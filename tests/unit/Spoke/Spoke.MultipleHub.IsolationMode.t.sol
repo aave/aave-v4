@@ -43,8 +43,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Add reserves to the new spoke
     isolationVars.reserveAId = newSpoke.addReserve(
-      isolationVars.assetAId,
       address(newHub),
+      isolationVars.assetAId,
       _deployMockPriceFeed(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
         active: true,
@@ -59,8 +59,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       dynReserveConfig
     );
     isolationVars.reserveBId = newSpoke.addReserve(
-      isolationVars.assetBId,
       address(newHub),
+      isolationVars.assetBId,
       _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
@@ -114,8 +114,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // List reserve B on spoke 1 for the canonical hub
     isolationVars.spoke1ReserveBId = spoke1.addReserve(
-      isolationVars.assetBIdMainHub,
       address(hub),
+      isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
@@ -197,8 +197,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // Add main hub reserve B to the new spoke
     vm.startPrank(ADMIN);
     isolationVars.reserveBIdMainHub = newSpoke.addReserve(
-      isolationVars.assetBIdMainHub,
       address(hub),
+      isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,

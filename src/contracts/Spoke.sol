@@ -79,8 +79,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function addReserve(
-    uint256 assetId,
     address hub,
+    uint256 assetId,
     address priceSource,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig

@@ -100,8 +100,8 @@ interface ISpoke is IMulticall, IAccessManaged {
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;
 
   function addReserve(
-    uint256 assetId,
     address hub,
+    uint256 assetId,
     address priceSource,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynConfig

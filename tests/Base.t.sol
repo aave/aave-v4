@@ -589,36 +589,36 @@ abstract contract Base is Test {
     });
 
     spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
-      wethAssetId,
       address(hub),
+      wethAssetId,
       _deployMockPriceFeed(spoke1, 2000e8),
       spokeInfo[spoke1].weth.reserveConfig,
       spokeInfo[spoke1].weth.dynReserveConfig
     );
     spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
-      wbtcAssetId,
       address(hub),
+      wbtcAssetId,
       _deployMockPriceFeed(spoke1, 50_000e8),
       spokeInfo[spoke1].wbtc.reserveConfig,
       spokeInfo[spoke1].wbtc.dynReserveConfig
     );
     spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(
-      daiAssetId,
       address(hub),
+      daiAssetId,
       _deployMockPriceFeed(spoke1, 1e8),
       spokeInfo[spoke1].dai.reserveConfig,
       spokeInfo[spoke1].dai.dynReserveConfig
     );
     spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(
-      usdxAssetId,
       address(hub),
+      usdxAssetId,
       _deployMockPriceFeed(spoke1, 1e8),
       spokeInfo[spoke1].usdx.reserveConfig,
       spokeInfo[spoke1].usdx.dynReserveConfig
     );
     spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(
-      usdyAssetId,
       address(hub),
+      usdyAssetId,
       _deployMockPriceFeed(spoke1, 1e8),
       spokeInfo[spoke1].usdy.reserveConfig,
       spokeInfo[spoke1].usdy.dynReserveConfig
@@ -699,43 +699,43 @@ abstract contract Base is Test {
     spokeInfo[spoke2].dai2.dynReserveConfig = DataTypes.DynamicReserveConfig({collateralFactor: 70_00});
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
-      wbtcAssetId,
       address(hub),
+      wbtcAssetId,
       _deployMockPriceFeed(spoke2, 50_000e8),
       spokeInfo[spoke2].wbtc.reserveConfig,
       spokeInfo[spoke2].wbtc.dynReserveConfig
     );
     spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(
-      wethAssetId,
       address(hub),
+      wethAssetId,
       _deployMockPriceFeed(spoke2, 2000e8),
       spokeInfo[spoke2].weth.reserveConfig,
       spokeInfo[spoke2].weth.dynReserveConfig
     );
     spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(
-      daiAssetId,
       address(hub),
+      daiAssetId,
       _deployMockPriceFeed(spoke2, 1e8),
       spokeInfo[spoke2].dai.reserveConfig,
       spokeInfo[spoke2].dai.dynReserveConfig
     );
     spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(
-      usdxAssetId,
       address(hub),
+      usdxAssetId,
       _deployMockPriceFeed(spoke2, 1e8),
       spokeInfo[spoke2].usdx.reserveConfig,
       spokeInfo[spoke2].usdx.dynReserveConfig
     );
     spokeInfo[spoke2].usdy.reserveId = spoke2.addReserve(
-      usdyAssetId,
       address(hub),
+      usdyAssetId,
       _deployMockPriceFeed(spoke2, 1e8),
       spokeInfo[spoke2].usdy.reserveConfig,
       spokeInfo[spoke2].usdy.dynReserveConfig
     );
     spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(
-      dai2AssetId,
       address(hub),
+      dai2AssetId,
       _deployMockPriceFeed(spoke2, 1e8),
       spokeInfo[spoke2].dai2.reserveConfig,
       spokeInfo[spoke2].dai2.dynReserveConfig
@@ -795,29 +795,29 @@ abstract contract Base is Test {
     spokeInfo[spoke3].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({collateralFactor: 77_00});
 
     spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
-      daiAssetId,
       address(hub),
+      daiAssetId,
       _deployMockPriceFeed(spoke3, 1e8),
       spokeInfo[spoke3].dai.reserveConfig,
       spokeInfo[spoke3].dai.dynReserveConfig
     );
     spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(
-      usdxAssetId,
       address(hub),
+      usdxAssetId,
       _deployMockPriceFeed(spoke3, 1e8),
       spokeInfo[spoke3].usdx.reserveConfig,
       spokeInfo[spoke3].usdx.dynReserveConfig
     );
     spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(
-      wethAssetId,
       address(hub),
+      wethAssetId,
       _deployMockPriceFeed(spoke3, 2000e8),
       spokeInfo[spoke3].weth.reserveConfig,
       spokeInfo[spoke3].weth.dynReserveConfig
     );
     spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(
-      wbtcAssetId,
       address(hub),
+      wbtcAssetId,
       _deployMockPriceFeed(spoke3, 50_000e8),
       spokeInfo[spoke3].wbtc.reserveConfig,
       spokeInfo[spoke3].wbtc.dynReserveConfig

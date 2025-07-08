@@ -379,7 +379,7 @@ contract SpokeConfigTest is SpokeBase {
     emit ISpoke.ReserveAdded(reserveId, wethAssetId);
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(wethAssetId, address(hub), reserveSource, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(address(hub), wethAssetId, reserveSource, newReserveConfig, newDynReserveConfig);
 
     assertEq(spoke1.getReserveConfig(reserveId), newReserveConfig);
     assertEq(spoke1.getDynamicReserveConfig(reserveId), newDynReserveConfig);
@@ -405,7 +405,7 @@ contract SpokeConfigTest is SpokeBase {
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(assetId, address(hub), reserveSource, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(address(hub), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
   function test_addReserve_fuzz_reverts_invalid_assetId(uint256 assetId) public {
@@ -429,7 +429,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(assetId, address(hub), reserveSource, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(address(hub), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
   function test_addReserve_revertsWith_InvalidOracle() public {
@@ -451,7 +451,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.InvalidOracle.selector);
     vm.prank(ADMIN);
-    newSpoke.addReserve(wethAssetId, address(hub), address(0), newReserveConfig, newDynReserveConfig);
+    newSpoke.addReserve(address(hub), wethAssetId, address(0), newReserveConfig, newDynReserveConfig);
   }
 
   function test_updateLiquidationConfig_closeFactor() public {

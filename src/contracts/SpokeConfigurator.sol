@@ -20,6 +20,20 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   constructor(address owner_) Ownable(owner_) {}
 
   /// @inheritdoc ISpokeConfigurator
+  function updateOracle(address spoke, address oracle) external onlyOwner {
+    ISpoke(spoke).updateOracle(oracle);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function updateReservePriceSource(
+    address spoke,
+    uint256 reserveId,
+    address priceSource
+  ) external onlyOwner {
+    ISpoke(spoke).updateReservePriceSource(reserveId, priceSource);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
   function updateLiquidationCloseFactor(address spoke, uint256 closeFactor) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     DataTypes.LiquidationConfig memory liquidationConfig = targetSpoke.getLiquidationConfig();
@@ -47,6 +61,18 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     DataTypes.LiquidationConfig memory liquidationConfig = targetSpoke.getLiquidationConfig();
     liquidationConfig.liquidationBonusFactor = liquidationBonusFactor;
     targetSpoke.updateLiquidationConfig(liquidationConfig);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function addReserve(
+    address spoke,
+    address hub,
+    uint256 assetId,
+    address priceSource,
+    DataTypes.ReserveConfig calldata config,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
+  ) external onlyOwner {
+    ISpoke(spoke).addReserve(hub, assetId, priceSource, config, dynamicConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator

@@ -124,11 +124,11 @@ contract SpokeMulticall is SpokeBase {
     bytes[] memory calls = new bytes[](2);
     calls[0] = abi.encodeCall(
       ISpoke.addReserve,
-      (daiAssetId, address(hub), _deployMockPriceFeed(spoke1, 1e8), dai2Config, dai2DynConfig)
+      (address(hub), daiAssetId, _deployMockPriceFeed(spoke1, 1e8), dai2Config, dai2DynConfig)
     );
     calls[1] = abi.encodeCall(
       ISpoke.addReserve,
-      (daiAssetId, address(hub), _deployMockPriceFeed(spoke1, 1e8), dai3Config, dai3DynConfig)
+      (address(hub), daiAssetId, _deployMockPriceFeed(spoke1, 1e8), dai3Config, dai3DynConfig)
     );
 
     vm.expectEmit(address(spoke1));
