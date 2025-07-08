@@ -298,7 +298,6 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     emit Remove(assetId, msg.sender, feeShares, feeAmount);
     emit Add(assetId, feeReceiver, feeShares, feeAmount);
-    emit AccrueFees(assetId, feeShares);
   }
 
   function _refresh(
