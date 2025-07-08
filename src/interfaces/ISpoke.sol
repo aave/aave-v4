@@ -21,6 +21,7 @@ interface ISpoke is IMulticall, IAccessManaged {
     DataTypes.DynamicReserveConfig config
   );
   event UserDynamicConfigRefreshed(address indexed user);
+  event UserDynamicConfigRefreshed(address indexed user, uint256 reserveId);
 
   event Supply(uint256 indexed reserveId, address indexed user, uint256 suppliedShares);
   event Withdraw(
@@ -67,15 +68,10 @@ interface ISpoke is IMulticall, IAccessManaged {
     address liquidator
   );
 
-  // TODO: rm when treasury accounting is done; indexing to read more easily
-  event TmpLiquidationFee(uint256 indexed tmpLiquidationFee);
-
-  error UserNotBorrowingReserve(uint256 reserveId);
   error ReserveNotListed();
   error AssetNotListed();
   error InvalidLiquidityPremium();
   error InsufficientSupply(uint256 supply);
-  error NotAvailableLiquidity(uint256 availableLiquidity);
   error ReserveNotBorrowable(uint256 reserveId);
   error ReserveCannotBeUsedAsCollateral(uint256 reserveId);
   error ReserveNotActive();
@@ -89,16 +85,14 @@ interface ISpoke is IMulticall, IAccessManaged {
   error InvalidHubAddress();
   error InvalidHealthFactorForMaxBonus();
   error InvalidLiquidationBonusFactor();
-  error NoUserRiskPremiumDecrease();
   error HealthFactorNotBelowThreshold();
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();
-  error InvalidLiquidationProtocolFee();
+  error InvalidLiquidationFee();
   error InvalidOracleAddress();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
-  error CollateralStatusUnchanged();
 
   function addReserve(
     uint256 assetId,
@@ -157,9 +151,10 @@ interface ISpoke is IMulticall, IAccessManaged {
   ) external;
 
   /**
-   * @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
-   * @param reserveId The reserveId of the underlying asset as registered on the spoke.
-   * @param usingAsCollateral True if the user wants to use the supply as collateral, false otherwise.
+   * @notice Enables or disables the use of a supplied reserve as collateral for the user.
+   * @dev No action is taken if the collateral status remains unchanged.
+   * @param reserveId The identifier of the reserve.
+   * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
    */
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
 

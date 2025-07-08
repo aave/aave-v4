@@ -29,23 +29,23 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
   /**
    * @dev Constructor.
-   * @dev The authority should implement the AccessManaged interface to control access.
-   * @param authority The address of the authority contract which manages permissions.
+   * @dev The authority contract must implement the AccessManaged interface for access control.
+   * @param authority_ The address of the authority contract which manages permissions.
    */
-  constructor(address authority) AccessManaged(authority) {}
+  constructor(address authority_) AccessManaged(authority_) {
+    // Intentionally left blank
+  }
 
-  // /////
-  // Governance
-  // /////
-
-  /// @dev `decimals` is passed as input to allow registration of ERC20 assets which do not implement the optional `decimals()` function
+  /// @inheritdoc ILiquidityHub
   function addAsset(
-    address asset,
+    address underlying,
     uint8 decimals,
+    address feeReceiver,
     address irStrategy
   ) external restricted returns (uint256) {
-    require(asset != address(0), InvalidAssetAddress());
+    require(underlying != address(0), InvalidUnderlying());
     require(decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
+    require(feeReceiver != address(0), InvalidFeeReceiver());
     require(irStrategy != address(0), InvalidIrStrategy());
 
     uint256 assetId = _assetCount++;
@@ -53,13 +53,13 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       active: true,
       paused: false,
       frozen: false,
-      feeReceiver: address(0),
+      feeReceiver: feeReceiver,
       liquidityFee: 0,
       irStrategy: irStrategy
     });
 
     _assets[assetId] = DataTypes.Asset({
-      underlying: asset,
+      underlying: underlying,
       decimals: decimals,
       suppliedShares: 0,
       availableLiquidity: 0,
@@ -73,20 +73,21 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       config: config
     });
 
-    emit AssetAdded(assetId, asset, decimals);
+    emit AssetAdded(assetId, underlying, decimals);
     emit AssetConfigUpdated(assetId, config);
 
     return assetId;
   }
 
+  /// @inheritdoc ILiquidityHub
   function updateAssetConfig(
     uint256 assetId,
     DataTypes.AssetConfig calldata config
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     require(config.liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR, InvalidLiquidityFee());
-    require(config.feeReceiver != address(0) || config.liquidityFee == 0, InvalidFeeReceiver());
-    require(address(config.irStrategy) != address(0), InvalidIrStrategy());
+    require(config.feeReceiver != address(0), InvalidFeeReceiver());
+    require(config.irStrategy != address(0), InvalidIrStrategy());
 
     DataTypes.Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
@@ -274,6 +275,28 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // todo mathematically find premium diff ceiling and replace the `2`
     // if no premium debt is restored, premium debt remains unchanged
     require(premiumDebtAfter + realizedPremiumTaken - premiumDebtBefore <= 2, InvalidDebtChange());
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function payFee(uint256 assetId, uint256 feeShares) external {
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+    _validatePayFee(spoke, feeShares);
+
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage feeReceiver = _spokes[assetId][asset.config.feeReceiver];
+
+    asset.accrue(assetId, feeReceiver);
+
+    uint256 spokeSuppliedShares = spoke.suppliedShares;
+    uint256 spokeSuppliedAssets = asset.toSuppliedAssetsDown(spokeSuppliedShares);
+    uint256 feeAmount = asset.toSuppliedAssetsDown(feeShares);
+    require(feeAmount <= spokeSuppliedAssets, SuppliedAmountExceeded(spokeSuppliedAssets));
+
+    spoke.suppliedShares = spokeSuppliedShares - feeShares;
+    feeReceiver.suppliedShares += feeShares;
+
+    emit Remove(assetId, msg.sender, feeShares, feeAmount);
+    emit AccrueFees(assetId, feeShares);
   }
 
   function _refresh(
@@ -531,5 +554,11 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   function _add(uint256 a, int256 b) internal pure returns (uint256) {
     if (b >= 0) return a + uint256(b);
     return a - uint256(-b);
+  }
+
+  function _validatePayFee(DataTypes.SpokeData storage spoke, uint256 feeShares) internal view {
+    // TODO: validate valid asset
+    require(spoke.config.active, SpokeNotActive());
+    require(feeShares != 0, InvalidFeeShares());
   }
 }
