@@ -337,8 +337,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 70_00);
 
     // weth price drops to $800
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    oracle.setReservePrice(_wethReserveId(spoke1), 800e8); // $800
+    _mockReservePrice(spoke1, _wethReserveId(spoke1), 800e8); // $800
 
     updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 105_00);
     updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 103_00);
@@ -352,8 +351,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 78_00);
 
     // dai price drops to $0.5
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    oracle.setReservePrice(_daiReserveId(spoke1), 0.5e8);
+    _mockReservePrice(spoke1, _daiReserveId(spoke1), 0.5e8);
 
     updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 104_00);
     updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 106_00);
@@ -368,8 +366,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     updateCollateralFactor(spoke1, _daiReserveId(spoke1), 78_00);
 
     // wbtc price drops to $40k
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    oracle.setReservePrice(_wbtcReserveId(spoke1), 40_000e8);
+    _mockReservePrice(spoke1, _wbtcReserveId(spoke1), 40_000e8);
 
     updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 108_00);
     updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 109_00);
