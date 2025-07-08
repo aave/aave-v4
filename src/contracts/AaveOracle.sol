@@ -38,7 +38,7 @@ contract AaveOracle is IAaveOracle {
     require(targetSource.decimals() == DECIMALS, InvalidSourceDecimals(reserveId));
     _sources[reserveId] = targetSource;
     _getSourcePrice(reserveId); // check if the source is valid
-    emit ReserveSourceUpdated(reserveId, targetSource);
+    emit ReserveSourceUpdated(reserveId, source);
   }
 
   /// @inheritdoc IPriceOracle
