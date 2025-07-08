@@ -8,6 +8,10 @@ contract PositionStatusWrapper {
   using PositionStatus for DataTypes.PositionStatus;
   DataTypes.PositionStatus internal _p;
 
+  function MAX_RESERVES_COUNT() external pure returns (uint256) {
+    return PositionStatus.MAX_RESERVES_COUNT;
+  }
+
   function BORROWING_MASK() external pure returns (uint256) {
     return PositionStatus.BORROWING_MASK;
   }
