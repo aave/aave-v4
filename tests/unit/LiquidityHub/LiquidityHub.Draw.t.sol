@@ -71,7 +71,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       assetBefore.baseDrawnShares + shares,
       'baseDrawnShares after draw'
     );
-    assertBorrowRateInvariant(hub, assetId, 'hub.draw');
+    assertBorrowRateSynced(hub, assetId, 'hub.draw');
     // spoke
     (baseDebt, premiumDebt) = hub.getSpokeDebt(assetId, address(spoke1));
     assertEq(hub.getSpokeTotalDebt(assetId, address(spoke1)), amount, 'spoke totalDebt after');
@@ -130,7 +130,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       'baseDrawnShares after draw'
     );
 
-    assertBorrowRateInvariant(hub, assetId, 'hub.draw');
+    assertBorrowRateSynced(hub, assetId, 'hub.draw');
   }
 
   function test_draw_revertsWith_AssetNotActive() public {

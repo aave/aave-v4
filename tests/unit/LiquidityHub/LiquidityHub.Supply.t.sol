@@ -313,7 +313,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     );
     (uint256 baseDebtAfter, ) = hub.getAssetDebt(assetId);
     assertEq(baseDebtAfter, baseDebtBefore, 'hub base debt after');
-    assertBorrowRateInvariant(hub, assetId, 'hub.add');
+    assertBorrowRateSynced(hub, assetId, 'hub.add');
     // token balance
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
     assertEq(underlying.balanceOf(address(hub)), amount, 'hub token balance post-supply');
@@ -556,7 +556,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     );
     (uint256 baseDebtAfter, ) = hub.getAssetDebt(daiAssetId);
     assertEq(baseDebtAfter, baseDebtBefore, 'hub base debt after');
-    assertBorrowRateInvariant(hub, daiAssetId, 'hub.add');
+    assertBorrowRateSynced(hub, daiAssetId, 'hub.add');
   }
 
   function test_supply_with_increased_index_with_premium() public {
