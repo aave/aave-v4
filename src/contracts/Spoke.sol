@@ -754,18 +754,17 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
 
     while (vars.reserveId < reservesListLength) {
-      DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
-
       if (!positionStatus.isUsingAsCollateralOrBorrowing(vars.reserveId)) {
         unchecked {
           ++vars.reserveId;
         }
         continue;
       }
+
+      DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
       DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
       vars.assetId = reserve.assetId;
       ILiquidityHub hub = reserve.hub;
-
       vars.assetPrice = oracle.getReservePrice(vars.reserveId);
       unchecked {
         vars.assetUnit = 10 ** reserve.decimals;
@@ -775,17 +774,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         DataTypes.DynamicReserveConfig storage dynConfig = _dynamicConfig[vars.reserveId][
           userPosition.configKey
         ];
-
-        vars.assetId = reserve.assetId;
         vars.liquidityPremium = reserve.config.liquidityPremium;
-        vars.assetPrice = oracle.getReservePrice(vars.reserveId);
-        unchecked {
-          vars.assetUnit = 10 ** reserve.decimals;
-        }
+
         vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
           userPosition,
-          vars.assetId,
           hub,
+          vars.assetId,
           vars.assetPrice,
           vars.assetUnit
         );
@@ -802,10 +796,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       if (positionStatus.isBorrowing(vars.reserveId)) {
         vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
           userPosition,
+          hub,
           vars.assetId,
           vars.assetPrice,
-          vars.assetUnit,
-          hub
+          vars.assetUnit
         );
       }
 
@@ -861,10 +855,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _getUserDebtInBaseCurrency(
     DataTypes.UserPosition storage userPosition,
+    ILiquidityHub hub,
     uint256 assetId,
     uint256 assetPrice,
-    uint256 assetUnit,
-    ILiquidityHub hub
+    uint256 assetUnit
   ) internal view returns (uint256) {
     (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(hub, assetId, userPosition);
     return ((baseDebt + premiumDebt) * assetPrice).wadify() / assetUnit;
@@ -872,8 +866,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _getUserBalanceInBaseCurrency(
     DataTypes.UserPosition storage userPosition,
-    uint256 assetId,
     ILiquidityHub hub,
+    uint256 assetId,
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
