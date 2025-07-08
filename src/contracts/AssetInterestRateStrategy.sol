@@ -8,8 +8,7 @@ import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/interf
  * @title AssetInterestRateStrategy contract
  * @author Aave Labs
  * @notice Asset interest rate strategy used by the Aave protocol
- * @dev Strategies are hub-specific: one strategy CAN'T be used across different Aave hubs
- *   due to the usage of asset id as index of the _interestRateData
+ * @dev Strategies are hub-specific, due to the usage of asset id as index of the _interestRateData.
  */
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMathExtended for *;

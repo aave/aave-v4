@@ -231,8 +231,8 @@ contract LiquidityHubBorrowIndex is Base {
   }
 
   function _deployAndAddSpoke(uint256 assetId) internal returns (address) {
-    IPriceOracle oracle = new MockPriceOracle();
-    Spoke spoke = new Spoke(address(oracle), address(accessManager));
+    Spoke spoke = new Spoke(address(accessManager));
+    IAaveOracle oracle = new AaveOracle(address(spoke), 8, 'Spoke (USD)');
     vm.prank(HUB_ADMIN);
     hub.addSpoke(
       assetId,

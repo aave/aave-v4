@@ -46,6 +46,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     siloedVars.reserveBId = newSpoke.addReserve(
       siloedVars.assetBId,
       address(newHub),
+      _deployMockPriceFeed(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -58,9 +59,6 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       }),
       dynReserveConfig
     );
-
-    // Set the price of B reserve for the new oracle
-    newOracle.setReservePrice(siloedVars.reserveBId, 2000e8);
 
     // Link new hub and new spoke for asset B, 100k draw cap
     newHub.addSpoke(
@@ -92,6 +90,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     siloedVars.reserveAId = spoke1.addReserve(
       siloedVars.assetAId,
       address(hub),
+      _deployMockPriceFeed(spoke1, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -104,9 +103,6 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       }),
       dynReserveConfig
     );
-
-    // Set the price of A reserve for the spoke 1 oracle
-    oracle1.setReservePrice(siloedVars.reserveAId, 50_000e8);
 
     // Link canonical hub and spoke 1 for asset A
     hub.addSpoke(
@@ -129,6 +125,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     siloedVars.reserveAIdNewSpoke = newSpoke.addReserve(
       siloedVars.assetAId,
       address(hub),
+      _deployMockPriceFeed(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -141,10 +138,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       }),
       dynReserveConfig
     );
-
-    // Set the price of reserve A for the new oracle
-    newOracle.setReservePrice(siloedVars.reserveAIdNewSpoke, 2000e8);
-
+  
     // Link canonical hub and new spoke for asset A, 500k supply cap, 0 borrow cap
     hub.addSpoke(
       siloedVars.assetAId,

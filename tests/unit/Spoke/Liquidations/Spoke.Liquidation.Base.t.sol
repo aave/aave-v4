@@ -147,13 +147,13 @@ contract SpokeLiquidationBase is SpokeBase {
       });
     }
 
-    _increaseCollateralReserveSupplyExchangeRate(
-      state.collateralReserve.assetId,
-      collateralReserveId,
-      supplyAmount / 2,
-      skipTime,
-      bob
-    );
+    _borrowWithoutHfCheck({
+      spoke: spoke1,
+      user: bob,
+      reserveId: collateralReserveId,
+      debtAmount: supplyAmount / 2
+    });
+    skip(skipTime);
 
     vm.assume(
       _getRequiredDebtAmountForLtHf(spoke1, alice, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
@@ -601,28 +601,5 @@ contract SpokeLiquidationBase is SpokeBase {
     );
 
     return state;
-  }
-
-  function _increaseCollateralReserveSupplyExchangeRate(
-    uint256 assetId,
-    uint256 collateralReserveId,
-    uint256 borrowAmount,
-    uint256 skipTime,
-    address user
-  ) internal {
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    // set price to 0 to circumvent borrow validation
-    uint256 initialPrice = oracle.getReservePrice(collateralReserveId);
-    oracle.setReservePrice(collateralReserveId, 0);
-    // user borrows some collateral reserve to inflate collateral supply ex rate
-    Utils.borrow({
-      spoke: spoke1,
-      reserveId: collateralReserveId,
-      user: user,
-      amount: borrowAmount,
-      onBehalfOf: user
-    });
-    oracle.setReservePrice(collateralReserveId, initialPrice);
-    skip(skipTime);
   }
 }

@@ -17,8 +17,7 @@ import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 
 // interfaces
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {ISpoke} from 'src/interfaces/ISpoke.sol';
-import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
+import {ISpoke, IAaveOracle} from 'src/interfaces/ISpoke.sol';
 
 contract Spoke is ISpoke, Multicall, AccessManaged {
   using SafeERC20 for IERC20;
@@ -32,7 +31,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMathExtended.WAD;
   uint256 public constant MAX_LIQUIDITY_PREMIUM = 1000_00; // 1000.00%
-  IPriceOracle public immutable oracle;
+
+  IAaveOracle public oracle;
+  uint256[] public reservesList; // todo: rm, not needed
+  uint256 public reserveCount;
 
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
@@ -41,26 +43,32 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   DataTypes.LiquidationConfig internal _liquidationConfig;
-  uint256[] public reservesList; // todo: rm, not needed
-  uint256 public reserveCount;
 
   /**
    * @dev Constructor.
    * @dev The authority should implement the AccessManaged interface to control access.
-   * @param oracleAddress The address of the price oracle contract used for asset valuations.
-   * @param authority The address of the authority contract which manages permissions.
+   * @param authority_ The address of the authority contract which manages permissions.
    */
-  constructor(address oracleAddress, address authority) AccessManaged(authority) {
-    require(oracleAddress != address(0), InvalidOracleAddress());
-
-    oracle = IPriceOracle(oracleAddress);
+  constructor(address authority_) AccessManaged(authority_) {
     // todo move to `initialize` when adding upgradeability
     _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    emit LiquidationConfigUpdated(_liquidationConfig);
   }
 
   // /////
   // Governance
   // /////
+
+  function updateOracle(address newOracle) external restricted {
+    require(newOracle != address(0), InvalidOracle());
+    oracle = IAaveOracle(newOracle);
+    emit OracleUpdated(newOracle);
+  }
+
+  function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
+    require(reserveId < reserveCount, ReserveNotListed());
+    _updateReservePriceSource(reserveId, priceSource);
+  }
 
   function updateLiquidationConfig(
     DataTypes.LiquidationConfig calldata liquidationConfig
@@ -73,6 +81,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function addReserve(
     uint256 assetId,
     address hub,
+    address priceSource,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
@@ -84,6 +93,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     DataTypes.Asset memory asset = ILiquidityHub(hub).getAsset(assetId);
     require(asset.underlying != address(0), AssetNotListed());
+
+    _updateReservePriceSource(reserveId, priceSource);
 
     reservesList.push(reserveId);
     _reserves[reserveId] = DataTypes.Reserve({
@@ -602,6 +613,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     // todo validate user not trying to repay more
+  }
+
+  function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
+    require(address(oracle) != address(0), InvalidOracle());
+    oracle.setReserveSource(reserveId, priceSource);
+    emit ReservePriceSourceUpdated(reserveId, priceSource);
   }
 
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
@@ -1216,7 +1233,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     debtReserve.baseDrawnShares -= vars.totalRestoredShares;
     collateralReserve.suppliedShares -= vars.totalWithdrawnShares;
 
-    collateralReserveHub.refreshPremiumDebt(
+    debtReserveHub.refreshPremiumDebt(
       vars.debtAssetId,
       vars.totalUserDebtPremiumDrawnSharesDelta,
       vars.totalUserDebtPremiumOffsetDelta,
