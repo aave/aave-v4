@@ -13,7 +13,6 @@ library PositionStatus {
   using PositionStatus for DataTypes.PositionStatus;
 
   error InvalidReserveId();
-  error InvalidReserveCount();
 
   //TODO: After we complete the data structures packing, this needs to be adjusted to the right size depending on the number of bits we will use to store the reserve index
   uint256 public constant MAX_RESERVES_COUNT = 1024;
@@ -78,7 +77,7 @@ library PositionStatus {
   ) internal view returns (bool) {
     unchecked {
       require(reserveId < MAX_RESERVES_COUNT, InvalidReserveId());
-      return (self.getMapSlot(reserveId) >> (reserveId % 128 << 1)) & 3 != 0;
+      return (self.getMapSlot(reserveId) >> ((reserveId % 128) << 1)) & 3 != 0;
     }
   }
 
@@ -116,7 +115,8 @@ library PositionStatus {
 
   /**
    * @dev Counts the number of reserves enabled as collateral.
-   * @dev Counts all bits in the last bucket after reserveCount as well..
+   * @dev Panics if `reserveCount` is greater than MAX_RESERVES_COUNT, & disregards
+   * potential dirty bits set after `reserveCount`.
    * @param self The configuration object.
    * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
    */
@@ -124,12 +124,14 @@ library PositionStatus {
     DataTypes.PositionStatus storage self,
     uint256 reserveCount
   ) internal view returns (uint256) {
-    require(reserveCount <= MAX_RESERVES_COUNT, InvalidReserveCount()); // assertion: should never hit
+    assert(reserveCount <= MAX_RESERVES_COUNT); // should never hit
     unchecked {
-      uint256 count;
-      uint256 bucket = 1 + (reserveCount >> 7);
-      while (bucket-- != 0) {
-        count += LibBit.popCount(self.map[bucket] & COLLATERAL_MASK);
+      uint256 bucket = reserveCount >> 7;
+      uint256 count = LibBit.popCount(
+        (self.map[bucket] & (COLLATERAL_MASK >> (256 - ((reserveCount % 128) << 1))))
+      ); // disregard bits after `reserveCount`
+      while (bucket != 0) {
+        count += LibBit.popCount(self.map[--bucket] & COLLATERAL_MASK);
       }
       return count;
     }
