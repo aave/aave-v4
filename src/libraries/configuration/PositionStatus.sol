@@ -117,7 +117,7 @@ library PositionStatus {
     unchecked {
       uint256 bucket = reserveCount >> 7;
       uint256 count = LibBit.popCount(
-        (self.map[bucket] & (COLLATERAL_MASK >> (256 - ((reserveCount % 128) << 1))))
+        self.map[bucket] & (COLLATERAL_MASK >> (256 - ((reserveCount % 128) << 1)))
       ); // disregard bits after `reserveCount`
       while (bucket != 0) {
         count += LibBit.popCount(self.map[--bucket] & COLLATERAL_MASK);

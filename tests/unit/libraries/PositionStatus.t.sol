@@ -179,6 +179,8 @@ contract PositionStatusTest is Test {
     uint256 collateralCount;
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
       if (p.isUsingAsCollateral(reserveId)) ++collateralCount;
+      // reserveId is 0-base indexed
+      assertEq(p.collateralCount({reserveCount: reserveId + 1}), collateralCount);
     }
 
     assertEq(p.collateralCount(reserveCount), collateralCount);
