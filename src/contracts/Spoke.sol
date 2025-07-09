@@ -124,7 +124,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId,
     DataTypes.ReserveConfig calldata config
   ) external restricted {
-    // TODO: AccessControl, More sophisticated
+    // TODO: More sophisticated
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     require(reserve.underlying != address(0), ReserveNotListed());
     _validateReserveConfig(config);
@@ -137,7 +137,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     _validateDynamicReserveConfig(dynamicConfig);
-    // TODO: AccessControl, More sophisticated
+    // TODO: More sophisticated
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     uint16 nextConfigKey;
     // @dev overflow is desired, we implicitly invalidate & override stale config
@@ -507,13 +507,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getVariableLiquidationBonus(
     uint256 reserveId,
+    address user,
     uint256 healthFactor
   ) public view returns (uint256) {
     // if healthFactorForMaxBonus is 0, always returns liquidationBonus
     return
       _liquidationConfig.calculateVariableLiquidationBonus(
         healthFactor,
-        _dynamicConfig[reserveId][_reserves[reserveId].dynamicConfigKey].liquidationBonus,
+        _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey].liquidationBonus,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       );
   }
@@ -1305,6 +1306,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
     vars.liquidationBonus = getVariableLiquidationBonus(
       vars.collateralReserveId,
+      user,
       vars.healthFactor
     );
     vars.closeFactor = _liquidationConfig.closeFactor;

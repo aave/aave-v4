@@ -236,6 +236,7 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   function getVariableLiquidationBonus(
     uint256 reserveId,
+    address user,
     uint256 healthFactor
   ) external view returns (uint256);
 
