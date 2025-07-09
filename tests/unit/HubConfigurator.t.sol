@@ -437,7 +437,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
 
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
     expectedConfig.irStrategy = interestRateStrategy;
-    _mockInterestRate(interestRateStrategy, 5_00);
+    _mockInterestRateBps(interestRateStrategy, 5_00);
 
     vm.expectCall(
       address(hub),

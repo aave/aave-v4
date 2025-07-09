@@ -65,9 +65,9 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       siloedVars.assetBId,
       address(newSpoke),
       DataTypes.SpokeConfig({
-        drawCap: siloedVars.assetBDrawCap,
+        active: true,
         supplyCap: UINT256_MAX,
-        active: true
+        drawCap: siloedVars.assetBDrawCap
       })
     );
     vm.stopPrank();
@@ -109,9 +109,9 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       siloedVars.assetAId,
       address(spoke1),
       DataTypes.SpokeConfig({
-        drawCap: type(uint256).max,
+        active: true,
         supplyCap: type(uint256).max,
-        active: true
+        drawCap: type(uint256).max
       })
     );
     vm.stopPrank();
@@ -143,7 +143,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     hub.addSpoke(
       siloedVars.assetAId,
       address(newSpoke),
-      DataTypes.SpokeConfig({drawCap: 0, supplyCap: siloedVars.assetASupplyCap, active: true})
+      DataTypes.SpokeConfig({active: true, supplyCap: siloedVars.assetASupplyCap, drawCap: 0})
     );
     vm.stopPrank();
 
