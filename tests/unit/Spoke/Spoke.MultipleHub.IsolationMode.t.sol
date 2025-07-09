@@ -45,6 +45,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     isolationVars.reserveAId = newSpoke.addReserve(
       isolationVars.assetAId,
       address(newHub),
+      _deployMockPriceFeed(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -59,6 +60,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     isolationVars.reserveBId = newSpoke.addReserve(
       isolationVars.assetBId,
       address(newHub),
+      _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -70,10 +72,6 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       }),
       dynReserveConfig
     );
-
-    // Set the prices of the new reserves for the new oracle
-    newOracle.setReservePrice(isolationVars.reserveAId, 2000e8);
-    newOracle.setReservePrice(isolationVars.reserveBId, 50_000e8);
 
     // Link hub and spoke
     newHub.addSpoke(
@@ -116,6 +114,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     isolationVars.spoke1ReserveBId = spoke1.addReserve(
       isolationVars.assetBIdMainHub,
       address(hub),
+      _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -127,9 +126,6 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       }),
       dynReserveConfig
     );
-
-    // Set the price of reserve B on spoke1 for the main hub
-    oracle1.setReservePrice(isolationVars.spoke1ReserveBId, 50_000e8);
 
     // Link main hub and spoke 1 for asset B
     hub.addSpoke(
@@ -200,6 +196,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     isolationVars.reserveBIdMainHub = newSpoke.addReserve(
       isolationVars.assetBIdMainHub,
       address(hub),
+      _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
@@ -211,9 +208,6 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       }),
       dynReserveConfig
     );
-
-    // Set the price of main hub reserve B on new spoke
-    newOracle.setReservePrice(isolationVars.reserveBIdMainHub, 50_000e8);
 
     // Link main hub and new spoke for asset B
     // 0 supply cap, 100k draw cap

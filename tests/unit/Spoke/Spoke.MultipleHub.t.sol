@@ -43,6 +43,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     daiHub2ReserveId = spoke1.addReserve(
       daiAssetId,
       address(hub2),
+      _deployMockPriceFeed(spoke1, 1e8),
       daiHub2Config,
       dynDaiHub2Config
     );
@@ -64,6 +65,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     daiHub3ReserveId = spoke1.addReserve(
       hub3DaiAssetId,
       address(hub3),
+      _deployMockPriceFeed(spoke1, 1e8),
       daiHub3Config,
       dynDaiHub3Config
     );
@@ -79,10 +81,6 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     // Connect hub 3 and spoke 1 for dai
     hub3.addSpoke(hub3DaiAssetId, address(spoke1), spokeConfig);
-
-    // Set the prices for dai for the new hubs
-    oracle1.setReservePrice(daiHub2ReserveId, 1e8);
-    oracle1.setReservePrice(daiHub3ReserveId, 1e8);
 
     vm.stopPrank();
 

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
 import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
@@ -116,9 +116,10 @@ contract ConfiguratorTest is LiquidityHubBase {
     address feeReceiver,
     address interestRateStrategy
   ) public {
-    vm.assume(
-      underlying != address(0) && feeReceiver != address(0) && interestRateStrategy != address(0)
-    );
+    assumeUnusedAddress(underlying);
+    assumeNotZeroAddress(feeReceiver);
+    assumeNotZeroAddress(interestRateStrategy);
+
     decimals = uint8(bound(decimals, hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, type(uint8).max));
 
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector, address(hub));
@@ -160,9 +161,10 @@ contract ConfiguratorTest is LiquidityHubBase {
     address feeReceiver,
     address interestRateStrategy
   ) public {
-    vm.assume(
-      underlying != address(0) && feeReceiver != address(0) && interestRateStrategy != address(0)
-    );
+    assumeUnusedAddress(underlying);
+    assumeNotZeroAddress(feeReceiver);
+    assumeNotZeroAddress(interestRateStrategy);
+
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     uint256 expectedAssetId = hub.getAssetCount();
@@ -347,59 +349,57 @@ contract ConfiguratorTest is LiquidityHubBase {
   }
 
   function test_updateFeeReceiver_fuzz(uint256 assetId, address feeReceiver) public {
+    assumeNotZeroAddress(feeReceiver);
+
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
-    if (feeReceiver == address(0)) {
-      vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
-    } else {
-      DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(assetId);
+    DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(assetId);
 
-      if (feeReceiver != oldConfig.feeReceiver) {
+    if (feeReceiver != oldConfig.feeReceiver) {
+      vm.expectCall(
+        address(hub),
+        abi.encodeCall(
+          ILiquidityHub.updateSpokeConfig,
+          (
+            assetId,
+            oldConfig.feeReceiver,
+            DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+          )
+        )
+      );
+
+      if (hub.getSpoke(assetId, feeReceiver).lastUpdateTimestamp == 0) {
+        vm.expectCall(
+          address(hub),
+          abi.encodeCall(
+            ILiquidityHub.addSpoke,
+            (
+              assetId,
+              feeReceiver,
+              DataTypes.SpokeConfig({
+                supplyCap: type(uint256).max,
+                drawCap: type(uint256).max,
+                active: true
+              })
+            )
+          )
+        );
+      } else {
         vm.expectCall(
           address(hub),
           abi.encodeCall(
             ILiquidityHub.updateSpokeConfig,
             (
               assetId,
-              oldConfig.feeReceiver,
-              DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+              feeReceiver,
+              DataTypes.SpokeConfig({
+                supplyCap: type(uint256).max,
+                drawCap: type(uint256).max,
+                active: true
+              })
             )
           )
         );
-
-        if (hub.getSpoke(assetId, feeReceiver).lastUpdateTimestamp == 0) {
-          vm.expectCall(
-            address(hub),
-            abi.encodeCall(
-              ILiquidityHub.addSpoke,
-              (
-                assetId,
-                feeReceiver,
-                DataTypes.SpokeConfig({
-                  supplyCap: type(uint256).max,
-                  drawCap: type(uint256).max,
-                  active: true
-                })
-              )
-            )
-          );
-        } else {
-          vm.expectCall(
-            address(hub),
-            abi.encodeCall(
-              ILiquidityHub.updateSpokeConfig,
-              (
-                assetId,
-                feeReceiver,
-                DataTypes.SpokeConfig({
-                  supplyCap: type(uint256).max,
-                  drawCap: type(uint256).max,
-                  active: true
-                })
-              )
-            )
-          );
-        }
       }
 
       // same struct, renaming to expectedConfig
@@ -631,14 +631,7 @@ contract ConfiguratorTest is LiquidityHubBase {
   ) internal returns (uint256) {
     if (fetchErc20Decimals) {
       _mockDecimals(underlying, decimals);
-      return
-        configurator.addAsset(
-          address(hub),
-          underlying,
-          decimals,
-          feeReceiver,
-          interestRateStrategy
-        );
+      return configurator.addAsset(address(hub), underlying, feeReceiver, interestRateStrategy);
     } else {
       return
         configurator.addAsset(
