@@ -99,21 +99,18 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   function calculateInterestRate(
     uint256 assetId,
     uint256 availableLiquidity,
-    uint256 totalDebt,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    uint256 baseDebt,
+    uint256 premiumDebt
   ) external view virtual override returns (uint256) {
     InterestRateData memory rateData = _interestRateData[assetId];
     require(rateData.optimalUsageRatio != 0, InterestRateDataNotSet(assetId));
 
     uint256 currentVariableBorrowRateRay = rateData.baseVariableBorrowRate.bpsToRay();
-    if (totalDebt == 0) {
+    if (baseDebt == 0) {
       return currentVariableBorrowRateRay;
     }
 
-    uint256 usageRatioRay = totalDebt.rayDivUp(
-      availableLiquidity + liquidityAdded - liquidityTaken + totalDebt
-    );
+    uint256 usageRatioRay = baseDebt.rayDivUp(availableLiquidity + baseDebt);
     uint256 optimalUsageRatioRay = rateData.optimalUsageRatio.bpsToRay();
 
     if (usageRatioRay <= optimalUsageRatioRay) {
