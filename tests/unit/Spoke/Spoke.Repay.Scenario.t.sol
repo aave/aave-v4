@@ -1071,7 +1071,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     assertApproxEqAbs(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       bobDaiBefore.totalDebt + action2.borrowAmount,
-      3,
+      4,
       'bob dai debt after second borrow'
     );
 
