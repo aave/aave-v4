@@ -24,7 +24,6 @@ contract PositionStatusTest is Test {
     assertEq(p.BORROWING_MASK(), borrowingMask);
     assertEq(p.COLLATERAL_MASK() | p.BORROWING_MASK(), UINT256_MAX);
     assertEq(p.COLLATERAL_MASK() & p.BORROWING_MASK(), 0);
-    assertEq(p.MAX_RESERVES_COUNT(), 1024);
   }
 
   function test_setBorrowing_slot0() public {
@@ -56,11 +55,6 @@ contract PositionStatusTest is Test {
   }
 
   function test_fuzz_setBorrowing(uint256 a, bool b) public {
-    if (a >= p.MAX_RESERVES_COUNT()) {
-      vm.expectRevert(PositionStatus.InvalidReserveId.selector);
-      p.setBorrowing(a, b);
-      return;
-    }
     p.setBorrowing(a, b);
     assertEq(p.isBorrowing(a), b);
   }
@@ -94,11 +88,6 @@ contract PositionStatusTest is Test {
   }
 
   function test_fuzz_setUseAsCollateral(uint256 a, bool b) public {
-    if (a >= p.MAX_RESERVES_COUNT()) {
-      vm.expectRevert();
-      p.setUsingAsCollateral(a, b);
-      return;
-    }
     p.setUsingAsCollateral(a, b);
     assertEq(p.isUsingAsCollateral(a), b);
   }
@@ -155,47 +144,36 @@ contract PositionStatusTest is Test {
 
   function test_collateralCount() public {
     p.setUsingAsCollateral(127, true);
-    assertEq(p.collateralCount(p.MAX_RESERVES_COUNT()), 1);
     assertEq(p.collateralCount(128), 1);
 
     // ignore invalid bits
     assertEq(p.collateralCount(100), 0);
 
     p.setUsingAsCollateral(2, true);
-    assertEq(p.collateralCount(p.MAX_RESERVES_COUNT()), 2);
     assertEq(p.collateralCount(128), 2);
 
     p.setUsingAsCollateral(32, true);
-    assertEq(p.collateralCount(p.MAX_RESERVES_COUNT()), 3);
     assertEq(p.collateralCount(128), 3);
 
     p.setUsingAsCollateral(342, true);
-    assertEq(p.collateralCount(p.MAX_RESERVES_COUNT()), 4);
     assertEq(p.collateralCount(343), 4);
 
     p.setUsingAsCollateral(342, true);
-    assertEq(p.collateralCount(p.MAX_RESERVES_COUNT()), 4);
     assertEq(p.collateralCount(343), 4);
 
     p.setUsingAsCollateral(32, false);
-    assertEq(p.collateralCount(p.MAX_RESERVES_COUNT()), 3);
     assertEq(p.collateralCount(343), 3);
 
     // disregards borrowed assets
     p.setBorrowing(32, true);
-    assertEq(p.collateralCount(p.MAX_RESERVES_COUNT()), 3);
     assertEq(p.collateralCount(343), 3);
 
     p.setBorrowing(79, true);
-    assertEq(p.collateralCount(p.MAX_RESERVES_COUNT()), 3);
     assertEq(p.collateralCount(343), 3);
-
-    vm.expectRevert();
-    p.collateralCount(PositionStatus.MAX_RESERVES_COUNT + 1);
   }
 
   function test_collateralCount(uint256 reserveCount) public {
-    reserveCount = bound(reserveCount, 0, p.MAX_RESERVES_COUNT());
+    reserveCount = bound(reserveCount, 0, 1 << 10); // gas limit
     vm.setArbitraryStorage(address(p));
 
     uint256 collateralCount;
