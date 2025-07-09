@@ -58,6 +58,7 @@ interface ISpokeConfigurator {
    * @param priceSource The address of the price source.
    * @param config The configuration of the reserve.
    * @param dynamicConfig The dynamic configuration of the reserve.
+   * @return reserveId The identifier of the reserve.
    */
   function addReserve(
     address spoke,
@@ -66,7 +67,7 @@ interface ISpokeConfigurator {
     address priceSource,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
-  ) external;
+  ) external returns (uint256 reserveId);
 
   /**
    * @notice Updates the active flag of a reserve.

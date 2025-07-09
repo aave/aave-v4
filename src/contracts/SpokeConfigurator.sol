@@ -71,8 +71,8 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     address priceSource,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
-  ) external onlyOwner {
-    ISpoke(spoke).addReserve(hub, assetId, priceSource, config, dynamicConfig);
+  ) external onlyOwner returns (uint256 reserveId) {
+    return ISpoke(spoke).addReserve(hub, assetId, priceSource, config, dynamicConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
