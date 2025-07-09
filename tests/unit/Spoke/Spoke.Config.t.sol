@@ -377,6 +377,10 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveAdded(reserveId, wethAssetId);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.ReserveConfigUpdated(reserveId, newReserveConfig);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.DynamicReserveConfigUpdated(reserveId, 0, newDynReserveConfig);
 
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(address(hub), wethAssetId, reserveSource, newReserveConfig, newDynReserveConfig);

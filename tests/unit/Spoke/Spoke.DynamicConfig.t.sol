@@ -6,6 +6,29 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeDynamicConfigTest is SpokeBase {
   using SafeCast for uint256;
 
+  function test_updateDynamicReserveConfig_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.prank(alice);
+    spoke1.updateDynamicReserveConfig(
+      _daiReserveId(spoke1), 
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 80_00
+      })
+    );
+  }
+
+  function test_updateDynamicReserveConfig_revertsWith_ReserveNotListed() public {
+    uint256 invalidReserveId = spoke1.reserveCount();
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotListed.selector, invalidReserveId));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(
+      invalidReserveId, 
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 80_00
+      })
+    );
+  }
+
   function test_updateDynamicReserveConfig_revertsWith_InvalidCollateralFactor() public {
     uint16 collateralFactor = vm
       .randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
