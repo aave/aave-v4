@@ -10,7 +10,7 @@ import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
-import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
+import {PairArray} from 'src/libraries/helpers/PairArray.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
@@ -24,7 +24,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
   using PercentageMathExtended for uint256;
-  using KeyValueListInMemory for KeyValueListInMemory.List;
+  using PairArray for PairArray.Array;
   using LiquidationLogic for DataTypes.LiquidationConfig;
   using PositionStatus for DataTypes.PositionStatus;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
@@ -787,10 +787,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.CalculateUserAccountDataVars memory vars;
     uint256 reservesListLength = reservesList.length;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
+    PairArray.Array memory pairArray = PairArray.init(
       positionStatus.collateralCount(reservesListLength)
     );
-
+  
     while (vars.reserveId < reservesListLength) {
       if (!positionStatus.isUsingAsCollateralOrBorrowing(vars.reserveId)) {
         unchecked {
@@ -823,7 +823,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         );
 
         vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
-        list.add(vars.i, vars.liquidityPremium, vars.userCollateralInBaseCurrency);
+        pairArray.set(vars.i, vars.liquidityPremium, vars.userCollateralInBaseCurrency);
         vars.avgCollateralFactor += vars.userCollateralInBaseCurrency * dynConfig.collateralFactor;
 
         unchecked {
@@ -860,13 +860,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
 
-    list.sortByKey(); // sort by liquidity premium
+    pairArray.sortByKey(); // sort by liquidity premium
     vars.i = 0;
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
-    while (vars.i < list.length() && vars.debtCounterInBaseCurrency > 0) {
+
+    while (vars.i < pairArray.length() && vars.debtCounterInBaseCurrency > 0) {
       if (vars.debtCounterInBaseCurrency == 0) break;
-      (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = list.get(vars.i);
+      (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = pairArray.get(vars.i);
       if (vars.userCollateralInBaseCurrency > vars.debtCounterInBaseCurrency) {
         vars.userCollateralInBaseCurrency = vars.debtCounterInBaseCurrency;
       }
