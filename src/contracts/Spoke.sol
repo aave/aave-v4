@@ -433,6 +433,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit UserRiskPremiumUpdate(user, userRiskPremium);
   }
 
+  function updateUserDynamicConfig(uint256 reserveId) external {
+    _refreshDynamicConfig(msg.sender, reserveId);
+  }
+
+  function updateUserDynamicConfig() external {
+    _refreshDynamicConfig(msg.sender);
+  }
+
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
     return _positionStatus[user].isUsingAsCollateral(reserveId);
   }
