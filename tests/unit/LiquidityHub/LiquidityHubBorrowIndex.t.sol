@@ -12,7 +12,7 @@ contract LiquidityHubBorrowIndex is Base {
   function setUp() public override {
     deployFixtures();
     initEnvironment();
-    _mockInterestRate(borrowRate);
+    _mockInterestRateBps(borrowRate);
   }
 
   function test_spokeAddedDuringZeroDebtPeriod() public {
@@ -238,9 +238,9 @@ contract LiquidityHubBorrowIndex is Base {
       assetId,
       address(spoke),
       DataTypes.SpokeConfig({
+        active: true,
         supplyCap: type(uint256).max,
-        drawCap: type(uint256).max,
-        active: true
+        drawCap: type(uint256).max
       })
     );
     return address(spoke);

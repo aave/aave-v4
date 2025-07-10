@@ -17,9 +17,9 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
       irStrategy: address(irStrategy)
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
-      drawCap: 1000e18,
+      active: true,
       supplyCap: 1000e18,
-      active: true
+      drawCap: 1000e18
     });
 
     // Only Hub Admin can add assets to the hub
@@ -126,7 +126,7 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     hub.updateSpokeConfig(
       daiAssetId,
       address(spoke1),
-      DataTypes.SpokeConfig({drawCap: 1000e18, supplyCap: 1000e18, active: true})
+      DataTypes.SpokeConfig({active: true, supplyCap: 1000e18, drawCap: 1000e18})
     );
   }
 
@@ -240,9 +240,9 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
       irStrategy: address(irStrategy)
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
-      drawCap: 1000e18,
+      active: true,
       supplyCap: 1000e18,
-      active: true
+      drawCap: 1000e18
     });
 
     IAccessManager authority = IAccessManager(hub.authority());

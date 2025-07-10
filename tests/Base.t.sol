@@ -304,9 +304,9 @@ abstract contract Base is Test {
   
   function configureTokenList() internal {
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+      active: true,
       supplyCap: type(uint256).max,
-      drawCap: type(uint256).max,
-      active: true
+      drawCap: type(uint256).max
     });
 
     // Add all assets to the Liquidity Hub
@@ -1845,17 +1845,20 @@ abstract contract Base is Test {
   }
 
   function assertEq(DataTypes.AssetConfig memory a, DataTypes.AssetConfig memory b) internal pure {
-    require(a.active == b.active, 'assertEq(AssetConfig): active');
-    require(a.paused == b.paused, 'assertEq(AssetConfig): paused');
-    require(a.frozen == b.frozen, 'assertEq(AssetConfig): rozen');
-    require(a.feeReceiver == b.feeReceiver, 'assertEq(AssetConfig): feeReceiver');
-    require(a.liquidityFee == b.liquidityFee, 'assertEq(AssetConfig): liquidityFee');
-    require(address(a.irStrategy) == address(b.irStrategy), 'assertEq(AssetConfig): irStrategy');
+    assertEq(a.active, b.active, 'assertEq(AssetConfig): active');
+    assertEq(a.paused, b.paused, 'assertEq(AssetConfig): paused');
+    assertEq(a.frozen, b.frozen, 'assertEq(AssetConfig): frozen');
+    assertEq(a.feeReceiver, b.feeReceiver, 'assertEq(AssetConfig): feeReceiver');
+    assertEq(a.liquidityFee, b.liquidityFee, 'assertEq(AssetConfig): liquidityFee');
+    assertEq(a.irStrategy, b.irStrategy, 'assertEq(AssetConfig): irStrategy');
+    assertEq(abi.encode(a), abi.encode(b), 'assertEq(AssetConfig): all fields');
   }
 
   function assertEq(DataTypes.SpokeConfig memory a, DataTypes.SpokeConfig memory b) internal pure {
-    require(a.supplyCap == b.supplyCap, 'assertEq(SpokeConfig): supplyCap');
-    require(a.drawCap == b.drawCap, 'assertEq(SpokeConfig): drawCap');
+    assertEq(a.supplyCap, b.supplyCap, 'assertEq(SpokeConfig): supplyCap');
+    assertEq(a.drawCap, b.drawCap, 'assertEq(SpokeConfig): drawCap');
+    assertEq(a.active, b.active, 'assertEq(SpokeConfig): active');
+    assertEq(abi.encode(a), abi.encode(b), 'assertEq(SpokeConfig): all fields');
   }
 
   function _calculateExpectedFees(
@@ -1884,11 +1887,11 @@ abstract contract Base is Test {
     );
   }
 
-  function _mockInterestRate(uint256 interestRateBps) internal {
-    _mockInterestRate(address(irStrategy), interestRateBps);
+  function _mockInterestRateBps(uint256 interestRateBps) internal {
+    _mockInterestRateBps(address(irStrategy), interestRateBps);
   }
 
-  function _mockInterestRate(address interestRateStrategy, uint256 interestRateBps) internal {
+  function _mockInterestRateBps(address interestRateStrategy, uint256 interestRateBps) internal {
     vm.mockCall(
       interestRateStrategy,
       IBasicInterestRateStrategy.calculateInterestRate.selector,
@@ -1896,44 +1899,88 @@ abstract contract Base is Test {
     );
   }
 
-  function _mockInterestRate(
+  function _mockInterestRateBps(
     uint256 interestRateBps,
     uint256 assetId,
     uint256 availableLiquidity,
-    uint256 totalDebt,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    uint256 baseDebt,
+    uint256 premiumDebt
   ) internal {
-    _mockInterestRate(
+    _mockInterestRateBps(
       address(irStrategy),
       interestRateBps,
       assetId,
       availableLiquidity,
-      totalDebt,
-      liquidityAdded,
-      liquidityTaken
+      baseDebt,
+      premiumDebt
     );
   }
 
-  function _mockInterestRate(
+  function _mockInterestRateBps(
     address interestRateStrategy,
     uint256 interestRateBps,
     uint256 assetId,
     uint256 availableLiquidity,
-    uint256 totalDebt,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    uint256 baseDebt,
+    uint256 premiumDebt
   ) internal {
     vm.mockCall(
       interestRateStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, availableLiquidity, totalDebt, liquidityAdded, liquidityTaken)
+        (assetId, availableLiquidity, baseDebt, premiumDebt)
       ),
       abi.encode(interestRateBps.bpsToRay())
     );
   }
 
+  function _mockInterestRateRay(uint256 interestRateRay) internal {
+    _mockInterestRateRay(address(irStrategy), interestRateRay);
+  }
+
+  function _mockInterestRateRay(address interestRateStrategy, uint256 interestRateRay) internal {
+    vm.mockCall(
+      interestRateStrategy,
+      IBasicInterestRateStrategy.calculateInterestRate.selector,
+      abi.encode(interestRateRay)
+    );
+  }
+
+  function _mockInterestRateRay(
+    uint256 interestRateRay,
+    uint256 assetId,
+    uint256 availableLiquidity,
+    uint256 baseDebt,
+    uint256 premiumDebt
+  ) internal {
+    _mockInterestRateRay(
+      address(irStrategy),
+      interestRateRay,
+      assetId,
+      availableLiquidity,
+      baseDebt,
+      premiumDebt
+    );
+  }
+
+  function _mockInterestRateRay(
+    address interestRateStrategy,
+    uint256 interestRateRay,
+    uint256 assetId,
+    uint256 availableLiquidity,
+    uint256 baseDebt,
+    uint256 premiumDebt
+  ) internal {
+    vm.mockCall(
+      interestRateStrategy,
+      abi.encodeCall(
+        IBasicInterestRateStrategy.calculateInterestRate,
+        (assetId, availableLiquidity, baseDebt, premiumDebt)
+      ),
+      abi.encode(interestRateRay)
+    );
+  }
+  
   function _mockReservePrice(ISpoke spoke, uint256 reserveId, uint256 price) internal {
     require(price > 0, 'mockReservePrice: price must be positive');
     AaveOracle oracle = AaveOracle(address(spoke.oracle()));
@@ -1951,6 +1998,26 @@ abstract contract Base is Test {
   function _deployMockPriceFeed(ISpoke spoke, uint256 price) internal returns (address) {
     AaveOracle oracle = AaveOracle(address(spoke.oracle()));
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
+  }
+
+    function assertBorrowRateSynced(
+    ILiquidityHub hub,
+    uint256 assetId,
+    string memory operation
+  ) internal {
+    DataTypes.Asset memory asset = hub.getAsset(assetId);
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+
+    vm.assertEq(
+      asset.baseBorrowRate,
+      IBasicInterestRateStrategy(asset.config.irStrategy).calculateInterestRate(
+        assetId,
+        asset.availableLiquidity,
+        baseDebt,
+        premiumDebt
+      ),
+      string.concat('base borrow rate after ', operation)
+    );
   }
 
   function _assertEventNotEmitted(bytes32 eventSignature) internal {
