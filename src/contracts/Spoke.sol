@@ -181,7 +181,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     }
     _validateWithdraw(reserve, userPosition, amount);
 
-    _accruePremium(reserve, userPosition, hub, assetId, msg.sender); // unnecessary but we realize premium debt here
+    _accruePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, 0);
 
     uint256 withdrawnShares = hub.remove(assetId, amount, to);
 
@@ -190,7 +190,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
-    _calcAndRefreshPremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
+    _updatePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Withdraw(reserveId, msg.sender, withdrawnShares, to);
@@ -212,7 +212,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    _accruePremium(reserve, userPosition, hub, assetId, msg.sender); // unnecessary but we realize premium debt here
+    _accruePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, 0);
 
     uint256 baseDrawnShares = hub.draw(assetId, amount, to);
 
@@ -221,7 +221,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
-    _calcAndRefreshPremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
+    _updatePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Borrow(reserveId, msg.sender, baseDrawnShares, to);
@@ -244,7 +244,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
 
     // settle premium debt here
-    _accrueAndRealizePremium(reserve, userPosition, hub, assetId, msg.sender, premiumDebtRestored);
+    _accruePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, premiumDebtRestored);
 
     uint256 restoredShares = hub.restore(
       assetId,
@@ -261,7 +261,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     }
 
     (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
-    _calcAndRefreshPremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
+    _updatePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Repay(reserveId, msg.sender, restoredShares);
@@ -628,24 +628,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return (amount - premiumDebt, premiumDebt);
   }
 
-  function _accruePremium(
-    DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage userPosition,
-    ILiquidityHub hub,
-    uint256 assetId,
-    address user
-  ) internal {
-    _accrueAndRealizePremium({
-      reserve: reserve,
-      userPosition: userPosition,
-      hub: hub,
-      assetId: assetId,
-      user: user,
-      premiumDebtRestored: 0
-    });
-  }
-
-  function _accrueAndRealizePremium(
+  function _accruePremiumDebt(
     DataTypes.Reserve storage reserve,
     DataTypes.UserPosition storage userPosition,
     ILiquidityHub hub,
@@ -675,7 +658,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
   }
 
-  function _calcAndRefreshPremiumDebt(
+  function _updatePremiumDebt(
     DataTypes.Reserve storage reserve,
     DataTypes.UserPosition storage userPosition,
     ILiquidityHub hub,
@@ -1073,7 +1056,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.premiumDebt
       );
 
-      _accrueAndRealizePremium(
+      _accruePremiumDebt(
         debtReserve,
         userDebtPosition,
         debtReserveHub,
@@ -1084,13 +1067,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
       // todo: rm later to opt
       // optional: settle collateral reserve's premium debt
-      _accruePremium(
+      _accruePremiumDebt(
         collateralReserve,
         userCollateralPosition,
         collateralReserveHub,
         vars.collateralAssetId,
-        vars.user
-      ); // unnecessary but settle premium debt here for consistency
+        vars.user,
+        0
+      );
 
       // repay debt
       vars.restoredShares = debtReserveHub.restore(
@@ -1124,7 +1108,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(vars.user);
 
       // refresh debt reserve premium
-      (vars.userPremiumDrawnShares, vars.userPremiumOffset) = _calcAndRefreshPremiumDebt(
+      (vars.userPremiumDrawnShares, vars.userPremiumOffset) = _updatePremiumDebt(
         debtReserve,
         userDebtPosition,
         debtReserveHub,
@@ -1142,7 +1126,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.totalUserDebtPremiumOffsetDelta += int256(vars.userPremiumOffset);
 
       // refresh collateral reserve premium
-      _calcAndRefreshPremiumDebt(
+      _updatePremiumDebt(
         collateralReserve,
         userCollateralPosition,
         collateralReserveHub,
