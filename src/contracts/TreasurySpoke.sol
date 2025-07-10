@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {ITreasurySpoke} from 'src/interfaces/ITreasurySpoke.sol';
+import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 
 /**
  * @title TreasurySpoke
@@ -13,8 +15,15 @@ import {ITreasurySpoke} from 'src/interfaces/ITreasurySpoke.sol';
  * @dev Allows withdraw to claim fees and supply to invest back into the Hub via this dedicated spoke.
  */
 contract TreasurySpoke is Ownable, ITreasurySpoke {
+  using SafeERC20 for IERC20;
+
   /// @inheritdoc ITreasurySpoke
   ILiquidityHub public immutable HUB;
+
+  error ZeroAddress();
+  error ZeroAmount();
+
+  event ERC20Transferred(address indexed token, address indexed to, uint256 amount);
 
   /**
    * @dev Constructor
@@ -52,6 +61,16 @@ contract TreasurySpoke is Ownable, ITreasurySpoke {
     return HUB.getSpokeSuppliedShares(reserveId, address(this));
   }
 
-  // todo: add functions to transfer ERC20 out, assuming this can hold assets
+  /// @inheritdoc ITreasurySpoke
+  function transfer(address token, address to, uint256 amount) external onlyOwner {
+    if (token == address(0)) revert ZeroAddress();
+    if (to == address(0)) revert ZeroAddress();
+    if (amount == 0) revert ZeroAmount();
+
+    IERC20(token).safeTransfer(to, amount);
+
+    emit ERC20Transferred(token, to, amount);
+  }
+
   // todo: add functions to rescue
 }
