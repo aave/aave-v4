@@ -7,7 +7,10 @@ contract SpokeConfigTest is SpokeBase {
   using SafeCast for uint256;
 
   function test_spoke_deploy() public {
-    address predictedSpokeAddress = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+    address predictedSpokeAddress = vm.computeCreateAddress(
+      address(this),
+      vm.getNonce(address(this))
+    );
     vm.expectEmit(predictedSpokeAddress);
     emit ISpoke.LiquidationConfigUpdated(
       DataTypes.LiquidationConfig({
@@ -20,7 +23,9 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateOracle_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spoke1.updateOracle(address(0));
   }
@@ -40,7 +45,9 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spoke1.updateReservePriceSource(0, address(0));
   }
@@ -377,9 +384,23 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveAdded(reserveId, wethAssetId);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.ReserveConfigUpdated(reserveId, newReserveConfig);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.DynamicReserveConfigUpdated({
+      reserveId: reserveId,
+      configKey: 0,
+      config: newDynReserveConfig
+    });
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(wethAssetId, address(hub), reserveSource, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(
+      wethAssetId,
+      address(hub),
+      reserveSource,
+      newReserveConfig,
+      newDynReserveConfig
+    );
 
     assertEq(spoke1.getReserveConfig(reserveId), newReserveConfig);
     assertEq(spoke1.getDynamicReserveConfig(reserveId), newDynReserveConfig);
@@ -451,7 +472,13 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.InvalidOracle.selector);
     vm.prank(ADMIN);
-    newSpoke.addReserve(wethAssetId, address(hub), address(0), newReserveConfig, newDynReserveConfig);
+    newSpoke.addReserve(
+      wethAssetId,
+      address(hub),
+      address(0),
+      newReserveConfig,
+      newDynReserveConfig
+    );
   }
 
   function test_updateLiquidationConfig_closeFactor() public {
