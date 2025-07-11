@@ -455,6 +455,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       hfAfterBorrow
     );
     state = _getAccountingInfoBeforeLiq(state);
+    // Get user's dynamic config key before liquidation
+    uint16 configKeyBefore = spoke1.getUserPosition(collateralReserveId, alice).configKey;
 
     (
       state.collToLiq,
@@ -502,6 +504,12 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
     state = _getAccountingInfoAfterLiq(state);
+    // Validate user's dynamic config key unchanged after liquidation
+    assertEq(
+      spoke1.getUserPosition(collateralReserveId, alice).configKey,
+      configKeyBefore,
+      'User dynamic config key changed after liquidation'
+    );
 
     // with repay donation, it is possible to repay more than the actual debt amount
     if (stdMath.delta(state.debt.balanceAfter, state.debt.balanceBefore) > requiredDebtAmount) {

@@ -268,12 +268,22 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
+      // Get user's dynamic config key before liquidation
+      uint16 configKeyBefore = spoke1.getUserPosition(collateralReserveIds[i], alice).configKey;
+
       vm.prank(LIQUIDATOR);
       spoke1.liquidationCall(
         collateralReserveIds[i],
         debtReserveIds[i],
         alice,
         requiredDebtAmounts[i]
+      );
+
+      // Validate user's dynamic config key unchanged after liquidation
+      assertEq(
+        spoke1.getUserPosition(collateralReserveIds[i], alice).configKey,
+        configKeyBefore,
+        'User dynamic config key changed after liquidation'
       );
     }
 
