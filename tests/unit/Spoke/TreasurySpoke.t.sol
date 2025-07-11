@@ -12,8 +12,6 @@ contract TreasurySpokeTest is SpokeBase {
   using PercentageMathExtended for uint256;
   using WadRayMath for uint256;
 
-  event ERC20Transferred(address indexed token, address indexed to, uint256 amount);
-
   MockERC20 internal testToken;
 
   function setUp() public virtual override {
@@ -132,33 +130,13 @@ contract TreasurySpokeTest is SpokeBase {
 
   function test_transfer_revertsWith_Unauthorized(address caller) public {
     vm.assume(caller != TREASURY_ADMIN);
-
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     treasurySpoke.transfer(address(testToken), address(1), 1);
-  }
-
-  function test_transfer_revertsWith_ZeroTokenAddress() public {
-    vm.prank(TREASURY_ADMIN);
-    vm.expectRevert(TreasurySpoke.ZeroAddress.selector);
-    treasurySpoke.transfer(address(0), address(1), 1);
-  }
-
-  function test_transfer_revertsWith_ZeroRecipientAddress() public {
-    vm.prank(TREASURY_ADMIN);
-    vm.expectRevert(TreasurySpoke.ZeroAddress.selector);
-    treasurySpoke.transfer(address(testToken), address(0), 1);
-  }
-
-  function test_transfer_revertsWith_ZeroAmount() public {
-    vm.prank(TREASURY_ADMIN);
-    vm.expectRevert(TreasurySpoke.ZeroAmount.selector);
-    treasurySpoke.transfer(address(testToken), address(1), 0);
   }
 
   function test_transfer_revertsWith_InsufficientBalance(uint256 amount) public {
     vm.assume(amount > 0);
-
     vm.prank(TREASURY_ADMIN);
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -177,32 +155,26 @@ contract TreasurySpokeTest is SpokeBase {
     amount = bound(amount, 1, 1000000e18);
 
     testToken.mint(address(treasurySpoke), amount);
-    assertEq(testToken.balanceOf(address(treasurySpoke)), amount);
-    assertEq(testToken.balanceOf(recipient), 0);
-
     vm.prank(TREASURY_ADMIN);
-    vm.expectEmit(true, true, false, true, address(treasurySpoke));
-    emit ERC20Transferred(address(testToken), recipient, amount);
+    vm.expectEmit(true, true, true, true, address(testToken));
+    emit IERC20.Transfer(address(treasurySpoke), recipient, amount);
     treasurySpoke.transfer(address(testToken), recipient, amount);
 
     assertEq(testToken.balanceOf(address(treasurySpoke)), 0);
     assertEq(testToken.balanceOf(recipient), amount);
   }
 
-  function test_transfer_success_partialAmount(address recipient) public {
+  function test_transfer_success_partialAmount(address recipient, uint256 transferAmount) public {
     vm.assume(recipient != address(0));
     vm.assume(recipient != address(treasurySpoke));
 
     uint256 totalAmount = 1000e18;
-    uint256 transferAmount = 400e18;
+    transferAmount = bound(transferAmount, 1, totalAmount - 1);
 
     testToken.mint(address(treasurySpoke), totalAmount);
-    assertEq(testToken.balanceOf(address(treasurySpoke)), totalAmount);
-    assertEq(testToken.balanceOf(recipient), 0);
-
     vm.prank(TREASURY_ADMIN);
-    vm.expectEmit(true, true, false, true, address(treasurySpoke));
-    emit ERC20Transferred(address(testToken), recipient, transferAmount);
+    vm.expectEmit(true, true, true, true, address(testToken));
+    emit IERC20.Transfer(address(treasurySpoke), recipient, transferAmount);
     treasurySpoke.transfer(address(testToken), recipient, transferAmount);
 
     assertEq(testToken.balanceOf(address(treasurySpoke)), totalAmount - transferAmount);

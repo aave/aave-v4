@@ -63,13 +63,7 @@ contract TreasurySpoke is Ownable, ITreasurySpoke {
 
   /// @inheritdoc ITreasurySpoke
   function transfer(address token, address to, uint256 amount) external onlyOwner {
-    if (token == address(0)) revert ZeroAddress();
-    if (to == address(0)) revert ZeroAddress();
-    if (amount == 0) revert ZeroAmount();
-
     IERC20(token).safeTransfer(to, amount);
-
-    emit ERC20Transferred(token, to, amount);
   }
 
   // todo: add functions to rescue
