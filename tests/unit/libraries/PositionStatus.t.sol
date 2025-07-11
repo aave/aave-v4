@@ -207,6 +207,41 @@ contract PositionStatusTest is Base {
     assertEq(p.collateralCount(reserveCount), collateralCount);
   }
 
+  function test_setters_use_correct_slot(uint256 a) public {
+    uint256 bucket = a / 128;
+    bytes32 slot = keccak256(abi.encode(bucket, p.slot()));
+
+    vm.record();
+    p.setUsingAsCollateral(a, vm.randomBool());
+    (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(p));
+    assertEq(writes.length, 1);
+    assertEq(reads.length, 2);
+
+    assertEq(writes[0], slot);
+    assertEq(reads[0], slot);
+    assertEq(reads[1], slot);
+
+    vm.record();
+    p.setBorrowing(a, vm.randomBool());
+    (reads, writes) = vm.accesses(address(p));
+    assertEq(writes.length, 1);
+    assertEq(reads.length, 2);
+
+    assertEq(writes[0], slot);
+    assertEq(reads[0], slot);
+    assertEq(reads[1], slot);
+  }
+
+  function test_getBucketWord(uint256 a) public {
+    uint256 bucket = a / 128;
+    vm.record();
+    p.getBucketWord(a);
+    (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(p));
+    assertEq(writes.length, 0);
+    assertEq(reads.length, 1);
+    assertEq(reads[0], keccak256(abi.encode(bucket, p.slot())));
+  }
+
   function test_popCount(bytes32) public {
     uint256 bits = vm.randomUint();
     assertEq(LibBit.popCount(bits), _popCountNaive(bits));

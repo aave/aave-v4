@@ -40,7 +40,13 @@ contract PositionStatusWrapper {
     return _p.collateralCount(reserveCount);
   }
 
-  function getMapSlot(uint256 reserveId) external view returns (uint256) {
-    return _p.getMapSlot(reserveId);
+  function getBucketWord(uint256 reserveId) external view returns (uint256) {
+    return _p.getBucketWord(reserveId);
+  }
+
+  function slot() external pure returns (bytes32 s) {
+    assembly ('memory-safe') {
+      s := _p.slot
+    }
   }
 }

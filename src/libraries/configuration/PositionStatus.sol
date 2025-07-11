@@ -70,7 +70,7 @@ library PositionStatus {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      return (self.getMapSlot(reserveId) >> ((reserveId % 128) << 1)) & 3 != 0;
+      return (self.getBucketWord(reserveId) >> ((reserveId % 128) << 1)) & 3 != 0;
     }
   }
 
@@ -85,7 +85,7 @@ library PositionStatus {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      return (self.getMapSlot(reserveId) >> ((reserveId % 128) << 1)) & 1 != 0;
+      return (self.getBucketWord(reserveId) >> ((reserveId % 128) << 1)) & 1 != 0;
     }
   }
 
@@ -100,7 +100,7 @@ library PositionStatus {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      return (self.getMapSlot(reserveId) >> (((reserveId % 128) << 1) + 1)) & 1 != 0;
+      return (self.getBucketWord(reserveId) >> (((reserveId % 128) << 1) + 1)) & 1 != 0;
     }
   }
 
@@ -127,11 +127,11 @@ library PositionStatus {
   }
 
   /**
-   * @dev Returns the slot containing the reserve state in the bitmap.
+   * @dev Returns the word containing the reserve state in the bitmap.
    * @param self The configuration object.
-   * @return The slot containing the state of the reserve.
+   * @return The word containing the state of the reserve.
    */
-  function getMapSlot(
+  function getBucketWord(
     DataTypes.PositionStatus storage self,
     uint256 reserveId
   ) internal view returns (uint256) {
