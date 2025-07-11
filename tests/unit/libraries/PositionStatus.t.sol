@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import {LibBit} from 'src/dependencies/solady/LibBit.sol';
-import {Test} from 'forge-std/Test.sol';
+import 'tests/Base.t.sol';
 
-import {PositionStatusWrapper, PositionStatus} from 'tests/mocks/PositionStatusWrapper.sol';
-
-contract PositionStatusTest is Test {
+contract PositionStatusTest is Base {
   PositionStatusWrapper internal p;
 
-  function setUp() public {
+  function setUp() public override {
     p = new PositionStatusWrapper();
   }
 
@@ -106,8 +103,8 @@ contract PositionStatusTest is Test {
     assertEq(p.isUsingAsCollateralOrBorrowing(0), false);
 
     p.setUsingAsCollateral(0, true);
+    assertEq(p.isUsingAsCollateralOrBorrowing(0), true);
     p.setBorrowing(0, true);
-
     assertEq(p.isUsingAsCollateralOrBorrowing(0), true);
 
     p.setUsingAsCollateral(0, false);
@@ -146,6 +143,10 @@ contract PositionStatusTest is Test {
     p.setUsingAsCollateral(127, true);
     assertEq(p.collateralCount(128), 1);
 
+    p.setUsingAsCollateral(128, true);
+    assertEq(p.collateralCount(128), 1);
+    assertEq(p.collateralCount(129), 2);
+
     // ignore invalid bits
     assertEq(p.collateralCount(100), 0);
 
@@ -156,20 +157,40 @@ contract PositionStatusTest is Test {
     assertEq(p.collateralCount(128), 3);
 
     p.setUsingAsCollateral(342, true);
-    assertEq(p.collateralCount(343), 4);
-
-    p.setUsingAsCollateral(342, true);
-    assertEq(p.collateralCount(343), 4);
+    assertEq(p.collateralCount(343), 5);
 
     p.setUsingAsCollateral(32, false);
-    assertEq(p.collateralCount(343), 3);
+    assertEq(p.collateralCount(343), 4);
 
-    // disregards borrowed assets
+    // disregards borrowed reserves
     p.setBorrowing(32, true);
-    assertEq(p.collateralCount(343), 3);
+    assertEq(p.collateralCount(343), 4);
 
     p.setBorrowing(79, true);
-    assertEq(p.collateralCount(343), 3);
+    assertEq(p.collateralCount(343), 4);
+
+    p.setBorrowing(255, true);
+    assertEq(p.collateralCount(343), 4);
+  }
+
+  function test_collateralCount_ignoresInvalidBits() public {
+    p.setUsingAsCollateral(127, true);
+    assertEq(p.collateralCount(100), 0);
+    assertEq(p.collateralCount(200), 1);
+
+    p.setUsingAsCollateral(255, true);
+    assertEq(p.collateralCount(200), 1);
+    p.setUsingAsCollateral(133, true);
+    assertEq(p.collateralCount(200), 2);
+
+    p.setUsingAsCollateral(383, true);
+    assertEq(p.collateralCount(300), 3);
+    p.setUsingAsCollateral(283, true);
+    assertEq(p.collateralCount(300), 4);
+
+    p.setUsingAsCollateral(511, true);
+    assertEq(p.collateralCount(500), 5);
+    assertEq(p.collateralCount(600), 6);
   }
 
   function test_collateralCount(uint256 reserveCount) public {
@@ -179,14 +200,15 @@ contract PositionStatusTest is Test {
     uint256 collateralCount;
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
       if (p.isUsingAsCollateral(reserveId)) ++collateralCount;
-      // reserveId is 0-base indexed
+      // reserveId is 0-base indexed, assert running collateralCount is maintained correctly
       assertEq(p.collateralCount({reserveCount: reserveId + 1}), collateralCount);
     }
 
     assertEq(p.collateralCount(reserveCount), collateralCount);
   }
 
-  function test_popCount(uint256 bits) public pure {
+  function test_popCount(bytes32) public {
+    uint256 bits = vm.randomUint();
     assertEq(LibBit.popCount(bits), _popCountNaive(bits));
   }
 
