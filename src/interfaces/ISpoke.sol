@@ -20,8 +20,8 @@ interface ISpoke is IMulticall, IAccessManaged {
     uint16 indexed configKey,
     DataTypes.DynamicReserveConfig config
   );
-  event UserDynamicConfigRefreshed(address indexed user);
-  event UserDynamicConfigRefreshed(address indexed user, uint256 reserveId);
+  event UserDynamicConfigRefreshedAll(address indexed user);
+  event UserDynamicConfigRefreshedSingle(address indexed user, uint256 reserveId);
 
   event Supply(uint256 indexed reserveId, address indexed user, uint256 suppliedShares);
   event Withdraw(
@@ -80,6 +80,7 @@ interface ISpoke is IMulticall, IAccessManaged {
   error ReserveFrozen();
   error InvalidCollateralFactor();
   error InvalidLiquidationBonus();
+  error IncompatibleCollateralFactorAndLiquidationBonus();
   error InvalidReserveDecimals();
   error HealthFactorBelowThreshold();
   error InvalidCloseFactor();
@@ -235,6 +236,7 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   function getVariableLiquidationBonus(
     uint256 reserveId,
+    address user,
     uint256 healthFactor
   ) external view returns (uint256);
 
