@@ -23,14 +23,16 @@ import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
+import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
-import {Utils} from './Utils.sol';
+import {Utils} from 'tests/Utils.sol';
 
 // mocks
-import {TestnetERC20} from './mocks/TestnetERC20.sol';
-import {MockERC20} from './mocks/MockERC20.sol';
-import {MockPriceFeed} from './mocks/MockPriceFeed.sol';
+import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
+import {MockERC20} from 'tests/mocks/MockERC20.sol';
+import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
+import {PositionStatusWrapper} from 'tests/mocks/PositionStatusWrapper.sol';
 
 // dependencies
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -42,6 +44,7 @@ import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
+import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 
 abstract contract Base is Test {
   using WadRayMathExtended for uint256;

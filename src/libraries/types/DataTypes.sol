@@ -105,7 +105,6 @@ library DataTypes {
     uint256 reserveId;
     uint256 reservePrice;
     uint256 liquidityPremium;
-    uint256 collateralReserveCount;
     uint256 userCollateralInBaseCurrency;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
