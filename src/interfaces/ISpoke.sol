@@ -20,8 +20,8 @@ interface ISpoke is IMulticall, IAccessManaged {
     uint16 indexed configKey,
     DataTypes.DynamicReserveConfig config
   );
-  event UserDynamicConfigRefreshed(address indexed user);
-  event UserDynamicConfigRefreshed(address indexed user, uint256 reserveId);
+  event UserDynamicConfigRefreshedAll(address indexed user);
+  event UserDynamicConfigRefreshedSingle(address indexed user, uint256 reserveId);
 
   event Supply(uint256 indexed reserveId, address indexed user, uint256 suppliedShares);
   event Withdraw(
