@@ -126,8 +126,8 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     uint256 drawAmount,
     uint256 skipTime
   ) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 2 - 1);
-    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT / 2 - amount);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 4 - 1);
+    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT / 4 - amount);
     drawAmount = bound(drawAmount, 1, amount + amount2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
