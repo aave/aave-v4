@@ -40,7 +40,7 @@ contract TreasurySpokeTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    treasurySpoke.withdraw(daiAssetId, 1, makeAddr('recipient'));
+    treasurySpoke.withdraw(daiAssetId, 1, vm.randomAddress());
   }
 
   function test_supply(uint256 amount) public {
@@ -132,7 +132,7 @@ contract TreasurySpokeTest is SpokeBase {
     vm.assume(caller != TREASURY_ADMIN);
     vm.prank(caller);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
-    treasurySpoke.transfer(address(testToken), makeAddr('recipient'), 1);
+    treasurySpoke.transfer(address(testToken), vm.randomAddress(), 1);
   }
 
   function test_transfer_revertsWith_InsufficientBalance(uint256 amount) public {
@@ -148,7 +148,7 @@ contract TreasurySpokeTest is SpokeBase {
         amount
       )
     );
-    treasurySpoke.transfer(token, makeAddr('recipient'), amount);
+    treasurySpoke.transfer(token, vm.randomAddress(), amount);
   }
 
   function test_transfer_fuzz_all(address recipient, uint256 amount) public {
