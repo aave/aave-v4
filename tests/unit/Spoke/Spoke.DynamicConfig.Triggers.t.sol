@@ -169,4 +169,119 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
   }
+
+  function test_manual_single_triggers_dynamicConfigUpdate() public {
+    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+
+    // no action yet, so user config should not change
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
+
+    // manually trigger update
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UserDynamicConfigRefreshed(alice, _usdxReserveId(spoke1));
+    vm.prank(alice);
+    spoke1.updateUserDynamicConfig(_usdxReserveId(spoke1));
+
+    // user config should change
+    assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+  }
+
+  /// @dev Tests user having two collaterals, but only updates one of their dynamic configs.
+  function test_manual_single_collateral_update_triggers_dynamicConfigUpdate() public {
+    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
+    DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+    skip(365 days);
+
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
+    configs = _getUserDynConfigKeys(spoke1, alice);
+
+    // no action yet, so user config should not change
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertNotEq(abi.encode(_getSpokeDynConfigKeys(spoke1)), abi.encode(configs));
+
+    // alice only manually triggers weth dyn config update
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UserDynamicConfigRefreshed(alice, _wethReserveId(spoke1));
+    vm.prank(alice);
+    spoke1.updateUserDynamicConfig(_wethReserveId(spoke1));
+
+    // user config should change for weth
+    assertNotEq(abi.encode(_getUserDynConfigKeys(spoke1, alice)), abi.encode(configs));
+    assertEq(
+      _getSpokeDynConfigKeys(spoke1)[_wethReserveId(spoke1)],
+      _getUserDynConfigKeys(spoke1, alice)[_wethReserveId(spoke1)]
+    );
+
+    // Now alice triggers the usdx dyn config update
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UserDynamicConfigRefreshed(alice, _usdxReserveId(spoke1));
+    vm.prank(alice);
+    spoke1.updateUserDynamicConfig(_usdxReserveId(spoke1));
+
+    // user config should change for usdx
+    assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertEq(
+      _getSpokeDynConfigKeys(spoke1)[_usdxReserveId(spoke1)],
+      _getUserDynConfigKeys(spoke1, alice)[_usdxReserveId(spoke1)]
+    );
+    assertEq(
+      _getSpokeDynConfigKeys(spoke1)[_wethReserveId(spoke1)],
+      _getUserDynConfigKeys(spoke1, alice)[_wethReserveId(spoke1)]
+    );
+  }
+
+  function test_manual_single_collateral_updateAll_triggers_dynamicConfigUpdate() public {
+    DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
+
+    configs = _getUserDynConfigKeys(spoke1, alice);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    skip(365 days);
+
+    // no action yet, so user config should not change
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
+
+    // manually trigger update
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UserDynamicConfigRefreshed(alice);
+    vm.prank(alice);
+    spoke1.updateUserDynamicConfig();
+
+    // user config should change
+    assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+  }
+
+  function test_manual_updateAll_triggers_dynamicConfigUpdate() public {
+    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
+    DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
+    configs = _getUserDynConfigKeys(spoke1, alice);
+
+    skip(365 days);
+
+    // no action yet, so user config should not change
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
+
+    // manually trigger update
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UserDynamicConfigRefreshed(alice);
+    vm.prank(alice);
+    spoke1.updateUserDynamicConfig();
+
+    // user config should change
+    assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+  }
 }
