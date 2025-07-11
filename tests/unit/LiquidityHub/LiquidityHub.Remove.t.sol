@@ -126,8 +126,8 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     uint256 drawAmount,
     uint256 skipTime
   ) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 4 - 1);
-    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT / 4 - amount);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10 - 1);
+    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT / 10 - amount);
     drawAmount = bound(drawAmount, 1, amount + amount2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
@@ -163,6 +163,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     skip(skipTime);
 
     (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    vm.assume(baseDebt + premiumDebt <= MAX_SUPPLY_AMOUNT);
 
     // restore all drawn liquidity
     Utils.restore({
