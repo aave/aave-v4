@@ -188,10 +188,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
       state.collateralReserves[i] = spoke1.getReserve(collateralReserveIds[i]);
-      state.collDynConfigs[i] = spoke1.getDynamicReserveConfig(
-        collateralReserveIds[i],
-        state.collateralReserves[i].dynamicConfigKey
-      ); // utilize latest dynamic config
+      state.collDynConfigs[i] = _getUserDynConfig(spoke1, alice, collateralReserveIds[i]); // utilize user's dynamic config
     }
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);

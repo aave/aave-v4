@@ -105,7 +105,7 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
-    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
+    state.collDynConfig = _getUserDynConfig(spoke1, alice, collateralReserveId);
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(

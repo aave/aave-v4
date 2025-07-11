@@ -389,7 +389,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
-    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
+    state.collDynConfig = _getUserDynConfig(spoke1, alice, collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
 
     liqConfig = _bound(liqConfig);
