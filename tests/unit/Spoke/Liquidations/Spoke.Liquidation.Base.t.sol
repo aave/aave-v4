@@ -177,8 +177,8 @@ contract SpokeLiquidationBase is SpokeBase {
 
     state = _getAccountingInfoBeforeLiq(state);
 
-    // Get user's dynamic config key before liquidation
-    uint16 configKeyBefore = spoke1.getUserPosition(collateralReserveId, alice).configKey;
+    // Get alice's dynamic config key before liquidation
+    DynamicConfig[] memory configKeysBefore = _getUserDynConfigKeys(spoke1, alice);
 
     (
       state.collToLiq,
@@ -227,12 +227,8 @@ contract SpokeLiquidationBase is SpokeBase {
 
     state = _getAccountingInfoAfterLiq(state);
 
-    // Validate user's dynamic config key unchanged after liquidation
-    assertEq(
-      spoke1.getUserPosition(collateralReserveId, alice).configKey,
-      configKeyBefore,
-      'User dynamic config key changed after liquidation'
-    );
+    // Validate alice's dynamic config key unchanged after liquidation
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configKeysBefore);
 
     // with a close factor, it is impossible to liquidate all debt unless deficit is reported
     assertTrue(

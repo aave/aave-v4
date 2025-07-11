@@ -1999,7 +1999,7 @@ abstract contract Base is Test {
       abi.encode(interestRateRay)
     );
   }
-  
+
   function _mockReservePrice(ISpoke spoke, uint256 reserveId, uint256 price) internal {
     require(price > 0, 'mockReservePrice: price must be positive');
     AaveOracle oracle = AaveOracle(address(spoke.oracle()));
@@ -2025,7 +2025,7 @@ abstract contract Base is Test {
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
   }
 
-    function assertBorrowRateSynced(
+  function assertBorrowRateSynced(
     ILiquidityHub hub,
     uint256 assetId,
     string memory operation
@@ -2050,7 +2050,22 @@ abstract contract Base is Test {
     for (uint256 i; i < entries.length; i++) {
       assertNotEq(entries[i].topics[0], eventSignature);
     }
-
     vm.recordLogs();
+  }
+
+  function _assertEventsNotEmitted(bytes32 event1Sig, bytes32 event2Sig) internal {
+    Vm.Log[] memory entries = vm.getRecordedLogs();
+    for (uint256 i; i < entries.length; i++) {
+      assertNotEq(entries[i].topics[0], event1Sig);
+      assertNotEq(entries[i].topics[0], event2Sig);
+    }
+    vm.recordLogs();
+  }
+
+  function _assertDynamicConfigRefreshEventsNotEmitted() internal {
+    _assertEventsNotEmitted(
+      ISpoke.UserDynamicConfigRefreshedAll.selector,
+      ISpoke.UserDynamicConfigRefreshedSingle.selector
+    );
   }
 }
