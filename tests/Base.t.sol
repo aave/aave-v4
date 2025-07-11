@@ -191,7 +191,6 @@ abstract contract Base is Test {
     uint256 premiumOffset;
     uint256 realizedPremium;
     uint256 premiumDebt;
-    uint40 timestamp;
   }
 
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
@@ -2160,8 +2159,7 @@ abstract contract Base is Test {
         premiumDrawnShares: spokeData.premiumDrawnShares,
         premiumOffset: spokeData.premiumOffset,
         realizedPremium: spokeData.realizedPremium,
-        premiumDebt: premiumDebt,
-        timestamp: vm.getBlockTimestamp().toUint40()
+        premiumDebt: premiumDebt
       });
   }
 
@@ -2175,7 +2173,6 @@ abstract contract Base is Test {
     assertEq(reserve.premiumOffset, asset.premiumOffset, 'premiumOffset');
     assertEq(reserve.realizedPremium, asset.realizedPremium, 'realizedPremium');
     assertEq(reserve.premiumDebt, asset.premiumDebt, 'premiumDebt');
-    assertEq(reserve.timestamp, asset.lastUpdateTimestamp, 'timestamp');
   }
 
   function assertEq(ReservePosition memory a, ReservePosition memory b) internal pure {

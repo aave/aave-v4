@@ -13,60 +13,6 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     test_remove_fuzz(reserveId, amount);
   }
 
-  // single asset, multiple spokes supplied. No debt
-  function test_remove_fuzz_multi_spoke(uint256 amount, uint256 amount2) public {
-    uint256 assetId = daiAssetId;
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT - 1);
-    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
-
-    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
-
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke1),
-      amount: amount,
-      user: alice,
-      to: address(spoke1)
-    });
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke2),
-      amount: amount2,
-      user: alice,
-      to: address(spoke2)
-    });
-
-    Utils.remove(hub, assetId, address(spoke1), amount, alice);
-    Utils.remove(hub, assetId, address(spoke2), amount2, alice);
-
-    AssetPosition memory assetData = getAssetPosition(hub, assetId);
-    ReservePosition memory reservePosition1 = getReservePosition(spoke1, _daiReserveId);
-    ReservePosition memory reservePosition2 = getReservePosition(spoke2, _daiReserveId);
-
-    // asset
-    assertEq(assetData.suppliedAmount, 0, 'asset suppliedAmount after');
-    assertEq(assetData.suppliedShares, 0, 'asset suppliedShares after');
-    assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity after');
-    assertEq(
-      assetData.lastUpdateTimestamp,
-      vm.getBlockTimestamp(),
-      'asset lastUpdateTimestamp after'
-    );
-    // spoke 1
-    assertEq(reservePosition1.suppliedAmount, 0, 'spoke1 suppliedAmount after');
-    assertEq(reservePosition1.suppliedShares, 0, 'spoke1 suppliedShares after');
-    assertEq(reservePosition1.timestamp, assetData.lastUpdateTimestamp, 'spoke1 timestamp after');
-    // spoke 2
-    assertEq(reservePosition1, reservePosition2);
-    // asset
-    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
-    assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
-    assertEq(underlying.balanceOf(address(hub)), 0, 'hub token balance after');
-    assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
-  }
-
   function test_remove_fuzz(uint256 reserveId, uint256 amount) public {
     reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
@@ -115,6 +61,59 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(reserve, assetData);
     // dai
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance after');
+    assertEq(underlying.balanceOf(address(hub)), 0, 'hub token balance after');
+    assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
+  }
+
+  // single asset, multiple spokes supplied. No debt
+  function test_remove_fuzz_multi_spoke(uint256 amount, uint256 amount2) public {
+    uint256 assetId = daiAssetId;
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT - 1);
+    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
+
+    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
+
+    Utils.add({
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke1),
+      amount: amount,
+      user: alice,
+      to: address(spoke1)
+    });
+    Utils.add({
+      hub: hub,
+      assetId: assetId,
+      spoke: address(spoke2),
+      amount: amount2,
+      user: alice,
+      to: address(spoke2)
+    });
+
+    Utils.remove(hub, assetId, address(spoke1), amount, alice);
+    Utils.remove(hub, assetId, address(spoke2), amount2, alice);
+
+    AssetPosition memory assetData = getAssetPosition(hub, assetId);
+    ReservePosition memory reservePosition1 = getReservePosition(spoke1, _daiReserveId);
+    ReservePosition memory reservePosition2 = getReservePosition(spoke2, _daiReserveId);
+
+    // asset
+    assertEq(assetData.suppliedAmount, 0, 'asset suppliedAmount after');
+    assertEq(assetData.suppliedShares, 0, 'asset suppliedShares after');
+    assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity after');
+    assertEq(
+      assetData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'asset lastUpdateTimestamp after'
+    );
+    // spoke 1
+    assertEq(reservePosition1.suppliedAmount, 0, 'spoke1 suppliedAmount after');
+    assertEq(reservePosition1.suppliedShares, 0, 'spoke1 suppliedShares after');
+    // spoke 2
+    assertEq(reservePosition1, reservePosition2);
+    // asset
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
+    assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
     assertEq(underlying.balanceOf(address(hub)), 0, 'hub token balance after');
     assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
   }
@@ -213,7 +212,6 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     // spoke 1
     assertEq(reservePosition1.suppliedAmount, 0, 'spoke1 suppliedAmount after');
     assertEq(reservePosition1.suppliedShares, 0, 'spoke1 suppliedShares after');
-    assertEq(reservePosition1.timestamp, assetData.lastUpdateTimestamp, 'spoke1 timestamp after');
     // spoke 2
     assertEq(reservePosition1, reservePosition2);
     // underlying
@@ -314,7 +312,6 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(reserve1.suppliedAmount, 0, 'spoke1 suppliedAmount');
     assertEq(reserve1.baseDebt, 0, 'spoke1 baseDebt');
     assertEq(reserve1.premiumDebt, 0, 'spoke1 premiumDebt');
-    assertEq(reserve1.timestamp, vm.getBlockTimestamp(), 'spoke1 timestamp');
     // spoke2
     assertEq(reserve1, reserve2);
     // dai
@@ -416,7 +413,6 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(reserve1.suppliedAmount, 0, 'spoke1 suppliedAmount');
     assertEq(reserve1.baseDebt, 0, 'spoke1 baseDebt');
     assertEq(reserve1.premiumDebt, 0, 'spoke1 premiumDebt');
-    assertEq(reserve1.timestamp, vm.getBlockTimestamp(), 'spoke1 timestamp');
     // spoke2
     assertEq(reserve1, reserve2);
     // dai - all to alice
