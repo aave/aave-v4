@@ -332,17 +332,17 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateDynamicReserveConfig(daiReserveId, config);
   }
 
-  function test_updateDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndLiquidationBonus()
+  function test_updateDynamicReserveConfig_revertsWith_IncompatibleCollateralFactorAndLiquidationBonus()
     public
   {
     // This config makes it so cf * lb > 100%
-    test_updateDynamicReserveConfig_fuzz_revertsWith_InvalidCollateralFactorAndLiquidationBonus({
+    test_updateDynamicReserveConfig_fuzz_revertsWith_IncompatibleCollateralFactorAndLiquidationBonus({
       collateralFactor: 95_00,
       liquidationBonus: 110_00
     });
   }
 
-  function test_updateDynamicReserveConfig_fuzz_revertsWith_InvalidCollateralFactorAndLiquidationBonus(
+  function test_updateDynamicReserveConfig_fuzz_revertsWith_IncompatibleCollateralFactorAndLiquidationBonus(
     uint256 collateralFactor,
     uint256 liquidationBonus
   ) public {
@@ -359,7 +359,7 @@ contract SpokeConfigTest is SpokeBase {
     config.collateralFactor = collateralFactor.toUint16();
     config.liquidationBonus = liquidationBonus;
 
-    vm.expectRevert(ISpoke.InvalidCollateralFactorAndLiquidationBonus.selector);
+    vm.expectRevert(ISpoke.IncompatibleCollateralFactorAndLiquidationBonus.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(daiReserveId, config);
   }

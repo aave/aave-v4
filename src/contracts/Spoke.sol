@@ -654,7 +654,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(
       config.collateralFactor.percentMulUp(config.liquidationBonus) <=
         PercentageMathExtended.PERCENTAGE_FACTOR,
-      InvalidCollateralFactorAndLiquidationBonus()
+      IncompatibleCollateralFactorAndLiquidationBonus()
     ); // Enforces that at moment loan is taken, there should be enough collateral to cover liquidation
   }
 
