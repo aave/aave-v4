@@ -40,7 +40,7 @@ contract TreasurySpokeTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    treasurySpoke.withdraw(daiAssetId, 1, address(1));
+    treasurySpoke.withdraw(daiAssetId, 1, makeAddr('recipient'));
   }
 
   function test_supply(uint256 amount) public {
@@ -132,15 +132,12 @@ contract TreasurySpokeTest is SpokeBase {
     vm.assume(caller != TREASURY_ADMIN);
     vm.prank(caller);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
-    treasurySpoke.transfer(address(testToken), address(1), 1);
+    treasurySpoke.transfer(address(testToken), makeAddr('recipient'), 1);
   }
 
-  function test_transfer_revertsWith_InsufficientBalance(address token, uint256 amount) public {
+  function test_transfer_revertsWith_InsufficientBalance(uint256 amount) public {
     vm.assume(amount > 0);
-    if (token.code.length == 0) {
-      token = address(new MockERC20());
-    }
-    vm.assume(token != address(0));
+    address token = address(new MockERC20());
 
     vm.prank(TREASURY_ADMIN);
     vm.expectRevert(
@@ -151,16 +148,16 @@ contract TreasurySpokeTest is SpokeBase {
         amount
       )
     );
-    treasurySpoke.transfer(token, address(1), amount);
+    treasurySpoke.transfer(token, makeAddr('recipient'), amount);
   }
 
-  function test_transfer_success(address recipient, uint256 amount) public {
+  function test_transfer_fuzz_all(address recipient, uint256 amount) public {
     vm.assume(recipient != address(0));
     vm.assume(recipient != address(treasurySpoke));
     amount = bound(amount, 1, 1000000e18);
 
     testToken.mint(address(treasurySpoke), amount);
-    vm.expectEmit(true, true, true, true, address(testToken));
+    vm.expectEmit(address(testToken));
     emit IERC20.Transfer(address(treasurySpoke), recipient, amount);
     vm.prank(TREASURY_ADMIN);
     treasurySpoke.transfer(address(testToken), recipient, amount);
@@ -169,7 +166,7 @@ contract TreasurySpokeTest is SpokeBase {
     assertEq(testToken.balanceOf(recipient), amount);
   }
 
-  function test_transfer_success_partialAmount(address recipient, uint256 transferAmount) public {
+  function test_transfer_fuzz_partialAmount(address recipient, uint256 transferAmount) public {
     vm.assume(recipient != address(0));
     vm.assume(recipient != address(treasurySpoke));
 
@@ -177,7 +174,7 @@ contract TreasurySpokeTest is SpokeBase {
     transferAmount = bound(transferAmount, 1, totalAmount - 1);
 
     testToken.mint(address(treasurySpoke), totalAmount);
-    vm.expectEmit(true, true, true, true, address(testToken));
+    vm.expectEmit(address(testToken));
     emit IERC20.Transfer(address(treasurySpoke), recipient, transferAmount);
     vm.prank(TREASURY_ADMIN);
     treasurySpoke.transfer(address(testToken), recipient, transferAmount);

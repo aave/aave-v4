@@ -46,11 +46,11 @@ interface ITreasurySpoke {
   function getSuppliedShares(uint256 reserveId) external view returns (uint256);
 
   /**
-   * @notice Transfers ERC20 tokens held by this contract to a specified address
-   * @dev Only callable by owner
-   * @param token The address of the ERC20 token to transfer
-   * @param to The recipient address
-   * @param amount The amount of tokens to transfer
+   * @notice Transfers ERC20 tokens held by this contract to a specified address.
+   * @dev Only callable by owner.
+   * @param token The address of the ERC20 token to transfer.
+   * @param to The recipient address.
+   * @param amount The amount of tokens to transfer.
    */
 
   function transfer(address token, address to, uint256 amount) external;

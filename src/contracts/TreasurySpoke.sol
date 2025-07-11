@@ -20,11 +20,6 @@ contract TreasurySpoke is Ownable, ITreasurySpoke {
   /// @inheritdoc ITreasurySpoke
   ILiquidityHub public immutable HUB;
 
-  error ZeroAddress();
-  error ZeroAmount();
-
-  event ERC20Transferred(address indexed token, address indexed to, uint256 amount);
-
   /**
    * @dev Constructor
    * @param owner_ The address of the owner
