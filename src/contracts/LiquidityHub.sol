@@ -148,7 +148,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-    _validateSupply(asset, spoke, amount, from);
+    _validateAdd(asset, spoke, amount, from);
 
     // todo: Mitigate inflation attack
     uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
@@ -173,7 +173,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-    _validateWithdraw(asset, spoke, amount);
+    _validateRemove(asset, spoke, amount);
 
     uint256 withdrawnShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
     asset.suppliedShares -= withdrawnShares;
@@ -474,14 +474,14 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   // Internal
   //
 
-  function _validateSupply(
+  function _validateAdd(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 amount,
     address from
   ) internal view {
     require(spoke.config.active, SpokeNotActive());
-    require(amount != 0, InvalidSupplyAmount());
+    require(amount != 0, InvalidAddAmount());
     require(from != address(this), InvalidAddFromHub());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
@@ -493,13 +493,13 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     );
   }
 
-  function _validateWithdraw(
+  function _validateRemove(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal view {
     require(spoke.config.active, SpokeNotActive());
-    require(amount != 0, InvalidWithdrawAmount());
+    require(amount != 0, InvalidRemoveAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     uint256 withdrawable = asset.toSuppliedAssetsDown(spoke.suppliedShares);
