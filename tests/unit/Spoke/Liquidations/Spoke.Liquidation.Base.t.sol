@@ -105,10 +105,14 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
-    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
+    state.collDynConfig = _getUserDynConfig(spoke1, alice, collateralReserveId);
 
     liqConfig = _bound(liqConfig);
-    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
+    liqBonus = bound(
+      liqBonus,
+      MIN_LIQUIDATION_BONUS,
+      PercentageMathExtended.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
+    );
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.01e18);
     liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     // bound supply amount to max supply amount
@@ -165,9 +169,16 @@ contract SpokeLiquidationBase is SpokeBase {
       debtReserveId,
       desiredHf
     );
-    state.liquidationBonus = spoke1.getVariableLiquidationBonus(collateralReserveId, hfAfterBorrow);
+    state.liquidationBonus = spoke1.getVariableLiquidationBonus(
+      collateralReserveId,
+      alice,
+      hfAfterBorrow
+    );
 
     state = _getAccountingInfoBeforeLiq(state);
+
+    // Get alice's dynamic config key before liquidation
+    DynamicConfig[] memory configKeysBefore = _getUserDynConfigKeys(spoke1, alice);
 
     (
       state.collToLiq,
@@ -215,6 +226,9 @@ contract SpokeLiquidationBase is SpokeBase {
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
     state = _getAccountingInfoAfterLiq(state);
+
+    // Validate alice's dynamic config key unchanged after liquidation
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configKeysBefore);
 
     // with a close factor, it is impossible to liquidate all debt unless deficit is reported
     assertTrue(

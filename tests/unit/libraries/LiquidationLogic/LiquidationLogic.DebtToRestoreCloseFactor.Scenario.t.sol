@@ -303,7 +303,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       totalCollateralFactor += dynConfig.collateralFactor * amountInBase;
       totalAmount += amountInBase;
       if (collateralIndex == i) {
-        params.liquidationBonus = reserve.config.liquidationBonus;
+        params.liquidationBonus = dynConfig.liquidationBonus;
         params.collateralFactor = dynConfig.collateralFactor;
       }
     }
@@ -369,7 +369,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     _mockReservePrice(spoke1, _wbtcReserveId(spoke1), 40_000e8);
 
     updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 108_00);
-    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 109_00);
+    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 105_00);
     updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 110_00);
     updateLiquidationBonus(spoke1, _wbtcReserveId(spoke1), 110_00);
   }
