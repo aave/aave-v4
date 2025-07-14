@@ -4,11 +4,13 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRepayEdgeCaseTest is SpokeBase {
+  using PercentageMathExtended for uint256;
+
   /// repay partial premium, base & full debt, with no interest accrual (no time pass)
   /// supply ex rate can increase while debt ex rate should remain the same
   /// this is due to donation on available liquidity
   function test_fuzz_repay_effect_on_ex_rates(uint256 daiBorrowAmount, uint256 skipTime) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 10);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
       spoke1,
@@ -19,7 +21,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // Bob supply weth as collateral
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    // Alice supply dai such that usage ratio after bob borrows is ~45%, borrow rate ~7.5%
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount.percentDivDown(45_00), alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
     skip(skipTime); // initial increase in index, no time passes for subsequent checks
 
@@ -94,7 +97,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
   function test_repay_supply_ex_rate_decr() public {
     // inflate ex rate to 1.5
-    _mockInterestRate(50_00);
+    _mockInterestRateBps(50_00);
     updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);
     updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 0);
 
@@ -147,7 +150,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
   function test_repay_supply_ex_rate_decr_skip_time() public {
     // inflate ex rate to 1.5
-    _mockInterestRate(50_00);
+    _mockInterestRateBps(50_00);
     updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);
     updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 0);
 
@@ -372,12 +375,13 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     repayAmount = baseRestored + premiumRestored;
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertEq(
+    assertApproxEqAbs(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       bobDaiBefore.totalDebt - baseRestored - premiumRestored,
+      1,
       'bob dai debt final balance'
     );
-    assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai premium debt final balance');
+    assertApproxEqAbs(bobDaiAfter.premiumDebt, bobDaiBefore.premiumDebt - premiumRestored, 1, 'bob dai premium debt final balance');
 
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethBefore.totalDebt, spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob));
@@ -491,7 +495,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertApproxEqAbs(bobDaiAfter.baseDebt, daiBorrowAmount, 1, 'bob dai base debt final balance');
+    assertApproxEqAbs(bobDaiAfter.baseDebt, daiBorrowAmount, 2, 'bob dai base debt final balance');
     assertApproxEqAbs(bobDaiAfter.premiumDebt, 0, 1, 'bob dai premium debt final balance');
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethAfter.totalDebt, bobWethBefore.totalDebt);
@@ -592,7 +596,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertEq(bobDaiAfter.baseDebt, daiBorrowAmount, 'bob dai base debt final balance');
+    assertApproxEqAbs(bobDaiAfter.baseDebt, daiBorrowAmount, 2, 'bob dai base debt final balance');
     assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai premium debt final balance');
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethAfter.totalDebt, bobWethBefore.totalDebt);

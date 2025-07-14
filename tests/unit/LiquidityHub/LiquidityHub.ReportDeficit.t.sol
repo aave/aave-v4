@@ -185,22 +185,4 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
       'supply exchange rate should increase'
     );
   }
-
-  /// Calculate the expected borrow rate after a restore action
-  function _calcExpectedBorrowRate(
-    uint256 assetId,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
-  ) internal view returns (uint256) {
-    (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
-
-    return
-      irStrategy.calculateInterestRate({
-        assetId: assetId,
-        availableLiquidity: hub.getAvailableLiquidity(assetId),
-        totalDebt: baseDebt,
-        liquidityAdded: liquidityAdded,
-        liquidityTaken: liquidityTaken
-      });
-  }
 }

@@ -165,7 +165,7 @@ interface ILiquidityHub is IAccessManaged {
    * @param baseAmount The base debt to repay.
    * @param premiumAmount The premium debt to repay.
    * @param from The address to pull assets from.
-   * @return The amount of debt shares restored.
+   * @return The amount of base debt shares restored.
    */
   function restore(
     uint256 assetId,
@@ -218,6 +218,8 @@ interface ILiquidityHub is IAccessManaged {
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
+
+  function convertToDrawnSharesUp(uint256 assetId, uint256 assets) external view returns (uint256);
 
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 

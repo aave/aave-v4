@@ -105,19 +105,13 @@ library AssetLogic {
     return assets.toSharesDown(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
   }
 
-  function updateBorrowRate(
-    DataTypes.Asset storage asset,
-    uint256 assetId,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
-  ) internal {
+  function updateBorrowRate(DataTypes.Asset storage asset, uint256 assetId) internal {
     asset.baseBorrowRate = IBasicInterestRateStrategy(asset.config.irStrategy)
       .calculateInterestRate({
         assetId: assetId,
         availableLiquidity: asset.availableLiquidity,
-        totalDebt: asset.baseDebt(),
-        liquidityAdded: liquidityAdded,
-        liquidityTaken: liquidityTaken
+        baseDebt: asset.baseDebt(),
+        premiumDebt: asset.premiumDebt()
       });
   }
 
@@ -139,7 +133,7 @@ library AssetLogic {
     if (feeShares > 0) {
       feeReceiver.suppliedShares += feeShares;
       asset.suppliedShares += feeShares;
-      // todo: emit event to signal fees accrual
+      emit ILiquidityHub.AccrueFees(assetId, feeShares);
     }
 
     asset.lastUpdateTimestamp = block.timestamp;

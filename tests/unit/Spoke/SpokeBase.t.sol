@@ -290,7 +290,7 @@ contract SpokeBase is Base {
   ) internal returns (uint256, uint256) {
     SupplyBorrowLocal memory state;
     if (isMockRate) {
-      _mockInterestRate(rate);
+      _mockInterestRateBps(rate);
     }
     (state.collateralReserveAssetId, ) = getAssetByReserveId(spoke, collateral.reserveId);
     (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
@@ -832,6 +832,15 @@ contract SpokeBase is Base {
     return configs;
   }
 
+  function _getUserDynConfig(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId
+  ) internal view returns (DataTypes.DynamicReserveConfig memory) {
+    return
+      spoke.getDynamicReserveConfig(reserveId, spoke.getUserPosition(reserveId, user).configKey);
+  }
+
   // deref and return current UserDynamicReserveConfig for a specific reserveId on user position.
   function _getUserDynConfigKeys(
     ISpoke spoke,
@@ -851,7 +860,6 @@ contract SpokeBase is Base {
     assertEq(a.paused, b.paused, 'paused');
     assertEq(a.borrowable, b.borrowable, 'borrowable');
     assertEq(a.collateral, b.collateral, 'collateral');
-    assertEq(a.liquidationBonus, b.liquidationBonus, 'liquidation bonus');
     assertEq(a.liquidityPremium, b.liquidityPremium, 'liquidity premium');
     assertEq(a.liquidationFee, b.liquidationFee, 'liquidation protocol fee');
     assertEq(abi.encode(a), abi.encode(b)); // sanity
@@ -914,5 +922,19 @@ contract SpokeBase is Base {
       }
     }
     revert('not found');
+  }
+
+  function updateLiquidationBonus(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 newLiquidationBonus
+  ) internal {
+    DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
+    config.liquidationBonus = newLiquidationBonus;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateDynamicReserveConfig(reserveId, config);
+
+    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
   }
 }

@@ -156,10 +156,14 @@ contract SpokeLiquidationBase is SpokeBase {
     state.collateralReserve = state.collateralReserves[state.collateralReserveIndex];
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
 
-    state.collDynConfig = state.spoke.getDynamicReserveConfig(collateralReserveId);
+    state.collDynConfig = _getUserDynConfig(spoke1, alice, collateralReserveId);
 
     liqConfig = _bound(liqConfig);
-    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
+    liqBonus = bound(
+      liqBonus,
+      MIN_LIQUIDATION_BONUS,
+      PercentageMathExtended.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
+    );
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.01e18);
     liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     // bound supply amount to max supply amount
@@ -196,13 +200,13 @@ contract SpokeLiquidationBase is SpokeBase {
       onBehalfOf: alice
     });
 
-    _increaseReserveSupplyExchangeRate(
-      state.spoke,
-      collateralReserveId,
-      supplyAmount / 2,
-      skipTime,
-      bob
-    );
+    _borrowWithoutHfCheck({
+      spoke: spoke1,
+      user: bob,
+      reserveId: collateralReserveId,
+      debtAmount: supplyAmount / 2
+    });
+    skip(skipTime);
 
     vm.assume(
       _getRequiredDebtAmountForLtHf(spoke1, alice, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
@@ -217,10 +221,14 @@ contract SpokeLiquidationBase is SpokeBase {
     state.liquidationBonus = _getVariableLiquidationBonus(
       state.spoke,
       collateralReserveId,
+      alice,
       hfAfterBorrow
     );
 
     state = _getAccountingInfoBeforeLiquidation(state);
+
+    // Get alice's dynamic config key before liquidation
+    DynamicConfig[] memory configKeysBefore = _getUserDynConfigKeys(spoke1, alice);
 
     (
       state.collToLiq,
@@ -269,6 +277,9 @@ contract SpokeLiquidationBase is SpokeBase {
     state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
     state = _getAccountingInfoAfterLiquidation(state);
+
+    // Validate alice's dynamic config key unchanged after liquidation
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configKeysBefore);
 
     return state;
   }
@@ -908,32 +919,5 @@ contract SpokeLiquidationBase is SpokeBase {
     }
 
     return state;
-  }
-
-  // increase supply exchange rate on a given reserve
-  function _increaseReserveSupplyExchangeRate(
-    ISpoke spoke,
-    uint256 collateralReserveId,
-    uint256 borrowAmount,
-    uint256 skipTime,
-    address user
-  ) internal {
-    // set price to 0 to circumvent borrow validation
-    uint256 assetId = spoke.getReserve(collateralReserveId).assetId;
-    uint256 initialExRate = hub.convertToSuppliedAssets(assetId, WadRayMathExtended.RAY.wadify()); // wadify to increase precision of ex rate increase
-    uint256 initialPrice = oracle1.getReservePrice(collateralReserveId);
-    oracle1.setReservePrice(collateralReserveId, 0);
-    // user borrows some collateral reserve to inflate collateral supply ex rate
-    Utils.borrow({
-      spoke: spoke1,
-      reserveId: collateralReserveId,
-      user: user,
-      amount: borrowAmount,
-      onBehalfOf: user
-    });
-    oracle1.setReservePrice(collateralReserveId, initialPrice);
-    skip(skipTime);
-    uint256 finalExRate = hub.convertToSuppliedAssets(assetId, WadRayMathExtended.RAY.wadify()); // wadify to increase precision of ex rate increase
-    assertGt(finalExRate, initialExRate);
   }
 }

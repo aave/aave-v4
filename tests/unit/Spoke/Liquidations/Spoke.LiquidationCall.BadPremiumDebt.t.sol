@@ -225,13 +225,13 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     // below this value results in bad debt during liquidation
     uint256 hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus);
 
-    _increaseReserveSupplyExchangeRate(
-      state.spoke,
-      collateralReserveId,
-      supplyAmount / 2,
-      skipTime,
-      bob
-    );
+    _borrowWithoutHfCheck({
+      spoke: spoke1,
+      user: bob,
+      reserveId: collateralReserveId,
+      debtAmount: supplyAmount / 2
+    });
+    skip(skipTime);
 
     // borrow some amount of debt reserve to keep healthy hf initially
     (uint256 hfAfterBorrow, ) = _borrowToBeAboveHealthyHf(
@@ -244,6 +244,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     state.liquidationBonus = _getVariableLiquidationBonus(
       state.spoke,
       collateralReserveId,
+      alice,
       hfAfterBorrow
     );
 

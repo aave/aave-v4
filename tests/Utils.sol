@@ -45,9 +45,9 @@ library Utils {
     address spoke,
     uint256 amount,
     address to
-  ) internal {
+  ) internal returns (uint256) {
     vm.prank(spoke);
-    hub.remove(assetId, amount, to);
+    return hub.remove(assetId, amount, to);
   }
 
   function restore(
@@ -57,48 +57,56 @@ library Utils {
     uint256 baseAmount,
     uint256 premiumAmount,
     address repayer
-  ) internal {
+  ) internal returns (uint256) {
     vm.startPrank(repayer);
     IERC20(hub.getAsset(assetId).underlying).approve(address(hub), (baseAmount + premiumAmount));
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.restore(assetId, baseAmount, premiumAmount, repayer);
+    return hub.restore(assetId, baseAmount, premiumAmount, repayer);
   }
 
   function addSpoke(
     ILiquidityHub hub,
+    address hubAdmin,
     uint256 assetId,
     address spoke,
     DataTypes.SpokeConfig memory spokeConfig
   ) internal {
+    vm.prank(hubAdmin);
     hub.addSpoke(assetId, spoke, spokeConfig);
   }
 
   function updateSpokeConfig(
     ILiquidityHub hub,
+    address hubAdmin,
     uint256 assetId,
     address spoke,
     DataTypes.SpokeConfig memory spokeConfig
   ) internal {
+    vm.prank(hubAdmin);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
   function addAsset(
     ILiquidityHub hub,
+    address hubAdmin,
     address underlying,
     uint8 decimals,
     address feeReceiver,
     address interestRateStrategy
   ) internal returns (uint256) {
+    vm.prank(hubAdmin);
     return hub.addAsset(underlying, decimals, feeReceiver, interestRateStrategy);
   }
 
   function updateAssetConfig(
     ILiquidityHub hub,
+    address hubAdmin,
     uint256 assetId,
     DataTypes.AssetConfig memory config
   ) internal {
+    vm.prank(hubAdmin);
     hub.updateAssetConfig(assetId, config);
   }
 

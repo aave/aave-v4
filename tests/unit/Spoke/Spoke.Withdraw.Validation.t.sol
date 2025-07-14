@@ -145,7 +145,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    _mockInterestRate(rate);
+    _mockInterestRateBps(rate);
 
     // Alice supply
     Utils.supply({

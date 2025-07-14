@@ -397,9 +397,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserves = new DataTypes.Reserve[](1);
     state.debtReserves = new DataTypes.Reserve[](1);
-
     state.spoke = spoke1;
-    state.collDynConfig = state.spoke.getDynamicReserveConfig(collateralReserveId);
+    state.collDynConfig = _getUserDynConfig(state.spoke, alice, collateralReserveId);
 
     state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
       collateralReserveId
@@ -459,13 +458,13 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
 
-    _increaseReserveSupplyExchangeRate(
-      state.spoke,
-      collateralReserveId,
-      supplyAmount / 2,
-      skipTime,
-      bob
-    );
+    _borrowWithoutHfCheck({
+      spoke: spoke1,
+      user: bob,
+      reserveId: collateralReserveId,
+      debtAmount: supplyAmount / 2
+    });
+    skip(skipTime);
 
     vm.assume(
       _getRequiredDebtAmountForLtHf(spoke1, alice, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
@@ -475,10 +474,12 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     state.liquidationBonus = _getVariableLiquidationBonus(
       state.spoke,
       collateralReserveId,
+      alice,
       hfAfterBorrow
     );
     state = _getAccountingInfoBeforeLiquidation(state);
 
+    uint16 configKeyBefore = spoke1.getUserPosition(collateralReserveId, alice).configKey;
     (
       state.collToLiq,
       state.debtToLiq,
@@ -527,6 +528,11 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
 
     state = _getAccountingInfoAfterLiquidation(state);
 
+    assertEq(
+      spoke1.getUserPosition(collateralReserveId, alice).configKey,
+      configKeyBefore,
+      'User dynamic config key changed after liquidation'
+    );
     return state;
   }
 }

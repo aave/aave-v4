@@ -319,13 +319,13 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     // below this value results in bad debt
     uint256 hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus);
 
-    _increaseReserveSupplyExchangeRate(
-      state.spoke,
-      collateralReserveId,
-      supplyAmount / 2,
-      skipTime,
-      bob
-    );
+    _borrowWithoutHfCheck({
+      spoke: spoke1,
+      user: bob,
+      reserveId: collateralReserveId,
+      debtAmount: supplyAmount / 2
+    });
+    skip(skipTime);
 
     // borrow some amount of debt reserve to end up below hf threshold
     _borrowMultipleReservesToBeAboveHealthyHf(
@@ -342,6 +342,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     state.liquidationBonus = _getVariableLiquidationBonus(
       spoke1,
       collateralReserveId,
+      alice,
       state.initialHf
     );
 
@@ -451,7 +452,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 dustInBase = 1e26;
 
     // mock with high base borrow rate so that less time must be skipped to reach desired HF
-    _mockInterestRate(500_00);
+    _mockInterestRateBps(500_00);
 
     vm.startPrank(user);
     for (uint256 i = 0; i < reserveIds.length; i++) {

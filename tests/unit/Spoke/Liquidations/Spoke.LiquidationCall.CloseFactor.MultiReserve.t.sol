@@ -182,10 +182,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     state.debtReserveIndex = debtReserveIndex;
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
       state.collateralReserves[i] = spoke1.getReserve(collateralReserveIds[i]);
-      state.collDynConfigs[i] = spoke1.getDynamicReserveConfig(
-        collateralReserveIds[i],
-        state.collateralReserves[i].dynamicConfigKey
-      ); // utilize latest dynamic config
+      state.collDynConfigs[i] = _getUserDynConfig(spoke1, alice, collateralReserveIds[i]); // utilize user's dynamic config
     }
     state.collDynConfig = state.collDynConfigs[collateralReserveIndex];
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
@@ -268,12 +265,14 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     state.liquidationBonus = _getVariableLiquidationBonus(
       state.spoke,
       state.collateralReserves[collateralReserveIndex].reserveId,
+      alice,
       hfAfterBorrow
     );
 
     // ensure position is liquidatable
     assertLt(state.spoke.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     _getAccountingInfoBeforeLiquidation(state);
+    DynamicConfig[] memory configKeysBefore = _getUserDynConfigKeys(spoke1, alice);
 
     (
       state.collToLiq,
@@ -300,6 +299,9 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     );
 
     _getAccountingInfoAfterLiquidation(state);
+
+    // Validate user's dynamic config key unchanged after liquidation
+    assertEq(_getUserDynConfigKeys(state.spoke, alice), configKeysBefore);
 
     return state;
   }

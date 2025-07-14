@@ -376,15 +376,13 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
 
     // set user position under hf threshold so that there is invalid collateral to cover all debt
     desiredHf = bound(desiredHf, 0.1e18, _calcLowestHfForBadDebt(state.spoke, alice, liqBonus));
-
-    // increase supply exchange rate of collateral reserve
-    _increaseReserveSupplyExchangeRate(
-      state.spoke,
-      collateralReserveId,
-      supplyAmount / 2,
-      skipTime,
-      bob
-    );
+    _borrowWithoutHfCheck({
+      spoke: spoke1,
+      user: bob,
+      reserveId: collateralReserveId,
+      debtAmount: supplyAmount / 2
+    });
+    skip(skipTime);
 
     vm.assume(
       _getRequiredDebtAmountForLtHf(spoke1, alice, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
@@ -400,6 +398,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     state.liquidationBonus = _getVariableLiquidationBonus(
       state.spoke,
       collateralReserveId,
+      alice,
       hfAfterBorrow
     );
 

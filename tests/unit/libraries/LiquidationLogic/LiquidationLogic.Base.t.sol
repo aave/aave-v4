@@ -3,8 +3,9 @@ pragma solidity ^0.8.0;
 
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import 'tests/Base.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract LiquidationLogicBaseTest is Base {
+contract LiquidationLogicBaseTest is SpokeBase {
   using PercentageMath for uint256;
   using WadRayMathExtended for uint256;
   using PercentageMathExtended for uint256;
