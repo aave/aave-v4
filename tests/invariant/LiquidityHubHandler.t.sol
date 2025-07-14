@@ -3,15 +3,17 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
+import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
+import {AaveOracle} from 'src/contracts/AaveOracle.sol';
 import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 import {TreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
-import '../mocks/MockPriceOracle.sol';
+import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
+import {MockPriceFeed} from '../mocks/MockPriceFeed.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.sol';
-import 'src/contracts/AssetInterestRateStrategy.sol';
 
 contract LiquidityHubHandler is Test {
   IERC20 public usdc;
@@ -41,8 +43,9 @@ contract LiquidityHubHandler is Test {
     accessManager = new AccessManager(hubAdmin);
     hub = new LiquidityHub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub));
-    oracle = new MockPriceOracle();
-    spoke1 = new Spoke(address(oracle), address(accessManager));
+    spoke1 = new Spoke(address(accessManager));
+    oracle = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
+    spoke1.updateOracle(address(oracle));
     treasurySpoke = new TreasurySpoke(hubAdmin, address(hub));
     usdc = new MockERC20();
     dai = new MockERC20();
@@ -78,17 +81,17 @@ contract LiquidityHubHandler is Test {
     spoke1.addReserve(
       0,
       address(hub),
+      _deployMockPriceFeed(spoke1, 1e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
         paused: false,
-        liquidationBonus: 100_00,
         liquidityPremium: 0,
         liquidationFee: 0,
         borrowable: false,
         collateral: false
       }),
-      DataTypes.DynamicReserveConfig({collateralFactor: 0})
+      DataTypes.DynamicReserveConfig({collateralFactor: 0, liquidationBonus: 100_00})
     );
     vm.stopPrank();
   }
@@ -163,5 +166,10 @@ contract LiquidityHubHandler is Test {
     // s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
     //   ? 0
     //   : hub.getTotalAssets(assetId) / reserveData.suppliedShares;
+  }
+
+  function _deployMockPriceFeed(Spoke spoke, uint256 price) internal returns (address) {
+    AaveOracle oracle = AaveOracle(address(spoke.oracle()));
+    return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
   }
 }

@@ -148,7 +148,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       (params.aliceAmount + params.bobAmount) / 2
     ); // some buffer on available borrowable liquidity
     params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
-    _mockInterestRate(params.rate);
+    _mockInterestRateBps(params.rate);
 
     MultiUserTestState memory state;
     (state.assetId, state.underlying) = getAssetByReserveId(spoke1, params.reserveId);

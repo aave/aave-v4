@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeDynamicConfigTriggersTest is SpokeBase {
-  using SafeCast for uint256;
-
   function test_supply_does_not_trigger_dynamicConfigUpdate() public {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
@@ -23,6 +21,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     Utils.supply(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
 
+    _assertDynamicConfigRefreshEventsNotEmitted();
     // user config should not change
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
@@ -39,6 +38,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     skip(322 days);
     Utils.repay(spoke1, _daiReserveId(spoke1), alice, UINT256_MAX);
 
+    _assertDynamicConfigRefreshEventsNotEmitted();
     // user config should not change
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
@@ -58,12 +58,13 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     // position is still healthy
     assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    oracle1.setReservePrice(_usdxReserveId(spoke1), 0.5e8); // make position partially liquidatable
+    _mockReservePrice(spoke1, _usdxReserveId(spoke1), 0.5e8); // make position partially liquidatable
     assertLe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);
     spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100e18);
 
+    _assertDynamicConfigRefreshEventsNotEmitted();
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
 
@@ -74,6 +75,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     vm.prank(bob);
     spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, UINT256_MAX);
 
+    _assertDynamicConfigRefreshEventsNotEmitted();
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
   }
@@ -97,7 +99,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshed(alice);
+    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -123,7 +125,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshed(alice);
+    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
     Utils.withdraw(spoke1, _usdxReserveId(spoke1), alice, 500e6, alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -147,13 +149,22 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supply(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
+
+    // when enabling, only the relevant asset is refreshed
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshed(alice);
+    emit ISpoke.UserDynamicConfigRefreshedSingle(alice, _wethReserveId(spoke1));
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true);
 
+    DynamicConfig[] memory userConfig = _getUserDynConfigKeys(spoke1, alice);
+    DynamicConfig[] memory spokeConfig = _getSpokeDynConfigKeys(spoke1);
+    // weth is refreshed but not all
+    assertEq(userConfig[_wethReserveId(spoke1)], spokeConfig[_wethReserveId(spoke1)]);
+    assertNotEq(abi.encode(userConfig), abi.encode(spokeConfig));
+
+    // when disabling all configs are refreshed
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshed(alice);
+    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false);
 
