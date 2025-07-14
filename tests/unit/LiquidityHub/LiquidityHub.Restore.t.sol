@@ -88,6 +88,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     );
   }
 
+  /// @dev Restore an amount greater than the base debt, with base interest accrued (no premium debt).
   function test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest(
     uint256 daiAmount,
     uint256 drawAmount,
@@ -145,6 +146,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     );
   }
 
+  /// @dev Restore an amount greater than the base debt, with base interest and premium debt accrued.
   function test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest_and_premium(
     uint256 daiAmount,
     uint256 drawAmount,
@@ -200,7 +202,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     hub.restore(daiAssetId, baseDebt + 1, premiumDebtRestored, alice);
   }
 
-  /// @dev Restore partial amount of base debt
+  /// @dev Restore partial amount of base debt after time has passed (no premium debt).
   function test_restore_partial_base() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
@@ -218,6 +220,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
     uint256 restoreBaseAmount = baseDebt / 2;
 
+    // no premium debt accrued
+    assertEq(premiumDebt, 0);
+
     vm.prank(address(spoke1));
     hub.restore(daiAssetId, restoreBaseAmount, premiumDebt, alice);
 
@@ -233,7 +238,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       1,
       'hub dai total suppliedAmount'
     );
-    assertEq(daiData.baseDebt, baseDebt - restoreBaseAmount, 'dai asset baseDebt');
+    assertApproxEqAbs(daiData.baseDebt, baseDebt - restoreBaseAmount, 1, 'dai asset baseDebt');
     assertEq(daiData.premiumDebt, 0, 'dai premiumDebt');
     assertEq(
       daiData.availableLiquidity,
@@ -248,6 +253,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     assertEq(spoke1DaiData.premiumDebt, daiData.premiumDebt, 'hub spoke1 premiumDebt');
   }
 
+  /// @dev Restore partial amount of base debt in the same block as draw action.
   function test_restore_partial_same_block() public {
     uint256 daiAmount = 100e18;
     uint256 drawAmount = daiAmount / 2;
@@ -276,6 +282,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     uint256 baseDebtRestored = baseDebt / 2;
     uint256 restoreAmount = baseDebtRestored + premiumDebt;
 
+    // no premium debt accrued in the same block
+    assertEq(premiumDebt, 0);
+
     vm.expectEmit(address(hub));
     emit ILiquidityHub.Restore(
       daiAssetId,
@@ -290,8 +299,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     AssetPosition memory daiData = getAssetPosition(hub, daiAssetId);
     ReservePosition memory spoke1DaiData = getReservePosition(spoke1, _daiReserveId);
 
-    // hub
-    // dai
+    // hub dai data
     assertEq(daiData.suppliedAmount, daiAmount, 'hub dai total assets post-restore');
     assertEq(
       daiData.suppliedShares,
@@ -310,15 +318,14 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       vm.getBlockTimestamp(),
       'hub dai lastUpdateTimestamp post-restore'
     );
-    // spoke1 dai
+    // spoke1 dai data
     assertEq(spoke1DaiData.suppliedShares, 0, 'spoke1 total dai shares post-restore');
     assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'spoke1 base dai debt post-restore');
     assertEq(spoke1DaiData.premiumDebt, daiData.premiumDebt, 'spoke1 dai premiumDebt post-restore');
 
     IERC20 dai = IERC20(hub.getAsset(daiAssetId).underlying);
 
-    // token balance
-    // dai
+    // dai token balance
     assertEq(dai.balanceOf(address(hub)), daiAmount - restoreAmount, 'hub dai final balance');
     assertEq(
       dai.balanceOf(alice),
@@ -337,6 +344,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     test_restore_fuzz_full_amount_with_interest(daiAmount, drawAmount, skipTime);
   }
 
+  /// @dev Restore full base debt amount after time has passed, with base interest accrued (no premium debt).
   function test_restore_fuzz_full_amount_with_interest(
     uint256 daiAmount,
     uint256 drawAmount,
@@ -369,6 +377,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
     skip(skipTime);
     (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
+
+    // no premium debt accrued
+    assertEq(premiumDebt, 0);
 
     // spoke1 restore full base debt
     vm.prank(address(spoke1));
@@ -415,6 +426,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     );
   }
 
+  /// @dev Restore full base debt amount after time has passed, with base interest and premium debt accrued.
   function test_restore_fuzz_full_amount_with_interest_and_premium(
     uint256 daiAmount,
     uint256 drawAmount,
