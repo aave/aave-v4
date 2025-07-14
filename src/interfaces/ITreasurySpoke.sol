@@ -52,7 +52,6 @@ interface ITreasurySpoke {
    * @param to The recipient address.
    * @param amount The amount of tokens to transfer.
    */
-
   function transfer(address token, address to, uint256 amount) external;
 
   /**
