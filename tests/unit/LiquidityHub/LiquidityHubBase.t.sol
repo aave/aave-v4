@@ -33,46 +33,8 @@ contract LiquidityHubBase is Base {
   function _updateSupplyCap(uint256 assetId, address spoke, uint256 newSupplyCap) internal {
     DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.supplyCap = newSupplyCap;
+    vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
-  }
-
-  /// @dev tempSpoke1 (tempUser1) supplies asset, tempSpoke2 (tempUser2) draws asset, skip 1 year
-  /// increases supply and debt exchange rate
-  function _increaseExchangeRate(uint256 assetId, uint256 amount) internal {
-    address tempUser1 = makeAddr('TEMP_USER_1');
-    deal(hub.getAsset(assetId).underlying, tempUser1, amount);
-
-    address tempSpoke1 = makeAddr('TEMP_SPOKE_1');
-    hub.addSpoke(
-      assetId,
-      tempSpoke1,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
-    );
-
-    address tempUser2 = makeAddr('TEMP_USER_2');
-    deal(hub.getAsset(assetId).underlying, tempUser2, amount);
-
-    address tempSpoke2 = makeAddr('TEMP_SPOKE_2');
-    hub.addSpoke(
-      assetId,
-      tempSpoke2,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
-    );
-
-    _supplyAndDrawLiquidity({
-      assetId: assetId,
-      supplyUser: tempUser1,
-      supplySpoke: tempSpoke1,
-      supplyAmount: amount,
-      drawUser: tempUser2,
-      drawSpoke: tempSpoke2,
-      drawAmount: amount,
-      skipTime: 365 days
-    });
-
-    // ensure that exchange rate has increased
-    assertTrue(hub.convertToSuppliedShares(assetId, amount) < amount);
-    assertTrue(hub.convertToDrawnShares(assetId, amount) < amount);
   }
 
   /// @dev mocks rate, supplySpoke (supplyUser) supplies asset, drawSpoke (drawUser) draws asset, skips time
@@ -132,16 +94,21 @@ contract LiquidityHubBase is Base {
 
     uint256 initialLiq = hub.getAvailableLiquidity(assetId);
 
-    address asset = hub.getAsset(assetId).underlying;
-    deal(asset, tempUser, amount);
+    address underlying = hub.getAsset(assetId).underlying;
+    deal(underlying, tempUser, amount);
 
     vm.prank(tempUser);
-    IERC20(asset).approve(address(hub), type(uint256).max);
+    IERC20(underlying).approve(address(hub), type(uint256).max);
 
+    vm.prank(ADMIN);
     hub.addSpoke(
       assetId,
       tempSpoke,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
+      DataTypes.SpokeConfig({
+        active: true,
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max
+      })
     );
 
     Utils.add({
@@ -157,26 +124,29 @@ contract LiquidityHubBase is Base {
   }
 
   /// @dev Draws liquidity from the Hub via a random spoke
-  function _drawLiquidity(
-    uint256 assetId,
-    uint256 amount,
-    bool withPremium
-  ) internal returns (uint256) {
+  function _drawLiquidity(uint256 assetId, uint256 amount, bool withPremium) internal {
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
 
     int256 premiumDrawnSharesDelta = 1000;
     int256 premiumOffsetDelta = 1000;
-    if (withPremium) {
-      // inflate premium data to create premium debt
-      hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
-    }
 
+    vm.prank(HUB_ADMIN);
     hub.addSpoke(
       assetId,
       tempSpoke,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
+      DataTypes.SpokeConfig({
+        active: true,
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max
+      })
     );
+
+    if (withPremium) {
+      // inflate premium data to create premium debt
+      vm.prank(tempSpoke);
+      hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
+    }
 
     Utils.draw(hub, assetId, tempSpoke, tempUser, amount, tempUser);
 
@@ -188,6 +158,7 @@ contract LiquidityHubBase is Base {
     if (withPremium) {
       assertGt(premiumDebt, 0); // non-zero premium debt
       // restore premium data
+      vm.prank(tempSpoke);
       hub.refreshPremiumDebt(
         assetId,
         -premiumDrawnSharesDelta,

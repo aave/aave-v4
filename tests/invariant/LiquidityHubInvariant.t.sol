@@ -31,11 +31,11 @@ contract LiquidityHubInvariant is StdInvariant, Test {
     // TODO: manage interest
     for (uint256 i; i < hub.getAssetCount(); ++i) {
       DataTypes.Asset memory reserveData = hub.getAsset(i);
-      address asset = hub.getAsset(i).underlying;
+      address underlying = hub.getAsset(i).underlying;
       // todo implement
       // assertEq(
       //   hub.getTotalAssets(reserveData.id),
-      //   IERC20(asset).balanceOf(address(hub)) - hubHandler.getAssetDonated(asset),
+      //   IERC20(underlying).balanceOf(address(hub)) - hubHandler.getAssetDonated(underlying),
       //   'wrong total assets'
       // );
     }

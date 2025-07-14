@@ -7,6 +7,12 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {IConfigurator} from 'src/interfaces/IConfigurator.sol';
 
+/**
+ * @title Configurator
+ * @author Aave Labs
+ * @notice Configurator contract for the Aave protocol
+ * @dev Must be granted permission by the Hub and Spoke
+ */
 contract Configurator is Ownable, IConfigurator {
   /**
    * @dev Constructor
@@ -30,20 +36,55 @@ contract Configurator is Ownable, IConfigurator {
   /// @inheritdoc IConfigurator
   function addAsset(
     address hub,
-    address asset,
+    address underlying,
+    address feeReceiver,
     address irStrategy
   ) external override onlyOwner returns (uint256) {
-    return ILiquidityHub(hub).addAsset(asset, IERC20Metadata(asset).decimals(), irStrategy);
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+
+    uint256 assetId = targetHub.addAsset(
+      underlying,
+      IERC20Metadata(underlying).decimals(),
+      feeReceiver,
+      irStrategy
+    );
+
+    targetHub.addSpoke(
+      assetId,
+      feeReceiver,
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      })
+    );
+
+    return assetId;
   }
 
   /// @inheritdoc IConfigurator
   function addAsset(
     address hub,
-    address asset,
+    address underlying,
     uint8 decimals,
+    address feeReceiver,
     address irStrategy
   ) external override onlyOwner returns (uint256) {
-    return ILiquidityHub(hub).addAsset(asset, decimals, irStrategy);
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+
+    uint256 assetId = targetHub.addAsset(underlying, decimals, feeReceiver, irStrategy);
+
+    targetHub.addSpoke(
+      assetId,
+      feeReceiver,
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      })
+    );
+
+    return assetId;
   }
 
   /// @inheritdoc IConfigurator
@@ -132,29 +173,33 @@ contract Configurator is Ownable, IConfigurator {
       return;
     }
 
-    if (config.feeReceiver != address(0)) {
+    hub.updateSpokeConfig(
+      assetId,
+      config.feeReceiver,
+      DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+    );
+
+    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, newFeeReceiver);
+    if (spokeData.lastUpdateTimestamp == 0) {
+      hub.addSpoke(
+        assetId,
+        newFeeReceiver,
+        DataTypes.SpokeConfig({
+          supplyCap: type(uint256).max,
+          drawCap: type(uint256).max,
+          active: true
+        })
+      );
+    } else {
       hub.updateSpokeConfig(
         assetId,
-        config.feeReceiver,
-        DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0})
+        newFeeReceiver,
+        DataTypes.SpokeConfig({
+          supplyCap: type(uint256).max,
+          drawCap: type(uint256).max,
+          active: true
+        })
       );
-    }
-
-    if (newFeeReceiver != address(0)) {
-      DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, newFeeReceiver);
-      if (spokeData.lastUpdateTimestamp == 0) {
-        hub.addSpoke(
-          assetId,
-          newFeeReceiver,
-          DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
-        );
-      } else {
-        hub.updateSpokeConfig(
-          assetId,
-          newFeeReceiver,
-          DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
-        );
-      }
     }
   }
 }

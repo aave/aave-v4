@@ -5,6 +5,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   using SharesMath for uint256;
+  using WadRayMathExtended for uint256;
+  using PercentageMathExtended for uint256;
 
   /// Bob supplies 2 collateral assets, borrows an amount such that both of them cover it, and then repays any amount of debt
   /// Bob's user risk premium should decrease or remain same after repay
@@ -286,8 +288,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    // Deploy liquidity for weth borrow
-    _openSupplyPosition(spoke2, _wethReserveId(spoke2), wethBorrowAmount);
+    // Deploy liquidity for weth borrow such that usage ratio will be at 45%
+    _openSupplyPosition(spoke2, _wethReserveId(spoke2), wethBorrowAmount.percentDivDown(45_00));
 
     // Bob borrows weth
     Utils.borrow({
@@ -298,12 +300,16 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       onBehalfOf: bob
     });
 
+    // usage ratio is ~45%, which is ~half to the kink point of 90%
+    // borrow rate ~= base borrow rate (5%) + slope1 (5%) / 2
+    assertApproxEqAbs(hub.getAsset(wethAssetId).baseBorrowRate, uint256(7_50).bpsToRay(), 1e18);
+
     // Alice supplies collateral in order to borrow
     uint256 aliceCollateralAmount = _calcMinimumCollAmount(
       spoke2,
       _wbtcReserveId(spoke2),
       _daiReserveId(spoke2),
-      daiSupplyAmount
+      daiSupplyAmount + dai2SupplyAmount
     );
     Utils.supplyCollateral({
       spoke: spoke2,
@@ -313,12 +319,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    // Mock call to raise dai interest rate upon this next borrow call so it outgrows weth debt interest
-    DataTypes.Asset memory daiAsset = hub.getAsset(daiAssetId);
-    (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
-    _mockInterestRate(10_00, daiAssetId, daiAsset.availableLiquidity, baseDebt, 0, daiSupplyAmount);
-
-    // Alice borrows dai to accrue interest
+    // Alice borrows all dai to push the dai interest rate to max rate
+    // This way Bob earns more interest on his dai supplies than the interest accrued on his weth borrow
     Utils.borrow({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
@@ -326,6 +328,16 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       amount: daiSupplyAmount,
       onBehalfOf: alice
     });
+    Utils.borrow({
+      spoke: spoke2,
+      reserveId: _dai2ReserveId(spoke2),
+      user: alice,
+      amount: dai2SupplyAmount,
+      onBehalfOf: alice
+    });
+
+    // usage ratio is 100%, borrow rate is max
+    assertEq(hub.getAsset(daiAssetId).baseBorrowRate, uint256(15_00).bpsToRay());
 
     // Bob's current risk premium should be greater than or equal liquidity premium of dai, since debt is not fully covered by it (and due to rounding)
     assertGt(
@@ -803,8 +815,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   /// Initially debt is covered by 2 collaterals, then due to price change, debt is covered by 1 collateral
   function test_riskPremium_priceChangeReducesRP(uint256 daiSupplyAmount, uint256 newPrice) public {
     daiSupplyAmount = bound(daiSupplyAmount, 1e18, MAX_SUPPLY_AMOUNT);
-    MockPriceOracle oracle = MockPriceOracle(address(spoke2.oracle()));
-    uint256 startingPrice = oracle.getReservePrice(_daiReserveId(spoke2));
+    uint256 startingPrice = spoke2.oracle().getReservePrice(_daiReserveId(spoke2));
     newPrice = bound(newPrice, startingPrice + 1, 1e16);
 
     // Supply dai and dai2 collaterals to cover weth debt. Dai increases in price to fully cover weth debt
@@ -865,7 +876,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
 
     // Now change the price of dai
-    oracle.setReservePrice(_daiReserveId(spoke2), newPrice);
+    _mockReservePrice(spoke2, _daiReserveId(spoke2), newPrice);
 
     // Now risk premium should equal LP of dai since debt is fully covered by it
     assertGe(

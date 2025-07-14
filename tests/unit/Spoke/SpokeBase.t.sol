@@ -290,7 +290,7 @@ contract SpokeBase is Base {
   ) internal returns (uint256, uint256) {
     SupplyBorrowLocal memory state;
     if (isMockRate) {
-      _mockInterestRate(rate);
+      _mockInterestRateBps(rate);
     }
     (state.collateralReserveAssetId, ) = getAssetByReserveId(spoke, collateral.reserveId);
     (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
@@ -684,7 +684,7 @@ contract SpokeBase is Base {
 
   function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
     DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    uint256 riskPremiumStored = pos.premiumDrawnShares.percentDiv(pos.baseDrawnShares);
+    uint256 riskPremiumStored = pos.premiumDrawnShares.percentDivDown(pos.baseDrawnShares);
     (uint256 riskPremiumCurrent, , , , ) = spoke.getUserAccountData(user);
     assertEq(riskPremiumCurrent, riskPremiumStored, 'user risk premium mismatch');
   }
@@ -695,7 +695,13 @@ contract SpokeBase is Base {
     address user
   ) internal view returns (uint256) {
     DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    return pos.premiumDrawnShares.percentDiv(pos.baseDrawnShares);
+    // sanity check
+    assertTrue(
+      pos.baseDrawnShares > 0 || pos.premiumDrawnShares == 0,
+      'if base is zero, premium must be zero'
+    );
+    if (pos.baseDrawnShares == 0) return 0;
+    return pos.premiumDrawnShares.percentDivDown(pos.baseDrawnShares);
   }
 
   function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {
@@ -736,6 +742,12 @@ contract SpokeBase is Base {
     assertEq(a.premiumDebt, b.premiumDebt, 'premium debt');
     assertEq(a.totalDebt, b.totalDebt, 'total debt');
     assertEq(keccak256(abi.encode(a)), keccak256(abi.encode(b)), 'debt data'); // sanity
+  }
+
+  function assertEq(DynamicConfig memory a, DynamicConfig memory b) internal pure {
+    assertEq(a.key, b.key, 'key');
+    assertEq(a.enabled, b.enabled, 'enabled');
+    assertEq(abi.encode(a), abi.encode(b)); // sanity
   }
 
   function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
@@ -820,6 +832,15 @@ contract SpokeBase is Base {
     return configs;
   }
 
+  function _getUserDynConfig(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId
+  ) internal view returns (DataTypes.DynamicReserveConfig memory) {
+    return
+      spoke.getDynamicReserveConfig(reserveId, spoke.getUserPosition(reserveId, user).configKey);
+  }
+
   // deref and return current UserDynamicReserveConfig for a specific reserveId on user position.
   function _getUserDynConfigKeys(
     ISpoke spoke,
@@ -839,9 +860,8 @@ contract SpokeBase is Base {
     assertEq(a.paused, b.paused, 'paused');
     assertEq(a.borrowable, b.borrowable, 'borrowable');
     assertEq(a.collateral, b.collateral, 'collateral');
-    assertEq(a.liquidationBonus, b.liquidationBonus, 'liquidation bonus');
     assertEq(a.liquidityPremium, b.liquidityPremium, 'liquidity premium');
-    assertEq(a.liquidationProtocolFee, b.liquidationProtocolFee, 'liquidation protocol fee');
+    assertEq(a.liquidationFee, b.liquidationFee, 'liquidation protocol fee');
     assertEq(abi.encode(a), abi.encode(b)); // sanity
   }
 

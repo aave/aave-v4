@@ -246,11 +246,6 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     assertEq(spoke1DaiData.suppliedShares, 0, 'hub spoke1 suppliedShares');
     assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'hub spoke1 baseDebt');
     assertEq(spoke1DaiData.premiumDebt, daiData.premiumDebt, 'hub spoke1 premiumDebt');
-    assertEq(
-      spoke1DaiData.timestamp,
-      daiData.lastUpdateTimestamp,
-      'hub spoke1 lastUpdateTimestamp'
-    );
   }
 
   function test_restore_partial_same_block() public {
@@ -319,11 +314,6 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     assertEq(spoke1DaiData.suppliedShares, 0, 'spoke1 total dai shares post-restore');
     assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'spoke1 base dai debt post-restore');
     assertEq(spoke1DaiData.premiumDebt, daiData.premiumDebt, 'spoke1 dai premiumDebt post-restore');
-    assertEq(
-      spoke1DaiData.timestamp,
-      daiData.lastUpdateTimestamp,
-      'spoke1 dai timestamp post-restore'
-    );
 
     IERC20 dai = IERC20(hub.getAsset(daiAssetId).underlying);
 

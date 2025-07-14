@@ -8,8 +8,7 @@ import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/interf
  * @title AssetInterestRateStrategy contract
  * @author Aave Labs
  * @notice Asset interest rate strategy used by the Aave protocol
- * @dev Strategies are hub-specific: one strategy CAN'T be used across different Aave hubs
- *   due to the usage of asset id as index of the _interestRateData
+ * @dev Strategies are hub-specific, due to the usage of asset id as index of the _interestRateData.
  */
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMathExtended for *;
@@ -23,20 +22,23 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS
 
+  /// @inheritdoc IAssetInterestRateStrategy
+  address public immutable LIQUIDITY_HUB;
+
   /// @dev Map of assetId and their interest rate data (assetId => interestRateData)
   mapping(uint256 assetId => InterestRateData data) internal _interestRateData;
 
   /**
    * @dev Constructor.
    */
-  constructor() {
-    /// TODO: Access Control; Store authorized address to set interest rate data
+  constructor(address liquidityHub_) {
+    LIQUIDITY_HUB = liquidityHub_;
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function setInterestRateData(uint256 assetId, InterestRateData calldata rateData) external {
-    /// TODO: Access Control; Only authorized address can set interest rate data
-
+  function setInterestRateData(uint256 assetId, bytes calldata data) external {
+    require(LIQUIDITY_HUB == msg.sender, OnlyLiquidityHub());
+    InterestRateData memory rateData = abi.decode(data, (InterestRateData));
     require(
       MIN_OPTIMAL_RATIO <= rateData.optimalUsageRatio &&
         rateData.optimalUsageRatio <= MAX_OPTIMAL_RATIO,
@@ -97,21 +99,18 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   function calculateInterestRate(
     uint256 assetId,
     uint256 availableLiquidity,
-    uint256 totalDebt,
-    uint256 liquidityAdded,
-    uint256 liquidityTaken
+    uint256 baseDebt,
+    uint256 premiumDebt
   ) external view virtual override returns (uint256) {
     InterestRateData memory rateData = _interestRateData[assetId];
     require(rateData.optimalUsageRatio != 0, InterestRateDataNotSet(assetId));
 
     uint256 currentVariableBorrowRateRay = rateData.baseVariableBorrowRate.bpsToRay();
-    if (totalDebt == 0) {
+    if (baseDebt == 0) {
       return currentVariableBorrowRateRay;
     }
 
-    uint256 usageRatioRay = totalDebt.rayDivUp(
-      availableLiquidity + liquidityAdded - liquidityTaken + totalDebt
-    );
+    uint256 usageRatioRay = baseDebt.rayDivUp(availableLiquidity + baseDebt);
     uint256 optimalUsageRatioRay = rateData.optimalUsageRatio.bpsToRay();
 
     if (usageRatioRay <= optimalUsageRatioRay) {

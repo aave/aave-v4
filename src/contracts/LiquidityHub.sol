@@ -3,7 +3,9 @@ pragma solidity ^0.8.0;
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
@@ -11,7 +13,7 @@ import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
-contract LiquidityHub is ILiquidityHub {
+contract LiquidityHub is ILiquidityHub, AccessManaged {
   using SafeERC20 for IERC20;
   using WadRayMathExtended for uint256;
   using SharesMath for uint256;
@@ -25,16 +27,25 @@ contract LiquidityHub is ILiquidityHub {
   mapping(uint256 assetId => mapping(address spokeAddress => DataTypes.SpokeData spokeData))
     internal _spokes;
 
-  // /////
-  // Governance
-  // /////
+  /**
+   * @dev Constructor.
+   * @dev The authority contract must implement the AccessManaged interface for access control.
+   * @param authority_ The address of the authority contract which manages permissions.
+   */
+  constructor(address authority_) AccessManaged(authority_) {
+    // Intentionally left blank
+  }
 
-  /// @dev `decimals` is passed as input to allow registration of ERC20 assets which do not implement the optional `decimals()` function
-  function addAsset(address asset, uint8 decimals, address irStrategy) external returns (uint256) {
-    // TODO: AccessControl
-
-    require(asset != address(0), InvalidAssetAddress());
+  /// @inheritdoc ILiquidityHub
+  function addAsset(
+    address underlying,
+    uint8 decimals,
+    address feeReceiver,
+    address irStrategy
+  ) external restricted returns (uint256) {
+    require(underlying != address(0), InvalidUnderlying());
     require(decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
+    require(feeReceiver != address(0), InvalidFeeReceiver());
     require(irStrategy != address(0), InvalidIrStrategy());
 
     uint256 assetId = _assetCount++;
@@ -42,13 +53,13 @@ contract LiquidityHub is ILiquidityHub {
       active: true,
       paused: false,
       frozen: false,
-      feeReceiver: address(0),
+      feeReceiver: feeReceiver,
       liquidityFee: 0,
       irStrategy: irStrategy
     });
 
     _assets[assetId] = DataTypes.Asset({
-      underlying: asset,
+      underlying: underlying,
       decimals: decimals,
       suppliedShares: 0,
       availableLiquidity: 0,
@@ -62,25 +73,27 @@ contract LiquidityHub is ILiquidityHub {
       config: config
     });
 
-    emit AssetAdded(assetId, asset, decimals);
+    emit AssetAdded(assetId, underlying, decimals);
     emit AssetConfigUpdated(assetId, config);
 
     return assetId;
   }
 
-  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external {
-    // TODO: AccessControl
-
+  /// @inheritdoc ILiquidityHub
+  function updateAssetConfig(
+    uint256 assetId,
+    DataTypes.AssetConfig calldata config
+  ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     require(config.liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR, InvalidLiquidityFee());
-    require(config.feeReceiver != address(0) || config.liquidityFee == 0, InvalidFeeReceiver());
+    require(config.feeReceiver != address(0), InvalidFeeReceiver());
     require(config.irStrategy != address(0), InvalidIrStrategy());
 
     DataTypes.Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
     asset.config = config;
-    asset.updateBorrowRate({assetId: assetId, liquidityAdded: 0, liquidityTaken: 0});
+    asset.updateBorrowRate(assetId);
 
     emit AssetConfigUpdated(assetId, config);
   }
@@ -89,9 +102,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     address spoke,
     DataTypes.SpokeConfig calldata config
-  ) external {
-    // TODO: AccessControl
-
+  ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     require(spoke != address(0), InvalidSpoke()); // todo: how to remove spoke
 
@@ -113,13 +124,18 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     address spoke,
     DataTypes.SpokeConfig calldata config
-  ) external {
-    // TODO: AccessControl
-
+  ) external restricted {
     require(_spokes[assetId][spoke].lastUpdateTimestamp != 0, SpokeNotListed());
 
     _spokes[assetId][spoke].config = config;
     emit SpokeConfigUpdated(assetId, spoke, config);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function setInterestRateData(uint256 assetId, bytes calldata data) external restricted {
+    DataTypes.Asset storage asset = _assets[assetId];
+    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+    IAssetInterestRateStrategy(asset.config.irStrategy).setInterestRateData(assetId, data);
   }
 
   // /////
@@ -128,24 +144,20 @@ contract LiquidityHub is ILiquidityHub {
 
   /// @inheritdoc ILiquidityHub
   function add(uint256 assetId, uint256 amount, address from) external returns (uint256) {
-    // TODO: authorization - only spokes
-
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateAdd(asset, spoke, amount, from);
 
-    asset.updateBorrowRate({assetId: assetId, liquidityAdded: amount, liquidityTaken: 0});
-
     // todo: Mitigate inflation attack
     uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
     require(suppliedShares != 0, InvalidSharesAmount());
-
-    asset.availableLiquidity += amount;
     asset.suppliedShares += suppliedShares;
-
     spoke.suppliedShares += suppliedShares;
+    asset.availableLiquidity += amount;
+
+    asset.updateBorrowRate(assetId);
 
     // TODO: fee-on-transfer
     IERC20(asset.underlying).safeTransferFrom(from, address(this), amount);
@@ -157,22 +169,18 @@ contract LiquidityHub is ILiquidityHub {
 
   /// @inheritdoc ILiquidityHub
   function remove(uint256 assetId, uint256 amount, address to) external returns (uint256) {
-    // TODO: authorization - only spokes
-
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateRemove(asset, spoke, amount);
 
-    asset.updateBorrowRate({assetId: assetId, liquidityAdded: 0, liquidityTaken: amount});
-
     uint256 withdrawnShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
-
-    asset.availableLiquidity -= amount;
     asset.suppliedShares -= withdrawnShares;
-
     spoke.suppliedShares -= withdrawnShares;
+    asset.availableLiquidity -= amount;
+
+    asset.updateBorrowRate(assetId);
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
@@ -183,22 +191,18 @@ contract LiquidityHub is ILiquidityHub {
 
   /// @inheritdoc ILiquidityHub
   function draw(uint256 assetId, uint256 amount, address to) external returns (uint256) {
-    // TODO: authorization - only spokes
-
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-    _validateDraw(asset, amount, spoke.config.drawCap);
-
-    asset.updateBorrowRate({assetId: assetId, liquidityAdded: 0, liquidityTaken: amount});
+    _validateDraw(asset, spoke, amount, spoke.config.drawCap);
 
     uint256 drawnShares = asset.toDrawnSharesUp(amount); // non zero since we round up
-
-    asset.availableLiquidity -= amount;
     asset.baseDrawnShares += drawnShares;
-
     spoke.baseDrawnShares += drawnShares;
+    asset.availableLiquidity -= amount;
+
+    asset.updateBorrowRate(assetId);
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
@@ -214,7 +218,6 @@ contract LiquidityHub is ILiquidityHub {
     uint256 premiumAmount,
     address from
   ) external returns (uint256) {
-    // TODO: authorization - only spokes
     // global & spoke premiumDebt (ghost, offset, realized) is *expected* to be updated on the `refreshPremiumDebt` callback
 
     DataTypes.Asset storage asset = _assets[assetId];
@@ -223,15 +226,15 @@ contract LiquidityHub is ILiquidityHub {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
-    asset.updateBorrowRate({assetId: assetId, liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
 
-    uint256 totalRestoredAmount = baseAmount + premiumAmount;
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
-
-    asset.availableLiquidity += totalRestoredAmount;
     asset.baseDrawnShares -= baseDrawnSharesRestored;
-
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
+    uint256 totalRestoredAmount = baseAmount + premiumAmount;
+    asset.availableLiquidity += totalRestoredAmount;
+
+    /// @dev premium debt must be restored in `refreshPremiumDebt` before calling this function
+    asset.updateBorrowRate(assetId);
 
     IERC20(asset.underlying).safeTransferFrom(from, address(this), totalRestoredAmount);
 
@@ -248,7 +251,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   ) external {
-    // todo only spoke
+    require(_spokes[assetId][msg.sender].config.active, SpokeNotActive());
 
     DataTypes.Asset storage asset = _assets[assetId];
 
@@ -266,6 +269,29 @@ contract LiquidityHub is ILiquidityHub {
     // todo mathematically find premium diff ceiling and replace the `2`
     // if no premium debt is restored, premium debt remains unchanged
     require(premiumDebtAfter + realizedPremiumTaken - premiumDebtBefore <= 2, InvalidDebtChange());
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function payFee(uint256 assetId, uint256 feeShares) external {
+    DataTypes.SpokeData storage sender = _spokes[assetId][msg.sender];
+    _validatePayFee(sender, feeShares);
+
+    address feeReceiver = _assets[assetId].config.feeReceiver;
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage receiver = _spokes[assetId][feeReceiver];
+
+    asset.accrue(assetId, receiver);
+
+    uint256 suppliedShares = sender.suppliedShares;
+    uint256 suppliedAssets = asset.toSuppliedAssetsDown(suppliedShares);
+    uint256 feeAmount = asset.toSuppliedAssetsDown(feeShares);
+    require(feeAmount <= suppliedAssets, SuppliedAmountExceeded(suppliedAssets));
+
+    sender.suppliedShares = suppliedShares - feeShares;
+    receiver.suppliedShares += feeShares;
+
+    emit Remove(assetId, msg.sender, feeShares, feeAmount);
+    emit Add(assetId, feeReceiver, feeShares, feeAmount);
   }
 
   function _refresh(
@@ -363,6 +389,10 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
+  function convertToDrawnSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {
+    return _assets[assetId].toDrawnSharesUp(assets);
+  }
+
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toDrawnAssetsDown(shares);
   }
@@ -450,6 +480,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount,
     address from
   ) internal view {
+    require(spoke.config.active, SpokeNotActive());
     require(amount != 0, InvalidAddAmount());
     require(from != address(this), InvalidAddFromHub());
     require(asset.config.active, AssetNotActive());
@@ -467,6 +498,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal view {
+    require(spoke.config.active, SpokeNotActive());
     require(amount != 0, InvalidRemoveAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
@@ -477,9 +509,11 @@ contract LiquidityHub is ILiquidityHub {
 
   function _validateDraw(
     DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
     uint256 amount,
     uint256 drawCap
   ) internal view {
+    require(spoke.config.active, SpokeNotActive());
     require(amount > 0, InvalidDrawAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
@@ -497,6 +531,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 baseAmountRestored,
     uint256 premiumAmountRestored
   ) internal view {
+    require(spoke.config.active, SpokeNotActive());
     require(baseAmountRestored + premiumAmountRestored != 0, InvalidRestoreAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
@@ -518,5 +553,11 @@ contract LiquidityHub is ILiquidityHub {
   function _add(uint256 a, int256 b) internal pure returns (uint256) {
     if (b >= 0) return a + uint256(b);
     return a - uint256(-b);
+  }
+
+  function _validatePayFee(DataTypes.SpokeData storage spoke, uint256 feeShares) internal view {
+    // TODO: validate valid asset
+    require(spoke.config.active, SpokeNotActive());
+    require(feeShares != 0, InvalidFeeShares());
   }
 }

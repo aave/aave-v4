@@ -12,7 +12,7 @@ contract LiquidityHubBorrowIndex is Base {
   function setUp() public override {
     deployFixtures();
     initEnvironment();
-    _mockInterestRate(borrowRate);
+    _mockInterestRateBps(borrowRate);
   }
 
   function test_spokeAddedDuringZeroDebtPeriod() public {
@@ -231,12 +231,17 @@ contract LiquidityHubBorrowIndex is Base {
   }
 
   function _deployAndAddSpoke(uint256 assetId) internal returns (address) {
-    IPriceOracle oracle = new MockPriceOracle();
-    Spoke spoke = new Spoke(address(oracle));
+    Spoke spoke = new Spoke(address(accessManager));
+    IAaveOracle oracle = new AaveOracle(address(spoke), 8, 'Spoke (USD)');
+    vm.prank(HUB_ADMIN);
     hub.addSpoke(
       assetId,
       address(spoke),
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
+      DataTypes.SpokeConfig({
+        active: true,
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max
+      })
     );
     return address(spoke);
   }
