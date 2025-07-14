@@ -132,9 +132,9 @@ contract SpokeMulticall is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveAdded(dai2ReserveId, daiAssetId);
+    emit ISpoke.ReserveAdded(dai2ReserveId, daiAssetId, address(hub));
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveAdded(dai3ReserveId, daiAssetId);
+    emit ISpoke.ReserveAdded(dai3ReserveId, daiAssetId, address(hub));
 
     // Execute the multicall
     vm.prank(SPOKE_ADMIN);

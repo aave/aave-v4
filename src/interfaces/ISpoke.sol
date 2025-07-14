@@ -12,7 +12,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @notice Basic interface for Spoke
  */
 interface ISpoke is IMulticall, IAccessManaged {
-  event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
+  event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
   event DynamicReserveConfigUpdated(
