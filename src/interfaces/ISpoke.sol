@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
-import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
-import {DataTypes, ILiquidityHub} from 'src/libraries/types/DataTypes.sol';
+import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 /**
  * @title ISpoke
@@ -12,7 +12,7 @@ import {DataTypes, ILiquidityHub} from 'src/libraries/types/DataTypes.sol';
  * @notice Basic interface for Spoke
  */
 interface ISpoke is IMulticall, IAccessManaged {
-  event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
+  event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
   event DynamicReserveConfigUpdated(
@@ -20,8 +20,8 @@ interface ISpoke is IMulticall, IAccessManaged {
     uint16 indexed configKey,
     DataTypes.DynamicReserveConfig config
   );
-  event UserDynamicConfigRefreshed(address indexed user);
-  event UserDynamicConfigRefreshed(address indexed user, uint256 reserveId);
+  event UserDynamicConfigRefreshedAll(address indexed user);
+  event UserDynamicConfigRefreshedSingle(address indexed user, uint256 reserveId);
 
   /**
    * @notice Emitted on the supply action.
@@ -121,7 +121,8 @@ interface ISpoke is IMulticall, IAccessManaged {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
-  event OracleUpdated(uint256 indexed reserveId, address indexed oracle);
+  event OracleUpdated(address indexed oracle);
+  event ReservePriceSourceUpdated(uint256 indexed reserveId, address indexed priceSource);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
 
   /**
@@ -153,6 +154,7 @@ interface ISpoke is IMulticall, IAccessManaged {
   error ReserveFrozen();
   error InvalidCollateralFactor();
   error InvalidLiquidationBonus();
+  error IncompatibleCollateralFactorAndLiquidationBonus();
   error InvalidReserveDecimals();
   error HealthFactorBelowThreshold();
   error InvalidCloseFactor();
@@ -164,16 +166,21 @@ interface ISpoke is IMulticall, IAccessManaged {
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();
   error InvalidLiquidationFee();
-  error InvalidOracleAddress();
+  error InvalidOracle();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
   error InactivePositionManager();
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
+  function updateOracle(address newOracle) external;
+
+  function updateReservePriceSource(uint256 reserveId, address priceSource) external;
+
   function addReserve(
     uint256 assetId,
     address hub,
+    address priceSource,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynConfig
   ) external returns (uint256);
@@ -347,6 +354,7 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   function getVariableLiquidationBonus(
     uint256 reserveId,
+    address user,
     uint256 healthFactor
   ) external view returns (uint256);
 
@@ -356,5 +364,5 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   function MAX_LIQUIDITY_PREMIUM() external view returns (uint256);
 
-  function oracle() external view returns (IPriceOracle);
+  function oracle() external view returns (IAaveOracle);
 }

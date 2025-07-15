@@ -33,8 +33,8 @@ library DataTypes {
   }
 
   struct SpokeConfig {
-    uint256 supplyCap;
     bool active;
+    uint256 supplyCap;
     uint256 drawCap;
   }
 
@@ -69,13 +69,13 @@ library DataTypes {
     bool paused;
     bool borrowable;
     bool collateral;
-    uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
     uint256 liquidityPremium; // BPS TODO: use smaller uint
     uint256 liquidationFee; // BPS TODO: use smaller uint
   }
 
   struct DynamicReserveConfig {
     uint16 collateralFactor;
+    uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
   }
 
   struct UserPosition {
@@ -110,7 +110,6 @@ library DataTypes {
     uint256 reserveId;
     uint256 reservePrice;
     uint256 liquidityPremium;
-    uint256 collateralReserveCount;
     uint256 userCollateralInBaseCurrency;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;

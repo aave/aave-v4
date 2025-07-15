@@ -269,7 +269,7 @@ contract LiquidityHubAccrueInterestTest is Base {
 
     // DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
-    // uint256 expectedDebtIndex = calculateExpectedDebtIndex(
+    // uint256 expectedDebtIndex = _calculateExpectedDebtIndex(
     //   initialDebtIndex,
     //   baseBorrowRate,
     //   uint40(startTime)
@@ -373,7 +373,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt1, 'baseDebt');
 
     // Say borrow rate changes
-    _mockInterestRate(borrowRate);
+    _mockInterestRateBps(borrowRate);
     // Make an action to cache this new borrow rate
     Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2));
 

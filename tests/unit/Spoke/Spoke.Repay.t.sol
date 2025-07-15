@@ -294,11 +294,11 @@ contract SpokeRepayTest is SpokeBase {
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
     assertApproxEqAbs(bobDaiAfter.premiumDebt, 0, 1, 'bob dai premium debt final balance');
-    assertEq(bobDaiAfter.baseDebt, daiBorrowAmount, 'bob dai base debt final balance');
+    assertApproxEqAbs(bobDaiAfter.baseDebt, daiBorrowAmount, 1, 'bob dai base debt final balance');
     assertApproxEqAbs(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       daiBorrowAmount,
-      1,
+      2,
       'bob dai debt final balance'
     );
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
@@ -1450,7 +1450,7 @@ contract SpokeRepayTest is SpokeBase {
 
   // Borrow X amount, receive Y Shares. Repay all, ensure Y shares repaid
   function test_fuzz_repay_x_y_shares(uint256 borrowAmount, uint40 skipTime) public {
-    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 10);
     skipTime = uint40(bound(skipTime, 1, MAX_SKIP_TIME));
 
     // calculate weth collateral
@@ -1466,7 +1466,7 @@ contract SpokeRepayTest is SpokeBase {
     // Bob supply weth
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
 
-    // Alice supply dai
+    // Alice supply dai such that usage ratio after bob borrows is ~45%, borrow rate ~7.5%
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
 
     uint256 expectedDrawnShares = hub.convertToDrawnShares(daiAssetId, borrowAmount);

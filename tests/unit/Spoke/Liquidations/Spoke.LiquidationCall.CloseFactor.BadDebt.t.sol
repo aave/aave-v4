@@ -386,13 +386,13 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       onBehalfOf: alice
     });
 
-    _increaseCollateralReserveSupplyExchangeRate(
-      state.collateralReserve.assetId,
-      collateralReserveId,
-      supplyAmount / 2,
-      skipTime,
-      bob
-    );
+    _borrowWithoutHfCheck({
+      spoke: spoke1,
+      user: bob,
+      reserveId: collateralReserveId,
+      debtAmount: supplyAmount / 2
+    });
+    skip(skipTime);
 
     vm.assume(
       _getRequiredDebtAmountForLtHf(spoke1, alice, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
@@ -405,7 +405,11 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       desiredHf
     );
 
-    state.liquidationBonus = spoke1.getVariableLiquidationBonus(collateralReserveId, hfAfterBorrow);
+    state.liquidationBonus = spoke1.getVariableLiquidationBonus(
+      collateralReserveId,
+      alice,
+      hfAfterBorrow
+    );
 
     state = _getAccountingInfoBeforeLiq(state);
     (

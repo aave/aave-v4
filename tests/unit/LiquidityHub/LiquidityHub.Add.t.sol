@@ -3,10 +3,10 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
-contract LiquidityHubSupplyTest is LiquidityHubBase {
+contract LiquidityHubAddTest is LiquidityHubBase {
   using SharesMath for uint256;
 
-  function test_supply_revertsWith_ERC20InsufficientAllowance() public {
+  function test_add_revertsWith_ERC20InsufficientAllowance() public {
     uint256 amount = 100e18;
 
     vm.expectRevert(
@@ -21,7 +21,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, makeAddr('randomUser'));
   }
 
-  function test_supply_fuzz_revertsWith_ERC20InsufficientAllowance(uint256 amount) public {
+  function test_add_fuzz_revertsWith_ERC20InsufficientAllowance(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -35,7 +35,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, makeAddr('randomUser'));
   }
 
-  function test_supply_revertsWith_AssetNotActive() public {
+  function test_add_revertsWith_AssetNotActive() public {
     uint256 amount = 100e18;
 
     updateAssetActive(hub, daiAssetId, false);
@@ -46,7 +46,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, alice);
   }
 
-  function test_supply_fuzz_revertsWith_AssetNotActive(uint256 amount) public {
+  function test_add_fuzz_revertsWith_AssetNotActive(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     updateAssetActive(hub, daiAssetId, false);
@@ -57,7 +57,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, alice);
   }
 
-  function test_supply_revertsWith_AssetPaused() public {
+  function test_add_revertsWith_AssetPaused() public {
     uint256 amount = 100e18;
 
     updateAssetPaused(hub, daiAssetId, true);
@@ -68,7 +68,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, alice);
   }
 
-  function test_supply_fuzz_revertsWith_AssetPaused(uint256 amount) public {
+  function test_add_fuzz_revertsWith_AssetPaused(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     updateAssetPaused(hub, daiAssetId, true);
@@ -79,7 +79,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, alice);
   }
 
-  function test_supply_revertsWith_AssetFrozen() public {
+  function test_add_revertsWith_AssetFrozen() public {
     uint256 amount = 100e18;
 
     updateAssetFrozen(hub, daiAssetId, true);
@@ -90,7 +90,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, alice);
   }
 
-  function test_supply_revertsWith_AssetFrozen(uint256 amount) public {
+  function test_add_revertsWith_AssetFrozen(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     updateAssetFrozen(hub, daiAssetId, true);
@@ -101,7 +101,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, alice);
   }
 
-  function test_supply_revertsWith_SupplyCapExceeded() public {
+  function test_add_revertsWith_SupplyCapExceeded() public {
     uint256 amount = 100e18;
 
     uint256 newSupplyCap = amount - 1;
@@ -113,14 +113,15 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   }
 
   /// supply reverts if the cap is exceeded, with proper rounding (up) applied to shares into assets conversion
-  function test_supply_revertsWith_SupplyCapExceeded_due_to_rounding() public {
-    _increaseExchangeRate(daiAssetId, 100e18);
+  function test_add_revertsWith_SupplyCapExceeded_due_to_rounding() public {
+    _addLiquidity(daiAssetId, 100e18);
+    _drawLiquidity(daiAssetId, 45e18, true);
 
     uint256 totalSuppliedAssets = hub.getTotalSuppliedAssets(daiAssetId);
     uint256 totalSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
 
     // Depending on the borrow rate, this may not be true
-    // It can be adjusted by changing the amount of assets passed to _increaseExchangeRate
+    // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
     assertNotEq(
       totalSuppliedAssets % totalSuppliedShares,
       0,
@@ -156,7 +157,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     assertEq(suppliedAssetsRoundedDown + supplyAmount, newSupplyCap);
   }
 
-  function test_supply_fuzz_revertsWith_SupplyCapExceeded(uint256 amount) public {
+  function test_add_fuzz_revertsWith_SupplyCapExceeded(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 newSupplyCap = amount - 1;
@@ -167,7 +168,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, alice);
   }
 
-  function test_supply_revertsWith_SupplyCapExceeded_due_to_interest() public {
+  function test_add_revertsWith_SupplyCapExceeded_due_to_interest() public {
     uint256 daiAmount = 100e18;
 
     uint256 newSupplyCap = daiAmount + 1;
@@ -189,10 +190,9 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, 1, alice);
   }
 
-  function test_supply_fuzz_revertsWith_SupplyCapExceeded_due_to_interest(
+  function test_add_fuzz_revertsWith_SupplyCapExceeded_due_to_interest(
     uint256 daiAmount,
     uint256 drawAmount,
-    uint256 rate,
     uint256 skipTime
   ) public {
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
@@ -200,10 +200,8 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     uint256 newSupplyCap = daiAmount + 1;
-    rate = bound(rate, 1, MAX_BORROW_RATE); // 0.01% to 1000%
 
     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
-    _mockInterestRate(rate);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
@@ -222,14 +220,15 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   }
 
   // supply succeeds if cap is reached but not exceeded
-  function test_supply_SupplyCapReachedButNotExceeded() public {
-    _increaseExchangeRate(daiAssetId, 100e18);
+  function test_add_SupplyCapReachedButNotExceeded() public {
+    _addLiquidity(daiAssetId, 100e18);
+    _drawLiquidity(daiAssetId, 45e18, true);
 
     uint256 totalSuppliedAssets = hub.getTotalSuppliedAssets(daiAssetId);
     uint256 totalSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
 
     // Depending on the borrow rate, this may not be true
-    // It can be adjusted by changing the amount of assets passed to _increaseExchangeRate
+    // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
     assertNotEq(
       totalSuppliedAssets % totalSuppliedShares,
       0,
@@ -259,82 +258,45 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     });
   }
 
-  function test_supply_single_asset() public {
-    uint256 amount = 100e18;
-    uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, amount);
-
-    // hub
-    assertEq(hub.getAssetSuppliedAmount(daiAssetId), 0);
-    assertEq(hub.getAssetSuppliedShares(daiAssetId), 0);
-    assertEq(hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1)), 0);
-    assertEq(hub.getSpokeSuppliedShares(daiAssetId, address(spoke1)), 0);
-    assertEq(hub.getAsset(daiAssetId).lastUpdateTimestamp, vm.getBlockTimestamp());
-    // token balance
-    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0);
-    assertEq(tokenList.dai.balanceOf(address(hub)), 0);
-
-    vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(daiAssetId, address(spoke1), amount, amount);
-    vm.prank(address(spoke1));
-    hub.add(daiAssetId, amount, alice);
-
-    // hub
-    assertEq(hub.getAssetSuppliedAmount(daiAssetId), amount, 'hub asset suppliedAmount after');
-    assertEq(
-      hub.getAssetSuppliedShares(daiAssetId),
-      expectedSupplyShares,
-      'hub asset suppliedShares after'
-    );
-    assertEq(
-      hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1)),
-      amount,
-      'hub spoke suppliedAmount after'
-    );
-    assertEq(
-      hub.getSpokeSuppliedShares(daiAssetId, address(spoke1)),
-      expectedSupplyShares,
-      'hub spoke suppliedShares after'
-    );
-    assertEq(hub.getAsset(daiAssetId).lastUpdateTimestamp, vm.getBlockTimestamp());
-    // token balance
-    assertEq(
-      tokenList.dai.balanceOf(alice),
-      MAX_SUPPLY_AMOUNT - amount,
-      'user token balance post-supply'
-    );
-    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
-    assertEq(tokenList.dai.balanceOf(address(hub)), amount, 'hub token balance post-supply');
+  function test_add_single_asset() public {
+    test_add_fuzz_single_asset(daiAssetId, alice, 100e18);
   }
 
   /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
-  function test_supply_fuzz_single_asset(uint256 assetId, address user, uint256 amount) public {
+  function test_add_fuzz_single_asset(uint256 assetId, address user, uint256 amount) public {
     _assumeValidSupplier(user);
 
-    assetId = bound(assetId, 0, hub.getAssetCount() - 2); // Exclude duplicated DAI
+    assetId = bound(assetId, 0, hub.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, amount);
     IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
-    deal(address(underlying), user, MAX_SUPPLY_AMOUNT);
+    (uint256 baseDebtBefore, uint256 premiumDebtBefore) = hub.getAssetDebt(assetId);
+    uint256 availableLiquidityBefore = hub.getAvailableLiquidity(assetId);
+    vm.expectCall(
+      address(irStrategy),
+      abi.encodeCall(
+        IBasicInterestRateStrategy.calculateInterestRate,
+        (assetId, availableLiquidityBefore + amount, baseDebtBefore, premiumDebtBefore)
+      )
+    );
+
     vm.prank(user);
     underlying.approve(address(hub), amount);
+    deal(address(underlying), user, amount);
 
+    uint256 shares = hub.convertToSuppliedShares(assetId, amount);
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(user, address(hub), amount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(assetId, address(spoke1), amount, amount);
+    emit ILiquidityHub.Add(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
     hub.add(assetId, amount, user);
 
     // hub
     assertEq(hub.getAssetSuppliedAmount(assetId), amount, 'hub asset suppliedAmount after');
-    assertEq(
-      hub.getAssetSuppliedShares(assetId),
-      expectedSupplyShares,
-      'hub asset suppliedShares after'
-    );
+    assertEq(hub.getAssetSuppliedShares(assetId), shares, 'hub asset suppliedShares after');
     assertEq(
       hub.getSpokeSuppliedAmount(assetId, address(spoke1)),
       amount,
@@ -342,19 +304,26 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     );
     assertEq(
       hub.getSpokeSuppliedShares(assetId, address(spoke1)),
-      expectedSupplyShares,
+      shares,
       'hub spoke suppliedShares after'
     );
     assertEq(hub.getAsset(assetId).lastUpdateTimestamp, vm.getBlockTimestamp());
+    assertEq(
+      hub.getAsset(assetId).availableLiquidity,
+      availableLiquidityBefore + amount,
+      'hub available liquidity after'
+    );
+    (uint256 baseDebtAfter, ) = hub.getAssetDebt(assetId);
+    assertEq(baseDebtAfter, baseDebtBefore, 'hub base debt after');
+    assertBorrowRateSynced(hub, assetId, 'hub.add');
     // token balance
-    assertEq(underlying.balanceOf(user), MAX_SUPPLY_AMOUNT - amount, 'user token balance post-supply');
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
     assertEq(underlying.balanceOf(address(hub)), amount, 'hub token balance post-supply');
   }
 
   /// @dev single user, 2 spokes, 2 assets, 2 amounts
   // test that assets across different spokes don't affect each others' accounting
-  function test_supply_fuzz_multi_asset_multi_spoke(
+  function test_add_fuzz_multi_asset_multi_spoke(
     uint256 assetId,
     uint256 amount,
     uint256 amount2
@@ -434,26 +403,29 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       amount2,
       'spoke2 suppliedAmount after'
     );
-    assertEq(underlying2.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount2, 'user asset2 balance after');
+    assertEq(
+      underlying2.balanceOf(alice),
+      MAX_SUPPLY_AMOUNT - amount2,
+      'user asset2 balance after'
+    );
     assertEq(underlying2.balanceOf(address(spoke2)), 0, 'spoke2 asset2 balance after');
     assertEq(underlying2.balanceOf(address(hub)), amount2, 'hub asset2 balance after');
   }
 
-  function test_supply_revertsWith_InvalidSupplyAmount() public {
+  function test_add_revertsWith_InvalidAddAmount() public {
     uint256 assetId = 0;
     uint256 amount = 0;
 
-    vm.expectRevert(ILiquidityHub.InvalidSupplyAmount.selector);
+    vm.expectRevert(ILiquidityHub.InvalidAddAmount.selector);
     vm.prank(address(spoke1));
     hub.add(assetId, amount, alice);
   }
 
-  function test_supply_revertsWith_InvalidSharesAmount() public {
+  function test_add_revertsWith_InvalidSharesAmount() public {
     // inflate exchange rate
     uint256 daiAmount = 1e9 * 1e18;
     uint256 drawAmount = daiAmount;
 
-    _mockInterestRate(MAX_BORROW_RATE);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
@@ -475,17 +447,14 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, alice);
   }
 
-  function test_supply_fuzz_revertsWith_InvalidSharesAmount_due_to_index(
+  function test_add_fuzz_revertsWith_InvalidSharesAmount_due_to_index(
     uint256 daiAmount,
     uint256 supplyAmount,
-    uint256 skipTime,
-    uint256 rate
+    uint256 skipTime
   ) public {
     // inflate exchange rate using large values
     daiAmount = bound(daiAmount, 1e20, MAX_SUPPLY_AMOUNT);
     skipTime = bound(skipTime, 365 days, 100 * 365 days);
-    rate = bound(rate, MAX_BORROW_RATE / 10, MAX_BORROW_RATE);
-    _mockInterestRate(rate);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
@@ -509,14 +478,14 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     hub.add(daiAssetId, supplyAmount, alice);
   }
 
-  function test_supply_revertsWith_InvalidAddFromHub() public {
+  function test_add_revertsWith_InvalidAddFromHub() public {
     vm.expectRevert(ILiquidityHub.InvalidAddFromHub.selector, address(hub));
 
     vm.prank(address(spoke1));
     hub.add(daiAssetId, 100e18, address(hub));
   }
 
-  function test_supply_with_increased_index() public {
+  function test_add_with_increased_index() public {
     uint256 daiAmount = 100e18;
 
     _supplyAndDrawLiquidity({
@@ -529,24 +498,37 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       drawAmount: daiAmount,
       skipTime: 365 days
     });
-    assertLt(hub.convertToSuppliedShares(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
 
     (, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
     assertEq(premiumDebt, 0); // zero premium debt
 
     uint256 supplyAmount = 10e18; // this can be 0
-    uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, supplyAmount);
+    uint256 shares = hub.convertToSuppliedShares(daiAssetId, supplyAmount);
+    assertLt(shares, supplyAmount); // index increased, exch rate > 1
 
     uint256 suppliedAssetsBefore = hub.getAssetSuppliedAmount(daiAssetId);
     uint256 suppliedSharesBefore = hub.getAssetSuppliedShares(daiAssetId);
 
-    Utils.add({
-      hub: hub,
-      assetId: daiAssetId,
-      caller: address(spoke2),
-      amount: supplyAmount,
-      user: bob
-    });
+    (uint256 baseDebtBefore, uint256 premiumDebtBefore) = hub.getAssetDebt(daiAssetId);
+    uint256 availableLiquidityBefore = hub.getAvailableLiquidity(daiAssetId);
+    vm.expectCall(
+      address(irStrategy),
+      abi.encodeCall(
+        IBasicInterestRateStrategy.calculateInterestRate,
+        (daiAssetId, availableLiquidityBefore + supplyAmount, baseDebtBefore, premiumDebtBefore)
+      )
+    );
+
+    vm.prank(alice);
+    tokenList.dai.approve(address(hub), supplyAmount);
+
+    vm.expectEmit(address(tokenList.dai));
+    emit IERC20.Transfer(alice, address(hub), supplyAmount);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Add(daiAssetId, address(spoke2), shares, supplyAmount);
+
+    vm.prank(address(spoke2));
+    hub.add(daiAssetId, supplyAmount, alice);
 
     assertEq(
       hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2)),
@@ -555,7 +537,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     );
     assertEq(
       hub.getSpokeSuppliedShares(daiAssetId, address(spoke2)),
-      suppliedSharesBefore + expectedSupplyShares,
+      suppliedSharesBefore + shares,
       'spoke suppliedShares after'
     );
     // Hub and Spoke accounting do not match because of liquidity fees
@@ -566,12 +548,20 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     );
     assertGe(
       hub.getAssetSuppliedShares(daiAssetId),
-      suppliedSharesBefore + expectedSupplyShares,
+      suppliedSharesBefore + shares,
       'hub suppliedShares after'
     );
+    assertEq(
+      hub.getAsset(daiAssetId).availableLiquidity,
+      availableLiquidityBefore + supplyAmount,
+      'hub available liquidity after'
+    );
+    (uint256 baseDebtAfter, ) = hub.getAssetDebt(daiAssetId);
+    assertEq(baseDebtAfter, baseDebtBefore, 'hub base debt after');
+    assertBorrowRateSynced(hub, daiAssetId, 'hub.add');
   }
 
-  function test_supply_with_increased_index_with_premium() public {
+  function test_add_with_increased_index_with_premium() public {
     uint256 daiAmount = 100e18;
     _addLiquidity(daiAssetId, daiAmount);
     _drawLiquidity(daiAssetId, daiAmount, true);
@@ -620,7 +610,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     );
   }
 
-  function test_supply_multi_supply_minimal_shares() public {
+  function test_add_multi_supply_minimal_shares() public {
     uint256 amount = 100e18;
 
     (, uint256 drawnAmount) = _supplyAndDrawLiquidity({
@@ -722,18 +712,12 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     );
   }
 
-  function test_supply_fuzz_single_spoke_multi_supply(
-    uint256 amount,
-    uint256 skipTime,
-    uint256 rate
-  ) public {
+  function test_add_fuzz_single_spoke_multi_supply(uint256 amount, uint256 skipTime) public {
     uint256 assetId = daiAssetId;
     uint256 numSupplies = 5;
 
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / numSupplies);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-    rate = bound(rate, 1, MAX_BORROW_RATE);
-    _mockInterestRate(rate);
 
     TestSupplyParams memory params;
     (params.assetSuppliedShares, params.drawnShares) = _supplyAndDrawLiquidity({
