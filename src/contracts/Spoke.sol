@@ -634,10 +634,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal pure {
     require(config.liquidityPremium <= MAX_LIQUIDITY_PREMIUM, InvalidLiquidityPremium()); // max 1000.00%
-    require(
-      config.liquidationFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
-      InvalidLiquidationFee()
-    );
   }
 
   function _validateDynamicReserveConfig(
@@ -656,6 +652,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         PercentageMathExtended.PERCENTAGE_FACTOR,
       IncompatibleCollateralFactorAndLiquidationBonus()
     ); // Enforces that at moment loan is taken, there should be enough collateral to cover liquidation
+    require(
+      config.liquidationFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
+      InvalidLiquidationFee()
+    );
   }
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal pure {
@@ -947,6 +947,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       hub.convertToDrawnAssets(assetId, reserve.baseDrawnShares),
       reserve.realizedPremium + accruedPremium
     );
+  }
+
+  function _getLiquidationFee(uint256 reserveId, address user) internal view returns (uint256) {
+    return _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey].liquidationFee;
   }
 
   // todo optimize, merge logic duped borrow/repay, rename
@@ -1290,7 +1294,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.closeFactor = _liquidationConfig.closeFactor;
     vars.collateralAssetPrice = oracle.getReservePrice(vars.collateralReserveId);
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
-    vars.liquidationFee = collateralReserve.config.liquidationFee;
+    vars.liquidationFee = _getLiquidationFee(vars.collateralReserveId, user);
 
     vars.actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate({
       debtToCover: debtToCover,

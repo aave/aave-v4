@@ -82,7 +82,6 @@ contract SpokeConfigTest is SpokeBase {
       frozen: !config.frozen,
       paused: !config.paused,
       liquidityPremium: config.liquidityPremium + 1,
-      liquidationFee: config.liquidationFee + 1,
       borrowable: !config.borrowable,
       collateral: !config.collateral
     });
@@ -99,11 +98,6 @@ contract SpokeConfigTest is SpokeBase {
       newReserveConfig.liquidityPremium,
       0,
       spoke1.MAX_LIQUIDITY_PREMIUM()
-    );
-    newReserveConfig.liquidationFee = bound(
-      newReserveConfig.liquidationFee,
-      0,
-      PercentageMath.PERCENTAGE_FACTOR
     );
 
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -364,24 +358,24 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateDynamicReserveConfig(daiReserveId, config);
   }
 
-  function test_updateReserveConfig_revertsWith_InvalidLiquidationFee() public {
+  function test_updateDynamicReserveConfig_revertsWith_InvalidLiquidationFee() public {
     uint256 liquidationFee = PercentageMath.PERCENTAGE_FACTOR + 1;
 
-    test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationFee(liquidationFee);
+    test_updateDynamicReserveConfig_fuzz_revertsWith_InvalidLiquidationFee(liquidationFee);
   }
 
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidationFee(
+  function test_updateDynamicReserveConfig_fuzz_revertsWith_InvalidLiquidationFee(
     uint256 liquidationFee
   ) public {
     liquidationFee = bound(liquidationFee, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint256).max);
 
     uint256 daiReserveId = _daiReserveId(spoke1);
-    DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
+    DataTypes.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(daiReserveId);
     config.liquidationFee = liquidationFee;
 
     vm.expectRevert(ISpoke.InvalidLiquidationFee.selector);
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(daiReserveId, config);
+    spoke1.updateDynamicReserveConfig(daiReserveId, config);
   }
 
   function test_addReserve() public {
@@ -391,13 +385,13 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       liquidityPremium: 10_00,
-      liquidationFee: 10_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 110_00
+      liquidationBonus: 110_00,
+      liquidationFee: 10_00
     });
 
     address reserveSource = _deployMockPriceFeed(spoke1, 2000e8);
@@ -433,14 +427,14 @@ contract SpokeConfigTest is SpokeBase {
       active: true,
       frozen: true,
       paused: true,
-      liquidationFee: 0,
       liquidityPremium: 10_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 110_00
+      liquidationBonus: 110_00,
+      liquidationFee: 0
     });
 
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
@@ -457,13 +451,13 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       liquidityPremium: 10_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 110_00
+      liquidationBonus: 110_00,
+      liquidationFee: 0
     });
 
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
@@ -481,13 +475,13 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       liquidityPremium: 10_00,
-      liquidationFee: 10_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 110_00
+      liquidationBonus: 110_00,
+      liquidationFee: 10_00
     });
 
     vm.expectRevert(ISpoke.InvalidOracle.selector);
