@@ -333,7 +333,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.borrow({
       spoke: spoke2,
       reserveId: _dai2ReserveId(spoke2),
-      user: alice,
+      caller: alice,
       amount: dai2SupplyAmount,
       onBehalfOf: alice
     });
