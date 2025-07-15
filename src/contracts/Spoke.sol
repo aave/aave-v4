@@ -114,7 +114,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
 
-    emit ReserveAdded(reserveId, assetId);
+    emit ReserveAdded(reserveId, assetId, hub);
     emit ReserveConfigUpdated(reserveId, config);
     emit DynamicReserveConfigUpdated(reserveId, dynamicConfigKey, dynamicConfig);
 
