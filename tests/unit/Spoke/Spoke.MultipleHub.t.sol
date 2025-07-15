@@ -31,36 +31,42 @@ contract SpokeMultipleHubTest is SpokeBase {
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 20_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory dynDaiHub2Config = DataTypes.DynamicReserveConfig({
-      collateralFactor: 78_00
+      collateralFactor: 78_00,
+      liquidationBonus: 100_00
     });
-    daiHub2ReserveId = spoke1.addReserve(address(hub2), daiAssetId, _deployMockPriceFeed(spoke1, 1e8), daiHub2Config, dynDaiHub2Config);
+    daiHub2ReserveId = spoke1.addReserve(
+      address(hub2),
+      daiAssetId,
+      _deployMockPriceFeed(spoke1, 1e8),
+      daiHub2Config,
+      dynDaiHub2Config
+    );
 
     // Relist hub 3's dai on spoke 1
     DataTypes.ReserveConfig memory daiHub3Config = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
       liquidityPremium: 20_00,
       liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory dynDaiHub3Config = DataTypes.DynamicReserveConfig({
-      collateralFactor: 78_00
+      collateralFactor: 78_00,
+      liquidationBonus: 100_00
     });
     daiHub3ReserveId = spoke1.addReserve(
       address(hub3), 
       hub3DaiAssetId, 
       _deployMockPriceFeed(spoke1, 1e8),
-      daiHub3Config, 
+      daiHub3Config,
       dynDaiHub3Config
     );
 

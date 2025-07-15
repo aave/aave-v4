@@ -832,6 +832,15 @@ contract SpokeBase is Base {
     return configs;
   }
 
+  function _getUserDynConfig(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId
+  ) internal view returns (DataTypes.DynamicReserveConfig memory) {
+    return
+      spoke.getDynamicReserveConfig(reserveId, spoke.getUserPosition(reserveId, user).configKey);
+  }
+
   // deref and return current UserDynamicReserveConfig for a specific reserveId on user position.
   function _getUserDynConfigKeys(
     ISpoke spoke,
@@ -840,15 +849,6 @@ contract SpokeBase is Base {
   ) internal view returns (DynamicConfig memory) {
     DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
     return DynamicConfig(pos.configKey, spoke.getUsingAsCollateral(reserveId, user));
-  }
-
-  function assertEq(
-    DataTypes.DynamicReserveConfig memory a,
-    DataTypes.DynamicReserveConfig memory b,
-    string memory label
-  ) internal pure {
-    assertEq(a.collateralFactor, b.collateralFactor, string.concat(label, ' collateral factor'));
-    assertEq(abi.encode(a), abi.encode(b), label); // sanity
   }
 
   function assertEq(DynamicConfig[] memory a, DynamicConfig[] memory b) internal pure {

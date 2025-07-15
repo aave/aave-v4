@@ -116,18 +116,6 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateLiquidationBonus(
-    address spoke,
-    uint256 reserveId,
-    uint256 liquidationBonus
-  ) external onlyOwner {
-    ISpoke targetSpoke = ISpoke(spoke);
-    DataTypes.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
-    reserveConfig.liquidationBonus = liquidationBonus;
-    targetSpoke.updateReserveConfig(reserveId, reserveConfig);
-  }
-
-  /// @inheritdoc ISpokeConfigurator
   function updateLiquidityPremium(
     address spoke,
     uint256 reserveId,
@@ -161,6 +149,19 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
       .getDynamicReserveConfig(reserveId);
     dynamicReserveConfig.collateralFactor = collateralFactor;
+    targetSpoke.updateDynamicReserveConfig(reserveId, dynamicReserveConfig);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function updateLiquidationBonus(
+    address spoke,
+    uint256 reserveId,
+    uint256 liquidationBonus
+  ) external onlyOwner {
+    ISpoke targetSpoke = ISpoke(spoke);
+    DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
+      .getDynamicReserveConfig(reserveId);
+    dynamicReserveConfig.liquidationBonus = liquidationBonus;
     targetSpoke.updateDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 }

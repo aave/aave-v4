@@ -110,18 +110,6 @@ interface ISpokeConfigurator {
   function updateCollateral(address spoke, uint256 reserveId, bool collateral) external;
 
   /**
-   * @notice Updates the liquidation bonus of a reserve.
-   * @param spoke The address of the spoke.
-   * @param reserveId The identifier of the reserve.
-   * @param liquidationBonus The new liquidation bonus.
-   */
-  function updateLiquidationBonus(
-    address spoke,
-    uint256 reserveId,
-    uint256 liquidationBonus
-  ) external;
-
-  /**
    * @notice Updates the liquidity premium of a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
@@ -151,5 +139,17 @@ interface ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint16 collateralFactor
+  ) external;
+
+  /**
+   * @notice Updates the liquidation bonus of a reserve.
+   * @param spoke The address of the spoke.
+   * @param reserveId The identifier of the reserve.
+   * @param liquidationBonus The new liquidation bonus.
+   */
+  function updateLiquidationBonus(
+    address spoke,
+    uint256 reserveId,
+    uint256 liquidationBonus
   ) external;
 }

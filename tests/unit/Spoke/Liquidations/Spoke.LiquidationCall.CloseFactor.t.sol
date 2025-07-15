@@ -389,7 +389,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
-    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
+    state.collDynConfig = _getUserDynConfig(spoke1, alice, collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
 
     liqConfig = _bound(liqConfig);
@@ -449,8 +449,14 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       desiredHf
     );
 
-    state.liquidationBonus = spoke1.getVariableLiquidationBonus(collateralReserveId, hfAfterBorrow);
+    state.liquidationBonus = spoke1.getVariableLiquidationBonus(
+      collateralReserveId,
+      alice,
+      hfAfterBorrow
+    );
     state = _getAccountingInfoBeforeLiq(state);
+    // Get user's dynamic config key before liquidation
+    uint16 configKeyBefore = spoke1.getUserPosition(collateralReserveId, alice).configKey;
 
     (
       state.collToLiq,
@@ -498,6 +504,12 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
     state = _getAccountingInfoAfterLiq(state);
+    // Validate user's dynamic config key unchanged after liquidation
+    assertEq(
+      spoke1.getUserPosition(collateralReserveId, alice).configKey,
+      configKeyBefore,
+      'User dynamic config key changed after liquidation'
+    );
 
     // with repay donation, it is possible to repay more than the actual debt amount
     if (stdMath.delta(state.debt.balanceAfter, state.debt.balanceBefore) > requiredDebtAmount) {

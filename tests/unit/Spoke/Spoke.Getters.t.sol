@@ -21,7 +21,7 @@ contract SpokeGettersTest is SpokeBase {
   ) public {
     reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
     healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, healthFactor);
+    uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, bob, healthFactor);
 
     _config = spoke1.getLiquidationConfig();
 
@@ -30,7 +30,7 @@ contract SpokeGettersTest is SpokeBase {
       LiquidationLogic.calculateVariableLiquidationBonus(
         _config,
         healthFactor,
-        spoke1.getReserve(reserveId).config.liquidationBonus,
+        spoke1.getDynamicReserveConfig(reserveId).liquidationBonus,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       ),
       'calc should match'
@@ -67,14 +67,14 @@ contract SpokeGettersTest is SpokeBase {
     spoke1.updateLiquidationConfig(config);
     _config = spoke1.getLiquidationConfig();
 
-    uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, healthFactor);
+    uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, bob, healthFactor);
 
     assertEq(
       liqBonus,
       LiquidationLogic.calculateVariableLiquidationBonus(
         _config,
         healthFactor,
-        spoke1.getReserve(reserveId).config.liquidationBonus,
+        spoke1.getDynamicReserveConfig(reserveId).liquidationBonus,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       ),
       'calc should match'
