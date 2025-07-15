@@ -2,24 +2,21 @@
 pragma solidity ^0.8.0;
 
 library PairArray {
-    uint256 constant VALUE_BITS = 224;
+    uint256 constant VALUE_BITS = 111;
     uint256 constant VALUE_MASK = (1 << VALUE_BITS) - 1;
-    uint256 constant SMALL_LENGTH_LIMIT = 13;
+    uint256 constant KEY_BITS = 17;
+    uint256 constant KEY_MASK = ((1 << KEY_BITS) - 1) << VALUE_BITS;
 
     struct Array {
         uint256[] items;
-        uint256 maxKey;
     }
 
     function init(uint256 size) internal pure returns (Array memory) {
-        return Array({items: new uint256[](size), maxKey: 0});
+        return Array({items: new uint256[](size)});
     }
 
     function set(Array memory self, uint256 index, uint256 key, uint256 value) internal pure {
         self.items[index] = pack(key, value);
-        if (key > self.maxKey) {
-            self.maxKey = key;
-        }
     }
 
     function get(Array memory self, uint256 index) internal pure returns (uint256, uint256) {
@@ -31,73 +28,48 @@ library PairArray {
     }
 
     function sortByKey(Array memory self) internal pure {
-        if (self.items.length < SMALL_LENGTH_LIMIT) {
-            bubbleSortByKey(self);
-        } else {
-            radixSortByKey(self);
-        }
-    }
+        uint256 len = length(self);
 
-    function bubbleSortByKey(Array memory self) internal pure {
-        uint256 length = self.items.length;
-        for (uint256 i = 0; i < length; ) {
-            for (uint256 j = i + 1; j < length;) {
-                if (self.items[i] > self.items[j]) {
-                    unchecked {
-                        self.items[i] += self.items[j];
-                        self.items[j] = self.items[i] - self.items[j];
-                        self.items[i] -= self.items[j];
-                    }
-                }
+        uint8[5] memory shifts = [4, 0, 8, 12, 16];
+        for (uint256 shiftIndex = 0; shiftIndex < shifts.length; shiftIndex++) {
+            uint256 shift = shifts[shiftIndex];
+
+            uint256 i;
+            uint256 countMap = 0;
+            for (i = 0; i < len; i++) {
+                countMap = inc(countMap, (getKey(self, i) >> shift) & 0xF, 1);
+            }
+
+            for (i = 1; i < 16; i++) {
+                countMap = inc(countMap, i, getCount(countMap, i - 1));
+            }
+
+            i = len;
+            while (i > 0) {
                 unchecked {
-                    ++j;
+                    i -= 1;
+                }
+                uint256 digit = (getKey(self, i) >> shift) & 0xF;
+                self.items[getCount(countMap, digit) - 1] |= (self.items[i] << (KEY_BITS + VALUE_BITS));
+                countMap = dec(countMap, digit, 1);
+            }
+
+            bool sorted = true;
+            for (i = 0; i < len; i++) {
+                self.items[i] >>= (KEY_BITS + VALUE_BITS);
+                if (i > 0 && self.items[i-1] > self.items[i]) {
+                    sorted = false;
                 }
             }
-            unchecked {
-                ++i;
+
+            if (sorted) {
+                break;
             }
-        }
-    }
-
-    function radixSortByKey(Array memory self) internal pure {
-        uint256 maxKey = self.maxKey;
-        for (uint256 exp = 1; exp <= maxKey;) {
-            countSortByKey(self, exp);
-            unchecked {
-                exp *= 10;
-            }
-        }
-    }
-
-    function countSortByKey(Array memory self, uint256 exp) internal pure {
-        uint256 length = self.items.length;
-        uint256[] memory output = new uint256[](length);
-        uint256[] memory count = new uint256[](10);
-        for (uint256 i = 0; i < length; i++) {
-            count[(getKey(self, i) / exp) % 10] += 1;
-        }
-
-        for (uint256 i = 1; i < 10; i++) {
-            count[i] += count[i - 1];
-        }
-
-        uint256 i = length;
-        while (i > 0) {
-            unchecked {
-                i -= 1;
-            }
-            uint256 digit = (getKey(self, i) / exp) % 10;
-            output[count[digit] - 1] = self.items[i];
-            count[digit] -= 1;
-        }
-
-        for (uint256 i = 0; i < length; i++) {
-            self.items[i] = output[i];
         }
     }
 
     function getKey(Array memory self, uint256 i) internal pure returns (uint256) {
-        return self.items[i] >> VALUE_BITS;
+        return (self.items[i] & KEY_MASK) >> VALUE_BITS;
     }
 
     function getValue(Array memory self, uint256 i) internal pure returns (uint256) {
@@ -106,5 +78,17 @@ library PairArray {
 
     function pack(uint256 key, uint256 value) internal pure returns (uint256) {
         return (key << VALUE_BITS) | value;
+    }
+
+    function inc(uint256 countMap, uint256 digit, uint256 delta) internal pure returns (uint256) {
+        return countMap + (delta << (digit << 4));
+    }
+
+    function dec(uint256 countMap, uint256 digit, uint256 delta) internal pure returns (uint256) {
+        return countMap - (delta << (digit << 4));
+    }
+
+    function getCount(uint256 countMap, uint256 digit) internal pure returns (uint256) {
+        return (countMap >> (digit << 4)) & 0xF;
     }
 }
