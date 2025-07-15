@@ -163,19 +163,35 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     targetHub.updateAssetConfig(assetId, config);
   }
 
+  /// @inheritdoc IHubConfigurator
+  function updateAssetConfig(
+    address hub,
+    uint256 assetId,
+    DataTypes.AssetConfig calldata config
+  ) external override onlyOwner {
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    _updateFeeReceiverSpokeConfig(
+      targetHub,
+      assetId,
+      targetHub.getAssetConfig(assetId),
+      config.feeReceiver
+    );
+    targetHub.updateAssetConfig(assetId, config);
+  }
+
   function _updateFeeReceiverSpokeConfig(
     ILiquidityHub hub,
     uint256 assetId,
-    DataTypes.AssetConfig memory config,
+    DataTypes.AssetConfig memory oldConfig,
     address newFeeReceiver
   ) internal {
-    if (config.feeReceiver == newFeeReceiver) {
+    if (oldConfig.feeReceiver == newFeeReceiver) {
       return;
     }
 
     hub.updateSpokeConfig(
       assetId,
-      config.feeReceiver,
+      oldConfig.feeReceiver,
       DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
     );
 

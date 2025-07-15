@@ -33,14 +33,11 @@ interface ISpokeConfigurator {
   function updateLiquidationCloseFactor(address spoke, uint256 closeFactor) external;
 
   /**
-   * @notice Updates the liquidation health factor for max bonus of a spoke.
+   * @notice Updates the health factor for max liquidation bonus of a spoke.
    * @param spoke The address of the spoke.
-   * @param healthFactorForMaxBonus The new liquidation health factor for max bonus.
+   * @param healthFactorForMaxBonus The new health factor for max liquidation bonus.
    */
-  function updateLiquidationHealthFactorForMaxBonus(
-    address spoke,
-    uint256 healthFactorForMaxBonus
-  ) external;
+  function updateHealthFactorForMaxBonus(address spoke, uint256 healthFactorForMaxBonus) external;
 
   /**
    * @notice Updates the liquidation bonus factor of a spoke.
@@ -130,6 +127,18 @@ interface ISpokeConfigurator {
   function updateLiquidationFee(address spoke, uint256 reserveId, uint256 liquidationFee) external;
 
   /**
+   * @notice Updates the config of a reserve.
+   * @param spoke The address of the spoke.
+   * @param reserveId The identifier of the reserve.
+   * @param config The new reserve config.
+   */
+  function updateReserveConfig(
+    address spoke,
+    uint256 reserveId,
+    DataTypes.ReserveConfig calldata config
+  ) external;
+
+  /**
    * @notice Updates the collateral factor of a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
@@ -151,5 +160,17 @@ interface ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint256 liquidationBonus
+  ) external;
+
+  /**
+   * @notice Updates the dynamic config of a reserve.
+   * @param spoke The address of the spoke.
+   * @param reserveId The identifier of the reserve.
+   * @param dynamicConfig The new dynamic config.
+   */
+  function updateDynamicReserveConfig(
+    address spoke,
+    uint256 reserveId,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external;
 }

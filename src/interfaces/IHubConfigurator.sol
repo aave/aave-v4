@@ -130,4 +130,16 @@ interface IHubConfigurator {
    * @param irStrategy The new interest rate strategy.
    */
   function updateInterestRateStrategy(address hub, uint256 assetId, address irStrategy) external;
+
+  /**
+   * @notice Updates the config of an asset.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param config The new asset config.
+   */
+  function updateAssetConfig(
+    address hub,
+    uint256 assetId,
+    DataTypes.AssetConfig calldata config
+  ) external;
 }

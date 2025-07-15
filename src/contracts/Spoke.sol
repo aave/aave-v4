@@ -92,8 +92,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId = reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
+    require(assetId < ILiquidityHub(hub).getAssetCount(), AssetNotListed());
     DataTypes.Asset memory asset = ILiquidityHub(hub).getAsset(assetId);
-    require(asset.underlying != address(0), AssetNotListed());
 
     _updateReservePriceSource(reserveId, priceSource);
 

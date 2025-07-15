@@ -42,7 +42,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateLiquidationHealthFactorForMaxBonus(
+  function updateHealthFactorForMaxBonus(
     address spoke,
     uint256 healthFactorForMaxBonus
   ) external onlyOwner {
@@ -140,6 +140,15 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
+  function updateReserveConfig(
+    address spoke,
+    uint256 reserveId,
+    DataTypes.ReserveConfig calldata config
+  ) external onlyOwner {
+    ISpoke(spoke).updateReserveConfig(reserveId, config);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
   function updateCollateralFactor(
     address spoke,
     uint256 reserveId,
@@ -163,5 +172,14 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
       .getDynamicReserveConfig(reserveId);
     dynamicReserveConfig.liquidationBonus = liquidationBonus;
     targetSpoke.updateDynamicReserveConfig(reserveId, dynamicReserveConfig);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function updateDynamicReserveConfig(
+    address spoke,
+    uint256 reserveId,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
+  ) external onlyOwner {
+    ISpoke(spoke).updateDynamicReserveConfig(reserveId, dynamicConfig);
   }
 }
