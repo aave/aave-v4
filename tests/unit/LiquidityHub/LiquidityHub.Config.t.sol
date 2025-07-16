@@ -37,18 +37,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertEq(hub.getSpokeConfig(assetId, address(spoke1)), spokeConfig);
   }
 
-  function test_updateSpokeConfig_fuzz_revertsWith_SpokeNotListed(
-    uint256 assetId,
-    address spoke,
-    DataTypes.SpokeConfig calldata spokeConfig
-  ) public {
-    if (hub.getSpoke(assetId, spoke).lastUpdateTimestamp != 0) {
-      assetId = bound(assetId, hub.getAssetCount(), type(uint256).max);
-    }
-    vm.expectRevert(ILiquidityHub.SpokeNotListed.selector);
-    Utils.updateSpokeConfig(hub, ADMIN, assetId, spoke, spokeConfig);
-  }
-
   function test_updateSpokeConfig_fuzz(
     uint256 assetId,
     DataTypes.SpokeConfig calldata spokeConfig
@@ -94,7 +82,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   ) public {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(interestRateStrategy);
-  
+
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
@@ -142,7 +130,14 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(expectedAssetId, expectedConfig);
 
-    uint256 assetId = Utils.addAsset(hub, ADMIN, underlying, decimals, feeReceiver, interestRateStrategy);
+    uint256 assetId = Utils.addAsset(
+      hub,
+      ADMIN,
+      underlying,
+      decimals,
+      feeReceiver,
+      interestRateStrategy
+    );
 
     assertEq(assetId, expectedAssetId, 'asset id');
     assertEq(hub.getAssetCount(), assetId + 1, 'asset count');
@@ -213,7 +208,11 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     // Always accrue first, based on old config
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), vm.getBlockTimestamp());
+    emit ILiquidityHub.DrawnIndexUpdate(
+      assetId,
+      hub.previewDrawnIndex(assetId),
+      vm.getBlockTimestamp()
+    );
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(assetId, newConfig);
 

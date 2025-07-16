@@ -112,7 +112,6 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       premiumDrawnShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
-      lastUpdateTimestamp: block.timestamp,
       config: config
     });
 
@@ -125,8 +124,6 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     address spoke,
     DataTypes.SpokeConfig calldata config
   ) external restricted {
-    require(_spokes[assetId][spoke].lastUpdateTimestamp != 0, SpokeNotListed());
-
     _spokes[assetId][spoke].config = config;
     emit SpokeConfigUpdated(assetId, spoke, config);
   }

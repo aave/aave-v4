@@ -335,17 +335,17 @@ contract ConfiguratorTest is LiquidityHubBase {
     configurator.updateFeeReceiver(address(hub), vm.randomUint(), vm.randomAddress());
   }
 
-  function test_updateFeeReceiver_fuzz_revertsWith_InvalidSpoke(uint256 assetId) public {
+  function test_updateFeeReceiver_fuzz_revertsWith_InvalidFeeReceiver(uint256 assetId) public {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
-    // reverts when adding zero as new spoke
-    vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
+    // reverts when updating asset's fee receiver to zero spoke
+    vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
     vm.prank(CONFIGURATOR_ADMIN);
     configurator.updateFeeReceiver(address(hub), assetId, address(0));
   }
 
-  function test_updateFeeReceiver_revertsWith_InvalidSpoke() public {
-    test_updateFeeReceiver_fuzz_revertsWith_InvalidSpoke(daiAssetId);
+  function test_updateFeeReceiver_revertsWith_InvalidFeeReceiver() public {
+    test_updateFeeReceiver_fuzz_revertsWith_InvalidFeeReceiver(daiAssetId);
   }
 
   function test_updateFeeReceiver_fuzz(uint256 assetId, address feeReceiver) public {
@@ -363,44 +363,26 @@ contract ConfiguratorTest is LiquidityHubBase {
           (
             assetId,
             oldConfig.feeReceiver,
-            DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+            DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: true})
           )
         )
       );
 
-      if (hub.getSpoke(assetId, feeReceiver).lastUpdateTimestamp == 0) {
-        vm.expectCall(
-          address(hub),
-          abi.encodeCall(
-            ILiquidityHub.addSpoke,
-            (
-              assetId,
-              feeReceiver,
-              DataTypes.SpokeConfig({
-                supplyCap: type(uint256).max,
-                drawCap: type(uint256).max,
-                active: true
-              })
-            )
+      vm.expectCall(
+        address(hub),
+        abi.encodeCall(
+          ILiquidityHub.updateSpokeConfig,
+          (
+            assetId,
+            feeReceiver,
+            DataTypes.SpokeConfig({
+              active: true,
+              supplyCap: type(uint256).max,
+              drawCap: type(uint256).max
+            })
           )
-        );
-      } else {
-        vm.expectCall(
-          address(hub),
-          abi.encodeCall(
-            ILiquidityHub.updateSpokeConfig,
-            (
-              assetId,
-              feeReceiver,
-              DataTypes.SpokeConfig({
-                active: true,
-                supplyCap: type(uint256).max,
-                drawCap: type(uint256).max
-              })
-            )
-          )
-        );
-      }
+        )
+      );
 
       // same struct, renaming to expectedConfig
       DataTypes.AssetConfig memory expectedConfig = oldConfig;
@@ -457,7 +439,7 @@ contract ConfiguratorTest is LiquidityHubBase {
     configurator.updateFeeConfig(address(hub), assetId, liquidityFee, feeReceiver);
   }
 
-  function test_updateFeeConfig_fuzz_revertsWith_InvalidSpoke(
+  function test_updateFeeConfig_fuzz_revertsWith_InvalidFeeReceiver(
     uint256 assetId,
     uint256 liquidityFee,
     address feeReceiver
@@ -465,8 +447,8 @@ contract ConfiguratorTest is LiquidityHubBase {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     liquidityFee = bound(liquidityFee, 1, PercentageMathExtended.PERCENTAGE_FACTOR);
 
-    // reverts when adding zero as new spoke
-    vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
+    // reverts when updating asset's fee receiver to zero spoke
+    vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
     vm.prank(CONFIGURATOR_ADMIN);
     configurator.updateFeeConfig(address(hub), assetId, liquidityFee, address(0));
   }
@@ -513,44 +495,26 @@ contract ConfiguratorTest is LiquidityHubBase {
         (
           assetId,
           oldConfig.feeReceiver,
-          DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+          DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: true})
         )
       )
     );
 
-    if (hub.getSpoke(assetId, feeReceiver).lastUpdateTimestamp == 0) {
-      vm.expectCall(
-        address(hub),
-        abi.encodeCall(
-          ILiquidityHub.addSpoke,
-          (
-            assetId,
-            feeReceiver,
-            DataTypes.SpokeConfig({
-              supplyCap: type(uint256).max,
-              drawCap: type(uint256).max,
-              active: true
-            })
-          )
+    vm.expectCall(
+      address(hub),
+      abi.encodeCall(
+        ILiquidityHub.updateSpokeConfig,
+        (
+          assetId,
+          feeReceiver,
+          DataTypes.SpokeConfig({
+            supplyCap: type(uint256).max,
+            drawCap: type(uint256).max,
+            active: true
+          })
         )
-      );
-    } else {
-      vm.expectCall(
-        address(hub),
-        abi.encodeCall(
-          ILiquidityHub.updateSpokeConfig,
-          (
-            assetId,
-            feeReceiver,
-            DataTypes.SpokeConfig({
-              supplyCap: type(uint256).max,
-              drawCap: type(uint256).max,
-              active: true
-            })
-          )
-        )
-      );
-    }
+      )
+    );
 
     // same struct, renaming to expectedConfig
     DataTypes.AssetConfig memory expectedConfig = oldConfig;

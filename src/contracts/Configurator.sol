@@ -176,30 +176,17 @@ contract Configurator is Ownable, IConfigurator {
     hub.updateSpokeConfig(
       assetId,
       config.feeReceiver,
-      DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+      DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: true})
     );
 
-    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, newFeeReceiver);
-    if (spokeData.lastUpdateTimestamp == 0) {
-      hub.addSpoke(
-        assetId,
-        newFeeReceiver,
-        DataTypes.SpokeConfig({
-          supplyCap: type(uint256).max,
-          drawCap: type(uint256).max,
-          active: true
-        })
-      );
-    } else {
-      hub.updateSpokeConfig(
-        assetId,
-        newFeeReceiver,
-        DataTypes.SpokeConfig({
-          supplyCap: type(uint256).max,
-          drawCap: type(uint256).max,
-          active: true
-        })
-      );
-    }
+    hub.updateSpokeConfig(
+      assetId,
+      newFeeReceiver,
+      DataTypes.SpokeConfig({
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max,
+        active: true
+      })
+    );
   }
 }
