@@ -146,6 +146,7 @@ library DataTypes {
 
   struct ExecuteLiquidationLocalVars {
     uint256 i;
+    address user;
     uint256 debtAssetId;
     uint256 collateralAssetId;
     uint256 debtReserveId;
