@@ -111,6 +111,32 @@ contract SpokeConfigTest is SpokeBase {
     assertEq(spoke1.getReserveConfig(daiReserveId), newReserveConfig);
   }
 
+  function test_updateDynamicReserveConfig_fuzz(
+    DataTypes.DynamicReserveConfig memory newConfig
+  ) public {
+    newConfig.liquidationFee = bound(
+      newConfig.liquidationFee,
+      0,
+      PercentageMathExtended.PERCENTAGE_FACTOR
+    );
+    newConfig.collateralFactor = uint16(bound(newConfig.collateralFactor, 0, 80_00));
+    newConfig.liquidationBonus = bound(
+      newConfig.liquidationBonus,
+      PercentageMathExtended.PERCENTAGE_FACTOR,
+      125_00
+    );
+
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke1, daiReserveId);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.DynamicReserveConfigUpdated(daiReserveId, dynamicConfigKey, newConfig);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(daiReserveId, newConfig);
+
+    assertEq(spoke1.getDynamicReserveConfig(daiReserveId), newConfig);
+  }
+
   function test_setUsingAsCollateral_revertsWith_ReserveCannotBeUsedAsCollateral() public {
     bool newCollateralFlag = false;
     bool usingAsCollateral = true;
