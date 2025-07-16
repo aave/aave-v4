@@ -339,10 +339,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     }
   }
 
-  function updateUserDynamicConfig(uint256 reserveId) external {
-    _refreshDynamicConfig(msg.sender, reserveId);
-  }
-
   function updateUserDynamicConfig() external {
     _refreshDynamicConfig(msg.sender);
   }

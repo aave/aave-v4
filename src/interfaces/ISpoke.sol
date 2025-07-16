@@ -174,13 +174,7 @@ interface ISpoke is IMulticall, IAccessManaged {
   function updateUserRiskPremium(address user) external;
 
   /**
-   * @notice Allows a user to update their dynamic configuration for a specific reserve.
-   * @param reserveId The identifier of the reserve.
-   */
-  function updateUserDynamicConfig(uint256 reserveId) external;
-
-  /**
-   * @notice Allows a user to update their dynamic configuration for all reserves.
+   * @notice Allows a user to update their dynamic configuration for all collateral reserves.
    */
   function updateUserDynamicConfig() external;
 
