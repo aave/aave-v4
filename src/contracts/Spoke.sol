@@ -292,16 +292,16 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       _positionStatus[msg.sender].setBorrowing(reserveId, false);
     }
 
-    (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
+    (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
     _updatePremiumDebt(
       reserve,
       userPosition,
       vars.hub,
       vars.assetId,
       onBehalfOf,
-      newUserRiskPremium
+      vars.newUserRiskPremium
     );
-    _notifyRiskPremiumUpdate(vars.assetId, onBehalfOf, newUserRiskPremium);
+    _notifyRiskPremiumUpdate(vars.assetId, onBehalfOf, vars.newUserRiskPremium);
 
     emit Repay(reserveId, msg.sender, onBehalfOf, vars.restoredShares);
   }

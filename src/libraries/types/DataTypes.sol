@@ -189,9 +189,6 @@ library DataTypes {
     uint256 premiumDebt;
     uint256 baseDebtRestored;
     uint256 premiumDebtRestored;
-    uint256 userPremiumDrawnShares;
-    uint256 userPremiumOffset;
-    uint256 accruedPremium;
     uint256 newUserRiskPremium;
     uint256 restoredShares;
   }
