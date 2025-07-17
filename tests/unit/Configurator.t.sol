@@ -409,6 +409,35 @@ contract ConfiguratorTest is LiquidityHubBase {
     test_updateFeeReceiver_fuzz(daiAssetId, address(treasurySpoke));
   }
 
+  /// @dev Test update fee receiver and fees can still be withdrawn from old fee receiver
+  function test_updateFeeReceiver_WithdrawFromOldSpoke() public {
+    // Old fee receiver is the treasury spoke
+    DataTypes.AssetConfig memory assetConfig = hub.getAssetConfig(daiAssetId);
+    assertEq(assetConfig.feeReceiver, address(treasurySpoke), 'fee receiver mismatch');
+
+    // Create debt to build up fees on the existing treasury spoke
+    _openDebtPosition(spoke1, _daiReserveId(spoke1), 100e18, true);
+
+    skip(365 days);
+
+    assertGe(treasurySpoke.getSuppliedShares(daiAssetId), 0);
+    uint256 fees = treasurySpoke.getSuppliedAmount(daiAssetId);
+
+    // Change the fee receiver
+    vm.prank(CONFIGURATOR_ADMIN);
+    configurator.updateFeeReceiver(address(hub), daiAssetId, makeAddr('newFeeReceiver'));
+
+    // Ensure fee receiver was updated
+    assetConfig = hub.getAssetConfig(daiAssetId);
+    assertEq(assetConfig.feeReceiver, makeAddr('newFeeReceiver'), 'fee receiver mismatch');
+
+    // Withdraw fees from the old treasury spoke
+    Utils.withdraw(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, fees, address(treasurySpoke));
+
+    // check that the spoke is empty
+    assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), 0);
+  }
+
   function test_updateFeeConfig_fuzz_revertsWith_OwnableUnauthorizedAccount(address caller) public {
     vm.assume(caller != CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));

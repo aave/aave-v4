@@ -1784,6 +1784,86 @@ abstract contract Base is Test {
     return spoke.getLiquidationConfig().closeFactor;
   }
 
+  function _calcMinimumCollAmount(
+    ISpoke spoke,
+    uint256 collReserveId,
+    uint256 debtReserveId,
+    uint256 debtAmount
+  ) internal view returns (uint256) {
+    IPriceOracle oracle = spoke.oracle();
+    DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
+    DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
+    uint256 collPrice = oracle.getReservePrice(collReserveId);
+    uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).decimals;
+
+    DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
+    uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).decimals;
+    uint256 debtPrice = oracle.getReservePrice(debtReserveId);
+
+    uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadify() / debtAssetUnits;
+    uint256 normalizedCollPrice = collPrice.wadify() / collAssetUnits;
+
+    return
+      (normalizedDebtAmount.wadify() /
+        normalizedCollPrice.wadify().percentMul(colDynConf.collateralFactor)) + 1;
+  }
+
+  /// @dev Opens a debt position for a random user, using same asset as collateral and borrow
+  function _openDebtPosition(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount,
+    bool withPremium
+  ) internal returns (uint256) {
+    address tempUser = vm.randomAddress();
+
+    // add collateral
+    uint256 supplyAmount = _calcMinimumCollAmount({
+      spoke: spoke,
+      collReserveId: reserveId,
+      debtReserveId: reserveId,
+      debtAmount: amount
+    });
+
+    IERC20 underlying = IERC20(spoke.getReserve(reserveId).underlying);
+    deal(address(underlying), tempUser, supplyAmount);
+    vm.prank(tempUser);
+    underlying.approve(address(hub), type(uint256).max);
+
+    Utils.supplyCollateral({
+      spoke: spoke,
+      reserveId: reserveId,
+      user: tempUser,
+      amount: supplyAmount,
+      onBehalfOf: tempUser
+    });
+
+    // debt
+    uint256 cachedLiquidityPremium;
+    if (withPremium) {
+      cachedLiquidityPremium = _getLiquidityPremium(spoke, reserveId);
+      updateLiquidityPremium(spoke, reserveId, 50_00);
+    }
+
+    Utils.borrow({
+      spoke: spoke,
+      reserveId: reserveId,
+      user: tempUser,
+      amount: amount,
+      onBehalfOf: tempUser
+    });
+    skip(365 days);
+
+    (uint256 baseDebt, uint256 premiumDebt) = spoke.getReserveDebt(reserveId);
+    assertGt(baseDebt, 0); // non-zero premium debt
+
+    if (withPremium) {
+      assertGt(premiumDebt, 0);
+      // restore cached liquidity premium
+      updateLiquidityPremium(spoke, reserveId, cachedLiquidityPremium);
+    }
+  }
+
   /// @dev Helper function to borrow without health factor check
   function _borrowWithoutHfCheck(
     ISpoke spoke,
@@ -2107,6 +2187,10 @@ abstract contract Base is Test {
       ISpoke.UserDynamicConfigRefreshedAll.selector,
       ISpoke.UserDynamicConfigRefreshedSingle.selector
     );
+  }
+
+  function _treasurySpoke() internal view returns (ISpoke) {
+    return ISpoke(address(treasurySpoke));
   }
 
   // @dev Helper function to get asset position, valid if no time has passed since last action

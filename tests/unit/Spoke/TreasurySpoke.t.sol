@@ -115,10 +115,6 @@ contract TreasurySpokeTest is SpokeBase {
     );
   }
 
-  function _treasurySpoke() internal view returns (ISpoke) {
-    return ISpoke(address(treasurySpoke));
-  }
-
   // todo: test that supplying from treasury does not create any issue. existing fees are added to the supply amount
   // todo: add test for 100% liquidity fee
 }
