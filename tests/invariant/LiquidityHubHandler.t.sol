@@ -87,11 +87,14 @@ contract LiquidityHubHandler is Test {
         frozen: false,
         paused: false,
         liquidityPremium: 0,
-        liquidationFee: 0,
         borrowable: false,
         collateral: false
       }),
-      DataTypes.DynamicReserveConfig({collateralFactor: 0, liquidationBonus: 100_00})
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 0,
+        liquidationBonus: 100_00,
+        liquidationFee: 0
+      })
     );
     vm.stopPrank();
   }

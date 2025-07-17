@@ -557,65 +557,65 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       liquidityPremium: 15_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke1].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
     spokeInfo[spoke1].wbtc.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
       liquidityPremium: 5_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke1].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
     spokeInfo[spoke1].dai.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
       liquidityPremium: 20_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke1].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
     spokeInfo[spoke1].usdx.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
       liquidityPremium: 50_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke1].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
     spokeInfo[spoke1].usdy.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
       liquidityPremium: 50_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke1].usdy.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
 
     spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
@@ -666,78 +666,78 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       liquidityPremium: 0,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke2].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
     spokeInfo[spoke2].weth.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
       liquidityPremium: 10_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke2].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 76_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
     spokeInfo[spoke2].dai.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
       liquidityPremium: 20_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke2].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
     spokeInfo[spoke2].usdx.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
       liquidityPremium: 50_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke2].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
     spokeInfo[spoke2].usdy.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
       liquidityPremium: 50_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke2].usdy.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
     spokeInfo[spoke2].dai2.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
       liquidityPremium: 100_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke2].dai2.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 70_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
@@ -796,52 +796,52 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       liquidityPremium: 0,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke3].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
     spokeInfo[spoke3].usdx.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
       liquidityPremium: 10_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke3].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
     spokeInfo[spoke3].weth.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
       liquidityPremium: 20_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke3].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 79_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
     spokeInfo[spoke3].wbtc.reserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
       liquidityPremium: 50_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     spokeInfo[spoke3].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 77_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
 
     spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
@@ -1118,13 +1118,13 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 newLiquidationFee
   ) internal {
-    DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
+    DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateReserveConfig(reserveId, config);
+    spoke.updateDynamicReserveConfig(reserveId, config);
 
-    assertEq(spoke.getReserve(reserveId).config.liquidationFee, newLiquidationFee);
+    assertEq(spoke.getDynamicReserveConfig(reserveId).liquidationFee, newLiquidationFee);
   }
 
   function updateCollateralFactor(
