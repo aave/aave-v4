@@ -230,7 +230,7 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
 
-  function reserveCount() external view returns (uint256);
+  function getReserveCount() external view returns (uint256);
 
   function reservesList(uint256) external view returns (uint256);
 

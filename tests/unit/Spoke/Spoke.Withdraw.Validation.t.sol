@@ -29,7 +29,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
   }
 
   function test_withdraw_revertsWith_ReserveNotListed() public {
-    uint256 reserveId = spoke1.reserveCount() + 1; // invalid reserveId
+    uint256 reserveId = spoke1.getReserveCount() + 1; // invalid reserveId
     uint256 amount = 100e18;
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);

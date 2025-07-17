@@ -758,7 +758,7 @@ contract SpokeBase is Base {
     DataTypes.UserPosition memory userPosition;
 
     // Find all reserves user has supplied, adding up total debt
-    for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
       if (spoke.getUsingAsCollateral(reserveId, user)) {
         ++suppliedReservesCount;
       }
@@ -773,7 +773,7 @@ contract SpokeBase is Base {
     // Gather up list of reserves as collateral to sort by LP
     KeyValueListInMemory.List memory reserveLP = KeyValueListInMemory.init(suppliedReservesCount);
     uint256 idx = 0;
-    for (uint256 reserveId; reserveId < spoke.reserveCount(); reserveId++) {
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); reserveId++) {
       if (spoke.getUsingAsCollateral(reserveId, user)) {
         reserveLP.add(idx, _getLiquidityPremium(spoke, reserveId), reserveId);
         ++idx;
@@ -811,7 +811,7 @@ contract SpokeBase is Base {
   }
 
   function _getSpokeDynConfigKeys(ISpoke spoke) internal view returns (DynamicConfig[] memory) {
-    uint256 reserveCount = spoke.reserveCount();
+    uint256 reserveCount = spoke.getReserveCount();
     DynamicConfig[] memory configs = new DynamicConfig[](reserveCount);
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
       configs[reserveId] = DynamicConfig(spoke.getReserve(reserveId).dynamicConfigKey, true);
@@ -824,7 +824,7 @@ contract SpokeBase is Base {
     ISpoke spoke,
     address user
   ) internal view returns (DynamicConfig[] memory) {
-    uint256 reserveCount = spoke.reserveCount();
+    uint256 reserveCount = spoke.getReserveCount();
     DynamicConfig[] memory configs = new DynamicConfig[](reserveCount);
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
       configs[reserveId] = _getUserDynConfigKeys(spoke, user, reserveId);
@@ -885,7 +885,7 @@ contract SpokeBase is Base {
 
   /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
   function getReserveIdByAssetId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {
-    for (uint256 i; i < spoke.reserveCount(); ++i) {
+    for (uint256 i; i < spoke.getReserveCount(); ++i) {
       if (assetId == spoke.getReserve(i).assetId) {
         return assetId;
       }

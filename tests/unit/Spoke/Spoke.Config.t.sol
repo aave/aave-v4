@@ -54,7 +54,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateReservePriceSource_revertsWith_ReserveNotListed() public {
-    uint256 reserveId = spoke1.reserveCount();
+    uint256 reserveId = spoke1.getReserveCount();
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReservePriceSource(reserveId, address(0));
@@ -281,12 +281,12 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateReserveConfig_revertsWith_ReserveNotListed() public {
-    uint256 invalidReserveId = spoke1.reserveCount();
+    uint256 invalidReserveId = spoke1.getReserveCount();
     test_updateReserveConfig_fuzz_revertsWith_ReserveNotListed(invalidReserveId);
   }
 
   function test_updateReserveConfig_fuzz_revertsWith_ReserveNotListed(uint256 reserveId) public {
-    reserveId = bound(reserveId, spoke1.reserveCount() + 1, type(uint256).max);
+    reserveId = bound(reserveId, spoke1.getReserveCount() + 1, type(uint256).max);
 
     DataTypes.ReserveConfig memory config;
 
@@ -385,7 +385,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve() public {
-    uint256 reserveId = spoke1.reserveCount();
+    uint256 reserveId = spoke1.getReserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: true,

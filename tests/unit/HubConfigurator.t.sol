@@ -4,11 +4,11 @@ pragma solidity ^0.8.10;
 import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract HubConfiguratorTest is LiquidityHubBase {
-  HubConfigurator internal hubConfigurator;
+  HubConfigurator public hubConfigurator;
 
-  address internal HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
+  address public HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
 
-  uint256 internal assetId;
+  uint256 public assetId;
 
   function setUp() public virtual override {
     super.setUp();

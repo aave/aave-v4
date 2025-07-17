@@ -1940,13 +1940,9 @@ abstract contract Base is Test {
   }
 
   function assertEq(DataTypes.DynamicReserveConfig memory a, DataTypes.DynamicReserveConfig memory b) internal pure {
-    assertEq(a, b, 'assertEq(DynamicReserveConfig): ');
-  }
-
-  function assertEq(DataTypes.DynamicReserveConfig memory a, DataTypes.DynamicReserveConfig memory b, string memory label) internal pure {
-    assertEq(a.collateralFactor, b.collateralFactor, string.concat(label, ' collateral factor'));
-    assertEq(a.liquidationBonus, b.liquidationBonus, string.concat(label, ' liquidation bonus'));
-    assertEq(abi.encode(a), abi.encode(b), string.concat(label, ' all fields'));
+    assertEq(a.collateralFactor, b.collateralFactor, 'assertEq(DynamicReserveConfig): collateralFactor');
+    assertEq(a.liquidationBonus, b.liquidationBonus, 'assertEq(DynamicReserveConfig): liquidationBonus');
+    assertEq(abi.encode(a), abi.encode(b), 'assertEq(DynamicReserveConfig): all fields');
   }
 
   function _calculateExpectedFees(

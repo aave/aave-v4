@@ -14,7 +14,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     uint256 reserveId,
     uint256 amount
   ) public {
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     // set reserve not borrowable
@@ -34,7 +34,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_fuzz_revertsWith_ReserveNotActive(uint256 reserveId, uint256 amount) public {
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     updateReserveActiveFlag(spoke1, reserveId, false);
@@ -47,13 +47,13 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_revertsWith_ReserveNotListed() public {
-    uint256 reserveId = spoke1.reserveCount() + 1; // invalid reserveId
+    uint256 reserveId = spoke1.getReserveCount() + 1; // invalid reserveId
 
     test_borrow_fuzz_revertsWith_ReserveNotListed({reserveId: reserveId, amount: 1});
   }
 
   function test_borrow_fuzz_revertsWith_ReserveNotListed(uint256 reserveId, uint256 amount) public {
-    vm.assume(reserveId >= spoke1.reserveCount());
+    vm.assume(reserveId >= spoke1.getReserveCount());
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     // Bob try to draw some dai
@@ -69,7 +69,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_fuzz_revertsWith_ReservePaused(uint256 reserveId, uint256 amount) public {
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     updateReservePausedFlag(spoke1, reserveId, true);
@@ -88,7 +88,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_fuzz_revertsWith_ReserveFrozen(uint256 reserveId, uint256 amount) public {
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     updateReserveFrozenFlag(spoke1, reserveId, true);
@@ -107,7 +107,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_fuzz_revertsWith_AssetNotActive(uint256 reserveId, uint256 amount) public {
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     // set asset not active
@@ -159,7 +159,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_fuzz_revertsWith_InvalidDrawAmount(uint256 reserveId) public {
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
 
     // Bob draws 0
     vm.expectRevert(ILiquidityHub.InvalidDrawAmount.selector);
@@ -175,7 +175,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_fuzz_revertsWith_DrawCapExceeded(uint256 reserveId, uint256 drawCap) public {
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT);
 
     uint256 drawAmount = drawCap + 1;

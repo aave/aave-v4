@@ -79,7 +79,7 @@ contract SpokeMulticall is SpokeBase {
 
   /// Add multiple reserves using multicall
   function test_multicall_addMultipleReserves() public {
-    uint256 reserveCountBefore = spoke1.reserveCount();
+    uint256 reserveCountBefore = spoke1.getReserveCount();
     uint256 dai2ReserveId = reserveCountBefore;
     uint256 dai3ReserveId = dai2ReserveId + 1;
     DataTypes.ReserveConfig memory dai2Config = DataTypes.ReserveConfig({
@@ -141,7 +141,7 @@ contract SpokeMulticall is SpokeBase {
     spoke1.multicall(calls);
 
     // Check the reserves
-    assertEq(spoke1.reserveCount(), reserveCountBefore + 2, 'Reserve count should increase by 2');
+    assertEq(spoke1.getReserveCount(), reserveCountBefore + 2, 'Reserve count should increase by 2');
     assertEq(spoke1.getReserveConfig(dai2ReserveId), dai2Config);
     assertEq(spoke1.getReserveConfig(dai3ReserveId), dai3Config);
     assertEq(spoke1.getDynamicReserveConfig(dai2ReserveId), dai2DynConfig);

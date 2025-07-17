@@ -4,13 +4,13 @@ pragma solidity ^0.8.10;
 import 'tests/Base.t.sol';
 
 contract SpokeConfiguratorTest is Base {
-  SpokeConfigurator internal spokeConfigurator;
-  address internal SPOKE_CONFIGURATOR_ADMIN = makeAddr('SPOKE_CONFIGURATOR_ADMIN');
+  SpokeConfigurator public spokeConfigurator;
+  address public SPOKE_CONFIGURATOR_ADMIN = makeAddr('SPOKE_CONFIGURATOR_ADMIN');
 
-  address internal spokeAddr;
-  ISpoke internal spoke;
-  uint256 internal reserveId;
-  uint256 internal invalidReserveId;
+  address public spokeAddr;
+  ISpoke public spoke;
+  uint256 public reserveId;
+  uint256 public invalidReserveId;
 
   function setUp() public virtual override {
     super.setUp();
@@ -20,7 +20,7 @@ contract SpokeConfiguratorTest is Base {
     spokeAddr = address(spoke1);
     spoke = ISpoke(spokeAddr);
     reserveId = 0;
-    invalidReserveId = spoke.reserveCount();
+    invalidReserveId = spoke.getReserveCount();
 
     // Grant spokeConfigurator spoke admin role with 0 delay
     IAccessManager accessManager = IAccessManager(spoke1.authority());
@@ -173,7 +173,7 @@ contract SpokeConfiguratorTest is Base {
       liquidationBonus: 100_00
     });
 
-    uint256 expectedReserveId = spoke.reserveCount();
+    uint256 expectedReserveId = spoke.getReserveCount();
 
     vm.expectCall(
       spokeAddr,
