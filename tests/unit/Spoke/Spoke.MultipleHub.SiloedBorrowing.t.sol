@@ -52,7 +52,6 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         frozen: false,
         paused: false,
         liquidityPremium: 15_00,
-        liquidationFee: 0,
         borrowable: true,
         collateral: true
       }),
@@ -95,7 +94,6 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         frozen: false,
         paused: false,
         liquidityPremium: 15_00,
-        liquidationFee: 0,
         borrowable: true,
         collateral: true
       }),
@@ -129,13 +127,12 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         frozen: false,
         paused: false,
         liquidityPremium: 15_00,
-        liquidationFee: 0,
         borrowable: true,
         collateral: true
       }),
       dynReserveConfig
     );
-  
+
     // Link canonical hub and new spoke for asset A, 500k supply cap, 0 borrow cap
     hub.addSpoke(
       siloedVars.assetAId,

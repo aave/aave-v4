@@ -861,7 +861,6 @@ contract SpokeBase is Base {
     assertEq(a.borrowable, b.borrowable, 'borrowable');
     assertEq(a.collateral, b.collateral, 'collateral');
     assertEq(a.liquidityPremium, b.liquidityPremium, 'liquidity premium');
-    assertEq(a.liquidationFee, b.liquidationFee, 'liquidation protocol fee');
     assertEq(abi.encode(a), abi.encode(b)); // sanity
   }
 
@@ -870,6 +869,8 @@ contract SpokeBase is Base {
     DataTypes.DynamicReserveConfig memory b
   ) internal pure {
     assertEq(a.collateralFactor, b.collateralFactor, 'collateral factor');
+    assertEq(a.liquidationBonus, b.liquidationBonus, 'liquidation bonus');
+    assertEq(a.liquidationFee, b.liquidationFee, 'liquidation protocol fee');
     assertEq(abi.encode(a), abi.encode(b)); // sanity
   }
 
@@ -879,6 +880,8 @@ contract SpokeBase is Base {
     string memory label
   ) internal pure {
     assertEq(a.collateralFactor, b.collateralFactor, string.concat(label, ' collateral factor'));
+    assertEq(a.liquidationBonus, b.liquidationBonus, string.concat(label, ' liquidation bonus'));
+    assertEq(a.liquidationFee, b.liquidationFee, string.concat(label, ' liquidation protocol fee'));
     assertEq(abi.encode(a), abi.encode(b), label); // sanity
   }
 
