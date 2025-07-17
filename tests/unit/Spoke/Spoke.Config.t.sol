@@ -403,7 +403,7 @@ contract SpokeConfigTest is SpokeBase {
     address reserveSource = _deployMockPriceFeed(spoke1, 2000e8);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveAdded(reserveId, wethAssetId);
+    emit ISpoke.ReserveAdded(reserveId, wethAssetId, address(hub));
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(reserveId, newReserveConfig);
     vm.expectEmit(address(spoke1));
