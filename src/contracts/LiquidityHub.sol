@@ -104,7 +104,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.SpokeConfig calldata config
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
-    require(spoke != address(0), InvalidSpoke()); // todo: how to remove spoke
+    require(spoke != address(0), InvalidSpoke());
 
     _spokes[assetId][spoke] = DataTypes.SpokeData({
       suppliedShares: 0,
@@ -119,6 +119,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     emit SpokeConfigUpdated(assetId, spoke, config);
   }
 
+  /// @inheritdoc ILiquidityHub
   function updateSpokeConfig(
     uint256 assetId,
     address spoke,
