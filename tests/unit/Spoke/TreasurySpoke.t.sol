@@ -4,11 +4,11 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract TreasurySpokeTest is SpokeBase {
-  MockERC20 internal testToken;
+  MockERC20 internal _testToken;
 
   function setUp() public virtual override {
     super.setUp();
-    testToken = new MockERC20();
+    _testToken = new MockERC20();
   }
 
   function test_initial_state() public view {
@@ -145,15 +145,15 @@ contract TreasurySpokeTest is SpokeBase {
     amount = bound(amount, 1, type(uint128).max);
     transferAmount = bound(transferAmount, 1, amount);
 
-    testToken.mint(address(treasurySpoke), amount);
+    _testToken.mint(address(treasurySpoke), amount);
 
-    vm.expectEmit(address(testToken));
+    vm.expectEmit(address(_testToken));
     emit IERC20.Transfer(address(treasurySpoke), recipient, transferAmount);
     vm.prank(TREASURY_ADMIN);
-    treasurySpoke.transfer(address(testToken), recipient, transferAmount);
+    treasurySpoke.transfer(address(_testToken), recipient, transferAmount);
 
-    assertEq(testToken.balanceOf(address(treasurySpoke)), amount - transferAmount);
-    assertEq(testToken.balanceOf(recipient), transferAmount);
+    assertEq(_testToken.balanceOf(address(treasurySpoke)), amount - transferAmount);
+    assertEq(_testToken.balanceOf(recipient), transferAmount);
   }
 
   function _treasurySpoke() internal view returns (ISpoke) {
