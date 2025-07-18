@@ -209,18 +209,20 @@ contract SpokeConfiguratorTest is Base {
 
   function test_updateActive() public {
     DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
-    expectedReserveConfig.active = !expectedReserveConfig.active;
+    for (uint256 i = 0; i < 2; i += 1) {
+      expectedReserveConfig.active = (i == 0) ? false : true;
 
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
-    );
-    vm.expectEmit(address(spoke));
-    emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateActive(spokeAddr, reserveId, expectedReserveConfig.active);
+      vm.expectCall(
+        spokeAddr,
+        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
+      );
+      vm.expectEmit(address(spoke));
+      emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+      spokeConfigurator.updateActive(spokeAddr, reserveId, expectedReserveConfig.active);
 
-    assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
+      assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
+    }
   }
 
   function test_updatePaused_revertsWith_OwnableUnauthorizedAccount() public {
@@ -231,18 +233,21 @@ contract SpokeConfiguratorTest is Base {
 
   function test_updatePaused() public {
     DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
-    expectedReserveConfig.paused = !expectedReserveConfig.paused;
 
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
-    );
-    vm.expectEmit(address(spoke));
-    emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updatePaused(spokeAddr, reserveId, expectedReserveConfig.paused);
+    for (uint256 i = 0; i < 2; i += 1) {
+      expectedReserveConfig.paused = (i == 0) ? false : true;
 
-    assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
+      vm.expectCall(
+        spokeAddr,
+        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
+      );
+      vm.expectEmit(address(spoke));
+      emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+      spokeConfigurator.updatePaused(spokeAddr, reserveId, expectedReserveConfig.paused);
+
+      assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
+    }
   }
 
   function test_updateFrozen_revertsWith_OwnableUnauthorizedAccount() public {
@@ -253,18 +258,21 @@ contract SpokeConfiguratorTest is Base {
 
   function test_updateFrozen() public {
     DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
-    expectedReserveConfig.frozen = !expectedReserveConfig.frozen;
 
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
-    );
-    vm.expectEmit(address(spoke));
-    emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateFrozen(spokeAddr, reserveId, expectedReserveConfig.frozen);
+    for (uint256 i = 0; i < 2; i += 1) {
+      expectedReserveConfig.frozen = (i == 0) ? false : true;
 
-    assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
+      vm.expectCall(
+        spokeAddr,
+        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
+      );
+      vm.expectEmit(address(spoke));
+      emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+      spokeConfigurator.updateFrozen(spokeAddr, reserveId, expectedReserveConfig.frozen);
+
+      assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
+    }
   }
 
   function test_updateBorrowable_revertsWith_OwnableUnauthorizedAccount() public {
@@ -275,18 +283,21 @@ contract SpokeConfiguratorTest is Base {
 
   function test_updateBorrowable() public {
     DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
-    expectedReserveConfig.borrowable = !expectedReserveConfig.borrowable;
 
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
-    );
-    vm.expectEmit(address(spoke));
-    emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateBorrowable(spokeAddr, reserveId, expectedReserveConfig.borrowable);
+    for (uint256 i = 0; i < 2; i += 1) {
+      expectedReserveConfig.borrowable = (i == 0) ? false : true;
 
-    assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
+      vm.expectCall(
+        spokeAddr,
+        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
+      );
+      vm.expectEmit(address(spoke));
+      emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+      spokeConfigurator.updateBorrowable(spokeAddr, reserveId, expectedReserveConfig.borrowable);
+
+      assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
+    }
   }
 
   function test_updateCollateral_revertsWith_OwnableUnauthorizedAccount() public {
@@ -297,18 +308,21 @@ contract SpokeConfiguratorTest is Base {
 
   function test_updateCollateral() public {
     DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
-    expectedReserveConfig.collateral = !expectedReserveConfig.collateral;
 
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
-    );
-    vm.expectEmit(address(spoke));
-    emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateCollateral(spokeAddr, reserveId, expectedReserveConfig.collateral);
+    for (uint256 i = 0; i < 2; i += 1) {
+      expectedReserveConfig.collateral = (i == 0) ? false : true;
 
-    assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
+      vm.expectCall(
+        spokeAddr,
+        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
+      );
+      vm.expectEmit(address(spoke));
+      emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+      spokeConfigurator.updateCollateral(spokeAddr, reserveId, expectedReserveConfig.collateral);
+
+      assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
+    }
   }
 
   function test_updateLiquidityPremium_revertsWith_OwnableUnauthorizedAccount() public {
@@ -418,14 +432,18 @@ contract SpokeConfiguratorTest is Base {
       abi.encodeCall(ISpoke.updateDynamicReserveConfig, (reserveId, expectedDynamicReserveConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.DynamicReserveConfigUpdated(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
+    emit ISpoke.DynamicReserveConfigUpdated(
+      reserveId,
+      expectedConfigKey,
+      expectedDynamicReserveConfig
+    );
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationFee(spokeAddr, reserveId, newLiquidationFee);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
   }
 
-   function test_updateReserveConfig_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_updateReserveConfig_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
     spokeConfigurator.updateReserveConfig(
@@ -470,7 +488,11 @@ contract SpokeConfiguratorTest is Base {
     spokeConfigurator.updateDynamicReserveConfig(
       spokeAddr,
       reserveId,
-      DataTypes.DynamicReserveConfig({collateralFactor: 20_00, liquidationBonus: 130_00, liquidationFee: 15_00})
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 20_00,
+        liquidationBonus: 130_00,
+        liquidationFee: 15_00
+      })
     );
   }
 
