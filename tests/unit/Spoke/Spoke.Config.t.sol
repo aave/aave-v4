@@ -54,7 +54,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateReservePriceSource_revertsWith_ReserveNotListed() public {
-    uint256 reserveId = spoke1.reserveCount();
+    uint256 reserveId = spoke1.getReserveCount();
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReservePriceSource(reserveId, address(0));
@@ -301,12 +301,12 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateReserveConfig_revertsWith_ReserveNotListed() public {
-    uint256 invalidReserveId = spoke1.reserveCount();
+    uint256 invalidReserveId = spoke1.getReserveCount();
     test_updateReserveConfig_fuzz_revertsWith_ReserveNotListed(invalidReserveId);
   }
 
   function test_updateReserveConfig_fuzz_revertsWith_ReserveNotListed(uint256 reserveId) public {
-    reserveId = bound(reserveId, spoke1.reserveCount() + 1, type(uint256).max);
+    reserveId = bound(reserveId, spoke1.getReserveCount() + 1, type(uint256).max);
 
     DataTypes.ReserveConfig memory config;
 
@@ -405,7 +405,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve() public {
-    uint256 reserveId = spoke1.reserveCount();
+    uint256 reserveId = spoke1.getReserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       active: true,
       frozen: true,
@@ -435,8 +435,8 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
-      wethAssetId,
       address(hub),
+      wethAssetId,
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
@@ -466,7 +466,7 @@ contract SpokeConfigTest is SpokeBase {
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(assetId, address(hub), reserveSource, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(address(hub), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
   function test_addReserve_fuzz_reverts_invalid_assetId(uint256 assetId) public {
@@ -490,7 +490,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(assetId, address(hub), reserveSource, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(address(hub), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
   function test_addReserve_revertsWith_InvalidOracle() public {
@@ -513,8 +513,8 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectRevert(ISpoke.InvalidOracle.selector);
     vm.prank(ADMIN);
     newSpoke.addReserve(
-      wethAssetId,
       address(hub),
+      wethAssetId,
       address(0),
       newReserveConfig,
       newDynReserveConfig

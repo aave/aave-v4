@@ -310,7 +310,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     uint256 assets
   ) public {
     _assumeValidSupplier(caller);
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
     assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
 
@@ -357,7 +357,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     uint256 assets
   ) public {
     _assumeValidSupplier(caller);
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
     assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
     // Caller starting balance must be at least the amount they will withdraw during test

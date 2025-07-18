@@ -758,7 +758,7 @@ contract SpokeBase is Base {
     DataTypes.UserPosition memory userPosition;
 
     // Find all reserves user has supplied, adding up total debt
-    for (uint256 reserveId; reserveId < spoke.reserveCount(); ++reserveId) {
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
       if (spoke.getUsingAsCollateral(reserveId, user)) {
         ++suppliedReservesCount;
       }
@@ -773,7 +773,7 @@ contract SpokeBase is Base {
     // Gather up list of reserves as collateral to sort by LP
     KeyValueListInMemory.List memory reserveLP = KeyValueListInMemory.init(suppliedReservesCount);
     uint256 idx = 0;
-    for (uint256 reserveId; reserveId < spoke.reserveCount(); reserveId++) {
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); reserveId++) {
       if (spoke.getUsingAsCollateral(reserveId, user)) {
         reserveLP.add(idx, _getLiquidityPremium(spoke, reserveId), reserveId);
         ++idx;
@@ -811,7 +811,7 @@ contract SpokeBase is Base {
   }
 
   function _getSpokeDynConfigKeys(ISpoke spoke) internal view returns (DynamicConfig[] memory) {
-    uint256 reserveCount = spoke.reserveCount();
+    uint256 reserveCount = spoke.getReserveCount();
     DynamicConfig[] memory configs = new DynamicConfig[](reserveCount);
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
       configs[reserveId] = DynamicConfig(spoke.getReserve(reserveId).dynamicConfigKey, true);
@@ -824,7 +824,7 @@ contract SpokeBase is Base {
     ISpoke spoke,
     address user
   ) internal view returns (DynamicConfig[] memory) {
-    uint256 reserveCount = spoke.reserveCount();
+    uint256 reserveCount = spoke.getReserveCount();
     DynamicConfig[] memory configs = new DynamicConfig[](reserveCount);
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
       configs[reserveId] = _getUserDynConfigKeys(spoke, user, reserveId);
@@ -851,40 +851,6 @@ contract SpokeBase is Base {
     return DynamicConfig(pos.configKey, spoke.getUsingAsCollateral(reserveId, user));
   }
 
-  function assertEq(
-    DataTypes.ReserveConfig memory a,
-    DataTypes.ReserveConfig memory b
-  ) internal pure {
-    assertEq(a.active, b.active, 'active');
-    assertEq(a.frozen, b.frozen, 'frozen');
-    assertEq(a.paused, b.paused, 'paused');
-    assertEq(a.borrowable, b.borrowable, 'borrowable');
-    assertEq(a.collateral, b.collateral, 'collateral');
-    assertEq(a.liquidityPremium, b.liquidityPremium, 'liquidity premium');
-    assertEq(abi.encode(a), abi.encode(b)); // sanity
-  }
-
-  function assertEq(
-    DataTypes.DynamicReserveConfig memory a,
-    DataTypes.DynamicReserveConfig memory b
-  ) internal pure {
-    assertEq(a.collateralFactor, b.collateralFactor, 'collateral factor');
-    assertEq(a.liquidationBonus, b.liquidationBonus, 'liquidation bonus');
-    assertEq(a.liquidationFee, b.liquidationFee, 'liquidation protocol fee');
-    assertEq(abi.encode(a), abi.encode(b)); // sanity
-  }
-
-  function assertEq(
-    DataTypes.DynamicReserveConfig memory a,
-    DataTypes.DynamicReserveConfig memory b,
-    string memory label
-  ) internal pure {
-    assertEq(a.collateralFactor, b.collateralFactor, string.concat(label, ' collateral factor'));
-    assertEq(a.liquidationBonus, b.liquidationBonus, string.concat(label, ' liquidation bonus'));
-    assertEq(a.liquidationFee, b.liquidationFee, string.concat(label, ' liquidation protocol fee'));
-    assertEq(abi.encode(a), abi.encode(b), label); // sanity
-  }
-
   function assertEq(DynamicConfig[] memory a, DynamicConfig[] memory b) internal pure {
     require(a.length == b.length);
     for (uint256 i; i < a.length; ++i) {
@@ -892,15 +858,6 @@ contract SpokeBase is Base {
         assertEq(a[i].key, b[i].key, string.concat('reserve ', vm.toString(i)));
       }
     }
-  }
-
-  function assertNotEq(
-    DataTypes.DynamicReserveConfig memory a,
-    DataTypes.DynamicReserveConfig memory b,
-    string memory label
-  ) internal pure {
-    assertNotEq(a.collateralFactor, b.collateralFactor, string.concat(label, ' collateral factor'));
-    assertNotEq(abi.encode(a), abi.encode(b)); // sanity
   }
 
   function assertNotEq(DynamicConfig[] memory a, DynamicConfig[] memory b) internal pure {
@@ -919,9 +876,9 @@ contract SpokeBase is Base {
 
   /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
   function getReserveIdByAssetId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {
-    for (uint256 i; i < spoke.reserveCount(); ++i) {
+    for (uint256 i; i < spoke.getReserveCount(); ++i) {
       if (assetId == spoke.getReserve(i).assetId) {
-        return assetId;
+        return i;
       }
     }
     revert('not found');

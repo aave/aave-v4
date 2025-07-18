@@ -66,8 +66,8 @@ contract SpokeAccessTest is SpokeBase {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
     spoke1.addReserve(
-      4,
       address(hub),
+      4,
       reserveSource,
       DataTypes.ReserveConfig({
         active: true,
@@ -87,8 +87,8 @@ contract SpokeAccessTest is SpokeBase {
     // Spoke admin can call addReserve
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
-      4,
       address(hub),
+      4,
       reserveSource,
       DataTypes.ReserveConfig({
         active: true,
@@ -207,8 +207,8 @@ contract SpokeAccessTest is SpokeBase {
     );
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
-      5,
       address(hub),
+      5,
       reserveSource,
       DataTypes.ReserveConfig({
         active: true,
@@ -233,8 +233,8 @@ contract SpokeAccessTest is SpokeBase {
     // Spoke admin can now call add reserve on the spoke after authority change
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
-      5,
       address(hub),
+      5,
       reserveSource,
       DataTypes.ReserveConfig({
         active: true,
