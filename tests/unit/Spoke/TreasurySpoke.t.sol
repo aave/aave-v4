@@ -2,16 +2,8 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
-import {MockERC20} from 'tests/mocks/MockERC20.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 
 contract TreasurySpokeTest is SpokeBase {
-  using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMath for uint256;
-  using PercentageMathExtended for uint256;
-  using WadRayMath for uint256;
-
   MockERC20 internal testToken;
 
   function setUp() public virtual override {
@@ -124,15 +116,11 @@ contract TreasurySpokeTest is SpokeBase {
     );
   }
 
-  function _treasurySpoke() internal view returns (ISpoke) {
-    return ISpoke(address(treasurySpoke));
-  }
-
   function test_transfer_revertsWith_Unauthorized(address caller) public {
     vm.assume(caller != TREASURY_ADMIN);
-    vm.prank(caller);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
-    treasurySpoke.transfer(address(testToken), vm.randomAddress(), 1);
+    vm.prank(caller);
+    treasurySpoke.transfer(vm.randomAddress(), vm.randomAddress(), 1);
   }
 
   function test_transfer_revertsWith_InsufficientBalance(uint256 amount) public {
@@ -151,38 +139,26 @@ contract TreasurySpokeTest is SpokeBase {
     treasurySpoke.transfer(token, vm.randomAddress(), amount);
   }
 
-  function test_transfer_fuzz_all(address recipient, uint256 amount) public {
+  function test_transfer_fuzz(address recipient, uint256 amount, uint256 transferAmount) public {
     vm.assume(recipient != address(0));
     vm.assume(recipient != address(treasurySpoke));
-    amount = bound(amount, 1, 1000000e18);
+    amount = bound(amount, 1, type(uint128).max);
+    transferAmount = bound(transferAmount, 1, amount);
 
     testToken.mint(address(treasurySpoke), amount);
-    vm.expectEmit(address(testToken));
-    emit IERC20.Transfer(address(treasurySpoke), recipient, amount);
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.transfer(address(testToken), recipient, amount);
 
-    assertEq(testToken.balanceOf(address(treasurySpoke)), 0);
-    assertEq(testToken.balanceOf(recipient), amount);
-  }
-
-  function test_transfer_fuzz_partialAmount(address recipient, uint256 transferAmount) public {
-    vm.assume(recipient != address(0));
-    vm.assume(recipient != address(treasurySpoke));
-
-    uint256 totalAmount = 1000e18;
-    transferAmount = bound(transferAmount, 1, totalAmount - 1);
-
-    testToken.mint(address(treasurySpoke), totalAmount);
     vm.expectEmit(address(testToken));
     emit IERC20.Transfer(address(treasurySpoke), recipient, transferAmount);
     vm.prank(TREASURY_ADMIN);
     treasurySpoke.transfer(address(testToken), recipient, transferAmount);
 
-    assertEq(testToken.balanceOf(address(treasurySpoke)), totalAmount - transferAmount);
+    assertEq(testToken.balanceOf(address(treasurySpoke)), amount - transferAmount);
     assertEq(testToken.balanceOf(recipient), transferAmount);
   }
 
-  // todo: test that supplying from treasury does not create any issue. existing fees are added to the supply amount
+  function _treasurySpoke() internal view returns (ISpoke) {
+    return ISpoke(address(treasurySpoke));
+  }
+
   // todo: add test for 100% liquidity fee
 }
