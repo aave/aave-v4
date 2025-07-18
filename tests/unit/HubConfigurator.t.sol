@@ -237,22 +237,13 @@ contract HubConfiguratorTest is LiquidityHubBase {
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
     expectedConfig.active = !expectedConfig.active;
 
-    test_updateActive_fuzz(assetId, expectedConfig.active);
-  }
-
-  function test_updateActive_fuzz(uint256 assetId, bool active) public {
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
-
-    DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
-    expectedConfig.active = active;
-
     vm.expectCall(
       address(hub),
       abi.encodeCall(ILiquidityHub.updateAssetConfig, (assetId, expectedConfig))
     );
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateActive(address(hub), assetId, active);
+    hubConfigurator.updateActive(address(hub), assetId, expectedConfig.active);
 
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
@@ -330,15 +321,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
     expectedConfig.liquidityFee = PercentageMathExtended.PERCENTAGE_FACTOR - 1;
 
-    vm.expectCall(
-      address(hub),
-      abi.encodeCall(ILiquidityHub.updateAssetConfig, (assetId, expectedConfig))
-    );
-
-    vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateLiquidityFee(address(hub), assetId, expectedConfig.liquidityFee);
-
-    assertEq(hub.getAssetConfig(assetId), expectedConfig);
+    test_updateLiquidityFee_fuzz(assetId, expectedConfig.liquidityFee);
   }
 
   function test_updateLiquidityFee_fuzz(uint256 assetId, uint256 liquidityFee) public {
