@@ -441,13 +441,14 @@ contract HubConfiguratorTest is LiquidityHubBase {
     uint256 fees = treasurySpoke.getSuppliedAmount(daiAssetId);
 
     // Change the fee receiver
+    TreasurySpoke newTreasurySpoke = new TreasurySpoke(HUB_ADMIN, address(hub));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeReceiver(address(hub), daiAssetId, makeAddr('newFeeReceiver'));
+    hubConfigurator.updateFeeReceiver(address(hub), daiAssetId, address(newTreasurySpoke));
 
     // Ensure fee receiver was updated
     assertEq(
       hub.getAssetConfig(daiAssetId).feeReceiver,
-      makeAddr('newFeeReceiver'),
+      address(newTreasurySpoke),
       'fee receiver mismatch'
     );
 
@@ -462,6 +463,17 @@ contract HubConfiguratorTest is LiquidityHubBase {
 
     // Check that the old treasury spoke is empty
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), 0);
+
+    // Accrue more fees, this time to new fee receiver
+    skip(365 days);
+
+    // Check that new fee receiver is getting the fees, and not old treasury spoke
+    assertGt(
+      newTreasurySpoke.getSuppliedAmount(daiAssetId),
+      0,
+      'new fee receiver should have accrued fees'
+    );
+    assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), 0, 'old fee receiver should be empty');
   }
 
   function test_updateFeeReceiver_Scenario() public {
