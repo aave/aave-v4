@@ -860,15 +860,6 @@ contract SpokeBase is Base {
     }
   }
 
-  function assertNotEq(
-    DataTypes.DynamicReserveConfig memory a,
-    DataTypes.DynamicReserveConfig memory b,
-    string memory label
-  ) internal pure {
-    assertNotEq(a.collateralFactor, b.collateralFactor, string.concat(label, ' collateral factor'));
-    assertNotEq(abi.encode(a), abi.encode(b)); // sanity
-  }
-
   function assertNotEq(DynamicConfig[] memory a, DynamicConfig[] memory b) internal pure {
     require(a.length == b.length);
     for (uint256 i; i < a.length; ++i) {

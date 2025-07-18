@@ -75,10 +75,13 @@ contract SpokeAccessTest is SpokeBase {
         paused: false,
         borrowable: true,
         collateral: true,
-        liquidityPremium: 0,
-        liquidationFee: 0
+        liquidityPremium: 0
       }),
-      DataTypes.DynamicReserveConfig({collateralFactor: 75_00, liquidationBonus: 100_00})
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 75_00,
+        liquidationBonus: 100_00,
+        liquidationFee: 0
+      })
     );
 
     // Spoke admin can call addReserve
@@ -93,10 +96,13 @@ contract SpokeAccessTest is SpokeBase {
         paused: false,
         borrowable: true,
         collateral: true,
-        liquidityPremium: 0,
-        liquidationFee: 0
+        liquidityPremium: 0
       }),
-      DataTypes.DynamicReserveConfig({collateralFactor: 75_00, liquidationBonus: 100_00})
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 75_00,
+        liquidationBonus: 100_00,
+        liquidationFee: 0
+      })
     );
 
     // updateReserveConfig only callable by spoke admin
@@ -111,8 +117,7 @@ contract SpokeAccessTest is SpokeBase {
         paused: false,
         borrowable: true,
         collateral: true,
-        liquidityPremium: 0,
-        liquidationFee: 0
+        liquidityPremium: 0
       })
     );
 
@@ -126,8 +131,7 @@ contract SpokeAccessTest is SpokeBase {
         paused: false,
         borrowable: true,
         collateral: true,
-        liquidityPremium: 0,
-        liquidationFee: 0
+        liquidityPremium: 0
       })
     );
 
@@ -137,14 +141,22 @@ contract SpokeAccessTest is SpokeBase {
     );
     spoke1.updateDynamicReserveConfig(
       _daiReserveId(spoke1),
-      DataTypes.DynamicReserveConfig({collateralFactor: 75_00, liquidationBonus: 100_00})
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 75_00,
+        liquidationBonus: 100_00,
+        liquidationFee: 0
+      })
     );
 
     // Spoke admin can call updateDynamicReserveConfig
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(
       _daiReserveId(spoke1),
-      DataTypes.DynamicReserveConfig({collateralFactor: 75_00, liquidationBonus: 100_00})
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 75_00,
+        liquidationBonus: 100_00,
+        liquidationFee: 0
+      })
     );
   }
 
@@ -204,10 +216,13 @@ contract SpokeAccessTest is SpokeBase {
         paused: false,
         borrowable: true,
         collateral: true,
-        liquidityPremium: 0,
-        liquidationFee: 0
+        liquidityPremium: 0
       }),
-      DataTypes.DynamicReserveConfig({collateralFactor: 75_00, liquidationBonus: 100_00})
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 75_00,
+        liquidationBonus: 100_00,
+        liquidationFee: 0
+      })
     );
 
     // Now we also give the spoke admin role capability to add reserve on new authority
@@ -227,10 +242,13 @@ contract SpokeAccessTest is SpokeBase {
         paused: false,
         borrowable: true,
         collateral: true,
-        liquidityPremium: 0,
-        liquidationFee: 0
+        liquidityPremium: 0
       }),
-      DataTypes.DynamicReserveConfig({collateralFactor: 75_00, liquidationBonus: 100_00})
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 75_00,
+        liquidationBonus: 100_00,
+        liquidationFee: 0
+      })
     );
   }
 }

@@ -119,26 +119,6 @@ interface ISpokeConfigurator {
   ) external;
 
   /**
-   * @notice Updates the liquidation fee of a reserve.
-   * @param spoke The address of the spoke.
-   * @param reserveId The identifier of the reserve.
-   * @param liquidationFee The new liquidation fee.
-   */
-  function updateLiquidationFee(address spoke, uint256 reserveId, uint256 liquidationFee) external;
-
-  /**
-   * @notice Updates the config of a reserve.
-   * @param spoke The address of the spoke.
-   * @param reserveId The identifier of the reserve.
-   * @param config The new reserve config.
-   */
-  function updateReserveConfig(
-    address spoke,
-    uint256 reserveId,
-    DataTypes.ReserveConfig calldata config
-  ) external;
-
-  /**
    * @notice Updates the collateral factor of a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
@@ -160,6 +140,26 @@ interface ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint256 liquidationBonus
+  ) external;
+
+  /**
+   * @notice Updates the liquidation fee of a reserve.
+   * @param spoke The address of the spoke.
+   * @param reserveId The identifier of the reserve.
+   * @param liquidationFee The new liquidation fee.
+   */
+  function updateLiquidationFee(address spoke, uint256 reserveId, uint256 liquidationFee) external;
+
+  /**
+   * @notice Updates the config of a reserve.
+   * @param spoke The address of the spoke.
+   * @param reserveId The identifier of the reserve.
+   * @param config The new reserve config.
+   */
+  function updateReserveConfig(
+    address spoke,
+    uint256 reserveId,
+    DataTypes.ReserveConfig calldata config
   ) external;
 
   /**

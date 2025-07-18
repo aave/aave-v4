@@ -13,7 +13,8 @@ contract SpokeDynamicConfigTest is SpokeBase {
       _daiReserveId(spoke1), 
       DataTypes.DynamicReserveConfig({
         collateralFactor: 80_00,
-        liquidationBonus: 100_00
+        liquidationBonus: 100_00,
+        liquidationFee: 0
       })
     );
   }
@@ -26,7 +27,8 @@ contract SpokeDynamicConfigTest is SpokeBase {
       invalidReserveId, 
       DataTypes.DynamicReserveConfig({
         collateralFactor: 80_00,
-        liquidationBonus: 100_00
+        liquidationBonus: 100_00,
+        liquidationFee: 0
       })
     );
   }

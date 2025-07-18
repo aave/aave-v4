@@ -147,12 +147,12 @@ contract SpokeConfiguratorTest is Base {
         frozen: false,
         borrowable: true,
         collateral: true,
-        liquidityPremium: 15_00,
-        liquidationFee: 0
+        liquidityPremium: 15_00
       }),
       dynamicConfig: DataTypes.DynamicReserveConfig({
         collateralFactor: 80_00,
-        liquidationBonus: 100_00
+        liquidationBonus: 100_00,
+        liquidationFee: 0
       })
     });
   }
@@ -165,12 +165,12 @@ contract SpokeConfiguratorTest is Base {
       frozen: false,
       borrowable: true,
       collateral: true,
-      liquidityPremium: 15_00,
-      liquidationFee: 0
+      liquidityPremium: 15_00
     });
     DataTypes.DynamicReserveConfig memory dynamicConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
 
     uint256 expectedReserveId = spoke.getReserveCount();
@@ -335,71 +335,6 @@ contract SpokeConfiguratorTest is Base {
     assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
   }
 
-  function test_updateLiquidationFee_revertsWith_OwnableUnauthorizedAccount() public {
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
-    vm.prank(alice);
-    spokeConfigurator.updateLiquidationFee(spokeAddr, reserveId, 0);
-  }
-
-  function test_updateLiquidationFee() public {
-    uint256 newLiquidationFee = PercentageMathExtended.PERCENTAGE_FACTOR / 2;
-
-    DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
-    expectedReserveConfig.liquidationFee = newLiquidationFee;
-
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
-    );
-    vm.expectEmit(address(spoke));
-    emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateLiquidationFee(spokeAddr, reserveId, newLiquidationFee);
-
-    assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
-  }
-
-  function test_updateReserveConfig_revertsWith_OwnableUnauthorizedAccount() public {
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
-    vm.prank(alice);
-    spokeConfigurator.updateReserveConfig(
-      spokeAddr,
-      reserveId,
-      DataTypes.ReserveConfig({
-        active: true,
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        collateral: true,
-        liquidityPremium: 15_00,
-        liquidationFee: 0
-      })
-    );
-  }
-
-  function test_updateReserveConfig() public {
-    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      active: true,
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateral: true,
-      liquidityPremium: 15_00,
-      liquidationFee: 0
-    });
-
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, newReserveConfig))
-    );
-    vm.expectEmit(address(spoke));
-    emit ISpoke.ReserveConfigUpdated(reserveId, newReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateReserveConfig(spokeAddr, reserveId, newReserveConfig);
-
-    assertEq(spoke.getReserveConfig(reserveId), newReserveConfig);
-  }
-
   function test_updateCollateralFactor_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
@@ -463,20 +398,87 @@ contract SpokeConfiguratorTest is Base {
     assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
   }
 
+  function test_updateLiquidationFee_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    spokeConfigurator.updateLiquidationFee(spokeAddr, reserveId, 0);
+  }
+
+  function test_updateLiquidationFee() public {
+    uint256 newLiquidationFee = PercentageMathExtended.PERCENTAGE_FACTOR / 2;
+
+    DataTypes.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke
+      .getDynamicReserveConfig(reserveId);
+    expectedDynamicReserveConfig.liquidationFee = newLiquidationFee;
+
+    uint16 expectedConfigKey = spoke.getReserve(reserveId).dynamicConfigKey + 1;
+
+    vm.expectCall(
+      spokeAddr,
+      abi.encodeCall(ISpoke.updateDynamicReserveConfig, (reserveId, expectedDynamicReserveConfig))
+    );
+    vm.expectEmit(address(spoke));
+    emit ISpoke.DynamicReserveConfigUpdated(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateLiquidationFee(spokeAddr, reserveId, newLiquidationFee);
+
+    assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
+  }
+
+   function test_updateReserveConfig_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    spokeConfigurator.updateReserveConfig(
+      spokeAddr,
+      reserveId,
+      DataTypes.ReserveConfig({
+        active: true,
+        paused: false,
+        frozen: false,
+        borrowable: true,
+        collateral: true,
+        liquidityPremium: 15_00
+      })
+    );
+  }
+
+  function test_updateReserveConfig() public {
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      active: true,
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      collateral: true,
+      liquidityPremium: 15_00
+    });
+
+    vm.expectCall(
+      spokeAddr,
+      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, newReserveConfig))
+    );
+    vm.expectEmit(address(spoke));
+    emit ISpoke.ReserveConfigUpdated(reserveId, newReserveConfig);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateReserveConfig(spokeAddr, reserveId, newReserveConfig);
+
+    assertEq(spoke.getReserveConfig(reserveId), newReserveConfig);
+  }
+
   function test_updateDynamicReserveConfig_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
     spokeConfigurator.updateDynamicReserveConfig(
       spokeAddr,
       reserveId,
-      DataTypes.DynamicReserveConfig({collateralFactor: 20_00, liquidationBonus: 130_00})
+      DataTypes.DynamicReserveConfig({collateralFactor: 20_00, liquidationBonus: 130_00, liquidationFee: 15_00})
     );
   }
 
   function test_updateDynamicReserveConfig() public {
     DataTypes.DynamicReserveConfig memory newDynamicReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 20_00,
-      liquidationBonus: 130_00
+      liquidationBonus: 130_00,
+      liquidationFee: 15_00
     });
 
     uint16 expectedConfigKey = spoke.getReserve(reserveId).dynamicConfigKey + 1;
