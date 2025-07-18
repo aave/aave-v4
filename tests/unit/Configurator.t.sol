@@ -411,13 +411,15 @@ contract ConfiguratorTest is LiquidityHubBase {
 
   /// @dev Test update fee receiver and fees can still be withdrawn from old fee receiver
   function test_updateFeeReceiver_WithdrawFromOldSpoke() public {
-    // Old fee receiver is the treasury spoke
-    DataTypes.AssetConfig memory assetConfig = hub.getAssetConfig(daiAssetId);
-    assertEq(assetConfig.feeReceiver, address(treasurySpoke), 'fee receiver mismatch');
+    // Ensure current fee receiver is the treasury spoke
+    assertEq(
+      hub.getAssetConfig(daiAssetId).feeReceiver,
+      address(treasurySpoke),
+      'fee receiver mismatch'
+    );
 
     // Create debt to build up fees on the existing treasury spoke
     _openDebtPosition(spoke1, _daiReserveId(spoke1), 100e18, true);
-
     skip(365 days);
 
     assertGe(treasurySpoke.getSuppliedShares(daiAssetId), 0);
@@ -428,13 +430,22 @@ contract ConfiguratorTest is LiquidityHubBase {
     configurator.updateFeeReceiver(address(hub), daiAssetId, makeAddr('newFeeReceiver'));
 
     // Ensure fee receiver was updated
-    assetConfig = hub.getAssetConfig(daiAssetId);
-    assertEq(assetConfig.feeReceiver, makeAddr('newFeeReceiver'), 'fee receiver mismatch');
+    assertEq(
+      hub.getAssetConfig(daiAssetId).feeReceiver,
+      makeAddr('newFeeReceiver'),
+      'fee receiver mismatch'
+    );
+
+    // Ensure old fee receiver is still active
+    assertTrue(
+      hub.getSpokeConfig(daiAssetId, address(treasurySpoke)).active,
+      'old fee receiver is not active'
+    );
 
     // Withdraw fees from the old treasury spoke
     Utils.withdraw(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, fees, address(treasurySpoke));
 
-    // check that the spoke is empty
+    // Check that the old treasury spoke is empty
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), 0);
   }
 
