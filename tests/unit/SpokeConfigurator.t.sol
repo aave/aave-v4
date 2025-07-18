@@ -362,7 +362,7 @@ contract SpokeConfiguratorTest is Base {
       .getDynamicReserveConfig(reserveId);
     expectedDynamicReserveConfig.collateralFactor = newCollateralFactor;
 
-    uint16 expectedConfigKey = spoke.getReserve(reserveId).dynamicConfigKey + 1;
+    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1);
 
     vm.expectCall(
       spokeAddr,
@@ -394,7 +394,7 @@ contract SpokeConfiguratorTest is Base {
       .getDynamicReserveConfig(reserveId);
     expectedDynamicReserveConfig.liquidationBonus = newLiquidationBonus;
 
-    uint16 expectedConfigKey = spoke.getReserve(reserveId).dynamicConfigKey + 1;
+    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1);
 
     vm.expectCall(
       spokeAddr,
@@ -425,7 +425,7 @@ contract SpokeConfiguratorTest is Base {
       .getDynamicReserveConfig(reserveId);
     expectedDynamicReserveConfig.liquidationFee = newLiquidationFee;
 
-    uint16 expectedConfigKey = spoke.getReserve(reserveId).dynamicConfigKey + 1;
+    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1);
 
     vm.expectCall(
       spokeAddr,
@@ -503,7 +503,7 @@ contract SpokeConfiguratorTest is Base {
       liquidationFee: 15_00
     });
 
-    uint16 expectedConfigKey = spoke.getReserve(reserveId).dynamicConfigKey + 1;
+    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1);
 
     vm.expectCall(
       spokeAddr,
