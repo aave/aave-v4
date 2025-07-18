@@ -151,7 +151,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     _validateAdd(asset, spoke, amount, from);
 
     // todo: Mitigate inflation attack
-    uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
+    uint256 suppliedShares = previewAdd(assetId, amount);
     require(suppliedShares != 0, InvalidSharesAmount());
     asset.suppliedShares += suppliedShares;
     spoke.suppliedShares += suppliedShares;
@@ -175,7 +175,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateRemove(asset, spoke, amount);
 
-    uint256 withdrawnShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
+    uint256 withdrawnShares = previewRemove(assetId, amount); // non zero since we round up
     asset.suppliedShares -= withdrawnShares;
     spoke.suppliedShares -= withdrawnShares;
     asset.availableLiquidity -= amount;
@@ -197,7 +197,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateDraw(asset, spoke, amount, spoke.config.drawCap);
 
-    uint256 drawnShares = asset.toDrawnSharesUp(amount); // non zero since we round up
+    uint256 drawnShares = previewDraw(assetId, amount); // non zero since we round up
     asset.baseDrawnShares += drawnShares;
     spoke.baseDrawnShares += drawnShares;
     asset.availableLiquidity -= amount;
@@ -227,7 +227,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
 
-    uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
+    uint256 baseDrawnSharesRestored = previewBaseRestore(assetId, baseAmount);
     asset.baseDrawnShares -= baseDrawnSharesRestored;
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
@@ -350,6 +350,26 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     address spoke
   ) external view returns (DataTypes.SpokeConfig memory) {
     return _spokes[assetId][spoke].config;
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function previewAdd(uint256 assetId, uint256 amount) public view returns (uint256) {
+    return _assets[assetId].toSuppliedSharesDown(amount);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function previewRemove(uint256 assetId, uint256 amount) public view returns (uint256) {
+    return _assets[assetId].toSuppliedSharesUp(amount);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function previewDraw(uint256 assetId, uint256 amount) public view returns (uint256) {
+    return _assets[assetId].toDrawnSharesUp(amount);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function previewBaseRestore(uint256 assetId, uint256 baseAmount) public view returns (uint256) {
+    return _assets[assetId].toDrawnSharesDown(baseAmount);
   }
 
   // todo 4626 getter naming
