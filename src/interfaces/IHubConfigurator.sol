@@ -4,11 +4,11 @@ pragma solidity ^0.8.0;
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 /**
- * @title IConfigurator
+ * @title IHubConfigurator
  * @author Aave Labs
- * @notice Interface for the Configurator
+ * @notice Interface for the HubConfigurator
  */
-interface IConfigurator {
+interface IHubConfigurator {
   /**
    * @notice Thrown when the the list of assets and spoke configs are not the same length in `addSpokeToAssets`.
    */
@@ -16,9 +16,9 @@ interface IConfigurator {
 
   /**
    * @notice Registers the same spoke for multiple assets with the hub, each with their own configuration.
-   * @dev The i-th asset id in `assetIds` corresponds to the i-th configuration in `configs`.
+   * @dev The i-th asset identifier in `assetIds` corresponds to the i-th configuration in `configs`.
    * @param hub The address of the Hub contract.
-   * @param assetIds The list of asset ids to register the spoke for.
+   * @param assetIds The list of asset identifiers to register the spoke for.
    * @param spoke The address of the Spoke contract.
    * @param configs The list of Spoke configurations to register.
    */
@@ -68,7 +68,7 @@ interface IConfigurator {
   /**
    * @notice Updates the active flag of an asset.
    * @param hub The address of the Hub contract.
-   * @param assetId The id of the asset.
+   * @param assetId The identifier of the asset.
    * @param active The new active flag.
    */
   function updateActive(address hub, uint256 assetId, bool active) external;
@@ -76,7 +76,7 @@ interface IConfigurator {
   /**
    * @notice Updates the paused flag of an asset.
    * @param hub The address of the Hub contract.
-   * @param assetId The id of the asset.
+   * @param assetId The identifier of the asset.
    * @param paused The new paused flag.
    */
   function updatePaused(address hub, uint256 assetId, bool paused) external;
@@ -84,7 +84,7 @@ interface IConfigurator {
   /**
    * @notice Updates the frozen flag of an asset.
    * @param hub The address of the Hub contract.
-   * @param assetId The id of the asset.
+   * @param assetId The identifier of the asset.
    * @param frozen The new frozen flag.
    */
   function updateFrozen(address hub, uint256 assetId, bool frozen) external;
@@ -92,7 +92,7 @@ interface IConfigurator {
   /**
    * @notice Updates the liquidity fee of an asset.
    * @param hub The address of the Hub contract.
-   * @param assetId The id of the asset.
+   * @param assetId The identifier of the asset.
    * @param liquidityFee The new liquidity fee.
    */
   function updateLiquidityFee(address hub, uint256 assetId, uint256 liquidityFee) external;
@@ -102,7 +102,7 @@ interface IConfigurator {
    * @dev The fee receiver cannot be zero.
    * @dev Before updating the fee receiver, it adjusts the spoke config of the old and new fee receivers.
    * @param hub The address of the Hub contract.
-   * @param assetId The id of the asset.
+   * @param assetId The identifier of the asset.
    * @param feeReceiver The new fee receiver.
    */
   function updateFeeReceiver(address hub, uint256 assetId, address feeReceiver) external;
@@ -112,7 +112,7 @@ interface IConfigurator {
    * @dev Before updating the fee receiver, it adjusts the spoke config of the old and new fee receivers.
    * @dev The fee receiver cannot be zero.
    * @param hub The address of the Hub contract.
-   * @param assetId The id of the asset.
+   * @param assetId The identifier of the asset.
    * @param liquidityFee The new liquidity fee.
    * @param feeReceiver The new fee receiver.
    */
@@ -126,8 +126,20 @@ interface IConfigurator {
   /**
    * @notice Updates the interest rate strategy of an asset.
    * @param hub The address of the Hub contract.
-   * @param assetId The id of the asset.
+   * @param assetId The identifier of the asset.
    * @param irStrategy The new interest rate strategy.
    */
   function updateInterestRateStrategy(address hub, uint256 assetId, address irStrategy) external;
+
+  /**
+   * @notice Updates the config of an asset.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param config The new asset config.
+   */
+  function updateAssetConfig(
+    address hub,
+    uint256 assetId,
+    DataTypes.AssetConfig calldata config
+  ) external;
 }

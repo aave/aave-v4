@@ -101,8 +101,8 @@ interface ISpoke is IMulticall, IAccessManaged {
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;
 
   function addReserve(
-    uint256 assetId,
     address hub,
+    uint256 assetId,
     address priceSource,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynConfig
@@ -230,7 +230,7 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
 
-  function reserveCount() external view returns (uint256);
+  function getReserveCount() external view returns (uint256);
 
   function reservesList(uint256) external view returns (uint256);
 

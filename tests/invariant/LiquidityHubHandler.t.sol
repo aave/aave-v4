@@ -79,8 +79,8 @@ contract LiquidityHubHandler is Test {
       })
     );
     spoke1.addReserve(
-      0,
       address(hub),
+      0,
       _deployMockPriceFeed(spoke1, 1e8),
       DataTypes.ReserveConfig({
         active: true,

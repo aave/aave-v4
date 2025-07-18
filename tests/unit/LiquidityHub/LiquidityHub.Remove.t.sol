@@ -14,7 +14,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
   }
 
   function test_remove_fuzz(uint256 reserveId, uint256 amount) public {
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
     IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);

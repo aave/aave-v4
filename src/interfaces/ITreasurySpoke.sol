@@ -29,6 +29,14 @@ interface ITreasurySpoke {
   function withdraw(uint256 reserveId, uint256 amount, address to) external;
 
   /**
+   * @notice Transfers a specified amount of ERC20 tokens from this contract.
+   * @param token The address of the ERC20 token to transfer.
+   * @param to The recipient address.
+   * @param amount The amount of tokens to transfer.
+   */
+  function transfer(address token, address to, uint256 amount) external;
+
+  /**
    * @notice Returns the amount of assets supplied.
    * @dev The reserve identifier matches the corresponding asset in the Liquidity Hub.
    * @param reserveId The identifier of the reserve.

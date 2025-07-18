@@ -35,8 +35,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   IAaveOracle public oracle;
   uint256[] public reservesList; // todo: rm, not needed
-  uint256 public reserveCount;
 
+  uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
   mapping(address user => DataTypes.PositionStatus positionStatus) internal _positionStatus;
@@ -67,7 +67,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
-    require(reserveId < reserveCount, ReserveNotListed());
+    require(reserveId < _reserveCount, ReserveNotListed());
     _updateReservePriceSource(reserveId, priceSource);
   }
 
@@ -80,8 +80,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function addReserve(
-    uint256 assetId,
     address hub,
+    uint256 assetId,
     address priceSource,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
@@ -89,11 +89,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(hub != address(0), InvalidHubAddress());
 
     _validateReserveConfig(config);
-    uint256 reserveId = reserveCount++;
+    uint256 reserveId = _reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
+    require(assetId < ILiquidityHub(hub).getAssetCount(), AssetNotListed());
     DataTypes.Asset memory asset = ILiquidityHub(hub).getAsset(assetId);
-    require(asset.underlying != address(0), AssetNotListed());
 
     _updateReservePriceSource(reserveId, priceSource);
 
@@ -126,8 +126,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.ReserveConfig calldata config
   ) external restricted {
     // TODO: More sophisticated
+    require(reserveId < _reserveCount, ReserveNotListed());
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    require(reserve.underlying != address(0), ReserveNotListed());
     _validateReserveConfig(config);
     reserve.config = config;
     emit ReserveConfigUpdated(reserveId, config);
@@ -137,6 +137,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
+    require(reserveId < _reserveCount, ReserveNotListed());
     _validateDynamicReserveConfig(dynamicConfig);
     // TODO: More sophisticated
     DataTypes.Reserve storage reserve = _reserves[reserveId];
@@ -337,6 +338,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     if (premiumIncrease && user != msg.sender) {
       _checkCanCall(_msgSender(), _msgData());
     }
+  }
+
+  function getReserveCount() external view returns (uint256) {
+    return _reserveCount;
   }
 
   function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
@@ -923,7 +928,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 newUserRiskPremium
   ) internal returns (bool) {
     DataTypes.NotifyRiskPremiumUpdateVars memory vars;
-    vars.reserveCount = reserveCount;
+    vars.reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     while (vars.reserveId < vars.reserveCount) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];

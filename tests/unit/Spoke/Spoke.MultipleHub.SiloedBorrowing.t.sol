@@ -44,8 +44,8 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
 
     // Add B reserve to the new spoke
     siloedVars.reserveBId = newSpoke.addReserve(
-      siloedVars.assetBId,
       address(newHub),
+      siloedVars.assetBId,
       _deployMockPriceFeed(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
         active: true,
@@ -86,8 +86,8 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
 
     // Add A reserve to spoke 1
     siloedVars.reserveAId = spoke1.addReserve(
-      siloedVars.assetAId,
       address(hub),
+      siloedVars.assetAId,
       _deployMockPriceFeed(spoke1, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
@@ -119,8 +119,8 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     vm.startPrank(ADMIN);
     // Add reserve A from canonical hub to the new spoke
     siloedVars.reserveAIdNewSpoke = newSpoke.addReserve(
-      siloedVars.assetAId,
       address(hub),
+      siloedVars.assetAId,
       _deployMockPriceFeed(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
         active: true,
