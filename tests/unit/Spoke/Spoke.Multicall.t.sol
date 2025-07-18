@@ -79,7 +79,7 @@ contract SpokeMulticall is SpokeBase {
 
   /// Add multiple reserves using multicall
   function test_multicall_addMultipleReserves() public {
-    uint256 reserveCountBefore = spoke1.reserveCount();
+    uint256 reserveCountBefore = spoke1.getReserveCount();
     uint256 dai2ReserveId = reserveCountBefore;
     uint256 dai3ReserveId = dai2ReserveId + 1;
     DataTypes.ReserveConfig memory dai2Config = DataTypes.ReserveConfig({
@@ -87,26 +87,26 @@ contract SpokeMulticall is SpokeBase {
       frozen: false,
       paused: false,
       liquidityPremium: 10_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory dai2DynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 88_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
     DataTypes.ReserveConfig memory dai3Config = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
       liquidityPremium: 5_00,
-      liquidationFee: 0,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory dai3DynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 70_00,
-      liquidationBonus: 100_00
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
 
     DataTypes.Reserve memory dai2ReserveExpected;
@@ -124,11 +124,11 @@ contract SpokeMulticall is SpokeBase {
     bytes[] memory calls = new bytes[](2);
     calls[0] = abi.encodeCall(
       ISpoke.addReserve,
-      (daiAssetId, address(hub), _deployMockPriceFeed(spoke1, 1e8), dai2Config, dai2DynConfig)
+      (address(hub), daiAssetId, _deployMockPriceFeed(spoke1, 1e8), dai2Config, dai2DynConfig)
     );
     calls[1] = abi.encodeCall(
       ISpoke.addReserve,
-      (daiAssetId, address(hub), _deployMockPriceFeed(spoke1, 1e8), dai3Config, dai3DynConfig)
+      (address(hub), daiAssetId, _deployMockPriceFeed(spoke1, 1e8), dai3Config, dai3DynConfig)
     );
 
     vm.expectEmit(address(spoke1));
@@ -141,7 +141,7 @@ contract SpokeMulticall is SpokeBase {
     spoke1.multicall(calls);
 
     // Check the reserves
-    assertEq(spoke1.reserveCount(), reserveCountBefore + 2, 'Reserve count should increase by 2');
+    assertEq(spoke1.getReserveCount(), reserveCountBefore + 2, 'Reserve count should increase by 2');
     assertEq(spoke1.getReserveConfig(dai2ReserveId), dai2Config);
     assertEq(spoke1.getReserveConfig(dai3ReserveId), dai3Config);
     assertEq(spoke1.getDynamicReserveConfig(dai2ReserveId), dai2DynConfig);

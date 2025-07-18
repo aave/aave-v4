@@ -44,8 +44,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 liquidationFee,
     uint256 skipTime
   ) public {
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
-    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
+    debtReserveId = bound(debtReserveId, 0, spoke1.getReserveCount() - 1);
 
     LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTest(
       liqConfig,
@@ -342,8 +342,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 skipTime,
     uint256 liqBonus
   ) public {
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
-    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
+    debtReserveId = bound(debtReserveId, 0, spoke1.getReserveCount() - 1);
 
     LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTest({
       liqConfig: liqConfig,

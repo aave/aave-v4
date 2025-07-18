@@ -6,6 +6,33 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeDynamicConfigTest is SpokeBase {
   using SafeCast for uint256;
 
+  function test_updateDynamicReserveConfig_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.prank(alice);
+    spoke1.updateDynamicReserveConfig(
+      _daiReserveId(spoke1), 
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 80_00,
+        liquidationBonus: 100_00,
+        liquidationFee: 0
+      })
+    );
+  }
+
+  function test_updateDynamicReserveConfig_revertsWith_ReserveNotListed() public {
+    uint256 invalidReserveId = spoke1.getReserveCount();
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotListed.selector, invalidReserveId));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(
+      invalidReserveId, 
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 80_00,
+        liquidationBonus: 100_00,
+        liquidationFee: 0
+      })
+    );
+  }
+
   function test_updateDynamicReserveConfig_revertsWith_InvalidCollateralFactor() public {
     uint16 collateralFactor = vm
       .randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
@@ -24,7 +51,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function test_updateDynamicReserveConfig_once() public {
     DynamicConfig[] memory configs = _getSpokeDynConfigKeys(spoke1);
 
-    for (uint256 reserveId; reserveId < spoke1.reserveCount(); ++reserveId) {
+    for (uint256 reserveId; reserveId < spoke1.getReserveCount(); ++reserveId) {
       uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
       DataTypes.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
@@ -45,7 +72,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     uint256 runs = vm.randomUint(1, 100); // [1,100] iterations each fuzz run
 
     while (--runs != 0) {
-      uint256 reserveId = vm.randomUint(0, spoke1.reserveCount() - 1);
+      uint256 reserveId = vm.randomUint(0, spoke1.getReserveCount() - 1);
       uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
       DataTypes.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
@@ -67,7 +94,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     uint256 runs = vm.randomUint(1, 100); // [1,100] iterations each fuzz run
 
     while (--runs != 0) {
-      uint256 reserveId = vm.randomUint(0, spoke1.reserveCount() - 1);
+      uint256 reserveId = vm.randomUint(0, spoke1.getReserveCount() - 1);
       uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
       DataTypes.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
