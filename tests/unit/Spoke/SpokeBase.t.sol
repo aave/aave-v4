@@ -878,7 +878,7 @@ contract SpokeBase is Base {
   function getReserveIdByAssetId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {
     for (uint256 i; i < spoke.getReserveCount(); ++i) {
       if (assetId == spoke.getReserve(i).assetId) {
-        return assetId;
+        return i;
       }
     }
     revert('not found');
