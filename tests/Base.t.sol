@@ -242,14 +242,15 @@ abstract contract Base is Test {
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
-    bytes4[] memory selectors = new bytes4[](7);
+    bytes4[] memory selectors = new bytes4[](8);
     selectors[0] = ISpoke.updateOracle.selector;
     selectors[1] = ISpoke.updateReservePriceSource.selector;
     selectors[2] = ISpoke.updateLiquidationConfig.selector;
     selectors[3] = ISpoke.addReserve.selector;
     selectors[4] = ISpoke.updateReserveConfig.selector;
     selectors[5] = ISpoke.updateDynamicReserveConfig.selector;
-    selectors[6] = ISpoke.updateUserRiskPremium.selector;
+    selectors[6] = ISpoke.updateExistingDynamicReserveConfig.selector;
+    selectors[7] = ISpoke.updateUserRiskPremium.selector;
     accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
 
     // Liquidity Hub Admin functionalities
@@ -1865,7 +1866,7 @@ abstract contract Base is Test {
     treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
   }
 
-  function _assumeValidSupplier(address user) internal {
+  function _assumeValidSupplier(address user) internal view {
     vm.assume(
       user != address(0) &&
         user != address(hub) &&
@@ -1905,44 +1906,53 @@ abstract contract Base is Test {
   }
 
   function assertEq(DataTypes.AssetConfig memory a, DataTypes.AssetConfig memory b) internal pure {
-    assertEq(a.active, b.active, 'assertEq(AssetConfig): active');
-    assertEq(a.paused, b.paused, 'assertEq(AssetConfig): paused');
-    assertEq(a.frozen, b.frozen, 'assertEq(AssetConfig): frozen');
-    assertEq(a.feeReceiver, b.feeReceiver, 'assertEq(AssetConfig): feeReceiver');
-    assertEq(a.liquidityFee, b.liquidityFee, 'assertEq(AssetConfig): liquidityFee');
-    assertEq(a.irStrategy, b.irStrategy, 'assertEq(AssetConfig): irStrategy');
-    assertEq(abi.encode(a), abi.encode(b), 'assertEq(AssetConfig): all fields');
+    assertEq(a.active, b.active, 'active');
+    assertEq(a.paused, b.paused, ' paused');
+    assertEq(a.frozen, b.frozen, 'frozen');
+    assertEq(a.feeReceiver, b.feeReceiver, 'feeReceiver');
+    assertEq(a.liquidityFee, b.liquidityFee, 'liquidityFee');
+    assertEq(a.irStrategy, b.irStrategy, 'irStrategy');
+    assertEq(abi.encode(a), abi.encode(b));
   }
 
   function assertEq(DataTypes.SpokeConfig memory a, DataTypes.SpokeConfig memory b) internal pure {
-    assertEq(a.supplyCap, b.supplyCap, 'assertEq(SpokeConfig): supplyCap');
-    assertEq(a.drawCap, b.drawCap, 'assertEq(SpokeConfig): drawCap');
-    assertEq(a.active, b.active, 'assertEq(SpokeConfig): active');
-    assertEq(abi.encode(a), abi.encode(b), 'assertEq(SpokeConfig): all fields');
+    assertEq(a.supplyCap, b.supplyCap, 'supplyCap');
+    assertEq(a.drawCap, b.drawCap, 'drawCap');
+    assertEq(a.active, b.active, 'active');
+    assertEq(abi.encode(a), abi.encode(b));
   }
 
-  function assertEq(DataTypes.LiquidationConfig memory a, DataTypes.LiquidationConfig memory b) internal pure {
-    assertEq(a.closeFactor, b.closeFactor, 'assertEq(LiquidationConfig): closeFactor');
-    assertEq(a.liquidationBonusFactor, b.liquidationBonusFactor, 'assertEq(LiquidationConfig): liquidationBonusFactor');
-    assertEq(a.healthFactorForMaxBonus, b.healthFactorForMaxBonus, 'assertEq(LiquidationConfig): healthFactorForMaxBonus');
-    assertEq(abi.encode(a), abi.encode(b), 'assertEq(LiquidationConfig): all fields');
+  function assertEq(
+    DataTypes.LiquidationConfig memory a,
+    DataTypes.LiquidationConfig memory b
+  ) internal pure {
+    assertEq(a.closeFactor, b.closeFactor, 'closeFactor');
+    assertEq(a.liquidationBonusFactor, b.liquidationBonusFactor, 'liquidationBonusFactor');
+    assertEq(a.healthFactorForMaxBonus, b.healthFactorForMaxBonus, 'healthFactorForMaxBonus');
+    assertEq(abi.encode(a), abi.encode(b));
   }
 
-  function assertEq(DataTypes.ReserveConfig memory a, DataTypes.ReserveConfig memory b) internal pure {
-    assertEq(a.active, b.active, 'assertEq(ReserveConfig): active');
-    assertEq(a.paused, b.paused, 'assertEq(ReserveConfig): paused');
-    assertEq(a.frozen, b.frozen, 'assertEq(ReserveConfig): frozen');
-    assertEq(a.borrowable, b.borrowable, 'assertEq(ReserveConfig): borrowable');
-    assertEq(a.collateral, b.collateral, 'assertEq(ReserveConfig): collateral');
-    assertEq(a.liquidityPremium, b.liquidityPremium, 'assertEq(ReserveConfig): liquidityPremium');
-    assertEq(abi.encode(a), abi.encode(b), 'assertEq(ReserveConfig): all fields');
+  function assertEq(
+    DataTypes.ReserveConfig memory a,
+    DataTypes.ReserveConfig memory b
+  ) internal pure {
+    assertEq(a.active, b.active, 'active');
+    assertEq(a.paused, b.paused, 'paused');
+    assertEq(a.frozen, b.frozen, 'frozen');
+    assertEq(a.borrowable, b.borrowable, 'borrowable');
+    assertEq(a.collateral, b.collateral, 'collateral');
+    assertEq(a.liquidityPremium, b.liquidityPremium, 'liquidityPremium');
+    assertEq(abi.encode(a), abi.encode(b), 'all fields');
   }
 
-  function assertEq(DataTypes.DynamicReserveConfig memory a, DataTypes.DynamicReserveConfig memory b) internal pure {
-    assertEq(a.collateralFactor, b.collateralFactor, 'assertEq(DynamicReserveConfig): collateralFactor');
-    assertEq(a.liquidationBonus, b.liquidationBonus, 'assertEq(DynamicReserveConfig): liquidationBonus');
-    assertEq(a.liquidationFee, b.liquidationFee, 'assertEq(DynamicReserveConfig): liquidationFee');
-    assertEq(abi.encode(a), abi.encode(b), 'assertEq(DynamicReserveConfig): all fields');
+  function assertEq(
+    DataTypes.DynamicReserveConfig memory a,
+    DataTypes.DynamicReserveConfig memory b
+  ) internal pure {
+    assertEq(a.collateralFactor, b.collateralFactor, 'collateralFactor');
+    assertEq(a.liquidationBonus, b.liquidationBonus, 'liquidationBonus');
+    assertEq(a.liquidationFee, b.liquidationFee, 'liquidationFee');
+    assertEq(abi.encode(a), abi.encode(b));
   }
 
   function _calculateExpectedFees(
@@ -2091,12 +2101,12 @@ abstract contract Base is Test {
   }
 
   function assertBorrowRateSynced(
-    ILiquidityHub hub,
+    ILiquidityHub liquidityHub,
     uint256 assetId,
     string memory operation
   ) internal {
-    DataTypes.Asset memory asset = hub.getAsset(assetId);
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    DataTypes.Asset memory asset = liquidityHub.getAsset(assetId);
+    (uint256 baseDebt, uint256 premiumDebt) = liquidityHub.getAssetDebt(assetId);
 
     vm.assertEq(
       asset.baseBorrowRate,

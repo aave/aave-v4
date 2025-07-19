@@ -133,6 +133,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit ReserveConfigUpdated(reserveId, config);
   }
 
+  /// @inheritdoc ISpoke
   function updateDynamicReserveConfig(
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
@@ -150,6 +151,22 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     _dynamicConfig[reserveId][nextConfigKey] = dynamicConfig;
     emit DynamicReserveConfigUpdated(reserveId, nextConfigKey, dynamicConfig);
     // todo emit if stale config overwritten?
+  }
+
+  /// @inheritdoc ISpoke
+  function updateExistingDynamicReserveConfig(
+    uint256 reserveId,
+    uint16 configKey,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
+  ) external restricted {
+    require(reserveId < _reserveCount, ReserveNotListed());
+    _validateDynamicReserveConfig(dynamicConfig);
+    // @dev sufficient check since min liquidationBonus is 100_00
+    require(_dynamicConfig[reserveId][configKey].liquidationBonus != 0, ConfigKeyUninitialized());
+
+    // Update the existing config at the specified key
+    _dynamicConfig[reserveId][configKey] = dynamicConfig;
+    emit DynamicReserveConfigUpdated(reserveId, configKey, dynamicConfig);
   }
 
   // /////

@@ -95,6 +95,7 @@ interface ISpoke is IMulticall, IAccessManaged {
   error InvalidOracle();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
+  error ConfigKeyUninitialized();
 
   function updateOracle(address newOracle) external;
 
@@ -110,8 +111,27 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;
 
+  /**
+   * @notice Updates the dynamic reserve config for a given reserve.
+   * @dev Appends dynamic config to the next valid config key, and overrides existing config if the key is already used.
+   * @param reserveId The identifier of the reserve.
+   * @param dynamicConfig The dynamic reserve config to update.
+   */
   function updateDynamicReserveConfig(
     uint256 reserveId,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
+  ) external;
+
+  /**
+   * @notice Updates the dynamic reserve config for a given reserve at the specified key.
+   * @dev Reverts with `ConfigKeyUninitialized` if the config key has not been uninitialized yet.
+   * @param reserveId The identifier of the reserve.
+   * @param configKey The key of the config to update.
+   * @param dynamicConfig The dynamic reserve config to update.
+   */
+  function updateExistingDynamicReserveConfig(
+    uint256 reserveId,
+    uint16 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external;
 
