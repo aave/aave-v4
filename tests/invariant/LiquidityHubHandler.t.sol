@@ -79,19 +79,22 @@ contract LiquidityHubHandler is Test {
       })
     );
     spoke1.addReserve(
-      0,
       address(hub),
+      0,
       _deployMockPriceFeed(spoke1, 1e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
         paused: false,
         liquidityPremium: 0,
-        liquidationFee: 0,
         borrowable: false,
         collateral: false
       }),
-      DataTypes.DynamicReserveConfig({collateralFactor: 0, liquidationBonus: 100_00})
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 0,
+        liquidationBonus: 100_00,
+        liquidationFee: 0
+      })
     );
     vm.stopPrank();
   }

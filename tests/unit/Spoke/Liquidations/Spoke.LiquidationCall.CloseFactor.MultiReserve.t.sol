@@ -116,10 +116,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 supplyAmountInBase,
     uint256 skipTime
   ) public {
-    collateralReserveId1 = bound(collateralReserveId1, 0, spoke1.reserveCount() - 1);
-    collateralReserveId2 = bound(collateralReserveId2, 0, spoke1.reserveCount() - 1);
-    debtReserveId1 = bound(debtReserveId1, 0, spoke1.reserveCount() - 1);
-    debtReserveId2 = bound(debtReserveId2, 0, spoke1.reserveCount() - 1);
+    collateralReserveId1 = bound(collateralReserveId1, 0, spoke1.getReserveCount() - 1);
+    collateralReserveId2 = bound(collateralReserveId2, 0, spoke1.getReserveCount() - 1);
+    debtReserveId1 = bound(debtReserveId1, 0, spoke1.getReserveCount() - 1);
+    debtReserveId2 = bound(debtReserveId2, 0, spoke1.getReserveCount() - 1);
 
     collateralReserveIndex = bound(collateralReserveIndex, 0, 1);
     debtReserveIndex = bound(debtReserveIndex, 0, 1);

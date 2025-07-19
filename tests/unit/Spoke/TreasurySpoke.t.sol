@@ -4,11 +4,12 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract TreasurySpokeTest is SpokeBase {
-  using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMath for uint256;
-  using PercentageMathExtended for uint256;
-  using WadRayMath for uint256;
+  MockERC20 internal _testToken;
+
+  function setUp() public virtual override {
+    super.setUp();
+    _testToken = new MockERC20();
+  }
 
   function test_initial_state() public view {
     assertEq(address(treasurySpoke.HUB()), address(hub));
@@ -31,7 +32,7 @@ contract TreasurySpokeTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    treasurySpoke.withdraw(daiAssetId, 1, address(1));
+    treasurySpoke.withdraw(daiAssetId, 1, vm.randomAddress());
   }
 
   function test_supply(uint256 amount) public {
@@ -115,10 +116,49 @@ contract TreasurySpokeTest is SpokeBase {
     );
   }
 
+  function test_transfer_revertsWith_Unauthorized(address caller) public {
+    vm.assume(caller != TREASURY_ADMIN);
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
+    vm.prank(caller);
+    treasurySpoke.transfer(vm.randomAddress(), vm.randomAddress(), 1);
+  }
+
+  function test_transfer_revertsWith_InsufficientBalance(uint256 amount) public {
+    vm.assume(amount > 0);
+    address token = address(new MockERC20());
+
+    vm.prank(TREASURY_ADMIN);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IERC20Errors.ERC20InsufficientBalance.selector,
+        address(treasurySpoke),
+        0,
+        amount
+      )
+    );
+    treasurySpoke.transfer(token, vm.randomAddress(), amount);
+  }
+
+  function test_transfer_fuzz(address recipient, uint256 amount, uint256 transferAmount) public {
+    vm.assume(recipient != address(0));
+    vm.assume(recipient != address(treasurySpoke));
+    amount = bound(amount, 1, type(uint128).max);
+    transferAmount = bound(transferAmount, 1, amount);
+
+    _testToken.mint(address(treasurySpoke), amount);
+
+    vm.expectEmit(address(_testToken));
+    emit IERC20.Transfer(address(treasurySpoke), recipient, transferAmount);
+    vm.prank(TREASURY_ADMIN);
+    treasurySpoke.transfer(address(_testToken), recipient, transferAmount);
+
+    assertEq(_testToken.balanceOf(address(treasurySpoke)), amount - transferAmount);
+    assertEq(_testToken.balanceOf(recipient), transferAmount);
+  }
+
   function _treasurySpoke() internal view returns (ISpoke) {
     return ISpoke(address(treasurySpoke));
   }
 
-  // todo: test that supplying from treasury does not create any issue. existing fees are added to the supply amount
   // todo: add test for 100% liquidity fee
 }

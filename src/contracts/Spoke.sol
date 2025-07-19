@@ -35,8 +35,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   IAaveOracle public oracle;
   uint256[] public reservesList; // todo: rm, not needed
-  uint256 public reserveCount;
 
+  uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
   mapping(address user => DataTypes.PositionStatus positionStatus) internal _positionStatus;
@@ -73,7 +73,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
-    require(reserveId < reserveCount, ReserveNotListed());
+    require(reserveId < _reserveCount, ReserveNotListed());
     _updateReservePriceSource(reserveId, priceSource);
   }
 
@@ -86,8 +86,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function addReserve(
-    uint256 assetId,
     address hub,
+    uint256 assetId,
     address priceSource,
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
@@ -95,11 +95,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(hub != address(0), InvalidHubAddress());
 
     _validateReserveConfig(config);
-    uint256 reserveId = reserveCount++;
+    uint256 reserveId = _reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
+    require(assetId < ILiquidityHub(hub).getAssetCount(), AssetNotListed());
     DataTypes.Asset memory asset = ILiquidityHub(hub).getAsset(assetId);
-    require(asset.underlying != address(0), AssetNotListed());
 
     _updateReservePriceSource(reserveId, priceSource);
 
@@ -132,8 +132,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.ReserveConfig calldata config
   ) external restricted {
     // TODO: More sophisticated
+    require(reserveId < _reserveCount, ReserveNotListed());
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    require(reserve.underlying != address(0), ReserveNotListed());
     _validateReserveConfig(config);
     reserve.config = config;
     emit ReserveConfigUpdated(reserveId, config);
@@ -143,6 +143,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
+    require(reserveId < _reserveCount, ReserveNotListed());
     _validateDynamicReserveConfig(dynamicConfig);
     // TODO: More sophisticated
     DataTypes.Reserve storage reserve = _reserves[reserveId];
@@ -456,6 +457,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return _userPositions[user][reserveId].suppliedShares;
   }
 
+  function getReserveCount() external view returns (uint256) {
+    return _reserveCount;
+  }
+
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
     (uint256 baseDebt, uint256 premiumDebt) = _getReserveDebt(_reserves[reserveId]);
     return (baseDebt, premiumDebt);
@@ -610,10 +615,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal pure {
     require(config.liquidityPremium <= MAX_LIQUIDITY_PREMIUM, InvalidLiquidityPremium()); // max 1000.00%
-    require(
-      config.liquidationFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
-      InvalidLiquidationFee()
-    );
   }
 
   function _validateDynamicReserveConfig(
@@ -632,6 +633,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         PercentageMathExtended.PERCENTAGE_FACTOR,
       IncompatibleCollateralFactorAndLiquidationBonus()
     ); // Enforces that at moment loan is taken, there should be enough collateral to cover liquidation
+    require(
+      config.liquidationFee <= PercentageMathExtended.PERCENTAGE_FACTOR,
+      InvalidLiquidationFee()
+    );
   }
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal pure {
@@ -1001,7 +1006,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 newUserRiskPremium
   ) internal returns (bool) {
     DataTypes.NotifyRiskPremiumUpdateVars memory vars;
-    vars.reserveCount = reserveCount;
+    vars.reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     while (vars.reserveId < vars.reserveCount) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
@@ -1258,9 +1263,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.debtReserveId = debtReserve.reserveId;
     vars.userCollateralBalance = getUserSuppliedAmount(vars.collateralReserveId, user);
     vars.totalDebt = baseDebt + premiumDebt;
-    vars.collateralFactor = _dynamicConfig[vars.collateralReserveId][
-      _userPositions[user][vars.collateralReserveId].configKey
-    ].collateralFactor;
+    DataTypes.DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[
+      vars.collateralReserveId
+    ][_userPositions[user][vars.collateralReserveId].configKey];
+    vars.collateralFactor = collateralDynConfig.collateralFactor;
 
     (
       ,
@@ -1290,7 +1296,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.closeFactor = _liquidationConfig.closeFactor;
     vars.collateralAssetPrice = oracle.getReservePrice(vars.collateralReserveId);
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
-    vars.liquidationFee = collateralReserve.config.liquidationFee;
+    vars.liquidationFee = collateralDynConfig.liquidationFee;
 
     vars.actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate({
       debtToCover: debtToCover,
