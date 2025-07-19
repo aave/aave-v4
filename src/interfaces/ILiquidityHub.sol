@@ -201,11 +201,25 @@ interface ILiquidityHub is IAccessManaged {
   function previewAdd(uint256 assetId, uint256 amount) external view returns (uint256);
 
   /**
+   * @notice Converts the specified amount of shares to asset amount supplied upon an Add action.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to convert to asset amount.
+   */
+  function previewAddByShares(uint256 assetId, uint256 shares) external view returns (uint256);
+
+  /**
    * @notice Converts the specified amount of asset to shares removed upon a Remove action.
    * @param assetId The identifier of the asset.
    * @param amount The amount of asset to convert to shares.
    */
   function previewRemove(uint256 assetId, uint256 amount) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of shares to asset amount removed upon a Remove action.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to convert to asset amount.
+   */
+  function previewRemoveByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
    * @notice Converts the specified amount of asset to shares drawn upon a Draw action.
@@ -215,11 +229,28 @@ interface ILiquidityHub is IAccessManaged {
   function previewDraw(uint256 assetId, uint256 amount) external view returns (uint256);
 
   /**
+   * @notice Converts the specified amount of shares to asset amount drawn upon a Draw action.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to convert to asset amount.
+   */
+  function previewDrawByShares(uint256 assetId, uint256 shares) external view returns (uint256);
+
+  /**
    * @notice Converts the specified amount of base asset to shares restored upon a Restore action.
    * @param assetId The identifier of the asset.
    * @param baseAmount The amount of base asset to convert to shares.
    */
   function previewBaseRestore(uint256 assetId, uint256 baseAmount) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of shares to base asset amount restored upon a Restore action.
+   * @param assetId The identifier of the asset.
+   * @param baseDrawnShares The amount of base drawn shares to convert to asset amount.
+   */
+  function previewBaseRestoreByShares(
+    uint256 assetId,
+    uint256 baseDrawnShares
+  ) external view returns (uint256);
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 

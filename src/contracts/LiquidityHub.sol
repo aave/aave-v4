@@ -358,8 +358,18 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   /// @inheritdoc ILiquidityHub
+  function previewAddByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+    return _assets[assetId].toSuppliedAssetsUp(shares);
+  }
+
+  /// @inheritdoc ILiquidityHub
   function previewRemove(uint256 assetId, uint256 amount) public view returns (uint256) {
     return _assets[assetId].toSuppliedSharesUp(amount);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function previewRemoveByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+    return _assets[assetId].toSuppliedAssetsDown(shares);
   }
 
   /// @inheritdoc ILiquidityHub
@@ -368,8 +378,21 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   /// @inheritdoc ILiquidityHub
+  function previewDrawByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+    return _assets[assetId].toDrawnAssetsDown(shares);
+  }
+
+  /// @inheritdoc ILiquidityHub
   function previewBaseRestore(uint256 assetId, uint256 baseAmount) public view returns (uint256) {
     return _assets[assetId].toDrawnSharesDown(baseAmount);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function previewBaseRestoreByShares(
+    uint256 assetId,
+    uint256 baseDrawnShares
+  ) public view returns (uint256) {
+    return _assets[assetId].toDrawnAssetsUp(baseDrawnShares);
   }
 
   // todo 4626 getter naming
