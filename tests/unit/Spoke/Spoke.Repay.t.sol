@@ -127,6 +127,7 @@ contract SpokeRepayTest is SpokeBase {
       0,
       'user total debt after full repay'
     );
+    assertFalse(spoke1.isBorrowing(_daiReserveId(spoke1), bob));
   }
 
   function test_repay_same_block() public {
@@ -477,6 +478,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Verify that Bob's debt is fully cleared after repayment
     assertEq(bobDaiAfter.totalDebt, 0, 'Bob dai debt should be cleared');
+    assertFalse(spoke1.isBorrowing(_daiReserveId(spoke1), bob));
 
     // Verify that his DAI balance was reduced by the full debt amount
     assertEq(

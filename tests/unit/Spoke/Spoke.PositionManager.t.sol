@@ -104,7 +104,9 @@ contract SpokePositionManagerTest is SpokeBase {
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
+    assertFalse(spoke1.isBorrowing(reserveId, POSITION_MANAGER));
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), amount);
+    assertTrue(spoke1.isBorrowing(reserveId, alice));
   }
 
   function test_onlyPositionManager_on_repay() public {
@@ -131,6 +133,15 @@ contract SpokePositionManagerTest is SpokeBase {
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), amount - repayAmount);
+    assertFalse(spoke1.isBorrowing(reserveId, POSITION_MANAGER));
+    assertTrue(spoke1.isBorrowing(reserveId, alice));
+
+    Utils.repay(spoke1, reserveId, POSITION_MANAGER, type(uint256).max, alice);
+    assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
+    assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
+    assertEq(spoke1.getUserTotalDebt(reserveId, alice), 0);
+    assertFalse(spoke1.isBorrowing(reserveId, POSITION_MANAGER));
+    assertFalse(spoke1.isBorrowing(reserveId, alice));
   }
 
   function test_onlyPositionManager_on_usingAsCollateral() public {

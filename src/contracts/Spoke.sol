@@ -289,7 +289,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     userPosition.baseDrawnShares -= vars.restoredShares;
 
     if (userPosition.baseDrawnShares == 0) {
-      _positionStatus[msg.sender].setBorrowing(reserveId, false);
+      _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
     }
 
     (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
@@ -377,7 +377,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     // check permissions if premium increases and not called by user
     if (premiumIncrease && !_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
-      _checkCanCall(_msgSender(), _msgData());
+      _checkCanCall(msg.sender, msg.data);
     }
   }
 
@@ -408,6 +408,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
     return _positionStatus[user].isUsingAsCollateral(reserveId);
+  }
+
+  function isBorrowing(uint256 reserveId, address user) external view returns (bool) {
+    return _positionStatus[user].isBorrowing(reserveId);
   }
 
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {

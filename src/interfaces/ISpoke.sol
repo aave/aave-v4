@@ -26,56 +26,56 @@ interface ISpoke is IMulticall, IAccessManaged {
   /**
    * @notice Emitted on the supply action.
    * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator, & supplier of the underlying asset.
-   * @param onBehalfOf The owner of the modified position.
+   * @param caller The transaction initiator, and supplier of the underlying asset.
+   * @param user The owner of the modified position.
    * @param suppliedShares The amount of supply shares minted.
    */
   event Supply(
     uint256 indexed reserveId,
     address indexed caller,
-    address indexed onBehalfOf,
+    address indexed user,
     uint256 suppliedShares
   );
 
   /**
    * @notice Emitted on the withdraw action.
    * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator, & recipient of the underlying asset being withdrawn.
-   * @param onBehalfOf The owner of the modified position.
+   * @param caller The transaction initiator, and recipient of the underlying asset being withdrawn.
+   * @param user The owner of the modified position.
    * @param suppliedShares The amount of supply shares burned.
    */
   event Withdraw(
     uint256 indexed reserveId,
     address indexed caller,
-    address indexed onBehalfOf,
+    address indexed user,
     uint256 suppliedShares
   );
 
   /**
    * @notice Emitted on the borrow action.
    * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator, & recipient of the underlying asset being borrowed.
-   * @param onBehalfOf The owner of the position on which debt is generated.
+   * @param caller The transaction initiator, and recipient of the underlying asset being borrowed.
+   * @param user The owner of the position on which debt is generated.
    * @param drawnShares The amount of debt shares minted.
    */
   event Borrow(
     uint256 indexed reserveId,
     address indexed caller,
-    address indexed onBehalfOf,
+    address indexed user,
     uint256 drawnShares
   );
 
   /**
    * @notice Emitted on the repay action.
    * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator, & supplier of the underlying asset being repaid.
-   * @param onBehalfOf The owner of the position whose debt is being repaid.
+   * @param caller The transaction initiator, and supplier of the underlying asset being repaid.
+   * @param user The owner of the position whose debt is being repaid.
    * @param drawnShares The amount of debt shares burned.
    */
   event Repay(
     uint256 indexed reserveId,
     address indexed caller,
-    address indexed onBehalfOf,
+    address indexed user,
     uint256 drawnShares
   );
 
@@ -347,6 +347,8 @@ interface ISpoke is IMulticall, IAccessManaged {
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
 
   function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
+
+  function isBorrowing(uint256 reserveId, address user) external view returns (bool);
 
   function reserveCount() external view returns (uint256);
 

@@ -375,6 +375,7 @@ contract SpokeBase is Base {
         vm.prank(user);
         spoke.repay(reserveId, debt, user);
         assertEq(spoke.getUserTotalDebt(reserveId, user), 0, 'user debt not zero');
+        assertFalse(spoke.isBorrowing(reserveId, user));
         // If the user has no debt in any asset (hf will be max), user risk premium should be zero
         if (spoke.getHealthFactor(user) == type(uint256).max) {
           assertEq(spoke.getUserRiskPremium(user), 0, 'user risk premium not zero');
@@ -493,9 +494,8 @@ contract SpokeBase is Base {
 
     // user debt
     DebtData memory expectedUserDebt = _calcExpectedUserDebt(assetId, expectedUserPos);
-    DebtData memory userDebt;
-    userDebt.totalDebt = spoke.getUserTotalDebt(reserveId, user);
-    (userDebt.baseDebt, userDebt.premiumDebt) = spoke.getUserDebt(reserveId, user);
+    DebtData memory userDebt = _getUserDebt(spoke, reserveId, user);
+    assertEq(spoke.isBorrowing(reserveId, user), userDebt.totalDebt > 0);
 
     // assertions
     _assertUserPosition(userPos, expectedUserPos, label);
@@ -511,6 +511,18 @@ contract SpokeBase is Base {
     userDebt.premiumDebt = userPos.realizedPremium + accruedPremium;
     userDebt.baseDebt = hub.convertToDrawnAssets(assetId, userPos.baseDrawnShares);
     userDebt.totalDebt = userDebt.baseDebt + userDebt.premiumDebt;
+  }
+
+  function _getUserDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (DebtData memory) {
+    DebtData memory userDebt;
+    userDebt.totalDebt = spoke.getUserTotalDebt(reserveId, user);
+    (userDebt.baseDebt, userDebt.premiumDebt) = spoke.getUserDebt(reserveId, user);
+    assertEq(userDebt.totalDebt, userDebt.baseDebt + userDebt.premiumDebt);
+    return userDebt;
   }
 
   // assert that user position matches expected
