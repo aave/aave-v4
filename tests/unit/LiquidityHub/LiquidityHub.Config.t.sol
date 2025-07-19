@@ -94,7 +94,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   ) public {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(interestRateStrategy);
-  
+
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
@@ -142,7 +142,14 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(expectedAssetId, expectedConfig);
 
-    uint256 assetId = Utils.addAsset(hub, ADMIN, underlying, decimals, feeReceiver, interestRateStrategy);
+    uint256 assetId = Utils.addAsset(
+      hub,
+      ADMIN,
+      underlying,
+      decimals,
+      feeReceiver,
+      interestRateStrategy
+    );
 
     assertEq(assetId, expectedAssetId, 'asset id');
     assertEq(hub.getAssetCount(), assetId + 1, 'asset count');
@@ -213,7 +220,11 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     // Always accrue first, based on old config
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), vm.getBlockTimestamp());
+    emit ILiquidityHub.DrawnIndexUpdate(
+      assetId,
+      hub.previewDrawnIndex(assetId),
+      vm.getBlockTimestamp()
+    );
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(assetId, newConfig);
 
@@ -385,7 +396,10 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertNotEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), futureFees);
   }
 
-  function _assumeValidAssetConfig(uint256 assetId, DataTypes.AssetConfig memory newConfig) public {
+  function _assumeValidAssetConfig(
+    uint256 assetId,
+    DataTypes.AssetConfig memory newConfig
+  ) internal pure {
     newConfig.liquidityFee = bound(
       newConfig.liquidityFee,
       0,

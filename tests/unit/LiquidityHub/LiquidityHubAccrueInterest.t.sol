@@ -47,7 +47,7 @@ contract LiquidityHubAccrueInterestTest is Base {
   }
 
   /// no interest accrued when no action taken
-  function test_accrueInterest_NoActionTaken() public {
+  function test_accrueInterest_NoActionTaken() public view {
     DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
     assertEq(daiInfo.baseDebtIndex, WadRayMathExtended.RAY);

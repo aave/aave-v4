@@ -313,7 +313,7 @@ contract SpokeLiquidationBase is SpokeBase {
   function _assertLiquidationFeeEarned(
     LiquidationTestLocalParams memory state,
     string memory label
-  ) internal view {
+  ) internal pure {
     uint256 totalLiqBonusAmount = state.supply.balanceChange -
       state.supply.balanceChange.percentDivUp(state.liquidationBonus);
     uint256 liquidationFeeAmount = state.treasury.balanceChange;
@@ -546,7 +546,7 @@ contract SpokeLiquidationBase is SpokeBase {
   /// rate field is the supply exchange rate of the collateral reserve, applied to a RAY.
   function _getAccountingInfoAfterLiq(
     LiquidationTestLocalParams memory state
-  ) internal returns (LiquidationTestLocalParams memory) {
+  ) internal view returns (LiquidationTestLocalParams memory) {
     state.treasury.balanceAfter = hub.getSpokeSuppliedAmount(
       state.collateralReserve.assetId,
       _getFeeReceiver(state.collateralReserve.assetId)
