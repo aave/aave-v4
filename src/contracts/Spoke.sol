@@ -877,8 +877,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   // todo optimize, merge logic duped borrow/repay, rename
   /**
-   * @dev Trigger risk premium update on all drawn reserves of `user` except the reserve's corresponding
-   * to `assetIdToAvoid` as those are expected to be updated outside of this method.
+   * @dev Trigger risk premium update on all drawn reserves of `user`.
    */
   function _notifyRiskPremiumUpdate(
     address user,
@@ -888,12 +887,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     while (vars.reserveId < vars.reserveCount) {
-      DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
-      DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
-      vars.assetId = reserve.assetId;
-      vars.hub = reserve.hub;
       // todo keep borrowed assets in transient storage/pass through?
       if (positionStatus.isBorrowing(vars.reserveId)) {
+        DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
+        DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
+        vars.assetId = reserve.assetId;
+        vars.hub = reserve.hub;
+
         uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
         uint256 oldUserPremiumOffset = userPosition.premiumOffset;
         uint256 accruedUserPremium = vars.hub.convertToDrawnAssets(
