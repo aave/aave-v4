@@ -218,11 +218,19 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     _assumeValidAssetConfig(assetId, newConfig);
     _mockInterestRateBps(newConfig.irStrategy, 5_00);
 
-    // Always accrue first, based on old config
+    uint256 availableLiquidity = hub.getAvailableLiquidity(assetId);
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DrawnIndexUpdate(
+    emit ILiquidityHub.AssetUpdated(
       assetId,
       hub.previewDrawnIndex(assetId),
+      IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
+        assetId: assetId,
+        availableLiquidity: availableLiquidity,
+        baseDebt: baseDebt,
+        premiumDebt: premiumDebt
+      }),
       vm.getBlockTimestamp()
     );
     vm.expectEmit(address(hub));

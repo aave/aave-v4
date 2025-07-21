@@ -19,7 +19,12 @@ interface ILiquidityHub is IAccessManaged {
     address indexed spoke,
     DataTypes.SpokeConfig config
   );
-  event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 lastUpdateTimestamp);
+  event AssetUpdated(
+    uint256 indexed assetId,
+    uint256 drawnIndex,
+    uint256 baseBorrowRate,
+    uint256 latestUpdateTimestamp // TODO: rm when block.timestamp is added in eth_getLogs rpc call
+  );
   event Add(
     uint256 indexed assetId,
     address indexed spoke,
