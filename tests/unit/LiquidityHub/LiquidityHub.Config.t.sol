@@ -5,6 +5,7 @@ import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubConfigTest is LiquidityHubBase {
   using SharesMath for uint256;
+  using WadRayMathExtended for uint32;
 
   function test_addSpoke_fuzz_revertsWith_AssetNotListed(
     uint256 assetId,
@@ -119,15 +120,29 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     address underlying,
     uint8 decimals,
     address feeReceiver,
-    address interestRateStrategy
+    uint32 baseVariableBorrowRate
   ) public {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
-    assumeNotZeroAddress(interestRateStrategy);
 
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
-
+    baseVariableBorrowRate = uint32(bound(baseVariableBorrowRate, 0, MAX_BORROW_RATE / 2)); // 1000%
     uint256 expectedAssetId = hub.getAssetCount();
+
+    address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub)));
+    vm.prank(address(hub));
+    IAssetInterestRateStrategy(interestRateStrategy).setInterestRateData(
+      expectedAssetId,
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: baseVariableBorrowRate, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
+    );
+
     DataTypes.AssetConfig memory expectedConfig = DataTypes.AssetConfig({
       active: true,
       frozen: false,
@@ -141,6 +156,13 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     emit ILiquidityHub.AssetAdded(expectedAssetId, underlying, decimals);
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetConfigUpdated(expectedAssetId, expectedConfig);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetUpdated(
+      expectedAssetId,
+      WadRayMathExtended.RAY,
+      baseVariableBorrowRate.bpsToRay(),
+      vm.getBlockTimestamp()
+    );
 
     uint256 assetId = Utils.addAsset(
       hub,

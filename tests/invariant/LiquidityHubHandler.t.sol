@@ -50,10 +50,8 @@ contract LiquidityHubHandler is Test {
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
-
-    // Add dai
-    hub.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy));
     vm.stopPrank();
+
     vm.prank(address(hub));
     irStrategy.setInterestRateData(
       0,
@@ -67,6 +65,8 @@ contract LiquidityHubHandler is Test {
       )
     );
     vm.startPrank(hubAdmin);
+    // Add dai
+    hub.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy));
     hub.updateAssetConfig(
       0,
       DataTypes.AssetConfig({

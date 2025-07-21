@@ -22,6 +22,21 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
       drawCap: 1000e18
     });
 
+    // initialize interest rate strategy data first
+    vm.startPrank(address(hub));
+    irStrategy.setInterestRateData(
+      hub.getAssetCount(),
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
+    );
+    vm.stopPrank();
+
     // Only Hub Admin can add assets to the hub
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))

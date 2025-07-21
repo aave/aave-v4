@@ -24,6 +24,12 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
   ///@dev Adds new assets A and B to the new hub and spoke, no restrictions.
   ///@dev Lists asset B on canonical hub and spoke with no restrictions.
   function setUpIsolationMode() internal {
+    // Configure interest rate strategy for assets A and B
+    vm.startPrank(address(newHub));
+    newIrStrategy.setInterestRateData(newHub.getAssetCount(), encodedIrData); // asset A
+    newIrStrategy.setInterestRateData(newHub.getAssetCount() + 1, encodedIrData); // asset B
+    vm.stopPrank();
+
     vm.startPrank(ADMIN);
     // Add assets A and B to the new hub
     newHub.addAsset(
@@ -92,11 +98,9 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     );
     vm.stopPrank();
 
-    // Configure interest rate strategy for assets A and B
-    vm.startPrank(address(newHub));
-    newIrStrategy.setInterestRateData(isolationVars.assetAId, encodedIrData);
-    newIrStrategy.setInterestRateData(isolationVars.assetBId, encodedIrData);
-    vm.stopPrank();
+    // Configure interest rate strategy for asset B on the main hub
+    vm.prank(address(hub));
+    irStrategy.setInterestRateData(isolationVars.assetBIdMainHub, encodedIrData);
 
     // List asset B on the canonical hub
     vm.startPrank(ADMIN);
@@ -135,10 +139,6 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       })
     );
     vm.stopPrank();
-
-    // Configure interest rate strategy for asset B on the main hub
-    vm.prank(address(hub));
-    irStrategy.setInterestRateData(isolationVars.assetBIdMainHub, encodedIrData);
 
     // Approvals
     vm.startPrank(bob);
