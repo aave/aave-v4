@@ -302,10 +302,9 @@ contract HubConfiguratorTest is LiquidityHubBase {
   }
 
   function test_updateLiquidityFee_fuzz_revertsWith_InvalidLiquidityFee(
-    uint256 assetId,
     uint256 liquidityFee
   ) public {
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+    uint256 assetId = vm.randomUint(0, hub.getAssetCount() - 1);
     liquidityFee = bound(
       liquidityFee,
       PercentageMathExtended.PERCENTAGE_FACTOR + 1,
@@ -348,8 +347,8 @@ contract HubConfiguratorTest is LiquidityHubBase {
     hubConfigurator.updateFeeReceiver(address(hub), vm.randomUint(), vm.randomAddress());
   }
 
-  function test_updateFeeReceiver_fuzz_revertsWith_InvalidFeeReceiver(uint256 assetId) public {
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+  function test_updateFeeReceiver_revertsWith_InvalidFeeReceiver() public {
+    uint256 assetId = vm.randomUint(0, hub.getAssetCount() - 1);
 
     // reverts when updating asset's fee receiver to zero spoke
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
@@ -479,13 +478,9 @@ contract HubConfiguratorTest is LiquidityHubBase {
     });
   }
 
-  function test_updateFeeConfig_fuzz_revertsWith_InvalidFeeReceiver(
-    uint256 assetId,
-    uint256 liquidityFee,
-    address feeReceiver
-  ) public {
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
-    liquidityFee = bound(liquidityFee, 1, PercentageMathExtended.PERCENTAGE_FACTOR);
+  function test_updateFeeConfig_revertsWith_InvalidFeeReceiver() public {
+    uint256 assetId = vm.randomUint(0, hub.getAssetCount() - 1);
+    uint256 liquidityFee = vm.randomUint(1, PercentageMathExtended.PERCENTAGE_FACTOR);
 
     // reverts when updating asset's fee receiver to zero spoke
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
@@ -494,11 +489,10 @@ contract HubConfiguratorTest is LiquidityHubBase {
   }
 
   function test_updateFeeConfig_fuzz_revertsWith_InvalidLiquidityFee(
-    uint256 assetId,
     uint256 liquidityFee,
     address feeReceiver
   ) public {
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+    uint256 assetId = vm.randomUint(0, hub.getAssetCount() - 1);
     liquidityFee = bound(
       liquidityFee,
       PercentageMathExtended.PERCENTAGE_FACTOR + 1,
@@ -603,10 +597,8 @@ contract HubConfiguratorTest is LiquidityHubBase {
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
 
-  function test_updateInterestRateStrategy_fuzz_revertsWith_InvalidIrStrategy(
-    uint256 assetId
-  ) public {
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+  function test_updateInterestRateStrategy_revertsWith_InvalidIrStrategy() public {
+    assetId = vm.randomUint(0, hub.getAssetCount() - 1);
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -614,10 +606,9 @@ contract HubConfiguratorTest is LiquidityHubBase {
   }
 
   function test_updateInterestRateStrategy_fuzz_revertsWith_InterestRateStrategyReverts(
-    uint256 assetId,
     address interestRateStrategy
   ) public {
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+    assetId = vm.randomUint(0, hub.getAssetCount() - 1);
     assumeUnusedAddress(interestRateStrategy);
 
     vm.expectRevert();
