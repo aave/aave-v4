@@ -87,6 +87,11 @@ library DataTypes {
     uint16 configKey; // key of the last user config
   }
 
+  struct PositionManagerConfig {
+    bool active;
+    mapping(address user => bool approved) approval;
+  }
+
   struct PositionStatus {
     mapping(uint256 slot => uint256 status) map;
   }
@@ -175,5 +180,16 @@ library DataTypes {
     uint256 totalDebtToLiquidate;
     uint256 usersLength;
     uint256 liquidatedSuppliedShares;
+  }
+
+  struct ExecuteRepayLocalVars {
+    ILiquidityHub hub;
+    uint256 assetId;
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    uint256 baseDebtRestored;
+    uint256 premiumDebtRestored;
+    uint256 newUserRiskPremium;
+    uint256 restoredShares;
   }
 }

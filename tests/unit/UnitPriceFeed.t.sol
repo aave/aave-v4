@@ -15,15 +15,15 @@ contract UnitPriceFeedTest is Base {
     unitPriceFeed = new UnitPriceFeed(_decimals, _description);
   }
 
-  function test_decimals() public {
+  function test_decimals() public view {
     assertEq(unitPriceFeed.decimals(), _decimals);
   }
 
-  function test_description() public {
+  function test_description() public view {
     assertEq(unitPriceFeed.description(), _description);
   }
-    
-  function test_version() public {
+
+  function test_version() public view {
     assertEq(unitPriceFeed.version(), 1);
   }
 
@@ -34,7 +34,13 @@ contract UnitPriceFeedTest is Base {
 
   function test_fuzz_latestRoundData(uint80 blockTimestamp) public {
     vm.warp(blockTimestamp);
-    (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) = unitPriceFeed.latestRoundData();
+    (
+      uint80 roundId,
+      int256 answer,
+      uint256 startedAt,
+      uint256 updatedAt,
+      uint80 answeredInRound
+    ) = unitPriceFeed.latestRoundData();
     assertEq(roundId, blockTimestamp);
     assertEq(answer, int256(10 ** _decimals));
     assertEq(startedAt, blockTimestamp);

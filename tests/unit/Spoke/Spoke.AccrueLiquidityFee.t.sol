@@ -463,7 +463,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
 
     // disable second asset as collateral, which increases risk premium
-    setUsingAsCollateral(spoke1, alice, reserveId, false);
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(reserveId, false, alice);
     assertEq(_getUserRpStored(spoke1, reserveId, alice), 50_00);
 
     // no change in treasury fees

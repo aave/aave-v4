@@ -36,7 +36,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 90_10);
     skip(322 days);
-    Utils.repay(spoke1, _daiReserveId(spoke1), alice, UINT256_MAX);
+    Utils.repay(spoke1, _daiReserveId(spoke1), alice, UINT256_MAX, alice);
 
     _assertDynamicConfigRefreshEventsNotEmitted();
     // user config should not change
@@ -144,7 +144,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     vm.prank(alice);
-    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false);
+    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
     configs = _getUserDynConfigKeys(spoke1, alice);
@@ -154,7 +154,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.UserDynamicConfigRefreshedSingle(alice, _wethReserveId(spoke1));
     vm.prank(alice);
-    spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true);
+    spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, alice);
 
     DynamicConfig[] memory userConfig = _getUserDynConfigKeys(spoke1, alice);
     DynamicConfig[] memory spokeConfig = _getSpokeDynConfigKeys(spoke1);
@@ -166,7 +166,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.UserDynamicConfigRefreshedAll(alice);
     vm.prank(alice);
-    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false);
+    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
