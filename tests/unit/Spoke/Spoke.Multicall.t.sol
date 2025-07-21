@@ -66,7 +66,7 @@ contract SpokeMulticall is SpokeBase {
     vm.expectEmit(address(spoke2));
     emit ISpoke.UsingAsCollateral(_daiReserveId(spoke2), bob, bob, true);
     vm.expectEmit(address(spoke2));
-    emit ISpoke.UserRiskPremiumUpdate(bob, _getLiquidityPremium(spoke2, _daiReserveId(spoke2)));
+    emit ISpoke.UserRiskPremiumUpdate(bob, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
 
     // Then he supplies dai and sets as collateral, so user rp should decrease
     vm.prank(bob);
@@ -92,7 +92,7 @@ contract SpokeMulticall is SpokeBase {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 10_00,
+      collateralRisk: 10_00,
       borrowable: true,
       collateral: true
     });
@@ -105,7 +105,7 @@ contract SpokeMulticall is SpokeBase {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 5_00,
+      collateralRisk: 5_00,
       borrowable: true,
       collateral: true
     });
@@ -165,10 +165,10 @@ contract SpokeMulticall is SpokeBase {
 
     // Set up the new reserve configs
     DataTypes.Reserve memory newDai = spoke1.getReserve(daiReserveId);
-    newDai.config.liquidityPremium += 1;
+    newDai.config.collateralRisk += 1;
     newDai.config.borrowable = false;
     DataTypes.Reserve memory newUsdx = spoke1.getReserve(usdxReserveId);
-    newUsdx.config.liquidityPremium += 1;
+    newUsdx.config.collateralRisk += 1;
     newUsdx.config.collateral = false;
 
     // Set up the multicall

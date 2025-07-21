@@ -81,7 +81,7 @@ contract SpokeConfigTest is SpokeBase {
       active: !config.active,
       frozen: !config.frozen,
       paused: !config.paused,
-      liquidityPremium: config.liquidityPremium + 1,
+      collateralRisk: config.collateralRisk + 1,
       borrowable: !config.borrowable,
       collateral: !config.collateral
     });
@@ -94,10 +94,10 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateReserveConfig_fuzz(DataTypes.ReserveConfig memory newReserveConfig) public {
-    newReserveConfig.liquidityPremium = bound(
-      newReserveConfig.liquidityPremium,
+    newReserveConfig.collateralRisk = bound(
+      newReserveConfig.collateralRisk,
       0,
-      spoke1.MAX_LIQUIDITY_PREMIUM()
+      spoke1.MAX_COLLATERAL_RISK()
     );
 
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -206,8 +206,8 @@ contract SpokeConfigTest is SpokeBase {
 
     // slight update in collateral factor so user is subject to dynamic risk config refresh
     updateCollateralFactor(spoke1, daiReserveId, _getCollateralFactor(spoke1, daiReserveId) + 1_00);
-    // slight update liquidity premium so user is subject to risk premium refresh
-    updateLiquidityPremium(spoke1, daiReserveId, _getLiquidityPremium(spoke1, daiReserveId) + 1_00);
+    // slight update collateral risk so user is subject to risk premium refresh
+    updateCollateralRisk(spoke1, daiReserveId, _getCollateralRisk(spoke1, daiReserveId) + 1_00);
 
     // Bob not using DAI as collateral
     assertFalse(spoke1.isUsingAsCollateral(daiReserveId, bob), 'bob not using as collateral');
@@ -230,8 +230,8 @@ contract SpokeConfigTest is SpokeBase {
 
     // slight update in collateral factor so user is subject to dynamic risk config refresh
     updateCollateralFactor(spoke1, daiReserveId, _getCollateralFactor(spoke1, daiReserveId) + 1_00);
-    // slight update liquidity premium so user is subject to risk premium refresh
-    updateLiquidityPremium(spoke1, daiReserveId, _getLiquidityPremium(spoke1, daiReserveId) + 1_00);
+    // slight update collateral risk so user is subject to risk premium refresh
+    updateCollateralRisk(spoke1, daiReserveId, _getCollateralRisk(spoke1, daiReserveId) + 1_00);
 
     // No action taken, because collateral status is already true
     bobDynConfig = _getUserDynConfigKeys(spoke1, bob);
@@ -272,16 +272,16 @@ contract SpokeConfigTest is SpokeBase {
     );
   }
 
-  function test_updateReserveConfig_revertsWith_InvalidLiquidityPremium() public {
-    uint256 liquidityPremium = PercentageMath.PERCENTAGE_FACTOR * 10 + 1;
-    test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidityPremium(liquidityPremium);
+  function test_updateReserveConfig_revertsWith_InvalidCollateralRisk() public {
+    uint256 collateralRisk = PercentageMath.PERCENTAGE_FACTOR * 10 + 1;
+    test_updateReserveConfig_fuzz_revertsWith_InvalidCollateralRisk(collateralRisk);
   }
 
-  function test_updateReserveConfig_fuzz_revertsWith_InvalidLiquidityPremium(
-    uint256 liquidityPremium
+  function test_updateReserveConfig_fuzz_revertsWith_InvalidCollateralRisk(
+    uint256 collateralRisk
   ) public {
-    liquidityPremium = bound(
-      liquidityPremium,
+    collateralRisk = bound(
+      collateralRisk,
       PercentageMath.PERCENTAGE_FACTOR * 10 + 1,
       type(uint256).max
     );
@@ -289,9 +289,9 @@ contract SpokeConfigTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
     DataTypes.ReserveConfig memory config = spoke1.getReserve(daiReserveId).config;
 
-    config.liquidityPremium = liquidityPremium;
+    config.collateralRisk = collateralRisk;
 
-    vm.expectRevert(ISpoke.InvalidLiquidityPremium.selector);
+    vm.expectRevert(ISpoke.InvalidCollateralRisk.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, config);
   }
@@ -406,7 +406,7 @@ contract SpokeConfigTest is SpokeBase {
       active: true,
       frozen: true,
       paused: true,
-      liquidityPremium: 10_00,
+      collateralRisk: 10_00,
       borrowable: true,
       collateral: true
     });
@@ -449,7 +449,7 @@ contract SpokeConfigTest is SpokeBase {
       active: true,
       frozen: true,
       paused: true,
-      liquidityPremium: 10_00,
+      collateralRisk: 10_00,
       borrowable: true,
       collateral: true
     });
@@ -472,7 +472,7 @@ contract SpokeConfigTest is SpokeBase {
       active: true,
       frozen: true,
       paused: true,
-      liquidityPremium: 10_00,
+      collateralRisk: 10_00,
       borrowable: true,
       collateral: true
     });
@@ -496,7 +496,7 @@ contract SpokeConfigTest is SpokeBase {
       active: true,
       frozen: true,
       paused: true,
-      liquidityPremium: 10_00,
+      collateralRisk: 10_00,
       borrowable: true,
       collateral: true
     });

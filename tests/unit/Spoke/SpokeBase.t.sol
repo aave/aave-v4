@@ -201,10 +201,10 @@ contract SpokeBase is Base {
     });
 
     // debt
-    uint256 cachedLiquidityPremium;
+    uint256 cachedCollateralRisk;
     if (withPremium) {
-      cachedLiquidityPremium = _getLiquidityPremium(spoke, reserveId);
-      updateLiquidityPremium(spoke, reserveId, 50_00);
+      cachedCollateralRisk = _getCollateralRisk(spoke, reserveId);
+      updateCollateralRisk(spoke, reserveId, 50_00);
     }
 
     Utils.borrow({
@@ -221,8 +221,8 @@ contract SpokeBase is Base {
 
     if (withPremium) {
       assertGt(premiumDebt, 0);
-      // restore cached liquidity premium
-      updateLiquidityPremium(spoke, reserveId, cachedLiquidityPremium);
+      // restore cached collateral risk
+      updateCollateralRisk(spoke, reserveId, cachedCollateralRisk);
     }
   }
 
@@ -795,36 +795,36 @@ contract SpokeBase is Base {
       return 0;
     }
 
-    // Gather up list of reserves as collateral to sort by LP
-    KeyValueListInMemory.List memory reserveLP = KeyValueListInMemory.init(suppliedReservesCount);
+    // Gather up list of reserves as collateral to sort by CR
+    KeyValueListInMemory.List memory reserveCR = KeyValueListInMemory.init(suppliedReservesCount);
     uint256 idx = 0;
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); reserveId++) {
       if (spoke.isUsingAsCollateral(reserveId, user)) {
-        reserveLP.add(idx, _getLiquidityPremium(spoke, reserveId), reserveId);
+        reserveCR.add(idx, _getCollateralRisk(spoke, reserveId), reserveId);
         ++idx;
       }
     }
 
-    // Sort supplied reserves by LP
-    reserveLP.sortByKey();
+    // Sort supplied reserves by CR
+    reserveCR.sortByKey();
 
-    // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up LP
+    // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up CR
     idx = 0;
     uint256 utilizedSupply = 0;
-    while (totalDebt > 0 && idx < reserveLP.length()) {
-      (uint256 lp, uint256 reserveId) = reserveLP.get(idx);
+    while (totalDebt > 0 && idx < reserveCR.length()) {
+      (uint256 cr, uint256 reserveId) = reserveCR.get(idx);
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
       uint256 suppliedAssets = hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares);
       uint256 supplyAmount = _getValueInBaseCurrency(spoke, reserveId, suppliedAssets);
 
       if (supplyAmount >= totalDebt) {
-        userRP += totalDebt * lp;
+        userRP += totalDebt * cr;
         utilizedSupply += totalDebt;
         totalDebt = 0;
         break;
       } else {
-        userRP += supplyAmount * lp;
+        userRP += supplyAmount * cr;
         utilizedSupply += supplyAmount;
         totalDebt -= supplyAmount;
       }

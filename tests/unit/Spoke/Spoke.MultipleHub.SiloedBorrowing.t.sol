@@ -51,7 +51,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         active: true,
         frozen: false,
         paused: false,
-        liquidityPremium: 15_00,
+        collateralRisk: 15_00,
         borrowable: true,
         collateral: true
       }),
@@ -93,7 +93,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         active: true,
         frozen: false,
         paused: false,
-        liquidityPremium: 15_00,
+        collateralRisk: 15_00,
         borrowable: true,
         collateral: true
       }),
@@ -126,7 +126,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         active: true,
         frozen: false,
         paused: false,
-        liquidityPremium: 15_00,
+        collateralRisk: 15_00,
         borrowable: true,
         collateral: true
       }),
