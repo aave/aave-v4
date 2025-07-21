@@ -271,7 +271,7 @@ interface ISpoke is IMulticall, IAccessManaged {
   function updateUserRiskPremium(address user) external;
 
   /**
-   * @notice Allows a user to update their dynamic configuration for all collateral reserves.
+   * @notice Allows Updating the dynamic configuration for all collateral reserves of a user position.
    * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
    * @param onBehalfOf The owner of the position being modified.
    */
