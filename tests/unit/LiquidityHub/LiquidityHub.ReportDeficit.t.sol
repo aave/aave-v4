@@ -79,7 +79,13 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
 
     // draw usdx liquidity to be restored
-    Utils.draw(hub, usdxAssetId, address(spoke1), address(spoke1), drawnAmount, address(spoke1));
+    Utils.draw({
+      hub: hub,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: drawnAmount,
+      to: address(spoke1)
+    });
 
     // skip to accrue interest
     skip(skipTime);
@@ -119,7 +125,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     ReportDeficitTestParams memory params;
 
     // create premium debt via spoke1
-    (params.baseDebt, params.premiumDebt) = _drawLiquidity(
+    (params.baseDebt, params.premiumDebt) = _drawLiquidityFromSpoke(
       address(spoke1),
       usdxAssetId,
       drawnAmount,

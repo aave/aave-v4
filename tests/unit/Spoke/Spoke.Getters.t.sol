@@ -19,7 +19,7 @@ contract SpokeGettersTest is SpokeBase {
     uint256 reserveId,
     uint256 healthFactor
   ) public {
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, bob, healthFactor);
 
@@ -49,7 +49,7 @@ contract SpokeGettersTest is SpokeBase {
     uint256 liquidationBonusFactor,
     uint256 healthFactorForMaxBonus
   ) public {
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     liquidationBonusFactor = bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
     healthFactorForMaxBonus = bound(

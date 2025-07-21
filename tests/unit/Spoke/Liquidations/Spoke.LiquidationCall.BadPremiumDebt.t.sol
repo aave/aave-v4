@@ -18,8 +18,8 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 skipTime,
     uint256 skipTimeToAccruePremium
   ) public {
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
-    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
+    debtReserveId = bound(debtReserveId, 0, spoke1.getReserveCount() - 1);
 
     LiquidationTestLocalParams memory state = _execLiqCallCloseFactorBadPremiumDebtTest(
       liqConfig,
@@ -216,7 +216,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     Utils.supplyCollateral({
       spoke: state.spoke,
       reserveId: collateralReserveId,
-      user: alice,
+      caller: alice,
       amount: supplyAmount,
       onBehalfOf: alice
     });

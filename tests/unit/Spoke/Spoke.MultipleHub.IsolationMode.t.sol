@@ -43,30 +43,28 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Add reserves to the new spoke
     isolationVars.reserveAId = newSpoke.addReserve(
-      isolationVars.assetAId,
       address(newHub),
+      isolationVars.assetAId,
       _deployMockPriceFeed(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
         paused: false,
         liquidityPremium: 15_00,
-        liquidationFee: 0,
         borrowable: false,
         collateral: true
       }),
       dynReserveConfig
     );
     isolationVars.reserveBId = newSpoke.addReserve(
-      isolationVars.assetBId,
       address(newHub),
+      isolationVars.assetBId,
       _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
         paused: false,
         liquidityPremium: 15_00,
-        liquidationFee: 0,
         borrowable: true,
         collateral: false
       }),
@@ -112,15 +110,14 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // List reserve B on spoke 1 for the canonical hub
     isolationVars.spoke1ReserveBId = spoke1.addReserve(
-      isolationVars.assetBIdMainHub,
       address(hub),
+      isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
         paused: false,
         liquidityPremium: 15_00,
-        liquidationFee: 0,
         borrowable: true,
         collateral: true
       }),
@@ -178,7 +175,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       'bob supplied amount of reserve A on new spoke'
     );
     assertTrue(
-      newSpoke.getUsingAsCollateral(isolationVars.reserveAId, bob),
+      newSpoke.isUsingAsCollateral(isolationVars.reserveAId, bob),
       'bob using reserve A as collateral on new spoke'
     );
     assertEq(
@@ -194,15 +191,14 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // Add main hub reserve B to the new spoke
     vm.startPrank(ADMIN);
     isolationVars.reserveBIdMainHub = newSpoke.addReserve(
-      isolationVars.assetBIdMainHub,
       address(hub),
+      isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
         paused: false,
         liquidityPremium: 15_00,
-        liquidationFee: 0,
         borrowable: true,
         collateral: true
       }),
@@ -268,7 +264,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     );
 
     // Bob will migrate to borrowing asset B from the new spoke, new hub, so repays canonical hub position
-    Utils.repay(newSpoke, isolationVars.reserveBIdMainHub, bob, 100_000e18);
+    Utils.repay(newSpoke, isolationVars.reserveBIdMainHub, bob, 100_000e18, bob);
     assertEq(newSpoke.getUserTotalDebt(isolationVars.reserveBIdMainHub, bob), 0);
     assertEq(hub.getAssetTotalDebt(isolationVars.assetBIdMainHub), 0);
 

@@ -42,7 +42,7 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     spoke1.liquidationCall(_usdxReserveId(spoke1), _usdyReserveId(spoke1), alice, UINT256_MAX);
 
     // Alice's usdx collateral unset
-    assertTrue(spoke1.getUsingAsCollateral(_usdxReserveId(spoke1), alice));
+    assertTrue(spoke1.isUsingAsCollateral(_usdxReserveId(spoke1), alice));
 
     // all collateral liquidated without overflowing
     assertEq(
@@ -93,7 +93,7 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     spoke1.liquidationCall(_usdxReserveId(spoke1), _usdyReserveId(spoke1), alice, UINT256_MAX);
 
     // Alice's usdx collateral unset
-    assertTrue(spoke1.getUsingAsCollateral(_usdxReserveId(spoke1), alice));
+    assertTrue(spoke1.isUsingAsCollateral(_usdxReserveId(spoke1), alice));
 
     // all collateral liquidated without overflowing
     assertEq(

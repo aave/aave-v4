@@ -124,7 +124,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
 
     // Full repayment, so back to zero debt
-    Utils.repay(spoke1, daiReserveId, bob, type(uint256).max);
+    Utils.repay(spoke1, daiReserveId, bob, type(uint256).max, bob);
 
     _assertSingleUserProtocolDebt(spoke1, daiReserveId, bob, 0, 0, 'after repay, no debt');
     _assertSingleUserProtocolSupply(

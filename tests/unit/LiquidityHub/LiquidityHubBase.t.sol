@@ -69,19 +69,17 @@ contract LiquidityHubBase is Base {
     supplyShares = Utils.add({
       hub: hub,
       assetId: assetId,
-      spoke: supplySpoke,
+      caller: supplySpoke,
       amount: supplyAmount,
-      user: supplyUser,
-      to: supplySpoke
+      user: supplyUser
     });
 
     drawnShares = Utils.draw({
       hub: hub,
       assetId: assetId,
       to: drawUser,
-      spoke: drawSpoke,
-      amount: drawAmount,
-      onBehalfOf: drawSpoke
+      caller: drawSpoke,
+      amount: drawAmount
     });
 
     skip(skipTime);
@@ -130,7 +128,7 @@ contract LiquidityHubBase is Base {
       hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
     }
 
-    Utils.draw(hub, assetId, tempSpoke, tempUser, amount, tempUser);
+    Utils.draw(hub, assetId, tempSpoke, tempUser, amount);
 
     skip(365 days);
 
@@ -152,7 +150,7 @@ contract LiquidityHubBase is Base {
   }
 
   /// @dev Draws liquidity from the Hub via a specific spoke which is already active
-  function _drawLiquidity(
+  function _drawLiquidityFromSpoke(
     address spoke,
     uint256 assetId,
     uint256 amount,
@@ -172,7 +170,7 @@ contract LiquidityHubBase is Base {
       hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
     }
 
-    Utils.draw(hub, assetId, spoke, tempUser, amount, tempUser);
+    Utils.draw({hub: hub, assetId: assetId, caller: spoke, amount: amount, to: tempUser});
 
     skip(skipTime);
 

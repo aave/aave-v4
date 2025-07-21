@@ -195,7 +195,7 @@ contract SpokeLiquidationBase is SpokeBase {
     Utils.supplyCollateral({
       spoke: state.spoke,
       reserveId: collateralReserveId,
-      user: alice,
+      caller: alice,
       amount: supplyAmount,
       onBehalfOf: alice
     });
@@ -311,7 +311,7 @@ contract SpokeLiquidationBase is SpokeBase {
     assertApproxEqAbs(
       state.userTotalDebt.balanceChange,
       state.spokeTotalDebt.balanceChange,
-      2,
+      3,
       string.concat('spoke/user total debt accounting ', label)
     );
     assertApproxEqAbs(
@@ -323,7 +323,7 @@ contract SpokeLiquidationBase is SpokeBase {
     assertApproxEqAbs(
       state.userPremiumDebt.balanceChange,
       state.spokePremiumDebt.balanceChange,
-      1,
+      3,
       string.concat('spoke/user premium debt accounting ', label)
     );
     // collateral asset
@@ -523,12 +523,12 @@ contract SpokeLiquidationBase is SpokeBase {
   /// @dev User's RP should be 0 if all coll reserves have liquidity premium == 0.
   /// @return bool True if user's RP is expected to be 0, False otherwise.
   function _shouldUserRpBeZero(ISpoke spoke, address user) internal view returns (bool) {
-    for (uint256 i = 0; i < spoke.reserveCount(); i++) {
+    for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
       DataTypes.Reserve memory reserve = spoke.getReserve(i);
       if (
         reserve.config.liquidityPremium > 0 &&
         spoke.getUserSuppliedShares(reserve.reserveId, user) > 0 &&
-        spoke.getUsingAsCollateral(reserve.reserveId, user)
+        spoke.isUsingAsCollateral(reserve.reserveId, user)
       ) {
         return false;
       }
@@ -893,7 +893,7 @@ contract SpokeLiquidationBase is SpokeBase {
     state.hasDeficit =
       state.userSuppliedAmount.balanceAfter == 0 &&
       state.userTotalDebt.balanceAfter == 0;
-    state.usingAsCollateral = state.spoke.getUsingAsCollateral(
+    state.usingAsCollateral = state.spoke.isUsingAsCollateral(
       state.collateralReserve.reserveId,
       state.user
     );

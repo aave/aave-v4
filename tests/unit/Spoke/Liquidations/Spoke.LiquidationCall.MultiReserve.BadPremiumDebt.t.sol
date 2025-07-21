@@ -65,7 +65,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 skipTimeToAccruePremium,
     uint256 debtReserveIndex
   ) public {
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
 
     uint256[] memory debtReserveIds = new uint256[](3);
     // debtReserveIds must be in ascending order for event emission assertions
@@ -147,7 +147,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 skipTimeToAccruePremium,
     uint256 debtReserveIndex
   ) public {
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
 
     uint256[] memory debtReserveIds = new uint256[](3);
     // debtReserveIds must be in ascending order for event emission assertions
@@ -228,7 +228,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 skipTimeToAccruePremium,
     uint256 debtReserveIndex
   ) public {
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
 
     uint256[] memory debtReserveIds = new uint256[](3);
     // debtReserveIds must be in ascending order for event emission assertions
@@ -311,7 +311,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     Utils.supplyCollateral({
       spoke: state.spoke,
       reserveId: collateralReserveId,
-      user: alice,
+      caller: alice,
       amount: supplyAmount,
       onBehalfOf: alice
     });

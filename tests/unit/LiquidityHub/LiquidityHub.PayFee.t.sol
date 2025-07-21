@@ -9,10 +9,9 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       amount: addAmount,
-      user: alice,
-      to: address(spoke1)
+      user: alice
     });
 
     uint256 feeShares = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
@@ -30,10 +29,9 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       amount: addAmount,
-      user: alice,
-      to: address(spoke1)
+      user: alice
     });
 
     _addLiquidity(daiAssetId, addAmount);
@@ -67,10 +65,9 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       amount: addAmount,
-      user: alice,
-      to: address(spoke1)
+      user: alice
     });
 
     _addLiquidity(daiAssetId, 100e18);

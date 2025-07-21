@@ -32,9 +32,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
   }
 
   /// With no collateral supplied, user risk premium is 0.
-  function test_getUserRiskPremium_no_collateral() public {
+  function test_getUserRiskPremium_no_collateral() public view {
     // Assert Bob has no collateral
-    for (uint256 reserveId = 0; reserveId < spoke1.reserveCount(); reserveId++) {
+    for (uint256 reserveId = 0; reserveId < spoke1.getReserveCount(); reserveId++) {
       DataTypes.UserPosition memory bobInfo = getUserInfo(spoke1, bob, reserveId);
       assertEq(bobInfo.suppliedShares, 0, 'bob supplied collateral');
     }
@@ -45,8 +45,8 @@ contract SpokeRiskPremiumTest is SpokeBase {
   function test_getUserRiskPremium_no_collateral_set() public {
     Utils.supply(spoke1, _daiReserveId(spoke1), bob, 100e18, bob);
     // Assert Bob has no collateral set
-    for (uint256 reserveId = 0; reserveId < spoke1.reserveCount(); reserveId++) {
-      assertEq(spoke1.getUsingAsCollateral(reserveId, bob), false, 'bob collateral set');
+    for (uint256 reserveId = 0; reserveId < spoke1.getReserveCount(); reserveId++) {
+      assertEq(spoke1.isUsingAsCollateral(reserveId, bob), false, 'bob collateral set');
     }
     // Bob doesn't set dai as collateral, despite supplying, so his user rp is 0
     assertEq(spoke1.getUserRiskPremium(bob), 0, 'user risk premium');
@@ -225,7 +225,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     skip(232 days);
 
-    Utils.repay(spoke1, _daiReserveId(spoke1), bob, 25e18);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, 25e18, bob);
     _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
     _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
   }

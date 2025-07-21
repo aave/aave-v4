@@ -95,8 +95,8 @@ contract SpokeBorrowTest is SpokeBase {
     emit ISpoke.Borrow(
       state.daiReserveId,
       bob,
-      hub.convertToDrawnShares(daiAssetId, state.daiBob.borrowAmount),
-      bob
+      bob,
+      hub.convertToDrawnShares(daiAssetId, state.daiBob.borrowAmount)
     );
     vm.prank(bob);
     spoke1.borrow(state.daiReserveId, state.daiBob.borrowAmount, bob);
@@ -251,8 +251,8 @@ contract SpokeBorrowTest is SpokeBase {
     emit ISpoke.Borrow(
       state.daiReserveId,
       bob,
-      hub.convertToDrawnShares(daiAssetId, state.daiBob.borrowAmount),
-      bob
+      bob,
+      hub.convertToDrawnShares(daiAssetId, state.daiBob.borrowAmount)
     );
     vm.prank(bob);
     spoke1.borrow(state.daiReserveId, state.daiBob.borrowAmount, bob);
