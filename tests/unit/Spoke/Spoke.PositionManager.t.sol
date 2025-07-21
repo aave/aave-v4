@@ -29,7 +29,7 @@ contract SpokePositionManagerTest is SpokeBase {
     spoke1.setUserPositionManager(POSITION_MANAGER, true);
   }
 
-  function test_disableApproval_on_inactivePositionManager() public {
+  function test_disableApproval_on_InactivePositionManager() public {
     _approvePositionManager(alice);
     assertTrue(spoke1.isPositionManager(alice, POSITION_MANAGER));
     assertTrue(spoke1.isPositionManagerActive(POSITION_MANAGER));
