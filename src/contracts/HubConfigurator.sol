@@ -192,7 +192,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     hub.updateSpokeConfig(
       assetId,
       oldConfig.feeReceiver,
-      DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: true})
+      DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: oldConfig.active})
     );
 
     hub.updateSpokeConfig(
