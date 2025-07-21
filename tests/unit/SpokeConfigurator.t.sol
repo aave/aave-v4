@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SpokeConfiguratorTest is Base {
+contract SpokeConfiguratorTest is SpokeBase {
   SpokeConfigurator public spokeConfigurator;
   address public SPOKE_CONFIGURATOR_ADMIN = makeAddr('SPOKE_CONFIGURATOR_ADMIN');
 
@@ -14,7 +14,6 @@ contract SpokeConfiguratorTest is Base {
 
   function setUp() public virtual override {
     super.setUp();
-    initEnvironment();
 
     spokeConfigurator = new SpokeConfigurator(SPOKE_CONFIGURATOR_ADMIN);
     spokeAddr = address(spoke1);
@@ -362,7 +361,7 @@ contract SpokeConfiguratorTest is Base {
       .getDynamicReserveConfig(reserveId);
     expectedDynamicReserveConfig.collateralFactor = newCollateralFactor;
 
-    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1);
+    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
     vm.expectCall(
       spokeAddr,
@@ -394,7 +393,7 @@ contract SpokeConfiguratorTest is Base {
       .getDynamicReserveConfig(reserveId);
     expectedDynamicReserveConfig.liquidationBonus = newLiquidationBonus;
 
-    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1);
+    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
     vm.expectCall(
       spokeAddr,
@@ -425,7 +424,7 @@ contract SpokeConfiguratorTest is Base {
       .getDynamicReserveConfig(reserveId);
     expectedDynamicReserveConfig.liquidationFee = newLiquidationFee;
 
-    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1);
+    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
     vm.expectCall(
       spokeAddr,
@@ -503,7 +502,7 @@ contract SpokeConfiguratorTest is Base {
       liquidationFee: 15_00
     });
 
-    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1);
+    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
     vm.expectCall(
       spokeAddr,
