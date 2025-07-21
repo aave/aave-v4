@@ -24,7 +24,7 @@ contract TreasurySpokeTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    treasurySpoke.supply(daiAssetId, 1);
+    treasurySpoke.supply(daiAssetId, 1, caller);
   }
 
   function test_withdraw_revertsWith_Unauthorized(address caller) public {

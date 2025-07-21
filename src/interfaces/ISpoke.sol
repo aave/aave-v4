@@ -23,21 +23,98 @@ interface ISpoke is IMulticall, IAccessManaged {
   event UserDynamicConfigRefreshedAll(address indexed user);
   event UserDynamicConfigRefreshedSingle(address indexed user, uint256 reserveId);
 
-  event Supply(uint256 indexed reserveId, address indexed user, uint256 suppliedShares);
+  /**
+   * @notice Emitted on the supply action.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param caller The transaction initiator, and supplier of the underlying asset.
+   * @param user The owner of the modified position.
+   * @param suppliedShares The amount of supply shares minted.
+   */
+  event Supply(
+    uint256 indexed reserveId,
+    address indexed caller,
+    address indexed user,
+    uint256 suppliedShares
+  );
+
+  /**
+   * @notice Emitted on the withdraw action.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param caller The transaction initiator, and recipient of the underlying asset being withdrawn.
+   * @param user The owner of the modified position.
+   * @param suppliedShares The amount of supply shares burned.
+   */
   event Withdraw(
     uint256 indexed reserveId,
+    address indexed caller,
     address indexed user,
-    uint256 suppliedShares,
-    address indexed to
+    uint256 suppliedShares
   );
+
+  /**
+   * @notice Emitted on the borrow action.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param caller The transaction initiator, and recipient of the underlying asset being borrowed.
+   * @param user The owner of the position on which debt is generated.
+   * @param drawnShares The amount of debt shares minted.
+   */
   event Borrow(
     uint256 indexed reserveId,
+    address indexed caller,
     address indexed user,
-    uint256 drawnShares,
-    address indexed to
+    uint256 drawnShares
   );
-  event Repay(uint256 indexed reserveId, address indexed user, uint256 drawnShares);
-  event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
+
+  /**
+   * @notice Emitted on the repay action.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param caller The transaction initiator, and supplier of the underlying asset being repaid.
+   * @param user The owner of the position whose debt is being repaid.
+   * @param drawnShares The amount of debt shares burned.
+   */
+  event Repay(
+    uint256 indexed reserveId,
+    address indexed caller,
+    address indexed user,
+    uint256 drawnShares
+  );
+
+  /**
+   * @notice Emitted on setUsingAsCollateral action.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param caller The transaction initiator.
+   * @param user The owner of the position being modified.
+   * @param usingAsCollateral Boolean whether the reserve is enabled or disabled as collateral.
+   */
+  event UsingAsCollateral(
+    uint256 indexed reserveId,
+    address indexed caller,
+    address indexed user,
+    bool usingAsCollateral
+  );
+
+  /**
+   * @notice Emitted on updateUserRiskPremium action.
+   * @param user The owner of the position being modified.
+   * @param riskPremium The new risk premium (BPS) value of user.
+   */
+  event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
+
+  /**
+   * @notice Emitted on setUserPositionManager or renouncePositionManagerRole action.
+   * @param user The address of the user on whose behalf position manager can act.
+   * @param positionManager The address of the position manager.
+   * @param approve True if position manager approval was granted, false if it was revoked.
+   */
+  event UserPositionManagerSet(address indexed user, address indexed positionManager, bool approve);
+
+  /**
+   * @notice Emitted on updatePositionManager action.
+   * @param positionManager The address of the position manager.
+   * @param active True if position manager has become active, false otherwise.
+   */
+  event PositionManagerUpdated(address indexed positionManager, bool active);
+
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
     address indexed user,
@@ -49,7 +126,6 @@ interface ISpoke is IMulticall, IAccessManaged {
   event OracleUpdated(address indexed oracle);
   event ReservePriceSourceUpdated(uint256 indexed reserveId, address indexed priceSource);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
-  event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
 
   /**
    * @dev Emitted when a borrower is liquidated.
@@ -95,6 +171,9 @@ interface ISpoke is IMulticall, IAccessManaged {
   error InvalidOracle();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
+  error InactivePositionManager();
+
+  function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
   function updateOracle(address newOracle) external;
 
@@ -115,40 +194,53 @@ interface ISpoke is IMulticall, IAccessManaged {
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external;
 
-  function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
+  /**
+   * @notice Allows an approved caller (admin) to toggle the active status of position manager.
+   * @param positionManager The address of the position manager.
+   * @param active True if positionManager is to be set as active, false otherwise.
+   */
+  function updatePositionManager(address positionManager, bool active) external;
 
   /**
-   * @notice Supplies a specified amount of the underlying asset to a given reserve.
-   * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior approval is required.
-   * @param reserveId The identifier of the reserve
+   * @notice Supply an amount of underlying asset of the specified reserve.
+   * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior token approval is required.
+   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+   * @param reserveId The reserve identifier.
    * @param amount The amount of asset to supply.
+   * @param onBehalfOf The owner of position to add supply shares to.
    */
-  function supply(uint256 reserveId, uint256 amount) external;
+  function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external;
 
   /**
    * @notice Withdraws a specified amount of underlying asset from the given reserve.
    * @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
+   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+   * @dev Caller receives the underlying asset withdrawn.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to withdraw.
-   * @param to The address receiving the withdrawn assets.
+   * @param onBehalfOf The owner of position to remove supply shares from.
    */
-  function withdraw(uint256 reserveId, uint256 amount, address to) external;
+  function withdraw(uint256 reserveId, uint256 amount, address onBehalfOf) external;
 
   /**
-   * @notice Borrows a specified amount of underlying asset from the given reserve.
+   * @notice Borrows a specified amount of underlying asset from the given reserve
+   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+   * @dev Caller receives the underlying asset borrowed.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to borrow.
-   * @param to The address receiving the borrowed assets.
+   * @param onBehalfOf The owner of the position against which debt is generated.
    */
-  function borrow(uint256 reserveId, uint256 amount, address to) external;
+  function borrow(uint256 reserveId, uint256 amount, address onBehalfOf) external;
 
   /**
    * @notice Repays a specified amount of underlying asset to a given reserve.
    * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior approval is required.
+   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to repay.
+   * @param onBehalfOf The owner of the position whose debt is repaid.
    */
-  function repay(uint256 reserveId, uint256 amount) external;
+  function repay(uint256 reserveId, uint256 amount, address onBehalfOf) external;
 
   function liquidationCall(
     uint256 collateralReserveId,
@@ -158,20 +250,48 @@ interface ISpoke is IMulticall, IAccessManaged {
   ) external;
 
   /**
-   * @notice Enables or disables the use of a supplied reserve as collateral for the user.
-   * @dev No action is taken if the collateral status remains unchanged.
-   * @param reserveId The identifier of the reserve.
-   * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
+   * @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
+   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param usingAsCollateral True if the user wants to use the supply as collateral, false otherwise.
+   * @param onBehalfOf The owner of the position being modified.
    */
-  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external;
+  function setUsingAsCollateral(
+    uint256 reserveId,
+    bool usingAsCollateral,
+    address onBehalfOf
+  ) external;
 
   /**
    * @notice Allows updating the risk premium on user position.
-   * @dev If the risk premium has increased, the caller must be authorized or the owner of the position,
-   * reverts with `Unauthorized` otherwise.
+   * @dev If the risk premium has increased, the caller must be `user` or an authorized position manager
+   * of `user`, reverts with `Unauthorized` otherwise.
    * @param user The address of the user.
    */
   function updateUserRiskPremium(address user) external;
+
+  /**
+   * @notice Allows caller to approve or revoke approval for positionManager.
+   * @param positionManager The address of the position manager.
+   * @param approve True if user wants to approve position manager, false otherwise.
+   */
+  function setUserPositionManager(address positionManager, bool approve) external;
+
+  /**
+   * @notice Allows position manager (as caller) to renounce their approval given by the user.
+   * @param user The address of the user.
+   */
+  function renouncePositionManagerRole(address user) external;
+
+  /**
+   * @notice Returns true if positionManager is active and approved by user, false otherwise.
+   */
+  function isPositionManager(address user, address positionManager) external view returns (bool);
+
+  /**
+   * @notice Returns true if positionManager is currently active, false otherwise.
+   */
+  function isPositionManagerActive(address positionManager) external view returns (bool);
 
   function getHealthFactor(address user) external view returns (uint256);
 
@@ -228,7 +348,9 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
 
-  function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
+  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
+
+  function isBorrowing(uint256 reserveId, address user) external view returns (bool);
 
   function getReserveCount() external view returns (uint256);
 

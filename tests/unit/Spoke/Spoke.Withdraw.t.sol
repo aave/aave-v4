@@ -43,7 +43,7 @@ contract SpokeWithdrawTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: amount,
       onBehalfOf: bob
     });
@@ -81,7 +81,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // Bob withdraws immediately in the same block
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Withdraw(_daiReserveId(spoke1), bob, amount, bob);
+    emit ISpoke.Withdraw(_daiReserveId(spoke1), bob, bob, amount);
     vm.prank(bob);
     spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
 
@@ -112,7 +112,7 @@ contract SpokeWithdrawTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: supplyAmount,
       onBehalfOf: bob
     });
@@ -141,7 +141,7 @@ contract SpokeWithdrawTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: supplyAmount,
       onBehalfOf: bob
     });
@@ -172,7 +172,7 @@ contract SpokeWithdrawTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: supplyAmount,
       onBehalfOf: bob
     });
@@ -190,7 +190,7 @@ contract SpokeWithdrawTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: borrowAmount,
       onBehalfOf: bob
     });
@@ -208,8 +208,9 @@ contract SpokeWithdrawTest is SpokeBase {
     Utils.repay({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: bob,
-      amount: type(uint256).max
+      caller: bob,
+      amount: type(uint256).max,
+      onBehalfOf: bob
     });
 
     uint256 supplyExRate = getSupplyExRate(daiAssetId);
@@ -236,7 +237,7 @@ contract SpokeWithdrawTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: supplyAmount,
       onBehalfOf: bob
     });
@@ -254,7 +255,7 @@ contract SpokeWithdrawTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: borrowAmount,
       onBehalfOf: bob
     });
@@ -272,8 +273,9 @@ contract SpokeWithdrawTest is SpokeBase {
     Utils.repay({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: bob,
-      amount: type(uint256).max
+      caller: bob,
+      amount: type(uint256).max,
+      onBehalfOf: bob
     });
 
     uint256 supplyExRate = getSupplyExRate(daiAssetId);
@@ -297,7 +299,7 @@ contract SpokeWithdrawTest is SpokeBase {
     });
 
     TestState memory state;
-    state.reserveId = spokeInfo[spoke1].dai.reserveId;
+    state.reserveId = _daiReserveId(spoke1);
 
     (
       ,
@@ -312,8 +314,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // repay all debt with interest
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
-    vm.prank(alice);
-    spoke1.repay(state.reserveId, repayAmount);
+    Utils.repay(spoke1, state.reserveId, alice, repayAmount, alice);
 
     // number of test stages
     TestData[3] memory reserveData;
@@ -346,7 +347,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // withdraw all available liquidity
     // bc debt is fully repaid, bob can withdraw all supplied
     vm.prank(bob);
-    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
+    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, onBehalfOf: bob});
     // treasury spoke withdraw fees
     withdrawLiquidityFees(daiAssetId, type(uint256).max);
 
@@ -421,7 +422,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     TestState memory state;
     state.reserveId = params.reserveId;
-    state.collateralReserveId = spokeInfo[spoke1].wbtc.reserveId;
+    state.collateralReserveId = _wbtcReserveId(spoke1);
     state.suppliedCollateralAmount = MAX_SUPPLY_AMOUNT; // ensure enough collateral
     state.borrowReserveSupplyAmount = params.borrowReserveSupplyAmount;
     state.borrowAmount = params.borrowAmount;
@@ -458,8 +459,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(state.alicePremiumDebt, 0, 'alice has no premium contribution to exchange rate');
 
     // alice repays all with interest
-    vm.prank(alice);
-    spoke1.repay(state.reserveId, repayAmount);
+    Utils.repay(spoke1, state.reserveId, alice, repayAmount, alice);
 
     // number of test stages
     TestData[3] memory reserveData;
@@ -491,7 +491,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // bob withdraws all
     vm.prank(bob);
-    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
+    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, onBehalfOf: bob});
 
     // treasury spoke withdraw fees
     withdrawLiquidityFees(assetId, type(uint256).max);
@@ -541,7 +541,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
   function test_withdraw_all_liquidity_with_interest_with_premium() public {
     TestState memory state;
-    state.reserveId = spokeInfo[spoke1].dai.reserveId;
+    state.reserveId = _daiReserveId(spoke1);
 
     // number of test stages
     TestData[3] memory reserveData;
@@ -563,8 +563,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // repay all debt with interest
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
-    vm.prank(alice);
-    spoke1.repay(state.reserveId, repayAmount);
+    Utils.repay(spoke1, state.reserveId, alice, repayAmount, alice);
 
     uint256 stage = 0;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -590,7 +589,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // debt is fully repaid, so bob can withdraw all supplied
     vm.prank(bob);
-    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
+    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, onBehalfOf: bob});
     // treasury spoke withdraw fees
     withdrawLiquidityFees(daiAssetId, type(uint256).max);
 
@@ -661,7 +660,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     TestState memory state;
     state.reserveId = params.reserveId;
-    state.collateralReserveId = spokeInfo[spoke1].wbtc.reserveId;
+    state.collateralReserveId = _wbtcReserveId(spoke1);
     state.suppliedCollateralAmount = MAX_SUPPLY_AMOUNT; // ensure enough collateral
     state.borrowReserveSupplyAmount = params.borrowReserveSupplyAmount;
     state.borrowAmount = params.borrowAmount;
@@ -696,8 +695,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // ensure interest has accrued
     vm.assume(repayAmount > state.borrowAmount);
 
-    vm.prank(alice);
-    spoke1.repay(state.reserveId, repayAmount);
+    Utils.repay(spoke1, state.reserveId, alice, repayAmount, alice);
 
     // number of test stages
     TestData[3] memory reserveData;
@@ -731,7 +729,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // bob withdraws all
     vm.prank(bob);
-    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
+    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, onBehalfOf: bob});
 
     // treasury spoke withdraw fees
     withdrawLiquidityFees(assetId, type(uint256).max);
@@ -791,8 +789,7 @@ contract SpokeWithdrawTest is SpokeBase {
       amount
     );
     Utils.supply(spoke1, _daiReserveId(spoke1), bob, amount, bob);
-    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob); // bob collateral
-    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob); // bob collateral
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount / 2, bob); // introduce debt
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice); // alice supply
 

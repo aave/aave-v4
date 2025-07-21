@@ -89,14 +89,12 @@ contract SpokeRepayScenarioTest is SpokeBase {
       // Supply weth and wbtc as collateral
       if (wethCollateralNeeded > 0) {
         deal(address(tokenList.weth), user, wethCollateralNeeded);
-        Utils.supply(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
-        setUsingAsCollateral(spoke1, user, _wethReserveId(spoke1), true);
+        Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
       }
 
       if (wbtcCollateralNeeded > 0) {
         deal(address(tokenList.wbtc), user, wbtcCollateralNeeded);
-        Utils.supply(spoke1, _wbtcReserveId(spoke1), user, wbtcCollateralNeeded, user);
-        setUsingAsCollateral(spoke1, user, _wbtcReserveId(spoke1), true);
+        Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), user, wbtcCollateralNeeded, user);
       }
 
       // Borrow assets based on fuzzed amounts
@@ -241,8 +239,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       usersInfo[i].daiInfo.premiumRestored = premiumRestored;
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.dai), user, usersInfo[i].daiInfo.repayAmount);
-        vm.prank(user);
-        spoke1.repay(_daiReserveId(spoke1), usersInfo[i].daiInfo.repayAmount);
+        Utils.repay(spoke1, _daiReserveId(spoke1), user, usersInfo[i].daiInfo.repayAmount, user);
       }
 
       // Check Dai Repayment
@@ -266,8 +263,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       usersInfo[i].wethInfo.premiumRestored = premiumRestored;
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.weth), user, usersInfo[i].wethInfo.repayAmount);
-        vm.prank(user);
-        spoke1.repay(_wethReserveId(spoke1), usersInfo[i].wethInfo.repayAmount);
+        Utils.repay(spoke1, _wethReserveId(spoke1), user, usersInfo[i].wethInfo.repayAmount, user);
       }
 
       // Check Weth Repayment
@@ -291,8 +287,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       usersInfo[i].usdxInfo.premiumRestored = premiumRestored;
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.usdx), user, usersInfo[i].usdxInfo.repayAmount);
-        vm.prank(user);
-        spoke1.repay(_usdxReserveId(spoke1), usersInfo[i].usdxInfo.repayAmount);
+        Utils.repay(spoke1, _usdxReserveId(spoke1), user, usersInfo[i].usdxInfo.repayAmount, user);
       }
 
       // Check Usdx Repayment
@@ -316,8 +311,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       usersInfo[i].wbtcInfo.premiumRestored = premiumRestored;
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.wbtc), user, usersInfo[i].wbtcInfo.repayAmount);
-        vm.prank(user);
-        spoke1.repay(_wbtcReserveId(spoke1), usersInfo[i].wbtcInfo.repayAmount);
+        Utils.repay(spoke1, _wbtcReserveId(spoke1), user, usersInfo[i].wbtcInfo.repayAmount, user);
       }
 
       // Check WBTC Repayment
@@ -439,14 +433,12 @@ contract SpokeRepayScenarioTest is SpokeBase {
       // Supply weth and wbtc as collateral
       if (wethCollateralNeeded > 0) {
         deal(address(tokenList.weth), user, wethCollateralNeeded);
-        Utils.supply(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
-        setUsingAsCollateral(spoke1, user, _wethReserveId(spoke1), true);
+        Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
       }
 
       if (wbtcCollateralNeeded > 0) {
         deal(address(tokenList.wbtc), user, wbtcCollateralNeeded);
-        Utils.supply(spoke1, _wbtcReserveId(spoke1), user, wbtcCollateralNeeded, user);
-        setUsingAsCollateral(spoke1, user, _wbtcReserveId(spoke1), true);
+        Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), user, wbtcCollateralNeeded, user);
       }
 
       // Borrow assets based on fuzzed amounts
@@ -591,8 +583,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       usersInfo[i].daiInfo.premiumRestored = premiumRestored;
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.dai), user, usersInfo[i].daiInfo.repayAmount);
-        vm.prank(user);
-        spoke1.repay(_daiReserveId(spoke1), usersInfo[i].daiInfo.repayAmount);
+        Utils.repay(spoke1, _daiReserveId(spoke1), user, usersInfo[i].daiInfo.repayAmount, user);
       }
 
       // Check Dai Repayment
@@ -616,8 +607,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       usersInfo[i].wethInfo.premiumRestored = premiumRestored;
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.weth), user, usersInfo[i].wethInfo.repayAmount);
-        vm.prank(user);
-        spoke1.repay(_wethReserveId(spoke1), usersInfo[i].wethInfo.repayAmount);
+        Utils.repay(spoke1, _wethReserveId(spoke1), user, usersInfo[i].wethInfo.repayAmount, user);
       }
 
       // Check Weth Repayment
@@ -641,8 +631,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       usersInfo[i].usdxInfo.premiumRestored = premiumRestored;
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.usdx), user, usersInfo[i].usdxInfo.repayAmount);
-        vm.prank(user);
-        spoke1.repay(_usdxReserveId(spoke1), usersInfo[i].usdxInfo.repayAmount);
+        Utils.repay(spoke1, _usdxReserveId(spoke1), user, usersInfo[i].usdxInfo.repayAmount, user);
       }
 
       // Check Usdx Repayment
@@ -666,8 +655,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       usersInfo[i].wbtcInfo.premiumRestored = premiumRestored;
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.wbtc), user, usersInfo[i].wbtcInfo.repayAmount);
-        vm.prank(user);
-        spoke1.repay(_wbtcReserveId(spoke1), usersInfo[i].wbtcInfo.repayAmount);
+        Utils.repay(spoke1, _wbtcReserveId(spoke1), user, usersInfo[i].wbtcInfo.repayAmount, user);
       }
 
       // Check WBTC Repayment
@@ -748,8 +736,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
       // Supply WETH as collateral
       deal(address(tokenList.weth), user, wethCollateralNeeded);
-      Utils.supply(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
-      setUsingAsCollateral(spoke1, user, _wethReserveId(spoke1), true);
+      Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
 
       usersInfo[i].suppliedShares = spoke1.getUserSuppliedShares(_wethReserveId(spoke1), user);
 
@@ -796,8 +783,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       usersInfo[i].premiumRestored = premiumRestored;
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.dai), user, usersInfo[i].repayAmount);
-        vm.prank(user);
-        spoke1.repay(_daiReserveId(spoke1), usersInfo[i].repayAmount);
+        Utils.repay(spoke1, _daiReserveId(spoke1), user, usersInfo[i].repayAmount, user);
       }
 
       // Check DAI Repayment
@@ -860,8 +846,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
       // Supply WETH as collateral
       deal(address(tokenList.weth), user, wethCollateralNeeded);
-      Utils.supply(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
-      setUsingAsCollateral(spoke1, user, _wethReserveId(spoke1), true);
+      Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), user, wethCollateralNeeded, user);
 
       usersInfo[i].suppliedShares = spoke1.getUserSuppliedShares(_wethReserveId(spoke1), user);
 
@@ -908,8 +893,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       usersInfo[i].premiumRestored = premiumRestored;
       if (baseRestored + premiumRestored > 0) {
         deal(address(tokenList.dai), user, usersInfo[i].repayAmount);
-        vm.prank(user);
-        spoke1.repay(_daiReserveId(spoke1), usersInfo[i].repayAmount);
+        Utils.repay(spoke1, _daiReserveId(spoke1), user, usersInfo[i].repayAmount, user);
       }
 
       // Check DAI Repayment
@@ -958,8 +942,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         action1.borrowAmount
       ) +
       1;
-    Utils.supply(spoke1, _wethReserveId(spoke1), bob, action1.supplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, action1.supplyAmount, bob);
 
     // Alice supply dai
     Utils.supply(
@@ -1017,12 +1000,12 @@ contract SpokeRepayScenarioTest is SpokeBase {
       emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
+        bob,
         hub.convertToDrawnShares(daiAssetId, baseRestored)
       );
     }
 
-    vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), action1.repayAmount);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, action1.repayAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
@@ -1114,12 +1097,12 @@ contract SpokeRepayScenarioTest is SpokeBase {
       emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
+        bob,
         hub.convertToDrawnShares(daiAssetId, baseRestored)
       );
     }
 
-    vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), action2.repayAmount);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, action2.repayAmount, bob);
 
     bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
@@ -1153,8 +1136,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supplies WETH as collateral
-    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
 
     // Alice supplies DAI
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
@@ -1209,11 +1191,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
     emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
+      bob,
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
 
-    vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), partialRepayAmount);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, partialRepayAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiAfter;
@@ -1264,12 +1246,13 @@ contract SpokeRepayScenarioTest is SpokeBase {
     emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
+      bob,
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
 
     // Bob repays using the max value to signal full repayment
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    spoke1.repay(_daiReserveId(spoke1), type(uint256).max, bob);
 
     bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
@@ -1317,8 +1300,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Set up initial state of the vault by having derl borrow
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
-    Utils.supply(spoke1, reserveId, derl, supplyAmount, derl);
-    setUsingAsCollateral(spoke1, derl, reserveId, true);
+    Utils.supplyCollateral(spoke1, reserveId, derl, supplyAmount, derl);
     if (userBorrowing > 0) {
       Utils.borrow(spoke1, reserveId, derl, userBorrowing, derl);
     }
@@ -1332,8 +1314,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     deal(reserve.underlying, caller, supplyAmount);
     vm.prank(caller);
     IERC20(reserve.underlying).approve(address(hub), supplyAmount);
-    Utils.supply(spoke1, reserveId, caller, supplyAmount, caller);
-    setUsingAsCollateral(spoke1, caller, reserveId, true);
+    Utils.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
 
     // Borrow
     uint256 shares1 = hub.convertToDrawnShares(reserve.assetId, assets);
@@ -1344,7 +1325,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
     deal(reserve.underlying, caller, assets);
     IERC20(reserve.underlying).approve(address(hub), assets);
-    spoke1.repay(reserveId, assets);
+    spoke1.repay(reserveId, assets, caller);
     vm.stopPrank();
 
     assertEq(shares2, shares1, 'borrowed and repaid shares');
@@ -1372,8 +1353,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Set up initial state of the vault by having derl borrow
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
-    Utils.supply(spoke1, reserveId, derl, supplyAmount, derl);
-    setUsingAsCollateral(spoke1, derl, reserveId, true);
+    Utils.supplyCollateral(spoke1, reserveId, derl, supplyAmount, derl);
     if (userBorrowing > 0) {
       Utils.borrow(spoke1, reserveId, derl, userBorrowing, derl);
     }
@@ -1387,8 +1367,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     deal(reserve.underlying, caller, supplyAmount);
     vm.prank(caller);
     IERC20(reserve.underlying).approve(address(hub), supplyAmount);
-    Utils.supply(spoke1, reserveId, caller, supplyAmount, caller);
-    setUsingAsCollateral(spoke1, caller, reserveId, true);
+    Utils.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
     Utils.borrow(spoke1, reserveId, caller, callerStartingDebt, caller);
 
     // Repay
@@ -1396,7 +1375,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     deal(reserve.underlying, caller, assets);
     vm.startPrank(caller);
     IERC20(reserve.underlying).approve(address(hub), assets);
-    spoke1.repay(reserveId, assets);
+    spoke1.repay(reserveId, assets, caller);
 
     // Borrow
     uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
