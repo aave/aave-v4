@@ -481,7 +481,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       .premiumDrawnShares;
 
     // Now, if Alice repays some debt, her user risk premium should change and percolate through protocol
-    Utils.repay(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount / 2);
+    Utils.repay(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount / 2, alice);
 
     // Bob's user risk premium remains unchanged
     assertEq(
@@ -823,7 +823,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Bob repay half dai debt
     if (bobDaiInfo.borrowAmount > 2) {
       uint256 repayAmount = (bobDaiInfo.baseDebt + bobDaiInfo.premiumDebt) / 2;
-      Utils.repay(spoke1, _daiReserveId(spoke1), bob, repayAmount);
+      Utils.repay(spoke1, _daiReserveId(spoke1), bob, repayAmount, bob);
 
       // Bob's risk premium should change
       bobExpectedRiskPremium = _calculateExpectedUserRP(bob, spoke1);

@@ -18,8 +18,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth
-    Utils.supply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
     Utils.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
@@ -51,8 +50,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth
-    Utils.supply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
     Utils.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
@@ -95,8 +93,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && maxDebtAmount > 0);
 
     // Bob supply weth
-    Utils.supply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
     Utils.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
@@ -142,8 +139,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmountDai + wethCollAmountUsdx, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmountDai + wethCollAmountUsdx, bob);
 
     // Alice supply dai
     Utils.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
@@ -203,8 +199,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(daiDebtAmount < MAX_SUPPLY_AMOUNT / 2 && daiDebtAmount > 1e12); // dai is 1e18, keep within similar bounds to usdx (at 1e6)
 
     // Bob supply weth
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmountDai + wethCollAmountUsdx, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmountDai + wethCollAmountUsdx, bob);
 
     // Alice supply dai
     Utils.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
@@ -262,8 +257,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       });
 
     // Bob supply weth
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Alice supply dai
     Utils.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
@@ -328,8 +322,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(usdxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && usdxDebtAmount > 0);
 
     // Bob supply weth
-    Utils.supply(spoke1, wethReserveId, bob, wethCollForDai + wethCollForUsdx, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollForDai + wethCollForUsdx, bob);
 
     // Alice supply dai
     Utils.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
@@ -373,8 +366,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth
-    Utils.supply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
     Utils.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
@@ -418,8 +410,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && maxDebtAmount > 0);
 
     // Bob supply weth
-    Utils.supply(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
     Utils.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
@@ -464,12 +455,10 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, (usdxDebtAmountWeth + usdxDebtAmountDai) * 2, alice); // supply enough buffer for multiple borrows
@@ -518,12 +507,10 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, (usdxDebtAmountWeth + usdxDebtAmountDai) + 1, alice); // supply enough buffer for multiple borrows
@@ -568,12 +555,10 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, (usdxDebtAmountWeth + usdxDebtAmountDai) * 2, alice); // supply enough buffer for multiple borrows
@@ -630,12 +615,10 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
@@ -687,12 +670,10 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, (usdxDebtAmountWeth + usdxDebtAmountDai) * 2, alice); // supply enough buffer for multiple borrows
@@ -750,12 +731,10 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
@@ -806,12 +785,10 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, (usdxDebtAmountWeth + usdxDebtAmountDai) * 2, alice); // supply enough buffer for multiple borrows
@@ -869,12 +846,9 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
-
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows

@@ -29,19 +29,19 @@ contract AssetInterestRateStrategyTest is Base {
     rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
-  function test_maxBorrowRate() public {
+  function test_maxBorrowRate() public view {
     assertEq(rateStrategy.MAX_BORROW_RATE(), 1000_00);
   }
 
-  function test_minOptimalRatio() public {
+  function test_minOptimalRatio() public view {
     assertEq(rateStrategy.MIN_OPTIMAL_RATIO(), 1_00);
   }
 
-  function test_maxOptimalRatio() public {
+  function test_maxOptimalRatio() public view {
     assertEq(rateStrategy.MAX_OPTIMAL_RATIO(), 99_00);
   }
 
-  function test_getInterestRateData() public {
+  function test_getInterestRateData() public view {
     assertEq(
       rateStrategy.getInterestRateData(mockAssetId).optimalUsageRatio,
       rateData.optimalUsageRatio
@@ -60,23 +60,23 @@ contract AssetInterestRateStrategyTest is Base {
     );
   }
 
-  function test_getOptimalUsageRatio() public {
+  function test_getOptimalUsageRatio() public view {
     assertEq(rateStrategy.getOptimalUsageRatio(mockAssetId), rateData.optimalUsageRatio);
   }
 
-  function test_getBaseVariableBorrowRate() public {
+  function test_getBaseVariableBorrowRate() public view {
     assertEq(rateStrategy.getBaseVariableBorrowRate(mockAssetId), rateData.baseVariableBorrowRate);
   }
 
-  function test_getVariableRateSlope1() public {
+  function test_getVariableRateSlope1() public view {
     assertEq(rateStrategy.getVariableRateSlope1(mockAssetId), rateData.variableRateSlope1);
   }
 
-  function test_getVariableRateSlope2() public {
+  function test_getVariableRateSlope2() public view {
     assertEq(rateStrategy.getVariableRateSlope2(mockAssetId), rateData.variableRateSlope2);
   }
 
-  function test_getMaxVariableBorrowRate() public {
+  function test_getMaxVariableBorrowRate() public view {
     assertEq(
       rateStrategy.getMaxVariableBorrowRate(mockAssetId),
       rateData.baseVariableBorrowRate + rateData.variableRateSlope1 + rateData.variableRateSlope2
@@ -170,9 +170,7 @@ contract AssetInterestRateStrategyTest is Base {
     });
   }
 
-  function test_calculateInterestRate_fuzz_ZeroDebt(
-    uint256 availableLiquidity
-  ) public {
+  function test_calculateInterestRate_fuzz_ZeroDebt(uint256 availableLiquidity) public view {
     availableLiquidity = bound(availableLiquidity, 0, type(uint128).max);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
@@ -259,14 +257,7 @@ contract AssetInterestRateStrategyTest is Base {
 
   function _generateCalculateInterestRateParams(
     uint256 targetUtilizationRatioRay
-  )
-    internal
-    returns (
-      uint256 availableLiquidity,
-      uint256 baseDebt,
-      uint256 premiumDebt
-    )
-  {
+  ) internal returns (uint256 availableLiquidity, uint256 baseDebt, uint256 premiumDebt) {
     baseDebt = bound(vm.randomUint(), 1, MAX_SUPPLY_AMOUNT);
 
     // utilizationRatio = baseDebt / (baseDebt + availableLiquidity)

@@ -42,7 +42,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _dai2ReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: MAX_SUPPLY_AMOUNT,
       onBehalfOf: bob
     });
@@ -51,14 +51,14 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _usdxReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: usdxSupplyAmount,
       onBehalfOf: bob
     });
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: daiSupplyAmount,
       onBehalfOf: bob
     });
@@ -67,7 +67,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.borrow({
       spoke: spoke2,
       reserveId: _dai2ReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: borrowAmount,
       onBehalfOf: bob
     });
@@ -77,7 +77,13 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
 
     // Now bob repays dai2
     deal(address(tokenList.dai), bob, repayAmount);
-    Utils.repay({spoke: spoke2, reserveId: _dai2ReserveId(spoke2), user: bob, amount: repayAmount});
+    Utils.repay({
+      spoke: spoke2,
+      reserveId: _dai2ReserveId(spoke2),
+      caller: bob,
+      amount: repayAmount,
+      onBehalfOf: bob
+    });
 
     assertLe(
       spoke2.getUserRiskPremium(bob),
@@ -108,14 +114,14 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _dai2ReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: dai2SupplyAmount,
       onBehalfOf: bob
     });
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: daiSupplyAmount,
       onBehalfOf: bob
     });
@@ -127,7 +133,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.borrow({
       spoke: spoke2,
       reserveId: _dai2ReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: borrowAmount,
       onBehalfOf: bob
     });
@@ -140,12 +146,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       .premiumDrawnShares;
 
     // Now bob disables dai as collateral
-    setUsingAsCollateral({
-      spoke: spoke2,
-      user: bob,
-      reserveId: _daiReserveId(spoke2),
-      usingAsCollateral: false
-    });
+    vm.prank(bob);
+    spoke2.setUsingAsCollateral(_daiReserveId(spoke2), false, bob);
 
     assertGe(
       spoke2.getUserRiskPremium(bob),
@@ -199,14 +201,14 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _dai2ReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: dai2SupplyAmount,
       onBehalfOf: bob
     });
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: daiSupplyAmount,
       onBehalfOf: bob
     });
@@ -215,7 +217,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.borrow({
       spoke: spoke2,
       reserveId: _dai2ReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: borrowAmount,
       onBehalfOf: bob
     });
@@ -227,7 +229,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.withdraw({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: withdrawAmount,
       onBehalfOf: bob
     });
@@ -276,14 +278,14 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: daiSupplyAmount,
       onBehalfOf: bob
     });
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _dai2ReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: dai2SupplyAmount,
       onBehalfOf: bob
     });
@@ -295,7 +297,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.borrow({
       spoke: spoke2,
       reserveId: _wethReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: wethBorrowAmount,
       onBehalfOf: bob
     });
@@ -314,7 +316,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _wbtcReserveId(spoke2),
-      user: alice,
+      caller: alice,
       amount: aliceCollateralAmount,
       onBehalfOf: alice
     });
@@ -324,14 +326,14 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.borrow({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: alice,
+      caller: alice,
       amount: daiSupplyAmount,
       onBehalfOf: alice
     });
     Utils.borrow({
       spoke: spoke2,
       reserveId: _dai2ReserveId(spoke2),
-      user: alice,
+      caller: alice,
       amount: dai2SupplyAmount,
       onBehalfOf: alice
     });
@@ -427,14 +429,14 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: daiSupplyAmount,
       onBehalfOf: bob
     });
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _dai2ReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: dai2SupplyAmount,
       onBehalfOf: bob
     });
@@ -446,7 +448,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.borrow({
       spoke: spoke2,
       reserveId: _wethReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: borrowAmount,
       onBehalfOf: bob
     });
@@ -537,14 +539,14 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: daiSupplyAmount,
       onBehalfOf: bob
     });
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _dai2ReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: dai2SupplyAmount,
       onBehalfOf: bob
     });
@@ -556,7 +558,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.borrow({
       spoke: spoke2,
       reserveId: _wethReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: wethBorrowAmount,
       onBehalfOf: bob
     });
@@ -582,14 +584,14 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _wbtcReserveId(spoke2),
-      user: alice,
+      caller: alice,
       amount: 1e8,
       onBehalfOf: alice
     });
     Utils.borrow({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: alice,
+      caller: alice,
       amount: 1,
       onBehalfOf: alice
     });
@@ -652,14 +654,14 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: daiSupplyAmount,
       onBehalfOf: bob
     });
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _dai2ReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: dai2SupplyAmount,
       onBehalfOf: bob
     });
@@ -668,7 +670,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.borrow({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: initialBorrowAmount,
       onBehalfOf: bob
     });
@@ -697,7 +699,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.borrow({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: additionalBorrowAmount,
       onBehalfOf: bob
     });
@@ -759,7 +761,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: wethSupplyAmount,
       onBehalfOf: bob
     });
@@ -768,7 +770,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: borrowAmount,
       onBehalfOf: bob
     });
@@ -794,7 +796,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wbtcReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: wbtcSupplyAmount,
       onBehalfOf: bob
     });
@@ -837,14 +839,14 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: daiSupplyAmount,
       onBehalfOf: bob
     });
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _dai2ReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: dai2SupplyAmount,
       onBehalfOf: bob
     });
@@ -853,7 +855,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     Utils.borrow({
       spoke: spoke2,
       reserveId: _wethReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: borrowAmount,
       onBehalfOf: bob
     });

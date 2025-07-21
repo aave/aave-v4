@@ -235,8 +235,9 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     Utils.borrow(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // no longer set weth as collateral
-    setUsingAsCollateral(spoke1, alice, wethReserveId, false);
-    assertFalse(spoke1.getUsingAsCollateral(wethReserveId, alice));
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(wethReserveId, false, alice);
+    assertFalse(spoke1.isUsingAsCollateral(wethReserveId, alice));
 
     // usdx collateral value drop, make sure that HF < threshold and position is liquidatable
     vm.mockCall(

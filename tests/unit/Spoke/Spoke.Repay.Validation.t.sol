@@ -13,7 +13,7 @@ contract SpokeRepayValidationTest is SpokeBase {
 
     vm.expectRevert(ISpoke.ReserveNotActive.selector);
     vm.prank(bob);
-    spoke1.repay(daiReserveId, amount);
+    spoke1.repay(daiReserveId, amount, bob);
   }
 
   function test_repay_revertsWith_ReservePaused() public {
@@ -25,7 +25,7 @@ contract SpokeRepayValidationTest is SpokeBase {
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(bob);
-    spoke1.repay(daiReserveId, amount);
+    spoke1.repay(daiReserveId, amount, bob);
   }
 
   function test_repay_revertsWith_ReserveNotListed() public {
@@ -34,6 +34,6 @@ contract SpokeRepayValidationTest is SpokeBase {
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(bob);
-    spoke1.repay(reserveId, amount);
+    spoke1.repay(reserveId, amount, bob);
   }
 }
