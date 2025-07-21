@@ -101,23 +101,19 @@ interface ISpoke is IMulticall, IAccessManaged {
   event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
 
   /**
-   * @notice Emitted on setPositionManagerApproval or renouncePositionManagerRole action.
+   * @notice Emitted on setUserPositionManager or renouncePositionManagerRole action.
    * @param user The address of the user on whose behalf position manager can act.
    * @param positionManager The address of the position manager.
    * @param approve True if position manager approval was granted, false if it was revoked.
    */
-  event ApprovalForPositionManager(
-    address indexed user,
-    address indexed positionManager,
-    bool approve
-  );
+  event UserPositionManagerSet(address indexed user, address indexed positionManager, bool approve);
 
   /**
-   * @notice Emitted on setPositionManager action.
+   * @notice Emitted on updatePositionManager action.
    * @param positionManager The address of the position manager.
    * @param active True if position manager has become active, false otherwise.
    */
-  event PositionManagerSet(address indexed positionManager, bool active);
+  event PositionManagerUpdated(address indexed positionManager, bool active);
 
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
@@ -203,7 +199,7 @@ interface ISpoke is IMulticall, IAccessManaged {
    * @param positionManager The address of the position manager.
    * @param active True if positionManager is to be set as active, false otherwise.
    */
-  function setPositionManager(address positionManager, bool active) external;
+  function updatePositionManager(address positionManager, bool active) external;
 
   /**
    * @notice Supply an amount of underlying asset of the specified reserve.
@@ -279,7 +275,7 @@ interface ISpoke is IMulticall, IAccessManaged {
    * @param positionManager The address of the position manager.
    * @param approve True if user wants to approve position manager, false otherwise.
    */
-  function setApprovalForPositionManager(address positionManager, bool approve) external;
+  function setUserPositionManager(address positionManager, bool approve) external;
 
   /**
    * @notice Allows position manager (as caller) to renounce their approval given by the user.

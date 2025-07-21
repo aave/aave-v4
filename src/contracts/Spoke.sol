@@ -159,9 +159,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   /// @inheritdoc ISpoke
-  function setPositionManager(address positionManager, bool active) external restricted {
+  function updatePositionManager(address positionManager, bool active) external restricted {
     _positionManager[positionManager].active = active;
-    emit PositionManagerSet(positionManager, active);
+    emit PositionManagerUpdated(positionManager, active);
   }
 
   // /////
@@ -383,18 +383,18 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   /// @inheritdoc ISpoke
-  function setApprovalForPositionManager(address positionManager, bool approve) external {
+  function setUserPositionManager(address positionManager, bool approve) external {
     DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
     // @dev only allow approval when position manager is active for improved UX
     require(!approve || config.active, InactivePositionManager());
     config.approval[msg.sender] = approve;
-    emit ApprovalForPositionManager(msg.sender, positionManager, approve);
+    emit UserPositionManagerSet(msg.sender, positionManager, approve);
   }
 
   /// @inheritdoc ISpoke
   function renouncePositionManagerRole(address onBehalfOf) external {
     _positionManager[msg.sender].approval[onBehalfOf] = false;
-    emit ApprovalForPositionManager(onBehalfOf, msg.sender, false);
+    emit UserPositionManagerSet(onBehalfOf, msg.sender, false);
   }
 
   /// @inheritdoc ISpoke

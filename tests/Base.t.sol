@@ -249,7 +249,7 @@ abstract contract Base is Test {
     selectors[2] = ISpoke.updateReserveConfig.selector;
     selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
     selectors[4] = ISpoke.updateUserRiskPremium.selector;
-    selectors[5] = ISpoke.setPositionManager.selector;
+    selectors[5] = ISpoke.updatePositionManager.selector;
     selectors[6] = ISpoke.updateOracle.selector;
     selectors[7] = ISpoke.updateReservePriceSource.selector;
 
@@ -1922,14 +1922,28 @@ abstract contract Base is Test {
     assertEq(abi.encode(a), abi.encode(b), 'assertEq(SpokeConfig): all fields');
   }
 
-  function assertEq(DataTypes.LiquidationConfig memory a, DataTypes.LiquidationConfig memory b) internal pure {
+  function assertEq(
+    DataTypes.LiquidationConfig memory a,
+    DataTypes.LiquidationConfig memory b
+  ) internal pure {
     assertEq(a.closeFactor, b.closeFactor, 'assertEq(LiquidationConfig): closeFactor');
-    assertEq(a.liquidationBonusFactor, b.liquidationBonusFactor, 'assertEq(LiquidationConfig): liquidationBonusFactor');
-    assertEq(a.healthFactorForMaxBonus, b.healthFactorForMaxBonus, 'assertEq(LiquidationConfig): healthFactorForMaxBonus');
+    assertEq(
+      a.liquidationBonusFactor,
+      b.liquidationBonusFactor,
+      'assertEq(LiquidationConfig): liquidationBonusFactor'
+    );
+    assertEq(
+      a.healthFactorForMaxBonus,
+      b.healthFactorForMaxBonus,
+      'assertEq(LiquidationConfig): healthFactorForMaxBonus'
+    );
     assertEq(abi.encode(a), abi.encode(b), 'assertEq(LiquidationConfig): all fields');
   }
 
-  function assertEq(DataTypes.ReserveConfig memory a, DataTypes.ReserveConfig memory b) internal pure {
+  function assertEq(
+    DataTypes.ReserveConfig memory a,
+    DataTypes.ReserveConfig memory b
+  ) internal pure {
     assertEq(a.active, b.active, 'assertEq(ReserveConfig): active');
     assertEq(a.paused, b.paused, 'assertEq(ReserveConfig): paused');
     assertEq(a.frozen, b.frozen, 'assertEq(ReserveConfig): frozen');
@@ -1939,9 +1953,20 @@ abstract contract Base is Test {
     assertEq(abi.encode(a), abi.encode(b), 'assertEq(ReserveConfig): all fields');
   }
 
-  function assertEq(DataTypes.DynamicReserveConfig memory a, DataTypes.DynamicReserveConfig memory b) internal pure {
-    assertEq(a.collateralFactor, b.collateralFactor, 'assertEq(DynamicReserveConfig): collateralFactor');
-    assertEq(a.liquidationBonus, b.liquidationBonus, 'assertEq(DynamicReserveConfig): liquidationBonus');
+  function assertEq(
+    DataTypes.DynamicReserveConfig memory a,
+    DataTypes.DynamicReserveConfig memory b
+  ) internal pure {
+    assertEq(
+      a.collateralFactor,
+      b.collateralFactor,
+      'assertEq(DynamicReserveConfig): collateralFactor'
+    );
+    assertEq(
+      a.liquidationBonus,
+      b.liquidationBonus,
+      'assertEq(DynamicReserveConfig): liquidationBonus'
+    );
     assertEq(a.liquidationFee, b.liquidationFee, 'assertEq(DynamicReserveConfig): liquidationFee');
     assertEq(abi.encode(a), abi.encode(b), 'assertEq(DynamicReserveConfig): all fields');
   }

@@ -16,11 +16,11 @@ contract SpokePositionManagerTest is SpokeBase {
       vm.expectRevert(ISpoke.InactivePositionManager.selector);
     } else {
       vm.expectEmit(address(spoke1));
-      emit ISpoke.ApprovalForPositionManager(user, positionManager, approve);
+      emit ISpoke.UserPositionManagerSet(user, positionManager, approve);
     }
 
     vm.prank(user);
-    spoke1.setApprovalForPositionManager(positionManager, approve);
+    spoke1.setUserPositionManager(positionManager, approve);
   }
 
   function test_renouncePositionManagerRole() public {
@@ -30,7 +30,7 @@ contract SpokePositionManagerTest is SpokeBase {
     address positionManager = vm.randomAddress();
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ApprovalForPositionManager(user, positionManager, false);
+    emit ISpoke.UserPositionManagerSet(user, positionManager, false);
     vm.prank(positionManager);
     spoke1.renouncePositionManagerRole(user);
   }
@@ -191,14 +191,14 @@ contract SpokePositionManagerTest is SpokeBase {
     assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.PositionManagerSet(POSITION_MANAGER, true);
+    emit ISpoke.PositionManagerUpdated(POSITION_MANAGER, true);
     vm.prank(SPOKE_ADMIN);
-    spoke1.setPositionManager(POSITION_MANAGER, true);
+    spoke1.updatePositionManager(POSITION_MANAGER, true);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ApprovalForPositionManager(who, POSITION_MANAGER, true);
+    emit ISpoke.UserPositionManagerSet(who, POSITION_MANAGER, true);
     vm.prank(who);
-    spoke1.setApprovalForPositionManager(POSITION_MANAGER, true);
+    spoke1.setUserPositionManager(POSITION_MANAGER, true);
 
     assertTrue(spoke1.isPositionManager(who, POSITION_MANAGER));
     assertTrue(spoke1.isPositionManagerActive(POSITION_MANAGER));
