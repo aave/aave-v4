@@ -26,17 +26,16 @@ contract LiquidationLogicBaseTest is SpokeBase {
     uint256 totalDebt;
   }
 
+  function setUp() public virtual override {
+    super.setUp();
+    _setTokenDecimals();
+  }
+
   function _setTokenDecimals() internal {
     daiUnits = 10 ** tokenList.dai.decimals();
     usdxUnits = 10 ** tokenList.usdx.decimals();
     wethUnits = 10 ** tokenList.weth.decimals();
     wbtcUnits = 10 ** tokenList.wbtc.decimals();
-  }
-
-  function setUp() public virtual override {
-    super.setUp();
-    initEnvironment();
-    _setTokenDecimals();
   }
 
   // calculate threshold when close factor > effectiveLiquidationPenalty so that calculateDebtToRestoreCloseFactor denom is > 0

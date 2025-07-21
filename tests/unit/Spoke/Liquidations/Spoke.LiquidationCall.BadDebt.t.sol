@@ -320,7 +320,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserves = new DataTypes.Reserve[](1);
     state.debtReserves = new DataTypes.Reserve[](1);
-
+    state.user = alice;
     state.spoke = spoke1;
 
     state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
@@ -329,18 +329,14 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     state.debtReserves[state.debtReserveIndex] = state.spoke.getReserve(debtReserveId);
     state.collateralReserve = state.collateralReserves[state.collateralReserveIndex];
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
-
-    state.collDynConfig = state.spoke.getDynamicReserveConfig(
-      collateralReserveId,
-      state.collateralReserve.dynamicConfigKey
-    ); // utilize latest dynamic config
+    state.collDynConfig = _getUserDynConfig(state.spoke, state.user, collateralReserveId);
 
     // bound close factor, with a static liq bonus
     liqConfig = _boundCloseFactor(liqConfig);
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMath.PERCENTAGE_FACTOR.percentDivUp(state.collDynConfig.collateralFactor)
+      PercentageMathExtended.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
     );
 
     liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
@@ -358,7 +354,6 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.user = alice;
     state.liquidationFee = liquidationFee;
 
     // set spoke liq config

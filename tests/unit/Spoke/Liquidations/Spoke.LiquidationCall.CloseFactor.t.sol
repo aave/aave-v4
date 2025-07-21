@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
-  using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
   using WadRayMathExtended for uint256;
 
@@ -413,8 +412,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       MIN_LIQUIDATION_BONUS,
       PercentageMathExtended
         .PERCENTAGE_FACTOR
-        .percentDiv(state.collDynConfig.collateralFactor)
-        .percentMul(99_00) // add buffer so that amount to restore is > 0
+        .percentDivDown(state.collDynConfig.collateralFactor)
+        .percentMulDown(99_00) // add buffer so that amount to restore is > 0
     );
 
     liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
@@ -447,7 +446,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       onBehalfOf: alice
     });
 
-    uint256 hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus).percentMul(
+    uint256 hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus).percentMulUp(
       101_00
     ); // add buffer so that not all collateral is seized
 
