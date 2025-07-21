@@ -23,6 +23,27 @@ contract SpokePositionManagerTest is SpokeBase {
     spoke1.setUserPositionManager(positionManager, approve);
   }
 
+  function test_setApproval_revertsWith_InactivePositionManager() public {
+    assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
+    vm.expectRevert(ISpoke.InactivePositionManager.selector);
+    spoke1.setUserPositionManager(POSITION_MANAGER, true);
+  }
+
+  function test_disableApproval_on_inactivePositionManager() public {
+    _approvePositionManager(alice);
+    assertTrue(spoke1.isPositionManager(alice, POSITION_MANAGER));
+    assertTrue(spoke1.isPositionManagerActive(POSITION_MANAGER));
+
+    _disablePositionManager();
+    assertFalse(spoke1.isPositionManager(alice, POSITION_MANAGER)); // since posm is not active
+    assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UserPositionManagerSet(alice, POSITION_MANAGER, false);
+    vm.prank(alice);
+    spoke1.setUserPositionManager(POSITION_MANAGER, false);
+  }
+
   function test_renouncePositionManagerRole() public {
     vm.setArbitraryStorage(address(spoke1));
 
@@ -43,7 +64,7 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     _approvePositionManager(alice);
-    _resetAllowance(alice);
+    _resetTokenAllowance(alice);
 
     DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
 
@@ -56,6 +77,10 @@ contract SpokePositionManagerTest is SpokeBase {
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserSuppliedAmount(reserveId, POSITION_MANAGER), 0);
     assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), amount);
+
+    _disablePositionManager();
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    Utils.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
   }
 
   function test_onlyPositionManager_on_withdraw() public {
@@ -67,7 +92,7 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.withdraw(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     _approvePositionManager(alice);
-    _resetAllowance(alice);
+    _resetTokenAllowance(alice);
 
     DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
     amount /= 2;
@@ -81,6 +106,10 @@ contract SpokePositionManagerTest is SpokeBase {
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserSuppliedAmount(reserveId, POSITION_MANAGER), 0);
     assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), amount);
+
+    _disablePositionManager();
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    Utils.withdraw(spoke1, reserveId, POSITION_MANAGER, amount, alice);
   }
 
   function test_onlyPositionManager_on_borrow() public {
@@ -92,7 +121,7 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.borrow(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     _approvePositionManager(alice);
-    _resetAllowance(alice);
+    _resetTokenAllowance(alice);
 
     DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
 
@@ -107,6 +136,10 @@ contract SpokePositionManagerTest is SpokeBase {
     assertFalse(spoke1.isBorrowing(reserveId, POSITION_MANAGER));
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), amount);
     assertTrue(spoke1.isBorrowing(reserveId, alice));
+
+    _disablePositionManager();
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    Utils.borrow(spoke1, reserveId, POSITION_MANAGER, amount, alice);
   }
 
   function test_onlyPositionManager_on_repay() public {
@@ -119,7 +152,7 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.repay(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     _approvePositionManager(alice);
-    _resetAllowance(alice);
+    _resetTokenAllowance(alice);
 
     DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
     uint256 repayAmount = amount / 3;
@@ -142,6 +175,10 @@ contract SpokePositionManagerTest is SpokeBase {
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), 0);
     assertFalse(spoke1.isBorrowing(reserveId, POSITION_MANAGER));
     assertFalse(spoke1.isBorrowing(reserveId, alice));
+
+    _disablePositionManager();
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    Utils.repay(spoke1, reserveId, POSITION_MANAGER, repayAmount, alice);
   }
 
   function test_onlyPositionManager_on_usingAsCollateral() public {
@@ -160,6 +197,10 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.setUsingAsCollateral(spoke1, reserveId, POSITION_MANAGER, usingAsCollateral, alice);
 
     assertEq(spoke1.isUsingAsCollateral(reserveId, alice), usingAsCollateral);
+
+    _disablePositionManager();
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    Utils.setUsingAsCollateral(spoke1, reserveId, POSITION_MANAGER, usingAsCollateral, alice);
   }
 
   function test_onlyPositionManager_on_updateUserRiskPremium() public {
@@ -184,6 +225,17 @@ contract SpokePositionManagerTest is SpokeBase {
     emit ISpoke.UserRiskPremiumUpdate(alice, _calculateExpectedUserRP(alice, spoke1));
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserRiskPremium(alice);
+
+    riskPremiumBefore = spoke1.getUserRiskPremium(alice);
+    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 1000_00);
+    assertGt(spoke1.getUserRiskPremium(alice), riskPremiumBefore);
+    _disablePositionManager();
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, POSITION_MANAGER)
+    );
+    vm.prank(POSITION_MANAGER);
+    spoke1.updateUserRiskPremium(alice);
   }
 
   function _approvePositionManager(address who) internal {
@@ -204,8 +256,17 @@ contract SpokePositionManagerTest is SpokeBase {
     assertTrue(spoke1.isPositionManagerActive(POSITION_MANAGER));
   }
 
-  function _resetAllowance(address user) internal {
-    vm.prank(user);
+  function _disablePositionManager() internal {
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.PositionManagerUpdated(POSITION_MANAGER, false);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updatePositionManager(POSITION_MANAGER, false);
+
+    assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
+  }
+
+  function _resetTokenAllowance(address who) internal {
+    vm.prank(who);
     tokenList.usdx.approve(address(hub), 0);
   }
 }
