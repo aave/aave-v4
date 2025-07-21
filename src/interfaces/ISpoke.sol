@@ -272,8 +272,10 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   /**
    * @notice Allows a user to update their dynamic configuration for all collateral reserves.
+   * @dev An authorized position manager can call this on behalf of the user.
+   * @param user The address of the user whose dynamic configuration is to be updated.
    */
-  function updateUserDynamicConfig() external;
+  function updateUserDynamicConfig(address user) external;
 
   /**
    * @notice Allows caller to approve or revoke approval for positionManager.
