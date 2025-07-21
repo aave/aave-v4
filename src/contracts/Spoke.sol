@@ -368,7 +368,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
       _notifyRiskPremiumUpdate(type(uint256).max, onBehalfOf, newUserRiskPremium);
     }
-    emit UsingAsCollateral(reserveId, onBehalfOf, usingAsCollateral);
+    emit UsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
   }
 
   /// @inheritdoc ISpoke

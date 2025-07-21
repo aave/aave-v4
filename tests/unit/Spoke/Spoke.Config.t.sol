@@ -262,10 +262,9 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UsingAsCollateral(daiReserveId, bob, usingAsCollateral);
+    emit ISpoke.UsingAsCollateral(daiReserveId, bob, bob, usingAsCollateral);
     spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral, bob);
 
-    DataTypes.UserPosition memory userData = spoke1.getUserPosition(daiReserveId, bob);
     assertEq(
       spoke1.isUsingAsCollateral(daiReserveId, bob),
       usingAsCollateral,

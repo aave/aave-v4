@@ -82,10 +82,16 @@ interface ISpoke is IMulticall, IAccessManaged {
   /**
    * @notice Emitted on setUsingAsCollateral action.
    * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param caller The transaction initiator.
    * @param user The owner of the position being modified.
    * @param usingAsCollateral Boolean whether the reserve is enabled or disabled as collateral.
    */
-  event UsingAsCollateral(uint256 indexed reserveId, address indexed user, bool usingAsCollateral);
+  event UsingAsCollateral(
+    uint256 indexed reserveId,
+    address indexed caller,
+    address indexed user,
+    bool usingAsCollateral
+  );
 
   /**
    * @notice Emitted on updateUserRiskPremium action.

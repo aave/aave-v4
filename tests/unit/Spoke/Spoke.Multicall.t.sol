@@ -22,7 +22,7 @@ contract SpokeMulticall is SpokeBase {
       hub.convertToSuppliedShares(daiAssetId, supplyAmount)
     );
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UsingAsCollateral(daiReserveId, bob, true);
+    emit ISpoke.UsingAsCollateral(daiReserveId, bob, bob, true);
 
     // Execute the multicall
     vm.prank(bob);
@@ -64,7 +64,7 @@ contract SpokeMulticall is SpokeBase {
       hub.convertToSuppliedShares(daiAssetId, MAX_SUPPLY_AMOUNT)
     );
     vm.expectEmit(address(spoke2));
-    emit ISpoke.UsingAsCollateral(_daiReserveId(spoke2), bob, true);
+    emit ISpoke.UsingAsCollateral(_daiReserveId(spoke2), bob, bob, true);
     vm.expectEmit(address(spoke2));
     emit ISpoke.UserRiskPremiumUpdate(bob, _getLiquidityPremium(spoke2, _daiReserveId(spoke2)));
 
@@ -147,7 +147,11 @@ contract SpokeMulticall is SpokeBase {
     spoke1.multicall(calls);
 
     // Check the reserves
-    assertEq(spoke1.getReserveCount(), reserveCountBefore + 2, 'Reserve count should increase by 2');
+    assertEq(
+      spoke1.getReserveCount(),
+      reserveCountBefore + 2,
+      'Reserve count should increase by 2'
+    );
     assertEq(spoke1.getReserveConfig(dai2ReserveId), dai2Config);
     assertEq(spoke1.getReserveConfig(dai3ReserveId), dai3Config);
     assertEq(spoke1.getDynamicReserveConfig(dai2ReserveId), dai2DynConfig);
