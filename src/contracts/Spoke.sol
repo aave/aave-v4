@@ -382,9 +382,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     }
   }
 
-  function updateUserDynamicConfig(address user) external {
-    require(user == msg.sender || _isPositionManager(user, msg.sender), Unauthorized());
-    _refreshDynamicConfig(user);
+  function updateUserDynamicConfig(address onBehalfOf) external onlyPositionManager(onBehalfOf) {
+    _refreshDynamicConfig(onBehalfOf);
   }
 
   /// @inheritdoc ISpoke

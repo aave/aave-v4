@@ -248,7 +248,7 @@ contract SpokePositionManagerTest is SpokeBase {
     updateCollateralFactor(spoke1, _daiReserveId(spoke1), 90_00);
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.Unauthorized.selector));
+    vm.expectRevert(ISpoke.Unauthorized.selector);
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserDynamicConfig(alice);
 
@@ -263,7 +263,7 @@ contract SpokePositionManagerTest is SpokeBase {
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
 
     _disablePositionManager();
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.Unauthorized.selector));
+    vm.expectRevert(ISpoke.Unauthorized.selector);
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserDynamicConfig(alice);
   }
