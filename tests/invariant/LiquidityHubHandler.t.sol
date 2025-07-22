@@ -83,7 +83,7 @@ contract LiquidityHubHandler is Test {
         active: true,
         frozen: false,
         paused: false,
-        liquidityPremium: 0,
+        collateralRisk: 0,
         borrowable: false,
         collateral: false
       }),

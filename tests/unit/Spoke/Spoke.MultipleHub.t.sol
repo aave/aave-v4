@@ -31,7 +31,7 @@ contract SpokeMultipleHubTest is SpokeBase {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 20_00,
+      collateralRisk: 20_00,
       borrowable: true,
       collateral: true
     });
@@ -53,7 +53,7 @@ contract SpokeMultipleHubTest is SpokeBase {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 20_00,
+      collateralRisk: 20_00,
       borrowable: true,
       collateral: true
     });
@@ -63,8 +63,8 @@ contract SpokeMultipleHubTest is SpokeBase {
       liquidationFee: 0
     });
     daiHub3ReserveId = spoke1.addReserve(
-      address(hub3), 
-      hub3DaiAssetId, 
+      address(hub3),
+      hub3DaiAssetId,
       _deployMockPriceFeed(spoke1, 1e8),
       daiHub3Config,
       dynDaiHub3Config

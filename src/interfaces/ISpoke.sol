@@ -14,7 +14,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 interface ISpoke is IMulticall, IAccessManaged {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
-  event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
   event DynamicReserveConfigUpdated(
     uint256 indexed reserveId,
     uint16 indexed configKey,
@@ -147,7 +146,7 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   error ReserveNotListed();
   error AssetNotListed();
-  error InvalidLiquidityPremium();
+  error InvalidCollateralRisk();
   error InsufficientSupply(uint256 supply);
   error ReserveNotBorrowable(uint256 reserveId);
   error ReserveCannotBeUsedAsCollateral(uint256 reserveId);
@@ -366,7 +365,7 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
 
-  function MAX_LIQUIDITY_PREMIUM() external view returns (uint256);
+  function MAX_COLLATERAL_RISK() external view returns (uint256);
 
   function oracle() external view returns (IAaveOracle);
 }

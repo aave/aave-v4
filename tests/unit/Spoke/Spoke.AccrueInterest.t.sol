@@ -203,9 +203,9 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint40 startTime = uint40(vm.getBlockTimestamp());
     uint256 usdxReserveId = _usdxReserveId(spoke1);
 
-    // Set liquidity premium of usdx on spoke1 to 10%
-    updateLiquidityPremium(spoke1, usdxReserveId, 10_00);
-    assertEq(10_00, _getLiquidityPremium(spoke1, usdxReserveId), 'usdx liquidity premium');
+    // Set collateral risk of usdx on spoke1 to 10%
+    updateCollateralRisk(spoke1, usdxReserveId, 10_00);
+    assertEq(10_00, _getCollateralRisk(spoke1, usdxReserveId), 'usdx collateral risk');
 
     // Bob supply usdx
     Utils.supplyCollateral(spoke1, usdxReserveId, bob, supplyAmount, bob);
