@@ -23,7 +23,7 @@ interface ILiquidityHub is IAccessManaged {
     uint256 indexed assetId,
     uint256 drawnIndex,
     uint256 baseBorrowRate,
-    uint256 latestUpdateTimestamp // TODO: rm when block.timestamp is added in eth_getLogs rpc call
+    uint256 latestUpdateTimestamp
   );
   event Add(
     uint256 indexed assetId,
