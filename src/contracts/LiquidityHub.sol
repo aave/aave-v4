@@ -49,6 +49,14 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(irStrategy != address(0), InvalidIrStrategy());
 
     uint256 assetId = _assetCount++;
+    uint256 baseDebtIndex = WadRayMathExtended.RAY;
+    uint256 baseBorrowRate = IAssetInterestRateStrategy(irStrategy).calculateInterestRate({
+      assetId: assetId,
+      availableLiquidity: 0,
+      baseDebt: 0,
+      premiumDebt: 0
+    });
+    uint256 lastUpdateTimestamp = block.timestamp;
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
       active: true,
       paused: false,
@@ -56,13 +64,6 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0,
       irStrategy: irStrategy
-    });
-
-    uint256 baseBorrowRate = IAssetInterestRateStrategy(irStrategy).calculateInterestRate({
-      assetId: assetId,
-      availableLiquidity: 0,
-      baseDebt: 0,
-      premiumDebt: 0
     });
     _assets[assetId] = DataTypes.Asset({
       underlying: underlying,
@@ -73,15 +74,15 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       premiumDrawnShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
-      baseDebtIndex: WadRayMathExtended.RAY,
+      baseDebtIndex: baseDebtIndex,
       baseBorrowRate: baseBorrowRate,
-      lastUpdateTimestamp: block.timestamp,
+      lastUpdateTimestamp: lastUpdateTimestamp,
       config: config
     });
 
     emit AssetAdded(assetId, underlying, decimals);
     emit AssetConfigUpdated(assetId, config);
-    emit AssetUpdated(assetId, WadRayMathExtended.RAY, baseBorrowRate, block.timestamp);
+    emit AssetUpdated(assetId, baseDebtIndex, baseBorrowRate, lastUpdateTimestamp);
 
     return assetId;
   }

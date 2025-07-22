@@ -126,7 +126,12 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assumeNotZeroAddress(feeReceiver);
 
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
-    baseVariableBorrowRate = uint32(bound(baseVariableBorrowRate, 0, MAX_BORROW_RATE / 2)); // 1000%
+
+    uint256 variableRateSlope1 = 5_00;
+    uint256 variableRateSlope2 = 5_00;
+    baseVariableBorrowRate = uint32(
+      bound(baseVariableBorrowRate, 0, MAX_BORROW_RATE - variableRateSlope1 - variableRateSlope2)
+    );
     uint256 expectedAssetId = hub.getAssetCount();
 
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub)));
@@ -136,9 +141,9 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       abi.encode(
         IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: baseVariableBorrowRate, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
+          baseVariableBorrowRate: baseVariableBorrowRate,
+          variableRateSlope1: uint32(variableRateSlope1), // 5.00%
+          variableRateSlope2: uint32(variableRateSlope2) // 5.00%
         })
       )
     );
