@@ -41,9 +41,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     internal _userPositions;
   mapping(address user => DataTypes.PositionStatus positionStatus) internal _positionStatus;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
+  mapping(address positionManager => DataTypes.PositionManagerConfig) internal _positionManager;
   mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   DataTypes.LiquidationConfig internal _liquidationConfig;
+
+  modifier onlyPositionManager(address onBehalfOf) {
+    require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
+    _;
+  }
 
   /**
    * @dev Constructor.
@@ -152,14 +158,24 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // todo emit if stale config overwritten?
   }
 
+  /// @inheritdoc ISpoke
+  function updatePositionManager(address positionManager, bool active) external restricted {
+    _positionManager[positionManager].active = active;
+    emit PositionManagerUpdated(positionManager, active);
+  }
+
   // /////
   // Users
   // /////
 
   /// @inheritdoc ISpoke
-  function supply(uint256 reserveId, uint256 amount) external {
+  function supply(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
+    DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
 
     _validateSupply(reserve);
 
@@ -168,13 +184,17 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     userPosition.suppliedShares += suppliedShares;
     reserve.suppliedShares += suppliedShares;
 
-    emit Supply(reserveId, msg.sender, suppliedShares);
+    emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares);
   }
 
   /// @inheritdoc ISpoke
-  function withdraw(uint256 reserveId, uint256 amount, address to) external {
+  function withdraw(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
+    DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     uint256 assetId = reserve.assetId;
     ILiquidityHub hub = reserve.hub;
 
@@ -184,28 +204,29 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     }
     _validateWithdraw(reserve, userPosition, amount);
 
-    _accruePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, 0);
-
-    uint256 withdrawnShares = hub.remove(assetId, amount, to);
+    _accruePremiumDebt(reserve, userPosition, hub, assetId, onBehalfOf, 0);
+    uint256 withdrawnShares = hub.remove(assetId, amount, msg.sender);
 
     userPosition.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
 
     // calc needs new user position, just updating base debt is enough
-    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
-    _updatePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
-    _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
+    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
+    _updatePremiumDebt(reserve, userPosition, hub, assetId, onBehalfOf, newUserRiskPremium);
+    _notifyRiskPremiumUpdate(assetId, onBehalfOf, newUserRiskPremium);
 
-    emit Withdraw(reserveId, msg.sender, withdrawnShares, to);
+    emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
   }
 
   /// @inheritdoc ISpoke
-  function borrow(uint256 reserveId, uint256 amount, address to) external {
-    // TODO: referral code
-    // TODO: onBehalfOf with credit delegation
+  function borrow(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
-    DataTypes.PositionStatus storage positionStatus = _positionStatus[msg.sender];
+    DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     uint256 assetId = reserve.assetId;
     ILiquidityHub hub = reserve.hub;
 
@@ -215,59 +236,75 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    _accruePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, 0);
-
-    uint256 baseDrawnShares = hub.draw(assetId, amount, to);
+    _accruePremiumDebt(reserve, userPosition, hub, assetId, onBehalfOf, 0);
+    uint256 baseDrawnShares = hub.draw(assetId, amount, msg.sender);
 
     reserve.baseDrawnShares += baseDrawnShares;
     userPosition.baseDrawnShares += baseDrawnShares;
 
     // calc needs new user position, just updating base debt is enough
-    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
-    _updatePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
-    _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
+    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
+    _updatePremiumDebt(reserve, userPosition, hub, assetId, onBehalfOf, newUserRiskPremium);
+    _notifyRiskPremiumUpdate(assetId, onBehalfOf, newUserRiskPremium);
 
-    emit Borrow(reserveId, msg.sender, baseDrawnShares, to);
+    emit Borrow(reserveId, msg.sender, onBehalfOf, baseDrawnShares);
   }
 
   /// @inheritdoc ISpoke
-  function repay(uint256 reserveId, uint256 amount) external {
-    /// @dev TODO: onBehalfOf
-    DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
+  function repay(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) {
+    DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    uint256 assetId = reserve.assetId;
-    ILiquidityHub hub = reserve.hub;
-
     _validateRepay(reserve);
-    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(hub, assetId, userPosition);
-    (uint256 baseDebtRestored, uint256 premiumDebtRestored) = _calculateRestoreAmount(
-      baseDebt,
-      premiumDebt,
+
+    DataTypes.ExecuteRepayLocalVars memory vars;
+    vars.hub = reserve.hub;
+    vars.assetId = reserve.assetId;
+    (vars.baseDebt, vars.premiumDebt) = _getUserDebt(vars.hub, vars.assetId, userPosition);
+    (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
+      vars.baseDebt,
+      vars.premiumDebt,
       amount
     );
 
     // settle premium debt here
-    _accruePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, premiumDebtRestored);
-
-    uint256 restoredShares = hub.restore(
-      assetId,
-      baseDebtRestored,
-      premiumDebtRestored,
+    _accruePremiumDebt(
+      reserve,
+      userPosition,
+      vars.hub,
+      vars.assetId,
+      onBehalfOf,
+      vars.premiumDebtRestored
+    );
+    vars.restoredShares = vars.hub.restore(
+      vars.assetId,
+      vars.baseDebtRestored,
+      vars.premiumDebtRestored,
       msg.sender
     ); // we settle base debt here
 
-    reserve.baseDrawnShares -= restoredShares;
-    userPosition.baseDrawnShares -= restoredShares;
+    reserve.baseDrawnShares -= vars.restoredShares;
+    userPosition.baseDrawnShares -= vars.restoredShares;
 
     if (userPosition.baseDrawnShares == 0) {
-      _positionStatus[msg.sender].setBorrowing(reserveId, false);
+      _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
     }
 
-    (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
-    _updatePremiumDebt(reserve, userPosition, hub, assetId, msg.sender, newUserRiskPremium);
-    _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
+    (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
+    _updatePremiumDebt(
+      reserve,
+      userPosition,
+      vars.hub,
+      vars.assetId,
+      onBehalfOf,
+      vars.newUserRiskPremium
+    );
+    _notifyRiskPremiumUpdate(vars.assetId, onBehalfOf, vars.newUserRiskPremium);
 
-    emit Repay(reserveId, msg.sender, restoredShares);
+    emit Repay(reserveId, msg.sender, onBehalfOf, vars.restoredShares);
   }
 
   function liquidationCall(
@@ -307,8 +344,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   /// @inheritdoc ISpoke
-  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external {
-    DataTypes.PositionStatus storage positionStatus = _positionStatus[msg.sender];
+  function setUsingAsCollateral(
+    uint256 reserveId,
+    bool usingAsCollateral,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) {
+    DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
     // process only if collateral status changes
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
@@ -321,31 +362,57 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
-      _refreshDynamicConfig(msg.sender, reserveId);
+      _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
       // If unsetting, check HF and update user rp
-      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
-      _notifyRiskPremiumUpdate(type(uint256).max, msg.sender, newUserRiskPremium);
+      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
+      _notifyRiskPremiumUpdate(type(uint256).max, onBehalfOf, newUserRiskPremium);
     }
-    emit UsingAsCollateral(reserveId, msg.sender, usingAsCollateral);
+    emit UsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
   }
 
   /// @inheritdoc ISpoke
-  function updateUserRiskPremium(address user) external {
-    (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
-    bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, user, userRiskPremium);
+  function updateUserRiskPremium(address onBehalfOf) external {
+    (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
+    bool premiumIncrease = _notifyRiskPremiumUpdate(type(uint256).max, onBehalfOf, userRiskPremium);
+
     // check permissions if premium increases and not called by user
-    if (premiumIncrease && user != msg.sender) {
-      _checkCanCall(_msgSender(), _msgData());
+    if (premiumIncrease && !_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
+      _checkCanCall(msg.sender, msg.data);
     }
   }
 
-  function getReserveCount() external view returns (uint256) {
-    return _reserveCount;
+  /// @inheritdoc ISpoke
+  function setUserPositionManager(address positionManager, bool approve) external {
+    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
+    // @dev only allow approval when position manager is active for improved UX
+    require(!approve || config.active, InactivePositionManager());
+    config.approval[msg.sender] = approve;
+    emit UserPositionManagerSet(msg.sender, positionManager, approve);
   }
 
-  function getUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
+  /// @inheritdoc ISpoke
+  function renouncePositionManagerRole(address onBehalfOf) external {
+    _positionManager[msg.sender].approval[onBehalfOf] = false;
+    emit UserPositionManagerSet(onBehalfOf, msg.sender, false);
+  }
+
+  /// @inheritdoc ISpoke
+  function isPositionManager(address user, address positionManager) external view returns (bool) {
+    return _isPositionManager(user, positionManager);
+  }
+
+  /// @inheritdoc ISpoke
+  function isPositionManagerActive(address positionManager) external view returns (bool) {
+    return _positionManager[positionManager].active;
+  }
+
+  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
     return _positionStatus[user].isUsingAsCollateral(reserveId);
+  }
+
+  function isBorrowing(uint256 reserveId, address user) external view returns (bool) {
+    return _positionStatus[user].isBorrowing(reserveId);
   }
 
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
@@ -388,6 +455,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
     return _userPositions[user][reserveId].suppliedShares;
+  }
+
+  function getReserveCount() external view returns (uint256) {
+    return _reserveCount;
   }
 
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
@@ -525,6 +596,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     // todo validate user not trying to repay more
+    // todo NoExplicitAmountToRepayOnBehalf
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
@@ -702,7 +774,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _refreshPremiumDebt(
     DataTypes.Reserve storage reserve,
-    address userAddress,
+    address user,
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
@@ -711,7 +783,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal {
     _refresh(
       reserve,
-      userAddress,
+      user,
       premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
@@ -728,7 +800,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _refresh(
     DataTypes.Reserve storage reserve,
-    address userAddress,
+    address user,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
@@ -740,12 +812,18 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     emit RefreshPremiumDebt(
       reserve.reserveId,
-      userAddress,
+      user,
       premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
       realizedPremiumTaken
     );
+  }
+
+  function _isPositionManager(address user, address manager) private view returns (bool) {
+    if (user == manager) return true;
+    DataTypes.PositionManagerConfig storage config = _positionManager[manager];
+    return config.active && config.approval[user];
   }
 
   /**

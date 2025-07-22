@@ -19,14 +19,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
     IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke1),
-      amount: amount,
-      user: alice,
-      to: address(spoke1)
-    });
+    Utils.add({hub: hub, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
 
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(address(hub), alice, amount);
@@ -73,22 +66,8 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
 
     IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke1),
-      amount: amount,
-      user: alice,
-      to: address(spoke1)
-    });
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke2),
-      amount: amount2,
-      user: alice,
-      to: address(spoke2)
-    });
+    Utils.add({hub: hub, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
+    Utils.add({hub: hub, assetId: assetId, caller: address(spoke2), amount: amount2, user: alice});
 
     Utils.remove(hub, assetId, address(spoke1), amount, alice);
     Utils.remove(hub, assetId, address(spoke2), amount2, alice);
@@ -133,32 +112,11 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     uint256 assetId = daiAssetId;
     IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke1),
-      amount: amount,
-      user: alice,
-      to: address(spoke1)
-    });
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke2),
-      amount: amount2,
-      user: alice,
-      to: address(spoke2)
-    });
+    Utils.add({hub: hub, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
+    Utils.add({hub: hub, assetId: assetId, caller: address(spoke2), amount: amount2, user: alice});
 
     // draw liquidity to accrue interest using spoke3
-    Utils.draw({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke3),
-      amount: drawAmount,
-      to: bob,
-      onBehalfOf: address(spoke3)
-    });
+    Utils.draw({hub: hub, assetId: assetId, caller: address(spoke3), amount: drawAmount, to: bob});
     skip(skipTime);
 
     (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
@@ -168,7 +126,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     Utils.restore({
       hub: hub,
       assetId: assetId,
-      spoke: address(spoke3),
+      caller: address(spoke3),
       baseAmount: baseDebt,
       premiumAmount: premiumDebt,
       repayer: bob
@@ -256,7 +214,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     Utils.restore({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       baseAmount: baseDebtRestored,
       premiumAmount: premiumDebtRestored,
       repayer: alice
@@ -353,10 +311,9 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: supply2Amount,
-      user: bob,
-      to: address(spoke2)
+      user: bob
     });
 
     (uint256 baseDebtRestored, uint256 premiumDebtRestored) = hub.getSpokeDebt(
@@ -368,7 +325,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     Utils.restore({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       baseAmount: baseDebtRestored,
       premiumAmount: premiumDebtRestored,
       repayer: alice
@@ -437,10 +394,9 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       amount: amount,
-      user: alice,
-      to: address(spoke1)
+      user: alice
     });
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
@@ -460,20 +416,12 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       amount: amount,
-      user: alice,
-      to: address(spoke1)
+      user: alice
     });
     // spoke1 draw all of dai reserve liquidity
-    Utils.draw({
-      hub: hub,
-      assetId: daiAssetId,
-      spoke: address(spoke1),
-      amount: amount,
-      to: alice,
-      onBehalfOf: address(spoke1)
-    });
+    Utils.draw({hub: hub, assetId: daiAssetId, caller: address(spoke1), amount: amount, to: alice});
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub.remove(daiAssetId, amount, address(spoke1));

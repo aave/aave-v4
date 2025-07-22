@@ -110,6 +110,7 @@ abstract contract Base is Test {
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
+  address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -242,14 +243,16 @@ abstract contract Base is Test {
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
-    bytes4[] memory selectors = new bytes4[](7);
-    selectors[0] = ISpoke.updateOracle.selector;
-    selectors[1] = ISpoke.updateReservePriceSource.selector;
-    selectors[2] = ISpoke.updateLiquidationConfig.selector;
-    selectors[3] = ISpoke.addReserve.selector;
-    selectors[4] = ISpoke.updateReserveConfig.selector;
-    selectors[5] = ISpoke.updateDynamicReserveConfig.selector;
-    selectors[6] = ISpoke.updateUserRiskPremium.selector;
+    bytes4[] memory selectors = new bytes4[](8);
+    selectors[0] = ISpoke.updateLiquidationConfig.selector;
+    selectors[1] = ISpoke.addReserve.selector;
+    selectors[2] = ISpoke.updateReserveConfig.selector;
+    selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
+    selectors[4] = ISpoke.updateUserRiskPremium.selector;
+    selectors[5] = ISpoke.updatePositionManager.selector;
+    selectors[6] = ISpoke.updateOracle.selector;
+    selectors[7] = ISpoke.updateReservePriceSource.selector;
+
     accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
 
     // Liquidity Hub Admin functionalities
@@ -290,7 +293,15 @@ abstract contract Base is Test {
     MAX_SUPPLY_AMOUNT_WBTC = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.wbtc.decimals();
     MAX_SUPPLY_AMOUNT_USDY = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdy.decimals();
 
-    address[6] memory users = [alice, bob, carol, derl, LIQUIDATOR, TREASURY_ADMIN];
+    address[7] memory users = [
+      alice,
+      bob,
+      carol,
+      derl,
+      LIQUIDATOR,
+      TREASURY_ADMIN,
+      POSITION_MANAGER
+    ];
 
     for (uint256 x; x < users.length; ++x) {
       tokenList.usdx.mint(users[x], mintAmount_USDX);
@@ -1143,16 +1154,6 @@ abstract contract Base is Test {
     assertEq(spoke.getDynamicReserveConfig(reserveId).collateralFactor, newCollateralFactor);
   }
 
-  function setUsingAsCollateral(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId,
-    bool usingAsCollateral
-  ) internal {
-    vm.prank(user);
-    spoke.setUsingAsCollateral(reserveId, usingAsCollateral);
-  }
-
   function updateCollateralFactor(
     ISpoke spoke,
     uint256 reserveId,
@@ -1323,7 +1324,7 @@ abstract contract Base is Test {
     uint256 assetsAmount,
     uint256 totalSuppliedAssets,
     uint256 totalSuppliedShares
-  ) internal view returns (uint256) {
+  ) internal pure returns (uint256) {
     uint256 sharesAmount = assetsAmount.toSharesDown(totalSuppliedAssets, totalSuppliedShares);
     return
       sharesAmount.toAssetsDown(
@@ -1865,7 +1866,7 @@ abstract contract Base is Test {
     treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
   }
 
-  function _assumeValidSupplier(address user) internal {
+  function _assumeValidSupplier(address user) internal view {
     vm.assume(
       user != address(0) &&
         user != address(hub) &&
@@ -1983,7 +1984,7 @@ abstract contract Base is Test {
     uint256 initialPremiumShares,
     uint256 liquidityFee,
     uint256 indexDelta
-  ) internal view returns (uint256 feesAmount) {
+  ) internal pure returns (uint256 feesAmount) {
     return
       indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
   }
@@ -2119,7 +2120,7 @@ abstract contract Base is Test {
     ILiquidityHub hub,
     uint256 assetId,
     string memory operation
-  ) internal {
+  ) internal view {
     DataTypes.Asset memory asset = hub.getAsset(assetId);
     (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
 

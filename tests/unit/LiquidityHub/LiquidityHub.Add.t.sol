@@ -136,10 +136,9 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       amount: supplyAmount,
-      user: alice,
-      to: address(spoke1)
+      user: alice
     });
 
     // set supply cap to amount of assets supplied * 2 - 1, given
@@ -253,10 +252,9 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       amount: supplyAmount,
-      user: alice,
-      to: address(spoke1)
+      user: alice
     });
   }
 
@@ -584,10 +582,9 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: supplyAmount,
-      user: bob,
-      to: address(spoke2)
+      user: bob
     });
 
     assertEq(
@@ -643,10 +640,9 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       amount: supplyAmount,
-      user: bob,
-      to: address(spoke1)
+      user: bob
     });
 
     // debt exists
@@ -753,10 +749,9 @@ contract LiquidityHubAddTest is LiquidityHubBase {
       Utils.add({
         hub: hub,
         assetId: assetId,
-        spoke: address(spoke1),
+        caller: address(spoke1),
         amount: supplyAmount,
-        user: bob,
-        to: address(spoke1)
+        user: bob
       });
 
       (uint256 baseDebt, ) = hub.getAssetDebt(assetId);

@@ -69,19 +69,17 @@ contract LiquidityHubBase is Base {
     supplyShares = Utils.add({
       hub: hub,
       assetId: assetId,
-      spoke: supplySpoke,
+      caller: supplySpoke,
       amount: supplyAmount,
-      user: supplyUser,
-      to: supplySpoke
+      user: supplyUser
     });
 
     drawnShares = Utils.draw({
       hub: hub,
       assetId: assetId,
       to: drawUser,
-      spoke: drawSpoke,
-      amount: drawAmount,
-      onBehalfOf: drawSpoke
+      caller: drawSpoke,
+      amount: drawAmount
     });
 
     skip(skipTime);
@@ -129,14 +127,7 @@ contract LiquidityHubBase is Base {
       })
     );
 
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: tempSpoke,
-      amount: amount,
-      user: tempUser,
-      to: tempSpoke
-    });
+    Utils.add({hub: hub, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
 
     assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
   }
@@ -166,7 +157,7 @@ contract LiquidityHubBase is Base {
       hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
     }
 
-    Utils.draw(hub, assetId, tempSpoke, tempUser, amount, tempUser);
+    Utils.draw(hub, assetId, tempSpoke, tempUser, amount);
 
     skip(365 days);
 

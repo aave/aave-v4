@@ -425,7 +425,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: collateralReserveId,
-      user: alice,
+      caller: alice,
       amount: supplyAmount,
       onBehalfOf: alice
     });

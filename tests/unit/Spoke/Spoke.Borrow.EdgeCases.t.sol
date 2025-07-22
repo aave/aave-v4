@@ -12,14 +12,14 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: carol,
+      caller: carol,
       amount: 100e18,
       onBehalfOf: carol
     });
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: 100e18,
       onBehalfOf: bob
     });
@@ -90,7 +90,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: MAX_SUPPLY_AMOUNT_WETH,
       onBehalfOf: bob
     });
@@ -98,7 +98,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: carol,
+      caller: carol,
       amount: MAX_SUPPLY_AMOUNT_WETH,
       onBehalfOf: carol
     });
@@ -173,14 +173,14 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: carol,
+      caller: carol,
       amount: MAX_SUPPLY_AMOUNT,
       onBehalfOf: carol
     });
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: MAX_SUPPLY_AMOUNT,
       onBehalfOf: bob
     });
@@ -227,7 +227,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: MAX_SUPPLY_AMOUNT,
       onBehalfOf: bob
     });
