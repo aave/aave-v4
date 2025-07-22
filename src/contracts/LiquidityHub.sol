@@ -450,7 +450,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
   function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
-    return asset.toSuppliedAssetsDown(asset.suppliedShares);
+    return previewRemoveByShares(assetId, asset.suppliedShares);
   }
 
   function getAssetSuppliedShares(uint256 assetId) external view returns (uint256) {
