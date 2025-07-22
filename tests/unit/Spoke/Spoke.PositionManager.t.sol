@@ -210,7 +210,7 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 1500e6, alice);
 
     uint256 riskPremiumBefore = spoke1.getUserRiskPremium(alice);
-    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 100_00);
+    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 100_00);
     assertGt(spoke1.getUserRiskPremium(alice), riskPremiumBefore);
 
     vm.expectRevert(
@@ -227,7 +227,7 @@ contract SpokePositionManagerTest is SpokeBase {
     spoke1.updateUserRiskPremium(alice);
 
     riskPremiumBefore = spoke1.getUserRiskPremium(alice);
-    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 1000_00);
+    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 1000_00);
     assertGt(spoke1.getUserRiskPremium(alice), riskPremiumBefore);
     _disablePositionManager();
 
