@@ -187,11 +187,11 @@ contract SpokeLiquidationBase is SpokeBase {
     ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
 
     state.liquidationFeeShares =
-      hub.convertToSuppliedSharesUp(
+      hub.previewRemoveByAssets(
         state.collateralReserve.assetId,
         state.collToLiq + state.liquidationFeeAmount
       ) -
-      hub.convertToSuppliedSharesUp(state.collateralReserve.assetId, state.collToLiq);
+      hub.previewRemoveByAssets(state.collateralReserve.assetId, state.collToLiq);
 
     if (collateralReserveId != debtReserveId) {
       vm.expectCall(

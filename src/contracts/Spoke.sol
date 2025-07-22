@@ -1079,7 +1079,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.totalRestoredShares += vars.restoredShares;
 
       // expected total withdrawn shares includes liquidation fee
-      vars.withdrawnShares = collateralReserveHub.convertToSuppliedSharesUp(
+      vars.withdrawnShares = collateralReserveHub.previewRemoveByAssets(
         vars.collateralAssetId,
         vars.liquidationFeeAmount + vars.collateralToLiquidate
       );

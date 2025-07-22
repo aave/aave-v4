@@ -22,7 +22,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       to: address(spoke2)
     });
 
-    uint256 shares = hub.convertToDrawnSharesUp(assetId, amount);
+    uint256 shares = hub.previewDrawByAssets(assetId, amount);
 
     DataTypes.Asset memory assetBefore = hub.getAsset(assetId);
     (, uint256 premiumDebt) = hub.getAssetDebt(assetId);
@@ -92,7 +92,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     _drawLiquidity(assetId, amount, true);
     skip(365 days);
 
-    uint256 shares = hub.convertToDrawnSharesUp(assetId, amount);
+    uint256 shares = hub.previewDrawByAssets(assetId, amount);
 
     DataTypes.Asset memory assetBefore = hub.getAsset(assetId);
     (, uint256 premiumDebt) = hub.getAssetDebt(assetId);

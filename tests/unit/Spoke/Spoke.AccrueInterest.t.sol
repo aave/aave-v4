@@ -677,7 +677,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // Bob borrows dai from spoke 1
     if (amounts.daiBorrowAmount > 0) {
       DataTypes.Asset memory asset = hub.getAsset(daiAssetId);
-      uint256 daiBorrowShares = hub.convertToDrawnSharesUp(daiAssetId, amounts.daiBorrowAmount);
+      uint256 daiBorrowShares = hub.previewDrawByAssets(daiAssetId, amounts.daiBorrowAmount);
       (, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
       _mockInterestRateRay({
         interestRateRay: rates.daiBaseBorrowRate,
@@ -692,7 +692,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // Bob borrows weth from spoke 1
     if (amounts.wethBorrowAmount > 0) {
       DataTypes.Asset memory asset = hub.getAsset(wethAssetId);
-      uint256 wethBorrowShares = hub.convertToDrawnSharesUp(wethAssetId, amounts.wethBorrowAmount);
+      uint256 wethBorrowShares = hub.previewDrawByAssets(wethAssetId, amounts.wethBorrowAmount);
       (, uint256 premiumDebt) = hub.getAssetDebt(wethAssetId);
       _mockInterestRateRay({
         interestRateRay: rates.wethBaseBorrowRate,
@@ -707,7 +707,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // Bob borrows usdx from spoke 1
     if (amounts.usdxBorrowAmount > 0) {
       DataTypes.Asset memory asset = hub.getAsset(usdxAssetId);
-      uint256 usdxBorrowShares = hub.convertToDrawnSharesUp(usdxAssetId, amounts.usdxBorrowAmount);
+      uint256 usdxBorrowShares = hub.previewDrawByAssets(usdxAssetId, amounts.usdxBorrowAmount);
       (, uint256 premiumDebt) = hub.getAssetDebt(usdxAssetId);
       _mockInterestRateRay({
         interestRateRay: rates.usdxBaseBorrowRate,
@@ -722,7 +722,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // Bob borrows wbtc from spoke 1
     if (amounts.wbtcBorrowAmount > 0) {
       DataTypes.Asset memory asset = hub.getAsset(wbtcAssetId);
-      uint256 wbtcBorrowShares = hub.convertToDrawnSharesUp(wbtcAssetId, amounts.wbtcBorrowAmount);
+      uint256 wbtcBorrowShares = hub.previewDrawByAssets(wbtcAssetId, amounts.wbtcBorrowAmount);
       (, uint256 premiumDebt) = hub.getAssetDebt(wbtcAssetId);
       _mockInterestRateRay({
         interestRateRay: rates.wbtcBaseBorrowRate,

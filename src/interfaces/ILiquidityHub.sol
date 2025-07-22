@@ -194,83 +194,100 @@ interface ILiquidityHub is IAccessManaged {
   function payFee(uint256 assetId, uint256 shares) external;
 
   /**
-   * @notice Converts the specified amount of asset to shares supplied upon an Add action.
+   * @notice Converts the specified amount of assets to shares supplied upon an Add action.
    * @param assetId The identifier of the asset.
-   * @param amount The amount of asset to convert to shares.
+   * @param assets The amount of assets to convert to shares.
+   * @return The amount of shares converted from assets.
    */
-  function previewAdd(uint256 assetId, uint256 amount) external view returns (uint256);
+  function previewAddByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
    * @notice Converts the specified amount of shares to asset amount supplied upon an Add action.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to convert to asset amount.
+   * @return The amount of assets converted from shares.
    */
   function previewAddByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of asset to shares removed upon a Remove action.
+   * @notice Converts the specified amount of assets to shares removed upon a Remove action.
    * @param assetId The identifier of the asset.
-   * @param amount The amount of asset to convert to shares.
+   * @param assets The amount of assets to convert to shares.
+   * @return The amount of shares converted from assets.
    */
-  function previewRemove(uint256 assetId, uint256 amount) external view returns (uint256);
+  function previewRemoveByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
    * @notice Converts the specified amount of shares to asset amount removed upon a Remove action.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to convert to asset amount.
+   * @return The amount of assets converted from shares.
    */
   function previewRemoveByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of asset to shares drawn upon a Draw action.
+   * @notice Converts the specified amount of assets to shares drawn upon a Draw action.
    * @param assetId The identifier of the asset.
-   * @param amount The amount of asset to convert to shares.
+   * @param assets The amount of assets to convert to shares.
+   * @return The amount of shares converted from assets.
    */
-  function previewDraw(uint256 assetId, uint256 amount) external view returns (uint256);
+  function previewDrawByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
    * @notice Converts the specified amount of shares to asset amount drawn upon a Draw action.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to convert to asset amount.
+   * @return The amount of assets converted from shares.
    */
   function previewDrawByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of base asset to shares restored upon a Restore action.
+   * @notice Converts the specified amount of assets to shares restored upon a Restore action.
    * @param assetId The identifier of the asset.
-   * @param baseAmount The amount of base asset to convert to shares.
+   * @param assets The amount of assets to convert to shares.
+   * @return The amount of shares converted from assets.
    */
-  function previewBaseRestore(uint256 assetId, uint256 baseAmount) external view returns (uint256);
+  function previewRestoreByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
    * @notice Converts the specified amount of shares to base asset amount restored upon a Restore action.
    * @param assetId The identifier of the asset.
-   * @param baseDrawnShares The amount of base drawn shares to convert to asset amount.
+   * @param shares The amount of drawn shares to convert to asset amount.
+   * @return The amount of assets converted from shares.
    */
-  function previewBaseRestoreByShares(
-    uint256 assetId,
-    uint256 baseDrawnShares
-  ) external view returns (uint256);
+  function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
+  /**
+   * @notice Converts the specified amount of drawn shares to asset amount.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of drawn shares to convert to asset amount.
+   * @return The amount of drawn assets converted from shares.
+   */
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
+  /**
+   * @notice Converts the specified amount of drawn assets to shares.
+   * @param assetId The identifier of the asset.
+   * @param assets The amount of drawn assets to convert to shares.
+   * @return The amount of drawn shares converted from assets.
+   */
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
-  function convertToDrawnSharesUp(uint256 assetId, uint256 assets) external view returns (uint256);
-
+  /**
+   * @notice Converts the specified amount of supplied shares to asset amount.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of supplied shares to convert to asset amount.
+   * @return The amount of supplied assets converted from shares.
+   */
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
-  function convertToSuppliedAssetsUp(
-    uint256 assetId,
-    uint256 shares
-  ) external view returns (uint256);
-
+  /**
+   * @notice Converts the specified amount of supplied assets to shares.
+   * @param assetId The identifier of the asset.
+   * @param assets The amount of supplied assets to convert to shares.
+   * @return The amount of supplied shares converted from assets.
+   */
   function convertToSuppliedShares(uint256 assetId, uint256 assets) external view returns (uint256);
-
-  function convertToSuppliedSharesUp(
-    uint256 assetId,
-    uint256 assets
-  ) external view returns (uint256);
 
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256);
 
