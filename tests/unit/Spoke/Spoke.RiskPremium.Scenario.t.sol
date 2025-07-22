@@ -588,8 +588,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     UserBorrowAction memory bobUsdxAction,
     UserBorrowAction memory aliceDaiAction,
     UserBorrowAction memory aliceUsdxAction,
-    uint256 daiCr,
-    uint256 usdxCr,
+    uint256 daiCollateralRisk,
+    uint256 usdxCollateralRisk,
     uint40[3] memory timeSkip
   ) public {
     bobDaiAction = _boundUserBorrowAction(bobDaiAction);
@@ -597,18 +597,26 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     aliceDaiAction = _boundUserBorrowAction(aliceDaiAction);
     aliceUsdxAction = _boundUserBorrowAction(aliceUsdxAction);
 
-    daiCr = bound(daiCr, 0, MAX_RISK_PREMIUM_BPS);
-    usdxCr = bound(usdxCr, 0, MAX_RISK_PREMIUM_BPS);
+    daiCollateralRisk = bound(daiCollateralRisk, 0, MAX_RISK_PREMIUM_BPS);
+    usdxCollateralRisk = bound(usdxCollateralRisk, 0, MAX_RISK_PREMIUM_BPS);
 
     timeSkip[0] = uint40(bound(timeSkip[0], 0, MAX_SKIP_TIME));
     timeSkip[1] = uint40(bound(timeSkip[1], 0, MAX_SKIP_TIME));
     timeSkip[2] = uint40(bound(timeSkip[2], 0, MAX_SKIP_TIME));
 
     // Set collateral risks
-    updateCollateralRisk(spoke1, _daiReserveId(spoke1), daiCr);
-    updateCollateralRisk(spoke1, _usdxReserveId(spoke1), usdxCr);
-    assertEq(_getCollateralRisk(spoke1, _daiReserveId(spoke1)), daiCr, 'dai collateral risk');
-    assertEq(_getCollateralRisk(spoke1, _usdxReserveId(spoke1)), usdxCr, 'usdx collateral risk');
+    updateCollateralRisk(spoke1, _daiReserveId(spoke1), daiCollateralRisk);
+    updateCollateralRisk(spoke1, _usdxReserveId(spoke1), usdxCollateralRisk);
+    assertEq(
+      _getCollateralRisk(spoke1, _daiReserveId(spoke1)),
+      daiCollateralRisk,
+      'dai collateral risk'
+    );
+    assertEq(
+      _getCollateralRisk(spoke1, _usdxReserveId(spoke1)),
+      usdxCollateralRisk,
+      'usdx collateral risk'
+    );
 
     UserInfoLocal memory bobDaiInfo;
     UserInfoLocal memory aliceDaiInfo;

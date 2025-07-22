@@ -274,7 +274,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     assertEq(spoke1.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
   }
 
-  /// Supply a high collateral-risk reserve which fully covers debt, but also supply lower cr reserves
+  /// Supply a high collateral-risk reserve which fully covers debt, but also supply lower collateral-risk reserves
   /// Assert that user rp should be less than the high collateral-risk reserve
   function test_getUserRiskPremium_multi_reserve_collateral_lower_rp_than_highest_cr() public {
     ReserveInfoLocal memory daiInfo;
@@ -399,7 +399,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     // Bob draw weth
     Utils.borrow(spoke1, wethInfo.reserveId, bob, wethInfo.borrowAmount, bob);
 
-    // Dai and usdx will each cover half the debt, because dai has lower cr than usdx
+    // Dai and usdx will each cover half the debt, because dai has lower collateral risk than usdx
     uint256 expectedRiskPremium = _calculateExpectedUserRP(bob, spoke1);
     assertEq(
       expectedRiskPremium,
@@ -872,7 +872,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     _mockReservePrice(spoke2, _usdxReserveId(spoke2), usdxInfo.price);
     _mockReservePrice(spoke2, _wbtcReserveId(spoke2), wbtcInfo.price);
 
-    // Update CRs
+    // Update reserves' collateral risk
     updateCollateralRisk(spoke2, _daiReserveId(spoke2), daiInfo.collateralRisk);
     updateCollateralRisk(spoke2, _wethReserveId(spoke2), wethInfo.collateralRisk);
     updateCollateralRisk(spoke2, _usdxReserveId(spoke2), usdxInfo.collateralRisk);

@@ -795,24 +795,26 @@ contract SpokeBase is Base {
       return 0;
     }
 
-    // Gather up list of reserves as collateral to sort by CR
-    KeyValueListInMemory.List memory reserveCR = KeyValueListInMemory.init(suppliedReservesCount);
+    // Gather up list of reserves as collateral to sort by collateral risk
+    KeyValueListInMemory.List memory reserveCollateralRisk = KeyValueListInMemory.init(
+      suppliedReservesCount
+    );
     uint256 idx = 0;
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); reserveId++) {
       if (spoke.isUsingAsCollateral(reserveId, user)) {
-        reserveCR.add(idx, _getCollateralRisk(spoke, reserveId), reserveId);
+        reserveCollateralRisk.add(idx, _getCollateralRisk(spoke, reserveId), reserveId);
         ++idx;
       }
     }
 
-    // Sort supplied reserves by CR
-    reserveCR.sortByKey();
+    // Sort supplied reserves by collateral risk
+    reserveCollateralRisk.sortByKey();
 
-    // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up CR
+    // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up collateral risk
     idx = 0;
     uint256 utilizedSupply = 0;
-    while (totalDebt > 0 && idx < reserveCR.length()) {
-      (uint256 collateralRisk, uint256 reserveId) = reserveCR.get(idx);
+    while (totalDebt > 0 && idx < reserveCollateralRisk.length()) {
+      (uint256 collateralRisk, uint256 reserveId) = reserveCollateralRisk.get(idx);
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
       uint256 suppliedAssets = hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares);
