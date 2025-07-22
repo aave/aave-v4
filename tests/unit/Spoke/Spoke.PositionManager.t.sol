@@ -238,6 +238,36 @@ contract SpokePositionManagerTest is SpokeBase {
     spoke1.updateUserRiskPremium(alice);
   }
 
+  function test_onlyPositionManager_on_updateUserDynamicConfig() public {
+    _openSupplyPosition(spoke1, _usdxReserveId(spoke1), 1500e6);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 0.5e18, alice);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
+    Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 1500e6, alice);
+
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
+    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 90_00);
+    DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    vm.prank(POSITION_MANAGER);
+    spoke1.updateUserDynamicConfig(alice);
+
+    _approvePositionManager(alice);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
+    vm.prank(POSITION_MANAGER);
+    spoke1.updateUserDynamicConfig(alice);
+
+    assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+
+    _disablePositionManager();
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    vm.prank(POSITION_MANAGER);
+    spoke1.updateUserDynamicConfig(alice);
+  }
+
   function _approvePositionManager(address who) internal {
     assertFalse(spoke1.isPositionManager(who, POSITION_MANAGER));
     assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
