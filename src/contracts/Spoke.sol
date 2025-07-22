@@ -698,7 +698,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal view {
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserveId));
     // deactivation should be allowed
     require(!usingAsCollateral || !reserve.config.frozen, ReserveFrozen());
   }

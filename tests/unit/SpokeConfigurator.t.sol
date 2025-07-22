@@ -146,7 +146,6 @@ contract SpokeConfiguratorTest is Base {
         paused: false,
         frozen: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 15_00
       }),
       dynamicConfig: DataTypes.DynamicReserveConfig({
@@ -164,7 +163,6 @@ contract SpokeConfiguratorTest is Base {
       paused: false,
       frozen: false,
       borrowable: true,
-      collateral: true,
       collateralRisk: 15_00
     });
     DataTypes.DynamicReserveConfig memory dynamicConfig = DataTypes.DynamicReserveConfig({
@@ -300,31 +298,6 @@ contract SpokeConfiguratorTest is Base {
     }
   }
 
-  function test_updateCollateral_revertsWith_OwnableUnauthorizedAccount() public {
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
-    vm.prank(alice);
-    spokeConfigurator.updateCollateral(spokeAddr, reserveId, true);
-  }
-
-  function test_updateCollateral() public {
-    DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
-
-    for (uint256 i = 0; i < 2; i += 1) {
-      expectedReserveConfig.collateral = (i == 0) ? false : true;
-
-      vm.expectCall(
-        spokeAddr,
-        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
-      );
-      vm.expectEmit(address(spoke));
-      emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
-      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-      spokeConfigurator.updateCollateral(spokeAddr, reserveId, expectedReserveConfig.collateral);
-
-      assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
-    }
-  }
-
   function test_updateCollateralRisk_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
@@ -454,7 +427,6 @@ contract SpokeConfiguratorTest is Base {
         paused: false,
         frozen: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 15_00
       })
     );
@@ -466,7 +438,6 @@ contract SpokeConfiguratorTest is Base {
       paused: false,
       frozen: false,
       borrowable: true,
-      collateral: true,
       collateralRisk: 15_00
     });
 

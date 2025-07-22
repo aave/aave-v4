@@ -53,8 +53,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         frozen: false,
         paused: false,
         collateralRisk: 15_00,
-        borrowable: false,
-        collateral: true
+        borrowable: false
       }),
       dynReserveConfig
     );
@@ -67,8 +66,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         frozen: false,
         paused: false,
         collateralRisk: 15_00,
-        borrowable: true,
-        collateral: false
+        borrowable: true
       }),
       dynReserveConfig
     );
@@ -115,8 +113,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         frozen: false,
         paused: false,
         collateralRisk: 15_00,
-        borrowable: true,
-        collateral: true
+        borrowable: true
       }),
       dynReserveConfig
     );
@@ -192,8 +189,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         frozen: false,
         paused: false,
         collateralRisk: 15_00,
-        borrowable: true,
-        collateral: true
+        borrowable: true
       }),
       dynReserveConfig
     );

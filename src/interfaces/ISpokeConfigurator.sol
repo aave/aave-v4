@@ -99,14 +99,6 @@ interface ISpokeConfigurator {
   function updateBorrowable(address spoke, uint256 reserveId, bool borrowable) external;
 
   /**
-   * @notice Updates the collateral flag of a reserve.
-   * @param spoke The address of the spoke.
-   * @param reserveId The identifier of the reserve.
-   * @param collateral The new collateral flag.
-   */
-  function updateCollateral(address spoke, uint256 reserveId, bool collateral) external;
-
-  /**
    * @notice Updates the collateral risk of a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.

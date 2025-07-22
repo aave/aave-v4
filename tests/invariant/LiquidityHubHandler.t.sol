@@ -84,8 +84,7 @@ contract LiquidityHubHandler is Test {
         frozen: false,
         paused: false,
         collateralRisk: 0,
-        borrowable: false,
-        collateral: false
+        borrowable: false
       }),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 0,

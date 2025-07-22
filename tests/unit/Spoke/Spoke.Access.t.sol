@@ -74,7 +74,6 @@ contract SpokeAccessTest is SpokeBase {
         frozen: false,
         paused: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 0
       }),
       DataTypes.DynamicReserveConfig({
@@ -95,7 +94,6 @@ contract SpokeAccessTest is SpokeBase {
         frozen: false,
         paused: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 0
       }),
       DataTypes.DynamicReserveConfig({
@@ -116,7 +114,6 @@ contract SpokeAccessTest is SpokeBase {
         frozen: false,
         paused: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 0
       })
     );
@@ -130,7 +127,6 @@ contract SpokeAccessTest is SpokeBase {
         frozen: false,
         paused: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 0
       })
     );
@@ -215,7 +211,6 @@ contract SpokeAccessTest is SpokeBase {
         frozen: false,
         paused: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 0
       }),
       DataTypes.DynamicReserveConfig({
@@ -241,7 +236,6 @@ contract SpokeAccessTest is SpokeBase {
         frozen: false,
         paused: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 0
       }),
       DataTypes.DynamicReserveConfig({

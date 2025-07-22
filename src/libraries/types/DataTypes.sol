@@ -68,7 +68,6 @@ library DataTypes {
     bool frozen;
     bool paused;
     bool borrowable;
-    bool collateral;
     uint256 collateralRisk; // BPS TODO: use smaller uint
   }
 

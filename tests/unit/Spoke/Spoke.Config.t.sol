@@ -82,8 +82,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: !config.frozen,
       paused: !config.paused,
       collateralRisk: config.collateralRisk + 1,
-      borrowable: !config.borrowable,
-      collateral: !config.collateral
+      borrowable: !config.borrowable
     });
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -137,19 +136,6 @@ contract SpokeConfigTest is SpokeBase {
     assertEq(spoke1.getDynamicReserveConfig(daiReserveId), newConfig);
   }
 
-  function test_setUsingAsCollateral_revertsWith_ReserveCannotBeUsedAsCollateral() public {
-    bool newCollateralFlag = false;
-    bool usingAsCollateral = true;
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    updateCollateralFlag(spoke1, daiReserveId, newCollateralFlag);
-
-    vm.expectRevert(
-      abi.encodeWithSelector(ISpoke.ReserveCannotBeUsedAsCollateral.selector, daiReserveId)
-    );
-    vm.prank(alice);
-    spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral, alice);
-  }
-
   function test_setUsingAsCollateral_revertsWith_ReserveFrozen() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -201,9 +187,6 @@ contract SpokeConfigTest is SpokeBase {
   function test_setUsingAsCollateral_collateralStatusUnchanged() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
-    // ensure DAI is allowed as collateral
-    updateCollateralFlag(spoke1, daiReserveId, true);
-
     // slight update in collateral factor so user is subject to dynamic risk config refresh
     updateCollateralFactor(spoke1, daiReserveId, _getCollateralFactor(spoke1, daiReserveId) + 1_00);
     // slight update collateral risk so user is subject to risk premium refresh
@@ -252,9 +235,6 @@ contract SpokeConfigTest is SpokeBase {
     uint256 daiAmount = 100e18;
 
     uint256 daiReserveId = _daiReserveId(spoke1);
-
-    // ensure DAI is allowed as collateral
-    updateCollateralFlag(spoke1, daiReserveId, newCollateralFlag);
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, daiAmount);
@@ -407,8 +387,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       collateralRisk: 10_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
@@ -450,8 +429,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       collateralRisk: 10_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
@@ -473,8 +451,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       collateralRisk: 10_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
@@ -497,8 +474,7 @@ contract SpokeConfigTest is SpokeBase {
       frozen: true,
       paused: true,
       collateralRisk: 10_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,

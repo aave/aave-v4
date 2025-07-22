@@ -32,8 +32,7 @@ contract SpokeMultipleHubTest is SpokeBase {
       frozen: false,
       paused: false,
       collateralRisk: 20_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     DataTypes.DynamicReserveConfig memory dynDaiHub2Config = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
@@ -54,8 +53,7 @@ contract SpokeMultipleHubTest is SpokeBase {
       frozen: false,
       paused: false,
       collateralRisk: 20_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     DataTypes.DynamicReserveConfig memory dynDaiHub3Config = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,

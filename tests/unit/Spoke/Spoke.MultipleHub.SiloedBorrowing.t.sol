@@ -53,8 +53,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         frozen: false,
         paused: false,
         collateralRisk: 15_00,
-        borrowable: true,
-        collateral: true
+        borrowable: true
       }),
       dynReserveConfig
     );
@@ -90,8 +89,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         frozen: false,
         paused: false,
         collateralRisk: 15_00,
-        borrowable: true,
-        collateral: true
+        borrowable: true
       }),
       dynReserveConfig
     );
@@ -117,8 +115,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         frozen: false,
         paused: false,
         collateralRisk: 15_00,
-        borrowable: true,
-        collateral: true
+        borrowable: true
       }),
       dynReserveConfig
     );

@@ -497,8 +497,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 15_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke1].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
@@ -510,8 +509,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 5_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke1].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
@@ -523,8 +521,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 20_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke1].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
@@ -536,8 +533,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 50_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke1].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
@@ -549,8 +545,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 50_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke1].usdy.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
@@ -606,8 +601,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 0,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke2].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
@@ -619,8 +613,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 10_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke2].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 76_00,
@@ -632,8 +625,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 20_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke2].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
@@ -645,8 +637,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 50_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke2].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
@@ -658,8 +649,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 50_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke2].usdy.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
@@ -671,8 +661,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 100_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke2].dai2.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 70_00,
@@ -736,8 +725,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 0,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke3].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
@@ -749,8 +737,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 10_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke3].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
@@ -762,8 +749,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 20_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke3].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 79_00,
@@ -775,8 +761,7 @@ abstract contract Base is Test {
       frozen: false,
       paused: false,
       collateralRisk: 50_00,
-      borrowable: true,
-      collateral: true
+      borrowable: true
     });
     spokeInfo[spoke3].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 77_00,
@@ -1089,13 +1074,6 @@ abstract contract Base is Test {
     config.collateralFactor = newCollateralFactor.toUint16();
     vm.prank(SPOKE_ADMIN);
     spoke.updateDynamicReserveConfig(reserveId, config);
-  }
-
-  function updateCollateralFlag(ISpoke spoke, uint256 reserveId, bool newCollateralFlag) internal {
-    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.collateral = newCollateralFlag;
-    vm.prank(SPOKE_ADMIN);
-    spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
   function updateReserveBorrowableFlag(
@@ -1874,7 +1852,6 @@ abstract contract Base is Test {
     assertEq(a.paused, b.paused, 'assertEq(ReserveConfig): paused');
     assertEq(a.frozen, b.frozen, 'assertEq(ReserveConfig): frozen');
     assertEq(a.borrowable, b.borrowable, 'assertEq(ReserveConfig): borrowable');
-    assertEq(a.collateral, b.collateral, 'assertEq(ReserveConfig): collateral');
     assertEq(a.collateralRisk, b.collateralRisk, 'assertEq(ReserveConfig): collateralRisk');
     assertEq(abi.encode(a), abi.encode(b), 'assertEq(ReserveConfig): all fields');
   }
