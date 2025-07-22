@@ -31,7 +31,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMathExtended.WAD;
-  uint256 public constant MAX_LIQUIDITY_PREMIUM = 1000_00; // 1000.00%
+  uint256 public constant MAX_COLLATERAL_RISK = 1000_00; // 1000.00%
 
   IAaveOracle public oracle;
   uint256[] public reservesList; // todo: rm, not needed
@@ -614,7 +614,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal pure {
-    require(config.liquidityPremium <= MAX_LIQUIDITY_PREMIUM, InvalidLiquidityPremium()); // max 1000.00%
+    require(config.collateralRisk <= MAX_COLLATERAL_RISK, InvalidCollateralRisk()); // max 1000.00%
   }
 
   function _validateDynamicReserveConfig(
@@ -866,7 +866,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         DataTypes.DynamicReserveConfig storage dynConfig = _dynamicConfig[vars.reserveId][
           userPosition.configKey
         ];
-        vars.liquidityPremium = reserve.config.liquidityPremium;
+        vars.collateralRisk = reserve.config.collateralRisk;
 
         vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
           userPosition,
@@ -877,7 +877,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         );
 
         vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
-        list.add(vars.i, vars.liquidityPremium, vars.userCollateralInBaseCurrency);
+        list.add(vars.i, vars.collateralRisk, vars.userCollateralInBaseCurrency);
         vars.avgCollateralFactor += vars.userCollateralInBaseCurrency * dynConfig.collateralFactor;
 
         unchecked {
@@ -914,17 +914,17 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     vars.debtCounterInBaseCurrency = vars.totalDebtInBaseCurrency;
 
-    list.sortByKey(); // sort by liquidity premium
+    list.sortByKey(); // sort by collateral risk
     vars.i = 0;
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
     while (vars.i < list.length() && vars.debtCounterInBaseCurrency > 0) {
       if (vars.debtCounterInBaseCurrency == 0) break;
-      (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = list.get(vars.i);
+      (vars.collateralRisk, vars.userCollateralInBaseCurrency) = list.get(vars.i);
       if (vars.userCollateralInBaseCurrency > vars.debtCounterInBaseCurrency) {
         vars.userCollateralInBaseCurrency = vars.debtCounterInBaseCurrency;
       }
-      vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
+      vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.collateralRisk;
       vars.collateralCounterInBaseCurrency += vars.userCollateralInBaseCurrency;
       vars.debtCounterInBaseCurrency -= vars.userCollateralInBaseCurrency;
       unchecked {
