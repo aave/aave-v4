@@ -125,6 +125,13 @@ contract AssetInterestRateStrategyTest is Base {
     rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
+  function test_setInterestRateData_revertsWith_InvalidRateData() public {
+    encodedRateData = abi.encode('invalid');
+    vm.expectRevert();
+    vm.prank(address(hub));
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
+  }
+
   function test_setInterestRateData() public {
     rateData = IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 60_00, // 60.00%

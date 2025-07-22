@@ -66,6 +66,8 @@ abstract contract Base is Test {
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
   uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
+  uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
+  uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
   uint256 internal constant MIN_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR; // 100% == 0% bonus
   uint256 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
@@ -361,16 +363,6 @@ abstract contract Base is Test {
       })
     );
 
-    // initialize interest rate strategy data first
-    vm.startPrank(address(hub));
-    irStrategy.setInterestRateData(wethAssetId, encodedIrData);
-    irStrategy.setInterestRateData(usdxAssetId, encodedIrData);
-    irStrategy.setInterestRateData(daiAssetId, encodedIrData);
-    irStrategy.setInterestRateData(wbtcAssetId, encodedIrData);
-    irStrategy.setInterestRateData(usdyAssetId, encodedIrData);
-    irStrategy.setInterestRateData(dai2AssetId, encodedIrData);
-    vm.stopPrank();
-
     // Add all assets to the Liquidity Hub
     vm.startPrank(ADMIN);
     // add WETH
@@ -378,7 +370,8 @@ abstract contract Base is Test {
       address(tokenList.weth),
       tokenList.weth.decimals(),
       address(treasurySpoke),
-      address(irStrategy)
+      address(irStrategy),
+      encodedIrData
     );
     hub.addSpoke(wethAssetId, address(treasurySpoke), spokeConfig);
     hub.updateAssetConfig(
@@ -397,7 +390,8 @@ abstract contract Base is Test {
       address(tokenList.usdx),
       tokenList.usdx.decimals(),
       address(treasurySpoke),
-      address(irStrategy)
+      address(irStrategy),
+      encodedIrData
     );
     hub.addSpoke(usdxAssetId, address(treasurySpoke), spokeConfig);
     hub.updateAssetConfig(
@@ -416,7 +410,8 @@ abstract contract Base is Test {
       address(tokenList.dai),
       tokenList.dai.decimals(),
       address(treasurySpoke),
-      address(irStrategy)
+      address(irStrategy),
+      encodedIrData
     );
     hub.addSpoke(daiAssetId, address(treasurySpoke), spokeConfig);
     hub.updateAssetConfig(
@@ -435,7 +430,8 @@ abstract contract Base is Test {
       address(tokenList.wbtc),
       tokenList.wbtc.decimals(),
       address(treasurySpoke),
-      address(irStrategy)
+      address(irStrategy),
+      encodedIrData
     );
     hub.addSpoke(wbtcAssetId, address(treasurySpoke), spokeConfig);
     hub.updateAssetConfig(
@@ -454,7 +450,8 @@ abstract contract Base is Test {
       address(tokenList.usdy),
       tokenList.usdy.decimals(),
       address(treasurySpoke),
-      address(irStrategy)
+      address(irStrategy),
+      encodedIrData
     );
     hub.addSpoke(usdyAssetId, address(treasurySpoke), spokeConfig);
     hub.updateAssetConfig(
@@ -473,7 +470,8 @@ abstract contract Base is Test {
       address(tokenList.dai),
       tokenList.dai.decimals(),
       address(treasurySpoke),
-      address(irStrategy)
+      address(irStrategy),
+      encodedIrData
     );
     hub.addSpoke(hub.getAssetCount() - 1, address(treasurySpoke), spokeConfig);
     hub.updateAssetConfig(
@@ -843,12 +841,6 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    vm.startPrank(address(hub2));
-    hub2IrStrategy.setInterestRateData(wethAssetId, encodedIrData);
-    hub2IrStrategy.setInterestRateData(usdxAssetId, encodedIrData);
-    hub2IrStrategy.setInterestRateData(daiAssetId, encodedIrData);
-    hub2IrStrategy.setInterestRateData(wbtcAssetId, encodedIrData);
-    vm.stopPrank();
 
     vm.startPrank(ADMIN);
 
@@ -858,7 +850,8 @@ abstract contract Base is Test {
       address(tokenList.weth),
       tokenList.weth.decimals(),
       address(treasurySpoke),
-      address(hub2IrStrategy)
+      address(hub2IrStrategy),
+      encodedIrData
     );
 
     // Add USDX
@@ -866,7 +859,8 @@ abstract contract Base is Test {
       address(tokenList.usdx),
       tokenList.usdx.decimals(),
       address(treasurySpoke),
-      address(hub2IrStrategy)
+      address(hub2IrStrategy),
+      encodedIrData
     );
 
     // Add DAI
@@ -874,7 +868,8 @@ abstract contract Base is Test {
       address(tokenList.dai),
       tokenList.dai.decimals(),
       address(treasurySpoke),
-      address(hub2IrStrategy)
+      address(hub2IrStrategy),
+      encodedIrData
     );
 
     // Add WBTC
@@ -882,9 +877,9 @@ abstract contract Base is Test {
       address(tokenList.wbtc),
       tokenList.wbtc.decimals(),
       address(treasurySpoke),
-      address(hub2IrStrategy)
+      address(hub2IrStrategy),
+      encodedIrData
     );
-
     vm.stopPrank();
 
     setUpRoles(hub2, spoke1, accessManager2);
@@ -917,12 +912,6 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    vm.startPrank(address(hub3));
-    hub3IrStrategy.setInterestRateData(hub3WethAssetId, encodedIrData);
-    hub3IrStrategy.setInterestRateData(hub3UsdxAssetId, encodedIrData);
-    hub3IrStrategy.setInterestRateData(hub3DaiAssetId, encodedIrData);
-    hub3IrStrategy.setInterestRateData(hub3WbtcAssetId, encodedIrData);
-    vm.stopPrank();
 
     vm.startPrank(ADMIN);
     // Add DAI
@@ -930,7 +919,8 @@ abstract contract Base is Test {
       address(tokenList.dai),
       tokenList.dai.decimals(),
       address(treasurySpoke),
-      address(hub3IrStrategy)
+      address(hub3IrStrategy),
+      encodedIrData
     );
 
     // Add USDX
@@ -938,7 +928,8 @@ abstract contract Base is Test {
       address(tokenList.usdx),
       tokenList.usdx.decimals(),
       address(treasurySpoke),
-      address(hub3IrStrategy)
+      address(hub3IrStrategy),
+      encodedIrData
     );
 
     // Add WBTC
@@ -946,7 +937,8 @@ abstract contract Base is Test {
       address(tokenList.wbtc),
       tokenList.wbtc.decimals(),
       address(treasurySpoke),
-      address(hub3IrStrategy)
+      address(hub3IrStrategy),
+      encodedIrData
     );
 
     // Add WETH
@@ -954,7 +946,8 @@ abstract contract Base is Test {
       address(tokenList.weth),
       tokenList.weth.decimals(),
       address(treasurySpoke),
-      address(hub3IrStrategy)
+      address(hub3IrStrategy),
+      encodedIrData
     );
 
     vm.stopPrank();

@@ -24,26 +24,22 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
   ///@dev Adds new assets A and B to the new hub and spoke, no restrictions.
   ///@dev Lists asset B on canonical hub and spoke with no restrictions.
   function setUpIsolationMode() internal {
-    // Configure interest rate strategy for assets A and B
-    vm.startPrank(address(newHub));
-    newIrStrategy.setInterestRateData(newHub.getAssetCount(), encodedIrData); // asset A
-    newIrStrategy.setInterestRateData(newHub.getAssetCount() + 1, encodedIrData); // asset B
-    vm.stopPrank();
-
     vm.startPrank(ADMIN);
     // Add assets A and B to the new hub
     newHub.addAsset(
       address(assetA),
       assetA.decimals(),
       address(treasurySpoke),
-      address(newIrStrategy)
+      address(newIrStrategy),
+      encodedIrData
     );
     isolationVars.assetAId = newHub.getAssetCount() - 1;
     newHub.addAsset(
       address(assetB),
       assetB.decimals(),
       address(treasurySpoke),
-      address(newIrStrategy)
+      address(newIrStrategy),
+      encodedIrData
     );
     isolationVars.assetBId = newHub.getAssetCount() - 1;
 
@@ -98,10 +94,6 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     );
     vm.stopPrank();
 
-    // Configure interest rate strategy for asset B on the main hub
-    vm.prank(address(hub));
-    irStrategy.setInterestRateData(isolationVars.assetBIdMainHub, encodedIrData);
-
     // List asset B on the canonical hub
     vm.startPrank(ADMIN);
     isolationVars.assetBIdMainHub = hub.getAssetCount();
@@ -109,7 +101,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(assetB),
       assetB.decimals(),
       address(treasurySpoke),
-      address(irStrategy) // Use the main hub's interest rate strategy
+      address(irStrategy), // Use the main hub's interest rate strategy
+      encodedIrData
     );
 
     // List reserve B on spoke 1 for the canonical hub
