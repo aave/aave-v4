@@ -148,7 +148,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-    _validateAdd(asset, spoke, amount, from);
+    _validateAdd(asset, spoke, assetId, amount, from);
 
     // todo: Mitigate inflation attack
     uint256 suppliedShares = previewAddByAssets(assetId, amount);
@@ -173,7 +173,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-    _validateRemove(asset, spoke, amount);
+    _validateRemove(asset, spoke, assetId, amount);
 
     uint256 withdrawnShares = previewRemoveByAssets(assetId, amount); // non zero since we round up
     asset.suppliedShares -= withdrawnShares;
@@ -225,7 +225,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
-    _validateRestore(asset, spoke, baseAmount, premiumAmount);
+    _validateRestore(asset, spoke, assetId, baseAmount, premiumAmount);
 
     uint256 baseDrawnSharesRestored = previewRestoreByAssets(assetId, baseAmount);
     asset.baseDrawnShares -= baseDrawnSharesRestored;
@@ -283,8 +283,8 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, receiver);
 
     uint256 suppliedShares = sender.suppliedShares;
-    uint256 suppliedAssets = asset.toSuppliedAssetsDown(suppliedShares);
-    uint256 feeAmount = asset.toSuppliedAssetsDown(feeShares);
+    uint256 suppliedAssets = previewRemoveByShares(assetId, suppliedShares);
+    uint256 feeAmount = previewRemoveByShares(assetId, feeShares);
     require(feeAmount <= suppliedAssets, SuppliedAmountExceeded(suppliedAssets));
 
     sender.suppliedShares = suppliedShares - feeShares;
@@ -440,14 +440,11 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256) {
-    return _getSpokeDebt(_assets[assetId], _spokes[assetId][spoke]);
+    return _getSpokeDebt(_spokes[assetId][spoke], assetId);
   }
 
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256) {
-    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeDebt(
-      _assets[assetId],
-      _spokes[assetId][spoke]
-    );
+    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeDebt(_spokes[assetId][spoke], assetId);
     return baseDebt + premiumDebt;
   }
 
@@ -472,11 +469,12 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.Asset storage asset = _assets[assetId];
     if (spoke == asset.config.feeReceiver) {
       return
-        asset.toSuppliedAssetsDown(
+        previewRemoveByShares(
+          assetId,
           _spokes[assetId][spoke].suppliedShares + asset.unrealizedFeeShares()
         );
     }
-    return asset.toSuppliedAssetsDown(_spokes[assetId][spoke].suppliedShares);
+    return previewRemoveByShares(assetId, _spokes[assetId][spoke].suppliedShares);
   }
 
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
@@ -502,6 +500,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   function _validateAdd(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
+    uint256 assetId,
     uint256 amount,
     address from
   ) internal view {
@@ -513,7 +512,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(!asset.config.frozen, AssetFrozen());
     require(
       spoke.config.supplyCap == type(uint256).max ||
-        asset.toSuppliedAssetsUp(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
+        previewAddByShares(assetId, spoke.suppliedShares) + amount <= spoke.config.supplyCap,
       SupplyCapExceeded(spoke.config.supplyCap)
     );
   }
@@ -521,13 +520,14 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   function _validateRemove(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
+    uint256 assetId,
     uint256 amount
   ) internal view {
     require(spoke.config.active, SpokeNotActive());
     require(amount != 0, InvalidRemoveAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
-    uint256 withdrawable = asset.toSuppliedAssetsDown(spoke.suppliedShares);
+    uint256 withdrawable = previewRemoveByShares(assetId, spoke.suppliedShares);
     require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
   }
@@ -553,6 +553,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   function _validateRestore(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
+    uint256 assetId,
     uint256 baseAmountRestored,
     uint256 premiumAmountRestored
   ) internal view {
@@ -560,18 +561,22 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(baseAmountRestored + premiumAmountRestored != 0, InvalidRestoreAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
-    (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
+    (uint256 baseDebt, ) = _getSpokeDebt(spoke, assetId);
     require(baseAmountRestored <= baseDebt, SurplusAmountRestored(baseDebt));
     // we should have already restored premium debt
   }
 
   function _getSpokeDebt(
-    DataTypes.Asset storage asset,
-    DataTypes.SpokeData storage spoke
+    DataTypes.SpokeData storage spoke,
+    uint256 assetId
   ) internal view returns (uint256, uint256) {
     // sanity: utilize solc underflow check
-    uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset;
-    return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
+    uint256 accruedPremium = previewRestoreByShares(assetId, spoke.premiumDrawnShares) -
+      spoke.premiumOffset;
+    return (
+      previewRestoreByShares(assetId, spoke.baseDrawnShares),
+      spoke.realizedPremium + accruedPremium
+    );
   }
 
   // handles underflow
