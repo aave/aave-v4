@@ -812,19 +812,19 @@ contract SpokeBase is Base {
     idx = 0;
     uint256 utilizedSupply = 0;
     while (totalDebt > 0 && idx < reserveCR.length()) {
-      (uint256 cr, uint256 reserveId) = reserveCR.get(idx);
+      (uint256 collateralRisk, uint256 reserveId) = reserveCR.get(idx);
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
       uint256 suppliedAssets = hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares);
       uint256 supplyAmount = _getValueInBaseCurrency(spoke, reserveId, suppliedAssets);
 
       if (supplyAmount >= totalDebt) {
-        userRP += totalDebt * cr;
+        userRP += totalDebt * collateralRisk;
         utilizedSupply += totalDebt;
         totalDebt = 0;
         break;
       } else {
-        userRP += supplyAmount * cr;
+        userRP += supplyAmount * collateralRisk;
         utilizedSupply += supplyAmount;
         totalDebt -= supplyAmount;
       }

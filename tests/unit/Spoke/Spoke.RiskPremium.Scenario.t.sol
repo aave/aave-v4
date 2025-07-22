@@ -24,7 +24,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     uint256 supplyAmount;
     uint256 borrowAmount;
     uint256 price;
-    uint256 cr;
+    uint256 collateralRisk;
     uint256 riskPremium;
   }
 
@@ -79,9 +79,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   /// Borrow, skip, supply, skip, supply, ensure risk premium is correct and accounting updates accordingly throughout protocol
   function test_riskPremiumPropagatesCorrectly_singleBorrow() public {
     GeneralLocalVars memory vars;
-    vars.usdxSupplyAmount = 1500e6; // 1500 usd, 50 cr
-    vars.wethSupplyAmount = 5e18; // 10_000 usd, 15 cr
-    vars.daiBorrowAmount = 10_000e18; // 10_000 usd, 20 cr
+    vars.usdxSupplyAmount = 1500e6; // 1500 usd, 50 collateralRisk
+    vars.wethSupplyAmount = 5e18; // 10_000 usd, 15 collateralRisk
+    vars.daiBorrowAmount = 10_000e18; // 10_000 usd, 20 collateralRisk
     vars.delay = 365 days;
 
     ReserveIds memory reservesIds;
@@ -90,9 +90,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     reservesIds.dai = _daiReserveId(spoke1);
 
     // Validate collateral risks
-    assertEq(_getCollateralRisk(spoke1, reservesIds.usdx), 50_00, 'usdx cr');
-    assertEq(_getCollateralRisk(spoke1, reservesIds.weth), 15_00, 'weth cr');
-    assertEq(_getCollateralRisk(spoke1, reservesIds.dai), 20_00, 'dai cr');
+    assertEq(_getCollateralRisk(spoke1, reservesIds.usdx), 50_00, 'usdx collateral risk');
+    assertEq(_getCollateralRisk(spoke1, reservesIds.weth), 15_00, 'weth collateral risk');
+    assertEq(_getCollateralRisk(spoke1, reservesIds.dai), 20_00, 'dai collateral risk');
 
     // Set collateral factor to 100% for Alice collateral
     updateCollateralFactor(spoke1, reservesIds.weth, 100_00);
@@ -109,7 +109,11 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     uint256 usdxCollateralRisk = _getCollateralRisk(spoke1, reservesIds.usdx);
     uint256 wethCollateralRisk = _getCollateralRisk(spoke1, reservesIds.weth);
-    assertLt(wethCollateralRisk, usdxCollateralRisk, 'weth cr should be less than usdx cr');
+    assertLt(
+      wethCollateralRisk,
+      usdxCollateralRisk,
+      'weth collateral risk should be less than usdx collateral risk'
+    );
 
     // Weth is enough to cover debt, both stored & calculated risk premiums match
     assertEq(spoke1.getUserRiskPremium(alice), wethCollateralRisk, 'user rp: weth covers debt');
@@ -218,7 +222,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   /// Bob and Alice each supply and borrow varying amounts of usdx and dai, we check interest accrues and values percolate to hub.
   /// After 1 year, Alice does a repay, and we ensure the same values are updated accordingly.
   function test_getUserRiskPremium_applyInterest_two_users_two_reserves_borrowed() public {
-    // Set Dai cr to 10% and usdx to 20%
+    // Set dai collateral risk to 10% and usdx to 20%
     updateCollateralRisk(spoke1, _daiReserveId(spoke1), 10_00);
     updateCollateralRisk(spoke1, _usdxReserveId(spoke1), 20_00);
 
@@ -243,8 +247,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     daiInfo.reserveId = _daiReserveId(spoke1);
     usdxInfo.reserveId = _usdxReserveId(spoke1);
 
-    daiInfo.cr = _getCollateralRisk(spoke1, daiInfo.reserveId);
-    usdxInfo.cr = _getCollateralRisk(spoke1, usdxInfo.reserveId);
+    daiInfo.collateralRisk = _getCollateralRisk(spoke1, daiInfo.reserveId);
+    usdxInfo.collateralRisk = _getCollateralRisk(spoke1, usdxInfo.reserveId);
 
     // Bob supply dai into spoke1
     Utils.supplyCollateral(spoke1, daiInfo.reserveId, bob, bobDaiInfo.supplyAmount, bob);
@@ -603,8 +607,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Set collateral risks
     updateCollateralRisk(spoke1, _daiReserveId(spoke1), daiCr);
     updateCollateralRisk(spoke1, _usdxReserveId(spoke1), usdxCr);
-    assertEq(_getCollateralRisk(spoke1, _daiReserveId(spoke1)), daiCr, 'dai cr');
-    assertEq(_getCollateralRisk(spoke1, _usdxReserveId(spoke1)), usdxCr, 'usdx cr');
+    assertEq(_getCollateralRisk(spoke1, _daiReserveId(spoke1)), daiCr, 'dai collateral risk');
+    assertEq(_getCollateralRisk(spoke1, _usdxReserveId(spoke1)), usdxCr, 'usdx collateral risk');
 
     UserInfoLocal memory bobDaiInfo;
     UserInfoLocal memory aliceDaiInfo;

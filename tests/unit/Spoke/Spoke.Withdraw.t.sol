@@ -291,7 +291,7 @@ contract SpokeWithdrawTest is SpokeBase {
   }
 
   function test_withdraw_all_liquidity_with_interest_no_premium() public {
-    // set weth CR to 0 for no premium contribution
+    // set weth collateral risk to 0 for no premium contribution
     updateCollateralRisk({spoke: spoke1, reserveId: _wethReserveId(spoke1), newCollateralRisk: 0});
 
     TestState memory state;
@@ -409,7 +409,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     (uint256 assetId, IERC20 underlying) = getAssetByReserveId(spoke1, params.reserveId);
 
-    // set weth CR to 0 for no premium contribution
+    // set weth collateral risk to 0 for no premium contribution
     updateCollateralRisk({
       spoke: spoke1,
       reserveId: _wbtcReserveId(spoke1), // use highest-valued asset
