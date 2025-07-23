@@ -50,23 +50,20 @@ contract LiquidityHubHandler is Test {
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
-
-    // Add dai
-    hub.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy));
     vm.stopPrank();
-    vm.prank(address(hub));
-    irStrategy.setInterestRateData(
-      0,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
+
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
     );
+
     vm.startPrank(hubAdmin);
+    // Add dai
+    hub.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
     hub.updateAssetConfig(
       0,
       DataTypes.AssetConfig({

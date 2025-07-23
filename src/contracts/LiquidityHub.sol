@@ -41,7 +41,8 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     address underlying,
     uint8 decimals,
     address feeReceiver,
-    address irStrategy
+    address irStrategy,
+    bytes calldata data
   ) external restricted returns (uint256) {
     require(underlying != address(0), InvalidUnderlying());
     require(decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
@@ -49,6 +50,16 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(irStrategy != address(0), InvalidIrStrategy());
 
     uint256 assetId = _assetCount++;
+    IAssetInterestRateStrategy(irStrategy).setInterestRateData(assetId, data);
+    uint256 baseBorrowRate = IAssetInterestRateStrategy(irStrategy).calculateInterestRate({
+      assetId: assetId,
+      availableLiquidity: 0,
+      baseDebt: 0,
+      premiumDebt: 0
+    });
+
+    uint256 baseDebtIndex = WadRayMathExtended.RAY;
+    uint256 lastUpdateTimestamp = block.timestamp;
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
       active: true,
       paused: false,
@@ -57,7 +68,6 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       liquidityFee: 0,
       irStrategy: irStrategy
     });
-
     _assets[assetId] = DataTypes.Asset({
       underlying: underlying,
       decimals: decimals,
@@ -67,14 +77,15 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       premiumDrawnShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
-      baseDebtIndex: WadRayMathExtended.RAY,
-      baseBorrowRate: 0,
-      lastUpdateTimestamp: block.timestamp,
+      baseDebtIndex: baseDebtIndex,
+      baseBorrowRate: baseBorrowRate,
+      lastUpdateTimestamp: lastUpdateTimestamp,
       config: config
     });
 
     emit AssetAdded(assetId, underlying, decimals);
     emit AssetConfigUpdated(assetId, config);
+    emit AssetUpdated(assetId, baseDebtIndex, baseBorrowRate, lastUpdateTimestamp);
 
     return assetId;
   }
