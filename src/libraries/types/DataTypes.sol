@@ -68,7 +68,7 @@ library DataTypes {
     bool paused;
     bool borrowable;
     bool collateral;
-    uint256 liquidityPremium; // BPS TODO: use smaller uint
+    uint256 collateralRisk; // BPS TODO: use smaller uint
   }
 
   struct DynamicReserveConfig {
@@ -84,6 +84,11 @@ library DataTypes {
     uint256 premiumOffset;
     uint256 realizedPremium;
     uint16 configKey; // key of the last user config
+  }
+
+  struct PositionManagerConfig {
+    bool active;
+    mapping(address user => bool approved) approval;
   }
 
   struct PositionStatus {
@@ -103,7 +108,7 @@ library DataTypes {
     uint256 assetUnit;
     uint256 reserveId;
     uint256 reservePrice;
-    uint256 liquidityPremium;
+    uint256 collateralRisk;
     uint256 userCollateralInBaseCurrency;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
@@ -174,5 +179,16 @@ library DataTypes {
     uint256 totalDebtToLiquidate;
     uint256 usersLength;
     uint256 liquidatedSuppliedShares;
+  }
+
+  struct ExecuteRepayLocalVars {
+    ILiquidityHub hub;
+    uint256 assetId;
+    uint256 baseDebt;
+    uint256 premiumDebt;
+    uint256 baseDebtRestored;
+    uint256 premiumDebtRestored;
+    uint256 newUserRiskPremium;
+    uint256 restoredShares;
   }
 }

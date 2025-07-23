@@ -38,15 +38,15 @@ contract AaveOracleTest is Base {
     test_description();
   }
 
-  function test_spoke() public {
+  function test_spoke() public view {
     assertEq(oracle.SPOKE(), address(spoke1));
   }
 
-  function test_decimals() public {
+  function test_decimals() public view {
     assertEq(oracle.DECIMALS(), _decimals);
   }
 
-  function test_description() public {
+  function test_description() public view {
     assertEq(oracle.DESCRIPTION(), _description);
   }
 

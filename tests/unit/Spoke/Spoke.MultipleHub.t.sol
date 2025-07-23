@@ -31,7 +31,7 @@ contract SpokeMultipleHubTest is SpokeBase {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 20_00,
+      collateralRisk: 20_00,
       borrowable: true,
       collateral: true
     });
@@ -53,7 +53,7 @@ contract SpokeMultipleHubTest is SpokeBase {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 20_00,
+      collateralRisk: 20_00,
       borrowable: true,
       collateral: true
     });
@@ -63,8 +63,8 @@ contract SpokeMultipleHubTest is SpokeBase {
       liquidationFee: 0
     });
     daiHub3ReserveId = spoke1.addReserve(
-      address(hub3), 
-      hub3DaiAssetId, 
+      address(hub3),
+      hub3DaiAssetId,
       _deployMockPriceFeed(spoke1, 1e8),
       daiHub3Config,
       dynDaiHub3Config
@@ -131,14 +131,14 @@ contract SpokeMultipleHubTest is SpokeBase {
     assertEq(daiReserve.underlying, address(tokenList.dai));
 
     // Bob can partially repay both debt positions on hub 1 and hub 2
-    Utils.repay(spoke1, _daiReserveId(spoke1), bob, hub1RepayAmount);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, hub1RepayAmount, bob);
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       hub1BorrowAmount - hub1RepayAmount
     );
     assertEq(hub.getAssetTotalDebt(daiAssetId), hub1BorrowAmount - hub1RepayAmount);
 
-    Utils.repay(spoke1, daiHub2ReserveId, bob, hub2RepayAmount);
+    Utils.repay(spoke1, daiHub2ReserveId, bob, hub2RepayAmount, bob);
     assertEq(spoke1.getUserTotalDebt(daiHub2ReserveId, bob), hub2BorrowAmount - hub2RepayAmount);
     assertEq(hub2.getAssetTotalDebt(daiAssetId), hub2BorrowAmount - hub2RepayAmount);
   }
