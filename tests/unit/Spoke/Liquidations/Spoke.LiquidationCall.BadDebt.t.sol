@@ -395,8 +395,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
       desiredHf
     );
 
-    state.liquidationBonus = _getVariableLiquidationBonus(
-      state.spoke,
+    state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
       collateralReserveId,
       state.user,
       hfAfterBorrow

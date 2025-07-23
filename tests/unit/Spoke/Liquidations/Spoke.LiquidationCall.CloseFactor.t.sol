@@ -470,10 +470,9 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     );
     // borrow some amount of debt reserve to end up below hf threshold
     (uint256 hfAfterBorrow, ) = _borrowToBeBelowHf(state.spoke, alice, debtReserveId, desiredHf);
-    state.liquidationBonus = _getVariableLiquidationBonus(
-      state.spoke,
+    state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
       collateralReserveId,
-      alice,
+      state.user,
       hfAfterBorrow
     );
     state = _getAccountingInfoBeforeLiquidation(state);

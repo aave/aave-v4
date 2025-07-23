@@ -241,10 +241,9 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
 
-    state.liquidationBonus = _getVariableLiquidationBonus(
-      state.spoke,
+    state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
       collateralReserveId,
-      alice,
+      state.user,
       hfAfterBorrow
     );
 

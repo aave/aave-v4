@@ -15,8 +15,6 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     uint256 availableLiquidityAfter;
     uint256 balanceBefore;
     uint256 balanceAfter;
-    uint256 baseBorrowRateBefore;
-    uint256 baseBorrowRateAfter;
     uint256 baseDebtAfter;
     uint256 premiumDebtAfter;
   }
@@ -138,7 +136,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     premiumAmount = bound(premiumAmount, 0, params.premiumDebt);
     vm.assume(baseAmount + premiumAmount > 0);
 
-    params.deficitBefore = _getDeficit(hub, usdxAssetId);
+    params.deficitBefore = getDeficit(hub, usdxAssetId);
     params.supplyExchangeRateBefore = hub.convertToSuppliedAssets(
       usdxAssetId,
       WadRayMathExtended.RAY
@@ -170,20 +168,20 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
 
     (params.baseDebtAfter, params.premiumDebtAfter) = hub.getAssetDebt(usdxAssetId);
 
-    params.deficitAfter = _getDeficit(hub, usdxAssetId);
+    params.deficitAfter = getDeficit(hub, usdxAssetId);
     params.supplyExchangeRateAfter = hub.convertToSuppliedAssets(
       usdxAssetId,
       WadRayMathExtended.RAY
     );
     params.availableLiquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceAfter = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
-    params.baseBorrowRateAfter = getBaseBorrowRate(hub, usdxAssetId);
 
     // due to rounding, base debt can differ by asset amount of one share
+    // and 1 wei due to rounding of premium debt
     assertApproxEqAbs(
       params.baseDebtAfter,
       params.baseDebt - baseAmount,
-      calculateAssetAmountOfOneShare(hub, usdxAssetId),
+      calculateAssetAmountOfOneShare(hub, usdxAssetId) + 1,
       'base debt'
     );
     assertEq(params.premiumDebtAfter, params.premiumDebt, 'premium debt');

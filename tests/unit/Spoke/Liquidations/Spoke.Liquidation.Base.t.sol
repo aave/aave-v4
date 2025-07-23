@@ -217,19 +217,19 @@ contract SpokeLiquidationBase is SpokeBase {
     skip(skipTime);
 
     vm.assume(
-      _getRequiredDebtAmountForLtHf(spoke1, alice, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
+      _getRequiredDebtAmountForLtHf(spoke1, state.user, debtReserveId, desiredHf) <=
+        MAX_SUPPLY_AMOUNT
     );
     // borrow some amount of debt reserve to end up below hf threshold
     (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
       state.spoke,
-      alice,
+      state.user,
       debtReserveId,
       desiredHf
     );
-    state.liquidationBonus = _getVariableLiquidationBonus(
-      state.spoke,
+    state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
       collateralReserveId,
-      alice,
+      state.user,
       hfAfterBorrow
     );
 
@@ -508,12 +508,12 @@ contract SpokeLiquidationBase is SpokeBase {
       string.concat('deficit can only exceed amount restored due to rounding direction ', label)
     );
     // precision error is asset equivalent of 1 share, due to rounding in restore
-    // more asset can be paid by user than is actually restored in accounting
+    // and 1 wei due to rounding of premium debt
     // outstanding debt should be moved to deficit
     assertApproxEqAbs(
       state.deficit.balanceChange,
       state.outstandingDebt,
-      state.assetAmountOfOneDrawnShare,
+      state.assetAmountOfOneDrawnShare + 1,
       string.concat('deficit should match restored amount ', label)
     );
   }
@@ -732,7 +732,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       WadRayMathExtended.RAY
     );
-    state.deficit.balanceBefore = _getDeficit(state.debtHub, state.debtReserve.assetId);
+    state.deficit.balanceBefore = getDeficit(state.debtHub, state.debtReserve.assetId);
 
     (state.spokeBaseDebt.balanceBefore, state.spokePremiumDebt.balanceBefore) = state
       .collateralHub
@@ -760,7 +760,7 @@ contract SpokeLiquidationBase is SpokeBase {
     state.userTotalDebts = new Balance[](state.debtReserves.length);
     state.deficitAmounts = new Balance[](state.debtReserves.length);
     for (uint256 i = 0; i < state.debtReserves.length; i++) {
-      state.deficitAmounts[i].balanceBefore = _getDeficit(
+      state.deficitAmounts[i].balanceBefore = getDeficit(
         state.debtReserves[i].hub,
         state.debtReserves[i].assetId
       );
@@ -831,7 +831,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       WadRayMathExtended.RAY
     );
-    state.deficit.balanceAfter = _getDeficit(state.debtReserve.hub, state.debtReserve.assetId);
+    state.deficit.balanceAfter = getDeficit(state.debtReserve.hub, state.debtReserve.assetId);
     (state.spokeBaseDebt.balanceAfter, state.spokePremiumDebt.balanceAfter) = hub.getSpokeDebt(
       state.debtReserve.assetId,
       address(state.spoke)
@@ -969,7 +969,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
     // multi reserve accounting
     for (uint256 i = 0; i < state.debtReserves.length; i++) {
-      state.deficitAmounts[i].balanceAfter = _getDeficit(
+      state.deficitAmounts[i].balanceAfter = getDeficit(
         state.debtReserves[i].hub,
         state.debtReserves[i].assetId
       );

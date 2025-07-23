@@ -339,8 +339,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     state = _getAccountingInfoBeforeLiquidation(state);
 
-    state.liquidationBonus = _getVariableLiquidationBonus(
-      spoke1,
+    state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
       collateralReserveId,
       state.user,
       state.initialHf

@@ -599,7 +599,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(!asset.config.paused, AssetPaused());
     (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
     require(baseAmount <= baseDebt, SurplusDeficitReported(baseDebt));
-    // we should have already cleared premium debt
+    // we should have already restored premium debt
   }
 
   // handles underflow

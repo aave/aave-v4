@@ -262,10 +262,9 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       uint256[] memory requiredDebtAmounts
     ) = _borrowMultipleReservesToBeBelowHf(state.spoke, alice, debtReserveIds, state.desiredHf);
 
-    state.liquidationBonus = _getVariableLiquidationBonus(
-      state.spoke,
+    state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
       state.collateralReserves[collateralReserveIndex].reserveId,
-      alice,
+      state.user,
       hfAfterBorrow
     );
 

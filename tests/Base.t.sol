@@ -1265,7 +1265,7 @@ abstract contract Base is Test {
     return hub.convertToDrawnAssets(assetId, MAX_SUPPLY_AMOUNT);
   }
 
-  function _getDeficit(ILiquidityHub hub, uint256 assetId) internal view returns (uint256) {
+  function getDeficit(ILiquidityHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.getAsset(assetId).deficitAmount;
   }
 
@@ -2261,6 +2261,6 @@ abstract contract Base is Test {
     ILiquidityHub hub,
     uint256 assetId
   ) internal view returns (uint256) {
-    return hub.convertToDrawnAssets(assetId, WadRayMath.RAY) / WadRayMath.RAY + 1; // add 1 to divUp
+    return hub.convertToDrawnAssets(assetId, WadRayMath.RAY) / WadRayMath.RAY; // add 1 to divUp
   }
 }
