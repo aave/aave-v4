@@ -118,7 +118,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _wbtcReserveId(spoke1);
 
     // update to a high liquidity premium so that even after liquidating all collateral, both base/premium debt remains
-    updateLiquidityPremium(spoke1, collateralReserveId, 100_00);
+    updateCollateralRisk(spoke1, collateralReserveId, 100_00);
 
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2({
       liqConfig: DataTypes.LiquidationConfig({
@@ -178,7 +178,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _usdyReserveId(spoke1);
 
     // update to a high liquidity premium so that even after liquidating all collateral, both base/premium debt remains
-    updateLiquidityPremium(spoke1, collateralReserveId, 100_00);
+    updateCollateralRisk(spoke1, collateralReserveId, 100_00);
 
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario3({
       liqConfig: DataTypes.LiquidationConfig({

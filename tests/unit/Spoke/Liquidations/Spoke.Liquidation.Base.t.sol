@@ -551,7 +551,7 @@ contract SpokeLiquidationBase is SpokeBase {
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
       DataTypes.Reserve memory reserve = spoke.getReserve(i);
       if (
-        reserve.config.liquidityPremium > 0 &&
+        reserve.config.collateralRisk > 0 &&
         spoke.getUserSuppliedShares(reserve.reserveId, user) > 0 &&
         spoke.isUsingAsCollateral(reserve.reserveId, user)
       ) {

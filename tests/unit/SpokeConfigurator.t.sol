@@ -147,7 +147,7 @@ contract SpokeConfiguratorTest is Base {
         frozen: false,
         borrowable: true,
         collateral: true,
-        liquidityPremium: 15_00
+        collateralRisk: 15_00
       }),
       dynamicConfig: DataTypes.DynamicReserveConfig({
         collateralFactor: 80_00,
@@ -165,7 +165,7 @@ contract SpokeConfiguratorTest is Base {
       frozen: false,
       borrowable: true,
       collateral: true,
-      liquidityPremium: 15_00
+      collateralRisk: 15_00
     });
     DataTypes.DynamicReserveConfig memory dynamicConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
@@ -325,17 +325,17 @@ contract SpokeConfiguratorTest is Base {
     }
   }
 
-  function test_updateLiquidityPremium_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_updateCollateralRisk_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    spokeConfigurator.updateLiquidityPremium(spokeAddr, reserveId, 0);
+    spokeConfigurator.updateCollateralRisk(spokeAddr, reserveId, 0);
   }
 
-  function test_updateLiquidityPremium() public {
-    uint256 newLiquidityPremium = spoke.MAX_LIQUIDITY_PREMIUM() / 2;
+  function test_updateCollateralRisk() public {
+    uint256 newCollateralRisk = spoke.MAX_COLLATERAL_RISK() / 2;
 
     DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
-    expectedReserveConfig.liquidityPremium = newLiquidityPremium;
+    expectedReserveConfig.collateralRisk = newCollateralRisk;
 
     vm.expectCall(
       spokeAddr,
@@ -344,7 +344,7 @@ contract SpokeConfiguratorTest is Base {
     vm.expectEmit(address(spoke));
     emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateLiquidityPremium(spokeAddr, reserveId, newLiquidityPremium);
+    spokeConfigurator.updateCollateralRisk(spokeAddr, reserveId, newCollateralRisk);
 
     assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
   }
@@ -455,7 +455,7 @@ contract SpokeConfiguratorTest is Base {
         frozen: false,
         borrowable: true,
         collateral: true,
-        liquidityPremium: 15_00
+        collateralRisk: 15_00
       })
     );
   }
@@ -467,7 +467,7 @@ contract SpokeConfiguratorTest is Base {
       frozen: false,
       borrowable: true,
       collateral: true,
-      liquidityPremium: 15_00
+      collateralRisk: 15_00
     });
 
     vm.expectCall(
