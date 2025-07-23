@@ -60,7 +60,6 @@ library DataTypes {
   }
 
   struct ReserveConfig {
-    bool active;
     bool frozen;
     bool paused;
     bool borrowable;

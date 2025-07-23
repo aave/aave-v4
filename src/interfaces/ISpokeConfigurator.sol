@@ -67,14 +67,6 @@ interface ISpokeConfigurator {
   ) external returns (uint256 reserveId);
 
   /**
-   * @notice Updates the active flag of a reserve.
-   * @param spoke The address of the spoke.
-   * @param reserveId The identifier of the reserve.
-   * @param active The new active flag.
-   */
-  function updateActive(address spoke, uint256 reserveId, bool active) external;
-
-  /**
    * @notice Updates the paused flag of a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.

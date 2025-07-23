@@ -78,11 +78,10 @@ contract SpokeConfigTest is SpokeBase {
     DataTypes.ReserveConfig memory config = spoke1.getReserveConfig(daiReserveId);
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      active: !config.active,
-      frozen: !config.frozen,
       paused: !config.paused,
-      collateralRisk: config.collateralRisk + 1,
-      borrowable: !config.borrowable
+      frozen: !config.frozen,
+      borrowable: !config.borrowable,
+      collateralRisk: config.collateralRisk + 1
     });
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
@@ -161,16 +160,6 @@ contract SpokeConfigTest is SpokeBase {
       spoke1.isUsingAsCollateral(daiReserveId, alice),
       'alice deactivated using as collateral frozen reserve'
     );
-  }
-
-  function test_setUsingAsCollateral_revertsWith_ReserveNotActive() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    updateReserveActiveFlag(spoke1, daiReserveId, false);
-    assertFalse(spoke1.getReserve(daiReserveId).config.active);
-
-    vm.expectRevert(ISpoke.ReserveNotActive.selector);
-    vm.prank(alice);
-    spoke1.setUsingAsCollateral(daiReserveId, true, alice);
   }
 
   function test_setUsingAsCollateral_revertsWith_ReservePaused() public {
@@ -383,11 +372,10 @@ contract SpokeConfigTest is SpokeBase {
   function test_addReserve() public {
     uint256 reserveId = spoke1.getReserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      active: true,
-      frozen: true,
       paused: true,
-      collateralRisk: 10_00,
-      borrowable: true
+      frozen: true,
+      borrowable: true,
+      collateralRisk: 10_00
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
@@ -425,11 +413,10 @@ contract SpokeConfigTest is SpokeBase {
     uint256 assetId = hub.getAssetCount(); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      active: true,
-      frozen: true,
       paused: true,
-      collateralRisk: 10_00,
-      borrowable: true
+      frozen: true,
+      borrowable: true,
+      collateralRisk: 10_00
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
@@ -447,11 +434,10 @@ contract SpokeConfigTest is SpokeBase {
     assetId = bound(assetId, hub.getAssetCount(), type(uint256).max); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      active: true,
-      frozen: true,
       paused: true,
-      collateralRisk: 10_00,
-      borrowable: true
+      frozen: true,
+      borrowable: true,
+      collateralRisk: 10_00
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
@@ -470,11 +456,10 @@ contract SpokeConfigTest is SpokeBase {
     Spoke newSpoke = new Spoke(address(accessManager));
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      active: true,
-      frozen: true,
       paused: true,
-      collateralRisk: 10_00,
-      borrowable: true
+      frozen: true,
+      borrowable: true,
+      collateralRisk: 10_00
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,

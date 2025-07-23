@@ -149,7 +149,6 @@ interface ISpoke is IMulticall, IAccessManaged {
   error InvalidCollateralRisk();
   error InsufficientSupply(uint256 supply);
   error ReserveNotBorrowable(uint256 reserveId);
-  error ReserveNotActive();
   error ReservePaused();
   error ReserveFrozen();
   error InvalidCollateralFactor();

@@ -142,7 +142,6 @@ contract SpokeConfiguratorTest is Base {
       assetId: 0,
       priceSource: address(0),
       config: DataTypes.ReserveConfig({
-        active: true,
         paused: false,
         frozen: false,
         borrowable: true,
@@ -159,7 +158,6 @@ contract SpokeConfiguratorTest is Base {
   function test_addReserve() public {
     address newPriceSource = _deployMockPriceFeed(spoke, 1000e8);
     DataTypes.ReserveConfig memory config = DataTypes.ReserveConfig({
-      active: true,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -197,30 +195,6 @@ contract SpokeConfiguratorTest is Base {
     });
 
     assertEq(actualReserveId, expectedReserveId);
-  }
-
-  function test_updateActive_revertsWith_OwnableUnauthorizedAccount() public {
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
-    vm.prank(alice);
-    spokeConfigurator.updateActive(spokeAddr, reserveId, true);
-  }
-
-  function test_updateActive() public {
-    DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
-    for (uint256 i = 0; i < 2; i += 1) {
-      expectedReserveConfig.active = (i == 0) ? false : true;
-
-      vm.expectCall(
-        spokeAddr,
-        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
-      );
-      vm.expectEmit(address(spoke));
-      emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
-      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-      spokeConfigurator.updateActive(spokeAddr, reserveId, expectedReserveConfig.active);
-
-      assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
-    }
   }
 
   function test_updatePaused_revertsWith_OwnableUnauthorizedAccount() public {
@@ -423,9 +397,8 @@ contract SpokeConfiguratorTest is Base {
       spokeAddr,
       reserveId,
       DataTypes.ReserveConfig({
-        active: true,
-        paused: false,
         frozen: false,
+        paused: false,
         borrowable: true,
         collateralRisk: 15_00
       })
@@ -434,9 +407,8 @@ contract SpokeConfiguratorTest is Base {
 
   function test_updateReserveConfig() public {
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      active: true,
-      paused: false,
       frozen: false,
+      paused: false,
       borrowable: true,
       collateralRisk: 15_00
     });

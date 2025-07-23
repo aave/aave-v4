@@ -77,7 +77,6 @@ contract LiquidityHubHandler is Test {
       0,
       _deployMockPriceFeed(spoke1, 1e8),
       DataTypes.ReserveConfig({
-        active: true,
         frozen: false,
         paused: false,
         collateralRisk: 0,
