@@ -33,6 +33,9 @@ contract SpokeOperations_Gas_Tests is Base {
   }
 
   function test_usingAsCollateral() public {
+    vm.prank(bob);
+    spoke1.supply(_daiReserveId(spoke1), 1000e18, bob);
+
     vm.startPrank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'usingAsCollateral: 0 borrows, enabled');
