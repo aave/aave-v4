@@ -20,15 +20,24 @@ contract SpokeOperations_Gas_Tests is Base {
   function test_supply() public {
     vm.startPrank(alice);
     spoke1.supply(_usdxReserveId(spoke1), 1000e6, alice);
-    vm.snapshotGasLastCall('Spoke.Operations', 'supply');
+    vm.snapshotGasLastCall('Spoke.Operations', 'supply: 0 borrows, collateral disabled');
     skip(100);
 
-    spoke1.supply(_usdxReserveId(spoke1), 1e18, alice);
-    vm.snapshotGasLastCall('Spoke.Operations', 'supply: second existing reserve');
+    spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, alice);
+    spoke1.supply(_wethReserveId(spoke1), 1e18, alice);
+    vm.snapshotGasLastCall('Spoke.Operations', 'supply: 0 borrows, collateral enabled');
     skip(100);
 
     spoke1.supply(_wethReserveId(spoke1), 1e18, alice);
-    vm.snapshotGasLastCall('Spoke.Operations', 'supply: second different reserve');
+    vm.snapshotGasLastCall('Spoke.Operations', 'supply: second action, same reserve');
+    skip(100);
+
+    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
+    spoke1.borrow(_daiReserveId(spoke1), 100e18, alice);
+    skip(100);
+
+    spoke1.supply(_wbtcReserveId(spoke1), 1e18, alice);
+    vm.snapshotGasLastCall('Spoke.Operations', 'supply: 1 borrows');
     vm.stopPrank();
   }
 
@@ -44,12 +53,12 @@ contract SpokeOperations_Gas_Tests is Base {
     spoke1.borrow(_daiReserveId(spoke1), 100e18, alice);
 
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
-    vm.snapshotGasLastCall('Spoke.Operations', 'usingAsCollateral: 1 borrow, enable');
+    vm.snapshotGasLastCall('Spoke.Operations', 'usingAsCollateral: 1 borrows, enable');
 
     spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, alice);
 
     spoke1.setUsingAsCollateral(_wethReserveId(spoke1), false, alice);
-    vm.snapshotGasLastCall('Spoke.Operations', 'usingAsCollateral: 1 borrow, disable');
+    vm.snapshotGasLastCall('Spoke.Operations', 'usingAsCollateral: 1 borrows, disable');
     vm.stopPrank();
   }
 
@@ -62,19 +71,19 @@ contract SpokeOperations_Gas_Tests is Base {
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
 
     spoke1.withdraw(_usdxReserveId(spoke1), 500e6, alice);
-    vm.snapshotGasLastCall('Spoke.Operations', 'withdraw: 0 borrow, partial');
+    vm.snapshotGasLastCall('Spoke.Operations', 'withdraw: 0 borrows, partial');
 
     skip(100);
 
     spoke1.withdraw(_usdxReserveId(spoke1), 500e6, alice);
-    vm.snapshotGasLastCall('Spoke.Operations', 'withdraw: 0 borrow, full');
+    vm.snapshotGasLastCall('Spoke.Operations', 'withdraw: 0 borrows, full');
 
     spoke1.supply(_usdxReserveId(spoke1), 1000e6, alice);
     spoke1.borrow(_daiReserveId(spoke1), 10e18, alice);
     skip(100);
 
     spoke1.withdraw(_usdxReserveId(spoke1), 500e6, alice);
-    vm.snapshotGasLastCall('Spoke.Operations', 'withdraw: 1 borrow, partial');
+    vm.snapshotGasLastCall('Spoke.Operations', 'withdraw: 1 borrows, partial');
     vm.stopPrank();
   }
 
@@ -122,7 +131,7 @@ contract SpokeOperations_Gas_Tests is Base {
     spoke1.borrow(_daiReserveId(spoke1), 500e18, alice);
 
     spoke1.updateUserRiskPremium(alice);
-    vm.snapshotGasLastCall('Spoke.Operations', 'updateUserRiskPremium: 1 borrow');
+    vm.snapshotGasLastCall('Spoke.Operations', 'updateUserRiskPremium: 1 borrows');
 
     spoke1.borrow(_usdxReserveId(spoke1), 500e6, alice);
 
