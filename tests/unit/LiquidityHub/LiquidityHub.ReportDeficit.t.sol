@@ -17,11 +17,14 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     uint256 balanceAfter;
     uint256 baseBorrowRateBefore;
     uint256 baseBorrowRateAfter;
+    uint256 baseDebtAfter;
+    uint256 premiumDebtAfter;
   }
   function setUp() public override {
     super.setUp();
 
     // deploy borrowable liquidity
+    _addLiquidity(daiAssetId, MAX_SUPPLY_AMOUNT);
     _addLiquidity(wethAssetId, MAX_SUPPLY_AMOUNT);
     _addLiquidity(usdxAssetId, MAX_SUPPLY_AMOUNT);
   }
@@ -70,7 +73,6 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
 
   function test_reportDeficit_fuzz_revertsWith_SurplusDeficitReported(
     uint256 drawnAmount,
-    uint256 deficitAmountRestored,
     uint256 skipTime,
     uint256 baseAmount,
     uint256 premiumAmount
@@ -90,7 +92,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     // skip to accrue interest
     skip(skipTime);
 
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
+    (uint256 baseDebt, ) = hub.getSpokeDebt(usdxAssetId, address(spoke1));
     vm.assume(baseAmount > baseDebt);
 
     premiumAmount = bound(premiumAmount, 0, UINT256_MAX - baseAmount);
@@ -98,7 +100,6 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     vm.expectRevert(
       abi.encodeWithSelector(ILiquidityHub.SurplusDeficitReported.selector, baseDebt)
     );
-
     vm.prank(address(spoke1));
     hub.reportDeficit(usdxAssetId, baseAmount, premiumAmount);
   }
@@ -144,7 +145,6 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     );
     params.availableLiquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceBefore = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
-    params.baseBorrowRateBefore = getBaseBorrowRate(hub, usdxAssetId);
 
     uint256 totalDeficit = baseAmount + premiumAmount;
 
@@ -168,6 +168,8 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     vm.prank(address(spoke1));
     hub.reportDeficit(usdxAssetId, baseAmount, premiumAmount);
 
+    (params.baseDebtAfter, params.premiumDebtAfter) = hub.getAssetDebt(usdxAssetId);
+
     params.deficitAfter = _getDeficit(hub, usdxAssetId);
     params.supplyExchangeRateAfter = hub.convertToSuppliedAssets(
       usdxAssetId,
@@ -177,7 +179,14 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     params.balanceAfter = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
     params.baseBorrowRateAfter = getBaseBorrowRate(hub, usdxAssetId);
 
-    assertEq(params.baseBorrowRateBefore, params.baseBorrowRateAfter, 'base borrow rate');
+    // due to rounding, base debt can differ by asset amount of one share
+    assertApproxEqAbs(
+      params.baseDebtAfter,
+      params.baseDebt - baseAmount,
+      calculateAssetAmountOfOneShare(hub, usdxAssetId),
+      'base debt'
+    );
+    assertEq(params.premiumDebtAfter, params.premiumDebt, 'premium debt');
     assertEq(params.balanceAfter, params.balanceBefore, 'balance change');
     assertEq(
       params.availableLiquidityAfter,

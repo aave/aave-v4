@@ -2330,4 +2330,11 @@ abstract contract Base is Test {
     assertEq(a.premiumDebt, b.premiumDebt, 'premiumDebt');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
+
+  function calculateAssetAmountOfOneShare(
+    ILiquidityHub hub,
+    uint256 assetId
+  ) internal view returns (uint256) {
+    return hub.convertToDrawnAssets(assetId, WadRayMath.RAY) / WadRayMath.RAY + 1; // add 1 to divUp
+  }
 }

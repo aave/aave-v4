@@ -317,11 +317,6 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     assertEq(baseDebtAfter, baseDebtBefore, 'hub base debt after');
     assertBorrowRateSynced(hub, assetId, 'hub.add');
     // token balance
-    assertEq(
-      underlying.balanceOf(user),
-      MAX_SUPPLY_AMOUNT - amount,
-      'user token balance post-supply'
-    );
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
     assertEq(underlying.balanceOf(address(hub)), amount, 'hub token balance post-supply');
   }

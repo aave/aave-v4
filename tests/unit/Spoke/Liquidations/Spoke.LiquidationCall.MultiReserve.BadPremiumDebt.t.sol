@@ -273,13 +273,14 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     state.collateralReserves = new DataTypes.Reserve[](1);
 
     state.spoke = spoke1;
+    state.user = alice;
 
     state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
       collateralReserveId
     );
     state.debtReserveIndex = bound(debtReserveIndex, 0, debtReserveIds.length - 1);
     state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
-    state.collDynConfig = state.spoke.getDynamicReserveConfig(collateralReserveId);
+    state.collDynConfig = _getUserDynConfig(state.spoke, state.user, collateralReserveId);
 
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       state.debtReserves[i] = state.spoke.getReserve(debtReserveIds[i]);
@@ -301,7 +302,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     skipTimeForPremiumAccrual = bound(skipTimeForPremiumAccrual, 365 days, MAX_SKIP_TIME); // enough time to accrue debt so that HF is liquidatable
-    state.user = alice;
 
     // set spoke liq config
     updateLiquidationConfig(state.spoke, liqConfig);
@@ -311,26 +311,26 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     Utils.supplyCollateral({
       spoke: state.spoke,
       reserveId: collateralReserveId,
-      caller: alice,
+      caller: state.user,
       amount: supplyAmount,
-      onBehalfOf: alice
+      onBehalfOf: state.user
     });
-    // calculate lowest HF where there is sufficient collateral to cover debt
-    // below this value results in bad debt
-    uint256 hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus);
-
     _borrowWithoutHfCheck({
-      spoke: spoke1,
+      spoke: state.spoke,
       user: bob,
       reserveId: collateralReserveId,
       debtAmount: supplyAmount / 2
     });
     skip(skipTime);
 
+    // calculate lowest HF where there is sufficient collateral to cover debt
+    // below this value results in bad debt
+    uint256 hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, state.user, liqBonus);
+
     // borrow some amount of debt reserve to end up below hf threshold
     _borrowMultipleReservesToBeAboveHealthyHf(
       state.spoke,
-      alice,
+      state.user,
       debtReserveIds,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
@@ -342,16 +342,16 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     state.liquidationBonus = _getVariableLiquidationBonus(
       spoke1,
       collateralReserveId,
-      alice,
+      state.user,
       state.initialHf
     );
 
     vm.assume(
-      state.spoke.getHealthFactor(alice) < hfBadDebtThreshold &&
+      state.spoke.getHealthFactor(state.user) < hfBadDebtThreshold &&
         _convertAmountToBaseCurrency(
           state.spoke,
           state.debtReserve.reserveId,
-          state.spoke.getUserTotalDebt(state.debtReserve.reserveId, alice)
+          state.spoke.getUserTotalDebt(state.debtReserve.reserveId, state.user)
         ) >
         state.totalCollateralInBaseCurrency.balanceBefore
     );
@@ -370,53 +370,55 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
 
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
-      if (debtReserveIds[i] != state.debtReserve.reserveId) {
-        uint256 reserveId = debtReserveIds[i];
-        uint256 assetId = state.debtReserves[i].assetId;
+      uint256 reserveId = debtReserveIds[i];
+      uint256 assetId = state.debtReserves[i].assetId;
 
-        uint256 expectedShares;
-        uint256 expectedDeficit;
+      uint256 expectedDeficitShares;
+      uint256 expectedDeficitAmount;
 
+      if (reserveId != state.debtReserve.reserveId) {
+        expectedDeficitShares = state.spoke.getUserPosition(reserveId, alice).baseDrawnShares;
+        expectedDeficitAmount = state.spoke.getUserTotalDebt(reserveId, alice);
         // for debt asset being liquidated, some debt is restored prior to deficit creation
-        if (reserveId == state.debtReserve.reserveId) {
-          (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
-            state.userBaseDebt.balanceBefore,
-            state.userPremiumDebt.balanceBefore,
-            state.debtToLiq,
-            assetId
-          );
-
-          // debt asset deficit shares are the initial amount minus the amount restored during liquidation
-          expectedShares =
-            state.spoke.getUserPosition(reserveId, alice).baseDrawnShares -
-            hub.convertToDrawnShares(assetId, basedDebtRestored);
-          // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
-          expectedDeficit =
-            hub.convertToDrawnAssets(assetId, expectedShares) +
-            state.userPremiumDebt.balanceBefore -
-            premDebtRestored;
-        } else {
-          expectedShares = state.spoke.getUserPosition(reserveId, alice).baseDrawnShares;
-          expectedDeficit = state.spoke.getUserTotalDebt(reserveId, alice);
-        }
-
-        vm.expectEmit(address(hub));
-        emit ILiquidityHub.DeficitCreated(
-          assetId,
-          address(state.spoke),
-          expectedShares,
-          expectedDeficit
+      } else {
+        (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
+          state.userBaseDebt.balanceBefore,
+          state.userPremiumDebt.balanceBefore,
+          state.debtToLiq,
+          assetId
         );
 
-        vm.expectEmit(address(hub));
-        emit ILiquidityHub.Restore(assetId, address(state.spoke), expectedShares, expectedDeficit);
+        // debt asset deficit shares are the initial amount minus the amount restored during liquidation
+        state.expectedDeficitShares = expectedDeficitShares =
+          state.spoke.getUserPosition(reserveId, alice).baseDrawnShares -
+          hub.convertToDrawnShares(assetId, basedDebtRestored);
+        // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
+        state.expectedDeficitAmount = expectedDeficitAmount =
+          hub.convertToDrawnAssets(assetId, expectedDeficitShares) +
+          state.userPremiumDebt.balanceBefore -
+          premDebtRestored;
       }
+      vm.expectEmit(address(hub));
+      emit ILiquidityHub.DeficitCreated(
+        assetId,
+        address(state.spoke),
+        expectedDeficitShares,
+        expectedDeficitAmount
+      );
+
+      vm.expectEmit(address(hub));
+      emit ILiquidityHub.Restore(
+        assetId,
+        address(state.spoke),
+        expectedDeficitShares,
+        expectedDeficitAmount
+      );
     }
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
       state.collateralReserve.underlying,
       state.debtReserve.underlying,
-      alice,
+      state.user,
       state.debtToLiq,
       state.collToLiq,
       LIQUIDATOR
@@ -425,7 +427,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     state.spoke.liquidationCall(
       collateralReserveId,
       debtReserveIds[state.debtReserveIndex],
-      alice,
+      state.user,
       UINT256_MAX
     );
 
@@ -454,10 +456,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     // mock with high base borrow rate so that less time must be skipped to reach desired HF
     _mockInterestRateBps(500_00);
 
-    vm.startPrank(user);
     for (uint256 i = 0; i < reserveIds.length; i++) {
       uint256 assetId = spoke.getReserve(reserveIds[i]).assetId;
-
       uint256 amountInBase;
       // randomly distribute total required debt across debt reserves
       if (i == reserveIds.length - 1) {
@@ -469,16 +469,20 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
           vars.remaining - dustInBase * (reserveIds.length - i - 1)
         );
       }
-
       uint256 amount = _convertBaseCurrencyToAmount(spoke, reserveIds[i], amountInBase);
       vm.assume(amount < MAX_SUPPLY_AMOUNT);
 
-      spoke.borrow(reserveIds[i], amount, user);
+      Utils.borrow({
+        spoke: spoke,
+        reserveId: reserveIds[i],
+        caller: user,
+        amount: amount,
+        onBehalfOf: user
+      });
 
       vars.remaining -= amountInBase;
       requiredDebts[i] = amount;
     }
-    vm.stopPrank();
 
     finalHf = spoke.getHealthFactor(user);
     assertGt(finalHf, desiredHf, 'should borrow enough for HF to be above desiredHf');
@@ -498,11 +502,17 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         'remaining debt should be 0 (reported as deficit)'
       );
       if (i != state.debtReserveIndex) {
-        uint256 expectedDeficit = state.userTotalDebts[i].balanceChange; // for other debt assets, total debt should be reported as deficit
+        uint256 expectedDeficitAmount = state.userTotalDebts[i].balanceChange; // for other debt assets, total debt should be reported as deficit
         assertEq(
           state.deficitAmounts[i].balanceChange,
-          expectedDeficit,
+          expectedDeficitAmount,
           'non-liquidated debt asset deficit'
+        );
+      } else {
+        assertEq(
+          state.deficitAmounts[i].balanceChange,
+          state.expectedDeficitAmount,
+          'liquidated debt asset deficit'
         );
       }
     }

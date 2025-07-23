@@ -364,13 +364,17 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     Utils.supplyCollateral({
       spoke: state.spoke,
       reserveId: collateralReserveId,
-      caller: alice,
+      caller: state.user,
       amount: supplyAmount,
-      onBehalfOf: alice
+      onBehalfOf: state.user
     });
 
     // set user position under hf threshold so that there is invalid collateral to cover all debt
-    desiredHf = bound(desiredHf, 0.1e18, _calcLowestHfForBadDebt(state.spoke, alice, liqBonus));
+    desiredHf = bound(
+      desiredHf,
+      0.1e18,
+      _calcLowestHfForBadDebt(state.spoke, state.user, liqBonus)
+    );
     _borrowWithoutHfCheck({
       spoke: spoke1,
       user: bob,
@@ -380,12 +384,13 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     skip(skipTime);
 
     vm.assume(
-      _getRequiredDebtAmountForLtHf(spoke1, alice, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
+      _getRequiredDebtAmountForLtHf(spoke1, state.user, debtReserveId, desiredHf) <=
+        MAX_SUPPLY_AMOUNT
     );
     // borrow some amount of debt reserve to end up below hf threshold
     (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
       state.spoke,
-      alice,
+      state.user,
       debtReserveId,
       desiredHf
     );
@@ -393,7 +398,7 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     state.liquidationBonus = _getVariableLiquidationBonus(
       state.spoke,
       collateralReserveId,
-      alice,
+      state.user,
       hfAfterBorrow
     );
 
@@ -414,10 +419,12 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     );
 
     // debt asset deficit shares are the initial amount minus the amount restored during liquidation
-    uint256 expectedShares = state.spoke.getUserPosition(debtReserveId, alice).baseDrawnShares -
+    state.expectedDeficitShares =
+      state.spoke.getUserPosition(debtReserveId, state.user).baseDrawnShares -
       hub.convertToDrawnShares(debtAssetId, basedDebtRestored);
     // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
-    uint256 expectedDeficit = hub.convertToDrawnAssets(debtAssetId, expectedShares) +
+    state.expectedDeficitAmount =
+      hub.convertToDrawnAssets(debtAssetId, state.expectedDeficitShares) +
       state.userPremiumDebt.balanceBefore -
       premDebtRestored;
 
@@ -425,24 +432,29 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     emit ILiquidityHub.DeficitCreated(
       debtAssetId,
       address(state.spoke),
-      expectedShares,
-      expectedDeficit
+      state.expectedDeficitShares,
+      state.expectedDeficitAmount
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Restore(debtAssetId, address(state.spoke), expectedShares, expectedDeficit);
+    emit ILiquidityHub.Restore(
+      debtAssetId,
+      address(state.spoke),
+      state.expectedDeficitShares,
+      state.expectedDeficitAmount
+    );
 
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
       state.collateralReserve.underlying,
       state.debtReserve.underlying,
-      alice,
+      state.user,
       state.debtToLiq,
       state.collToLiq,
       LIQUIDATOR
     );
     vm.prank(LIQUIDATOR);
-    state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, UINT256_MAX);
+    state.spoke.liquidationCall(collateralReserveId, debtReserveId, state.user, UINT256_MAX);
 
     state = _getAccountingInfoAfterLiquidation(state);
 

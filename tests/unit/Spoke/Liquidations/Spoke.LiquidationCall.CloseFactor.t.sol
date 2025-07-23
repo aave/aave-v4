@@ -397,7 +397,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     state.collateralReserves = new DataTypes.Reserve[](1);
     state.debtReserves = new DataTypes.Reserve[](1);
     state.spoke = spoke1;
-    state.collDynConfig = _getUserDynConfig(state.spoke, alice, collateralReserveId);
+    state.user = alice;
+    state.collDynConfig = _getUserDynConfig(state.spoke, state.user, collateralReserveId);
 
     state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
       collateralReserveId
@@ -431,7 +432,6 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.user = alice;
     state.liquidationFee = liquidationFee;
 
     updateLiquidationConfig(state.spoke, liqConfig);
@@ -441,14 +441,13 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     Utils.supplyCollateral({
       spoke: state.spoke,
       reserveId: collateralReserveId,
-      caller: alice,
+      caller: state.user,
       amount: supplyAmount,
-      onBehalfOf: alice
+      onBehalfOf: state.user
     });
 
-    uint256 hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, alice, liqBonus).percentMulUp(
-      101_00
-    ); // add buffer so that not all collateral is seized
+    uint256 hfBadDebtThreshold = _calcLowestHfForBadDebt(state.spoke, state.user, liqBonus)
+      .percentMulUp(101_00); // add buffer so that not all collateral is seized
 
     // desiredHF is within range of a liquidation that does not result in bad debt
     desiredHf = bound(
@@ -466,7 +465,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     skip(skipTime);
 
     vm.assume(
-      _getRequiredDebtAmountForLtHf(spoke1, alice, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
+      _getRequiredDebtAmountForLtHf(spoke1, state.user, debtReserveId, desiredHf) <=
+        MAX_SUPPLY_AMOUNT
     );
     // borrow some amount of debt reserve to end up below hf threshold
     (uint256 hfAfterBorrow, ) = _borrowToBeBelowHf(state.spoke, alice, debtReserveId, desiredHf);
@@ -478,7 +478,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     );
     state = _getAccountingInfoBeforeLiquidation(state);
 
-    uint16 configKeyBefore = spoke1.getUserPosition(collateralReserveId, alice).configKey;
+    uint16 configKeyBefore = spoke1.getUserPosition(collateralReserveId, state.user).configKey;
     (
       state.collToLiq,
       state.debtToLiq,
@@ -517,18 +517,18 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     emit ISpoke.LiquidationCall(
       state.collateralReserve.underlying,
       state.debtReserve.underlying,
-      alice,
+      state.user,
       state.debtToLiq,
       state.collToLiq,
       LIQUIDATOR
     );
     vm.prank(LIQUIDATOR);
-    state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, UINT256_MAX);
+    state.spoke.liquidationCall(collateralReserveId, debtReserveId, state.user, UINT256_MAX);
 
     state = _getAccountingInfoAfterLiquidation(state);
 
     assertEq(
-      spoke1.getUserPosition(collateralReserveId, alice).configKey,
+      spoke1.getUserPosition(collateralReserveId, state.user).configKey,
       configKeyBefore,
       'User dynamic config key changed after liquidation'
     );

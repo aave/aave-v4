@@ -1066,23 +1066,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     ILiquidityHub hub = reserve.hub;
     vars.assetId = reserve.assetId;
     (vars.baseDebt, vars.premiumDebt) = _getUserDebt(hub, vars.assetId, userPosition);
-    vars.userPremiumDrawnShares = userPosition.premiumDrawnShares;
-    vars.userPremiumOffset = userPosition.premiumOffset;
-    vars.accruedPremium = vars.premiumDebt - userPosition.realizedPremium;
-
-    userPosition.premiumDrawnShares = 0;
-    userPosition.premiumOffset = 0;
-    userPosition.realizedPremium = 0;
-
-    _refreshPremiumDebt(
-      reserve,
-      user,
-      vars.assetId,
-      -int256(vars.userPremiumDrawnShares),
-      -int256(vars.userPremiumOffset),
-      vars.accruedPremium,
-      vars.premiumDebt
-    ); // settle premium debt here
+    _accruePremiumDebt(reserve, userPosition, hub, vars.assetId, user, vars.premiumDebt);
 
     uint256 deficitShares = hub.reportDeficit(vars.assetId, vars.baseDebt, vars.premiumDebt); // settle base debt here by reporting deficit
 
@@ -1091,7 +1075,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     userPosition.baseDrawnShares -= deficitShares;
 
     // newUserRiskPremium is 0 due to no collateral remaining
-    _refreshPremiumDebt(reserve, user, vars.assetId, 0, 0, 0, 0);
+    _updatePremiumDebt(reserve, userPosition, hub, vars.assetId, user, 0);
     positionStatus.setBorrowing(reserve.reserveId, false);
   }
 
@@ -1159,7 +1143,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;
-    vars.collateralAsset = collateralReserve.underlying;
+    vars.collateralAssetId = collateralReserve.assetId;
+    vars.debtAssetId = debtReserve.assetId;
 
     while (vars.i < usersLength) {
       vars.user = users[vars.i];
@@ -1169,9 +1154,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       DataTypes.UserPosition storage userDebtPosition = _userPositions[vars.user][
         vars.debtReserveId
       ];
-
-      vars.collateralAssetId = collateralReserve.assetId;
-      vars.debtAssetId = debtReserve.assetId;
 
       (vars.baseDebt, vars.premiumDebt) = _getUserDebt(
         debtReserveHub,
@@ -1211,7 +1193,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       );
       vars.liquidationFeeShares = vars.withdrawnShares - vars.liquidatedSuppliedShares;
 
-      // accrue premium debt on debtReserve only
+      // accrue premium debt on debtReserve
       _accruePremiumDebt(
         debtReserve,
         userDebtPosition,
@@ -1220,7 +1202,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.user,
         vars.premiumDebtToLiquidate
       );
-
       // repay debt
       vars.restoredShares = debtReserveHub.restore(
         vars.debtAssetId,
@@ -1249,23 +1230,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
           vars.newUserRiskPremium
         );
 
+        vars.totalUserDebtPremiumDrawnSharesDelta += int256(vars.userPremiumDrawnShares);
+        vars.totalUserDebtPremiumOffsetDelta += int256(vars.userPremiumOffset);
+
         if (userDebtPosition.baseDrawnShares == 0) {
           DataTypes.PositionStatus storage positionStatus = _positionStatus[users[vars.i]];
           positionStatus.setBorrowing(vars.debtReserveId, false);
         }
-
-        vars.totalUserDebtPremiumDrawnSharesDelta += int256(vars.userPremiumDrawnShares);
-        vars.totalUserDebtPremiumOffsetDelta += int256(vars.userPremiumOffset);
-
-        // refresh collateral reserve premium
-        _updatePremiumDebt(
-          collateralReserve,
-          userCollateralPosition,
-          collateralReserveHub,
-          vars.collateralAssetId,
-          vars.user,
-          vars.newUserRiskPremium
-        );
 
         _notifyRiskPremiumUpdate(vars.debtAssetId, vars.user, vars.newUserRiskPremium);
       }
@@ -1280,25 +1251,18 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       }
     }
 
-    if (vars.totalLiquidationFeeShares > 0) {
-      collateralReserveHub.payFee(vars.collateralAssetId, vars.totalLiquidationFeeShares);
-    }
-
     // TODO: rm when dupe reserve accounting is rm
     debtReserve.baseDrawnShares -= vars.totalRestoredShares;
     collateralReserve.suppliedShares -= vars.totalWithdrawnShares;
+
+    if (vars.totalLiquidationFeeShares > 0) {
+      collateralReserveHub.payFee(vars.collateralAssetId, vars.totalLiquidationFeeShares);
+    }
 
     debtReserveHub.refreshPremiumDebt(
       vars.debtAssetId,
       vars.totalUserDebtPremiumDrawnSharesDelta,
       vars.totalUserDebtPremiumOffsetDelta,
-      0,
-      0
-    );
-    collateralReserveHub.refreshPremiumDebt(
-      vars.collateralAssetId,
-      vars.totalUserCollateralPremiumDrawnSharesDelta,
-      vars.totalUserCollateralPremiumOffsetDelta,
       0,
       0
     );
