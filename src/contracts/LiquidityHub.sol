@@ -50,8 +50,6 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(irStrategy != address(0), InvalidIrStrategy());
 
     uint256 assetId = _assetCount++;
-    uint256 baseDebtIndex = WadRayMathExtended.RAY;
-    uint256 lastUpdateTimestamp = block.timestamp;
     IAssetInterestRateStrategy(irStrategy).setInterestRateData(assetId, data);
     uint256 baseBorrowRate = IAssetInterestRateStrategy(irStrategy).calculateInterestRate({
       assetId: assetId,
@@ -59,6 +57,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       baseDebt: 0,
       premiumDebt: 0
     });
+
+    uint256 baseDebtIndex = WadRayMathExtended.RAY;
+    uint256 lastUpdateTimestamp = block.timestamp;
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
       active: true,
       paused: false,
