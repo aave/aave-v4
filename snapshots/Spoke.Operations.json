@@ -9,9 +9,9 @@
   "supply: second existing reserve": "128242",
   "updateUserRiskPremium: 1 borrow": "178237",
   "updateUserRiskPremium: 2 borrows": "226219",
-  "usingAsCollateral: 0 borrows, enabled": "56112",
-  "usingAsCollateral: 1 borrow, disabled": "191246",
-  "usingAsCollateral: 1 borrow, enabled": "24806",
+  "usingAsCollateral: 0 borrows, enable": "56112",
+  "usingAsCollateral: 1 borrow, disable": "191246",
+  "usingAsCollateral: 1 borrow, enable": "24806",
   "withdraw: 0 borrow, full": "232336",
   "withdraw: 0 borrow, partial": "243408",
   "withdraw: 1 borrow, partial": "457868"
