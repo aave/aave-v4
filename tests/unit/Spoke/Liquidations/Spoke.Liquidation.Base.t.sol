@@ -987,7 +987,7 @@ contract SpokeLiquidationBase is SpokeBase {
       );
     }
 
-    state.assetAmountOfOneDrawnShare = calculateAssetAmountOfOneShare(
+    state.assetAmountOfOneDrawnShare = minimumAssetsPerDrawnShare(
       state.debtHub,
       state.debtReserve.assetId
     );

@@ -181,7 +181,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     assertApproxEqAbs(
       params.baseDebtAfter,
       params.baseDebt - baseAmount,
-      calculateAssetAmountOfOneShare(hub, usdxAssetId) + 1,
+      minimumAssetsPerDrawnShare(hub, usdxAssetId) + 1,
       'base debt'
     );
     assertEq(params.premiumDebtAfter, params.premiumDebt, 'premium debt');

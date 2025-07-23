@@ -1242,6 +1242,14 @@ abstract contract Base is Test {
     return hub.convertToSuppliedAssetsUp(assetId, 1);
   }
 
+  /// @dev Helper function to calculate asset amount corresponding to single drawn share
+  function minimumAssetsPerDrawnShare(
+    ILiquidityHub hub,
+    uint256 assetId
+  ) internal view returns (uint256) {
+    return hub.convertToDrawnAssets(assetId, 1);
+  }
+
   /// @dev Helper function to calculate expected supplied assets based on amount to supply and current exchange rate
   /// taking potential donation into account
   function calculateEffectiveSuppliedAssets(
@@ -2255,12 +2263,5 @@ abstract contract Base is Test {
     assertEq(a.realizedPremium, b.realizedPremium, 'realizedPremium');
     assertEq(a.premiumDebt, b.premiumDebt, 'premiumDebt');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
-  }
-
-  function calculateAssetAmountOfOneShare(
-    ILiquidityHub hub,
-    uint256 assetId
-  ) internal view returns (uint256) {
-    return hub.convertToDrawnAssets(assetId, WadRayMath.RAY) / WadRayMath.RAY; // add 1 to divUp
   }
 }
