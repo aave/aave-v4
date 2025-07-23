@@ -13,14 +13,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
     // spoke2, bob supply dai
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke2),
-      amount: amount,
-      user: bob,
-      to: address(spoke2)
-    });
+    Utils.add({hub: hub, assetId: assetId, caller: address(spoke2), amount: amount, user: bob});
 
     uint256 shares = hub.convertToDrawnSharesUp(assetId, amount);
 
@@ -40,7 +33,17 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
+    emit ILiquidityHub.AssetUpdated(
+      assetId,
+      hub.previewDrawnIndex(assetId),
+      IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
+        assetId: assetId,
+        availableLiquidity: assetBefore.availableLiquidity - amount,
+        baseDebt: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+        premiumDebt: premiumDebt
+      }),
+      vm.getBlockTimestamp()
+    );
     vm.expectEmit(address(hub.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
@@ -110,7 +113,17 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
+    emit ILiquidityHub.AssetUpdated(
+      assetId,
+      hub.previewDrawnIndex(assetId),
+      IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
+        assetId: assetId,
+        availableLiquidity: assetBefore.availableLiquidity - amount,
+        baseDebt: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+        premiumDebt: premiumDebt
+      }),
+      vm.getBlockTimestamp()
+    );
     vm.expectEmit(address(hub.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
@@ -233,16 +246,15 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
+      user: bob
     });
     // withdraw all so no liquidity remains
     Utils.remove({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
       to: bob
     });
@@ -265,16 +277,15 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
+      user: bob
     });
     // withdraw all so no liquidity remains
     Utils.remove({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
       to: bob
     });
@@ -295,19 +306,17 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
+      user: bob
     });
     // draw all so no liquidity remains
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      to: bob,
-      onBehalfOf: bob
+      to: bob
     });
 
     assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
@@ -326,19 +335,17 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
+      user: bob
     });
     // draw all so no liquidity remains
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      to: bob,
-      onBehalfOf: bob
+      to: bob
     });
 
     assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
@@ -359,9 +366,9 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_revertsWith_DrawCapExceeded_due_to_interest() public {
-    // Set liquidity premium of dai to 0
-    updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);
-    assertEq(_getLiquidityPremium(spoke1, _daiReserveId(spoke1)), 0);
+    // Set collateral risk of dai to 0
+    updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
+    assertEq(_getCollateralRisk(spoke1, _daiReserveId(spoke1)), 0);
 
     uint256 daiAmount = 100e18;
     uint256 drawCap = daiAmount;

@@ -50,23 +50,20 @@ contract LiquidityHubHandler is Test {
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
-
-    // Add dai
-    hub.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy));
     vm.stopPrank();
-    vm.prank(address(hub));
-    irStrategy.setInterestRateData(
-      0,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
+
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
     );
+
     vm.startPrank(hubAdmin);
+    // Add dai
+    hub.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
     hub.updateAssetConfig(
       0,
       DataTypes.AssetConfig({
@@ -79,19 +76,22 @@ contract LiquidityHubHandler is Test {
       })
     );
     spoke1.addReserve(
-      0,
       address(hub),
+      0,
       _deployMockPriceFeed(spoke1, 1e8),
       DataTypes.ReserveConfig({
         active: true,
         frozen: false,
         paused: false,
-        liquidityPremium: 0,
-        liquidationFee: 0,
+        collateralRisk: 0,
         borrowable: false,
         collateral: false
       }),
-      DataTypes.DynamicReserveConfig({collateralFactor: 0, liquidationBonus: 100_00})
+      DataTypes.DynamicReserveConfig({
+        collateralFactor: 0,
+        liquidationBonus: 100_00,
+        liquidationFee: 0
+      })
     );
     vm.stopPrank();
   }
@@ -118,14 +118,7 @@ contract LiquidityHubHandler is Test {
     amount = bound(amount, 1, type(uint128).max);
 
     deal(hub.getAsset(assetId).underlying, user, amount);
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke1),
-      amount: amount,
-      user: user,
-      to: onBehalfOf
-    });
+    Utils.add({hub: hub, assetId: assetId, caller: address(spoke1), amount: amount, user: user});
 
     _updateState(assetId);
     s.reserveSupplied[assetId] += amount;
@@ -137,7 +130,7 @@ contract LiquidityHubHandler is Test {
     // TODO: bound by spoke1 user balance
     amount = bound(amount, 1, 2);
 
-    Utils.remove({hub: hub, assetId: assetId, spoke: address(spoke1), amount: amount, to: to});
+    Utils.remove({hub: hub, assetId: assetId, caller: address(spoke1), amount: amount, to: to});
 
     _updateState(assetId);
     s.reserveSupplied[assetId] -= amount;

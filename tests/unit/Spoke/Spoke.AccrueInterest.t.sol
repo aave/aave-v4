@@ -124,7 +124,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
 
     // Full repayment, so back to zero debt
-    Utils.repay(spoke1, daiReserveId, bob, type(uint256).max);
+    Utils.repay(spoke1, daiReserveId, bob, type(uint256).max, bob);
 
     _assertSingleUserProtocolDebt(spoke1, daiReserveId, bob, 0, 0, 'after repay, no debt');
     _assertSingleUserProtocolSupply(
@@ -203,9 +203,9 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint40 startTime = uint40(vm.getBlockTimestamp());
     uint256 usdxReserveId = _usdxReserveId(spoke1);
 
-    // Set liquidity premium of usdx on spoke1 to 10%
-    updateLiquidityPremium(spoke1, usdxReserveId, 10_00);
-    assertEq(10_00, _getLiquidityPremium(spoke1, usdxReserveId), 'usdx liquidity premium');
+    // Set collateral risk of usdx on spoke1 to 10%
+    updateCollateralRisk(spoke1, usdxReserveId, 10_00);
+    assertEq(10_00, _getCollateralRisk(spoke1, usdxReserveId), 'usdx collateral risk');
 
     // Bob supply usdx
     Utils.supplyCollateral(spoke1, usdxReserveId, bob, supplyAmount, bob);

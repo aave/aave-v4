@@ -14,8 +14,8 @@ contract SpokeUpdateUserRiskPremium is SpokeBase {
     assertEq(riskPremiumBefore, _calculateExpectedUserRP(alice, spoke1));
 
     assertLt(
-      _getLiquidityPremium(spoke1, _wethReserveId(spoke1)),
-      _getLiquidityPremium(spoke1, _usdxReserveId(spoke1))
+      _getCollateralRisk(spoke1, _wethReserveId(spoke1)),
+      _getCollateralRisk(spoke1, _usdxReserveId(spoke1))
     );
     // half weth price, increasing user rp since it's the less risky collateral
     _mockReservePriceByPercent(spoke1, _wethReserveId(spoke1), 50_00);

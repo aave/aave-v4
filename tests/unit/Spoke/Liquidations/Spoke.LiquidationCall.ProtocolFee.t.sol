@@ -21,8 +21,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
     uint256 liquidationFee,
     uint256 skipTime
   ) public returns (LiquidationTestLocalParams memory) {
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
-    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
+    debtReserveId = bound(debtReserveId, 0, spoke1.getReserveCount() - 1);
 
     LiquidationTestLocalParams memory state = _execLiqCallFuzzTest(
       liqConfig,

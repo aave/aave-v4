@@ -116,10 +116,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 supplyAmountInBase,
     uint256 skipTime
   ) public {
-    collateralReserveId1 = bound(collateralReserveId1, 0, spoke1.reserveCount() - 1);
-    collateralReserveId2 = bound(collateralReserveId2, 0, spoke1.reserveCount() - 1);
-    debtReserveId1 = bound(debtReserveId1, 0, spoke1.reserveCount() - 1);
-    debtReserveId2 = bound(debtReserveId2, 0, spoke1.reserveCount() - 1);
+    collateralReserveId1 = bound(collateralReserveId1, 0, spoke1.getReserveCount() - 1);
+    collateralReserveId2 = bound(collateralReserveId2, 0, spoke1.getReserveCount() - 1);
+    debtReserveId1 = bound(debtReserveId1, 0, spoke1.getReserveCount() - 1);
+    debtReserveId2 = bound(debtReserveId2, 0, spoke1.getReserveCount() - 1);
 
     collateralReserveIndex = bound(collateralReserveIndex, 0, 1);
     debtReserveIndex = bound(debtReserveIndex, 0, 1);
@@ -229,11 +229,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         supplyAmountInBase
       );
 
-      if (!spoke1.getUsingAsCollateral(collateralReserveIds[i], alice)) {
+      if (!spoke1.isUsingAsCollateral(collateralReserveIds[i], alice)) {
         Utils.supplyCollateral({
           spoke: spoke1,
           reserveId: collateralReserveIds[i],
-          user: alice,
+          caller: alice,
           amount: supplyAmount,
           onBehalfOf: alice
         });
@@ -241,7 +241,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         Utils.supply({
           spoke: spoke1,
           reserveId: collateralReserveIds[i],
-          user: alice,
+          caller: alice,
           amount: supplyAmount,
           onBehalfOf: alice
         });
