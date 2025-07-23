@@ -231,14 +231,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     _validateBorrow(reserve);
 
-    if (!positionStatus.isBorrowing(reserveId)) {
-      positionStatus.setBorrowing(reserveId, true);
-    }
-
     uint256 baseDrawnShares = hub.draw(assetId, amount, msg.sender);
 
     reserve.baseDrawnShares += baseDrawnShares;
     userPosition.baseDrawnShares += baseDrawnShares;
+
+    if (!positionStatus.isBorrowing(reserveId)) {
+      positionStatus.setBorrowing(reserveId, true);
+    }
 
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
@@ -281,7 +281,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.baseDebtRestored,
       vars.premiumDebtRestored,
       msg.sender
-    ); // settle base debt
+    );
 
     reserve.baseDrawnShares -= vars.restoredShares;
     userPosition.baseDrawnShares -= vars.restoredShares;
@@ -740,7 +740,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     ILiquidityHub hub,
     uint256 assetId,
     uint256 reserveId,
-    address userAddress,
+    address user,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
@@ -752,7 +752,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     emit RefreshPremiumDebt(
       reserveId,
-      userAddress,
+      user,
       premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
@@ -1077,6 +1077,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.premiumDebt
       );
 
+      // repay debt
       _settlePremiumDebt(
         debtReserve,
         userDebtPosition,
@@ -1086,7 +1087,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.user,
         vars.premiumDebtToLiquidate
       );
-      // repay debt
       vars.restoredShares = debtReserveHub.restore(
         vars.debtAssetId,
         vars.baseDebtToLiquidate,
