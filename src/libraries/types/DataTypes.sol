@@ -206,18 +206,4 @@ library DataTypes {
     uint256 newUserRiskPremium;
     uint256 restoredShares;
   }
-
-  struct ExecuteReportDeficitLocalVars {
-    ILiquidityHub hub;
-    uint256 assetId;
-    uint256 baseDebt;
-    uint256 premiumDebt;
-    uint256 baseDebtReported;
-    uint256 premiumDebtReported;
-    uint256 userPremiumDrawnShares;
-    uint256 userPremiumOffset;
-    uint256 accruedPremium;
-    uint256 newUserRiskPremium;
-    uint256 restoredShares;
-  }
 }

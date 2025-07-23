@@ -346,6 +346,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       state.initialHf
     );
 
+    // ensure that there is bad debt that includes premium debt
     vm.assume(
       state.spoke.getHealthFactor(state.user) < hfBadDebtThreshold &&
         _convertAmountToBaseCurrency(
@@ -405,7 +406,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         expectedDeficitShares,
         expectedDeficitAmount
       );
-
       vm.expectEmit(address(hub));
       emit ILiquidityHub.Restore(
         assetId,
@@ -414,6 +414,9 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         expectedDeficitAmount
       );
     }
+    vm.expectEmit(address(state.spoke));
+    emit ISpoke.UserRiskPremiumUpdate(state.user, 0);
+
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
       state.collateralReserve.underlying,

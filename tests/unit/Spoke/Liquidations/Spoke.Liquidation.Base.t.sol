@@ -490,7 +490,7 @@ contract SpokeLiquidationBase is SpokeBase {
   function _assertBadDebt(
     LiquidationTestLocalParams memory state,
     string memory label
-  ) internal view {
+  ) internal pure {
     // all collateral seized; all debt liquidated and moved to deficit
     assertEq(
       state.userSuppliedShares.balanceAfter,

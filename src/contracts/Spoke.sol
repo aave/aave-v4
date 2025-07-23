@@ -1059,31 +1059,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return vars.premiumIncrease;
   }
 
-  function _executeReportDeficit(
-    DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage userPosition,
-    DataTypes.PositionStatus storage positionStatus,
-    address user
-  ) internal {
-    // validation should already have occurred during liquidation
-    DataTypes.ExecuteReportDeficitLocalVars memory vars;
-
-    ILiquidityHub hub = reserve.hub;
-    vars.assetId = reserve.assetId;
-    (vars.baseDebt, vars.premiumDebt) = _getUserDebt(hub, vars.assetId, userPosition);
-    _accruePremiumDebt(reserve, userPosition, hub, vars.assetId, user, vars.premiumDebt);
-
-    uint256 deficitShares = hub.reportDeficit(vars.assetId, vars.baseDebt, vars.premiumDebt); // settle base debt here by reporting deficit
-
-    // non-zero deficit means user ends up with zero total debt/collateral
-    reserve.baseDrawnShares -= deficitShares;
-    userPosition.baseDrawnShares -= deficitShares;
-
-    // newUserRiskPremium is 0 due to no collateral remaining
-    _updatePremiumDebt(reserve, userPosition, hub, vars.assetId, user, 0);
-    positionStatus.setBorrowing(reserve.reserveId, false);
-  }
-
   /**
    * @dev Reports deficits for all borrowing reserves of the user.
    * Includes the debt reserve being repaid during liquidation.
@@ -1093,17 +1068,34 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     uint256 reservesLength = _reserveCount;
     uint256 reserveId;
+
     while (reserveId < reservesLength) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       if (positionStatus.isBorrowing(reserveId)) {
         DataTypes.Reserve storage reserve = _reserves[reserveId];
-        _executeReportDeficit(reserve, userPosition, positionStatus, user);
+        // validation should already have occurred during liquidation
+
+        ILiquidityHub hub = reserve.hub;
+        uint256 assetId = reserve.assetId;
+        (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(hub, assetId, userPosition);
+        _accruePremiumDebt(reserve, userPosition, hub, assetId, user, premiumDebt);
+
+        uint256 deficitShares = hub.reportDeficit(assetId, baseDebt, premiumDebt); // settle base debt here by reporting deficit
+
+        reserve.baseDrawnShares -= deficitShares;
+        userPosition.baseDrawnShares -= deficitShares;
+
+        // newUserRiskPremium is 0 due to no collateral remaining
+        _updatePremiumDebt(reserve, userPosition, hub, assetId, user, 0);
+        // non-zero deficit means user ends up with zero total debt/collateral
+        positionStatus.setBorrowing(reserve.reserveId, false);
         // notify unneeded here as each debt reserve's deficit will be individually reported
       }
       unchecked {
         ++reserveId;
       }
     }
+    emit UserRiskPremiumUpdate(user, 0);
   }
 
   function _refreshDynamicConfig(address user) internal {
