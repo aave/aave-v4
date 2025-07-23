@@ -21,19 +21,6 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   constructor(address owner_) Ownable(owner_) {}
 
   /// @inheritdoc IHubConfigurator
-  function addSpokeToAssets(
-    address hub,
-    address spoke,
-    uint256[] calldata assetIds,
-    DataTypes.SpokeConfig[] calldata configs
-  ) external onlyOwner {
-    require(assetIds.length == configs.length, MismatchedConfigs());
-    for (uint256 i; i < assetIds.length; i++) {
-      ILiquidityHub(hub).addSpoke(assetIds[i], spoke, configs[i]);
-    }
-  }
-
-  /// @inheritdoc IHubConfigurator
   function addAsset(
     address hub,
     address underlying,
@@ -156,6 +143,109 @@ contract HubConfigurator is Ownable, IHubConfigurator {
       config.feeReceiver
     );
     targetHub.updateAssetConfig(assetId, config);
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function freezeAsset(address hub, uint256 assetId) external override onlyOwner {
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    uint256 spokesCount = targetHub.getSpokeCount(assetId);
+    for (uint256 i; i < spokesCount; i++) {
+      address spokeAddress = targetHub.getSpokeAddress(assetId, i);
+      DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spokeAddress);
+      config.supplyCap = 0;
+      config.drawCap = 0;
+      targetHub.updateSpokeConfig(assetId, spokeAddress, config);
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function pauseAsset(address hub, uint256 assetId) external override onlyOwner {
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    uint256 spokesCount = targetHub.getSpokeCount(assetId);
+    for (uint256 i; i < spokesCount; i++) {
+      address spokeAddress = targetHub.getSpokeAddress(assetId, i);
+      DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spokeAddress);
+      config.active = false;
+      targetHub.updateSpokeConfig(assetId, spokeAddress, config);
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function updateSpokeActive(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    bool active
+  ) external override onlyOwner {
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    config.active = active;
+    targetHub.updateSpokeConfig(assetId, spoke, config);
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function updateSpokeSupplyCap(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    uint256 supplyCap
+  ) external override onlyOwner {
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    config.supplyCap = supplyCap;
+    targetHub.updateSpokeConfig(assetId, spoke, config);
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function updateSpokeDrawCap(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    uint256 drawCap
+  ) external override onlyOwner {
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    config.drawCap = drawCap;
+    targetHub.updateSpokeConfig(assetId, spoke, config);
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function updateSpokeCaps(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    uint256 supplyCap,
+    uint256 drawCap
+  ) external override onlyOwner {
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    config.supplyCap = supplyCap;
+    config.drawCap = drawCap;
+    targetHub.updateSpokeConfig(assetId, spoke, config);
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function updateSpokeConfig(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    DataTypes.SpokeConfig calldata config
+  ) external override onlyOwner {
+    ILiquidityHub targetHub = ILiquidityHub(hub);
+    targetHub.updateSpokeConfig(assetId, spoke, config);
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function addSpokeToAssets(
+    address hub,
+    address spoke,
+    uint256[] calldata assetIds,
+    DataTypes.SpokeConfig[] calldata configs
+  ) external onlyOwner {
+    require(assetIds.length == configs.length, MismatchedConfigs());
+    for (uint256 i; i < assetIds.length; i++) {
+      ILiquidityHub(hub).addSpoke(assetIds[i], spoke, configs[i]);
+    }
   }
 
   function _updateFeeReceiverSpokeConfig(
