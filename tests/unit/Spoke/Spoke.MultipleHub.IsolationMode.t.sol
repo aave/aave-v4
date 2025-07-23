@@ -50,7 +50,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         active: true,
         frozen: false,
         paused: false,
-        liquidityPremium: 15_00,
+        collateralRisk: 15_00,
         borrowable: false,
         collateral: true
       }),
@@ -64,7 +64,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         active: true,
         frozen: false,
         paused: false,
-        liquidityPremium: 15_00,
+        collateralRisk: 15_00,
         borrowable: true,
         collateral: false
       }),
@@ -117,7 +117,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         active: true,
         frozen: false,
         paused: false,
-        liquidityPremium: 15_00,
+        collateralRisk: 15_00,
         borrowable: true,
         collateral: true
       }),
@@ -198,7 +198,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         active: true,
         frozen: false,
         paused: false,
-        liquidityPremium: 15_00,
+        collateralRisk: 15_00,
         borrowable: true,
         collateral: true
       }),

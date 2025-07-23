@@ -568,7 +568,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 15_00,
+      collateralRisk: 15_00,
       borrowable: true,
       collateral: true
     });
@@ -581,7 +581,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 5_00,
+      collateralRisk: 5_00,
       borrowable: true,
       collateral: true
     });
@@ -594,7 +594,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 20_00,
+      collateralRisk: 20_00,
       borrowable: true,
       collateral: true
     });
@@ -607,7 +607,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 50_00,
+      collateralRisk: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -620,7 +620,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 50_00,
+      collateralRisk: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -677,7 +677,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 0,
+      collateralRisk: 0,
       borrowable: true,
       collateral: true
     });
@@ -690,7 +690,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 10_00,
+      collateralRisk: 10_00,
       borrowable: true,
       collateral: true
     });
@@ -703,7 +703,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 20_00,
+      collateralRisk: 20_00,
       borrowable: true,
       collateral: true
     });
@@ -716,7 +716,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 50_00,
+      collateralRisk: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -729,7 +729,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 50_00,
+      collateralRisk: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -742,7 +742,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 100_00,
+      collateralRisk: 100_00,
       borrowable: true,
       collateral: true
     });
@@ -807,7 +807,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 0,
+      collateralRisk: 0,
       borrowable: true,
       collateral: true
     });
@@ -820,7 +820,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 10_00,
+      collateralRisk: 10_00,
       borrowable: true,
       collateral: true
     });
@@ -833,7 +833,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 20_00,
+      collateralRisk: 20_00,
       borrowable: true,
       collateral: true
     });
@@ -846,7 +846,7 @@ abstract contract Base is Test {
       active: true,
       frozen: false,
       paused: false,
-      liquidityPremium: 50_00,
+      collateralRisk: 50_00,
       borrowable: true,
       collateral: true
     });
@@ -1183,13 +1183,13 @@ abstract contract Base is Test {
     spoke.updateReserveConfig(reserveId, reserveData.config);
   }
 
-  function updateLiquidityPremium(
+  function updateCollateralRisk(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 newLiquidityPremium
+    uint256 newCollateralRisk
   ) internal {
     DataTypes.ReserveConfig memory reserveConfig = spoke.getReserve(reserveId).config;
-    reserveConfig.liquidityPremium = newLiquidityPremium;
+    reserveConfig.collateralRisk = newCollateralRisk;
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, reserveConfig);
   }
@@ -1884,8 +1884,8 @@ abstract contract Base is Test {
     return hub.getAssetConfig(assetId).feeReceiver;
   }
 
-  function _getLiquidityPremium(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
-    return spoke.getReserveConfig(reserveId).liquidityPremium;
+  function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+    return spoke.getReserveConfig(reserveId).collateralRisk;
   }
 
   function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
@@ -1949,7 +1949,7 @@ abstract contract Base is Test {
     assertEq(a.frozen, b.frozen, 'assertEq(ReserveConfig): frozen');
     assertEq(a.borrowable, b.borrowable, 'assertEq(ReserveConfig): borrowable');
     assertEq(a.collateral, b.collateral, 'assertEq(ReserveConfig): collateral');
-    assertEq(a.liquidityPremium, b.liquidityPremium, 'assertEq(ReserveConfig): liquidityPremium');
+    assertEq(a.collateralRisk, b.collateralRisk, 'assertEq(ReserveConfig): collateralRisk');
     assertEq(abi.encode(a), abi.encode(b), 'assertEq(ReserveConfig): all fields');
   }
 

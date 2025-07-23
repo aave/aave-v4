@@ -111,7 +111,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
 
     // now only base debt grows
-    updateLiquidityPremium(spoke1, reserveId, 0);
+    updateCollateralRisk(spoke1, reserveId, 0);
     vm.prank(bob);
     spoke1.updateUserRiskPremium(bob);
 
@@ -121,7 +121,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // withdraw any treasury fees
     withdrawLiquidityFees(assetId, type(uint256).max);
 
-    // todo: updateLiquidityPremium, updateLiquidityFee or updateInterestRateStrategy needs reserve update?
+    // todo: updateCollateralRisk, updateLiquidityFee or updateInterestRateStrategy needs reserve update?
 
     // Time passes
     skip(skipTime);
@@ -175,7 +175,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
     uint256 expectedRp = 10_00;
-    updateLiquidityPremium(spoke1, reserveId, expectedRp);
+    updateCollateralRisk(spoke1, reserveId, expectedRp);
     uint256 liquidityFee = 5_00;
     updateLiquidityFee(hub, assetId, liquidityFee);
 
@@ -209,7 +209,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     // 0% premium
     expectedRp = 0;
-    updateLiquidityPremium(spoke1, reserveId, expectedRp);
+    updateCollateralRisk(spoke1, reserveId, expectedRp);
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AccrueFees(
@@ -292,7 +292,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
     uint256 expectedRp = 10_00;
-    updateLiquidityPremium(spoke1, reserveId, expectedRp);
+    updateCollateralRisk(spoke1, reserveId, expectedRp);
     uint256 liquidityFee = 5_00;
     updateLiquidityFee(hub, assetId, liquidityFee);
 
@@ -330,7 +330,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     // 0% premium
     expectedRp = 0;
-    updateLiquidityPremium(spoke1, reserveId, expectedRp);
+    updateCollateralRisk(spoke1, reserveId, expectedRp);
 
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AccrueFees(
@@ -420,9 +420,9 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
     uint256 expectedRp = 10_00;
-    updateLiquidityPremium(spoke1, reserveId, expectedRp);
+    updateCollateralRisk(spoke1, reserveId, expectedRp);
     // 50.00% premium for second collateral asset
-    updateLiquidityPremium(spoke1, reserveId2, 50_00);
+    updateCollateralRisk(spoke1, reserveId2, 50_00);
     uint256 liquidityFee = 5_00;
     updateLiquidityFee(hub, assetId, liquidityFee);
     updateLiquidityFee(hub, spoke1.getReserve(reserveId2).assetId, liquidityFee);
@@ -496,7 +496,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 expectedBaseDebtAccrual = borrowAmount.percentMulUp(rate);
     uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
     uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMulUp(
-      _getLiquidityPremium(spoke1, reserveId)
+      _getCollateralRisk(spoke1, reserveId)
     );
     uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMulUp(
       liquidityFee
