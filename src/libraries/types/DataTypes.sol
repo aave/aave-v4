@@ -29,7 +29,7 @@ library DataTypes {
     uint256 baseDebtIndex;
     uint256 baseBorrowRate;
     uint256 lastUpdateTimestamp;
-    uint256 deficit;
+    uint256 deficitAmount;
     DataTypes.AssetConfig config;
   }
 

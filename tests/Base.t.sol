@@ -1340,7 +1340,7 @@ abstract contract Base is Test {
   }
 
   function _getDeficit(ILiquidityHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.getAsset(assetId).deficit;
+    return hub.getAsset(assetId).deficitAmount;
   }
 
   function getBaseBorrowRate(ILiquidityHub hub, uint256 assetId) internal view returns (uint256) {

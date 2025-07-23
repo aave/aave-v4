@@ -68,7 +68,7 @@ library AssetLogic {
   }
 
   function totalSuppliedAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.availableLiquidity + asset.deficit + asset.totalDebt();
+    return asset.availableLiquidity + asset.deficitAmount + asset.totalDebt();
   }
 
   function totalSuppliedShares(DataTypes.Asset storage asset) internal view returns (uint256) {

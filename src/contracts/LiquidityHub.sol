@@ -70,7 +70,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       baseDebtIndex: WadRayMathExtended.RAY,
       baseBorrowRate: 0,
       lastUpdateTimestamp: block.timestamp,
-      deficit: 0,
+      deficitAmount: 0,
       config: config
     });
 
@@ -261,7 +261,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
     asset.baseDrawnShares -= baseDrawnSharesRestored;
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
-    asset.deficit += totalDeficitAmount;
+    asset.deficitAmount += totalDeficitAmount;
     asset.updateBorrowRate(assetId);
 
     emit DeficitCreated(assetId, msg.sender, baseDrawnSharesRestored, totalDeficitAmount);
