@@ -181,18 +181,16 @@ library DataTypes {
     uint256 restoredShares;
     uint256 withdrawnShares;
     uint256 newUserRiskPremium;
-    uint256 userPremiumDrawnShares;
-    uint256 userPremiumOffset;
     uint256 totalRestoredShares;
     uint256 totalWithdrawnShares;
-    uint256 totalCollateralToLiquidate;
     uint256 totalLiquidationFeeShares;
-    int256 totalUserDebtPremiumDrawnSharesDelta;
-    int256 totalUserDebtPremiumOffsetDelta;
-    uint256 totalDebtToLiquidate;
     uint256 usersLength;
     uint256 liquidatedSuppliedShares;
     bool hasDeficit;
+    address collateralUnderlying;
+    address debtUnderlying;
+    ILiquidityHub collateralReserveHub;
+    ILiquidityHub debtReserveHub;
   }
 
   struct ExecuteRepayLocalVars {

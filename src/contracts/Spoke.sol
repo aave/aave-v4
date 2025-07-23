@@ -309,26 +309,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256[] memory debtsToCover = new uint256[](1);
     debtsToCover[0] = debtToCover;
 
-    (
-      address collateralAsset,
-      address debtAsset,
-      uint256 debtToLiquidate,
-      uint256 collateralToLiquidate
-    ) = _executeLiquidationCall(
-        _reserves[collateralReserveId],
-        _reserves[debtReserveId],
-        users,
-        debtsToCover,
-        msg.sender
-      );
-
-    // TODO: emit liq protocol fee shares in event
-    emit LiquidationCall(
-      collateralAsset,
-      debtAsset,
-      user,
-      debtToLiquidate,
-      collateralToLiquidate,
+    _executeLiquidationCall(
+      _reserves[collateralReserveId],
+      _reserves[debtReserveId],
+      users,
+      debtsToCover,
       msg.sender
     );
   }
@@ -1085,31 +1070,26 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit UserDynamicConfigRefreshedSingle(user, reserveId);
   }
 
-  /**
-   * @return collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
-   * @return debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
-   * @return totalDebtToLiquidate The total amount of debt to be repaid.
-   * @return collateralToLiquidate The amount of collateral to liquidate.
-   */
   function _executeLiquidationCall(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
     address[] memory users,
     uint256[] memory debtsToCover,
     address liquidator
-  ) internal returns (address, address, uint256, uint256) {
+  ) internal {
     uint256 usersLength = users.length;
     require(usersLength == debtsToCover.length, UsersAndDebtLengthMismatch());
 
-    ILiquidityHub collateralReserveHub = collateralReserve.hub;
-    ILiquidityHub debtReserveHub = debtReserve.hub;
-
     DataTypes.ExecuteLiquidationLocalVars memory vars;
 
-    vars.collateralReserveId = collateralReserve.reserveId;
-    vars.debtReserveId = debtReserve.reserveId;
+    vars.collateralReserveHub = collateralReserve.hub;
     vars.collateralAssetId = collateralReserve.assetId;
+    vars.collateralReserveId = collateralReserve.reserveId;
+    vars.collateralUnderlying = collateralReserve.underlying;
+    vars.debtReserveHub = debtReserve.hub;
     vars.debtAssetId = debtReserve.assetId;
+    vars.debtReserveId = debtReserve.reserveId;
+    vars.debtUnderlying = debtReserve.underlying;
 
     while (vars.i < usersLength) {
       vars.user = users[vars.i];
@@ -1121,7 +1101,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       ];
 
       (vars.baseDebt, vars.premiumDebt) = _getUserDebt(
-        debtReserveHub,
+        vars.debtReserveHub,
         vars.debtAssetId,
         userDebtPosition
       );
@@ -1142,16 +1122,17 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       );
 
       // expected total withdrawn shares includes liquidation fee
-      vars.withdrawnShares = collateralReserveHub.convertToSuppliedSharesUp(
+      vars.withdrawnShares = vars.collateralReserveHub.convertToSuppliedSharesUp(
         vars.collateralAssetId,
         vars.liquidationFeeAmount + vars.collateralToLiquidate
       );
 
-      // collateral accounting
+      // perform collateral accounting first so that restore donations can not affect collateral shares calcs
+      // in case the same reserve is being repaid and liquidated
       userCollateralPosition.suppliedShares -= vars.withdrawnShares;
 
       // remove collateral, send liquidated collateral directly to liquidator
-      vars.liquidatedSuppliedShares = collateralReserveHub.remove(
+      vars.liquidatedSuppliedShares = vars.collateralReserveHub.remove(
         vars.collateralAssetId,
         vars.collateralToLiquidate,
         liquidator
@@ -1162,14 +1143,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       _settlePremiumDebt(
         debtReserve,
         userDebtPosition,
-        debtReserveHub,
+        vars.debtReserveHub,
         vars.debtAssetId,
         vars.debtReserveId,
         vars.user,
         vars.premiumDebtToLiquidate
       );
       // repay debt
-      vars.restoredShares = debtReserveHub.restore(
+      vars.restoredShares = vars.debtReserveHub.restore(
         vars.debtAssetId,
         vars.baseDebtToLiquidate,
         vars.premiumDebtToLiquidate,
@@ -1192,9 +1173,16 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       }
 
       vars.totalWithdrawnShares += vars.withdrawnShares;
-      vars.totalCollateralToLiquidate += vars.collateralToLiquidate;
       vars.totalLiquidationFeeShares += vars.liquidationFeeShares;
-      vars.totalDebtToLiquidate += vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate;
+
+      emit LiquidationCall(
+        vars.collateralUnderlying,
+        vars.debtUnderlying,
+        vars.user,
+        vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate,
+        vars.collateralToLiquidate,
+        liquidator
+      );
 
       unchecked {
         ++vars.i;
@@ -1206,15 +1194,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     collateralReserve.suppliedShares -= vars.totalWithdrawnShares;
 
     if (vars.totalLiquidationFeeShares > 0) {
-      collateralReserveHub.payFee(vars.collateralAssetId, vars.totalLiquidationFeeShares);
+      vars.collateralReserveHub.payFee(vars.collateralAssetId, vars.totalLiquidationFeeShares);
     }
-
-    return (
-      collateralReserve.underlying,
-      debtReserve.underlying,
-      vars.totalDebtToLiquidate,
-      vars.totalCollateralToLiquidate
-    );
   }
 
   /**
