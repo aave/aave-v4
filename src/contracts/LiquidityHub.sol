@@ -570,8 +570,8 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return a - uint256(-b);
   }
 
-  function _validatePayFee(DataTypes.SpokeData storage spoke, uint256 feeShares) internal view {
-    // TODO: validate valid asset
+  function _validatePayFee(DataTypes.SpokeData storage senderSpoke, uint256 feeShares) internal view {
+    require(senderSpoke.config.active, SpokeNotActive());
     require(feeShares != 0, InvalidFeeShares());
   }
 }
