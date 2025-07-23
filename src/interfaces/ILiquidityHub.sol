@@ -19,7 +19,12 @@ interface ILiquidityHub is IAccessManaged {
     address indexed spoke,
     DataTypes.SpokeConfig config
   );
-  event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 lastUpdateTimestamp);
+  event AssetUpdated(
+    uint256 indexed assetId,
+    uint256 drawnIndex,
+    uint256 baseBorrowRate,
+    uint256 latestUpdateTimestamp
+  );
   event Add(
     uint256 indexed assetId,
     address indexed spoke,
@@ -88,13 +93,15 @@ interface ILiquidityHub is IAccessManaged {
    * @param decimals The number of decimals of the asset.
    * @param feeReceiver The address of the fee receiver spoke.
    * @param irStrategy The address of the interest rate strategy contract.
+   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
    * @return The unique identifier of the added asset.
    */
   function addAsset(
     address underlying,
     uint8 decimals,
     address feeReceiver,
-    address irStrategy
+    address irStrategy,
+    bytes calldata data
   ) external returns (uint256);
 
   /**

@@ -22,15 +22,24 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
       drawCap: 1000e18
     });
 
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
+    );
+
     // Only Hub Admin can add assets to the hub
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy));
+    hub.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
 
     // Hub Admin can add assets to the hub
     vm.prank(HUB_ADMIN);
-    hub.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy));
+    hub.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
     uint256 assetAId = hub.getAssetCount() - 1; // Asset A Id
 
     // Only Hub Admin can update asset config

@@ -7,8 +7,8 @@ contract HubConfiguratorTest is LiquidityHubBase {
   HubConfigurator public hubConfigurator;
 
   address public HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
-
   uint256 public assetId;
+  bytes public encodedIrData;
 
   function setUp() public virtual override {
     super.setUp();
@@ -18,6 +18,14 @@ contract HubConfiguratorTest is LiquidityHubBase {
     vm.prank(ADMIN);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
     assetId = daiAssetId;
+    encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
+    );
   }
 
   function test_addSpokeToAssets_revertsWith_OwnableUnauthorizedAccount() public {
@@ -88,7 +96,21 @@ contract HubConfiguratorTest is LiquidityHubBase {
       underlying: vm.randomAddress(),
       decimals: uint8(vm.randomUint()),
       feeReceiver: vm.randomAddress(),
-      interestRateStrategy: vm.randomAddress()
+      interestRateStrategy: vm.randomAddress(),
+      encodedIrData: encodedIrData
+    });
+  }
+
+  function test_addAsset_reverts_invalidIrData() public {
+    vm.expectRevert();
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    _addAsset({
+      fetchErc20Decimals: vm.randomBool(),
+      underlying: vm.randomAddress(),
+      decimals: uint8(10),
+      feeReceiver: vm.randomAddress(),
+      interestRateStrategy: vm.randomAddress(),
+      encodedIrData: abi.encode('invalid')
     });
   }
 
@@ -107,7 +129,14 @@ contract HubConfiguratorTest is LiquidityHubBase {
 
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector, address(hub));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    _addAsset(fetchErc20Decimals, underlying, decimals, feeReceiver, interestRateStrategy);
+    _addAsset(
+      fetchErc20Decimals,
+      underlying,
+      decimals,
+      feeReceiver,
+      interestRateStrategy,
+      encodedIrData
+    );
   }
 
   function test_addAsset_fuzz(
@@ -115,15 +144,40 @@ contract HubConfiguratorTest is LiquidityHubBase {
     address underlying,
     uint8 decimals,
     address feeReceiver,
-    address interestRateStrategy
+    uint16 optimalUsageRatio,
+    uint32 baseVariableBorrowRate,
+    uint32 variableRateSlope1,
+    uint32 variableRateSlope2
   ) public {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
-    assumeNotZeroAddress(interestRateStrategy);
 
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
+    optimalUsageRatio = uint16(bound(optimalUsageRatio, MIN_OPTIMAL_RATIO, MAX_OPTIMAL_RATIO));
+
+    baseVariableBorrowRate = uint32(bound(baseVariableBorrowRate, 0, MAX_BORROW_RATE / 3));
+    uint32 remainingAfterBase = uint32(MAX_BORROW_RATE - baseVariableBorrowRate);
+    variableRateSlope1 = uint32(bound(variableRateSlope1, 0, remainingAfterBase / 2));
+    variableRateSlope2 = uint32(
+      bound(
+        variableRateSlope2,
+        variableRateSlope1,
+        MAX_BORROW_RATE - baseVariableBorrowRate - variableRateSlope1
+      )
+    );
 
     uint256 expectedAssetId = hub.getAssetCount();
+    address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub)));
+
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: optimalUsageRatio,
+        baseVariableBorrowRate: baseVariableBorrowRate,
+        variableRateSlope1: variableRateSlope1,
+        variableRateSlope2: variableRateSlope2
+      })
+    );
+
     DataTypes.AssetConfig memory expectedConfig = DataTypes.AssetConfig({
       active: true,
       paused: false,
@@ -142,7 +196,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
       address(hub),
       abi.encodeCall(
         ILiquidityHub.addAsset,
-        (underlying, decimals, feeReceiver, interestRateStrategy)
+        (underlying, decimals, feeReceiver, interestRateStrategy, encodedIrData)
       )
     );
 
@@ -157,7 +211,8 @@ contract HubConfiguratorTest is LiquidityHubBase {
       underlying,
       decimals,
       feeReceiver,
-      interestRateStrategy
+      interestRateStrategy,
+      encodedIrData
     );
 
     assertEq(assetId, expectedAssetId, 'asset id');
@@ -522,11 +577,19 @@ contract HubConfiguratorTest is LiquidityHubBase {
     address underlying,
     uint8 decimals,
     address feeReceiver,
-    address interestRateStrategy
+    address interestRateStrategy,
+    bytes memory encodedIrData
   ) internal returns (uint256) {
     if (fetchErc20Decimals) {
       _mockDecimals(underlying, decimals);
-      return hubConfigurator.addAsset(address(hub), underlying, feeReceiver, interestRateStrategy);
+      return
+        hubConfigurator.addAsset(
+          address(hub),
+          underlying,
+          feeReceiver,
+          interestRateStrategy,
+          encodedIrData
+        );
     } else {
       return
         hubConfigurator.addAsset(
@@ -534,7 +597,8 @@ contract HubConfiguratorTest is LiquidityHubBase {
           underlying,
           decimals,
           feeReceiver,
-          interestRateStrategy
+          interestRateStrategy,
+          encodedIrData
         );
     }
   }
