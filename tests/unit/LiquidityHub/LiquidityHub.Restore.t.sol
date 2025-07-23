@@ -16,20 +16,18 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: wethAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       amount: wethAmount,
-      user: alice,
-      to: address(spoke1)
+      user: alice
     });
 
     // spoke2 supply dai
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
+      user: bob
     });
 
     // spoke1 draw liquidity
@@ -37,9 +35,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       hub: hub,
       assetId: daiAssetId,
       to: alice,
-      spoke: address(spoke1),
-      amount: drawAmount,
-      onBehalfOf: address(spoke1)
+      caller: address(spoke1),
+      amount: drawAmount
     });
 
     (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
@@ -102,10 +99,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
+      user: bob
     });
 
     // spoke1 draw half of dai reserve liquidity
@@ -113,9 +109,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       hub: hub,
       assetId: daiAssetId,
       to: alice,
-      spoke: address(spoke1),
-      amount: drawAmount,
-      onBehalfOf: address(spoke1)
+      caller: address(spoke1),
+      amount: drawAmount
     });
 
     ReservePosition memory spoke1DaiData = getReservePosition(spoke1, _daiReserveId);
@@ -163,7 +158,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: alice,
+      caller: alice,
       amount: wethAmount,
       onBehalfOf: alice
     });
@@ -172,7 +167,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: daiAmount,
       onBehalfOf: bob
     });
@@ -181,9 +176,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: alice,
+      onBehalfOf: alice,
       amount: drawAmount,
-      onBehalfOf: alice
+      caller: alice
     });
 
     ReservePosition memory spoke1DaiData = getReservePosition(spoke1, _daiReserveId);
@@ -262,10 +257,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
       amount: daiAmount,
       user: bob,
-      to: address(spoke2)
+      caller: address(spoke2)
     });
 
     // spoke1 draw liquidity
@@ -273,9 +267,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       hub: hub,
       assetId: daiAssetId,
       to: alice,
-      spoke: address(spoke1),
-      amount: drawAmount,
-      onBehalfOf: address(spoke1)
+      caller: address(spoke1),
+      amount: drawAmount
     });
 
     (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
@@ -359,7 +352,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
       amount: daiAmount,
-      user: bob,
+      caller: bob,
       onBehalfOf: bob
     });
 
@@ -367,10 +360,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
-      to: alice,
-      spoke: address(spoke1),
-      amount: drawAmount,
-      onBehalfOf: address(spoke1)
+      to: address(spoke1),
+      caller: address(spoke1),
+      amount: drawAmount
     });
 
     ReservePosition memory spoke1DaiData = getReservePosition(spoke1, _daiReserveId);
@@ -443,7 +435,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: alice,
+      caller: alice,
       amount: wethAmount,
       onBehalfOf: alice
     });
@@ -452,7 +444,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
-      user: bob,
+      caller: bob,
       amount: daiAmount,
       onBehalfOf: bob
     });
@@ -461,7 +453,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
-      user: alice,
+      caller: alice,
       amount: drawAmount,
       onBehalfOf: alice
     });
