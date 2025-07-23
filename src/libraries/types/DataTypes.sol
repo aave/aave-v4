@@ -69,7 +69,7 @@ library DataTypes {
     bool paused;
     bool borrowable;
     bool collateral;
-    uint256 liquidityPremium; // BPS TODO: use smaller uint
+    uint256 collateralRisk; // BPS TODO: use smaller uint
   }
 
   struct DynamicReserveConfig {
@@ -109,7 +109,7 @@ library DataTypes {
     uint256 assetUnit;
     uint256 reserveId;
     uint256 reservePrice;
-    uint256 liquidityPremium;
+    uint256 collateralRisk;
     uint256 userCollateralInBaseCurrency;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
