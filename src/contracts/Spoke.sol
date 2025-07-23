@@ -383,6 +383,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   /// @inheritdoc ISpoke
+  function updateUserDynamicConfig(address onBehalfOf) external onlyPositionManager(onBehalfOf) {
+    _refreshDynamicConfig(onBehalfOf);
+  }
+
+  /// @inheritdoc ISpoke
   function setUserPositionManager(address positionManager, bool approve) external {
     DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
     // @dev only allow approval when position manager is active for improved UX
