@@ -4,6 +4,7 @@
   "liquidationCall: partial": "664563",
   "repay: full": "250783",
   "repay: partial": "336183",
+  "supply + enable usingAsCollateral": "241074",
   "supply: 0 borrows, collateral disabled": "176592",
   "supply: 0 borrows, collateral enabled": "179553",
   "supply: 1 borrow": "179542",
