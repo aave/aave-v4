@@ -7,7 +7,7 @@ contract LiquidityHubDescriptionTest is LiquidityHubBase {
   string internal constant NEW_DESCRIPTION = 'Updated Spoke Description';
   string internal constant EMPTY_DESCRIPTION = '';
   string internal constant LONG_DESCRIPTION =
-    'This is a very long description that tests the system ability to handle longer strings for spoke descriptions';
+    'This is a very long description that tests the system ability to handle longer strings for hub descriptions';
 
   function test_updateDescription() public {
     assertEq(hub.description(), EMPTY_DESCRIPTION);
@@ -35,14 +35,14 @@ contract LiquidityHubDescriptionTest is LiquidityHubBase {
     vm.prank(HUB_ADMIN);
     hub.updateDescription(newDescription);
 
-    assertEq(hub.description(), newDescription, 'Fuzz description update failed');
+    assertEq(hub.description(), newDescription, 'description');
   }
 
   function test_updateDescription_revertsWith_AccessManagedUnauthorized() public {
-    test_updateDescription_fuzz_unauthorized(alice, NEW_DESCRIPTION);
+    test_updateDescription_fuzz_revertsWith_AccessManagedUnauthorized(alice, NEW_DESCRIPTION);
   }
 
-  function test_updateDescription_fuzz_unauthorized(
+  function test_updateDescription_fuzz_revertsWith_AccessManagedUnauthorized(
     address unauthorizedUser,
     string memory newDescription
   ) public {

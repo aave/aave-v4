@@ -35,7 +35,7 @@ contract SpokeDescriptionTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDescription(newDescription);
 
-    assertEq(spoke1.description(), newDescription, 'Fuzz description update failed');
+    assertEq(spoke1.description(), newDescription, 'description');
   }
 
   function test_updateDescription_revertsWith_AccessManagedUnauthorized() public {
