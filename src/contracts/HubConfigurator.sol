@@ -38,7 +38,8 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     address hub,
     address underlying,
     address feeReceiver,
-    address irStrategy
+    address irStrategy,
+    bytes calldata data
   ) external override onlyOwner returns (uint256) {
     ILiquidityHub targetHub = ILiquidityHub(hub);
 
@@ -46,7 +47,8 @@ contract HubConfigurator is Ownable, IHubConfigurator {
       underlying,
       IERC20Metadata(underlying).decimals(),
       feeReceiver,
-      irStrategy
+      irStrategy,
+      data
     );
 
     targetHub.addSpoke(
@@ -68,11 +70,12 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     address underlying,
     uint8 decimals,
     address feeReceiver,
-    address irStrategy
+    address irStrategy,
+    bytes calldata data
   ) external override onlyOwner returns (uint256) {
     ILiquidityHub targetHub = ILiquidityHub(hub);
 
-    uint256 assetId = targetHub.addAsset(underlying, decimals, feeReceiver, irStrategy);
+    uint256 assetId = targetHub.addAsset(underlying, decimals, feeReceiver, irStrategy, data);
 
     targetHub.addSpoke(
       assetId,

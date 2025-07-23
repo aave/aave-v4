@@ -1089,8 +1089,8 @@ contract SpokeRepayTest is SpokeBase {
   ) public {
     daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
 
-    // update liquidity premium to zero
-    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 0);
+    // update collateral risk to zero
+    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(

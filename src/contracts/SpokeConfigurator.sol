@@ -116,14 +116,14 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateLiquidityPremium(
+  function updateCollateralRisk(
     address spoke,
     uint256 reserveId,
-    uint256 liquidityPremium
+    uint256 collateralRisk
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     DataTypes.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
-    reserveConfig.liquidityPremium = liquidityPremium;
+    reserveConfig.collateralRisk = collateralRisk;
     targetSpoke.updateReserveConfig(reserveId, reserveConfig);
   }
 

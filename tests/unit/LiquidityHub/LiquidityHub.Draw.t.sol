@@ -33,7 +33,17 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
+    emit ILiquidityHub.AssetUpdated(
+      assetId,
+      hub.previewDrawnIndex(assetId),
+      IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
+        assetId: assetId,
+        availableLiquidity: assetBefore.availableLiquidity - amount,
+        baseDebt: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+        premiumDebt: premiumDebt
+      }),
+      vm.getBlockTimestamp()
+    );
     vm.expectEmit(address(hub.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
@@ -103,7 +113,17 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
+    emit ILiquidityHub.AssetUpdated(
+      assetId,
+      hub.previewDrawnIndex(assetId),
+      IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
+        assetId: assetId,
+        availableLiquidity: assetBefore.availableLiquidity - amount,
+        baseDebt: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+        premiumDebt: premiumDebt
+      }),
+      vm.getBlockTimestamp()
+    );
     vm.expectEmit(address(hub.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
@@ -346,9 +366,9 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_revertsWith_DrawCapExceeded_due_to_interest() public {
-    // Set liquidity premium of dai to 0
-    updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);
-    assertEq(_getLiquidityPremium(spoke1, _daiReserveId(spoke1)), 0);
+    // Set collateral risk of dai to 0
+    updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
+    assertEq(_getCollateralRisk(spoke1, _daiReserveId(spoke1)), 0);
 
     uint256 daiAmount = 100e18;
     uint256 drawCap = daiAmount;

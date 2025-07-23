@@ -587,8 +587,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     // final collateral factor and RP only depends on remaining dai collateral
     assertEq(
       userRP,
-      spoke1.getReserve(state.daiReserveId).config.liquidityPremium,
-      'userRP matches lp of dai coll'
+      spoke1.getReserve(state.daiReserveId).config.collateralRisk,
+      'userRP matches collateral risk of dai coll'
     );
     assertEq(
       avgCollFactor.dewadifyDown(),

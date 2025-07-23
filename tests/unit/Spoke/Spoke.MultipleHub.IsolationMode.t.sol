@@ -30,14 +30,16 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(assetA),
       assetA.decimals(),
       address(treasurySpoke),
-      address(newIrStrategy)
+      address(newIrStrategy),
+      encodedIrData
     );
     isolationVars.assetAId = newHub.getAssetCount() - 1;
     newHub.addAsset(
       address(assetB),
       assetB.decimals(),
       address(treasurySpoke),
-      address(newIrStrategy)
+      address(newIrStrategy),
+      encodedIrData
     );
     isolationVars.assetBId = newHub.getAssetCount() - 1;
 
@@ -50,7 +52,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         active: true,
         frozen: false,
         paused: false,
-        liquidityPremium: 15_00,
+        collateralRisk: 15_00,
         borrowable: false,
         collateral: true
       }),
@@ -64,7 +66,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         active: true,
         frozen: false,
         paused: false,
-        liquidityPremium: 15_00,
+        collateralRisk: 15_00,
         borrowable: true,
         collateral: false
       }),
@@ -92,12 +94,6 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     );
     vm.stopPrank();
 
-    // Configure interest rate strategy for assets A and B
-    vm.startPrank(address(newHub));
-    newIrStrategy.setInterestRateData(isolationVars.assetAId, encodedIrData);
-    newIrStrategy.setInterestRateData(isolationVars.assetBId, encodedIrData);
-    vm.stopPrank();
-
     // List asset B on the canonical hub
     vm.startPrank(ADMIN);
     isolationVars.assetBIdMainHub = hub.getAssetCount();
@@ -105,7 +101,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(assetB),
       assetB.decimals(),
       address(treasurySpoke),
-      address(irStrategy) // Use the main hub's interest rate strategy
+      address(irStrategy), // Use the main hub's interest rate strategy
+      encodedIrData
     );
 
     // List reserve B on spoke 1 for the canonical hub
@@ -117,7 +114,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         active: true,
         frozen: false,
         paused: false,
-        liquidityPremium: 15_00,
+        collateralRisk: 15_00,
         borrowable: true,
         collateral: true
       }),
@@ -135,10 +132,6 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       })
     );
     vm.stopPrank();
-
-    // Configure interest rate strategy for asset B on the main hub
-    vm.prank(address(hub));
-    irStrategy.setInterestRateData(isolationVars.assetBIdMainHub, encodedIrData);
 
     // Approvals
     vm.startPrank(bob);
@@ -198,7 +191,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         active: true,
         frozen: false,
         paused: false,
-        liquidityPremium: 15_00,
+        collateralRisk: 15_00,
         borrowable: true,
         collateral: true
       }),
