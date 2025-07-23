@@ -58,6 +58,7 @@ interface ILiquidityHub is IAccessManaged {
     uint256 realizedPremiumTaken
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
+  event DescriptionUpdated(string newDescription);
 
   error InvalidSharesAmount();
   error InvalidAddAmount();
@@ -118,6 +119,12 @@ interface ILiquidityHub is IAccessManaged {
     address spoke,
     DataTypes.SpokeConfig calldata config
   ) external;
+
+  /**
+   * @notice Updates the description of the hub.
+   * @param newDescription The new description of the hub.
+   */
+  function updateDescription(string calldata newDescription) external;
 
   /**
    * @notice Updates the interest rate strategy for a specified asset.
@@ -265,4 +272,6 @@ interface ILiquidityHub is IAccessManaged {
   function getAssetCount() external view returns (uint256);
 
   function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint8);
+
+  function description() external view returns (string memory);
 }

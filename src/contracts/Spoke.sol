@@ -36,6 +36,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   IAaveOracle public oracle;
   uint256[] public reservesList; // todo: rm, not needed
+  string public description;
 
   uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
@@ -84,6 +85,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     _validateLiquidationConfig(liquidationConfig);
     _liquidationConfig = liquidationConfig;
     emit LiquidationConfigUpdated(liquidationConfig);
+  }
+
+  /// @inheritdoc ISpoke
+  function updateDescription(string calldata newDescription) external restricted {
+    description = newDescription;
+    emit DescriptionUpdated(newDescription);
   }
 
   function addReserve(

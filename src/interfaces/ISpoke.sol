@@ -127,6 +127,12 @@ interface ISpoke is IMulticall, IAccessManaged {
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
 
   /**
+   * @notice Emitted on updateDescription action.
+   * @param newDescription The new description of the spoke.
+   */
+  event DescriptionUpdated(string newDescription);
+
+  /**
    * @dev Emitted when a borrower is liquidated.
    * @param collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
    * @param debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
@@ -156,7 +162,6 @@ interface ISpoke is IMulticall, IAccessManaged {
   error InvalidCollateralFactor();
   error InvalidLiquidationBonus();
   error IncompatibleCollateralFactorAndLiquidationBonus();
-  error InvalidReserveDecimals();
   error HealthFactorBelowThreshold();
   error InvalidCloseFactor();
   error InvalidHubAddress();
@@ -177,6 +182,12 @@ interface ISpoke is IMulticall, IAccessManaged {
   function updateOracle(address newOracle) external;
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;
+
+  /**
+   * @notice Updates the description of the spoke.
+   * @param newDescription The new description of the spoke.
+   */
+  function updateDescription(string calldata newDescription) external;
 
   function addReserve(
     address hub,
@@ -375,4 +386,6 @@ interface ISpoke is IMulticall, IAccessManaged {
   function MAX_COLLATERAL_RISK() external view returns (uint256);
 
   function oracle() external view returns (IAaveOracle);
+
+  function description() external view returns (string memory);
 }

@@ -245,7 +245,7 @@ abstract contract Base is Test {
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
-    bytes4[] memory selectors = new bytes4[](8);
+    bytes4[] memory selectors = new bytes4[](9);
     selectors[0] = ISpoke.updateLiquidationConfig.selector;
     selectors[1] = ISpoke.addReserve.selector;
     selectors[2] = ISpoke.updateReserveConfig.selector;
@@ -254,16 +254,18 @@ abstract contract Base is Test {
     selectors[5] = ISpoke.updatePositionManager.selector;
     selectors[6] = ISpoke.updateOracle.selector;
     selectors[7] = ISpoke.updateReservePriceSource.selector;
+    selectors[8] = ISpoke.updateDescription.selector;
 
     accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
 
     // Liquidity Hub Admin functionalities
-    bytes4[] memory hubSelectors = new bytes4[](5);
+    bytes4[] memory hubSelectors = new bytes4[](6);
     hubSelectors[0] = ILiquidityHub.addAsset.selector;
     hubSelectors[1] = ILiquidityHub.updateAssetConfig.selector;
     hubSelectors[2] = ILiquidityHub.addSpoke.selector;
     hubSelectors[3] = ILiquidityHub.updateSpokeConfig.selector;
     hubSelectors[4] = ILiquidityHub.setInterestRateData.selector;
+    hubSelectors[5] = ILiquidityHub.updateDescription.selector;
     accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
 
     vm.stopPrank();

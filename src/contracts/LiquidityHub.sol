@@ -22,6 +22,8 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
   uint8 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
 
+  string public description;
+
   uint256 internal _assetCount;
   mapping(uint256 assetId => DataTypes.Asset assetData) internal _assets;
   mapping(uint256 assetId => mapping(address spokeAddress => DataTypes.SpokeData spokeData))
@@ -140,6 +142,12 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     _spokes[assetId][spoke].config = config;
     emit SpokeConfigUpdated(assetId, spoke, config);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function updateDescription(string calldata newDescription) external restricted {
+    description = newDescription;
+    emit DescriptionUpdated(newDescription);
   }
 
   /// @inheritdoc ILiquidityHub
