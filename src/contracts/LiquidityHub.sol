@@ -118,8 +118,8 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(spoke != address(0), InvalidSpoke());
     require(!_isSpokeListed[assetId][spoke], SpokeAlreadyListed());
 
-    _spokesList[assetId].push(spoke);
     _isSpokeListed[assetId][spoke] = true;
+    _spokesList[assetId].push(spoke);
 
     _spokes[assetId][spoke] = DataTypes.SpokeData({
       suppliedShares: 0,
@@ -570,7 +570,10 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return a - uint256(-b);
   }
 
-  function _validatePayFee(DataTypes.SpokeData storage senderSpoke, uint256 feeShares) internal view {
+  function _validatePayFee(
+    DataTypes.SpokeData storage senderSpoke,
+    uint256 feeShares
+  ) internal view {
     require(senderSpoke.config.active, SpokeNotActive());
     require(feeShares != 0, InvalidFeeShares());
   }
