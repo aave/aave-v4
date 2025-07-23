@@ -485,11 +485,10 @@ contract HubConfiguratorTest is LiquidityHubBase {
 
   /// @dev Test update fee receiver and fees can still be withdrawn from old fee receiver
   function test_updateFeeReceiver_WithdrawFromOldSpoke() public {
-    // Ensure current fee receiver is the treasury spoke
     assertEq(
       hub.getAssetConfig(daiAssetId).feeReceiver,
       address(treasurySpoke),
-      'old fee receiver mismatch'
+      'current fee receiver matches treasury spoke'
     );
 
     // Create debt to build up fees on the existing treasury spoke
@@ -504,14 +503,11 @@ contract HubConfiguratorTest is LiquidityHubBase {
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeReceiver(address(hub), daiAssetId, address(newTreasurySpoke));
 
-    // Ensure fee receiver was updated
     assertEq(
       hub.getAssetConfig(daiAssetId).feeReceiver,
       address(newTreasurySpoke),
-      'new fee receiver mismatch'
+      'new fee receiver updated'
     );
-
-    // Ensure old fee receiver is still active
     assertTrue(
       hub.getSpokeConfig(daiAssetId, address(treasurySpoke)).active,
       'old fee receiver is not active'
@@ -520,13 +516,11 @@ contract HubConfiguratorTest is LiquidityHubBase {
     // Withdraw fees from the old treasury spoke
     Utils.withdraw(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, fees, address(treasurySpoke));
 
-    // Check that the old treasury spoke is empty
-    assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), 0);
+    assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), 0, 'old treasury spoke should be empty');
 
     // Accrue more fees, this time to new fee receiver
     skip(365 days);
 
-    // Check that new fee receiver is getting the fees, and not old treasury spoke
     assertGt(
       newTreasurySpoke.getSuppliedAmount(daiAssetId),
       0,
