@@ -13,7 +13,6 @@ library DataTypes {
     uint256 premiumDrawnShares;
     uint256 premiumOffset; // todo make signed
     uint256 realizedPremium;
-    uint256 lastUpdateTimestamp; // todo: unneeded?
     DataTypes.SpokeConfig config;
   }
 
@@ -39,9 +38,6 @@ library DataTypes {
   }
 
   struct AssetConfig {
-    bool active;
-    bool paused;
-    bool frozen;
     address feeReceiver;
     uint256 liquidityFee;
     address irStrategy;

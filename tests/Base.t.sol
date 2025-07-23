@@ -377,9 +377,6 @@ abstract contract Base is Test {
     hub.updateAssetConfig(
       wethAssetId,
       DataTypes.AssetConfig({
-        active: true,
-        paused: false,
-        frozen: false,
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy)
@@ -397,9 +394,6 @@ abstract contract Base is Test {
     hub.updateAssetConfig(
       usdxAssetId,
       DataTypes.AssetConfig({
-        active: true,
-        paused: false,
-        frozen: false,
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy)
@@ -417,9 +411,6 @@ abstract contract Base is Test {
     hub.updateAssetConfig(
       daiAssetId,
       DataTypes.AssetConfig({
-        active: true,
-        paused: false,
-        frozen: false,
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy)
@@ -437,9 +428,6 @@ abstract contract Base is Test {
     hub.updateAssetConfig(
       wbtcAssetId,
       DataTypes.AssetConfig({
-        active: true,
-        paused: false,
-        frozen: false,
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy)
@@ -457,9 +445,6 @@ abstract contract Base is Test {
     hub.updateAssetConfig(
       usdyAssetId,
       DataTypes.AssetConfig({
-        active: true,
-        paused: false,
-        frozen: false,
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy)
@@ -477,9 +462,6 @@ abstract contract Base is Test {
     hub.updateAssetConfig(
       hub.getAssetCount() - 1,
       DataTypes.AssetConfig({
-        active: true,
-        paused: false,
-        frozen: false,
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy)
@@ -942,48 +924,6 @@ abstract contract Base is Test {
     return (hub3, hub3IrStrategy);
   }
 
-  function updateAssetActive(
-    ILiquidityHub liquidityHub,
-    uint256 assetId,
-    bool newActiveFlag
-  ) internal {
-    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAssetConfig(assetId);
-    assetConfig.active = newActiveFlag;
-
-    vm.prank(HUB_ADMIN);
-    liquidityHub.updateAssetConfig(assetId, assetConfig);
-
-    assertEq(liquidityHub.getAssetConfig(assetId).active, newActiveFlag);
-  }
-
-  function updateAssetPaused(
-    ILiquidityHub liquidityHub,
-    uint256 assetId,
-    bool newPausedFlag
-  ) internal {
-    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAssetConfig(assetId);
-    assetConfig.paused = newPausedFlag;
-
-    vm.prank(HUB_ADMIN);
-    liquidityHub.updateAssetConfig(assetId, assetConfig);
-
-    assertEq(liquidityHub.getAssetConfig(assetId).paused, newPausedFlag);
-  }
-
-  function updateAssetFrozen(
-    ILiquidityHub liquidityHub,
-    uint256 assetId,
-    bool newFrozenFlag
-  ) internal {
-    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAssetConfig(assetId);
-    assetConfig.frozen = newFrozenFlag;
-
-    vm.prank(HUB_ADMIN);
-    liquidityHub.updateAssetConfig(assetId, assetConfig);
-
-    assertEq(liquidityHub.getAssetConfig(assetId).frozen, newFrozenFlag);
-  }
-
   function updateAssetFeeReceiver(
     ILiquidityHub liquidityHub,
     uint256 assetId,
@@ -1157,6 +1097,18 @@ abstract contract Base is Test {
   function _dai2ReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].dai2.reserveId;
   }
+
+  function updateSpokeActive(
+    ILiquidityHub liquidityHub,
+    uint256 assetId,
+    address spoke,
+    bool newActive
+  ) internal {
+    DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
+    spokeConfig.active = newActive;
+    vm.prank(HUB_ADMIN);
+    liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
+  } 
 
   function updateDrawCap(
     ILiquidityHub liquidityHub,
@@ -1810,9 +1762,6 @@ abstract contract Base is Test {
   }
 
   function assertEq(DataTypes.AssetConfig memory a, DataTypes.AssetConfig memory b) internal pure {
-    assertEq(a.active, b.active, 'assertEq(AssetConfig): active');
-    assertEq(a.paused, b.paused, 'assertEq(AssetConfig): paused');
-    assertEq(a.frozen, b.frozen, 'assertEq(AssetConfig): frozen');
     assertEq(a.feeReceiver, b.feeReceiver, 'assertEq(AssetConfig): feeReceiver');
     assertEq(a.liquidityFee, b.liquidityFee, 'assertEq(AssetConfig): liquidityFee');
     assertEq(a.irStrategy, b.irStrategy, 'assertEq(AssetConfig): irStrategy');

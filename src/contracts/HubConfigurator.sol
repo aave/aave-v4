@@ -91,30 +91,6 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateActive(address hub, uint256 assetId, bool active) external override onlyOwner {
-    ILiquidityHub targetHub = ILiquidityHub(hub);
-    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    config.active = active;
-    targetHub.updateAssetConfig(assetId, config);
-  }
-
-  /// @inheritdoc IHubConfigurator
-  function updatePaused(address hub, uint256 assetId, bool paused) external override onlyOwner {
-    ILiquidityHub targetHub = ILiquidityHub(hub);
-    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    config.paused = paused;
-    targetHub.updateAssetConfig(assetId, config);
-  }
-
-  /// @inheritdoc IHubConfigurator
-  function updateFrozen(address hub, uint256 assetId, bool frozen) external override onlyOwner {
-    ILiquidityHub targetHub = ILiquidityHub(hub);
-    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    config.frozen = frozen;
-    targetHub.updateAssetConfig(assetId, config);
-  }
-
-  /// @inheritdoc IHubConfigurator
   function updateLiquidityFee(
     address hub,
     uint256 assetId,
@@ -198,8 +174,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
       DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
     );
 
-    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, newFeeReceiver);
-    if (spokeData.lastUpdateTimestamp == 0) {
+    if (!hub.isSpokeListed(assetId, newFeeReceiver)) {
       hub.addSpoke(
         assetId,
         newFeeReceiver,

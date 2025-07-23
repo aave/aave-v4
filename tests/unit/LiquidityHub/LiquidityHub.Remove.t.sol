@@ -433,21 +433,10 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     hub.remove(daiAssetId, 0, alice);
   }
 
-  function test_remove_revertsWith_AssetNotActive() public {
-    uint256 amount = 100e18;
-    updateAssetActive(hub, daiAssetId, false);
-
-    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+  function test_remove_revertsWith_SpokeNotActive() public {
+    updateSpokeActive(hub, daiAssetId, address(spoke1), false);
+    vm.expectRevert(ILiquidityHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
-    hub.remove(daiAssetId, amount, alice);
-  }
-
-  function test_remove_revertsWith_AssetPaused() public {
-    uint256 amount = 100e18;
-    updateAssetPaused(hub, daiAssetId, true);
-
-    vm.expectRevert(ILiquidityHub.AssetPaused.selector);
-    vm.prank(address(spoke1));
-    hub.remove(daiAssetId, amount, alice);
+    hub.remove(daiAssetId, 100e18, alice);
   }
 }

@@ -63,7 +63,6 @@ interface ILiquidityHub is IAccessManaged {
   error InvalidAddAmount();
   error InvalidAddFromHub();
   error AssetNotListed();
-  error AssetNotActive();
   error SupplyCapExceeded(uint256 supplyCap);
   error InvalidRemoveAmount();
   error InvalidRestoreAmount();
@@ -74,8 +73,7 @@ interface ILiquidityHub is IAccessManaged {
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
   error SpokeNotListed();
-  error AssetPaused();
-  error AssetFrozen();
+  error SpokeAlreadyListed();
   error InvalidIrStrategy();
   error InvalidAssetDecimals();
   error InvalidLiquidityFee();
@@ -243,6 +241,12 @@ interface ILiquidityHub is IAccessManaged {
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
+
+  function getSpokeCount(uint256 assetId) external view returns (uint256);
+
+  function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address);
+
+  function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
 
   function getSpoke(
     uint256 assetId,

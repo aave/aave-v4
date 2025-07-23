@@ -68,9 +68,6 @@ contract LiquidityHubHandler is Test {
       0,
       DataTypes.AssetConfig({
         feeReceiver: address(treasurySpoke),
-        active: true,
-        frozen: false,
-        paused: false,
         liquidityFee: 0,
         irStrategy: address(irStrategy)
       })

@@ -70,30 +70,6 @@ interface IHubConfigurator {
   ) external returns (uint256);
 
   /**
-   * @notice Updates the active flag of an asset.
-   * @param hub The address of the Hub contract.
-   * @param assetId The identifier of the asset.
-   * @param active The new active flag.
-   */
-  function updateActive(address hub, uint256 assetId, bool active) external;
-
-  /**
-   * @notice Updates the paused flag of an asset.
-   * @param hub The address of the Hub contract.
-   * @param assetId The identifier of the asset.
-   * @param paused The new paused flag.
-   */
-  function updatePaused(address hub, uint256 assetId, bool paused) external;
-
-  /**
-   * @notice Updates the frozen flag of an asset.
-   * @param hub The address of the Hub contract.
-   * @param assetId The identifier of the asset.
-   * @param frozen The new frozen flag.
-   */
-  function updateFrozen(address hub, uint256 assetId, bool frozen) external;
-
-  /**
    * @notice Updates the liquidity fee of an asset.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
