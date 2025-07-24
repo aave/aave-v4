@@ -593,6 +593,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // todo NoExplicitAmountToRepayOnBehalf
   }
 
+  /**
+   * @dev Helper function to get user premium offset in assets amount from shares amount using current debt index.
+   * @dev Rounds down to the nearest assets amount.
+   * @param hub The liquidity hub of the reserve.
+   * @param assetId The asset identifier.
+   * @param shares The amount of shares to convert to assets amount.
+   * @return The amount of assets converted from shares amount, corresponding to user premium offset.
+   */
   function _previewOffset(
     ILiquidityHub hub,
     uint256 assetId,
