@@ -55,14 +55,14 @@ library Utils {
     address caller,
     uint256 baseAmount,
     uint256 premiumAmount,
-    address repayer
+    address restorer
   ) internal returns (uint256) {
-    vm.startPrank(repayer);
+    vm.startPrank(restorer);
     IERC20(hub.getAsset(assetId).underlying).approve(address(hub), (baseAmount + premiumAmount));
     vm.stopPrank();
 
     vm.prank(caller);
-    return hub.restore(assetId, baseAmount, premiumAmount, repayer);
+    return hub.restore(assetId, baseAmount, premiumAmount, restorer);
   }
 
   function addSpoke(

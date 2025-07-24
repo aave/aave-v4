@@ -26,8 +26,8 @@ library DataTypes {
     uint256 premiumDrawnShares;
     uint256 premiumOffset; // todo make signed
     uint256 realizedPremium;
-    uint256 baseDebtIndex;
-    uint256 baseBorrowRate;
+    uint256 baseDrawnIndex;
+    uint256 baseDrawnRate;
     uint256 lastUpdateTimestamp;
     DataTypes.AssetConfig config;
   }

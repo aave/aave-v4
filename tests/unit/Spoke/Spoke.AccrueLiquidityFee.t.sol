@@ -61,8 +61,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, reserveId, bob, borrowAmount, bob);
 
-    uint256 baseBorrowRate = hub.getBaseInterestRate(assetId);
-    uint256 initialBaseIndex = hub.getAsset(assetId).baseDebtIndex;
+    uint256 baseDrawnRate = hub.getBaseInterestRate(assetId);
+    uint256 initialBaseIndex = hub.getAsset(assetId).baseDrawnIndex;
     uint256 userRp = spoke1.getUserRiskPremium(bob);
 
     // withdraw any treasury fees
@@ -73,7 +73,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(reserveId, bob);
     {
-      uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, baseBorrowRate, startTime);
+      uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, baseDrawnRate, startTime);
       uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(userRp);
       uint256 expectedPremiumDebt = hub.convertToDrawnAssets(assetId, expectedPremiumDrawnShares) -
         bobPosition.premiumOffset +
@@ -99,7 +99,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
         initialDrawnShares: bobPosition.baseDrawnShares,
         initialPremiumShares: bobPosition.premiumDrawnShares,
         liquidityFee: _getLiquidityFee(assetId),
-        indexDelta: hub.getAsset(assetId).baseDebtIndex - initialBaseIndex
+        indexDelta: hub.getAsset(assetId).baseDrawnIndex - initialBaseIndex
       })
     );
 
@@ -116,7 +116,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     spoke1.updateUserRiskPremium(bob);
 
     // refresh
-    initialBaseIndex = hub.getAsset(assetId).baseDebtIndex;
+    initialBaseIndex = hub.getAsset(assetId).baseDrawnIndex;
 
     // withdraw any treasury fees
     withdrawLiquidityFees(assetId, type(uint256).max);
@@ -136,7 +136,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
         initialDrawnShares: bobPosition.baseDrawnShares,
         initialPremiumShares: 0,
         liquidityFee: _getLiquidityFee(assetId),
-        indexDelta: hub.getAsset(assetId).baseDebtIndex - initialBaseIndex
+        indexDelta: hub.getAsset(assetId).baseDrawnIndex - initialBaseIndex
       })
     );
 

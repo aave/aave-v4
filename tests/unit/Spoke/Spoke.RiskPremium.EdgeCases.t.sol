@@ -304,7 +304,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
 
     // usage ratio is ~45%, which is ~half to the kink point of 90%
     // borrow rate ~= base borrow rate (5%) + slope1 (5%) / 2
-    assertApproxEqAbs(hub.getAsset(wethAssetId).baseBorrowRate, uint256(7_50).bpsToRay(), 1e18);
+    assertApproxEqAbs(hub.getAsset(wethAssetId).baseDrawnRate, uint256(7_50).bpsToRay(), 1e18);
 
     // Alice supplies collateral in order to borrow
     uint256 aliceCollateralAmount = _calcMinimumCollAmount(
@@ -339,7 +339,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     });
 
     // usage ratio is 100%, borrow rate is max
-    assertEq(hub.getAsset(daiAssetId).baseBorrowRate, uint256(15_00).bpsToRay());
+    assertEq(hub.getAsset(daiAssetId).baseDrawnRate, uint256(15_00).bpsToRay());
 
     // Bob's current risk premium should be greater than or equal collateral risk of dai, since debt is not fully covered by it (and due to rounding)
     assertGt(

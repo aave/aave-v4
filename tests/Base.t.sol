@@ -162,7 +162,7 @@ abstract contract Base is Test {
     DataTypes.DynamicReserveConfig dynReserveConfig;
   }
 
-  struct DebtAccounting {
+  struct DrawnAccounting {
     uint256 cumulativeDebt;
     uint256 baseDebt;
     uint256 outstandingPremium;
@@ -180,8 +180,8 @@ abstract contract Base is Test {
     uint256 premiumDebt;
     uint40 lastUpdateTimestamp;
     uint256 availableLiquidity;
-    uint256 baseDebtIndex;
-    uint256 baseBorrowRate;
+    uint256 baseDrawnIndex;
+    uint256 baseDrawnRate;
   }
 
   struct SpokePosition {
@@ -2048,7 +2048,7 @@ abstract contract Base is Test {
     (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
 
     vm.assertEq(
-      asset.baseBorrowRate,
+      asset.baseDrawnRate,
       IBasicInterestRateStrategy(asset.config.irStrategy).calculateInterestRate(
         assetId,
         asset.availableLiquidity,
@@ -2103,8 +2103,8 @@ abstract contract Base is Test {
         realizedPremium: assetData.realizedPremium,
         premiumDebt: premiumDebt,
         lastUpdateTimestamp: uint40(assetData.lastUpdateTimestamp),
-        baseDebtIndex: assetData.baseDebtIndex,
-        baseBorrowRate: assetData.baseBorrowRate
+        baseDrawnIndex: assetData.baseDrawnIndex,
+        baseDrawnRate: assetData.baseDrawnRate
       });
   }
 

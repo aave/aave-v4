@@ -57,14 +57,14 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     uint256 assetId = _assetCount++;
     IAssetInterestRateStrategy(irStrategy).setInterestRateData(assetId, data);
-    uint256 baseBorrowRate = IAssetInterestRateStrategy(irStrategy).calculateInterestRate({
+    uint256 baseDrawnRate = IAssetInterestRateStrategy(irStrategy).calculateInterestRate({
       assetId: assetId,
       availableLiquidity: 0,
       baseDebt: 0,
       premiumDebt: 0
     });
 
-    uint256 baseDebtIndex = WadRayMathExtended.RAY;
+    uint256 baseDrawnIndex = WadRayMathExtended.RAY;
     uint256 lastUpdateTimestamp = block.timestamp;
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
       active: true,
@@ -83,15 +83,15 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       premiumDrawnShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
-      baseDebtIndex: baseDebtIndex,
-      baseBorrowRate: baseBorrowRate,
+      baseDrawnIndex: baseDrawnIndex,
+      baseDrawnRate: baseDrawnRate,
       lastUpdateTimestamp: lastUpdateTimestamp,
       config: config
     });
 
     emit AssetAdded(assetId, underlying, decimals);
     emit AssetConfigUpdated(assetId, config);
-    emit AssetUpdated(assetId, baseDebtIndex, baseBorrowRate, lastUpdateTimestamp);
+    emit AssetUpdated(assetId, baseDrawnIndex, baseDrawnRate, lastUpdateTimestamp);
 
     return assetId;
   }
@@ -407,7 +407,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].baseBorrowRate;
+    return _assets[assetId].baseDrawnRate;
   }
 
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256) {

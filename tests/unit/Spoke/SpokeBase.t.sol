@@ -621,7 +621,7 @@ contract SpokeBase is Base {
   ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 accruedBase = MathUtils
-      .calculateLinearInterest(hub.getAsset(assetId).baseBorrowRate, lastTimestamp)
+      .calculateLinearInterest(hub.getAsset(assetId).baseDrawnRate, lastTimestamp)
       .rayMulUp(prevBaseDebt);
 
     // equivalent to multiplying by risk premium (RP = premium drawn shares / base drawn shares)

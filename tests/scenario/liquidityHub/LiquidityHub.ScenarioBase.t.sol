@@ -31,7 +31,7 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
 
   struct TestState {
     uint256 assetId;
-    uint256[NUM_TIMESTAMPS] baseBorrowRate;
+    uint256[NUM_TIMESTAMPS] baseDrawnRate;
     uint256[NUM_TIMESTAMPS] skipTime;
     SpokeActions[NUM_SPOKES] actions;
   }
@@ -157,7 +157,7 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
   ) internal {
     for (uint256 i = 0; i < NUM_TIMESTAMPS; i++) {
       state.skipTime[i] = time;
-      state.baseBorrowRate[i] = borrowRate;
+      state.baseDrawnRate[i] = borrowRate;
     }
   }
 
@@ -168,7 +168,7 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
   ) internal returns (uint256) {
     state.assetId = bound(_state.assetId, 0, NUM_ASSETS - 1);
     for (uint256 i = 0; i < NUM_TIMESTAMPS; i++) {
-      state.baseBorrowRate[i] = bound(_state.baseBorrowRate[0], 0, MAX_BORROW_RATE);
+      state.baseDrawnRate[i] = bound(_state.baseDrawnRate[0], 0, MAX_BORROW_RATE);
       state.skipTime[i] = bound(_state.skipTime[0], 0, MAX_BORROW_RATE);
 
       for (uint256 j = 0; j < NUM_SPOKES; j++) {

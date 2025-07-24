@@ -43,8 +43,8 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity after');
     assertEq(assetData.baseDebt, 0, 'asset baseDebt after');
     assertEq(assetData.premiumDebt, 0, 'asset premiumDebt after');
-    assertEq(assetData.baseDebtIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex after');
-    assertEq(assetData.baseBorrowRate, uint256(5_00).bpsToRay(), 'asset baseBorrowRate after');
+    assertEq(assetData.baseDrawnIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex after');
+    assertEq(assetData.baseDrawnRate, uint256(5_00).bpsToRay(), 'asset baseDrawnRate after');
     assertEq(
       assetData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -129,7 +129,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       caller: address(spoke3),
       baseAmount: baseDebt,
       premiumAmount: premiumDebt,
-      repayer: bob
+      restorer: bob
     });
 
     uint256 aliceBalanceBefore = underlying.balanceOf(alice);
@@ -217,7 +217,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       caller: address(spoke1),
       baseAmount: baseDebtRestored,
       premiumAmount: premiumDebtRestored,
-      repayer: alice
+      restorer: alice
     });
 
     AssetPosition memory asset = getAssetPosition(hub, daiAssetId);
@@ -244,7 +244,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     // removable amount should exceed initial added amount due to accrued interest
     assertTrue(removeAmount > addAmount);
 
-    // bob withdraws all possible liquidity
+    // bob removes all possible liquidity
     // some has gone to feeReceiver
     vm.prank(address(spoke2));
     hub.remove(daiAssetId, removeAmount, bob);
@@ -328,7 +328,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       caller: address(spoke1),
       baseAmount: baseDebtRestored,
       premiumAmount: premiumDebtRestored,
-      repayer: alice
+      restorer: alice
     });
 
     AssetPosition memory asset = getAssetPosition(hub, daiAssetId);
@@ -338,7 +338,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       'dai availableLiquidity'
     );
 
-    uint256 withdrawAmount = hub.getSpokeAddedAmount(daiAssetId, address(spoke2));
+    uint256 removeAmount = hub.getSpokeAddedAmount(daiAssetId, address(spoke2));
     uint256 daiBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 feeAmount = hub.getSpokeAddedAmount(
       daiAssetId,
@@ -349,10 +349,10 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       hub.getAssetConfig(daiAssetId).feeReceiver
     );
 
-    // bob withdraws all possible liquidity
+    // bob removes all possible liquidity
     // some has gone to feeReceiver
     vm.prank(address(spoke2));
-    hub.remove(daiAssetId, withdrawAmount, bob);
+    hub.remove(daiAssetId, removeAmount, bob);
 
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
@@ -375,7 +375,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     // dai - all to alice
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai balance');
     assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'spoke2 dai balance');
-    assertEq(tokenList.dai.balanceOf(bob), daiBalanceBefore + withdrawAmount, 'bob dai balance');
+    assertEq(tokenList.dai.balanceOf(bob), daiBalanceBefore + removeAmount, 'bob dai balance');
   }
 
   function test_remove_revertsWith_AddedAmountExceeded_zero_added() public {

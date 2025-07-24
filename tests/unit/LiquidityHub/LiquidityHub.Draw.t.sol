@@ -250,7 +250,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       amount: daiAmount,
       user: bob
     });
-    // withdraw all so no liquidity remains
+    // remove all so no liquidity remains
     Utils.remove({
       hub: hub,
       assetId: daiAssetId,
@@ -281,7 +281,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       amount: daiAmount,
       user: bob
     });
-    // withdraw all so no liquidity remains
+    // remove all so no liquidity remains
     Utils.remove({
       hub: hub,
       assetId: daiAssetId,
@@ -391,7 +391,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     assertGt(baseDebt, drawCap);
 
     // restore to provide liquidity
-    // Must repay at least one full share
+    // Must restore at least one full share
     vm.startPrank(address(spoke1));
     hub.restore({
       assetId: daiAssetId,
@@ -437,7 +437,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.assume(baseDebt > drawCap + singleShareInAssets);
 
     // restore to provide liquidity
-    // Must repay at least one full share;
+    // Must restore at least one full share;
     vm.startPrank(address(spoke1));
     hub.restore({
       assetId: daiAssetId,

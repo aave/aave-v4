@@ -38,9 +38,9 @@ contract LiquidityHubBase is Base {
     uint256 expectedAdd2Shares;
   }
 
-  struct DebtData {
-    DebtAccounting asset;
-    DebtAccounting[3] spoke;
+  struct DrawnData {
+    DrawnAccounting asset;
+    DrawnAccounting[3] spoke;
   }
 
   function setUp() public virtual override {
@@ -85,22 +85,22 @@ contract LiquidityHubBase is Base {
     skip(skipTime);
   }
 
-  function _getDebt(uint256 assetId) internal view returns (DebtData memory) {
+  function _getDrawn(uint256 assetId) internal view returns (DrawnData memory) {
     revert('implement me');
 
-    // DebtData memory debtData;
-    // debtData.asset.cumulativeDebt = hub.getAssetCumulativeDebt(assetId);
-    // (debtData.asset.baseDebt, debtData.asset.outstandingPremium) = hub.getAssetDebt(assetId);
+    // DrawnData memory drawnData;
+    // drawnData.asset.cumulativeDebt = hub.getAssetCumulativeDebt(assetId);
+    // (drawnData.asset.baseDebt, drawnData.asset.outstandingPremium) = hub.getAssetDebt(assetId);
 
     // address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
     // for (uint256 i = 0; i < 3; i++) {
-    //   debtData.spoke[i].cumulativeDebt = hub.getSpokeCumulativeDebt(assetId, address(spokes[i]));
-    //   (debtData.spoke[i].baseDebt, debtData.spoke[i].outstandingPremium) = hub.getSpokeDebt(
+    //   drawnData.spoke[i].cumulativeDebt = hub.getSpokeCumulativeDebt(assetId, address(spokes[i]));
+    //   (drawnData.spoke[i].baseDebt, drawnData.spoke[i].outstandingPremium) = hub.getSpokeDebt(
     //     assetId,
     //     spokes[i]
     //   );
     // }
-    // return debtData;
+    // return drawnData;
   }
 
   /// @dev Adds liquidity to the Hub via a random spoke

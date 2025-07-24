@@ -73,7 +73,7 @@ library AssetLogic {
 
   function totalAddedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
     return
-      asset.addedShares + asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
+      asset.addedShares + asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDrawnIndex);
   }
 
   function toAddedAssetsUp(
@@ -112,12 +112,12 @@ library AssetLogic {
         baseDebt: asset.baseDebt(),
         premiumDebt: asset.premiumDebt()
       });
-    asset.baseBorrowRate = newBorrowRate;
+    asset.baseDrawnRate = newBorrowRate;
 
     // asset accrual should have already occurred
     emit ILiquidityHub.AssetUpdated(
       assetId,
-      asset.baseDebtIndex,
+      asset.baseDrawnIndex,
       newBorrowRate,
       asset.lastUpdateTimestamp
     );
@@ -134,10 +134,10 @@ library AssetLogic {
     DataTypes.SpokeData storage feeReceiver
   ) internal {
     uint256 drawnIndex = asset.previewDrawnIndex();
-    uint256 feeShares = asset.previewFeeShares(drawnIndex - asset.baseDebtIndex);
+    uint256 feeShares = asset.previewFeeShares(drawnIndex - asset.baseDrawnIndex);
 
     // Accrue interest and fees
-    asset.baseDebtIndex = drawnIndex;
+    asset.baseDrawnIndex = drawnIndex;
     if (feeShares > 0) {
       feeReceiver.addedShares += feeShares;
       asset.addedShares += feeShares;
@@ -153,14 +153,14 @@ library AssetLogic {
    * @return The resulting drawn index.
    */
   function previewDrawnIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
-    uint256 previousIndex = asset.baseDebtIndex;
+    uint256 previousIndex = asset.baseDrawnIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
     if (lastUpdateTimestamp == block.timestamp || asset.baseDrawnShares == 0) {
       return previousIndex;
     }
     return
       previousIndex.rayMulUp(
-        MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
+        MathUtils.calculateLinearInterest(asset.baseDrawnRate, uint40(lastUpdateTimestamp))
       );
   }
 
@@ -193,6 +193,6 @@ library AssetLogic {
    * @return The amount of shares corresponding to the fees
    */
   function unrealizedFeeShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
+    return asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDrawnIndex);
   }
 }

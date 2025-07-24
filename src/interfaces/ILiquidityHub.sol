@@ -22,7 +22,7 @@ interface ILiquidityHub is IAccessManaged {
   event AssetUpdated(
     uint256 indexed assetId,
     uint256 drawnIndex,
-    uint256 baseBorrowRate,
+    uint256 baseDrawnRate,
     uint256 latestUpdateTimestamp
   );
   event Add(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
