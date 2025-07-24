@@ -48,9 +48,9 @@ contract LiquidityHubBase is Base {
     initEnvironment();
   }
 
-  function _updateSupplyCap(uint256 assetId, address spoke, uint256 newSupplyCap) internal {
+  function _updateAddCap(uint256 assetId, address spoke, uint256 newAddCap) internal {
     DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
-    spokeConfig.supplyCap = newSupplyCap;
+    spokeConfig.addCap = newAddCap;
     vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
@@ -120,11 +120,7 @@ contract LiquidityHubBase is Base {
     hub.addSpoke(
       assetId,
       tempSpoke,
-      DataTypes.SpokeConfig({
-        active: true,
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max
-      })
+      DataTypes.SpokeConfig({active: true, addCap: type(uint256).max, drawCap: type(uint256).max})
     );
 
     Utils.add({hub: hub, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
@@ -144,11 +140,7 @@ contract LiquidityHubBase is Base {
     hub.addSpoke(
       assetId,
       tempSpoke,
-      DataTypes.SpokeConfig({
-        active: true,
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max
-      })
+      DataTypes.SpokeConfig({active: true, addCap: type(uint256).max, drawCap: type(uint256).max})
     );
 
     if (withPremium) {

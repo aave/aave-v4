@@ -175,4 +175,14 @@ library MathUtils {
       result := xor(b, mul(xor(a, b), lt(a, b)))
     }
   }
+
+  // handles underflow
+  function add(uint256 a, int256 b) internal pure returns (uint256) {
+    if (b >= 0) return a + uint256(b);
+    return a - uint256(-b);
+  }
+
+  function signedDiff(uint256 a, uint256 b) internal pure returns (int256) {
+    return int256(a) - int256(b); // todo use safeCast when amounts packed to uint112/uint128
+  }
 }

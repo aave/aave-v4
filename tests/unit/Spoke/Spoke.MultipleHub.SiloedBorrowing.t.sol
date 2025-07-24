@@ -7,7 +7,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
   struct SiloedLocalVars {
     uint256 assetAId;
     uint256 assetBId;
-    uint256 assetASupplyCap;
+    uint256 assetAAddCap;
     uint256 assetBDrawCap;
     uint256 reserveAId;
     uint256 reserveBId;
@@ -31,7 +31,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
   function setUpSiloedBorrowing() internal {
     vm.startPrank(ADMIN);
     siloedVars.assetBDrawCap = 100_000e18;
-    siloedVars.assetASupplyCap = 500_000e18;
+    siloedVars.assetAAddCap = 500_000e18;
 
     // Add asset B to the new hub
     newHub.addAsset(
@@ -63,11 +63,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     newHub.addSpoke(
       siloedVars.assetBId,
       address(newSpoke),
-      DataTypes.SpokeConfig({
-        active: true,
-        supplyCap: UINT256_MAX,
-        drawCap: siloedVars.assetBDrawCap
-      })
+      DataTypes.SpokeConfig({active: true, addCap: UINT256_MAX, drawCap: siloedVars.assetBDrawCap})
     );
 
     // Add asset A to the canonical hub
@@ -100,11 +96,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     hub.addSpoke(
       siloedVars.assetAId,
       address(spoke1),
-      DataTypes.SpokeConfig({
-        active: true,
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max
-      })
+      DataTypes.SpokeConfig({active: true, addCap: type(uint256).max, drawCap: type(uint256).max})
     );
 
     // Add reserve A from canonical hub to the new spoke
@@ -127,7 +119,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     hub.addSpoke(
       siloedVars.assetAId,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, supplyCap: siloedVars.assetASupplyCap, drawCap: 0})
+      DataTypes.SpokeConfig({active: true, addCap: siloedVars.assetAAddCap, drawCap: 0})
     );
     vm.stopPrank();
 
@@ -155,12 +147,12 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       newSpoke,
       siloedVars.reserveAIdNewSpoke,
       bob,
-      siloedVars.assetASupplyCap,
+      siloedVars.assetAAddCap,
       bob
     );
     assertEq(
       newSpoke.getUserSuppliedAmount(siloedVars.reserveAIdNewSpoke, bob),
-      siloedVars.assetASupplyCap,
+      siloedVars.assetAAddCap,
       'bob supplied amount of asset A on new spoke'
     );
     assertTrue(
@@ -169,13 +161,13 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     );
     assertEq(
       hub.getAssetSuppliedAmount(siloedVars.assetAId),
-      siloedVars.assetASupplyCap,
+      siloedVars.assetAAddCap,
       'total supplied amount of asset A on canonical hub'
     );
 
     // Bob cannot supply past his currently supplied amount due to supply cap
     vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, siloedVars.assetASupplyCap)
+      abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, siloedVars.assetAAddCap)
     );
     Utils.supply(newSpoke, siloedVars.reserveAIdNewSpoke, bob, 1e18, bob);
 

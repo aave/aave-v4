@@ -101,19 +101,19 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, alice);
   }
 
-  function test_add_revertsWith_SupplyCapExceeded() public {
+  function test_add_revertsWith_AddCapExceeded() public {
     uint256 amount = 100e18;
 
-    uint256 newSupplyCap = amount - 1;
-    _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
+    uint256 newAddCap = amount - 1;
+    _updateAddCap(daiAssetId, address(spoke1), newAddCap);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke1));
     hub.add(daiAssetId, amount, alice);
   }
 
   /// supply reverts if the cap is exceeded, with proper rounding (up) applied to shares into assets conversion
-  function test_add_revertsWith_SupplyCapExceeded_due_to_rounding() public {
+  function test_add_revertsWith_AddCapExceeded_due_to_rounding() public {
     _addLiquidity(daiAssetId, 100e18);
     _drawLiquidity(daiAssetId, 45e18, true);
 
@@ -143,36 +143,36 @@ contract LiquidityHubAddTest is LiquidityHubBase {
 
     // set supply cap to amount of assets supplied * 2 - 1, given
     // that the same asset amount is provided again below
-    uint256 newSupplyCap = 2 * supplyAmount - 1;
-    _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
+    uint256 newAddCap = 2 * supplyAmount - 1;
+    _updateAddCap(daiAssetId, address(spoke1), newAddCap);
 
     // this cap will be exceeded only if the existing supplied
     // shares are rounded up
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke1));
     hub.add(daiAssetId, supplyAmount, alice);
 
     // check that supply cap is not exceeded if assets are rounded down
     uint256 suppliedAssetsRoundedDown = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
-    assertEq(suppliedAssetsRoundedDown + supplyAmount, newSupplyCap);
+    assertEq(suppliedAssetsRoundedDown + supplyAmount, newAddCap);
   }
 
-  function test_add_fuzz_revertsWith_SupplyCapExceeded(uint256 amount) public {
+  function test_add_fuzz_revertsWith_AddCapExceeded(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    uint256 newSupplyCap = amount - 1;
-    _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
+    uint256 newAddCap = amount - 1;
+    _updateAddCap(daiAssetId, address(spoke1), newAddCap);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke1));
     hub.add(daiAssetId, amount, alice);
   }
 
-  function test_add_revertsWith_SupplyCapExceeded_due_to_interest() public {
+  function test_add_revertsWith_AddCapExceeded_due_to_interest() public {
     uint256 daiAmount = 100e18;
 
-    uint256 newSupplyCap = daiAmount + 1;
-    _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
+    uint256 newAddCap = daiAmount + 1;
+    _updateAddCap(daiAssetId, address(spoke2), newAddCap);
 
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
@@ -185,12 +185,12 @@ contract LiquidityHubAddTest is LiquidityHubBase {
       skipTime: 365 days
     });
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke2));
     hub.add(daiAssetId, 1, alice);
   }
 
-  function test_add_fuzz_revertsWith_SupplyCapExceeded_due_to_interest(
+  function test_add_fuzz_revertsWith_AddCapExceeded_due_to_interest(
     uint256 daiAmount,
     uint256 drawAmount,
     uint256 skipTime
@@ -199,9 +199,9 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     drawAmount = bound(drawAmount, 1, daiAmount);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    uint256 newSupplyCap = daiAmount + 1;
+    uint256 newAddCap = daiAmount + 1;
 
-    _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
+    _updateAddCap(daiAssetId, address(spoke2), newAddCap);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
@@ -214,13 +214,13 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     });
     vm.assume(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke2));
     hub.add(daiAssetId, 1, alice); // cannot supply any additional amount
   }
 
   // supply succeeds if cap is reached but not exceeded
-  function test_add_SupplyCapReachedButNotExceeded() public {
+  function test_add_AddCapReachedButNotExceeded() public {
     _addLiquidity(daiAssetId, 100e18);
     _drawLiquidity(daiAssetId, 45e18, true);
 
@@ -246,8 +246,8 @@ contract LiquidityHubAddTest is LiquidityHubBase {
       totalSuppliedShares
     );
 
-    uint256 newSupplyCap = spokeSuppliedAssetsRoundedUp + supplyAmount;
-    _updateSupplyCap(daiAssetId, address(spoke1), newSupplyCap);
+    uint256 newAddCap = spokeSuppliedAssetsRoundedUp + supplyAmount;
+    _updateAddCap(daiAssetId, address(spoke1), newAddCap);
 
     Utils.add({
       hub: hub,

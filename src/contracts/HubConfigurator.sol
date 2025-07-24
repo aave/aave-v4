@@ -54,11 +54,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     targetHub.addSpoke(
       assetId,
       feeReceiver,
-      DataTypes.SpokeConfig({
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max,
-        active: true
-      })
+      DataTypes.SpokeConfig({addCap: type(uint256).max, drawCap: type(uint256).max, active: true})
     );
 
     return assetId;
@@ -80,11 +76,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     targetHub.addSpoke(
       assetId,
       feeReceiver,
-      DataTypes.SpokeConfig({
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max,
-        active: true
-      })
+      DataTypes.SpokeConfig({addCap: type(uint256).max, drawCap: type(uint256).max, active: true})
     );
 
     return assetId;
@@ -195,7 +187,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     hub.updateSpokeConfig(
       assetId,
       oldConfig.feeReceiver,
-      DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+      DataTypes.SpokeConfig({addCap: 0, drawCap: 0, active: false})
     );
 
     DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, newFeeReceiver);
@@ -203,21 +195,13 @@ contract HubConfigurator is Ownable, IHubConfigurator {
       hub.addSpoke(
         assetId,
         newFeeReceiver,
-        DataTypes.SpokeConfig({
-          supplyCap: type(uint256).max,
-          drawCap: type(uint256).max,
-          active: true
-        })
+        DataTypes.SpokeConfig({addCap: type(uint256).max, drawCap: type(uint256).max, active: true})
       );
     } else {
       hub.updateSpokeConfig(
         assetId,
         newFeeReceiver,
-        DataTypes.SpokeConfig({
-          supplyCap: type(uint256).max,
-          drawCap: type(uint256).max,
-          active: true
-        })
+        DataTypes.SpokeConfig({addCap: type(uint256).max, drawCap: type(uint256).max, active: true})
       );
     }
   }

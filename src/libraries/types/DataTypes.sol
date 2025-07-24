@@ -34,7 +34,7 @@ library DataTypes {
 
   struct SpokeConfig {
     bool active;
-    uint256 supplyCap;
+    uint256 addCap;
     uint256 drawCap;
   }
 

@@ -378,15 +378,15 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(tokenList.dai.balanceOf(bob), daiBalanceBefore + withdrawAmount, 'bob dai balance');
   }
 
-  function test_remove_revertsWith_SuppliedAmountExceeded_zero_supplied() public {
+  function test_remove_revertsWith_AddedAmountExceeded_zero_supplied() public {
     uint256 amount = 1;
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddedAmountExceeded.selector, 0));
     vm.prank(address(spoke1));
     hub.remove(daiAssetId, amount, address(spoke1));
   }
 
-  function test_remove_revertsWith_SuppliedAmountExceeded() public {
+  function test_remove_revertsWith_AddedAmountExceeded() public {
     uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
@@ -399,14 +399,14 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       user: alice
     });
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddedAmountExceeded.selector, amount));
     vm.prank(address(spoke1));
     hub.remove(daiAssetId, amount + 1, alice);
 
     // advance time, but no accrual
     skip(1e18);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, amount));
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddedAmountExceeded.selector, amount));
     vm.prank(address(spoke1));
     hub.remove(daiAssetId, amount + 1, alice);
   }

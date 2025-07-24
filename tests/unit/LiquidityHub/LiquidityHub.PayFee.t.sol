@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubPayFeeTest is LiquidityHubBase {
-  function test_payFee_revertsWith_SuppliedAmountExceeded() public {
+  function test_payFee_revertsWith_AddedAmountExceeded() public {
     uint256 addAmount = 100e18;
     Utils.add({
       hub: hub,
@@ -17,14 +17,12 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     uint256 feeShares = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
     uint256 feeAmount = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
 
-    vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, feeAmount)
-    );
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddedAmountExceeded.selector, feeAmount));
     vm.prank(address(spoke1));
     hub.payFee(daiAssetId, feeShares + 1);
   }
 
-  function test_payFee_revertsWith_SuppliedAmountExceeded_with_interest() public {
+  function test_payFee_revertsWith_AddedAmountExceeded_with_interest() public {
     uint256 addAmount = 100e18;
     Utils.add({
       hub: hub,
@@ -43,9 +41,7 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     // supply ex rate increases due to interest
     assertGt(feeAmount, feeShares);
 
-    vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, feeAmount)
-    );
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddedAmountExceeded.selector, feeAmount));
     vm.prank(address(spoke1));
     hub.payFee(daiAssetId, feeShares + 1);
   }

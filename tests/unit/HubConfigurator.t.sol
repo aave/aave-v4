@@ -45,9 +45,9 @@ contract HubConfiguratorTest is LiquidityHubBase {
     assetIds[1] = wethAssetId;
 
     DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](3);
-    spokeConfigs[0] = DataTypes.SpokeConfig({supplyCap: 1, drawCap: 2, active: true});
-    spokeConfigs[1] = DataTypes.SpokeConfig({supplyCap: 3, drawCap: 4, active: true});
-    spokeConfigs[2] = DataTypes.SpokeConfig({supplyCap: 5, drawCap: 6, active: true});
+    spokeConfigs[0] = DataTypes.SpokeConfig({addCap: 1, drawCap: 2, active: true});
+    spokeConfigs[1] = DataTypes.SpokeConfig({addCap: 3, drawCap: 4, active: true});
+    spokeConfigs[2] = DataTypes.SpokeConfig({addCap: 5, drawCap: 6, active: true});
 
     vm.expectRevert(IHubConfigurator.MismatchedConfigs.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -60,12 +60,12 @@ contract HubConfiguratorTest is LiquidityHubBase {
     assetIds[1] = wethAssetId;
 
     DataTypes.SpokeConfig memory daiSpokeConfig = DataTypes.SpokeConfig({
-      supplyCap: 1,
+      addCap: 1,
       drawCap: 2,
       active: true
     });
     DataTypes.SpokeConfig memory wethSpokeConfig = DataTypes.SpokeConfig({
-      supplyCap: 3,
+      addCap: 3,
       drawCap: 4,
       active: true
     });
@@ -187,7 +187,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
       irStrategy: interestRateStrategy
     });
     DataTypes.SpokeConfig memory expectedSpokeConfig = DataTypes.SpokeConfig({
-      supplyCap: type(uint256).max,
+      addCap: type(uint256).max,
       drawCap: type(uint256).max,
       active: true
     });
@@ -325,7 +325,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
           (
             assetId,
             oldConfig.feeReceiver,
-            DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+            DataTypes.SpokeConfig({addCap: 0, drawCap: 0, active: false})
           )
         )
       );
@@ -339,7 +339,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
               assetId,
               feeReceiver,
               DataTypes.SpokeConfig({
-                supplyCap: type(uint256).max,
+                addCap: type(uint256).max,
                 drawCap: type(uint256).max,
                 active: true
               })
@@ -355,7 +355,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
               assetId,
               feeReceiver,
               DataTypes.SpokeConfig({
-                supplyCap: type(uint256).max,
+                addCap: type(uint256).max,
                 drawCap: type(uint256).max,
                 active: true
               })
@@ -414,7 +414,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
           (
             assetId,
             oldConfig.feeReceiver,
-            DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+            DataTypes.SpokeConfig({addCap: 0, drawCap: 0, active: false})
           )
         )
       );
@@ -428,7 +428,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
               assetId,
               feeReceiver,
               DataTypes.SpokeConfig({
-                supplyCap: type(uint256).max,
+                addCap: type(uint256).max,
                 drawCap: type(uint256).max,
                 active: true
               })
@@ -444,7 +444,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
               assetId,
               feeReceiver,
               DataTypes.SpokeConfig({
-                supplyCap: type(uint256).max,
+                addCap: type(uint256).max,
                 drawCap: type(uint256).max,
                 active: true
               })
@@ -542,7 +542,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
         (
           assetId,
           oldConfig.feeReceiver,
-          DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+          DataTypes.SpokeConfig({addCap: 0, drawCap: 0, active: false})
         )
       )
     );
@@ -554,7 +554,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
           assetId,
           newAssetConfig.feeReceiver,
           DataTypes.SpokeConfig({
-            supplyCap: type(uint256).max,
+            addCap: type(uint256).max,
             drawCap: type(uint256).max,
             active: true
           })

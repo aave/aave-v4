@@ -350,7 +350,7 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
-      supplyCap: type(uint256).max,
+      addCap: type(uint256).max,
       drawCap: type(uint256).max
     });
 
@@ -1842,7 +1842,7 @@ abstract contract Base is Test {
   }
 
   function assertEq(DataTypes.SpokeConfig memory a, DataTypes.SpokeConfig memory b) internal pure {
-    assertEq(a.supplyCap, b.supplyCap, 'assertEq(SpokeConfig): supplyCap');
+    assertEq(a.addCap, b.addCap, 'assertEq(SpokeConfig): addCap');
     assertEq(a.drawCap, b.drawCap, 'assertEq(SpokeConfig): drawCap');
     assertEq(a.active, b.active, 'assertEq(SpokeConfig): active');
     assertEq(abi.encode(a), abi.encode(b), 'assertEq(SpokeConfig): all fields');

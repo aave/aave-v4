@@ -6,6 +6,7 @@ import {Multicall} from 'src/misc/Multicall.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
+
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
@@ -14,6 +15,7 @@ import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.s
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 // interfaces
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
@@ -24,6 +26,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
+  using MathUtils for uint256;
   using PercentageMathExtended for uint256;
   using PercentageMathExtended for uint16;
   using KeyValueListInMemory for KeyValueListInMemory.List;
@@ -751,8 +754,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   ) internal {
-    reserve.premiumDrawnShares = _add(reserve.premiumDrawnShares, premiumDrawnSharesDelta);
-    reserve.premiumOffset = _add(reserve.premiumOffset, premiumOffsetDelta);
+    reserve.premiumDrawnShares = reserve.premiumDrawnShares.add(premiumDrawnSharesDelta);
+    reserve.premiumOffset = reserve.premiumOffset.add(premiumOffsetDelta);
     reserve.realizedPremium = reserve.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
     emit RefreshPremiumDebt(
@@ -982,8 +985,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         );
         userPosition.realizedPremium += accruedUserPremium;
 
-        int256 premiumDrawnSharesDelta = _signedDiff(
-          userPosition.premiumDrawnShares,
+        int256 premiumDrawnSharesDelta = userPosition.premiumDrawnShares.signedDiff(
           oldUserPremiumDrawnShares
         );
         if (!vars.premiumIncrease) vars.premiumIncrease = premiumDrawnSharesDelta > 0;
@@ -995,7 +997,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
           vars.reserveId,
           user,
           premiumDrawnSharesDelta,
-          _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset),
+          userPosition.premiumOffset.signedDiff(oldUserPremiumOffset),
           accruedUserPremium,
           0
         );
@@ -1244,16 +1246,5 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.baseDebtToLiquidate,
       vars.premiumDebtToLiquidate
     );
-  }
-
-  // handles underflow
-  function _add(uint256 a, int256 b) internal pure returns (uint256) {
-    if (b >= 0) return a + uint256(b);
-    return a - uint256(-b);
-  }
-
-  // todo move to MathUtils
-  function _signedDiff(uint256 a, uint256 b) internal pure returns (int256) {
-    return int256(a) - int256(b); // todo use safeCast when amounts packed to uint112/uint128
   }
 }

@@ -18,7 +18,7 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
-      supplyCap: 1000e18,
+      addCap: 1000e18,
       drawCap: 1000e18
     });
 
@@ -135,7 +135,7 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     hub.updateSpokeConfig(
       daiAssetId,
       address(spoke1),
-      DataTypes.SpokeConfig({active: true, supplyCap: 1000e18, drawCap: 1000e18})
+      DataTypes.SpokeConfig({active: true, addCap: 1000e18, drawCap: 1000e18})
     );
   }
 
@@ -250,7 +250,7 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
-      supplyCap: 1000e18,
+      addCap: 1000e18,
       drawCap: 1000e18
     });
 

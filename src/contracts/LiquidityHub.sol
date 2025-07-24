@@ -4,13 +4,18 @@ pragma solidity ^0.8.0;
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
+
+// libraries
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+
+// interfaces
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
 contract LiquidityHub is ILiquidityHub, AccessManaged {
@@ -19,6 +24,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   using SharesMath for uint256;
   using PercentageMathExtended for uint256;
   using AssetLogic for DataTypes.Asset;
+  using MathUtils for uint256;
 
   uint8 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
 
@@ -162,10 +168,10 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     _validateAdd(asset, spoke, amount, from);
 
     // todo: Mitigate inflation attack
-    uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
-    require(suppliedShares != 0, InvalidSharesAmount());
-    asset.suppliedShares += suppliedShares;
-    spoke.suppliedShares += suppliedShares;
+    uint256 shares = asset.toSuppliedSharesDown(amount);
+    require(shares != 0, InvalidSharesAmount());
+    asset.suppliedShares += shares;
+    spoke.suppliedShares += shares;
     asset.availableLiquidity += amount;
 
     asset.updateBorrowRate(assetId);
@@ -173,9 +179,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // TODO: fee-on-transfer
     IERC20(asset.underlying).safeTransferFrom(from, address(this), amount);
 
-    emit Add(assetId, msg.sender, suppliedShares, amount);
+    emit Add(assetId, msg.sender, shares, amount);
 
-    return suppliedShares;
+    return shares;
   }
 
   /// @inheritdoc ILiquidityHub
@@ -186,18 +192,18 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateRemove(asset, spoke, amount);
 
-    uint256 withdrawnShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
-    asset.suppliedShares -= withdrawnShares;
-    spoke.suppliedShares -= withdrawnShares;
+    uint256 shares = asset.toSuppliedSharesUp(amount); // non zero since we round up
+    asset.suppliedShares -= shares;
+    spoke.suppliedShares -= shares;
     asset.availableLiquidity -= amount;
 
     asset.updateBorrowRate(assetId);
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
-    emit Remove(assetId, msg.sender, withdrawnShares, amount);
+    emit Remove(assetId, msg.sender, shares, amount);
 
-    return withdrawnShares;
+    return shares;
   }
 
   /// @inheritdoc ILiquidityHub
@@ -208,18 +214,18 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateDraw(asset, spoke, amount, spoke.config.drawCap);
 
-    uint256 drawnShares = asset.toDrawnSharesUp(amount); // non zero since we round up
-    asset.baseDrawnShares += drawnShares;
-    spoke.baseDrawnShares += drawnShares;
+    uint256 shares = asset.toDrawnSharesUp(amount); // non zero since we round up
+    asset.baseDrawnShares += shares;
+    spoke.baseDrawnShares += shares;
     asset.availableLiquidity -= amount;
 
     asset.updateBorrowRate(assetId);
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
-    emit Draw(assetId, msg.sender, drawnShares, amount);
+    emit Draw(assetId, msg.sender, shares, amount);
 
-    return drawnShares;
+    return shares;
   }
 
   /// @inheritdoc ILiquidityHub
@@ -238,20 +244,20 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
 
-    uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
-    asset.baseDrawnShares -= baseDrawnSharesRestored;
-    spoke.baseDrawnShares -= baseDrawnSharesRestored;
-    uint256 totalRestoredAmount = baseAmount + premiumAmount;
-    asset.availableLiquidity += totalRestoredAmount;
+    uint256 shares = asset.toDrawnSharesDown(baseAmount);
+    asset.baseDrawnShares -= shares;
+    spoke.baseDrawnShares -= shares;
+    uint256 totalAmount = baseAmount + premiumAmount;
+    asset.availableLiquidity += totalAmount;
 
     /// @dev premium debt must be restored in `refreshPremiumDebt` before calling this function
     asset.updateBorrowRate(assetId);
 
-    IERC20(asset.underlying).safeTransferFrom(from, address(this), totalRestoredAmount);
+    IERC20(asset.underlying).safeTransferFrom(from, address(this), totalAmount);
 
-    emit Restore(assetId, msg.sender, baseDrawnSharesRestored, totalRestoredAmount);
+    emit Restore(assetId, msg.sender, shares, totalAmount);
 
-    return baseDrawnSharesRestored;
+    return shares;
   }
 
   /// @inheritdoc ILiquidityHub
@@ -283,9 +289,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   /// @inheritdoc ILiquidityHub
-  function payFee(uint256 assetId, uint256 feeShares) external {
+  function payFee(uint256 assetId, uint256 shares) external {
     DataTypes.SpokeData storage sender = _spokes[assetId][msg.sender];
-    _validatePayFee(sender, feeShares);
+    _validatePayFee(sender, shares);
 
     address feeReceiver = _assets[assetId].config.feeReceiver;
     DataTypes.Asset storage asset = _assets[assetId];
@@ -295,14 +301,14 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     uint256 suppliedShares = sender.suppliedShares;
     uint256 suppliedAssets = asset.toSuppliedAssetsDown(suppliedShares);
-    uint256 feeAmount = asset.toSuppliedAssetsDown(feeShares);
-    require(feeAmount <= suppliedAssets, SuppliedAmountExceeded(suppliedAssets));
+    uint256 feeAmount = asset.toSuppliedAssetsDown(shares);
+    require(feeAmount <= suppliedAssets, AddedAmountExceeded(suppliedAssets));
 
-    sender.suppliedShares = suppliedShares - feeShares;
-    receiver.suppliedShares += feeShares;
+    sender.suppliedShares = suppliedShares - shares;
+    receiver.suppliedShares += shares;
 
-    emit Remove(assetId, msg.sender, feeShares, feeAmount);
-    emit Add(assetId, feeReceiver, feeShares, feeAmount);
+    emit Remove(assetId, msg.sender, shares, feeAmount);
+    emit Add(assetId, feeReceiver, shares, feeAmount);
   }
 
   function _refresh(
@@ -319,12 +325,12 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // accrue interest and liquidity fees
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
-    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
-    asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
+    asset.premiumDrawnShares = asset.premiumDrawnShares.add(premiumDrawnShareDelta);
+    asset.premiumOffset = asset.premiumOffset.add(premiumOffsetDelta);
     asset.realizedPremium = asset.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
-    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
-    spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
+    spoke.premiumDrawnShares = spoke.premiumDrawnShares.add(premiumDrawnShareDelta);
+    spoke.premiumOffset = spoke.premiumOffset.add(premiumOffsetDelta);
     spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
     emit RefreshPremiumDebt(
@@ -498,9 +504,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(!asset.config.paused, AssetPaused());
     require(!asset.config.frozen, AssetFrozen());
     require(
-      spoke.config.supplyCap == type(uint256).max ||
-        asset.toSuppliedAssetsUp(spoke.suppliedShares) + amount <= spoke.config.supplyCap,
-      SupplyCapExceeded(spoke.config.supplyCap)
+      spoke.config.addCap == type(uint256).max ||
+        asset.toSuppliedAssetsUp(spoke.suppliedShares) + amount <= spoke.config.addCap,
+      AddCapExceeded(spoke.config.addCap)
     );
   }
 
@@ -514,7 +520,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     uint256 withdrawable = asset.toSuppliedAssetsDown(spoke.suppliedShares);
-    require(amount <= withdrawable, SuppliedAmountExceeded(withdrawable));
+    require(amount <= withdrawable, AddedAmountExceeded(withdrawable));
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
   }
 
@@ -539,15 +545,15 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   function _validateRestore(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
-    uint256 baseAmountRestored,
-    uint256 premiumAmountRestored
+    uint256 baseAmount,
+    uint256 premiumAmount
   ) internal view {
     require(spoke.config.active, SpokeNotActive());
-    require(baseAmountRestored + premiumAmountRestored != 0, InvalidRestoreAmount());
+    require(baseAmount + premiumAmount != 0, InvalidRestoreAmount());
     require(asset.config.active, AssetNotActive());
     require(!asset.config.paused, AssetPaused());
     (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
-    require(baseAmountRestored <= baseDebt, SurplusAmountRestored(baseDebt));
+    require(baseAmount <= baseDebt, SurplusAmountRestored(baseDebt));
     // we should have already restored premium debt
   }
 
@@ -558,12 +564,6 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // sanity: utilize solc underflow check
     uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset;
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
-  }
-
-  // handles underflow
-  function _add(uint256 a, int256 b) internal pure returns (uint256) {
-    if (b >= 0) return a + uint256(b);
-    return a - uint256(-b);
   }
 
   function _validatePayFee(DataTypes.SpokeData storage spoke, uint256 feeShares) internal view {

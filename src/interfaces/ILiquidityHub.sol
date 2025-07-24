@@ -25,30 +25,10 @@ interface ILiquidityHub is IAccessManaged {
     uint256 baseBorrowRate,
     uint256 latestUpdateTimestamp
   );
-  event Add(
-    uint256 indexed assetId,
-    address indexed spoke,
-    uint256 suppliedShares,
-    uint256 suppliedAmount
-  );
-  event Remove(
-    uint256 indexed assetId,
-    address indexed spoke,
-    uint256 withdrawnShares,
-    uint256 withdrawnAmount
-  );
-  event Draw(
-    uint256 indexed assetId,
-    address indexed spoke,
-    uint256 drawnShares,
-    uint256 drawnAmount
-  );
-  event Restore(
-    uint256 indexed assetId,
-    address indexed spoke,
-    uint256 baseRestoredShares,
-    uint256 totalRestoredAmount
-  );
+  event Add(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
+  event Remove(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
+  event Draw(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
+  event Restore(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
   event RefreshPremiumDebt(
     uint256 indexed assetId,
     address indexed spoke,
@@ -64,10 +44,10 @@ interface ILiquidityHub is IAccessManaged {
   error InvalidAddFromHub();
   error AssetNotListed();
   error AssetNotActive();
-  error SupplyCapExceeded(uint256 supplyCap);
+  error AddCapExceeded(uint256 addCap);
   error InvalidRemoveAmount();
   error InvalidRestoreAmount();
-  error SuppliedAmountExceeded(uint256 suppliedAmount);
+  error AddedAmountExceeded(uint256 amount);
   error NotAvailableLiquidity(uint256 availableLiquidity);
   error InvalidDrawAmount();
   error DrawCapExceeded(uint256 drawCap);
@@ -127,10 +107,10 @@ interface ILiquidityHub is IAccessManaged {
   function setInterestRateData(uint256 assetId, bytes calldata data) external;
 
   /**
-   * @notice Add/Supply asset on behalf of user.
+   * @notice Add asset on behalf of user.
    * @dev Only callable by spokes.
    * @param assetId The identifier of the asset.
-   * @param amount The amount of asset liquidity to add/supply.
+   * @param amount The amount of asset liquidity to add.
    * @param from The address which we pull assets from (user).
    * @return The amount of shares added or supplied.
    */
