@@ -137,7 +137,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
       .getDynamicReserveConfig(reserveId);
     dynamicReserveConfig.collateralFactor = collateralFactor;
-    targetSpoke.updateDynamicReserveConfig(reserveId, dynamicReserveConfig);
+    targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -150,7 +150,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
       .getDynamicReserveConfig(reserveId);
     dynamicReserveConfig.liquidationBonus = liquidationBonus;
-    targetSpoke.updateDynamicReserveConfig(reserveId, dynamicReserveConfig);
+    targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -163,7 +163,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
       .getDynamicReserveConfig(reserveId);
     dynamicReserveConfig.liquidationFee = liquidationFee;
-    targetSpoke.updateDynamicReserveConfig(reserveId, dynamicReserveConfig);
+    targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -176,11 +176,21 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateDynamicReserveConfig(
+  function addDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
+  ) external onlyOwner returns (uint16 configKey) {
+    return ISpoke(spoke).addDynamicReserveConfig(reserveId, dynamicConfig);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function updateDynamicReserveConfig(
+    address spoke,
+    uint256 reserveId,
+    uint256 configKey,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external onlyOwner {
-    ISpoke(spoke).updateDynamicReserveConfig(reserveId, dynamicConfig);
+    ISpoke(spoke).updateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
   }
 }

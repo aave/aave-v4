@@ -921,6 +921,15 @@ contract SpokeBase is Base {
     return vm.randomUint(configKey, type(uint16).max).toUint16();
   }
 
+  function _randomInitializedConfigKey(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
+    uint16 configKey = _nextDynamicConfigKey(spoke, reserveId);
+    if (spoke.getDynamicReserveConfig(reserveId, configKey).liquidationBonus == 0) {
+      // all config keys are initialized
+      return vm.randomUint(0, uint256(type(uint16).max)).toUint16();
+    }
+    return vm.randomUint(0, spoke.getReserve(reserveId).dynamicConfigKey).toUint16();
+  }
+
   /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
   function getReserveIdByAssetId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {
     for (uint256 i; i < spoke.getReserveCount(); ++i) {

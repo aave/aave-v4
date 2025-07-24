@@ -251,8 +251,8 @@ abstract contract Base is Test {
     selectors[2] = ISpoke.updateLiquidationConfig.selector;
     selectors[3] = ISpoke.addReserve.selector;
     selectors[4] = ISpoke.updateReserveConfig.selector;
-    selectors[5] = ISpoke.updateDynamicReserveConfig.selector;
-    selectors[6] = ISpoke.updateExistingDynamicReserveConfig.selector;
+    selectors[5] = ISpoke.addDynamicReserveConfig.selector;
+    selectors[6] = ISpoke.updateDynamicReserveConfig.selector;
     selectors[7] = ISpoke.updateUserRiskPremium.selector;
     selectors[8] = ISpoke.updatePositionManager.selector;
     accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
@@ -1046,7 +1046,7 @@ abstract contract Base is Test {
     config.liquidationBonus = newLiquidationBonus;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateDynamicReserveConfig(reserveId, config);
+    spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId).liquidationBonus, newLiquidationBonus);
   }
@@ -1060,7 +1060,7 @@ abstract contract Base is Test {
     config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateDynamicReserveConfig(reserveId, config);
+    spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId).liquidationFee, newLiquidationFee);
   }
@@ -1075,7 +1075,7 @@ abstract contract Base is Test {
     config.collateralFactor = newCollateralFactor.toUint16();
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateDynamicReserveConfig(reserveId, config);
+    spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId).collateralFactor, newCollateralFactor);
   }
@@ -1088,7 +1088,7 @@ abstract contract Base is Test {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     vm.prank(SPOKE_ADMIN);
-    spoke.updateDynamicReserveConfig(reserveId, config);
+    spoke.addDynamicReserveConfig(reserveId, config);
   }
 
   function updateCollateralFlag(ISpoke spoke, uint256 reserveId, bool newCollateralFlag) internal {
@@ -2059,6 +2059,20 @@ abstract contract Base is Test {
     for (uint256 i; i < entries.length; i++) {
       assertNotEq(entries[i].topics[0], event1Sig);
       assertNotEq(entries[i].topics[0], event2Sig);
+    }
+    vm.recordLogs();
+  }
+
+  function _assertEventsNotEmitted(
+    bytes32 event1Sig,
+    bytes32 event2Sig,
+    bytes32 event3Sig
+  ) internal {
+    Vm.Log[] memory entries = vm.getRecordedLogs();
+    for (uint256 i; i < entries.length; i++) {
+      assertNotEq(entries[i].topics[0], event1Sig);
+      assertNotEq(entries[i].topics[0], event2Sig);
+      assertNotEq(entries[i].topics[0], event3Sig);
     }
     vm.recordLogs();
   }

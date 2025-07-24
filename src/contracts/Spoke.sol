@@ -14,6 +14,7 @@ import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.s
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 // interfaces
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
@@ -26,6 +27,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using WadRayMathExtended for uint256;
   using PercentageMathExtended for uint256;
   using PercentageMathExtended for uint16;
+  using SafeCast for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using LiquidationLogic for DataTypes.LiquidationConfig;
   using PositionStatus for DataTypes.PositionStatus;
@@ -141,39 +143,20 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   /// @inheritdoc ISpoke
-  function updateDynamicReserveConfig(
+  function addDynamicReserveConfig(
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
-  ) external restricted {
-    require(reserveId < _reserveCount, ReserveNotListed());
-    _validateDynamicReserveConfig(dynamicConfig);
-    // TODO: More sophisticated
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    uint16 nextConfigKey;
-    // @dev overflow is desired, we implicitly invalidate & override stale config
-    unchecked {
-      nextConfigKey = ++reserve.dynamicConfigKey;
-    }
-    // todo opt: concat key to use single lookup
-    _dynamicConfig[reserveId][nextConfigKey] = dynamicConfig;
-    emit DynamicReserveConfigUpdated(reserveId, nextConfigKey, dynamicConfig);
-    // todo emit if stale config overwritten?
+  ) external restricted returns (uint16) {
+    return _updateDynamicReserveConfig(reserveId, type(uint256).max, dynamicConfig);
   }
 
   /// @inheritdoc ISpoke
-  function updateExistingDynamicReserveConfig(
+  function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint16 configKey,
+    uint256 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
-    require(reserveId < _reserveCount, ReserveNotListed());
-    _validateDynamicReserveConfig(dynamicConfig);
-    // @dev sufficient check since min liquidationBonus is 100_00
-    require(_dynamicConfig[reserveId][configKey].liquidationBonus != 0, ConfigKeyUninitialized());
-
-    // Update the existing config at the specified key
-    _dynamicConfig[reserveId][configKey] = dynamicConfig;
-    emit DynamicReserveConfigUpdated(reserveId, configKey, dynamicConfig);
+    _updateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
   }
 
   /// @inheritdoc ISpoke
@@ -1043,6 +1026,40 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
     _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
     emit UserDynamicConfigRefreshedSingle(user, reserveId);
+  }
+
+  /**
+   * @dev Updates the dynamic reserve config for a given reserve. Appends to new config key
+   * if `configKey` is `type(uint256).max` otherwise overrides existing specified config.
+   * @return nextConfigKey The key of the updated dynamic config.
+   */
+  function _updateDynamicReserveConfig(
+    uint256 reserveId,
+    uint256 configKey,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
+  ) internal returns (uint16) {
+    require(reserveId < _reserveCount, ReserveNotListed());
+    _validateDynamicReserveConfig(dynamicConfig);
+
+    uint16 nextConfigKey;
+    if (configKey == type(uint256).max) {
+      // @dev overflow is desired, we implicitly invalidate & override stale config
+      unchecked {
+        nextConfigKey = ++_reserves[reserveId].dynamicConfigKey;
+      }
+    } else {
+      nextConfigKey = configKey.toUint16();
+      // @dev sufficient check since min liquidationBonus is 100_00
+      require(
+        _dynamicConfig[reserveId][nextConfigKey].liquidationBonus != 0,
+        ConfigKeyUninitialized()
+      );
+    }
+
+    _dynamicConfig[reserveId][nextConfigKey] = dynamicConfig;
+    emit DynamicReserveConfigUpdated(reserveId, nextConfigKey, dynamicConfig);
+
+    return nextConfigKey;
   }
 
   /// @return collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.

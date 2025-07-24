@@ -194,11 +194,12 @@ interface ISpoke is IMulticall, IAccessManaged {
    * @dev Appends dynamic config to the next valid config key, and overrides existing config if the key is already used.
    * @param reserveId The identifier of the reserve.
    * @param dynamicConfig The dynamic reserve config to update.
+   * @return configKey The key of the added dynamic config.
    */
-  function updateDynamicReserveConfig(
+  function addDynamicReserveConfig(
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
-  ) external;
+  ) external returns (uint16 configKey);
 
   /**
    * @notice Updates the dynamic reserve config for a given reserve at the specified key.
@@ -207,9 +208,9 @@ interface ISpoke is IMulticall, IAccessManaged {
    * @param configKey The key of the config to update.
    * @param dynamicConfig The dynamic reserve config to update.
    */
-  function updateExistingDynamicReserveConfig(
+  function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint16 configKey,
+    uint256 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external;
 
