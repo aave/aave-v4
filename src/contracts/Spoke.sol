@@ -718,8 +718,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal {
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
-      userPremiumOffset; // assets(premiumShares) - offset should never be < 0
+    uint256 accruedPremium = _calcAccruedPremium(
+      hub,
+      assetId,
+      userPremiumDrawnShares,
+      userPremiumOffset
+    );
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
     userPosition.realizedPremium =
@@ -897,6 +901,16 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
   }
 
+  function _calcAccruedPremium(
+    ILiquidityHub hub,
+    uint256 assetId,
+    uint256 userPremiumDrawnShares,
+    uint256 userPremiumOffset
+  ) internal view returns (uint256) {
+    uint256 userPremiumDebt = hub.convertToDrawnAssets(assetId, userPremiumDrawnShares);
+    return userPremiumOffset >= userPremiumDebt ? 0 : userPremiumDebt - userPremiumOffset;
+  }
+
   function _getUserDebtInBaseCurrency(
     DataTypes.UserPosition storage userPosition,
     ILiquidityHub hub,
@@ -925,8 +939,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetId,
     DataTypes.UserPosition storage userPosition
   ) internal view returns (uint256, uint256) {
-    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares) -
-      userPosition.premiumOffset;
+    uint256 accruedPremium = _calcAccruedPremium(
+      hub,
+      assetId,
+      userPosition.premiumDrawnShares,
+      userPosition.premiumOffset
+    );
     return (
       hub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares),
       userPosition.realizedPremium + accruedPremium
@@ -939,8 +957,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal view returns (uint256, uint256) {
     uint256 assetId = reserve.assetId;
     ILiquidityHub hub = reserve.hub;
-    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) -
-      reserve.premiumOffset;
+    uint256 accruedPremium = _calcAccruedPremium(
+      hub,
+      assetId,
+      reserve.premiumDrawnShares,
+      reserve.premiumOffset
+    );
     return (
       hub.convertToDrawnAssets(assetId, reserve.baseDrawnShares),
       reserve.realizedPremium + accruedPremium
@@ -968,10 +990,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
         uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
         uint256 oldUserPremiumOffset = userPosition.premiumOffset;
-        uint256 accruedUserPremium = vars.hub.convertToDrawnAssets(
+        uint256 accruedUserPremium = _calcAccruedPremium(
+          vars.hub,
           vars.assetId,
-          oldUserPremiumDrawnShares
-        ) - oldUserPremiumOffset;
+          oldUserPremiumDrawnShares,
+          oldUserPremiumOffset
+        );
 
         userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMulUp(
           newUserRiskPremium
