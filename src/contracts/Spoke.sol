@@ -372,7 +372,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   /// @inheritdoc ISpoke
-  function updateUserDynamicConfig(address onBehalfOf) external onlyPositionManager(onBehalfOf) {
+  function updateUserDynamicConfig(address onBehalfOf) external {
+    if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
+      _checkCanCall(msg.sender, msg.data);
+    }
     _refreshDynamicConfig(onBehalfOf);
   }
 

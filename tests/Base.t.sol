@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {stdError} from 'forge-std/StdError.sol';
 import {stdMath} from 'forge-std/StdMath.sol';
-import {Vm} from 'forge-std/Vm.sol';
+import {Vm, VmSafe} from 'forge-std/Vm.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
@@ -110,6 +110,7 @@ abstract contract Base is Test {
   address internal ADMIN = makeAddr('ADMIN');
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
+  address internal USER_POSITION_UPDATER = makeAddr('USER_POSITION_UPDATER');
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
@@ -232,40 +233,50 @@ abstract contract Base is Test {
   }
 
   function setUpRoles(
-    ILiquidityHub hub,
+    ILiquidityHub liquidityHub,
     ISpoke spoke,
-    IAccessManager accessManager
+    IAccessManager manager
   ) internal virtual {
     vm.startPrank(ADMIN);
     // Grant roles with 0 delay
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
+    manager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
+    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
+
+    manager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
+    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
+
+    manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
+    manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, USER_POSITION_UPDATER, 0);
 
     // Grant responsibilities to roles
-    // Spoke Admin functionalities
-    bytes4[] memory selectors = new bytes4[](8);
-    selectors[0] = ISpoke.updateLiquidationConfig.selector;
-    selectors[1] = ISpoke.addReserve.selector;
-    selectors[2] = ISpoke.updateReserveConfig.selector;
-    selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
-    selectors[4] = ISpoke.updateUserRiskPremium.selector;
-    selectors[5] = ISpoke.updatePositionManager.selector;
-    selectors[6] = ISpoke.updateOracle.selector;
-    selectors[7] = ISpoke.updateReservePriceSource.selector;
+    {
+      bytes4[] memory selectors = new bytes4[](7);
+      selectors[0] = ISpoke.updateLiquidationConfig.selector;
+      selectors[1] = ISpoke.addReserve.selector;
+      selectors[2] = ISpoke.updateReserveConfig.selector;
+      selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
+      selectors[4] = ISpoke.updatePositionManager.selector;
+      selectors[5] = ISpoke.updateOracle.selector;
+      selectors[6] = ISpoke.updateReservePriceSource.selector;
+      manager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
+    }
 
-    accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
+    {
+      bytes4[] memory selectors = new bytes4[](2);
+      selectors[0] = ISpoke.updateUserDynamicConfig.selector;
+      selectors[1] = ISpoke.updateUserRiskPremium.selector;
+      manager.setTargetFunctionRole(address(spoke), selectors, Roles.USER_POSITION_UPDATER_ROLE);
+    }
 
-    // Liquidity Hub Admin functionalities
-    bytes4[] memory hubSelectors = new bytes4[](5);
-    hubSelectors[0] = ILiquidityHub.addAsset.selector;
-    hubSelectors[1] = ILiquidityHub.updateAssetConfig.selector;
-    hubSelectors[2] = ILiquidityHub.addSpoke.selector;
-    hubSelectors[3] = ILiquidityHub.updateSpokeConfig.selector;
-    hubSelectors[4] = ILiquidityHub.setInterestRateData.selector;
-    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
-
+    {
+      bytes4[] memory selectors = new bytes4[](5);
+      selectors[0] = ILiquidityHub.addAsset.selector;
+      selectors[1] = ILiquidityHub.updateAssetConfig.selector;
+      selectors[2] = ILiquidityHub.addSpoke.selector;
+      selectors[3] = ILiquidityHub.updateSpokeConfig.selector;
+      selectors[4] = ILiquidityHub.setInterestRateData.selector;
+      manager.setTargetFunctionRole(address(liquidityHub), selectors, Roles.HUB_ADMIN_ROLE);
+    }
     vm.stopPrank();
   }
 
@@ -1055,7 +1066,7 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId,
     uint256 newLiquidationFee
-  ) internal {
+  ) internal resumePrank {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationFee = newLiquidationFee;
 
@@ -2164,5 +2175,12 @@ abstract contract Base is Test {
     assertEq(a.realizedPremium, b.realizedPremium, 'realizedPremium');
     assertEq(a.premiumDebt, b.premiumDebt, 'premiumDebt');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
+  }
+
+  modifier resumePrank() {
+    (VmSafe.CallerMode callerMode, address msgSender, address txOrigin) = vm.readCallers();
+    if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.stopPrank();
+    _;
+    if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.startPrank(msgSender, txOrigin);
   }
 }
