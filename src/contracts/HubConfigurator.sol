@@ -149,7 +149,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   function freezeAsset(address hub, uint256 assetId) external override onlyOwner {
     ILiquidityHub targetHub = ILiquidityHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
-    for (uint256 i; i < spokesCount; i++) {
+    for (uint256 i = 0; i < spokesCount; ++i) {
       address spokeAddress = targetHub.getSpokeAddress(assetId, i);
       DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spokeAddress);
       config.supplyCap = 0;
@@ -162,7 +162,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   function pauseAsset(address hub, uint256 assetId) external override onlyOwner {
     ILiquidityHub targetHub = ILiquidityHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
-    for (uint256 i; i < spokesCount; i++) {
+    for (uint256 i = 0; i < spokesCount; ++i) {
       address spokeAddress = targetHub.getSpokeAddress(assetId, i);
       DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spokeAddress);
       config.active = false;
@@ -243,7 +243,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     DataTypes.SpokeConfig[] calldata configs
   ) external onlyOwner {
     require(assetIds.length == configs.length, MismatchedConfigs());
-    for (uint256 i; i < assetIds.length; i++) {
+    for (uint256 i = 0; i < assetIds.length; ++i) {
       ILiquidityHub(hub).addSpoke(assetIds[i], spoke, configs[i]);
     }
   }
