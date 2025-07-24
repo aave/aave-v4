@@ -163,9 +163,9 @@ abstract contract Base is Test {
   }
 
   struct DrawnAccounting {
-    uint256 cumulativeDebt;
-    uint256 baseDebt;
-    uint256 outstandingPremium;
+    uint256 totalOwed;
+    uint256 drawn;
+    uint256 premium;
   }
 
   struct AssetPosition {
@@ -173,11 +173,11 @@ abstract contract Base is Test {
     uint256 addedShares;
     uint256 addedAmount;
     uint256 baseDrawnShares;
-    uint256 baseDebt;
+    uint256 drawn;
     uint256 premiumDrawnShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
-    uint256 premiumDebt;
+    uint256 premium;
     uint40 lastUpdateTimestamp;
     uint256 availableLiquidity;
     uint256 baseDrawnIndex;
@@ -190,11 +190,11 @@ abstract contract Base is Test {
     uint256 addedShares;
     uint256 addedAmount;
     uint256 baseDrawnShares;
-    uint256 baseDebt;
+    uint256 drawn;
     uint256 premiumDrawnShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
-    uint256 premiumDebt;
+    uint256 premium;
   }
 
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
@@ -1316,24 +1316,24 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to calculate the amount of base and premium debt to restore
-  // @return baseDebtRestored amount of base debt to restore
-  // @return premiumDebtRestored amount of premium debt to restore
+  // @return drawnRestored amount of base debt to restore
+  // @return premiumRestored amount of premium debt to restore
   function _calculateExactRestoreAmount(
-    uint256 baseDebt,
-    uint256 premiumDebt,
+    uint256 drawn,
+    uint256 premium,
     uint256 restoreAmount,
     uint256 assetId
   ) internal view returns (uint256, uint256) {
-    if (restoreAmount <= premiumDebt) {
+    if (restoreAmount <= premium) {
       return (0, restoreAmount);
     }
-    uint256 baseDebtRestored = _min(baseDebt, restoreAmount - premiumDebt);
+    uint256 drawnRestored = _min(drawn, restoreAmount - premium);
     // round base debt to nearest whole share
-    baseDebtRestored = hub.convertToDrawnAssets(
+    drawnRestored = hub.convertToDrawnAssets(
       assetId,
-      hub.convertToDrawnShares(assetId, baseDebtRestored)
+      hub.convertToDrawnShares(assetId, drawnRestored)
     );
-    return (baseDebtRestored, premiumDebt);
+    return (drawnRestored, premium);
   }
 
   /// @dev Helper function to check consistent supplied amounts within accounting
@@ -1448,7 +1448,7 @@ abstract contract Base is Test {
     string memory label
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = hub.getSpokeDebt(assetId, address(spoke));
+    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = hub.getSpokeOwed(assetId, address(spoke));
     assertApproxEqAbs(
       actualBaseDebt,
       expectedBaseDebt,
@@ -1462,7 +1462,7 @@ abstract contract Base is Test {
       string.concat('spoke premium debt ', label)
     );
     assertApproxEqAbs(
-      hub.getSpokeTotalDebt(assetId, address(spoke)),
+      hub.getSpokeTotalOwed(assetId, address(spoke)),
       expectedBaseDebt + expectedPremiumDebt,
       2,
       string.concat('spoke total debt ', label)
@@ -1477,7 +1477,7 @@ abstract contract Base is Test {
     string memory label
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = hub.getAssetDebt(assetId);
+    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = hub.getAssetOwed(assetId);
     assertApproxEqAbs(
       actualBaseDebt,
       expectedBaseDebt,
@@ -1491,7 +1491,7 @@ abstract contract Base is Test {
       string.concat('asset premium debt ', label)
     );
     assertApproxEqAbs(
-      hub.getAssetTotalDebt(assetId),
+      hub.getAssetTotalOwed(assetId),
       expectedBaseDebt + expectedPremiumDebt,
       2,
       string.concat('asset total debt ', label)
@@ -1772,8 +1772,8 @@ abstract contract Base is Test {
 
   /// @dev Helper function to get asset base debt
   function getAssetBaseDebt(uint256 assetId) internal view returns (uint256) {
-    (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
-    return baseDebt;
+    (uint256 drawn, ) = hub.getAssetOwed(assetId);
+    return drawn;
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke
@@ -1895,11 +1895,11 @@ abstract contract Base is Test {
   }
 
   function _calculateExpectedFees(
-    uint256 baseDebtIncrease,
-    uint256 premiumDebtIncrease,
+    uint256 drawnIncrease,
+    uint256 premiumIncrease,
     uint256 liquidityFee
   ) internal pure returns (uint256) {
-    return (baseDebtIncrease + premiumDebtIncrease).percentMulDown(liquidityFee);
+    return (drawnIncrease + premiumIncrease).percentMulDown(liquidityFee);
   }
 
   function _calculateExpectedFeesAmount(
@@ -1936,16 +1936,16 @@ abstract contract Base is Test {
     uint256 interestRateBps,
     uint256 assetId,
     uint256 availableLiquidity,
-    uint256 baseDebt,
-    uint256 premiumDebt
+    uint256 drawn,
+    uint256 premium
   ) internal {
     _mockInterestRateBps(
       address(irStrategy),
       interestRateBps,
       assetId,
       availableLiquidity,
-      baseDebt,
-      premiumDebt
+      drawn,
+      premium
     );
   }
 
@@ -1954,14 +1954,14 @@ abstract contract Base is Test {
     uint256 interestRateBps,
     uint256 assetId,
     uint256 availableLiquidity,
-    uint256 baseDebt,
-    uint256 premiumDebt
+    uint256 drawn,
+    uint256 premium
   ) internal {
     vm.mockCall(
       interestRateStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, availableLiquidity, baseDebt, premiumDebt)
+        (assetId, availableLiquidity, drawn, premium)
       ),
       abi.encode(interestRateBps.bpsToRay())
     );
@@ -1983,16 +1983,16 @@ abstract contract Base is Test {
     uint256 interestRateRay,
     uint256 assetId,
     uint256 availableLiquidity,
-    uint256 baseDebt,
-    uint256 premiumDebt
+    uint256 drawn,
+    uint256 premium
   ) internal {
     _mockInterestRateRay(
       address(irStrategy),
       interestRateRay,
       assetId,
       availableLiquidity,
-      baseDebt,
-      premiumDebt
+      drawn,
+      premium
     );
   }
 
@@ -2001,14 +2001,14 @@ abstract contract Base is Test {
     uint256 interestRateRay,
     uint256 assetId,
     uint256 availableLiquidity,
-    uint256 baseDebt,
-    uint256 premiumDebt
+    uint256 drawn,
+    uint256 premium
   ) internal {
     vm.mockCall(
       interestRateStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, availableLiquidity, baseDebt, premiumDebt)
+        (assetId, availableLiquidity, drawn, premium)
       ),
       abi.encode(interestRateRay)
     );
@@ -2045,15 +2045,15 @@ abstract contract Base is Test {
     string memory operation
   ) internal view {
     DataTypes.Asset memory asset = hub.getAsset(assetId);
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
 
     vm.assertEq(
       asset.baseDrawnRate,
       IBasicInterestRateStrategy(asset.config.irStrategy).calculateInterestRate(
         assetId,
         asset.availableLiquidity,
-        baseDebt,
-        premiumDebt
+        drawn,
+        premium
       ),
       string.concat('base borrow rate after ', operation)
     );
@@ -2089,7 +2089,7 @@ abstract contract Base is Test {
     uint256 assetId
   ) internal view returns (AssetPosition memory) {
     DataTypes.Asset memory assetData = hub.getAsset(assetId);
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
     return
       AssetPosition({
         assetId: assetId,
@@ -2097,11 +2097,11 @@ abstract contract Base is Test {
         addedShares: assetData.addedShares,
         addedAmount: hub.getAssetAddedAmount(assetId),
         baseDrawnShares: assetData.baseDrawnShares,
-        baseDebt: baseDebt,
+        drawn: drawn,
         premiumDrawnShares: assetData.premiumDrawnShares,
         premiumOffset: assetData.premiumOffset,
         realizedPremium: assetData.realizedPremium,
-        premiumDebt: premiumDebt,
+        premium: premium,
         lastUpdateTimestamp: uint40(assetData.lastUpdateTimestamp),
         baseDrawnIndex: assetData.baseDrawnIndex,
         baseDrawnRate: assetData.baseDrawnRate
@@ -2121,7 +2121,7 @@ abstract contract Base is Test {
   ) internal view returns (SpokePosition memory) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke));
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getSpokeDebt(assetId, address(spoke));
+    (uint256 drawn, uint256 premium) = hub.getSpokeOwed(assetId, address(spoke));
     return
       SpokePosition({
         reserveId: reserveId,
@@ -2129,11 +2129,11 @@ abstract contract Base is Test {
         addedShares: spokeData.addedShares,
         addedAmount: hub.getSpokeAddedAmount(assetId, address(spoke)),
         baseDrawnShares: spokeData.baseDrawnShares,
-        baseDebt: baseDebt,
+        drawn: drawn,
         premiumDrawnShares: spokeData.premiumDrawnShares,
         premiumOffset: spokeData.premiumOffset,
         realizedPremium: spokeData.realizedPremium,
-        premiumDebt: premiumDebt
+        premium: premium
       });
   }
 
@@ -2142,11 +2142,11 @@ abstract contract Base is Test {
     assertEq(a.addedShares, b.addedShares, 'addedShares');
     assertEq(a.addedAmount, b.addedAmount, 'addedAmount');
     assertEq(a.baseDrawnShares, b.baseDrawnShares, 'baseDrawnShares');
-    assertEq(a.baseDebt, b.baseDebt, 'baseDebt');
+    assertEq(a.drawn, b.drawn, 'baseDebt');
     assertEq(a.premiumDrawnShares, b.premiumDrawnShares, 'premiumDrawnShares');
     assertEq(a.premiumOffset, b.premiumOffset, 'premiumOffset');
     assertEq(a.realizedPremium, b.realizedPremium, 'realizedPremium');
-    assertEq(a.premiumDebt, b.premiumDebt, 'premiumDebt');
+    assertEq(a.premium, b.premium, 'premium');
   }
 
   function assertEq(SpokePosition memory a, SpokePosition memory b) internal pure {
@@ -2155,11 +2155,11 @@ abstract contract Base is Test {
     assertEq(a.addedShares, b.addedShares, 'addedShares');
     assertEq(a.addedAmount, b.addedAmount, 'addedAmount');
     assertEq(a.baseDrawnShares, b.baseDrawnShares, 'baseDrawnShares');
-    assertEq(a.baseDebt, b.baseDebt, 'baseDebt');
+    assertEq(a.drawn, b.drawn, 'drawn');
     assertEq(a.premiumDrawnShares, b.premiumDrawnShares, 'premiumDrawnShares');
     assertEq(a.premiumOffset, b.premiumOffset, 'premiumOffset');
     assertEq(a.realizedPremium, b.realizedPremium, 'realizedPremium');
-    assertEq(a.premiumDebt, b.premiumDebt, 'premiumDebt');
+    assertEq(a.premium, b.premium, 'premium');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 }

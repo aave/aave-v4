@@ -1228,7 +1228,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // verify LH asset debt is decreased by partial repayment
     assertApproxEqAbs(
-      hub.getAssetTotalDebt(_daiReserveId(spoke1)),
+      hub.getAssetTotalOwed(_daiReserveId(spoke1)),
       fullDebt - baseRestored - premiumRestored,
       2
     );
@@ -1279,7 +1279,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     assertEq(premiumDaiDebt, 0);
 
     // verify LH asset debt is 0
-    assertEq(hub.getAssetTotalDebt(_daiReserveId(spoke1)), 0);
+    assertEq(hub.getAssetTotalOwed(_daiReserveId(spoke1)), 0);
   }
 
   /// User supplies appropriate collateral, then borrows, immediately repays, check delta on share amounts

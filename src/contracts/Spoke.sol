@@ -766,7 +766,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       realizedPremiumAdded,
       realizedPremiumTaken
     );
-    hub.refreshPremiumDebt(
+    hub.refreshPremium(
       assetId,
       premiumDrawnSharesDelta,
       premiumOffsetDelta,
@@ -1151,14 +1151,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     debtReserve.baseDrawnShares -= vars.totalRestoredShares;
     collateralReserve.suppliedShares -= vars.totalWithdrawnShares;
 
-    debtReserveHub.refreshPremiumDebt(
+    debtReserveHub.refreshPremium(
       vars.debtAssetId,
       vars.totalUserDebtPremiumDrawnSharesDelta,
       vars.totalUserDebtPremiumOffsetDelta,
       0,
       0
     );
-    collateralReserveHub.refreshPremiumDebt(
+    collateralReserveHub.refreshPremium(
       vars.collateralAssetId,
       vars.totalUserCollateralPremiumDrawnSharesDelta,
       vars.totalUserCollateralPremiumOffsetDelta,

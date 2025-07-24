@@ -25,9 +25,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 actualPremium;
     uint256 reserveDebt;
     uint256 reservePremium;
-    uint256 spokeDebt;
+    uint256 spokeOwed;
     uint256 spokePremium;
-    uint256 assetDebt;
+    uint256 assetOwed;
     uint256 assetPremium;
   }
 
@@ -984,12 +984,12 @@ contract SpokeRiskPremiumTest is SpokeBase {
     assertApproxEqAbs(reservePremium, premiumDebt, 1, 'reserve premium debt');
 
     // See if values are reflected on hub side as well
-    (uint256 spokeDebt, uint256 spokePremium) = hub.getSpokeDebt(wbtcAssetId, address(spoke3));
-    assertEq(spokeDebt, baseDebt, 'hub spoke base debt');
+    (uint256 spokeOwed, uint256 spokePremium) = hub.getSpokeOwed(wbtcAssetId, address(spoke3));
+    assertEq(spokeOwed, baseDebt, 'hub spoke base debt');
     assertApproxEqAbs(spokePremium, premiumDebt, 1, 'hub spoke premium debt');
 
-    (uint256 assetDebt, uint256 assetPremium) = hub.getAssetDebt(wbtcAssetId);
-    assertEq(assetDebt, baseDebt, 'hub asset base debt');
+    (uint256 assetOwed, uint256 assetPremium) = hub.getAssetOwed(wbtcAssetId);
+    assertEq(assetOwed, baseDebt, 'hub asset base debt');
     assertApproxEqAbs(assetPremium, premiumDebt, 1, 'hub asset premium debt');
   }
 
@@ -1134,11 +1134,11 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     // See if values are reflected on hub side as well
-    (debtChecks.spokeDebt, debtChecks.spokePremium) = hub.getSpokeDebt(
+    (debtChecks.spokeOwed, debtChecks.spokePremium) = hub.getSpokeOwed(
       wbtcAssetId,
       address(spoke3)
     );
-    assertEq(debtChecks.spokeDebt, debtChecks.baseDebt, 'hub spoke base debt after accrual');
+    assertEq(debtChecks.spokeOwed, debtChecks.baseDebt, 'hub spoke base debt after accrual');
     assertApproxEqAbs(
       debtChecks.spokePremium,
       debtChecks.premiumDebt,
@@ -1146,8 +1146,8 @@ contract SpokeRiskPremiumTest is SpokeBase {
       'hub spoke premium debt after accrual'
     );
 
-    (debtChecks.assetDebt, debtChecks.assetPremium) = hub.getAssetDebt(wbtcAssetId);
-    assertEq(debtChecks.assetDebt, debtChecks.baseDebt, 'hub asset base debt after accrual');
+    (debtChecks.assetOwed, debtChecks.assetPremium) = hub.getAssetOwed(wbtcAssetId);
+    assertEq(debtChecks.assetOwed, debtChecks.baseDebt, 'hub asset base debt after accrual');
     assertApproxEqAbs(
       debtChecks.assetPremium,
       debtChecks.premiumDebt,
@@ -1187,11 +1187,11 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     // See if values are reflected on hub side as well
-    (debtChecks.spokeDebt, debtChecks.spokePremium) = hub.getSpokeDebt(
+    (debtChecks.spokeOwed, debtChecks.spokePremium) = hub.getSpokeOwed(
       wethAssetId,
       address(spoke3)
     );
-    assertEq(debtChecks.spokeDebt, debtChecks.baseDebt, 'hub spoke base debt after accrual');
+    assertEq(debtChecks.spokeOwed, debtChecks.baseDebt, 'hub spoke base debt after accrual');
     assertApproxEqAbs(
       debtChecks.spokePremium,
       debtChecks.premiumDebt,
@@ -1199,8 +1199,8 @@ contract SpokeRiskPremiumTest is SpokeBase {
       'hub spoke premium debt after accrual'
     );
 
-    (debtChecks.assetDebt, debtChecks.assetPremium) = hub.getAssetDebt(wethAssetId);
-    assertEq(debtChecks.assetDebt, debtChecks.baseDebt, 'hub asset base debt after accrual');
+    (debtChecks.assetOwed, debtChecks.assetPremium) = hub.getAssetOwed(wethAssetId);
+    assertEq(debtChecks.assetOwed, debtChecks.baseDebt, 'hub asset base debt after accrual');
     assertApproxEqAbs(
       debtChecks.assetPremium,
       debtChecks.premiumDebt,

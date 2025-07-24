@@ -363,8 +363,8 @@ contract SpokeBase is Base {
   ) internal {
     uint256 reserveId = _assetReserveId(spoke);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 assetDebtWithoutSpoke = hub.getAssetTotalDebt(assetId) -
-      hub.getSpokeTotalDebt(assetId, address(spoke));
+    uint256 assetOwedWithoutSpoke = hub.getAssetTotalOwed(assetId) -
+      hub.getSpokeTotalOwed(assetId, address(spoke));
 
     address[4] memory users = [alice, bob, carol, derl];
     for (uint256 i; i < users.length; ++i) {
@@ -384,10 +384,10 @@ contract SpokeBase is Base {
     }
 
     assertEq(spoke.getReserveTotalDebt(reserveId), 0, 'reserve total debt not zero');
-    assertEq(hub.getSpokeTotalDebt(assetId, address(spoke)), 0, 'hub spoke total debt not zero');
+    assertEq(hub.getSpokeTotalOwed(assetId, address(spoke)), 0, 'hub spoke total debt not zero');
     assertEq(
-      hub.getAssetTotalDebt(assetId),
-      assetDebtWithoutSpoke,
+      hub.getAssetTotalOwed(assetId),
+      assetOwedWithoutSpoke,
       'hub asset total debt not settled'
     );
   }

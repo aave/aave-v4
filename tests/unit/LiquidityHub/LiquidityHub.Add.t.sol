@@ -271,13 +271,13 @@ contract LiquidityHubAddTest is LiquidityHubBase {
 
     IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
-    (uint256 baseDebtBefore, uint256 premiumDebtBefore) = hub.getAssetDebt(assetId);
+    (uint256 drawnBefore, uint256 premiumBefore) = hub.getAssetOwed(assetId);
     uint256 availableLiquidityBefore = hub.getAvailableLiquidity(assetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, availableLiquidityBefore + amount, baseDebtBefore, premiumDebtBefore)
+        (assetId, availableLiquidityBefore + amount, drawnBefore, premiumBefore)
       )
     );
 
@@ -313,8 +313,8 @@ contract LiquidityHubAddTest is LiquidityHubBase {
       availableLiquidityBefore + amount,
       'hub available liquidity after'
     );
-    (uint256 baseDebtAfter, ) = hub.getAssetDebt(assetId);
-    assertEq(baseDebtAfter, baseDebtBefore, 'hub base debt after');
+    (uint256 drawnAfter, ) = hub.getAssetOwed(assetId);
+    assertEq(drawnAfter, drawnBefore, 'hub base debt after');
     assertBorrowRateSynced(hub, assetId, 'hub.add');
     // token balance
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-add');
@@ -495,8 +495,8 @@ contract LiquidityHubAddTest is LiquidityHubBase {
       skipTime: 365 days
     });
 
-    (, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
-    assertEq(premiumDebt, 0); // zero premium debt
+    (, uint256 premium) = hub.getAssetOwed(daiAssetId);
+    assertEq(premium, 0); // zero premium debt
 
     uint256 addAmount = 10e18; // this can be 0
     uint256 shares = hub.convertToAddedShares(daiAssetId, addAmount);
@@ -505,13 +505,13 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     uint256 addedAssetsBefore = hub.getAssetAddedAmount(daiAssetId);
     uint256 addedSharesBefore = hub.getAssetAddedShares(daiAssetId);
 
-    (uint256 baseDebtBefore, uint256 premiumDebtBefore) = hub.getAssetDebt(daiAssetId);
+    (uint256 drawnBefore, uint256 premiumBefore) = hub.getAssetOwed(daiAssetId);
     uint256 availableLiquidityBefore = hub.getAvailableLiquidity(daiAssetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (daiAssetId, availableLiquidityBefore + addAmount, baseDebtBefore, premiumDebtBefore)
+        (daiAssetId, availableLiquidityBefore + addAmount, drawnBefore, premiumBefore)
       )
     );
 
@@ -552,8 +552,8 @@ contract LiquidityHubAddTest is LiquidityHubBase {
       availableLiquidityBefore + addAmount,
       'hub available liquidity after'
     );
-    (uint256 baseDebtAfter, ) = hub.getAssetDebt(daiAssetId);
-    assertEq(baseDebtAfter, baseDebtBefore, 'hub base debt after');
+    (uint256 drawnAfter, ) = hub.getAssetOwed(daiAssetId);
+    assertEq(drawnAfter, drawnBefore, 'hub base debt after');
     assertBorrowRateSynced(hub, daiAssetId, 'hub.add');
   }
 
@@ -642,10 +642,10 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     });
 
     // debt exists
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
-    assertGt(baseDebt, 0);
-    (baseDebt, premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
-    assertGt(baseDebt, 0);
+    (uint256 drawn, uint256 premium) = hub.getAssetOwed(daiAssetId);
+    assertGt(drawn, 0);
+    (drawn, premium) = hub.getSpokeOwed(daiAssetId, address(spoke1));
+    assertGt(drawn, 0);
 
     // hub
     assertGe(
@@ -750,10 +750,10 @@ contract LiquidityHubAddTest is LiquidityHubBase {
         user: bob
       });
 
-      (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
-      assertGt(baseDebt, 0);
-      (baseDebt, ) = hub.getSpokeDebt(assetId, address(spoke1));
-      assertGt(baseDebt, 0);
+      (uint256 drawn, ) = hub.getAssetOwed(assetId);
+      assertGt(drawn, 0);
+      (drawn, ) = hub.getSpokeOwed(assetId, address(spoke1));
+      assertGt(drawn, 0);
 
       params.availableLiq += addAmount;
       params.assetAddedShares += addShares;

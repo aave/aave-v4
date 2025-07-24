@@ -45,9 +45,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     uint256 actualPremium;
     uint256 reserveDebt;
     uint256 reservePremium;
-    uint256 spokeDebt;
+    uint256 spokeOwed;
     uint256 spokePremium;
-    uint256 assetDebt;
+    uint256 assetOwed;
     uint256 assetPremium;
   }
 
@@ -1067,11 +1067,11 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Check spoke debt on hub for dai
-    (debtChecks.spokeDebt, debtChecks.spokePremium) = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    (debtChecks.spokeOwed, debtChecks.spokePremium) = hub.getSpokeOwed(daiAssetId, address(spoke1));
 
     // Spoke debt should be the sum of both user debts
     assertApproxEqAbs(
-      debtChecks.spokeDebt,
+      debtChecks.spokeOwed,
       bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt,
       1,
       string.concat('hub spoke base debt ', label)
@@ -1086,14 +1086,14 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Check spoke debt on hub for usdx
-    (debtChecks.spokeDebt, debtChecks.spokePremium) = hub.getSpokeDebt(
+    (debtChecks.spokeOwed, debtChecks.spokePremium) = hub.getSpokeOwed(
       usdxAssetId,
       address(spoke1)
     );
 
     // Spoke debt should be the sum of both user debts
     assertApproxEqAbs(
-      debtChecks.spokeDebt,
+      debtChecks.spokeOwed,
       bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt,
       1,
       string.concat('hub spoke base debt ', label)
@@ -1108,11 +1108,11 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Check asset debt on hub for dai
-    (debtChecks.assetDebt, debtChecks.assetPremium) = hub.getAssetDebt(daiAssetId);
+    (debtChecks.assetOwed, debtChecks.assetPremium) = hub.getAssetOwed(daiAssetId);
 
     // Asset debt should be the sum of both user debts
     assertApproxEqAbs(
-      debtChecks.assetDebt,
+      debtChecks.assetOwed,
       bobDaiInfo.baseDebt + aliceDaiInfo.baseDebt,
       1,
       string.concat('hub asset base debt ', label)
@@ -1127,11 +1127,11 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Check asset debt on hub for usdx
-    (debtChecks.assetDebt, debtChecks.assetPremium) = hub.getAssetDebt(usdxAssetId);
+    (debtChecks.assetOwed, debtChecks.assetPremium) = hub.getAssetOwed(usdxAssetId);
 
     // Asset debt should be the sum of both user debts
     assertApproxEqAbs(
-      debtChecks.assetDebt,
+      debtChecks.assetOwed,
       bobUsdxInfo.baseDebt + aliceUsdxInfo.baseDebt,
       1,
       string.concat('hub asset base debt ', label)

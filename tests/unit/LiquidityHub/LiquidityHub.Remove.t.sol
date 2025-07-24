@@ -41,8 +41,8 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(assetData.addedAmount, 0, 'asset added amount after');
     assertEq(assetData.addedShares, 0, 'asset added shares after');
     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity after');
-    assertEq(assetData.baseDebt, 0, 'asset baseDebt after');
-    assertEq(assetData.premiumDebt, 0, 'asset premiumDebt after');
+    assertEq(assetData.drawn, 0, 'asset drawn after');
+    assertEq(assetData.premium, 0, 'asset premium after');
     assertEq(assetData.baseDrawnIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex after');
     assertEq(assetData.baseDrawnRate, uint256(5_00).bpsToRay(), 'asset baseDrawnRate after');
     assertEq(
@@ -119,16 +119,16 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     Utils.draw({hub: hub, assetId: assetId, caller: address(spoke3), amount: drawAmount, to: bob});
     skip(skipTime);
 
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
-    vm.assume(baseDebt + premiumDebt <= MAX_SUPPLY_AMOUNT);
+    (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
+    vm.assume(drawn + premium <= MAX_SUPPLY_AMOUNT);
 
     // restore all drawn liquidity
     Utils.restore({
       hub: hub,
       assetId: assetId,
       caller: address(spoke3),
-      baseAmount: baseDebt,
-      premiumAmount: premiumDebt,
+      baseAmount: drawn,
+      premiumAmount: premium,
       restorer: bob
     });
 
@@ -205,7 +205,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       skipTime: 365 days
     });
 
-    (uint256 baseDebtRestored, uint256 premiumDebtRestored) = hub.getSpokeDebt(
+    (uint256 drawnRestored, uint256 premiumRestored) = hub.getSpokeOwed(
       daiAssetId,
       address(spoke1)
     );
@@ -215,15 +215,15 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       hub: hub,
       assetId: daiAssetId,
       caller: address(spoke1),
-      baseAmount: baseDebtRestored,
-      premiumAmount: premiumDebtRestored,
+      baseAmount: drawnRestored,
+      premiumAmount: premiumRestored,
       restorer: alice
     });
 
     AssetPosition memory asset = getAssetPosition(hub, daiAssetId);
     assertEq(
       asset.availableLiquidity,
-      initialAvailableLiquidity + baseDebtRestored + premiumDebtRestored,
+      initialAvailableLiquidity + drawnRestored + premiumRestored,
       'dai availableLiquidity'
     );
 
@@ -262,14 +262,14 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       1,
       'dai availableLiquidity'
     );
-    assertEq(asset.baseDebt, 0, 'dai baseDebt');
-    assertEq(asset.premiumDebt, 0, 'dai premiumDebt');
+    assertEq(asset.drawn, 0, 'dai drawn');
+    assertEq(asset.premium, 0, 'dai premium');
     assertEq(asset.lastUpdateTimestamp, vm.getBlockTimestamp(), 'dai lastUpdateTimestamp');
     // spoke1
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares');
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount');
-    assertEq(spokePosition1.baseDebt, 0, 'spoke1 baseDebt');
-    assertEq(spokePosition1.premiumDebt, 0, 'spoke1 premiumDebt');
+    assertEq(spokePosition1.drawn, 0, 'spoke1 drawn');
+    assertEq(spokePosition1.premium, 0, 'spoke1 premium');
     // spoke2
     assertEq(spokePosition1, spokePosition2);
     // dai
@@ -316,7 +316,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       user: bob
     });
 
-    (uint256 baseDebtRestored, uint256 premiumDebtRestored) = hub.getSpokeDebt(
+    (uint256 drawnRestored, uint256 premiumRestored) = hub.getSpokeOwed(
       daiAssetId,
       address(spoke1)
     );
@@ -326,15 +326,15 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       hub: hub,
       assetId: daiAssetId,
       caller: address(spoke1),
-      baseAmount: baseDebtRestored,
-      premiumAmount: premiumDebtRestored,
+      baseAmount: drawnRestored,
+      premiumAmount: premiumRestored,
       restorer: alice
     });
 
     AssetPosition memory asset = getAssetPosition(hub, daiAssetId);
     assertEq(
       asset.availableLiquidity,
-      initialAvailableLiquidity + baseDebtRestored + premiumDebtRestored + add2Amount,
+      initialAvailableLiquidity + drawnRestored + premiumRestored + add2Amount,
       'dai availableLiquidity'
     );
 
@@ -362,14 +362,14 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertApproxEqAbs(asset.addedAmount, feeAmount, 1, 'hub addedAmount');
     assertEq(asset.addedShares, feeShares, 'hub addedShares');
     assertApproxEqAbs(asset.availableLiquidity, feeAmount, 1, 'dai availableLiquidity');
-    assertEq(asset.baseDebt, 0, 'dai baseDebt');
-    assertEq(asset.premiumDebt, 0, 'dai premiumDebt');
+    assertEq(asset.drawn, 0, 'dai drawn');
+    assertEq(asset.premium, 0, 'dai premium');
     assertEq(asset.lastUpdateTimestamp, vm.getBlockTimestamp(), 'dai lastUpdateTimestamp');
     // spoke1
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares');
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount');
-    assertEq(spokePosition1.baseDebt, 0, 'spoke1 baseDebt');
-    assertEq(spokePosition1.premiumDebt, 0, 'spoke1 premiumDebt');
+    assertEq(spokePosition1.drawn, 0, 'spoke1 drawn');
+    assertEq(spokePosition1.premium, 0, 'spoke1 premium');
     // spoke2
     assertEq(spokePosition1, spokePosition2);
     // dai - all to alice

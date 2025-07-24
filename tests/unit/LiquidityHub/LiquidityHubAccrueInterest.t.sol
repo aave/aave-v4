@@ -111,7 +111,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.baseDrawnIndex, expectedDebtIndex1, 'baseDrawnIndex');
     assertEq(hub.getAssetAddedAmount(daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
-    assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt1, 'baseDebt');
+    assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt1, 'drawn');
 
     startTime = vm.getBlockTimestamp();
     baseDrawnRate = hub.getBaseInterestRate(daiAssetId);
@@ -136,7 +136,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.baseDrawnIndex, expectedDebtIndex2, 'baseDrawnIndex2');
     assertEq(hub.getAssetAddedAmount(daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
-    assertEq(getAssetBaseDebt(daiAssetId), 0, 'baseDebt');
+    assertEq(getAssetBaseDebt(daiAssetId), 0, 'drawn');
 
     // Time passes
     skip(elapsed);
@@ -153,7 +153,7 @@ contract LiquidityHubAccrueInterestTest is Base {
       addAmount + addAmount2 * 2 + interest,
       'addAmount'
     );
-    assertEq(getAssetBaseDebt(daiAssetId), 0, 'baseDebt');
+    assertEq(getAssetBaseDebt(daiAssetId), 0, 'drawn');
   }
 
   /// accrue interest after some time has passed
@@ -189,7 +189,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.baseDrawnIndex, expectedDebtIndex, 'baseDrawnIndex');
     assertEq(hub.getAssetAddedAmount(daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
-    assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt, 'baseDebt');
+    assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt, 'drawn');
   }
 
   /// accrue interest on any borrow amount after any time has passed
@@ -228,7 +228,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.baseDrawnIndex, expectedDebtIndex, 'baseDrawnIndex');
     assertEq(hub.getAssetAddedAmount(daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
-    assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt, 'baseDebt');
+    assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt, 'drawn');
   }
 
   function test_accrueInterest_TenPercentRP(uint256 borrowAmount, uint40 elapsed) public {
@@ -300,7 +300,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     //     );
 
     //     assertEq(daiInfo.lastUpdateTimestamp - startTime, elapsed);
-    //     assertEq(daiInfo.baseDebt, totalBase);
+    //     assertEq(daiInfo.drawn, totalBase);
     //     assertEq(daiInfo.riskPremium.derayify(), riskPremium);
     //     assertEq(daiInfo.realizedPremium, (totalBase - borrowAmount).percentMul(riskPremium));
   }
@@ -354,7 +354,7 @@ contract LiquidityHubAccrueInterestTest is Base {
       spoke1Amounts.add0 + addAmount2 + interest1,
       'addAmount'
     );
-    assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt1, 'baseDebt');
+    assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt1, 'drawn');
 
     // Say borrow rate changes
     _mockInterestRateBps(borrowRate);
@@ -387,6 +387,6 @@ contract LiquidityHubAccrueInterestTest is Base {
       spoke1Amounts.add0 + addAmount2 * 3 + interest1 + interest2,
       'addAmount t2'
     );
-    assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt2, 'baseDebt t2');
+    assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt2, 'drawn t2');
   }
 }

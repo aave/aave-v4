@@ -20,7 +20,7 @@ library AssetLogic {
   // todo: option for cached object
   // todo: add virtual offset for inflation attack
 
-  // debt exchange rate does not incl premiumDebt to accrue base rate separately
+  // debt exchange rate does not incl premium to accrue base rate separately
   function toDrawnAssetsUp(
     DataTypes.Asset storage asset,
     uint256 shares
@@ -49,26 +49,26 @@ library AssetLogic {
     return assets.rayDivDown(asset.previewDrawnIndex());
   }
 
-  function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
+  function drawn(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.baseDrawnShares.rayMulUp(asset.previewDrawnIndex());
   }
 
-  function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
+  function premium(DataTypes.Asset storage asset) internal view returns (uint256) {
     // sanity: utilize solc underflow check
     uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumDrawnShares) - asset.premiumOffset;
     return asset.realizedPremium + accruedPremium;
   }
 
   function debt(DataTypes.Asset storage asset) internal view returns (uint256, uint256) {
-    return (asset.baseDebt(), asset.premiumDebt());
+    return (asset.drawn(), asset.premium());
   }
 
-  function totalDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDebt() + asset.premiumDebt();
+  function totalOwed(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return asset.drawn() + asset.premium();
   }
 
   function totalAddedAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.availableLiquidity + asset.totalDebt();
+    return asset.availableLiquidity + asset.totalOwed();
   }
 
   function totalAddedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -109,8 +109,8 @@ library AssetLogic {
       .calculateInterestRate({
         assetId: assetId,
         availableLiquidity: asset.availableLiquidity,
-        baseDebt: asset.baseDebt(),
-        premiumDebt: asset.premiumDebt()
+        drawn: asset.drawn(),
+        premium: asset.premium()
       });
     asset.baseDrawnRate = newBorrowRate;
 

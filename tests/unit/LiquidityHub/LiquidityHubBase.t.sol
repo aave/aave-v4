@@ -55,7 +55,7 @@ contract LiquidityHubBase is Base {
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
-  /// @dev mocks rate, addSpoke (addUser) supplies asset, drawSpoke (drawUser) draws asset, skips time
+  /// @dev mocks rate, addSpoke (addUser) adds asset, drawSpoke (drawUser) draws asset, skips time
   function _addAndDrawLiquidity(
     uint256 assetId,
     address addUser,
@@ -90,12 +90,12 @@ contract LiquidityHubBase is Base {
 
     // DrawnData memory drawnData;
     // drawnData.asset.cumulativeDebt = hub.getAssetCumulativeDebt(assetId);
-    // (drawnData.asset.baseDebt, drawnData.asset.outstandingPremium) = hub.getAssetDebt(assetId);
+    // (drawnData.asset.drawn, drawnData.asset.outstandingPremium) = hub.getAssetOwed(assetId);
 
     // address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
     // for (uint256 i = 0; i < 3; i++) {
     //   drawnData.spoke[i].cumulativeDebt = hub.getSpokeCumulativeDebt(assetId, address(spokes[i]));
-    //   (drawnData.spoke[i].baseDebt, drawnData.spoke[i].outstandingPremium) = hub.getSpokeDebt(
+    //   (drawnData.spoke[i].drawn, drawnData.spoke[i].outstandingPremium) = hub.getSpokeOwed(
     //     assetId,
     //     spokes[i]
     //   );
@@ -146,27 +146,21 @@ contract LiquidityHubBase is Base {
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(tempSpoke);
-      hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
+      hub.refreshPremium(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
     }
 
     Utils.draw(hub, assetId, tempSpoke, tempUser, amount);
 
     skip(365 days);
 
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
-    assertGt(baseDebt, 0); // non-zero premium debt
+    (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
+    assertGt(drawn, 0); // non-zero premium debt
 
     if (withPremium) {
-      assertGt(premiumDebt, 0); // non-zero premium debt
+      assertGt(premium, 0); // non-zero premium debt
       // restore premium data
       vm.prank(tempSpoke);
-      hub.refreshPremiumDebt(
-        assetId,
-        -premiumDrawnSharesDelta,
-        -premiumOffsetDelta,
-        premiumDebt,
-        0
-      );
+      hub.refreshPremium(assetId, -premiumDrawnSharesDelta, -premiumOffsetDelta, premium, 0);
     }
   }
 }

@@ -154,17 +154,17 @@ interface ILiquidityHub is IAccessManaged {
   ) external returns (uint256);
 
   /**
-   * @notice Refreshes premium debt accounting.
+   * @notice Refreshes premium accounting.
    * @dev To be called when moving accrued premium to realized premium.
    * @dev Only callable by spokes.
-   * @dev Premium debt can only decrease by at most the amount of realized premium taken.
+   * @dev Premium can only decrease by at most the amount of realized premium taken.
    * @param assetId The identifier of the asset.
    * @param premiumDrawnSharesDelta The change in premium drawn shares.
    * @param premiumOffsetDelta The change in premium offset.
    * @param realizedPremiumAdded The increase of realized premium.
    * @param realizedPremiumTaken The decrease of realized premium.
    */
-  function refreshPremiumDebt(
+  function refreshPremium(
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
@@ -202,13 +202,13 @@ interface ILiquidityHub is IAccessManaged {
 
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
 
-  function getAssetDebt(uint256 assetId) external view returns (uint256, uint256);
+  function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
 
   function getAssetAddedAmount(uint256 assetId) external view returns (uint256);
 
   function getAssetAddedShares(uint256 assetId) external view returns (uint256);
 
-  function getAssetTotalDebt(uint256 assetId) external view returns (uint256);
+  function getAssetTotalOwed(uint256 assetId) external view returns (uint256);
 
   function getTotalAddedAssets(uint256 assetId) external view returns (uint256);
 
@@ -228,13 +228,13 @@ interface ILiquidityHub is IAccessManaged {
     address spoke
   ) external view returns (DataTypes.SpokeConfig memory);
 
-  function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256);
+  function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256);
 
   function getSpokeAddedAmount(uint256 assetId, address spoke) external view returns (uint256);
 
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256);
 
-  function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256);
 
   function getAssetCount() external view returns (uint256);
 

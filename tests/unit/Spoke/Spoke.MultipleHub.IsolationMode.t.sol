@@ -219,7 +219,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Check Bob's total debt of asset B on the new spoke
     assertEq(newSpoke.getUserTotalDebt(isolationVars.reserveBIdMainHub, bob), 100_000e18);
-    assertEq(hub.getAssetTotalDebt(isolationVars.assetBIdMainHub), 100_000e18);
+    assertEq(hub.getAssetTotalOwed(isolationVars.assetBIdMainHub), 100_000e18);
 
     // Bob cannot borrow asset B from main hub via new spoke past draw cap
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, 100_000e18));
@@ -247,12 +247,12 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // Bob will migrate to borrowing asset B from the new spoke, new hub, so repays canonical hub position
     Utils.repay(newSpoke, isolationVars.reserveBIdMainHub, bob, 100_000e18, bob);
     assertEq(newSpoke.getUserTotalDebt(isolationVars.reserveBIdMainHub, bob), 0);
-    assertEq(hub.getAssetTotalDebt(isolationVars.assetBIdMainHub), 0);
+    assertEq(hub.getAssetTotalOwed(isolationVars.assetBIdMainHub), 0);
 
     // Bob opens new borrow position for asset B on the new spoke, new hub
     Utils.borrow(newSpoke, isolationVars.reserveBId, bob, 100_000e18, bob);
     assertEq(newSpoke.getUserTotalDebt(isolationVars.reserveBId, bob), 100_000e18);
-    assertEq(newHub.getAssetTotalDebt(isolationVars.assetBId), 100_000e18);
+    assertEq(newHub.getAssetTotalOwed(isolationVars.assetBId), 100_000e18);
 
     // DAO offboards credit line to new spoke from the canonical hub by setting Asset B draw cap to 0
     vm.prank(HUB_ADMIN);

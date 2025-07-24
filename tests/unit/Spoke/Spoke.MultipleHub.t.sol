@@ -114,7 +114,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     // Bob borrows dai from spoke 1, hub 1
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, hub1BorrowAmount, bob);
     assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), hub1BorrowAmount);
-    assertEq(hub.getAssetTotalDebt(daiAssetId), hub1BorrowAmount);
+    assertEq(hub.getAssetTotalOwed(daiAssetId), hub1BorrowAmount);
 
     // Alice seeds liquidity for dai to hub 2 via spoke 1
     Utils.supply(spoke1, daiHub2ReserveId, alice, MAX_SUPPLY_AMOUNT, alice);
@@ -122,7 +122,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     // Bob can also borrow dai from hub 2 via spoke 1
     Utils.borrow(spoke1, daiHub2ReserveId, bob, hub2BorrowAmount, bob);
     assertEq(spoke1.getUserTotalDebt(daiHub2ReserveId, bob), hub2BorrowAmount);
-    assertEq(hub2.getAssetTotalDebt(daiAssetId), hub2BorrowAmount);
+    assertEq(hub2.getAssetTotalOwed(daiAssetId), hub2BorrowAmount);
 
     // Verify Dai is indeed the asset Bob is borrowing from both hubs
     DataTypes.Reserve memory daiReserve = spoke1.getReserve(_daiReserveId(spoke1));
@@ -136,11 +136,11 @@ contract SpokeMultipleHubTest is SpokeBase {
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       hub1BorrowAmount - hub1RepayAmount
     );
-    assertEq(hub.getAssetTotalDebt(daiAssetId), hub1BorrowAmount - hub1RepayAmount);
+    assertEq(hub.getAssetTotalOwed(daiAssetId), hub1BorrowAmount - hub1RepayAmount);
 
     Utils.repay(spoke1, daiHub2ReserveId, bob, hub2RepayAmount, bob);
     assertEq(spoke1.getUserTotalDebt(daiHub2ReserveId, bob), hub2BorrowAmount - hub2RepayAmount);
-    assertEq(hub2.getAssetTotalDebt(daiAssetId), hub2BorrowAmount - hub2RepayAmount);
+    assertEq(hub2.getAssetTotalOwed(daiAssetId), hub2BorrowAmount - hub2RepayAmount);
   }
 
   /// @dev Test showcasing collateral on hub 3 can suffice for debt position on hub 1
@@ -160,7 +160,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     // Bob borrows dai from hub 1
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, hub1BorrowAmount, bob);
     assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), hub1BorrowAmount);
-    assertEq(hub.getAssetTotalDebt(daiAssetId), hub1BorrowAmount);
+    assertEq(hub.getAssetTotalOwed(daiAssetId), hub1BorrowAmount);
 
     // Alice seeds liquidity for dai to hub 3
     Utils.supply(spoke1, daiHub3ReserveId, alice, MAX_SUPPLY_AMOUNT - daiSupplyAmount, alice);

@@ -500,7 +500,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       accruedPremium - restoreAmount,
     //       'hub dai outstandingPremium'
     //     );
-    //     assertEq(daiData.baseDebt, accruedBaseDebt + drawAmount, 'hub dai baseDebt');
+    //     assertEq(daiData.drawn, accruedBaseDebt + drawAmount, 'hub dai drawn');
     //     assertEq(
     //       daiData.availableLiquidity,
     //       daiAmount - drawAmount + restoreAmount,
@@ -510,10 +510,10 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
     //     assertEq(
     //       daiDebtData.asset.cumulativeDebt,
-    //       daiData.baseDebt + daiData.outstandingPremium,
+    //       daiData.drawn + daiData.outstandingPremium,
     //       'asset cumulativeDebt'
     //     );
-    //     assertEq(daiDebtData.asset.baseDebt, accruedBaseDebt + drawAmount, 'asset baseDebt');
+    //     assertEq(daiDebtData.asset.drawn, accruedBaseDebt + drawAmount, 'asset drawn');
     //     assertEq(
     //       daiDebtData.asset.outstandingPremium,
     //       accruedPremium - restoreAmount,
@@ -525,7 +525,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       daiData.outstandingPremium,
     //       'hub spoke1 outstandingPremium'
     //     );
-    //     assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'hub spoke1 baseDebt');
+    //     assertEq(spoke1DaiData.drawn, daiData.drawn, 'hub spoke1 drawn');
     //     assertEq(
     //       spoke1DaiData.lastUpdateTimestamp,
     //       daiData.lastUpdateTimestamp,
@@ -533,10 +533,10 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     );
     //     assertEq(
     //       daiDebtData.spoke[0].cumulativeDebt,
-    //       daiData.baseDebt + daiData.outstandingPremium,
+    //       daiData.drawn + daiData.outstandingPremium,
     //       'spoke1 cumulativeDebt'
     //     );
-    //     assertEq(daiDebtData.spoke[0].baseDebt, accruedBaseDebt + drawAmount, 'spoke1 baseDebt');
+    //     assertEq(daiDebtData.spoke[0].drawn, accruedBaseDebt + drawAmount, 'spoke1 drawn');
     //     assertEq(
     //       daiDebtData.spoke[0].outstandingPremium,
     //       accruedPremium - restoreAmount,
@@ -601,7 +601,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       accruedPremium - restoreAmount,
     //       'hub dai outstandingPremium'
     //     );
-    //     assertEq(daiData.baseDebt, accruedBaseDebt + drawAmount, 'hub dai baseDebt');
+    //     assertEq(daiData.drawn, accruedBaseDebt + drawAmount, 'hub dai drawn');
     //     assertEq(
     //       daiData.availableLiquidity,
     //       daiAmount - drawAmount + restoreAmount,
@@ -611,10 +611,10 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
     //     assertEq(
     //       daiDebtData.asset.cumulativeDebt,
-    //       daiData.baseDebt + daiData.outstandingPremium,
+    //       daiData.drawn + daiData.outstandingPremium,
     //       'asset cumulativeDebt'
     //     );
-    //     assertEq(daiDebtData.asset.baseDebt, accruedBaseDebt + drawAmount, 'asset baseDebt');
+    //     assertEq(daiDebtData.asset.drawn, accruedBaseDebt + drawAmount, 'asset drawn');
     //     assertEq(
     //       daiDebtData.asset.outstandingPremium,
     //       accruedPremium - restoreAmount,
@@ -626,7 +626,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       daiData.outstandingPremium,
     //       'hub spoke1 outstandingPremium'
     //     );
-    //     assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'hub spoke1 baseDebt');
+    //     assertEq(spoke1DaiData.drawn, daiData.drawn, 'hub spoke1 drawn');
     //     assertEq(
     //       spoke1DaiData.lastUpdateTimestamp,
     //       daiData.lastUpdateTimestamp,
@@ -634,10 +634,10 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     );
     //     assertEq(
     //       daiDebtData.spoke[0].cumulativeDebt,
-    //       daiData.baseDebt + daiData.outstandingPremium,
+    //       daiData.drawn + daiData.outstandingPremium,
     //       'spoke1 cumulativeDebt'
     //     );
-    //     assertEq(daiDebtData.spoke[0].baseDebt, accruedBaseDebt + drawAmount, 'spoke1 baseDebt');
+    //     assertEq(daiDebtData.spoke[0].drawn, accruedBaseDebt + drawAmount, 'spoke1 drawn');
     //     assertEq(
     //       daiDebtData.spoke[0].outstandingPremium,
     //       accruedPremium - restoreAmount,
@@ -689,7 +689,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       'hub dai total assets'
     //     );
     //     assertEq(daiData.outstandingPremium, 0, 'hub dai outstandingPremium');
-    //     assertEq(daiData.baseDebt, accruedBaseDebt + drawAmount - 1, 'hub dai baseDebt');
+    //     assertEq(daiData.drawn, accruedBaseDebt + drawAmount - 1, 'hub dai drawn');
     //     assertEq(
     //       daiData.availableLiquidity,
     //       daiAmount - drawAmount + restoreAmount,
@@ -702,7 +702,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       accruedBaseDebt + drawAmount - 1,
     //       'asset cumulativeDebt'
     //     );
-    //     assertEq(daiDebtData.asset.baseDebt, accruedBaseDebt + drawAmount - 1, 'asset baseDebt');
+    //     assertEq(daiDebtData.asset.drawn, accruedBaseDebt + drawAmount - 1, 'asset drawn');
     //     assertEq(daiDebtData.asset.outstandingPremium, 0, 'asset outstandingPremium');
     //     // spoke1
     //     assertEq(
@@ -710,7 +710,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       daiData.outstandingPremium,
     //       'hub spoke1 outstandingPremium'
     //     );
-    //     assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'hub spoke1 baseDebt');
+    //     assertEq(spoke1DaiData.drawn, daiData.drawn, 'hub spoke1 drawn');
     //     assertEq(
     //       spoke1DaiData.lastUpdateTimestamp,
     //       daiData.lastUpdateTimestamp,
@@ -721,7 +721,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       accruedBaseDebt + drawAmount - 1,
     //       'spoke1 cumulativeDebt'
     //     );
-    //     assertEq(daiDebtData.spoke[0].baseDebt, accruedBaseDebt + drawAmount - 1, 'spoke1 baseDebt');
+    //     assertEq(daiDebtData.spoke[0].drawn, accruedBaseDebt + drawAmount - 1, 'spoke1 drawn');
     //     assertEq(daiDebtData.spoke[0].outstandingPremium, 0, 'spoke1 outstandingPremium');
   }
 
@@ -783,9 +783,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     );
     //     assertEq(daiData.outstandingPremium, 0, 'hub dai outstandingPremium');
     //     assertEq(
-    //       daiData.baseDebt,
+    //       daiData.drawn,
     //       accruedBaseDebt + drawAmount - (restoreAmount - accruedPremium), // eat into base debt after premium is consumed
-    //       'hub dai baseDebt'
+    //       'hub dai drawn'
     //     );
     //     assertEq(
     //       daiData.availableLiquidity,
@@ -799,9 +799,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       'asset cumulativeDebt'
     //     );
     //     assertEq(
-    //       daiDebtData.asset.baseDebt,
+    //       daiDebtData.asset.drawn,
     //       accruedBaseDebt + drawAmount - (restoreAmount - accruedPremium),
-    //       'asset baseDebt'
+    //       'asset drawn'
     //     );
     //     assertEq(daiDebtData.asset.outstandingPremium, 0, 'asset outstandingPremium');
     //     // spoke1
@@ -810,7 +810,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       daiData.outstandingPremium,
     //       'hub spoke1 outstandingPremium'
     //     );
-    //     assertEq(spoke1DaiData.baseDebt, daiData.baseDebt, 'hub spoke1 baseDebt');
+    //     assertEq(spoke1DaiData.drawn, daiData.drawn, 'hub spoke1 drawn');
     //     assertEq(
     //       spoke1DaiData.lastUpdateTimestamp,
     //       daiData.lastUpdateTimestamp,
@@ -822,9 +822,9 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       'spoke1 cumulativeDebt'
     //     );
     //     assertEq(
-    //       daiDebtData.spoke[0].baseDebt,
+    //       daiDebtData.spoke[0].drawn,
     //       accruedBaseDebt + drawAmount - (restoreAmount - accruedPremium),
-    //       'spoke1 baseDebt'
+    //       'spoke1 drawn'
     //     );
     //     assertEq(daiDebtData.spoke[0].outstandingPremium, 0, 'spoke1 outstandingPremium');
   }
@@ -909,7 +909,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       daiAmount - drawAmount + restoreAmount,
     //       'hub dai availableLiquidity post-restore'
     //     );
-    //     assertEq(hubData.daiData.baseDebt, drawAmount - restoreAmount, 'hub dai baseDebt post-restore');
+    //     assertEq(hubData.daiData.drawn, drawAmount - restoreAmount, 'hub dai drawn post-restore');
     //     assertEq(hubData.daiData.outstandingPremium, 0, 'hub dai outstandingPremium post-restore');
     //     assertEq(
     //       hubData.daiData.baseBorrowIndex,
@@ -924,7 +924,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       'hub dai lastUpdateTimestamp post-restore'
     //     );
     //     assertEq(daiDebtData.asset.cumulativeDebt, drawAmount - restoreAmount, 'asset cumulativeDebt');
-    //     assertEq(daiDebtData.asset.baseDebt, drawAmount - restoreAmount, 'asset baseDebt');
+    //     assertEq(daiDebtData.asset.drawn, drawAmount - restoreAmount, 'asset drawn');
     //     assertEq(daiDebtData.asset.outstandingPremium, 0, 'asset outstandingPremium');
     //     // weth
     //     assertEq(
@@ -937,7 +937,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       wethAmount,
     //       'hub weth availableLiquidity post-restore'
     //     );
-    //     assertEq(hubData.wethData.baseDebt, 0, 'hub weth baseDebt post-restore');
+    //     assertEq(hubData.wethData.drawn, 0, 'hub weth drawn post-restore');
     //     assertEq(hubData.wethData.outstandingPremium, 0, 'hub weth outstandingPremium post-restore');
     //     assertEq(
     //       hubData.wethData.baseBorrowIndex,
@@ -957,7 +957,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       hubData.wethData.suppliedShares,
     //       'spoke1 total weth shares post-restore'
     //     );
-    //     assertEq(hubData.spoke1WethData.baseDebt, hubData.wethData.baseDebt, 'spoke1 base weth debt');
+    //     assertEq(hubData.spoke1WethData.drawn, hubData.wethData.drawn, 'spoke1 base weth debt');
     //     assertEq(
     //       hubData.spoke1WethData.outstandingPremium,
     //       hubData.wethData.outstandingPremium,
@@ -977,8 +977,8 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     // spoke1 dai
     //     assertEq(hubData.spoke1DaiData.suppliedShares, 0, 'spoke1 total dai shares post-restore');
     //     assertEq(
-    //       hubData.spoke1DaiData.baseDebt,
-    //       hubData.daiData.baseDebt,
+    //       hubData.spoke1DaiData.drawn,
+    //       hubData.daiData.drawn,
     //       'spoke1 base dai debt post-restore'
     //     );
     //     assertEq(
@@ -1002,7 +1002,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       drawAmount - restoreAmount,
     //       'spoke1 cumulativeDebt'
     //     );
-    //     assertEq(daiDebtData.spoke[0].baseDebt, drawAmount - restoreAmount, 'spoke1 baseDebt');
+    //     assertEq(daiDebtData.spoke[0].drawn, drawAmount - restoreAmount, 'spoke1 drawn');
     //     assertEq(daiDebtData.spoke[0].outstandingPremium, 0, 'spoke1 outstandingPremium');
     //     // spoke2 dai
     //     assertEq(
@@ -1010,7 +1010,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       hubData.daiData.suppliedShares,
     //       'spoke2 total dai shares post-restore'
     //     );
-    //     assertEq(hubData.spoke2DaiData.baseDebt, 0, 'spoke2 base dai debt post-restore');
+    //     assertEq(hubData.spoke2DaiData.drawn, 0, 'spoke2 base dai debt post-restore');
     //     assertEq(
     //       hubData.spoke2DaiData.outstandingPremium,
     //       hubData.daiData.outstandingPremium,
@@ -1135,17 +1135,17 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     //     // asset
-    //     assertEq(daiData.baseDebt, 0, 'asset baseDebt');
+    //     assertEq(daiData.drawn, 0, 'asset drawn');
     //     assertEq(daiData.outstandingPremium, 0, 'asset outstandingPremium');
     //     assertEq(daiDebtData.asset.cumulativeDebt, 0, 'asset cumulativeDebt');
-    //     assertEq(daiDebtData.asset.baseDebt, 0, 'asset baseDebt');
+    //     assertEq(daiDebtData.asset.drawn, 0, 'asset drawn');
     //     assertEq(daiDebtData.asset.outstandingPremium, 0, 'asset outstandingPremium');
 
     //     // spoke
-    //     assertEq(spoke1Data.baseDebt, 0, 'spoke1 baseDebt');
+    //     assertEq(spoke1Data.drawn, 0, 'spoke1 drawn');
     //     assertEq(spoke1Data.outstandingPremium, 0, 'spoke1 outstandingPremium');
     //     assertEq(daiDebtData.spoke[0].cumulativeDebt, 0, 'spoke1 cumulativeDebt');
-    //     assertEq(daiDebtData.spoke[0].baseDebt, 0, 'spoke1 baseDebt');
+    //     assertEq(daiDebtData.spoke[0].drawn, 0, 'spoke1 drawn');
     //     assertEq(daiDebtData.spoke[0].outstandingPremium, 0, 'spoke1 outstandingPremium');
   }
 
@@ -1234,17 +1234,17 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     //     // asset
-    //     assertEq(daiData.baseDebt, 0, 'asset baseDebt');
+    //     assertEq(daiData.drawn, 0, 'asset drawn');
     //     assertEq(daiData.outstandingPremium, 0, 'asset outstandingPremium');
     //     assertEq(daiDebtData.asset.cumulativeDebt, 0, 'asset cumulativeDebt');
-    //     assertEq(daiDebtData.asset.baseDebt, 0, 'asset baseDebt');
+    //     assertEq(daiDebtData.asset.drawn, 0, 'asset drawn');
     //     assertEq(daiDebtData.asset.outstandingPremium, 0, 'asset outstandingPremium');
 
     //     // spoke
-    //     assertEq(spoke1Data.baseDebt, 0, 'spoke1 baseDebt');
+    //     assertEq(spoke1Data.drawn, 0, 'spoke1 drawn');
     //     assertEq(spoke1Data.outstandingPremium, 0, 'spoke1 outstandingPremium');
     //     assertEq(daiDebtData.spoke[0].cumulativeDebt, 0, 'spoke1 cumulativeDebt');
-    //     assertEq(daiDebtData.spoke[0].baseDebt, 0, 'spoke1 baseDebt');
+    //     assertEq(daiDebtData.spoke[0].drawn, 0, 'spoke1 drawn');
     //     assertEq(daiDebtData.spoke[0].outstandingPremium, 0, 'spoke1 outstandingPremium');
   }
 
@@ -1336,17 +1336,17 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     //     // asset
-    //     assertEq(daiData.baseDebt, 0, 'asset baseDebt');
+    //     assertEq(daiData.drawn, 0, 'asset drawn');
     //     assertEq(daiData.outstandingPremium, 0, 'asset outstandingPremium');
     //     assertEq(daiDebtData.asset.cumulativeDebt, 0, 'asset cumulativeDebt');
-    //     assertEq(daiDebtData.asset.baseDebt, 0, 'asset baseDebt');
+    //     assertEq(daiDebtData.asset.drawn, 0, 'asset drawn');
     //     assertEq(daiDebtData.asset.outstandingPremium, 0, 'asset outstandingPremium');
 
     //     // spoke1
-    //     assertEq(spoke1Data.baseDebt, 0, 'spoke1 baseDebt');
+    //     assertEq(spoke1Data.drawn, 0, 'spoke1 drawn');
     //     assertEq(spoke1Data.outstandingPremium, 0, 'spoke1 outstandingPremium');
     //     assertEq(daiDebtData.spoke[0].cumulativeDebt, 0, 'spoke1 cumulativeDebt');
-    //     assertEq(daiDebtData.spoke[0].baseDebt, 0, 'spoke1 baseDebt');
+    //     assertEq(daiDebtData.spoke[0].drawn, 0, 'spoke1 drawn');
     //     assertEq(daiDebtData.spoke[0].outstandingPremium, 0, 'spoke1 outstandingPremium');
   }
 
@@ -1443,17 +1443,17 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     //     // asset
-    //     assertEq(daiData.baseDebt, 0, 'asset baseDebt');
+    //     assertEq(daiData.drawn, 0, 'asset drawn');
     //     assertEq(daiData.outstandingPremium, 0, 'asset outstandingPremium');
     //     assertEq(daiDebtData.asset.cumulativeDebt, 0, 'asset cumulativeDebt');
-    //     assertEq(daiDebtData.asset.baseDebt, 0, 'asset baseDebt');
+    //     assertEq(daiDebtData.asset.drawn, 0, 'asset drawn');
     //     assertEq(daiDebtData.asset.outstandingPremium, 0, 'asset outstandingPremium');
 
     //     // spoke
-    //     assertEq(spoke1Data.baseDebt, 0, 'spoke1 baseDebt');
+    //     assertEq(spoke1Data.drawn, 0, 'spoke1 drawn');
     //     assertEq(spoke1Data.outstandingPremium, 0, 'spoke1 outstandingPremium');
     //     assertEq(daiDebtData.spoke[0].cumulativeDebt, 0, 'spoke1 cumulativeDebt');
-    //     assertEq(daiDebtData.spoke[0].baseDebt, 0, 'spoke1 baseDebt');
+    //     assertEq(daiDebtData.spoke[0].drawn, 0, 'spoke1 drawn');
     //     assertEq(daiDebtData.spoke[0].outstandingPremium, 0, 'spoke1 outstandingPremium');
   }
 }

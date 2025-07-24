@@ -172,8 +172,8 @@ contract AssetInterestRateStrategyTest is Base {
     rateStrategy.calculateInterestRate({
       assetId: mockAssetId2,
       availableLiquidity: 0,
-      baseDebt: 0,
-      premiumDebt: 0
+      drawn: 0,
+      premium: 0
     });
   }
 
@@ -183,8 +183,8 @@ contract AssetInterestRateStrategyTest is Base {
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
       availableLiquidity: availableLiquidity,
-      baseDebt: 0,
-      premiumDebt: 0
+      drawn: 0,
+      premium: 0
     });
 
     assertEq(variableBorrowRate, rateData.baseVariableBorrowRate.bpsToRay());
@@ -199,15 +199,15 @@ contract AssetInterestRateStrategyTest is Base {
 
     (
       uint256 availableLiquidity,
-      uint256 baseDebt,
-      uint256 premiumDebt
+      uint256 drawn,
+      uint256 premium
     ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
       availableLiquidity: availableLiquidity,
-      baseDebt: baseDebt,
-      premiumDebt: premiumDebt
+      drawn: drawn,
+      premium: premium
     });
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
@@ -215,7 +215,7 @@ contract AssetInterestRateStrategyTest is Base {
         rateData.optimalUsageRatio.bpsToRay()
       );
 
-    if (baseDebt >= 1e27) {
+    if (drawn >= 1e27) {
       assertEq(variableBorrowRate, expectedVariableRate);
     } else {
       assertApproxEqAbs(variableBorrowRate, expectedVariableRate, 0.0001e27);
@@ -232,15 +232,15 @@ contract AssetInterestRateStrategyTest is Base {
 
     (
       uint256 availableLiquidity,
-      uint256 baseDebt,
-      uint256 premiumDebt
+      uint256 drawn,
+      uint256 premium
     ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
       availableLiquidity: availableLiquidity,
-      baseDebt: baseDebt,
-      premiumDebt: premiumDebt
+      drawn: drawn,
+      premium: premium
     });
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
@@ -251,7 +251,7 @@ contract AssetInterestRateStrategyTest is Base {
         .rayMulUp(utilizationRatioRay - rateData.optimalUsageRatio.bpsToRay())
         .rayDivUp(WadRayMathExtended.RAY - rateData.optimalUsageRatio.bpsToRay());
 
-    if (baseDebt >= 1e27) {
+    if (drawn >= 1e27) {
       assertEq(variableBorrowRate, expectedVariableRate);
     } else {
       assertApproxEqAbs(variableBorrowRate, expectedVariableRate, 0.0001e27);
@@ -264,17 +264,17 @@ contract AssetInterestRateStrategyTest is Base {
 
   function _generateCalculateInterestRateParams(
     uint256 targetUtilizationRatioRay
-  ) internal returns (uint256 availableLiquidity, uint256 baseDebt, uint256 premiumDebt) {
-    baseDebt = bound(vm.randomUint(), 1, MAX_SUPPLY_AMOUNT);
+  ) internal returns (uint256 availableLiquidity, uint256 drawn, uint256 premium) {
+    drawn = bound(vm.randomUint(), 1, MAX_SUPPLY_AMOUNT);
 
-    // utilizationRatio = baseDebt / (baseDebt + availableLiquidity)
-    // utilizationRatio * baseDebt + utilizationRatio * availableLiquidity = baseDebt
-    // availableLiquidity = baseDebt * (1 - utilizationRatio) / utilizationRatio
-    availableLiquidity = baseDebt
+    // utilizationRatio = drawn / (drawn + availableLiquidity)
+    // utilizationRatio * drawn + utilizationRatio * availableLiquidity = drawn
+    // availableLiquidity = drawn * (1 - utilizationRatio) / utilizationRatio
+    availableLiquidity = drawn
       .rayMulUp(WadRayMathExtended.RAY - targetUtilizationRatioRay)
       .rayDivUp(targetUtilizationRatioRay);
 
     // unused in the current IR strategy
-    premiumDebt = vm.randomUint();
+    premium = vm.randomUint();
   }
 }

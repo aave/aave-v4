@@ -21,7 +21,7 @@ contract SpokeAccessTest is SpokeBase {
     hub.restore(daiAssetId, 1000e18, 0, bob);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SpokeNotActive.selector));
-    hub.refreshPremiumDebt(daiAssetId, 0, 0, 0, 0);
+    hub.refreshPremium(daiAssetId, 0, 0, 0, 0);
 
     // A spoke is allowed to call the hub functions
     deal(address(tokenList.dai), address(spoke1), 1000e18);
@@ -32,7 +32,7 @@ contract SpokeAccessTest is SpokeBase {
     hub.draw(daiAssetId, 500e18, address(spoke1));
     hub.restore(daiAssetId, 500e18, 0, address(spoke1));
     hub.remove(daiAssetId, 1000e18, address(spoke1));
-    hub.refreshPremiumDebt(daiAssetId, 0, 0, 0, 0);
+    hub.refreshPremium(daiAssetId, 0, 0, 0, 0);
     vm.stopPrank();
   }
 

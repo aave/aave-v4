@@ -493,7 +493,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(premiumDaiDebt, 0);
 
     // verify LH asset debt is 0
-    uint256 lhAssetDebt = hub.getAssetTotalDebt(_daiReserveId(spoke1));
+    uint256 lhAssetDebt = hub.getAssetTotalOwed(_daiReserveId(spoke1));
     assertEq(lhAssetDebt, 0);
   }
 

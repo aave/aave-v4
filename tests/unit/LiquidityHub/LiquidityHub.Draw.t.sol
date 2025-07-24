@@ -18,7 +18,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 shares = hub.convertToDrawnSharesUp(assetId, amount);
 
     DataTypes.Asset memory assetBefore = hub.getAsset(assetId);
-    (, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    (, uint256 premium) = hub.getAssetOwed(assetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
@@ -27,7 +27,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
           assetId,
           assetBefore.availableLiquidity - amount,
           hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
-          premiumDebt
+          premium
         )
       )
     );
@@ -39,8 +39,8 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         availableLiquidity: assetBefore.availableLiquidity - amount,
-        baseDebt: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
-        premiumDebt: premiumDebt
+        drawn: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+        premium: premium
       }),
       vm.getBlockTimestamp()
     );
@@ -53,11 +53,11 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     hub.draw(assetId, amount, alice);
 
     // hub
-    uint256 baseDebt;
-    (baseDebt, premiumDebt) = hub.getAssetDebt(assetId);
-    assertEq(hub.getAssetTotalDebt(assetId), amount, 'asset totalDebt after');
-    assertEq(baseDebt, amount, 'asset baseDebt after');
-    assertEq(premiumDebt, 0, 'asset premiumDebt after');
+    uint256 drawn;
+    (drawn, premium) = hub.getAssetOwed(assetId);
+    assertEq(hub.getAssetTotalOwed(assetId), amount, 'asset totalDebt after');
+    assertEq(drawn, amount, 'asset drawn after');
+    assertEq(premium, 0, 'asset premium after');
     assertEq(hub.getAvailableLiquidity(assetId), 0, 'asset availableLiquidity after');
     assertEq(
       hub.getAsset(assetId).lastUpdateTimestamp,
@@ -76,10 +76,10 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     );
     assertBorrowRateSynced(hub, assetId, 'hub.draw');
     // spoke
-    (baseDebt, premiumDebt) = hub.getSpokeDebt(assetId, address(spoke1));
-    assertEq(hub.getSpokeTotalDebt(assetId, address(spoke1)), amount, 'spoke totalDebt after');
-    assertEq(baseDebt, amount, 'spoke baseDebt after');
-    assertEq(premiumDebt, 0, 'spoke premiumDebt after');
+    (drawn, premium) = hub.getSpokeOwed(assetId, address(spoke1));
+    assertEq(hub.getSpokeTotalOwed(assetId, address(spoke1)), amount, 'spoke totalDebt after');
+    assertEq(drawn, amount, 'spoke drawn after');
+    assertEq(premium, 0, 'spoke premium after');
     // token balance
     assertEq(underlying.balanceOf(alice), amount + MAX_SUPPLY_AMOUNT, 'alice asset final balance');
     assertEq(underlying.balanceOf(bob), MAX_SUPPLY_AMOUNT - amount, 'bob asset final balance');
@@ -98,7 +98,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 shares = hub.convertToDrawnSharesUp(assetId, amount);
 
     DataTypes.Asset memory assetBefore = hub.getAsset(assetId);
-    (, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    (, uint256 premium) = hub.getAssetOwed(assetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
@@ -107,7 +107,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
           assetId,
           assetBefore.availableLiquidity - amount,
           hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
-          premiumDebt
+          premium
         )
       )
     );
@@ -119,8 +119,8 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         availableLiquidity: assetBefore.availableLiquidity - amount,
-        baseDebt: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
-        premiumDebt: premiumDebt
+        drawn: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+        premium: premium
       }),
       vm.getBlockTimestamp()
     );
@@ -387,8 +387,8 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       skipTime: 365 days
     });
 
-    (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
-    assertGt(baseDebt, drawCap);
+    (uint256 drawn, ) = hub.getAssetOwed(daiAssetId);
+    assertGt(drawn, drawCap);
 
     // restore to provide liquidity
     // Must restore at least one full share
@@ -431,10 +431,10 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       skipTime: skipTime
     });
 
-    (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
+    (uint256 drawn, ) = hub.getAssetOwed(daiAssetId);
     uint256 singleShareInAssets = minimumAssetsPerDrawnShare(daiAssetId);
-    // Need the baseDebt to be greater than the drawCap from interest, past the share we restore
-    vm.assume(baseDebt > drawCap + singleShareInAssets);
+    // Need the drawn to be greater than the drawCap from interest, past the share we restore
+    vm.assume(drawn > drawCap + singleShareInAssets);
 
     // restore to provide liquidity
     // Must restore at least one full share;

@@ -126,7 +126,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       skipTime: skipTime
     });
 
-    (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
+    (uint256 baseDebt, ) = hub.getAssetOwed(daiAssetId);
 
     // ensure inflated exch rate
     vm.assume(hub.convertToDrawnAssets(daiAssetId, 1e18) > 1e18);
@@ -255,7 +255,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       skipTime: skipTime
     });
 
-    (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
+    (uint256 baseDebt, ) = hub.getAssetOwed(daiAssetId);
 
     // drawn shares are rounded up
     uint256 expectedDebtShares = amount1.toSharesUp(
