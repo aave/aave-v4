@@ -644,15 +644,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 healthFactor,
     uint256 collateralFactor
   ) internal view {
-    DataTypes.ReserveConfig memory collateralConfig = collateralReserve.config;
-    DataTypes.ReserveConfig memory debtConfig = debtReserve.config;
     require(debtToCover > 0, InvalidDebtToCover());
     require(
       collateralReserve.underlying != address(0) && debtReserve.underlying != address(0),
       ReserveNotListed()
     );
-    require(collateralConfig.active && debtConfig.active, ReserveNotActive());
-    require(!collateralConfig.paused && !debtConfig.paused, ReservePaused());
+    require(collateralReserve.config.active && debtReserve.config.active, ReserveNotActive());
+    require(!collateralReserve.config.paused && !debtReserve.config.paused, ReservePaused());
     require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
     bool isCollateralEnabled = _positionStatus[user].isUsingAsCollateral(
       collateralReserve.reserveId
