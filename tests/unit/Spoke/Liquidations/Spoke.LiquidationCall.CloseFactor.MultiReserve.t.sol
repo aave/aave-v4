@@ -116,10 +116,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 supplyAmountInBase,
     uint256 skipTime
   ) public {
-    collateralReserveId1 = bound(collateralReserveId1, 0, spoke1.reserveCount() - 1);
-    collateralReserveId2 = bound(collateralReserveId2, 0, spoke1.reserveCount() - 1);
-    debtReserveId1 = bound(debtReserveId1, 0, spoke1.reserveCount() - 1);
-    debtReserveId2 = bound(debtReserveId2, 0, spoke1.reserveCount() - 1);
+    collateralReserveId1 = bound(collateralReserveId1, 0, spoke1.getReserveCount() - 1);
+    collateralReserveId2 = bound(collateralReserveId2, 0, spoke1.getReserveCount() - 1);
+    debtReserveId1 = bound(debtReserveId1, 0, spoke1.getReserveCount() - 1);
+    debtReserveId2 = bound(debtReserveId2, 0, spoke1.getReserveCount() - 1);
 
     collateralReserveIndex = bound(collateralReserveIndex, 0, 1);
     debtReserveIndex = bound(debtReserveIndex, 0, 1);
@@ -188,10 +188,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
       state.collateralReserves[i] = spoke1.getReserve(collateralReserveIds[i]);
-      state.collDynConfigs[i] = spoke1.getDynamicReserveConfig(
-        collateralReserveIds[i],
-        state.collateralReserves[i].dynamicConfigKey
-      ); // utilize latest dynamic config
+      state.collDynConfigs[i] = _getUserDynConfig(spoke1, alice, collateralReserveIds[i]); // utilize user's dynamic config
     }
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
@@ -232,11 +229,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         supplyAmountInBase
       );
 
-      if (!spoke1.getUsingAsCollateral(collateralReserveIds[i], alice)) {
+      if (!spoke1.isUsingAsCollateral(collateralReserveIds[i], alice)) {
         Utils.supplyCollateral({
           spoke: spoke1,
           reserveId: collateralReserveIds[i],
-          user: alice,
+          caller: alice,
           amount: supplyAmount,
           onBehalfOf: alice
         });
@@ -244,7 +241,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         Utils.supply({
           spoke: spoke1,
           reserveId: collateralReserveIds[i],
-          user: alice,
+          caller: alice,
           amount: supplyAmount,
           onBehalfOf: alice
         });
@@ -267,6 +264,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      DynamicConfig[] memory configKeysBefore = _getUserDynConfigKeys(spoke1, alice);
 
       vm.prank(LIQUIDATOR);
       spoke1.liquidationCall(
@@ -275,6 +273,9 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         alice,
         requiredDebtAmounts[i]
       );
+
+      // Validate user's dynamic config key unchanged after liquidation
+      assertEq(_getUserDynConfigKeys(spoke1, alice), configKeysBefore);
     }
 
     return state;

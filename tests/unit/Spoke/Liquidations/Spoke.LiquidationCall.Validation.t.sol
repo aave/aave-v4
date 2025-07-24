@@ -21,8 +21,8 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     uint256 reserveId2,
     uint256 debtToCover
   ) public {
-    reserveId1 = bound(reserveId1, 0, spoke1.reserveCount() - 1);
-    reserveId2 = bound(reserveId2, 0, spoke1.reserveCount() - 1);
+    reserveId1 = bound(reserveId1, 0, spoke1.getReserveCount() - 1);
+    reserveId2 = bound(reserveId2, 0, spoke1.getReserveCount() - 1);
     debtToCover = bound(debtToCover, 1, MAX_SUPPLY_AMOUNT);
 
     // if even, reserveId1 is collateral, reserveId2 is debt
@@ -55,8 +55,8 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     uint256 reserveId2,
     uint256 debtToCover
   ) public {
-    reserveId1 = bound(reserveId1, 0, spoke1.reserveCount() - 1);
-    reserveId2 = bound(reserveId2, 0, spoke1.reserveCount() - 1);
+    reserveId1 = bound(reserveId1, 0, spoke1.getReserveCount() - 1);
+    reserveId2 = bound(reserveId2, 0, spoke1.getReserveCount() - 1);
     debtToCover = bound(debtToCover, 1, MAX_SUPPLY_AMOUNT);
 
     // if even, reserveId1 is collateral, reserveId2 is debt
@@ -89,8 +89,8 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     uint256 reserveId2,
     uint256 debtToCover
   ) public {
-    reserveId1 = bound(reserveId1, 0, spoke1.reserveCount() - 1);
-    reserveId2 = bound(reserveId2, 0, spoke1.reserveCount() - 1);
+    reserveId1 = bound(reserveId1, 0, spoke1.getReserveCount() - 1);
+    reserveId2 = bound(reserveId2, 0, spoke1.getReserveCount() - 1);
     debtToCover = bound(debtToCover, 1, MAX_SUPPLY_AMOUNT);
 
     // if even, reserveId1 is collateral, reserveId2 is debt
@@ -123,8 +123,8 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     uint256 reserveId2,
     uint256 debtToCover
   ) public {
-    reserveId1 = bound(reserveId1, 0, spoke1.reserveCount() - 1);
-    reserveId2 = bound(reserveId2, 0, spoke1.reserveCount() - 1);
+    reserveId1 = bound(reserveId1, 0, spoke1.getReserveCount() - 1);
+    reserveId2 = bound(reserveId2, 0, spoke1.getReserveCount() - 1);
     debtToCover = bound(debtToCover, 1, MAX_SUPPLY_AMOUNT);
 
     // if even, reserveId1 is collateral, reserveId2 is debt
@@ -151,8 +151,8 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     uint256 reserveId1,
     uint256 reserveId2
   ) public {
-    reserveId1 = bound(reserveId1, 0, spoke1.reserveCount() - 1);
-    reserveId2 = bound(reserveId2, 0, spoke1.reserveCount() - 1);
+    reserveId1 = bound(reserveId1, 0, spoke1.getReserveCount() - 1);
+    reserveId2 = bound(reserveId2, 0, spoke1.getReserveCount() - 1);
     uint256 debtToCover = 0;
 
     // if even, reserveId1 is collateral, reserveId2 is debt
@@ -182,8 +182,8 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     uint256 reserveId2,
     uint256 debtToCover
   ) public {
-    reserveId1 = bound(reserveId1, 0, spoke1.reserveCount() - 1);
-    reserveId2 = bound(reserveId2, 0, spoke1.reserveCount() - 1);
+    reserveId1 = bound(reserveId1, 0, spoke1.getReserveCount() - 1);
+    reserveId2 = bound(reserveId2, 0, spoke1.getReserveCount() - 1);
     uint256 debtToCover = bound(debtToCover, 1, MAX_SUPPLY_AMOUNT);
 
     // if even, reserveId1 is collateral, reserveId2 is debt
@@ -221,8 +221,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     debtToCover = bound(debtToCover, 1, MAX_SUPPLY_AMOUNT);
     wethAmount = bound(wethAmount, 1, MAX_SUPPLY_AMOUNT / 10);
     daiAmount = wethAmount * 5; // ensure enough collateral to borrow
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    newWethPrice = bound(newWethPrice, 0, oracle.getReservePrice(_wethReserveId(spoke1)));
+    newWethPrice = bound(newWethPrice, 1, spoke1.oracle().getReservePrice(_wethReserveId(spoke1)));
     uint256 usdxAmount = daiAmount * 2; // Another collateral to cover debt while removing weth collateral
 
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -236,11 +235,16 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
     Utils.borrow(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // no longer set weth as collateral
-    setUsingAsCollateral(spoke1, alice, wethReserveId, false);
-    assertFalse(spoke1.getUsingAsCollateral(wethReserveId, alice));
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(wethReserveId, false, alice);
+    assertFalse(spoke1.isUsingAsCollateral(wethReserveId, alice));
 
     // usdx collateral value drop, make sure that HF < threshold and position is liquidatable
-    oracle.setReservePrice(usdxReserveId, 0);
+    vm.mockCall(
+      address(spoke1.oracle()),
+      abi.encodeWithSelector(IPriceOracle.getReservePrice.selector, usdxReserveId),
+      abi.encode(0)
+    );
     assertLt(
       spoke1.getHealthFactor(alice),
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,

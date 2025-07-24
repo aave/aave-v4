@@ -31,37 +31,49 @@ contract SpokeMultipleHubTest is SpokeBase {
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
-      liquidityPremium: 20_00,
-      liquidationFee: 0,
+      collateralRisk: 20_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory dynDaiHub2Config = DataTypes.DynamicReserveConfig({
-      collateralFactor: 78_00
+      collateralFactor: 78_00,
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
-    daiHub2ReserveId = spoke1.addReserve(daiAssetId, address(hub2), daiHub2Config, dynDaiHub2Config);
+    daiHub2ReserveId = spoke1.addReserve(
+      address(hub2),
+      daiAssetId,
+      _deployMockPriceFeed(spoke1, 1e8),
+      daiHub2Config,
+      dynDaiHub2Config
+    );
 
     // Relist hub 3's dai on spoke 1
     DataTypes.ReserveConfig memory daiHub3Config = DataTypes.ReserveConfig({
       active: true,
       frozen: false,
       paused: false,
-      liquidationBonus: 100_00,
-      liquidityPremium: 20_00,
-      liquidationFee: 0,
+      collateralRisk: 20_00,
       borrowable: true,
       collateral: true
     });
     DataTypes.DynamicReserveConfig memory dynDaiHub3Config = DataTypes.DynamicReserveConfig({
-      collateralFactor: 78_00
+      collateralFactor: 78_00,
+      liquidationBonus: 100_00,
+      liquidationFee: 0
     });
-    daiHub3ReserveId = spoke1.addReserve(hub3DaiAssetId, address(hub3), daiHub3Config, dynDaiHub3Config);
+    daiHub3ReserveId = spoke1.addReserve(
+      address(hub3),
+      hub3DaiAssetId,
+      _deployMockPriceFeed(spoke1, 1e8),
+      daiHub3Config,
+      dynDaiHub3Config
+    );
 
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+      active: true,
       supplyCap: type(uint256).max,
-      drawCap: type(uint256).max,
-      active: true
+      drawCap: type(uint256).max
     });
 
     // Connect hub 2 and spoke 1 for dai
@@ -69,10 +81,6 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     // Connect hub 3 and spoke 1 for dai
     hub3.addSpoke(hub3DaiAssetId, address(spoke1), spokeConfig);
-
-    // Set the prices for dai for the new hubs
-    oracle1.setReservePrice(daiHub2ReserveId, 1e8);
-    oracle1.setReservePrice(daiHub3ReserveId, 1e8);
 
     vm.stopPrank();
 
@@ -123,14 +131,14 @@ contract SpokeMultipleHubTest is SpokeBase {
     assertEq(daiReserve.underlying, address(tokenList.dai));
 
     // Bob can partially repay both debt positions on hub 1 and hub 2
-    Utils.repay(spoke1, _daiReserveId(spoke1), bob, hub1RepayAmount);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, hub1RepayAmount, bob);
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       hub1BorrowAmount - hub1RepayAmount
     );
     assertEq(hub.getAssetTotalDebt(daiAssetId), hub1BorrowAmount - hub1RepayAmount);
 
-    Utils.repay(spoke1, daiHub2ReserveId, bob, hub2RepayAmount);
+    Utils.repay(spoke1, daiHub2ReserveId, bob, hub2RepayAmount, bob);
     assertEq(spoke1.getUserTotalDebt(daiHub2ReserveId, bob), hub2BorrowAmount - hub2RepayAmount);
     assertEq(hub2.getAssetTotalDebt(daiAssetId), hub2BorrowAmount - hub2RepayAmount);
   }

@@ -9,10 +9,9 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       amount: addAmount,
-      user: alice,
-      to: address(spoke1)
+      user: alice
     });
 
     uint256 feeShares = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
@@ -30,10 +29,9 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       amount: addAmount,
-      user: alice,
-      to: address(spoke1)
+      user: alice
     });
 
     _addLiquidity(daiAssetId, addAmount);
@@ -67,10 +65,9 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke1),
+      caller: address(spoke1),
       amount: addAmount,
-      user: alice,
-      to: address(spoke1)
+      user: alice
     });
 
     _addLiquidity(daiAssetId, 100e18);
@@ -85,6 +82,7 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     );
 
     feeShares = bound(feeShares, 1, spokeSharesBefore);
+    uint256 feeAmount = hub.convertToSuppliedAssets(daiAssetId, feeShares);
 
     uint256 feeReceiverSharesBefore = hub.getSpokeSuppliedShares(
       daiAssetId,
@@ -92,7 +90,9 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.AccrueFees(daiAssetId, feeShares);
+    emit ILiquidityHub.Remove(daiAssetId, address(spoke1), feeShares, feeAmount);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Add(daiAssetId, _getFeeReceiver(daiAssetId), feeShares, feeAmount);
 
     vm.prank(address(spoke1));
     hub.payFee(daiAssetId, feeShares);

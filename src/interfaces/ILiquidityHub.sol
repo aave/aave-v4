@@ -19,7 +19,12 @@ interface ILiquidityHub is IAccessManaged {
     address indexed spoke,
     DataTypes.SpokeConfig config
   );
-  event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 lastUpdateTimestamp);
+  event AssetUpdated(
+    uint256 indexed assetId,
+    uint256 drawnIndex,
+    uint256 baseBorrowRate,
+    uint256 latestUpdateTimestamp
+  );
   event Add(
     uint256 indexed assetId,
     address indexed spoke,
@@ -55,12 +60,12 @@ interface ILiquidityHub is IAccessManaged {
   event AccrueFees(uint256 indexed assetId, uint256 shares);
 
   error InvalidSharesAmount();
-  error InvalidSupplyAmount();
+  error InvalidAddAmount();
   error InvalidAddFromHub();
   error AssetNotListed();
   error AssetNotActive();
   error SupplyCapExceeded(uint256 supplyCap);
-  error InvalidWithdrawAmount();
+  error InvalidRemoveAmount();
   error InvalidRestoreAmount();
   error SuppliedAmountExceeded(uint256 suppliedAmount);
   error NotAvailableLiquidity(uint256 availableLiquidity);
@@ -69,7 +74,6 @@ interface ILiquidityHub is IAccessManaged {
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
   error SpokeNotListed();
-  error InvalidRiskPremiumBps(uint256 bps);
   error AssetPaused();
   error AssetFrozen();
   error InvalidIrStrategy();
@@ -89,13 +93,15 @@ interface ILiquidityHub is IAccessManaged {
    * @param decimals The number of decimals of the asset.
    * @param feeReceiver The address of the fee receiver spoke.
    * @param irStrategy The address of the interest rate strategy contract.
+   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
    * @return The unique identifier of the added asset.
    */
   function addAsset(
     address underlying,
     uint8 decimals,
     address feeReceiver,
-    address irStrategy
+    address irStrategy,
+    bytes calldata data
   ) external returns (uint256);
 
   /**
@@ -158,7 +164,7 @@ interface ILiquidityHub is IAccessManaged {
    * @param baseAmount The base debt to repay.
    * @param premiumAmount The premium debt to repay.
    * @param from The address to pull assets from.
-   * @return The amount of debt restored.
+   * @return The amount of base debt shares restored.
    */
   function restore(
     uint256 assetId,
@@ -197,6 +203,8 @@ interface ILiquidityHub is IAccessManaged {
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
+
+  function convertToDrawnSharesUp(uint256 assetId, uint256 assets) external view returns (uint256);
 
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 

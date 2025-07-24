@@ -19,8 +19,8 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     uint256 liquidationFee,
     uint256 skipTime
   ) public {
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
-    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
+    debtReserveId = bound(debtReserveId, 0, spoke1.getReserveCount() - 1);
 
     LiquidationTestLocalParams memory state = _execLiqCallCloseFactorBadDebtTest(
       liqConfig,
@@ -36,7 +36,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
 
     // with no collateral remaining collateral should be disabled as collateral
     assertFalse(
-      spoke1.getUsingAsCollateral(state.collateralReserve.reserveId, alice),
+      spoke1.isUsingAsCollateral(state.collateralReserve.reserveId, alice),
       'isUsingAsCollateral should be false with no collateral'
     );
     // all collateral is seized
@@ -381,18 +381,18 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: collateralReserveId,
-      user: alice,
+      caller: alice,
       amount: supplyAmount,
       onBehalfOf: alice
     });
 
-    _increaseCollateralReserveSupplyExchangeRate(
-      state.collateralReserve.assetId,
-      collateralReserveId,
-      supplyAmount / 2,
-      skipTime,
-      bob
-    );
+    _borrowWithoutHfCheck({
+      spoke: spoke1,
+      user: bob,
+      reserveId: collateralReserveId,
+      debtAmount: supplyAmount / 2
+    });
+    skip(skipTime);
 
     vm.assume(
       _getRequiredDebtAmountForLtHf(spoke1, alice, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
@@ -405,7 +405,11 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       desiredHf
     );
 
-    state.liquidationBonus = spoke1.getVariableLiquidationBonus(collateralReserveId, hfAfterBorrow);
+    state.liquidationBonus = spoke1.getVariableLiquidationBonus(
+      collateralReserveId,
+      alice,
+      hfAfterBorrow
+    );
 
     state = _getAccountingInfoBeforeLiq(state);
     (

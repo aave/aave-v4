@@ -105,10 +105,14 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
-    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
+    state.collDynConfig = _getUserDynConfig(spoke1, alice, collateralReserveId);
 
     liqConfig = _bound(liqConfig);
-    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
+    liqBonus = bound(
+      liqBonus,
+      MIN_LIQUIDATION_BONUS,
+      PercentageMathExtended.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
+    );
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.01e18);
     liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     // bound supply amount to max supply amount
@@ -129,11 +133,11 @@ contract SpokeLiquidationBase is SpokeBase {
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
     updateLiquidationFee(spoke1, collateralReserveId, state.liquidationFee);
 
-    if (!spoke1.getUsingAsCollateral(collateralReserveId, alice)) {
+    if (!spoke1.isUsingAsCollateral(collateralReserveId, alice)) {
       Utils.supplyCollateral({
         spoke: spoke1,
         reserveId: collateralReserveId,
-        user: alice,
+        caller: alice,
         amount: supplyAmount,
         onBehalfOf: alice
       });
@@ -141,19 +145,19 @@ contract SpokeLiquidationBase is SpokeBase {
       Utils.supply({
         spoke: spoke1,
         reserveId: collateralReserveId,
-        user: alice,
+        caller: alice,
         amount: supplyAmount,
         onBehalfOf: alice
       });
     }
 
-    _increaseCollateralReserveSupplyExchangeRate(
-      state.collateralReserve.assetId,
-      collateralReserveId,
-      supplyAmount / 2,
-      skipTime,
-      bob
-    );
+    _borrowWithoutHfCheck({
+      spoke: spoke1,
+      user: bob,
+      reserveId: collateralReserveId,
+      debtAmount: supplyAmount / 2
+    });
+    skip(skipTime);
 
     vm.assume(
       _getRequiredDebtAmountForLtHf(spoke1, alice, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
@@ -165,9 +169,16 @@ contract SpokeLiquidationBase is SpokeBase {
       debtReserveId,
       desiredHf
     );
-    state.liquidationBonus = spoke1.getVariableLiquidationBonus(collateralReserveId, hfAfterBorrow);
+    state.liquidationBonus = spoke1.getVariableLiquidationBonus(
+      collateralReserveId,
+      alice,
+      hfAfterBorrow
+    );
 
     state = _getAccountingInfoBeforeLiq(state);
+
+    // Get alice's dynamic config key before liquidation
+    DynamicConfig[] memory configKeysBefore = _getUserDynConfigKeys(spoke1, alice);
 
     (
       state.collToLiq,
@@ -215,6 +226,9 @@ contract SpokeLiquidationBase is SpokeBase {
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
     state = _getAccountingInfoAfterLiq(state);
+
+    // Validate alice's dynamic config key unchanged after liquidation
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configKeysBefore);
 
     // with a close factor, it is impossible to liquidate all debt unless deficit is reported
     assertTrue(
@@ -299,7 +313,7 @@ contract SpokeLiquidationBase is SpokeBase {
   function _assertLiquidationFeeEarned(
     LiquidationTestLocalParams memory state,
     string memory label
-  ) internal view {
+  ) internal pure {
     uint256 totalLiqBonusAmount = state.supply.balanceChange -
       state.supply.balanceChange.percentDivUp(state.liquidationBonus);
     uint256 liquidationFeeAmount = state.treasury.balanceChange;
@@ -352,9 +366,9 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal view {
-    // uingAsCollateral should remain True after liquidation
+    // usingAsCollateral should remain True after liquidation
     assertTrue(
-      spoke.getUsingAsCollateral(state.collateralReserve.reserveId, user),
+      spoke.isUsingAsCollateral(state.collateralReserve.reserveId, user),
       string.concat('isUsingAsCollateral should remain true ', label)
     );
   }
@@ -532,7 +546,7 @@ contract SpokeLiquidationBase is SpokeBase {
   /// rate field is the supply exchange rate of the collateral reserve, applied to a RAY.
   function _getAccountingInfoAfterLiq(
     LiquidationTestLocalParams memory state
-  ) internal returns (LiquidationTestLocalParams memory) {
+  ) internal view returns (LiquidationTestLocalParams memory) {
     state.treasury.balanceAfter = hub.getSpokeSuppliedAmount(
       state.collateralReserve.assetId,
       _getFeeReceiver(state.collateralReserve.assetId)
@@ -601,28 +615,5 @@ contract SpokeLiquidationBase is SpokeBase {
     );
 
     return state;
-  }
-
-  function _increaseCollateralReserveSupplyExchangeRate(
-    uint256 assetId,
-    uint256 collateralReserveId,
-    uint256 borrowAmount,
-    uint256 skipTime,
-    address user
-  ) internal {
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    // set price to 0 to circumvent borrow validation
-    uint256 initialPrice = oracle.getReservePrice(collateralReserveId);
-    oracle.setReservePrice(collateralReserveId, 0);
-    // user borrows some collateral reserve to inflate collateral supply ex rate
-    Utils.borrow({
-      spoke: spoke1,
-      reserveId: collateralReserveId,
-      user: user,
-      amount: borrowAmount,
-      onBehalfOf: user
-    });
-    oracle.setReservePrice(collateralReserveId, initialPrice);
-    skip(skipTime);
   }
 }
