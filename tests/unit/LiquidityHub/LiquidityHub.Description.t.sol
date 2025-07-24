@@ -46,7 +46,7 @@ contract LiquidityHubDescriptionTest is LiquidityHubBase {
     address unauthorizedUser,
     string memory newDescription
   ) public {
-    vm.assume(unauthorizedUser != HUB_ADMIN);
+    assumeNotAdmin(unauthorizedUser);
     assumeUnusedAddress(unauthorizedUser);
 
     vm.expectRevert(

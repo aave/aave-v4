@@ -2167,4 +2167,8 @@ abstract contract Base is Test {
     assertEq(a.premiumDebt, b.premiumDebt, 'premiumDebt');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
+
+  function assumeNotAdmin(address user) internal {
+    vm.assume(user != ADMIN && user != HUB_ADMIN && user != SPOKE_ADMIN);
+  }
 }

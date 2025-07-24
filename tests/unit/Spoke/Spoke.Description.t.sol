@@ -46,7 +46,7 @@ contract SpokeDescriptionTest is SpokeBase {
     address unauthorizedUser,
     string memory newDescription
   ) public {
-    vm.assume(unauthorizedUser != SPOKE_ADMIN);
+    assumeNotAdmin(unauthorizedUser);
     assumeUnusedAddress(unauthorizedUser);
 
     vm.expectRevert(
