@@ -455,8 +455,8 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  function test_draw_fuzz_revertsWith_InvalidDrawToHub(uint256 daiAmount) public {
-    vm.expectRevert(ILiquidityHub.InvalidDrawToHub.selector);
+  function test_draw_fuzz_revertsWith_InvalidToAddress(uint256 daiAmount) public {
+    vm.expectRevert(ILiquidityHub.InvalidToAddress.selector);
     vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: daiAmount, to: address(hub)});
   }

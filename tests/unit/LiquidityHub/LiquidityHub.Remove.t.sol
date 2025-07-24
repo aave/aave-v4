@@ -440,8 +440,8 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     hub.remove(daiAssetId, 100e18, alice);
   }
 
-  function test_remove_revertsWith_InvalidRemoveToHub() public {
-    vm.expectRevert(ILiquidityHub.InvalidRemoveToHub.selector);
+  function test_remove_revertsWith_InvalidToAddress() public {
+    vm.expectRevert(ILiquidityHub.InvalidToAddress.selector);
     vm.prank(address(spoke1));
     hub.remove(daiAssetId, 100e18, address(hub));
   }

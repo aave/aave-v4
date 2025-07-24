@@ -496,7 +496,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 amount,
     address from
   ) internal view {
-    require(from != address(this), InvalidAddFromHub());
+    require(from != address(this), InvalidFromAddress());
     require(amount > 0, InvalidAddAmount());
     require(spoke.config.active, SpokeNotActive());
     uint256 supplyCap = spoke.config.supplyCap;
@@ -513,7 +513,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 amount,
     address to
   ) internal view {
-    require(to != address(this), InvalidRemoveToHub());
+    require(to != address(this), InvalidToAddress());
     require(amount > 0, InvalidRemoveAmount());
     require(spoke.config.active, SpokeNotActive());
     uint256 withdrawable = asset.toSuppliedAssetsDown(spoke.suppliedShares);
@@ -527,7 +527,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 amount,
     address to
   ) internal view {
-    require(to != address(this), InvalidDrawToHub());
+    require(to != address(this), InvalidToAddress());
     require(amount > 0, InvalidDrawAmount());
     require(spoke.config.active, SpokeNotActive());
     uint256 drawCap = spoke.config.drawCap;
@@ -549,7 +549,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 premiumAmountRestored,
     address from
   ) internal view {
-    require(from != address(this), InvalidRestoreFromHub());
+    require(from != address(this), InvalidFromAddress());
     require(baseAmountRestored + premiumAmountRestored > 0, InvalidRestoreAmount());
     require(spoke.config.active, SpokeNotActive());
     (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
