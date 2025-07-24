@@ -245,7 +245,7 @@ abstract contract Base is Test {
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
-    bytes4[] memory selectors = new bytes4[](8);
+    bytes4[] memory selectors = new bytes4[](9);
     selectors[0] = ISpoke.updateOracle.selector;
     selectors[1] = ISpoke.updateReservePriceSource.selector;
     selectors[2] = ISpoke.updateLiquidationConfig.selector;
@@ -254,6 +254,7 @@ abstract contract Base is Test {
     selectors[5] = ISpoke.updateDynamicReserveConfig.selector;
     selectors[6] = ISpoke.updateExistingDynamicReserveConfig.selector;
     selectors[7] = ISpoke.updateUserRiskPremium.selector;
+    selectors[8] = ISpoke.updatePositionManager.selector;
     accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
 
     // Liquidity Hub Admin functionalities
@@ -1866,8 +1867,8 @@ abstract contract Base is Test {
     assertEq(a.frozen, b.frozen, 'frozen');
     assertEq(a.borrowable, b.borrowable, 'borrowable');
     assertEq(a.collateral, b.collateral, 'collateral');
-    assertEq(a.liquidityPremium, b.liquidityPremium, 'liquidityPremium');
-    assertEq(abi.encode(a), abi.encode(b), 'all fields');
+    assertEq(a.collateralRisk, b.collateralRisk, 'collateralRisk');
+    assertEq(abi.encode(a), abi.encode(b));
   }
 
   function assertEq(
