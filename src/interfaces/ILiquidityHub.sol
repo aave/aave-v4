@@ -62,6 +62,9 @@ interface ILiquidityHub is IAccessManaged {
   error InvalidSharesAmount();
   error InvalidAddAmount();
   error InvalidAddFromHub();
+  error InvalidRemoveToHub();
+  error InvalidDrawToHub();
+  error InvalidRestoreFromHub();
   error AssetNotListed();
   error SupplyCapExceeded(uint256 supplyCap);
   error InvalidRemoveAmount();

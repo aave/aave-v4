@@ -459,4 +459,50 @@ contract SpokeConfiguratorTest is Base {
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), newDynamicReserveConfig);
   }
+
+  function test_pauseAllReserves_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+  }
+
+  function test_pauseAllReserves() public {
+    for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
+      DataTypes.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
+      reserveConfig.paused = true;
+      vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig)));
+      vm.expectEmit(address(spoke));
+      emit ISpoke.ReserveConfigUpdated(reserveId, reserveConfig);
+    }
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+
+    for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
+      assertEq(spoke.getReserveConfig(reserveId).paused, true);
+    }
+  }
+
+  function test_freezeAllReserves_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    spokeConfigurator.freezeAllReserves(spokeAddr);
+  }
+
+  function test_freezeAllReserves() public {
+    for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
+      DataTypes.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
+      reserveConfig.frozen = true;
+      vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig)));
+      vm.expectEmit(address(spoke));
+      emit ISpoke.ReserveConfigUpdated(reserveId, reserveConfig);
+    }
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeAllReserves(spokeAddr);
+
+    for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
+      assertEq(spoke.getReserveConfig(reserveId).frozen, true);
+    }
+  }
 }

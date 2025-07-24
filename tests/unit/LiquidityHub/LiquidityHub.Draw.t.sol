@@ -389,6 +389,48 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.stopPrank();
   }
 
+  /// Tests that the draw cap is checked against spoke's debt, not the hub's debt
+  function test_draw_DifferentSpokes() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawCap = daiAmount;
+    uint256 drawAmount = drawCap;
+
+    updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
+    updateDrawCap(hub, daiAssetId, address(spoke2), drawCap);
+
+    _supplyAndDrawLiquidity({
+      assetId: daiAssetId,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: daiAmount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: drawAmount,
+      skipTime: 365 days
+    });
+
+    // restore to provide liquidity
+    // Must repay at least one full share
+    vm.startPrank(address(spoke1));
+    hub.restore({
+      assetId: daiAssetId,
+      baseAmount: minimumAssetsPerDrawnShare(daiAssetId),
+      premiumAmount: 0,
+      from: alice
+    });
+    vm.stopPrank();
+
+    (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
+    assertGt(baseDebt, drawCap);
+
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
+    vm.prank(address(spoke1));
+    hub.draw({assetId: daiAssetId, amount: 1, to: bob});
+
+    vm.prank(address(spoke2));
+    hub.draw({assetId: daiAssetId, amount: 1, to: bob});
+  }
+
   function test_draw_revertsWith_DrawCapExceeded() public {
     uint256 daiAmount = 100e18;
     uint256 drawCap = daiAmount;
@@ -411,5 +453,11 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
     vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+  }
+
+  function test_draw_fuzz_revertsWith_InvalidDrawToHub(uint256 daiAmount) public {
+    vm.expectRevert(ILiquidityHub.InvalidDrawToHub.selector);
+    vm.prank(address(spoke1));
+    hub.draw({assetId: daiAssetId, amount: daiAmount, to: address(hub)});
   }
 }

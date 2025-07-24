@@ -670,7 +670,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   /**
    * @dev Validates the reserve can be set as collateral.
-   * @dev Collateral can be disabled if the reserve is frozen but not enabled.
+   * @dev Collateral can be disabled if the reserve is frozen.
    * @param reserve The reserve to be set as collateral.
    * @param reserveId The identifier of the reserve.
    * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.

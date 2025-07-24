@@ -167,4 +167,26 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   ) external onlyOwner {
     ISpoke(spoke).updateDynamicReserveConfig(reserveId, dynamicConfig);
   }
+
+  /// @inheritdoc ISpokeConfigurator
+  function pauseAllReserves(address spoke) external onlyOwner {
+    ISpoke targetSpoke = ISpoke(spoke);
+    uint256 reserveCount = targetSpoke.getReserveCount();
+    for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
+      DataTypes.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
+      reserveConfig.paused = true;
+      targetSpoke.updateReserveConfig(reserveId, reserveConfig);
+    }
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function freezeAllReserves(address spoke) external onlyOwner {
+    ISpoke targetSpoke = ISpoke(spoke);
+    uint256 reserveCount = targetSpoke.getReserveCount();
+    for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
+      DataTypes.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
+      reserveConfig.frozen = true;
+      targetSpoke.updateReserveConfig(reserveId, reserveConfig);
+    }
+  }
 }

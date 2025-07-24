@@ -421,7 +421,6 @@ contract LiquidityHubAddTest is LiquidityHubBase {
 
   function test_add_revertsWith_InvalidAddFromHub() public {
     vm.expectRevert(ILiquidityHub.InvalidAddFromHub.selector, address(hub));
-
     vm.prank(address(spoke1));
     hub.add(daiAssetId, 100e18, address(hub));
   }

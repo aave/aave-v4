@@ -153,4 +153,16 @@ interface ISpokeConfigurator {
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external;
+
+  /**
+   * @notice Pauses all reserves of a spoke.
+   * @param spoke The address of the spoke.
+   */
+  function pauseAllReserves(address spoke) external;
+
+  /**
+   * @notice Freezes all reserves of a spoke.
+   * @param spoke The address of the spoke.
+   */
+  function freezeAllReserves(address spoke) external;
 }
