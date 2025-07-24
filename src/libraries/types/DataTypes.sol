@@ -8,7 +8,7 @@ library DataTypes {
   // Liquidity Hub types
   // todo pack
   struct SpokeData {
-    uint256 suppliedShares;
+    uint256 addedShares;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
     uint256 premiumOffset; // todo make signed
@@ -20,7 +20,7 @@ library DataTypes {
   struct Asset {
     address underlying;
     uint8 decimals;
-    uint256 suppliedShares;
+    uint256 addedShares;
     uint256 availableLiquidity;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;

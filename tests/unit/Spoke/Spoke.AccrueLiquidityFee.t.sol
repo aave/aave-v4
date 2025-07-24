@@ -8,7 +8,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
   using PercentageMathExtended for uint256;
 
   function test_accrueLiquidityFee_NoActionTaken() public view {
-    assertEq(hub.getSpokeSuppliedShares(daiAssetId, address(treasurySpoke)), 0);
+    assertEq(hub.getSpokeAddedShares(daiAssetId, address(treasurySpoke)), 0);
     _assertSingleUserProtocolDebt(
       spoke1,
       _daiReserveId(spoke1),
@@ -43,7 +43,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
 
     // treasury
-    assertEq(hub.getSpokeSuppliedAmount(daiAssetId, address(treasurySpoke)), 0);
+    assertEq(hub.getSpokeAddedAmount(daiAssetId, address(treasurySpoke)), 0);
   }
 
   function test_accrueLiquidityFee_fuzz_BorrowAmountAndSkipTime(
@@ -90,10 +90,10 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     }
 
     // Alice supplies 1 share to trigger interest accrual
-    Utils.supplyCollateral(spoke1, reserveId, alice, minimumAssetsPerSuppliedShare(assetId), alice);
+    Utils.supplyCollateral(spoke1, reserveId, alice, minimumAssetsPerAddedShare(assetId), alice);
 
     // treasury
-    uint256 expectedFeeShares = hub.convertToSuppliedShares(
+    uint256 expectedFeeShares = hub.convertToAddedShares(
       assetId,
       _calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.baseDrawnShares,
@@ -104,7 +104,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
 
     assertApproxEqAbs(
-      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
       1,
       'treasury shares'
@@ -127,10 +127,10 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     skip(skipTime);
 
     // Alice supplies 1 share to trigger interest accrual
-    Utils.supply(spoke1, reserveId, alice, minimumAssetsPerSuppliedShare(assetId), alice);
+    Utils.supply(spoke1, reserveId, alice, minimumAssetsPerAddedShare(assetId), alice);
 
     // treasury
-    expectedFeeShares = hub.convertToSuppliedShares(
+    expectedFeeShares = hub.convertToAddedShares(
       assetId,
       _calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.baseDrawnShares,
@@ -141,7 +141,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
 
     assertApproxEqAbs(
-      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
       1,
       'treasury shares'
@@ -157,13 +157,13 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     skip(skipTime);
 
     // Alice supplies 1 share to trigger interest accrual
-    Utils.supply(spoke1, reserveId, alice, minimumAssetsPerSuppliedShare(assetId), alice);
+    Utils.supply(spoke1, reserveId, alice, minimumAssetsPerAddedShare(assetId), alice);
 
     // treasury
     expectedFeeShares = 0;
 
     assertApproxEqAbs(
-      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
       1,
       'treasury shares'
@@ -202,8 +202,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       'after base and premium debt accrual'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
+      hub.convertToAddedShares(assetId, expectedTreasuryFees),
       'treasury fees after base and premium debt accrual'
     );
 
@@ -212,10 +212,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     updateCollateralRisk(spoke1, reserveId, expectedRp);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.AccrueFees(
-      assetId,
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees)
-    );
+    emit ILiquidityHub.AccrueFees(assetId, hub.convertToAddedShares(assetId, expectedTreasuryFees));
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
 
@@ -240,16 +237,13 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       'after base debt accrual'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
+      hub.convertToAddedShares(assetId, expectedTreasuryFees),
       'treasury fees after base debt accrual'
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.AccrueFees(
-      assetId,
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees)
-    );
+    emit ILiquidityHub.AccrueFees(assetId, hub.convertToAddedShares(assetId, expectedTreasuryFees));
 
     // 0.00% liquidity fee
     liquidityFee = 0;
@@ -257,7 +251,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
-    Utils.supply(spoke1, reserveId, bob, minimumAssetsPerSuppliedShare(assetId), bob);
+    Utils.supply(spoke1, reserveId, bob, minimumAssetsPerAddedShare(assetId), bob);
     _assertEventNotEmitted(ILiquidityHub.AccrueFees.selector);
 
     vm.recordLogs();
@@ -281,8 +275,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       'after base debt accrual'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
+      hub.convertToAddedShares(assetId, expectedTreasuryFees),
       'treasury fees after base debt accrual'
     );
   }
@@ -323,8 +317,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       'after base and premium debt accrual'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
+      hub.convertToAddedShares(assetId, expectedTreasuryFees),
       'treasury fees after base and premium debt accrual'
     );
 
@@ -333,10 +327,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     updateCollateralRisk(spoke1, reserveId, expectedRp);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.AccrueFees(
-      assetId,
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees)
-    );
+    emit ILiquidityHub.AccrueFees(assetId, hub.convertToAddedShares(assetId, expectedTreasuryFees));
 
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
@@ -363,16 +354,13 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       'after base debt accrual'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
+      hub.convertToAddedShares(assetId, expectedTreasuryFees),
       'treasury fees after base debt accrual'
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.AccrueFees(
-      assetId,
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees)
-    );
+    emit ILiquidityHub.AccrueFees(assetId, hub.convertToAddedShares(assetId, expectedTreasuryFees));
 
     // 0.00% liquidity fee
     liquidityFee = 0;
@@ -380,7 +368,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
-    Utils.supply(spoke1, reserveId, bob, minimumAssetsPerSuppliedShare(assetId), bob);
+    Utils.supply(spoke1, reserveId, bob, minimumAssetsPerAddedShare(assetId), bob);
     _assertEventNotEmitted(ILiquidityHub.AccrueFees.selector);
 
     vm.recordLogs();
@@ -404,8 +392,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       'after base debt accrual'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
+      hub.convertToAddedShares(assetId, expectedTreasuryFees),
       'treasury fees after base debt accrual'
     );
   }
@@ -457,8 +445,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       'after base and premium debt accrual'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
+      hub.convertToAddedShares(assetId, expectedTreasuryFees),
       'treasury fees'
     );
 
@@ -476,8 +464,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       'after base and premium debt accrual'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
+      hub.convertToAddedShares(assetId, expectedTreasuryFees),
       'treasury fees after base and premium debt accrual'
     );
   }
@@ -516,8 +504,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       'after base and premium debt accrual'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
-      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
+      hub.convertToAddedShares(assetId, expectedTreasuryFees),
       'treasury fees after base and premium debt accrual'
     );
 
@@ -527,7 +515,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       'alice does not earn anything'
     );
     assertEq(
-      hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
+      hub.getSpokeAddedAmount(assetId, address(treasurySpoke)),
       expectedBaseDebtAccrual + expectedPremiumDebt,
       'treasury all accumulated interest'
     );

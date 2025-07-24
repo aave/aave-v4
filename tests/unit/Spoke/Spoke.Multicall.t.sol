@@ -15,12 +15,7 @@ contract SpokeMulticall is SpokeBase {
     calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (daiReserveId, true, bob));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supply(
-      daiReserveId,
-      bob,
-      bob,
-      hub.convertToSuppliedShares(daiAssetId, supplyAmount)
-    );
+    emit ISpoke.Supply(daiReserveId, bob, bob, hub.convertToAddedShares(daiAssetId, supplyAmount));
     vm.expectEmit(address(spoke1));
     emit ISpoke.UsingAsCollateral(daiReserveId, bob, bob, true);
 
@@ -61,7 +56,7 @@ contract SpokeMulticall is SpokeBase {
       _daiReserveId(spoke2),
       bob,
       bob,
-      hub.convertToSuppliedShares(daiAssetId, MAX_SUPPLY_AMOUNT)
+      hub.convertToAddedShares(daiAssetId, MAX_SUPPLY_AMOUNT)
     );
     vm.expectEmit(address(spoke2));
     emit ISpoke.UsingAsCollateral(_daiReserveId(spoke2), bob, bob, true);

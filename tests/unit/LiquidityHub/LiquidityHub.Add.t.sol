@@ -112,49 +112,49 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, alice);
   }
 
-  /// supply reverts if the cap is exceeded, with proper rounding (up) applied to shares into assets conversion
+  /// add reverts if the cap is exceeded, with proper rounding (up) applied to shares into assets conversion
   function test_add_revertsWith_AddCapExceeded_due_to_rounding() public {
     _addLiquidity(daiAssetId, 100e18);
     _drawLiquidity(daiAssetId, 45e18, true);
 
-    uint256 totalSuppliedAssets = hub.getTotalSuppliedAssets(daiAssetId);
-    uint256 totalSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
+    uint256 totalAddedAssets = hub.getTotalAddedAssets(daiAssetId);
+    uint256 totalAddedShares = hub.getAssetAddedShares(daiAssetId);
 
     // Depending on the borrow rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
     assertNotEq(
-      totalSuppliedAssets % totalSuppliedShares,
+      totalAddedAssets % totalAddedShares,
       0,
-      'totalSuppliedAssets % totalSuppliedShares is zero'
+      'totalAddedAssets % totalAddedShares is zero'
     );
 
     // The asset amount is 1 share worth of assets (rounded down) + 1
-    // The supplied share is 1, which rounded up is equal to the
-    // amount of assets supplied
-    uint256 supplyAmount = totalSuppliedAssets / totalSuppliedShares + 1;
+    // The added share is 1, which rounded up is equal to the
+    // amount of assets added
+    uint256 addedAmount = totalAddedAssets / totalAddedShares + 1;
 
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
       caller: address(spoke1),
-      amount: supplyAmount,
+      amount: addedAmount,
       user: alice
     });
 
-    // set supply cap to amount of assets supplied * 2 - 1, given
+    // set add cap to amount of assets added * 2 - 1, given
     // that the same asset amount is provided again below
-    uint256 newAddCap = 2 * supplyAmount - 1;
+    uint256 newAddCap = 2 * addedAmount - 1;
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
 
-    // this cap will be exceeded only if the existing supplied
+    // this cap will be exceeded only if the existing added
     // shares are rounded up
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, supplyAmount, alice);
+    hub.add(daiAssetId, addedAmount, alice);
 
-    // check that supply cap is not exceeded if assets are rounded down
-    uint256 suppliedAssetsRoundedDown = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
-    assertEq(suppliedAssetsRoundedDown + supplyAmount, newAddCap);
+    // check that add cap is not exceeded if assets are rounded down
+    uint256 addedAssetsRoundedDown = hub.getSpokeAddedAmount(daiAssetId, address(spoke1));
+    assertEq(addedAssetsRoundedDown + addedAmount, newAddCap);
   }
 
   function test_add_fuzz_revertsWith_AddCapExceeded(uint256 amount) public {
@@ -174,11 +174,11 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     uint256 newAddCap = daiAmount + 1;
     _updateAddCap(daiAssetId, address(spoke2), newAddCap);
 
-    _supplyAndDrawLiquidity({
+    _addAndDrawLiquidity({
       assetId: daiAssetId,
-      supplyUser: bob,
-      supplySpoke: address(spoke2),
-      supplyAmount: daiAmount,
+      addUser: bob,
+      addSpoke: address(spoke2),
+      addAmount: daiAmount,
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: daiAmount,
@@ -202,58 +202,58 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     uint256 newAddCap = daiAmount + 1;
 
     _updateAddCap(daiAssetId, address(spoke2), newAddCap);
-    _supplyAndDrawLiquidity({
+    _addAndDrawLiquidity({
       assetId: daiAssetId,
-      supplyUser: bob,
-      supplySpoke: address(spoke2),
-      supplyAmount: daiAmount,
+      addUser: bob,
+      addSpoke: address(spoke2),
+      addAmount: daiAmount,
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: drawAmount,
       skipTime: skipTime
     });
-    vm.assume(hub.convertToSuppliedShares(daiAssetId, daiAmount) < daiAmount);
+    vm.assume(hub.convertToAddedShares(daiAssetId, daiAmount) < daiAmount);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke2));
-    hub.add(daiAssetId, 1, alice); // cannot supply any additional amount
+    hub.add(daiAssetId, 1, alice); // cannot add any additional amount
   }
 
-  // supply succeeds if cap is reached but not exceeded
+  // add succeeds if cap is reached but not exceeded
   function test_add_AddCapReachedButNotExceeded() public {
     _addLiquidity(daiAssetId, 100e18);
     _drawLiquidity(daiAssetId, 45e18, true);
 
-    uint256 totalSuppliedAssets = hub.getTotalSuppliedAssets(daiAssetId);
-    uint256 totalSuppliedShares = hub.getAssetSuppliedShares(daiAssetId);
+    uint256 totalAddedAssets = hub.getTotalAddedAssets(daiAssetId);
+    uint256 totalAddedShares = hub.getAssetAddedShares(daiAssetId);
 
     // Depending on the borrow rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
     assertNotEq(
-      totalSuppliedAssets % totalSuppliedShares,
+      totalAddedAssets % totalAddedShares,
       0,
-      'totalSuppliedAssets % totalSuppliedShares is zero'
+      'totalAddedAssets % totalAddedShares is zero'
     );
 
     // The asset amount is 1 share worth of assets (rounded down) + 1
-    // The supplied share is 1, which rounded up is equal to the
-    // amount of assets supplied
-    uint256 supplyAmount = totalSuppliedAssets / totalSuppliedShares + 1;
+    // The added share is 1, which rounded up is equal to the
+    // amount of assets added
+    uint256 addedAmount = totalAddedAssets / totalAddedShares + 1;
 
-    uint256 spokeSuppliedShares = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
-    uint256 spokeSuppliedAssetsRoundedUp = spokeSuppliedShares.toAssetsUp(
-      totalSuppliedAssets,
-      totalSuppliedShares
+    uint256 spokeAddedShares = hub.getSpokeAddedShares(daiAssetId, address(spoke1));
+    uint256 spokeAddedAssetsRoundedUp = spokeAddedShares.toAssetsUp(
+      totalAddedAssets,
+      totalAddedShares
     );
 
-    uint256 newAddCap = spokeSuppliedAssetsRoundedUp + supplyAmount;
+    uint256 newAddCap = spokeAddedAssetsRoundedUp + addedAmount;
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
 
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
       caller: address(spoke1),
-      amount: supplyAmount,
+      amount: addedAmount,
       user: alice
     });
   }
@@ -262,7 +262,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     test_add_fuzz_single_asset(daiAssetId, alice, 100e18);
   }
 
-  /// @dev User makes a first supply, shares and assets amounts are correct, no precision loss
+  /// @dev User makes a first add, shares and assets amounts are correct, no precision loss
   function test_add_fuzz_single_asset(uint256 assetId, address user, uint256 amount) public {
     _assumeValidSupplier(user);
 
@@ -285,7 +285,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     underlying.approve(address(hub), amount);
     deal(address(underlying), user, amount);
 
-    uint256 shares = hub.convertToSuppliedShares(assetId, amount);
+    uint256 shares = hub.convertToAddedShares(assetId, amount);
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(user, address(hub), amount);
     vm.expectEmit(address(hub));
@@ -295,17 +295,17 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     hub.add(assetId, amount, user);
 
     // hub
-    assertEq(hub.getAssetSuppliedAmount(assetId), amount, 'hub asset suppliedAmount after');
-    assertEq(hub.getAssetSuppliedShares(assetId), shares, 'hub asset suppliedShares after');
+    assertEq(hub.getAssetAddedAmount(assetId), amount, 'hub asset addedAmount after');
+    assertEq(hub.getAssetAddedShares(assetId), shares, 'hub asset addedShares after');
     assertEq(
-      hub.getSpokeSuppliedAmount(assetId, address(spoke1)),
+      hub.getSpokeAddedAmount(assetId, address(spoke1)),
       amount,
-      'hub spoke suppliedAmount after'
+      'hub spoke addedAmount after'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId, address(spoke1)),
+      hub.getSpokeAddedShares(assetId, address(spoke1)),
       shares,
-      'hub spoke suppliedShares after'
+      'hub spoke addedShares after'
     );
     assertEq(hub.getAsset(assetId).lastUpdateTimestamp, vm.getBlockTimestamp());
     assertEq(
@@ -317,8 +317,8 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     assertEq(baseDebtAfter, baseDebtBefore, 'hub base debt after');
     assertBorrowRateSynced(hub, assetId, 'hub.add');
     // token balance
-    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-supply');
-    assertEq(underlying.balanceOf(address(hub)), amount, 'hub token balance post-supply');
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-add');
+    assertEq(underlying.balanceOf(address(hub)), amount, 'hub token balance post-add');
   }
 
   /// @dev single user, 2 spokes, 2 assets, 2 amounts
@@ -357,11 +357,11 @@ contract LiquidityHubAddTest is LiquidityHubBase {
 
     // asset1
     assertEq(
-      hub.getAssetSuppliedShares(assetId),
-      hub.convertToSuppliedShares(assetId, amount),
-      'asset suppliedShares after'
+      hub.getAssetAddedShares(assetId),
+      hub.convertToAddedShares(assetId, amount),
+      'asset addedShares after'
     );
-    assertEq(hub.getAssetSuppliedAmount(assetId), amount, 'asset suppliedAmount after');
+    assertEq(hub.getAssetAddedAmount(assetId), amount, 'asset addedAmount after');
     assertEq(hub.getAvailableLiquidity(assetId), amount, 'asset availableLiquidity after');
     assertEq(
       hub.getAsset(assetId).lastUpdateTimestamp,
@@ -369,23 +369,19 @@ contract LiquidityHubAddTest is LiquidityHubBase {
       'asset lastUpdateTimestamp after'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId, address(spoke1)),
-      hub.convertToSuppliedShares(assetId, amount),
-      'spoke1 suppliedShares after'
+      hub.getSpokeAddedShares(assetId, address(spoke1)),
+      hub.convertToAddedShares(assetId, amount),
+      'spoke1 addedShares after'
     );
-    assertEq(
-      hub.getSpokeSuppliedAmount(assetId, address(spoke1)),
-      amount,
-      'spoke1 suppliedAmount after'
-    );
+    assertEq(hub.getSpokeAddedAmount(assetId, address(spoke1)), amount, 'spoke1 addedAmount after');
     assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount, 'user asset1 balance after');
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset1 balance after');
     assertEq(underlying.balanceOf(address(hub)), amount, 'hub asset1 balance after');
     // asset2
     assertEq(
-      hub.getAssetSuppliedShares(assetId2),
-      hub.convertToSuppliedShares(assetId2, amount2),
-      'asset2 suppliedShares after'
+      hub.getAssetAddedShares(assetId2),
+      hub.convertToAddedShares(assetId2, amount2),
+      'asset2 addedShares after'
     );
     assertEq(hub.getAvailableLiquidity(assetId2), amount2, 'asset2 availableLiquidity after');
     assertEq(
@@ -394,14 +390,14 @@ contract LiquidityHubAddTest is LiquidityHubBase {
       'asset2 lastUpdateTimestamp after'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(assetId2, address(spoke2)),
-      hub.convertToSuppliedShares(assetId2, amount2),
-      'spoke2 suppliedShares after'
+      hub.getSpokeAddedShares(assetId2, address(spoke2)),
+      hub.convertToAddedShares(assetId2, amount2),
+      'spoke2 addedShares after'
     );
     assertEq(
-      hub.getSpokeSuppliedAmount(assetId2, address(spoke2)),
+      hub.getSpokeAddedAmount(assetId2, address(spoke2)),
       amount2,
-      'spoke2 suppliedAmount after'
+      'spoke2 addedAmount after'
     );
     assertEq(
       underlying2.balanceOf(alice),
@@ -426,21 +422,21 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     uint256 daiAmount = 1e9 * 1e18;
     uint256 drawAmount = daiAmount;
 
-    _supplyAndDrawLiquidity({
+    _addAndDrawLiquidity({
       assetId: daiAssetId,
-      supplyUser: bob,
-      supplySpoke: address(spoke2),
-      supplyAmount: daiAmount,
+      addUser: bob,
+      addSpoke: address(spoke2),
+      addAmount: daiAmount,
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: drawAmount,
       skipTime: 365 days * 10
     });
-    assertLt(hub.convertToSuppliedShares(daiAssetId, daiAmount), daiAmount); // index increased
+    assertLt(hub.convertToAddedShares(daiAssetId, daiAmount), daiAmount); // index increased
 
-    // supply < 1 share
+    // add < 1 share
     uint256 amount = 1;
-    assertTrue(hub.convertToSuppliedShares(daiAssetId, amount) == 0);
+    assertTrue(hub.convertToAddedShares(daiAssetId, amount) == 0);
 
     vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
     vm.prank(address(spoke1));
@@ -449,33 +445,33 @@ contract LiquidityHubAddTest is LiquidityHubBase {
 
   function test_add_fuzz_revertsWith_InvalidSharesAmount_due_to_index(
     uint256 daiAmount,
-    uint256 supplyAmount,
+    uint256 addAmount,
     uint256 skipTime
   ) public {
     // inflate exchange rate using large values
     daiAmount = bound(daiAmount, 1e20, MAX_SUPPLY_AMOUNT);
     skipTime = bound(skipTime, 365 days, 100 * 365 days);
-    _supplyAndDrawLiquidity({
+    _addAndDrawLiquidity({
       assetId: daiAssetId,
-      supplyUser: bob,
-      supplySpoke: address(spoke2),
-      supplyAmount: daiAmount,
+      addUser: bob,
+      addSpoke: address(spoke2),
+      addAmount: daiAmount,
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: daiAmount,
       skipTime: skipTime
     });
 
-    uint256 minAllowedSupplyAmount = hub.convertToSuppliedAssets(daiAssetId, 1);
+    uint256 minAllowedAddedAmount = hub.convertToAddedAssets(daiAssetId, 1);
     // 1 share converts to > 1 amount
-    vm.assume(minAllowedSupplyAmount > 1);
+    vm.assume(minAllowedAddedAmount > 1);
 
-    // supply < 1 share with an amount > 0
-    supplyAmount = bound(supplyAmount, 1, minAllowedSupplyAmount - 1);
+    // add < 1 share with an amount > 0
+    addAmount = bound(addAmount, 1, minAllowedAddedAmount - 1);
 
     vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, supplyAmount, alice);
+    hub.add(daiAssetId, addAmount, alice);
   }
 
   function test_add_revertsWith_InvalidAddFromHub() public {
@@ -488,11 +484,11 @@ contract LiquidityHubAddTest is LiquidityHubBase {
   function test_add_with_increased_index() public {
     uint256 daiAmount = 100e18;
 
-    _supplyAndDrawLiquidity({
+    _addAndDrawLiquidity({
       assetId: daiAssetId,
-      supplyUser: bob,
-      supplySpoke: address(spoke2),
-      supplyAmount: daiAmount,
+      addUser: bob,
+      addSpoke: address(spoke2),
+      addAmount: daiAmount,
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: daiAmount,
@@ -502,12 +498,12 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     (, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
     assertEq(premiumDebt, 0); // zero premium debt
 
-    uint256 supplyAmount = 10e18; // this can be 0
-    uint256 shares = hub.convertToSuppliedShares(daiAssetId, supplyAmount);
-    assertLt(shares, supplyAmount); // index increased, exch rate > 1
+    uint256 addAmount = 10e18; // this can be 0
+    uint256 shares = hub.convertToAddedShares(daiAssetId, addAmount);
+    assertLt(shares, addAmount); // index increased, exch rate > 1
 
-    uint256 suppliedAssetsBefore = hub.getAssetSuppliedAmount(daiAssetId);
-    uint256 suppliedSharesBefore = hub.getAssetSuppliedShares(daiAssetId);
+    uint256 addedAssetsBefore = hub.getAssetAddedAmount(daiAssetId);
+    uint256 addedSharesBefore = hub.getAssetAddedShares(daiAssetId);
 
     (uint256 baseDebtBefore, uint256 premiumDebtBefore) = hub.getAssetDebt(daiAssetId);
     uint256 availableLiquidityBefore = hub.getAvailableLiquidity(daiAssetId);
@@ -515,45 +511,45 @@ contract LiquidityHubAddTest is LiquidityHubBase {
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (daiAssetId, availableLiquidityBefore + supplyAmount, baseDebtBefore, premiumDebtBefore)
+        (daiAssetId, availableLiquidityBefore + addAmount, baseDebtBefore, premiumDebtBefore)
       )
     );
 
     vm.prank(alice);
-    tokenList.dai.approve(address(hub), supplyAmount);
+    tokenList.dai.approve(address(hub), addAmount);
 
     vm.expectEmit(address(tokenList.dai));
-    emit IERC20.Transfer(alice, address(hub), supplyAmount);
+    emit IERC20.Transfer(alice, address(hub), addAmount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(daiAssetId, address(spoke2), shares, supplyAmount);
+    emit ILiquidityHub.Add(daiAssetId, address(spoke2), shares, addAmount);
 
     vm.prank(address(spoke2));
-    hub.add(daiAssetId, supplyAmount, alice);
+    hub.add(daiAssetId, addAmount, alice);
 
     assertEq(
-      hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2)),
-      suppliedAssetsBefore + supplyAmount,
-      'spoke suppliedAssets after'
+      hub.getSpokeAddedAmount(daiAssetId, address(spoke2)),
+      addedAssetsBefore + addAmount,
+      'spoke addedAssets after'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(daiAssetId, address(spoke2)),
-      suppliedSharesBefore + shares,
-      'spoke suppliedShares after'
+      hub.getSpokeAddedShares(daiAssetId, address(spoke2)),
+      addedSharesBefore + shares,
+      'spoke addedShares after'
     );
     // Hub and Spoke accounting do not match because of liquidity fees
     assertGe(
-      hub.getAssetSuppliedAmount(daiAssetId),
-      suppliedAssetsBefore + supplyAmount,
-      'hub suppliedAssets after'
+      hub.getAssetAddedAmount(daiAssetId),
+      addedAssetsBefore + addAmount,
+      'hub addedAssets after'
     );
     assertGe(
-      hub.getAssetSuppliedShares(daiAssetId),
-      suppliedSharesBefore + shares,
-      'hub suppliedShares after'
+      hub.getAssetAddedShares(daiAssetId),
+      addedSharesBefore + shares,
+      'hub addedShares after'
     );
     assertEq(
       hub.getAsset(daiAssetId).availableLiquidity,
-      availableLiquidityBefore + supplyAmount,
+      availableLiquidityBefore + addAmount,
       'hub available liquidity after'
     );
     (uint256 baseDebtAfter, ) = hub.getAssetDebt(daiAssetId);
@@ -565,83 +561,83 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     uint256 daiAmount = 100e18;
     _addLiquidity(daiAssetId, daiAmount);
     _drawLiquidity(daiAssetId, daiAmount, true);
-    assertLt(hub.convertToSuppliedShares(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
+    assertLt(hub.convertToAddedShares(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
 
-    uint256 supplyAmount = 10e18;
-    uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, supplyAmount);
+    uint256 addAmount = 10e18;
+    uint256 expectedAddedShares = hub.convertToAddedShares(daiAssetId, addAmount);
 
-    uint256 suppliedAssetsBefore = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2));
-    uint256 suppliedSharesBefore = hub.getSpokeSuppliedShares(daiAssetId, address(spoke2));
-    // effective supply amount (taking into account potential donation)
-    uint256 spokeSuppliedAmount = calculateEffectiveSuppliedAssets(
-      supplyAmount,
-      hub.getTotalSuppliedAssets(daiAssetId),
-      hub.getTotalSuppliedShares(daiAssetId)
+    uint256 addedAssetsBefore = hub.getSpokeAddedAmount(daiAssetId, address(spoke2));
+    uint256 addedSharesBefore = hub.getSpokeAddedShares(daiAssetId, address(spoke2));
+    // effective add amount (taking into account potential donation)
+    uint256 spokeAddedAmount = calculateEffectiveAddedAssets(
+      addAmount,
+      hub.getTotalAddedAssets(daiAssetId),
+      hub.getTotalAddedShares(daiAssetId)
     );
 
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
       caller: address(spoke2),
-      amount: supplyAmount,
+      amount: addAmount,
       user: bob
     });
 
     assertEq(
-      hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2)),
-      suppliedAssetsBefore + spokeSuppliedAmount,
-      'spoke suppliedAssets after'
+      hub.getSpokeAddedAmount(daiAssetId, address(spoke2)),
+      addedAssetsBefore + spokeAddedAmount,
+      'spoke addedAssets after'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(daiAssetId, address(spoke2)),
-      suppliedSharesBefore + expectedSupplyShares,
-      'spoke suppliedShares after'
+      hub.getSpokeAddedShares(daiAssetId, address(spoke2)),
+      addedSharesBefore + expectedAddedShares,
+      'spoke addedShares after'
     );
     // Hub and Spoke accounting do not match because of liquidity fees
     assertGe(
-      hub.getAssetSuppliedAmount(daiAssetId),
-      suppliedAssetsBefore + spokeSuppliedAmount,
-      'hub suppliedAssets after'
+      hub.getAssetAddedAmount(daiAssetId),
+      addedAssetsBefore + spokeAddedAmount,
+      'hub addedAssets after'
     );
     assertGe(
-      hub.getAssetSuppliedShares(daiAssetId),
-      suppliedSharesBefore + expectedSupplyShares,
-      'hub suppliedShares after'
+      hub.getAssetAddedShares(daiAssetId),
+      addedSharesBefore + expectedAddedShares,
+      'hub addedShares after'
     );
   }
 
-  function test_add_multi_supply_minimal_shares() public {
+  function test_add_multi_add_minimal_shares() public {
     uint256 amount = 100e18;
 
-    (, uint256 drawnAmount) = _supplyAndDrawLiquidity({
+    (, uint256 drawnAmount) = _addAndDrawLiquidity({
       assetId: daiAssetId,
-      supplyUser: bob,
-      supplySpoke: address(spoke2),
-      supplyAmount: amount,
+      addUser: bob,
+      addSpoke: address(spoke2),
+      addAmount: amount,
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: amount,
       skipTime: 365 days
     });
 
-    uint256 suppliedAssetsBefore1 = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
-    uint256 suppliedSharesBefore1 = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
-    uint256 suppliedAssetsBefore2 = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2));
-    uint256 suppliedSharesBefore2 = hub.getSpokeSuppliedShares(daiAssetId, address(spoke2));
-    uint256 supplyShares = 1; // minimum for 1 share
-    uint256 supplyAmount = minimumAssetsPerSuppliedShare(daiAssetId);
-    // effective supply amount (taking into account potential donation)
-    uint256 spokeSuppliedAmount = calculateEffectiveSuppliedAssets(
-      supplyAmount,
-      hub.getTotalSuppliedAssets(daiAssetId),
-      hub.getTotalSuppliedShares(daiAssetId)
+    uint256 addedAssetsBefore1 = hub.getSpokeAddedAmount(daiAssetId, address(spoke1));
+    uint256 addedSharesBefore1 = hub.getSpokeAddedShares(daiAssetId, address(spoke1));
+    uint256 addedAssetsBefore2 = hub.getSpokeAddedAmount(daiAssetId, address(spoke2));
+    uint256 addedSharesBefore2 = hub.getSpokeAddedShares(daiAssetId, address(spoke2));
+    uint256 addShares = 1; // minimum for 1 share
+    uint256 addAmount = minimumAssetsPerAddedShare(daiAssetId);
+    // effective add amount (taking into account potential donation)
+    uint256 spokeAddedAmount = calculateEffectiveAddedAssets(
+      addAmount,
+      hub.getTotalAddedAssets(daiAssetId),
+      hub.getTotalAddedShares(daiAssetId)
     );
 
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
       caller: address(spoke1),
-      amount: supplyAmount,
+      amount: addAmount,
       user: bob
     });
 
@@ -653,18 +649,18 @@ contract LiquidityHubAddTest is LiquidityHubBase {
 
     // hub
     assertGe(
-      hub.getAssetSuppliedAmount(daiAssetId),
-      suppliedAssetsBefore1 + suppliedAssetsBefore2 + spokeSuppliedAmount,
-      'hub suppliedAssets after'
+      hub.getAssetAddedAmount(daiAssetId),
+      addedAssetsBefore1 + addedAssetsBefore2 + spokeAddedAmount,
+      'hub addedAssets after'
     );
     assertGe(
-      hub.getAssetSuppliedShares(daiAssetId),
-      suppliedSharesBefore1 + supplyShares,
-      'hub suppliedShares after'
+      hub.getAssetAddedShares(daiAssetId),
+      addedSharesBefore1 + addShares,
+      'hub addedShares after'
     );
     assertEq(
       hub.getAvailableLiquidity(daiAssetId),
-      amount + supplyAmount - drawnAmount,
+      amount + addAmount - drawnAmount,
       'asset availableLiquidity after'
     );
     assertEq(
@@ -674,30 +670,30 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     );
     // spoke1
     assertEq(
-      hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1)),
-      spokeSuppliedAmount,
-      'spoke1 suppliedAssets after'
+      hub.getSpokeAddedAmount(daiAssetId, address(spoke1)),
+      spokeAddedAmount,
+      'spoke1 addedAssets after'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(daiAssetId, address(spoke1)),
-      supplyShares,
-      'spoke1 suppliedShares after'
+      hub.getSpokeAddedShares(daiAssetId, address(spoke1)),
+      addShares,
+      'spoke1 addedShares after'
     );
     // spoke2
     assertGe(
-      hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2)),
-      suppliedAssetsBefore2,
-      'spoke2 suppliedAmount after'
+      hub.getSpokeAddedAmount(daiAssetId, address(spoke2)),
+      addedAssetsBefore2,
+      'spoke2 addedAmount after'
     );
     assertEq(
-      hub.getSpokeSuppliedShares(daiAssetId, address(spoke2)),
-      suppliedSharesBefore2,
-      'spoke2 suppliedShares after'
+      hub.getSpokeAddedShares(daiAssetId, address(spoke2)),
+      addedSharesBefore2,
+      'spoke2 addedShares after'
     );
     // token balance
     assertEq(
       tokenList.dai.balanceOf(address(hub)),
-      supplyAmount + amount - drawnAmount,
+      addAmount + amount - drawnAmount,
       'hub token balance after'
     );
     assertEq(
@@ -707,50 +703,50 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     );
     assertEq(
       tokenList.dai.balanceOf(bob),
-      MAX_SUPPLY_AMOUNT - amount - supplyAmount,
+      MAX_SUPPLY_AMOUNT - amount - addAmount,
       'bob token balance after'
     );
   }
 
-  function test_add_fuzz_single_spoke_multi_supply(uint256 amount, uint256 skipTime) public {
+  function test_add_fuzz_single_spoke_multi_add(uint256 amount, uint256 skipTime) public {
     uint256 assetId = daiAssetId;
-    uint256 numSupplies = 5;
+    uint256 numAdds = 5;
 
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / numSupplies);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / numAdds);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    TestSupplyParams memory params;
-    (params.assetSuppliedShares, params.drawnShares) = _supplyAndDrawLiquidity({
+    TestAddParams memory params;
+    (params.assetAddedShares, params.drawnShares) = _addAndDrawLiquidity({
       assetId: assetId,
-      supplyUser: bob,
-      supplySpoke: address(spoke2),
-      supplyAmount: amount,
+      addUser: bob,
+      addSpoke: address(spoke2),
+      addAmount: amount,
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: amount,
       skipTime: skipTime
     });
-    vm.assume(hub.convertToSuppliedShares(assetId, amount) < amount);
+    vm.assume(hub.convertToAddedShares(assetId, amount) < amount);
 
     params.drawnAmount = amount;
-    params.assetSuppliedAmount = hub.convertToSuppliedAssets(assetId, params.assetSuppliedShares);
+    params.assetAddedAmount = hub.convertToAddedAssets(assetId, params.assetAddedShares);
     params.availableLiq = amount - params.drawnAmount;
-    params.spoke2SuppliedShares = hub.getSpokeSuppliedShares(assetId, address(spoke2));
-    params.spoke2SuppliedAmount = hub.convertToSuppliedAssets(assetId, params.spoke2SuppliedShares);
+    params.spoke2AddedShares = hub.getSpokeAddedShares(assetId, address(spoke2));
+    params.spoke2AddedAmount = hub.convertToAddedAssets(assetId, params.spoke2AddedShares);
     params.aliceBalance = MAX_SUPPLY_AMOUNT + params.drawnAmount;
     params.bobBalance = MAX_SUPPLY_AMOUNT - amount;
 
-    uint256 supplyShares = 1; // minimum for 1 share
-    uint256 supplyAmount;
-    for (uint256 i = 0; i < numSupplies; i++) {
-      supplyAmount = minimumAssetsPerSuppliedShare(assetId);
+    uint256 addShares = 1; // minimum for 1 share
+    uint256 addAmount;
+    for (uint256 i = 0; i < numAdds; i++) {
+      addAmount = minimumAssetsPerAddedShare(assetId);
 
-      // bob supply minimal amount
+      // bob add minimal amount
       Utils.add({
         hub: hub,
         assetId: assetId,
         caller: address(spoke1),
-        amount: supplyAmount,
+        amount: addAmount,
         user: bob
       });
 
@@ -759,27 +755,16 @@ contract LiquidityHubAddTest is LiquidityHubBase {
       (baseDebt, ) = hub.getSpokeDebt(assetId, address(spoke1));
       assertGt(baseDebt, 0);
 
-      params.availableLiq += supplyAmount;
-      params.assetSuppliedShares += supplyShares;
-      params.assetSuppliedAmount = hub.convertToSuppliedAssets(assetId, params.assetSuppliedShares);
-      params.spoke1SuppliedShares += supplyShares;
-      params.spoke1SuppliedAmount = hub.convertToSuppliedAssets(
-        assetId,
-        params.spoke1SuppliedShares
-      );
-      params.bobBalance -= supplyAmount;
+      params.availableLiq += addAmount;
+      params.assetAddedShares += addShares;
+      params.assetAddedAmount = hub.convertToAddedAssets(assetId, params.assetAddedShares);
+      params.spoke1AddedShares += addShares;
+      params.spoke1AddedAmount = hub.convertToAddedAssets(assetId, params.spoke1AddedShares);
+      params.bobBalance -= addAmount;
 
       // hub
-      assertGe(
-        hub.getAssetSuppliedAmount(assetId),
-        params.assetSuppliedAmount,
-        'hub suppliedAmount after'
-      );
-      assertGe(
-        hub.getAssetSuppliedShares(assetId),
-        params.assetSuppliedShares,
-        'hub suppliedShares after'
-      );
+      assertGe(hub.getAssetAddedAmount(assetId), params.assetAddedAmount, 'hub addedAmount after');
+      assertGe(hub.getAssetAddedShares(assetId), params.assetAddedShares, 'hub addedShares after');
       assertEq(
         hub.getAvailableLiquidity(assetId),
         params.availableLiq,
@@ -792,25 +777,25 @@ contract LiquidityHubAddTest is LiquidityHubBase {
       );
       // spoke1
       assertEq(
-        hub.getSpokeSuppliedAmount(assetId, address(spoke1)),
-        hub.convertToSuppliedAssets(assetId, params.spoke1SuppliedShares),
-        'spoke1 suppliedAmount after'
+        hub.getSpokeAddedAmount(assetId, address(spoke1)),
+        hub.convertToAddedAssets(assetId, params.spoke1AddedShares),
+        'spoke1 addedAmount after'
       );
       assertEq(
-        hub.getSpokeSuppliedShares(assetId, address(spoke1)),
-        params.spoke1SuppliedShares,
-        'spoke1 suppliedShares after'
+        hub.getSpokeAddedShares(assetId, address(spoke1)),
+        params.spoke1AddedShares,
+        'spoke1 addedShares after'
       );
       // spoke2
       assertEq(
-        hub.getSpokeSuppliedAmount(assetId, address(spoke2)),
-        hub.convertToSuppliedAssets(assetId, params.spoke2SuppliedShares),
-        'spoke2 suppliedAmount after'
+        hub.getSpokeAddedAmount(assetId, address(spoke2)),
+        hub.convertToAddedAssets(assetId, params.spoke2AddedShares),
+        'spoke2 addedAmount after'
       );
       assertEq(
-        hub.getSpokeSuppliedShares(assetId, address(spoke2)),
-        params.spoke2SuppliedShares,
-        'spoke2 suppliedShares after'
+        hub.getSpokeAddedShares(assetId, address(spoke2)),
+        params.spoke2AddedShares,
+        'spoke2 addedShares after'
       );
       // token balance
       assertEq(

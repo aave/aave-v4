@@ -345,13 +345,13 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     address oldFeeReceiver = config.feeReceiver;
     config.feeReceiver = makeAddr('newFeeReceiver');
 
-    uint256 feesShares = hub.getSpokeSuppliedShares(assetId, oldFeeReceiver);
+    uint256 feesShares = hub.getSpokeAddedShares(assetId, oldFeeReceiver);
     assertTrue(feesShares > 0, 'no fees');
 
     test_updateAssetConfig_fuzz(assetId, config);
 
-    assertEq(hub.getSpokeSuppliedShares(assetId, oldFeeReceiver), feesShares);
-    assertEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), 0);
+    assertEq(hub.getSpokeAddedShares(assetId, oldFeeReceiver), feesShares);
+    assertEq(hub.getSpokeAddedShares(assetId, config.feeReceiver), 0);
   }
 
   /// Updates the fee receiver by reusing a previously assigned spoke, with no impact on accrued fees
@@ -360,21 +360,21 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     test_updateAssetConfig_fuzz_NewFeeReceiver(assetId);
 
     address oldFeeReceiver = address(treasurySpoke);
-    uint256 oldFees = hub.getSpokeSuppliedShares(assetId, oldFeeReceiver);
+    uint256 oldFees = hub.getSpokeAddedShares(assetId, oldFeeReceiver);
 
     skip(365 days);
 
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
     address newFeeReceiver = config.feeReceiver;
 
-    uint256 newFees = hub.getSpokeSuppliedShares(assetId, newFeeReceiver);
+    uint256 newFees = hub.getSpokeAddedShares(assetId, newFeeReceiver);
     assertTrue(newFees > 0);
 
     config.feeReceiver = address(treasurySpoke);
     test_updateAssetConfig_fuzz(assetId, config);
 
-    assertEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), oldFees);
-    assertEq(hub.getSpokeSuppliedShares(assetId, newFeeReceiver), newFees);
+    assertEq(hub.getSpokeAddedShares(assetId, config.feeReceiver), oldFees);
+    assertEq(hub.getSpokeAddedShares(assetId, newFeeReceiver), newFees);
   }
 
   /// Updates the fee receiver to an existing spoke of the hub, so ends up with existing supplied shares plus accrued fees
@@ -388,22 +388,22 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     _addLiquidity(assetId, amount);
     _drawLiquidity(assetId, amount, true);
 
-    uint256 oldReceiverFees = hub.getSpokeSuppliedShares(assetId, oldFeeReceiver);
+    uint256 oldReceiverFees = hub.getSpokeAddedShares(assetId, oldFeeReceiver);
     assertTrue(oldReceiverFees > 0);
 
     // spoke1 adds some assets
     Utils.add({hub: hub, assetId: assetId, caller: address(spoke2), amount: amount, user: bob});
-    uint256 newReceiverFees = hub.getSpokeSuppliedShares(assetId, newFeeReceiver);
+    uint256 newReceiverFees = hub.getSpokeAddedShares(assetId, newFeeReceiver);
 
     updateAssetFeeReceiver(hub, assetId, newFeeReceiver);
 
     skip(365 days);
 
     // new fee receiver keeps the existing supplied shares and earns more via fees accrual
-    assertTrue(hub.getSpokeSuppliedShares(assetId, newFeeReceiver) > newReceiverFees);
+    assertTrue(hub.getSpokeAddedShares(assetId, newFeeReceiver) > newReceiverFees);
 
     // old fee receiver keeps the accrued fees
-    assertEq(hub.getSpokeSuppliedShares(assetId, oldFeeReceiver), oldReceiverFees);
+    assertEq(hub.getSpokeAddedShares(assetId, oldFeeReceiver), oldReceiverFees);
   }
 
   /// Triggers accrual when liquidity fee update, based on old liquidity fee
@@ -416,13 +416,13 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     _drawLiquidity(assetId, amount, true);
 
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
-    uint256 feeShares = hub.getSpokeSuppliedShares(assetId, config.feeReceiver);
+    uint256 feeShares = hub.getSpokeAddedShares(assetId, config.feeReceiver);
     assertTrue(feeShares > 0, 'no fees');
 
     config.liquidityFee = liquidityFee;
     test_updateAssetConfig_fuzz(assetId, config);
 
-    assertEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), feeShares);
+    assertEq(hub.getSpokeAddedShares(assetId, config.feeReceiver), feeShares);
   }
 
   /// No fees accrued whe updating liquidity fee from zero to non-zero
@@ -445,8 +445,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     config.feeReceiver = makeAddr('feeReceiver');
     test_updateAssetConfig_fuzz(assetId, config);
 
-    assertEq(hub.getSpokeSuppliedShares(assetId, address(0)), 0);
-    assertEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), 0);
+    assertEq(hub.getSpokeAddedShares(assetId, address(0)), 0);
+    assertEq(hub.getSpokeAddedShares(assetId, config.feeReceiver), 0);
   }
 
   /// Triggers accrual when interest rate strategy is updated, based on old strategy
@@ -458,11 +458,11 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     _addLiquidity(assetId, amount);
     _drawLiquidity(assetId, amount, true);
 
-    uint256 fees = hub.getSpokeSuppliedShares(assetId, address(treasurySpoke));
+    uint256 fees = hub.getSpokeAddedShares(assetId, address(treasurySpoke));
     assertTrue(fees > 0, 'no fees');
 
     skip(365 days);
-    uint256 futureFees = hub.getSpokeSuppliedShares(assetId, address(treasurySpoke));
+    uint256 futureFees = hub.getSpokeAddedShares(assetId, address(treasurySpoke));
     rewind(365 days);
 
     AssetInterestRateStrategy newIrStrategy = new AssetInterestRateStrategy(address(hub));
@@ -472,7 +472,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     Utils.updateAssetConfig(hub, ADMIN, assetId, config);
 
     skip(365 days);
-    assertNotEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), futureFees);
+    assertNotEq(hub.getSpokeAddedShares(assetId, config.feeReceiver), futureFees);
   }
 
   function _assumeValidAssetConfig(

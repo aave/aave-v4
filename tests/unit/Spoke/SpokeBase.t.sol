@@ -265,7 +265,7 @@ contract SpokeBase is Base {
     // index has increased, ie now the shares are less than the amount
     assertGt(
       borrow.supplyAmount,
-      hub.convertToSuppliedShares(state.borrowReserveAssetId, borrow.supplyAmount)
+      hub.convertToAddedShares(state.borrowReserveAssetId, borrow.supplyAmount)
     );
 
     return (
@@ -294,11 +294,11 @@ contract SpokeBase is Base {
     }
     (state.collateralReserveAssetId, ) = getAssetByReserveId(spoke, collateral.reserveId);
     (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
-    state.collateralSupplyShares = hub.convertToSuppliedShares(
+    state.collateralSupplyShares = hub.convertToAddedShares(
       state.collateralReserveAssetId,
       collateral.supplyAmount
     );
-    state.borrowSupplyShares = hub.convertToSuppliedShares(
+    state.borrowSupplyShares = hub.convertToAddedShares(
       state.borrowReserveAssetId,
       borrow.supplyAmount
     );
@@ -596,7 +596,7 @@ contract SpokeBase is Base {
     );
     userPos.premiumOffset = hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares);
     userPos.realizedPremium = expectedRealizedPremium;
-    userPos.suppliedShares = hub.convertToSuppliedShares(assetId, suppliedAmount);
+    userPos.suppliedShares = hub.convertToAddedShares(assetId, suppliedAmount);
   }
 
   /// calculated expected realized premium
@@ -817,7 +817,7 @@ contract SpokeBase is Base {
       (uint256 collateralRisk, uint256 reserveId) = reserveCollateralRisk.get(idx);
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      uint256 suppliedAssets = hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares);
+      uint256 suppliedAssets = hub.convertToAddedAssets(assetId, userPosition.suppliedShares);
       uint256 supplyAmount = _getValueInBaseCurrency(spoke, reserveId, suppliedAssets);
 
       if (supplyAmount >= totalDebt) {

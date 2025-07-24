@@ -222,10 +222,10 @@ export class LiquidityHub {
     };
   }
 
-  convertToSuppliedAssets(shares: bigint) {
+  convertToAddedAssets(shares: bigint) {
     return this.toSupplyAssets(shares);
   }
-  convertToSuppliedShares(assets: bigint) {
+  convertToAddedShares(assets: bigint) {
     return this.toSupplyShares(assets);
   }
 
@@ -590,7 +590,7 @@ export class User {
   }
 
   getSuppliedBalance() {
-    return this.hub.convertToSuppliedAssets(this.suppliedShares);
+    return this.hub.convertToAddedAssets(this.suppliedShares);
   }
 
   log(spoke = false, hub = false) {
@@ -668,7 +668,7 @@ export class System {
   }
 
   nonZeroSuppliedShares(amount: bigint) {
-    while (this.hub.convertToSuppliedShares(amount) === 0n) amount = randomAmount();
+    while (this.hub.convertToAddedShares(amount) === 0n) amount = randomAmount();
     return amount;
   }
 

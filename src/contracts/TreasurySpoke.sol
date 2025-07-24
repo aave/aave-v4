@@ -40,7 +40,7 @@ contract TreasurySpoke is Ownable, ITreasurySpoke {
   function withdraw(uint256 reserveId, uint256 amount, address) external onlyOwner {
     // If uint256.max is passed, withdraw all supplied assets
     if (amount == type(uint256).max) {
-      amount = HUB.getSpokeSuppliedAmount(reserveId, address(this));
+      amount = HUB.getSpokeAddedAmount(reserveId, address(this));
     }
 
     HUB.remove(reserveId, amount, msg.sender);
@@ -53,11 +53,11 @@ contract TreasurySpoke is Ownable, ITreasurySpoke {
 
   /// @inheritdoc ITreasurySpoke
   function getSuppliedAmount(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeSuppliedAmount(reserveId, address(this));
+    return HUB.getSpokeAddedAmount(reserveId, address(this));
   }
 
   /// @inheritdoc ITreasurySpoke
   function getSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeSuppliedShares(reserveId, address(this));
+    return HUB.getSpokeAddedShares(reserveId, address(this));
   }
 }

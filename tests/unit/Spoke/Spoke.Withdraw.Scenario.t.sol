@@ -61,7 +61,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     skip(elapsed);
 
     // Ensure interest has accrued
-    vm.assume(hub.getAssetSuppliedAmount(daiAssetId) > supplyAmount);
+    vm.assume(hub.getAssetAddedAmount(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -75,8 +75,8 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    uint256 treasuryFees = hub.getSpokeSuppliedAmount(daiAssetId, address(treasurySpoke));
-    uint256 interestAccrued = hub.getAssetSuppliedAmount(daiAssetId) - treasuryFees - supplyAmount;
+    uint256 treasuryFees = hub.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
+    uint256 interestAccrued = hub.getAssetAddedAmount(daiAssetId) - treasuryFees - supplyAmount;
 
     uint256 totalSupplied = interestAccrued + supplyAmount;
     assertApproxEqAbs(
@@ -92,9 +92,9 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // Withdraw partial supplied assets
     Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, partialWithdrawAmount, bob);
 
-    treasuryFees = hub.getSpokeSuppliedAmount(daiAssetId, address(treasurySpoke));
+    treasuryFees = hub.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
     interestAccrued =
-      hub.getAssetSuppliedAmount(daiAssetId) -
+      hub.getAssetAddedAmount(daiAssetId) -
       treasuryFees -
       (supplyAmount - partialWithdrawAmount);
 
@@ -332,14 +332,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     IERC20(reserve.underlying).approve(address(hub), assets);
 
     // Supply and confirm share amount from event emission
-    uint256 shares1 = hub.convertToSuppliedShares(reserve.assetId, assets);
+    uint256 shares1 = hub.convertToAddedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpoke.Supply(reserveId, caller, caller, shares1);
     vm.prank(caller);
     spoke1.supply(reserveId, assets, caller);
 
     // Withdraw and confirm share amount from event emission
-    uint256 shares2 = hub.convertToSuppliedShares(reserve.assetId, assets);
+    uint256 shares2 = hub.convertToAddedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpoke.Withdraw(reserveId, caller, caller, shares2);
     vm.prank(caller);
@@ -394,14 +394,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     });
 
     // Withdraw and confirm share amount from event emission
-    uint256 shares1 = hub.convertToSuppliedShares(reserve.assetId, assets);
+    uint256 shares1 = hub.convertToAddedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpoke.Withdraw(reserveId, caller, caller, shares1);
     vm.prank(caller);
     spoke1.withdraw(reserveId, assets, caller);
 
     // Supply and confirm share amount from event emission
-    uint256 shares2 = hub.convertToSuppliedShares(reserve.assetId, assets);
+    uint256 shares2 = hub.convertToAddedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpoke.Supply(reserveId, caller, caller, shares2);
     vm.prank(caller);

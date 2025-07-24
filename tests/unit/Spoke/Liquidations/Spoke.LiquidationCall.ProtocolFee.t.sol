@@ -163,7 +163,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       skipTime: 365 days
     });
 
-    uint256 liquidationFee = hub.convertToSuppliedAssets(
+    uint256 liquidationFee = hub.convertToAddedAssets(
       state.collateralReserve.assetId,
       state.treasury.balanceChange
     );

@@ -109,7 +109,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     // Bob supplies dai to spoke 1 on hub 1
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, hub1SupplyAmount, bob);
     assertEq(spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob), hub1SupplyAmount);
-    assertEq(hub.getAssetSuppliedAmount(daiAssetId), hub1SupplyAmount);
+    assertEq(hub.getAssetAddedAmount(daiAssetId), hub1SupplyAmount);
 
     // Bob borrows dai from spoke 1, hub 1
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, hub1BorrowAmount, bob);
@@ -152,7 +152,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     // Bob supply to spoke 1 on hub 1
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, daiSupplyAmount, bob);
     assertEq(spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob), daiSupplyAmount);
-    assertEq(hub.getAssetSuppliedAmount(daiAssetId), daiSupplyAmount);
+    assertEq(hub.getAssetAddedAmount(daiAssetId), daiSupplyAmount);
 
     // Alice seeds liquidity for dai to hub 1
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, MAX_SUPPLY_AMOUNT - daiSupplyAmount, alice);
@@ -168,11 +168,11 @@ contract SpokeMultipleHubTest is SpokeBase {
     // Bob supplies collateral to hub 3
     Utils.supplyCollateral(spoke1, daiHub3ReserveId, bob, daiSupplyAmount, bob);
     assertEq(spoke1.getUserSuppliedAmount(daiHub3ReserveId, bob), daiSupplyAmount);
-    assertEq(hub3.getAssetSuppliedAmount(hub3DaiAssetId), MAX_SUPPLY_AMOUNT);
+    assertEq(hub3.getAssetAddedAmount(hub3DaiAssetId), MAX_SUPPLY_AMOUNT);
 
     // Since Bob has sufficient collateral on hub 3 to cover his debt position, he can withdraw from hub 1
     Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, daiSupplyAmount, bob);
     assertEq(spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob), 0);
-    assertEq(hub.getAssetSuppliedAmount(daiAssetId), MAX_SUPPLY_AMOUNT - daiSupplyAmount);
+    assertEq(hub.getAssetAddedAmount(daiAssetId), MAX_SUPPLY_AMOUNT - daiSupplyAmount);
   }
 }

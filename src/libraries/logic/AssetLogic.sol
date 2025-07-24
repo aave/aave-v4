@@ -67,42 +67,41 @@ library AssetLogic {
     return asset.baseDebt() + asset.premiumDebt();
   }
 
-  function totalSuppliedAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
+  function totalAddedAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.availableLiquidity + asset.totalDebt();
   }
 
-  function totalSuppliedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
+  function totalAddedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
     return
-      asset.suppliedShares +
-      asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
+      asset.addedShares + asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
   }
 
-  function toSuppliedAssetsUp(
+  function toAddedAssetsUp(
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsUp(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
+    return shares.toAssetsUp(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
-  function toSuppliedAssetsDown(
+  function toAddedAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsDown(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
+    return shares.toAssetsDown(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
-  function toSuppliedSharesUp(
+  function toAddedSharesUp(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesUp(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
+    return assets.toSharesUp(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
-  function toSuppliedSharesDown(
+  function toAddedSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesDown(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
+    return assets.toSharesDown(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
   function updateBorrowRate(DataTypes.Asset storage asset, uint256 assetId) internal {
@@ -140,8 +139,8 @@ library AssetLogic {
     // Accrue interest and fees
     asset.baseDebtIndex = drawnIndex;
     if (feeShares > 0) {
-      feeReceiver.suppliedShares += feeShares;
-      asset.suppliedShares += feeShares;
+      feeReceiver.addedShares += feeShares;
+      asset.addedShares += feeShares;
       emit ILiquidityHub.AccrueFees(assetId, feeShares);
     }
 
@@ -184,7 +183,7 @@ library AssetLogic {
       .rayMulDown(asset.baseDrawnShares + asset.premiumDrawnShares)
       .percentMulDown(liquidityFee);
 
-    return feesAmount.toSharesDown(asset.totalSuppliedAssets() - feesAmount, asset.suppliedShares);
+    return feesAmount.toSharesDown(asset.totalAddedAssets() - feesAmount, asset.addedShares);
   }
 
   /**

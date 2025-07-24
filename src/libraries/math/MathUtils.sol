@@ -182,7 +182,7 @@ library MathUtils {
     return a - uint256(-b);
   }
 
-  function signedDiff(uint256 a, uint256 b) internal pure returns (int256) {
+  function signedSub(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b); // todo use safeCast when amounts packed to uint112/uint128
   }
 }

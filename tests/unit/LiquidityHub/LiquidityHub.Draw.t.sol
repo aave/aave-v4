@@ -12,7 +12,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
-    // spoke2, bob supply dai
+    // spoke2, bob add dai
     Utils.add({hub: hub, assetId: assetId, caller: address(spoke2), amount: amount, user: bob});
 
     uint256 shares = hub.convertToDrawnSharesUp(assetId, amount);
@@ -242,7 +242,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   function test_draw_revertsWith_NotAvailableLiquidity_due_to_remove() public {
     uint256 daiAmount = 100e18;
 
-    // spoke2, bob supply dai
+    // spoke2, bob add dai
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
@@ -273,7 +273,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   ) public {
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
 
-    // spoke2, bob supply dai
+    // spoke2, bob add dai
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
@@ -302,7 +302,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   function test_draw_revertsWith_NotAvailableLiquidity_due_to_draw() public {
     uint256 daiAmount = 100e18;
 
-    // spoke2, bob supply dai
+    // spoke2, bob add dai
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
@@ -331,7 +331,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   function test_draw_fuzz_revertsWith_NotAvailableLiquidity_due_to_draw(uint256 daiAmount) public {
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
 
-    // spoke2, bob supply dai
+    // spoke2, bob add dai
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
@@ -376,11 +376,11 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
-    _supplyAndDrawLiquidity({
+    _addAndDrawLiquidity({
       assetId: daiAssetId,
-      supplyUser: bob,
-      supplySpoke: address(spoke2),
-      supplyAmount: daiAmount,
+      addUser: bob,
+      addSpoke: address(spoke2),
+      addAmount: daiAmount,
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: drawAmount,
@@ -420,11 +420,11 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
     _mockInterestRateBps(rate);
-    _supplyAndDrawLiquidity({
+    _addAndDrawLiquidity({
       assetId: daiAssetId,
-      supplyUser: bob,
-      supplySpoke: address(spoke2),
-      supplyAmount: daiAmount,
+      addUser: bob,
+      addSpoke: address(spoke2),
+      addAmount: daiAmount,
       drawUser: alice,
       drawSpoke: address(spoke1),
       drawAmount: daiAmount,

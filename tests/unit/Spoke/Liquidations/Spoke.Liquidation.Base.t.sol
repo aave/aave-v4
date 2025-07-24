@@ -187,11 +187,11 @@ contract SpokeLiquidationBase is SpokeBase {
     ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
 
     state.liquidationFeeShares =
-      hub.convertToSuppliedSharesUp(
+      hub.convertToAddedSharesUp(
         state.collateralReserve.assetId,
         state.collToLiq + state.liquidationFeeAmount
       ) -
-      hub.convertToSuppliedSharesUp(state.collateralReserve.assetId, state.collToLiq);
+      hub.convertToAddedSharesUp(state.collateralReserve.assetId, state.collToLiq);
 
     if (collateralReserveId != debtReserveId) {
       vm.expectCall(
@@ -525,11 +525,11 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.reserveId,
       alice
     );
-    state.rate.rateBefore = hub.convertToSuppliedAssets(
+    state.rate.rateBefore = hub.convertToAddedAssets(
       state.collateralReserve.assetId,
       WadRayMathExtended.RAY
     );
-    state.treasury.balanceBefore = hub.getSpokeSuppliedAmount(
+    state.treasury.balanceBefore = hub.getSpokeAddedAmount(
       state.collateralReserve.assetId,
       _getFeeReceiver(state.collateralReserve.assetId)
     );
@@ -547,7 +547,7 @@ contract SpokeLiquidationBase is SpokeBase {
   function _getAccountingInfoAfterLiq(
     LiquidationTestLocalParams memory state
   ) internal view returns (LiquidationTestLocalParams memory) {
-    state.treasury.balanceAfter = hub.getSpokeSuppliedAmount(
+    state.treasury.balanceAfter = hub.getSpokeAddedAmount(
       state.collateralReserve.assetId,
       _getFeeReceiver(state.collateralReserve.assetId)
     );
@@ -564,7 +564,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.reserveId,
       alice
     );
-    state.rate.rateAfter = hub.convertToSuppliedAssets(
+    state.rate.rateAfter = hub.convertToAddedAssets(
       state.collateralReserve.assetId,
       WadRayMathExtended.RAY
     );

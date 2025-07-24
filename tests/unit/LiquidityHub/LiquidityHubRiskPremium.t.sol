@@ -63,7 +63,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
     vm.skip(true, 'pending refactor');
 
     //     vm.prank(address(spoke1));
-    //     hub.supply(daiAssetId, daiAmount, spoke1RiskPremium, alice);
+    //     hub.add(daiAssetId, daiAmount, spoke1RiskPremium, alice);
     //     assertEq(hub.getAsset(daiAssetId).riskPremium, 0); // since no drawn liquidity
   }
 
@@ -71,7 +71,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
     vm.skip(true, 'pending refactor');
 
     //     vm.prank(address(spoke1));
-    //     hub.supply(daiAssetId, daiAmount, spoke1RiskPremium, alice);
+    //     hub.add(daiAssetId, daiAmount, spoke1RiskPremium, alice);
 
     //     uint256 usdxDrawnAmount = daiAmount / 2;
     //     vm.prank(address(spoke2));
@@ -85,7 +85,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
     vm.skip(true, 'pending refactor');
 
     //     vm.prank(address(spoke1));
-    //     hub.supply(daiAssetId, daiAmount, spoke1RiskPremium, alice);
+    //     hub.add(daiAssetId, daiAmount, spoke1RiskPremium, alice);
 
     //     uint256 usdxDrawnAmount = daiAmount / 3;
     //     // spoke 2 draws
@@ -129,7 +129,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
     vm.skip(true, 'pending refactor');
 
     //     vm.prank(address(spoke1));
-    //     hub.supply(daiAssetId, daiAmount, spoke1RiskPremium, alice);
+    //     hub.add(daiAssetId, daiAmount, spoke1RiskPremium, alice);
 
     //     uint256 spoke1DrawAmount = daiAmount / 4;
     //     uint256 spoke2DrawAmount = daiAmount / 2;
@@ -180,7 +180,7 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
     //     uint256 totalToDraw = p.drawAmount.spoke1 + p.drawAmount.spoke2 + p.drawAmount.spoke3;
 
     //     vm.prank(address(spoke1));
-    //     hub.supply(daiAssetId, totalToDraw, spoke1RiskPremium, alice);
+    //     hub.add(daiAssetId, totalToDraw, spoke1RiskPremium, alice);
 
     //     // spoke 1 draws
     //     vm.prank(address(spoke1));
@@ -243,7 +243,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
     //     );
 
     //     vm.prank(address(spoke1));
-    //     hub.supply(daiAssetId, daiAmount, spoke1RiskPremium, alice);
+    //     hub.add(daiAssetId, daiAmount, spoke1RiskPremium, alice);
 
     //     uint256 spoke1DrawAmount = daiAmount / 4;
     //     uint256 spoke2DrawAmount = daiAmount / 2;
@@ -331,7 +331,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
     //     );
 
     //     vm.prank(address(spoke1));
-    //     hub.supply(daiAssetId, daiAmount, spoke1RiskPremium, alice);
+    //     hub.add(daiAssetId, daiAmount, spoke1RiskPremium, alice);
 
     //     uint256 spoke1DrawAmount = daiAmount / 4;
     //     uint256 spoke2DrawAmount = daiAmount / 2;
@@ -425,7 +425,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
     //     );
 
     //     vm.prank(address(spoke1));
-    //     hub.supply(daiAssetId, totalToDraw, p.riskPremium.spoke1, alice);
+    //     hub.add(daiAssetId, totalToDraw, p.riskPremium.spoke1, alice);
 
     //     // spoke 1 draws
     //     vm.prank(address(spoke1));

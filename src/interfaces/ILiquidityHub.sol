@@ -112,39 +112,39 @@ interface ILiquidityHub is IAccessManaged {
    * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to add.
    * @param from The address which we pull assets from (user).
-   * @return The amount of shares added or supplied.
+   * @return The amount of shares added.
    */
   function add(uint256 assetId, uint256 amount, address from) external returns (uint256);
 
   /**
-   * @notice Remove/Withdraw supplied asset on behalf of user.
+   * @notice Remove added assets on behalf of user.
    * @dev Only callable by spokes.
    * @param assetId The identifier of the asset.
-   * @param amount The amount of asset liquidity to remove/withdraw.
+   * @param amount The amount of asset liquidity to remove.
    * @param to The address to transfer the assets to.
-   * @return The amount of shares removed or withdrawn.
+   * @return The amount of added shares removed.
    */
   function remove(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
   /**
-   * @notice Draw/Borrow debt on behalf of user.
+   * @notice Draw assets on behalf of user.
    * @dev Only callable by spokes.
    * @param assetId The identifier of the asset.
-   * @param amount The amount of debt to draw.
+   * @param amount The amount of asset to draw.
    * @param to The address to transfer the underlying assets to.
    * @return The amount of base shares drawn.
    */
   function draw(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
   /**
-   * @notice Restores/Repays debt on behalf of user.
+   * @notice Restores assets on behalf of user.
    * @dev Only callable by spokes.
    * @dev Interest is always paid off first from premium, then from base.
    * @param assetId The identifier of the asset.
-   * @param baseAmount The base debt to repay.
-   * @param premiumAmount The premium debt to repay.
+   * @param baseAmount The base amount to restore.
+   * @param premiumAmount The premium amount to restore.
    * @param from The address to pull assets from.
-   * @return The amount of base debt shares restored.
+   * @return The amount of base shares restored.
    */
   function restore(
     uint256 assetId,
@@ -186,19 +186,13 @@ interface ILiquidityHub is IAccessManaged {
 
   function convertToDrawnSharesUp(uint256 assetId, uint256 assets) external view returns (uint256);
 
-  function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+  function convertToAddedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
-  function convertToSuppliedAssetsUp(
-    uint256 assetId,
-    uint256 shares
-  ) external view returns (uint256);
+  function convertToAddedAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256);
 
-  function convertToSuppliedShares(uint256 assetId, uint256 assets) external view returns (uint256);
+  function convertToAddedShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
-  function convertToSuppliedSharesUp(
-    uint256 assetId,
-    uint256 assets
-  ) external view returns (uint256);
+  function convertToAddedSharesUp(uint256 assetId, uint256 assets) external view returns (uint256);
 
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256);
 
@@ -210,15 +204,15 @@ interface ILiquidityHub is IAccessManaged {
 
   function getAssetDebt(uint256 assetId) external view returns (uint256, uint256);
 
-  function getAssetSuppliedAmount(uint256 assetId) external view returns (uint256);
+  function getAssetAddedAmount(uint256 assetId) external view returns (uint256);
 
-  function getAssetSuppliedShares(uint256 assetId) external view returns (uint256);
+  function getAssetAddedShares(uint256 assetId) external view returns (uint256);
 
   function getAssetTotalDebt(uint256 assetId) external view returns (uint256);
 
-  function getTotalSuppliedAssets(uint256 assetId) external view returns (uint256);
+  function getTotalAddedAssets(uint256 assetId) external view returns (uint256);
 
-  function getTotalSuppliedShares(uint256 assetId) external view returns (uint256);
+  function getTotalAddedShares(uint256 assetId) external view returns (uint256);
 
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
 
@@ -236,9 +230,9 @@ interface ILiquidityHub is IAccessManaged {
 
   function getSpokeDebt(uint256 assetId, address spoke) external view returns (uint256, uint256);
 
-  function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeAddedAmount(uint256 assetId, address spoke) external view returns (uint256);
 
-  function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256);
 
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
 

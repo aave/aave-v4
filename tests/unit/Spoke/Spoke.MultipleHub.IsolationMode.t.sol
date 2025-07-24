@@ -160,7 +160,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       'bob using reserve A as collateral on new spoke'
     );
     assertEq(
-      newHub.getAssetSuppliedAmount(isolationVars.assetAId),
+      newHub.getAssetAddedAmount(isolationVars.assetAId),
       MAX_SUPPLY_AMOUNT,
       'total supplied amount of assetA on new hub'
     );
@@ -209,7 +209,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       'alice supplied amount of reserve B on spoke 1'
     );
     assertEq(
-      hub.getAssetSuppliedAmount(isolationVars.assetBIdMainHub),
+      hub.getAssetAddedAmount(isolationVars.assetBIdMainHub),
       500_000e18,
       'total supplied amount of asset B on main hub'
     );
@@ -234,7 +234,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Now there is liquidity for asset B on the new hub
     assertEq(
-      newHub.getAssetSuppliedAmount(isolationVars.assetBId),
+      newHub.getAssetAddedAmount(isolationVars.assetBId),
       MAX_SUPPLY_AMOUNT,
       'total supplied amount of asset B on new hub'
     );

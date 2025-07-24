@@ -14,8 +14,8 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
       user: alice
     });
 
-    uint256 feeShares = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
-    uint256 feeAmount = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
+    uint256 feeShares = hub.getSpokeAddedShares(daiAssetId, address(spoke1));
+    uint256 feeAmount = hub.getSpokeAddedAmount(daiAssetId, address(spoke1));
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddedAmountExceeded.selector, feeAmount));
     vm.prank(address(spoke1));
@@ -35,10 +35,10 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     _addLiquidity(daiAssetId, addAmount);
     _drawLiquidity(daiAssetId, addAmount, true);
 
-    uint256 feeShares = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
-    uint256 feeAmount = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
+    uint256 feeShares = hub.getSpokeAddedShares(daiAssetId, address(spoke1));
+    uint256 feeAmount = hub.getSpokeAddedAmount(daiAssetId, address(spoke1));
 
-    // supply ex rate increases due to interest
+    // add ex rate increases due to interest
     assertGt(feeAmount, feeShares);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddedAmountExceeded.selector, feeAmount));
@@ -69,18 +69,15 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     _addLiquidity(daiAssetId, 100e18);
     _drawLiquidity(daiAssetId, 100e18, true);
 
-    uint256 spokeSharesBefore = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
+    uint256 spokeSharesBefore = hub.getSpokeAddedShares(daiAssetId, address(spoke1));
 
-    // supply ex rate increases due to interest
-    assertGe(
-      hub.convertToSuppliedAssets(daiAssetId, WadRayMathExtended.RAY),
-      WadRayMathExtended.RAY
-    );
+    // add ex rate increases due to interest
+    assertGe(hub.convertToAddedAssets(daiAssetId, WadRayMathExtended.RAY), WadRayMathExtended.RAY);
 
     feeShares = bound(feeShares, 1, spokeSharesBefore);
-    uint256 feeAmount = hub.convertToSuppliedAssets(daiAssetId, feeShares);
+    uint256 feeAmount = hub.convertToAddedAssets(daiAssetId, feeShares);
 
-    uint256 feeReceiverSharesBefore = hub.getSpokeSuppliedShares(
+    uint256 feeReceiverSharesBefore = hub.getSpokeAddedShares(
       daiAssetId,
       _getFeeReceiver(daiAssetId)
     );
@@ -93,17 +90,17 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     vm.prank(address(spoke1));
     hub.payFee(daiAssetId, feeShares);
 
-    uint256 spokeSharesAfter = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
-    uint256 feeReceiverSharesAfter = hub.getSpokeSuppliedShares(
+    uint256 spokeSharesAfter = hub.getSpokeAddedShares(daiAssetId, address(spoke1));
+    uint256 feeReceiverSharesAfter = hub.getSpokeAddedShares(
       daiAssetId,
       _getFeeReceiver(daiAssetId)
     );
 
-    assertEq(spokeSharesAfter, spokeSharesBefore - feeShares, 'spoke supplied shares after');
+    assertEq(spokeSharesAfter, spokeSharesBefore - feeShares, 'spoke added shares after');
     assertEq(
       feeReceiverSharesAfter,
       feeReceiverSharesBefore + feeShares,
-      'fee receiver supplied shares after'
+      'fee receiver added shares after'
     );
   }
 

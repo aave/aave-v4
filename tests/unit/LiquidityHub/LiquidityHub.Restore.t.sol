@@ -460,7 +460,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     uint256 rate = uint256(15_00).bpsToRay();
     //     uint32 riskPremium = 30_00;
 
-    //     _supplyAndDrawLiquidity({
+    //     _addAndDrawLiquidity({
     //       daiAmount: daiAmount,
     //       wethAmount: wethAmount,
     //       daiDrawAmount: drawAmount,
@@ -562,7 +562,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
     //     riskPremium %= MAX_RISK_PREMIUM_BPS;
 
-    //     _supplyAndDrawLiquidity({
+    //     _addAndDrawLiquidity({
     //       daiAmount: daiAmount,
     //       wethAmount: wethAmount,
     //       daiDrawAmount: drawAmount,
@@ -655,7 +655,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     uint256 rate = uint256(15_00).bpsToRay();
     //     uint32 riskPremium = 30_00;
 
-    //     _supplyAndDrawLiquidity({
+    //     _addAndDrawLiquidity({
     //       daiAmount: daiAmount,
     //       wethAmount: wethAmount,
     //       daiDrawAmount: drawAmount,
@@ -743,7 +743,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     rate = bound(rate, 1, 1000_00).bpsToRay(); // 0.01% to 1000%
     //     riskPremium %= MAX_RISK_PREMIUM_BPS;
 
-    //     _supplyAndDrawLiquidity({
+    //     _addAndDrawLiquidity({
     //       daiAmount: daiAmount,
     //       wethAmount: wethAmount,
     //       daiDrawAmount: drawAmount,

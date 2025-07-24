@@ -204,7 +204,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     // If uint256.max is passed, withdraw all user's supplied assets
     if (amount == type(uint256).max) {
-      amount = hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares);
+      amount = hub.convertToAddedAssets(assetId, userPosition.suppliedShares);
     }
     _validateWithdraw(reserve, userPosition, amount);
 
@@ -432,7 +432,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
     return
-      _reserves[reserveId].hub.convertToSuppliedAssets(
+      _reserves[reserveId].hub.convertToAddedAssets(
         _reserves[reserveId].assetId,
         _reserves[reserveId].suppliedShares
       );
@@ -444,7 +444,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getUserSuppliedAmount(uint256 reserveId, address user) public view returns (uint256) {
     return
-      _reserves[reserveId].hub.convertToSuppliedAssets(
+      _reserves[reserveId].hub.convertToAddedAssets(
         _reserves[reserveId].assetId,
         _userPositions[user][reserveId].suppliedShares
       );
@@ -571,7 +571,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(reserve.underlying != address(0), ReserveNotListed());
     require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    uint256 suppliedAmount = reserve.hub.convertToSuppliedAssets(
+    uint256 suppliedAmount = reserve.hub.convertToAddedAssets(
       reserve.assetId,
       userPosition.suppliedShares
     );
@@ -919,7 +919,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetUnit
   ) internal view returns (uint256) {
     return
-      (hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares) * assetPrice).wadify() /
+      (hub.convertToAddedAssets(assetId, userPosition.suppliedShares) * assetPrice).wadify() /
       assetUnit;
   }
 
@@ -985,7 +985,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         );
         userPosition.realizedPremium += accruedUserPremium;
 
-        int256 premiumDrawnSharesDelta = userPosition.premiumDrawnShares.signedDiff(
+        int256 premiumDrawnSharesDelta = userPosition.premiumDrawnShares.signedSub(
           oldUserPremiumDrawnShares
         );
         if (!vars.premiumIncrease) vars.premiumIncrease = premiumDrawnSharesDelta > 0;
@@ -997,7 +997,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
           vars.reserveId,
           user,
           premiumDrawnSharesDelta,
-          userPosition.premiumOffset.signedDiff(oldUserPremiumOffset),
+          userPosition.premiumOffset.signedSub(oldUserPremiumOffset),
           accruedUserPremium,
           0
         );
@@ -1106,7 +1106,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.totalRestoredShares += vars.restoredShares;
 
       // expected total withdrawn shares includes liquidation fee
-      vars.withdrawnShares = collateralReserveHub.convertToSuppliedSharesUp(
+      vars.withdrawnShares = collateralReserveHub.convertToAddedSharesUp(
         vars.collateralAssetId,
         vars.liquidationFeeAmount + vars.collateralToLiquidate
       );

@@ -6,15 +6,15 @@ import 'tests/Base.t.sol';
 contract LiquidityHubBase is Base {
   using SharesMath for uint256;
 
-  struct TestSupplyParams {
+  struct TestAddParams {
     uint256 drawnAmount;
     uint256 drawnShares;
-    uint256 assetSuppliedAmount;
-    uint256 assetSuppliedShares;
-    uint256 spoke1SuppliedAmount;
-    uint256 spoke1SuppliedShares;
-    uint256 spoke2SuppliedAmount;
-    uint256 spoke2SuppliedShares;
+    uint256 assetAddedAmount;
+    uint256 assetAddedShares;
+    uint256 spoke1AddedAmount;
+    uint256 spoke1AddedShares;
+    uint256 spoke2AddedAmount;
+    uint256 spoke2AddedShares;
     uint256 availableLiq;
     uint256 bobBalance;
     uint256 aliceBalance;
@@ -33,9 +33,9 @@ contract LiquidityHubBase is Base {
     uint256 timestamp;
     uint256 accruedBase;
     uint256 initialAvailableLiquidity;
-    uint256 initialSupplyShares;
-    uint256 supply2Amount;
-    uint256 expectedSupply2Shares;
+    uint256 initialAddShares;
+    uint256 add2Amount;
+    uint256 expectedAdd2Shares;
   }
 
   struct DebtData {
@@ -55,23 +55,23 @@ contract LiquidityHubBase is Base {
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
-  /// @dev mocks rate, supplySpoke (supplyUser) supplies asset, drawSpoke (drawUser) draws asset, skips time
-  function _supplyAndDrawLiquidity(
+  /// @dev mocks rate, addSpoke (addUser) supplies asset, drawSpoke (drawUser) draws asset, skips time
+  function _addAndDrawLiquidity(
     uint256 assetId,
-    address supplyUser,
-    address supplySpoke,
-    uint256 supplyAmount,
+    address addUser,
+    address addSpoke,
+    uint256 addAmount,
     address drawUser,
     address drawSpoke,
     uint256 drawAmount,
     uint256 skipTime
-  ) internal returns (uint256 supplyShares, uint256 drawnShares) {
-    supplyShares = Utils.add({
+  ) internal returns (uint256 addedShares, uint256 drawnShares) {
+    addedShares = Utils.add({
       hub: hub,
       assetId: assetId,
-      caller: supplySpoke,
-      amount: supplyAmount,
-      user: supplyUser
+      caller: addSpoke,
+      amount: addAmount,
+      user: addUser
     });
 
     drawnShares = Utils.draw({
