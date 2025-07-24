@@ -66,7 +66,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     address spoke,
     DataTypes.SpokeConfig calldata spokeConfig
   ) public {
-    if (!hub.isSpokeListed(assetId, spoke)) {
+    if (!hub.isAssetSpoke(assetId, spoke)) {
       assetId = bound(assetId, hub.getAssetCount(), type(uint256).max);
     }
     vm.expectRevert(ILiquidityHub.SpokeNotListed.selector);

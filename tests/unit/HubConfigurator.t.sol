@@ -210,7 +210,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
         )
       );
 
-      if (!hub.isSpokeListed(assetId, feeReceiver)) {
+      if (!hub.isAssetSpoke(assetId, feeReceiver)) {
         vm.expectCall(
           address(hub),
           abi.encodeCall(
@@ -299,7 +299,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
         )
       );
 
-      if (!hub.isSpokeListed(assetId, feeReceiver)) {
+      if (!hub.isAssetSpoke(assetId, feeReceiver)) {
         vm.expectCall(
           address(hub),
           abi.encodeCall(

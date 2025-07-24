@@ -118,8 +118,8 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(spoke != address(0), InvalidSpoke());
     require(!_spokesList[assetId].contains(spoke), SpokeAlreadyListed());
 
-    _spokes[assetId][spoke].config = config;
     _spokesList[assetId].add(spoke);
+    _spokes[assetId][spoke].config = config;
 
     emit SpokeAdded(assetId, spoke);
     emit SpokeConfigUpdated(assetId, spoke, config);
@@ -350,7 +350,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return _spokesList[assetId].at(index);
   }
 
-  function isSpokeListed(uint256 assetId, address spoke) external view returns (bool) {
+  function isAssetSpoke(uint256 assetId, address spoke) external view returns (bool) {
     return _spokesList[assetId].contains(spoke);
   }
 
