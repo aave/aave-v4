@@ -418,10 +418,6 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
-  function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toDrawnAssetsDown(shares);
-  }
-
   function previewDrawnIndex(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].previewDrawnIndex();
   }

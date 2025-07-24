@@ -604,6 +604,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // todo NoExplicitAmountToRepayOnBehalf
   }
 
+  function _previewOffset(
+    ILiquidityHub hub,
+    uint256 assetId,
+    uint256 shares
+  ) internal view returns (uint256) {
+    return hub.previewDrawByShares(assetId, shares);
+  }
+
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
     require(address(oracle) != address(0), InvalidOracle());
     oracle.setReserveSource(reserveId, priceSource);
@@ -759,7 +767,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
       .baseDrawnShares
       .percentMulUp(newUserRiskPremium);
-    uint256 userPremiumOffset = userPosition.premiumOffset = hub.previewOffset(
+    uint256 userPremiumOffset = userPosition.premiumOffset = _previewOffset(
+      hub,
       assetId,
       userPremiumDrawnShares
     );
@@ -1028,7 +1037,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMulUp(
           newUserRiskPremium
         );
-        userPosition.premiumOffset = hub.previewOffset(assetId, userPosition.premiumDrawnShares);
+        userPosition.premiumOffset = _previewOffset(hub, assetId, userPosition.premiumDrawnShares);
         userPosition.realizedPremium += accruedUserPremium;
 
         int256 premiumDrawnSharesDelta = _signedDiff(
