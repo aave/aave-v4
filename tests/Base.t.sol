@@ -240,9 +240,9 @@ abstract contract Base is Test {
     vm.startPrank(ADMIN);
     // Grant roles with 0 delay
     manager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
-    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
-
     manager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
+
+    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
     manager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
 
     manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
