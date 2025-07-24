@@ -38,7 +38,8 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(assetB),
       assetB.decimals(),
       address(treasurySpoke),
-      address(newIrStrategy)
+      address(newIrStrategy),
+      encodedIrData
     );
     siloedVars.assetBId = newHub.getAssetCount() - 1;
 
@@ -68,19 +69,14 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         drawCap: siloedVars.assetBDrawCap
       })
     );
-    vm.stopPrank();
 
-    // Configure interest rate strategy for asset B
-    vm.prank(address(newHub));
-    newIrStrategy.setInterestRateData(siloedVars.assetBId, encodedIrData);
-
-    vm.startPrank(ADMIN);
     // Add asset A to the canonical hub
     hub.addAsset(
       address(assetA),
       assetA.decimals(),
       address(treasurySpoke),
-      address(irStrategy) // Use the canonical hub's interest rate strategy
+      address(irStrategy), // Use the canonical hub's interest rate strategy
+      encodedIrData
     );
     siloedVars.assetAId = hub.getAssetCount() - 1;
 
@@ -110,13 +106,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         drawCap: type(uint256).max
       })
     );
-    vm.stopPrank();
 
-    // Configure interest rate strategy for asset A
-    vm.prank(address(hub));
-    irStrategy.setInterestRateData(siloedVars.assetAId, encodedIrData);
-
-    vm.startPrank(ADMIN);
     // Add reserve A from canonical hub to the new spoke
     siloedVars.reserveAIdNewSpoke = newSpoke.addReserve(
       address(hub),

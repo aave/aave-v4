@@ -106,13 +106,22 @@ library AssetLogic {
   }
 
   function updateBorrowRate(DataTypes.Asset storage asset, uint256 assetId) internal {
-    asset.baseBorrowRate = IBasicInterestRateStrategy(asset.config.irStrategy)
+    uint256 newBorrowRate = IBasicInterestRateStrategy(asset.config.irStrategy)
       .calculateInterestRate({
         assetId: assetId,
         availableLiquidity: asset.availableLiquidity,
         baseDebt: asset.baseDebt(),
         premiumDebt: asset.premiumDebt()
       });
+    asset.baseBorrowRate = newBorrowRate;
+
+    // asset accrual should have already occurred
+    emit ILiquidityHub.AssetUpdated(
+      assetId,
+      asset.baseDebtIndex,
+      newBorrowRate,
+      asset.lastUpdateTimestamp
+    );
   }
 
   /**
@@ -137,7 +146,6 @@ library AssetLogic {
     }
 
     asset.lastUpdateTimestamp = block.timestamp;
-    emit ILiquidityHub.DrawnIndexUpdate(assetId, drawnIndex, block.timestamp);
   }
 
   /**

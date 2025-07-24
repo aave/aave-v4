@@ -66,6 +66,8 @@ abstract contract Base is Test {
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
   uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
+  uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
+  uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
   uint256 internal constant MIN_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR; // 100% == 0% bonus
   uint256 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
@@ -352,6 +354,15 @@ abstract contract Base is Test {
       drawCap: type(uint256).max
     });
 
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
+    );
+
     // Add all assets to the Liquidity Hub
     vm.startPrank(ADMIN);
     // add WETH
@@ -359,23 +370,10 @@ abstract contract Base is Test {
       address(tokenList.weth),
       tokenList.weth.decimals(),
       address(treasurySpoke),
-      address(irStrategy)
+      address(irStrategy),
+      encodedIrData
     );
     hub.addSpoke(wethAssetId, address(treasurySpoke), spokeConfig);
-    vm.stopPrank();
-    vm.prank(address(hub));
-    irStrategy.setInterestRateData(
-      wethAssetId,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
-    );
-    vm.startPrank(ADMIN);
     hub.updateAssetConfig(
       wethAssetId,
       DataTypes.AssetConfig({
@@ -387,29 +385,15 @@ abstract contract Base is Test {
         irStrategy: address(irStrategy)
       })
     );
-
     // add USDX
     hub.addAsset(
       address(tokenList.usdx),
       tokenList.usdx.decimals(),
       address(treasurySpoke),
-      address(irStrategy)
+      address(irStrategy),
+      encodedIrData
     );
     hub.addSpoke(usdxAssetId, address(treasurySpoke), spokeConfig);
-    vm.stopPrank();
-    vm.prank(address(hub));
-    irStrategy.setInterestRateData(
-      usdxAssetId,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
-    );
-    vm.startPrank(ADMIN);
     hub.updateAssetConfig(
       usdxAssetId,
       DataTypes.AssetConfig({
@@ -421,29 +405,15 @@ abstract contract Base is Test {
         irStrategy: address(irStrategy)
       })
     );
-
     // add DAI
     hub.addAsset(
       address(tokenList.dai),
       tokenList.dai.decimals(),
       address(treasurySpoke),
-      address(irStrategy)
+      address(irStrategy),
+      encodedIrData
     );
     hub.addSpoke(daiAssetId, address(treasurySpoke), spokeConfig);
-    vm.stopPrank();
-    vm.prank(address(hub));
-    irStrategy.setInterestRateData(
-      daiAssetId,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
-    );
-    vm.startPrank(ADMIN);
     hub.updateAssetConfig(
       daiAssetId,
       DataTypes.AssetConfig({
@@ -455,29 +425,15 @@ abstract contract Base is Test {
         irStrategy: address(irStrategy)
       })
     );
-
     // add WBTC
     hub.addAsset(
       address(tokenList.wbtc),
       tokenList.wbtc.decimals(),
       address(treasurySpoke),
-      address(irStrategy)
+      address(irStrategy),
+      encodedIrData
     );
     hub.addSpoke(wbtcAssetId, address(treasurySpoke), spokeConfig);
-    vm.stopPrank();
-    vm.prank(address(hub));
-    irStrategy.setInterestRateData(
-      wbtcAssetId,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
-    );
-    vm.startPrank(ADMIN);
     hub.updateAssetConfig(
       wbtcAssetId,
       DataTypes.AssetConfig({
@@ -489,29 +445,15 @@ abstract contract Base is Test {
         irStrategy: address(irStrategy)
       })
     );
-
     // add USDY
     hub.addAsset(
       address(tokenList.usdy),
       tokenList.usdy.decimals(),
       address(treasurySpoke),
-      address(irStrategy)
+      address(irStrategy),
+      encodedIrData
     );
     hub.addSpoke(usdyAssetId, address(treasurySpoke), spokeConfig);
-    vm.stopPrank();
-    vm.prank(address(hub));
-    irStrategy.setInterestRateData(
-      usdyAssetId,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
-    );
-    vm.startPrank(ADMIN);
     hub.updateAssetConfig(
       usdyAssetId,
       DataTypes.AssetConfig({
@@ -523,29 +465,15 @@ abstract contract Base is Test {
         irStrategy: address(irStrategy)
       })
     );
-
     // add DAI again
     hub.addAsset(
       address(tokenList.dai),
       tokenList.dai.decimals(),
       address(treasurySpoke),
-      address(irStrategy)
+      address(irStrategy),
+      encodedIrData
     );
     hub.addSpoke(hub.getAssetCount() - 1, address(treasurySpoke), spokeConfig);
-    vm.stopPrank();
-    vm.prank(address(hub));
-    irStrategy.setInterestRateData(
-      dai2AssetId,
-      abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      )
-    );
-    vm.startPrank(ADMIN);
     hub.updateAssetConfig(
       hub.getAssetCount() - 1,
       DataTypes.AssetConfig({
@@ -900,44 +828,9 @@ abstract contract Base is Test {
    * 3: WBTC
    */
   function hub2Fixture() internal returns (ILiquidityHub, AssetInterestRateStrategy) {
-    vm.startPrank(ADMIN);
-
     IAccessManager accessManager2 = new AccessManager(ADMIN);
     ILiquidityHub hub2 = new LiquidityHub(address(accessManager2));
     AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
-
-    // Add assets to the second hub
-    // Add WETH
-    hub2.addAsset(
-      address(tokenList.weth),
-      tokenList.weth.decimals(),
-      address(treasurySpoke),
-      address(hub2IrStrategy)
-    );
-
-    // Add USDX
-    hub2.addAsset(
-      address(tokenList.usdx),
-      tokenList.usdx.decimals(),
-      address(treasurySpoke),
-      address(hub2IrStrategy)
-    );
-
-    // Add DAI
-    hub2.addAsset(
-      address(tokenList.dai),
-      tokenList.dai.decimals(),
-      address(treasurySpoke),
-      address(hub2IrStrategy)
-    );
-
-    // Add WBTC
-    hub2.addAsset(
-      address(tokenList.wbtc),
-      tokenList.wbtc.decimals(),
-      address(treasurySpoke),
-      address(hub2IrStrategy)
-    );
 
     // Configure IR Strategy for hub 2
     bytes memory encodedIrData = abi.encode(
@@ -948,11 +841,45 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    vm.startPrank(address(hub2));
-    hub2IrStrategy.setInterestRateData(wethAssetId, encodedIrData);
-    hub2IrStrategy.setInterestRateData(usdxAssetId, encodedIrData);
-    hub2IrStrategy.setInterestRateData(daiAssetId, encodedIrData);
-    hub2IrStrategy.setInterestRateData(wbtcAssetId, encodedIrData);
+
+    vm.startPrank(ADMIN);
+
+    // Add assets to the second hub
+    // Add WETH
+    hub2.addAsset(
+      address(tokenList.weth),
+      tokenList.weth.decimals(),
+      address(treasurySpoke),
+      address(hub2IrStrategy),
+      encodedIrData
+    );
+
+    // Add USDX
+    hub2.addAsset(
+      address(tokenList.usdx),
+      tokenList.usdx.decimals(),
+      address(treasurySpoke),
+      address(hub2IrStrategy),
+      encodedIrData
+    );
+
+    // Add DAI
+    hub2.addAsset(
+      address(tokenList.dai),
+      tokenList.dai.decimals(),
+      address(treasurySpoke),
+      address(hub2IrStrategy),
+      encodedIrData
+    );
+
+    // Add WBTC
+    hub2.addAsset(
+      address(tokenList.wbtc),
+      tokenList.wbtc.decimals(),
+      address(treasurySpoke),
+      address(hub2IrStrategy),
+      encodedIrData
+    );
     vm.stopPrank();
 
     setUpRoles(hub2, spoke1, accessManager2);
@@ -967,48 +894,14 @@ abstract contract Base is Test {
    * 3: WETH
    */
   function hub3Fixture() internal returns (ILiquidityHub, AssetInterestRateStrategy) {
-    vm.startPrank(ADMIN);
-
     IAccessManager accessManager3 = new AccessManager(ADMIN);
     ILiquidityHub hub3 = new LiquidityHub(address(accessManager3));
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
-    // Add DAI
-    hub3.addAsset(
-      address(tokenList.dai),
-      tokenList.dai.decimals(),
-      address(treasurySpoke),
-      address(hub3IrStrategy)
-    );
     uint256 hub3DaiAssetId = 0;
-
-    // Add USDX
-    hub3.addAsset(
-      address(tokenList.usdx),
-      tokenList.usdx.decimals(),
-      address(treasurySpoke),
-      address(hub3IrStrategy)
-    );
     uint256 hub3UsdxAssetId = 1;
-
-    // Add WBTC
-    hub3.addAsset(
-      address(tokenList.wbtc),
-      tokenList.wbtc.decimals(),
-      address(treasurySpoke),
-      address(hub3IrStrategy)
-    );
     uint256 hub3WbtcAssetId = 2;
-
-    // Add WETH
-    hub3.addAsset(
-      address(tokenList.weth),
-      tokenList.weth.decimals(),
-      address(treasurySpoke),
-      address(hub3IrStrategy)
-    );
     uint256 hub3WethAssetId = 3;
-    vm.stopPrank();
 
     // Configure IR Strategy for hub 3
     bytes memory encodedIrData = abi.encode(
@@ -1019,11 +912,44 @@ abstract contract Base is Test {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-    vm.startPrank(address(hub3));
-    hub3IrStrategy.setInterestRateData(hub3WethAssetId, encodedIrData);
-    hub3IrStrategy.setInterestRateData(hub3UsdxAssetId, encodedIrData);
-    hub3IrStrategy.setInterestRateData(hub3DaiAssetId, encodedIrData);
-    hub3IrStrategy.setInterestRateData(hub3WbtcAssetId, encodedIrData);
+
+    vm.startPrank(ADMIN);
+    // Add DAI
+    hub3.addAsset(
+      address(tokenList.dai),
+      tokenList.dai.decimals(),
+      address(treasurySpoke),
+      address(hub3IrStrategy),
+      encodedIrData
+    );
+
+    // Add USDX
+    hub3.addAsset(
+      address(tokenList.usdx),
+      tokenList.usdx.decimals(),
+      address(treasurySpoke),
+      address(hub3IrStrategy),
+      encodedIrData
+    );
+
+    // Add WBTC
+    hub3.addAsset(
+      address(tokenList.wbtc),
+      tokenList.wbtc.decimals(),
+      address(treasurySpoke),
+      address(hub3IrStrategy),
+      encodedIrData
+    );
+
+    // Add WETH
+    hub3.addAsset(
+      address(tokenList.weth),
+      tokenList.weth.decimals(),
+      address(treasurySpoke),
+      address(hub3IrStrategy),
+      encodedIrData
+    );
+
     vm.stopPrank();
 
     setUpRoles(hub3, spoke1, accessManager3);

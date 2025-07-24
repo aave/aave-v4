@@ -33,7 +33,17 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
+    emit ILiquidityHub.AssetUpdated(
+      assetId,
+      hub.previewDrawnIndex(assetId),
+      IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
+        assetId: assetId,
+        availableLiquidity: assetBefore.availableLiquidity - amount,
+        baseDebt: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+        premiumDebt: premiumDebt
+      }),
+      vm.getBlockTimestamp()
+    );
     vm.expectEmit(address(hub.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
@@ -103,7 +113,17 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DrawnIndexUpdate(assetId, hub.previewDrawnIndex(assetId), block.timestamp);
+    emit ILiquidityHub.AssetUpdated(
+      assetId,
+      hub.previewDrawnIndex(assetId),
+      IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
+        assetId: assetId,
+        availableLiquidity: assetBefore.availableLiquidity - amount,
+        baseDebt: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+        premiumDebt: premiumDebt
+      }),
+      vm.getBlockTimestamp()
+    );
     vm.expectEmit(address(hub.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
