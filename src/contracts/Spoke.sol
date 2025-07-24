@@ -1036,10 +1036,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         reserve.baseDrawnShares -= deficitShares;
         userPosition.baseDrawnShares -= deficitShares;
         // newUserRiskPremium is 0 due to no collateral remaining
-        userPosition.premiumDrawnShares = 0;
-        userPosition.premiumOffset = 0;
-
-        _refreshPremiumDebt(reserve, hub, assetId, reserveId, user, 0, 0, 0, 0);
         // non-zero deficit means user ends up with zero total debt
         positionStatus.setBorrowing(reserve.reserveId, false);
       }
