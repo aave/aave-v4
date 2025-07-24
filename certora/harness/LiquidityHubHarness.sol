@@ -6,6 +6,11 @@ pragma solidity ^0.8.0;
 contract LiquidityHubHarness is LiquidityHub {
       using AssetLogic for DataTypes.Asset;
 
+  constructor(address authority_) LiquidityHub(authority_) {
+    // Intentionally left blank
+  }
+
+
   function accrueInterest(
     uint256 assetId
   ) external  {
@@ -13,7 +18,8 @@ contract LiquidityHubHarness is LiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][asset.config.feeReceiver]);
+    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+  
   }
 
 

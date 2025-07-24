@@ -229,7 +229,7 @@ rule viewFunctionsIntegrity(uint256 assetId, method f) filtered { f-> f.isView &
                                 f.selector != sig:getAsset(uint256).selector &&
                                 f.selector != sig:getAssetConfig(uint256).selector &&
                                 f.selector != sig:MAX_ALLOWED_ASSET_DECIMALS().selector &&
-                                f.selector != sig:assetsList(uint256).selector &&
+                            //    f.selector != sig:assetsList(uint256).selector &&
                                 f.selector != sig:getSpoke(uint256,address).selector &&
                                 f.selector != sig:getSpokeConfig(uint256,address).selector &&
                                 f.selector != sig:toSharesDown(uint256,uint256,uint256).selector &&
@@ -301,9 +301,9 @@ function callViewFunction(method f, env e, calldataarg args) returns mathint {
     else if (f.selector == sig:getBaseInterestRate(uint256).selector) {
         return getBaseInterestRate(e,args);
     }
-    else if (f.selector == sig:assetCount().selector) {
+/*    else if (f.selector == sig:assetCount().selector) {
         return assetCount(e,args);
-    }
+    } */
     else if (f.selector == sig:getBaseInterestRate(uint256).selector) {
         return getBaseInterestRate(e,args);
     }

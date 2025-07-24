@@ -21,9 +21,9 @@ x > y => toSharesUp(x) >= toSharesUp(y)
 **/
 rule toSharesUp_monotonicity(uint256 assetId, uint256 x, uint256 y){
     uint256 totalAssets; uint256 totalShares;
-    require totalAssets >= totalShares;
+    // require totalAssets >= totalShares;
     assert x < y => 
-            toSharesUp(x, totalAssets, totalShares) <= toSharesUp(y, totalAssets, totalShares);
+            toSharesUp(x, totalAssets, totalShares) < toSharesUp(y, totalAssets, totalShares);
 }
 
 /** 
