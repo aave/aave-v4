@@ -151,10 +151,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
       address spokeAddress = targetHub.getSpokeAddress(assetId, i);
-      DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spokeAddress);
-      config.supplyCap = 0;
-      config.drawCap = 0;
-      targetHub.updateSpokeConfig(assetId, spokeAddress, config);
+      _updateSpokeCaps(targetHub, assetId, spokeAddress, 0, 0);
     }
   }
 
@@ -244,6 +241,13 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     }
   }
 
+  /**
+   * @dev Updates the spoke configs for the old and new fee receivers.
+   *  - updates the caps for the old fee receiver to 0.
+   *  - if new fee receiver is not already a spoke, it adds it with max caps and active flag set to true.
+   *  - if new fee receiver is already a spoke, it updates the caps to max, without changing the active flag.
+   * @dev If the old and new fee receivers are the same, it does nothing.
+   */
   function _updateFeeReceiverSpokeConfig(
     ILiquidityHub hub,
     uint256 assetId,
@@ -271,6 +275,9 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     }
   }
 
+  /**
+   * @dev Updates the spoke caps, without changing the active flag.
+   */
   function _updateSpokeCaps(
     ILiquidityHub hub,
     uint256 assetId,

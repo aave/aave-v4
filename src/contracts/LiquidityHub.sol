@@ -26,9 +26,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
   uint256 internal _assetCount;
   mapping(uint256 assetId => DataTypes.Asset assetData) internal _assets;
-  mapping(uint256 assetId => mapping(address spokeAddress => DataTypes.SpokeData spokeData))
+  mapping(uint256 assetId => mapping(address spoke => DataTypes.SpokeData spokeData))
     internal _spokes;
-  mapping(uint256 assetId => EnumerableSet.AddressSet spokeAddresses) internal _spokesList;
+  mapping(uint256 assetId => EnumerableSet.AddressSet spoke) internal _assetToSpokes;
 
   /**
    * @dev Constructor.
@@ -116,9 +116,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     require(spoke != address(0), InvalidSpoke());
-    require(!_spokesList[assetId].contains(spoke), SpokeAlreadyListed());
+    require(!_assetToSpokes[assetId].contains(spoke), SpokeAlreadyListed());
 
-    _spokesList[assetId].add(spoke);
+    _assetToSpokes[assetId].add(spoke);
     _spokes[assetId][spoke].config = config;
 
     emit SpokeAdded(assetId, spoke);
@@ -130,7 +130,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     address spoke,
     DataTypes.SpokeConfig calldata config
   ) external restricted {
-    require(_spokesList[assetId].contains(spoke), SpokeNotListed());
+    require(_assetToSpokes[assetId].contains(spoke), SpokeNotListed());
     _spokes[assetId][spoke].config = config;
     emit SpokeConfigUpdated(assetId, spoke, config);
   }
@@ -343,15 +343,15 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   function getSpokeCount(uint256 assetId) external view returns (uint256) {
-    return _spokesList[assetId].length();
+    return _assetToSpokes[assetId].length();
   }
 
   function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address) {
-    return _spokesList[assetId].at(index);
+    return _assetToSpokes[assetId].at(index);
   }
 
   function isAssetSpoke(uint256 assetId, address spoke) external view returns (bool) {
-    return _spokesList[assetId].contains(spoke);
+    return _assetToSpokes[assetId].contains(spoke);
   }
 
   function getSpoke(
