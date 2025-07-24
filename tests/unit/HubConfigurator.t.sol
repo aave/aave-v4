@@ -205,7 +205,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
           (
             assetId,
             oldConfig.feeReceiver,
-            DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+            DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: hub.getSpokeConfig(assetId, oldConfig.feeReceiver).active})
           )
         )
       );
@@ -237,7 +237,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
               DataTypes.SpokeConfig({
                 supplyCap: type(uint256).max,
                 drawCap: type(uint256).max,
-                active: true
+                active: hub.getSpokeConfig(assetId, feeReceiver).active
               })
             )
           )
@@ -294,7 +294,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
           (
             assetId,
             oldConfig.feeReceiver,
-            DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+            DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: hub.getSpokeConfig(assetId, oldConfig.feeReceiver).active})
           )
         )
       );
@@ -326,7 +326,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
               DataTypes.SpokeConfig({
                 supplyCap: type(uint256).max,
                 drawCap: type(uint256).max,
-                active: true
+                active: hub.getSpokeConfig(assetId, feeReceiver).active
               })
             )
           )
@@ -416,7 +416,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
         (
           assetId,
           oldConfig.feeReceiver,
-          DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
+          DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: true})
         )
       )
     );

@@ -97,7 +97,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   ) external override onlyOwner {
     ILiquidityHub targetHub = ILiquidityHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    _updateFeeReceiverSpokeConfig(targetHub, assetId, config, feeReceiver);
+    _updateFeeReceiverSpokeConfig(targetHub, assetId, config.feeReceiver, feeReceiver);
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config);
   }
@@ -111,7 +111,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   ) external override onlyOwner {
     ILiquidityHub targetHub = ILiquidityHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    _updateFeeReceiverSpokeConfig(targetHub, assetId, config, feeReceiver);
+    _updateFeeReceiverSpokeConfig(targetHub, assetId, config.feeReceiver, feeReceiver);
     config.liquidityFee = liquidityFee;
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config);
@@ -139,7 +139,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     _updateFeeReceiverSpokeConfig(
       targetHub,
       assetId,
-      targetHub.getAssetConfig(assetId),
+      targetHub.getAssetConfig(assetId).feeReceiver,
       config.feeReceiver
     );
     targetHub.updateAssetConfig(assetId, config);
@@ -217,11 +217,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     uint256 supplyCap,
     uint256 drawCap
   ) external override onlyOwner {
-    ILiquidityHub targetHub = ILiquidityHub(hub);
-    DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-    config.supplyCap = supplyCap;
-    config.drawCap = drawCap;
-    targetHub.updateSpokeConfig(assetId, spoke, config);
+    _updateSpokeCaps(ILiquidityHub(hub), assetId, spoke, supplyCap, drawCap);
   }
 
   /// @inheritdoc IHubConfigurator
@@ -251,18 +247,14 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   function _updateFeeReceiverSpokeConfig(
     ILiquidityHub hub,
     uint256 assetId,
-    DataTypes.AssetConfig memory oldConfig,
+    address oldFeeReceiver,
     address newFeeReceiver
   ) internal {
-    if (oldConfig.feeReceiver == newFeeReceiver) {
+    if (oldFeeReceiver == newFeeReceiver) {
       return;
     }
 
-    hub.updateSpokeConfig(
-      assetId,
-      oldConfig.feeReceiver,
-      DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
-    );
+    _updateSpokeCaps(hub, assetId, oldFeeReceiver, 0, 0);
 
     if (!hub.isAssetSpoke(assetId, newFeeReceiver)) {
       hub.addSpoke(
@@ -275,15 +267,20 @@ contract HubConfigurator is Ownable, IHubConfigurator {
         })
       );
     } else {
-      hub.updateSpokeConfig(
-        assetId,
-        newFeeReceiver,
-        DataTypes.SpokeConfig({
-          supplyCap: type(uint256).max,
-          drawCap: type(uint256).max,
-          active: true
-        })
-      );
+      _updateSpokeCaps(hub, assetId, newFeeReceiver, type(uint256).max, type(uint256).max);
     }
+  }
+
+  function _updateSpokeCaps(
+    ILiquidityHub hub,
+    uint256 assetId,
+    address spoke,
+    uint256 supplyCap,
+    uint256 drawCap
+  ) internal {
+    DataTypes.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
+    config.supplyCap = supplyCap;
+    config.drawCap = drawCap;
+    hub.updateSpokeConfig(assetId, spoke, config);
   }
 }
