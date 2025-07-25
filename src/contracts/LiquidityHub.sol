@@ -279,7 +279,18 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // can increase due to precision loss on premium debt (base unchanged)
     // todo mathematically find premium diff ceiling and replace the `2`
     // if no premium debt is restored, premium debt remains unchanged
-    require(premiumDebtAfter + realizedPremiumTaken - premiumDebtBefore <= 2, InvalidDebtChange());
+    //require(premiumDebtAfter + realizedPremiumTaken - premiumDebtBefore <= 2, InvalidDebtChange());
+    if (premiumDebtBefore >= premiumDebtAfter + realizedPremiumTaken) {
+      require(
+        premiumDebtBefore - (premiumDebtAfter + realizedPremiumTaken) <= 2,
+        InvalidDebtChange()
+      );
+    } else {
+      require(
+        premiumDebtAfter + realizedPremiumTaken - premiumDebtBefore <= 2,
+        InvalidDebtChange()
+      );
+    }
   }
 
   /// @inheritdoc ILiquidityHub
@@ -319,13 +330,21 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // accrue interest and liquidity fees
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
+    uint256 realizedPremium = asset.realizedPremium + realizedPremiumAdded;
+
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
-    asset.realizedPremium = asset.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
+    asset.realizedPremium = realizedPremiumTaken <= realizedPremium
+      ? realizedPremium - realizedPremiumTaken
+      : 0;
+
+    realizedPremium = spoke.realizedPremium + realizedPremiumAdded;
 
     spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
-    spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
+    spoke.realizedPremium = realizedPremiumTaken <= realizedPremium
+      ? realizedPremium - realizedPremiumTaken
+      : 0;
 
     emit RefreshPremiumDebt(
       assetId,
@@ -405,7 +424,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toDrawnAssetsDown(shares);
+    return _assets[assetId].toDrawnAssetsUp(shares);
   }
 
   function previewDrawnIndex(uint256 assetId) external view returns (uint256) {
@@ -556,7 +575,10 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.SpokeData storage spoke
   ) internal view returns (uint256, uint256) {
     // sanity: utilize solc underflow check
-    uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset;
+    uint256 premiumDrawnAssets = asset.toDrawnAssetsUp(spoke.premiumDrawnShares);
+    uint256 accruedPremium = spoke.premiumOffset >= premiumDrawnAssets
+      ? 0
+      : premiumDrawnAssets - spoke.premiumOffset;
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
   }
 

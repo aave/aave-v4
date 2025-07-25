@@ -55,8 +55,11 @@ library AssetLogic {
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
     // sanity: utilize solc underflow check
-    uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumDrawnShares) - asset.premiumOffset;
-    return asset.realizedPremium + accruedPremium;
+    uint256 premiumDrawnAssets = asset.toDrawnAssetsUp(asset.premiumDrawnShares);
+    return
+      asset.premiumOffset > premiumDrawnAssets
+        ? asset.realizedPremium
+        : asset.realizedPremium + premiumDrawnAssets - asset.premiumOffset;
   }
 
   function debt(DataTypes.Asset storage asset) internal view returns (uint256, uint256) {
