@@ -123,6 +123,20 @@ interface IHubConfigurator {
   function pauseAsset(address hub, uint256 assetId) external;
 
   /**
+   * @notice Register the spoke for the specified asset in the hub.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset to register the spoke for.
+   * @param spoke The address of the Spoke contract.
+   * @param config The Spoke configuration to register.
+   */
+  function addSpoke(
+    address hub,
+    address spoke,
+    uint256 assetId,
+    DataTypes.SpokeConfig calldata config
+  ) external;
+
+  /**
    * @notice Registers the same spoke for multiple assets with the hub, each with their own configuration.
    * @dev The i-th asset identifier in `assetIds` corresponds to the i-th configuration in `configs`.
    * @param hub The address of the Hub contract.

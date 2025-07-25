@@ -168,6 +168,29 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
+  function addSpoke(
+    address hub,
+    address spoke,
+    uint256 assetId,
+    DataTypes.SpokeConfig calldata config
+  ) external onlyOwner {
+    ILiquidityHub(hub).addSpoke(assetId, spoke, config);
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function addSpokeToAssets(
+    address hub,
+    address spoke,
+    uint256[] calldata assetIds,
+    DataTypes.SpokeConfig[] calldata configs
+  ) external onlyOwner {
+    require(assetIds.length == configs.length, MismatchedConfigs());
+    for (uint256 i = 0; i < assetIds.length; ++i) {
+      ILiquidityHub(hub).addSpoke(assetIds[i], spoke, configs[i]);
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
   function updateSpokeActive(
     address hub,
     uint256 assetId,
@@ -228,25 +251,16 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
-  /// @inheritdoc IHubConfigurator
-  function addSpokeToAssets(
-    address hub,
-    address spoke,
-    uint256[] calldata assetIds,
-    DataTypes.SpokeConfig[] calldata configs
-  ) external onlyOwner {
-    require(assetIds.length == configs.length, MismatchedConfigs());
-    for (uint256 i = 0; i < assetIds.length; ++i) {
-      ILiquidityHub(hub).addSpoke(assetIds[i], spoke, configs[i]);
-    }
-  }
-
   /**
    * @dev Updates the spoke configs for the old and new fee receivers.
    *  - updates the caps for the old fee receiver to 0.
    *  - if new fee receiver is not already a spoke, it adds it with max caps and active flag set to true.
    *  - if new fee receiver is already a spoke, it updates the caps to max, without changing the active flag.
    * @dev If the old and new fee receivers are the same, it does nothing.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param oldFeeReceiver The old fee receiver.
+   * @param newFeeReceiver The new fee receiver.
    */
   function _updateFeeReceiverSpokeConfig(
     ILiquidityHub hub,
@@ -260,7 +274,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
 
     _updateSpokeCaps(hub, assetId, oldFeeReceiver, 0, 0);
 
-    if (!hub.isAssetSpoke(assetId, newFeeReceiver)) {
+    if (!hub.isSpokeListed(assetId, newFeeReceiver)) {
       hub.addSpoke(
         assetId,
         newFeeReceiver,
@@ -277,6 +291,11 @@ contract HubConfigurator is Ownable, IHubConfigurator {
 
   /**
    * @dev Updates the spoke caps, without changing the active flag.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param supplyCap The new supply cap.
+   * @param drawCap The new draw cap.
    */
   function _updateSpokeCaps(
     ILiquidityHub hub,

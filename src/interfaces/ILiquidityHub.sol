@@ -247,7 +247,7 @@ interface ILiquidityHub is IAccessManaged {
 
   function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address);
 
-  function isAssetSpoke(uint256 assetId, address spoke) external view returns (bool);
+  function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
 
   function getSpoke(
     uint256 assetId,

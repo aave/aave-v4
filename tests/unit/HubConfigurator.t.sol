@@ -205,12 +205,16 @@ contract HubConfiguratorTest is LiquidityHubBase {
           (
             assetId,
             oldConfig.feeReceiver,
-            DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: hub.getSpokeConfig(assetId, oldConfig.feeReceiver).active})
+            DataTypes.SpokeConfig({
+              supplyCap: 0,
+              drawCap: 0,
+              active: hub.getSpokeConfig(assetId, oldConfig.feeReceiver).active
+            })
           )
         )
       );
 
-      if (!hub.isAssetSpoke(assetId, feeReceiver)) {
+      if (!hub.isSpokeListed(assetId, feeReceiver)) {
         vm.expectCall(
           address(hub),
           abi.encodeCall(
@@ -294,12 +298,16 @@ contract HubConfiguratorTest is LiquidityHubBase {
           (
             assetId,
             oldConfig.feeReceiver,
-            DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: hub.getSpokeConfig(assetId, oldConfig.feeReceiver).active})
+            DataTypes.SpokeConfig({
+              supplyCap: 0,
+              drawCap: 0,
+              active: hub.getSpokeConfig(assetId, oldConfig.feeReceiver).active
+            })
           )
         )
       );
 
-      if (!hub.isAssetSpoke(assetId, feeReceiver)) {
+      if (!hub.isSpokeListed(assetId, feeReceiver)) {
         vm.expectCall(
           address(hub),
           abi.encodeCall(
@@ -496,6 +504,30 @@ contract HubConfiguratorTest is LiquidityHubBase {
       DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spokeAddresses[i]);
       assertEq(spokeConfig.active, false);
     }
+  }
+
+  function test_addSpoke_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    DataTypes.SpokeConfig memory spokeConfig;
+    hubConfigurator.addSpoke(address(hub), vm.randomAddress(), 0, spokeConfig);
+  }
+
+  function test_addSpoke() public {
+    address newSpoke = makeAddr('newSpoke');
+
+    DataTypes.SpokeConfig memory daiSpokeConfig = DataTypes.SpokeConfig({
+      supplyCap: 1,
+      drawCap: 2,
+      active: true
+    });
+
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.SpokeAdded(daiAssetId, newSpoke);
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.addSpoke(address(hub), newSpoke, daiAssetId, daiSpokeConfig);
+
+    assertEq(hub.getSpokeConfig(daiAssetId, newSpoke), daiSpokeConfig);
   }
 
   function test_addSpokeToAssets_revertsWith_OwnableUnauthorizedAccount() public {

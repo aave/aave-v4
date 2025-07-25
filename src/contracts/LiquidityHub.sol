@@ -350,7 +350,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return _assetToSpokes[assetId].at(index);
   }
 
-  function isAssetSpoke(uint256 assetId, address spoke) external view returns (bool) {
+  function isSpokeListed(uint256 assetId, address spoke) external view returns (bool) {
     return _assetToSpokes[assetId].contains(spoke);
   }
 
