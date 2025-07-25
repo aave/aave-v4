@@ -575,7 +575,10 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.SpokeData storage spoke
   ) internal view returns (uint256, uint256) {
     // sanity: utilize solc underflow check
-    uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset;
+    uint256 premiumDrawnAssets = asset.toDrawnAssetsUp(spoke.premiumDrawnShares);
+    uint256 accruedPremium = spoke.premiumOffset >= premiumDrawnAssets
+      ? 0
+      : premiumDrawnAssets - spoke.premiumOffset;
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
   }
 
