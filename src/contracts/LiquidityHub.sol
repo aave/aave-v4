@@ -435,8 +435,8 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
-  function previewDrawnIndex(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].previewDrawnIndex();
+  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].getDrawnIndex();
   }
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256) {

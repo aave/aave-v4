@@ -35,7 +35,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetUpdated(
       assetId,
-      hub.previewDrawnIndex(assetId),
+      hub.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         availableLiquidity: assetBefore.availableLiquidity - amount,
@@ -115,7 +115,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetUpdated(
       assetId,
-      hub.previewDrawnIndex(assetId),
+      hub.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         availableLiquidity: assetBefore.availableLiquidity - amount,

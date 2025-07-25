@@ -307,7 +307,12 @@ interface ILiquidityHub is IAccessManaged {
    */
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
-  function previewDrawnIndex(uint256 assetId) external view returns (uint256);
+  /**
+   * @notice Calculates the current drawn index of the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The calculated current drawn index of the asset.
+   */
+  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256);
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
 
