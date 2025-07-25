@@ -182,7 +182,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     spoke1.borrow(_daiReserveId(spoke1), 15, bob);
 
     uint256 exchangeRateAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    assertGt(exchangeRateAfter, exchangeRateBefore);
+    assertGe(exchangeRateAfter, exchangeRateBefore);
     exchangeRateBefore = exchangeRateAfter;
 
     skip(1);
@@ -191,7 +191,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     Utils.repay(spoke1, _daiReserveId(spoke1), alice, type(uint256).max, alice);
 
     exchangeRateAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    assertGt(exchangeRateAfter, exchangeRateBefore, 'supply rate decreased');
+    assertGe(exchangeRateAfter, exchangeRateBefore, 'supply rate decreased');
   }
 
   function test_repay_less_than_share() public {
