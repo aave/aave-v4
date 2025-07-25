@@ -558,7 +558,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // internal
   function _validateSupply(DataTypes.Reserve storage reserve) internal view {
     require(reserve.underlying != address(0), ReserveNotListed());
-    require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     require(!reserve.config.frozen, ReserveFrozen());
   }
@@ -569,7 +568,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 amount
   ) internal view {
     require(reserve.underlying != address(0), ReserveNotListed());
-    require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     uint256 suppliedAmount = reserve.hub.convertToSuppliedAssets(
       reserve.assetId,
@@ -580,7 +578,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _validateBorrow(DataTypes.Reserve storage reserve) internal view {
     require(reserve.underlying != address(0), ReserveNotListed());
-    require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     require(!reserve.config.frozen, ReserveFrozen());
     require(reserve.config.borrowable, ReserveNotBorrowable(reserve.reserveId));
@@ -590,7 +587,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // TODO: Place this and LH equivalent in a generic logic library
   function _validateRepay(DataTypes.Reserve storage reserve) internal view {
     require(reserve.underlying != address(0), ReserveNotListed());
-    require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     // todo validate user not trying to repay more
     // todo NoExplicitAmountToRepayOnBehalf
@@ -666,7 +662,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       collateralReserve.underlying != address(0) && debtReserve.underlying != address(0),
       ReserveNotListed()
     );
-    require(collateralReserve.config.active && debtReserve.config.active, ReserveNotActive());
     require(!collateralReserve.config.paused && !debtReserve.config.paused, ReservePaused());
     require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
     bool isCollateralEnabled = _positionStatus[user].isUsingAsCollateral(
@@ -678,7 +673,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   /**
    * @dev Validates the reserve can be set as collateral.
-   * @dev Collateral can be disabled if the reserve is frozen but not enabled.
+   * @dev Collateral can be disabled if the reserve is frozen.
    * @param reserve The reserve to be set as collateral.
    * @param reserveId The identifier of the reserve.
    * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
@@ -688,9 +683,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId,
     bool usingAsCollateral
   ) internal view {
-    require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserveId));
     // deactivation should be allowed
     require(!usingAsCollateral || !reserve.config.frozen, ReserveFrozen());
   }
