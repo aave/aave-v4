@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
@@ -19,6 +20,7 @@ import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrat
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
 contract LiquidityHub is ILiquidityHub, AccessManaged {
+  using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
   using WadRayMathExtended for uint256;
   using SharesMath for uint256;
@@ -30,8 +32,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
   uint256 internal _assetCount;
   mapping(uint256 assetId => DataTypes.Asset assetData) internal _assets;
-  mapping(uint256 assetId => mapping(address spokeAddress => DataTypes.SpokeData spokeData))
+  mapping(uint256 assetId => mapping(address spoke => DataTypes.SpokeData spokeData))
     internal _spokes;
+  mapping(uint256 assetId => EnumerableSet.AddressSet spoke) internal _assetToSpokes;
 
   /**
    * @dev Constructor.
@@ -67,9 +70,6 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 baseDrawnIndex = WadRayMathExtended.RAY;
     uint256 lastUpdateTimestamp = block.timestamp;
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
-      active: true,
-      paused: false,
-      frozen: false,
       feeReceiver: feeReceiver,
       liquidityFee: 0,
       irStrategy: irStrategy
@@ -121,17 +121,11 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.SpokeConfig calldata config
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
-    require(spoke != address(0), InvalidSpoke()); // todo: how to remove spoke
+    require(spoke != address(0), InvalidSpoke());
+    require(!_assetToSpokes[assetId].contains(spoke), SpokeAlreadyListed());
 
-    _spokes[assetId][spoke] = DataTypes.SpokeData({
-      addedShares: 0,
-      baseDrawnShares: 0,
-      premiumDrawnShares: 0,
-      premiumOffset: 0,
-      realizedPremium: 0,
-      lastUpdateTimestamp: block.timestamp,
-      config: config
-    });
+    _assetToSpokes[assetId].add(spoke);
+    _spokes[assetId][spoke].config = config;
 
     emit SpokeAdded(assetId, spoke);
     emit SpokeConfigUpdated(assetId, spoke, config);
@@ -142,8 +136,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     address spoke,
     DataTypes.SpokeConfig calldata config
   ) external restricted {
-    require(_spokes[assetId][spoke].lastUpdateTimestamp != 0, SpokeNotListed());
-
+    require(_assetToSpokes[assetId].contains(spoke), SpokeNotListed());
     _spokes[assetId][spoke].config = config;
     emit SpokeConfigUpdated(assetId, spoke, config);
   }
@@ -190,7 +183,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-    _validateRemove(asset, spoke, amount);
+    _validateRemove(asset, spoke, amount, to);
 
     uint256 shares = asset.toAddedSharesUp(amount); // non zero since we round up
     asset.addedShares -= shares;
@@ -212,7 +205,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-    _validateDraw(asset, spoke, amount, spoke.config.drawCap);
+    _validateDraw(asset, spoke, amount, to);
 
     uint256 shares = asset.toDrawnSharesUp(amount); // non zero since we round up
     asset.baseDrawnShares += shares;
@@ -242,7 +235,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
-    _validateRestore(asset, spoke, baseAmount, premiumAmount);
+    _validateRestore(asset, spoke, baseAmount, premiumAmount, from);
 
     uint256 shares = asset.toDrawnSharesDown(baseAmount);
     asset.baseDrawnShares -= shares;
@@ -343,16 +336,29 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     );
   }
 
-  //
-  // public
-  //
-
+  /// @inheritdoc ILiquidityHub
   function getAssetCount() external view override returns (uint256) {
     return _assetCount;
   }
 
+  /// @inheritdoc ILiquidityHub
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory) {
     return _assets[assetId];
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function getSpokeCount(uint256 assetId) external view returns (uint256) {
+    return _assetToSpokes[assetId].length();
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address) {
+    return _assetToSpokes[assetId].at(index);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function isSpokeListed(uint256 assetId, address spoke) external view returns (bool) {
+    return _assetToSpokes[assetId].contains(spoke);
   }
 
   function getSpoke(
@@ -480,28 +486,25 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 amount,
     address from
   ) internal view {
+    require(from != address(this), InvalidFromAddress());
+    require(amount > 0, InvalidAddAmount());
     require(spoke.config.active, SpokeNotActive());
-    require(amount != 0, InvalidAddAmount());
-    require(from != address(this), InvalidAddFromHub());
-    require(asset.config.active, AssetNotActive());
-    require(!asset.config.paused, AssetPaused());
-    require(!asset.config.frozen, AssetFrozen());
+    uint256 addCap = spoke.config.addCap;
     require(
-      spoke.config.addCap == type(uint256).max ||
-        asset.toAddedAssetsUp(spoke.addedShares) + amount <= spoke.config.addCap,
-      AddCapExceeded(spoke.config.addCap)
+      addCap == type(uint256).max || addCap >= asset.toAddedAssetsUp(spoke.addedShares) + amount,
+      AddCapExceeded(addCap)
     );
   }
 
   function _validateRemove(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
-    uint256 amount
+    uint256 amount,
+    address to
   ) internal view {
+    require(to != address(this), InvalidToAddress());
+    require(amount > 0, InvalidRemoveAmount());
     require(spoke.config.active, SpokeNotActive());
-    require(amount != 0, InvalidRemoveAmount());
-    require(asset.config.active, AssetNotActive());
-    require(!asset.config.paused, AssetPaused());
     uint256 withdrawable = asset.toAddedAssetsDown(spoke.addedShares);
     require(amount <= withdrawable, AddedAmountExceeded(withdrawable));
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
@@ -511,15 +514,15 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 amount,
-    uint256 drawCap
+    address to
   ) internal view {
-    require(spoke.config.active, SpokeNotActive());
+    require(to != address(this), InvalidToAddress());
     require(amount > 0, InvalidDrawAmount());
-    require(asset.config.active, AssetNotActive());
-    require(!asset.config.paused, AssetPaused());
-    require(!asset.config.frozen, AssetFrozen());
+    require(spoke.config.active, SpokeNotActive());
+    uint256 drawCap = spoke.config.drawCap;
+    (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spoke);
     require(
-      drawCap == type(uint256).max || amount + asset.totalOwed() <= drawCap,
+      drawCap == type(uint256).max || drawCap >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
     );
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
@@ -529,12 +532,12 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 baseAmount,
-    uint256 premiumAmount
+    uint256 premiumAmount,
+    address from
   ) internal view {
+    require(from != address(this), InvalidFromAddress());
+    require(baseAmount + premiumAmount > 0, InvalidRestoreAmount());
     require(spoke.config.active, SpokeNotActive());
-    require(baseAmount + premiumAmount != 0, InvalidRestoreAmount());
-    require(asset.config.active, AssetNotActive());
-    require(!asset.config.paused, AssetPaused());
     (uint256 drawn, ) = _getSpokeOwed(asset, spoke);
     require(baseAmount <= drawn, SurplusAmountRestored(drawn));
     // we should have already restored premium
@@ -549,9 +552,11 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
   }
 
-  function _validatePayFee(DataTypes.SpokeData storage spoke, uint256 feeShares) internal view {
-    // TODO: validate valid asset
-    require(spoke.config.active, SpokeNotActive());
+  function _validatePayFee(
+    DataTypes.SpokeData storage senderSpoke,
+    uint256 feeShares
+  ) internal view {
+    require(senderSpoke.config.active, SpokeNotActive());
     require(feeShares != 0, InvalidFeeShares());
   }
 }

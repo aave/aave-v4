@@ -142,11 +142,9 @@ contract SpokeConfiguratorTest is Base {
       assetId: 0,
       priceSource: address(0),
       config: DataTypes.ReserveConfig({
-        active: true,
         paused: false,
         frozen: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 15_00
       }),
       dynamicConfig: DataTypes.DynamicReserveConfig({
@@ -160,11 +158,9 @@ contract SpokeConfiguratorTest is Base {
   function test_addReserve() public {
     address newPriceSource = _deployMockPriceFeed(spoke, 1000e8);
     DataTypes.ReserveConfig memory config = DataTypes.ReserveConfig({
-      active: true,
       paused: false,
       frozen: false,
       borrowable: true,
-      collateral: true,
       collateralRisk: 15_00
     });
     DataTypes.DynamicReserveConfig memory dynamicConfig = DataTypes.DynamicReserveConfig({
@@ -199,30 +195,6 @@ contract SpokeConfiguratorTest is Base {
     });
 
     assertEq(actualReserveId, expectedReserveId);
-  }
-
-  function test_updateActive_revertsWith_OwnableUnauthorizedAccount() public {
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
-    vm.prank(alice);
-    spokeConfigurator.updateActive(spokeAddr, reserveId, true);
-  }
-
-  function test_updateActive() public {
-    DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
-    for (uint256 i = 0; i < 2; i += 1) {
-      expectedReserveConfig.active = (i == 0) ? false : true;
-
-      vm.expectCall(
-        spokeAddr,
-        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
-      );
-      vm.expectEmit(address(spoke));
-      emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
-      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-      spokeConfigurator.updateActive(spokeAddr, reserveId, expectedReserveConfig.active);
-
-      assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
-    }
   }
 
   function test_updatePaused_revertsWith_OwnableUnauthorizedAccount() public {
@@ -295,31 +267,6 @@ contract SpokeConfiguratorTest is Base {
       emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
       vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updateBorrowable(spokeAddr, reserveId, expectedReserveConfig.borrowable);
-
-      assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
-    }
-  }
-
-  function test_updateCollateral_revertsWith_OwnableUnauthorizedAccount() public {
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
-    vm.prank(alice);
-    spokeConfigurator.updateCollateral(spokeAddr, reserveId, true);
-  }
-
-  function test_updateCollateral() public {
-    DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
-
-    for (uint256 i = 0; i < 2; i += 1) {
-      expectedReserveConfig.collateral = (i == 0) ? false : true;
-
-      vm.expectCall(
-        spokeAddr,
-        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
-      );
-      vm.expectEmit(address(spoke));
-      emit ISpoke.ReserveConfigUpdated(reserveId, expectedReserveConfig);
-      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-      spokeConfigurator.updateCollateral(spokeAddr, reserveId, expectedReserveConfig.collateral);
 
       assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
     }
@@ -450,11 +397,9 @@ contract SpokeConfiguratorTest is Base {
       spokeAddr,
       reserveId,
       DataTypes.ReserveConfig({
-        active: true,
-        paused: false,
         frozen: false,
+        paused: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 15_00
       })
     );
@@ -462,11 +407,9 @@ contract SpokeConfiguratorTest is Base {
 
   function test_updateReserveConfig() public {
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      active: true,
-      paused: false,
       frozen: false,
+      paused: false,
       borrowable: true,
-      collateral: true,
       collateralRisk: 15_00
     });
 
@@ -515,5 +458,51 @@ contract SpokeConfiguratorTest is Base {
     spokeConfigurator.updateDynamicReserveConfig(spokeAddr, reserveId, newDynamicReserveConfig);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), newDynamicReserveConfig);
+  }
+
+  function test_pauseAllReserves_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+  }
+
+  function test_pauseAllReserves() public {
+    for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
+      DataTypes.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
+      reserveConfig.paused = true;
+      vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig)));
+      vm.expectEmit(address(spoke));
+      emit ISpoke.ReserveConfigUpdated(reserveId, reserveConfig);
+    }
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+
+    for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
+      assertEq(spoke.getReserveConfig(reserveId).paused, true);
+    }
+  }
+
+  function test_freezeAllReserves_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    spokeConfigurator.freezeAllReserves(spokeAddr);
+  }
+
+  function test_freezeAllReserves() public {
+    for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
+      DataTypes.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
+      reserveConfig.frozen = true;
+      vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig)));
+      vm.expectEmit(address(spoke));
+      emit ISpoke.ReserveConfigUpdated(reserveId, reserveConfig);
+    }
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeAllReserves(spokeAddr);
+
+    for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
+      assertEq(spoke.getReserveConfig(reserveId).frozen, true);
+    }
   }
 }

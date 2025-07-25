@@ -68,9 +68,6 @@ contract LiquidityHubHandler is Test {
       0,
       DataTypes.AssetConfig({
         feeReceiver: address(treasurySpoke),
-        active: true,
-        frozen: false,
-        paused: false,
         liquidityFee: 0,
         irStrategy: address(irStrategy)
       })
@@ -80,12 +77,10 @@ contract LiquidityHubHandler is Test {
       0,
       _deployMockPriceFeed(spoke1, 1e8),
       DataTypes.ReserveConfig({
-        active: true,
         frozen: false,
         paused: false,
         collateralRisk: 0,
-        borrowable: false,
-        collateral: false
+        borrowable: false
       }),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 0,

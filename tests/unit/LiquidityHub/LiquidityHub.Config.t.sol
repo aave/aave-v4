@@ -40,16 +40,25 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     Utils.addSpoke(hub, ADMIN, assetId, address(0), spokeConfig);
   }
 
+  function test_addSpoke_revertsWith_SpokeAlreadyListed(
+    uint256 assetId,
+    DataTypes.SpokeConfig calldata spokeConfig
+  ) public {
+    vm.expectRevert(ILiquidityHub.SpokeAlreadyListed.selector);
+    Utils.addSpoke(hub, ADMIN, daiAssetId, address(spoke1), spokeConfig);
+  }
+
   function test_addSpoke_fuzz(uint256 assetId, DataTypes.SpokeConfig calldata spokeConfig) public {
+    address newSpoke = makeAddr('newSpoke');
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeAdded(assetId, address(spoke1));
+    emit ILiquidityHub.SpokeAdded(assetId, newSpoke);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeConfigUpdated(assetId, address(spoke1), spokeConfig);
-    Utils.addSpoke(hub, ADMIN, assetId, address(spoke1), spokeConfig);
+    emit ILiquidityHub.SpokeConfigUpdated(assetId, newSpoke, spokeConfig);
+    Utils.addSpoke(hub, ADMIN, assetId, newSpoke, spokeConfig);
 
-    assertEq(hub.getSpokeConfig(assetId, address(spoke1)), spokeConfig);
+    assertEq(hub.getSpokeConfig(assetId, newSpoke), spokeConfig);
   }
 
   function test_updateSpokeConfig_fuzz_revertsWith_SpokeNotListed(
@@ -57,7 +66,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     address spoke,
     DataTypes.SpokeConfig calldata spokeConfig
   ) public {
-    if (hub.getSpoke(assetId, spoke).lastUpdateTimestamp != 0) {
+    if (!hub.isSpokeListed(assetId, spoke)) {
       assetId = bound(assetId, hub.getAssetCount(), type(uint256).max);
     }
     vm.expectRevert(ILiquidityHub.SpokeNotListed.selector);
@@ -187,9 +196,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub)));
 
     DataTypes.AssetConfig memory expectedConfig = DataTypes.AssetConfig({
-      active: true,
-      frozen: false,
-      paused: false,
       feeReceiver: feeReceiver,
       liquidityFee: 0,
       irStrategy: interestRateStrategy

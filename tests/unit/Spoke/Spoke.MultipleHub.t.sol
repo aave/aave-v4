@@ -28,12 +28,10 @@ contract SpokeMultipleHubTest is SpokeBase {
     vm.startPrank(ADMIN);
     // Relist hub 2's dai on spoke1
     DataTypes.ReserveConfig memory daiHub2Config = DataTypes.ReserveConfig({
-      active: true,
-      frozen: false,
       paused: false,
-      collateralRisk: 20_00,
+      frozen: false,
       borrowable: true,
-      collateral: true
+      collateralRisk: 20_00
     });
     DataTypes.DynamicReserveConfig memory dynDaiHub2Config = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
@@ -50,12 +48,10 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     // Relist hub 3's dai on spoke 1
     DataTypes.ReserveConfig memory daiHub3Config = DataTypes.ReserveConfig({
-      active: true,
-      frozen: false,
       paused: false,
-      collateralRisk: 20_00,
+      frozen: false,
       borrowable: true,
-      collateral: true
+      collateralRisk: 20_00
     });
     DataTypes.DynamicReserveConfig memory dynDaiHub3Config = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
