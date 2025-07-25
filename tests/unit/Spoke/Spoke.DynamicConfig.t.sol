@@ -94,13 +94,6 @@ contract SpokeDynamicConfigTest is SpokeBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
     );
-    vm.prank(caller);
-    spoke1.addDynamicReserveConfig(reserveId, dynConf);
-
-    vm.expectRevert(
-      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
-    );
-    vm.prank(caller);
     spoke1.updateDynamicReserveConfig(reserveId, _randomConfigKey(), dynConf);
   }
 

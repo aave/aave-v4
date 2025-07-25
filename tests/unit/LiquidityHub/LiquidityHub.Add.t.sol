@@ -35,70 +35,11 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     hub.add(daiAssetId, amount, makeAddr('randomUser'));
   }
 
-  function test_add_revertsWith_AssetNotActive() public {
-    uint256 amount = 100e18;
-
-    updateAssetActive(hub, daiAssetId, false);
-    assertFalse(hub.getAsset(daiAssetId).config.active);
-
-    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+  function test_add_revertsWith_SpokeNotActive() public {
+    updateSpokeActive(hub, daiAssetId, address(spoke1), false);
+    vm.expectRevert(ILiquidityHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
-    hub.add(daiAssetId, amount, alice);
-  }
-
-  function test_add_fuzz_revertsWith_AssetNotActive(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-
-    updateAssetActive(hub, daiAssetId, false);
-    assertFalse(hub.getAsset(daiAssetId).config.active);
-
-    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
-    vm.prank(address(spoke1));
-    hub.add(daiAssetId, amount, alice);
-  }
-
-  function test_add_revertsWith_AssetPaused() public {
-    uint256 amount = 100e18;
-
-    updateAssetPaused(hub, daiAssetId, true);
-    assertTrue(hub.getAsset(daiAssetId).config.paused);
-
-    vm.expectRevert(ILiquidityHub.AssetPaused.selector);
-    vm.prank(address(spoke1));
-    hub.add(daiAssetId, amount, alice);
-  }
-
-  function test_add_fuzz_revertsWith_AssetPaused(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-
-    updateAssetPaused(hub, daiAssetId, true);
-    assertTrue(hub.getAsset(daiAssetId).config.paused);
-
-    vm.expectRevert(ILiquidityHub.AssetPaused.selector);
-    vm.prank(address(spoke1));
-    hub.add(daiAssetId, amount, alice);
-  }
-
-  function test_add_revertsWith_AssetFrozen() public {
-    uint256 amount = 100e18;
-
-    updateAssetFrozen(hub, daiAssetId, true);
-    assertTrue(hub.getAsset(daiAssetId).config.frozen);
-
-    vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
-    vm.prank(address(spoke1));
-    hub.add(daiAssetId, amount, alice);
-  }
-
-  function test_add_revertsWith_AssetFrozen(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-
-    updateAssetFrozen(hub, daiAssetId, true);
-    assertTrue(hub.getAsset(daiAssetId).config.frozen);
-
-    vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
-    vm.prank(address(spoke1));
-    hub.add(daiAssetId, amount, alice);
+    hub.add(daiAssetId, 100e18, alice);
   }
 
   function test_add_revertsWith_SupplyCapExceeded() public {
@@ -478,9 +419,8 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     hub.add(daiAssetId, supplyAmount, alice);
   }
 
-  function test_add_revertsWith_InvalidAddFromHub() public {
-    vm.expectRevert(ILiquidityHub.InvalidAddFromHub.selector, address(hub));
-
+  function test_add_revertsWith_InvalidFromAddress() public {
+    vm.expectRevert(ILiquidityHub.InvalidFromAddress.selector);
     vm.prank(address(spoke1));
     hub.add(daiAssetId, 100e18, address(hub));
   }

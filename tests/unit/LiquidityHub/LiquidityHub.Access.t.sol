@@ -9,9 +9,6 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     TestnetERC20 tokenA = new TestnetERC20('A', 'A', 18);
     TestnetERC20 tokenB = new TestnetERC20('B', 'B', 18);
     DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
-      active: true,
-      frozen: false,
-      paused: false,
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
       irStrategy: address(irStrategy)
@@ -241,9 +238,6 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
   /// @dev Test showcasing ability to change the authority contract governing access control on the liquidity hub.
   function test_change_authority() public {
     DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
-      active: true,
-      frozen: false,
-      paused: false,
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
       irStrategy: address(irStrategy)
