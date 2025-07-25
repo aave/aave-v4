@@ -532,12 +532,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(amount > 0, InvalidDrawAmount());
     require(spoke.config.active, SpokeNotActive());
     uint256 drawCap = spoke.config.drawCap;
-    uint256 totalSpokeDebt = asset.toDrawnAssetsUp(spoke.baseDrawnShares) +
-      spoke.realizedPremium +
-      asset.toDrawnAssetsUp(spoke.premiumDrawnShares) -
-      spoke.premiumOffset;
+    (uint256 drawn, uint256 premium) = _getSpokeDebt(asset, spoke);
     require(
-      drawCap == type(uint256).max || drawCap >= totalSpokeDebt + amount,
+      drawCap == type(uint256).max || drawCap >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
     );
     require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
