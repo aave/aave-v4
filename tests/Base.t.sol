@@ -233,7 +233,7 @@ abstract contract Base is Test {
   }
 
   function setUpRoles(
-    ILiquidityHub liquidityHub,
+    ILiquidityHub targetHub,
     ISpoke spoke,
     IAccessManager manager
   ) internal virtual {
@@ -275,7 +275,7 @@ abstract contract Base is Test {
       selectors[2] = ILiquidityHub.addSpoke.selector;
       selectors[3] = ILiquidityHub.updateSpokeConfig.selector;
       selectors[4] = ILiquidityHub.setInterestRateData.selector;
-      manager.setTargetFunctionRole(address(liquidityHub), selectors, Roles.HUB_ADMIN_ROLE);
+      manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
     }
     vm.stopPrank();
   }
@@ -921,68 +921,80 @@ abstract contract Base is Test {
   }
 
   function updateAssetFeeReceiver(
-    ILiquidityHub liquidityHub,
+    ILiquidityHub targetHub,
     uint256 assetId,
     address newFeeReceiver
-  ) internal {
-    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
-    assetConfig.feeReceiver = newFeeReceiver;
+  ) internal pausePrank {
+    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    config.feeReceiver = newFeeReceiver;
 
     vm.prank(HUB_ADMIN);
-    liquidityHub.updateAssetConfig(assetId, assetConfig);
+    targetHub.updateAssetConfig(assetId, config);
+
+    assertEq(targetHub.getAssetConfig(assetId), config);
   }
 
-  function updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
+  function updateReserveFrozenFlag(
+    ISpoke spoke,
+    uint256 reserveId,
+    bool newFrozenFlag
+  ) internal pausePrank {
     DataTypes.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
     config.frozen = newFrozenFlag;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
 
-    assertEq(spoke.getReserveConfig(reserveId).frozen, newFrozenFlag);
+    assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateReservePausedFlag(ISpoke spoke, uint256 reserveId, bool newPausedFlag) internal {
-    DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
+  function updateReservePausedFlag(
+    ISpoke spoke,
+    uint256 reserveId,
+    bool newPausedFlag
+  ) internal pausePrank {
+    DataTypes.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
     config.paused = newPausedFlag;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
+
+    assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
   function updateLiquidationBonus(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newLiquidationBonus
-  ) internal {
+  ) internal pausePrank {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationBonus = newLiquidationBonus;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateDynamicReserveConfig(reserveId, config);
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId).liquidationBonus, newLiquidationBonus);
+    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
   }
 
   function updateLiquidationFee(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newLiquidationFee
-  ) internal resumePrank {
+  ) internal pausePrank {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateDynamicReserveConfig(reserveId, config);
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId).liquidationFee, newLiquidationFee);
+    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
   }
 
   function updateCollateralFactor(
     ISpoke spoke,
     function(ISpoke) pure returns (uint256) reserveIdFn,
     uint256 newCollateralFactor
-  ) internal {
+  ) internal pausePrank {
     uint256 reserveId = reserveIdFn(spoke);
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
@@ -990,60 +1002,68 @@ abstract contract Base is Test {
     vm.prank(SPOKE_ADMIN);
     spoke.updateDynamicReserveConfig(reserveId, config);
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId).collateralFactor, newCollateralFactor);
+    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
   }
 
   function updateCollateralFactor(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newCollateralFactor
-  ) internal {
+  ) internal pausePrank {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     vm.prank(SPOKE_ADMIN);
     spoke.updateDynamicReserveConfig(reserveId, config);
+
+    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
   }
 
   function updateReserveBorrowableFlag(
     ISpoke spoke,
     uint256 reserveId,
     bool newBorrowable
-  ) internal {
-    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.borrowable = newBorrowable;
+  ) internal pausePrank {
+    DataTypes.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
+    config.borrowable = newBorrowable;
     vm.prank(SPOKE_ADMIN);
-    spoke.updateReserveConfig(reserveId, reserveData.config);
+    spoke.updateReserveConfig(reserveId, config);
+
+    assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
   function updateCollateralRisk(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newCollateralRisk
-  ) internal {
-    DataTypes.ReserveConfig memory reserveConfig = spoke.getReserve(reserveId).config;
-    reserveConfig.collateralRisk = newCollateralRisk;
+  ) internal pausePrank {
+    DataTypes.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
+    config.collateralRisk = newCollateralRisk;
     vm.prank(SPOKE_ADMIN);
-    spoke.updateReserveConfig(reserveId, reserveConfig);
+    spoke.updateReserveConfig(reserveId, config);
+
+    assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
   function updateLiquidityFee(
     ILiquidityHub liquidityHub,
     uint256 assetId,
     uint256 liquidityFee
-  ) internal {
+  ) internal pausePrank {
     DataTypes.AssetConfig memory config = liquidityHub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee;
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, config);
+    liquidityHub.updateAssetConfig(assetId, config);
+
+    assertEq(liquidityHub.getAssetConfig(assetId), config);
   }
 
-  function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal {
+  function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal pausePrank {
     DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
     liqConfig.closeFactor = newCloseFactor;
     vm.prank(SPOKE_ADMIN);
     spoke.updateLiquidationConfig(liqConfig);
 
-    assertEq(spoke.getLiquidationConfig().closeFactor, newCloseFactor);
+    assertEq(spoke.getLiquidationConfig(), liqConfig);
   }
 
   function getCloseFactor(ISpoke spoke) internal view returns (uint256) {
@@ -1091,23 +1111,27 @@ abstract contract Base is Test {
     uint256 assetId,
     address spoke,
     bool newActive
-  ) internal {
+  ) internal pausePrank {
     DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
     spokeConfig.active = newActive;
     vm.prank(HUB_ADMIN);
     liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
-  } 
+
+    assertEq(liquidityHub.getSpokeConfig(assetId, spoke), spokeConfig);
+  }
 
   function updateDrawCap(
     ILiquidityHub liquidityHub,
     uint256 assetId,
     address spoke,
     uint256 newDrawCap
-  ) internal {
+  ) internal pausePrank {
     DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
     vm.prank(HUB_ADMIN);
     liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
+
+    assertEq(liquidityHub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
   function getUserInfo(
@@ -1750,64 +1774,48 @@ abstract contract Base is Test {
   }
 
   function assertEq(DataTypes.AssetConfig memory a, DataTypes.AssetConfig memory b) internal pure {
-    assertEq(a.feeReceiver, b.feeReceiver, 'assertEq(AssetConfig): feeReceiver');
-    assertEq(a.liquidityFee, b.liquidityFee, 'assertEq(AssetConfig): liquidityFee');
-    assertEq(a.irStrategy, b.irStrategy, 'assertEq(AssetConfig): irStrategy');
-    assertEq(abi.encode(a), abi.encode(b), 'assertEq(AssetConfig): all fields');
+    assertEq(a.feeReceiver, b.feeReceiver, 'feeReceiver');
+    assertEq(a.liquidityFee, b.liquidityFee, 'liquidityFee');
+    assertEq(a.irStrategy, b.irStrategy, 'irStrategy');
+    assertEq(abi.encode(a), abi.encode(b));
   }
 
   function assertEq(DataTypes.SpokeConfig memory a, DataTypes.SpokeConfig memory b) internal pure {
-    assertEq(a.supplyCap, b.supplyCap, 'assertEq(SpokeConfig): supplyCap');
-    assertEq(a.drawCap, b.drawCap, 'assertEq(SpokeConfig): drawCap');
-    assertEq(a.active, b.active, 'assertEq(SpokeConfig): active');
-    assertEq(abi.encode(a), abi.encode(b), 'assertEq(SpokeConfig): all fields');
+    assertEq(a.supplyCap, b.supplyCap, 'supplyCap');
+    assertEq(a.drawCap, b.drawCap, 'drawCap');
+    assertEq(a.active, b.active, 'active');
+    assertEq(abi.encode(a), abi.encode(b));
   }
 
   function assertEq(
     DataTypes.LiquidationConfig memory a,
     DataTypes.LiquidationConfig memory b
   ) internal pure {
-    assertEq(a.closeFactor, b.closeFactor, 'assertEq(LiquidationConfig): closeFactor');
-    assertEq(
-      a.liquidationBonusFactor,
-      b.liquidationBonusFactor,
-      'assertEq(LiquidationConfig): liquidationBonusFactor'
-    );
-    assertEq(
-      a.healthFactorForMaxBonus,
-      b.healthFactorForMaxBonus,
-      'assertEq(LiquidationConfig): healthFactorForMaxBonus'
-    );
-    assertEq(abi.encode(a), abi.encode(b), 'assertEq(LiquidationConfig): all fields');
+    assertEq(a.closeFactor, b.closeFactor, 'closeFactor');
+    assertEq(a.liquidationBonusFactor, b.liquidationBonusFactor, 'liquidationBonusFactor');
+    assertEq(a.healthFactorForMaxBonus, b.healthFactorForMaxBonus, 'healthFactorForMaxBonus');
+    assertEq(abi.encode(a), abi.encode(b));
   }
 
   function assertEq(
     DataTypes.ReserveConfig memory a,
     DataTypes.ReserveConfig memory b
   ) internal pure {
-    assertEq(a.paused, b.paused, 'assertEq(ReserveConfig): paused');
-    assertEq(a.frozen, b.frozen, 'assertEq(ReserveConfig): frozen');
-    assertEq(a.borrowable, b.borrowable, 'assertEq(ReserveConfig): borrowable');
-    assertEq(a.collateralRisk, b.collateralRisk, 'assertEq(ReserveConfig): collateralRisk');
-    assertEq(abi.encode(a), abi.encode(b), 'assertEq(ReserveConfig): all fields');
+    assertEq(a.paused, b.paused, 'paused');
+    assertEq(a.frozen, b.frozen, 'frozen');
+    assertEq(a.borrowable, b.borrowable, 'borrowable');
+    assertEq(a.collateralRisk, b.collateralRisk, 'collateralRisk');
+    assertEq(abi.encode(a), abi.encode(b));
   }
 
   function assertEq(
     DataTypes.DynamicReserveConfig memory a,
     DataTypes.DynamicReserveConfig memory b
   ) internal pure {
-    assertEq(
-      a.collateralFactor,
-      b.collateralFactor,
-      'assertEq(DynamicReserveConfig): collateralFactor'
-    );
-    assertEq(
-      a.liquidationBonus,
-      b.liquidationBonus,
-      'assertEq(DynamicReserveConfig): liquidationBonus'
-    );
-    assertEq(a.liquidationFee, b.liquidationFee, 'assertEq(DynamicReserveConfig): liquidationFee');
-    assertEq(abi.encode(a), abi.encode(b), 'assertEq(DynamicReserveConfig): all fields');
+    assertEq(a.collateralFactor, b.collateralFactor, 'collateralFactor');
+    assertEq(a.liquidationBonus, b.liquidationBonus, 'liquidationBonus');
+    assertEq(a.liquidationFee, b.liquidationFee, 'liquidationFee');
+    assertEq(abi.encode(a), abi.encode(b));
   }
 
   function _calculateExpectedFees(
@@ -1956,14 +1964,13 @@ abstract contract Base is Test {
   }
 
   function assertBorrowRateSynced(
-    ILiquidityHub hub,
+    ILiquidityHub targetHub,
     uint256 assetId,
     string memory operation
   ) internal view {
-    DataTypes.Asset memory asset = hub.getAsset(assetId);
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
-
-    vm.assertEq(
+    DataTypes.Asset memory asset = targetHub.getAsset(assetId);
+    (uint256 baseDebt, uint256 premiumDebt) = targetHub.getAssetDebt(assetId);
+    assertEq(
       asset.baseBorrowRate,
       IBasicInterestRateStrategy(asset.config.irStrategy).calculateInterestRate(
         assetId,
@@ -2001,17 +2008,17 @@ abstract contract Base is Test {
 
   // @dev Helper function to get asset position, valid if no time has passed since last action
   function getAssetPosition(
-    ILiquidityHub hub,
+    ILiquidityHub targetHub,
     uint256 assetId
   ) internal view returns (AssetPosition memory) {
-    DataTypes.Asset memory assetData = hub.getAsset(assetId);
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    DataTypes.Asset memory assetData = targetHub.getAsset(assetId);
+    (uint256 baseDebt, uint256 premiumDebt) = targetHub.getAssetDebt(assetId);
     return
       AssetPosition({
         assetId: assetId,
         availableLiquidity: assetData.availableLiquidity,
         suppliedShares: assetData.suppliedShares,
-        suppliedAmount: hub.getAssetSuppliedAmount(assetId),
+        suppliedAmount: targetHub.getAssetSuppliedAmount(assetId),
         baseDrawnShares: assetData.baseDrawnShares,
         baseDebt: baseDebt,
         premiumDrawnShares: assetData.premiumDrawnShares,
@@ -2079,7 +2086,7 @@ abstract contract Base is Test {
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
-  modifier resumePrank() {
+  modifier pausePrank() {
     (VmSafe.CallerMode callerMode, address msgSender, address txOrigin) = vm.readCallers();
     if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.stopPrank();
     _;

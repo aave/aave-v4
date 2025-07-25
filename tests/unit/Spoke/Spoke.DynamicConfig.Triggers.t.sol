@@ -199,7 +199,6 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     vm.assume(
       caller != alice &&
         caller != POSITION_MANAGER &&
-        caller != ADMIN &&
         caller != SPOKE_ADMIN &&
         caller != USER_POSITION_UPDATER
     );
