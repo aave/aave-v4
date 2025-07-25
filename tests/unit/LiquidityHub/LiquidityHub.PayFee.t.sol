@@ -4,6 +4,19 @@ pragma solidity ^0.8.0;
 import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubPayFeeTest is LiquidityHubBase {
+  function test_payFee_revertsWith_InvalidFeeShares() public {
+    vm.expectRevert(ILiquidityHub.InvalidFeeShares.selector);
+    vm.prank(address(spoke1));
+    hub.payFee(daiAssetId, 0);
+  }
+
+  function test_payFee_revertsWith_SpokeNotActive() public {
+    updateSpokeActive(hub, daiAssetId, address(spoke1), false);
+    vm.expectRevert(ILiquidityHub.SpokeNotActive.selector);
+    vm.prank(address(spoke1));
+    hub.payFee(daiAssetId, 1);
+  }
+
   function test_payFee_revertsWith_SuppliedAmountExceeded() public {
     uint256 addAmount = 100e18;
     Utils.add({
@@ -109,11 +122,5 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
       feeReceiverSharesBefore + feeShares,
       'fee receiver supplied shares after'
     );
-  }
-
-  function test_payFee_revertsWith_InvalidFeeShares() public {
-    vm.expectRevert(ILiquidityHub.InvalidFeeShares.selector);
-    vm.prank(address(spoke1));
-    hub.payFee(daiAssetId, 0);
   }
 }
