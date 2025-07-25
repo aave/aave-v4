@@ -7,7 +7,7 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {AaveOracle} from 'src/contracts/AaveOracle.sol';
-import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
+import {Hub} from 'src/contracts/Hub.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 import {TreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
@@ -15,13 +15,13 @@ import {MockPriceFeed} from '../mocks/MockPriceFeed.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.sol';
 
-contract LiquidityHubHandler is Test {
+contract HubHandler is Test {
   IERC20 public usdc;
   IERC20 public dai;
   IERC20 public usdt;
 
   IPriceOracle public oracle;
-  LiquidityHub public hub;
+  Hub public hub;
   Spoke public spoke1;
   TreasurySpoke public treasurySpoke;
   AccessManager public accessManager;
@@ -41,7 +41,7 @@ contract LiquidityHubHandler is Test {
   constructor() {
     vm.startPrank(hubAdmin);
     accessManager = new AccessManager(hubAdmin);
-    hub = new LiquidityHub(address(accessManager));
+    hub = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub));
     spoke1 = new Spoke(address(accessManager));
     oracle = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
@@ -76,12 +76,7 @@ contract LiquidityHubHandler is Test {
       address(hub),
       0,
       _deployMockPriceFeed(spoke1, 1e8),
-      DataTypes.ReserveConfig({
-        frozen: false,
-        paused: false,
-        collateralRisk: 0,
-        borrowable: false
-      }),
+      DataTypes.ReserveConfig({frozen: false, paused: false, collateralRisk: 0, borrowable: false}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 0,
         liquidationBonus: 100_00,

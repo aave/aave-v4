@@ -12,7 +12,7 @@ function eq(Stage a, Stage b) pure returns (bool) {
 
 using {eq as ==} for Stage global;
 
-abstract contract LiquidityHubScenarioBaseTest is Base {
+abstract contract HubScenarioBaseTest is Base {
   using SharesMath for uint256;
   using PercentageMath for uint256;
 
@@ -31,7 +31,7 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
 
   struct TestState {
     uint256 assetId;
-    uint256[NUM_TIMESTAMPS] baseDrawnRate;
+    uint256[NUM_TIMESTAMPS] baseDrawRate;
     uint256[NUM_TIMESTAMPS] skipTime;
     SpokeActions[NUM_SPOKES] actions;
   }
@@ -157,7 +157,7 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
   ) internal {
     for (uint256 i = 0; i < NUM_TIMESTAMPS; i++) {
       state.skipTime[i] = time;
-      state.baseDrawnRate[i] = borrowRate;
+      state.baseDrawRate[i] = borrowRate;
     }
   }
 
@@ -168,7 +168,7 @@ abstract contract LiquidityHubScenarioBaseTest is Base {
   ) internal returns (uint256) {
     state.assetId = bound(_state.assetId, 0, NUM_ASSETS - 1);
     for (uint256 i = 0; i < NUM_TIMESTAMPS; i++) {
-      state.baseDrawnRate[i] = bound(_state.baseDrawnRate[0], 0, MAX_BORROW_RATE);
+      state.baseDrawRate[i] = bound(_state.baseDrawRate[0], 0, MAX_BORROW_RATE);
       state.skipTime[i] = bound(_state.skipTime[0], 0, MAX_BORROW_RATE);
 
       for (uint256 j = 0; j < NUM_SPOKES; j++) {

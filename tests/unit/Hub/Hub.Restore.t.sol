@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './LiquidityHubBase.t.sol';
+import './HubBase.t.sol';
 
-contract LiquidityHubRestoreTest is LiquidityHubBase {
+contract HubRestoreTest is HubBase {
   using SharesMath for uint256;
   using WadRayMathExtended for uint256;
   using PercentageMath for uint256;
@@ -51,7 +51,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
     //     // alice restore invalid amount > drawn amount AND premium
     //     vm.expectRevert(
-    //       abi.encodeWithSelector(ILiquidityHub.SurplusAmountRestored.selector, drawAmount)
+    //       abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, drawAmount)
     //     );
 
     //     vm.prank(address(spoke1));
@@ -61,7 +61,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
   function test_restore_revertsWith_InvalidRestoreAmount_zero() public {
     vm.skip(true, 'pending refactor');
 
-    //     vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
+    //     vm.expectRevert(IHub.InvalidRestoreAmount.selector);
 
     //     vm.prank(address(spoke1));
     //     hub.restore({assetId: daiAssetId, amount: 0, riskPremium: 0, restorer: alice});
@@ -74,7 +74,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
     //     assertFalse(hub.getAsset(daiAssetId).config.active);
 
-    //     vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+    //     vm.expectRevert(IHub.AssetNotActive.selector);
     //     vm.prank(address(spoke1));
     //     hub.restore({assetId: daiAssetId, amount: 1, riskPremium: 0, restorer: alice});
   }
@@ -86,7 +86,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
     //     assertTrue(hub.getAsset(daiAssetId).config.paused);
 
-    //     vm.expectRevert(ILiquidityHub.AssetPaused.selector);
+    //     vm.expectRevert(IHub.AssetPaused.selector);
     //     vm.prank(address(spoke1));
     //     hub.restore({assetId: daiAssetId, amount: 1, riskPremium: 0, restorer: alice});
   }
@@ -164,7 +164,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
     //     // alice restore invalid amount > drawn amount (no premium)
     //     vm.expectRevert(
-    //       abi.encodeWithSelector(ILiquidityHub.SurplusAmountRestored.selector, cumulatedBaseDebt)
+    //       abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, cumulatedBaseDebt)
     //     );
 
     //     vm.prank(address(spoke1));
@@ -253,7 +253,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
 
     //     // alice restore invalid amount > drawn amount (no premium)
     //     vm.expectRevert(
-    //       abi.encodeWithSelector(ILiquidityHub.SurplusAmountRestored.selector, cumulatedBaseDebt)
+    //       abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, cumulatedBaseDebt)
     //     );
 
     //     vm.prank(address(spoke1));
@@ -341,7 +341,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     // alice restore invalid amount > drawn amount AND premium
     //     vm.expectRevert(
     //       abi.encodeWithSelector(
-    //         ILiquidityHub.SurplusAmountRestored.selector,
+    //         IHub.SurplusAmountRestored.selector,
     //         cumulatedBaseDebt + accruedPremium
     //       )
     //     );
@@ -436,7 +436,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     // alice restore invalid amount > drawn amount AND premium
     //     vm.expectRevert(
     //       abi.encodeWithSelector(
-    //         ILiquidityHub.SurplusAmountRestored.selector,
+    //         IHub.SurplusAmountRestored.selector,
     //         cumulatedBaseDebt + accruedPremium
     //       )
     //     );
@@ -880,7 +880,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //     });
 
     //     vm.expectEmit(address(hub));
-    //     emit ILiquidityHub.Restore(daiAssetId, address(spoke1), restoreAmount);
+    //     emit IHub.Restore(daiAssetId, address(spoke1), restoreAmount);
 
     //     vm.prank(address(spoke1));
     //     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, restorer: alice});
@@ -916,7 +916,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       INIT_BASE_BORROW_INDEX,
     //       'hub dai baseBorrowIndex post-restore'
     //     );
-    //     assertEq(hubData.daiData.baseDrawnRate, rate, 'hub dai baseDrawnRate post-restore');
+    //     assertEq(hubData.daiData.baseDrawRate, rate, 'hub dai baseDrawRate post-restore');
     //     assertEq(hubData.daiData.riskPremium, 0, 'hub dai riskPremium post-restore');
     //     assertEq(
     //       hubData.daiData.lastUpdateTimestamp,
@@ -944,7 +944,7 @@ contract LiquidityHubRestoreTest is LiquidityHubBase {
     //       INIT_BASE_BORROW_INDEX,
     //       'hub weth baseBorrowIndex post-restore'
     //     );
-    //     assertEq(hubData.wethData.baseDrawnRate, rate, 'hub weth baseDrawnRate post-restore');
+    //     assertEq(hubData.wethData.baseDrawRate, rate, 'hub weth baseDrawRate post-restore');
     //     assertEq(hubData.wethData.riskPremium, 0, 'hub weth riskPremium post-restore');
     //     assertEq(
     //       hubData.wethData.lastUpdateTimestamp,

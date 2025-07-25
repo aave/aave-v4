@@ -994,7 +994,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
 
     if (action1.repayAmount == 0) {
-      vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
+      vm.expectRevert(IHub.InvalidRestoreAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
       emit ISpoke.Repay(
@@ -1091,7 +1091,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
 
     if (action2.repayAmount == 0) {
-      vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
+      vm.expectRevert(IHub.InvalidRestoreAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
       emit ISpoke.Repay(

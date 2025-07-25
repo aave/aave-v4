@@ -18,7 +18,7 @@ import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 // interfaces
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IHub} from 'src/interfaces/IHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
@@ -102,8 +102,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId = _reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
-    require(assetId < ILiquidityHub(hub).getAssetCount(), AssetNotListed());
-    DataTypes.Asset memory asset = ILiquidityHub(hub).getAsset(assetId);
+    require(assetId < IHub(hub).getAssetCount(), AssetNotListed());
+    DataTypes.Asset memory asset = IHub(hub).getAsset(assetId);
 
     _updateReservePriceSource(reserveId, priceSource);
 
@@ -120,7 +120,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       dynamicConfigKey: dynamicConfigKey,
       decimals: asset.decimals,
       underlying: asset.underlying,
-      hub: ILiquidityHub(hub)
+      hub: IHub(hub)
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
 
@@ -200,7 +200,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     uint256 assetId = reserve.assetId;
-    ILiquidityHub hub = reserve.hub;
+    IHub hub = reserve.hub;
 
     // If uint256.max is passed, withdraw all user's supplied assets
     if (amount == type(uint256).max) {
@@ -230,7 +230,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     uint256 assetId = reserve.assetId;
-    ILiquidityHub hub = reserve.hub;
+    IHub hub = reserve.hub;
 
     _validateBorrow(reserve);
 
@@ -709,7 +709,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function _settlePremiumDebt(
     DataTypes.Reserve storage reserve,
     DataTypes.UserPosition storage userPosition,
-    ILiquidityHub hub,
+    IHub hub,
     uint256 assetId,
     uint256 reserveId,
     address user,
@@ -741,7 +741,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _refreshPremiumDebt(
     DataTypes.Reserve storage reserve,
-    ILiquidityHub hub,
+    IHub hub,
     uint256 assetId,
     uint256 reserveId,
     address user,
@@ -807,7 +807,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
       DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
       vars.assetId = reserve.assetId;
-      ILiquidityHub hub = reserve.hub;
+      IHub hub = reserve.hub;
       vars.assetPrice = oracle.getReservePrice(vars.reserveId);
       unchecked {
         vars.assetUnit = 10 ** reserve.decimals;
@@ -898,7 +898,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _getUserDebtInBaseCurrency(
     DataTypes.UserPosition storage userPosition,
-    ILiquidityHub hub,
+    IHub hub,
     uint256 assetId,
     uint256 assetPrice,
     uint256 assetUnit
@@ -909,7 +909,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _getUserBalanceInBaseCurrency(
     DataTypes.UserPosition storage userPosition,
-    ILiquidityHub hub,
+    IHub hub,
     uint256 assetId,
     uint256 assetPrice,
     uint256 assetUnit
@@ -920,7 +920,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _getUserDebt(
-    ILiquidityHub hub,
+    IHub hub,
     uint256 assetId,
     DataTypes.UserPosition storage userPosition
   ) internal view returns (uint256, uint256) {
@@ -937,7 +937,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.Reserve storage reserve
   ) internal view returns (uint256, uint256) {
     uint256 assetId = reserve.assetId;
-    ILiquidityHub hub = reserve.hub;
+    IHub hub = reserve.hub;
     uint256 accruedPremium = hub.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) -
       reserve.premiumOffset;
     return (
@@ -1040,8 +1040,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 usersLength = users.length;
     require(usersLength == debtsToCover.length, UsersAndDebtLengthMismatch());
 
-    ILiquidityHub collateralReserveHub = collateralReserve.hub;
-    ILiquidityHub debtReserveHub = debtReserve.hub;
+    IHub collateralReserveHub = collateralReserve.hub;
+    IHub debtReserveHub = debtReserve.hub;
 
     DataTypes.ExecuteLiquidationLocalVars memory vars;
 

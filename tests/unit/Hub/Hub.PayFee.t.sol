@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
+import 'tests/unit/Hub/HubBase.t.sol';
 
-contract LiquidityHubPayFeeTest is LiquidityHubBase {
+contract HubPayFeeTest is HubBase {
   function test_payFee_revertsWith_InvalidFeeShares() public {
-    vm.expectRevert(ILiquidityHub.InvalidFeeShares.selector);
+    vm.expectRevert(IHub.InvalidFeeShares.selector);
     vm.prank(address(spoke1));
     hub.payFee(daiAssetId, 0);
   }
 
   function test_payFee_revertsWith_SpokeNotActive() public {
     updateSpokeActive(hub, daiAssetId, address(spoke1), false);
-    vm.expectRevert(ILiquidityHub.SpokeNotActive.selector);
+    vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub.payFee(daiAssetId, 1);
   }
@@ -30,7 +30,7 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     uint256 feeShares = hub.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 feeAmount = hub.getSpokeAddedAmount(daiAssetId, address(spoke1));
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddedAmountExceeded.selector, feeAmount));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, feeAmount));
     vm.prank(address(spoke1));
     hub.payFee(daiAssetId, feeShares + 1);
   }
@@ -54,7 +54,7 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     // add ex rate increases due to interest
     assertGt(feeAmount, feeShares);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddedAmountExceeded.selector, feeAmount));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, feeAmount));
     vm.prank(address(spoke1));
     hub.payFee(daiAssetId, feeShares + 1);
   }
@@ -96,9 +96,9 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Remove(daiAssetId, address(spoke1), feeShares, feeAmount);
+    emit IHub.Remove(daiAssetId, address(spoke1), feeShares, feeAmount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(daiAssetId, _getFeeReceiver(daiAssetId), feeShares, feeAmount);
+    emit IHub.Add(daiAssetId, _getFeeReceiver(daiAssetId), feeShares, feeAmount);
 
     vm.prank(address(spoke1));
     hub.payFee(daiAssetId, feeShares);

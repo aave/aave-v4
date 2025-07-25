@@ -83,8 +83,8 @@ contract AssetInterestRateStrategyTest is Base {
     );
   }
 
-  function test_setInterestRateData_revertsWith_OnlyLiquidityHub() public {
-    vm.expectRevert(IAssetInterestRateStrategy.OnlyLiquidityHub.selector);
+  function test_setInterestRateData_revertsWith_OnlyHub() public {
+    vm.expectRevert(IAssetInterestRateStrategy.OnlyHub.selector);
     vm.prank(makeAddr('randomCaller'));
     rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }

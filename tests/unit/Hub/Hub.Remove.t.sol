@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
+import 'tests/unit/Hub/HubBase.t.sol';
 
-contract LiquidityHubRemoveTest is LiquidityHubBase {
+contract HubRemoveTest is HubBase {
   using WadRayMathExtended for uint256;
 
   function test_remove() public {
@@ -24,12 +24,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Remove(
-      assetId,
-      address(spoke1),
-      hub.convertToAddedSharesUp(assetId, amount),
-      amount
-    );
+    emit IHub.Remove(assetId, address(spoke1), hub.convertToAddedSharesUp(assetId, amount), amount);
 
     vm.prank(address(spoke1));
     hub.remove(assetId, amount, alice);
@@ -44,7 +39,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(assetData.drawn, 0, 'asset drawn after');
     assertEq(assetData.premium, 0, 'asset premium after');
     assertEq(assetData.baseDrawnIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex after');
-    assertEq(assetData.baseDrawnRate, uint256(5_00).bpsToRay(), 'asset baseDrawnRate after');
+    assertEq(assetData.baseDrawRate, uint256(5_00).bpsToRay(), 'asset baseDrawRate after');
     assertEq(
       assetData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -381,7 +376,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
   function test_remove_revertsWith_AddedAmountExceeded_zero_added() public {
     uint256 amount = 1;
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddedAmountExceeded.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, 0));
     vm.prank(address(spoke1));
     hub.remove(daiAssetId, amount, address(spoke1));
   }
@@ -399,14 +394,14 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       user: alice
     });
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddedAmountExceeded.selector, amount));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, amount));
     vm.prank(address(spoke1));
     hub.remove(daiAssetId, amount + 1, alice);
 
     // advance time, but no accrual
     skip(1e18);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddedAmountExceeded.selector, amount));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, amount));
     vm.prank(address(spoke1));
     hub.remove(daiAssetId, amount + 1, alice);
   }
@@ -422,26 +417,26 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     });
     // spoke1 draw all of dai reserve liquidity
     Utils.draw({hub: hub, assetId: daiAssetId, caller: address(spoke1), amount: amount, to: alice});
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.NotAvailableLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub.remove(daiAssetId, amount, address(spoke1));
   }
 
   function test_remove_revertsWith_InvalidRemoveAmount() public {
-    vm.expectRevert(ILiquidityHub.InvalidRemoveAmount.selector);
+    vm.expectRevert(IHub.InvalidRemoveAmount.selector);
     vm.prank(address(spoke1));
     hub.remove(daiAssetId, 0, alice);
   }
 
   function test_remove_revertsWith_SpokeNotActive() public {
     updateSpokeActive(hub, daiAssetId, address(spoke1), false);
-    vm.expectRevert(ILiquidityHub.SpokeNotActive.selector);
+    vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub.remove(daiAssetId, 100e18, alice);
   }
 
   function test_remove_revertsWith_InvalidToAddress() public {
-    vm.expectRevert(ILiquidityHub.InvalidToAddress.selector);
+    vm.expectRevert(IHub.InvalidToAddress.selector);
     vm.prank(address(spoke1));
     hub.remove(daiAssetId, 100e18, address(hub));
   }

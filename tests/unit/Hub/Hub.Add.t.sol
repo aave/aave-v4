@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
+import 'tests/unit/Hub/HubBase.t.sol';
 
-contract LiquidityHubAddTest is LiquidityHubBase {
+contract HubAddTest is HubBase {
   using SharesMath for uint256;
 
   function test_add_revertsWith_ERC20InsufficientAllowance() public {
@@ -37,7 +37,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
 
   function test_add_revertsWith_SpokeNotActive() public {
     updateSpokeActive(hub, daiAssetId, address(spoke1), false);
-    vm.expectRevert(ILiquidityHub.SpokeNotActive.selector);
+    vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub.add(daiAssetId, 100e18, alice);
   }
@@ -48,7 +48,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     uint256 newAddCap = amount - 1;
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, newAddCap));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke1));
     hub.add(daiAssetId, amount, alice);
   }
@@ -89,7 +89,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
 
     // this cap will be exceeded only if the existing added
     // shares are rounded up
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, newAddCap));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke1));
     hub.add(daiAssetId, addedAmount, alice);
 
@@ -104,7 +104,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     uint256 newAddCap = amount - 1;
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, newAddCap));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke1));
     hub.add(daiAssetId, amount, alice);
   }
@@ -126,7 +126,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
       skipTime: 365 days
     });
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, newAddCap));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke2));
     hub.add(daiAssetId, 1, alice);
   }
@@ -155,7 +155,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     });
     vm.assume(hub.convertToAddedShares(daiAssetId, daiAmount) < daiAmount);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, newAddCap));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke2));
     hub.add(daiAssetId, 1, alice); // cannot add any additional amount
   }
@@ -230,7 +230,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(user, address(hub), amount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(assetId, address(spoke1), shares, amount);
+    emit IHub.Add(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
     hub.add(assetId, amount, user);
@@ -281,7 +281,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(assetId, address(spoke1), amount, amount);
+    emit IHub.Add(assetId, address(spoke1), amount, amount);
 
     vm.prank(address(spoke1));
     hub.add(assetId, amount, alice);
@@ -289,7 +289,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     vm.expectEmit(address(underlying2));
     emit IERC20.Transfer(alice, address(hub), amount2);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(assetId2, address(spoke2), amount2, amount2);
+    emit IHub.Add(assetId2, address(spoke2), amount2, amount2);
 
     vm.prank(address(spoke2));
     hub.add(assetId2, amount2, alice);
@@ -353,7 +353,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     uint256 assetId = 0;
     uint256 amount = 0;
 
-    vm.expectRevert(ILiquidityHub.InvalidAddAmount.selector);
+    vm.expectRevert(IHub.InvalidAddAmount.selector);
     vm.prank(address(spoke1));
     hub.add(assetId, amount, alice);
   }
@@ -379,7 +379,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     uint256 amount = 1;
     assertTrue(hub.convertToAddedShares(daiAssetId, amount) == 0);
 
-    vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
+    vm.expectRevert(IHub.InvalidSharesAmount.selector);
     vm.prank(address(spoke1));
     hub.add(daiAssetId, amount, alice);
   }
@@ -410,13 +410,13 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     // add < 1 share with an amount > 0
     addAmount = bound(addAmount, 1, minAllowedAddedAmount - 1);
 
-    vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
+    vm.expectRevert(IHub.InvalidSharesAmount.selector);
     vm.prank(address(spoke1));
     hub.add(daiAssetId, addAmount, alice);
   }
 
   function test_add_revertsWith_InvalidFromAddress() public {
-    vm.expectRevert(ILiquidityHub.InvalidFromAddress.selector);
+    vm.expectRevert(IHub.InvalidFromAddress.selector);
     vm.prank(address(spoke1));
     hub.add(daiAssetId, 100e18, address(hub));
   }
@@ -461,7 +461,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     vm.expectEmit(address(tokenList.dai));
     emit IERC20.Transfer(alice, address(hub), addAmount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(daiAssetId, address(spoke2), shares, addAmount);
+    emit IHub.Add(daiAssetId, address(spoke2), shares, addAmount);
 
     vm.prank(address(spoke2));
     hub.add(daiAssetId, addAmount, alice);

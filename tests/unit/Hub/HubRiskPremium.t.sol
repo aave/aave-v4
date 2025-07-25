@@ -20,7 +20,7 @@ struct TestDrawAmountAndRiskPremiumInput {
   TestRiskPremiumInput riskPremium;
 }
 
-contract LiquidityHubRiskPremiumTest_Base is Base {
+contract HubRiskPremiumTest_Base is Base {
   using SharesMath for uint256;
   using WadRayMathExtended for uint256;
   using PercentageMath for uint256;
@@ -56,7 +56,7 @@ contract LiquidityHubRiskPremiumTest_Base is Base {
   }
 }
 
-contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskPremiumTest_Base {
+contract HubRiskPremium_ConstantTimeAndRiskPremium is HubRiskPremiumTest_Base {
   using WadRayMathExtended for uint256;
 
   function test_riskPremiumOnNoDraw() public {
@@ -221,25 +221,23 @@ contract LiquidityHubRiskPremium_ConstantTimeAndRiskPremium is LiquidityHubRiskP
   }
 }
 
-contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
-  LiquidityHubRiskPremiumTest_Base
-{
+contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest_Base {
   using WadRayMathExtended for uint256;
 
   function test_fuzzMultipleDrawWhileAccruingInterest(
     uint256 timeToSkip,
-    uint256 baseDrawnRate
+    uint256 baseDrawRate
   ) public {
     vm.skip(true, 'pending refactor');
 
     //     timeToSkip = bound(timeToSkip, 1 days, 10_000 days);
-    //     baseDrawnRate = bound(baseDrawnRate, uint256(1).bpsToRay(), uint256(100_00).bpsToRay());
+    //     baseDrawRate = bound(baseDrawRate, uint256(1).bpsToRay(), uint256(100_00).bpsToRay());
     //     uint40 lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
 
     //     vm.mockCall(
     //       address(irStrategy),
     //       IBasicInterestRateStrategy.calculateInterestRates.selector,
-    //       abi.encode(baseDrawnRate)
+    //       abi.encode(baseDrawRate)
     //     );
 
     //     vm.prank(address(spoke1));
@@ -259,7 +257,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
 
     //     skip(timeToSkip);
     //     uint256 spoke1AccruedDebt = spoke1DrawAmount.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawnRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
     //     );
 
     //     // spoke 2 draws
@@ -285,10 +283,10 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
 
     //     spoke1DrawAmount += spoke1AccruedDebt;
     //     spoke1AccruedDebt = spoke1DrawAmount.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawnRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
     //     );
     //     uint256 spoke2AccruedDebt = spoke2DrawAmount.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawnRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
     //     );
 
     //     // spoke 3 draws remaining liquidity
@@ -313,7 +311,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
 
     //     test_fuzzMultipleDrawWhileAccruingInterest({
     //       timeToSkip: 365 days,
-    //       baseDrawnRate: uint256(15_00).bpsToRay()
+    //       baseDrawRate: uint256(15_00).bpsToRay()
     //     });
   }
 
@@ -407,13 +405,13 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
   function test_fuzzMultipleDrawWhileAccruingInterest(
     TestDrawAmountAndRiskPremiumInput memory p,
     uint256 timeToSkip,
-    uint256 baseDrawnRate
+    uint256 baseDrawRate
   ) public {
     vm.skip(true, 'pending refactor');
 
     //     p = bound({input: p, minDrawAmount: daiAmount, maxDrawAmount: daiAmount});
     //     timeToSkip = bound(timeToSkip, 1 days, 100_000 days);
-    //     baseDrawnRate = bound(baseDrawnRate, uint256(1).bpsToRay(), uint256(100_00).bpsToRay());
+    //     baseDrawRate = bound(baseDrawRate, uint256(1).bpsToRay(), uint256(100_00).bpsToRay());
     //     uint40 lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
 
     //     uint256 totalToDraw = p.drawAmount.spoke1 + p.drawAmount.spoke2 + p.drawAmount.spoke3;
@@ -421,7 +419,7 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
     //     vm.mockCall(
     //       address(irStrategy),
     //       IBasicInterestRateStrategy.calculateInterestRates.selector,
-    //       abi.encode(baseDrawnRate)
+    //       abi.encode(baseDrawRate)
     //     );
 
     //     vm.prank(address(spoke1));
@@ -437,15 +435,15 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
 
     //     skip(timeToSkip);
     //     uint256 spoke1AccruedDebt = p.drawAmount.spoke1.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawnRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
     //     );
 
-    //     // borrow baseDrawnRate changes with this action
-    //     baseDrawnRate *= 2;
+    //     // borrow baseDrawRate changes with this action
+    //     baseDrawRate *= 2;
     //     vm.mockCall(
     //       address(irStrategy),
     //       IBasicInterestRateStrategy.calculateInterestRates.selector,
-    //       abi.encode(baseDrawnRate)
+    //       abi.encode(baseDrawRate)
     //     );
 
     //     // spoke 2 draws
@@ -471,10 +469,10 @@ contract LiquidityHubRiskPremium_VariableTimeAndConstantRiskPremium is
 
     //     p.drawAmount.spoke1 += spoke1AccruedDebt;
     //     spoke1AccruedDebt = p.drawAmount.spoke1.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawnRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
     //     );
     //     uint256 spoke2AccruedDebt = p.drawAmount.spoke2.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawnRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
     //     );
 
     //     // spoke 3 draws remaining liquidity

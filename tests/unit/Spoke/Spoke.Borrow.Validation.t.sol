@@ -108,9 +108,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     Utils.supply(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // Bob draw more than supplied dai amount
-    vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, daiAmount)
-    );
+    vm.expectRevert(abi.encodeWithSelector(IHub.NotAvailableLiquidity.selector, daiAmount));
     vm.prank(bob);
     spoke1.borrow(daiReserveId, borrowAmount, bob);
   }
@@ -124,7 +122,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
 
     // Bob draws 0
-    vm.expectRevert(ILiquidityHub.InvalidDrawAmount.selector);
+    vm.expectRevert(IHub.InvalidDrawAmount.selector);
     vm.prank(bob);
     spoke1.borrow(reserveId, 0, bob);
   }
@@ -147,7 +145,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     assertEq(hub.getSpoke(assetId, address(spoke1)).config.drawCap, drawCap);
 
     // Bob borrow dai amount exceeding draw cap
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
     vm.prank(bob);
     spoke1.borrow(reserveId, drawAmount, bob);
   }
@@ -188,7 +186,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     // Bob should be able to borrow 1 dai
     assertGt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
     Utils.borrow(spoke1, daiReserveId, bob, 1, bob);
   }
 }

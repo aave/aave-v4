@@ -15,11 +15,11 @@ import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 // interfaces
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IHub} from 'src/interfaces/IHub.sol';
 import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
-contract LiquidityHub is ILiquidityHub, AccessManaged {
+contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
   using WadRayMathExtended for uint256;
@@ -45,7 +45,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // Intentionally left blank
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function addAsset(
     address underlying,
     uint8 decimals,
@@ -60,7 +60,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     uint256 assetId = _assetCount++;
     IAssetInterestRateStrategy(irStrategy).setInterestRateData(assetId, data);
-    uint256 baseDrawnRate = IAssetInterestRateStrategy(irStrategy).calculateInterestRate({
+    uint256 baseDrawRate = IAssetInterestRateStrategy(irStrategy).calculateInterestRate({
       assetId: assetId,
       availableLiquidity: 0,
       drawn: 0,
@@ -84,19 +84,19 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       premiumOffset: 0,
       realizedPremium: 0,
       baseDrawnIndex: baseDrawnIndex,
-      baseDrawnRate: baseDrawnRate,
+      baseDrawRate: baseDrawRate,
       lastUpdateTimestamp: lastUpdateTimestamp,
       config: config
     });
 
     emit AssetAdded(assetId, underlying, decimals);
     emit AssetConfigUpdated(assetId, config);
-    emit AssetUpdated(assetId, baseDrawnIndex, baseDrawnRate, lastUpdateTimestamp);
+    emit AssetUpdated(assetId, baseDrawnIndex, baseDrawRate, lastUpdateTimestamp);
 
     return assetId;
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function updateAssetConfig(
     uint256 assetId,
     DataTypes.AssetConfig calldata config
@@ -110,7 +110,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
     asset.config = config;
-    asset.updateBorrowRate(assetId);
+    asset.updateDrawRate(assetId);
 
     emit AssetConfigUpdated(assetId, config);
   }
@@ -141,7 +141,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     emit SpokeConfigUpdated(assetId, spoke, config);
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function setInterestRateData(uint256 assetId, bytes calldata data) external restricted {
     DataTypes.Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
@@ -152,7 +152,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   // Spoke Actions
   // /////
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function add(uint256 assetId, uint256 amount, address from) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -167,7 +167,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     spoke.addedShares += shares;
     asset.availableLiquidity += amount;
 
-    asset.updateBorrowRate(assetId);
+    asset.updateDrawRate(assetId);
 
     // TODO: fee-on-transfer
     IERC20(asset.underlying).safeTransferFrom(from, address(this), amount);
@@ -177,7 +177,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return shares;
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function remove(uint256 assetId, uint256 amount, address to) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -190,7 +190,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     spoke.addedShares -= shares;
     asset.availableLiquidity -= amount;
 
-    asset.updateBorrowRate(assetId);
+    asset.updateDrawRate(assetId);
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
@@ -199,7 +199,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return shares;
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function draw(uint256 assetId, uint256 amount, address to) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -212,7 +212,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     spoke.baseDrawnShares += shares;
     asset.availableLiquidity -= amount;
 
-    asset.updateBorrowRate(assetId);
+    asset.updateDrawRate(assetId);
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
@@ -221,7 +221,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return shares;
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function restore(
     uint256 assetId,
     uint256 baseAmount,
@@ -244,7 +244,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.availableLiquidity += totalAmount;
 
     /// @dev premium must be restored in `refreshPremium` before calling this function
-    asset.updateBorrowRate(assetId);
+    asset.updateDrawRate(assetId);
 
     IERC20(asset.underlying).safeTransferFrom(from, address(this), totalAmount);
 
@@ -253,7 +253,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return shares;
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function refreshPremium(
     uint256 assetId,
     int256 premiumDrawnShareDelta,
@@ -278,10 +278,10 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // can increase due to precision loss on premium (base unchanged)
     // todo mathematically find premium diff ceiling and replace the `2`
     // if no premium is restored, premium remains unchanged
-    require(premiumAfter + realizedPremiumTaken - premiumBefore <= 2, InvalidDebtChange());
+    require(premiumAfter + realizedPremiumTaken - premiumBefore <= 2, InvalidPremiumChange());
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function payFee(uint256 assetId, uint256 shares) external {
     DataTypes.SpokeData storage sender = _spokes[assetId][msg.sender];
     _validatePayFee(sender, shares);
@@ -293,9 +293,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, receiver);
 
     uint256 addedShares = sender.addedShares;
-    uint256 suppliedAssets = asset.toAddedAssetsDown(addedShares);
+    uint256 addedAssets = asset.toAddedAssetsDown(addedShares);
     uint256 feeAmount = asset.toAddedAssetsDown(shares);
-    require(feeAmount <= suppliedAssets, AddedAmountExceeded(suppliedAssets));
+    require(feeAmount <= addedAssets, AddedAmountExceeded(addedAssets));
 
     sender.addedShares = addedShares - shares;
     receiver.addedShares += shares;
@@ -326,7 +326,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     spoke.premiumOffset = spoke.premiumOffset.add(premiumOffsetDelta);
     spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
-    emit RefreshPremiumDebt(
+    emit RefreshPremium(
       assetId,
       spokeAddress,
       premiumDrawnShareDelta,
@@ -336,27 +336,27 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     );
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function getAssetCount() external view override returns (uint256) {
     return _assetCount;
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory) {
     return _assets[assetId];
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function getSpokeCount(uint256 assetId) external view returns (uint256) {
     return _assetToSpokes[assetId].length();
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address) {
     return _assetToSpokes[assetId].at(index);
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc IHub
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool) {
     return _assetToSpokes[assetId].contains(spoke);
   }
@@ -413,7 +413,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].baseDrawnRate;
+    return _assets[assetId].baseDrawRate;
   }
 
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256) {

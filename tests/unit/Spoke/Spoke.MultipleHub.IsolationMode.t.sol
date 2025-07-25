@@ -160,7 +160,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     );
 
     // Bob cannot borrow asset B because there is no liquidity
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.NotAvailableLiquidity.selector, 0));
     Utils.borrow(newSpoke, isolationVars.reserveBId, bob, 1, bob);
 
     // Add main hub reserve B to the new spoke
@@ -188,7 +188,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     vm.stopPrank();
 
     // Bob still cannot borrow asset B from the new hub because there is no liquidity
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.NotAvailableLiquidity.selector, 0));
     Utils.borrow(newSpoke, isolationVars.reserveBId, bob, 1, bob);
 
     // Alice can supply asset B to the main hub via spoke 1 (and will earn yield as usual)
@@ -214,11 +214,11 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     assertEq(hub.getAssetTotalOwed(isolationVars.assetBIdMainHub), 100_000e18);
 
     // Bob cannot borrow asset B from main hub via new spoke past draw cap
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, 100_000e18));
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 100_000e18));
     Utils.borrow(newSpoke, isolationVars.reserveBIdMainHub, bob, 1, bob);
 
     // Bob cannot supply B to main hub via new spoke because supply cap is 0
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, 0));
     Utils.supply(newSpoke, isolationVars.reserveBIdMainHub, bob, 1e18, bob);
 
     // Alice can supply B to the new hub via new spoke
@@ -255,7 +255,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     );
 
     // Now Bob or any other users cannot draw any asset B from the new spoke main hub due to new draw cap of 0
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 0));
     Utils.borrow(newSpoke, isolationVars.reserveBIdMainHub, bob, 1e18, bob);
   }
 }

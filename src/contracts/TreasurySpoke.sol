@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IHub} from 'src/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/interfaces/ITreasurySpoke.sol';
 
 /**
@@ -18,17 +18,17 @@ contract TreasurySpoke is Ownable, ITreasurySpoke {
   using SafeERC20 for IERC20;
 
   /// @inheritdoc ITreasurySpoke
-  ILiquidityHub public immutable HUB;
+  IHub public immutable HUB;
 
   /**
    * @dev Constructor
    * @param owner_ The address of the owner
-   * @param hub_ The address of the LiquidityHub
+   * @param hub_ The address of the Hub
    */
   constructor(address owner_, address hub_) Ownable(owner_) {
     require(hub_ != address(0), InvalidHubAddress());
 
-    HUB = ILiquidityHub(hub_);
+    HUB = IHub(hub_);
   }
 
   /// @inheritdoc ITreasurySpoke

@@ -93,14 +93,14 @@ contract SpokeAccrueInterestTest is SpokeBase {
     Utils.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
-    uint256 baseDrawnRate = hub.getBaseInterestRate(daiAssetId);
+    uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
     uint256 userRp = spoke1.getUserRiskPremium(bob);
 
     // Time passes
     skip(elapsed);
 
     // Check debts after interest accrual
-    uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, baseDrawnRate, startTime);
+    uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, baseDrawRate, startTime);
     uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(borrowAmount, baseDebt, userRp);
     uint256 interest = (baseDebt + expectedPremiumDebt) - borrowAmount;
 
@@ -121,7 +121,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
 
     startTime = uint40(vm.getBlockTimestamp());
-    baseDrawnRate = hub.getBaseInterestRate(daiAssetId);
+    baseDrawRate = hub.getBaseInterestRate(daiAssetId);
 
     // Full repayment, so back to zero debt
     Utils.repay(spoke1, daiReserveId, bob, type(uint256).max, bob);
@@ -169,13 +169,13 @@ contract SpokeAccrueInterestTest is SpokeBase {
     Utils.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
-    uint256 baseDrawnRate = hub.getBaseInterestRate(daiAssetId);
+    uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
     uint256 userRp = spoke1.getUserRiskPremium(bob);
 
     // Time passes
     skip(skipTime);
 
-    uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, baseDrawnRate, startTime);
+    uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, baseDrawRate, startTime);
     uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(borrowAmount, baseDebt, userRp);
     uint256 interest = (baseDebt + expectedPremiumDebt) - borrowAmount;
 
@@ -216,11 +216,11 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // User risk premium should be 10%
     uint256 riskPremium = spoke1.getUserRiskPremium(bob);
     assertEq(riskPremium, 10_00, 'user risk premium');
-    uint256 baseDrawnRate = hub.getBaseInterestRate(usdxAssetId);
+    uint256 baseDrawRate = hub.getBaseInterestRate(usdxAssetId);
 
     skip(skipTime);
 
-    uint256 expectedBaseDebt = _calculateExpectedBaseDebt(borrowAmount, baseDrawnRate, startTime);
+    uint256 expectedBaseDebt = _calculateExpectedBaseDebt(borrowAmount, baseDrawRate, startTime);
     uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(
       borrowAmount,
       expectedBaseDebt,

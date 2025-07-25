@@ -3,21 +3,21 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 import 'forge-std/StdInvariant.sol';
-import './LiquidityHubHandler.t.sol';
+import './HubHandler.t.sol';
 
-import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
+import {Hub} from 'src/contracts/Hub.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
-contract LiquidityHubInvariant is StdInvariant, Test {
-  LiquidityHubHandler hubHandler;
-  LiquidityHub hub;
+contract HubInvariant is StdInvariant, Test {
+  HubHandler hubHandler;
+  Hub hub;
 
   function setUp() public {
-    hubHandler = new LiquidityHubHandler();
+    hubHandler = new HubHandler();
     hub = hubHandler.hub();
     targetContract(address(hubHandler));
     bytes4[] memory selectors = new bytes4[](1);
-    selectors[0] = LiquidityHubHandler.supply.selector;
+    selectors[0] = HubHandler.supply.selector;
     targetSelector(FuzzSelector({addr: address(hubHandler), selectors: selectors}));
   }
 

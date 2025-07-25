@@ -994,7 +994,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
   }
 
   /// Bob supplies varying amounts of dai, weth, usdx, and max wbtc, then borrows varying wbtc and weth amounts.
-  /// We check interest is updated properly after 1 year, and accounting percolates up through liquidity hub.
+  /// We check interest is updated properly after 1 year, and accounting percolates up through hub.
   function test_getUserRiskPremium_fuzz_applyInterest_two_reserves_borrowed(
     uint256 daiSupplyAmount,
     uint256 usdxSupplyAmount,

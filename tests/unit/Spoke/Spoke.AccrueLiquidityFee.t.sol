@@ -28,7 +28,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     vm.recordLogs();
     // Bob supplies through spoke 1
     Utils.supply(spoke1, daiReserveId, bob, amount, bob);
-    _assertEventNotEmitted(ILiquidityHub.AccrueFees.selector);
+    _assertEventNotEmitted(IHub.AccrueFees.selector);
 
     // Skip time
     skip(skipTime);
@@ -61,7 +61,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, reserveId, bob, borrowAmount, bob);
 
-    uint256 baseDrawnRate = hub.getBaseInterestRate(assetId);
+    uint256 baseDrawRate = hub.getBaseInterestRate(assetId);
     uint256 initialBaseIndex = hub.getAsset(assetId).baseDrawnIndex;
     uint256 userRp = spoke1.getUserRiskPremium(bob);
 
@@ -73,7 +73,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(reserveId, bob);
     {
-      uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, baseDrawnRate, startTime);
+      uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, baseDrawRate, startTime);
       uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(userRp);
       uint256 expectedPremiumDebt = hub.convertToDrawnAssets(assetId, expectedPremiumDrawnShares) -
         bobPosition.premiumOffset +
@@ -212,15 +212,15 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     updateCollateralRisk(spoke1, reserveId, expectedRp);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.AccrueFees(assetId, hub.convertToAddedShares(assetId, expectedTreasuryFees));
+    emit IHub.AccrueFees(assetId, hub.convertToAddedShares(assetId, expectedTreasuryFees));
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
 
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
     withdrawLiquidityFees(assetId, type(uint256).max);
-    _assertEventNotEmitted(ILiquidityHub.Add.selector);
-    _assertEventNotEmitted(ILiquidityHub.AccrueFees.selector);
+    _assertEventNotEmitted(IHub.Add.selector);
+    _assertEventNotEmitted(IHub.AccrueFees.selector);
 
     expectedBaseDebtAccrual = 750e18; // 50% of 1500 (base debt accrual)
     expectedBaseDebt += expectedBaseDebtAccrual;
@@ -243,7 +243,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.AccrueFees(assetId, hub.convertToAddedShares(assetId, expectedTreasuryFees));
+    emit IHub.AccrueFees(assetId, hub.convertToAddedShares(assetId, expectedTreasuryFees));
 
     // 0.00% liquidity fee
     liquidityFee = 0;
@@ -252,13 +252,13 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
     Utils.supply(spoke1, reserveId, bob, minimumAssetsPerAddedShare(assetId), bob);
-    _assertEventNotEmitted(ILiquidityHub.AccrueFees.selector);
+    _assertEventNotEmitted(IHub.AccrueFees.selector);
 
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
     withdrawLiquidityFees(assetId, type(uint256).max);
-    _assertEventNotEmitted(ILiquidityHub.Add.selector);
-    _assertEventNotEmitted(ILiquidityHub.AccrueFees.selector);
+    _assertEventNotEmitted(IHub.Add.selector);
+    _assertEventNotEmitted(IHub.AccrueFees.selector);
 
     expectedBaseDebtAccrual = 1125e18; // 50% of 2250 (base debt accrual)
     expectedBaseDebt += expectedBaseDebtAccrual;
@@ -327,7 +327,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     updateCollateralRisk(spoke1, reserveId, expectedRp);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.AccrueFees(assetId, hub.convertToAddedShares(assetId, expectedTreasuryFees));
+    emit IHub.AccrueFees(assetId, hub.convertToAddedShares(assetId, expectedTreasuryFees));
 
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
@@ -336,8 +336,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
     withdrawLiquidityFees(assetId, type(uint256).max);
-    _assertEventNotEmitted(ILiquidityHub.Add.selector);
-    _assertEventNotEmitted(ILiquidityHub.AccrueFees.selector);
+    _assertEventNotEmitted(IHub.Add.selector);
+    _assertEventNotEmitted(IHub.AccrueFees.selector);
 
     expectedBaseDebtAccrual = expectedBaseDebt.percentMulUp(rate);
     expectedBaseDebt += expectedBaseDebtAccrual;
@@ -360,7 +360,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.AccrueFees(assetId, hub.convertToAddedShares(assetId, expectedTreasuryFees));
+    emit IHub.AccrueFees(assetId, hub.convertToAddedShares(assetId, expectedTreasuryFees));
 
     // 0.00% liquidity fee
     liquidityFee = 0;
@@ -369,13 +369,13 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
     Utils.supply(spoke1, reserveId, bob, minimumAssetsPerAddedShare(assetId), bob);
-    _assertEventNotEmitted(ILiquidityHub.AccrueFees.selector);
+    _assertEventNotEmitted(IHub.AccrueFees.selector);
 
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
     withdrawLiquidityFees(assetId, type(uint256).max);
-    _assertEventNotEmitted(ILiquidityHub.Add.selector);
-    _assertEventNotEmitted(ILiquidityHub.AccrueFees.selector);
+    _assertEventNotEmitted(IHub.Add.selector);
+    _assertEventNotEmitted(IHub.AccrueFees.selector);
 
     expectedBaseDebtAccrual = expectedBaseDebt.percentMulUp(rate);
     expectedBaseDebt += expectedBaseDebtAccrual;

@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
 
-contract LiquidityHubAccrueInterestTest is Base {
+contract HubAccrueInterestTest is Base {
   struct Timestamps {
     uint40 t0;
     uint40 t1;
@@ -90,7 +90,7 @@ contract LiquidityHubAccrueInterestTest is Base {
 
     Utils.add(hub, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
-    uint256 baseDrawnRate = hub.getBaseInterestRate(daiAssetId);
+    uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
 
     // Time passes
     skip(elapsed);
@@ -103,7 +103,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     (uint256 expectedDebtIndex1, uint256 expectedBaseDebt1) = calculateExpectedDebt(
       daiInfo.baseDrawnShares,
       initialDebtIndex,
-      baseDrawnRate,
+      baseDrawRate,
       uint40(startTime)
     );
     uint256 interest = expectedBaseDebt1 - borrowAmount;
@@ -114,13 +114,13 @@ contract LiquidityHubAccrueInterestTest is Base {
     assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt1, 'drawn');
 
     startTime = vm.getBlockTimestamp();
-    baseDrawnRate = hub.getBaseInterestRate(daiAssetId);
+    baseDrawRate = hub.getBaseInterestRate(daiAssetId);
 
     // calculate expected drawn to restore
     (uint256 expectedDebtIndex2, uint256 expectedBaseDebt2) = calculateExpectedDebt(
       daiInfo.baseDrawnShares,
       expectedDebtIndex1,
-      baseDrawnRate,
+      baseDrawRate,
       uint40(startTime)
     );
 
@@ -168,7 +168,7 @@ contract LiquidityHubAccrueInterestTest is Base {
 
     Utils.add(hub, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
-    uint256 baseDrawnRate = hub.getBaseInterestRate(daiAssetId);
+    uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
 
     // Time passes
     skip(elapsed);
@@ -181,7 +181,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     (uint256 expectedDebtIndex, uint256 expectedBaseDebt) = calculateExpectedDebt(
       daiInfo.baseDrawnShares,
       initialDebtIndex,
-      baseDrawnRate,
+      baseDrawRate,
       uint40(startTime)
     );
     uint256 interest = expectedBaseDebt - borrowAmount;
@@ -207,7 +207,7 @@ contract LiquidityHubAccrueInterestTest is Base {
 
     Utils.add(hub, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
-    uint256 baseDrawnRate = hub.getBaseInterestRate(daiAssetId);
+    uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
 
     // Time passes
     skip(elapsed);
@@ -220,7 +220,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     (uint256 expectedDebtIndex, uint256 expectedBaseDebt) = calculateExpectedDebt(
       daiInfo.baseDrawnShares,
       initialDebtIndex,
-      baseDrawnRate,
+      baseDrawRate,
       uint40(startTime)
     );
     uint256 interest = expectedBaseDebt - borrowAmount;
@@ -243,7 +243,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     // Utils.add(hub, daiAssetId, address(spoke1), addAmount, address(spoke1), address(spoke1));
     // Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount, address(spoke1));
     // // refresh risk premium
-    // uint256 baseDrawnRate = hub.getBaseInterestRate(daiAssetId);
+    // uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
 
     // // Time passes
     // skip(elapsed);
@@ -255,7 +255,7 @@ contract LiquidityHubAccrueInterestTest is Base {
 
     // uint256 expectedDebtIndex = _calculateExpectedDebtIndex(
     //   initialDebtIndex,
-    //   baseDrawnRate,
+    //   baseDrawRate,
     //   uint40(startTime)
     // );
 
@@ -284,7 +284,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     //     vm.startPrank(address(spoke1));
     //     hub.add(daiAssetId, addAmount, 0, address(spoke1));
     //     hub.draw(daiAssetId, borrowAmount, riskPremium, address(spoke1));
-    //     uint256 baseDrawnRate = hub.getBaseInterestRate(daiAssetId);
+    //     uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
     //     vm.stopPrank();
 
     //     // Time passes
@@ -295,7 +295,7 @@ contract LiquidityHubAccrueInterestTest is Base {
 
     //     DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
-    //     uint256 totalBase = MathUtils.calculateLinearInterest(baseDrawnRate, uint40(startTime)).rayMul(
+    //     uint256 totalBase = MathUtils.calculateLinearInterest(baseDrawRate, uint40(startTime)).rayMul(
     //       borrowAmount
     //     );
 
@@ -341,7 +341,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     (uint256 expectedDebtIndex, uint256 expectedBaseDebt1) = calculateExpectedDebt(
       assetData.t0.baseDrawnShares,
       initialDebtIndex,
-      assetData.t0.baseDrawnRate,
+      assetData.t0.baseDrawRate,
       timestamps.t0
     );
     cumulated.t1 = expectedDebtIndex;
@@ -374,7 +374,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     (expectedDebtIndex, expectedBaseDebt2) = calculateExpectedDebt(
       assetData.t0.baseDrawnShares,
       cumulated.t1,
-      assetData.t2.baseDrawnRate,
+      assetData.t2.baseDrawRate,
       timestamps.t1
     );
     cumulated.t2 = expectedDebtIndex;

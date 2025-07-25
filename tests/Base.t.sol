@@ -10,7 +10,7 @@ import {console2 as console} from 'forge-std/console2.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
-import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
+import {Hub, IHub} from 'src/contracts/Hub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
 import {AaveOracle, IAaveOracle} from 'src/contracts/AaveOracle.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
@@ -90,7 +90,7 @@ abstract contract Base is Test {
   IAaveOracle internal oracle1;
   IAaveOracle internal oracle2;
   IAaveOracle internal oracle3;
-  ILiquidityHub internal hub;
+  IHub internal hub;
   ITreasurySpoke internal treasurySpoke;
   ISpoke internal spoke1;
   ISpoke internal spoke2;
@@ -182,7 +182,7 @@ abstract contract Base is Test {
     uint40 lastUpdateTimestamp;
     uint256 availableLiquidity;
     uint256 baseDrawnIndex;
-    uint256 baseDrawnRate;
+    uint256 baseDrawRate;
   }
 
   struct SpokePosition {
@@ -207,7 +207,7 @@ abstract contract Base is Test {
   function deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
     accessManager = new AccessManager(ADMIN);
-    hub = new LiquidityHub(address(accessManager));
+    hub = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub));
     spoke1 = ISpoke(new Spoke(address(accessManager)));
     spoke2 = ISpoke(new Spoke(address(accessManager)));
@@ -232,11 +232,7 @@ abstract contract Base is Test {
     setUpRoles(hub, spoke3, accessManager);
   }
 
-  function setUpRoles(
-    ILiquidityHub targetHub,
-    ISpoke spoke,
-    IAccessManager manager
-  ) internal virtual {
+  function setUpRoles(IHub targetHub, ISpoke spoke, IAccessManager manager) internal virtual {
     vm.startPrank(ADMIN);
     // Grant roles with 0 delay
     manager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
@@ -270,11 +266,11 @@ abstract contract Base is Test {
 
     {
       bytes4[] memory selectors = new bytes4[](5);
-      selectors[0] = ILiquidityHub.addAsset.selector;
-      selectors[1] = ILiquidityHub.updateAssetConfig.selector;
-      selectors[2] = ILiquidityHub.addSpoke.selector;
-      selectors[3] = ILiquidityHub.updateSpokeConfig.selector;
-      selectors[4] = ILiquidityHub.setInterestRateData.selector;
+      selectors[0] = IHub.addAsset.selector;
+      selectors[1] = IHub.updateAssetConfig.selector;
+      selectors[2] = IHub.addSpoke.selector;
+      selectors[3] = IHub.updateSpokeConfig.selector;
+      selectors[4] = IHub.setInterestRateData.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
     }
     vm.stopPrank();
@@ -374,7 +370,7 @@ abstract contract Base is Test {
       })
     );
 
-    // Add all assets to the Liquidity Hub
+    // Add all assets to the Hub
     vm.startPrank(ADMIN);
     // add WETH
     hub.addAsset(
@@ -790,9 +786,9 @@ abstract contract Base is Test {
    * 2: DAI
    * 3: WBTC
    */
-  function hub2Fixture() internal returns (ILiquidityHub, AssetInterestRateStrategy) {
+  function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager2 = new AccessManager(ADMIN);
-    ILiquidityHub hub2 = new LiquidityHub(address(accessManager2));
+    IHub hub2 = new Hub(address(accessManager2));
     AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
 
     // Configure IR Strategy for hub 2
@@ -856,9 +852,9 @@ abstract contract Base is Test {
    * 2: WBTC
    * 3: WETH
    */
-  function hub3Fixture() internal returns (ILiquidityHub, AssetInterestRateStrategy) {
+  function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager3 = new AccessManager(ADMIN);
-    ILiquidityHub hub3 = new LiquidityHub(address(accessManager3));
+    IHub hub3 = new Hub(address(accessManager3));
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
     uint256 hub3DaiAssetId = 0;
@@ -921,7 +917,7 @@ abstract contract Base is Test {
   }
 
   function updateAssetFeeReceiver(
-    ILiquidityHub targetHub,
+    IHub targetHub,
     uint256 assetId,
     address newFeeReceiver
   ) internal pausePrank {
@@ -1044,17 +1040,13 @@ abstract contract Base is Test {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateLiquidityFee(
-    ILiquidityHub liquidityHub,
-    uint256 assetId,
-    uint256 liquidityFee
-  ) internal pausePrank {
-    DataTypes.AssetConfig memory config = liquidityHub.getAssetConfig(assetId);
+  function updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal pausePrank {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee;
     vm.prank(HUB_ADMIN);
-    liquidityHub.updateAssetConfig(assetId, config);
+    hub.updateAssetConfig(assetId, config);
 
-    assertEq(liquidityHub.getAssetConfig(assetId), config);
+    assertEq(hub.getAssetConfig(assetId), config);
   }
 
   function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal pausePrank {
@@ -1107,31 +1099,31 @@ abstract contract Base is Test {
   }
 
   function updateSpokeActive(
-    ILiquidityHub liquidityHub,
+    IHub hub,
     uint256 assetId,
     address spoke,
     bool newActive
   ) internal pausePrank {
-    DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
+    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.active = newActive;
     vm.prank(HUB_ADMIN);
-    liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
 
-    assertEq(liquidityHub.getSpokeConfig(assetId, spoke), spokeConfig);
+    assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
   function updateDrawCap(
-    ILiquidityHub liquidityHub,
+    IHub hub,
     uint256 assetId,
     address spoke,
     uint256 newDrawCap
   ) internal pausePrank {
-    DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
+    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
     vm.prank(HUB_ADMIN);
-    liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
 
-    assertEq(liquidityHub.getSpokeConfig(assetId, spoke), spokeConfig);
+    assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
   function getUserInfo(
@@ -1961,7 +1953,7 @@ abstract contract Base is Test {
   }
 
   function assertBorrowRateSynced(
-    ILiquidityHub targetHub,
+    IHub targetHub,
     uint256 assetId,
     string memory operation
   ) internal view {
@@ -1969,7 +1961,7 @@ abstract contract Base is Test {
     (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
 
     vm.assertEq(
-      asset.baseDrawnRate,
+      asset.baseDrawRate,
       IBasicInterestRateStrategy(asset.config.irStrategy).calculateInterestRate(
         assetId,
         asset.availableLiquidity,
@@ -2006,7 +1998,7 @@ abstract contract Base is Test {
 
   // @dev Helper function to get asset position, valid if no time has passed since last action
   function getAssetPosition(
-    ILiquidityHub targetHub,
+    IHub targetHub,
     uint256 assetId
   ) internal view returns (AssetPosition memory) {
     DataTypes.Asset memory assetData = targetHub.getAsset(assetId);
@@ -2025,7 +2017,7 @@ abstract contract Base is Test {
         premium: premium,
         lastUpdateTimestamp: uint40(assetData.lastUpdateTimestamp),
         baseDrawnIndex: assetData.baseDrawnIndex,
-        baseDrawnRate: assetData.baseDrawnRate
+        baseDrawRate: assetData.baseDrawRate
       });
   }
 

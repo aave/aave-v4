@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
 
-contract LiquidityHubBase is Base {
+contract HubBase is Base {
   using SharesMath for uint256;
 
   struct TestAddParams {

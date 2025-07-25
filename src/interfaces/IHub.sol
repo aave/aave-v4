@@ -6,11 +6,11 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 /**
- * @title ILiquidityHub
+ * @title IHub
  * @author Aave Labs
- * @notice Basic interface for LiquidityHub
+ * @notice Basic interface for Hub
  */
-interface ILiquidityHub is IAccessManaged {
+interface IHub is IAccessManaged {
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
   event AssetAdded(uint256 indexed assetId, address indexed underlying, uint8 decimals);
   event AssetConfigUpdated(uint256 indexed assetId, DataTypes.AssetConfig config);
@@ -22,14 +22,14 @@ interface ILiquidityHub is IAccessManaged {
   event AssetUpdated(
     uint256 indexed assetId,
     uint256 drawnIndex,
-    uint256 baseDrawnRate,
+    uint256 baseDrawRate,
     uint256 latestUpdateTimestamp
   );
   event Add(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
   event Remove(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
   event Draw(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
   event Restore(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
-  event RefreshPremiumDebt(
+  event RefreshPremium(
     uint256 indexed assetId,
     address indexed spoke,
     int256 premiumDrawnSharesDelta,
@@ -47,7 +47,7 @@ interface ILiquidityHub is IAccessManaged {
   error AddCapExceeded(uint256 addCap);
   error InvalidRemoveAmount();
   error InvalidRestoreAmount();
-  error AddedAmountExceeded(uint256 amount);
+  error AddedAmountExceeded(uint256 addedAmount);
   error NotAvailableLiquidity(uint256 availableLiquidity);
   error InvalidDrawAmount();
   error DrawCapExceeded(uint256 drawCap);
@@ -59,7 +59,7 @@ interface ILiquidityHub is IAccessManaged {
   error InvalidAssetDecimals();
   error InvalidLiquidityFee();
   error InvalidUnderlying();
-  error InvalidDebtChange();
+  error InvalidPremiumChange();
   error InvalidFeeReceiver();
   error SpokeNotActive();
   error InvalidFeeShares();

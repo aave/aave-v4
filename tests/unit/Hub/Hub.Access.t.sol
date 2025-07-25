@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
+import 'tests/unit/Hub/HubBase.t.sol';
 
-contract LiquidityHubAccessTest is LiquidityHubBase {
+contract HubAccessTest is HubBase {
   /// @dev Test showing that restricted functions on hub can only be called by hub admin.
-  function test_liquidity_hub_admin_access() public {
+  function test_hub_admin_access() public {
     TestnetERC20 tokenA = new TestnetERC20('A', 'A', 18);
     TestnetERC20 tokenB = new TestnetERC20('B', 'B', 18);
     DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
@@ -80,11 +80,11 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
       })
     );
 
-    // Only Liquidity Hub can set interest rates
-    vm.expectRevert(abi.encodeWithSelector(IAssetInterestRateStrategy.OnlyLiquidityHub.selector));
+    // Only Hub can set interest rates
+    vm.expectRevert(abi.encodeWithSelector(IAssetInterestRateStrategy.OnlyHub.selector));
     irStrategy.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Liquidity Hub can set interest rates
+    // Hub can set interest rates
     vm.prank(address(hub));
     irStrategy.setInterestRateData(daiAssetId, encodedIrData);
 
@@ -112,7 +112,7 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
 
     // Change the role responsible for setting interest rate data on the hub
     bytes4[] memory hubSelectors = new bytes4[](1);
-    hubSelectors[0] = ILiquidityHub.setInterestRateData.selector;
+    hubSelectors[0] = IHub.setInterestRateData.selector;
     vm.prank(ADMIN);
     accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.DEFAULT_ADMIN_ROLE);
 
@@ -165,7 +165,7 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     // Now, we change the role responsible for setting interest rate data to SET_INTEREST_RATE role.
     uint64 SET_INTEREST_RATE_ROLE = 4;
     bytes4[] memory hubSelectors = new bytes4[](1);
-    hubSelectors[0] = ILiquidityHub.setInterestRateData.selector;
+    hubSelectors[0] = IHub.setInterestRateData.selector;
     vm.prank(ADMIN);
     accessManager.setTargetFunctionRole(address(hub), hubSelectors, SET_INTEREST_RATE_ROLE);
 
@@ -235,7 +235,7 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     assertEq(address(hub.authority()), address(accessManager));
   }
 
-  /// @dev Test showcasing ability to change the authority contract governing access control on the liquidity hub.
+  /// @dev Test showcasing ability to change the authority contract governing access control on the hub.
   function test_change_authority() public {
     DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
       feeReceiver: address(treasurySpoke),
@@ -256,7 +256,7 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     vm.startPrank(NEW_ADMIN);
     newAuthority.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
     bytes4[] memory selectors = new bytes4[](1);
-    selectors[0] = ILiquidityHub.updateAssetConfig.selector;
+    selectors[0] = IHub.updateAssetConfig.selector;
     newAuthority.setTargetFunctionRole(address(hub), selectors, Roles.HUB_ADMIN_ROLE);
     vm.stopPrank();
 
@@ -288,7 +288,7 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     hub.updateSpokeConfig(daiAssetId, address(spoke1), spokeConfig);
 
     // Now we also give the hub admin role capability to update spoke config on new authority
-    selectors[0] = ILiquidityHub.updateSpokeConfig.selector;
+    selectors[0] = IHub.updateSpokeConfig.selector;
     vm.prank(NEW_ADMIN);
     newAuthority.setTargetFunctionRole(address(hub), selectors, Roles.HUB_ADMIN_ROLE);
 

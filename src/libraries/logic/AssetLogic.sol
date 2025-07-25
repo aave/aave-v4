@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IHub} from 'src/interfaces/IHub.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -104,7 +104,7 @@ library AssetLogic {
     return assets.toSharesDown(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
-  function updateBorrowRate(DataTypes.Asset storage asset, uint256 assetId) internal {
+  function updateDrawRate(DataTypes.Asset storage asset, uint256 assetId) internal {
     uint256 newBorrowRate = IBasicInterestRateStrategy(asset.config.irStrategy)
       .calculateInterestRate({
         assetId: assetId,
@@ -112,15 +112,10 @@ library AssetLogic {
         drawn: asset.drawn(),
         premium: asset.premium()
       });
-    asset.baseDrawnRate = newBorrowRate;
+    asset.baseDrawRate = newBorrowRate;
 
     // asset accrual should have already occurred
-    emit ILiquidityHub.AssetUpdated(
-      assetId,
-      asset.baseDrawnIndex,
-      newBorrowRate,
-      asset.lastUpdateTimestamp
-    );
+    emit IHub.AssetUpdated(assetId, asset.baseDrawnIndex, newBorrowRate, asset.lastUpdateTimestamp);
   }
 
   /**
@@ -141,7 +136,7 @@ library AssetLogic {
     if (feeShares > 0) {
       feeReceiver.addedShares += feeShares;
       asset.addedShares += feeShares;
-      emit ILiquidityHub.AccrueFees(assetId, feeShares);
+      emit IHub.AccrueFees(assetId, feeShares);
     }
 
     asset.lastUpdateTimestamp = block.timestamp;
@@ -160,7 +155,7 @@ library AssetLogic {
     }
     return
       previousIndex.rayMulUp(
-        MathUtils.calculateLinearInterest(asset.baseDrawnRate, uint40(lastUpdateTimestamp))
+        MathUtils.calculateLinearInterest(asset.baseDrawRate, uint40(lastUpdateTimestamp))
       );
   }
 

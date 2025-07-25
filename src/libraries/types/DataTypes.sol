@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IHub} from 'src/interfaces/IHub.sol';
 import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 library DataTypes {
-  // Liquidity Hub types
+  // Hub types
   // todo pack
   struct SpokeData {
     uint256 addedShares;
@@ -26,7 +26,7 @@ library DataTypes {
     uint256 premiumOffset; // todo make signed
     uint256 realizedPremium;
     uint256 baseDrawnIndex;
-    uint256 baseDrawnRate;
+    uint256 baseDrawRate;
     uint256 lastUpdateTimestamp;
     DataTypes.AssetConfig config;
   }
@@ -56,7 +56,7 @@ library DataTypes {
     uint16 dynamicConfigKey; // key of the last reserve config
     uint8 decimals;
     address underlying;
-    ILiquidityHub hub;
+    IHub hub;
   }
 
   struct ReserveConfig {
@@ -95,7 +95,7 @@ library DataTypes {
     uint256 reserveCount;
     uint256 reserveId;
     uint256 assetId;
-    ILiquidityHub hub;
+    IHub hub;
   }
 
   struct CalculateUserAccountDataVars {
@@ -179,7 +179,7 @@ library DataTypes {
   }
 
   struct ExecuteRepayLocalVars {
-    ILiquidityHub hub;
+    IHub hub;
     uint256 assetId;
     uint256 baseDebt;
     uint256 premiumDebt;

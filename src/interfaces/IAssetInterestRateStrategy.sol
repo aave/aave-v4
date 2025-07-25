@@ -45,9 +45,9 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   }
 
   /**
-   * @notice Thrown when the caller is not the liquidity hub
+   * @notice Thrown when the caller is not the hub
    */
-  error OnlyLiquidityHub();
+  error OnlyHub();
 
   /**
    * @notice Thrown when the max possible rate is greater than `MAX_BORROW_RATE`
@@ -96,10 +96,10 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   function MAX_OPTIMAL_RATIO() external view returns (uint256);
 
   /**
-   * @notice Returns the address of the liquidity hub
-   * @return The address of the liquidity hub
+   * @notice Returns the address of the hub
+   * @return The address of the hub
    */
-  function LIQUIDITY_HUB() external view returns (address);
+  function HUB() external view returns (address);
 
   /**
    * @notice Returns the full InterestRateData object for the given asset

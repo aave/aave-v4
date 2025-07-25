@@ -200,7 +200,7 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   /**
    * @notice Supply an amount of underlying asset of the specified reserve.
-   * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior token approval is required.
+   * @dev The Hub pulls the underlying asset from the caller, so prior token approval is required.
    * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
    * @param reserveId The reserve identifier.
    * @param amount The amount of asset to supply.
@@ -231,7 +231,7 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   /**
    * @notice Repays a specified amount of underlying asset to a given reserve.
-   * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior approval is required.
+   * @dev The Hub pulls the underlying asset from the caller, so prior approval is required.
    * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to repay.

@@ -160,13 +160,11 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     );
 
     // Bob cannot supply past his currently supplied amount due to supply cap
-    vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.AddCapExceeded.selector, siloedVars.assetAAddCap)
-    );
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, siloedVars.assetAAddCap));
     Utils.supply(newSpoke, siloedVars.reserveAIdNewSpoke, bob, 1e18, bob);
 
     // Bob cannot borrow asset A from the new spoke, canonical hub, because draw cap is 0
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 0));
     Utils.borrow(newSpoke, siloedVars.reserveAIdNewSpoke, bob, 1e18, bob);
 
     // Let Alice supply some asset B to the new spoke
@@ -186,7 +184,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
 
     // Bob cannot borrow additional asset B from the new spoke, new hub, because of draw cap
     vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, siloedVars.assetBDrawCap)
+      abi.encodeWithSelector(IHub.DrawCapExceeded.selector, siloedVars.assetBDrawCap)
     );
     Utils.borrow(newSpoke, siloedVars.reserveBId, bob, 1e18, bob);
   }

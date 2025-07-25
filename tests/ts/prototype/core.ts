@@ -31,7 +31,7 @@ const VIRTUAL_SHARES = 10n ** 6n;
 
 // type/token transfers to differentiate supplied/debt shares
 // notify is unneeded since prototype assumes one asset on hub
-export class LiquidityHub {
+export class Hub {
   public spokes: Spoke[] = [];
   public lastUpdateTimestamp = 0n;
 
@@ -252,7 +252,7 @@ export class LiquidityHub {
   }
 
   whoami() {
-    return 'LiquidityHub';
+    return 'Hub';
   }
 }
 
@@ -266,7 +266,7 @@ export class Spoke {
 
   public suppliedShares = 0n;
 
-  constructor(public hub: LiquidityHub, public readonly id = ++spokeIdCounter) {}
+  constructor(public hub: Hub, public readonly id = ++spokeIdCounter) {}
 
   supply(amount: bigint, who: User) {
     const user = this.getUser(who);
@@ -525,7 +525,7 @@ export class Spoke {
 
 export class User {
   public spoke: Spoke;
-  public hub: LiquidityHub;
+  public hub: Hub;
 
   public baseDrawnShares = 0n;
   public ghostDrawnShares = 0n;
@@ -626,14 +626,14 @@ export class User {
 }
 
 export class System {
-  public hub: LiquidityHub;
+  public hub: Hub;
   public spokes: Spoke[];
   public users: User[];
 
-  public supplyExchangeRatio: ReturnType<typeof LiquidityHub.prototype.supplyExchangeRatio>;
+  public supplyExchangeRatio: ReturnType<typeof Hub.prototype.supplyExchangeRatio>;
 
   constructor(numSpokes = 1, numUsers = 3) {
-    this.hub = new LiquidityHub();
+    this.hub = new Hub();
     this.spokes = new Array(numSpokes).fill(null).map(() => new Spoke(this.hub));
     this.users = new Array(numUsers).fill(null).map(() => new User());
     this.assignSpokes();
@@ -908,7 +908,7 @@ export class System {
 }
 
 class Utils {
-  static checkTotalDebt(totalDebtBefore: bigint, who: LiquidityHub | Spoke | User) {
+  static checkTotalDebt(totalDebtBefore: bigint, who: Hub | Spoke | User) {
     const totalDebtAfter = who.getTotalDebt();
     const diff = totalDebtAfter - totalDebtBefore;
     if (totalDebtAfter > totalDebtBefore && diff > 1n) {
@@ -923,13 +923,13 @@ class Utils {
     }
   }
 
-  static checkBounds(who: LiquidityHub | Spoke | User) {
+  static checkBounds(who: Hub | Spoke | User) {
     const fail = [
       who.baseDrawnShares,
       who.ghostDrawnShares,
       who.offset,
       who.realisedPremium,
-      ...(who instanceof LiquidityHub
+      ...(who instanceof Hub
         ? [who.suppliedShares, who.totalSupplyAssets(), who.premiumDebt(), who.availableLiquidity]
         : []),
     ].reduce((flag, v) => flag || v < 0n || v > MAX_UINT, false);
@@ -939,7 +939,7 @@ class Utils {
     }
   }
 
-  static ratio(supplyExchangeRatio: ReturnType<typeof LiquidityHub.prototype.supplyExchangeRatio>) {
+  static ratio(supplyExchangeRatio: ReturnType<typeof Hub.prototype.supplyExchangeRatio>) {
     const precision = 50;
     return formatUnits(
       (supplyExchangeRatio.totalSuppliedAssets * 10n ** BigInt(precision)) /
@@ -949,8 +949,8 @@ class Utils {
   }
 
   static diff(
-    a: ReturnType<typeof LiquidityHub.prototype.supplyExchangeRatio>,
-    b: ReturnType<typeof LiquidityHub.prototype.supplyExchangeRatio>
+    a: ReturnType<typeof Hub.prototype.supplyExchangeRatio>,
+    b: ReturnType<typeof Hub.prototype.supplyExchangeRatio>
   ) {
     const precision = 50;
     return formatUnits(

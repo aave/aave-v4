@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
+import 'tests/unit/Hub/HubBase.t.sol';
 
-contract HubConfiguratorTest is LiquidityHubBase {
+contract HubConfiguratorTest is HubBase {
   HubConfigurator public hubConfigurator;
 
   address public HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
@@ -72,7 +72,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
 
     decimals = uint8(bound(decimals, hub.MAX_ALLOWED_ASSET_DECIMALS() + 1, type(uint8).max));
 
-    vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector, address(hub));
+    vm.expectRevert(IHub.InvalidAssetDecimals.selector, address(hub));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     _addAsset(
       fetchErc20Decimals,
@@ -137,14 +137,14 @@ contract HubConfiguratorTest is LiquidityHubBase {
     vm.expectCall(
       address(hub),
       abi.encodeCall(
-        ILiquidityHub.addAsset,
+        IHub.addAsset,
         (underlying, decimals, feeReceiver, interestRateStrategy, encodedIrData)
       )
     );
 
     vm.expectCall(
       address(hub),
-      abi.encodeCall(ILiquidityHub.addSpoke, (expectedAssetId, feeReceiver, expectedSpokeConfig))
+      abi.encodeCall(IHub.addSpoke, (expectedAssetId, feeReceiver, expectedSpokeConfig))
     );
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -174,10 +174,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
     expectedConfig.liquidityFee = PercentageMathExtended.PERCENTAGE_FACTOR - 1;
 
-    vm.expectCall(
-      address(hub),
-      abi.encodeCall(ILiquidityHub.updateAssetConfig, (assetId, expectedConfig))
-    );
+    vm.expectCall(address(hub), abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig)));
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateLiquidityFee(address(hub), assetId, expectedConfig.liquidityFee);
@@ -200,7 +197,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
       vm.expectCall(
         address(hub),
         abi.encodeCall(
-          ILiquidityHub.updateSpokeConfig,
+          IHub.updateSpokeConfig,
           (
             assetId,
             oldConfig.feeReceiver,
@@ -217,7 +214,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
         vm.expectCall(
           address(hub),
           abi.encodeCall(
-            ILiquidityHub.addSpoke,
+            IHub.addSpoke,
             (
               assetId,
               feeReceiver,
@@ -233,7 +230,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
         vm.expectCall(
           address(hub),
           abi.encodeCall(
-            ILiquidityHub.updateSpokeConfig,
+            IHub.updateSpokeConfig,
             (
               assetId,
               feeReceiver,
@@ -253,7 +250,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
 
       vm.expectCall(
         address(hub),
-        abi.encodeCall(ILiquidityHub.updateAssetConfig, (assetId, expectedConfig))
+        abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig))
       );
 
       vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -293,7 +290,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
       vm.expectCall(
         address(hub),
         abi.encodeCall(
-          ILiquidityHub.updateSpokeConfig,
+          IHub.updateSpokeConfig,
           (
             assetId,
             oldConfig.feeReceiver,
@@ -310,7 +307,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
         vm.expectCall(
           address(hub),
           abi.encodeCall(
-            ILiquidityHub.addSpoke,
+            IHub.addSpoke,
             (
               assetId,
               feeReceiver,
@@ -326,7 +323,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
         vm.expectCall(
           address(hub),
           abi.encodeCall(
-            ILiquidityHub.updateSpokeConfig,
+            IHub.updateSpokeConfig,
             (
               assetId,
               feeReceiver,
@@ -346,10 +343,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
     expectedConfig.feeReceiver = feeReceiver;
     expectedConfig.liquidityFee = liquidityFee;
 
-    vm.expectCall(
-      address(hub),
-      abi.encodeCall(ILiquidityHub.updateAssetConfig, (assetId, expectedConfig))
-    );
+    vm.expectCall(address(hub), abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig)));
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeConfig(address(hub), assetId, liquidityFee, feeReceiver);
@@ -381,10 +375,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
     expectedConfig.irStrategy = interestRateStrategy;
     _mockInterestRateBps(interestRateStrategy, 5_00);
 
-    vm.expectCall(
-      address(hub),
-      abi.encodeCall(ILiquidityHub.updateAssetConfig, (assetId, expectedConfig))
-    );
+    vm.expectCall(address(hub), abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig)));
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateInterestRateStrategy(address(hub), assetId, interestRateStrategy);
@@ -419,7 +410,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
     vm.expectCall(
       address(hub),
       abi.encodeCall(
-        ILiquidityHub.updateSpokeConfig,
+        IHub.updateSpokeConfig,
         (
           assetId,
           oldConfig.feeReceiver,
@@ -430,7 +421,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
     vm.expectCall(
       address(hub),
       abi.encodeCall(
-        ILiquidityHub.addSpoke,
+        IHub.addSpoke,
         (
           assetId,
           newAssetConfig.feeReceiver,
@@ -442,10 +433,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
         )
       )
     );
-    vm.expectCall(
-      address(hub),
-      abi.encodeCall(ILiquidityHub.updateAssetConfig, (assetId, newAssetConfig))
-    );
+    vm.expectCall(address(hub), abi.encodeCall(IHub.updateAssetConfig, (assetId, newAssetConfig)));
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateAssetConfig(address(hub), assetId, newAssetConfig);
@@ -466,7 +454,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
       spokeConfig.drawCap = 0;
       vm.expectCall(
         address(hub),
-        abi.encodeCall(ILiquidityHub.updateSpokeConfig, (assetId, spokeAddresses[i], spokeConfig))
+        abi.encodeCall(IHub.updateSpokeConfig, (assetId, spokeAddresses[i], spokeConfig))
       );
     }
 
@@ -492,7 +480,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
       spokeConfig.active = false;
       vm.expectCall(
         address(hub),
-        abi.encodeCall(ILiquidityHub.updateSpokeConfig, (assetId, spokeAddresses[i], spokeConfig))
+        abi.encodeCall(IHub.updateSpokeConfig, (assetId, spokeAddresses[i], spokeConfig))
       );
     }
 
@@ -522,7 +510,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
     });
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeAdded(daiAssetId, newSpoke);
+    emit IHub.SpokeAdded(daiAssetId, newSpoke);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.addSpoke(address(hub), newSpoke, daiAssetId, daiSpokeConfig);
 
@@ -578,9 +566,9 @@ contract HubConfiguratorTest is LiquidityHubBase {
     spokeConfigs[1] = wethSpokeConfig;
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeAdded(daiAssetId, newSpoke);
+    emit IHub.SpokeAdded(daiAssetId, newSpoke);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.SpokeAdded(wethAssetId, newSpoke);
+    emit IHub.SpokeAdded(wethAssetId, newSpoke);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.addSpokeToAssets(address(hub), newSpoke, assetIds, spokeConfigs);
 
@@ -604,7 +592,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
       expectedSpokeConfig.active = active;
       vm.expectCall(
         address(hub),
-        abi.encodeCall(ILiquidityHub.updateSpokeConfig, (assetId, spoke, expectedSpokeConfig))
+        abi.encodeCall(IHub.updateSpokeConfig, (assetId, spoke, expectedSpokeConfig))
       );
       vm.prank(HUB_CONFIGURATOR_ADMIN);
       hubConfigurator.updateSpokeActive(address(hub), assetId, spoke, active);
@@ -624,7 +612,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
     expectedSpokeConfig.addCap = newSupplyCap;
     vm.expectCall(
       address(hub),
-      abi.encodeCall(ILiquidityHub.updateSpokeConfig, (assetId, spoke, expectedSpokeConfig))
+      abi.encodeCall(IHub.updateSpokeConfig, (assetId, spoke, expectedSpokeConfig))
     );
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateSpokeSupplyCap(address(hub), assetId, spoke, newSupplyCap);
@@ -643,7 +631,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
     expectedSpokeConfig.drawCap = newDrawCap;
     vm.expectCall(
       address(hub),
-      abi.encodeCall(ILiquidityHub.updateSpokeConfig, (assetId, spoke, expectedSpokeConfig))
+      abi.encodeCall(IHub.updateSpokeConfig, (assetId, spoke, expectedSpokeConfig))
     );
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateSpokeDrawCap(address(hub), assetId, spoke, newDrawCap);
@@ -664,7 +652,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
     expectedSpokeConfig.drawCap = newDrawCap;
     vm.expectCall(
       address(hub),
-      abi.encodeCall(ILiquidityHub.updateSpokeConfig, (assetId, spoke, expectedSpokeConfig))
+      abi.encodeCall(IHub.updateSpokeConfig, (assetId, spoke, expectedSpokeConfig))
     );
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateSpokeCaps(address(hub), assetId, spoke, newSupplyCap, newDrawCap);
@@ -690,7 +678,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
     });
     vm.expectCall(
       address(hub),
-      abi.encodeCall(ILiquidityHub.updateSpokeConfig, (assetId, spoke, newSpokeConfig))
+      abi.encodeCall(IHub.updateSpokeConfig, (assetId, spoke, newSpokeConfig))
     );
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateSpokeConfig(address(hub), assetId, spoke, newSpokeConfig);

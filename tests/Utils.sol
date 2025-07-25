@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IHub} from 'src/interfaces/IHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -13,7 +13,7 @@ library Utils {
 
   // hub
   function add(
-    ILiquidityHub hub,
+    IHub hub,
     uint256 assetId,
     address caller,
     uint256 amount,
@@ -28,7 +28,7 @@ library Utils {
   }
 
   function draw(
-    ILiquidityHub hub,
+    IHub hub,
     uint256 assetId,
     address caller,
     address to,
@@ -39,7 +39,7 @@ library Utils {
   }
 
   function remove(
-    ILiquidityHub hub,
+    IHub hub,
     uint256 assetId,
     address caller,
     uint256 amount,
@@ -50,7 +50,7 @@ library Utils {
   }
 
   function restore(
-    ILiquidityHub hub,
+    IHub hub,
     uint256 assetId,
     address caller,
     uint256 baseAmount,
@@ -66,7 +66,7 @@ library Utils {
   }
 
   function addSpoke(
-    ILiquidityHub hub,
+    IHub hub,
     address hubAdmin,
     uint256 assetId,
     address spoke,
@@ -77,7 +77,7 @@ library Utils {
   }
 
   function updateSpokeConfig(
-    ILiquidityHub hub,
+    IHub hub,
     address hubAdmin,
     uint256 assetId,
     address spoke,
@@ -88,7 +88,7 @@ library Utils {
   }
 
   function addAsset(
-    ILiquidityHub hub,
+    IHub hub,
     address hubAdmin,
     address underlying,
     uint8 decimals,
@@ -101,7 +101,7 @@ library Utils {
   }
 
   function updateAssetConfig(
-    ILiquidityHub hub,
+    IHub hub,
     address hubAdmin,
     uint256 assetId,
     DataTypes.AssetConfig memory config

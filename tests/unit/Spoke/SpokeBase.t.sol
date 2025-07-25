@@ -621,7 +621,7 @@ contract SpokeBase is Base {
   ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 accruedBase = MathUtils
-      .calculateLinearInterest(hub.getAsset(assetId).baseDrawnRate, lastTimestamp)
+      .calculateLinearInterest(hub.getAsset(assetId).baseDrawRate, lastTimestamp)
       .rayMulUp(prevBaseDebt);
 
     // equivalent to multiplying by risk premium (RP = premium drawn shares / base drawn shares)
@@ -901,7 +901,7 @@ contract SpokeBase is Base {
     return uint16(uint256(dynamicConfigKey + 1) % type(uint16).max);
   }
 
-  /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
+  /// @dev Returns the id of the reserve corresponding to the given Hub asset id
   function getReserveIdByAssetId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {
     for (uint256 i; i < spoke.getReserveCount(); ++i) {
       if (assetId == spoke.getReserve(i).assetId) {

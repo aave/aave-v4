@@ -23,7 +23,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   uint256 public constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS
 
   /// @inheritdoc IAssetInterestRateStrategy
-  address public immutable LIQUIDITY_HUB;
+  address public immutable HUB;
 
   /// @dev Map of assetId and their interest rate data (assetId => interestRateData)
   mapping(uint256 assetId => InterestRateData data) internal _interestRateData;
@@ -31,13 +31,13 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /**
    * @dev Constructor.
    */
-  constructor(address liquidityHub_) {
-    LIQUIDITY_HUB = liquidityHub_;
+  constructor(address hub_) {
+    HUB = hub_;
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
   function setInterestRateData(uint256 assetId, bytes calldata data) external {
-    require(LIQUIDITY_HUB == msg.sender, OnlyLiquidityHub());
+    require(HUB == msg.sender, OnlyHub());
     InterestRateData memory rateData = abi.decode(data, (InterestRateData));
     require(
       MIN_OPTIMAL_RATIO <= rateData.optimalUsageRatio &&
