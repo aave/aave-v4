@@ -1247,7 +1247,7 @@ abstract contract Base is Test {
     ILiquidityHub hub,
     uint256 assetId
   ) internal view returns (uint256) {
-    return hub.convertToDrawnAssets(assetId, 1);
+    return hub.convertToDrawnAssetsDown(assetId, 1);
   }
 
   /// @dev Helper function to calculate expected supplied assets based on amount to supply and current exchange rate
@@ -1274,7 +1274,7 @@ abstract contract Base is Test {
   }
 
   function getDeficit(ILiquidityHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.getAsset(assetId).deficitAmount;
+    return hub.getAsset(assetId).deficit;
   }
 
   function getBaseBorrowRate(ILiquidityHub hub, uint256 assetId) internal view returns (uint256) {

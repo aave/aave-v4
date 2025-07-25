@@ -405,13 +405,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         expectedDeficitShares,
         expectedDeficitAmount
       );
-      vm.expectEmit(address(hub));
-      emit ILiquidityHub.Restore(
-        assetId,
-        address(state.spoke),
-        expectedDeficitShares,
-        expectedDeficitAmount
-      );
     }
     vm.expectEmit(address(state.spoke));
     emit ISpoke.UserRiskPremiumUpdate(state.user, 0);
@@ -506,13 +499,13 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       if (i != state.debtReserveIndex) {
         uint256 expectedDeficitAmount = state.userTotalDebts[i].balanceChange; // for other debt assets, total debt should be reported as deficit
         assertEq(
-          state.deficitAmounts[i].balanceChange,
+          state.deficits[i].balanceChange,
           expectedDeficitAmount,
           'non-liquidated debt asset deficit'
         );
       } else {
         assertEq(
-          state.deficitAmounts[i].balanceChange,
+          state.deficits[i].balanceChange,
           state.expectedDeficitAmount,
           'liquidated debt asset deficit'
         );

@@ -80,7 +80,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       baseDebtIndex: baseDebtIndex,
       baseBorrowRate: baseBorrowRate,
       lastUpdateTimestamp: lastUpdateTimestamp,
-      deficitAmount: 0,
+      deficit: 0,
       config: config
     });
 
@@ -272,11 +272,10 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
     asset.baseDrawnShares -= baseDrawnSharesRestored;
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
-    asset.deficitAmount += totalDeficitAmount;
+    asset.deficit += totalDeficitAmount;
     asset.updateBorrowRate(assetId);
 
     emit DeficitCreated(assetId, msg.sender, baseDrawnSharesRestored, totalDeficitAmount);
-    emit Restore(assetId, msg.sender, baseDrawnSharesRestored, totalDeficitAmount);
 
     return baseDrawnSharesRestored;
   }
@@ -418,9 +417,15 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   ) external view returns (uint256) {
     return _assets[assetId].toSuppliedSharesUp(assets);
   }
-
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toDrawnAssetsUp(shares);
+  }
+
+  function convertToDrawnAssetsDown(
+    uint256 assetId,
+    uint256 shares
+  ) external view returns (uint256) {
+    return _assets[assetId].toDrawnAssetsDown(shares);
   }
 
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {

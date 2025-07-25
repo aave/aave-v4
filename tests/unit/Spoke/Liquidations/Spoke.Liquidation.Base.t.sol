@@ -52,7 +52,7 @@ contract SpokeLiquidationBase is SpokeBase {
     Balance deficit;
     Balance totalCollateralInBaseCurrency;
     Balance totalDebtInBaseCurrency;
-    Balance[] deficitAmounts;
+    Balance[] deficits;
     Balance[] userTotalDebts;
     Balance[] spokeTotalDebts;
     DataTypes.DynamicReserveConfig collDynConfig;
@@ -758,9 +758,9 @@ contract SpokeLiquidationBase is SpokeBase {
 
     // multi reserve accounting
     state.userTotalDebts = new Balance[](state.debtReserves.length);
-    state.deficitAmounts = new Balance[](state.debtReserves.length);
+    state.deficits = new Balance[](state.debtReserves.length);
     for (uint256 i = 0; i < state.debtReserves.length; i++) {
-      state.deficitAmounts[i].balanceBefore = getDeficit(
+      state.deficits[i].balanceBefore = getDeficit(
         state.debtReserves[i].hub,
         state.debtReserves[i].assetId
       );
@@ -969,13 +969,13 @@ contract SpokeLiquidationBase is SpokeBase {
 
     // multi reserve accounting
     for (uint256 i = 0; i < state.debtReserves.length; i++) {
-      state.deficitAmounts[i].balanceAfter = getDeficit(
+      state.deficits[i].balanceAfter = getDeficit(
         state.debtReserves[i].hub,
         state.debtReserves[i].assetId
       );
-      state.deficitAmounts[i].balanceChange = stdMath.delta(
-        state.deficitAmounts[i].balanceAfter,
-        state.deficitAmounts[i].balanceBefore
+      state.deficits[i].balanceChange = stdMath.delta(
+        state.deficits[i].balanceAfter,
+        state.deficits[i].balanceBefore
       );
       state.userTotalDebts[i].balanceAfter = state.spoke.getUserTotalDebt(
         state.debtReserves[i].reserveId,

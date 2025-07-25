@@ -60,8 +60,8 @@ interface ILiquidityHub is IAccessManaged {
   event DeficitCreated(
     uint256 indexed assetId,
     address indexed spoke,
-    uint256 baseSharesCreated,
-    uint256 amountCreated
+    uint256 baseRestoredShares,
+    uint256 totalRestoredAmount
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
 
@@ -221,6 +221,11 @@ interface ILiquidityHub is IAccessManaged {
     uint256 baseAmount,
     uint256 premiumAmount
   ) external returns (uint256);
+
+  function convertToDrawnAssetsDown(
+    uint256 assetId,
+    uint256 shares
+  ) external view returns (uint256);
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
