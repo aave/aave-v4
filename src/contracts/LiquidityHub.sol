@@ -235,7 +235,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 premiumAmount,
     address from
   ) external returns (uint256) {
-    // global & spoke premium (ghost, offset, realized) is *expected* to be updated on the `refreshPremium` callback
+    // global & spoke premium (premium, offset, realized) is *expected* to be updated on the `refreshPremium` callback
 
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];

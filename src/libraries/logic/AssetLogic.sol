@@ -148,7 +148,7 @@ library AssetLogic {
   }
 
   /**
-   * @dev Calculates the drawn index based on the borrow rate and the previous index.
+   * @dev Calculates the drawn index based on the base drawn rate and the previous index.
    * @param asset The data struct of the asset whose index is increasing.
    * @return The resulting drawn index.
    */
@@ -188,7 +188,7 @@ library AssetLogic {
 
   /**
    * @dev Calculates the amount of fee shares generated from the asset's accrued interest.
-   * @dev It calculates the updated drawn index on the fly using the current index and the borrow rate.
+   * @dev It calculates the updated drawn index on the fly using the current index and the drawn rate.
    * @param asset The data struct of the asset with accruing interest
    * @return The amount of shares corresponding to the fees
    */
