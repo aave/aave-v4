@@ -330,26 +330,27 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     );
   }
 
-  //
-  // public
-  //
-
+  /// @inheritdoc ILiquidityHub
   function getAssetCount() external view override returns (uint256) {
     return _assetCount;
   }
 
+  /// @inheritdoc ILiquidityHub
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory) {
     return _assets[assetId];
   }
 
+  /// @inheritdoc ILiquidityHub
   function getSpokeCount(uint256 assetId) external view returns (uint256) {
     return _assetToSpokes[assetId].length();
   }
 
+  /// @inheritdoc ILiquidityHub
   function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address) {
     return _assetToSpokes[assetId].at(index);
   }
 
+  /// @inheritdoc ILiquidityHub
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool) {
     return _assetToSpokes[assetId].contains(spoke);
   }
