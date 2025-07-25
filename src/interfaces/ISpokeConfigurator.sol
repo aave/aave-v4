@@ -67,14 +67,6 @@ interface ISpokeConfigurator {
   ) external returns (uint256 reserveId);
 
   /**
-   * @notice Updates the active flag of a reserve.
-   * @param spoke The address of the spoke.
-   * @param reserveId The identifier of the reserve.
-   * @param active The new active flag.
-   */
-  function updateActive(address spoke, uint256 reserveId, bool active) external;
-
-  /**
    * @notice Updates the paused flag of a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
@@ -97,14 +89,6 @@ interface ISpokeConfigurator {
    * @param borrowable The new borrowable flag.
    */
   function updateBorrowable(address spoke, uint256 reserveId, bool borrowable) external;
-
-  /**
-   * @notice Updates the collateral flag of a reserve.
-   * @param spoke The address of the spoke.
-   * @param reserveId The identifier of the reserve.
-   * @param collateral The new collateral flag.
-   */
-  function updateCollateral(address spoke, uint256 reserveId, bool collateral) external;
 
   /**
    * @notice Updates the collateral risk of a reserve.
@@ -169,4 +153,16 @@ interface ISpokeConfigurator {
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external;
+
+  /**
+   * @notice Pauses all reserves of a spoke.
+   * @param spoke The address of the spoke.
+   */
+  function pauseAllReserves(address spoke) external;
+
+  /**
+   * @notice Freezes all reserves of a spoke.
+   * @param spoke The address of the spoke.
+   */
+  function freezeAllReserves(address spoke) external;
 }

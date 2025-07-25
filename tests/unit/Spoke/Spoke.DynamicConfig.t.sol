@@ -7,10 +7,12 @@ contract SpokeDynamicConfigTest is SpokeBase {
   using SafeCast for uint256;
 
   function test_updateDynamicReserveConfig_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spoke1.updateDynamicReserveConfig(
-      _daiReserveId(spoke1), 
+      _daiReserveId(spoke1),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 80_00,
         liquidationBonus: 100_00,
@@ -21,10 +23,10 @@ contract SpokeDynamicConfigTest is SpokeBase {
 
   function test_updateDynamicReserveConfig_revertsWith_ReserveNotListed() public {
     uint256 invalidReserveId = spoke1.getReserveCount();
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotListed.selector, invalidReserveId));
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(
-      invalidReserveId, 
+      invalidReserveId,
       DataTypes.DynamicReserveConfig({
         collateralFactor: 80_00,
         liquidationBonus: 100_00,

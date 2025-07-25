@@ -910,18 +910,4 @@ contract SpokeBase is Base {
     }
     revert('not found');
   }
-
-  function updateLiquidationBonus(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 newLiquidationBonus
-  ) internal {
-    DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
-    config.liquidationBonus = newLiquidationBonus;
-
-    vm.prank(SPOKE_ADMIN);
-    spoke.updateDynamicReserveConfig(reserveId, config);
-
-    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
-  }
 }

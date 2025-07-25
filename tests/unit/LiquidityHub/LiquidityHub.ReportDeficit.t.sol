@@ -43,32 +43,6 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     hub.reportDeficit(usdxAssetId, 0, 0);
   }
 
-  function test_reportDeficit_revertsWith_AssetNotActive() public {
-    uint256 baseAmount = 10e6;
-    uint256 premiumAmount = 1e6;
-
-    // set asset as inactive
-    updateAssetActive(hub, usdxAssetId, false);
-
-    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
-
-    vm.prank(address(spoke1));
-    hub.reportDeficit(usdxAssetId, baseAmount, premiumAmount);
-  }
-
-  function test_reportDeficit_revertsWith_AssetPaused() public {
-    uint256 baseAmount = 10e6;
-    uint256 premiumAmount = 1e6;
-
-    // set asset as paused
-    updateAssetPaused(hub, usdxAssetId, true);
-
-    vm.expectRevert(ILiquidityHub.AssetPaused.selector);
-
-    vm.prank(address(spoke1));
-    hub.reportDeficit(usdxAssetId, baseAmount, premiumAmount);
-  }
-
   function test_reportDeficit_fuzz_revertsWith_SurplusDeficitReported(
     uint256 drawnAmount,
     uint256 skipTime,

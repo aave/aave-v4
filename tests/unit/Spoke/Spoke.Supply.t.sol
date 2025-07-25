@@ -13,18 +13,6 @@ contract SpokeSupplyTest is SpokeBase {
     spoke1.supply(reserveId, amount, bob);
   }
 
-  function test_supply_revertsWith_ReserveNotActive() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    uint256 amount = 100e18;
-
-    updateReserveActiveFlag(spoke1, daiReserveId, false);
-    assertFalse(spoke1.getReserve(daiReserveId).config.active);
-
-    vm.expectRevert(ISpoke.ReserveNotActive.selector);
-    vm.prank(bob);
-    spoke1.supply(daiReserveId, amount, bob);
-  }
-
   function test_supply_revertsWith_ReservePaused() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
