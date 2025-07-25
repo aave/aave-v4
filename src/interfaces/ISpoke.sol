@@ -208,7 +208,7 @@ interface ISpoke is IMulticall, IAccessManaged {
    */
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint256 configKey,
+    uint16 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external;
 

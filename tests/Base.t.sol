@@ -1929,12 +1929,12 @@ abstract contract Base is Test {
   }
 
   function assertBorrowRateSynced(
-    ILiquidityHub liquidityHub,
+    ILiquidityHub targetHub,
     uint256 assetId,
     string memory operation
   ) internal view {
-    DataTypes.Asset memory asset = hub.getAsset(assetId);
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    DataTypes.Asset memory asset = targetHub.getAsset(assetId);
+    (uint256 baseDebt, uint256 premiumDebt) = targetHub.getAssetDebt(assetId);
 
     vm.assertEq(
       asset.baseBorrowRate,

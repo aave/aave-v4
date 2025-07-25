@@ -16,7 +16,6 @@ contract SpokeConfiguratorTest is SpokeBase {
 
   function setUp() public virtual override {
     super.setUp();
-    initEnvironment();
 
     spokeConfigurator = new SpokeConfigurator(SPOKE_CONFIGURATOR_ADMIN);
     spokeAddr = address(spoke1);
@@ -529,7 +528,10 @@ contract SpokeConfiguratorTest is SpokeBase {
     for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
       DataTypes.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
       reserveConfig.paused = true;
-      vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig)));
+      vm.expectCall(
+        spokeAddr,
+        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig))
+      );
       vm.expectEmit(address(spoke));
       emit ISpoke.ReserveConfigUpdated(reserveId, reserveConfig);
     }
@@ -552,7 +554,10 @@ contract SpokeConfiguratorTest is SpokeBase {
     for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
       DataTypes.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
       reserveConfig.frozen = true;
-      vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig)));
+      vm.expectCall(
+        spokeAddr,
+        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig))
+      );
       vm.expectEmit(address(spoke));
       emit ISpoke.ReserveConfigUpdated(reserveId, reserveConfig);
     }

@@ -172,7 +172,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   function updateDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
-    uint256 configKey,
+    uint16 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external onlyOwner {
     ISpoke(spoke).updateDynamicReserveConfig(reserveId, configKey, dynamicConfig);

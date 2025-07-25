@@ -94,6 +94,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
     );
+    vm.prank(caller);
     spoke1.updateDynamicReserveConfig(reserveId, _randomConfigKey(), dynConf);
   }
 
@@ -186,23 +187,6 @@ contract SpokeDynamicConfigTest is SpokeBase {
     DataTypes.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
 
     vm.expectRevert(ISpoke.ConfigKeyUninitialized.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateDynamicReserveConfig(reserveId, configKey, dynConf);
-  }
-
-  function test_updateDynamicReserveConfig_revertsWith_InvalidConfigKey() public {
-    uint256 reserveId = _randomReserveId(spoke1);
-    DataTypes.DynamicReserveConfig memory dynConf = DataTypes.DynamicReserveConfig({
-      collateralFactor: 80_00,
-      liquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-
-    uint256 configKey = vm.randomUint(uint256(type(uint16).max) + 1, type(uint256).max);
-
-    vm.expectRevert(
-      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 16, configKey)
-    );
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(reserveId, configKey, dynConf);
   }

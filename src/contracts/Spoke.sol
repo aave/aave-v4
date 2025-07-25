@@ -153,7 +153,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   /// @inheritdoc ISpoke
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint256 configKey,
+    uint16 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     _updateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
@@ -1041,7 +1041,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         nextConfigKey = ++_reserves[reserveId].dynamicConfigKey;
       }
     } else {
-      nextConfigKey = configKey.toUint16();
+      nextConfigKey = configKey.toUint16(); // sanity
       // @dev sufficient check since min liquidationBonus is 100_00
       require(
         _dynamicConfig[reserveId][nextConfigKey].liquidationBonus != 0,

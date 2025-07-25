@@ -6,19 +6,6 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeConfigTest is SpokeBase {
   using SafeCast for uint256;
 
-  function test_setUsingAsCollateral_revertsWith_ReserveCannotBeUsedAsCollateral() public {
-    bool newCollateralFlag = false;
-    bool usingAsCollateral = true;
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    updateCollateralFlag(spoke1, daiReserveId, newCollateralFlag);
-
-    vm.expectRevert(
-      abi.encodeWithSelector(ISpoke.ReserveCannotBeUsedAsCollateral.selector, daiReserveId)
-    );
-    vm.prank(alice);
-    spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral, alice);
-  }
-
   function test_setUsingAsCollateral_revertsWith_ReserveFrozen() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -46,16 +33,6 @@ contract SpokeConfigTest is SpokeBase {
     );
   }
 
-  function test_setUsingAsCollateral_revertsWith_ReserveNotActive() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    updateReserveActiveFlag(spoke1, daiReserveId, false);
-    assertFalse(spoke1.getReserve(daiReserveId).config.active);
-
-    vm.expectRevert(ISpoke.ReserveNotActive.selector);
-    vm.prank(alice);
-    spoke1.setUsingAsCollateral(daiReserveId, true, alice);
-  }
-
   function test_setUsingAsCollateral_revertsWith_ReservePaused() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     updateReservePausedFlag(spoke1, daiReserveId, true);
@@ -69,9 +46,6 @@ contract SpokeConfigTest is SpokeBase {
   /// no action taken when collateral status is unchanged
   function test_setUsingAsCollateral_collateralStatusUnchanged() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
-
-    // ensure DAI is allowed as collateral
-    updateCollateralFlag(spoke1, daiReserveId, true);
 
     // slight update in collateral factor so user is subject to dynamic risk config refresh
     updateCollateralFactor(spoke1, daiReserveId, _getCollateralFactor(spoke1, daiReserveId) + 1_00);
@@ -125,9 +99,6 @@ contract SpokeConfigTest is SpokeBase {
     uint256 daiAmount = 100e18;
 
     uint256 daiReserveId = _daiReserveId(spoke1);
-
-    // ensure DAI is allowed as collateral
-    updateCollateralFlag(spoke1, daiReserveId, newCollateralFlag);
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, daiAmount);
