@@ -592,11 +592,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // todo NoExplicitAmountToRepayOnBehalf
   }
 
+  // TODO: Ideally we remove this because it's a not different from converting premium drawn shares
   /**
    * @dev Calculates the user's premium debt offset in assets amount from a given share amount.
-   * @dev Rounds down to the nearest assets amount.
-   * @dev Uses the opposite rounding direction of the debt shares-to-assets conversion to prevent underflow
-   * in premium debt.
+   * @dev Rounds up to the nearest assets amount.
    * @param hub The liquidity hub of the reserve.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to convert to assets amount.
@@ -607,7 +606,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetId,
     uint256 shares
   ) internal view returns (uint256) {
-    return hub.previewDrawByShares(assetId, shares);
+    return hub.previewRestoreByShares(assetId, shares);
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
