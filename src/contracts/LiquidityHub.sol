@@ -435,6 +435,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
+  /// @inheritdoc ILiquidityHub
   function getAssetDrawnIndex(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].getDrawnIndex();
   }

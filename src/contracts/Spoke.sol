@@ -593,12 +593,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   /**
-   * @dev Helper function to get user premium offset in assets amount from shares amount using current debt index.
+   * @dev Calculates the user's premium debt offset in assets amount from a given share amount.
    * @dev Rounds down to the nearest assets amount.
+   * @dev Uses the opposite rounding direction of the debt shares-to-assets conversion to prevent underflow
+   * in premium debt.
    * @param hub The liquidity hub of the reserve.
-   * @param assetId The asset identifier.
+   * @param assetId The identifier of the asset.
    * @param shares The amount of shares to convert to assets amount.
-   * @return The amount of assets converted from shares amount, corresponding to user premium offset.
+   * @return The amount of assets converted corresponding to user's premium offset.
    */
   function _previewOffset(
     ILiquidityHub hub,
