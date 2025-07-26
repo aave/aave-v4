@@ -27,25 +27,6 @@ contract SpokeBorrowValidationTest is SpokeBase {
     spoke1.borrow(reserveId, amount, bob);
   }
 
-  function test_borrow_revertsWith_ReserveNotActive() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-
-    test_borrow_fuzz_revertsWith_ReserveNotActive({reserveId: daiReserveId, amount: 1});
-  }
-
-  function test_borrow_fuzz_revertsWith_ReserveNotActive(uint256 reserveId, uint256 amount) public {
-    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-
-    updateReserveActiveFlag(spoke1, reserveId, false);
-    assertFalse(spoke1.getReserve(reserveId).config.active);
-
-    // Bob tries to draw
-    vm.expectRevert(ISpoke.ReserveNotActive.selector);
-    vm.prank(bob);
-    spoke1.borrow(reserveId, amount, bob);
-  }
-
   function test_borrow_revertsWith_ReserveNotListed() public {
     uint256 reserveId = spoke1.getReserveCount() + 1; // invalid reserveId
 
@@ -96,25 +77,6 @@ contract SpokeBorrowValidationTest is SpokeBase {
 
     // Bob try to draw
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
-    vm.prank(bob);
-    spoke1.borrow(reserveId, 1, bob);
-  }
-
-  function test_borrow_revertsWith_AssetNotActive() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-
-    test_borrow_fuzz_revertsWith_AssetNotActive({reserveId: daiReserveId, amount: 1});
-  }
-
-  function test_borrow_fuzz_revertsWith_AssetNotActive(uint256 reserveId, uint256 amount) public {
-    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-
-    // set asset not active
-    updateAssetActive(hub, spoke1.getReserve(reserveId).assetId, false);
-
-    // Bob try to draw
-    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
     vm.prank(bob);
     spoke1.borrow(reserveId, 1, bob);
   }

@@ -149,8 +149,6 @@ interface ISpoke is IMulticall, IAccessManaged {
   error InvalidCollateralRisk();
   error InsufficientSupply(uint256 supply);
   error ReserveNotBorrowable(uint256 reserveId);
-  error ReserveCannotBeUsedAsCollateral(uint256 reserveId);
-  error ReserveNotActive();
   error ReservePaused();
   error ReserveFrozen();
   error InvalidCollateralFactor();
@@ -263,15 +261,15 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   /**
    * @notice Allows updating the risk premium on user position.
-   * @dev If the risk premium has increased, the caller must be `user` or an authorized position manager
-   * of `user`, reverts with `Unauthorized` otherwise.
+   * @dev If the risk premium has increased, the caller must be `user`, an authorized position manager
+   * of `user`, or admin.
    * @param user The address of the user.
    */
   function updateUserRiskPremium(address user) external;
 
   /**
    * @notice Allows updating the dynamic configuration for all collateral reserves of a user position.
-   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+   * @dev Caller must be `onBehalfOf`, an authorized position manager for `onBehalfOf`, or admin.
    * @param onBehalfOf The owner of the position being modified.
    */
   function updateUserDynamicConfig(address onBehalfOf) external;

@@ -172,27 +172,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
   }
 
-  function test_manual_single_collateral_updateAll_triggers_dynamicConfigUpdate() public {
-    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
-    DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
-
-    // no action yet, so user config should not change
-    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
-    assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
-
-    // manually trigger update
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
-    vm.prank(alice);
-    spoke1.updateUserDynamicConfig(alice);
-
-    // user config should change
-    assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
-    assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
-  }
-
-  function test_manual_updateAll_triggers_dynamicConfigUpdate() public {
+  function test_updateUserDynamicConfig_triggers_dynamicConfigUpdate() public {
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
@@ -215,8 +195,13 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
   }
 
-  function test_manual_withPermission_triggers_dynamicConfigUpdate(address caller) public {
-    vm.assume(caller != alice);
+  function test_updateUserDynamicConfig_reverts_when_not_authorized(address caller) public {
+    vm.assume(
+      caller != alice &&
+        caller != POSITION_MANAGER &&
+        caller != SPOKE_ADMIN &&
+        caller != USER_POSITION_UPDATER
+    );
 
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
@@ -229,19 +214,47 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
 
-    // Caller other than alice or position manager should not be able to update
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    // Caller other than alice, position manager or approved admin should not be able to update
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
+    );
     vm.prank(caller);
     spoke1.updateUserDynamicConfig(alice);
 
-    // Alice can update
+    assertFalse(spoke1.isPositionManager(alice, POSITION_MANAGER));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, POSITION_MANAGER)
+    );
+    vm.prank(POSITION_MANAGER);
+    spoke1.updateUserDynamicConfig(alice);
+
+    vm.prank(ADMIN);
+    spoke1.updatePositionManager(POSITION_MANAGER, true);
+
+    vm.prank(alice);
+    spoke1.setUserPositionManager(POSITION_MANAGER, true);
+
+    _updateUserDynamicConfig({caller: alice, existingConfigs: configs});
+    _updateUserDynamicConfig({caller: POSITION_MANAGER, existingConfigs: configs});
+    _updateUserDynamicConfig({caller: SPOKE_ADMIN, existingConfigs: configs});
+    _updateUserDynamicConfig({caller: USER_POSITION_UPDATER, existingConfigs: configs});
+  }
+
+  function _updateUserDynamicConfig(
+    address caller,
+    DynamicConfig[] memory existingConfigs
+  ) internal {
+    uint256 snapshotId = vm.snapshotState();
+
     vm.expectEmit(address(spoke1));
     emit ISpoke.UserDynamicConfigRefreshedAll(alice);
-    vm.prank(alice);
+    vm.prank(caller);
     spoke1.updateUserDynamicConfig(alice);
 
     // user config should change
-    assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertNotEq(_getUserDynConfigKeys(spoke1, alice), existingConfigs);
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+
+    vm.revertToState(snapshotId);
   }
 }
