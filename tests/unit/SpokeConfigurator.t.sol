@@ -539,8 +539,8 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.pauseAllReserves(spokeAddr);
 
-    for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
-      assertEq(spoke.getReserveConfig(reserveId).paused, true);
+    for (uint256 id; id < spoke.getReserveCount(); ++id) {
+      assertEq(spoke.getReserveConfig(id).paused, true);
     }
   }
 
@@ -551,22 +551,19 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_freezeAllReserves() public {
-    for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
-      DataTypes.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
+    for (uint256 id; id < spoke.getReserveCount(); ++id) {
+      DataTypes.ReserveConfig memory reserveConfig = spoke.getReserveConfig(id);
       reserveConfig.frozen = true;
-      vm.expectCall(
-        spokeAddr,
-        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig))
-      );
+      vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateReserveConfig, (id, reserveConfig)));
       vm.expectEmit(address(spoke));
-      emit ISpoke.ReserveConfigUpdated(reserveId, reserveConfig);
+      emit ISpoke.ReserveConfigUpdated(id, reserveConfig);
     }
 
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.freezeAllReserves(spokeAddr);
 
-    for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
-      assertEq(spoke.getReserveConfig(reserveId).frozen, true);
+    for (uint256 id; id < spoke.getReserveCount(); ++id) {
+      assertEq(spoke.getReserveConfig(id).frozen, true);
     }
   }
 }

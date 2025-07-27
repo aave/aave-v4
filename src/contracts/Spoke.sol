@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {Multicall} from 'src/misc/Multicall.sol';
 
-import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
@@ -27,7 +26,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using WadRayMathExtended for uint256;
   using PercentageMathExtended for uint256;
   using PercentageMathExtended for uint16;
-  using SafeCast for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using LiquidationLogic for DataTypes.LiquidationConfig;
   using PositionStatus for DataTypes.PositionStatus;
@@ -1063,7 +1061,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         nextConfigKey = ++_reserves[reserveId].dynamicConfigKey;
       }
     } else {
-      nextConfigKey = configKey.toUint16(); // sanity
+      // SAFETY: configKey is initially casted up to uint256, so we can safely downcast to uint16
+      nextConfigKey = uint16(configKey);
       // @dev sufficient check since min liquidationBonus is 100_00
       require(
         _dynamicConfig[reserveId][nextConfigKey].liquidationBonus != 0,
