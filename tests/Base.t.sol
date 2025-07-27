@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {stdError} from 'forge-std/StdError.sol';
 import {stdMath} from 'forge-std/StdMath.sol';
-import {Vm} from 'forge-std/Vm.sol';
+import {Vm, VmSafe} from 'forge-std/Vm.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
@@ -110,6 +110,7 @@ abstract contract Base is Test {
   address internal ADMIN = makeAddr('ADMIN');
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
+  address internal USER_POSITION_UPDATER = makeAddr('USER_POSITION_UPDATER');
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
@@ -232,40 +233,50 @@ abstract contract Base is Test {
   }
 
   function setUpRoles(
-    ILiquidityHub hub,
+    ILiquidityHub targetHub,
     ISpoke spoke,
-    IAccessManager accessManager
+    IAccessManager manager
   ) internal virtual {
     vm.startPrank(ADMIN);
     // Grant roles with 0 delay
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
+    manager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
+    manager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
+
+    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
+    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
+
+    manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
+    manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, USER_POSITION_UPDATER, 0);
 
     // Grant responsibilities to roles
-    // Spoke Admin functionalities
-    bytes4[] memory selectors = new bytes4[](9);
-    selectors[0] = ISpoke.updateOracle.selector;
-    selectors[1] = ISpoke.updateReservePriceSource.selector;
-    selectors[2] = ISpoke.updateLiquidationConfig.selector;
-    selectors[3] = ISpoke.addReserve.selector;
-    selectors[4] = ISpoke.updateReserveConfig.selector;
-    selectors[5] = ISpoke.addDynamicReserveConfig.selector;
-    selectors[6] = ISpoke.updateDynamicReserveConfig.selector;
-    selectors[7] = ISpoke.updateUserRiskPremium.selector;
-    selectors[8] = ISpoke.updatePositionManager.selector;
-    accessManager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
+    {
+      bytes4[] memory selectors = new bytes4[](7);
+      selectors[0] = ISpoke.updateLiquidationConfig.selector;
+      selectors[1] = ISpoke.addReserve.selector;
+      selectors[2] = ISpoke.updateReserveConfig.selector;
+      selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
+      selectors[4] = ISpoke.updatePositionManager.selector;
+      selectors[5] = ISpoke.updateOracle.selector;
+      selectors[6] = ISpoke.updateReservePriceSource.selector;
+      manager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
+    }
 
-    // Liquidity Hub Admin functionalities
-    bytes4[] memory hubSelectors = new bytes4[](5);
-    hubSelectors[0] = ILiquidityHub.addAsset.selector;
-    hubSelectors[1] = ILiquidityHub.updateAssetConfig.selector;
-    hubSelectors[2] = ILiquidityHub.addSpoke.selector;
-    hubSelectors[3] = ILiquidityHub.updateSpokeConfig.selector;
-    hubSelectors[4] = ILiquidityHub.setInterestRateData.selector;
-    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
+    {
+      bytes4[] memory selectors = new bytes4[](2);
+      selectors[0] = ISpoke.updateUserDynamicConfig.selector;
+      selectors[1] = ISpoke.updateUserRiskPremium.selector;
+      manager.setTargetFunctionRole(address(spoke), selectors, Roles.USER_POSITION_UPDATER_ROLE);
+    }
 
+    {
+      bytes4[] memory selectors = new bytes4[](5);
+      selectors[0] = ILiquidityHub.addAsset.selector;
+      selectors[1] = ILiquidityHub.updateAssetConfig.selector;
+      selectors[2] = ILiquidityHub.addSpoke.selector;
+      selectors[3] = ILiquidityHub.updateSpokeConfig.selector;
+      selectors[4] = ILiquidityHub.setInterestRateData.selector;
+      manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
+    }
     vm.stopPrank();
   }
 
@@ -910,68 +921,80 @@ abstract contract Base is Test {
   }
 
   function updateAssetFeeReceiver(
-    ILiquidityHub liquidityHub,
+    ILiquidityHub targetHub,
     uint256 assetId,
     address newFeeReceiver
-  ) internal {
-    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
-    assetConfig.feeReceiver = newFeeReceiver;
+  ) internal pausePrank {
+    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    config.feeReceiver = newFeeReceiver;
 
     vm.prank(HUB_ADMIN);
-    liquidityHub.updateAssetConfig(assetId, assetConfig);
+    targetHub.updateAssetConfig(assetId, config);
+
+    assertEq(targetHub.getAssetConfig(assetId), config);
   }
 
-  function updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
+  function updateReserveFrozenFlag(
+    ISpoke spoke,
+    uint256 reserveId,
+    bool newFrozenFlag
+  ) internal pausePrank {
     DataTypes.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
     config.frozen = newFrozenFlag;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
 
-    assertEq(spoke.getReserveConfig(reserveId).frozen, newFrozenFlag);
+    assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateReservePausedFlag(ISpoke spoke, uint256 reserveId, bool newPausedFlag) internal {
-    DataTypes.ReserveConfig memory config = spoke.getReserve(reserveId).config;
+  function updateReservePausedFlag(
+    ISpoke spoke,
+    uint256 reserveId,
+    bool newPausedFlag
+  ) internal pausePrank {
+    DataTypes.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
     config.paused = newPausedFlag;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
+
+    assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
   function updateLiquidationBonus(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newLiquidationBonus
-  ) internal {
+  ) internal pausePrank {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationBonus = newLiquidationBonus;
 
     vm.prank(SPOKE_ADMIN);
     spoke.addDynamicReserveConfig(reserveId, config);
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId).liquidationBonus, newLiquidationBonus);
+    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
   }
 
   function updateLiquidationFee(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newLiquidationFee
-  ) internal {
+  ) internal pausePrank {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
     spoke.addDynamicReserveConfig(reserveId, config);
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId).liquidationFee, newLiquidationFee);
+    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
   }
 
   function updateCollateralFactor(
     ISpoke spoke,
     function(ISpoke) pure returns (uint256) reserveIdFn,
     uint256 newCollateralFactor
-  ) internal {
+  ) internal pausePrank {
     uint256 reserveId = reserveIdFn(spoke);
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
@@ -979,60 +1002,68 @@ abstract contract Base is Test {
     vm.prank(SPOKE_ADMIN);
     spoke.addDynamicReserveConfig(reserveId, config);
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId).collateralFactor, newCollateralFactor);
+    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
   }
 
   function updateCollateralFactor(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newCollateralFactor
-  ) internal {
+  ) internal pausePrank {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     vm.prank(SPOKE_ADMIN);
-    spoke.addDynamicReserveConfig(reserveId, config);
+    spoke.updateDynamicReserveConfig(reserveId, config);
+
+    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
   }
 
   function updateReserveBorrowableFlag(
     ISpoke spoke,
     uint256 reserveId,
     bool newBorrowable
-  ) internal {
-    DataTypes.Reserve memory reserveData = spoke.getReserve(reserveId);
-    reserveData.config.borrowable = newBorrowable;
+  ) internal pausePrank {
+    DataTypes.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
+    config.borrowable = newBorrowable;
     vm.prank(SPOKE_ADMIN);
-    spoke.updateReserveConfig(reserveId, reserveData.config);
+    spoke.updateReserveConfig(reserveId, config);
+
+    assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
   function updateCollateralRisk(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newCollateralRisk
-  ) internal {
-    DataTypes.ReserveConfig memory reserveConfig = spoke.getReserve(reserveId).config;
-    reserveConfig.collateralRisk = newCollateralRisk;
+  ) internal pausePrank {
+    DataTypes.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
+    config.collateralRisk = newCollateralRisk;
     vm.prank(SPOKE_ADMIN);
-    spoke.updateReserveConfig(reserveId, reserveConfig);
+    spoke.updateReserveConfig(reserveId, config);
+
+    assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
   function updateLiquidityFee(
     ILiquidityHub liquidityHub,
     uint256 assetId,
     uint256 liquidityFee
-  ) internal {
+  ) internal pausePrank {
     DataTypes.AssetConfig memory config = liquidityHub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee;
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, config);
+    liquidityHub.updateAssetConfig(assetId, config);
+
+    assertEq(liquidityHub.getAssetConfig(assetId), config);
   }
 
-  function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal {
+  function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal pausePrank {
     DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
     liqConfig.closeFactor = newCloseFactor;
     vm.prank(SPOKE_ADMIN);
     spoke.updateLiquidationConfig(liqConfig);
 
-    assertEq(spoke.getLiquidationConfig().closeFactor, newCloseFactor);
+    assertEq(spoke.getLiquidationConfig(), liqConfig);
   }
 
   function getCloseFactor(ISpoke spoke) internal view returns (uint256) {
@@ -1080,11 +1111,13 @@ abstract contract Base is Test {
     uint256 assetId,
     address spoke,
     bool newActive
-  ) internal {
+  ) internal pausePrank {
     DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
     spokeConfig.active = newActive;
     vm.prank(HUB_ADMIN);
     liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
+
+    assertEq(liquidityHub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
   function updateDrawCap(
@@ -1092,11 +1125,13 @@ abstract contract Base is Test {
     uint256 assetId,
     address spoke,
     uint256 newDrawCap
-  ) internal {
+  ) internal pausePrank {
     DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
     vm.prank(HUB_ADMIN);
     liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
+
+    assertEq(liquidityHub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
   function getUserInfo(
@@ -1935,8 +1970,7 @@ abstract contract Base is Test {
   ) internal view {
     DataTypes.Asset memory asset = targetHub.getAsset(assetId);
     (uint256 baseDebt, uint256 premiumDebt) = targetHub.getAssetDebt(assetId);
-
-    vm.assertEq(
+    assertEq(
       asset.baseBorrowRate,
       IBasicInterestRateStrategy(asset.config.irStrategy).calculateInterestRate(
         assetId,
@@ -1988,17 +2022,17 @@ abstract contract Base is Test {
 
   // @dev Helper function to get asset position, valid if no time has passed since last action
   function getAssetPosition(
-    ILiquidityHub hub,
+    ILiquidityHub targetHub,
     uint256 assetId
   ) internal view returns (AssetPosition memory) {
-    DataTypes.Asset memory assetData = hub.getAsset(assetId);
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    DataTypes.Asset memory assetData = targetHub.getAsset(assetId);
+    (uint256 baseDebt, uint256 premiumDebt) = targetHub.getAssetDebt(assetId);
     return
       AssetPosition({
         assetId: assetId,
         availableLiquidity: assetData.availableLiquidity,
         suppliedShares: assetData.suppliedShares,
-        suppliedAmount: hub.getAssetSuppliedAmount(assetId),
+        suppliedAmount: targetHub.getAssetSuppliedAmount(assetId),
         baseDrawnShares: assetData.baseDrawnShares,
         baseDebt: baseDebt,
         premiumDrawnShares: assetData.premiumDrawnShares,
@@ -2064,5 +2098,12 @@ abstract contract Base is Test {
     assertEq(a.realizedPremium, b.realizedPremium, 'realizedPremium');
     assertEq(a.premiumDebt, b.premiumDebt, 'premiumDebt');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
+  }
+
+  modifier pausePrank() {
+    (VmSafe.CallerMode callerMode, address msgSender, address txOrigin) = vm.readCallers();
+    if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.stopPrank();
+    _;
+    if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.startPrank(msgSender, txOrigin);
   }
 }
