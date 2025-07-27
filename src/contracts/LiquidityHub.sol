@@ -155,7 +155,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     _validateAdd(asset, spoke, amount, from);
 
     // todo: Mitigate inflation attack
-    uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
+    uint256 suppliedShares = previewAddByAssets(assetId, amount);
     require(suppliedShares != 0, InvalidSharesAmount());
     asset.suppliedShares += suppliedShares;
     spoke.suppliedShares += suppliedShares;
@@ -179,7 +179,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateRemove(asset, spoke, amount, to);
 
-    uint256 withdrawnShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
+    uint256 withdrawnShares = previewRemoveByAssets(assetId, amount); // non zero since we round up
     asset.suppliedShares -= withdrawnShares;
     spoke.suppliedShares -= withdrawnShares;
     asset.availableLiquidity -= amount;
@@ -201,7 +201,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateDraw(asset, spoke, amount, to);
 
-    uint256 drawnShares = asset.toDrawnSharesUp(amount); // non zero since we round up
+    uint256 drawnShares = previewDrawByAssets(assetId, amount); // non zero since we round up
     asset.baseDrawnShares += drawnShares;
     spoke.baseDrawnShares += drawnShares;
     asset.availableLiquidity -= amount;
@@ -231,7 +231,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount, from);
 
-    uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
+    uint256 baseDrawnSharesRestored = previewRestoreByAssets(assetId, baseAmount);
     asset.baseDrawnShares -= baseDrawnSharesRestored;
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
@@ -369,7 +369,47 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return _spokes[assetId][spoke].config;
   }
 
-  // todo 4626 getter naming
+  /// @inheritdoc ILiquidityHub
+  function previewAddByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
+    return _assets[assetId].toSuppliedSharesDown(assets);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function previewAddByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+    return _assets[assetId].toSuppliedAssetsUp(shares);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function previewRemoveByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
+    return _assets[assetId].toSuppliedSharesUp(assets);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function previewRemoveByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+    return _assets[assetId].toSuppliedAssetsDown(shares);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function previewDrawByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
+    return _assets[assetId].toDrawnSharesUp(assets);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function previewDrawByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+    return _assets[assetId].toDrawnAssetsDown(shares);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function previewRestoreByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
+    return _assets[assetId].toDrawnSharesDown(assets);
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function previewRestoreByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+    return _assets[assetId].toDrawnAssetsUp(shares);
+  }
+
+  /// @inheritdoc ILiquidityHub
   function convertToSuppliedAssets(
     uint256 assetId,
     uint256 shares
@@ -377,13 +417,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return _assets[assetId].toSuppliedAssetsDown(shares);
   }
 
-  function convertToSuppliedAssetsUp(
-    uint256 assetId,
-    uint256 shares
-  ) external view returns (uint256) {
-    return _assets[assetId].toSuppliedAssetsUp(shares);
-  }
-
+  /// @inheritdoc ILiquidityHub
   function convertToSuppliedShares(
     uint256 assetId,
     uint256 assets
@@ -391,31 +425,19 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return _assets[assetId].toSuppliedSharesDown(assets);
   }
 
-  function convertToSuppliedSharesUp(
-    uint256 assetId,
-    uint256 assets
-  ) external view returns (uint256) {
-    return _assets[assetId].toSuppliedSharesUp(assets);
-  }
-
+  /// @inheritdoc ILiquidityHub
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toDrawnAssetsUp(shares);
   }
 
+  /// @inheritdoc ILiquidityHub
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
-  function convertToDrawnSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toDrawnSharesUp(assets);
-  }
-
-  function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toDrawnAssetsDown(shares);
-  }
-
-  function previewDrawnIndex(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].previewDrawnIndex();
+  /// @inheritdoc ILiquidityHub
+  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].getDrawnIndex();
   }
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256) {

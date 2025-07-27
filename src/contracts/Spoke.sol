@@ -432,7 +432,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
     return
-      _reserves[reserveId].hub.convertToSuppliedAssets(
+      _reserves[reserveId].hub.previewRemoveByShares(
         _reserves[reserveId].assetId,
         _reserves[reserveId].suppliedShares
       );
@@ -444,7 +444,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getUserSuppliedAmount(uint256 reserveId, address user) public view returns (uint256) {
     return
-      _reserves[reserveId].hub.convertToSuppliedAssets(
+      _reserves[reserveId].hub.previewRemoveByShares(
         _reserves[reserveId].assetId,
         _userPositions[user][reserveId].suppliedShares
       );
@@ -590,6 +590,24 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(!reserve.config.paused, ReservePaused());
     // todo validate user not trying to repay more
     // todo NoExplicitAmountToRepayOnBehalf
+  }
+
+  /**
+   * @dev Calculates the user's premium debt offset in assets amount from a given share amount.
+   * @dev Rounds down to the nearest assets amount.
+   * @dev Uses the opposite rounding direction of the debt shares-to-assets conversion to prevent underflow
+   * in premium debt.
+   * @param hub The liquidity hub of the reserve.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to convert to assets amount.
+   * @return The amount of assets converted corresponding to user's premium offset.
+   */
+  function _previewOffset(
+    ILiquidityHub hub,
+    uint256 assetId,
+    uint256 shares
+  ) internal view returns (uint256) {
+    return hub.previewDrawByShares(assetId, shares);
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
@@ -912,7 +930,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetUnit
   ) internal view returns (uint256) {
     return
-      (hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares) * assetPrice).wadify() /
+      (hub.previewRemoveByShares(assetId, userPosition.suppliedShares) * assetPrice).wadify() /
       assetUnit;
   }
 
@@ -924,7 +942,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares) -
       userPosition.premiumOffset;
     return (
-      hub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares),
+      hub.previewRestoreByShares(assetId, userPosition.baseDrawnShares),
       userPosition.realizedPremium + accruedPremium
     );
   }
@@ -938,7 +956,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 accruedPremium = hub.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) -
       reserve.premiumOffset;
     return (
-      hub.convertToDrawnAssets(assetId, reserve.baseDrawnShares),
+      hub.previewRestoreByShares(assetId, reserve.baseDrawnShares),
       reserve.realizedPremium + accruedPremium
     );
   }
@@ -972,7 +990,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMulUp(
           newUserRiskPremium
         );
-        userPosition.premiumOffset = vars.hub.previewOffset(
+        userPosition.premiumOffset = _previewOffset(
+          vars.hub,
           vars.assetId,
           userPosition.premiumDrawnShares
         );
@@ -1134,7 +1153,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.totalRestoredShares += vars.restoredShares;
 
       // expected total withdrawn shares includes liquidation fee
-      vars.withdrawnShares = collateralReserveHub.convertToSuppliedSharesUp(
+      vars.withdrawnShares = collateralReserveHub.previewRemoveByAssets(
         vars.collateralAssetId,
         vars.liquidationFeeAmount + vars.collateralToLiquidate
       );

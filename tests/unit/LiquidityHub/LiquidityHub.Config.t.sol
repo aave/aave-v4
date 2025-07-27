@@ -299,7 +299,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetUpdated(
       assetId,
-      hub.previewDrawnIndex(assetId),
+      hub.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         availableLiquidity: availableLiquidity,
