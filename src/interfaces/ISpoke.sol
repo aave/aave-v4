@@ -14,17 +14,45 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 interface ISpoke is IMulticall, IAccessManaged {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
+
+  /**
+   * @notice Emitted when a dynamic reserve config is added.
+   * @dev The config key is the next available key for the reserve, which is now the latest config
+   * key of the reserve. It can be an existing key that was previously used and is now being
+   * overridden.
+   * @param reserveId The identifier of the reserve.
+   * @param configKey The key of the added dynamic config.
+   * @param config The dynamic reserve config.
+   */
   event DynamicReserveConfigAdded(
     uint256 indexed reserveId,
     uint16 indexed configKey,
     DataTypes.DynamicReserveConfig config
   );
+
+  /**
+   * @notice Emitted when a dynamic reserve config is updated.
+   * @param reserveId The identifier of the reserve.
+   * @param configKey The key of the updated dynamic config.
+   * @param config The dynamic reserve config.
+   */
   event DynamicReserveConfigUpdated(
     uint256 indexed reserveId,
     uint16 indexed configKey,
     DataTypes.DynamicReserveConfig config
   );
+
+  /**
+   * @notice Emitted when a user's dynamic config is refreshed for all reserves to their latest config key.
+   * @param user The address of the user.
+   */
   event UserDynamicConfigRefreshedAll(address indexed user);
+
+  /**
+   * @notice Emitted when a user's dynamic config is refreshed for a single reserve to its latest config key.
+   * @param user The address of the user.
+   * @param reserveId The identifier of the reserve.
+   */
   event UserDynamicConfigRefreshedSingle(address indexed user, uint256 reserveId);
 
   /**
@@ -206,7 +234,7 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   /**
    * @notice Updates the dynamic reserve config for a given reserve at the specified key.
-   * @dev Reverts with `ConfigKeyUninitialized` if the config key has not been uninitialized yet.
+   * @dev Reverts with `ConfigKeyUninitialized` if the config key has not been initialized yet.
    * @param reserveId The identifier of the reserve.
    * @param configKey The key of the config to update.
    * @param dynamicConfig The dynamic reserve config to update.

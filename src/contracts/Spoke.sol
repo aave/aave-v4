@@ -123,7 +123,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     emit ReserveAdded(reserveId, assetId, hub);
     emit ReserveConfigUpdated(reserveId, config);
-    emit DynamicReserveConfigUpdated(reserveId, dynamicConfigKey, dynamicConfig);
+    emit DynamicReserveConfigAdded(reserveId, dynamicConfigKey, dynamicConfig);
 
     return reserveId;
   }
@@ -151,7 +151,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     unchecked {
       configKey = ++_reserves[reserveId].dynamicConfigKey;
     }
-    _setDynamicReserveConfig(reserveId, configKey, dynamicConfig);
+    _validateDynamicReserveConfig(dynamicConfig);
+    _dynamicConfig[reserveId][configKey] = dynamicConfig;
     emit DynamicReserveConfigAdded(reserveId, configKey, dynamicConfig);
     return configKey;
   }
@@ -165,7 +166,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(reserveId < _reserveCount, ReserveNotListed());
     // @dev sufficient check since min liquidationBonus is 100_00
     require(_dynamicConfig[reserveId][configKey].liquidationBonus != 0, ConfigKeyUninitialized());
-    _setDynamicReserveConfig(reserveId, configKey, dynamicConfig);
+    _validateDynamicReserveConfig(dynamicConfig);
+    _dynamicConfig[reserveId][configKey] = dynamicConfig;
     emit DynamicReserveConfigUpdated(reserveId, configKey, dynamicConfig);
   }
 
@@ -1051,15 +1053,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
     _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
     emit UserDynamicConfigRefreshedSingle(user, reserveId);
-  }
-
-  function _setDynamicReserveConfig(
-    uint256 reserveId,
-    uint16 configKey,
-    DataTypes.DynamicReserveConfig calldata dynamicConfig
-  ) internal {
-    _validateDynamicReserveConfig(dynamicConfig);
-    _dynamicConfig[reserveId][configKey] = dynamicConfig;
   }
 
   /// @return collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.

@@ -188,7 +188,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.ReserveConfigUpdated(expectedReserveId, config);
     vm.expectEmit(address(spoke));
-    emit ISpoke.DynamicReserveConfigUpdated(expectedReserveId, 0, dynamicConfig);
+    emit ISpoke.DynamicReserveConfigAdded(expectedReserveId, 0, dynamicConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     uint256 actualReserveId = spokeConfigurator.addReserve({
       spoke: spokeAddr,
