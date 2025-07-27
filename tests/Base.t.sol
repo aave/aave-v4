@@ -250,14 +250,15 @@ abstract contract Base is Test {
 
     // Grant responsibilities to roles
     {
-      bytes4[] memory selectors = new bytes4[](7);
+      bytes4[] memory selectors = new bytes4[](8);
       selectors[0] = ISpoke.updateLiquidationConfig.selector;
       selectors[1] = ISpoke.addReserve.selector;
       selectors[2] = ISpoke.updateReserveConfig.selector;
       selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
-      selectors[4] = ISpoke.updatePositionManager.selector;
-      selectors[5] = ISpoke.updateOracle.selector;
-      selectors[6] = ISpoke.updateReservePriceSource.selector;
+      selectors[4] = ISpoke.addDynamicReserveConfig.selector;
+      selectors[5] = ISpoke.updatePositionManager.selector;
+      selectors[6] = ISpoke.updateOracle.selector;
+      selectors[7] = ISpoke.updateReservePriceSource.selector;
       manager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
     }
 
@@ -966,56 +967,60 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId,
     uint256 newLiquidationBonus
-  ) internal pausePrank {
+  ) internal pausePrank returns (uint16) {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationBonus = newLiquidationBonus;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.addDynamicReserveConfig(reserveId, config);
+    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    return configKey;
   }
 
   function updateLiquidationFee(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newLiquidationFee
-  ) internal pausePrank {
+  ) internal pausePrank returns (uint16) {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.addDynamicReserveConfig(reserveId, config);
+    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    return configKey;
   }
 
   function updateCollateralFactor(
     ISpoke spoke,
     function(ISpoke) pure returns (uint256) reserveIdFn,
     uint256 newCollateralFactor
-  ) internal pausePrank {
+  ) internal pausePrank returns (uint16) {
     uint256 reserveId = reserveIdFn(spoke);
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
 
     vm.prank(SPOKE_ADMIN);
-    spoke.addDynamicReserveConfig(reserveId, config);
+    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    return configKey;
   }
 
   function updateCollateralFactor(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newCollateralFactor
-  ) internal pausePrank {
+  ) internal pausePrank returns (uint16) {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     vm.prank(SPOKE_ADMIN);
-    spoke.updateDynamicReserveConfig(reserveId, config);
+    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    return configKey;
   }
 
   function updateReserveBorrowableFlag(
