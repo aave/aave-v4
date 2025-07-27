@@ -145,7 +145,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint16) {
-    return _updateDynamicReserveConfig(reserveId, type(uint256).max, dynamicConfig);
+    require(reserveId < _reserveCount, ReserveNotListed());
+    uint16 configKey;
+    // @dev overflow is desired, we implicitly invalidate & override stale config
+    unchecked {
+      configKey = ++_reserves[reserveId].dynamicConfigKey;
+    }
+    _setDynamicReserveConfig(reserveId, configKey, dynamicConfig);
+    emit DynamicReserveConfigAdded(reserveId, configKey, dynamicConfig);
+    return configKey;
   }
 
   /// @inheritdoc ISpoke
@@ -154,7 +162,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint16 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
-    _updateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
+    require(reserveId < _reserveCount, ReserveNotListed());
+    // @dev sufficient check since min liquidationBonus is 100_00
+    require(_dynamicConfig[reserveId][configKey].liquidationBonus != 0, ConfigKeyUninitialized());
+    _setDynamicReserveConfig(reserveId, configKey, dynamicConfig);
+    emit DynamicReserveConfigUpdated(reserveId, configKey, dynamicConfig);
   }
 
   /// @inheritdoc ISpoke
@@ -1041,39 +1053,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit UserDynamicConfigRefreshedSingle(user, reserveId);
   }
 
-  /**
-   * @dev Updates the dynamic reserve config for a given reserve. Appends to new config key
-   * if `configKey` is `type(uint256).max` otherwise overrides existing specified config.
-   * @return nextConfigKey The key of the updated dynamic config.
-   */
-  function _updateDynamicReserveConfig(
+  function _setDynamicReserveConfig(
     uint256 reserveId,
-    uint256 configKey,
+    uint16 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
-  ) internal returns (uint16) {
-    require(reserveId < _reserveCount, ReserveNotListed());
+  ) internal {
     _validateDynamicReserveConfig(dynamicConfig);
-
-    uint16 nextConfigKey;
-    if (configKey == type(uint256).max) {
-      // @dev overflow is desired, we implicitly invalidate & override stale config
-      unchecked {
-        nextConfigKey = ++_reserves[reserveId].dynamicConfigKey;
-      }
-    } else {
-      // SAFETY: configKey is initially casted up to uint256, so we can safely downcast to uint16
-      nextConfigKey = uint16(configKey);
-      // @dev sufficient check since min liquidationBonus is 100_00
-      require(
-        _dynamicConfig[reserveId][nextConfigKey].liquidationBonus != 0,
-        ConfigKeyUninitialized()
-      );
-    }
-
-    _dynamicConfig[reserveId][nextConfigKey] = dynamicConfig;
-    emit DynamicReserveConfigUpdated(reserveId, nextConfigKey, dynamicConfig);
-
-    return nextConfigKey;
+    _dynamicConfig[reserveId][configKey] = dynamicConfig;
   }
 
   /// @return collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.

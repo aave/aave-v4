@@ -14,6 +14,11 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 interface ISpoke is IMulticall, IAccessManaged {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
+  event DynamicReserveConfigAdded(
+    uint256 indexed reserveId,
+    uint16 indexed configKey,
+    DataTypes.DynamicReserveConfig config
+  );
   event DynamicReserveConfigUpdated(
     uint256 indexed reserveId,
     uint16 indexed configKey,
