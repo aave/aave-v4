@@ -369,7 +369,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   /// @inheritdoc ISpoke
-  function updateUserDynamicConfig(address onBehalfOf) external onlyPositionManager(onBehalfOf) {
+  function updateUserDynamicConfig(address onBehalfOf) external {
+    if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
+      _checkCanCall(msg.sender, msg.data);
+    }
     _refreshDynamicConfig(onBehalfOf);
   }
 
@@ -426,7 +429,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
     return
-      _reserves[reserveId].hub.convertToSuppliedAssets(
+      _reserves[reserveId].hub.previewRemoveByShares(
         _reserves[reserveId].assetId,
         _reserves[reserveId].suppliedShares
       );
@@ -438,7 +441,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getUserSuppliedAmount(uint256 reserveId, address user) public view returns (uint256) {
     return
-      _reserves[reserveId].hub.convertToSuppliedAssets(
+      _reserves[reserveId].hub.previewRemoveByShares(
         _reserves[reserveId].assetId,
         _userPositions[user][reserveId].suppliedShares
       );
@@ -552,7 +555,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // internal
   function _validateSupply(DataTypes.Reserve storage reserve) internal view {
     require(reserve.underlying != address(0), ReserveNotListed());
-    require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     require(!reserve.config.frozen, ReserveFrozen());
   }
@@ -563,7 +565,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 amount
   ) internal view {
     require(reserve.underlying != address(0), ReserveNotListed());
-    require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     uint256 suppliedAmount = reserve.hub.convertToSuppliedAssets(
       reserve.assetId,
@@ -574,7 +575,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _validateBorrow(DataTypes.Reserve storage reserve) internal view {
     require(reserve.underlying != address(0), ReserveNotListed());
-    require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     require(!reserve.config.frozen, ReserveFrozen());
     require(reserve.config.borrowable, ReserveNotBorrowable(reserve.reserveId));
@@ -584,10 +584,27 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // TODO: Place this and LH equivalent in a generic logic library
   function _validateRepay(DataTypes.Reserve storage reserve) internal view {
     require(reserve.underlying != address(0), ReserveNotListed());
-    require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
     // todo validate user not trying to repay more
     // todo NoExplicitAmountToRepayOnBehalf
+  }
+
+  /**
+   * @dev Calculates the user's premium debt offset in assets amount from a given share amount.
+   * @dev Rounds down to the nearest assets amount.
+   * @dev Uses the opposite rounding direction of the debt shares-to-assets conversion to prevent underflow
+   * in premium debt.
+   * @param hub The liquidity hub of the reserve.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to convert to assets amount.
+   * @return The amount of assets converted corresponding to user's premium offset.
+   */
+  function _previewOffset(
+    ILiquidityHub hub,
+    uint256 assetId,
+    uint256 shares
+  ) internal view returns (uint256) {
+    return hub.previewDrawByShares(assetId, shares);
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
@@ -651,7 +668,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       collateralReserve.underlying != address(0) && debtReserve.underlying != address(0),
       ReserveNotListed()
     );
-    require(collateralReserve.config.active && debtReserve.config.active, ReserveNotActive());
     require(!collateralReserve.config.paused && !debtReserve.config.paused, ReservePaused());
     require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
     bool isCollateralEnabled = _positionStatus[user].isUsingAsCollateral(
@@ -663,7 +679,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   /**
    * @dev Validates the reserve can be set as collateral.
-   * @dev Collateral can be disabled if the reserve is frozen but not enabled.
+   * @dev Collateral can be disabled if the reserve is frozen.
    * @param reserve The reserve to be set as collateral.
    * @param reserveId The identifier of the reserve.
    * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
@@ -673,9 +689,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId,
     bool usingAsCollateral
   ) internal view {
-    require(reserve.config.active, ReserveNotActive());
     require(!reserve.config.paused, ReservePaused());
-    require(reserve.config.collateral, ReserveCannotBeUsedAsCollateral(reserveId));
     // deactivation should be allowed
     require(!usingAsCollateral || !reserve.config.frozen, ReserveFrozen());
   }
@@ -917,7 +931,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares) -
       userPosition.premiumOffset;
     return (
-      hub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares),
+      hub.previewRestoreByShares(assetId, userPosition.baseDrawnShares),
       userPosition.realizedPremium + accruedPremium
     );
   }
@@ -931,7 +945,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 accruedPremium = hub.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) -
       reserve.premiumOffset;
     return (
-      hub.convertToDrawnAssets(assetId, reserve.baseDrawnShares),
+      hub.previewRestoreByShares(assetId, reserve.baseDrawnShares),
       reserve.realizedPremium + accruedPremium
     );
   }
@@ -965,7 +979,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMulUp(
           newUserRiskPremium
         );
-        userPosition.premiumOffset = vars.hub.previewOffset(
+        userPosition.premiumOffset = _previewOffset(
+          vars.hub,
           vars.assetId,
           userPosition.premiumDrawnShares
         );
@@ -1093,7 +1108,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.totalRestoredShares += vars.restoredShares;
 
       // expected total withdrawn shares includes liquidation fee
-      vars.withdrawnShares = collateralReserveHub.convertToSuppliedSharesUp(
+      vars.withdrawnShares = collateralReserveHub.previewRemoveByAssets(
         vars.collateralAssetId,
         vars.liquidationFeeAmount + vars.collateralToLiquidate
       );

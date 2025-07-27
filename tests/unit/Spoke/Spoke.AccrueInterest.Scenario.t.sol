@@ -512,10 +512,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
       // Store index before accrual, and use this for calculating expected base debt
       Indices memory indices;
-      indices.daiIndex = hub.previewDrawnIndex(daiAssetId);
-      indices.wethIndex = hub.previewDrawnIndex(wethAssetId);
-      indices.usdxIndex = hub.previewDrawnIndex(usdxAssetId);
-      indices.wbtcIndex = hub.previewDrawnIndex(wbtcAssetId);
+      indices.daiIndex = hub.getAssetDrawnIndex(daiAssetId);
+      indices.wethIndex = hub.getAssetDrawnIndex(wethAssetId);
+      indices.usdxIndex = hub.getAssetDrawnIndex(usdxAssetId);
+      indices.wbtcIndex = hub.getAssetDrawnIndex(wbtcAssetId);
 
       // Store timestamp before next skip time
       startTime = uint40(vm.getBlockTimestamp());

@@ -89,12 +89,10 @@ contract SpokeMulticall is SpokeBase {
     uint256 dai2ReserveId = reserveCountBefore;
     uint256 dai3ReserveId = dai2ReserveId + 1;
     DataTypes.ReserveConfig memory dai2Config = DataTypes.ReserveConfig({
-      active: true,
-      frozen: false,
       paused: false,
-      collateralRisk: 10_00,
+      frozen: false,
       borrowable: true,
-      collateral: true
+      collateralRisk: 10_00
     });
     DataTypes.DynamicReserveConfig memory dai2DynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 88_00,
@@ -102,12 +100,10 @@ contract SpokeMulticall is SpokeBase {
       liquidationFee: 0
     });
     DataTypes.ReserveConfig memory dai3Config = DataTypes.ReserveConfig({
-      active: true,
-      frozen: false,
       paused: false,
-      collateralRisk: 5_00,
+      frozen: false,
       borrowable: true,
-      collateral: true
+      collateralRisk: 5_00
     });
     DataTypes.DynamicReserveConfig memory dai3DynConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 70_00,
@@ -169,7 +165,6 @@ contract SpokeMulticall is SpokeBase {
     newDai.config.borrowable = false;
     DataTypes.Reserve memory newUsdx = spoke1.getReserve(usdxReserveId);
     newUsdx.config.collateralRisk += 1;
-    newUsdx.config.collateral = false;
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](2);
