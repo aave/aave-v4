@@ -8,6 +8,7 @@ contract SpokeGettersTest is SpokeBase {
   using LiquidationLogic for DataTypes.LiquidationConfig;
 
   DataTypes.LiquidationConfig internal _config;
+
   function test_getVariableLiquidationBonus_notConfigured() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 healthFactor = WadRayMath.WAD;
@@ -18,9 +19,9 @@ contract SpokeGettersTest is SpokeBase {
     uint256 reserveId,
     uint256 healthFactor
   ) public {
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, healthFactor);
+    uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, bob, healthFactor);
 
     _config = spoke1.getLiquidationConfig();
 
@@ -29,7 +30,7 @@ contract SpokeGettersTest is SpokeBase {
       LiquidationLogic.calculateVariableLiquidationBonus(
         _config,
         healthFactor,
-        spoke1.getReserve(reserveId).config.liquidationBonus,
+        spoke1.getDynamicReserveConfig(reserveId).liquidationBonus,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       ),
       'calc should match'
@@ -48,7 +49,7 @@ contract SpokeGettersTest is SpokeBase {
     uint256 liquidationBonusFactor,
     uint256 healthFactorForMaxBonus
   ) public {
-    reserveId = bound(reserveId, 0, spoke1.reserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     liquidationBonusFactor = bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
     healthFactorForMaxBonus = bound(
@@ -62,17 +63,18 @@ contract SpokeGettersTest is SpokeBase {
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor
     });
+    vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(config);
     _config = spoke1.getLiquidationConfig();
 
-    uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, healthFactor);
+    uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, bob, healthFactor);
 
     assertEq(
       liqBonus,
       LiquidationLogic.calculateVariableLiquidationBonus(
         _config,
         healthFactor,
-        spoke1.getReserve(reserveId).config.liquidationBonus,
+        spoke1.getDynamicReserveConfig(reserveId).liquidationBonus,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       ),
       'calc should match'

@@ -33,18 +33,16 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     Utils.borrow(spoke1, _usdyReserveId(spoke1), alice, borrowAmount2, alice);
 
     // price drops to reach liquidatable state
-    oracle.setAssetPrice(wethAssetId, calcNewPrice(oracle.getAssetPrice(wethAssetId), 50_00)); // weth price drops by 50%
+    _mockReservePriceByPercent(spoke1, _wethReserveId(spoke1), 50_00);
 
     // position is liquidatable
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.UsingAsCollateral(_usdxReserveId(spoke1), alice, false);
     vm.prank(bob);
     spoke1.liquidationCall(_usdxReserveId(spoke1), _usdyReserveId(spoke1), alice, UINT256_MAX);
 
     // Alice's usdx collateral unset
-    assertFalse(spoke1.getUsingAsCollateral(_usdxReserveId(spoke1), alice));
+    assertTrue(spoke1.isUsingAsCollateral(_usdxReserveId(spoke1), alice));
 
     // all collateral liquidated without overflowing
     assertEq(
@@ -68,14 +66,14 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     // second amount of coll/debt is 1/10 of first
     // collateral
     uint256 supplyAmount = ((supplyAmountInBase.percentMulUp(101_00) * 10 ** decimals.weth) /
-      oracle.getAssetPrice(wethAssetId)).dewadify();
+      spoke1.oracle().getReservePrice(_wethReserveId(spoke1))).dewadifyDown();
     uint256 supplyAmount2 = (((supplyAmountInBase / 10) * 10 ** decimals.usdx) /
-      oracle.getAssetPrice(usdxAssetId)).dewadify();
+      spoke1.oracle().getReservePrice(_usdxReserveId(spoke1))).dewadifyDown();
     // debt
     uint256 borrowAmount = ((supplyAmountInBase * 10 ** decimals.dai) /
-      oracle.getAssetPrice(daiAssetId)).dewadify();
+      spoke1.oracle().getReservePrice(_daiReserveId(spoke1))).dewadifyDown();
     uint256 borrowAmount2 = (((supplyAmountInBase / 10) * 10 ** decimals.usdy) /
-      oracle.getAssetPrice(usdyAssetId)).dewadify();
+      spoke1.oracle().getReservePrice(_usdyReserveId(spoke1))).dewadifyDown();
 
     // supply
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, supplyAmount, alice);
@@ -86,18 +84,16 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     Utils.borrow(spoke1, _usdyReserveId(spoke1), alice, borrowAmount2, alice);
 
     // price drops to reach liquidatable state
-    oracle.setAssetPrice(wethAssetId, calcNewPrice(oracle.getAssetPrice(wethAssetId), 50_00)); // weth price drops by 50%
+    _mockReservePriceByPercent(spoke1, _wethReserveId(spoke1), 50_00);
 
     // position is liquidatable
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.UsingAsCollateral(_usdxReserveId(spoke1), alice, false);
     vm.prank(bob);
     spoke1.liquidationCall(_usdxReserveId(spoke1), _usdyReserveId(spoke1), alice, UINT256_MAX);
 
     // Alice's usdx collateral unset
-    assertFalse(spoke1.getUsingAsCollateral(_usdxReserveId(spoke1), alice));
+    assertTrue(spoke1.isUsingAsCollateral(_usdxReserveId(spoke1), alice));
 
     // all collateral liquidated without overflowing
     assertEq(

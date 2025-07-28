@@ -1,25 +1,30 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 /**
  * @title ILiquidityHub
  * @author Aave Labs
  * @notice Basic interface for LiquidityHub
  */
-interface ILiquidityHub {
+interface ILiquidityHub is IAccessManaged {
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
-  event AssetAdded(uint256 indexed assetId, address indexed asset);
+  event AssetAdded(uint256 indexed assetId, address indexed underlying, uint8 decimals);
   event AssetConfigUpdated(uint256 indexed assetId, DataTypes.AssetConfig config);
   event SpokeConfigUpdated(
     uint256 indexed assetId,
     address indexed spoke,
-    uint256 drawCap,
-    uint256 supplyCap
+    DataTypes.SpokeConfig config
   );
-  event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 lastUpdateTimestamp);
+  event AssetUpdated(
+    uint256 indexed assetId,
+    uint256 drawnIndex,
+    uint256 baseBorrowRate,
+    uint256 latestUpdateTimestamp
+  );
   event Add(
     uint256 indexed assetId,
     address indexed spoke,
@@ -52,15 +57,15 @@ interface ILiquidityHub {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
+  event AccrueFees(uint256 indexed assetId, uint256 shares);
 
-  error MismatchedConfigs();
   error InvalidSharesAmount();
-  error InvalidSupplyAmount();
-  error InvalidAddFromHub();
+  error InvalidAddAmount();
+  error InvalidFromAddress();
+  error InvalidToAddress();
   error AssetNotListed();
-  error AssetNotActive();
   error SupplyCapExceeded(uint256 supplyCap);
-  error InvalidWithdrawAmount();
+  error InvalidRemoveAmount();
   error InvalidRestoreAmount();
   error SuppliedAmountExceeded(uint256 suppliedAmount);
   error NotAvailableLiquidity(uint256 availableLiquidity);
@@ -68,44 +73,57 @@ interface ILiquidityHub {
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error InvalidSpoke();
-  error InvalidRiskPremiumBps(uint256 bps);
-  error AssetPaused();
-  error AssetFrozen();
+  error SpokeNotListed();
+  error SpokeAlreadyListed();
   error InvalidIrStrategy();
   error InvalidAssetDecimals();
   error InvalidLiquidityFee();
-  error InvalidAssetAddress();
+  error InvalidUnderlying();
   error InvalidDebtChange();
   error InvalidFeeReceiver();
+  error SpokeNotActive();
+  error InvalidFeeShares();
 
-  function addAsset(DataTypes.AssetConfig memory params, address asset) external;
+  /**
+   * @notice Adds a new asset to the hub.
+   * @dev The same underlying asset address can be added as an asset multiple times.
+   * @dev The fee receiver must be configured as a Spoke separately.
+   * @param underlying The address of the underlying asset.
+   * @param decimals The number of decimals of the asset.
+   * @param feeReceiver The address of the fee receiver spoke.
+   * @param irStrategy The address of the interest rate strategy contract.
+   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
+   * @return The unique identifier of the added asset.
+   */
+  function addAsset(
+    address underlying,
+    uint8 decimals,
+    address feeReceiver,
+    address irStrategy,
+    bytes calldata data
+  ) external returns (uint256);
 
-  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig memory config) external;
+  /**
+   * @notice Updates the configuration of an asset.
+   * @param assetId The identifier of the asset.
+   * @param config The new configuration for the asset.
+   */
+  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external;
 
-  function addSpoke(uint256 assetId, DataTypes.SpokeConfig memory params, address spoke) external;
-
-  function addSpokes(
-    uint256[] calldata assetIds,
-    DataTypes.SpokeConfig[] memory configs,
-    address spoke
-  ) external;
+  function addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig calldata params) external;
 
   function updateSpokeConfig(
     uint256 assetId,
     address spoke,
-    DataTypes.SpokeConfig memory config
+    DataTypes.SpokeConfig calldata config
   ) external;
 
   /**
-   * @notice Updates the fee configuration for a specified asset.
-   * @dev Accrues asset fees to the current receiver before applying any updates.
-   * @dev Disables the old fee receiver as spoke by setting its caps to zero.
-   * @dev The new fee receiver cannot be zero if the liquidity fee is non-zero.
+   * @notice Updates the interest rate strategy for a specified asset.
    * @param assetId The identifier of the asset.
-   * @param feeReceiver The address of the fee receiver
-   * @param liquidityFee The fee percentage applied to the asset based on liquidity growth.
+   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
    */
-  function updateAssetFees(uint256 assetId, address feeReceiver, uint256 liquidityFee) external;
+  function setInterestRateData(uint256 assetId, bytes calldata data) external;
 
   /**
    * @notice Add/Supply asset on behalf of user.
@@ -145,7 +163,7 @@ interface ILiquidityHub {
    * @param baseAmount The base debt to repay.
    * @param premiumAmount The premium debt to repay.
    * @param from The address to pull assets from.
-   * @return The amount of debt restored.
+   * @return The amount of base debt shares restored.
    */
   function restore(
     uint256 assetId,
@@ -173,22 +191,128 @@ interface ILiquidityHub {
     uint256 realizedPremiumTaken
   ) external;
 
+  /**
+   * @notice Pay existing liquidity to feeReceiver.
+   * @dev Only callable by spokes.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to pay to feeReceiver.
+   */
+  function payFee(uint256 assetId, uint256 shares) external;
+
+  /**
+   * @notice Converts the specified amount of assets to shares amount added upon an Add action.
+   * @dev Rounds down to the nearest shares amount.
+   * @param assetId The identifier of the asset.
+   * @param assets The amount of assets to convert to shares amount.
+   * @return The amount of shares converted from assets amount.
+   */
+  function previewAddByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified shares amount to assets amount added upon an Add action.
+   * @dev Rounds up to the nearest assets amount.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to convert to assets amount.
+   * @return The amount of assets converted from shares amount.
+   */
+  function previewAddByShares(uint256 assetId, uint256 shares) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of assets to shares amount removed upon a Remove action.
+   * @dev Rounds up to the nearest shares amount.
+   * @param assetId The identifier of the asset.
+   * @param assets The amount of assets to convert to shares amount.
+   * @return The amount of shares converted from assets amount.
+   */
+  function previewRemoveByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of shares to assets amount removed upon a Remove action.
+   * @dev Rounds down to the nearest assets amount.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to convert to assets amount.
+   * @return The amount of assets converted from shares amount.
+   */
+  function previewRemoveByShares(uint256 assetId, uint256 shares) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of assets to shares amount drawn upon a Draw action.
+   * @dev Rounds up to the nearest shares amount.
+   * @param assetId The identifier of the asset.
+   * @param assets The amount of assets to convert to shares amount.
+   * @return The amount of shares converted from assets amount.
+   */
+  function previewDrawByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of shares to assets amount drawn upon a Draw action.
+   * @dev Rounds down to the nearest assets amount.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to convert to assets amount.
+   * @return The amount of assets converted from shares amount.
+   */
+  function previewDrawByShares(uint256 assetId, uint256 shares) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of assets to shares amount restored upon a Restore action.
+   * @dev Rounds down to the nearest shares amount.
+   * @param assetId The identifier of the asset.
+   * @param assets The amount of assets to convert to shares amount.
+   * @return The amount of shares converted from assets amount.
+   */
+  function previewRestoreByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of shares to assets amount restored upon a Restore action.
+   * @dev Rounds up to the nearest assets amount.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of drawn shares to convert to assets amount.
+   * @return The amount of assets converted from shares amount.
+   */
+  function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of supplied shares to assets amount.
+   * @dev Rounds down to the nearest assets amount.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of supplied shares to convert to assets amount.
+   * @return The amount of supplied assets converted from shares amount.
+   */
+  function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of supplied assets to shares amount.
+   * @dev Rounds down to the nearest shares amount.
+   * @param assetId The identifier of the asset.
+   * @param assets The amount of supplied assets to convert to shares amount.
+   * @return The amount of supplied shares converted from assets amount.
+   */
+  function convertToSuppliedShares(uint256 assetId, uint256 assets) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of drawn shares to assets amount.
+   * @dev Rounds up to the nearest assets amount.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of drawn shares to convert to assets amount.
+   * @return The amount of drawn assets converted from shares amount.
+   */
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
+  /**
+   * @notice Converts the specified amount of drawn assets to shares amount.
+   * @dev Rounds down to the nearest shares amount.
+   * @param assetId The identifier of the asset.
+   * @param assets The amount of drawn assets to convert to shares amount.
+   * @return The amount of drawn shares converted from assets amount.
+   */
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
-  function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
-  function convertToSuppliedAssetsUp(
-    uint256 assetId,
-    uint256 shares
-  ) external view returns (uint256);
-  function convertToSuppliedShares(uint256 assetId, uint256 assets) external view returns (uint256);
-  function convertToSuppliedSharesUp(
-    uint256 assetId,
-    uint256 assets
-  ) external view returns (uint256);
-  function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256);
-  function previewDrawnIndex(uint256 assetId) external view returns (uint256);
+  /**
+   * @notice Calculates the current drawn index of the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The calculated current drawn index of the asset.
+   */
+  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256);
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
 
@@ -210,6 +334,12 @@ interface ILiquidityHub {
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
 
+  function getSpokeCount(uint256 assetId) external view returns (uint256);
+
+  function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address);
+
+  function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
+
   function getSpoke(
     uint256 assetId,
     address spoke
@@ -228,9 +358,7 @@ interface ILiquidityHub {
 
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
 
-  function assetCount() external view returns (uint256);
+  function getAssetCount() external view returns (uint256);
 
-  function assetsList(uint256 assetId) external view returns (IERC20);
-
-  function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint256);
+  function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint8);
 }

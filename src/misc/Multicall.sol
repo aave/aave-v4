@@ -23,5 +23,6 @@ abstract contract Multicall is IMulticall {
 
       results[i] = res;
     }
+    return results;
   }
 }

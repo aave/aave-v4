@@ -6,7 +6,6 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 /// tests where liquidation results in bad debt (debt > 0, collateral = 0)
 /// TODO: realize bad debt into deficit when deficit accounting is implemented, resolve tests
 contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
-  using WadRayMath for uint256;
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
 
@@ -17,11 +16,11 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationProtocolFee,
+    uint256 liquidationFee,
     uint256 skipTime
   ) public {
-    collateralReserveId = bound(collateralReserveId, 0, spoke1.reserveCount() - 1);
-    debtReserveId = bound(debtReserveId, 0, spoke1.reserveCount() - 1);
+    collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
+    debtReserveId = bound(debtReserveId, 0, spoke1.getReserveCount() - 1);
 
     LiquidationTestLocalParams memory state = _execLiqCallCloseFactorBadDebtTest(
       liqConfig,
@@ -29,7 +28,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       supplyAmount,
       collateralReserveId,
       debtReserveId,
-      liquidationProtocolFee,
+      liquidationFee,
       skipTime
     );
 
@@ -37,7 +36,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
 
     // with no collateral remaining collateral should be disabled as collateral
     assertFalse(
-      spoke1.getUsingAsCollateral(state.collateralReserve.reserveId, alice),
+      spoke1.isUsingAsCollateral(state.collateralReserve.reserveId, alice),
       'isUsingAsCollateral should be false with no collateral'
     );
     // all collateral is seized
@@ -60,7 +59,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationProtocolFee,
+    uint256 liquidationFee,
     uint256 skipTime
   ) public {
     liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
@@ -70,7 +69,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       liqConfig,
       liqBonus,
       supplyAmount,
-      liquidationProtocolFee,
+      liquidationFee,
       skipTime
     );
   }
@@ -87,7 +86,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       skipTime: 365 days
@@ -106,7 +105,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       skipTime: 365 days
@@ -126,7 +125,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       skipTime: 365 days
@@ -146,7 +145,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1.5e18,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       skipTime: 365 days
@@ -166,7 +165,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       skipTime: 365 days
@@ -186,7 +185,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10_000e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       skipTime: 365 days
@@ -205,7 +204,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       skipTime: 365 days
@@ -224,7 +223,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 10e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       skipTime: 365 days
@@ -243,7 +242,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1_000e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       skipTime: 365 days
@@ -262,7 +261,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1_000e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       skipTime: 365 days
@@ -281,7 +280,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1_000e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       skipTime: 365 days
@@ -300,7 +299,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmount: 1_000e6,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       skipTime: 365 days
@@ -336,7 +335,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     uint256 supplyAmount,
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    uint256 liquidationProtocolFee,
+    uint256 liquidationFee,
     uint256 skipTime
   ) internal returns (LiquidationTestLocalParams memory) {
     vm.skip(true, 'pending deficit accounting');
@@ -349,26 +348,31 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMath.PERCENTAGE_FACTOR.percentDiv(state.collateralReserve.config.collateralFactor)
+      PercentageMath.PERCENTAGE_FACTOR.percentDiv(state.collDynConfig.collateralFactor)
     );
 
-    liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
+    liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(state.collateralReserve.assetId, 1e25),
+      _convertBaseCurrencyToAmount(spoke1, state.collateralReserve.reserveId, 1e25),
       _min(
-        _convertBaseCurrencyToAmount(state.collateralReserve.assetId, MAX_SUPPLY_IN_BASE_CURRENCY),
+        _convertBaseCurrencyToAmount(
+          spoke1,
+          state.collateralReserve.reserveId,
+          MAX_SUPPLY_IN_BASE_CURRENCY
+        ),
         MAX_SUPPLY_AMOUNT
       )
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.liquidationProtocolFee = liquidationProtocolFee;
+    state.liquidationFee = liquidationFee;
 
     // set spoke liq config
+    vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-    updateLiquidationProtocolFee(spoke1, collateralReserveId, state.liquidationProtocolFee);
+    updateLiquidationFee(spoke1, collateralReserveId, state.liquidationFee);
     // set user position under hf threshold so that there is invalid collateral to cover all debt
     // results in bad debt remaining (debt > 0, collateral = 0)
     uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, collateralReserveId, liqBonus)
@@ -377,18 +381,18 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: collateralReserveId,
-      user: alice,
+      caller: alice,
       amount: supplyAmount,
       onBehalfOf: alice
     });
 
-    _increaseCollateralReserveSupplyExchangeRate(
-      state.collateralReserve.assetId,
-      collateralReserveId,
-      supplyAmount / 2,
-      skipTime,
-      bob
-    );
+    _borrowWithoutHfCheck({
+      spoke: spoke1,
+      user: bob,
+      reserveId: collateralReserveId,
+      debtAmount: supplyAmount / 2
+    });
+    skip(skipTime);
 
     vm.assume(
       _getRequiredDebtAmountForLtHf(spoke1, alice, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
@@ -401,23 +405,23 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       desiredHf
     );
 
-    state.liquidationBonus = spoke1.getVariableLiquidationBonus(collateralReserveId, hfAfterBorrow);
+    state.liquidationBonus = spoke1.getVariableLiquidationBonus(
+      collateralReserveId,
+      alice,
+      hfAfterBorrow
+    );
 
     state = _getAccountingInfoBeforeLiq(state);
     (
       state.collToLiq,
       state.debtToLiq,
-      state.liqProtocolFee
+      state.liquidationFeeAmount
     ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
-
-    // logs to read protocol fee from tmp emitted event
-    // TODO: update when treasury accounting is done
-    vm.recordLogs();
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.LiquidationCall(
-      state.collateralReserve.asset,
-      state.debtReserve.asset,
+      state.collateralReserve.underlying,
+      state.debtReserve.underlying,
       alice,
       state.debtToLiq,
       state.collToLiq,

@@ -5,99 +5,58 @@ import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubDrawTest is LiquidityHubBase {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
 
-  function test_draw_same_block() public {
-    uint256 daiAmount = 100e18;
-    uint256 drawAmount = daiAmount;
+  function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 amount) public {
+    assetId = bound(assetId, 0, hub.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    // hub
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
-    assertEq(hub.getAssetTotalDebt(daiAssetId), 0);
-    assertEq(baseDebt, 0);
-    assertEq(premiumDebt, 0);
-    assertEq(hub.getAvailableLiquidity(daiAssetId), 0);
-    assertEq(hub.getAsset(daiAssetId).lastUpdateTimestamp, vm.getBlockTimestamp());
-    // spoke
-    (baseDebt, premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
-    assertEq(hub.getSpokeTotalDebt(daiAssetId, address(spoke1)), 0);
-    assertEq(baseDebt, 0);
-    assertEq(premiumDebt, 0);
+    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
     // spoke2, bob supply dai
-    Utils.add({
-      hub: hub,
-      assetId: daiAssetId,
-      spoke: address(spoke2),
-      amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
-    });
+    Utils.add({hub: hub, assetId: assetId, caller: address(spoke2), amount: amount, user: bob});
 
-    // spoke1 draw all dai reserve liquidity
+    uint256 shares = hub.previewDrawByAssets(assetId, amount);
+
+    DataTypes.Asset memory assetBefore = hub.getAsset(assetId);
+    (, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    vm.expectCall(
+      address(irStrategy),
+      abi.encodeCall(
+        IBasicInterestRateStrategy.calculateInterestRate,
+        (
+          assetId,
+          assetBefore.availableLiquidity - amount,
+          hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+          premiumDebt
+        )
+      )
+    );
+
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Draw(daiAssetId, address(spoke1), drawAmount, drawAmount);
+    emit ILiquidityHub.AssetUpdated(
+      assetId,
+      hub.getAssetDrawnIndex(assetId),
+      IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
+        assetId: assetId,
+        availableLiquidity: assetBefore.availableLiquidity - amount,
+        baseDebt: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+        premiumDebt: premiumDebt
+      }),
+      vm.getBlockTimestamp()
+    );
+    vm.expectEmit(address(hub.getAsset(assetId).underlying));
+    emit IERC20.Transfer(address(hub), alice, amount);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Draw(assetId, address(spoke1), shares, amount);
+
     vm.prank(address(spoke1));
-    hub.draw({assetId: daiAssetId, amount: drawAmount, to: alice});
+    hub.draw(assetId, amount, alice);
 
     // hub
-    (baseDebt, premiumDebt) = hub.getAssetDebt(daiAssetId);
-    assertEq(hub.getAssetTotalDebt(daiAssetId), drawAmount, 'asset totalDebt after');
-    assertEq(baseDebt, drawAmount, 'asset baseDebt after');
-    assertEq(premiumDebt, 0, 'asset premiumDebt after');
-    assertEq(hub.getAvailableLiquidity(daiAssetId), 0, 'asset availableLiquidity after');
-    assertEq(
-      hub.getAsset(daiAssetId).lastUpdateTimestamp,
-      vm.getBlockTimestamp(),
-      'asset lastUpdateTimestamp after'
-    );
-    // spoke
-    (baseDebt, premiumDebt) = hub.getSpokeDebt(daiAssetId, address(spoke1));
-    assertEq(
-      hub.getSpokeTotalDebt(daiAssetId, address(spoke1)),
-      drawAmount,
-      'spoke totalDebt after'
-    );
-    assertEq(baseDebt, drawAmount, 'spoke baseDebt after');
-    assertEq(premiumDebt, 0, 'spoke premiumDebt after');
-    // dai balance
-    assertEq(
-      tokenList.dai.balanceOf(alice),
-      drawAmount + MAX_SUPPLY_AMOUNT,
-      'alice dai final balance'
-    );
-    assertEq(tokenList.dai.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob dai final balance');
-    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
-    assertEq(tokenList.dai.balanceOf(address(spoke2)), 0, 'spoke2 dai final balance');
-  }
-
-  function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 daiAmount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 2); // Exclude duplicated DAI
-    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
-    uint256 drawAmount = daiAmount;
-
-    IERC20 asset = hub.assetsList(assetId);
-
-    // spoke2, bob supply dai
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke2),
-      amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
-    });
-
-    // spoke1 draw all dai reserve liquidity
-    vm.expectEmit(address(hub));
-    emit ILiquidityHub.Draw(assetId, address(spoke1), drawAmount, drawAmount);
-    vm.prank(address(spoke1));
-    hub.draw({assetId: assetId, amount: drawAmount, to: alice});
-
-    // hub
-    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
-    assertEq(hub.getAssetTotalDebt(assetId), drawAmount, 'asset totalDebt after');
-    assertEq(baseDebt, drawAmount, 'asset baseDebt after');
+    uint256 baseDebt;
+    (baseDebt, premiumDebt) = hub.getAssetDebt(assetId);
+    assertEq(hub.getAssetTotalDebt(assetId), amount, 'asset totalDebt after');
+    assertEq(baseDebt, amount, 'asset baseDebt after');
     assertEq(premiumDebt, 0, 'asset premiumDebt after');
     assertEq(hub.getAvailableLiquidity(assetId), 0, 'asset availableLiquidity after');
     assertEq(
@@ -105,85 +64,93 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
+    assertEq(
+      hub.getAsset(assetId).availableLiquidity,
+      assetBefore.availableLiquidity - amount,
+      'available liquidity after draw'
+    );
+    assertEq(
+      hub.getAsset(assetId).baseDrawnShares,
+      assetBefore.baseDrawnShares + shares,
+      'baseDrawnShares after draw'
+    );
+    assertBorrowRateSynced(hub, assetId, 'hub.draw');
     // spoke
     (baseDebt, premiumDebt) = hub.getSpokeDebt(assetId, address(spoke1));
-    assertEq(hub.getSpokeTotalDebt(assetId, address(spoke1)), drawAmount, 'spoke totalDebt after');
-    assertEq(baseDebt, drawAmount, 'spoke baseDebt after');
+    assertEq(hub.getSpokeTotalDebt(assetId, address(spoke1)), amount, 'spoke totalDebt after');
+    assertEq(baseDebt, amount, 'spoke baseDebt after');
     assertEq(premiumDebt, 0, 'spoke premiumDebt after');
     // token balance
-    assertEq(asset.balanceOf(alice), drawAmount + MAX_SUPPLY_AMOUNT, 'alice asset final balance');
-    assertEq(asset.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob asset final balance');
-    assertEq(asset.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
-    assertEq(asset.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
+    assertEq(underlying.balanceOf(alice), amount + MAX_SUPPLY_AMOUNT, 'alice asset final balance');
+    assertEq(underlying.balanceOf(bob), MAX_SUPPLY_AMOUNT - amount, 'bob asset final balance');
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
+    assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
   }
 
-  function test_draw_revertsWith_AssetNotActive() public {
-    uint256 drawAmount = 1;
-    updateAssetActive(hub, daiAssetId, false);
+  function test_draw_fuzz_IncreasedBorrowRate(uint256 assetId, uint256 amount) public {
+    assetId = bound(assetId, 0, hub.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
 
-    assertFalse(hub.getAsset(daiAssetId).config.active);
+    _addLiquidity(assetId, amount * 2);
+    _drawLiquidity(assetId, amount, true);
+    skip(365 days);
 
-    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+    uint256 shares = hub.previewDrawByAssets(assetId, amount);
+
+    DataTypes.Asset memory assetBefore = hub.getAsset(assetId);
+    (, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    vm.expectCall(
+      address(irStrategy),
+      abi.encodeCall(
+        IBasicInterestRateStrategy.calculateInterestRate,
+        (
+          assetId,
+          assetBefore.availableLiquidity - amount,
+          hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+          premiumDebt
+        )
+      )
+    );
+
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.AssetUpdated(
+      assetId,
+      hub.getAssetDrawnIndex(assetId),
+      IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
+        assetId: assetId,
+        availableLiquidity: assetBefore.availableLiquidity - amount,
+        baseDebt: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+        premiumDebt: premiumDebt
+      }),
+      vm.getBlockTimestamp()
+    );
+    vm.expectEmit(address(hub.getAsset(assetId).underlying));
+    emit IERC20.Transfer(address(hub), alice, amount);
+    vm.expectEmit(address(hub));
+    emit ILiquidityHub.Draw(assetId, address(spoke1), shares, amount);
+
     vm.prank(address(spoke1));
-    hub.draw(daiAssetId, drawAmount, address(spoke1));
+    hub.draw(assetId, amount, alice);
+
+    assertEq(
+      hub.getAsset(assetId).availableLiquidity,
+      assetBefore.availableLiquidity - amount,
+      'available liquidity after draw'
+    );
+    assertEq(
+      hub.getAsset(assetId).baseDrawnShares,
+      assetBefore.baseDrawnShares + shares,
+      'baseDrawnShares after draw'
+    );
+
+    assertBorrowRateSynced(hub, assetId, 'hub.draw');
   }
 
-  function test_draw_fuzz_revertsWith_AssetNotActive(uint256 assetId, uint256 drawAmount) public {
-    drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
-    updateAssetActive(hub, assetId, false);
-
-    assertFalse(hub.getAsset(assetId).config.active);
-
-    vm.expectRevert(ILiquidityHub.AssetNotActive.selector);
+  function test_draw_revertsWith_SpokeNotActive() public {
+    updateSpokeActive(hub, daiAssetId, address(spoke1), false);
+    vm.expectRevert(ILiquidityHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
-    hub.draw(assetId, drawAmount, address(spoke1));
-  }
-
-  function test_draw_revertsWith_AssetPaused() public {
-    uint256 drawAmount = 1;
-    updateAssetPaused(hub, daiAssetId, true);
-
-    assertTrue(hub.getAsset(daiAssetId).config.paused);
-
-    vm.expectRevert(ILiquidityHub.AssetPaused.selector);
-    vm.prank(address(spoke1));
-    hub.draw(daiAssetId, drawAmount, address(spoke1));
-  }
-
-  function test_draw_fuzz_revertsWith_AssetPaused(uint256 assetId, uint256 drawAmount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
-    drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
-    updateAssetPaused(hub, assetId, true);
-
-    assertTrue(hub.getAsset(assetId).config.paused);
-
-    vm.expectRevert(ILiquidityHub.AssetPaused.selector);
-    vm.prank(address(spoke1));
-    hub.draw(assetId, drawAmount, address(spoke1));
-  }
-
-  function test_draw_revertsWith_AssetFrozen() public {
-    uint256 drawAmount = 1;
-    updateAssetFrozen(hub, daiAssetId, true);
-
-    assertTrue(hub.getAsset(daiAssetId).config.frozen);
-
-    vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
-    vm.prank(address(spoke1));
-    hub.draw(daiAssetId, drawAmount, address(spoke1));
-  }
-
-  function test_draw_fuzz_revertsWith_AssetFrozen(uint256 assetId, uint256 drawAmount) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
-    drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
-    updateAssetFrozen(hub, assetId, true);
-
-    assertTrue(hub.getAsset(assetId).config.frozen);
-
-    vm.expectRevert(ILiquidityHub.AssetFrozen.selector);
-    vm.prank(address(spoke1));
-    hub.draw(assetId, drawAmount, address(spoke1));
+    hub.draw(daiAssetId, 100e18, alice);
   }
 
   function test_draw_revertsWith_NotAvailableLiquidity() public {
@@ -200,7 +167,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 assetId,
     uint256 drawAmount
   ) public {
-    assetId = bound(assetId, 0, hub.assetCount() - 1);
+    assetId = bound(assetId, 0, hub.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
     assertTrue(hub.getAvailableLiquidity(assetId) == 0);
@@ -217,16 +184,15 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
+      user: bob
     });
     // withdraw all so no liquidity remains
     Utils.remove({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
       to: bob
     });
@@ -249,16 +215,15 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
+      user: bob
     });
     // withdraw all so no liquidity remains
     Utils.remove({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
       to: bob
     });
@@ -279,19 +244,17 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
+      user: bob
     });
     // draw all so no liquidity remains
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      to: bob,
-      onBehalfOf: bob
+      to: bob
     });
 
     assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
@@ -310,19 +273,17 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     Utils.add({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      user: bob,
-      to: address(spoke2)
+      user: bob
     });
     // draw all so no liquidity remains
     Utils.draw({
       hub: hub,
       assetId: daiAssetId,
-      spoke: address(spoke2),
+      caller: address(spoke2),
       amount: daiAmount,
-      to: bob,
-      onBehalfOf: bob
+      to: bob
     });
 
     assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
@@ -343,9 +304,9 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
   }
 
   function test_draw_revertsWith_DrawCapExceeded_due_to_interest() public {
-    // Set liquidity premium of dai to 0
-    updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);
-    assertEq(_getLiquidityPremium(spoke1, _daiReserveId(spoke1)), 0);
+    // Set collateral risk of dai to 0
+    updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
+    assertEq(_getCollateralRisk(spoke1, _daiReserveId(spoke1)), 0);
 
     uint256 daiAmount = 100e18;
     uint256 drawCap = daiAmount;
@@ -388,7 +349,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     uint256 skipTime
   ) public {
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
-    rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
+    rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     uint256 drawCap = daiAmount;
@@ -396,7 +357,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
-    _mockRate(rate);
+    _mockInterestRateBps(rate);
     _supplyAndDrawLiquidity({
       assetId: daiAssetId,
       supplyUser: bob,
@@ -428,6 +389,48 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.stopPrank();
   }
 
+  /// Tests that the draw cap is checked against spoke's debt, not the hub's debt
+  function test_draw_DifferentSpokes() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawCap = daiAmount;
+    uint256 drawAmount = drawCap;
+
+    updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
+    updateDrawCap(hub, daiAssetId, address(spoke2), drawCap);
+
+    _supplyAndDrawLiquidity({
+      assetId: daiAssetId,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: daiAmount,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: drawAmount,
+      skipTime: 365 days
+    });
+
+    // restore to provide liquidity
+    // Must repay at least one full share
+    vm.startPrank(address(spoke1));
+    hub.restore({
+      assetId: daiAssetId,
+      baseAmount: minimumAssetsPerDrawnShare(daiAssetId),
+      premiumAmount: 0,
+      from: alice
+    });
+    vm.stopPrank();
+
+    (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
+    assertGt(baseDebt, drawCap);
+
+    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
+    vm.prank(address(spoke1));
+    hub.draw({assetId: daiAssetId, amount: 1, to: bob});
+
+    vm.prank(address(spoke2));
+    hub.draw({assetId: daiAssetId, amount: 1, to: bob});
+  }
+
   function test_draw_revertsWith_DrawCapExceeded() public {
     uint256 daiAmount = 100e18;
     uint256 drawCap = daiAmount;
@@ -450,5 +453,11 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
     vm.prank(address(spoke1));
     hub.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
+  }
+
+  function test_draw_fuzz_revertsWith_InvalidToAddress(uint256 daiAmount) public {
+    vm.expectRevert(ILiquidityHub.InvalidToAddress.selector);
+    vm.prank(address(spoke1));
+    hub.draw({assetId: daiAssetId, amount: daiAmount, to: address(hub)});
   }
 }

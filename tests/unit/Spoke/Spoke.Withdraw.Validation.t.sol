@@ -4,20 +4,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeWithdrawValidationTest is SpokeBase {
-  using WadRayMath for uint256;
-
-  function test_withdraw_revertsWith_ReserveNotActive() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    uint256 amount = 100e18;
-
-    updateReserveActiveFlag(spoke1, daiReserveId, false);
-    assertFalse(spoke1.getReserve(daiReserveId).config.active);
-
-    vm.expectRevert(ISpoke.ReserveNotActive.selector);
-    vm.prank(bob);
-    spoke1.withdraw(daiReserveId, amount, bob);
-  }
-
   function test_withdraw_revertsWith_ReservePaused() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
@@ -31,7 +17,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
   }
 
   function test_withdraw_revertsWith_ReserveNotListed() public {
-    uint256 reserveId = spoke1.reserveCount() + 1; // invalid reserveId
+    uint256 reserveId = spoke1.getReserveCount() + 1; // invalid reserveId
     uint256 amount = 100e18;
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
@@ -70,7 +56,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: reserveId,
-      user: alice,
+      caller: alice,
       amount: amount,
       onBehalfOf: alice
     });
@@ -99,27 +85,26 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     uint256 reserveId = _daiReserveId(spoke1);
 
     // Alice supplies dai
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: reserveId,
-      user: alice,
+      caller: alice,
       amount: supplyAmount,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, reserveId, true);
 
     // Alice borrows dai
     Utils.borrow({
       spoke: spoke1,
       reserveId: reserveId,
-      user: alice,
+      caller: alice,
       amount: borrowAmount,
       onBehalfOf: alice
     });
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, supplyAmount));
     vm.prank(alice);
-    spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, to: bob});
+    spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, onBehalfOf: alice});
 
     // accrue interest
     skip(365 days);
@@ -130,7 +115,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, newWithdrawalLimit));
     vm.prank(alice);
-    spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, to: alice});
+    spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, onBehalfOf: alice});
   }
 
   // Cannot withdraw more than available liquidity, before and after time skip, fuzzed
@@ -144,36 +129,31 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within Collateral Factor
-    rate = bound(rate, 1, MAX_BORROW_RATE).bpsToRay();
+    rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(rate)
-    );
+    _mockInterestRateBps(rate);
 
     // Alice supply
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: reserveId,
-      user: alice,
+      caller: alice,
       amount: supplyAmount,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, reserveId, true);
     // Alice borrows dai
     Utils.borrow({
       spoke: spoke1,
       reserveId: reserveId,
-      user: alice,
+      caller: alice,
       amount: borrowAmount,
       onBehalfOf: alice
     });
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, supplyAmount));
     vm.prank(alice);
-    spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, to: alice});
+    spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, onBehalfOf: alice});
 
     // debt accrues
     skip(skipTime);
@@ -184,6 +164,6 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, newWithdrawalLimit));
     vm.prank(alice);
-    spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, to: alice});
+    spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, onBehalfOf: alice});
   }
 }
