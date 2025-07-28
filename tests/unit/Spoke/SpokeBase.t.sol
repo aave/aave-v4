@@ -172,12 +172,13 @@ contract SpokeBase is Base {
   }
 
   /// @dev Opens a debt position for a random user, using same asset as collateral and borrow
+  /// @return user address
   function _openDebtPosition(
     ISpoke spoke,
     uint256 reserveId,
     uint256 amount,
     bool withPremium
-  ) internal returns (uint256) {
+  ) internal returns (address) {
     address tempUser = vm.randomAddress();
 
     // add collateral
@@ -225,6 +226,8 @@ contract SpokeBase is Base {
       // restore cached collateral risk
       updateCollateralRisk(spoke, reserveId, cachedCollateralRisk);
     }
+
+    return tempUser;
   }
 
   // increase share conversion index on given reserve

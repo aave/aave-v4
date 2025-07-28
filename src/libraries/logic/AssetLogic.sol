@@ -179,30 +179,14 @@ library AssetLogic {
     if (nextDrawnIndex == currentDrawnIndex || liquidityFee == 0) {
       return 0;
     }
-    // liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee
-    uint256 feesAmount = (nextDrawnIndex - currentDrawnIndex)
-      .rayMulDown(asset.baseDrawnShares + asset.premiumDrawnShares)
-      .percentMulDown(liquidityFee);
 
-    uint256 feesAmountActual = ((nextDrawnIndex - currentDrawnIndex).rayMulDown(
-      asset.baseDrawnShares
-    ) +
-      asset.getDrawnIndex().rayMulDown(asset.premiumDrawnShares) -
+    uint256 feesAmount = ((nextDrawnIndex - currentDrawnIndex).rayMulUp(asset.baseDrawnShares) +
+      nextDrawnIndex.rayMulUp(asset.premiumDrawnShares) -
       asset.premiumOffset).percentMulDown(liquidityFee);
 
-    require(absDiff(feesAmount, feesAmountActual) < 2, FeeDiff(feesAmount, feesAmountActual));
-
-    return
-      feesAmountActual.toSharesDown(
-        asset.totalSuppliedAssets() - feesAmountActual,
-        asset.suppliedShares
-      );
+    return feesAmount.toSharesDown(asset.totalSuppliedAssets() - feesAmount, asset.suppliedShares);
   }
 
-  error FeeDiff(uint256 feesAmount, uint256 feesAmountActual);
-  function absDiff(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    return a > b ? a - b : b - a;
-  }
   /**
    * @dev Calculates the amount of fee shares generated from the asset's accrued interest.
    * @dev It calculates the updated drawn index on the fly using the current index and the borrow rate.
