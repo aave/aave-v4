@@ -175,4 +175,11 @@ library MathUtils {
       result := xor(b, mul(xor(a, b), lt(a, b)))
     }
   }
+
+  /// @dev Returns max(0, x - y).
+  function zeroFloorSub(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    assembly {
+      z := mul(gt(x, y), sub(x, y))
+    }
+  }
 }

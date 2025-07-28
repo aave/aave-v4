@@ -12,6 +12,7 @@ import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
 contract LiquidityHub is ILiquidityHub, AccessManaged {
@@ -327,17 +328,13 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
-    asset.realizedPremium = realizedPremiumTaken <= realizedPremium
-      ? realizedPremium - realizedPremiumTaken
-      : 0;
+    asset.realizedPremium = MathUtils.zeroFloorSub(realizedPremium, realizedPremiumTaken);
 
     realizedPremium = spoke.realizedPremium + realizedPremiumAdded;
 
     spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
-    spoke.realizedPremium = realizedPremiumTaken <= realizedPremium
-      ? realizedPremium - realizedPremiumTaken
-      : 0;
+    spoke.realizedPremium = MathUtils.zeroFloorSub(realizedPremium, realizedPremiumTaken);
 
     emit RefreshPremiumDebt(
       assetId,
@@ -602,9 +599,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   ) internal view returns (uint256, uint256) {
     // sanity: utilize solc underflow check
     uint256 premiumDrawnAssets = asset.toDrawnAssetsUp(spoke.premiumDrawnShares);
-    uint256 accruedPremium = spoke.premiumOffset >= premiumDrawnAssets
-      ? 0
-      : premiumDrawnAssets - spoke.premiumOffset;
+    uint256 accruedPremium = MathUtils.zeroFloorSub(premiumDrawnAssets, spoke.premiumOffset);
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
   }
 

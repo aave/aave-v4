@@ -10,6 +10,7 @@ import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
@@ -771,9 +772,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     reserve.premiumDrawnShares = _add(reserve.premiumDrawnShares, premiumDrawnSharesDelta);
     reserve.premiumOffset = _add(reserve.premiumOffset, premiumOffsetDelta);
     uint256 reserveRealizedPremium = reserve.realizedPremium + realizedPremiumAdded;
-    reserve.realizedPremium = realizedPremiumTaken <= reserveRealizedPremium
-      ? reserveRealizedPremium - realizedPremiumTaken
-      : 0;
+    reserve.realizedPremium = MathUtils.zeroFloorSub(reserveRealizedPremium, realizedPremiumTaken);
 
     emit RefreshPremiumDebt(
       reserveId,
@@ -924,7 +923,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 userPremiumOffset
   ) internal view returns (uint256) {
     uint256 userPremiumDebt = hub.convertToDrawnAssets(assetId, userPremiumDrawnShares);
-    return userPremiumOffset >= userPremiumDebt ? 0 : userPremiumDebt - userPremiumOffset;
+    return MathUtils.zeroFloorSub(userPremiumDebt, userPremiumOffset);
   }
 
   function _getUserDebtInBaseCurrency(
