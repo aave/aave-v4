@@ -123,7 +123,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     emit ReserveAdded(reserveId, assetId, hub);
     emit ReserveConfigUpdated(reserveId, config);
-    emit DynamicReserveConfigUpdated(reserveId, dynamicConfigKey, dynamicConfig);
+    emit DynamicReserveConfigAdded(reserveId, dynamicConfigKey, dynamicConfig);
 
     return reserveId;
   }
@@ -140,23 +140,35 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit ReserveConfigUpdated(reserveId, config);
   }
 
+  /// @inheritdoc ISpoke
+  function addDynamicReserveConfig(
+    uint256 reserveId,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
+  ) external restricted returns (uint16) {
+    require(reserveId < _reserveCount, ReserveNotListed());
+    uint16 configKey;
+    // @dev overflow is desired, we implicitly invalidate & override stale config
+    unchecked {
+      configKey = ++_reserves[reserveId].dynamicConfigKey;
+    }
+    _validateDynamicReserveConfig(dynamicConfig);
+    _dynamicConfig[reserveId][configKey] = dynamicConfig;
+    emit DynamicReserveConfigAdded(reserveId, configKey, dynamicConfig);
+    return configKey;
+  }
+
+  /// @inheritdoc ISpoke
   function updateDynamicReserveConfig(
     uint256 reserveId,
+    uint16 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
+    // @dev sufficient check since min liquidationBonus is 100_00
+    require(_dynamicConfig[reserveId][configKey].liquidationBonus != 0, ConfigKeyUninitialized());
     _validateDynamicReserveConfig(dynamicConfig);
-    // TODO: More sophisticated
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    uint16 nextConfigKey;
-    // @dev overflow is desired, we implicitly invalidate & override stale config
-    unchecked {
-      nextConfigKey = ++reserve.dynamicConfigKey;
-    }
-    // todo opt: concat key to use single lookup
-    _dynamicConfig[reserveId][nextConfigKey] = dynamicConfig;
-    emit DynamicReserveConfigUpdated(reserveId, nextConfigKey, dynamicConfig);
-    // todo emit if stale config overwritten?
+    _dynamicConfig[reserveId][configKey] = dynamicConfig;
+    emit DynamicReserveConfigUpdated(reserveId, configKey, dynamicConfig);
   }
 
   /// @inheritdoc ISpoke
@@ -418,7 +430,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
     return
-      _reserves[reserveId].hub.convertToSuppliedAssets(
+      _reserves[reserveId].hub.previewRemoveByShares(
         _reserves[reserveId].assetId,
         _reserves[reserveId].suppliedShares
       );
@@ -430,7 +442,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getUserSuppliedAmount(uint256 reserveId, address user) public view returns (uint256) {
     return
-      _reserves[reserveId].hub.convertToSuppliedAssets(
+      _reserves[reserveId].hub.previewRemoveByShares(
         _reserves[reserveId].assetId,
         _userPositions[user][reserveId].suppliedShares
       );
@@ -576,6 +588,24 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(!reserve.config.paused, ReservePaused());
     // todo validate user not trying to repay more
     // todo NoExplicitAmountToRepayOnBehalf
+  }
+
+  /**
+   * @dev Calculates the user's premium debt offset in assets amount from a given share amount.
+   * @dev Rounds down to the nearest assets amount.
+   * @dev Uses the opposite rounding direction of the debt shares-to-assets conversion to prevent underflow
+   * in premium debt.
+   * @param hub The liquidity hub of the reserve.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to convert to assets amount.
+   * @return The amount of assets converted corresponding to user's premium offset.
+   */
+  function _previewOffset(
+    ILiquidityHub hub,
+    uint256 assetId,
+    uint256 shares
+  ) internal view returns (uint256) {
+    return hub.previewDrawByShares(assetId, shares);
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
@@ -898,7 +928,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetUnit
   ) internal view returns (uint256) {
     return
-      (hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares) * assetPrice).wadify() /
+      (hub.previewRemoveByShares(assetId, userPosition.suppliedShares) * assetPrice).wadify() /
       assetUnit;
   }
 
@@ -910,7 +940,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares) -
       userPosition.premiumOffset;
     return (
-      hub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares),
+      hub.previewRestoreByShares(assetId, userPosition.baseDrawnShares),
       userPosition.realizedPremium + accruedPremium
     );
   }
@@ -924,7 +954,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 accruedPremium = hub.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) -
       reserve.premiumOffset;
     return (
-      hub.convertToDrawnAssets(assetId, reserve.baseDrawnShares),
+      hub.previewRestoreByShares(assetId, reserve.baseDrawnShares),
       reserve.realizedPremium + accruedPremium
     );
   }
@@ -961,7 +991,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMulUp(
           newUserRiskPremium
         );
-        userPosition.premiumOffset = vars.hub.previewOffset(
+        userPosition.premiumOffset = _previewOffset(
+          vars.hub,
           vars.assetId,
           userPosition.premiumDrawnShares
         );
@@ -1111,7 +1142,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       );
 
       // expected total withdrawn shares includes liquidation fee
-      vars.withdrawnShares = vars.collateralReserveHub.convertToSuppliedSharesUp(
+      vars.withdrawnShares = vars.collateralReserveHub.previewRemoveByAssets(
         vars.collateralAssetId,
         vars.liquidationFeeAmount + vars.collateralToLiquidate
       );
