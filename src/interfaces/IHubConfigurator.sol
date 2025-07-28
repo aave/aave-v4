@@ -217,4 +217,12 @@ interface IHubConfigurator {
     address spoke,
     DataTypes.SpokeConfig calldata config
   ) external;
+
+  /**
+   * @notice Updates the interest rate data for an asset.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
+   */
+  function updateInterestRateData(address hub, uint256 assetId, bytes calldata data) external;
 }

@@ -685,6 +685,30 @@ contract HubConfiguratorTest is HubBase {
     assertEq(hub1.getSpokeConfig(assetId, spoke), newSpokeConfig);
   }
 
+  function test_updateInterestRateData_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    hubConfigurator.updateInterestRateData(address(hub1), assetId, vm.randomBytes(32));
+  }
+
+  function test_updateInterestRateData() public {
+    IAssetInterestRateStrategy.InterestRateData memory newIrData = IAssetInterestRateStrategy.InterestRateData({
+      optimalUsageRatio: 90_00, // 90.00%
+      baseVariableBorrowRate: 5_00, // 5.00%
+      variableRateSlope1: 5_00, // 5.00%
+      variableRateSlope2: 5_00 // 5.00%
+    });
+
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHub.setInterestRateData, (assetId, abi.encode(newIrData)))
+    );
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateInterestRateData(address(hub1), assetId, abi.encode(newIrData));
+
+    assertEq(irStrategy.getInterestRateData(assetId), newIrData);
+  }
+
   function _addAsset(
     bool fetchErc20Decimals,
     address underlying,

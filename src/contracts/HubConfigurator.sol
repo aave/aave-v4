@@ -247,6 +247,15 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
+  /// @inheritdoc IHubConfigurator
+  function updateInterestRateData(
+    address hub,
+    uint256 assetId,
+    bytes calldata data
+  ) external override onlyOwner {
+    IHub(hub).setInterestRateData(assetId, data);
+  }
+
   /**
    * @dev Updates the spoke configs for the old and new fee receivers.
    *  - updates the caps for the old fee receiver to 0.
