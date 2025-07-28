@@ -61,7 +61,7 @@ library Utils {
     vm.stopPrank();
 
     vm.prank(caller);
-    return hub.restore(assetId, baseAmount, DataTypes.PremiumDelta(0, 0, 0), repayer);
+    return hub.restore(assetId, baseAmount, 0, DataTypes.PremiumDelta(0, 0, 0), repayer);
   }
 
   function addSpoke(

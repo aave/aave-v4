@@ -279,6 +279,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.restoredShares = vars.hub.restore(
       vars.assetId,
       vars.baseDebtRestored,
+      vars.premiumDebtRestored,
       premiumDelta,
       msg.sender
     );
@@ -1061,7 +1062,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
       // repay debt
       {
-        DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
+        vars.premiumDelta = DataTypes.PremiumDelta({
           drawnSharesDelta: -int256(userDebtPosition.premiumDrawnShares),
           offsetDelta: -int256(userDebtPosition.premiumOffset),
           realizedDelta: int256(vars.accruedPremium) - int256(vars.premiumDebtToLiquidate)
@@ -1069,13 +1070,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.restoredShares = debtReserveHub.restore(
           vars.debtAssetId,
           vars.baseDebtToLiquidate,
-          premiumDelta,
+          vars.premiumDebtToLiquidate,
+          vars.premiumDelta,
           liquidator
         );
         // debt accounting
         userDebtPosition.baseDrawnShares -= vars.restoredShares;
         vars.totalRestoredShares += vars.restoredShares;
-        _settlePremiumDebt(userDebtPosition, premiumDelta);
+        _settlePremiumDebt(userDebtPosition, vars.premiumDelta);
       }
 
       // expected total withdrawn shares includes liquidation fee

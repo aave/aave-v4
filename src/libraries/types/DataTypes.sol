@@ -183,6 +183,7 @@ library DataTypes {
     uint256 totalDebtToLiquidate;
     uint256 usersLength;
     uint256 liquidatedSuppliedShares;
+    DataTypes.PremiumDelta premiumDelta;
   }
 
   struct ExecuteRepayLocalVars {

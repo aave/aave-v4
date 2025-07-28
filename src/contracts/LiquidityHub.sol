@@ -219,6 +219,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   function restore(
     uint256 assetId,
     uint256 baseAmount,
+    uint256 premiumAmount,
     DataTypes.PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256) {
@@ -229,7 +230,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     uint256 premiumDebtBefore = asset.premiumDebt();
     _applyPremiumDelta(asset, spoke, premiumDelta);
-    uint256 premiumAmount = premiumDebtBefore - asset.premiumDebt(); // asserts premium should not have increased
+    require(asset.premiumDebt() + premiumAmount - premiumDebtBefore <= 2, PremiumDebtChanged());
     _validateRestore(asset, spoke, baseAmount, premiumAmount, from);
 
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);

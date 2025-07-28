@@ -334,6 +334,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     hub.restore({
       assetId: daiAssetId,
       baseAmount: minimumAssetsPerDrawnShare(daiAssetId),
+      premiumAmount: 0,
       premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
       from: alice
     });
@@ -380,6 +381,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     hub.restore({
       assetId: daiAssetId,
       baseAmount: singleShareInAssets,
+      premiumAmount: 0,
       premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
       from: alice
     });
@@ -415,6 +417,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     hub.restore({
       assetId: daiAssetId,
       baseAmount: minimumAssetsPerDrawnShare(daiAssetId),
+      premiumAmount: 0,
       premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
       from: alice
     });

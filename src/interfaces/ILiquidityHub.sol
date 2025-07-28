@@ -159,6 +159,7 @@ interface ILiquidityHub is IAccessManaged {
    * @dev Interest is always paid off first from premium, then from base.
    * @param assetId The identifier of the asset.
    * @param baseAmount The base debt to repay.
+   * @param premiumAmount The premium debt to repay.
    * @param premiumDelta The premium debt delta to apply which signal premium debt repayment.
    * @param from The address to pull assets from.
    * @return The amount of base debt shares restored.
@@ -166,6 +167,7 @@ interface ILiquidityHub is IAccessManaged {
   function restore(
     uint256 assetId,
     uint256 baseAmount,
+    uint256 premiumAmount,
     DataTypes.PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256);
