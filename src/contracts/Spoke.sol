@@ -307,7 +307,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
     _notifyRiskPremiumUpdate(onBehalfOf, vars.newUserRiskPremium);
 
-    emit Repay(reserveId, msg.sender, onBehalfOf, vars.restoredShares);
+    emit Repay(reserveId, msg.sender, onBehalfOf, vars.restoredShares); // todo: add premiumDelta
   }
 
   function liquidationCall(

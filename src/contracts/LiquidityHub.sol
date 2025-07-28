@@ -243,7 +243,14 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     IERC20(asset.underlying).safeTransferFrom(from, address(this), totalRestoredAmount);
 
-    emit Restore(assetId, msg.sender, baseDrawnSharesRestored, premiumDelta, totalRestoredAmount);
+    emit Restore(
+      assetId,
+      msg.sender,
+      baseDrawnSharesRestored,
+      premiumDelta,
+      baseAmount,
+      premiumAmount
+    );
 
     return baseDrawnSharesRestored;
   }

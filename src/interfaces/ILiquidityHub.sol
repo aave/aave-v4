@@ -48,7 +48,8 @@ interface ILiquidityHub is IAccessManaged {
     address indexed spoke,
     uint256 baseRestoredShares,
     DataTypes.PremiumDelta premiumDelta,
-    uint256 totalRestoredAmount
+    uint256 baseRestoredAmount,
+    uint256 premiumRestoredAmount
   );
   event RefreshPremiumDebt(
     uint256 indexed assetId,
