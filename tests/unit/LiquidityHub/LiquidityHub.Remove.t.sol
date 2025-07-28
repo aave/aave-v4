@@ -27,7 +27,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     emit ILiquidityHub.Remove(
       assetId,
       address(spoke1),
-      hub.convertToSuppliedSharesUp(assetId, amount),
+      hub.previewRemoveByAssets(assetId, amount),
       amount
     );
 

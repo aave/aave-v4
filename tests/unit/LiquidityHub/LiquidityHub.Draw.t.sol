@@ -15,7 +15,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     // spoke2, bob supply dai
     Utils.add({hub: hub, assetId: assetId, caller: address(spoke2), amount: amount, user: bob});
 
-    uint256 shares = hub.convertToDrawnSharesUp(assetId, amount);
+    uint256 shares = hub.previewDrawByAssets(assetId, amount);
 
     DataTypes.Asset memory assetBefore = hub.getAsset(assetId);
     (, uint256 premiumDebt) = hub.getAssetDebt(assetId);
@@ -35,7 +35,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetUpdated(
       assetId,
-      hub.previewDrawnIndex(assetId),
+      hub.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         availableLiquidity: assetBefore.availableLiquidity - amount,
@@ -95,7 +95,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     _drawLiquidity(assetId, amount, true);
     skip(365 days);
 
-    uint256 shares = hub.convertToDrawnSharesUp(assetId, amount);
+    uint256 shares = hub.previewDrawByAssets(assetId, amount);
 
     DataTypes.Asset memory assetBefore = hub.getAsset(assetId);
     (, uint256 premiumDebt) = hub.getAssetDebt(assetId);
@@ -115,7 +115,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetUpdated(
       assetId,
-      hub.previewDrawnIndex(assetId),
+      hub.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         availableLiquidity: assetBefore.availableLiquidity - amount,
