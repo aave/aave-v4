@@ -38,9 +38,6 @@ library DataTypes {
   }
 
   struct AssetConfig {
-    bool active;
-    bool paused;
-    bool frozen;
     address feeReceiver;
     uint256 liquidityFee;
     address irStrategy;
@@ -63,11 +60,9 @@ library DataTypes {
   }
 
   struct ReserveConfig {
-    bool active;
     bool frozen;
     bool paused;
     bool borrowable;
-    bool collateral;
     uint256 collateralRisk; // BPS TODO: use smaller uint
   }
 

@@ -333,7 +333,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     stage = 1;
-    state.withdrawnShares = hub.convertToSuppliedSharesUp(daiAssetId, state.withdrawAmount);
+    state.withdrawnShares = hub.previewRemoveByAssets(daiAssetId, state.withdrawAmount);
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
@@ -482,7 +482,7 @@ contract SpokeWithdrawTest is SpokeBase {
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
-    state.withdrawnShares = hub.convertToSuppliedSharesUp(assetId, state.withdrawAmount);
+    state.withdrawnShares = hub.previewRemoveByAssets(assetId, state.withdrawAmount);
     uint256 supplyExRateBefore = getSupplyExRate(assetId);
 
     // bob withdraws all
@@ -576,7 +576,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     stage = 1;
-    state.withdrawnShares = hub.convertToSuppliedSharesUp(daiAssetId, state.withdrawAmount);
+    state.withdrawnShares = hub.previewRemoveByAssets(daiAssetId, state.withdrawAmount);
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
@@ -720,7 +720,7 @@ contract SpokeWithdrawTest is SpokeBase {
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
-    state.withdrawnShares = hub.convertToSuppliedSharesUp(assetId, state.withdrawAmount);
+    state.withdrawnShares = hub.previewRemoveByAssets(assetId, state.withdrawAmount);
     uint256 supplyExRateBefore = getSupplyExRate(assetId);
 
     // bob withdraws all
