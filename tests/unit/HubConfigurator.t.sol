@@ -29,35 +29,9 @@ contract HubConfiguratorTest is LiquidityHubBase {
         variableRateSlope2: 5_00 // 5.00%
       })
     );
-  }
 
-  function test_addSpokeToAssets_fuzz_revertsWith_OwnableUnauthorizedAccount(
-    address caller
-  ) public {
-    vm.assume(caller != HUB_CONFIGURATOR_ADMIN);
-
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
-    vm.prank(caller);
-    hubConfigurator.addSpokeToAssets(
-      address(hub),
-      vm.randomAddress(),
-      new uint256[](0),
-      new DataTypes.SpokeConfig[](0)
-    );
-  }
-
-  function test_addSpokeToAssets_revertsWith_InvalidSpoke() public {
-    uint256[] memory assetIds = new uint256[](2);
-    assetIds[0] = daiAssetId;
-    assetIds[1] = wethAssetId;
-
-    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
-    spokeConfigs[0] = DataTypes.SpokeConfig({active: true, supplyCap: 1, drawCap: 2});
-    spokeConfigs[1] = DataTypes.SpokeConfig({active: true, supplyCap: 3, drawCap: 4});
-
-    vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
-    vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.addSpokeToAssets(address(hub), address(0), assetIds, spokeConfigs);
+    spokeAddresses = [address(spoke1), address(spoke2), address(spoke3), address(treasurySpoke)];
+    spoke = address(spoke1);
   }
 
   function test_addAsset_fuzz_revertsWith_OwnableUnauthorizedAccount(address caller) public {
@@ -242,65 +216,12 @@ contract HubConfiguratorTest is LiquidityHubBase {
     hubConfigurator.updateFeeReceiver(address(hub), vm.randomUint(), vm.randomAddress());
   }
 
-  function test_updateFeeReceiver_revertsWith_InvalidFeeReceiver() public {
+  function test_updateFeeReceiver_revertsWith_InvalidSpoke() public {
     uint256 assetId = vm.randomUint(0, hub.getAssetCount() - 1);
 
-    // reverts when updating asset's fee receiver to zero spoke
-    vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
+    vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeReceiver(address(hub), assetId, address(0));
-  }
-
-  function test_updateFeeReceiver_oldFeeReceiverDeactivated() public {
-    uint256 assetId = vm.randomUint(0, hub.getAssetCount() - 1);
-    address oldFeeReceiver = hub.getAssetConfig(assetId).feeReceiver;
-    address newFeeReceiver = makeAddr('newFeeReceiver');
-    DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(assetId);
-
-    // Deactivate old fee receiver
-    vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(
-      assetId,
-      oldFeeReceiver,
-      DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false})
-    );
-
-    // Old fee receiver keeps same active flag
-    vm.expectCall(
-      address(hub),
-      abi.encodeCall(
-        ILiquidityHub.updateSpokeConfig,
-        (assetId, oldFeeReceiver, DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0, active: false}))
-      )
-    );
-    vm.expectCall(
-      address(hub),
-      abi.encodeCall(
-        ILiquidityHub.updateSpokeConfig,
-        (
-          assetId,
-          newFeeReceiver,
-          DataTypes.SpokeConfig({
-            supplyCap: type(uint256).max,
-            drawCap: type(uint256).max,
-            active: hub.getSpokeConfig(assetId, newFeeReceiver).active
-          })
-        )
-      )
-    );
-    DataTypes.AssetConfig memory expectedConfig = oldConfig;
-    expectedConfig.feeReceiver = newFeeReceiver;
-
-    vm.expectCall(
-      address(hub),
-      abi.encodeCall(ILiquidityHub.updateAssetConfig, (assetId, expectedConfig))
-    );
-
-    vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeReceiver(address(hub), assetId, newFeeReceiver);
-
-    // Ensure old fee receiver is still deactivated
-    assertFalse(hub.getSpokeConfig(assetId, oldFeeReceiver).active);
   }
 
   function test_updateFeeReceiver_fuzz(address feeReceiver) public {
@@ -514,12 +435,11 @@ contract HubConfiguratorTest is LiquidityHubBase {
     });
   }
 
-  function test_updateFeeConfig_revertsWith_InvalidFeeReceiver() public {
+  function test_updateFeeConfig_revertsWith_InvalidSpoke() public {
     uint256 assetId = vm.randomUint(0, hub.getAssetCount() - 1);
     uint256 liquidityFee = vm.randomUint(1, PercentageMathExtended.PERCENTAGE_FACTOR);
 
-    // reverts when updating asset's fee receiver to zero spoke
-    vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
+    vm.expectRevert(ILiquidityHub.InvalidSpoke.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeConfig(address(hub), assetId, liquidityFee, address(0));
   }
@@ -712,14 +632,14 @@ contract HubConfiguratorTest is LiquidityHubBase {
     vm.expectCall(
       address(hub),
       abi.encodeCall(
-        ILiquidityHub.updateSpokeConfig,
+        ILiquidityHub.addSpoke,
         (
           assetId,
           newAssetConfig.feeReceiver,
           DataTypes.SpokeConfig({
             supplyCap: type(uint256).max,
             drawCap: type(uint256).max,
-            active: hub.getSpokeConfig(assetId, newAssetConfig.feeReceiver).active
+            active: true
           })
         )
       )
