@@ -114,7 +114,6 @@ interface ILiquidityHub is IAccessManaged {
 
   /**
    * @notice Updates the configuration of a spoke for a specific asset.
-   * @dev It is possible to update the spoke configuration of a non-existent spoke.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke to update.
    * @param config The new configuration for the spoke.

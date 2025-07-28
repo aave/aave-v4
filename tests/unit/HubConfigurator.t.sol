@@ -209,7 +209,9 @@ contract HubConfiguratorTest is LiquidityHubBase {
     assertEq(hub.getAssetConfig(assetId), expectedConfig);
   }
 
-  function test_updateFeeReceiver_revertsWith_OwnableUnauthorizedAccount(address caller) public {
+  function test_updateFeeReceiver_fuzz_revertsWith_OwnableUnauthorizedAccount(
+    address caller
+  ) public {
     vm.assume(caller != HUB_CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
@@ -423,7 +425,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
     test_updateFeeReceiver_fuzz(address(treasurySpoke));
   }
 
-  function test_updateFeeConfig_revertsWith_OwnableUnauthorizedAccount(address caller) public {
+  function test_updateFeeConfig_fuzz_revertsWith_OwnableUnauthorizedAccount(address caller) public {
     vm.assume(caller != HUB_CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
@@ -547,7 +549,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
     test_updateFeeConfig_fuzz(0, 0, address(treasurySpoke));
   }
 
-  function test_updateInterestRateStrategy_revertsWith_OwnableUnauthorizedAccount(
+  function test_updateInterestRateStrategy_fuzz_revertsWith_OwnableUnauthorizedAccount(
     address caller
   ) public {
     vm.assume(caller != HUB_CONFIGURATOR_ADMIN);
@@ -582,18 +584,18 @@ contract HubConfiguratorTest is LiquidityHubBase {
     hubConfigurator.updateInterestRateStrategy(address(hub), assetId, address(0));
   }
 
-  function test_updateInterestRateStrategy_fuzz_revertsWith_InterestRateStrategyReverts(
-    address interestRateStrategy
-  ) public {
+  function test_updateInterestRateStrategy_revertsWith_InterestRateStrategyReverts() public {
     assetId = vm.randomUint(0, hub.getAssetCount() - 1);
-    assumeUnusedAddress(interestRateStrategy);
+    address interestRateStrategy = makeAddr('newInterestRateStrategy');
 
     vm.expectRevert();
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateInterestRateStrategy(address(hub), assetId, interestRateStrategy);
   }
 
-  function test_updateAssetConfig_revertsWith_OwnableUnauthorizedAccount(address caller) public {
+  function test_updateAssetConfig_fuzz_revertsWith_OwnableUnauthorizedAccount(
+    address caller
+  ) public {
     vm.assume(caller != HUB_CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
