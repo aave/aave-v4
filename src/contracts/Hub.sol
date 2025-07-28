@@ -161,7 +161,7 @@ contract Hub is IHub, AccessManaged {
     _validateAdd(asset, spoke, amount, from);
 
     // todo: Mitigate inflation attack
-    uint256 shares = asset.toAddedSharesDown(amount);
+    uint256 shares = previewAddByAssets(assetId, amount);
     require(shares != 0, InvalidSharesAmount());
     asset.addedShares += shares;
     spoke.addedShares += shares;
@@ -185,7 +185,7 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateRemove(asset, spoke, amount, to);
 
-    uint256 shares = asset.toAddedSharesUp(amount); // non zero since we round up
+    uint256 shares = previewRemoveByAssets(assetId, amount); // non zero since we round up
     asset.addedShares -= shares;
     spoke.addedShares -= shares;
     asset.availableLiquidity -= amount;
@@ -207,7 +207,7 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateDraw(asset, spoke, amount, to);
 
-    uint256 shares = asset.toDrawnSharesUp(amount); // non zero since we round up
+    uint256 shares = previewDrawByAssets(assetId, amount); // non zero since we round up
     asset.baseDrawnShares += shares;
     spoke.baseDrawnShares += shares;
     asset.availableLiquidity -= amount;
@@ -237,7 +237,7 @@ contract Hub is IHub, AccessManaged {
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount, from);
 
-    uint256 shares = asset.toDrawnSharesDown(baseAmount);
+    uint256 shares = previewRestoreByAssets(assetId, baseAmount);
     asset.baseDrawnShares -= shares;
     spoke.baseDrawnShares -= shares;
     uint256 totalAmount = baseAmount + premiumAmount;
@@ -375,41 +375,69 @@ contract Hub is IHub, AccessManaged {
     return _spokes[assetId][spoke].config;
   }
 
-  // todo 4626 getter naming
+  /// @inheritdoc IHub
+  function previewAddByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
+    return _assets[assetId].toAddedSharesDown(assets);
+  }
+
+  /// @inheritdoc IHub
+  function previewAddByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+    return _assets[assetId].toAddedAssetsUp(shares);
+  }
+
+  /// @inheritdoc IHub
+  function previewRemoveByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
+    return _assets[assetId].toAddedSharesUp(assets);
+  }
+
+  /// @inheritdoc IHub
+  function previewRemoveByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+    return _assets[assetId].toAddedAssetsDown(shares);
+  }
+
+  /// @inheritdoc IHub
+  function previewDrawByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
+    return _assets[assetId].toDrawnSharesUp(assets);
+  }
+
+  /// @inheritdoc IHub
+  function previewDrawByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+    return _assets[assetId].toDrawnAssetsDown(shares);
+  }
+
+  /// @inheritdoc IHub
+  function previewRestoreByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
+    return _assets[assetId].toDrawnSharesDown(assets);
+  }
+
+  /// @inheritdoc IHub
+  function previewRestoreByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+    return _assets[assetId].toDrawnAssetsUp(shares);
+  }
+
+  /// @inheritdoc IHub
   function convertToAddedAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toAddedAssetsDown(shares);
   }
 
-  function convertToAddedAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toAddedAssetsUp(shares);
-  }
-
+  /// @inheritdoc IHub
   function convertToAddedShares(uint256 assetId, uint256 assets) external view returns (uint256) {
     return _assets[assetId].toAddedSharesDown(assets);
   }
 
-  function convertToAddedSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toAddedSharesUp(assets);
-  }
-
+  /// @inheritdoc IHub
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toDrawnAssetsUp(shares);
   }
 
+  /// @inheritdoc IHub
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
-  function convertToDrawnSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toDrawnSharesUp(assets);
-  }
-
-  function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toDrawnAssetsDown(shares);
-  }
-
-  function previewDrawnIndex(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].previewDrawnIndex();
+  /// @inheritdoc IHub
+  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].getDrawnIndex();
   }
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256) {

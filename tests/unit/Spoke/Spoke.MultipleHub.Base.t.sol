@@ -75,7 +75,7 @@ contract SpokeMultipleHubBase is SpokeBase {
     selectors[2] = ISpoke.updateLiquidationConfig.selector;
     selectors[3] = ISpoke.addReserve.selector;
     selectors[4] = ISpoke.updateReserveConfig.selector;
-    selectors[5] = ISpoke.updateDynamicReserveConfig.selector;
+    selectors[5] = ISpoke.addDynamicReserveConfig.selector;
     selectors[6] = ISpoke.updateUserRiskPremium.selector;
 
     accessManager.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);

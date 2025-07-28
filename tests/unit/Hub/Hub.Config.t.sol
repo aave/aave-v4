@@ -40,10 +40,8 @@ contract HubConfigTest is HubBase {
     Utils.addSpoke(hub, ADMIN, assetId, address(0), spokeConfig);
   }
 
-  function test_addSpoke_revertsWith_SpokeAlreadyListed(
-    uint256 assetId,
-    DataTypes.SpokeConfig calldata spokeConfig
-  ) public {
+  function test_addSpoke_revertsWith_SpokeAlreadyListed() public {
+    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(daiAssetId, address(spoke1));
     vm.expectRevert(IHub.SpokeAlreadyListed.selector);
     Utils.addSpoke(hub, ADMIN, daiAssetId, address(spoke1), spokeConfig);
   }
@@ -301,7 +299,7 @@ contract HubConfigTest is HubBase {
     vm.expectEmit(address(hub));
     emit IHub.AssetUpdated(
       assetId,
-      hub.previewDrawnIndex(assetId),
+      hub.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         availableLiquidity: availableLiquidity,

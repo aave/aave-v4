@@ -2,7 +2,6 @@
 pragma solidity ^0.8.10;
 
 import {IHub} from 'src/interfaces/IHub.sol';
-import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 library DataTypes {
   // Hub types

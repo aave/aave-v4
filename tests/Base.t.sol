@@ -246,14 +246,15 @@ abstract contract Base is Test {
 
     // Grant responsibilities to roles
     {
-      bytes4[] memory selectors = new bytes4[](7);
+      bytes4[] memory selectors = new bytes4[](8);
       selectors[0] = ISpoke.updateLiquidationConfig.selector;
       selectors[1] = ISpoke.addReserve.selector;
       selectors[2] = ISpoke.updateReserveConfig.selector;
       selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
-      selectors[4] = ISpoke.updatePositionManager.selector;
-      selectors[5] = ISpoke.updateOracle.selector;
-      selectors[6] = ISpoke.updateReservePriceSource.selector;
+      selectors[4] = ISpoke.addDynamicReserveConfig.selector;
+      selectors[5] = ISpoke.updatePositionManager.selector;
+      selectors[6] = ISpoke.updateOracle.selector;
+      selectors[7] = ISpoke.updateReservePriceSource.selector;
       manager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
     }
 
@@ -962,56 +963,60 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId,
     uint256 newLiquidationBonus
-  ) internal pausePrank {
+  ) internal pausePrank returns (uint16) {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationBonus = newLiquidationBonus;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateDynamicReserveConfig(reserveId, config);
+    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    return configKey;
   }
 
   function updateLiquidationFee(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newLiquidationFee
-  ) internal pausePrank {
+  ) internal pausePrank returns (uint16) {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateDynamicReserveConfig(reserveId, config);
+    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    return configKey;
   }
 
   function updateCollateralFactor(
     ISpoke spoke,
     function(ISpoke) pure returns (uint256) reserveIdFn,
     uint256 newCollateralFactor
-  ) internal pausePrank {
+  ) internal pausePrank returns (uint16) {
     uint256 reserveId = reserveIdFn(spoke);
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateDynamicReserveConfig(reserveId, config);
+    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    return configKey;
   }
 
   function updateCollateralFactor(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newCollateralFactor
-  ) internal pausePrank {
+  ) internal pausePrank returns (uint16) {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     vm.prank(SPOKE_ADMIN);
-    spoke.updateDynamicReserveConfig(reserveId, config);
+    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    return configKey;
   }
 
   function updateReserveBorrowableFlag(
@@ -1170,12 +1175,12 @@ abstract contract Base is Test {
 
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
   function minimumAssetsPerDrawnShare(uint256 assetId) internal view returns (uint256) {
-    return hub.convertToDrawnAssets(assetId, 1);
+    return hub.previewRestoreByShares(assetId, 1);
   }
 
   /// @dev Helper function to calculate asset amount corresponding to single added share
   function minimumAssetsPerAddedShare(uint256 assetId) internal view returns (uint256) {
-    return hub.convertToAddedAssetsUp(assetId, 1);
+    return hub.previewAddByShares(assetId, 1);
   }
 
   /// @dev Helper function to calculate expected added assets based on amount to add and current exchange rate
@@ -1985,6 +1990,20 @@ abstract contract Base is Test {
     for (uint256 i; i < entries.length; i++) {
       assertNotEq(entries[i].topics[0], event1Sig);
       assertNotEq(entries[i].topics[0], event2Sig);
+    }
+    vm.recordLogs();
+  }
+
+  function _assertEventsNotEmitted(
+    bytes32 event1Sig,
+    bytes32 event2Sig,
+    bytes32 event3Sig
+  ) internal {
+    Vm.Log[] memory entries = vm.getRecordedLogs();
+    for (uint256 i; i < entries.length; i++) {
+      assertNotEq(entries[i].topics[0], event1Sig);
+      assertNotEq(entries[i].topics[0], event2Sig);
+      assertNotEq(entries[i].topics[0], event3Sig);
     }
     vm.recordLogs();
   }

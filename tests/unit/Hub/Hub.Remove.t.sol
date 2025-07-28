@@ -24,7 +24,7 @@ contract HubRemoveTest is HubBase {
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
-    emit IHub.Remove(assetId, address(spoke1), hub.convertToAddedSharesUp(assetId, amount), amount);
+    emit IHub.Remove(assetId, address(spoke1), hub.previewRemoveByAssets(assetId, amount), amount);
 
     vm.prank(address(spoke1));
     hub.remove(assetId, amount, alice);

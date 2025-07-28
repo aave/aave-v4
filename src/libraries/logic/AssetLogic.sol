@@ -25,32 +25,32 @@ library AssetLogic {
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.rayMulUp(asset.previewDrawnIndex());
+    return shares.rayMulUp(asset.getDrawnIndex());
   }
 
   function toDrawnAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.rayMulDown(asset.previewDrawnIndex());
+    return shares.rayMulDown(asset.getDrawnIndex());
   }
 
   function toDrawnSharesUp(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.rayDivUp(asset.previewDrawnIndex());
+    return assets.rayDivUp(asset.getDrawnIndex());
   }
 
   function toDrawnSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.rayDivDown(asset.previewDrawnIndex());
+    return assets.rayDivDown(asset.getDrawnIndex());
   }
 
   function drawn(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDrawnShares.rayMulUp(asset.previewDrawnIndex());
+    return asset.baseDrawnShares.rayMulUp(asset.getDrawnIndex());
   }
 
   function premium(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -72,8 +72,7 @@ library AssetLogic {
   }
 
   function totalAddedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return
-      asset.addedShares + asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDrawnIndex);
+    return asset.addedShares + asset.getFeeShares(asset.getDrawnIndex() - asset.baseDrawnIndex);
   }
 
   function toAddedAssetsUp(
@@ -128,8 +127,8 @@ library AssetLogic {
     uint256 assetId,
     DataTypes.SpokeData storage feeReceiver
   ) internal {
-    uint256 drawnIndex = asset.previewDrawnIndex();
-    uint256 feeShares = asset.previewFeeShares(drawnIndex - asset.baseDrawnIndex);
+    uint256 drawnIndex = asset.getDrawnIndex();
+    uint256 feeShares = asset.getFeeShares(drawnIndex - asset.baseDrawnIndex);
 
     // Accrue interest and fees
     asset.baseDrawnIndex = drawnIndex;
@@ -147,7 +146,7 @@ library AssetLogic {
    * @param asset The data struct of the asset whose index is increasing.
    * @return The resulting drawn index.
    */
-  function previewDrawnIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
+  function getDrawnIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
     uint256 previousIndex = asset.baseDrawnIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
     if (lastUpdateTimestamp == block.timestamp || asset.baseDrawnShares == 0) {
@@ -165,7 +164,7 @@ library AssetLogic {
    * @param indexDelta The increase in the asset index resulting from interest accrual.
    * @return The amount of shares corresponding to the fees
    */
-  function previewFeeShares(
+  function getFeeShares(
     DataTypes.Asset storage asset,
     uint256 indexDelta
   ) internal view returns (uint256) {
@@ -188,6 +187,6 @@ library AssetLogic {
    * @return The amount of shares corresponding to the fees
    */
   function unrealizedFeeShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDrawnIndex);
+    return asset.getFeeShares(asset.getDrawnIndex() - asset.baseDrawnIndex);
   }
 }
