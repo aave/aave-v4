@@ -862,11 +862,6 @@ abstract contract Base is Test {
     ILiquidityHub hub3 = new LiquidityHub(address(accessManager3));
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
-    uint256 hub3DaiAssetId = 0;
-    uint256 hub3UsdxAssetId = 1;
-    uint256 hub3WbtcAssetId = 2;
-    uint256 hub3WethAssetId = 3;
-
     // Configure IR Strategy for hub 3
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({

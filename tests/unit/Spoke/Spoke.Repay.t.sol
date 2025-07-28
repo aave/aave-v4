@@ -117,8 +117,7 @@ contract SpokeRepayTest is SpokeBase {
     assertGt(pos.baseDrawnShares, 0, 'user baseDrawnShares after repay');
     assertGt(hub.convertToDrawnAssets(daiAssetId, pos.baseDrawnShares), 0, 'user baseDrawnAssets');
 
-    vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), UINT256_MAX, bob);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
 
     pos = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
     assertEq(pos.baseDrawnShares, 0, 'user baseDrawnShares after full repay');
@@ -1298,7 +1297,6 @@ contract SpokeRepayTest is SpokeBase {
     skip(skipTime);
 
     // Repayments
-    vm.startPrank(bob);
     daiInfo.posBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGe(bobDaiBefore.totalDebt, daiInfo.borrowAmount);
@@ -1310,7 +1308,7 @@ contract SpokeRepayTest is SpokeBase {
         daiAssetId
       );
       deal(address(tokenList.dai), bob, daiInfo.repayAmount);
-      spoke1.repay(_daiReserveId(spoke1), daiInfo.repayAmount, bob);
+      Utils.repay(spoke1, _daiReserveId(spoke1), bob, daiInfo.repayAmount, bob);
     }
     Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
@@ -1325,7 +1323,7 @@ contract SpokeRepayTest is SpokeBase {
         wethAssetId
       );
       deal(address(tokenList.weth), bob, wethInfo.repayAmount);
-      spoke1.repay(_wethReserveId(spoke1), wethInfo.repayAmount, bob);
+      Utils.repay(spoke1, _wethReserveId(spoke1), bob, wethInfo.repayAmount, bob);
     }
     Debts memory bobWethAfter = getUserDebt(spoke1, bob, _wethReserveId(spoke1));
 
@@ -1340,7 +1338,7 @@ contract SpokeRepayTest is SpokeBase {
         wbtcAssetId
       );
       deal(address(tokenList.wbtc), bob, wbtcInfo.repayAmount);
-      spoke1.repay(_wbtcReserveId(spoke1), wbtcInfo.repayAmount, bob);
+      Utils.repay(spoke1, _wbtcReserveId(spoke1), bob, wbtcInfo.repayAmount, bob);
     }
     Debts memory bobWbtcAfter = getUserDebt(spoke1, bob, _wbtcReserveId(spoke1));
 
@@ -1355,7 +1353,7 @@ contract SpokeRepayTest is SpokeBase {
         usdxAssetId
       );
       deal(address(tokenList.usdx), bob, usdxInfo.repayAmount);
-      spoke1.repay(_usdxReserveId(spoke1), usdxInfo.repayAmount, bob);
+      Utils.repay(spoke1, _usdxReserveId(spoke1), bob, usdxInfo.repayAmount, bob);
     }
     Debts memory bobUsdxAfter = getUserDebt(spoke1, bob, _usdxReserveId(spoke1));
 
@@ -1443,7 +1441,6 @@ contract SpokeRepayTest is SpokeBase {
     } else {
       assertEq(bobWbtcAfter.totalDebt, bobWbtcBefore.totalDebt);
     }
-    vm.stopPrank();
 
     _repayAll(spoke1, _daiReserveId);
     _repayAll(spoke1, _wethReserveId);
