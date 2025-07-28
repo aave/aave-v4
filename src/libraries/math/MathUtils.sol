@@ -176,12 +176,24 @@ library MathUtils {
     }
   }
 
-  // handles underflow
+  /**
+   * @notice Adds a signed integer to an unsigned integer.
+   * @dev Reverts on underflow.
+   * @param a The unsigned integer.
+   * @param b The signed integer.
+   * @return The result of the addition.
+   */
   function add(uint256 a, int256 b) internal pure returns (uint256) {
     if (b >= 0) return a + uint256(b);
     return a - uint256(-b);
   }
 
+  /**
+   * @notice Subtracts an unsigned integer from an unsigned integer.
+   * @param a The unsigned integer.
+   * @param b The unsigned integer.
+   * @return The signed result of the subtraction.
+   */
   function signedSub(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b); // todo use safeCast when amounts packed to uint112/uint128
   }

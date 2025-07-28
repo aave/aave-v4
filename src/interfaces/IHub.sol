@@ -121,7 +121,7 @@ interface IHub is IAccessManaged {
    * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to remove.
    * @param to The address to transfer the assets to.
-   * @return The amount of added shares removed.
+   * @return The amount of shares removed.
    */
   function remove(uint256 assetId, uint256 amount, address to) external returns (uint256);
 

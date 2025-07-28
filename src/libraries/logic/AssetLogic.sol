@@ -20,7 +20,7 @@ library AssetLogic {
   // todo: option for cached object
   // todo: add virtual offset for inflation attack
 
-  // debt exchange rate does not incl premium to accrue base rate separately
+  // drawn exchange rate does not include premium to accrue base rate separately
   function toDrawnAssetsUp(
     DataTypes.Asset storage asset,
     uint256 shares
@@ -58,11 +58,6 @@ library AssetLogic {
     uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumDrawnShares) - asset.premiumOffset;
     return asset.realizedPremium + accruedPremium;
   }
-
-  function debt(DataTypes.Asset storage asset) internal view returns (uint256, uint256) {
-    return (asset.drawn(), asset.premium());
-  }
-
   function totalOwed(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.drawn() + asset.premium();
   }
