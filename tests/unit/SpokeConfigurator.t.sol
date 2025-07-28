@@ -138,6 +138,35 @@ contract SpokeConfiguratorTest is SpokeBase {
     assertEq(spoke.getLiquidationConfig(), expectedLiquidationConfig);
   }
 
+  function test_updateLiquidationConfig_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    spokeConfigurator.updateLiquidationConfig(spokeAddr, DataTypes.LiquidationConfig({
+      closeFactor: 0,
+      healthFactorForMaxBonus: 0,
+      liquidationBonusFactor: 0
+    }));
+  }
+
+  function test_updateLiquidationConfig() public {
+    DataTypes.LiquidationConfig memory newLiquidationConfig = DataTypes.LiquidationConfig({
+      closeFactor: spoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD() * 2,
+      healthFactorForMaxBonus: spoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD() / 2,
+      liquidationBonusFactor: PercentageMathExtended.PERCENTAGE_FACTOR / 2
+    });
+
+    vm.expectCall(
+      spokeAddr,
+      abi.encodeCall(ISpoke.updateLiquidationConfig, (newLiquidationConfig))
+    );
+    vm.expectEmit(address(spoke));
+    emit ISpoke.LiquidationConfigUpdated(newLiquidationConfig);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateLiquidationConfig(spokeAddr, newLiquidationConfig);
+
+    assertEq(spoke.getLiquidationConfig(), newLiquidationConfig);
+  }
+
   function test_addReserve_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);

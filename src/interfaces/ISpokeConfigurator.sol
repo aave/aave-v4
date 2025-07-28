@@ -47,6 +47,16 @@ interface ISpokeConfigurator {
   function updateLiquidationBonusFactor(address spoke, uint256 liquidationBonusFactor) external;
 
   /**
+   * @notice Updates the liquidation config of a spoke.
+   * @param spoke The address of the spoke.
+   * @param liquidationConfig The new liquidation config.
+   */
+  function updateLiquidationConfig(
+    address spoke,
+    DataTypes.LiquidationConfig calldata liquidationConfig
+  ) external;
+
+  /**
    * @notice Adds a new reserve to a spoke.
    * @dev The price source must implement the AggregatorV3Interface.
    * @param spoke The address of the spoke.

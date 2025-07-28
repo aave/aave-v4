@@ -64,6 +64,14 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
+  function updateLiquidationConfig(
+    address spoke,
+    DataTypes.LiquidationConfig calldata liquidationConfig
+  ) external onlyOwner {
+    ISpoke(spoke).updateLiquidationConfig(liquidationConfig);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
   function addReserve(
     address spoke,
     address hub,
