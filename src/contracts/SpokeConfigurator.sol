@@ -207,4 +207,13 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
       targetSpoke.updateReserveConfig(reserveId, reserveConfig);
     }
   }
+
+  /// @inheritdoc ISpokeConfigurator
+  function updatePositionManager(
+    address spoke,
+    address positionManager,
+    bool active
+  ) external onlyOwner {
+    ISpoke(spoke).updatePositionManager(positionManager, active);
+  }
 }

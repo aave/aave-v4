@@ -190,4 +190,12 @@ interface ISpokeConfigurator {
    * @param spoke The address of the spoke.
    */
   function freezeAllReserves(address spoke) external;
+
+  /**
+   * @notice Updates the active flag of a spoke's position manager.
+   * @param spoke The address of the spoke.
+   * @param positionManager The address of the position manager.
+   * @param active The new active flag.
+   */
+  function updatePositionManager(address spoke, address positionManager, bool active) external;
 }

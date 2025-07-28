@@ -583,4 +583,23 @@ contract SpokeConfiguratorTest is SpokeBase {
       assertEq(spoke.getReserveConfig(id).frozen, true);
     }
   }
+
+  function test_updatePositionManager_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    spokeConfigurator.updatePositionManager(spokeAddr, address(0), true);
+  }
+
+  function test_updatePositionManager() public {
+    address newPositionManager = makeAddr('NEW_POSITION_MANAGER');
+    for (uint256 i = 0; i < 2; i += 1) {
+      bool active = (i == 0) ? true : false;
+      vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updatePositionManager, (newPositionManager, active)));
+      vm.expectEmit(address(spoke));
+      emit ISpoke.PositionManagerUpdated(newPositionManager, active);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+      spokeConfigurator.updatePositionManager(spokeAddr, newPositionManager, active);
+      assertEq(spoke.isPositionManagerActive(newPositionManager), active);
+    }
+  }
 }
