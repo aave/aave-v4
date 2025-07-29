@@ -1244,8 +1244,7 @@ abstract contract Base is Test {
     IPriceOracle oracle = spoke.oracle();
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
-      (amount * oracle.getReservePrice(reserveId).wadify()) /
-      (10 ** hub.getAsset(assetId).decimals);
+      (amount * oracle.getReservePrice(reserveId).toWad()) / (10 ** hub.getAsset(assetId).decimals);
   }
 
   /// @notice Convert 1 asset amount to equivalent amount in another asset.
@@ -1560,7 +1559,7 @@ abstract contract Base is Test {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return (amount * assetPrice).wadify() / assetUnit;
+    return (amount * assetPrice).toWad() / assetUnit;
   }
 
   function _convertBaseCurrencyToAmount(
@@ -1584,7 +1583,7 @@ abstract contract Base is Test {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return ((baseCurrencyAmount * assetUnit) / assetPrice).dewadifyDown();
+    return ((baseCurrencyAmount * assetUnit) / assetPrice).fromWadDown();
   }
 
   /**

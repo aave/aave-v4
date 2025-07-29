@@ -143,7 +143,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     // so that maxCollateralToLiquidate <= userCollateralBalanceInBaseCurrency
     vm.assume(
       params.userCollateralBalance <=
-        (maxCollateralToLiquidate * params.collateralAssetUnit).dewadifyDown() /
+        (maxCollateralToLiquidate * params.collateralAssetUnit).fromWadDown() /
           params.collateralAssetPrice
     );
 
@@ -194,7 +194,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     // so that maxCollateralToLiquidate > userCollateralBalanceInBaseCurrency
     vm.assume(
       params.userCollateralBalance >
-        (maxCollateralToLiquidate * params.collateralAssetUnit).dewadifyDown() /
+        (maxCollateralToLiquidate * params.collateralAssetUnit).fromWadDown() /
           params.collateralAssetPrice
     );
 
@@ -207,7 +207,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
     uint256 collateralAmount = ((maxCollateralToLiquidate * params.collateralAssetUnit) /
-      params.collateralAssetPrice).dewadifyDown() + 1;
+      params.collateralAssetPrice).fromWadDown() + 1;
 
     (uint256 actualCollateralToLiquidate, uint256 liquidationFeeAmount) = _calcLiquidationFeeAmount(
       params,
@@ -281,7 +281,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     TestAvailableCollateralParams memory params
   ) internal pure returns (uint256) {
     return
-      ((params.actualDebtToLiquidate * params.debtAssetPrice).wadify() / params.debtAssetUnit)
+      ((params.actualDebtToLiquidate * params.debtAssetPrice).toWad() / params.debtAssetUnit)
         .percentMulDown(params.liquidationBonus);
   }
 
@@ -303,12 +303,12 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     TestAvailableCollateralParams memory params
   ) internal pure returns (uint256) {
     uint256 userCollateralBalanceInBaseCurrency = (params.userCollateralBalance *
-      params.collateralAssetPrice).wadify() / params.collateralAssetUnit;
+      params.collateralAssetPrice).toWad() / params.collateralAssetUnit;
 
     return
       ((params.debtAssetUnit * userCollateralBalanceInBaseCurrency) / params.debtAssetPrice)
         .percentDivDown(params.liquidationBonus)
-        .dewadifyDown();
+        .fromWadDown();
   }
 
   // internal helper to trigger revert checks

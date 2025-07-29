@@ -449,7 +449,7 @@ contract SpokeLiquidationBase is SpokeBase {
     (, , params.healthFactor, , params.totalDebtInBaseCurrency) = spoke.getUserAccountData(alice);
 
     // duplicated logic from LiquidationLogic.calculateDebtToRestoreCloseFactor
-    uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
+    uint256 effectiveLiquidationPenalty = (params.liquidationBonus.toWad())
       .percentMulDown(params.collateralFactor)
       .fromBpsDown();
     if (params.closeFactor < effectiveLiquidationPenalty) {
@@ -459,7 +459,7 @@ contract SpokeLiquidationBase is SpokeBase {
       (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
         (params.closeFactor - params.healthFactor)) /
         ((params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice))
-        .dewadifyDown();
+        .fromWadDown();
   }
 
   /// @notice Calc user's lowest possible health factor whereby a liqudation can still restore HF to close factor.

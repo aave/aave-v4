@@ -167,7 +167,7 @@ library WadRayMath {
    * @param a The number
    * @return b (= a * 1e18)
    */
-  function wadify(uint256 a) internal pure returns (uint256 b) {
+  function toWad(uint256 a) internal pure returns (uint256 b) {
     // to avoid overflow, b/WAD == a
     assembly {
       b := mul(a, WAD)
@@ -183,7 +183,7 @@ library WadRayMath {
    * @param a The number in Wad precision
    * @return b (= a / 1e18)
    */
-  function dewadifyDown(uint256 a) internal pure returns (uint256 b) {
+  function fromWadDown(uint256 a) internal pure returns (uint256 b) {
     assembly {
       b := div(a, WAD)
     }

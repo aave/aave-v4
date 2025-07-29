@@ -441,7 +441,7 @@ contract SpokeBase is Base {
 
     return
       normalizedDebtAmount.wadDivUp(
-        normalizedCollPrice.wadify().percentMulDown(colDynConf.collateralFactor)
+        normalizedCollPrice.toWad().percentMulDown(colDynConf.collateralFactor)
       );
   }
 
@@ -465,8 +465,8 @@ contract SpokeBase is Base {
     uint256 normalizedCollPrice = (collAmount * collPrice).wadDivDown(collAssetUnits);
 
     uint256 maxDebt = (
-      (normalizedCollPrice.wadify().percentMulDown(colDynConf.collateralFactor) /
-        normalizedDebtAmount.wadify())
+      (normalizedCollPrice.toWad().percentMulDown(colDynConf.collateralFactor) /
+        normalizedDebtAmount.toWad())
     );
 
     return maxDebt > 1 ? maxDebt - 1 : maxDebt;

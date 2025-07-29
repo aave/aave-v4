@@ -591,7 +591,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'userRP matches collateral risk of dai coll'
     );
     assertEq(
-      avgCollFactor.dewadifyDown(),
+      avgCollFactor.fromWadDown(),
       _getUserDynConfig(spoke1, alice, state.daiReserveId).collateralFactor,
       'avg coll factor matches dai coll factor'
     );
