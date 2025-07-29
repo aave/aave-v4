@@ -288,13 +288,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       offsetDelta: -int256(userPosition.premiumOffset),
       realizedDelta: int256(vars.accruedPremium) - int256(vars.premiumDebtRestored)
     });
-    vars.restoredShares = vars.hub.restore(
-      vars.assetId,
-      vars.baseDebtRestored,
-      vars.premiumDebtRestored,
-      premiumDelta,
-      msg.sender
-    );
+    if (vars.premiumDebtRestored > 0) {
+      vars.hub.restorePremium(vars.assetId, vars.premiumDebtRestored, premiumDelta, msg.sender);
+    }
+    if (vars.baseDebtRestored > 0) {
+      vars.restoredShares = vars.hub.restoreBase(vars.assetId, vars.baseDebtRestored, msg.sender);
+    }
 
     reserve.baseDrawnShares -= vars.restoredShares;
     userPosition.baseDrawnShares -= vars.restoredShares;
@@ -1098,13 +1097,21 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
           offsetDelta: -int256(userDebtPosition.premiumOffset),
           realizedDelta: int256(vars.accruedPremium) - int256(vars.premiumDebtToLiquidate)
         });
-        vars.restoredShares = debtReserveHub.restore(
-          vars.debtAssetId,
-          vars.baseDebtToLiquidate,
-          vars.premiumDebtToLiquidate,
-          vars.premiumDelta,
-          liquidator
-        );
+        if (vars.premiumDebtToLiquidate > 0) {
+          debtReserveHub.restorePremium(
+            vars.debtAssetId,
+            vars.premiumDebtToLiquidate,
+            vars.premiumDelta,
+            liquidator
+          );
+        }
+        if (vars.baseDebtToLiquidate > 0) {
+          vars.restoredShares = debtReserveHub.restoreBase(
+            vars.debtAssetId,
+            vars.baseDebtToLiquidate,
+            liquidator
+          );
+        }
         // debt accounting
         userDebtPosition.baseDrawnShares -= vars.restoredShares;
         vars.totalRestoredShares += vars.restoredShares;

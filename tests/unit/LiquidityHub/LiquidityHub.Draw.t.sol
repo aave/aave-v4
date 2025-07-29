@@ -331,11 +331,9 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     // restore to provide liquidity
     // Must repay at least one full share
     vm.startPrank(address(spoke1));
-    hub.restore({
+    hub.restoreBase({
       assetId: daiAssetId,
       baseAmount: minimumAssetsPerDrawnShare(daiAssetId),
-      premiumAmount: 0,
-      premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
       from: alice
     });
 
@@ -378,13 +376,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     // restore to provide liquidity
     // Must repay at least one full share;
     vm.startPrank(address(spoke1));
-    hub.restore({
-      assetId: daiAssetId,
-      baseAmount: singleShareInAssets,
-      premiumAmount: 0,
-      premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
-      from: alice
-    });
+    hub.restoreBase({assetId: daiAssetId, baseAmount: singleShareInAssets, from: alice});
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, drawCap));
     hub.draw({assetId: daiAssetId, amount: 1, to: bob});
@@ -414,11 +406,9 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     // restore to provide liquidity
     // Must repay at least one full share
     vm.startPrank(address(spoke1));
-    hub.restore({
+    hub.restoreBase({
       assetId: daiAssetId,
       baseAmount: minimumAssetsPerDrawnShare(daiAssetId),
-      premiumAmount: 0,
-      premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
       from: alice
     });
     vm.stopPrank();

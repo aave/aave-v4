@@ -216,11 +216,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   /// @inheritdoc ILiquidityHub
-  function restore(
+  function restoreBase(
     uint256 assetId,
     uint256 baseAmount,
-    uint256 premiumAmount,
-    DataTypes.PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
@@ -228,31 +226,46 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
-    uint256 premiumDebtBefore = asset.premiumDebt();
-    _applyPremiumDelta(asset, spoke, premiumDelta);
-    require(asset.premiumDebt() + premiumAmount - premiumDebtBefore <= 2, PremiumDebtChanged());
-    _validateRestore(asset, spoke, baseAmount, premiumAmount, from);
+    _validateRestore(asset, spoke, baseAmount, 0, from);
 
     uint256 baseDrawnSharesRestored = previewRestoreByAssets(assetId, baseAmount);
     asset.baseDrawnShares -= baseDrawnSharesRestored;
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
-    uint256 totalRestoredAmount = baseAmount + premiumAmount;
-    asset.availableLiquidity += totalRestoredAmount;
+
+    asset.availableLiquidity += baseAmount;
 
     asset.updateBorrowRate(assetId);
 
-    IERC20(asset.underlying).safeTransferFrom(from, address(this), totalRestoredAmount);
+    IERC20(asset.underlying).safeTransferFrom(from, address(this), baseAmount);
 
-    emit Restore(
-      assetId,
-      msg.sender,
-      baseDrawnSharesRestored,
-      premiumDelta,
-      baseAmount,
-      premiumAmount
-    );
+    emit RestoreBase(assetId, msg.sender, baseDrawnSharesRestored, baseAmount);
 
     return baseDrawnSharesRestored;
+  }
+
+  function restorePremium(
+    uint256 assetId,
+    uint256 premiumAmount,
+    DataTypes.PremiumDelta calldata premiumDelta,
+    address from
+  ) external {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+
+    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+
+    _validateRestore(asset, spoke, 0, premiumAmount, from);
+
+    uint256 premiumDebtBefore = asset.premiumDebt();
+    _applyPremiumDelta(asset, spoke, premiumDelta);
+    require(asset.premiumDebt() + premiumAmount - premiumDebtBefore <= 2, PremiumDebtChanged());
+    asset.availableLiquidity += premiumAmount;
+
+    asset.updateBorrowRate(assetId);
+
+    IERC20(asset.underlying).safeTransferFrom(from, address(this), premiumAmount);
+
+    emit RestorePremium(assetId, msg.sender, premiumDelta, premiumAmount);
   }
 
   /// @inheritdoc ILiquidityHub
