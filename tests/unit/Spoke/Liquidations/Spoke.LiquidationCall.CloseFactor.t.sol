@@ -5,8 +5,8 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
-  using PercentageMathExtended for uint256;
-  using WadRayMathExtended for uint256;
+  using PercentageMath for uint256;
+  using WadRayMath for uint256;
 
   /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
   /// single debt reserve, single collateral reserve
@@ -396,13 +396,13 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMathExtended
+      PercentageMath
         .PERCENTAGE_FACTOR
-        .percentDiv(state.collDynConfig.collateralFactor)
-        .percentMul(95_00) // add buffer so that amount to restore is > 0
+        .percentDivDown(state.collDynConfig.collateralFactor)
+        .percentMulUp(95_00) // add buffer so that amount to restore is > 0
     );
 
-    liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(spoke1, collateralReserveId, 1e25),
@@ -419,8 +419,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
     updateLiquidationFee(spoke1, collateralReserveId, state.liquidationFee);
-    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, collateralReserveId, liqBonus)
-      .percentMul(101_00); // add buffer so that not all collateral is seized
+    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, state.collDynConfig, liqBonus)
+      .percentMulUp(101_00); // add buffer so that not all collateral is seized
 
     Utils.supplyCollateral({
       spoke: spoke1,

@@ -5,7 +5,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeDynamicConfigTest is SpokeBase {
   using SafeCast for uint256;
-  using PercentageMathExtended for uint256;
+  using PercentageMath for uint256;
 
   function test_addDynamicReserveConfig_revertsWith_InvalidLiquidationBonus() public {
     uint256 reserveId = _randomReserveId(spoke1);

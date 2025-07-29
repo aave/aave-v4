@@ -5,8 +5,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRiskPremiumScenarioTest is SpokeBase {
   using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   struct GeneralLocalVars {
     uint256 usdxSupplyAmount;
@@ -151,7 +151,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       MathUtils.calculateLinearInterest(
         hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
         vars.lastUpdateTimestamp
-      ) - WadRayMathExtended.RAY
+      ) - WadRayMath.RAY
     );
     vars.expectedPremiumDebt = accruedDaiDebt.percentMulUp(wethCollateralRisk);
 
@@ -203,7 +203,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       MathUtils.calculateLinearInterest(
         hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
         startTime
-      ) - WadRayMathExtended.RAY
+      ) - WadRayMath.RAY
     );
 
     vars.expectedPremiumDebt =

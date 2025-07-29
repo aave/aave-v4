@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubRemoveTest is LiquidityHubBase {
-  using WadRayMathExtended for uint256;
+  using WadRayMath for uint256;
 
   function test_remove() public {
     uint256 amount = 100e18;
@@ -43,7 +43,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity after');
     assertEq(assetData.baseDebt, 0, 'asset baseDebt after');
     assertEq(assetData.premiumDebt, 0, 'asset premiumDebt after');
-    assertEq(assetData.baseDebtIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex after');
+    assertEq(assetData.baseDebtIndex, WadRayMath.RAY, 'asset baseBorrowIndex after');
     assertEq(assetData.baseBorrowRate, uint256(5_00).bpsToRay(), 'asset baseBorrowRate after');
     assertEq(
       assetData.lastUpdateTimestamp,
