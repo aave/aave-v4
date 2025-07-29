@@ -14,6 +14,8 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 balanceAfter;
     uint256 balanceChange;
     uint256 baseChange;
+    uint256 balanceSkipTime;
+    uint256 balanceChangeSkipTime;
   }
 
   struct ConvertedValues {
@@ -296,7 +298,7 @@ contract SpokeLiquidationBase is SpokeBase {
   function _checkLiquidation(
     LiquidationTestLocalParams memory state,
     string memory label
-  ) internal view {
+  ) internal {
     _assertLiquidationFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
     _assertSupplyExchangeRate(state, label);
@@ -308,6 +310,77 @@ contract SpokeLiquidationBase is SpokeBase {
       _assertUserAccountData(state, label);
     }
     _assertLiquidationAccounting(state, label);
+    _assertLiquidationAccountingWithSkipTime(state, label);
+  }
+
+  // accounting assertions with skip time after a liquidation
+  function _assertLiquidationAccountingWithSkipTime(
+    LiquidationTestLocalParams memory state,
+    string memory label
+  ) internal {
+    skip(340 days);
+
+    // user debt
+    (state.userBaseDebt.balanceSkipTime, state.userPremiumDebt.balanceSkipTime) = state
+      .spoke
+      .getUserDebt(state.debtReserve.reserveId, state.user);
+    state.userTotalDebt.balanceSkipTime =
+      state.userBaseDebt.balanceSkipTime +
+      state.userPremiumDebt.balanceSkipTime;
+    // reserve debt
+    (state.reserveBaseDebt.balanceSkipTime, state.reservePremiumDebt.balanceSkipTime) = state
+      .spoke
+      .getReserveDebt(state.debtReserveId);
+    state.reserveTotalDebt.balanceSkipTime =
+      state.reserveBaseDebt.balanceSkipTime +
+      state.reservePremiumDebt.balanceSkipTime;
+    // spoke debt
+    (state.spokeBaseDebt.balanceSkipTime, state.spokePremiumDebt.balanceSkipTime) = hub
+      .getSpokeDebt(state.debtReserve.assetId, address(state.spoke));
+    state.spokeTotalDebt.balanceSkipTime =
+      state.spokeBaseDebt.balanceSkipTime +
+      state.spokePremiumDebt.balanceSkipTime;
+
+    // balance changes before/after liquidation
+    state.userTotalDebt.balanceChangeSkipTime = stdMath.delta(
+      state.userTotalDebt.balanceSkipTime,
+      state.userTotalDebt.balanceAfter
+    );
+    state.spokeTotalDebt.balanceChangeSkipTime = stdMath.delta(
+      state.spokeTotalDebt.balanceSkipTime,
+      state.spokeTotalDebt.balanceAfter
+    );
+    state.reserveTotalDebt.balanceChangeSkipTime = stdMath.delta(
+      state.reserveTotalDebt.balanceSkipTime,
+      state.reserveTotalDebt.balanceAfter
+    );
+
+    if (state.userTotalDebt.balanceBefore == state.spokeTotalDebt.balanceBefore) {
+      // if user and spoke debts initially match, they should accrue at the same rate
+      assertEq(
+        state.userTotalDebt.balanceChangeSkipTime,
+        state.spokeTotalDebt.balanceChangeSkipTime,
+        string.concat('user/spoke total debt accounting after skipTime ', label)
+      );
+    } else {
+      // otherwise debt interest accrual is at min the amount from user position
+      assertLe(
+        state.userTotalDebt.balanceChangeSkipTime,
+        state.spokeTotalDebt.balanceChangeSkipTime,
+        string.concat('user/spoke total debt accounting after skipTime ', label)
+      );
+    }
+    // interest accrual should match between spoke/hub
+    assertEq(
+      state.reserveTotalDebt.balanceChangeSkipTime,
+      state.spokeTotalDebt.balanceChangeSkipTime,
+      string.concat('reserve/spoke total debt change accounting after skipTime ', label)
+    );
+    assertEq(
+      state.reserveTotalDebt.balanceSkipTime,
+      state.spokeTotalDebt.balanceSkipTime,
+      string.concat('reserve/spoke total debt accounting after skipTime ', label)
+    );
   }
 
   /// @dev check that spoke accounting from hub matches user accounting from spoke
@@ -335,10 +408,9 @@ contract SpokeLiquidationBase is SpokeBase {
       string.concat('user/spoke premium debt accounting ', label)
     );
     // debt asset - reserve vs spoke accounting
-    assertApproxEqAbs(
+    assertEq(
       state.reserveTotalDebt.balanceChange,
       state.spokeTotalDebt.balanceChange,
-      1,
       string.concat('reserve/spoke total debt accounting ', label)
     );
     assertEq(
@@ -346,10 +418,9 @@ contract SpokeLiquidationBase is SpokeBase {
       state.spokeBaseDebt.balanceChange,
       string.concat('reserve/spoke base debt accounting ', label)
     );
-    assertApproxEqAbs(
+    assertEq(
       state.reservePremiumDebt.balanceChange,
       state.spokePremiumDebt.balanceChange,
-      1,
       string.concat('reserve/spoke premium debt accounting ', label)
     );
     // collateral asset - user vs spoke accounting
