@@ -451,7 +451,7 @@ contract SpokeLiquidationBase is SpokeBase {
     // duplicated logic from LiquidationLogic.calculateDebtToRestoreCloseFactor
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
       .percentMulDown(params.collateralFactor)
-      .fromBps();
+      .fromBpsDown();
     if (params.closeFactor < effectiveLiquidationPenalty) {
       return type(uint256).max;
     }

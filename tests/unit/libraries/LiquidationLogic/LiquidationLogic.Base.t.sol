@@ -49,7 +49,7 @@ contract LiquidationLogicBaseTest is Base {
     uint256 liquidationBonus,
     uint256 collateralFactor
   ) internal pure returns (uint256) {
-    return (liquidationBonus.wadify()).percentMulDown(collateralFactor - 1).fromBps();
+    return (liquidationBonus.wadify()).percentMulDown(collateralFactor - 1).fromBpsDown();
   }
 
   function _setStructFields(

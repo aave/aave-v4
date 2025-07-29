@@ -871,7 +871,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // strip BPS factor from result, because running avgCollateralFactor sum has been scaled by collateralFactor (in BPS) above
     vars.healthFactor = vars.totalDebtInBaseCurrency == 0
       ? type(uint256).max
-      : vars.avgCollateralFactor.wadDivDown(vars.totalDebtInBaseCurrency).fromBps(); // HF of 1 -> 1e18
+      : vars.avgCollateralFactor.wadDivDown(vars.totalDebtInBaseCurrency).fromBpsDown(); // HF of 1 -> 1e18
 
     // divide by total collateral to get avg collateral factor in wad
     vars.avgCollateralFactor = vars.totalCollateralInBaseCurrency == 0

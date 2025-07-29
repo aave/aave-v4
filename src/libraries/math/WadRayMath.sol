@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title WadRayMath library, with explicit rounding
+ * @title WadRayMath library
  * @author Aave
- * @notice Provides functions to perform calculations with Wad and Ray units
+ * @notice Provides functions to perform calculations with Wad and Ray units with explicit rounding
  * @dev Provides mul and div function for wads (decimal numbers with 18 digits of precision) and rays (decimal numbers
  * with 27 digits of precision)
  */

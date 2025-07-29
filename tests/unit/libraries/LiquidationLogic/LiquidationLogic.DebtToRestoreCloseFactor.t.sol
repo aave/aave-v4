@@ -25,7 +25,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     params = _bound(params);
     // so that default uint max is not returned
     vm.assume(
-      (params.liquidationBonus.wadify()).percentMulDown(params.collateralFactor).fromBps() - 1 <
+      (params.liquidationBonus.wadify()).percentMulDown(params.collateralFactor).fromBpsDown() - 1 <
         params.closeFactor
     );
     params.debtAssetUnit = 0;
@@ -43,7 +43,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     // so that default uint max is not returned
     // ie params.closeFactor > effectiveLiquidationPenalty
     vm.assume(
-      (params.liquidationBonus.wadify()).percentMulDown(params.collateralFactor).fromBps() - 1 <
+      (params.liquidationBonus.wadify()).percentMulDown(params.collateralFactor).fromBpsDown() - 1 <
         params.closeFactor
     );
     params.debtAssetPrice = 0;
@@ -61,7 +61,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     params.healthFactor = params.closeFactor;
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
       .percentMulDown(params.collateralFactor)
-      .fromBps();
+      .fromBpsDown();
     // params.closeFactor >= effectiveLiquidationPenalty so that default uint max is not returned
     vm.assume(effectiveLiquidationPenalty <= params.closeFactor);
     DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
@@ -78,7 +78,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     params.healthFactor = params.closeFactor + 1;
     // so that default uint max is not returned
     vm.assume(
-      (params.liquidationBonus.wadify()).percentMulDown(params.collateralFactor).fromBps() - 1 <
+      (params.liquidationBonus.wadify()).percentMulDown(params.collateralFactor).fromBpsDown() - 1 <
         params.closeFactor
     );
     DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);

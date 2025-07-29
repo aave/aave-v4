@@ -70,7 +70,7 @@ library LiquidationLogic {
     // the greater the penalty, the more debt must be repaid to restore the user's health factor
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
       .percentMulDown(params.collateralFactor)
-      .fromBps();
+      .fromBpsDown();
 
     // prevent underflow in denominator
     if (params.closeFactor < effectiveLiquidationPenalty) {

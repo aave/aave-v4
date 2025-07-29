@@ -328,7 +328,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     params.totalDebtInBaseCurrency = totalAmount;
     params.healthFactor = totalCollateralFactor
       .wadDivDown(params.totalDebtInBaseCurrency)
-      .fromBps();
+      .fromBpsDown();
   }
 
   /// set up collateral factors and liquidation bonuses with price drop for weth collateral
