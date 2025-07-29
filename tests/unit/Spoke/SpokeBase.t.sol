@@ -932,6 +932,21 @@ contract SpokeBase is Base {
     return vm.randomUint(0, type(uint16).max).toUint16();
   }
 
+  function _randomSpoke(ILiquidityHub liqHub, uint256 assetId) internal returns (ISpoke) {
+    uint256 spokeCount = liqHub.getSpokeCount(assetId);
+    uint256 spokeIndex = vm.randomUint(0, spokeCount - 1);
+    return ISpoke(liqHub.getSpokeAddress(assetId, spokeIndex));
+  }
+
+  function _reserveId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {
+    for (uint256 id; id < spoke.getReserveCount(); ++id) {
+      if (spoke.getReserve(id).assetId == assetId) {
+        return id;
+      }
+    }
+    revert('not found');
+  }
+
   function _nextDynamicConfigKey(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
     uint16 dynamicConfigKey = spoke.getReserve(reserveId).dynamicConfigKey;
     return uint16(uint256(dynamicConfigKey + 1) % type(uint16).max);

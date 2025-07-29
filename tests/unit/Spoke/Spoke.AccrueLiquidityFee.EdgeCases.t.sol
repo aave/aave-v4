@@ -148,15 +148,50 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     }
 
     assertEq(hub.getSpokeTotalDebt(assetId, address(spoke1)), 0, 'all debt should be repaid');
-    assertLe(
-      hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
-      totalRepaid - totalBorrowed,
-      'fees <= accrued'
-    );
-    assertApproxEqRel(
-      hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
-      totalRepaid - totalBorrowed,
-      0.0000001e18 // 0.00001%
-    );
+    uint256 feesAccruedToTreasury = hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke));
+    assertLe(feesAccruedToTreasury, totalRepaid - totalBorrowed, 'fees <= accrued');
+    assertApproxEqRel(feesAccruedToTreasury, totalRepaid - totalBorrowed, 0.0000001e18); // 0.00001%
+  }
+
+  function test_accrueLiquidityFee_maxLiquidityFee_multi_spoke() public {
+    uint256 assetId = daiAssetId; // on all spokes
+    uint256 spokeCount = hub.getSpokeCount(assetId);
+    updateLiquidityFee(hub, assetId, MAX_LIQUIDITY_FEE);
+    // build spoke list excluding treasury spoke
+    ISpoke[] memory spokes = new ISpoke[](spokeCount - 1);
+    uint256 spokeIndex;
+    for (uint256 i; i < spokeCount; ++i) {
+      if (hub.getSpokeAddress(assetId, i) != address(treasurySpoke)) {
+        spokes[spokeIndex++] = ISpoke(hub.getSpokeAddress(assetId, i));
+      }
+    }
+
+    uint256 totalBorrowed;
+    uint256 count = vm.randomUint(10, 1000);
+    for (uint256 i; i < count; ++i) {
+      address user = makeUser(i);
+      uint256 borrowAmount = vm.randomUint(1, MAX_SUPPLY_AMOUNT / count);
+      ISpoke spoke = spokes[i % spokes.length]; // to deterministically pick random spoke
+      uint256 reserveId = _reserveId(spoke, assetId);
+      _backedBorrow(spoke, user, reserveId, reserveId, borrowAmount);
+      totalBorrowed += borrowAmount;
+    }
+
+    skip(vm.randomUint(1, MAX_SKIP_TIME));
+
+    uint256 totalRepaid;
+    for (uint256 i; i < count; ++i) {
+      address user = makeUser(i); // deterministic operation
+      ISpoke spoke = spokes[i % spokes.length]; // deterministic operation
+      uint256 reserveId = _reserveId(spoke, assetId);
+      uint256 debt = spoke.getUserTotalDebt(reserveId, user);
+      deal(spoke, reserveId, user, debt);
+      Utils.repay(spoke, reserveId, user, debt, user);
+      totalRepaid += debt;
+    }
+
+    uint256 feesAccruedToTreasury = hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke));
+    assertLe(feesAccruedToTreasury, totalRepaid - totalBorrowed, 'fees <= accrued');
+    assertApproxEqRel(feesAccruedToTreasury, totalRepaid - totalBorrowed, 0.0000001e18); // 0.00001%
   }
 }
