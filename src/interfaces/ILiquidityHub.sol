@@ -213,7 +213,7 @@ interface ILiquidityHub is IAccessManaged {
    * @param assetId The identifier of the asset.
    * @param baseAmount The base debt to report as deficit.
    * @param premiumAmount The premium debt to report as deficit.
-   * @return The amount of debt reported as deficit.
+   * @return The amount of base debt shares reported as deficit.
    */
   function reportDeficit(
     uint256 assetId,

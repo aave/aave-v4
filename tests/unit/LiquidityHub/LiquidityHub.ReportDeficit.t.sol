@@ -18,6 +18,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     uint256 baseDebtAfter;
     uint256 premiumDebtAfter;
   }
+
   function setUp() public override {
     super.setUp();
 

@@ -1898,7 +1898,7 @@ abstract contract Base is Test {
   }
 
   /// @dev Borrow to be below a certain healthy health factor
-  /// This function validates HF and does not mock price, thus it will cache user RP properly
+  /// @dev This function validates HF and does not mock price, thus it will cache user RP properly
   function _borrowToBeAboveHealthyHf(
     ISpoke spoke,
     address user,

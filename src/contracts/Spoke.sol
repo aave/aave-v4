@@ -1027,7 +1027,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   /**
    * @dev Reports deficits for all borrowing reserves of the user.
-   * Includes the debt reserve being repaid during liquidation.
+   * @dev Includes the debt reserve being repaid during liquidation.
    * @param user The address of the user whose deficits are being reported.
    */
   function _reportDeficits(address user) internal {
@@ -1219,6 +1219,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   /**
+   * @dev Calculates the liquidation parameters for a user being liquidated.
+   * @param collateralReserve The collateral reserve being liquidated.
+   * @param debtReserve The debt reserve being repaid during liquidation.
+   * @param user The address of the user being liquidated.
+   * @param debtToCover The amount of debt to cover.
+   * @param baseDebt The base debt of the user.
+   * @param premiumDebt The premium debt of the user.
    * @return actualCollateralToLiquidate The amount of collateral to liquidate.
    * @return liquidationFeeAmount The amount of protocol fee.
    * @return baseDebtToLiquidate The amount of base debt to repay.
