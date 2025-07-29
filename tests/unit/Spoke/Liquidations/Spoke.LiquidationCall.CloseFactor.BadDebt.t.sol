@@ -7,7 +7,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 /// TODO: realize bad debt into deficit when deficit accounting is implemented, resolve tests
 contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
-  using PercentageMathExtended for uint256;
+  using PercentageMath for uint256;
 
   /// variable close factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
   function test_liquidationCall_fuzz_closeFactor_badDebt(
@@ -343,15 +343,16 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
+    state.collDynConfig = _getUserDynConfig(spoke1, alice, collateralReserveId);
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMath.PERCENTAGE_FACTOR.percentDiv(state.collDynConfig.collateralFactor)
+      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
     );
 
-    liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(spoke1, state.collateralReserve.reserveId, 1e25),
@@ -375,8 +376,8 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     updateLiquidationFee(spoke1, collateralReserveId, state.liquidationFee);
     // set user position under hf threshold so that there is invalid collateral to cover all debt
     // results in bad debt remaining (debt > 0, collateral = 0)
-    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, collateralReserveId, liqBonus)
-      .percentMul(99_00);
+    uint256 desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, state.collDynConfig, liqBonus)
+      .percentMulUp(99_00);
 
     Utils.supplyCollateral({
       spoke: spoke1,

@@ -5,8 +5,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccrueInterestTest is SpokeBase {
   using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   struct TestAmounts {
     uint256 daiSupplyAmount;
@@ -1113,6 +1113,6 @@ contract SpokeAccrueInterestTest is SpokeBase {
   }
 
   function _bpsToRay(uint256 bps) internal pure returns (uint256) {
-    return (bps * WadRayMathExtended.RAY) / PercentageMath.PERCENTAGE_FACTOR;
+    return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
   }
 }

@@ -5,9 +5,9 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRiskPremiumTest is SpokeBase {
   using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   struct ReserveInfoLocal {
     uint256 reserveId;
