@@ -324,17 +324,13 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // accrue interest and liquidity fees
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
-    uint256 realizedPremium = asset.realizedPremium + realizedPremiumAdded;
-
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
-    asset.realizedPremium = MathUtils.zeroFloorSub(realizedPremium, realizedPremiumTaken);
-
-    realizedPremium = spoke.realizedPremium + realizedPremiumAdded;
+    asset.realizedPremium = asset.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
     spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
-    spoke.realizedPremium = MathUtils.zeroFloorSub(realizedPremium, realizedPremiumTaken);
+    spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
     emit RefreshPremiumDebt(
       assetId,
