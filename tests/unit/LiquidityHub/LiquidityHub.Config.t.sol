@@ -40,10 +40,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     Utils.addSpoke(hub, ADMIN, assetId, address(0), spokeConfig);
   }
 
-  function test_addSpoke_revertsWith_SpokeAlreadyListed(
-    uint256 assetId,
-    DataTypes.SpokeConfig calldata spokeConfig
-  ) public {
+  function test_addSpoke_revertsWith_SpokeAlreadyListed() public {
+    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(daiAssetId, address(spoke1));
     vm.expectRevert(ILiquidityHub.SpokeAlreadyListed.selector);
     Utils.addSpoke(hub, ADMIN, daiAssetId, address(spoke1), spokeConfig);
   }

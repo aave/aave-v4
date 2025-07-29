@@ -143,14 +143,29 @@ interface ISpokeConfigurator {
   ) external;
 
   /**
-   * @notice Updates the dynamic config of a reserve.
+   * @notice Add a dynamic config of a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
+   * @param dynamicConfig The new dynamic config.
+   * @return configKey The key of the added dynamic config.
+   */
+  function addDynamicReserveConfig(
+    address spoke,
+    uint256 reserveId,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
+  ) external returns (uint16 configKey);
+
+  /**
+   * @notice Updates the dynamic config of a reserve at the specified key.
+   * @param spoke The address of the spoke.
+   * @param reserveId The identifier of the reserve.
+   * @param configKey The key of the dynamic config to update.
    * @param dynamicConfig The new dynamic config.
    */
   function updateDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
+    uint16 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external;
 
