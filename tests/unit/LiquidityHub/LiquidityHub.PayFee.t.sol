@@ -89,10 +89,7 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     uint256 spokeSharesBefore = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
 
     // supply ex rate increases due to interest
-    assertGe(
-      hub.convertToSuppliedAssets(daiAssetId, WadRayMathExtended.RAY),
-      WadRayMathExtended.RAY
-    );
+    assertGe(hub.convertToSuppliedAssets(daiAssetId, WadRayMath.RAY), WadRayMath.RAY);
 
     feeShares = bound(feeShares, 1, spokeSharesBefore);
     uint256 feeAmount = hub.convertToSuppliedAssets(daiAssetId, feeShares);

@@ -5,7 +5,7 @@ import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubConfigTest is LiquidityHubBase {
   using SharesMath for uint256;
-  using WadRayMathExtended for uint32;
+  using WadRayMath for uint32;
 
   bytes public encodedIrData;
 
@@ -211,7 +211,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetUpdated(
       expectedAssetId,
-      WadRayMathExtended.RAY,
+      WadRayMath.RAY,
       baseVariableBorrowRate.bpsToRay(),
       vm.getBlockTimestamp()
     );
@@ -251,10 +251,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   ) public {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
-    newConfig.liquidityFee = vm.randomUint(
-      PercentageMathExtended.PERCENTAGE_FACTOR + 1,
-      type(uint256).max
-    );
+    newConfig.liquidityFee = vm.randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint256).max);
     vm.expectRevert(ILiquidityHub.InvalidLiquidityFee.selector);
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(assetId, newConfig);
@@ -266,7 +263,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   ) public {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
-    newConfig.liquidityFee = vm.randomUint(1, PercentageMathExtended.PERCENTAGE_FACTOR);
+    newConfig.liquidityFee = vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR);
     newConfig.feeReceiver = address(0);
     vm.expectRevert(ILiquidityHub.InvalidFeeReceiver.selector);
     vm.prank(HUB_ADMIN);
@@ -413,7 +410,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   /// Triggers accrual when liquidity fee update, based on old liquidity fee
   function test_updateAssetConfig_fuzz_LiquidityFee(uint256 assetId, uint256 liquidityFee) public {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
-    liquidityFee = bound(liquidityFee, 1, PercentageMathExtended.PERCENTAGE_FACTOR);
+    liquidityFee = bound(liquidityFee, 1, PercentageMath.PERCENTAGE_FACTOR);
 
     uint256 amount = 1000e18;
     _addLiquidity(assetId, amount);
@@ -435,7 +432,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 liquidityFee
   ) public {
     assetId = bound(assetId, 0, hub.getAssetCount() - 1);
-    liquidityFee = bound(liquidityFee, 1, PercentageMathExtended.PERCENTAGE_FACTOR);
+    liquidityFee = bound(liquidityFee, 1, PercentageMath.PERCENTAGE_FACTOR);
 
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.liquidityFee = 0;
@@ -483,11 +480,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
   ) internal pure {
-    newConfig.liquidityFee = bound(
-      newConfig.liquidityFee,
-      0,
-      PercentageMathExtended.PERCENTAGE_FACTOR
-    );
+    newConfig.liquidityFee = bound(newConfig.liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     vm.assume(address(newConfig.feeReceiver) != address(0) || newConfig.liquidityFee == 0);
     assumeNotPrecompile(newConfig.feeReceiver);
     assumeNotForgeAddress(newConfig.feeReceiver);

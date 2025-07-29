@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
-  using PercentageMathExtended for uint256;
-  using WadRayMathExtended for uint256;
+  using PercentageMath for uint256;
+  using WadRayMath for uint256;
 
   uint256 internal dustInBase = 10e26; // $10 in base currency
 
@@ -192,11 +192,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMathExtended.PERCENTAGE_FACTOR.percentDivDown(
+      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(
         state.collDynConfigs[collateralReserveIndex].collateralFactor
       )
     );
-    liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     supplyAmountInBase = bound(
       supplyAmountInBase,
       dustInBase * state.debtReserves.length, // enough to cover dust for all debt reserves
@@ -350,7 +350,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     vm.stopPrank();
 
     finalHf = spoke.getHealthFactor(user);
-    assertLt(finalHf, desiredHf, 'should borrow enough for HF to be below desiredHf');
+    assertLt(
+      finalHf,
+      desiredHf,
+      '_borrowMultipleReservesToBeBelowHf: should borrow enough for HF to be below desiredHf'
+    );
   }
 
   // increase supply exchange rate across multiple reserves
@@ -368,7 +372,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     vm.startPrank(user);
     for (uint256 i = 0; i < collateralReserves.length; i++) {
       uint256 assetId = spoke.getReserve(collateralReserves[i].reserveId).assetId;
-      initialExRate[i] = hub.convertToSuppliedAssets(assetId, WadRayMathExtended.RAY.wadify());
+      initialExRate[i] = hub.convertToSuppliedAssets(assetId, WadRayMath.RAY.toWad());
       // mock price to 0 to circumvent borrow validation
       vm.mockCall(
         address(oracle1),
@@ -388,7 +392,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     for (uint256 i = 0; i < collateralReserves.length; i++) {
       finalExRate[i] = hub.convertToSuppliedAssets(
         spoke.getReserve(collateralReserves[i].reserveId).assetId,
-        WadRayMathExtended.RAY.wadify()
+        WadRayMath.RAY.toWad()
       );
       assertGt(finalExRate[i], initialExRate[i]);
     }

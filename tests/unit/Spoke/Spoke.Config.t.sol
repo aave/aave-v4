@@ -5,7 +5,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeConfigTest is SpokeBase {
   using SafeCast for uint256;
-  using PercentageMathExtended for uint256;
+  using PercentageMath for uint256;
 
   function test_spoke_deploy() public {
     address predictedSpokeAddress = vm.computeCreateAddress(

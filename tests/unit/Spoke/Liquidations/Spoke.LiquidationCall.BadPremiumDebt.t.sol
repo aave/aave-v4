@@ -5,7 +5,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 /// tests with bad debt with a single collateral/debt reserve that includes accrued premium debt
 contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
-  using PercentageMathExtended for uint256;
+  using PercentageMath for uint256;
 
   /// tests where liquidation results in bad debt with premium debt > 0
   function test_liquidationCall_fuzz_badPremiumDebt(
@@ -195,7 +195,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMathExtended.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
+      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
     );
     liquidationFee = bound(liquidationFee, 0, 100_00);
     supplyAmount = bound(

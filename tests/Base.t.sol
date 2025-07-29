@@ -17,9 +17,9 @@ import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/contracts/HubConfigurator.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/contracts/SpokeConfigurator.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
@@ -48,10 +48,10 @@ import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 
 abstract contract Base is Test {
-  using WadRayMathExtended for uint256;
+  using WadRayMath for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
-  using PercentageMathExtended for uint256;
+  using PercentageMath for uint256;
   using SafeCast for *;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
@@ -1265,8 +1265,7 @@ abstract contract Base is Test {
     IPriceOracle oracle = spoke.oracle();
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
-      (amount * oracle.getReservePrice(reserveId).wadify()) /
-      (10 ** hub.getAsset(assetId).decimals);
+      (amount * oracle.getReservePrice(reserveId).toWad()) / (10 ** hub.getAsset(assetId).decimals);
   }
 
   /// @notice Convert 1 asset amount to equivalent amount in another asset.
@@ -1581,7 +1580,7 @@ abstract contract Base is Test {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return (amount * assetPrice).wadify() / assetUnit;
+    return (amount * assetPrice).toWad() / assetUnit;
   }
 
   function _convertBaseCurrencyToAmount(
@@ -1605,7 +1604,7 @@ abstract contract Base is Test {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return ((baseCurrencyAmount * assetUnit) / assetPrice).dewadifyDown();
+    return ((baseCurrencyAmount * assetUnit) / assetPrice).fromWadDown();
   }
 
   /**
@@ -1643,9 +1642,7 @@ abstract contract Base is Test {
     ) = spoke.getUserAccountData(user);
 
     requiredDebtInBaseCurrency =
-      totalCollateralBase.percentMul(currentAvgCollateralFactor.dewadifyDown() + 1).wadDivUp(
-        desiredHf
-      ) -
+      (totalCollateralBase.percentMulUp(currentAvgCollateralFactor + 1) / desiredHf) -
       totalDebtBase;
     // add 1 to num to round debt up (ie making sure resultant debt creates HF that is less than desired)
   }
@@ -1891,7 +1888,7 @@ abstract contract Base is Test {
 
     return
       totalCollateralBase
-        .percentMulDown(currentAvgCollateralFactor.dewadifyDown())
+        .percentMulDown(currentAvgCollateralFactor.fromWadDown())
         .percentMulDown(99_00)
         .wadDivDown(desiredHf) - totalDebtBase;
     // buffer to force debt lower (ie making sure resultant debt creates HF that is gt desired)

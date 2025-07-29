@@ -3,19 +3,18 @@ pragma solidity ^0.8.0;
 
 import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
 library AssetLogic {
   using AssetLogic for DataTypes.Asset;
   using PercentageMath for uint256;
-  using PercentageMathExtended for uint256;
   using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
+  using WadRayMath for uint256;
 
   // todo: option for cached object
   // todo: add virtual offset for inflation attack

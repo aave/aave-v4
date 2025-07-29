@@ -3,9 +3,10 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
-/// tests where liquidation results in bad debt (debt remaining > 0, collateral remaining = 0)
-contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
-  using PercentageMathExtended for uint256;
+/// tests where liquidation results in bad debt (debt > 0, collateral = 0)
+/// TODO: realize bad debt into deficit when deficit accounting is implemented, resolve tests
+contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
+  using PercentageMath for uint256;
 
   /// coll: weth / debt: dai
   function test_liquidationCall_badDebt_scenario1() public {
@@ -336,10 +337,10 @@ contract LiquidationCallBadDebtTest is SpokeLiquidationBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMathExtended.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
+      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
     );
 
-    liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e25),

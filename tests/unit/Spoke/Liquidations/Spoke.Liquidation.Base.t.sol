@@ -6,8 +6,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 
 contract SpokeLiquidationBase is SpokeBase {
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   struct Balance {
     uint256 balanceBefore;
@@ -171,10 +171,10 @@ contract SpokeLiquidationBase is SpokeBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMathExtended.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
+      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
     );
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.01e18);
-    liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     // bound supply amount to max supply amount
     supplyAmount = bound(
       supplyAmount,
@@ -633,9 +633,9 @@ contract SpokeLiquidationBase is SpokeBase {
 
     (, , params.healthFactor, , params.totalDebtInBaseCurrency) = spoke.getUserAccountData(alice);
     // duplicated logic from LiquidationLogic.calculateDebtToRestoreCloseFactor
-    uint256 effectiveLiquidationPenalty = (params.liquidationBonus.wadify())
+    uint256 effectiveLiquidationPenalty = (params.liquidationBonus.toWad())
       .percentMulDown(params.collateralFactor)
-      .fromBps();
+      .fromBpsDown();
     if (params.closeFactor < effectiveLiquidationPenalty) {
       return UINT256_MAX;
     }
@@ -643,7 +643,7 @@ contract SpokeLiquidationBase is SpokeBase {
       (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
         (params.closeFactor - params.healthFactor)) /
         ((params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice))
-        .dewadifyDown();
+        .fromWadDown();
   }
 
   /// @notice Calc user's lowest possible health factor whereby a liqudation can still restore HF to close factor.
@@ -655,7 +655,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 liquidationBonus
   ) internal view returns (uint256) {
     (, uint256 avgCollateralFactor, , , ) = spoke.getUserAccountData(user);
-    return _calcLowestHfForBadDebt(avgCollateralFactor.dewadifyDown(), liquidationBonus);
+    return _calcLowestHfForBadDebt(avgCollateralFactor.fromWadDown(), liquidationBonus);
   }
 
   /// given collateral factor and liquidation bonus, calculate the lowest health factor possible
@@ -730,7 +730,7 @@ contract SpokeLiquidationBase is SpokeBase {
     );
     state.rate.rateBefore = state.collateralHub.convertToSuppliedAssets(
       state.collateralReserve.assetId,
-      WadRayMathExtended.RAY
+      WadRayMath.RAY
     );
     state.deficit.balanceBefore = getDeficit(state.debtHub, state.debtReserve.assetId);
 
@@ -829,7 +829,7 @@ contract SpokeLiquidationBase is SpokeBase {
     );
     state.rate.rateAfter = state.collateralHub.convertToSuppliedAssets(
       state.collateralReserve.assetId,
-      WadRayMathExtended.RAY
+      WadRayMath.RAY
     );
     state.deficit.balanceAfter = getDeficit(state.debtReserve.hub, state.debtReserve.assetId);
     (state.spokeBaseDebt.balanceAfter, state.spokePremiumDebt.balanceAfter) = hub.getSpokeDebt(

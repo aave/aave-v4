@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallScenarioTest is SpokeLiquidationBase {
-  using PercentageMathExtended for uint256;
-  using WadRayMathExtended for uint256;
+  using PercentageMath for uint256;
+  using WadRayMath for uint256;
 
   struct Amount {
     uint256 wbtc;
@@ -620,7 +620,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'userRP matches collateral risk of dai coll'
     );
     assertEq(
-      avgCollFactor.dewadifyDown(),
+      avgCollFactor.fromWadDown(),
       _getUserDynConfig(spoke1, alice, state.daiReserveId).collateralFactor,
       'avg coll factor matches dai coll factor'
     );

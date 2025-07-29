@@ -112,10 +112,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     vm.assume(baseAmount + premiumAmount > 0);
 
     params.deficitBefore = getDeficit(hub, usdxAssetId);
-    params.supplyExchangeRateBefore = hub.convertToSuppliedAssets(
-      usdxAssetId,
-      WadRayMathExtended.RAY
-    );
+    params.supplyExchangeRateBefore = hub.convertToSuppliedAssets(usdxAssetId, WadRayMath.RAY);
     params.availableLiquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceBefore = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
 
@@ -136,10 +133,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     (params.baseDebtAfter, params.premiumDebtAfter) = hub.getAssetDebt(usdxAssetId);
 
     params.deficitAfter = getDeficit(hub, usdxAssetId);
-    params.supplyExchangeRateAfter = hub.convertToSuppliedAssets(
-      usdxAssetId,
-      WadRayMathExtended.RAY
-    );
+    params.supplyExchangeRateAfter = hub.convertToSuppliedAssets(usdxAssetId, WadRayMath.RAY);
     params.availableLiquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceAfter = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
 
