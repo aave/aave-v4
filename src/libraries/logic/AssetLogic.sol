@@ -13,7 +13,6 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 library AssetLogic {
   using AssetLogic for DataTypes.Asset;
   using PercentageMath for uint256;
-  using PercentageMath for uint256;
   using SharesMath for uint256;
   using WadRayMath for uint256;
 
