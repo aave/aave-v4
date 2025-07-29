@@ -783,8 +783,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal {
     reserve.premiumDrawnShares = _add(reserve.premiumDrawnShares, premiumDrawnSharesDelta);
     reserve.premiumOffset = _add(reserve.premiumOffset, premiumOffsetDelta);
-    uint256 reserveRealizedPremium = reserve.realizedPremium + realizedPremiumAdded;
-    reserve.realizedPremium = MathUtils.zeroFloorSub(reserveRealizedPremium, realizedPremiumTaken);
+    reserve.realizedPremium = reserve.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
     emit RefreshPremiumDebt(
       reserveId,
