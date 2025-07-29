@@ -150,14 +150,11 @@ contract SpokeBase is Base {
   /// @dev Opens a supply position for a random user
   function _openSupplyPosition(ISpoke spoke, uint256 reserveId, uint256 amount) public {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
+    uint256 initialLiq = spoke.getReserve(reserveId).hub.getAvailableLiquidity(assetId);
 
-    address tempUser = vm.randomAddress();
-    IERC20 underlying = IERC20(spoke.getReserve(reserveId).underlying);
-    deal(address(underlying), tempUser, amount);
-
-    vm.prank(tempUser);
-    underlying.approve(address(hub), type(uint256).max);
+    address tempUser = makeUser();
+    deal(spoke, reserveId, tempUser, amount);
+    Utils.approve(spoke, reserveId, tempUser, UINT256_MAX);
 
     Utils.supply({
       spoke: spoke,
@@ -178,7 +175,7 @@ contract SpokeBase is Base {
     uint256 amount,
     bool withPremium
   ) internal returns (address) {
-    address tempUser = vm.randomAddress();
+    address tempUser = makeUser();
 
     // add collateral
     uint256 supplyAmount = _calcMinimumCollAmount({
@@ -188,10 +185,8 @@ contract SpokeBase is Base {
       debtAmount: amount
     });
 
-    IERC20 underlying = IERC20(spoke.getReserve(reserveId).underlying);
-    deal(address(underlying), tempUser, supplyAmount);
-    vm.prank(tempUser);
-    underlying.approve(address(hub), type(uint256).max);
+    deal(spoke, reserveId, tempUser, supplyAmount);
+    Utils.approve(spoke, reserveId, tempUser, UINT256_MAX);
 
     Utils.supplyCollateral({
       spoke: spoke,
@@ -227,6 +222,33 @@ contract SpokeBase is Base {
     }
 
     return tempUser;
+  }
+
+  // @dev Borrows reserve by minimum required collateral for the same reserve
+  function _backedBorrow(
+    ISpoke spoke,
+    address user,
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    uint256 borrowAmount
+  ) internal {
+    uint256 supplyAmount = _calcMinimumCollAmount(
+      spoke,
+      collateralReserveId,
+      debtReserveId,
+      borrowAmount
+    ) * 2;
+    deal(spoke, collateralReserveId, user, supplyAmount);
+    Utils.approve(spoke, collateralReserveId, user, UINT256_MAX);
+    Utils.supplyCollateral(spoke, collateralReserveId, user, supplyAmount, user);
+    Utils.borrow(spoke, debtReserveId, user, borrowAmount, user);
+  }
+
+  function deal(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
+    IERC20 underlying = IERC20(spoke.getReserve(reserveId).underlying);
+    if (underlying.balanceOf(user) < amount) {
+      deal(address(underlying), user, amount);
+    }
   }
 
   // increase share conversion index on given reserve

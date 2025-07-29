@@ -2108,4 +2108,20 @@ abstract contract Base is Test {
     _;
     if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.startPrank(msgSender, txOrigin);
   }
+
+  function makeEntity(string memory id, bytes32 key) internal returns (address) {
+    return makeAddr(string.concat(id, '-', vm.toString(uint256(key))));
+  }
+
+  function makeUser(uint256 i) internal returns (address) {
+    return makeEntity('user', bytes32(i));
+  }
+
+  function makeUser() internal returns (address) {
+    return makeEntity('user', vm.randomBytes8());
+  }
+
+  function makeSpoke() internal returns (address) {
+    return makeEntity('spoke', vm.randomBytes8());
+  }
 }

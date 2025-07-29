@@ -193,30 +193,34 @@ contract TreasurySpokeTest is SpokeBase {
 
     uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
 
-    assertEq(
+    assertApproxEqAbs(
       hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
       hub.getAssetTotalDebt(assetId) - amount,
+      3,
       'treasury spoke supplied amount on hub'
     );
-    assertEq(
+    assertApproxEqAbs(
       fees,
       hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
+      3,
       'treasury spoke supplied amount on spoke'
     );
 
-    IERC20 asset = IERC20(spoke1.getReserve(reserveId).underlying);
-    uint256 balanceBefore = asset.balanceOf(TREASURY_ADMIN);
+    if (fees > 0) {
+      IERC20 asset = IERC20(spoke1.getReserve(reserveId).underlying);
+      uint256 balanceBefore = asset.balanceOf(TREASURY_ADMIN);
 
-    deal(address(asset), tempUser, UINT256_MAX);
-    Utils.repay(spoke1, reserveId, tempUser, UINT256_MAX, tempUser);
-    Utils.withdraw(_treasurySpoke(), assetId, TREASURY_ADMIN, fees, address(treasurySpoke));
+      deal(address(asset), tempUser, UINT256_MAX);
+      Utils.repay(spoke1, reserveId, tempUser, UINT256_MAX, tempUser);
+      Utils.withdraw(_treasurySpoke(), assetId, TREASURY_ADMIN, fees, address(treasurySpoke));
 
-    assertEq(balanceBefore + fees, asset.balanceOf(TREASURY_ADMIN), 'Treasury admin balance');
-    assertEq(
-      0,
-      hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
-      'treasury spoke remaining supplied amount'
-    );
+      assertEq(balanceBefore + fees, asset.balanceOf(TREASURY_ADMIN), 'Treasury admin balance');
+      assertEq(
+        0,
+        hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
+        'treasury spoke remaining supplied amount'
+      );
+    }
   }
 
   function _treasurySpoke() internal view returns (ISpoke) {

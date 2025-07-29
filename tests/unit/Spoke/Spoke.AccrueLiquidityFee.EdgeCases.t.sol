@@ -43,19 +43,22 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     (, uint256 premiumDebt) = spoke1.getUserDebt(reserveId, alice);
     assertGt(premiumDebt, 0);
 
-    assertEq(
+    assertApproxEqAbs(
       spoke1.getUserSuppliedAmount(reserveId, alice),
       supplyAmount,
+      3,
       'alice does not earn anything'
     );
-    assertEq(
+    assertApproxEqAbs(
       hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
       spoke1.getUserTotalDebt(reserveId, alice) - borrowAmount,
+      3,
       'fees == total user accrued'
     );
-    assertEq(
+    assertApproxEqAbs(
       hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
       hub.getSpokeTotalDebt(assetId, address(spoke1)) - borrowAmount,
+      3,
       'fees == total spoke accrued'
     );
   }
@@ -89,21 +92,16 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
 
     skip(skipTime);
 
-    {
-      (, uint256 premiumDebt) = spoke1.getUserDebt(reserveId, alice);
-      assertGt(premiumDebt, 0);
-      (, premiumDebt) = spoke1.getUserDebt(reserveId, bob);
-      assertGt(premiumDebt, 0);
-    }
-
-    assertEq(
+    assertApproxEqAbs(
       spoke1.getUserSuppliedAmount(reserveId, alice),
       supplyAmount,
+      3,
       'alice does not earn anything'
     );
-    assertEq(
+    assertApproxEqAbs(
       spoke1.getUserSuppliedAmount(reserveId, bob),
       supplyAmount2,
+      3,
       'bob does not earn anything'
     );
 
@@ -116,10 +114,49 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
         borrowAmount2,
       'treasury accrued <= total accrued'
     );
-    assertEq(
+    assertApproxEqAbs(
       totalAccruedToTreasury,
       hub.getSpokeTotalDebt(assetId, address(spoke1)) - borrowAmount - borrowAmount2,
+      3,
       'fees == total spoke accrued'
+    );
+  }
+
+  function test_accrueLiquidityFee_maxLiquidityFee_multi_user() public {
+    uint256 reserveId = _randomReserveId(spoke1);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+    updateLiquidityFee(hub, assetId, MAX_LIQUIDITY_FEE);
+
+    uint256 totalBorrowed;
+    uint256 count = vm.randomUint(10, 1000);
+    for (uint256 i; i < count; ++i) {
+      address user = makeUser(i);
+      uint256 borrowAmount = vm.randomUint(1, MAX_SUPPLY_AMOUNT / count);
+      _backedBorrow(spoke1, user, reserveId, reserveId, borrowAmount);
+      totalBorrowed += borrowAmount;
+    }
+
+    skip(vm.randomUint(1, MAX_SKIP_TIME));
+
+    uint256 totalRepaid;
+    for (uint256 i; i < count; ++i) {
+      address user = makeUser(i); // deterministic operation
+      uint256 debt = spoke1.getUserTotalDebt(reserveId, user);
+      deal(spoke1, reserveId, user, debt);
+      Utils.repay(spoke1, reserveId, user, debt, user);
+      totalRepaid += debt;
+    }
+
+    assertEq(hub.getSpokeTotalDebt(assetId, address(spoke1)), 0, 'all debt should be repaid');
+    assertLe(
+      hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
+      totalRepaid - totalBorrowed,
+      'fees <= accrued'
+    );
+    assertApproxEqRel(
+      hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
+      totalRepaid - totalBorrowed,
+      0.0000001e18 // 0.00001%
     );
   }
 }
