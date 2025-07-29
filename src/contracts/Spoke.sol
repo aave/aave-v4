@@ -123,7 +123,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     emit ReserveAdded(reserveId, assetId, hub);
     emit ReserveConfigUpdated(reserveId, config);
-    emit DynamicReserveConfigUpdated(reserveId, dynamicConfigKey, dynamicConfig);
+    emit DynamicReserveConfigAdded(reserveId, dynamicConfigKey, dynamicConfig);
 
     return reserveId;
   }
@@ -140,23 +140,35 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit ReserveConfigUpdated(reserveId, config);
   }
 
+  /// @inheritdoc ISpoke
+  function addDynamicReserveConfig(
+    uint256 reserveId,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
+  ) external restricted returns (uint16) {
+    require(reserveId < _reserveCount, ReserveNotListed());
+    uint16 configKey;
+    // @dev overflow is desired, we implicitly invalidate & override stale config
+    unchecked {
+      configKey = ++_reserves[reserveId].dynamicConfigKey;
+    }
+    _validateDynamicReserveConfig(dynamicConfig);
+    _dynamicConfig[reserveId][configKey] = dynamicConfig;
+    emit DynamicReserveConfigAdded(reserveId, configKey, dynamicConfig);
+    return configKey;
+  }
+
+  /// @inheritdoc ISpoke
   function updateDynamicReserveConfig(
     uint256 reserveId,
+    uint16 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
+    // @dev sufficient check since min liquidationBonus is 100_00
+    require(_dynamicConfig[reserveId][configKey].liquidationBonus != 0, ConfigKeyUninitialized());
     _validateDynamicReserveConfig(dynamicConfig);
-    // TODO: More sophisticated
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    uint16 nextConfigKey;
-    // @dev overflow is desired, we implicitly invalidate & override stale config
-    unchecked {
-      nextConfigKey = ++reserve.dynamicConfigKey;
-    }
-    // todo opt: concat key to use single lookup
-    _dynamicConfig[reserveId][nextConfigKey] = dynamicConfig;
-    emit DynamicReserveConfigUpdated(reserveId, nextConfigKey, dynamicConfig);
-    // todo emit if stale config overwritten?
+    _dynamicConfig[reserveId][configKey] = dynamicConfig;
+    emit DynamicReserveConfigUpdated(reserveId, configKey, dynamicConfig);
   }
 
   /// @inheritdoc ISpoke

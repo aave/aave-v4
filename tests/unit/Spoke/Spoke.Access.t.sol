@@ -127,11 +127,11 @@ contract SpokeAccessTest is SpokeBase {
       })
     );
 
-    // updateDynamicReserveConfig only callable by spoke admin
+    // addDynamicReserveConfig only callable by spoke admin
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    spoke1.updateDynamicReserveConfig(
+    spoke1.addDynamicReserveConfig(
       _daiReserveId(spoke1),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
@@ -140,9 +140,9 @@ contract SpokeAccessTest is SpokeBase {
       })
     );
 
-    // Spoke admin can call updateDynamicReserveConfig
+    // Spoke admin can call addDynamicReserveConfig
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateDynamicReserveConfig(
+    spoke1.addDynamicReserveConfig(
       _daiReserveId(spoke1),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
