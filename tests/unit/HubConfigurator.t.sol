@@ -173,7 +173,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
 
   function test_updateLiquidityFee() public {
     DataTypes.AssetConfig memory expectedConfig = hub.getAssetConfig(assetId);
-    expectedConfig.liquidityFee = PercentageMathExtended.PERCENTAGE_FACTOR - 1;
+    expectedConfig.liquidityFee = PercentageMath.PERCENTAGE_FACTOR - 1;
 
     vm.expectCall(
       address(hub),
@@ -285,7 +285,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
   }
 
   function test_updateFeeConfig_fuzz(uint256 liquidityFee, address feeReceiver) public {
-    liquidityFee = bound(liquidityFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
+    liquidityFee = bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     assumeNotZeroAddress(feeReceiver);
 
     DataTypes.AssetConfig memory oldConfig = hub.getAssetConfig(assetId);

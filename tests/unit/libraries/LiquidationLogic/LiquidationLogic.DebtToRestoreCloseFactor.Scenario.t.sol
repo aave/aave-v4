@@ -5,8 +5,7 @@ import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogicBaseTest {
   using WadRayMath for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using PercentageMath for uint256;
 
   struct ReserveAmount {
     uint256 reserveId;
@@ -327,7 +326,9 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       }
     }
     params.totalDebtInBaseCurrency = totalAmount;
-    params.healthFactor = totalCollateralFactor.wadDiv(params.totalDebtInBaseCurrency).fromBps();
+    params.healthFactor = totalCollateralFactor
+      .wadDivDown(params.totalDebtInBaseCurrency)
+      .fromBpsDown();
   }
 
   /// set up collateral factors and liquidation bonuses with price drop for weth collateral

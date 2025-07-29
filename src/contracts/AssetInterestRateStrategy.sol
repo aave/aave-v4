@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 /**
@@ -11,7 +11,7 @@ import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/interf
  * @dev Strategies are hub-specific, due to the usage of asset id as index of the _interestRateData.
  */
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
-  using WadRayMathExtended for *;
+  using WadRayMath for *;
 
   /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MAX_BORROW_RATE = 1000_00; // 1000.00% in BPS
@@ -126,7 +126,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
           .variableRateSlope2
           .bpsToRay()
           .rayMulUp(usageRatioRay - optimalUsageRatioRay)
-          .rayDivUp(WadRayMathExtended.RAY - optimalUsageRatioRay);
+          .rayDivUp(WadRayMath.RAY - optimalUsageRatioRay);
     }
 
     return currentVariableBorrowRateRay;

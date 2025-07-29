@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
-  using PercentageMathExtended for uint256;
-  using WadRayMathExtended for uint256;
+  using PercentageMath for uint256;
+  using WadRayMath for uint256;
 
   uint256 internal dustInBase = 10e26; // $10 in base currency
 
@@ -197,12 +197,12 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMathExtended
+      PercentageMath
         .PERCENTAGE_FACTOR
         .percentDivDown(state.collDynConfigs[collateralReserveIndex].collateralFactor)
         .percentMulDown(99_00) // add buffer so that not all debt is liquidated
     );
-    liquidationFee = bound(liquidationFee, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     supplyAmountInBase = bound(
       supplyAmountInBase,
       dustInBase * state.debtReserves.length, // enough to cover dust for all debt reserves
@@ -214,12 +214,13 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     state.collateralReserveId = collateralReserveIds[collateralReserveIndex];
     state.debtReserveId = debtReserveIds[debtReserveIndex];
+    state.collDynConfig = _getUserDynConfig(spoke1, alice, state.collateralReserveId);
 
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, state.collateralReserveId, liqBonus);
     updateLiquidationFee(spoke1, state.collateralReserveId, state.liquidationFee);
-    state.desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, state.collateralReserveId, liqBonus)
+    state.desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, state.collDynConfig, liqBonus)
       .percentMulDown(101_00); // add buffer so that not all debt is liquidated
 
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
@@ -326,7 +327,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     vm.stopPrank();
 
     finalHf = spoke.getHealthFactor(user);
-    assertLt(finalHf, desiredHf, 'should borrow enough for HF to be below desiredHf');
+    assertLt(
+      finalHf,
+      desiredHf,
+      '_borrowMultipleReservesToBeBelowHf: should borrow enough for HF to be below desiredHf'
+    );
   }
 
   function _increaseCollateralReservesSupplyExchangeRate(

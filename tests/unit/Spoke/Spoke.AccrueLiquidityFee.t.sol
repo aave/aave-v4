@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccrueLiquidityFeeTest is SpokeBase {
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   function test_accrueLiquidityFee_NoActionTaken() public view {
     assertEq(hub.getSpokeSuppliedShares(daiAssetId, address(treasurySpoke)), 0);
