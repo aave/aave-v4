@@ -51,7 +51,12 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     assertEq(
       hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
       spoke1.getUserTotalDebt(reserveId, alice) - borrowAmount,
-      'treasury accrued matches total accrued'
+      'fees == total user accrued'
+    );
+    assertEq(
+      hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
+      hub.getSpokeTotalDebt(assetId, address(spoke1)) - borrowAmount,
+      'fees == total spoke accrued'
     );
   }
 
@@ -63,11 +68,12 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     uint256 skipTime,
     uint256 rate
   ) public {
-    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 4); // within collateralization
     borrowAmount2 = bound(borrowAmount2, 1, MAX_SUPPLY_AMOUNT / 4); // within collateralization
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
     updateLiquidityFee(hub, spoke1.getReserve(reserveId).assetId, MAX_LIQUIDITY_FEE);
 
@@ -83,10 +89,12 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
 
     skip(skipTime);
 
-    (, uint256 premiumDebt) = spoke1.getUserDebt(reserveId, alice);
-    assertGt(premiumDebt, 0);
-    (, premiumDebt) = spoke1.getUserDebt(reserveId, bob);
-    assertGt(premiumDebt, 0);
+    {
+      (, uint256 premiumDebt) = spoke1.getUserDebt(reserveId, alice);
+      assertGt(premiumDebt, 0);
+      (, premiumDebt) = spoke1.getUserDebt(reserveId, bob);
+      assertGt(premiumDebt, 0);
+    }
 
     assertEq(
       spoke1.getUserSuppliedAmount(reserveId, alice),
@@ -98,13 +106,20 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       supplyAmount2,
       'bob does not earn anything'
     );
+
+    uint256 totalAccruedToTreasury = hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke));
     assertLe(
-      hub.getSpokeSuppliedAmount(spoke1.getReserve(reserveId).assetId, address(treasurySpoke)),
+      totalAccruedToTreasury,
       spoke1.getUserTotalDebt(reserveId, alice) -
         borrowAmount +
         spoke1.getUserTotalDebt(reserveId, bob) -
         borrowAmount2,
       'treasury accrued <= total accrued'
+    );
+    assertEq(
+      totalAccruedToTreasury,
+      hub.getSpokeTotalDebt(assetId, address(spoke1)) - borrowAmount - borrowAmount2,
+      'fees == total spoke accrued'
     );
   }
 }
