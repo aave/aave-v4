@@ -1224,10 +1224,10 @@ contract SpokeRepayTest is SpokeBase {
     repayPortion = bound(repayPortion, 0, PercentageMath.PERCENTAGE_FACTOR);
     skipTime = uint40(bound(skipTime, 1, MAX_SKIP_TIME));
 
-    daiInfo.repayAmount = daiInfo.borrowAmount.percentMul(repayPortion);
-    wethInfo.repayAmount = wethInfo.borrowAmount.percentMul(repayPortion);
-    usdxInfo.repayAmount = usdxInfo.borrowAmount.percentMul(repayPortion);
-    wbtcInfo.repayAmount = wbtcInfo.borrowAmount.percentMul(repayPortion);
+    daiInfo.repayAmount = daiInfo.borrowAmount.percentMulUp(repayPortion);
+    wethInfo.repayAmount = wethInfo.borrowAmount.percentMulUp(repayPortion);
+    usdxInfo.repayAmount = usdxInfo.borrowAmount.percentMulUp(repayPortion);
+    wbtcInfo.repayAmount = wbtcInfo.borrowAmount.percentMulUp(repayPortion);
 
     // weth collateral for dai and usdx
     // wbtc collateral for weth and wbtc

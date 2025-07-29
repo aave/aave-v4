@@ -9,17 +9,17 @@ import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
-import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
-import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
 contract LiquidityHub is ILiquidityHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
-  using WadRayMathExtended for uint256;
+  using WadRayMath for uint256;
   using SharesMath for uint256;
-  using PercentageMathExtended for uint256;
+  using PercentageMath for uint256;
   using AssetLogic for DataTypes.Asset;
 
   uint8 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
@@ -61,7 +61,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       premiumDebt: 0
     });
 
-    uint256 baseDebtIndex = WadRayMathExtended.RAY;
+    uint256 baseDebtIndex = WadRayMath.RAY;
     uint256 lastUpdateTimestamp = block.timestamp;
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
       feeReceiver: feeReceiver,
@@ -96,7 +96,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.AssetConfig calldata config
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
-    require(config.liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR, InvalidLiquidityFee());
+    require(config.liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
     require(config.feeReceiver != address(0), InvalidFeeReceiver());
     require(config.irStrategy != address(0), InvalidIrStrategy());
 

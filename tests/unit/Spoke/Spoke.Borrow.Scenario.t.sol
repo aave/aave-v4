@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowScenarioTest is SpokeBase {
-  using WadRayMathExtended for uint256;
+  using WadRayMath for uint256;
 
   /// fuzz - 2 users borrowing 2 assets from 1 spoke
   function test_borrow_fuzz_single_spoke_multi_reserves_multi_user(

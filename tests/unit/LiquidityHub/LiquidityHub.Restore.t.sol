@@ -5,7 +5,7 @@ import './LiquidityHubBase.t.sol';
 
 contract LiquidityHubRestoreTest is LiquidityHubBase {
   using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
+  using WadRayMath for uint256;
   using PercentageMath for uint256;
 
   function test_restore_revertsWith_SurplusAmountRestored() public {
