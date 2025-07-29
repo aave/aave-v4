@@ -109,6 +109,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     emit AssetConfigUpdated(assetId, config);
   }
 
+  /// @inheritdoc ILiquidityHub
   function addSpoke(
     uint256 assetId,
     address spoke,

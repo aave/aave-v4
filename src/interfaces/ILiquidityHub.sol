@@ -110,6 +110,12 @@ interface ILiquidityHub is IAccessManaged {
    */
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external;
 
+  /**
+   * @notice Registers a new spoke for a specific asset in the hub's internal accounting.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke to add.
+   * @param params The configuration parameters for the spoke.
+   */
   function addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig calldata params) external;
 
   /**
