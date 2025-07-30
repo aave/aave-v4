@@ -227,11 +227,11 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+    _validateRestore(asset, spoke, baseAmount, premiumAmount, from);
 
     uint256 premiumDebtBefore = asset.premiumDebt();
     _applyPremiumDelta(asset, spoke, premiumDelta);
     require(asset.premiumDebt() + premiumAmount - premiumDebtBefore <= 2, PremiumDebtChanged());
-    _validateRestore(asset, spoke, baseAmount, premiumAmount, from);
 
     uint256 baseDrawnSharesRestored = previewRestoreByAssets(assetId, baseAmount);
     asset.baseDrawnShares -= baseDrawnSharesRestored;
