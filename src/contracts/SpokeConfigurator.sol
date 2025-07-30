@@ -76,14 +76,6 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateActive(address spoke, uint256 reserveId, bool active) external onlyOwner {
-    ISpoke targetSpoke = ISpoke(spoke);
-    DataTypes.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
-    reserveConfig.active = active;
-    targetSpoke.updateReserveConfig(reserveId, reserveConfig);
-  }
-
-  /// @inheritdoc ISpokeConfigurator
   function updatePaused(address spoke, uint256 reserveId, bool paused) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     DataTypes.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
@@ -104,14 +96,6 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     ISpoke targetSpoke = ISpoke(spoke);
     DataTypes.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
     reserveConfig.borrowable = borrowable;
-    targetSpoke.updateReserveConfig(reserveId, reserveConfig);
-  }
-
-  /// @inheritdoc ISpokeConfigurator
-  function updateCollateral(address spoke, uint256 reserveId, bool collateral) external onlyOwner {
-    ISpoke targetSpoke = ISpoke(spoke);
-    DataTypes.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
-    reserveConfig.collateral = collateral;
     targetSpoke.updateReserveConfig(reserveId, reserveConfig);
   }
 
@@ -137,7 +121,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
       .getDynamicReserveConfig(reserveId);
     dynamicReserveConfig.collateralFactor = collateralFactor;
-    targetSpoke.updateDynamicReserveConfig(reserveId, dynamicReserveConfig);
+    targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -150,7 +134,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
       .getDynamicReserveConfig(reserveId);
     dynamicReserveConfig.liquidationBonus = liquidationBonus;
-    targetSpoke.updateDynamicReserveConfig(reserveId, dynamicReserveConfig);
+    targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -163,7 +147,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
       .getDynamicReserveConfig(reserveId);
     dynamicReserveConfig.liquidationFee = liquidationFee;
-    targetSpoke.updateDynamicReserveConfig(reserveId, dynamicReserveConfig);
+    targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -176,11 +160,43 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateDynamicReserveConfig(
+  function addDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
+  ) external onlyOwner returns (uint16 configKey) {
+    return ISpoke(spoke).addDynamicReserveConfig(reserveId, dynamicConfig);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function updateDynamicReserveConfig(
+    address spoke,
+    uint256 reserveId,
+    uint16 configKey,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external onlyOwner {
-    ISpoke(spoke).updateDynamicReserveConfig(reserveId, dynamicConfig);
+    ISpoke(spoke).updateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function pauseAllReserves(address spoke) external onlyOwner {
+    ISpoke targetSpoke = ISpoke(spoke);
+    uint256 reserveCount = targetSpoke.getReserveCount();
+    for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
+      DataTypes.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
+      reserveConfig.paused = true;
+      targetSpoke.updateReserveConfig(reserveId, reserveConfig);
+    }
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function freezeAllReserves(address spoke) external onlyOwner {
+    ISpoke targetSpoke = ISpoke(spoke);
+    uint256 reserveCount = targetSpoke.getReserveCount();
+    for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
+      DataTypes.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
+      reserveConfig.frozen = true;
+      targetSpoke.updateReserveConfig(reserveId, reserveConfig);
+    }
   }
 }

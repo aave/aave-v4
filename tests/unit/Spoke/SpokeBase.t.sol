@@ -5,6 +5,7 @@ import 'tests/Base.t.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 
 contract SpokeBase is Base {
+  using SafeCast for *;
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
   using WadRayMathExtended for uint256;
@@ -896,9 +897,37 @@ contract SpokeBase is Base {
     }
   }
 
+  function _randomReserveId(ISpoke spoke) internal returns (uint256) {
+    return vm.randomUint(0, spoke.getReserveCount() - 1);
+  }
+
+  function _randomConfigKey() internal returns (uint16) {
+    return vm.randomUint(0, type(uint16).max).toUint16();
+  }
+
   function _nextDynamicConfigKey(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
     uint16 dynamicConfigKey = spoke.getReserve(reserveId).dynamicConfigKey;
     return uint16(uint256(dynamicConfigKey + 1) % type(uint16).max);
+  }
+
+  function _randomUninitializedConfigKey(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal returns (uint16) {
+    uint16 configKey = _nextDynamicConfigKey(spoke, reserveId);
+    if (spoke.getDynamicReserveConfig(reserveId, configKey).liquidationBonus != 0) {
+      revert('no uninitialized config keys');
+    }
+    return vm.randomUint(configKey, type(uint16).max).toUint16();
+  }
+
+  function _randomInitializedConfigKey(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
+    uint16 configKey = _nextDynamicConfigKey(spoke, reserveId);
+    if (spoke.getDynamicReserveConfig(reserveId, configKey).liquidationBonus != 0) {
+      // all config keys are initialized
+      return vm.randomUint(0, uint256(type(uint16).max)).toUint16();
+    }
+    return vm.randomUint(0, spoke.getReserve(reserveId).dynamicConfigKey).toUint16();
   }
 
   /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id

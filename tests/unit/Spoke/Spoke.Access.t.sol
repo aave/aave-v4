@@ -70,11 +70,9 @@ contract SpokeAccessTest is SpokeBase {
       4,
       reserveSource,
       DataTypes.ReserveConfig({
-        active: true,
-        frozen: false,
         paused: false,
+        frozen: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 0
       }),
       DataTypes.DynamicReserveConfig({
@@ -91,11 +89,9 @@ contract SpokeAccessTest is SpokeBase {
       4,
       reserveSource,
       DataTypes.ReserveConfig({
-        active: true,
-        frozen: false,
         paused: false,
+        frozen: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 0
       }),
       DataTypes.DynamicReserveConfig({
@@ -112,11 +108,9 @@ contract SpokeAccessTest is SpokeBase {
     spoke1.updateReserveConfig(
       _daiReserveId(spoke1),
       DataTypes.ReserveConfig({
-        active: true,
-        frozen: false,
         paused: false,
+        frozen: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 0
       })
     );
@@ -126,20 +120,18 @@ contract SpokeAccessTest is SpokeBase {
     spoke1.updateReserveConfig(
       _daiReserveId(spoke1),
       DataTypes.ReserveConfig({
-        active: true,
-        frozen: false,
         paused: false,
+        frozen: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 0
       })
     );
 
-    // updateDynamicReserveConfig only callable by spoke admin
+    // addDynamicReserveConfig only callable by spoke admin
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    spoke1.updateDynamicReserveConfig(
+    spoke1.addDynamicReserveConfig(
       _daiReserveId(spoke1),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
@@ -148,9 +140,9 @@ contract SpokeAccessTest is SpokeBase {
       })
     );
 
-    // Spoke admin can call updateDynamicReserveConfig
+    // Spoke admin can call addDynamicReserveConfig
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateDynamicReserveConfig(
+    spoke1.addDynamicReserveConfig(
       _daiReserveId(spoke1),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
@@ -211,11 +203,9 @@ contract SpokeAccessTest is SpokeBase {
       5,
       reserveSource,
       DataTypes.ReserveConfig({
-        active: true,
-        frozen: false,
         paused: false,
+        frozen: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 0
       }),
       DataTypes.DynamicReserveConfig({
@@ -237,11 +227,9 @@ contract SpokeAccessTest is SpokeBase {
       5,
       reserveSource,
       DataTypes.ReserveConfig({
-        active: true,
-        frozen: false,
         paused: false,
+        frozen: false,
         borrowable: true,
-        collateral: true,
         collateralRisk: 0
       }),
       DataTypes.DynamicReserveConfig({
