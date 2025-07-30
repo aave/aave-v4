@@ -7,7 +7,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
   uint256 public constant MAX_LIQUIDITY_FEE = 100_00;
 
   /// @dev Max liquidity fee with premium debt accrual
-  function test_accrueLiquidityFee_fuzz_maxLiquidityFee_with_premium() public {
+  function test_accrueLiquidityFee_maxLiquidityFee_with_premium() public {
     test_accrueLiquidityFee_fuzz_maxLiquidityFee_with_premium({
       reserveId: _daiReserveId(spoke1),
       borrowAmount: 500e18,
