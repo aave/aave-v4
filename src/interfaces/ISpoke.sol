@@ -410,8 +410,6 @@ interface ISpoke is IMulticall, IAccessManaged {
 
   function getReserveCount() external view returns (uint256);
 
-  function reservesList(uint256) external view returns (uint256);
-
   function getVariableLiquidationBonus(
     uint256 reserveId,
     address user,

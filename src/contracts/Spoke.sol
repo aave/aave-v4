@@ -32,7 +32,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   uint256 public constant MAX_COLLATERAL_RISK = 1000_00; // 1000.00%
 
   IAaveOracle public oracle;
-  uint256[] public reservesList; // todo: rm, not needed
 
   uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
@@ -101,7 +100,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     _updateReservePriceSource(reserveId, priceSource);
 
-    reservesList.push(reserveId);
     _reserves[reserveId] = DataTypes.Reserve({
       reserveId: reserveId,
       assetId: assetId,
@@ -787,13 +785,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     address user
   ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
     DataTypes.CalculateUserAccountDataVars memory vars;
-    uint256 reservesListLength = reservesList.length;
+    uint256 reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
-      positionStatus.collateralCount(reservesListLength)
+      positionStatus.collateralCount(reserveCount)
     );
 
-    while (vars.reserveId < reservesListLength) {
+    while (vars.reserveId < reserveCount) {
       if (!positionStatus.isUsingAsCollateralOrBorrowing(vars.reserveId)) {
         unchecked {
           ++vars.reserveId;
@@ -993,9 +991,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _refreshDynamicConfig(address user) internal {
-    uint256 reservesListLength = reservesList.length;
+    uint256 reserveCount = _reserveCount;
     uint256 reserveId;
-    while (reserveId < reservesListLength) {
+    while (reserveId < reserveCount) {
       if (_positionStatus[user].isUsingAsCollateral(reserveId)) {
         _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
       }
