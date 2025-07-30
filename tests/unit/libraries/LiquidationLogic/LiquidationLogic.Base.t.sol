@@ -6,8 +6,7 @@ import 'tests/Base.t.sol';
 
 contract LiquidationLogicBaseTest is Base {
   using PercentageMath for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
 
   uint256 internal daiUnits;
   uint256 internal usdxUnits;
@@ -50,7 +49,7 @@ contract LiquidationLogicBaseTest is Base {
     uint256 liquidationBonus,
     uint256 collateralFactor
   ) internal pure returns (uint256) {
-    return (liquidationBonus.wadify()).percentMulDown(collateralFactor - 1).fromBps();
+    return (liquidationBonus.toWad()).percentMulDown(collateralFactor - 1).fromBpsDown();
   }
 
   function _setStructFields(

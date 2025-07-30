@@ -18,20 +18,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // Alice supplies weth as collateral
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: collReserveId,
-      user: alice,
+      caller: alice,
       amount: collAmount,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
     // Bob supplies dai
     Utils.supply({
       spoke: spoke1,
       reserveId: debtReserveId,
-      user: bob,
+      caller: bob,
       amount: maxDebtAmount,
       onBehalfOf: bob
     });
@@ -40,7 +39,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: debtReserveId,
-      user: alice,
+      caller: alice,
       amount: maxDebtAmount,
       onBehalfOf: alice
     });
@@ -50,7 +49,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, onBehalfOf: alice});
   }
 
   /// @dev fuzz - cannot withdraw an amount if resulting withdrawal would result in HF < threshold
@@ -71,20 +70,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     vm.assume(collAmount < MAX_SUPPLY_AMOUNT && collAmount > 1);
 
     // Alice supplies weth as collateral
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: collReserveId,
-      user: alice,
+      caller: alice,
       amount: collAmount,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
     // Bob supplies dai
     Utils.supply({
       spoke: spoke1,
       reserveId: debtReserveId,
-      user: bob,
+      caller: bob,
       amount: debtAmount,
       onBehalfOf: bob
     });
@@ -93,7 +91,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: debtReserveId,
-      user: alice,
+      caller: alice,
       amount: debtAmount,
       onBehalfOf: alice
     });
@@ -103,7 +101,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     // withdrawing coll will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: collAmount, to: alice}); // todo: resolve precision, should be 1?
+    spoke1.withdraw({reserveId: collReserveId, amount: collAmount, onBehalfOf: alice}); // todo: resolve precision, should be 1?
   }
 
   /// @dev cannot unset a collateral if unsetting would result in HF < threshold
@@ -125,7 +123,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
 
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     vm.prank(alice);
-    spoke1.setUsingAsCollateral(_wbtcReserveId(spoke1), false);
+    spoke1.setUsingAsCollateral(_wbtcReserveId(spoke1), false, alice);
   }
 
   /// @dev cannot withdraw an amount if HF < threshold due to price drop
@@ -142,20 +140,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // Alice supplies weth as collateral
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: collReserveId,
-      user: alice,
+      caller: alice,
       amount: collAmount,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
     // Bob supplies dai
     Utils.supply({
       spoke: spoke1,
       reserveId: debtReserveId,
-      user: bob,
+      caller: bob,
       amount: maxDebtAmount,
       onBehalfOf: bob
     });
@@ -164,7 +161,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: debtReserveId,
-      user: alice,
+      caller: alice,
       amount: maxDebtAmount,
       onBehalfOf: alice
     });
@@ -173,15 +170,13 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that alice is undercollateralized
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 newPrice = calcNewPrice(oracle.getReservePrice(collReserveId), 50_00); // 50% price drop
-    oracle.setReservePrice(collReserveId, newPrice);
+    _mockReservePriceByPercent(spoke1, collReserveId, 50_00);
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, onBehalfOf: alice});
   }
 
   /// @dev fuzz - cannot withdraw an amount if resulting withdrawal would result in HF < threshold
@@ -189,9 +184,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 collAmount,
     uint256 newPrice
   ) public {
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 currPrice = oracle.getReservePrice(_wethReserveId(spoke1));
-    newPrice = bound(newPrice, 0, currPrice - 1);
+    uint256 currPrice = spoke1.oracle().getReservePrice(_wethReserveId(spoke1));
+    newPrice = bound(newPrice, 1, currPrice - 1);
     collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
     uint256 collReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
@@ -206,20 +200,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT && maxDebtAmount > 1);
 
     // Alice supplies weth as collateral
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: collReserveId,
-      user: alice,
+      caller: alice,
       amount: collAmount,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
     // Bob supplies dai
     Utils.supply({
       spoke: spoke1,
       reserveId: debtReserveId,
-      user: bob,
+      caller: bob,
       amount: maxDebtAmount,
       onBehalfOf: bob
     });
@@ -228,7 +221,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: debtReserveId,
-      user: alice,
+      caller: alice,
       amount: maxDebtAmount,
       onBehalfOf: alice
     });
@@ -237,13 +230,13 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop so that alice is undercollateralized
-    oracle.setReservePrice(collReserveId, newPrice);
+    _mockReservePrice(spoke1, collReserveId, newPrice);
     vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, onBehalfOf: alice});
   }
 
   /// @dev cannot withdraw an amount if HF < threshold due to interest
@@ -260,20 +253,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // Alice supplies weth as collateral
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: collReserveId,
-      user: alice,
+      caller: alice,
       amount: collAmount,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
     // Bob supplies dai
     Utils.supply({
       spoke: spoke1,
       reserveId: debtReserveId,
-      user: bob,
+      caller: bob,
       amount: maxDebtAmount,
       onBehalfOf: bob
     });
@@ -282,7 +274,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: debtReserveId,
-      user: alice,
+      caller: alice,
       amount: maxDebtAmount,
       onBehalfOf: alice
     });
@@ -297,7 +289,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, onBehalfOf: alice});
   }
 
   /// @dev fuzz - cannot withdraw an amount if HF < threshold due to interest
@@ -320,20 +312,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT && maxDebtAmount > 1);
 
     // Alice supplies weth as collateral
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: collReserveId,
-      user: alice,
+      caller: alice,
       amount: collAmount,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, collReserveId, true);
 
     // Bob supplies dai
     Utils.supply({
       spoke: spoke1,
       reserveId: debtReserveId,
-      user: bob,
+      caller: bob,
       amount: maxDebtAmount,
       onBehalfOf: bob
     });
@@ -342,7 +333,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: debtReserveId,
-      user: alice,
+      caller: alice,
       amount: maxDebtAmount,
       onBehalfOf: alice
     });
@@ -357,7 +348,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     // withdrawing any amount will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: collReserveId, amount: 1, to: alice});
+    spoke1.withdraw({reserveId: collReserveId, amount: 1, onBehalfOf: alice});
   }
 
   /// @dev cannot withdraw an amount to bring HF < 1, if multiple debts for same coll
@@ -386,20 +377,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // Alice supplies weth as collateral
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: wethReserveId,
-      user: alice,
+      caller: alice,
       amount: wethCollAmountDai + wethCollAmountUsdx,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, wethReserveId, true);
 
     // Bob supplies dai
     Utils.supply({
       spoke: spoke1,
       reserveId: daiReserveId,
-      user: bob,
+      caller: bob,
       amount: daiDebtAmount,
       onBehalfOf: bob
     });
@@ -407,7 +397,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: daiReserveId,
-      user: alice,
+      caller: alice,
       amount: daiDebtAmount,
       onBehalfOf: alice
     });
@@ -416,7 +406,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: usdxReserveId,
-      user: bob,
+      caller: bob,
       amount: usdxDebtAmount,
       onBehalfOf: bob
     });
@@ -424,7 +414,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: usdxReserveId,
-      user: alice,
+      caller: alice,
       amount: usdxDebtAmount,
       onBehalfOf: alice
     });
@@ -434,7 +424,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     // withdrawing any non trivial amount of dai will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: 3, to: alice}); // todo: resolve precision. Should be 1
+    spoke1.withdraw({reserveId: wethReserveId, amount: 3, onBehalfOf: alice}); // todo: resolve precision. Should be 1
   }
 
   /// @dev fuzz - cannot withdraw an amount to bring HF < 1, if multiple debts for same coll
@@ -471,20 +461,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     );
 
     // Alice supplies weth as collateral
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: wethReserveId,
-      user: alice,
+      caller: alice,
       amount: wethCollAmountDai + wethCollAmountUsdx,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, wethReserveId, true);
 
     // Bob supplies dai
     Utils.supply({
       spoke: spoke1,
       reserveId: daiReserveId,
-      user: bob,
+      caller: bob,
       amount: daiDebtAmount,
       onBehalfOf: bob
     });
@@ -492,7 +481,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: daiReserveId,
-      user: alice,
+      caller: alice,
       amount: daiDebtAmount,
       onBehalfOf: alice
     });
@@ -501,7 +490,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: usdxReserveId,
-      user: bob,
+      caller: bob,
       amount: usdxDebtAmount,
       onBehalfOf: bob
     });
@@ -509,7 +498,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: usdxReserveId,
-      user: alice,
+      caller: alice,
       amount: usdxDebtAmount,
       onBehalfOf: alice
     });
@@ -522,7 +511,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.withdraw({
       reserveId: wethReserveId,
       amount: (wethCollAmountDai + wethCollAmountUsdx) / 2,
-      to: alice
+      onBehalfOf: alice
     }); // todo: resolve precision. Should be 1
   }
 
@@ -552,20 +541,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // Alice supplies weth as collateral
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: wethReserveId,
-      user: alice,
+      caller: alice,
       amount: wethCollAmountDai + wethCollAmountUsdx,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, wethReserveId, true);
 
     // Bob supplies dai
     Utils.supply({
       spoke: spoke1,
       reserveId: daiReserveId,
-      user: bob,
+      caller: bob,
       amount: daiDebtAmount,
       onBehalfOf: bob
     });
@@ -573,7 +561,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: daiReserveId,
-      user: alice,
+      caller: alice,
       amount: daiDebtAmount,
       onBehalfOf: alice
     });
@@ -582,7 +570,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: usdxReserveId,
-      user: bob,
+      caller: bob,
       amount: usdxDebtAmount,
       onBehalfOf: bob
     });
@@ -590,23 +578,21 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: usdxReserveId,
-      user: alice,
+      caller: alice,
       amount: usdxDebtAmount,
       onBehalfOf: alice
     });
 
     assertApproxEqAbs(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD, 1);
 
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 newPrice = calcNewPrice(oracle.getReservePrice(wethReserveId), 50_00); // 50% price drop
-    oracle.setReservePrice(wethReserveId, newPrice);
+    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
 
     assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any non trivial amount of dai will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: alice});
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, onBehalfOf: alice});
   }
 
   /// @dev fuzz - cannot withdraw an amount if HF < 1 due to price drop, if multiple debts for same coll
@@ -615,9 +601,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmount,
     uint256 newPrice
   ) public {
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 currPrice = oracle.getReservePrice(_wethReserveId(spoke1));
-    newPrice = bound(newPrice, 0, currPrice - 1);
+    uint256 currPrice = spoke1.oracle().getReservePrice(_wethReserveId(spoke1));
+    newPrice = bound(newPrice, 1, currPrice - 1);
 
     daiDebtAmount = bound(daiDebtAmount, 1, MAX_SUPPLY_AMOUNT);
     usdxDebtAmount = bound(usdxDebtAmount, 1, MAX_SUPPLY_AMOUNT);
@@ -648,20 +633,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     );
 
     // Alice supplies weth as collateral
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: wethReserveId,
-      user: alice,
+      caller: alice,
       amount: wethCollAmountDai + wethCollAmountUsdx,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, wethReserveId, true);
 
     // Bob supplies dai
     Utils.supply({
       spoke: spoke1,
       reserveId: daiReserveId,
-      user: bob,
+      caller: bob,
       amount: daiDebtAmount,
       onBehalfOf: bob
     });
@@ -669,7 +653,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: daiReserveId,
-      user: alice,
+      caller: alice,
       amount: daiDebtAmount,
       onBehalfOf: alice
     });
@@ -678,7 +662,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: usdxReserveId,
-      user: bob,
+      caller: bob,
       amount: usdxDebtAmount,
       onBehalfOf: bob
     });
@@ -686,7 +670,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: usdxReserveId,
-      user: alice,
+      caller: alice,
       amount: usdxDebtAmount,
       onBehalfOf: alice
     });
@@ -694,13 +678,13 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop so that alice is undercollateralized
-    oracle.setReservePrice(wethReserveId, newPrice);
+    _mockReservePrice(spoke1, wethReserveId, newPrice);
     vm.assume(spoke1.getHealthFactor(alice) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing any non trivial amount of weth will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: alice});
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, onBehalfOf: alice});
   }
 
   /// @dev cannot withdraw an amount if HF < 1 due to interest, if multiple debts for same coll
@@ -731,20 +715,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // Alice supplies weth as collateral
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: wethReserveId,
-      user: alice,
+      caller: alice,
       amount: wethCollAmountDai + wethCollAmountUsdx,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, wethReserveId, true);
 
     // Bob supplies dai
     Utils.supply({
       spoke: spoke1,
       reserveId: daiReserveId,
-      user: bob,
+      caller: bob,
       amount: daiDebtAmount,
       onBehalfOf: bob
     });
@@ -752,7 +735,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: daiReserveId,
-      user: alice,
+      caller: alice,
       amount: daiDebtAmount,
       onBehalfOf: alice
     });
@@ -761,7 +744,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: usdxReserveId,
-      user: bob,
+      caller: bob,
       amount: usdxDebtAmount,
       onBehalfOf: bob
     });
@@ -769,7 +752,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: usdxReserveId,
-      user: alice,
+      caller: alice,
       amount: usdxDebtAmount,
       onBehalfOf: alice
     });
@@ -784,7 +767,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     // cannot withdraw any amount of weth (HF already < threshold)
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: alice});
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, onBehalfOf: alice});
   }
 
   /// @dev fuzz - cannot withdraw an amount if HF < 1 due to interest, if multiple debts for same coll
@@ -824,20 +807,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     );
 
     // Alice supplies weth as collateral
-    Utils.supply({
+    Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: wethReserveId,
-      user: alice,
+      caller: alice,
       amount: wethCollAmountDai + wethCollAmountUsdx,
       onBehalfOf: alice
     });
-    setUsingAsCollateral(spoke1, alice, wethReserveId, true);
 
     // Bob supplies dai
     Utils.supply({
       spoke: spoke1,
       reserveId: daiReserveId,
-      user: bob,
+      caller: bob,
       amount: daiDebtAmount,
       onBehalfOf: bob
     });
@@ -845,7 +827,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: daiReserveId,
-      user: alice,
+      caller: alice,
       amount: daiDebtAmount,
       onBehalfOf: alice
     });
@@ -854,7 +836,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.supply({
       spoke: spoke1,
       reserveId: usdxReserveId,
-      user: bob,
+      caller: bob,
       amount: usdxDebtAmount,
       onBehalfOf: bob
     });
@@ -862,7 +844,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     Utils.borrow({
       spoke: spoke1,
       reserveId: usdxReserveId,
-      user: alice,
+      caller: alice,
       amount: usdxDebtAmount,
       onBehalfOf: alice
     });
@@ -876,7 +858,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     // withdrawing any amount of weth will result in HF < threshold
     vm.prank(alice);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: alice});
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, onBehalfOf: alice});
   }
 
   /// @dev cannot withdraw an amount to bring HF < 1, if multiple colls for same debt
@@ -904,12 +886,10 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
@@ -924,12 +904,12 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     // withdrawing weth will result in HF < threshold
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, to: bob}); // todo: resolve precision, should be 1
+    spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, onBehalfOf: bob}); // todo: resolve precision, should be 1
 
     // withdrawing dai will result in HF < threshold
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, to: bob}); // todo: resolve precision, should be 1
+    spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, onBehalfOf: bob}); // todo: resolve precision, should be 1
   }
 
   /// @dev cannot withdraw an amount to bring HF < 1, if multiple colls for same debt
@@ -963,12 +943,10 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
@@ -983,12 +961,12 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     // withdrawing some nontrivial amount of weth will result in HF < threshold
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, to: bob}); // todo: resolve precision, should be 1
+    spoke1.withdraw({reserveId: wethReserveId, amount: wethCollAmount, onBehalfOf: bob}); // todo: resolve precision, should be 1
 
     // withdrawing some nontrivial amount of dai will result in HF < threshold
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, to: bob}); // todo: resolve precision, should be 1
+    spoke1.withdraw({reserveId: daiReserveId, amount: daiCollAmount, onBehalfOf: bob}); // todo: resolve precision, should be 1
   }
 
   /// @dev cannot withdraw an amount if HF < 1 due to interest, if multiple colls for same debt
@@ -1018,12 +996,10 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
@@ -1043,12 +1019,12 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     // withdrawing weth will result in HF < threshold
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: bob});
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, onBehalfOf: bob});
 
     // withdrawing dai will result in HF < threshold
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: daiReserveId, amount: 1, to: bob});
+    spoke1.withdraw({reserveId: daiReserveId, amount: 1, onBehalfOf: bob});
   }
 
   /// @dev cannot withdraw an amount if HF < 1 due to interest, if multiple colls for same debt
@@ -1082,12 +1058,10 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
@@ -1107,12 +1081,12 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     // cannot withdraw any amount of weth (HF already < threshold)
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: bob});
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, onBehalfOf: bob});
 
     // cannot withdraw any amount of dai (HF already < threshold)
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: daiReserveId, amount: 1, to: bob});
+    spoke1.withdraw({reserveId: daiReserveId, amount: 1, onBehalfOf: bob});
   }
 
   /// @dev cannot withdraw an amount if HF < 1 due to price drop, if multiple colls for same debt
@@ -1142,12 +1116,10 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
@@ -1160,21 +1132,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 newPrice = calcNewPrice(oracle.getReservePrice(wethReserveId), 50_00); // 50% price drop
-    oracle.setReservePrice(wethReserveId, newPrice);
+    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
     // invalid HF
     assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot withdraw any amount of weth (HF already < threshold)
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: bob});
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, onBehalfOf: bob});
 
     // cannot withdraw any amount of dai (HF already < threshold)
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: daiReserveId, amount: 1, to: bob});
+    spoke1.withdraw({reserveId: daiReserveId, amount: 1, onBehalfOf: bob});
   }
 
   /// @dev fuzz - cannot withdraw an amount if HF < 1 due to price drop, if multiple colls for same debt
@@ -1183,9 +1153,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmountDai,
     uint256 newPrice
   ) public {
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 currPrice = oracle.getReservePrice(_wethReserveId(spoke1));
-    newPrice = bound(newPrice, 0, currPrice - 1);
+    uint256 currPrice = spoke1.oracle().getReservePrice(_wethReserveId(spoke1));
+    newPrice = bound(newPrice, 1, currPrice - 1);
     usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
     usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);
 
@@ -1212,12 +1181,10 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
@@ -1230,19 +1197,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    oracle.setReservePrice(wethReserveId, newPrice);
+    _mockReservePrice(spoke1, wethReserveId, newPrice);
     // invalid HF
     vm.assume(spoke1.getHealthFactor(bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot withdraw any amount of weth (HF already < threshold)
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: bob});
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, onBehalfOf: bob});
 
     // cannot withdraw any amount of dai (HF already < threshold)
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: daiReserveId, amount: 1, to: bob});
+    spoke1.withdraw({reserveId: daiReserveId, amount: 1, onBehalfOf: bob});
   }
 
   /// @dev cannot withdraw an amount if HF < 1 due to price drop, if multiple colls for same debt
@@ -1272,12 +1239,10 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
@@ -1290,21 +1255,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 newPrice = calcNewPrice(oracle.getReservePrice(daiReserveId), 50_00); // 50% price drop
-    oracle.setReservePrice(daiReserveId, newPrice);
+    _mockReservePriceByPercent(spoke1, daiReserveId, 50_00);
     // invalid HF
     assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot withdraw any amount of weth (HF already < threshold)
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: bob});
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, onBehalfOf: bob});
 
     // cannot withdraw any amount of dai (HF already < threshold)
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: daiReserveId, amount: 1, to: bob});
+    spoke1.withdraw({reserveId: daiReserveId, amount: 1, onBehalfOf: bob});
   }
 
   /// @dev fuzz - cannot withdraw an amount if HF < 1 due to price drop, if multiple colls for same debt
@@ -1313,9 +1276,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmountDai,
     uint256 newPrice
   ) public {
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    uint256 currPrice = oracle.getReservePrice(_daiReserveId(spoke1));
-    newPrice = bound(newPrice, 0, currPrice - 1);
+    uint256 currPrice = spoke1.oracle().getReservePrice(_daiReserveId(spoke1));
+    newPrice = bound(newPrice, 1, currPrice - 1);
     usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
     usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);
 
@@ -1342,12 +1304,10 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    Utils.supply(spoke1, wethReserveId, bob, wethCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, wethReserveId, true);
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supply(spoke1, daiReserveId, bob, daiCollAmount, bob);
-    setUsingAsCollateral(spoke1, bob, daiReserveId, true);
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
     Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmountWeth + usdxDebtAmountDai, alice); // supply enough buffer for multiple borrows
@@ -1360,19 +1320,19 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    oracle.setReservePrice(daiReserveId, newPrice);
+    _mockReservePrice(spoke1, daiReserveId, newPrice);
     // invalid HF
     vm.assume(spoke1.getHealthFactor(bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot withdraw any amount of weth (HF already < threshold)
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: wethReserveId, amount: 1, to: bob});
+    spoke1.withdraw({reserveId: wethReserveId, amount: 1, onBehalfOf: bob});
 
     // cannot withdraw any amount of dai (HF already < threshold)
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.withdraw({reserveId: daiReserveId, amount: 1, to: bob});
+    spoke1.withdraw({reserveId: daiReserveId, amount: 1, onBehalfOf: bob});
   }
 
   // TODO: tests with other combos of collateral/debt, particularly with different units

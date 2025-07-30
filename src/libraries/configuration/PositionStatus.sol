@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {DataTypes} from '../types/DataTypes.sol';
+import {LibBit} from 'src/dependencies/solady/LibBit.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 /**
  * @title PositionStatus
@@ -11,10 +12,6 @@ import {DataTypes} from '../types/DataTypes.sol';
 library PositionStatus {
   using PositionStatus for DataTypes.PositionStatus;
 
-  error InvalidReserveId();
-
-  //TODO: After we complete the data structures packing, this needs to be adjusted to the right size depending on the number of bits we will use to store the reserve index
-  uint256 public constant MAX_RESERVES_COUNT = 1024;
   uint256 internal constant BORROWING_MASK =
     0x5555555555555555555555555555555555555555555555555555555555555555;
   uint256 internal constant COLLATERAL_MASK =
@@ -31,7 +28,6 @@ library PositionStatus {
     uint256 reserveId,
     bool borrowing
   ) internal {
-    require(reserveId < MAX_RESERVES_COUNT, InvalidReserveId());
     unchecked {
       uint256 bit = 1 << ((reserveId % 128) << 1);
       if (borrowing) {
@@ -54,7 +50,6 @@ library PositionStatus {
     bool usingAsCollateral
   ) internal {
     unchecked {
-      require(reserveId < MAX_RESERVES_COUNT, InvalidReserveId());
       uint256 bit = 1 << (((reserveId % 128) << 1) + 1);
       if (usingAsCollateral) {
         self.map[reserveId >> 7] |= bit;
@@ -75,8 +70,7 @@ library PositionStatus {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      require(reserveId < MAX_RESERVES_COUNT, InvalidReserveId());
-      return (self.getMapSlot(reserveId) >> (reserveId % 128 << 1)) & 3 != 0;
+      return (self.getBucketWord(reserveId) >> ((reserveId % 128) << 1)) & 3 != 0;
     }
   }
 
@@ -91,8 +85,7 @@ library PositionStatus {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      require(reserveId < MAX_RESERVES_COUNT, InvalidReserveId());
-      return (self.getMapSlot(reserveId) >> ((reserveId % 128) << 1)) & 1 != 0;
+      return (self.getBucketWord(reserveId) >> ((reserveId % 128) << 1)) & 1 != 0;
     }
   }
 
@@ -107,17 +100,38 @@ library PositionStatus {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      require(reserveId < MAX_RESERVES_COUNT, InvalidReserveId());
-      return (self.getMapSlot(reserveId) >> (((reserveId % 128) << 1) + 1)) & 1 != 0;
+      return (self.getBucketWord(reserveId) >> (((reserveId % 128) << 1) + 1)) & 1 != 0;
     }
   }
 
   /**
-   * @dev Returns the slot containing the reserve state in the bitmap.
+   * @dev Counts the number of reserves enabled as collateral.
+   * @dev Disregards potential dirty bits set after `reserveCount`.
    * @param self The configuration object.
-   * @return The slot containing the state of the reserve.
+   * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
    */
-  function getMapSlot(
+  function collateralCount(
+    DataTypes.PositionStatus storage self,
+    uint256 reserveCount
+  ) internal view returns (uint256) {
+    unchecked {
+      uint256 bucket = reserveCount >> 7;
+      uint256 count = LibBit.popCount(
+        self.map[bucket] & (COLLATERAL_MASK >> (256 - ((reserveCount % 128) << 1)))
+      ); // disregard bits after `reserveCount`
+      while (bucket != 0) {
+        count += LibBit.popCount(self.map[--bucket] & COLLATERAL_MASK);
+      }
+      return count;
+    }
+  }
+
+  /**
+   * @dev Returns the word containing the reserve state in the bitmap.
+   * @param self The configuration object.
+   * @return The word containing the state of the reserve.
+   */
+  function getBucketWord(
     DataTypes.PositionStatus storage self,
     uint256 reserveId
   ) internal view returns (uint256) {

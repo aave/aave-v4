@@ -5,8 +5,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRiskPremiumScenarioTest is SpokeBase {
   using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   struct GeneralLocalVars {
     uint256 usdxSupplyAmount;
@@ -24,7 +24,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     uint256 supplyAmount;
     uint256 borrowAmount;
     uint256 price;
-    uint256 lp;
+    uint256 collateralRisk;
     uint256 riskPremium;
   }
 
@@ -68,7 +68,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
   /** Spoke1 Init Config
    * +-----------+------------+------------------+--------+----------+
-   * | reserveId | collateral | liquidityPremium | price  | decimals |
+   * | reserveId | collateral | collateralRisk | price  | decimals |
    * +-----------+------------+------------------+--------+----------+
    * |         0 | weth       | 15%              | 2_000  |       18 |
    * |         1 | wbtc       | 50%              | 50_000 |        8 |
@@ -79,9 +79,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   /// Borrow, skip, supply, skip, supply, ensure risk premium is correct and accounting updates accordingly throughout protocol
   function test_riskPremiumPropagatesCorrectly_singleBorrow() public {
     GeneralLocalVars memory vars;
-    vars.usdxSupplyAmount = 1500e6; // 1500 usd, 50 lp
-    vars.wethSupplyAmount = 5e18; // 10_000 usd, 15 lp
-    vars.daiBorrowAmount = 10_000e18; // 10_000 usd, 20 lp
+    vars.usdxSupplyAmount = 1500e6; // 1500 usd, 50 collateralRisk
+    vars.wethSupplyAmount = 5e18; // 10_000 usd, 15 collateralRisk
+    vars.daiBorrowAmount = 10_000e18; // 10_000 usd, 20 collateralRisk
     vars.delay = 365 days;
 
     ReserveIds memory reservesIds;
@@ -89,16 +89,17 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     reservesIds.weth = _wethReserveId(spoke1);
     reservesIds.dai = _daiReserveId(spoke1);
 
-    // Validate liquidity premiums
-    assertEq(_getLiquidityPremium(spoke1, reservesIds.usdx), 50_00, 'usdx lp');
-    assertEq(_getLiquidityPremium(spoke1, reservesIds.weth), 15_00, 'weth lp');
-    assertEq(_getLiquidityPremium(spoke1, reservesIds.dai), 20_00, 'dai lp');
+    // Validate collateral risks
+    assertEq(_getCollateralRisk(spoke1, reservesIds.usdx), 50_00, 'usdx collateral risk');
+    assertEq(_getCollateralRisk(spoke1, reservesIds.weth), 15_00, 'weth collateral risk');
+    assertEq(_getCollateralRisk(spoke1, reservesIds.dai), 20_00, 'dai collateral risk');
 
     // Set collateral factor to 100% for Alice collateral
     updateCollateralFactor(spoke1, reservesIds.weth, 100_00);
     updateCollateralFactor(spoke1, reservesIds.usdx, 100_00);
 
-    Utils.supply(spoke1, reservesIds.dai, bob, vars.daiBorrowAmount, bob);
+    // supply twice the amount that alice borrows, usage ratio ~45%, borrow rate ~7.5%
+    Utils.supply(spoke1, reservesIds.dai, bob, vars.daiBorrowAmount.percentDivDown(45_00), bob);
 
     Utils.supplyCollateral(spoke1, reservesIds.usdx, alice, vars.usdxSupplyAmount, alice);
 
@@ -106,19 +107,23 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     Utils.borrow(spoke1, reservesIds.dai, alice, vars.daiBorrowAmount, alice);
 
-    uint256 usdxLiquidityPremium = _getLiquidityPremium(spoke1, reservesIds.usdx);
-    uint256 wethLiquidityPremium = _getLiquidityPremium(spoke1, reservesIds.weth);
-    assertLt(wethLiquidityPremium, usdxLiquidityPremium, 'weth lp should be less than usdx lp');
+    uint256 usdxCollateralRisk = _getCollateralRisk(spoke1, reservesIds.usdx);
+    uint256 wethCollateralRisk = _getCollateralRisk(spoke1, reservesIds.weth);
+    assertLt(
+      wethCollateralRisk,
+      usdxCollateralRisk,
+      'weth collateral risk should be less than usdx collateral risk'
+    );
 
     // Weth is enough to cover debt, both stored & calculated risk premiums match
-    assertEq(spoke1.getUserRiskPremium(alice), wethLiquidityPremium, 'user rp: weth covers debt');
+    assertEq(spoke1.getUserRiskPremium(alice), wethCollateralRisk, 'user rp: weth covers debt');
     // Check stored risk premium via back-calculating premium drawn shares
     DataTypes.UserPosition memory alicePosition = spoke1.getUserPosition(
       _daiReserveId(spoke1),
       alice
     );
     vars.expectedPremiumDrawnShares = alicePosition.baseDrawnShares.percentMulUp(
-      wethLiquidityPremium
+      wethCollateralRisk
     );
     assertEq(
       alicePosition.premiumDrawnShares,
@@ -146,9 +151,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       MathUtils.calculateLinearInterest(
         hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
         vars.lastUpdateTimestamp
-      ) - WadRayMathExtended.RAY
+      ) - WadRayMath.RAY
     );
-    vars.expectedPremiumDebt = accruedDaiDebt.percentMulUp(wethLiquidityPremium);
+    vars.expectedPremiumDebt = accruedDaiDebt.percentMulUp(wethCollateralRisk);
 
     (uint256 baseDaiDebt, uint256 daiPremiumDebt) = spoke1.getUserDebt(reservesIds.dai, alice);
     assertEq(baseDaiDebt, vars.daiBorrowAmount + accruedDaiDebt, 'dai base debt');
@@ -198,7 +203,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       MathUtils.calculateLinearInterest(
         hub.getBaseInterestRate(daiAssetId), // todo: IR strategy has a pending fix
         startTime
-      ) - WadRayMathExtended.RAY
+      ) - WadRayMath.RAY
     );
 
     vars.expectedPremiumDebt =
@@ -217,9 +222,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   /// Bob and Alice each supply and borrow varying amounts of usdx and dai, we check interest accrues and values percolate to hub.
   /// After 1 year, Alice does a repay, and we ensure the same values are updated accordingly.
   function test_getUserRiskPremium_applyInterest_two_users_two_reserves_borrowed() public {
-    // Set Dai lp to 10% and usdx to 20%
-    updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 10_00);
-    updateLiquidityPremium(spoke1, _usdxReserveId(spoke1), 20_00);
+    // Set dai collateral risk to 10% and usdx to 20%
+    updateCollateralRisk(spoke1, _daiReserveId(spoke1), 10_00);
+    updateCollateralRisk(spoke1, _usdxReserveId(spoke1), 20_00);
 
     UserInfoLocal memory bobDaiInfo;
     UserInfoLocal memory aliceDaiInfo;
@@ -242,8 +247,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     daiInfo.reserveId = _daiReserveId(spoke1);
     usdxInfo.reserveId = _usdxReserveId(spoke1);
 
-    daiInfo.lp = _getLiquidityPremium(spoke1, daiInfo.reserveId);
-    usdxInfo.lp = _getLiquidityPremium(spoke1, usdxInfo.reserveId);
+    daiInfo.collateralRisk = _getCollateralRisk(spoke1, daiInfo.reserveId);
+    usdxInfo.collateralRisk = _getCollateralRisk(spoke1, usdxInfo.reserveId);
 
     // Bob supply dai into spoke1
     Utils.supplyCollateral(spoke1, daiInfo.reserveId, bob, bobDaiInfo.supplyAmount, bob);
@@ -480,7 +485,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       .premiumDrawnShares;
 
     // Now, if Alice repays some debt, her user risk premium should change and percolate through protocol
-    Utils.repay(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount / 2);
+    Utils.repay(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount / 2, alice);
 
     // Bob's user risk premium remains unchanged
     assertEq(
@@ -583,8 +588,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     UserBorrowAction memory bobUsdxAction,
     UserBorrowAction memory aliceDaiAction,
     UserBorrowAction memory aliceUsdxAction,
-    uint256 daiLp,
-    uint256 usdxLp,
+    uint256 daiCollateralRisk,
+    uint256 usdxCollateralRisk,
     uint40[3] memory timeSkip
   ) public {
     bobDaiAction = _boundUserBorrowAction(bobDaiAction);
@@ -592,18 +597,26 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     aliceDaiAction = _boundUserBorrowAction(aliceDaiAction);
     aliceUsdxAction = _boundUserBorrowAction(aliceUsdxAction);
 
-    daiLp = bound(daiLp, 0, MAX_RISK_PREMIUM_BPS);
-    usdxLp = bound(usdxLp, 0, MAX_RISK_PREMIUM_BPS);
+    daiCollateralRisk = bound(daiCollateralRisk, 0, MAX_RISK_PREMIUM_BPS);
+    usdxCollateralRisk = bound(usdxCollateralRisk, 0, MAX_RISK_PREMIUM_BPS);
 
     timeSkip[0] = uint40(bound(timeSkip[0], 0, MAX_SKIP_TIME));
     timeSkip[1] = uint40(bound(timeSkip[1], 0, MAX_SKIP_TIME));
     timeSkip[2] = uint40(bound(timeSkip[2], 0, MAX_SKIP_TIME));
 
-    // Set liquidity premiums
-    updateLiquidityPremium(spoke1, _daiReserveId(spoke1), daiLp);
-    updateLiquidityPremium(spoke1, _usdxReserveId(spoke1), usdxLp);
-    assertEq(_getLiquidityPremium(spoke1, _daiReserveId(spoke1)), daiLp, 'dai lp');
-    assertEq(_getLiquidityPremium(spoke1, _usdxReserveId(spoke1)), usdxLp, 'usdx lp');
+    // Set collateral risks
+    updateCollateralRisk(spoke1, _daiReserveId(spoke1), daiCollateralRisk);
+    updateCollateralRisk(spoke1, _usdxReserveId(spoke1), usdxCollateralRisk);
+    assertEq(
+      _getCollateralRisk(spoke1, _daiReserveId(spoke1)),
+      daiCollateralRisk,
+      'dai collateral risk'
+    );
+    assertEq(
+      _getCollateralRisk(spoke1, _usdxReserveId(spoke1)),
+      usdxCollateralRisk,
+      'usdx collateral risk'
+    );
 
     UserInfoLocal memory bobDaiInfo;
     UserInfoLocal memory aliceDaiInfo;
@@ -822,7 +835,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Bob repay half dai debt
     if (bobDaiInfo.borrowAmount > 2) {
       uint256 repayAmount = (bobDaiInfo.baseDebt + bobDaiInfo.premiumDebt) / 2;
-      Utils.repay(spoke1, _daiReserveId(spoke1), bob, repayAmount);
+      Utils.repay(spoke1, _daiReserveId(spoke1), bob, repayAmount, bob);
 
       // Bob's risk premium should change
       bobExpectedRiskPremium = _calculateExpectedUserRP(bob, spoke1);
@@ -916,7 +929,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     _verifyProtocolDebtShares(bobDaiInfo, aliceDaiInfo, bobUsdxInfo, aliceUsdxInfo, 'final');
   }
 
-  /// Bob supplies and borrows varying amounts of 4 reserves. We fuzz prices and liquidity premiums, and wait arbitrary time.
+  /// Bob supplies and borrows varying amounts of 4 reserves. We fuzz prices and collateral risks, and wait arbitrary time.
   /// We ensure risk premium is calculated correctly before and after the time passing
   function test_getUserRiskPremium_fuzz_inflight_calcs(
     UserBorrowAction memory daiAmounts,

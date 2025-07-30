@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
-  using PercentageMathExtended for uint256;
-  using WadRayMathExtended for uint256;
+  using PercentageMath for uint256;
+  using WadRayMath for uint256;
 
   uint256 internal dustInBase = 10e26; // $10 in base currency
 
@@ -30,7 +30,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000e26,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
@@ -62,7 +62,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000e26,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
@@ -94,7 +94,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       }),
       liqBonus: 105_00,
       supplyAmountInBase: 10_000_000e26,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: 0,
@@ -116,10 +116,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 supplyAmountInBase,
     uint256 skipTime
   ) public {
-    collateralReserveId1 = bound(collateralReserveId1, 0, spoke1.reserveCount() - 1);
-    collateralReserveId2 = bound(collateralReserveId2, 0, spoke1.reserveCount() - 1);
-    debtReserveId1 = bound(debtReserveId1, 0, spoke1.reserveCount() - 1);
-    debtReserveId2 = bound(debtReserveId2, 0, spoke1.reserveCount() - 1);
+    collateralReserveId1 = bound(collateralReserveId1, 0, spoke1.getReserveCount() - 1);
+    collateralReserveId2 = bound(collateralReserveId2, 0, spoke1.getReserveCount() - 1);
+    debtReserveId1 = bound(debtReserveId1, 0, spoke1.getReserveCount() - 1);
+    debtReserveId2 = bound(debtReserveId2, 0, spoke1.getReserveCount() - 1);
 
     collateralReserveIndex = bound(collateralReserveIndex, 0, 1);
     debtReserveIndex = bound(debtReserveIndex, 0, 1);
@@ -142,7 +142,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       liqConfig: liqConfig,
       liqBonus: 105_00,
       supplyAmountInBase: supplyAmountInBase,
-      liquidationProtocolFee: 5_00,
+      liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
       collateralReserveIndex: collateralReserveIndex,
@@ -178,7 +178,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256[] memory debtReserveIds,
     uint256 collateralReserveIndex,
     uint256 debtReserveIndex,
-    uint256 liquidationProtocolFee,
+    uint256 liquidationFee,
     uint256 skipTime
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
@@ -188,10 +188,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
       state.collateralReserves[i] = spoke1.getReserve(collateralReserveIds[i]);
-      state.collDynConfigs[i] = spoke1.getDynamicReserveConfig(
-        collateralReserveIds[i],
-        state.collateralReserves[i].dynamicConfigKey
-      ); // utilize latest dynamic config
+      state.collDynConfigs[i] = _getUserDynConfig(spoke1, alice, collateralReserveIds[i]); // utilize user's dynamic config
     }
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
@@ -200,12 +197,12 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
-      PercentageMathExtended
+      PercentageMath
         .PERCENTAGE_FACTOR
         .percentDivDown(state.collDynConfigs[collateralReserveIndex].collateralFactor)
         .percentMulDown(99_00) // add buffer so that not all debt is liquidated
     );
-    liquidationProtocolFee = bound(liquidationProtocolFee, 0, 100_00);
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     supplyAmountInBase = bound(
       supplyAmountInBase,
       dustInBase * state.debtReserves.length, // enough to cover dust for all debt reserves
@@ -213,15 +210,17 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    state.liquidationProtocolFee = liquidationProtocolFee;
+    state.liquidationFee = liquidationFee;
 
     state.collateralReserveId = collateralReserveIds[collateralReserveIndex];
     state.debtReserveId = debtReserveIds[debtReserveIndex];
+    state.collDynConfig = _getUserDynConfig(spoke1, alice, state.collateralReserveId);
 
+    vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liqConfig);
     updateLiquidationBonus(spoke1, state.collateralReserveId, liqBonus);
-    updateLiquidationProtocolFee(spoke1, state.collateralReserveId, state.liquidationProtocolFee);
-    state.desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, state.collateralReserveId, liqBonus)
+    updateLiquidationFee(spoke1, state.collateralReserveId, state.liquidationFee);
+    state.desiredHf = _calcLowestHfToRestoreCloseFactor(spoke1, state.collDynConfig, liqBonus)
       .percentMulDown(101_00); // add buffer so that not all debt is liquidated
 
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
@@ -231,11 +230,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         supplyAmountInBase
       );
 
-      if (!spoke1.getUsingAsCollateral(collateralReserveIds[i], alice)) {
+      if (!spoke1.isUsingAsCollateral(collateralReserveIds[i], alice)) {
         Utils.supplyCollateral({
           spoke: spoke1,
           reserveId: collateralReserveIds[i],
-          user: alice,
+          caller: alice,
           amount: supplyAmount,
           onBehalfOf: alice
         });
@@ -243,7 +242,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         Utils.supply({
           spoke: spoke1,
           reserveId: collateralReserveIds[i],
-          user: alice,
+          caller: alice,
           amount: supplyAmount,
           onBehalfOf: alice
         });
@@ -266,6 +265,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       assertLt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      DynamicConfig[] memory configKeysBefore = _getUserDynConfigKeys(spoke1, alice);
 
       vm.prank(LIQUIDATOR);
       spoke1.liquidationCall(
@@ -274,6 +274,9 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         alice,
         requiredDebtAmounts[i]
       );
+
+      // Validate user's dynamic config key unchanged after liquidation
+      assertEq(_getUserDynConfigKeys(spoke1, alice), configKeysBefore);
     }
 
     return state;
@@ -324,7 +327,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     vm.stopPrank();
 
     finalHf = spoke.getHealthFactor(user);
-    assertLt(finalHf, desiredHf, 'should borrow enough for HF to be below desiredHf');
+    assertLt(
+      finalHf,
+      desiredHf,
+      '_borrowMultipleReservesToBeBelowHf: should borrow enough for HF to be below desiredHf'
+    );
   }
 
   function _increaseCollateralReservesSupplyExchangeRate(

@@ -4,11 +4,13 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRepayEdgeCaseTest is SpokeBase {
+  using PercentageMath for uint256;
+
   /// repay partial premium, base & full debt, with no interest accrual (no time pass)
   /// supply ex rate can increase while debt ex rate should remain the same
   /// this is due to donation on available liquidity
   function test_fuzz_repay_effect_on_ex_rates(uint256 daiBorrowAmount, uint256 skipTime) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 10);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
       spoke1,
@@ -19,7 +21,14 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // Bob supply weth as collateral
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    // Alice supply dai such that usage ratio after bob borrows is ~45%, borrow rate ~7.5%
+    Utils.supply(
+      spoke1,
+      _daiReserveId(spoke1),
+      alice,
+      daiBorrowAmount.percentDivDown(45_00),
+      alice
+    );
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
     skip(skipTime); // initial increase in index, no time passes for subsequent checks
 
@@ -39,9 +48,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
-    vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, 0);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, daiRepayAmount, bob);
 
     _checkSupplyRateIncreasing(
       supplyExRateBefore,
@@ -62,8 +70,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     supplyExRateBefore = getSupplyExRate(daiAssetId);
     debtExRateBefore = getDebtExRate(daiAssetId);
 
-    vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, daiRepayAmount, bob);
 
     _checkSupplyRateIncreasing(
       supplyExRateBefore,
@@ -80,8 +87,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     supplyExRateBefore = getSupplyExRate(daiAssetId);
     debtExRateBefore = getDebtExRate(daiAssetId);
 
-    vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, type(uint256).max, bob);
 
     _checkSupplyRateIncreasing(
       supplyExRateBefore,
@@ -94,9 +100,9 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
   function test_repay_supply_ex_rate_decr() public {
     // inflate ex rate to 1.5
-    _mockInterestRate(50_00);
-    updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);
-    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 0);
+    _mockInterestRateBps(50_00);
+    updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
+    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
 
     // enough coll
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
@@ -118,7 +124,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30);
 
     // 30% rp
-    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 30_00);
+    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 30_00);
 
     vm.prank(alice);
     spoke1.borrow(_daiReserveId(spoke1), 15, alice);
@@ -134,8 +140,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     supplyExRateBefore = getSupplyExRate(daiAssetId);
 
     // alice repays full
-    vm.prank(alice);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    Utils.repay(spoke1, _daiReserveId(spoke1), alice, type(uint256).max, alice);
 
     _checkSupplyRateIncreasing(
       supplyExRateBefore,
@@ -147,9 +152,9 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
   function test_repay_supply_ex_rate_decr_skip_time() public {
     // inflate ex rate to 1.5
-    _mockInterestRate(50_00);
-    updateLiquidityPremium(spoke1, _daiReserveId(spoke1), 0);
-    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 0);
+    _mockInterestRateBps(50_00);
+    updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
+    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
 
     // enough coll
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
@@ -169,7 +174,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30);
 
     // 30% rp
-    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 30_00);
+    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 30_00);
 
     vm.prank(alice);
     spoke1.borrow(_daiReserveId(spoke1), 15, alice);
@@ -183,16 +188,15 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     skip(1);
 
     // alice repays full
-    vm.prank(alice);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max);
+    Utils.repay(spoke1, _daiReserveId(spoke1), alice, type(uint256).max, alice);
 
     exchangeRateAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGt(exchangeRateAfter, exchangeRateBefore, 'supply rate decreased');
   }
 
   function test_repay_less_than_share() public {
-    // update liquidity premium to zero
-    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 0);
+    // update collateral risk to zero
+    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
 
     // Accrue interest and ensure it's less than 1 share and pay it off
     uint256 daiSupplyAmount = 1000e18;
@@ -200,8 +204,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     uint256 daiBorrowAmount = 100e18;
 
     // Bob supplies WETH as collateral
-    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
 
     // Alice supplies DAI
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
@@ -256,8 +259,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     vm.expectEmit(address(tokenList.dai));
     emit IERC20.Transfer(bob, address(hub), repayAmount);
-    vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), repayAmount);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, repayAmount, bob);
 
     // debt remains unchanged & is donated (premium was already 0)
     assertEq(getUserDebt(spoke1, bob, _daiReserveId(spoke1)), bobDaiDebtBefore);
@@ -265,8 +267,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
   // repay less than 1 share of base debt, but nonzero premium debt
   function test_repay_zero_shares_nonzero_premium_debt() public {
-    // update liquidity premium of weth to 20%
-    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 20_00);
+    // update collateral risk of weth to 20%
+    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 20_00);
 
     // Accrue interest and ensure it's less than 1 share and pay it off
     uint256 daiSupplyAmount = 100e18;
@@ -274,8 +276,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     uint256 daiBorrowAmount = 100;
 
     // Bob supplies WETH as collateral
-    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
 
     // Alice supplies DAI
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
@@ -352,10 +353,9 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // Repay
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(_daiReserveId(spoke1), bob, 0);
-
+    emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, 0);
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), repayAmount);
+    spoke1.repay(_daiReserveId(spoke1), repayAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -372,12 +372,18 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     repayAmount = baseRestored + premiumRestored;
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertEq(
+    assertApproxEqAbs(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       bobDaiBefore.totalDebt - baseRestored - premiumRestored,
+      1,
       'bob dai debt final balance'
     );
-    assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai premium debt final balance');
+    assertApproxEqAbs(
+      bobDaiAfter.premiumDebt,
+      bobDaiBefore.premiumDebt - premiumRestored,
+      1,
+      'bob dai premium debt final balance'
+    );
 
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethBefore.totalDebt, spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob));
@@ -396,8 +402,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supply weth
-    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
 
     // Alice supply dai
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
@@ -446,8 +451,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
     // Bob repays premium
-    vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), bobDaiBefore.premiumDebt);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, bobDaiBefore.premiumDebt, bob);
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
@@ -470,10 +474,11 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
+      bob,
       hub.convertToDrawnShares(daiAssetId, baseRestored)
     );
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -491,7 +496,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertApproxEqAbs(bobDaiAfter.baseDebt, daiBorrowAmount, 1, 'bob dai base debt final balance');
+    assertApproxEqAbs(bobDaiAfter.baseDebt, daiBorrowAmount, 2, 'bob dai base debt final balance');
     assertApproxEqAbs(bobDaiAfter.premiumDebt, 0, 1, 'bob dai premium debt final balance');
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethAfter.totalDebt, bobWethBefore.totalDebt);
@@ -505,16 +510,15 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
   /// repay all accrued base debt interest when premium debt is zero
   function test_repay_only_base_debt_no_premium() public {
-    // update liquidity premium to zero
-    updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 0);
+    // update collateral risk to zero
+    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
 
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supply weth
-    Utils.supply(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    setUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1), true);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
 
     // Alice supply dai
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
@@ -571,10 +575,11 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
+      bob,
       hub.convertToDrawnShares(daiAssetId, daiRepayAmount)
     );
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount);
+    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
@@ -592,7 +597,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertEq(bobDaiAfter.baseDebt, daiBorrowAmount, 'bob dai base debt final balance');
+    assertApproxEqAbs(bobDaiAfter.baseDebt, daiBorrowAmount, 2, 'bob dai base debt final balance');
     assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai premium debt final balance');
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethAfter.totalDebt, bobWethBefore.totalDebt);

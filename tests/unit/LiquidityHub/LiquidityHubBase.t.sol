@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract LiquidityHubBase is Base {
   using SharesMath for uint256;
@@ -44,7 +43,7 @@ contract LiquidityHubBase is Base {
     DebtAccounting[3] spoke;
   }
 
-  function setUp() public override {
+  function setUp() public virtual override {
     super.setUp();
     initEnvironment();
   }
@@ -52,46 +51,8 @@ contract LiquidityHubBase is Base {
   function _updateSupplyCap(uint256 assetId, address spoke, uint256 newSupplyCap) internal {
     DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.supplyCap = newSupplyCap;
+    vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
-  }
-
-  /// @dev tempSpoke1 (tempUser1) supplies asset, tempSpoke2 (tempUser2) draws asset, skip 1 year
-  /// increases supply and debt exchange rate
-  function _increaseExchangeRate(uint256 assetId, uint256 amount) internal {
-    address tempUser1 = makeAddr('TEMP_USER_1');
-    deal(address(hub.assetsList(assetId)), tempUser1, amount);
-
-    address tempSpoke1 = makeAddr('TEMP_SPOKE_1');
-    hub.addSpoke(
-      assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke1
-    );
-
-    address tempUser2 = makeAddr('TEMP_USER_2');
-    deal(address(hub.assetsList(assetId)), tempUser2, amount);
-
-    address tempSpoke2 = makeAddr('TEMP_SPOKE_2');
-    hub.addSpoke(
-      assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke2
-    );
-
-    _supplyAndDrawLiquidity({
-      assetId: assetId,
-      supplyUser: tempUser1,
-      supplySpoke: tempSpoke1,
-      supplyAmount: amount,
-      drawUser: tempUser2,
-      drawSpoke: tempSpoke2,
-      drawAmount: amount,
-      skipTime: 365 days
-    });
-
-    // ensure that exchange rate has increased
-    assertTrue(hub.convertToSuppliedShares(assetId, amount) < amount);
-    assertTrue(hub.convertToDrawnShares(assetId, amount) < amount);
   }
 
   /// @dev mocks rate, supplySpoke (supplyUser) supplies asset, drawSpoke (drawUser) draws asset, skips time
@@ -108,19 +69,17 @@ contract LiquidityHubBase is Base {
     supplyShares = Utils.add({
       hub: hub,
       assetId: assetId,
-      spoke: supplySpoke,
+      caller: supplySpoke,
       amount: supplyAmount,
-      user: supplyUser,
-      to: supplySpoke
+      user: supplyUser
     });
 
     drawnShares = Utils.draw({
       hub: hub,
       assetId: assetId,
       to: drawUser,
-      spoke: drawSpoke,
-      amount: drawAmount,
-      onBehalfOf: drawSpoke
+      caller: drawSpoke,
+      amount: drawAmount
     });
 
     skip(skipTime);
@@ -151,53 +110,54 @@ contract LiquidityHubBase is Base {
 
     uint256 initialLiq = hub.getAvailableLiquidity(assetId);
 
-    IERC20 asset = hub.assetsList(assetId);
-    deal(address(asset), tempUser, amount);
+    address underlying = hub.getAsset(assetId).underlying;
+    deal(underlying, tempUser, amount);
 
     vm.prank(tempUser);
-    asset.approve(address(hub), type(uint256).max);
+    IERC20(underlying).approve(address(hub), type(uint256).max);
 
+    vm.prank(ADMIN);
     hub.addSpoke(
       assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke
+      tempSpoke,
+      DataTypes.SpokeConfig({
+        active: true,
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max
+      })
     );
 
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: tempSpoke,
-      amount: amount,
-      user: tempUser,
-      to: tempSpoke
-    });
+    Utils.add({hub: hub, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
 
     assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
   }
 
   /// @dev Draws liquidity from the Hub via a random spoke
-  function _drawLiquidity(
-    uint256 assetId,
-    uint256 amount,
-    bool withPremium
-  ) internal returns (uint256) {
+  function _drawLiquidity(uint256 assetId, uint256 amount, bool withPremium) internal {
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
 
     int256 premiumDrawnSharesDelta = 1000;
     int256 premiumOffsetDelta = 1000;
+
+    vm.prank(HUB_ADMIN);
+    hub.addSpoke(
+      assetId,
+      tempSpoke,
+      DataTypes.SpokeConfig({
+        active: true,
+        supplyCap: type(uint256).max,
+        drawCap: type(uint256).max
+      })
+    );
+
     if (withPremium) {
       // inflate premium data to create premium debt
+      vm.prank(tempSpoke);
       hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
     }
 
-    hub.addSpoke(
-      assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      tempSpoke
-    );
-
-    Utils.draw(hub, assetId, tempSpoke, tempUser, amount, tempUser);
+    Utils.draw(hub, assetId, tempSpoke, tempUser, amount);
 
     skip(365 days);
 
@@ -207,6 +167,7 @@ contract LiquidityHubBase is Base {
     if (withPremium) {
       assertGt(premiumDebt, 0); // non-zero premium debt
       // restore premium data
+      vm.prank(tempSpoke);
       hub.refreshPremiumDebt(
         assetId,
         -premiumDrawnSharesDelta,

@@ -47,10 +47,10 @@ contract LiquidityHubAccrueInterestTest is Base {
   }
 
   /// no interest accrued when no action taken
-  function test_accrueInterest_NoActionTaken() public {
+  function test_accrueInterest_NoActionTaken() public view {
     DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
-    assertEq(daiInfo.baseDebtIndex, WadRayMathExtended.RAY);
+    assertEq(daiInfo.baseDebtIndex, WadRayMath.RAY);
     assertEq(daiInfo.realizedPremium, 0);
     assertEq(hub.getAssetSuppliedAmount(daiAssetId), 0);
     assertEq(getAssetBaseDebt(daiAssetId), 0);
@@ -61,19 +61,19 @@ contract LiquidityHubAccrueInterestTest is Base {
     elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
 
     uint256 supplyAmount = 1000e18;
-    Utils.add(hub, daiAssetId, address(spoke1), supplyAmount, address(spoke1), address(spoke1));
+    Utils.add(hub, daiAssetId, address(spoke1), supplyAmount, address(spoke1));
 
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount, address(spoke2), address(spoke2));
+    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount, address(spoke2));
 
     DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
     // Timestamp does not update when no interest accrued
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
-    assertEq(daiInfo.baseDebtIndex, WadRayMathExtended.RAY, 'baseDebtIndex');
+    assertEq(daiInfo.baseDebtIndex, WadRayMath.RAY, 'baseDebtIndex');
     assertEq(hub.getAssetSuppliedAmount(daiAssetId), supplyAmount * 2);
     assertEq(getAssetBaseDebt(daiAssetId), 0);
   }
@@ -86,17 +86,17 @@ contract LiquidityHubAccrueInterestTest is Base {
     uint256 supplyAmount2 = 100e18;
     uint256 startTime = vm.getBlockTimestamp();
     uint256 borrowAmount = 100e18;
-    uint256 initialDebtIndex = WadRayMathExtended.RAY;
+    uint256 initialDebtIndex = WadRayMath.RAY;
 
-    Utils.add(hub, daiAssetId, address(spoke1), supplyAmount, address(spoke1), address(spoke1));
-    Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount, address(spoke1));
+    Utils.add(hub, daiAssetId, address(spoke1), supplyAmount, address(spoke1));
+    Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
     uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
 
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2), address(spoke2));
+    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2));
 
     DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
@@ -150,7 +150,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2), address(spoke2));
+    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2));
 
     daiInfo = hub.getAsset(daiAssetId);
 
@@ -172,17 +172,17 @@ contract LiquidityHubAccrueInterestTest is Base {
     uint256 supplyAmount2 = 100e18;
     uint256 startTime = vm.getBlockTimestamp();
     uint256 borrowAmount = 100e18;
-    uint256 initialDebtIndex = WadRayMathExtended.RAY;
+    uint256 initialDebtIndex = WadRayMath.RAY;
 
-    Utils.add(hub, daiAssetId, address(spoke1), supplyAmount, address(spoke1), address(spoke1));
-    Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount, address(spoke1));
+    Utils.add(hub, daiAssetId, address(spoke1), supplyAmount, address(spoke1));
+    Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
     uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
 
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2), address(spoke2));
+    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2));
 
     DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
@@ -215,17 +215,17 @@ contract LiquidityHubAccrueInterestTest is Base {
     uint256 startTime = vm.getBlockTimestamp();
     uint256 supplyAmount = borrowAmount * 2;
     uint256 supplyAmount2 = 100e18;
-    uint256 initialDebtIndex = WadRayMathExtended.RAY;
+    uint256 initialDebtIndex = WadRayMath.RAY;
 
-    Utils.add(hub, daiAssetId, address(spoke1), supplyAmount, address(spoke1), address(spoke1));
-    Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount, address(spoke1));
+    Utils.add(hub, daiAssetId, address(spoke1), supplyAmount, address(spoke1));
+    Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
     uint256 baseBorrowRate = hub.getBaseInterestRate(daiAssetId);
 
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2), address(spoke2));
+    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2));
 
     DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
@@ -253,7 +253,7 @@ contract LiquidityHubAccrueInterestTest is Base {
 
     // uint256 startTime = vm.getBlockTimestamp();
     // uint256 supplyAmount = borrowAmount * 2;
-    // uint256 initialDebtIndex = WadRayMathExtended.RAY;
+    // uint256 initialDebtIndex = WadRayMath.RAY;
     // uint32 riskPremium = 10_00;
 
     // Utils.add(hub, daiAssetId, address(spoke1), supplyAmount, address(spoke1), address(spoke1));
@@ -269,7 +269,7 @@ contract LiquidityHubAccrueInterestTest is Base {
 
     // DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
 
-    // uint256 expectedDebtIndex = calculateExpectedDebtIndex(
+    // uint256 expectedDebtIndex = _calculateExpectedDebtIndex(
     //   initialDebtIndex,
     //   baseBorrowRate,
     //   uint40(startTime)
@@ -330,7 +330,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     borrowRate = bound(borrowRate, 0, MAX_BORROW_RATE);
     elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
-    uint256 initialDebtIndex = WadRayMathExtended.RAY;
+    uint256 initialDebtIndex = WadRayMath.RAY;
     uint256 supplyAmount2 = 1000e18;
 
     Timestamps memory timestamps;
@@ -341,15 +341,8 @@ contract LiquidityHubAccrueInterestTest is Base {
     spoke1Amounts.supply0 = borrowAmount * 2;
     timestamps.t0 = uint40(vm.getBlockTimestamp());
 
-    Utils.add(
-      hub,
-      daiAssetId,
-      address(spoke1),
-      spoke1Amounts.supply0,
-      address(spoke1),
-      address(spoke1)
-    );
-    Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount, address(spoke1));
+    Utils.add(hub, daiAssetId, address(spoke1), spoke1Amounts.supply0, address(spoke1));
+    Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
 
     assetData.t0 = hub.getAsset(daiAssetId);
 
@@ -357,7 +350,7 @@ contract LiquidityHubAccrueInterestTest is Base {
     skip(elapsed);
 
     // Spoke 2 does a supply to accrue interest
-    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2), address(spoke2));
+    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2));
 
     assetData.t1 = hub.getAsset(daiAssetId);
     timestamps.t1 = uint40(vm.getBlockTimestamp());
@@ -380,16 +373,16 @@ contract LiquidityHubAccrueInterestTest is Base {
     assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt1, 'baseDebt');
 
     // Say borrow rate changes
-    _mockInterestRate(borrowRate);
+    _mockInterestRateBps(borrowRate);
     // Make an action to cache this new borrow rate
-    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2), address(spoke2));
+    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2));
 
     // Time passes
     skip(elapsed);
     timestamps.t2 = uint40(vm.getBlockTimestamp());
 
     // Spoke 2 does a supply to accrue interest
-    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2), address(spoke2));
+    Utils.add(hub, daiAssetId, address(spoke2), supplyAmount2, address(spoke2));
 
     assetData.t2 = hub.getAsset(daiAssetId);
     timestamps.t2 = uint40(vm.getBlockTimestamp());

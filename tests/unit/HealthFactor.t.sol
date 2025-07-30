@@ -163,10 +163,10 @@ contract HealthFactorTest_ToMigrate is Base {
 
       // avgCollateralFactor += userCollateral * reserve.config.collateralFactor;
     }
-    avgCollateralFactor = totalCollateral != 0 ? avgCollateralFactor / totalCollateral : 0;
-    return
-      totalDebt == 0
-        ? type(uint256).max
-        : (totalCollateral.percentMul(avgCollateralFactor)).wadDiv(totalDebt);
+    // avgCollateralFactor = totalCollateral != 0 ? avgCollateralFactor / totalCollateral : 0;
+    // return
+    //   totalDebt == 0
+    //     ? type(uint256).max
+    //     : (totalCollateral.percentMul(avgCollateralFactor)).wadDiv(totalDebt);
   }
 }

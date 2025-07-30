@@ -5,8 +5,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccrueInterestScenarioTest is SpokeBase {
   using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   struct TestAmounts {
     uint256 daiSupplyAmount;
@@ -512,10 +512,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
       // Store index before accrual, and use this for calculating expected base debt
       Indices memory indices;
-      indices.daiIndex = hub.previewDrawnIndex(daiAssetId);
-      indices.wethIndex = hub.previewDrawnIndex(wethAssetId);
-      indices.usdxIndex = hub.previewDrawnIndex(usdxAssetId);
-      indices.wbtcIndex = hub.previewDrawnIndex(wbtcAssetId);
+      indices.daiIndex = hub.getAssetDrawnIndex(daiAssetId);
+      indices.wethIndex = hub.getAssetDrawnIndex(wethAssetId);
+      indices.usdxIndex = hub.getAssetDrawnIndex(usdxAssetId);
+      indices.wbtcIndex = hub.getAssetDrawnIndex(wbtcAssetId);
 
       // Store timestamp before next skip time
       startTime = uint40(vm.getBlockTimestamp());
@@ -523,7 +523,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       skip(skipTime);
 
       // Check bob's base debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
-      indices.daiIndex = calculateExpectedDebtIndex(
+      indices.daiIndex = _calculateExpectedDebtIndex(
         indices.daiIndex,
         rates.daiBaseBorrowRate,
         startTime
@@ -570,7 +570,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         'dai after second accrual'
       );
 
-      indices.wethIndex = calculateExpectedDebtIndex(
+      indices.wethIndex = _calculateExpectedDebtIndex(
         indices.wethIndex,
         rates.wethBaseBorrowRate,
         startTime
@@ -622,7 +622,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         'weth after second accrual'
       );
 
-      indices.usdxIndex = calculateExpectedDebtIndex(
+      indices.usdxIndex = _calculateExpectedDebtIndex(
         indices.usdxIndex,
         rates.usdxBaseBorrowRate,
         startTime
@@ -669,7 +669,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         'usdx after second accrual'
       );
 
-      indices.wbtcIndex = calculateExpectedDebtIndex(
+      indices.wbtcIndex = _calculateExpectedDebtIndex(
         indices.wbtcIndex,
         rates.wbtcBaseBorrowRate,
         startTime
@@ -823,6 +823,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
   }
 
   function _bpsToRay(uint256 bps) internal pure returns (uint256) {
-    return (bps * WadRayMathExtended.RAY) / PercentageMath.PERCENTAGE_FACTOR;
+    return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
   }
 }

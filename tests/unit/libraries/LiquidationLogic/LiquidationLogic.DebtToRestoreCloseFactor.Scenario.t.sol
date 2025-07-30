@@ -5,8 +5,7 @@ import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogicBaseTest {
   using WadRayMath for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using PercentageMath for uint256;
 
   struct ReserveAmount {
     uint256 reserveId;
@@ -249,7 +248,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       _convertBaseCurrencyToAmount(
         _convertDebtToCollBaseCurrency(params.liquidationBonus, debtBaseCurrencyRestored),
         oracle.getReservePrice(collaterals[collateralIndex].reserveId),
-        10 ** spoke1.getReserve(collaterals[collateralIndex].reserveId).config.decimals
+        10 ** spoke1.getReserve(collaterals[collateralIndex].reserveId).decimals
       ) +
       1; // add 1 to round up coll seized as in LiquidationLogic calculateAvailableCollateralToLiquidate
 
@@ -298,12 +297,12 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       uint256 amountInBase = _convertAmountToBaseCurrency(
         collaterals[i].amount,
         oracle.getReservePrice(reserve.reserveId),
-        10 ** reserve.config.decimals
+        10 ** reserve.decimals
       );
       totalCollateralFactor += dynConfig.collateralFactor * amountInBase;
       totalAmount += amountInBase;
       if (collateralIndex == i) {
-        params.liquidationBonus = reserve.config.liquidationBonus;
+        params.liquidationBonus = dynConfig.liquidationBonus;
         params.collateralFactor = dynConfig.collateralFactor;
       }
     }
@@ -312,7 +311,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     totalAmount = 0;
     for (uint256 i = 0; i < debts.length; i++) {
       DataTypes.Reserve memory reserve = spoke.getReserve(debts[i].reserveId);
-      uint256 debtAssetUnit = 10 ** reserve.config.decimals;
+      uint256 debtAssetUnit = 10 ** reserve.decimals;
       uint256 debtAssetPrice = oracle.getReservePrice(reserve.reserveId);
       uint256 amountInBase = _convertAmountToBaseCurrency(
         debts[i].amount,
@@ -327,7 +326,9 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       }
     }
     params.totalDebtInBaseCurrency = totalAmount;
-    params.healthFactor = totalCollateralFactor.wadDiv(params.totalDebtInBaseCurrency).fromBps();
+    params.healthFactor = totalCollateralFactor
+      .wadDivDown(params.totalDebtInBaseCurrency)
+      .fromBpsDown();
   }
 
   /// set up collateral factors and liquidation bonuses with price drop for weth collateral
@@ -337,8 +338,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 70_00);
 
     // weth price drops to $800
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    oracle.setReservePrice(_wethReserveId(spoke1), 800e8); // $800
+    _mockReservePrice(spoke1, _wethReserveId(spoke1), 800e8); // $800
 
     updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 105_00);
     updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 103_00);
@@ -352,8 +352,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 78_00);
 
     // dai price drops to $0.5
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    oracle.setReservePrice(_daiReserveId(spoke1), 0.5e8);
+    _mockReservePrice(spoke1, _daiReserveId(spoke1), 0.5e8);
 
     updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 104_00);
     updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 106_00);
@@ -368,11 +367,10 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     updateCollateralFactor(spoke1, _daiReserveId(spoke1), 78_00);
 
     // wbtc price drops to $40k
-    MockPriceOracle oracle = MockPriceOracle(address(spoke1.oracle()));
-    oracle.setReservePrice(_wbtcReserveId(spoke1), 40_000e8);
+    _mockReservePrice(spoke1, _wbtcReserveId(spoke1), 40_000e8);
 
     updateLiquidationBonus(spoke1, _daiReserveId(spoke1), 108_00);
-    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 109_00);
+    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), 105_00);
     updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), 110_00);
     updateLiquidationBonus(spoke1, _wbtcReserveId(spoke1), 110_00);
   }
