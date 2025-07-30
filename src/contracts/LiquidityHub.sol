@@ -329,7 +329,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   function _refresh(
     uint256 assetId,
     address spokeAddress,
-    int256 premiumDrawnShareDelta,
+    int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
@@ -340,18 +340,18 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // accrue interest and liquidity fees
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
-    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
+    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnSharesDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
     asset.realizedPremium = asset.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
-    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
+    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnSharesDelta);
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
     spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
     emit RefreshPremiumDebt(
       assetId,
       spokeAddress,
-      premiumDrawnShareDelta,
+      premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
       realizedPremiumTaken
