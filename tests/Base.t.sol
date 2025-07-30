@@ -2105,31 +2105,6 @@ abstract contract Base is Test {
     );
   }
 
-  /// @dev Adds liquidity to the Hub via a random spoke
-  function _addLiquidity(uint256 assetId, uint256 amount) public {
-    address tempSpoke = vm.randomAddress();
-    address tempUser = vm.randomAddress();
-
-    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
-
-    address underlying = hub.getAsset(assetId).underlying;
-    deal(underlying, tempUser, amount);
-
-    vm.prank(tempUser);
-    IERC20(underlying).approve(address(hub), UINT256_MAX);
-
-    vm.prank(ADMIN);
-    hub.addSpoke(
-      assetId,
-      tempSpoke,
-      DataTypes.SpokeConfig({supplyCap: UINT256_MAX, drawCap: UINT256_MAX, active: true})
-    );
-
-    Utils.add({hub: hub, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
-
-    assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
-  }
-
   // @dev Helper function to get asset position, valid if no time has passed since last action
   function getAssetPosition(
     ILiquidityHub targetHub,
