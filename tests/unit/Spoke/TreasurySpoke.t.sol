@@ -157,7 +157,7 @@ contract TreasurySpokeTest is SpokeBase {
   }
 
   function test_withdraw_maxLiquidityFee() public {
-    test_withdraw_fuzz_maxLiquidityFee(_daiReserveId(_treasurySpoke()), 1000e18, 340 days);
+    test_withdraw_fuzz_maxLiquidityFee(_daiReserveId(spoke1), 1000e18, 340 days);
   }
 
   function test_withdraw_fuzz_maxLiquidityFee(
