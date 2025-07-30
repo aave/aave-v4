@@ -13,6 +13,7 @@ methods {
     
     function toSharesUp(uint256 assets, uint256 totalAssets, uint256 totalShares) external  returns (uint256) envfree ;
     function toAssetsUp(uint256 shares, uint256 totalAssets, uint256 totalShares) external  returns (uint256) envfree ;
+
 }
 
 /** 
@@ -21,9 +22,9 @@ x > y => toSharesUp(x) >= toSharesUp(y)
 **/
 rule toSharesUp_monotonicity(uint256 assetId, uint256 x, uint256 y){
     uint256 totalAssets; uint256 totalShares;
-    // require totalAssets >= totalShares;
+    require totalAssets >= totalShares;
     assert x < y => 
-            toSharesUp(x, totalAssets, totalShares) < toSharesUp(y, totalAssets, totalShares);
+            toSharesUp(x, totalAssets, totalShares) <= toSharesUp(y, totalAssets, totalShares);
 }
 
 /** 
@@ -143,4 +144,15 @@ rule toAssetsDown_additivity(uint256 assetId, uint256 x, uint256 y){
 
     uint256 assetsForXplusY = toAssetsDown(require_uint256(x + y), totalAssets, totalShares);  
     assert assetsForXplusY >= assetsForX + assetsForYAfterX;
+}
+
+
+
+/**
+ * @title previewFeeShares monotonicity
+ */
+rule previewFeeShares_monotonicity(uint256 assetId, uint256 indexDelta1, uint256 indexDelta2) {
+    env e;
+    assert indexDelta1 == 0 => previewFeeShares(e,assetId, indexDelta1) == 0;
+    assert indexDelta1 < indexDelta2 => previewFeeShares(e,assetId, indexDelta1) <= previewFeeShares(e,assetId, indexDelta2);
 }

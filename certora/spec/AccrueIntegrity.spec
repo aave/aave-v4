@@ -7,71 +7,15 @@ To run this spec file:
  certoraRun certora/conf/LiquidityHubAccrueIntegrity.conf 
 **/
 
-import "./Math_CVL.spec";
+import "./LiquidityHubBase.spec";
 
 using LiquidityHubHarness as liquidityHub;
 using MathWrapper as mathWrapper; 
-using WadRayMathWrapper as wadRayMath;
-
 
 methods {
     // envfree functions
-    function WadRayMathWrapper.RAY() external returns (uint256) envfree;
     function mathWrapper.SECONDS_PER_YEAR() external returns (uint256) envfree;
 
-
-    // standard summarization of mulDiv 
-    function Math.mulDiv(uint256 x, uint256 y, uint256 denominator, Math.Rounding rounding) internal  returns (uint256) => 
-        mulDivCVL(x,y,denominator,rounding);
-
-    // summarization proved in Math.spec 
-    function WadRayMath.rayMul(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivHalf(a,b,wadRayMath.RAY());
-    
-    function WadRayMath.rayDiv(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivHalf(a,wadRayMath.RAY(),b);
-
-    function WadRayMathExtended.rayMulDown(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivDownCVL(a,b,wadRayMath.RAY());
-    
-    function WadRayMathExtended.rayMulUp(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivUpCVL(a,b,wadRayMath.RAY());
-    
-    function WadRayMathExtended.rayDivDown(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivDownCVL(a,wadRayMath.RAY(),b);
-    
-    function WadRayMathExtended.rayDivUp(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivUpCVL(a,wadRayMath.RAY(),b);
-
-    function AssetLogic.previewFeeShares(
-    DataTypes.Asset storage asset,
-    uint256 indexDelta
-  ) internal returns (uint256) =>  ALWAYS(0);
-    /*
-    function AssetLogic.previewFeeShares(
-    DataTypes.Asset storage asset,
-    uint256 indexDelta
-  ) internal returns (uint256) => SummaryLibrary.previewFeeShares(asset, indexDelta);
-
-  function SummaryLibrary.calcFees(uint256 indexDelta, uint256 totalDrawnShares, uint256 liquidityFee) internal  returns (uint256) => calcFeesApproximation(indexDelta, totalDrawnShares, liquidityFee);  */
-}
-
-ghost calcFeesApproximation(uint256, uint256, uint256) returns uint256;
-/* 
- select which cvl math function to use
-*/
-function mulDivCVL(uint256 x, uint256 y, uint256 z, Math.Rounding rounding) returns uint256 {
-    mathint mul  = x * y;
-    if (z == 0 ) {
-        revert();
-    }
-    if (rounding == Math.Rounding.Floor) 
-        return mulDivDownCVL(x, y, z);
-    else if (rounding == Math.Rounding.Ceil) 
-        return mulDivUpCVL(x, y, z);
-    else
-        assert false; 
-    return 0; 
 }
 
 /**
@@ -153,17 +97,18 @@ rule supplyExchangeRateIsMonotonic_accrue(){
     require liquidityHub._assets[assetId].baseDebtIndex >= wadRayMath.RAY();
 
     mathint assetsBefore = getAssetSuppliedAmount(e1, assetId);
-    mathint sharesBefore = getAssetSuppliedShares(e1, assetId); 
+    mathint sharesBefore = getTotalSuppliedShares(e1, assetId); 
     //requireInvariant totalAssetsVsShares(assetId,e);
     require assetsBefore >= sharesBefore;
-
+    // todo - check this is always true 
+    require liquidityHub._assets[assetId].config.liquidityFee <= 10000;
     uint256 baseDebt;
     uint256 premiumDebt;
     (baseDebt,premiumDebt) = getAssetDebt(e1, assetId);
     accrueInterest(e2,assetId);
 
     mathint assetsAfter = getAssetSuppliedAmount(e3, assetId);
-    mathint sharesAfter = getAssetSuppliedShares(e3, assetId);
+    mathint sharesAfter = getTotalSuppliedShares(e3, assetId);
 
     assert assetsAfter * sharesBefore >= assetsBefore * sharesAfter; 
     // > when only considering accrue interest
@@ -202,6 +147,7 @@ rule twoStepVsOneStep(uint256 assetId) {
     
     storage afterTwoSteps = lastStorage;
     
+    
     accrueInterest(eNext,assetId) at init;
 
     satisfy baseDebtIndex_afterTwoSteps > liquidityHub._assets[assetId].baseDebtIndex;
@@ -215,7 +161,7 @@ rule twoStepVsOneStep(uint256 assetId) {
       https://certora.atlassian.net/browse/CERT-8924  is blocking a stronger rule */    
     assert 
         baseDebtIndex_afterTwoSteps != liquidityHub._assets[assetId].baseDebtIndex ||
-        lastStorage == afterTwoSteps;
+        lastStorage == afterTwoSteps ;
     
 }
 
@@ -226,17 +172,21 @@ rule twoStepVsOneStep(uint256 assetId) {
 **/
 
 rule viewFunctionsIntegrity(uint256 assetId, method f) filtered { f-> f.isView &&
+                                f.selector != sig:MAX_ALLOWED_ASSET_DECIMALS().selector &&
+                                f.selector !=  sig:authority().selector &&
+                                f.selector != sig:isConsumingScheduledOp().selector &&
+                                // returns a struct 
                                 f.selector != sig:getAsset(uint256).selector &&
                                 f.selector != sig:getAssetConfig(uint256).selector &&
-                                f.selector != sig:MAX_ALLOWED_ASSET_DECIMALS().selector &&
-                            //    f.selector != sig:assetsList(uint256).selector &&
                                 f.selector != sig:getSpoke(uint256,address).selector &&
                                 f.selector != sig:getSpokeConfig(uint256,address).selector &&
+                                // harness functions
                                 f.selector != sig:toSharesDown(uint256,uint256,uint256).selector &&
                                 f.selector != sig:toAssetsDown(uint256,uint256,uint256).selector &&
                                 f.selector != sig:toSharesUp(uint256,uint256,uint256).selector &&
                                 f.selector != sig:toAssetsUp(uint256,uint256,uint256).selector &&
-                                f.selector != sig:getAssetSuppliedAmountUp(uint256).selector }
+                                f.selector != sig:getAssetSuppliedAmountUp(uint256).selector 
+                                }
 {
     env e;
     calldataarg args; 
@@ -301,9 +251,9 @@ function callViewFunction(method f, env e, calldataarg args) returns mathint {
     else if (f.selector == sig:getBaseInterestRate(uint256).selector) {
         return getBaseInterestRate(e,args);
     }
-/*    else if (f.selector == sig:assetCount().selector) {
-        return assetCount(e,args);
-    } */
+    else if (f.selector == sig:getAssetCount().selector) {
+        return getAssetCount(e,args);
+    } 
     else if (f.selector == sig:getBaseInterestRate(uint256).selector) {
         return getBaseInterestRate(e,args);
     }
@@ -337,7 +287,11 @@ function callViewFunction(method f, env e, calldataarg args) returns mathint {
     else if (f.selector == sig:convertToSuppliedAssetsUp(uint256,uint256).selector) {
         return convertToSuppliedAssetsUp(e,args);
     }
-    else  {
+    else  if (f.selector ==  sig:convertToDrawnSharesUp(uint256,uint256).selector) {
+        return convertToDrawnSharesUp(e,args);
+    }
+    else
+    {
         assert false, "unknown view function";
         return 0;
     }

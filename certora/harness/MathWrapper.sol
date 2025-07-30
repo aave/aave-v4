@@ -3,6 +3,7 @@
 import {Math} from '../../src/dependencies/openzeppelin/Math.sol';
 import {WadRayMath} from '../../src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from '../../src/libraries/math/WadRayMathExtended.sol';
+import {PercentageMathExtended} from '../../src/libraries/math/PercentageMathExtended.sol';
 pragma solidity ^0.8.0;
 
 
@@ -41,5 +42,9 @@ contract MathWrapper  {
     }
     function rayDivUp(uint256 a, uint256 b) public pure returns (uint256) {
         return WadRayMathExtended.rayDivUp(a, b);
+    }
+
+    function percentMulDown(uint256 value,uint256 percentage) public pure returns (uint256) {
+        return PercentageMathExtended.percentMulDown(value, percentage);
     }
 }

@@ -1,7 +1,7 @@
 
 import "./ERC20s_CVL.spec";
 import "./Math_CVL.spec";
-import "./LiquidityHubBase.spec";
+import "./LiquidityHubAdvanceSummary.spec";
 
 
 using LiquidityHub as liquidityHub;
@@ -19,33 +19,36 @@ methods {
     //rules concerning updateBorrowRate are in ...
   function AssetLogic.updateBorrowRate(
     DataTypes.Asset storage asset,
-    uint256,
-    uint256
+    uint256 assetId
   ) internal => NONDET;
 
-  function AssetLogic.accrue(DataTypes.Asset storage asset, DataTypes.SpokeData storage feeReceiver) internal => accrueCalled();
+  function AssetLogic.accrue(DataTypes.Asset storage asset, uint256 assetId, DataTypes.SpokeData storage feeReceiver) internal => accrueCalled();
 
   function MathUtils.calculateLinearInterest(
     uint256 rate,
     uint40 lastUpdateTimestamp
   ) internal returns (uint256) => ghostLinearInterest(rate, lastUpdateTimestamp);
 
-  function LiquidityHub._validateDraw(
-    DataTypes.Asset storage asset,
-    uint256 amount,
-    uint256 drawCap
-  ) internal => NONDET;
-  function _validateSupply(
+  function _validateAdd(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 amount,
     address from
   ) internal => NONDET;
-  function LiquidityHub._validateWithdraw(
+
+  function _validateRemove(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 amount
   ) internal => NONDET;
+
+  function LiquidityHub._validateDraw(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
+    uint256 amount,
+    uint256 drawCap
+  ) internal => NONDET;
+
   function LiquidityHub._validateRestore(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
@@ -93,7 +96,7 @@ function accrueCalled() {
 /************ Hooks  ************/
 /// Update sumAvailableLiquidity[t] on update to availableLiquidity of assetId for token t
 hook Sstore _assets[KEY uint256 assetId].availableLiquidity uint256 new_value (uint256 old_value) {
-    sumAvailableLiquidity[currentContract.assetsList[assetId]] = sumAvailableLiquidity[currentContract.assetsList[assetId]] + new_value - old_value;
+    sumAvailableLiquidity[currentContract._assets[assetId].underlying] = sumAvailableLiquidity[currentContract._assets[assetId].underlying] + new_value - old_value;
 }
 
 hook Sstore _assets[KEY uint256 assetId].baseDebtIndex uint256 new_value (uint256 old_value) {
@@ -101,6 +104,13 @@ hook Sstore _assets[KEY uint256 assetId].baseDebtIndex uint256 new_value (uint25
 }
 
 hook Sload uint256 value _assets[KEY uint256 assetId].baseDebtIndex  {
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
+}
+hook Sstore _assets[KEY uint256 assetId].suppliedShares uint256 new_value (uint256 old_value) {
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
+}
+
+hook Sload uint256 value _assets[KEY uint256 assetId].suppliedShares  {
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
@@ -127,7 +137,7 @@ https://prover.certora.com/output/40726/1223726233564eeabef3da5a94096d92/?anonym
 
 otherwise passes violation: https://prover.certora.com/output/40726/1c96eb0569424739acd95562ffcbd9b2/?anonymousKey=b2530ed45dc0a161001d1893849e3d2bbfe3e907
 **/
-invariant solvency_external(address asset )
+strong invariant solvency_external(address asset )
     balanceByToken[asset][liquidityHub] >=  sumAvailableLiquidity[asset]  {
 
         /*
@@ -279,7 +289,7 @@ definition emptyAsset(uint256 assetId) returns bool =
             liquidityHub._spokes[assetId][spoke].baseDrawnShares == 0 &&
             liquidityHub._spokes[assetId][spoke].realizedPremium == 0  
         ) && 
-        liquidityHub.assetsList[assetId] == 0;
+        liquidityHub._assets[assetId].underlying == 0;
 
 
 /** @title integrity of a validAsset 
@@ -288,8 +298,7 @@ in the case that assetId is not listed yet
 **/
 
 invariant validAssetId(uint256 assetId)  
-    assetId >= liquidityHub.assetCount => emptyAsset(assetId) && 
-    liquidityHub.assetsList.length == liquidityHub.assetCount;
+    assetId >= liquidityHub._assetCount => emptyAsset(assetId);
 
 
 
@@ -342,3 +351,9 @@ function requireAllInvariants(uint256 assetId, env e)  {
     requireInvariant sumOfSpokeSupplyShares(assetId);
     requireInvariant baseDebtIndexMin(assetId); 
 }   
+
+/**
+ * @title liquidityFee upper bound: config.liquidityFee must not exceed PercentageMathExtended.PERCENTAGE_FACTOR
+ */
+invariant liquidityFee_upper_bound(uint256 assetId) 
+    liquidityHub._assets[assetId].config.liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR;

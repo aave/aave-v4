@@ -14,6 +14,9 @@ function previewFeeShares(
     uint256 indexDelta
   ) external view returns (uint256) {
       uint256 liquidityFee = asset.config.liquidityFee;
+      if (indexDelta == 0 || liquidityFee == 0) {
+        return 0;
+      }
       uint256 totalDrawnShares = asset.baseDrawnShares + asset.premiumDrawnShares;
       uint256 feesAmount = calcFees(indexDelta,totalDrawnShares, liquidityFee);
       return feesAmount.toSharesDown(asset.totalSuppliedAssets() -  feesAmount, asset.suppliedShares);

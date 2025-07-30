@@ -1,7 +1,7 @@
 
 import "./ERC20s_CVL.spec";
 import "./Math_CVL.spec";
-import "./LiquidityHubBase.spec";
+import "./LiquidityHubAdvanceSummary.spec";
 import "./SharesMath.spec";
 
 methods {
