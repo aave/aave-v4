@@ -61,7 +61,8 @@ contract SpokePositionManagerTest is SpokeBase {
     uint256 amount = 100e6;
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
-    Utils.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
+    vm.prank(POSITION_MANAGER);
+    spoke1.supply(reserveId, amount, alice);
 
     _approvePositionManager(alice);
     _resetTokenAllowance(alice);
