@@ -278,7 +278,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   /// @inheritdoc ILiquidityHub
   function refreshPremiumDebt(
     uint256 assetId,
-    int256 premiumDrawnShareDelta,
+    int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
@@ -291,7 +291,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     _refresh(
       assetId,
       msg.sender,
-      premiumDrawnShareDelta,
+      premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
       realizedPremiumTaken
