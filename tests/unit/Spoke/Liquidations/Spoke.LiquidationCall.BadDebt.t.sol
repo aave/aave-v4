@@ -429,7 +429,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       premDebtRestored;
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DeficitCreated(
+    emit ILiquidityHub.DeficitReported(
       debtAssetId,
       address(state.spoke),
       state.expectedDeficitShares,

@@ -57,7 +57,7 @@ interface ILiquidityHub is IAccessManaged {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
-  event DeficitCreated(
+  event DeficitReported(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 baseRestoredShares,

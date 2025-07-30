@@ -262,13 +262,15 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     _validateReportDeficit(asset, spoke, baseAmount, premiumAmount);
 
     uint256 totalDeficitAmount = baseAmount + premiumAmount;
-    uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
+    uint256 baseDrawnSharesRestored = previewRestoreByAssets(assetId, baseAmount);
     asset.baseDrawnShares -= baseDrawnSharesRestored;
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
     asset.deficit += totalDeficitAmount;
+
+    /// @dev premium debt must be restored in `refreshPremiumDebt` before calling this function
     asset.updateBorrowRate(assetId);
 
-    emit DeficitCreated(assetId, msg.sender, baseDrawnSharesRestored, totalDeficitAmount);
+    emit DeficitReported(assetId, msg.sender, baseDrawnSharesRestored, totalDeficitAmount);
 
     return baseDrawnSharesRestored;
   }

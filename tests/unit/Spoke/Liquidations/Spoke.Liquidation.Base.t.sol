@@ -78,6 +78,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 finalHf;
     uint256 initialHf;
     bool usingAsCollateral;
+    bool isBorrowing;
     uint256 debtReserveIndex;
     uint256 collateralReserveIndex;
     uint256 hfBadDebtThreshold;
@@ -587,6 +588,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.assetAmountOfOneDrawnShare + 1,
       string.concat('deficit should match restored amount ', label)
     );
+    assertEq(state.isBorrowing, false, string.concat('isBorrowing should be false ', label));
   }
 
   /// generic assertions in non bad debt scenarios
@@ -1037,6 +1039,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.reserveId,
       state.user
     );
+    state.isBorrowing = state.spoke.isBorrowing(state.debtReserve.reserveId, state.user);
 
     // multi reserve accounting
     for (uint256 i = 0; i < state.debtReserves.length; i++) {

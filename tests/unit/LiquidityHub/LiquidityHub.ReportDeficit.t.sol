@@ -119,14 +119,14 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
     uint256 totalDeficit = baseAmount + premiumAmount;
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DeficitCreated(
+    emit ILiquidityHub.DeficitReported(
       usdxAssetId,
       address(spoke1),
       hub.convertToDrawnShares(usdxAssetId, baseAmount),
       totalDeficit
     );
 
-    // Restore the deficit
+    // Report the deficit
     vm.prank(address(spoke1));
     hub.reportDeficit(usdxAssetId, baseAmount, premiumAmount);
 

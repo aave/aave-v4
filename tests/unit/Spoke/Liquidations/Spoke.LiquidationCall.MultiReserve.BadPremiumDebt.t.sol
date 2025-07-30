@@ -253,8 +253,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     _checkDebtReserveDeficits(state, debtReserveIds, alice);
   }
 
-  /// execute fuzz tests with bad debt across multiple debt reserves
-  /// multiple debt reserves, single collateral reserve
+  /// execute fuzz tests with bad debt across multiple debt reserves, single collateral reserve
   /// liquidating all collateral is insufficient to cover debt, bad debt remains
   /// close factor varies across range of values
   /// non-variable liquidation bonus
@@ -399,7 +398,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
           premDebtRestored;
       }
       vm.expectEmit(address(hub));
-      emit ILiquidityHub.DeficitCreated(
+      emit ILiquidityHub.DeficitReported(
         assetId,
         address(state.spoke),
         expectedDeficitShares,

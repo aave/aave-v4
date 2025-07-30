@@ -1079,6 +1079,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit UserDynamicConfigRefreshedSingle(user, reserveId);
   }
 
+  /**
+   * @dev Executes liquidation call across all users in the array, for a given pair of debt/collateral reserves.
+   */
   function _executeLiquidationCall(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
@@ -1170,12 +1173,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       userDebtPosition.baseDrawnShares -= vars.restoredShares;
       vars.totalRestoredShares += vars.restoredShares;
 
+      if (userDebtPosition.baseDrawnShares == 0) {
+        _positionStatus[vars.user].setBorrowing(vars.debtReserveId, false);
+      }
+
       if (vars.hasDeficit) {
         _reportDeficits(vars.user);
       } else {
-        if (userDebtPosition.baseDrawnShares == 0) {
-          _positionStatus[vars.user].setBorrowing(vars.debtReserveId, false);
-        }
         // new risk premium only needs to be propagated if no deficit exists
         (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(vars.user);
         _notifyRiskPremiumUpdate(vars.user, vars.newUserRiskPremium);
