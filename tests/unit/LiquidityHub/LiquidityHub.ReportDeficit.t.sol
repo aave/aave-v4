@@ -164,6 +164,7 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
       params.supplyExchangeRateBefore,
       'supply exchange rate should increase'
     );
+    assertBorrowRateSynced(hub, usdxAssetId, 'reportDeficit');
   }
 
   function test_reportDeficit_fuzz_with_premium(
@@ -253,5 +254,6 @@ contract LiquidityHubReportDeficitTest is LiquidityHubBase {
       params.supplyExchangeRateBefore,
       'supply exchange rate should increase'
     );
+    assertBorrowRateSynced(hub, usdxAssetId, 'reportDeficit');
   }
 }

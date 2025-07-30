@@ -441,6 +441,12 @@ contract SpokeLiquidationBase is SpokeBase {
       0,
       string.concat('no spoke collateral underlying should remain ', label)
     );
+    assertBorrowRateSynced(
+      state.collateralHub,
+      state.collateralAssetId,
+      'liquidationCall collateral'
+    );
+    assertBorrowRateSynced(state.debtHub, state.debtAssetId, 'liquidationCall debt');
   }
 
   /// assert that the user account data is correct after liquidation, without deficit
@@ -763,7 +769,9 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state
   ) internal view returns (LiquidationTestLocalParams memory) {
     state.debtReserveId = state.debtReserve.reserveId;
+    state.debtAssetId = state.debtReserve.assetId;
     state.collateralReserveId = state.collateralReserve.reserveId;
+    state.collateralAssetId = state.collateralReserve.assetId;
     state.closeFactor = _getCloseFactor(state.spoke);
 
     state.collateralHub = state.collateralReserve.hub;
