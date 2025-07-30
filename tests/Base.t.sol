@@ -1642,7 +1642,9 @@ abstract contract Base is Test {
     ) = spoke.getUserAccountData(user);
 
     requiredDebtInBaseCurrency =
-      (totalCollateralBase.percentMulUp(currentAvgCollateralFactor + 1) / desiredHf) -
+      totalCollateralBase.percentMulDown(currentAvgCollateralFactor.fromWadDown() + 1).wadDivUp(
+        desiredHf
+      ) -
       totalDebtBase;
     // add 1 to num to round debt up (ie making sure resultant debt creates HF that is less than desired)
   }

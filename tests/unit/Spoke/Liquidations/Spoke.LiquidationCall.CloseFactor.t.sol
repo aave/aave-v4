@@ -7,6 +7,23 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
 
+  function test_debug() public {
+    test_liquidationCall_fuzz_closeFactor({
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1e18,
+        liquidationBonusFactor: 0,
+        healthFactorForMaxBonus: 0
+      }),
+      liqBonus: 1.0559e4,
+      supplyAmount: 4.0622739695530374029146536172e28,
+      liquidationFee: 2.213e3,
+      collateralReserveId: 2,
+      debtReserveId: 1,
+      skipTime: 8.64e8,
+      desiredHf: 9.99999999999999997e17
+    });
+  }
+
   /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
   /// single debt reserve, single collateral reserve
   /// user health factor position is higher than threshold, so that close factor can be achieved post-liquidation
