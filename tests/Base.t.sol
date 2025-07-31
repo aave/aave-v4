@@ -2137,7 +2137,7 @@ abstract contract Base is Test {
     assertEq(a.addedShares, b.addedShares, 'addedShares');
     assertEq(a.addedAmount, b.addedAmount, 'addedAmount');
     assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
-    assertEq(a.drawn, b.drawn, 'baseDebt');
+    assertEq(a.drawn, b.drawn, 'drawnDebt');
     assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffset, b.premiumOffset, 'premiumOffset');
     assertEq(a.realizedPremium, b.realizedPremium, 'realizedPremium');

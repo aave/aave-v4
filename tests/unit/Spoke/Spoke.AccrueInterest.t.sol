@@ -100,15 +100,15 @@ contract SpokeAccrueInterestTest is SpokeBase {
     skip(elapsed);
 
     // Check debts after interest accrual
-    uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, drawnRate, startTime);
-    uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(borrowAmount, baseDebt, userRp);
-    uint256 interest = (baseDebt + expectedPremiumDebt) - borrowAmount;
+    uint256 drawnDebt = _calculateExpectedBaseDebt(borrowAmount, drawnRate, startTime);
+    uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(borrowAmount, drawnDebt, userRp);
+    uint256 interest = (drawnDebt + expectedPremiumDebt) - borrowAmount;
 
     _assertSingleUserProtocolDebt(
       spoke1,
       daiReserveId,
       bob,
-      baseDebt,
+      drawnDebt,
       expectedPremiumDebt,
       'after accrual'
     );
@@ -175,15 +175,15 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // Time passes
     skip(skipTime);
 
-    uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, drawnRate, startTime);
-    uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(borrowAmount, baseDebt, userRp);
-    uint256 interest = (baseDebt + expectedPremiumDebt) - borrowAmount;
+    uint256 drawnDebt = _calculateExpectedBaseDebt(borrowAmount, drawnRate, startTime);
+    uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(borrowAmount, drawnDebt, userRp);
+    uint256 interest = (drawnDebt + expectedPremiumDebt) - borrowAmount;
 
     _assertSingleUserProtocolDebt(
       spoke1,
       daiReserveId,
       bob,
-      baseDebt,
+      drawnDebt,
       expectedPremiumDebt,
       'after accrual'
     );
@@ -340,7 +340,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     rates.wbtcBaseBorrowRate = hub.getAssetDrawnRate(wbtcAssetId);
 
     // Check bob's base debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
-    uint256 baseDebt = _calculateExpectedBaseDebt(
+    uint256 drawnDebt = _calculateExpectedBaseDebt(
       amounts.daiBorrowAmount,
       rates.daiBaseBorrowRate,
       startTime
@@ -349,7 +349,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _daiReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       0,
       'dai before accrual'
     );
@@ -364,7 +364,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     _assertSpokeSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'dai before accrual');
     _assertAssetSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'dai before accrual');
 
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.wethBorrowAmount,
       rates.wethBaseBorrowRate,
       startTime
@@ -373,7 +373,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _wethReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       0,
       'weth before accrual'
     );
@@ -388,7 +388,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     _assertSpokeSupply(spoke1, _wethReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'weth before accrual');
     _assertAssetSupply(spoke1, _wethReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'weth before accrual');
 
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.usdxBorrowAmount,
       rates.usdxBaseBorrowRate,
       startTime
@@ -397,7 +397,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _usdxReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       0,
       'usdx before accrual'
     );
@@ -412,7 +412,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     _assertSpokeSupply(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'usdx before accrual');
     _assertAssetSupply(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'usdx before accrual');
 
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.wbtcBorrowAmount,
       rates.wbtcBaseBorrowRate,
       startTime
@@ -421,7 +421,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _wbtcReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       0,
       'wbtc before accrual'
     );
@@ -440,22 +440,22 @@ contract SpokeAccrueInterestTest is SpokeBase {
     skip(skipTime);
 
     // Check bob's base debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.daiBorrowAmount,
       rates.daiBaseBorrowRate,
       startTime
     );
     uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(
       amounts.daiBorrowAmount,
-      baseDebt,
+      drawnDebt,
       bobRp
     );
-    uint256 interest = (baseDebt + expectedPremiumDebt) - amounts.daiBorrowAmount;
+    uint256 interest = (drawnDebt + expectedPremiumDebt) - amounts.daiBorrowAmount;
     _assertSingleUserProtocolDebt(
       spoke1,
       _daiReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       expectedPremiumDebt,
       'dai after accrual'
     );
@@ -485,18 +485,18 @@ contract SpokeAccrueInterestTest is SpokeBase {
       'dai after accrual'
     );
 
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.wethBorrowAmount,
       rates.wethBaseBorrowRate,
       startTime
     );
-    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wethBorrowAmount, baseDebt, bobRp);
-    interest = (baseDebt + expectedPremiumDebt) - amounts.wethBorrowAmount;
+    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wethBorrowAmount, drawnDebt, bobRp);
+    interest = (drawnDebt + expectedPremiumDebt) - amounts.wethBorrowAmount;
     _assertSingleUserProtocolDebt(
       spoke1,
       _wethReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       expectedPremiumDebt,
       'weth after accrual'
     );
@@ -526,18 +526,18 @@ contract SpokeAccrueInterestTest is SpokeBase {
       'weth after accrual'
     );
 
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.usdxBorrowAmount,
       rates.usdxBaseBorrowRate,
       startTime
     );
-    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.usdxBorrowAmount, baseDebt, bobRp);
-    interest = (baseDebt + expectedPremiumDebt) - amounts.usdxBorrowAmount;
+    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.usdxBorrowAmount, drawnDebt, bobRp);
+    interest = (drawnDebt + expectedPremiumDebt) - amounts.usdxBorrowAmount;
     _assertSingleUserProtocolDebt(
       spoke1,
       _usdxReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       expectedPremiumDebt,
       'usdx after accrual'
     );
@@ -567,18 +567,18 @@ contract SpokeAccrueInterestTest is SpokeBase {
       'usdx after accrual'
     );
 
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.wbtcBorrowAmount,
       rates.wbtcBaseBorrowRate,
       startTime
     );
-    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wbtcBorrowAmount, baseDebt, bobRp);
-    interest = (baseDebt + expectedPremiumDebt) - amounts.wbtcBorrowAmount;
+    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wbtcBorrowAmount, drawnDebt, bobRp);
+    interest = (drawnDebt + expectedPremiumDebt) - amounts.wbtcBorrowAmount;
     _assertSingleUserProtocolDebt(
       spoke1,
       _wbtcReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       expectedPremiumDebt,
       'wbtc after accrual'
     );
@@ -739,7 +739,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     assertEq(bobRp, _calculateExpectedUserRP(bob, spoke1), 'user risk premium Before');
 
     // Check bob's base debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
-    uint256 baseDebt = _calculateExpectedBaseDebt(
+    uint256 drawnDebt = _calculateExpectedBaseDebt(
       amounts.daiBorrowAmount,
       rates.daiBaseBorrowRate,
       startTime
@@ -748,7 +748,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _daiReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       0,
       'dai before accrual'
     );
@@ -763,7 +763,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     _assertSpokeSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'dai before accrual');
     _assertAssetSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'dai before accrual');
 
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.wethBorrowAmount,
       rates.wethBaseBorrowRate,
       startTime
@@ -772,7 +772,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _wethReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       0,
       'weth before accrual'
     );
@@ -787,7 +787,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     _assertSpokeSupply(spoke1, _wethReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'weth before accrual');
     _assertAssetSupply(spoke1, _wethReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'weth before accrual');
 
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.usdxBorrowAmount,
       rates.usdxBaseBorrowRate,
       startTime
@@ -796,7 +796,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _usdxReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       0,
       'usdx before accrual'
     );
@@ -811,7 +811,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     _assertSpokeSupply(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'usdx before accrual');
     _assertAssetSupply(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'usdx before accrual');
 
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.wbtcBorrowAmount,
       rates.wbtcBaseBorrowRate,
       startTime
@@ -820,7 +820,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _wbtcReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       0,
       'wbtc before accrual'
     );
@@ -840,7 +840,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Check bob's base debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.daiBorrowAmount,
       rates.daiBaseBorrowRate,
       startTime
@@ -849,12 +849,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 expectedPremiumDebt = hub.convertToDrawnAssets(daiAssetId, expectedpremiumShares) -
       bobPosition.premiumOffset +
       bobPosition.realizedPremium;
-    uint256 interest = (baseDebt + expectedPremiumDebt) - amounts.daiBorrowAmount;
+    uint256 interest = (drawnDebt + expectedPremiumDebt) - amounts.daiBorrowAmount;
     _assertSingleUserProtocolDebt(
       spoke1,
       _daiReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       expectedPremiumDebt,
       'dai after accrual'
     );
@@ -885,7 +885,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
 
     bobPosition = spoke1.getUserPosition(_wethReserveId(spoke1), bob);
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.wethBorrowAmount,
       rates.wethBaseBorrowRate,
       startTime
@@ -895,12 +895,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
       hub.convertToDrawnAssets(wethAssetId, expectedpremiumShares) -
       bobPosition.premiumOffset +
       bobPosition.realizedPremium;
-    interest = (baseDebt + expectedPremiumDebt) - amounts.wethBorrowAmount;
+    interest = (drawnDebt + expectedPremiumDebt) - amounts.wethBorrowAmount;
     _assertSingleUserProtocolDebt(
       spoke1,
       _wethReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       expectedPremiumDebt,
       'weth after accrual'
     );
@@ -931,7 +931,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
 
     bobPosition = spoke1.getUserPosition(_usdxReserveId(spoke1), bob);
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.usdxBorrowAmount,
       rates.usdxBaseBorrowRate,
       startTime
@@ -941,12 +941,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
       hub.convertToDrawnAssets(usdxAssetId, expectedpremiumShares) -
       bobPosition.premiumOffset +
       bobPosition.realizedPremium;
-    interest = (baseDebt + expectedPremiumDebt) - amounts.usdxBorrowAmount;
+    interest = (drawnDebt + expectedPremiumDebt) - amounts.usdxBorrowAmount;
     _assertSingleUserProtocolDebt(
       spoke1,
       _usdxReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       expectedPremiumDebt,
       'usdx after accrual'
     );
@@ -977,7 +977,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
 
     bobPosition = spoke1.getUserPosition(_wbtcReserveId(spoke1), bob);
-    baseDebt = _calculateExpectedBaseDebt(
+    drawnDebt = _calculateExpectedBaseDebt(
       amounts.wbtcBorrowAmount,
       rates.wbtcBaseBorrowRate,
       startTime
@@ -987,12 +987,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
       hub.convertToDrawnAssets(wbtcAssetId, expectedpremiumShares) -
       bobPosition.premiumOffset +
       bobPosition.realizedPremium;
-    interest = (baseDebt + expectedPremiumDebt) - amounts.wbtcBorrowAmount;
+    interest = (drawnDebt + expectedPremiumDebt) - amounts.wbtcBorrowAmount;
     _assertSingleUserProtocolDebt(
       spoke1,
       _wbtcReserveId(spoke1),
       bob,
-      baseDebt,
+      drawnDebt,
       expectedPremiumDebt,
       'wbtc after accrual'
     );

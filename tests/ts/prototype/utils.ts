@@ -26,7 +26,7 @@ export function logDebt(who: User | Spoke | Hub) {
   const hub = who instanceof Hub ? who : who.hub;
   console.log(
     'debt: base %d + premium %d (ghost %d, offset %d, unrealised %d) = %d',
-    f(who.getDebt().baseDebt),
+    f(who.getDebt().drawnDebt),
     f(who.getDebt().premiumDebt),
     f(hub.toDrawnAssets(who.ghostDrawnShares)),
     f(who.offset),

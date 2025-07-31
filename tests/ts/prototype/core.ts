@@ -57,7 +57,7 @@ export class Hub {
     return rayDiv(assets, this.baseDrawnIndex, rounding);
   }
 
-  baseDebt() {
+  drawnDebt() {
     return this.convertToDrawnAssets(this.drawnShares);
   }
   premiumDebt() {
@@ -68,7 +68,7 @@ export class Hub {
 
   totalSupplyAssets() {
     this.accrue();
-    return this.liquidity + this.baseDebt() + this.premiumDebt() + 1n;
+    return this.liquidity + this.drawnDebt() + this.premiumDebt() + 1n;
   }
   totalSupplyShares() {
     return this.suppliedShares + VIRTUAL_SHARES;
@@ -196,12 +196,12 @@ export class Hub {
     console.log('hub.suppliedShares          ', f(this.suppliedShares));
     console.log('hub.totalSupplyAssets       ', f(this.totalSupplyAssets()));
     console.log('hub.liquidity      ', f(this.liquidity));
-    console.log('hub.baseDebt                ', f(this.baseDebt()));
+    console.log('hub.drawnDebt                ', f(this.drawnDebt()));
     console.log('hub.premiumDebt             ', f(this.premiumDebt()));
     console.log('hub.lastUpdateTimestamp     ', this.lastUpdateTimestamp);
 
     console.log('hub.getTotalDebt            ', f(this.getTotalDebt()));
-    console.log('hub.getDebt: baseDebt       ', f(this.getDebt().baseDebt));
+    console.log('hub.getDebt: drawnDebt       ', f(this.getDebt().drawnDebt));
     console.log('hub.getDebt: premiumDebt    ', f(this.getDebt().premiumDebt));
     console.log();
 
@@ -217,7 +217,7 @@ export class Hub {
     const accruedPremium = this.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
     assertGeZero(accruedPremium);
     return {
-      baseDebt: this.convertToDrawnAssets(this.drawnShares),
+      drawnDebt: this.convertToDrawnAssets(this.drawnShares),
       premiumDebt: accruedPremium + this.realisedPremium,
     };
   }
@@ -330,9 +330,9 @@ export class Spoke {
     const user = this.getUser(who);
 
     this.hub.accrue();
-    const {baseDebt, premiumDebt} = this.getUserDebt(user);
-    const {baseDebtRestored, premiumDebtRestored} = this.deductFromPremium(
-      baseDebt,
+    const {drawnDebt, premiumDebt} = this.getUserDebt(user);
+    const {drawnDebtRestored, premiumDebtRestored} = this.deductFromPremium(
+      drawnDebt,
       premiumDebt,
       amount,
       user
@@ -350,7 +350,7 @@ export class Spoke {
       user.realisedPremium - userRealisedPremium,
       user
     ); // settle premium debt
-    const drawnShares = this.hub.restore(baseDebtRestored, premiumDebtRestored, this); // settle base debt
+    const drawnShares = this.hub.restore(drawnDebtRestored, premiumDebtRestored, this); // settle base debt
 
     this.drawnShares -= drawnShares;
     user.drawnShares -= drawnShares;
@@ -364,32 +364,32 @@ export class Spoke {
     return [drawnShares, premiumDebtRestored];
   }
 
-  deductFromPremium(baseDebt: bigint, premiumDebt: bigint, amount: bigint, user: User) {
+  deductFromPremium(drawnDebt: bigint, premiumDebt: bigint, amount: bigint, user: User) {
     if (amount === MAX_UINT) {
-      return {baseDebtRestored: baseDebt, premiumDebtRestored: premiumDebt};
+      return {drawnDebtRestored: drawnDebt, premiumDebtRestored: premiumDebt};
     }
 
-    let baseDebtRestored = 0n,
+    let drawnDebtRestored = 0n,
       premiumDebtRestored = 0n;
 
     if (amount < premiumDebt) {
-      baseDebtRestored = 0n;
+      drawnDebtRestored = 0n;
       premiumDebtRestored = amount;
     } else {
-      baseDebtRestored = amount - premiumDebt;
+      drawnDebtRestored = amount - premiumDebt;
       premiumDebtRestored = premiumDebt;
     }
 
     // sanity
-    if (baseDebtRestored > baseDebt) {
+    if (drawnDebtRestored > drawnDebt) {
       user.log(true, true);
       info(
-        'baseDebtRestored, baseDebt, diff',
-        f(baseDebtRestored),
-        f(baseDebt),
-        absDiff(baseDebtRestored, baseDebt)
+        'drawnDebtRestored, drawnDebt, diff',
+        f(drawnDebtRestored),
+        f(drawnDebt),
+        absDiff(drawnDebtRestored, drawnDebt)
       );
-      throw new Error('baseDebtRestored exceeds baseDebt');
+      throw new Error('drawnDebtRestored exceeds drawnDebt');
     }
 
     if (premiumDebtRestored > premiumDebt) {
@@ -403,7 +403,7 @@ export class Spoke {
       throw new Error('premiumDebtRestored exceeds premiumDebt');
     }
 
-    return {baseDebtRestored, premiumDebtRestored};
+    return {drawnDebtRestored, premiumDebtRestored};
   }
 
   updateUserRiskPremium(who: User) {
@@ -454,7 +454,7 @@ export class Spoke {
     const accruedPremium = this.hub.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
     assertGeZero(accruedPremium);
     return {
-      baseDebt: this.hub.convertToDrawnAssets(this.drawnShares),
+      drawnDebt: this.hub.convertToDrawnAssets(this.drawnShares),
       premiumDebt: accruedPremium + this.realisedPremium,
     };
   }
@@ -465,7 +465,7 @@ export class Spoke {
     const accruedPremium = this.hub.convertToDrawnAssets(user.ghostDrawnShares) - user.offset;
     assertGeZero(accruedPremium);
     return {
-      baseDebt: this.hub.convertToDrawnAssets(user.drawnShares),
+      drawnDebt: this.hub.convertToDrawnAssets(user.drawnShares),
       premiumDebt: accruedPremium + user.realisedPremium,
     };
   }
@@ -505,7 +505,7 @@ export class Spoke {
     console.log('spoke.realisedPremium       ', f(this.realisedPremium));
     console.log('spoke.suppliedShares        ', f(this.suppliedShares));
     console.log('spoke.getTotalDebt          ', f(this.getTotalDebt()));
-    console.log('spoke.getDebt: baseDebt     ', f(this.getDebt().baseDebt));
+    console.log('spoke.getDebt: drawnDebt     ', f(this.getDebt().drawnDebt));
     console.log('spoke.getDebt: premiumDebt  ', f(this.getDebt().premiumDebt));
     console.log();
     if (hub) this.hub.log();
@@ -559,9 +559,9 @@ export class User {
 
   repay(amount: bigint) {
     this.beforeHook('repay', amount);
-    const [baseDebtSharesRestored, premiumAmountRestored] = this.spoke.repay(amount, this);
+    const [drawnDebtSharesRestored, premiumAmountRestored] = this.spoke.repay(amount, this);
     this.afterHook();
-    return [baseDebtSharesRestored, premiumAmountRestored];
+    return [drawnDebtSharesRestored, premiumAmountRestored];
   }
 
   updateRiskPremium() {
@@ -598,7 +598,7 @@ export class User {
     console.log('user.suppliedShares         ', f(this.suppliedShares));
     console.log('user.riskPremium            ', formatBps(this.riskPremium));
     console.log('user.getTotalDebt           ', f(this.spoke.getUserTotalDebt(this)));
-    console.log('user.getDebt: baseDebt      ', f(this.spoke.getUserDebt(this).baseDebt));
+    console.log('user.getDebt: drawnDebt      ', f(this.spoke.getUserDebt(this).drawnDebt));
     console.log('user.getDebt: premiumDebt   ', f(this.spoke.getUserDebt(this).premiumDebt));
     console.log();
     if (spoke) this.spoke.log();
@@ -721,9 +721,9 @@ export class System {
   invariant_sumOfBaseDebt() {
     let fail = false,
       diff = 0n;
-    const hubBaseDebt = this.hub.getDebt().baseDebt;
-    const spokeDrawn = this.spokes.reduce((sum, spoke) => sum + spoke.getDebt().baseDebt, 0n);
-    const userBaseDebt = this.users.reduce((sum, user) => sum + user.getDebt().baseDebt, 0n);
+    const hubBaseDebt = this.hub.getDebt().drawnDebt;
+    const spokeDrawn = this.spokes.reduce((sum, spoke) => sum + spoke.getDebt().drawnDebt, 0n);
+    const userBaseDebt = this.users.reduce((sum, user) => sum + user.getDebt().drawnDebt, 0n);
     if ((diff = absDiff(hubBaseDebt, spokeDrawn)) > PRECISION) {
       console.error('hubBaseDebt !== spokeDrawn, diff', f(hubBaseDebt), f(spokeDrawn), diff);
       fail = true;
@@ -745,7 +745,7 @@ export class System {
 
     if (hubBaseDebt === 0n && spokeDrawn + userBaseDebt !== 0n) {
       console.error(
-        'spoke & user dust baseDebt remaining when hub baseDebt is completely repaid',
+        'spoke & user dust drawnDebt remaining when hub drawnDebt is completely repaid',
         'spokeDrawn %d, userBaseDebt %d',
         f(spokeDrawn),
         f(userBaseDebt)

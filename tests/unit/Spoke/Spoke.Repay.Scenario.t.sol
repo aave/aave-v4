@@ -230,7 +230,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       // DAI repayment
       debtsBefore[i][0] = getUserDebt(spoke1, user, _daiReserveId(spoke1));
       (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
-        debtsBefore[i][0].baseDebt,
+        debtsBefore[i][0].drawnDebt,
         debtsBefore[i][0].premiumDebt,
         usersInfo[i].daiInfo.repayAmount,
         daiAssetId
@@ -254,7 +254,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       // WETH repayment
       debtsBefore[i][1] = getUserDebt(spoke1, user, _wethReserveId(spoke1));
       (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
-        debtsBefore[i][1].baseDebt,
+        debtsBefore[i][1].drawnDebt,
         debtsBefore[i][1].premiumDebt,
         usersInfo[i].wethInfo.repayAmount,
         wethAssetId
@@ -278,7 +278,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       // USDX repayment
       debtsBefore[i][2] = getUserDebt(spoke1, user, _usdxReserveId(spoke1));
       (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
-        debtsBefore[i][2].baseDebt,
+        debtsBefore[i][2].drawnDebt,
         debtsBefore[i][2].premiumDebt,
         usersInfo[i].usdxInfo.repayAmount,
         usdxAssetId
@@ -302,7 +302,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       // WBTC repayment
       debtsBefore[i][3] = getUserDebt(spoke1, user, _wbtcReserveId(spoke1));
       (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
-        debtsBefore[i][3].baseDebt,
+        debtsBefore[i][3].drawnDebt,
         debtsBefore[i][3].premiumDebt,
         usersInfo[i].wbtcInfo.repayAmount,
         wbtcAssetId
@@ -574,7 +574,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       // DAI repayment
       debtsBefore[i][0] = getUserDebt(spoke1, user, _daiReserveId(spoke1));
       (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
-        debtsBefore[i][0].baseDebt,
+        debtsBefore[i][0].drawnDebt,
         debtsBefore[i][0].premiumDebt,
         usersInfo[i].daiInfo.repayAmount,
         daiAssetId
@@ -598,7 +598,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       // WETH repayment
       debtsBefore[i][1] = getUserDebt(spoke1, user, _wethReserveId(spoke1));
       (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
-        debtsBefore[i][1].baseDebt,
+        debtsBefore[i][1].drawnDebt,
         debtsBefore[i][1].premiumDebt,
         usersInfo[i].wethInfo.repayAmount,
         wethAssetId
@@ -622,7 +622,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       // USDX repayment
       debtsBefore[i][2] = getUserDebt(spoke1, user, _usdxReserveId(spoke1));
       (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
-        debtsBefore[i][2].baseDebt,
+        debtsBefore[i][2].drawnDebt,
         debtsBefore[i][2].premiumDebt,
         usersInfo[i].usdxInfo.repayAmount,
         usdxAssetId
@@ -646,7 +646,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       // WBTC repayment
       debtsBefore[i][3] = getUserDebt(spoke1, user, _wbtcReserveId(spoke1));
       (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
-        debtsBefore[i][3].baseDebt,
+        debtsBefore[i][3].drawnDebt,
         debtsBefore[i][3].premiumDebt,
         usersInfo[i].wbtcInfo.repayAmount,
         wbtcAssetId
@@ -774,7 +774,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
       // DAI repayment
       (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
-        debtsBefore[i].baseDebt,
+        debtsBefore[i].drawnDebt,
         debtsBefore[i].premiumDebt,
         usersInfo[i].repayAmount,
         daiAssetId
@@ -884,7 +884,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
       // DAI repayment
       (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
-        debtsBefore[i].baseDebt,
+        debtsBefore[i].drawnDebt,
         debtsBefore[i].premiumDebt,
         usersInfo[i].repayAmount,
         daiAssetId
@@ -987,7 +987,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Bob repays the first repay amount
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
-      bobDaiBefore.baseDebt,
+      bobDaiBefore.drawnDebt,
       bobDaiBefore.premiumDebt,
       action1.repayAmount,
       daiAssetId
@@ -1084,7 +1084,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Bob repays the second repay amount
     (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
-      bobDaiBefore.baseDebt,
+      bobDaiBefore.drawnDebt,
       bobDaiBefore.premiumDebt,
       action2.repayAmount,
       daiAssetId
@@ -1152,7 +1152,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     Debts memory bobDaiBefore;
     Debts memory bobWethBefore;
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+    (bobDaiBefore.drawnDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       bob
     );
@@ -1168,7 +1168,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+    (bobDaiBefore.drawnDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       bob
     );
@@ -1176,11 +1176,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'Accrued interest increased bob dai debt');
 
     // Calculate full debt before repayment
-    uint256 fullDebt = bobDaiBefore.baseDebt + bobDaiBefore.premiumDebt;
+    uint256 fullDebt = bobDaiBefore.drawnDebt + bobDaiBefore.premiumDebt;
     uint256 partialRepayAmount = fullDebt / 2;
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
-      bobDaiBefore.baseDebt,
+      bobDaiBefore.drawnDebt,
       bobDaiBefore.premiumDebt,
       partialRepayAmount,
       daiAssetId
@@ -1200,7 +1200,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiAfter;
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiAfter.baseDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
+    (bobDaiAfter.drawnDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       bob
     );
@@ -1235,7 +1235,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     uint256 restoreAmount = bobDaiAfter.totalDebt;
     (baseRestored, premiumRestored) = _calculateExactRestoreAmount(
-      bobDaiAfter.baseDebt,
+      bobDaiAfter.drawnDebt,
       bobDaiAfter.premiumDebt,
       restoreAmount,
       daiAssetId
@@ -1255,7 +1255,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiAfter.baseDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
+    (bobDaiAfter.drawnDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       bob
     );

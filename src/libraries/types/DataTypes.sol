@@ -142,7 +142,7 @@ library DataTypes {
     uint256 totalDebt;
     uint256 healthFactor;
     uint256 liquidationBonus;
-    uint256 baseDebtToLiquidate;
+    uint256 drawnDebtToLiquidate;
     uint256 premiumDebtToLiquidate;
     uint256 closeFactor;
     uint256 collateralFactor;
@@ -170,13 +170,13 @@ library DataTypes {
     uint256 collateralAssetId;
     uint256 debtReserveId;
     uint256 collateralReserveId;
-    uint256 baseDebt;
+    uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 accruedPremium;
     uint256 collateralToLiquidate;
     uint256 liquidationFeeAmount;
     uint256 liquidationFeeShares;
-    uint256 baseDebtToLiquidate;
+    uint256 drawnDebtToLiquidate;
     uint256 premiumDebtToLiquidate;
     uint256 restoredShares;
     uint256 withdrawnShares;
@@ -197,10 +197,10 @@ library DataTypes {
   struct ExecuteRepayLocalVars {
     IHub hub;
     uint256 assetId;
-    uint256 baseDebt;
+    uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 accruedPremium;
-    uint256 baseDebtRestored;
+    uint256 drawnDebtRestored;
     uint256 premiumDebtRestored;
     uint256 userpremiumShares;
     uint256 userPremiumOffset;

@@ -12,7 +12,7 @@ contract SpokeBase is Base {
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
   struct Debts {
-    uint256 baseDebt;
+    uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 totalDebt;
   }
@@ -42,7 +42,7 @@ contract SpokeBase is Base {
 
   struct DebtData {
     uint256 totalDebt;
-    uint256 baseDebt;
+    uint256 drawnDebt;
     uint256 premiumDebt;
   }
 
@@ -212,8 +212,8 @@ contract SpokeBase is Base {
     });
     skip(365 days);
 
-    (uint256 baseDebt, uint256 premiumDebt) = spoke.getReserveDebt(reserveId);
-    assertGt(baseDebt, 0); // non-zero premium debt
+    (uint256 drawnDebt, uint256 premiumDebt) = spoke.getReserveDebt(reserveId);
+    assertGt(drawnDebt, 0); // non-zero premium debt
 
     if (withPremium) {
       assertGt(premiumDebt, 0);
@@ -537,8 +537,8 @@ contract SpokeBase is Base {
     uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPos.premiumShares) -
       userPos.premiumOffset;
     userDebt.premiumDebt = userPos.realizedPremium + accruedPremium;
-    userDebt.baseDebt = hub.convertToDrawnAssets(assetId, userPos.drawnShares);
-    userDebt.totalDebt = userDebt.baseDebt + userDebt.premiumDebt;
+    userDebt.drawnDebt = hub.convertToDrawnAssets(assetId, userPos.drawnShares);
+    userDebt.totalDebt = userDebt.drawnDebt + userDebt.premiumDebt;
   }
 
   function _getUserDebt(
@@ -548,8 +548,8 @@ contract SpokeBase is Base {
   ) internal view returns (DebtData memory) {
     DebtData memory userDebt;
     userDebt.totalDebt = spoke.getUserTotalDebt(reserveId, user);
-    (userDebt.baseDebt, userDebt.premiumDebt) = spoke.getUserDebt(reserveId, user);
-    assertEq(userDebt.totalDebt, userDebt.baseDebt + userDebt.premiumDebt);
+    (userDebt.drawnDebt, userDebt.premiumDebt) = spoke.getUserDebt(reserveId, user);
+    assertEq(userDebt.totalDebt, userDebt.drawnDebt + userDebt.premiumDebt);
     return userDebt;
   }
 
@@ -592,7 +592,11 @@ contract SpokeBase is Base {
     DebtData memory expectedUserDebt,
     string memory label
   ) internal pure {
-    assertEq(userDebt.baseDebt, expectedUserDebt.baseDebt, string.concat('user base debt ', label));
+    assertEq(
+      userDebt.drawnDebt,
+      expectedUserDebt.drawnDebt,
+      string.concat('user base debt ', label)
+    );
     assertApproxEqAbs(
       userDebt.premiumDebt,
       expectedUserDebt.premiumDebt,
@@ -671,18 +675,18 @@ contract SpokeBase is Base {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
 
     reserveDebt.totalDebt = spoke.getReserveTotalDebt(reserveId);
-    (reserveDebt.baseDebt, reserveDebt.premiumDebt) = spoke.getReserveDebt(reserveId);
+    (reserveDebt.drawnDebt, reserveDebt.premiumDebt) = spoke.getReserveDebt(reserveId);
 
     for (uint256 i = 0; i < users.length; ++i) {
       DataTypes.UserPosition memory userData = getUserInfo(spoke, users[i], reserveId);
-      (uint256 baseDebt, uint256 premiumDebt) = spoke.getUserDebt(reserveId, users[i]);
+      (uint256 drawnDebt, uint256 premiumDebt) = spoke.getUserDebt(reserveId, users[i]);
 
-      usersDebt.baseDebt += baseDebt;
+      usersDebt.drawnDebt += drawnDebt;
       usersDebt.premiumDebt += premiumDebt;
-      usersDebt.totalDebt += baseDebt + premiumDebt;
+      usersDebt.totalDebt += drawnDebt + premiumDebt;
 
       assertEq(
-        baseDebt,
+        drawnDebt,
         hub.convertToDrawnAssets(assetId, userData.drawnShares),
         string.concat('user ', vm.toString(i), ' base debt ', label)
       );
@@ -696,8 +700,8 @@ contract SpokeBase is Base {
     }
 
     assertEq(
-      reserveDebt.baseDebt,
-      usersDebt.baseDebt,
+      reserveDebt.drawnDebt,
+      usersDebt.drawnDebt,
       string.concat('reserve vs sum users base debt ', label)
     );
     assertEq(
@@ -783,13 +787,13 @@ contract SpokeBase is Base {
     address user,
     uint256 reserveId
   ) internal view returns (Debts memory data) {
-    (data.baseDebt, data.premiumDebt) = spoke.getUserDebt(reserveId, user);
-    data.totalDebt = data.baseDebt + data.premiumDebt;
+    (data.drawnDebt, data.premiumDebt) = spoke.getUserDebt(reserveId, user);
+    data.totalDebt = data.drawnDebt + data.premiumDebt;
   }
 
   // todo: merge with _assertUserDebt
   function assertEq(Debts memory a, Debts memory b) internal pure {
-    assertEq(a.baseDebt, b.baseDebt, 'base debt');
+    assertEq(a.drawnDebt, b.drawnDebt, 'base debt');
     assertEq(a.premiumDebt, b.premiumDebt, 'premium debt');
     assertEq(a.totalDebt, b.totalDebt, 'total debt');
     assertEq(keccak256(abi.encode(a)), keccak256(abi.encode(b)), 'debt data'); // sanity

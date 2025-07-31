@@ -41,7 +41,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     uint256 daiRepayAmount = vm.randomUint(1, bobDebt.premiumDebt - 1);
 
     (uint256 baseToRestore, uint256 premiumToRestore) = _calculateExactRestoreAmount(
-      bobDebt.baseDebt,
+      bobDebt.drawnDebt,
       bobDebt.premiumDebt,
       daiRepayAmount,
       daiAssetId
@@ -67,7 +67,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     bobDebt = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
     // repay partial base debt
-    daiRepayAmount = bobDebt.premiumDebt + bound(vm.randomUint(), 1, bobDebt.baseDebt - 1);
+    daiRepayAmount = bobDebt.premiumDebt + bound(vm.randomUint(), 1, bobDebt.drawnDebt - 1);
     supplyExRateBefore = getSupplyExRate(daiAssetId);
     debtExRateBefore = getDebtExRate(daiAssetId);
 
@@ -250,7 +250,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     assertEq(hub.convertToDrawnShares(daiAssetId, repayAmount), 0, 'Shares nonzero');
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
-      bobDaiDebtBefore.baseDebt,
+      bobDaiDebtBefore.drawnDebt,
       bobDaiDebtBefore.premiumDebt,
       repayAmount,
       daiAssetId
@@ -301,7 +301,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     Debts memory bobWethBefore;
 
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+    (bobDaiBefore.drawnDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       bob
     );
@@ -332,7 +332,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+    (bobDaiBefore.drawnDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       bob
     );
@@ -344,7 +344,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     assertEq(hub.convertToDrawnShares(daiAssetId, repayAmount), 0, 'Shares nonzero');
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
-      bobDaiBefore.baseDebt,
+      bobDaiBefore.drawnDebt,
       bobDaiBefore.premiumDebt,
       repayAmount,
       daiAssetId
@@ -368,7 +368,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     );
     Debts memory bobDaiAfter;
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiAfter.baseDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
+    (bobDaiAfter.drawnDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       bob
     );
@@ -427,7 +427,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     Debts memory bobWethBefore;
     bobWethBefore.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+    (bobDaiBefore.drawnDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       bob
     );
@@ -447,7 +447,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+    (bobDaiBefore.drawnDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       bob
     );
@@ -464,10 +464,10 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     assertApproxEqAbs(bobDaiBefore.premiumDebt, 0, 1, 'bob dai premium debt after premium repay');
 
     // Bob repays base debt
-    uint256 daiRepayAmount = bobDaiBefore.baseDebt - daiBorrowAmount;
+    uint256 daiRepayAmount = bobDaiBefore.drawnDebt - daiBorrowAmount;
     assertGt(daiRepayAmount, 0); // interest is not zero
     (uint256 baseRestored, ) = _calculateExactRestoreAmount(
-      bobDaiBefore.baseDebt,
+      bobDaiBefore.drawnDebt,
       bobDaiBefore.premiumDebt,
       daiRepayAmount,
       daiAssetId
@@ -493,13 +493,13 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     Debts memory bobWethAfter;
     bobWethAfter.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiAfter.baseDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
+    (bobDaiAfter.drawnDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       bob
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertApproxEqAbs(bobDaiAfter.baseDebt, daiBorrowAmount, 2, 'bob dai base debt final balance');
+    assertApproxEqAbs(bobDaiAfter.drawnDebt, daiBorrowAmount, 2, 'bob dai base debt final balance');
     assertApproxEqAbs(bobDaiAfter.premiumDebt, 0, 1, 'bob dai premium debt final balance');
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethAfter.totalDebt, bobWethBefore.totalDebt);
@@ -544,7 +544,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+    (bobDaiBefore.drawnDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       bob
     );
@@ -563,7 +563,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiBefore.baseDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
+    (bobDaiBefore.drawnDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       bob
     );
@@ -571,7 +571,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     assertEq(bobDaiBefore.premiumDebt, 0, 'bob dai premium debt before');
 
     // Bob repays base debt
-    uint256 daiRepayAmount = bobDaiBefore.baseDebt - daiBorrowAmount;
+    uint256 daiRepayAmount = bobDaiBefore.drawnDebt - daiBorrowAmount;
     assertGt(daiRepayAmount, 0); // interest is not zero
 
     vm.expectEmit(address(spoke1));
@@ -594,13 +594,13 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     Debts memory bobWethAfter;
     bobWethAfter.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    (bobDaiAfter.baseDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
+    (bobDaiAfter.drawnDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       bob
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertApproxEqAbs(bobDaiAfter.baseDebt, daiBorrowAmount, 2, 'bob dai base debt final balance');
+    assertApproxEqAbs(bobDaiAfter.drawnDebt, daiBorrowAmount, 2, 'bob dai base debt final balance');
     assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai premium debt final balance');
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethAfter.totalDebt, bobWethBefore.totalDebt);

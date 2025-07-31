@@ -272,13 +272,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.ExecuteRepayLocalVars memory vars;
     vars.hub = reserve.hub;
     vars.assetId = reserve.assetId;
-    (vars.baseDebt, vars.premiumDebt, vars.accruedPremium) = _getUserDebt(
+    (vars.drawnDebt, vars.premiumDebt, vars.accruedPremium) = _getUserDebt(
       vars.hub,
       vars.assetId,
       userPosition
     );
-    (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
-      vars.baseDebt,
+    (vars.drawnDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
+      vars.drawnDebt,
       vars.premiumDebt,
       amount
     );
@@ -290,7 +290,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     });
     vars.restoredShares = vars.hub.restore(
       vars.assetId,
-      vars.baseDebtRestored,
+      vars.drawnDebtRestored,
       vars.premiumDebtRestored,
       premiumDelta,
       msg.sender
@@ -415,23 +415,23 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
     DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    (uint256 baseDebt, uint256 premiumDebt, ) = _getUserDebt(
+    (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
       reserve.hub,
       reserve.assetId,
       userPosition
     );
-    return (baseDebt, premiumDebt);
+    return (drawnDebt, premiumDebt);
   }
 
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
     DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    (uint256 baseDebt, uint256 premiumDebt, ) = _getUserDebt(
+    (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
       reserve.hub,
       reserve.assetId,
       userPosition
     );
-    return baseDebt + premiumDebt;
+    return drawnDebt + premiumDebt;
   }
 
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
@@ -463,13 +463,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
-    (uint256 baseDebt, uint256 premiumDebt) = _getReserveDebt(_reserves[reserveId]);
-    return (baseDebt, premiumDebt);
+    (uint256 drawnDebt, uint256 premiumDebt) = _getReserveDebt(_reserves[reserveId]);
+    return (drawnDebt, premiumDebt);
   }
 
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
-    (uint256 baseDebt, uint256 premiumDebt) = _getReserveDebt(_reserves[reserveId]);
-    return baseDebt + premiumDebt;
+    (uint256 drawnDebt, uint256 premiumDebt) = _getReserveDebt(_reserves[reserveId]);
+    return drawnDebt + premiumDebt;
   }
 
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256) {
@@ -703,12 +703,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   // @dev allows donation on base debt
   function _calculateRestoreAmount(
-    uint256 baseDebt,
+    uint256 drawnDebt,
     uint256 premiumDebt,
     uint256 amount
   ) internal pure returns (uint256, uint256) {
-    if (amount >= baseDebt + premiumDebt) {
-      return (baseDebt, premiumDebt);
+    if (amount >= drawnDebt + premiumDebt) {
+      return (drawnDebt, premiumDebt);
     }
     if (amount <= premiumDebt) {
       return (0, amount);
@@ -881,8 +881,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
-    (uint256 baseDebt, uint256 premiumDebt, ) = _getUserDebt(hub, assetId, userPosition);
-    return ((baseDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
+    (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(hub, assetId, userPosition);
+    return ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
   }
 
   function _getUserBalanceInBaseCurrency(
@@ -1006,7 +1006,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         IHub hub = reserve.hub;
         uint256 assetId = reserve.assetId;
         (
-          uint256 baseDebtRestored,
+          uint256 drawnDebtRestored,
           uint256 premiumDebtRestored,
           uint256 accruedPremium
         ) = _getUserDebt(hub, assetId, userPosition);
@@ -1018,7 +1018,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         });
         uint256 deficitShares = hub.reportDeficit(
           assetId,
-          baseDebtRestored,
+          drawnDebtRestored,
           premiumDebtRestored,
           premiumDelta
         );
@@ -1090,7 +1090,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.debtReserveId
       ];
 
-      (vars.baseDebt, vars.premiumDebt, vars.accruedPremium) = _getUserDebt(
+      (vars.drawnDebt, vars.premiumDebt, vars.accruedPremium) = _getUserDebt(
         vars.debtReserveHub,
         vars.debtAssetId,
         userDebtPosition
@@ -1099,7 +1099,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       (
         vars.collateralToLiquidate,
         vars.liquidationFeeAmount,
-        vars.baseDebtToLiquidate,
+        vars.drawnDebtToLiquidate,
         vars.premiumDebtToLiquidate,
         vars.hasDeficit
       ) = _calculateLiquidationParameters(
@@ -1107,7 +1107,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         debtReserve,
         vars.user,
         debtsToCover[vars.i],
-        vars.baseDebt,
+        vars.drawnDebt,
         vars.premiumDebt
       );
 
@@ -1138,7 +1138,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         });
         vars.restoredShares = vars.debtReserveHub.restore(
           vars.debtAssetId,
-          vars.baseDebtToLiquidate,
+          vars.drawnDebtToLiquidate,
           vars.premiumDebtToLiquidate,
           vars.premiumDelta,
           liquidator
@@ -1168,7 +1168,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.collateralUnderlying,
         vars.debtUnderlying,
         vars.user,
-        vars.baseDebtToLiquidate + vars.premiumDebtToLiquidate,
+        vars.drawnDebtToLiquidate + vars.premiumDebtToLiquidate,
         vars.collateralToLiquidate,
         liquidator
       );
@@ -1193,11 +1193,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @param debtReserve The debt reserve being repaid during liquidation.
    * @param user The address of the user being liquidated.
    * @param debtToCover The amount of debt to cover.
-   * @param baseDebt The base debt of the user.
+   * @param drawnDebt The base debt of the user.
    * @param premiumDebt The premium debt of the user.
    * @return actualCollateralToLiquidate The amount of collateral to liquidate.
    * @return liquidationFeeAmount The amount of protocol fee.
-   * @return baseDebtToLiquidate The amount of base debt to repay.
+   * @return drawnDebtToLiquidate The amount of base debt to repay.
    * @return premiumDebtToLiquidate The amount of premium debt to repay.
    * @return hasDeficit The flag representing if the user will have deficit to report.
    */
@@ -1206,14 +1206,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.Reserve storage debtReserve,
     address user,
     uint256 debtToCover,
-    uint256 baseDebt,
+    uint256 drawnDebt,
     uint256 premiumDebt
   ) internal view returns (uint256, uint256, uint256, uint256, bool) {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;
     vars.userCollateralBalance = getUserSuppliedAmount(vars.collateralReserveId, user);
-    vars.totalDebt = baseDebt + premiumDebt;
+    vars.totalDebt = drawnDebt + premiumDebt;
     DataTypes.DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[
       vars.collateralReserveId
     ][_userPositions[user][vars.collateralReserveId].configKey];
@@ -1259,8 +1259,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.liquidationFeeAmount,
       vars.hasDeficit
     ) = vars.calculateAvailableCollateralToLiquidate();
-    (vars.baseDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
-      baseDebt,
+    (vars.drawnDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
+      drawnDebt,
       premiumDebt,
       vars.actualDebtToLiquidate
     );
@@ -1268,7 +1268,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return (
       vars.actualCollateralToLiquidate,
       vars.liquidationFeeAmount,
-      vars.baseDebtToLiquidate,
+      vars.drawnDebtToLiquidate,
       vars.premiumDebtToLiquidate,
       vars.hasDeficit
     );

@@ -73,7 +73,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(reserveId, bob);
     {
-      uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, drawnRate, startTime);
+      uint256 drawnDebt = _calculateExpectedBaseDebt(borrowAmount, drawnRate, startTime);
       uint256 expectedpremiumShares = bobPosition.drawnShares.percentMulUp(userRp);
       uint256 expectedPremiumDebt = hub.convertToDrawnAssets(assetId, expectedpremiumShares) -
         bobPosition.premiumOffset +
@@ -83,7 +83,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
         spoke1,
         reserveId,
         bob,
-        baseDebt,
+        drawnDebt,
         expectedPremiumDebt,
         'after accrual'
       );

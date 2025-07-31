@@ -579,8 +579,8 @@ contract Hub is IHub, AccessManaged {
     require(from != address(this), InvalidFromAddress());
     require(drawnAmount + premiumAmount > 0, InvalidRestoreAmount());
     require(spoke.config.active, SpokeNotActive());
-    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeOwed(asset, spoke);
-    require(drawnAmount <= baseDebt, SurplusAmountRestored(baseDebt));
+    (uint256 drawnDebt, uint256 premiumDebt) = _getSpokeOwed(asset, spoke);
+    require(drawnAmount <= drawnDebt, SurplusAmountRestored(drawnDebt));
     require(premiumAmount <= premiumDebt, SurplusAmountRestored(premiumDebt));
   }
 
@@ -601,8 +601,8 @@ contract Hub is IHub, AccessManaged {
   ) internal view {
     require(spoke.config.active, SpokeNotActive());
     require(baseAmount + premiumAmount != 0, InvalidDeficitAmount());
-    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeOwed(asset, spoke);
-    require(baseAmount <= baseDebt, SurplusDeficitReported(baseDebt));
+    (uint256 drawnDebt, uint256 premiumDebt) = _getSpokeOwed(asset, spoke);
+    require(baseAmount <= drawnDebt, SurplusDeficitReported(drawnDebt));
     require(premiumAmount <= premiumDebt, SurplusDeficitReported(premiumDebt));
   }
 

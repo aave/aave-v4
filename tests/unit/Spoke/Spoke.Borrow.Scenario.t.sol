@@ -530,7 +530,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
 
     state.daiBob.userPosBefore = spoke1.getUserPosition(state.daiReserveId, bob);
     uint40 lastTimestamp = uint40(vm.getBlockTimestamp());
-    (uint256 baseDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
+    (uint256 drawnDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
 
     skip(skipTime);
 
@@ -549,7 +549,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     _assertRealizedPremiumCalcMatchesNaive(
       spoke1,
       state.daiReserveId,
-      baseDebt,
+      drawnDebt,
       state.daiBob.userPosBefore,
       lastTimestamp
     );
@@ -558,9 +558,9 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     vm.prank(bob);
     spoke1.borrow(state.daiReserveId, borrowAmount2, bob);
 
-    (baseDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
+    (drawnDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
     // check that accrued base debt matches expected
-    assertApproxEqAbs(baseDebt, expectedBaseDebt, 3, 'base debt after borrow2');
+    assertApproxEqAbs(drawnDebt, expectedBaseDebt, 3, 'base debt after borrow2');
 
     // assertions for 2nd borrow
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'spoke1 bob dai after');
@@ -568,7 +568,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       spoke: spoke1,
       reserveId: state.daiReserveId,
       user: bob,
-      debtAmount: baseDebt,
+      debtAmount: drawnDebt,
       suppliedAmount: state.daiBob.supplyAmount,
       expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
       label: 'bob dai data after'
