@@ -72,7 +72,7 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supply(reserveId, POSITION_MANAGER, alice, amount);
+    emit ISpokeBase.Supply(reserveId, POSITION_MANAGER, alice, amount);
     Utils.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
@@ -101,7 +101,7 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Withdraw(reserveId, POSITION_MANAGER, alice, amount);
+    emit ISpokeBase.Withdraw(reserveId, POSITION_MANAGER, alice, amount);
     Utils.withdraw(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
@@ -129,7 +129,7 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Borrow(reserveId, POSITION_MANAGER, alice, amount);
+    emit ISpokeBase.Borrow(reserveId, POSITION_MANAGER, alice, amount);
     Utils.borrow(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
@@ -161,7 +161,7 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub), repayAmount);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(reserveId, POSITION_MANAGER, alice, repayAmount);
+    emit ISpokeBase.Repay(reserveId, POSITION_MANAGER, alice, repayAmount);
     Utils.repay(spoke1, reserveId, POSITION_MANAGER, repayAmount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);

@@ -63,7 +63,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Bob repays half of principal debt
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(
+    emit ISpokeBase.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -174,7 +174,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Bob repays half of principal debt
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, daiRepayAmount);
+    emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, daiRepayAmount);
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
@@ -271,7 +271,7 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(
+    emit ISpokeBase.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -372,7 +372,7 @@ contract SpokeRepayTest is SpokeBase {
     daiRepayAmount = bound(daiRepayAmount, 1, bobDaiPremiumDebtBefore);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, 0);
+    emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0);
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
@@ -457,7 +457,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 fullDebt = bobDaiBefore.baseDebt + bobDaiBefore.premiumDebt;
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(
+    emit ISpokeBase.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -560,7 +560,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Bob repays
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(
+    emit ISpokeBase.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -678,7 +678,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Bob repays
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(
+    emit ISpokeBase.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -802,7 +802,7 @@ contract SpokeRepayTest is SpokeBase {
       vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
-      emit ISpoke.Repay(
+      emit ISpokeBase.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -922,7 +922,7 @@ contract SpokeRepayTest is SpokeBase {
       );
       deal(address(tokenList.dai), bob, daiRepayAmount);
       vm.expectEmit(address(spoke1));
-      emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, 0);
+      emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0);
     }
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
@@ -1040,7 +1040,7 @@ contract SpokeRepayTest is SpokeBase {
       vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
-      emit ISpoke.Repay(
+      emit ISpokeBase.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -1154,7 +1154,7 @@ contract SpokeRepayTest is SpokeBase {
       vm.expectRevert(ILiquidityHub.InvalidRestoreAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
-      emit ISpoke.Repay(
+      emit ISpokeBase.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -1508,7 +1508,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 bobTotalDebtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(
+    emit ISpokeBase.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
