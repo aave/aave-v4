@@ -49,7 +49,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, 0);
-    Utils.repay(spoke1, _daiReserveId(spoke1), bob, daiRepayAmount, bob);
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
     _checkSupplyRateIncreasing(
       supplyExRateBefore,
@@ -87,7 +88,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     supplyExRateBefore = getSupplyExRate(daiAssetId);
     debtExRateBefore = getDebtExRate(daiAssetId);
 
-    Utils.repay(spoke1, _daiReserveId(spoke1), bob, type(uint256).max, bob);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
 
     _checkSupplyRateIncreasing(
       supplyExRateBefore,
@@ -140,7 +141,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     supplyExRateBefore = getSupplyExRate(daiAssetId);
 
     // alice repays full
-    Utils.repay(spoke1, _daiReserveId(spoke1), alice, type(uint256).max, alice);
+    Utils.repay(spoke1, _daiReserveId(spoke1), alice, UINT256_MAX, alice);
 
     _checkSupplyRateIncreasing(
       supplyExRateBefore,
@@ -188,7 +189,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     skip(1);
 
     // alice repays full
-    Utils.repay(spoke1, _daiReserveId(spoke1), alice, type(uint256).max, alice);
+    Utils.repay(spoke1, _daiReserveId(spoke1), alice, UINT256_MAX, alice);
 
     exchangeRateAfter = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGt(exchangeRateAfter, exchangeRateBefore, 'supply rate decreased');
@@ -259,7 +260,9 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     vm.expectEmit(address(tokenList.dai));
     emit IERC20.Transfer(bob, address(hub), repayAmount);
-    Utils.repay(spoke1, _daiReserveId(spoke1), bob, repayAmount, bob);
+
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), repayAmount, bob);
 
     // debt remains unchanged & is donated (premium was already 0)
     assertEq(getUserDebt(spoke1, bob, _daiReserveId(spoke1)), bobDaiDebtBefore);

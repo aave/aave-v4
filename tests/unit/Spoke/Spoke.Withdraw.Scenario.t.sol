@@ -71,7 +71,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: bob,
-      amount: type(uint256).max,
+      amount: UINT256_MAX,
       onBehalfOf: bob
     });
 
@@ -382,7 +382,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // Deal caller the balance they will supply, and approve hub
     deal(reserve.underlying, caller, callerStartingBalance);
     vm.prank(caller);
-    IERC20(reserve.underlying).approve(address(hub), type(uint256).max);
+    IERC20(reserve.underlying).approve(address(hub), UINT256_MAX);
 
     // Set up initial state of caller by supplying their starting balance
     Utils.supply({

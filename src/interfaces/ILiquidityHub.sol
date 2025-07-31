@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 /**
  * @title ILiquidityHub
@@ -56,6 +55,13 @@ interface ILiquidityHub is IAccessManaged {
     address indexed spoke,
     DataTypes.PremiumDelta premiumDelta
   );
+  event DeficitReported(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 baseRestoredShares,
+    DataTypes.PremiumDelta premiumDelta,
+    uint256 totalRestoredAmount
+  );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
 
   error InvalidSharesAmount();
@@ -78,8 +84,10 @@ interface ILiquidityHub is IAccessManaged {
   error InvalidAssetDecimals();
   error InvalidLiquidityFee();
   error InvalidUnderlying();
-  error PremiumDebtChanged();
+  error InvalidDebtChange();
+  error InvalidDeficitAmount();
   error InvalidFeeReceiver();
+  error SurplusDeficitReported(uint256 amount);
   error SpokeNotActive();
   error InvalidFeeShares();
 
@@ -176,7 +184,7 @@ interface ILiquidityHub is IAccessManaged {
   /**
    * @notice Refreshes premium debt accounting.
    * @dev Only callable by active spokes, reverts with `SpokeNotActive` otherwise.
-   * @dev Overall premium debt should not decrease, reverts with `PremiumDebtChanged` otherwise.
+   * @dev Overall premium debt should not decrease, reverts with `InvalidDebtChange` otherwise.
    * @param assetId The identifier of the asset.
    * @param premiumDelta The change in premium debt.
    */
@@ -192,6 +200,22 @@ interface ILiquidityHub is IAccessManaged {
    * @param shares The amount of shares to pay to feeReceiver.
    */
   function payFee(uint256 assetId, uint256 shares) external;
+
+  /**
+   * @notice Reports deficit.
+   * @dev Only callable by spokes.
+   * @param assetId The identifier of the asset.
+   * @param baseAmount The base debt to report as deficit.
+   * @param premiumAmount The premium debt to report as deficit.
+   * @param premiumDelta The premium debt delta to apply which signal premium debt deficit.
+   * @return The amount of base debt shares reported as deficit.
+   */
+  function reportDeficit(
+    uint256 assetId,
+    uint256 baseAmount,
+    uint256 premiumAmount,
+    DataTypes.PremiumDelta calldata premiumDelta
+  ) external returns (uint256);
 
   /**
    * @notice Converts the specified amount of assets to shares amount added upon an Add action.

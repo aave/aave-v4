@@ -106,7 +106,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
 
     assertEq(
       LiquidationLogic.calculateDebtToRestoreCloseFactor(args),
-      type(uint256).max,
+      UINT256_MAX,
       'closeFactorDebt is max uint'
     );
   }

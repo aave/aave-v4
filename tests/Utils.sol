@@ -19,10 +19,7 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    vm.startPrank(user);
-    IERC20(hub.getAsset(assetId).underlying).approve(address(hub), amount);
-    vm.stopPrank();
-
+    approve(hub, assetId, caller, amount);
     vm.prank(caller);
     return hub.add(assetId, amount, user);
   }
@@ -56,10 +53,7 @@ library Utils {
     uint256 baseAmount,
     address repayer
   ) internal returns (uint256) {
-    vm.startPrank(repayer);
-    IERC20(hub.getAsset(assetId).underlying).approve(address(hub), baseAmount);
-    vm.stopPrank();
-
+    approve(hub, assetId, repayer, baseAmount);
     vm.prank(caller);
     return hub.restore(assetId, baseAmount, 0, DataTypes.PremiumDelta(0, 0, 0), repayer);
   }
@@ -174,5 +168,28 @@ library Utils {
   ) internal {
     vm.prank(caller);
     spoke.repay(reserveId, amount, onBehalfOf);
+  }
+
+  function approve(ISpoke spoke, uint256 reserveId, address owner, uint256 amount) internal {
+    _approve(
+      IERC20(spoke.getReserve(reserveId).underlying),
+      owner,
+      address(spoke.getReserve(reserveId).hub),
+      amount
+    );
+  }
+
+  function approve(ILiquidityHub hub, uint256 assetId, address owner, uint256 amount) internal {
+    _approve(IERC20(hub.getAsset(assetId).underlying), owner, address(hub), amount);
+  }
+
+  function _approve(IERC20 underlying, address owner, address spender, uint256 amount) private {
+    uint256 allowance = underlying.allowance(owner, spender);
+    if (allowance < amount) {
+      vm.startPrank(owner);
+      underlying.approve(spender, 0);
+      underlying.approve(spender, amount);
+      vm.stopPrank();
+    }
   }
 }

@@ -16,7 +16,7 @@ contract PercentageMathTests is Test {
   }
 
   function test_percentMul_fuzz(uint256 value, uint256 percentage) public {
-    if (!(percentage == 0 || !(value > type(uint256).max / percentage))) {
+    if (!(percentage == 0 || !(value > UINT256_MAX / percentage))) {
       vm.expectRevert();
       w.percentMulDown(value, percentage);
       vm.expectRevert();
@@ -31,7 +31,7 @@ contract PercentageMathTests is Test {
   }
 
   function test_percentDiv_fuzz(uint256 value, uint256 percentage) public {
-    if (percentage == 0 || value > type(uint256).max / w.PERCENTAGE_FACTOR()) {
+    if (percentage == 0 || value > UINT256_MAX / w.PERCENTAGE_FACTOR()) {
       vm.expectRevert();
       w.percentDivDown(value, percentage);
       vm.expectRevert();

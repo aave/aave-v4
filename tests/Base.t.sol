@@ -325,11 +325,11 @@ abstract contract Base is Test {
       deal(address(tokenList.weth), users[x], mintAmount_WETH);
 
       vm.startPrank(users[x]);
-      tokenList.weth.approve(address(hub), type(uint256).max);
-      tokenList.usdx.approve(address(hub), type(uint256).max);
-      tokenList.dai.approve(address(hub), type(uint256).max);
-      tokenList.wbtc.approve(address(hub), type(uint256).max);
-      tokenList.usdy.approve(address(hub), type(uint256).max);
+      tokenList.weth.approve(address(hub), UINT256_MAX);
+      tokenList.usdx.approve(address(hub), UINT256_MAX);
+      tokenList.dai.approve(address(hub), UINT256_MAX);
+      tokenList.wbtc.approve(address(hub), UINT256_MAX);
+      tokenList.usdy.approve(address(hub), UINT256_MAX);
       vm.stopPrank();
     }
   }
@@ -350,11 +350,11 @@ abstract contract Base is Test {
       deal(address(tokenList.weth), spokes[x], spokeMintAmount_WETH);
 
       vm.startPrank(spokes[x]);
-      tokenList.weth.approve(address(hub), type(uint256).max);
-      tokenList.usdx.approve(address(hub), type(uint256).max);
-      tokenList.dai.approve(address(hub), type(uint256).max);
-      tokenList.wbtc.approve(address(hub), type(uint256).max);
-      tokenList.usdy.approve(address(hub), type(uint256).max);
+      tokenList.weth.approve(address(hub), UINT256_MAX);
+      tokenList.usdx.approve(address(hub), UINT256_MAX);
+      tokenList.dai.approve(address(hub), UINT256_MAX);
+      tokenList.wbtc.approve(address(hub), UINT256_MAX);
+      tokenList.usdy.approve(address(hub), UINT256_MAX);
       vm.stopPrank();
     }
   }
@@ -362,8 +362,8 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
+      supplyCap: UINT256_MAX,
+      drawCap: UINT256_MAX
     });
 
     bytes memory encodedIrData = abi.encode(
@@ -862,11 +862,6 @@ abstract contract Base is Test {
     ILiquidityHub hub3 = new LiquidityHub(address(accessManager3));
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
-    uint256 hub3DaiAssetId = 0;
-    uint256 hub3UsdxAssetId = 1;
-    uint256 hub3WbtcAssetId = 2;
-    uint256 hub3WethAssetId = 3;
-
     // Configure IR Strategy for hub 3
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
@@ -961,6 +956,16 @@ abstract contract Base is Test {
     spoke.updateReserveConfig(reserveId, config);
 
     assertEq(spoke.getReserveConfig(reserveId), config);
+  }
+
+  function updateLiquidationConfig(
+    ISpoke spoke,
+    DataTypes.LiquidationConfig memory config
+  ) internal pausePrank {
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateLiquidationConfig(config);
+
+    assertEq(spoke.getLiquidationConfig(), config);
   }
 
   function updateLiquidationBonus(
@@ -1191,6 +1196,14 @@ abstract contract Base is Test {
     return hub.previewAddByShares(assetId, 1);
   }
 
+  /// @dev Helper function to calculate asset amount corresponding to single drawn share
+  function minimumAssetsPerDrawnShare(
+    ILiquidityHub hub,
+    uint256 assetId
+  ) internal view returns (uint256) {
+    return hub.previewDrawByShares(assetId, 1);
+  }
+
   /// @dev Helper function to calculate expected supplied assets based on amount to supply and current exchange rate
   /// taking potential donation into account
   function calculateEffectiveSuppliedAssets(
@@ -1212,6 +1225,14 @@ abstract contract Base is Test {
 
   function getDebtExRate(uint256 assetId) internal view returns (uint256) {
     return hub.convertToDrawnAssets(assetId, MAX_SUPPLY_AMOUNT);
+  }
+
+  function getDeficit(ILiquidityHub hub, uint256 assetId) internal view returns (uint256) {
+    return hub.getAsset(assetId).deficit;
+  }
+
+  function getBaseBorrowRate(ILiquidityHub hub, uint256 assetId) internal view returns (uint256) {
+    return hub.getAsset(assetId).baseBorrowRate;
   }
 
   /// TODO: Once inflation protection implemented, can remove boolean param since rate should always monotonically increase
@@ -1621,7 +1642,9 @@ abstract contract Base is Test {
     ) = spoke.getUserAccountData(user);
 
     requiredDebtInBaseCurrency =
-      (totalCollateralBase.percentMulUp(currentAvgCollateralFactor + 1) / desiredHf) -
+      totalCollateralBase.percentMulDown(currentAvgCollateralFactor.fromWadDown() + 1).wadDivUp(
+        desiredHf
+      ) -
       totalDebtBase;
     // add 1 to num to round debt up (ie making sure resultant debt creates HF that is less than desired)
   }
@@ -1836,6 +1859,66 @@ abstract contract Base is Test {
   ) internal pure returns (uint256 feesAmount) {
     return
       indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
+  }
+
+  /// @dev Get the liquidation bonus for a given reserve at a user HF
+  function _getVariableLiquidationBonus(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 healthFactor
+  ) internal view returns (uint256) {
+    return spoke.getVariableLiquidationBonus(reserveId, user, healthFactor);
+  }
+
+  /**
+   * @notice Returns the required debt amount in base currency to ensure user position is above a certain health factor.
+   * @return requiredDebt The required additional debt amount in base currency.
+   */
+  function _getRequiredDebtForGtHf(
+    ISpoke spoke,
+    address user,
+    uint256 desiredHf
+  ) internal view returns (uint256) {
+    (
+      ,
+      uint256 currentAvgCollateralFactor,
+      ,
+      uint256 totalCollateralBase,
+      uint256 totalDebtBase
+    ) = spoke.getUserAccountData(user);
+
+    return
+      totalCollateralBase
+        .percentMulDown(currentAvgCollateralFactor.fromWadDown())
+        .percentMulDown(99_00)
+        .wadDivDown(desiredHf) - totalDebtBase;
+    // buffer to force debt lower (ie making sure resultant debt creates HF that is gt desired)
+  }
+
+  /// @dev Borrow to be below a certain healthy health factor
+  /// @dev This function validates HF and does not mock price, thus it will cache user RP properly
+  function _borrowToBeAboveHealthyHf(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 desiredHf
+  ) internal returns (uint256, uint256) {
+    uint256 requiredDebtInBase = _getRequiredDebtForGtHf(spoke, user, desiredHf);
+    uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(
+      spoke,
+      reserveId,
+      requiredDebtInBase
+    ) - 1;
+
+    vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
+
+    vm.prank(user);
+    spoke.borrow(reserveId, requiredDebtAmount, user);
+
+    uint256 finalHf = spoke.getHealthFactor(user);
+    assertGt(finalHf, desiredHf, 'should borrow so that HF is above desiredHf');
+    return (finalHf, requiredDebtAmount);
   }
 
   function _mockDecimals(address underlying, uint8 decimals) internal {
@@ -2107,5 +2190,21 @@ abstract contract Base is Test {
     if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.stopPrank();
     _;
     if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.startPrank(msgSender, txOrigin);
+  }
+
+  function makeEntity(string memory id, bytes32 key) internal returns (address) {
+    return makeAddr(string.concat(id, '-', vm.toString(uint256(key))));
+  }
+
+  function makeUser(uint256 i) internal returns (address) {
+    return makeEntity('user', bytes32(i));
+  }
+
+  function makeUser() internal returns (address) {
+    return makeEntity('user', vm.randomBytes8());
+  }
+
+  function makeSpoke() internal returns (address) {
+    return makeEntity('spoke', vm.randomBytes8());
   }
 }

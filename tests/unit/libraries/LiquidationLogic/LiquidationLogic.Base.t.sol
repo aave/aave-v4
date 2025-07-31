@@ -3,8 +3,9 @@ pragma solidity ^0.8.0;
 
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import 'tests/Base.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract LiquidationLogicBaseTest is Base {
+contract LiquidationLogicBaseTest is SpokeBase {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
 
@@ -24,17 +25,16 @@ contract LiquidationLogicBaseTest is Base {
     uint256 totalDebt;
   }
 
+  function setUp() public virtual override {
+    super.setUp();
+    _setTokenDecimals();
+  }
+
   function _setTokenDecimals() internal {
     daiUnits = 10 ** tokenList.dai.decimals();
     usdxUnits = 10 ** tokenList.usdx.decimals();
     wethUnits = 10 ** tokenList.weth.decimals();
     wbtcUnits = 10 ** tokenList.wbtc.decimals();
-  }
-
-  function setUp() public virtual override {
-    super.setUp();
-    initEnvironment();
-    _setTokenDecimals();
   }
 
   // calculate threshold when close factor > effectiveLiquidationPenalty so that calculateDebtToRestoreCloseFactor denom is > 0

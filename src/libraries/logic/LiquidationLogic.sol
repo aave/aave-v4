@@ -91,43 +91,63 @@ library LiquidationLogic {
    * @return The maximum collateral amount that can be liquidated.
    * @return The corresponding debt amount to liquidate.
    * @return The protocol liquidation fee amount.
+   * @return A boolean indicating if there is a deficit in the liquidation.
    */
   function calculateAvailableCollateralToLiquidate(
     DataTypes.LiquidationCallLocalVars memory params
-  ) internal pure returns (uint256, uint256, uint256) {
+  ) internal pure returns (uint256, uint256, uint256, bool) {
+    DataTypes.CalculateAvailableCollateralToLiquidate memory vars;
+
     // convert existing collateral to base currency
-    uint256 userCollateralBalanceInBaseCurrency = (params.userCollateralBalance *
-      params.collateralAssetPrice).toWad() / params.collateralAssetUnit;
+    vars.userCollateralBalanceInBaseCurrency =
+      (params.userCollateralBalance * params.collateralAssetPrice).toWad() /
+      params.collateralAssetUnit;
 
     // find collateral in base currency that corresponds to the debt to cover
-    uint256 baseCollateral = (params.actualDebtToLiquidate * params.debtAssetPrice).toWad() /
+    vars.baseCollateral =
+      (params.actualDebtToLiquidate * params.debtAssetPrice).toWad() /
       params.debtAssetUnit;
 
     // account for additional collateral required due to liquidation bonus
-    uint256 maxCollateralToLiquidate = baseCollateral.percentMulDown(params.liquidationBonus);
+    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMulDown(params.liquidationBonus);
 
-    uint256 collateralAmount;
-    uint256 debtAmountNeeded;
-    if (maxCollateralToLiquidate >= userCollateralBalanceInBaseCurrency) {
-      collateralAmount = params.userCollateralBalance;
-      debtAmountNeeded = ((params.debtAssetUnit * userCollateralBalanceInBaseCurrency)
+    if (vars.maxCollateralToLiquidate >= vars.userCollateralBalanceInBaseCurrency) {
+      vars.collateralAmount = params.userCollateralBalance;
+      vars.debtAmountNeeded = ((params.debtAssetUnit * vars.userCollateralBalanceInBaseCurrency)
         .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).fromWadDown();
+      vars.collateralToLiquidateInBaseCurrency = vars.userCollateralBalanceInBaseCurrency;
+      vars.debtToLiquidateInBaseCurrency =
+        (vars.debtAmountNeeded * params.debtAssetPrice).toWad() /
+        params.debtAssetUnit;
     } else {
       // add 1 to round collateral amount up, ensuring HF is always <= close factor
-      collateralAmount =
-        ((maxCollateralToLiquidate * params.collateralAssetUnit) / params.collateralAssetPrice)
+      vars.collateralAmount =
+        ((vars.maxCollateralToLiquidate * params.collateralAssetUnit) / params.collateralAssetPrice)
           .fromWadDown() +
         1;
-      debtAmountNeeded = params.actualDebtToLiquidate;
+      vars.debtAmountNeeded = params.actualDebtToLiquidate;
+      vars.collateralToLiquidateInBaseCurrency =
+        (vars.collateralAmount * params.collateralAssetPrice).toWad() /
+        params.collateralAssetUnit;
+      vars.debtToLiquidateInBaseCurrency = vars.baseCollateral;
     }
 
+    vars.hasDeficit =
+      vars.debtToLiquidateInBaseCurrency < params.totalDebtInBaseCurrency &&
+      vars.collateralToLiquidateInBaseCurrency == params.totalCollateralInBaseCurrency;
+
     if (params.liquidationFee != 0) {
-      uint256 bonusCollateral = collateralAmount -
-        collateralAmount.percentDivUp(params.liquidationBonus);
+      uint256 bonusCollateral = vars.collateralAmount -
+        vars.collateralAmount.percentDivUp(params.liquidationBonus);
       uint256 liquidationFeeAmount = bonusCollateral.percentMulUp(params.liquidationFee);
-      return (collateralAmount - liquidationFeeAmount, debtAmountNeeded, liquidationFeeAmount);
+      return (
+        vars.collateralAmount - liquidationFeeAmount,
+        vars.debtAmountNeeded,
+        liquidationFeeAmount,
+        vars.hasDeficit
+      );
     } else {
-      return (collateralAmount, debtAmountNeeded, 0);
+      return (vars.collateralAmount, vars.debtAmountNeeded, 0, vars.hasDeficit);
     }
   }
 }
