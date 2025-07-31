@@ -682,7 +682,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       _mockInterestRateRay({
         interestRateRay: rates.daiBaseBorrowRate,
         assetId: daiAssetId,
-        availableLiquidity: asset.availableLiquidity - amounts.daiBorrowAmount,
+        liquidity: asset.liquidity - amounts.daiBorrowAmount,
         drawn: hub.convertToDrawnAssets(daiAssetId, asset.drawnShares + daiBorrowShares),
         premium: premium
       });
@@ -697,7 +697,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       _mockInterestRateRay({
         interestRateRay: rates.wethBaseBorrowRate,
         assetId: wethAssetId,
-        availableLiquidity: asset.availableLiquidity - amounts.wethBorrowAmount,
+        liquidity: asset.liquidity - amounts.wethBorrowAmount,
         drawn: hub.convertToDrawnAssets(wethAssetId, asset.drawnShares + wethBorrowShares),
         premium: premium
       });
@@ -712,7 +712,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       _mockInterestRateRay({
         interestRateRay: rates.usdxBaseBorrowRate,
         assetId: usdxAssetId,
-        availableLiquidity: asset.availableLiquidity - amounts.usdxBorrowAmount,
+        liquidity: asset.liquidity - amounts.usdxBorrowAmount,
         drawn: hub.convertToDrawnAssets(usdxAssetId, asset.drawnShares + usdxBorrowShares),
         premium: premium
       });
@@ -727,7 +727,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       _mockInterestRateRay({
         interestRateRay: rates.wbtcBaseBorrowRate,
         assetId: wbtcAssetId,
-        availableLiquidity: asset.availableLiquidity - amounts.wbtcBorrowAmount,
+        liquidity: asset.liquidity - amounts.wbtcBorrowAmount,
         drawn: hub.convertToDrawnAssets(wbtcAssetId, asset.drawnShares + wbtcBorrowShares),
         premium: premium
       });

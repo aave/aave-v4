@@ -19,7 +19,7 @@ library DataTypes {
     address underlying;
     uint8 decimals;
     uint256 addedShares;
-    uint256 availableLiquidity;
+    uint256 liquidity;
     uint256 drawnShares;
     uint256 premiumShares;
     uint256 premiumOffset; // todo make signed

@@ -213,12 +213,12 @@ contract HubAddTest is HubBase {
     IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
     (uint256 drawnBefore, uint256 premiumBefore) = hub.getAssetOwed(assetId);
-    uint256 availableLiquidityBefore = hub.getAvailableLiquidity(assetId);
+    uint256 liquidityBefore = hub.getAvailableLiquidity(assetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, availableLiquidityBefore + amount, drawnBefore, premiumBefore)
+        (assetId, liquidityBefore + amount, drawnBefore, premiumBefore)
       )
     );
 
@@ -250,8 +250,8 @@ contract HubAddTest is HubBase {
     );
     assertEq(hub.getAsset(assetId).lastUpdateTimestamp, vm.getBlockTimestamp());
     assertEq(
-      hub.getAsset(assetId).availableLiquidity,
-      availableLiquidityBefore + amount,
+      hub.getAsset(assetId).liquidity,
+      liquidityBefore + amount,
       'hub available liquidity after'
     );
     (uint256 drawnAfter, ) = hub.getAssetOwed(assetId);
@@ -303,7 +303,7 @@ contract HubAddTest is HubBase {
       'asset addedShares after'
     );
     assertEq(hub.getAssetAddedAmount(assetId), amount, 'asset addedAmount after');
-    assertEq(hub.getAvailableLiquidity(assetId), amount, 'asset availableLiquidity after');
+    assertEq(hub.getAvailableLiquidity(assetId), amount, 'asset liquidity after');
     assertEq(
       hub.getAsset(assetId).lastUpdateTimestamp,
       timestamp,
@@ -324,7 +324,7 @@ contract HubAddTest is HubBase {
       hub.convertToAddedShares(assetId2, amount2),
       'asset2 addedShares after'
     );
-    assertEq(hub.getAvailableLiquidity(assetId2), amount2, 'asset2 availableLiquidity after');
+    assertEq(hub.getAvailableLiquidity(assetId2), amount2, 'asset2 liquidity after');
     assertEq(
       hub.getAsset(assetId2).lastUpdateTimestamp,
       timestamp,
@@ -446,12 +446,12 @@ contract HubAddTest is HubBase {
     uint256 addedSharesBefore = hub.getAssetAddedShares(daiAssetId);
 
     (uint256 drawnBefore, uint256 premiumBefore) = hub.getAssetOwed(daiAssetId);
-    uint256 availableLiquidityBefore = hub.getAvailableLiquidity(daiAssetId);
+    uint256 liquidityBefore = hub.getAvailableLiquidity(daiAssetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (daiAssetId, availableLiquidityBefore + addAmount, drawnBefore, premiumBefore)
+        (daiAssetId, liquidityBefore + addAmount, drawnBefore, premiumBefore)
       )
     );
 
@@ -488,8 +488,8 @@ contract HubAddTest is HubBase {
       'hub addedShares after'
     );
     assertEq(
-      hub.getAsset(daiAssetId).availableLiquidity,
-      availableLiquidityBefore + addAmount,
+      hub.getAsset(daiAssetId).liquidity,
+      liquidityBefore + addAmount,
       'hub available liquidity after'
     );
     (uint256 drawnAfter, ) = hub.getAssetOwed(daiAssetId);
@@ -601,7 +601,7 @@ contract HubAddTest is HubBase {
     assertEq(
       hub.getAvailableLiquidity(daiAssetId),
       amount + addAmount - drawnAmount,
-      'asset availableLiquidity after'
+      'asset liquidity after'
     );
     assertEq(
       hub.getAsset(daiAssetId).lastUpdateTimestamp,
@@ -705,11 +705,7 @@ contract HubAddTest is HubBase {
       // hub
       assertGe(hub.getAssetAddedAmount(assetId), params.assetAddedAmount, 'hub addedAmount after');
       assertGe(hub.getAssetAddedShares(assetId), params.assetAddedShares, 'hub addedShares after');
-      assertEq(
-        hub.getAvailableLiquidity(assetId),
-        params.availableLiq,
-        'asset availableLiquidity after'
-      );
+      assertEq(hub.getAvailableLiquidity(assetId), params.availableLiq, 'asset liquidity after');
       assertEq(
         hub.getAsset(assetId).lastUpdateTimestamp,
         vm.getBlockTimestamp(),

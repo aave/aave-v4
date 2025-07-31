@@ -98,7 +98,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @inheritdoc IBasicInterestRateStrategy
   function calculateInterestRate(
     uint256 assetId,
-    uint256 availableLiquidity,
+    uint256 liquidity,
     uint256 drawn,
     uint256 premium
   ) external view virtual override returns (uint256) {
@@ -110,7 +110,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
       return currentVariableBorrowRateRay;
     }
 
-    uint256 usageRatioRay = drawn.rayDivUp(availableLiquidity + drawn);
+    uint256 usageRatioRay = drawn.rayDivUp(liquidity + drawn);
     uint256 optimalUsageRatioRay = rateData.optimalUsageRatio.bpsToRay();
 
     if (usageRatioRay <= optimalUsageRatioRay) {

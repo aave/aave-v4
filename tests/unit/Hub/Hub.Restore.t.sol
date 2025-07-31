@@ -502,9 +502,9 @@ contract HubRestoreTest is HubBase {
     //     );
     //     assertEq(daiData.drawn, accruedBaseDebt + drawAmount, 'hub dai drawn');
     //     assertEq(
-    //       daiData.availableLiquidity,
+    //       daiData.liquidity,
     //       daiAmount - drawAmount + restoreAmount,
-    //       'hub dai availableLiquidity'
+    //       'hub dai liquidity'
     //     );
     //     assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
 
@@ -603,9 +603,9 @@ contract HubRestoreTest is HubBase {
     //     );
     //     assertEq(daiData.drawn, accruedBaseDebt + drawAmount, 'hub dai drawn');
     //     assertEq(
-    //       daiData.availableLiquidity,
+    //       daiData.liquidity,
     //       daiAmount - drawAmount + restoreAmount,
-    //       'hub dai availableLiquidity'
+    //       'hub dai liquidity'
     //     );
     //     assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
 
@@ -691,9 +691,9 @@ contract HubRestoreTest is HubBase {
     //     assertEq(daiData.outstandingPremium, 0, 'hub dai outstandingPremium');
     //     assertEq(daiData.drawn, accruedBaseDebt + drawAmount - 1, 'hub dai drawn');
     //     assertEq(
-    //       daiData.availableLiquidity,
+    //       daiData.liquidity,
     //       daiAmount - drawAmount + restoreAmount,
-    //       'hub dai availableLiquidity'
+    //       'hub dai liquidity'
     //     );
     //     assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
 
@@ -788,9 +788,9 @@ contract HubRestoreTest is HubBase {
     //       'hub dai drawn'
     //     );
     //     assertEq(
-    //       daiData.availableLiquidity,
+    //       daiData.liquidity,
     //       daiAmount - drawAmount + restoreAmount,
-    //       'hub dai availableLiquidity'
+    //       'hub dai liquidity'
     //     );
     //     assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
     //     assertEq(
@@ -905,9 +905,9 @@ contract HubRestoreTest is HubBase {
     //       'hub dai total shares post-restore'
     //     );
     //     assertEq(
-    //       hubData.daiData.availableLiquidity,
+    //       hubData.daiData.liquidity,
     //       daiAmount - drawAmount + restoreAmount,
-    //       'hub dai availableLiquidity post-restore'
+    //       'hub dai liquidity post-restore'
     //     );
     //     assertEq(hubData.daiData.drawn, drawAmount - restoreAmount, 'hub dai drawn post-restore');
     //     assertEq(hubData.daiData.outstandingPremium, 0, 'hub dai outstandingPremium post-restore');
@@ -933,9 +933,9 @@ contract HubRestoreTest is HubBase {
     //       'hub weth total shares post-restore'
     //     );
     //     assertEq(
-    //       hubData.wethData.availableLiquidity,
+    //       hubData.wethData.liquidity,
     //       wethAmount,
-    //       'hub weth availableLiquidity post-restore'
+    //       'hub weth liquidity post-restore'
     //     );
     //     assertEq(hubData.wethData.drawn, 0, 'hub weth drawn post-restore');
     //     assertEq(hubData.wethData.outstandingPremium, 0, 'hub weth outstandingPremium post-restore');

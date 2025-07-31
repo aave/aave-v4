@@ -25,7 +25,7 @@ contract HubDrawTest is HubBase {
         IBasicInterestRateStrategy.calculateInterestRate,
         (
           assetId,
-          assetBefore.availableLiquidity - amount,
+          assetBefore.liquidity - amount,
           hub.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
           premium
         )
@@ -38,7 +38,7 @@ contract HubDrawTest is HubBase {
       hub.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
-        availableLiquidity: assetBefore.availableLiquidity - amount,
+        liquidity: assetBefore.liquidity - amount,
         drawn: hub.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
         premium: premium
       }),
@@ -58,15 +58,15 @@ contract HubDrawTest is HubBase {
     assertEq(hub.getAssetTotalOwed(assetId), amount, 'asset totalDebt after');
     assertEq(drawn, amount, 'asset drawn after');
     assertEq(premium, 0, 'asset premium after');
-    assertEq(hub.getAvailableLiquidity(assetId), 0, 'asset availableLiquidity after');
+    assertEq(hub.getAvailableLiquidity(assetId), 0, 'asset liquidity after');
     assertEq(
       hub.getAsset(assetId).lastUpdateTimestamp,
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
     assertEq(
-      hub.getAsset(assetId).availableLiquidity,
-      assetBefore.availableLiquidity - amount,
+      hub.getAsset(assetId).liquidity,
+      assetBefore.liquidity - amount,
       'available liquidity after draw'
     );
     assertEq(
@@ -105,7 +105,7 @@ contract HubDrawTest is HubBase {
         IBasicInterestRateStrategy.calculateInterestRate,
         (
           assetId,
-          assetBefore.availableLiquidity - amount,
+          assetBefore.liquidity - amount,
           hub.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
           premium
         )
@@ -118,7 +118,7 @@ contract HubDrawTest is HubBase {
       hub.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
-        availableLiquidity: assetBefore.availableLiquidity - amount,
+        liquidity: assetBefore.liquidity - amount,
         drawn: hub.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
         premium: premium
       }),
@@ -133,8 +133,8 @@ contract HubDrawTest is HubBase {
     hub.draw(assetId, amount, alice);
 
     assertEq(
-      hub.getAsset(assetId).availableLiquidity,
-      assetBefore.availableLiquidity - amount,
+      hub.getAsset(assetId).liquidity,
+      assetBefore.liquidity - amount,
       'available liquidity after draw'
     );
     assertEq(

@@ -11,8 +11,8 @@ contract HubReportDeficitTest is HubBase {
     uint256 deficitAfter;
     uint256 supplyExchangeRateBefore;
     uint256 supplyExchangeRateAfter;
-    uint256 availableLiquidityBefore;
-    uint256 availableLiquidityAfter;
+    uint256 liquidityBefore;
+    uint256 liquidityAfter;
     uint256 balanceBefore;
     uint256 balanceAfter;
     uint256 drawnAfter;
@@ -116,7 +116,7 @@ contract HubReportDeficitTest is HubBase {
 
     params.deficitBefore = getDeficit(hub, usdxAssetId);
     params.supplyExchangeRateBefore = hub.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
-    params.availableLiquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
+    params.liquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceBefore = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
     uint256 drawnSharesBefore = hub.getAsset(usdxAssetId).drawnShares;
     uint256 totalDeficit = baseAmount + premiumAmount;
@@ -142,7 +142,7 @@ contract HubReportDeficitTest is HubBase {
 
     params.deficitAfter = getDeficit(hub, usdxAssetId);
     params.supplyExchangeRateAfter = hub.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
-    params.availableLiquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
+    params.liquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceAfter = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
     uint256 drawnSharesAfter = hub.getAsset(usdxAssetId).drawnShares;
 
@@ -161,11 +161,7 @@ contract HubReportDeficitTest is HubBase {
     );
     assertEq(params.premiumAfter, params.premium - premiumAmount, 'premium debt');
     assertEq(params.balanceAfter, params.balanceBefore, 'balance change');
-    assertEq(
-      params.availableLiquidityAfter,
-      params.availableLiquidityBefore,
-      'available liquidity'
-    );
+    assertEq(params.liquidityAfter, params.liquidityBefore, 'available liquidity');
     assertEq(params.deficitAfter, params.deficitBefore + totalDeficit, 'deficit accounting');
     assertGe(
       params.supplyExchangeRateAfter,

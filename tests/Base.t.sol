@@ -180,7 +180,7 @@ abstract contract Base is Test {
     uint256 realizedPremium;
     uint256 premium;
     uint40 lastUpdateTimestamp;
-    uint256 availableLiquidity;
+    uint256 liquidity;
     uint256 drawnIndex;
     uint256 drawnRate;
   }
@@ -1930,25 +1930,18 @@ abstract contract Base is Test {
   function _mockInterestRateBps(
     uint256 interestRateBps,
     uint256 assetId,
-    uint256 availableLiquidity,
+    uint256 liquidity,
     uint256 drawn,
     uint256 premium
   ) internal {
-    _mockInterestRateBps(
-      address(irStrategy),
-      interestRateBps,
-      assetId,
-      availableLiquidity,
-      drawn,
-      premium
-    );
+    _mockInterestRateBps(address(irStrategy), interestRateBps, assetId, liquidity, drawn, premium);
   }
 
   function _mockInterestRateBps(
     address interestRateStrategy,
     uint256 interestRateBps,
     uint256 assetId,
-    uint256 availableLiquidity,
+    uint256 liquidity,
     uint256 drawn,
     uint256 premium
   ) internal {
@@ -1956,7 +1949,7 @@ abstract contract Base is Test {
       interestRateStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, availableLiquidity, drawn, premium)
+        (assetId, liquidity, drawn, premium)
       ),
       abi.encode(interestRateBps.bpsToRay())
     );
@@ -1977,25 +1970,18 @@ abstract contract Base is Test {
   function _mockInterestRateRay(
     uint256 interestRateRay,
     uint256 assetId,
-    uint256 availableLiquidity,
+    uint256 liquidity,
     uint256 drawn,
     uint256 premium
   ) internal {
-    _mockInterestRateRay(
-      address(irStrategy),
-      interestRateRay,
-      assetId,
-      availableLiquidity,
-      drawn,
-      premium
-    );
+    _mockInterestRateRay(address(irStrategy), interestRateRay, assetId, liquidity, drawn, premium);
   }
 
   function _mockInterestRateRay(
     address interestRateStrategy,
     uint256 interestRateRay,
     uint256 assetId,
-    uint256 availableLiquidity,
+    uint256 liquidity,
     uint256 drawn,
     uint256 premium
   ) internal {
@@ -2003,7 +1989,7 @@ abstract contract Base is Test {
       interestRateStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, availableLiquidity, drawn, premium)
+        (assetId, liquidity, drawn, premium)
       ),
       abi.encode(interestRateRay)
     );
@@ -2046,7 +2032,7 @@ abstract contract Base is Test {
       asset.drawnRate,
       IBasicInterestRateStrategy(asset.config.irStrategy).calculateInterestRate(
         assetId,
-        asset.availableLiquidity,
+        asset.liquidity,
         drawn,
         premium
       ),
@@ -2102,7 +2088,7 @@ abstract contract Base is Test {
     return
       AssetPosition({
         assetId: assetId,
-        availableLiquidity: assetData.availableLiquidity,
+        liquidity: assetData.liquidity,
         addedShares: assetData.addedShares,
         addedAmount: targetHub.getAssetAddedAmount(assetId),
         drawnShares: assetData.drawnShares,

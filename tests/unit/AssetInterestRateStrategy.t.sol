@@ -167,20 +167,15 @@ contract AssetInterestRateStrategyTest is Base {
         mockAssetId2
       )
     );
-    rateStrategy.calculateInterestRate({
-      assetId: mockAssetId2,
-      availableLiquidity: 0,
-      drawn: 0,
-      premium: 0
-    });
+    rateStrategy.calculateInterestRate({assetId: mockAssetId2, liquidity: 0, drawn: 0, premium: 0});
   }
 
-  function test_calculateInterestRate_fuzz_ZeroDebt(uint256 availableLiquidity) public view {
-    availableLiquidity = bound(availableLiquidity, 0, type(uint128).max);
+  function test_calculateInterestRate_fuzz_ZeroDebt(uint256 liquidity) public view {
+    liquidity = bound(liquidity, 0, type(uint128).max);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
-      availableLiquidity: availableLiquidity,
+      liquidity: liquidity,
       drawn: 0,
       premium: 0
     });
@@ -195,15 +190,13 @@ contract AssetInterestRateStrategyTest is Base {
   function test_calculateInterestRate_LeftToKinkPoint(uint256 utilizationRatio) public {
     uint256 utilizationRatioRay = bound(utilizationRatio, 1, rateData.optimalUsageRatio).bpsToRay();
 
-    (
-      uint256 availableLiquidity,
-      uint256 drawn,
-      uint256 premium
-    ) = _generateCalculateInterestRateParams(utilizationRatioRay);
+    (uint256 liquidity, uint256 drawn, uint256 premium) = _generateCalculateInterestRateParams(
+      utilizationRatioRay
+    );
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
-      availableLiquidity: availableLiquidity,
+      liquidity: liquidity,
       drawn: drawn,
       premium: premium
     });
@@ -228,15 +221,13 @@ contract AssetInterestRateStrategyTest is Base {
     uint256 utilizationRatioRay = bound(utilizationRatio, rateData.optimalUsageRatio + 1, 100_00)
       .bpsToRay();
 
-    (
-      uint256 availableLiquidity,
-      uint256 drawn,
-      uint256 premium
-    ) = _generateCalculateInterestRateParams(utilizationRatioRay);
+    (uint256 liquidity, uint256 drawn, uint256 premium) = _generateCalculateInterestRateParams(
+      utilizationRatioRay
+    );
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
-      availableLiquidity: availableLiquidity,
+      liquidity: liquidity,
       drawn: drawn,
       premium: premium
     });
@@ -262,13 +253,13 @@ contract AssetInterestRateStrategyTest is Base {
 
   function _generateCalculateInterestRateParams(
     uint256 targetUtilizationRatioRay
-  ) internal returns (uint256 availableLiquidity, uint256 drawn, uint256 premium) {
+  ) internal returns (uint256 liquidity, uint256 drawn, uint256 premium) {
     drawn = bound(vm.randomUint(), 1, MAX_SUPPLY_AMOUNT);
 
-    // utilizationRatio = drawn / (drawn + availableLiquidity)
-    // utilizationRatio * drawn + utilizationRatio * availableLiquidity = drawn
-    // availableLiquidity = drawn * (1 - utilizationRatio) / utilizationRatio
-    availableLiquidity = drawn.rayMulUp(WadRayMath.RAY - targetUtilizationRatioRay).rayDivUp(
+    // utilizationRatio = drawn / (drawn + liquidity)
+    // utilizationRatio * drawn + utilizationRatio * liquidity = drawn
+    // liquidity = drawn * (1 - utilizationRatio) / utilizationRatio
+    liquidity = drawn.rayMulUp(WadRayMath.RAY - targetUtilizationRatioRay).rayDivUp(
       targetUtilizationRatioRay
     );
 

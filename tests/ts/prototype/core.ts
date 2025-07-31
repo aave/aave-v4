@@ -42,7 +42,7 @@ export class Hub {
 
   public baseDebtIndex = RAY;
 
-  public availableLiquidity = 0n;
+  public liquidity = 0n;
 
   public suppliedShares = 0n;
 
@@ -68,7 +68,7 @@ export class Hub {
 
   totalSupplyAssets() {
     this.accrue();
-    return this.availableLiquidity + this.baseDebt() + this.premiumDebt() + 1n;
+    return this.liquidity + this.baseDebt() + this.premiumDebt() + 1n;
   }
   totalSupplyShares() {
     return this.suppliedShares + VIRTUAL_SHARES;
@@ -97,7 +97,7 @@ export class Hub {
     assertNonZero(suppliedShares);
 
     this.suppliedShares += suppliedShares;
-    this.availableLiquidity += amount;
+    this.liquidity += amount;
 
     this.getSpoke(spoke).suppliedShares += suppliedShares;
 
@@ -108,7 +108,7 @@ export class Hub {
     const suppliedShares = this.toSupplyShares(amount, Rounding.CEIL);
 
     this.suppliedShares -= suppliedShares;
-    this.availableLiquidity -= amount;
+    this.liquidity -= amount;
 
     this.getSpoke(spoke).suppliedShares -= suppliedShares;
 
@@ -120,7 +120,7 @@ export class Hub {
   draw(amount: bigint, spoke: Spoke) {
     const drawnShares = this.toDrawnShares(amount, Rounding.CEIL);
 
-    this.availableLiquidity -= amount;
+    this.liquidity -= amount;
     this.drawnShares += drawnShares;
 
     this.getSpoke(spoke).drawnShares += drawnShares;
@@ -132,7 +132,7 @@ export class Hub {
   restore(baseAmount: bigint, premiumAmount: bigint, spoke: Spoke) {
     const drawnShares = this.toDrawnShares(baseAmount);
 
-    this.availableLiquidity += baseAmount + premiumAmount;
+    this.liquidity += baseAmount + premiumAmount;
     this.drawnShares -= drawnShares;
 
     this.getSpoke(spoke).drawnShares -= drawnShares;
@@ -195,7 +195,7 @@ export class Hub {
 
     console.log('hub.suppliedShares          ', f(this.suppliedShares));
     console.log('hub.totalSupplyAssets       ', f(this.totalSupplyAssets()));
-    console.log('hub.availableLiquidity      ', f(this.availableLiquidity));
+    console.log('hub.liquidity      ', f(this.liquidity));
     console.log('hub.baseDebt                ', f(this.baseDebt()));
     console.log('hub.premiumDebt             ', f(this.premiumDebt()));
     console.log('hub.lastUpdateTimestamp     ', this.lastUpdateTimestamp);
@@ -912,7 +912,7 @@ class Utils {
       who.offset,
       who.realisedPremium,
       ...(who instanceof Hub
-        ? [who.suppliedShares, who.totalSupplyAssets(), who.premiumDebt(), who.availableLiquidity]
+        ? [who.suppliedShares, who.totalSupplyAssets(), who.premiumDebt(), who.liquidity]
         : []),
     ].reduce((flag, v) => flag || v < 0n || v > MAX_UINT, false);
     if (fail) {

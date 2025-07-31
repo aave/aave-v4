@@ -63,7 +63,7 @@ contract Hub is IHub, AccessManaged {
     IAssetInterestRateStrategy(irStrategy).setInterestRateData(assetId, data);
     uint256 drawnRate = IAssetInterestRateStrategy(irStrategy).calculateInterestRate({
       assetId: assetId,
-      availableLiquidity: 0,
+      liquidity: 0,
       drawn: 0,
       premium: 0
     });
@@ -79,7 +79,7 @@ contract Hub is IHub, AccessManaged {
       underlying: underlying,
       decimals: decimals,
       addedShares: 0,
-      availableLiquidity: 0,
+      liquidity: 0,
       drawnShares: 0,
       premiumShares: 0,
       premiumOffset: 0,
@@ -167,7 +167,7 @@ contract Hub is IHub, AccessManaged {
     require(shares != 0, InvalidSharesAmount());
     asset.addedShares += shares;
     spoke.addedShares += shares;
-    asset.availableLiquidity += amount;
+    asset.liquidity += amount;
 
     asset.updateDrawnRate(assetId);
 
@@ -190,7 +190,7 @@ contract Hub is IHub, AccessManaged {
     uint256 shares = previewRemoveByAssets(assetId, amount); // non zero since we round up
     asset.addedShares -= shares;
     spoke.addedShares -= shares;
-    asset.availableLiquidity -= amount;
+    asset.liquidity -= amount;
 
     asset.updateDrawnRate(assetId);
 
@@ -212,7 +212,7 @@ contract Hub is IHub, AccessManaged {
     uint256 shares = previewDrawByAssets(assetId, amount); // non zero since we round up
     asset.drawnShares += shares;
     spoke.drawnShares += shares;
-    asset.availableLiquidity -= amount;
+    asset.liquidity -= amount;
 
     asset.updateDrawnRate(assetId);
 
@@ -242,7 +242,7 @@ contract Hub is IHub, AccessManaged {
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
     uint256 totalAmount = drawnAmount + premiumAmount;
-    asset.availableLiquidity += totalAmount;
+    asset.liquidity += totalAmount;
 
     asset.updateDrawnRate(assetId);
 
@@ -510,7 +510,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].availableLiquidity;
+    return _assets[assetId].liquidity;
   }
 
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
@@ -548,7 +548,7 @@ contract Hub is IHub, AccessManaged {
     require(spoke.config.active, SpokeNotActive());
     uint256 withdrawable = asset.toAddedAssetsDown(spoke.addedShares);
     require(amount <= withdrawable, AddedAmountExceeded(withdrawable));
-    require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
+    require(amount <= asset.liquidity, NotAvailableLiquidity(asset.liquidity));
   }
 
   function _validateDraw(
@@ -566,7 +566,7 @@ contract Hub is IHub, AccessManaged {
       drawCap == type(uint256).max || drawCap >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
     );
-    require(amount <= asset.availableLiquidity, NotAvailableLiquidity(asset.availableLiquidity));
+    require(amount <= asset.liquidity, NotAvailableLiquidity(asset.liquidity));
   }
 
   function _validateRestore(

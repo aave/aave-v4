@@ -70,7 +70,7 @@ interface IHub is IAccessManaged {
   error InvalidRemoveAmount();
   error InvalidRestoreAmount();
   error AddedAmountExceeded(uint256 addedAmount);
-  error NotAvailableLiquidity(uint256 availableLiquidity);
+  error NotAvailableLiquidity(uint256 liquidity);
   error InvalidDrawAmount();
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);
