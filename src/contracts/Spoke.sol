@@ -284,7 +284,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
 
     DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
-      drawnSharesDelta: -int256(userPosition.premiumShares),
+      premiumSharesDelta: -int256(userPosition.premiumShares),
       offsetDelta: -int256(userPosition.premiumOffset),
       realizedDelta: int256(vars.accruedPremium) - int256(vars.premiumDebtRestored)
     });
@@ -744,7 +744,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.Reserve storage reserve,
     DataTypes.PremiumDelta memory premiumDelta
   ) internal {
-    reserve.premiumShares = reserve.premiumShares.add(premiumDelta.drawnSharesDelta);
+    reserve.premiumShares = reserve.premiumShares.add(premiumDelta.premiumSharesDelta);
     reserve.premiumOffset = reserve.premiumOffset.add(premiumDelta.offsetDelta);
     reserve.realizedPremium = reserve.realizedPremium.add(premiumDelta.realizedDelta);
   }
@@ -973,7 +973,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
           vars.reserveId,
           user,
           DataTypes.PremiumDelta({
-            drawnSharesDelta: premiumSharesDelta,
+            premiumSharesDelta: premiumSharesDelta,
             offsetDelta: userPosition.premiumOffset.signedSub(oldUserPremiumOffset),
             realizedDelta: int256(accruedUserPremium)
           })
@@ -1012,7 +1012,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         ) = _getUserDebt(hub, assetId, userPosition);
 
         DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
-          drawnSharesDelta: -int256(userPosition.premiumShares),
+          premiumSharesDelta: -int256(userPosition.premiumShares),
           offsetDelta: -int256(userPosition.premiumOffset),
           realizedDelta: int256(accruedPremium) - int256(premiumDebtRestored)
         });
@@ -1132,7 +1132,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       // repay debt
       {
         vars.premiumDelta = DataTypes.PremiumDelta({
-          drawnSharesDelta: -int256(userDebtPosition.premiumShares),
+          premiumSharesDelta: -int256(userDebtPosition.premiumShares),
           offsetDelta: -int256(userDebtPosition.premiumOffset),
           realizedDelta: int256(vars.accruedPremium) - int256(vars.premiumDebtToLiquidate)
         });

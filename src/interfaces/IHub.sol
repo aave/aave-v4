@@ -43,13 +43,6 @@ interface IHub is IAccessManaged {
   event RefreshPremium(
     uint256 indexed assetId,
     address indexed spoke,
-    uint256 suppliedShares,
-    uint256 suppliedAmount
-  );
-
-  event RefreshPremiumDebt(
-    uint256 indexed assetId,
-    address indexed spoke,
     DataTypes.PremiumDelta premiumDelta
   );
   event DeficitReported(

@@ -298,7 +298,7 @@ contract Hub is IHub, AccessManaged {
     // no premium debt change allowed
     _applyPremiumDelta(asset, spoke, premiumDelta, 0);
 
-    emit RefreshPremiumDebt(assetId, msg.sender, premiumDelta);
+    emit RefreshPremium(assetId, msg.sender, premiumDelta);
   }
 
   /// @inheritdoc IHub
@@ -325,7 +325,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /**
-   * @dev Applies premium deltas on asset and spoke debt, and validates that total premium debt
+   * @dev Applies premium deltas on asset and spoke owed, and validates that total premium
    * cannot decrease by more than `premiumAmount`.
    */
   function _applyPremiumDelta(
@@ -336,11 +336,11 @@ contract Hub is IHub, AccessManaged {
   ) internal {
     uint256 premiumBefore = asset.premium();
 
-    asset.premiumShares = asset.premiumShares.add(premium.drawnSharesDelta);
+    asset.premiumShares = asset.premiumShares.add(premium.premiumSharesDelta);
     asset.premiumOffset = asset.premiumOffset.add(premium.offsetDelta);
     asset.realizedPremium = asset.realizedPremium.add(premium.realizedDelta);
 
-    spoke.premiumShares = spoke.premiumShares.add(premium.drawnSharesDelta);
+    spoke.premiumShares = spoke.premiumShares.add(premium.premiumSharesDelta);
     spoke.premiumOffset = spoke.premiumOffset.add(premium.offsetDelta);
     spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta);
 

@@ -123,7 +123,7 @@ library DataTypes {
   }
 
   struct PremiumDelta {
-    int256 drawnSharesDelta;
+    int256 premiumSharesDelta;
     int256 offsetDelta;
     int256 realizedDelta;
   }
