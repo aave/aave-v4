@@ -329,7 +329,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
   /**
    * @dev Applies premium deltas on asset and spoke debt, and validates that total premium debt
-   * cannot decrease by more than `premiumAmount` restored.
+   * cannot decrease by more than `premiumAmount`.
    */
   function _applyPremiumDelta(
     DataTypes.Asset storage asset,
