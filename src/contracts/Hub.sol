@@ -209,18 +209,18 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateDraw(asset, spoke, amount, to);
 
-    uint256 shares = previewDrawByAssets(assetId, amount); // non zero since we round up
-    asset.drawnShares += shares;
-    spoke.drawnShares += shares;
+    uint256 drawnShares = previewDrawByAssets(assetId, amount); // non zero since we round up
+    asset.drawnShares += drawnShares;
+    spoke.drawnShares += drawnShares;
     asset.liquidity -= amount;
 
     asset.updateDrawnRate(assetId);
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
-    emit Draw(assetId, msg.sender, shares, amount);
+    emit Draw(assetId, msg.sender, drawnShares, amount);
 
-    return shares;
+    return drawnShares;
   }
 
   /// @inheritdoc IHub

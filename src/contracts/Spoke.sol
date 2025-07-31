@@ -222,7 +222,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     userPosition.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
 
-    // calc needs new user position, just updating base debt is enough
+    // calc needs new user position, just updating drawn debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
 
@@ -252,7 +252,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    // calc needs new user position, just updating base debt is enough
+    // calc needs new user position, just updating drawn debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
 
@@ -701,7 +701,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(!usingAsCollateral || !reserve.config.frozen, ReserveFrozen());
   }
 
-  // @dev allows donation on base debt
+  // @dev allows donation on drawn debt
   function _calculateRestoreAmount(
     uint256 drawnDebt,
     uint256 premiumDebt,
@@ -1193,11 +1193,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @param debtReserve The debt reserve being repaid during liquidation.
    * @param user The address of the user being liquidated.
    * @param debtToCover The amount of debt to cover.
-   * @param drawnDebt The base debt of the user.
+   * @param drawnDebt The drawn debt of the user.
    * @param premiumDebt The premium debt of the user.
    * @return actualCollateralToLiquidate The amount of collateral to liquidate.
    * @return liquidationFeeAmount The amount of protocol fee.
-   * @return drawnDebtToLiquidate The amount of base debt to repay.
+   * @return drawnDebtToLiquidate The amount of drawn debt to repay.
    * @return premiumDebtToLiquidate The amount of premium debt to repay.
    * @return hasDeficit The flag representing if the user will have deficit to report.
    */
