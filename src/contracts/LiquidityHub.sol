@@ -274,7 +274,6 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 totalDeficitAmount = baseAmount + premiumAmount;
     asset.deficit += totalDeficitAmount;
 
-    /// @dev premium debt must be restored in `refreshPremiumDebt` before calling this function
     asset.updateBorrowRate(assetId);
 
     emit DeficitReported(
@@ -295,9 +294,8 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   ) external {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
-    require(spoke.config.active, SpokeNotActive());
 
-    // accrue interest and liquidity fees
+    require(spoke.config.active, SpokeNotActive());
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
     // no premium debt change allowed
@@ -331,7 +329,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
   /**
    * @dev Applies premium deltas on asset and spoke debt, and validates that total premium debt
-   * change is within `premiumAmount` restored.
+   * cannot decrease by more than `premiumAmount` restored.
    */
   function _applyPremiumDelta(
     DataTypes.Asset storage asset,
@@ -596,9 +594,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(from != address(this), InvalidFromAddress());
     require(baseAmountRestored + premiumAmountRestored > 0, InvalidRestoreAmount());
     require(spoke.config.active, SpokeNotActive());
-    (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
+    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeDebt(asset, spoke);
     require(baseAmountRestored <= baseDebt, SurplusAmountRestored(baseDebt));
-    // we should have already restored premium debt
+    require(premiumAmountRestored <= premiumDebt, SurplusAmountRestored(premiumDebt));
   }
 
   function _getSpokeDebt(
@@ -618,9 +616,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   ) internal view {
     require(spoke.config.active, SpokeNotActive());
     require(baseAmount + premiumAmount != 0, InvalidDeficitAmount());
-    (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
+    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeDebt(asset, spoke);
     require(baseAmount <= baseDebt, SurplusDeficitReported(baseDebt));
-    // we should have already restored premium debt
+    require(premiumAmount <= premiumDebt, SurplusDeficitReported(premiumDebt));
   }
 
   // handles underflow

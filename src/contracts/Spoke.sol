@@ -1031,7 +1031,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
           premiumDebtRestored,
           premiumDelta
         );
-
+        _settlePremiumDebt(reserve, userPosition, premiumDelta);
         reserve.baseDrawnShares -= deficitShares;
         userPosition.baseDrawnShares -= deficitShares;
         // newUserRiskPremium is 0 due to no collateral remaining
@@ -1150,7 +1150,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
           liquidator
         );
         // debt accounting
-        _settlePremiumDebt(userDebtPosition, vars.premiumDelta);
+        _settlePremiumDebt(debtReserve, userDebtPosition, vars.premiumDelta);
         userDebtPosition.baseDrawnShares -= vars.restoredShares;
         vars.totalRestoredShares += vars.restoredShares;
       }

@@ -16,7 +16,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   /// deficit covers base debt and premium debt
   function test_liquidationCall_multi_reserve_badPremiumDebt_scenario1_base_and_premium() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
-
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
@@ -374,12 +373,20 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
       uint256 expectedDeficitShares;
       uint256 expectedDeficitAmount;
+      DataTypes.PremiumDelta memory expectedDeficitPremiumDelta;
 
       if (reserveId != state.debtReserve.reserveId) {
-        expectedDeficitShares = state.spoke.getUserPosition(reserveId, alice).baseDrawnShares;
+        DataTypes.UserPosition memory userPosition = state.spoke.getUserPosition(reserveId, alice);
+        expectedDeficitShares = userPosition.baseDrawnShares;
         expectedDeficitAmount = state.spoke.getUserTotalDebt(reserveId, alice);
+        expectedDeficitPremiumDelta = DataTypes.PremiumDelta(
+          -int256(userPosition.premiumDrawnShares),
+          -int256(userPosition.premiumOffset),
+          -int256(userPosition.realizedPremium)
+        );
         // for debt asset being liquidated, some debt is restored prior to deficit creation
       } else {
+        DataTypes.UserPosition memory userPosition = state.spoke.getUserPosition(reserveId, alice);
         (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
           state.userBaseDebt.balanceBefore,
           state.userPremiumDebt.balanceBefore,
@@ -389,19 +396,30 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
         // debt asset deficit shares are the initial amount minus the amount restored during liquidation
         state.expectedDeficitShares = expectedDeficitShares =
-          state.spoke.getUserPosition(reserveId, alice).baseDrawnShares -
+          userPosition.baseDrawnShares -
           hub.convertToDrawnShares(assetId, basedDebtRestored);
         // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
         state.expectedDeficitAmount = expectedDeficitAmount =
           hub.convertToDrawnAssets(assetId, expectedDeficitShares) +
           state.userPremiumDebt.balanceBefore -
           premDebtRestored;
+        uint256 accruedPremium = hub.convertToDrawnAssets(
+          assetId,
+          userPosition.premiumDrawnShares
+        ) - userPosition.premiumOffset;
+        // premium shares & offset were reset in the prior restore, and the remaining realized premium is now restored as deficit
+        expectedDeficitPremiumDelta = DataTypes.PremiumDelta(
+          0,
+          0,
+          int256(premDebtRestored) - int256(accruedPremium)
+        );
       }
       vm.expectEmit(address(hub));
       emit ILiquidityHub.DeficitReported(
         assetId,
         address(state.spoke),
         expectedDeficitShares,
+        expectedDeficitPremiumDelta,
         expectedDeficitAmount
       );
     }
