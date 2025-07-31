@@ -215,4 +215,8 @@ contract LiquidityHubBase is Base {
 
     assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
   }
+
+  function _randomAssetId(ILiquidityHub liqHub) internal returns (uint256) {
+    return vm.randomUint(0, liqHub.getAssetCount() - 1);
+  }
 }

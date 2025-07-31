@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 /**
  * @title ILiquidityHub
@@ -65,6 +64,20 @@ interface ILiquidityHub is IAccessManaged {
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
 
+  /**
+   * @notice Emitted when a deficit is cleared.
+   * @param assetId The identifier of the asset.
+   * @param spoke The spoke that cleared the deficit, and had supplied shares removed.
+   * @param removedShares The amount of shares removed.
+   * @param amount The amount of deficit cleared.
+   */
+  event DeficitCleared(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 removedShares,
+    uint256 amount
+  );
+
   error InvalidSharesAmount();
   error InvalidAddAmount();
   error InvalidFromAddress();
@@ -91,6 +104,7 @@ interface ILiquidityHub is IAccessManaged {
   error SurplusDeficitReported(uint256 amount);
   error SpokeNotActive();
   error InvalidFeeShares();
+  error InvalidClearDeficitAmount();
 
   /**
    * @notice Adds a new asset to the hub.
@@ -135,7 +149,7 @@ interface ILiquidityHub is IAccessManaged {
 
   /**
    * @notice Add/Supply asset on behalf of user.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to add/supply.
    * @param from The address which we pull assets from (user).
@@ -145,7 +159,7 @@ interface ILiquidityHub is IAccessManaged {
 
   /**
    * @notice Remove/Withdraw supplied asset on behalf of user.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to remove/withdraw.
    * @param to The address to transfer the assets to.
@@ -155,7 +169,7 @@ interface ILiquidityHub is IAccessManaged {
 
   /**
    * @notice Draw/Borrow debt on behalf of user.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of debt to draw.
    * @param to The address to transfer the underlying assets to.
@@ -165,7 +179,7 @@ interface ILiquidityHub is IAccessManaged {
 
   /**
    * @notice Restores/Repays debt on behalf of user.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @dev Interest is always paid off first from premium, then from base.
    * @param assetId The identifier of the asset.
    * @param baseAmount The base debt to repay.
@@ -183,7 +197,7 @@ interface ILiquidityHub is IAccessManaged {
   /**
    * @notice Refreshes premium debt accounting.
    * @dev To be called when moving accrued premium to realized premium.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @dev Premium debt can only decrease by at most the amount of realized premium taken.
    * @param assetId The identifier of the asset.
    * @param premiumDrawnSharesDelta The change in premium drawn shares.
@@ -201,7 +215,7 @@ interface ILiquidityHub is IAccessManaged {
 
   /**
    * @notice Pay existing liquidity to feeReceiver.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to pay to feeReceiver.
    */
@@ -209,7 +223,7 @@ interface ILiquidityHub is IAccessManaged {
 
   /**
    * @notice Reports deficit.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param baseAmount The base debt to report as deficit.
    * @param premiumAmount The premium debt to report as deficit.
@@ -220,6 +234,15 @@ interface ILiquidityHub is IAccessManaged {
     uint256 baseAmount,
     uint256 premiumAmount
   ) external returns (uint256);
+
+  /**
+   * @notice Clears deficit by removing supplied shares of caller spoke.
+   * @dev Only callable by active spokes.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount of deficit to clear.
+   * @return The amount of shares removed.
+   */
+  function clearDeficit(uint256 assetId, uint256 amount) external returns (uint256);
 
   /**
    * @notice Converts the specified amount of assets to shares amount added upon an Add action.
@@ -353,6 +376,8 @@ interface ILiquidityHub is IAccessManaged {
   function getTotalSuppliedShares(uint256 assetId) external view returns (uint256);
 
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
+
+  function getDeficit(uint256 assetId) external view returns (uint256);
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
 

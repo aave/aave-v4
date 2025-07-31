@@ -276,6 +276,29 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   /// @inheritdoc ILiquidityHub
+  function clearDeficit(uint256 assetId, uint256 amount) external returns (uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+
+    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+    _validateClearDeficit(spoke, amount);
+
+    uint256 deficit = asset.deficit;
+    if (amount > deficit) amount = deficit;
+
+    uint256 removedShares = previewRemoveByAssets(assetId, amount);
+    asset.suppliedShares -= removedShares;
+    spoke.suppliedShares -= removedShares;
+    asset.deficit = deficit - amount;
+
+    asset.updateBorrowRate(assetId);
+
+    emit DeficitCleared(assetId, msg.sender, removedShares, amount);
+
+    return removedShares;
+  }
+
+  /// @inheritdoc ILiquidityHub
   function refreshPremiumDebt(
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
@@ -533,6 +556,10 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return _assets[assetId].availableLiquidity;
   }
 
+  function getDeficit(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].deficit;
+  }
+
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
     return _assets[assetId].config;
   }
@@ -625,6 +652,11 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
     require(baseAmount <= baseDebt, SurplusDeficitReported(baseDebt));
     // we should have already restored premium debt
+  }
+
+  function _validateClearDeficit(DataTypes.SpokeData storage spoke, uint256 amount) internal view {
+    require(spoke.config.active, SpokeNotActive());
+    require(amount != 0, InvalidClearDeficitAmount());
   }
 
   // handles underflow
