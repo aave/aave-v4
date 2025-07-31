@@ -226,18 +226,18 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
 
   function test_fuzzMultipleDrawWhileAccruingInterest(
     uint256 timeToSkip,
-    uint256 baseDrawRate
+    uint256 drawnRate
   ) public {
     vm.skip(true, 'pending refactor');
 
     //     timeToSkip = bound(timeToSkip, 1 days, 10_000 days);
-    //     baseDrawRate = bound(baseDrawRate, uint256(1).bpsToRay(), uint256(100_00).bpsToRay());
+    //     drawnRate = bound(drawnRate, uint256(1).bpsToRay(), uint256(100_00).bpsToRay());
     //     uint40 lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
 
     //     vm.mockCall(
     //       address(irStrategy),
     //       IBasicInterestRateStrategy.calculateInterestRates.selector,
-    //       abi.encode(baseDrawRate)
+    //       abi.encode(drawnRate)
     //     );
 
     //     vm.prank(address(spoke1));
@@ -257,7 +257,7 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
 
     //     skip(timeToSkip);
     //     uint256 spoke1AccruedDebt = spoke1DrawAmount.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMath.RAY
+    //       MathUtils.calculateLinearInterest(drawnRate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
 
     //     // spoke 2 draws
@@ -283,10 +283,10 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
 
     //     spoke1DrawAmount += spoke1AccruedDebt;
     //     spoke1AccruedDebt = spoke1DrawAmount.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMath.RAY
+    //       MathUtils.calculateLinearInterest(drawnRate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
     //     uint256 spoke2AccruedDebt = spoke2DrawAmount.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMath.RAY
+    //       MathUtils.calculateLinearInterest(drawnRate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
 
     //     // spoke 3 draws remaining liquidity
@@ -311,7 +311,7 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
 
     //     test_fuzzMultipleDrawWhileAccruingInterest({
     //       timeToSkip: 365 days,
-    //       baseDrawRate: uint256(15_00).bpsToRay()
+    //       drawnRate: uint256(15_00).bpsToRay()
     //     });
   }
 
@@ -405,13 +405,13 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
   function test_fuzzMultipleDrawWhileAccruingInterest(
     TestDrawAmountAndRiskPremiumInput memory p,
     uint256 timeToSkip,
-    uint256 baseDrawRate
+    uint256 drawnRate
   ) public {
     vm.skip(true, 'pending refactor');
 
     //     p = bound({input: p, minDrawAmount: daiAmount, maxDrawAmount: daiAmount});
     //     timeToSkip = bound(timeToSkip, 1 days, 100_000 days);
-    //     baseDrawRate = bound(baseDrawRate, uint256(1).bpsToRay(), uint256(100_00).bpsToRay());
+    //     drawnRate = bound(drawnRate, uint256(1).bpsToRay(), uint256(100_00).bpsToRay());
     //     uint40 lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
 
     //     uint256 totalToDraw = p.drawAmount.spoke1 + p.drawAmount.spoke2 + p.drawAmount.spoke3;
@@ -419,7 +419,7 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
     //     vm.mockCall(
     //       address(irStrategy),
     //       IBasicInterestRateStrategy.calculateInterestRates.selector,
-    //       abi.encode(baseDrawRate)
+    //       abi.encode(drawnRate)
     //     );
 
     //     vm.prank(address(spoke1));
@@ -435,15 +435,15 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
 
     //     skip(timeToSkip);
     //     uint256 spoke1AccruedDebt = p.drawAmount.spoke1.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMath.RAY
+    //       MathUtils.calculateLinearInterest(drawnRate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
 
-    //     // borrow baseDrawRate changes with this action
-    //     baseDrawRate *= 2;
+    //     // borrow drawnRate changes with this action
+    //     drawnRate *= 2;
     //     vm.mockCall(
     //       address(irStrategy),
     //       IBasicInterestRateStrategy.calculateInterestRates.selector,
-    //       abi.encode(baseDrawRate)
+    //       abi.encode(drawnRate)
     //     );
 
     //     // spoke 2 draws
@@ -469,10 +469,10 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
 
     //     p.drawAmount.spoke1 += spoke1AccruedDebt;
     //     spoke1AccruedDebt = p.drawAmount.spoke1.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMath.RAY
+    //       MathUtils.calculateLinearInterest(drawnRate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
     //     uint256 spoke2AccruedDebt = p.drawAmount.spoke2.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMath.RAY
+    //       MathUtils.calculateLinearInterest(drawnRate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
 
     //     // spoke 3 draws remaining liquidity

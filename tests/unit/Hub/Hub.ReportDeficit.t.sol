@@ -113,14 +113,14 @@ contract HubReportDeficitTest is HubBase {
     params.supplyExchangeRateBefore = hub.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
     params.availableLiquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceBefore = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
-    uint256 baseDrawnSharesBefore = hub.getAsset(usdxAssetId).baseDrawnShares;
+    uint256 drawnSharesBefore = hub.getAsset(usdxAssetId).drawnShares;
     uint256 totalDeficit = baseAmount + premiumAmount;
 
     // Refresh premium debt first
     vm.prank(address(spoke1));
     hub.refreshPremium({
       assetId: usdxAssetId,
-      premiumDrawnSharesDelta: int256(0),
+      premiumSharesDelta: int256(0),
       premiumOffsetDelta: int256(0),
       realizedPremiumAdded: 0,
       realizedPremiumTaken: premiumAmount
@@ -144,7 +144,7 @@ contract HubReportDeficitTest is HubBase {
     params.supplyExchangeRateAfter = hub.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
     params.availableLiquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceAfter = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
-    uint256 baseDrawnSharesAfter = hub.getAsset(usdxAssetId).baseDrawnShares;
+    uint256 drawnSharesAfter = hub.getAsset(usdxAssetId).drawnShares;
 
     // due to rounding of donation, base debt can differ by asset amount of one share
     // and 1 wei imprecision
@@ -155,8 +155,8 @@ contract HubReportDeficitTest is HubBase {
       'base debt'
     );
     assertEq(
-      baseDrawnSharesAfter,
-      baseDrawnSharesBefore - hub.convertToDrawnShares(usdxAssetId, baseAmount),
+      drawnSharesAfter,
+      drawnSharesBefore - hub.convertToDrawnShares(usdxAssetId, baseAmount),
       'base drawn shares'
     );
     assertEq(params.premiumAfter, params.premium - premiumAmount, 'premium debt');
@@ -206,7 +206,7 @@ contract HubReportDeficitTest is HubBase {
     params.supplyExchangeRateBefore = hub.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
     params.availableLiquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceBefore = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
-    uint256 baseDrawnSharesBefore = hub.getAsset(usdxAssetId).baseDrawnShares;
+    uint256 drawnSharesBefore = hub.getAsset(usdxAssetId).drawnShares;
     uint256 totalDeficit = baseAmount + premiumAmount;
 
     vm.expectEmit(address(hub));
@@ -227,7 +227,7 @@ contract HubReportDeficitTest is HubBase {
     params.supplyExchangeRateAfter = hub.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
     params.availableLiquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
     params.balanceAfter = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
-    uint256 baseDrawnSharesAfter = hub.getAsset(usdxAssetId).baseDrawnShares;
+    uint256 drawnSharesAfter = hub.getAsset(usdxAssetId).drawnShares;
 
     // due to rounding of donation, base debt can differ by asset amount of one share
     // and 1 wei imprecision
@@ -238,8 +238,8 @@ contract HubReportDeficitTest is HubBase {
       'base debt'
     );
     assertEq(
-      baseDrawnSharesAfter,
-      baseDrawnSharesBefore - hub.convertToDrawnShares(usdxAssetId, baseAmount),
+      drawnSharesAfter,
+      drawnSharesBefore - hub.convertToDrawnShares(usdxAssetId, baseAmount),
       'base drawn shares'
     );
     assertEq(params.premiumAfter, params.premium, 'premium debt');

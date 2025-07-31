@@ -41,9 +41,9 @@ contract SpokeMulticall is SpokeBase {
     Utils.borrow(spoke2, _dai2ReserveId(spoke2), bob, 1000e18, bob);
 
     // Check bob's premium drawn shares as proxy for user rp
-    uint256 bobPremiumDrawnSharesBefore = spoke2
+    uint256 bobpremiumSharesBefore = spoke2
       .getUserPosition(_dai2ReserveId(spoke2), bob)
-      .premiumDrawnShares;
+      .premiumShares;
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](3);
@@ -67,13 +67,13 @@ contract SpokeMulticall is SpokeBase {
     vm.prank(bob);
     spoke2.multicall(calls);
 
-    uint256 bobPremiumDrawnSharesAfter = spoke2
+    uint256 bobpremiumSharesAfter = spoke2
       .getUserPosition(_dai2ReserveId(spoke2), bob)
-      .premiumDrawnShares;
+      .premiumShares;
 
     assertLt(
-      bobPremiumDrawnSharesAfter,
-      bobPremiumDrawnSharesBefore,
+      bobpremiumSharesAfter,
+      bobpremiumSharesBefore,
       'Bob premium drawn shares should decrease'
     );
   }

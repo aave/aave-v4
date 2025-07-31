@@ -61,14 +61,14 @@ contract Hub is IHub, AccessManaged {
 
     uint256 assetId = _assetCount++;
     IAssetInterestRateStrategy(irStrategy).setInterestRateData(assetId, data);
-    uint256 baseDrawRate = IAssetInterestRateStrategy(irStrategy).calculateInterestRate({
+    uint256 drawnRate = IAssetInterestRateStrategy(irStrategy).calculateInterestRate({
       assetId: assetId,
       availableLiquidity: 0,
       drawn: 0,
       premium: 0
     });
 
-    uint256 baseDrawnIndex = WadRayMath.RAY;
+    uint256 drawnIndex = WadRayMath.RAY;
     uint256 lastUpdateTimestamp = block.timestamp;
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
       feeReceiver: feeReceiver,
@@ -80,12 +80,12 @@ contract Hub is IHub, AccessManaged {
       decimals: decimals,
       addedShares: 0,
       availableLiquidity: 0,
-      baseDrawnShares: 0,
-      premiumDrawnShares: 0,
+      drawnShares: 0,
+      premiumShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
-      baseDrawnIndex: baseDrawnIndex,
-      baseDrawRate: baseDrawRate,
+      drawnIndex: drawnIndex,
+      drawnRate: drawnRate,
       lastUpdateTimestamp: lastUpdateTimestamp,
       deficit: 0,
       config: config
@@ -93,7 +93,7 @@ contract Hub is IHub, AccessManaged {
 
     emit AssetAdded(assetId, underlying, decimals);
     emit AssetConfigUpdated(assetId, config);
-    emit AssetUpdated(assetId, baseDrawnIndex, baseDrawRate, lastUpdateTimestamp);
+    emit AssetUpdated(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
 
     return assetId;
   }
@@ -210,8 +210,8 @@ contract Hub is IHub, AccessManaged {
     _validateDraw(asset, spoke, amount, to);
 
     uint256 shares = previewDrawByAssets(assetId, amount); // non zero since we round up
-    asset.baseDrawnShares += shares;
-    spoke.baseDrawnShares += shares;
+    asset.drawnShares += shares;
+    spoke.drawnShares += shares;
     asset.availableLiquidity -= amount;
 
     asset.updateDrawRate(assetId);
@@ -240,8 +240,8 @@ contract Hub is IHub, AccessManaged {
     _validateRestore(asset, spoke, baseAmount, premiumAmount, from);
 
     uint256 shares = previewRestoreByAssets(assetId, baseAmount);
-    asset.baseDrawnShares -= shares;
-    spoke.baseDrawnShares -= shares;
+    asset.drawnShares -= shares;
+    spoke.drawnShares -= shares;
     uint256 totalAmount = baseAmount + premiumAmount;
     asset.availableLiquidity += totalAmount;
 
@@ -269,23 +269,23 @@ contract Hub is IHub, AccessManaged {
     _validateReportDeficit(asset, spoke, baseAmount, premiumAmount);
 
     uint256 totalDeficitAmount = baseAmount + premiumAmount;
-    uint256 baseDrawnSharesRestored = previewRestoreByAssets(assetId, baseAmount);
-    asset.baseDrawnShares -= baseDrawnSharesRestored;
-    spoke.baseDrawnShares -= baseDrawnSharesRestored;
+    uint256 drawnSharesRestored = previewRestoreByAssets(assetId, baseAmount);
+    asset.drawnShares -= drawnSharesRestored;
+    spoke.drawnShares -= drawnSharesRestored;
     asset.deficit += totalDeficitAmount;
 
-    /// @dev premium debt must be restored in `refreshPremium` before calling this function
+    /// @dev premium must be restored in `refreshPremium` before calling this function
     asset.updateDrawRate(assetId);
 
-    emit DeficitReported(assetId, msg.sender, baseDrawnSharesRestored, totalDeficitAmount);
+    emit DeficitReported(assetId, msg.sender, drawnSharesRestored, totalDeficitAmount);
 
-    return baseDrawnSharesRestored;
+    return drawnSharesRestored;
   }
 
   /// @inheritdoc IHub
   function refreshPremium(
     uint256 assetId,
-    int256 premiumDrawnSharesDelta,
+    int256 premiumSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
@@ -298,7 +298,7 @@ contract Hub is IHub, AccessManaged {
     _refresh(
       assetId,
       msg.sender,
-      premiumDrawnSharesDelta,
+      premiumSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
       realizedPremiumTaken
@@ -336,7 +336,7 @@ contract Hub is IHub, AccessManaged {
   function _refresh(
     uint256 assetId,
     address spokeAddress,
-    int256 premiumDrawnSharesDelta,
+    int256 premiumSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
@@ -347,18 +347,18 @@ contract Hub is IHub, AccessManaged {
     // accrue interest and liquidity fees
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
-    asset.premiumDrawnShares = asset.premiumDrawnShares.add(premiumDrawnSharesDelta);
+    asset.premiumShares = asset.premiumShares.add(premiumSharesDelta);
     asset.premiumOffset = asset.premiumOffset.add(premiumOffsetDelta);
     asset.realizedPremium = asset.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
-    spoke.premiumDrawnShares = spoke.premiumDrawnShares.add(premiumDrawnSharesDelta);
+    spoke.premiumShares = spoke.premiumShares.add(premiumSharesDelta);
     spoke.premiumOffset = spoke.premiumOffset.add(premiumOffsetDelta);
     spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
     emit RefreshPremium(
       assetId,
       spokeAddress,
-      premiumDrawnSharesDelta,
+      premiumSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
       realizedPremiumTaken
@@ -410,7 +410,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function previewAddByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+  function previewAddByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toAddedAssetsUp(shares);
   }
 
@@ -420,7 +420,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function previewRemoveByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+  function previewRemoveByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toAddedAssetsDown(shares);
   }
 
@@ -430,7 +430,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function previewDrawByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+  function previewDrawByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toDrawnAssetsDown(shares);
   }
 
@@ -440,7 +440,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function previewRestoreByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+  function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toDrawnAssetsUp(shares);
   }
 
@@ -469,10 +469,6 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].getDrawnIndex();
   }
 
-  function getBaseDrawRate(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].baseDrawRate;
-  }
-
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     return (asset.drawn(), asset.premium());
@@ -494,6 +490,10 @@ contract Hub is IHub, AccessManaged {
   function getAssetAddedAmount(uint256 assetId) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     return asset.toAddedAssetsDown(asset.addedShares);
+  }
+
+  function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].drawnRate;
   }
 
   function getAssetAddedShares(uint256 assetId) external view returns (uint256) {
@@ -605,8 +605,8 @@ contract Hub is IHub, AccessManaged {
     DataTypes.SpokeData storage spoke
   ) internal view returns (uint256, uint256) {
     // sanity: utilize solc underflow check
-    uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset;
-    return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
+    uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumShares) - spoke.premiumOffset;
+    return (asset.toDrawnAssetsUp(spoke.drawnShares), spoke.realizedPremium + accruedPremium);
   }
 
   function _validateReportDeficit(

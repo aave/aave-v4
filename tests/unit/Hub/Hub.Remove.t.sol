@@ -38,8 +38,8 @@ contract HubRemoveTest is HubBase {
     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity after');
     assertEq(assetData.drawn, 0, 'asset drawn after');
     assertEq(assetData.premium, 0, 'asset premium after');
-    assertEq(assetData.baseDrawnIndex, WadRayMath.RAY, 'asset baseDrawnIndex after');
-    assertEq(assetData.baseDrawRate, uint256(5_00).bpsToRay(), 'asset baseDrawRate after');
+    assertEq(assetData.drawnIndex, WadRayMath.RAY, 'asset drawnIndex after');
+    assertEq(assetData.drawnRate, uint256(5_00).bpsToRay(), 'asset drawnRate after');
     assertEq(
       assetData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),

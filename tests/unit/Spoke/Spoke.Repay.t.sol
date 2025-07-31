@@ -114,14 +114,14 @@ contract SpokeRepayTest is SpokeBase {
     skip(365 days);
 
     DataTypes.UserPosition memory pos = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
-    assertGt(pos.baseDrawnShares, 0, 'user baseDrawnShares after repay');
-    assertGt(hub.convertToDrawnAssets(daiAssetId, pos.baseDrawnShares), 0, 'user baseDrawnAssets');
+    assertGt(pos.drawnShares, 0, 'user drawnShares after repay');
+    assertGt(hub.convertToDrawnAssets(daiAssetId, pos.drawnShares), 0, 'user baseDrawnAssets');
 
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
 
     pos = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
-    assertEq(pos.baseDrawnShares, 0, 'user baseDrawnShares after full repay');
-    assertEq(hub.convertToDrawnAssets(daiAssetId, pos.baseDrawnShares), 0, 'user baseDrawnAssets');
+    assertEq(pos.drawnShares, 0, 'user drawnShares after full repay');
+    assertEq(hub.convertToDrawnAssets(daiAssetId, pos.drawnShares), 0, 'user baseDrawnAssets');
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       0,
@@ -1479,7 +1479,7 @@ contract SpokeRepayTest is SpokeBase {
       bob,
       _daiReserveId(spoke1)
     );
-    assertEq(bobDaiDataBefore.baseDrawnShares, expectedDrawnShares, 'bob drawn shares');
+    assertEq(bobDaiDataBefore.drawnShares, expectedDrawnShares, 'bob drawn shares');
     assertEq(
       tokenList.dai.balanceOf(bob),
       bobDaiBalanceBefore + borrowAmount,
@@ -1491,7 +1491,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Bob should still have same number of drawn shares
     assertEq(
-      spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares,
       expectedDrawnShares,
       'bob drawn shares after time passed'
     );
@@ -1522,7 +1522,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Bob should have 0 drawn shares
     assertEq(
-      spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares,
       0,
       'bob drawn shares after repay'
     );

@@ -109,8 +109,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       reserveId: reserveId,
       assetId: assetId,
       suppliedShares: 0,
-      baseDrawnShares: 0,
-      premiumDrawnShares: 0,
+      drawnShares: 0,
+      premiumShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
       config: config,
@@ -213,7 +213,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     // If uint256.max is passed, withdraw all user's supplied assets
     if (amount == type(uint256).max) {
-      amount = hub.convertToAddedAssets(assetId, userPosition.suppliedShares);
+      amount = hub.previewRemoveByShares(assetId, userPosition.suppliedShares);
     }
     _validateWithdraw(reserve, userPosition, amount);
 
@@ -243,10 +243,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     _validateBorrow(reserve);
 
-    uint256 baseDrawnShares = hub.draw(assetId, amount, msg.sender);
+    uint256 drawnShares = hub.draw(assetId, amount, msg.sender);
 
-    reserve.baseDrawnShares += baseDrawnShares;
-    userPosition.baseDrawnShares += baseDrawnShares;
+    reserve.drawnShares += drawnShares;
+    userPosition.drawnShares += drawnShares;
 
     if (!positionStatus.isBorrowing(reserveId)) {
       positionStatus.setBorrowing(reserveId, true);
@@ -256,7 +256,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
 
-    emit Borrow(reserveId, msg.sender, onBehalfOf, baseDrawnShares);
+    emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
   }
 
   /// @inheritdoc ISpoke
@@ -295,10 +295,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       msg.sender
     );
 
-    reserve.baseDrawnShares -= vars.restoredShares;
-    userPosition.baseDrawnShares -= vars.restoredShares;
+    reserve.drawnShares -= vars.restoredShares;
+    userPosition.drawnShares -= vars.restoredShares;
 
-    if (userPosition.baseDrawnShares == 0) {
+    if (userPosition.drawnShares == 0) {
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
     }
 
@@ -468,7 +468,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    return reserve.premiumDrawnShares.rayDivDown(reserve.baseDrawnShares); // trailing
+    return reserve.premiumShares.rayDivDown(reserve.drawnShares); // trailing
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {
@@ -567,7 +567,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal view {
     require(reserve.underlying != address(0), ReserveNotListed());
     require(!reserve.config.paused, ReservePaused());
-    uint256 suppliedAmount = reserve.hub.convertToAddedAssets(
+    uint256 suppliedAmount = reserve.hub.previewRemoveByShares(
       reserve.assetId,
       userPosition.suppliedShares
     );
@@ -719,11 +719,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     address user,
     uint256 premiumDebtRestored
   ) internal {
-    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
+    uint256 userpremiumShares = userPosition.premiumShares;
     uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
+    uint256 accruedPremium = hub.previewRestoreByShares(assetId, userpremiumShares) -
       userPremiumOffset; // assets(premiumShares) - offset should never be < 0
-    userPosition.premiumDrawnShares = 0;
+    userPosition.premiumShares = 0;
     userPosition.premiumOffset = 0;
     userPosition.realizedPremium =
       userPosition.realizedPremium +
@@ -736,7 +736,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       assetId,
       reserveId,
       user,
-      -int256(userPremiumDrawnShares),
+      -int256(userpremiumShares),
       -int256(userPremiumOffset),
       accruedPremium,
       premiumDebtRestored
@@ -749,26 +749,26 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetId,
     uint256 reserveId,
     address user,
-    int256 premiumDrawnSharesDelta,
+    int256 premiumSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   ) internal {
-    reserve.premiumDrawnShares = reserve.premiumDrawnShares.add(premiumDrawnSharesDelta);
+    reserve.premiumShares = reserve.premiumShares.add(premiumSharesDelta);
     reserve.premiumOffset = reserve.premiumOffset.add(premiumOffsetDelta);
     reserve.realizedPremium = reserve.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
     emit RefreshPremiumDebt(
       reserveId,
       user,
-      premiumDrawnSharesDelta,
+      premiumSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
       realizedPremiumTaken
     );
     hub.refreshPremium(
       assetId,
-      premiumDrawnSharesDelta,
+      premiumSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
       realizedPremiumTaken
@@ -919,7 +919,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetUnit
   ) internal view returns (uint256) {
     return
-      (hub.convertToAddedAssets(assetId, userPosition.suppliedShares) * assetPrice).wadDivDown(
+      (hub.previewRemoveByShares(assetId, userPosition.suppliedShares) * assetPrice).wadDivDown(
         assetUnit
       );
   }
@@ -929,10 +929,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetId,
     DataTypes.UserPosition storage userPosition
   ) internal view returns (uint256, uint256) {
-    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares) -
+    uint256 accruedPremium = hub.previewRestoreByShares(assetId, userPosition.premiumShares) -
       userPosition.premiumOffset;
     return (
-      hub.previewRestoreByShares(assetId, userPosition.baseDrawnShares),
+      hub.previewRestoreByShares(assetId, userPosition.drawnShares),
       userPosition.realizedPremium + accruedPremium
     );
   }
@@ -943,10 +943,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal view returns (uint256, uint256) {
     uint256 assetId = reserve.assetId;
     IHub hub = reserve.hub;
-    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) -
+    uint256 accruedPremium = hub.previewRestoreByShares(assetId, reserve.premiumShares) -
       reserve.premiumOffset;
     return (
-      hub.previewRestoreByShares(assetId, reserve.baseDrawnShares),
+      hub.previewRestoreByShares(assetId, reserve.drawnShares),
       reserve.realizedPremium + accruedPremium
     );
   }
@@ -973,27 +973,23 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.assetId = reserve.assetId;
         vars.hub = reserve.hub;
 
-        uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
+        uint256 oldUserpremiumShares = userPosition.premiumShares;
         uint256 oldUserPremiumOffset = userPosition.premiumOffset;
-        uint256 accruedUserPremium = vars.hub.convertToDrawnAssets(
+        uint256 accruedUserPremium = vars.hub.previewRestoreByShares(
           vars.assetId,
-          oldUserPremiumDrawnShares
+          oldUserpremiumShares
         ) - oldUserPremiumOffset;
 
-        userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMulUp(
-          newUserRiskPremium
-        );
+        userPosition.premiumShares = userPosition.drawnShares.percentMulUp(newUserRiskPremium);
         userPosition.premiumOffset = _previewOffset(
           vars.hub,
           vars.assetId,
-          userPosition.premiumDrawnShares
+          userPosition.premiumShares
         );
         userPosition.realizedPremium += accruedUserPremium;
 
-        int256 premiumDrawnSharesDelta = userPosition.premiumDrawnShares.signedSub(
-          oldUserPremiumDrawnShares
-        );
-        if (!vars.premiumIncrease) vars.premiumIncrease = premiumDrawnSharesDelta > 0;
+        int256 premiumSharesDelta = userPosition.premiumShares.signedSub(oldUserpremiumShares);
+        if (!vars.premiumIncrease) vars.premiumIncrease = premiumSharesDelta > 0;
 
         _refreshPremiumDebt(
           reserve,
@@ -1001,7 +997,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
           vars.assetId,
           vars.reserveId,
           user,
-          premiumDrawnSharesDelta,
+          premiumSharesDelta,
           userPosition.premiumOffset.signedSub(oldUserPremiumOffset),
           accruedUserPremium,
           0
@@ -1049,8 +1045,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         );
         uint256 deficitShares = hub.reportDeficit(assetId, baseDebtRestored, premiumDebtRestored); // settle base debt here by reporting deficit
 
-        reserve.baseDrawnShares -= deficitShares;
-        userPosition.baseDrawnShares -= deficitShares;
+        reserve.drawnShares -= deficitShares;
+        userPosition.drawnShares -= deficitShares;
         // newUserRiskPremium is 0 due to no collateral remaining
         // non-zero deficit means user ends up with zero total debt
         positionStatus.setBorrowing(reserve.reserveId, false);
@@ -1175,10 +1171,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       );
 
       // debt accounting
-      userDebtPosition.baseDrawnShares -= vars.restoredShares;
+      userDebtPosition.drawnShares -= vars.restoredShares;
       vars.totalRestoredShares += vars.restoredShares;
 
-      if (userDebtPosition.baseDrawnShares == 0) {
+      if (userDebtPosition.drawnShares == 0) {
         _positionStatus[vars.user].setBorrowing(vars.debtReserveId, false);
       }
 
@@ -1208,7 +1204,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     }
 
     // TODO: rm when dupe reserve accounting is rm
-    debtReserve.baseDrawnShares -= vars.totalRestoredShares;
+    debtReserve.drawnShares -= vars.totalRestoredShares;
     collateralReserve.suppliedShares -= vars.totalWithdrawnShares;
 
     if (vars.totalLiquidationFeeShares > 0) {

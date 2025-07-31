@@ -35,7 +35,7 @@ export class Hub {
   public spokes: Spoke[] = [];
   public lastUpdateTimestamp = 0n;
 
-  public baseDrawnShares = 0n; // aka totalDrawnShares
+  public drawnShares = 0n; // aka totalDrawnShares
   public ghostDrawnShares = 0n;
   public offset = 0n;
   public realisedPremium = 0n;
@@ -58,7 +58,7 @@ export class Hub {
   }
 
   baseDebt() {
-    return this.convertToDrawnAssets(this.baseDrawnShares);
+    return this.convertToDrawnAssets(this.drawnShares);
   }
   premiumDebt() {
     const accruedPremium = this.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
@@ -121,9 +121,9 @@ export class Hub {
     const drawnShares = this.toDrawnShares(amount, Rounding.CEIL);
 
     this.availableLiquidity -= amount;
-    this.baseDrawnShares += drawnShares;
+    this.drawnShares += drawnShares;
 
-    this.getSpoke(spoke).baseDrawnShares += drawnShares;
+    this.getSpoke(spoke).drawnShares += drawnShares;
 
     return drawnShares;
   }
@@ -133,9 +133,9 @@ export class Hub {
     const drawnShares = this.toDrawnShares(baseAmount);
 
     this.availableLiquidity += baseAmount + premiumAmount;
-    this.baseDrawnShares -= drawnShares;
+    this.drawnShares -= drawnShares;
 
-    this.getSpoke(spoke).baseDrawnShares -= drawnShares;
+    this.getSpoke(spoke).drawnShares -= drawnShares;
 
     return drawnShares;
   }
@@ -187,7 +187,7 @@ export class Hub {
   log(spokes = false, users = false) {
     const ghostDebt = this.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
     console.log('--- Hub ---');
-    console.log('hub.baseDrawnShares         ', f(this.baseDrawnShares));
+    console.log('hub.drawnShares         ', f(this.drawnShares));
     console.log('hub.ghostDrawnShares        ', f(this.ghostDrawnShares));
     console.log('hub.offset                  ', f(this.offset));
     console.log('hub.ghostDebt               ', f(ghostDebt));
@@ -217,7 +217,7 @@ export class Hub {
     const accruedPremium = this.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
     assertGeZero(accruedPremium);
     return {
-      baseDebt: this.convertToDrawnAssets(this.baseDrawnShares),
+      baseDebt: this.convertToDrawnAssets(this.drawnShares),
       premiumDebt: accruedPremium + this.realisedPremium,
     };
   }
@@ -236,8 +236,8 @@ export class Hub {
     return this.toDrawnShares(assets);
   }
 
-  previewOffset(premiumDrawnShares: bigint) {
-    return this.toDrawnAssets(premiumDrawnShares);
+  previewOffset(premiumShares: bigint) {
+    return this.toDrawnAssets(premiumShares);
   }
 
   supplyExchangeRatio() {
@@ -259,7 +259,7 @@ export class Hub {
 export class Spoke {
   public users: User[] = [];
 
-  public baseDrawnShares = 0n;
+  public drawnShares = 0n;
   public ghostDrawnShares = 0n;
   public offset = 0n;
   public realisedPremium = 0n;
@@ -314,14 +314,11 @@ export class Spoke {
     this.refresh(-userGhostDrawnShares, -userOffset, accruedPremium, user);
     const drawnShares = this.hub.draw(amount, this); // asset to share should round up
 
-    this.baseDrawnShares += drawnShares;
-    user.baseDrawnShares += drawnShares;
+    this.drawnShares += drawnShares;
+    user.drawnShares += drawnShares;
 
     user.riskPremium = randomRiskPremium();
-    userGhostDrawnShares = user.ghostDrawnShares = percentMul(
-      user.baseDrawnShares,
-      user.riskPremium
-    );
+    userGhostDrawnShares = user.ghostDrawnShares = percentMul(user.drawnShares, user.riskPremium);
     userOffset = user.offset = this.hub.previewOffset(user.ghostDrawnShares);
 
     this.refresh(userGhostDrawnShares, userOffset, 0n, user);
@@ -355,14 +352,11 @@ export class Spoke {
     ); // settle premium debt
     const drawnShares = this.hub.restore(baseDebtRestored, premiumDebtRestored, this); // settle base debt
 
-    this.baseDrawnShares -= drawnShares;
-    user.baseDrawnShares -= drawnShares;
+    this.drawnShares -= drawnShares;
+    user.drawnShares -= drawnShares;
 
     user.riskPremium = randomRiskPremium();
-    userGhostDrawnShares = user.ghostDrawnShares = percentMul(
-      user.baseDrawnShares,
-      user.riskPremium
-    );
+    userGhostDrawnShares = user.ghostDrawnShares = percentMul(user.drawnShares, user.riskPremium);
     userOffset = user.offset = this.hub.previewOffset(user.ghostDrawnShares);
 
     this.refresh(userGhostDrawnShares, userOffset, 0n, user);
@@ -419,7 +413,7 @@ export class Spoke {
     const oldUserGhostDrawnShares = user.ghostDrawnShares;
     const oldUserOffset = user.offset;
 
-    user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
+    user.ghostDrawnShares = percentMul(user.drawnShares, user.riskPremium);
     user.offset = this.hub.previewOffset(user.ghostDrawnShares);
 
     const accruedPremium = this.hub.convertToDrawnAssets(oldUserGhostDrawnShares) - oldUserOffset;
@@ -460,7 +454,7 @@ export class Spoke {
     const accruedPremium = this.hub.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
     assertGeZero(accruedPremium);
     return {
-      baseDebt: this.hub.convertToDrawnAssets(this.baseDrawnShares),
+      baseDebt: this.hub.convertToDrawnAssets(this.drawnShares),
       premiumDebt: accruedPremium + this.realisedPremium,
     };
   }
@@ -471,7 +465,7 @@ export class Spoke {
     const accruedPremium = this.hub.convertToDrawnAssets(user.ghostDrawnShares) - user.offset;
     assertGeZero(accruedPremium);
     return {
-      baseDebt: this.hub.convertToDrawnAssets(user.baseDrawnShares),
+      baseDebt: this.hub.convertToDrawnAssets(user.drawnShares),
       premiumDebt: accruedPremium + user.realisedPremium,
     };
   }
@@ -504,7 +498,7 @@ export class Spoke {
   log(hub = false, users = false) {
     const ghostDebt = this.hub.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
     console.log(`--- Spoke ${this.id} ---`);
-    console.log('spoke.baseDrawnShares       ', f(this.baseDrawnShares));
+    console.log('spoke.drawnShares       ', f(this.drawnShares));
     console.log('spoke.ghostDrawnShares      ', f(this.ghostDrawnShares));
     console.log('spoke.offset                ', f(this.offset));
     console.log('spoke.ghostDebt             ', f(ghostDebt));
@@ -527,7 +521,7 @@ export class User {
   public spoke: Spoke;
   public hub: Hub;
 
-  public baseDrawnShares = 0n;
+  public drawnShares = 0n;
   public ghostDrawnShares = 0n;
   public offset = 0n;
   public realisedPremium = 0n;
@@ -596,7 +590,7 @@ export class User {
   log(spoke = false, hub = false) {
     const ghostDebt = this.hub.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
     console.log(`--- User ${this.id} ---`);
-    console.log('user.baseDrawnShares        ', f(this.baseDrawnShares));
+    console.log('user.drawnShares        ', f(this.drawnShares));
     console.log('user.ghostDrawnShares       ', f(this.ghostDrawnShares));
     console.log('user.offset                 ', f(this.offset));
     console.log('user.ghostDebt              ', f(ghostDebt));
@@ -694,7 +688,7 @@ export class System {
   invariant_valuesWithinBounds() {
     let fail = false;
     const all = [this.hub, ...this.spokes, ...this.users];
-    ['baseDrawnShares', 'ghostDrawnShares', 'offset', 'realisedPremium', 'suppliedShares'].forEach(
+    ['drawnShares', 'ghostDrawnShares', 'offset', 'realisedPremium', 'suppliedShares'].forEach(
       (key) => {
         all.forEach((who) => {
           if (who[key] < 0n || who[key] > MAX_UINT) {
@@ -849,22 +843,18 @@ export class System {
 
     this.spokes.forEach((spoke) => {
       const spokeOnHub = this.hub.getSpoke(spoke);
-      [
-        'baseDrawnShares',
-        'ghostDrawnShares',
-        'offset',
-        'realisedPremium',
-        'suppliedShares',
-      ].forEach((key) => {
-        if (spoke[key] !== spokeOnHub[key]) {
-          console.error(
-            `spoke(${spoke.id}).${key} ${f(spoke[key])} !== this.hub.spokes[${this.hub.idx(
-              spoke
-            )}].${key} ${f(spokeOnHub[key])}`
-          );
-          fail = true;
+      ['drawnShares', 'ghostDrawnShares', 'offset', 'realisedPremium', 'suppliedShares'].forEach(
+        (key) => {
+          if (spoke[key] !== spokeOnHub[key]) {
+            console.error(
+              `spoke(${spoke.id}).${key} ${f(spoke[key])} !== this.hub.spokes[${this.hub.idx(
+                spoke
+              )}].${key} ${f(spokeOnHub[key])}`
+            );
+            fail = true;
+          }
         }
-      });
+      );
     });
 
     this.handleFailure(fail, 'invariant_hubSpokeAccountingMatch');
@@ -917,7 +907,7 @@ class Utils {
 
   static checkBounds(who: Hub | Spoke | User) {
     const fail = [
-      who.baseDrawnShares,
+      who.drawnShares,
       who.ghostDrawnShares,
       who.offset,
       who.realisedPremium,

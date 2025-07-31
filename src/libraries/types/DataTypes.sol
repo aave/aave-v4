@@ -8,8 +8,8 @@ library DataTypes {
   // todo pack
   struct SpokeData {
     uint256 addedShares;
-    uint256 baseDrawnShares;
-    uint256 premiumDrawnShares;
+    uint256 drawnShares;
+    uint256 premiumShares;
     uint256 premiumOffset; // todo make signed
     uint256 realizedPremium;
     DataTypes.SpokeConfig config;
@@ -20,12 +20,12 @@ library DataTypes {
     uint8 decimals;
     uint256 addedShares;
     uint256 availableLiquidity;
-    uint256 baseDrawnShares;
-    uint256 premiumDrawnShares;
+    uint256 drawnShares;
+    uint256 premiumShares;
     uint256 premiumOffset; // todo make signed
     uint256 realizedPremium;
-    uint256 baseDrawnIndex;
-    uint256 baseDrawRate;
+    uint256 drawnIndex;
+    uint256 drawnRate;
     uint256 lastUpdateTimestamp;
     uint256 deficit;
     DataTypes.AssetConfig config;
@@ -48,8 +48,8 @@ library DataTypes {
     uint256 reserveId;
     uint256 assetId;
     uint256 suppliedShares;
-    uint256 baseDrawnShares;
-    uint256 premiumDrawnShares;
+    uint256 drawnShares;
+    uint256 premiumShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
     ReserveConfig config;
@@ -74,8 +74,8 @@ library DataTypes {
 
   struct UserPosition {
     uint256 suppliedShares;
-    uint256 baseDrawnShares;
-    uint256 premiumDrawnShares;
+    uint256 drawnShares;
+    uint256 premiumShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
     uint16 configKey; // key of the last user config
@@ -193,7 +193,7 @@ library DataTypes {
     uint256 premiumDebt;
     uint256 baseDebtRestored;
     uint256 premiumDebtRestored;
-    uint256 userPremiumDrawnShares;
+    uint256 userpremiumShares;
     uint256 userPremiumOffset;
     uint256 accruedPremium;
     uint256 newUserRiskPremium;

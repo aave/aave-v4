@@ -23,7 +23,7 @@ interface IHub is IAccessManaged {
   event AssetUpdated(
     uint256 indexed assetId,
     uint256 drawnIndex,
-    uint256 baseDrawRate,
+    uint256 drawnRate,
     uint256 latestUpdateTimestamp
   );
   event Add(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
@@ -33,7 +33,7 @@ interface IHub is IAccessManaged {
   event RefreshPremium(
     uint256 indexed assetId,
     address indexed spoke,
-    int256 premiumDrawnSharesDelta,
+    int256 premiumSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
@@ -167,14 +167,14 @@ interface IHub is IAccessManaged {
    * @dev Only callable by spokes.
    * @dev Premium can only decrease by at most the amount of realized premium taken.
    * @param assetId The identifier of the asset.
-   * @param premiumDrawnSharesDelta The change in premium drawn shares.
+   * @param premiumSharesDelta The change in premium drawn shares.
    * @param premiumOffsetDelta The change in premium offset.
    * @param realizedPremiumAdded The increase of realized premium.
    * @param realizedPremiumTaken The decrease of realized premium.
    */
   function refreshPremium(
     uint256 assetId,
-    int256 premiumDrawnSharesDelta,
+    int256 premiumSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
@@ -316,6 +316,13 @@ interface IHub is IAccessManaged {
    * @return The calculated current drawn index of the asset.
    */
   function getAssetDrawnIndex(uint256 assetId) external view returns (uint256);
+
+  /**
+   * @notice Returns the current drawn rate of the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The current drawn rate of the asset.
+   */
+  function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
 

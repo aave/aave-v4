@@ -376,7 +376,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       uint256 expectedDeficitAmount;
 
       if (reserveId != state.debtReserve.reserveId) {
-        expectedDeficitShares = state.spoke.getUserPosition(reserveId, alice).baseDrawnShares;
+        expectedDeficitShares = state.spoke.getUserPosition(reserveId, alice).drawnShares;
         expectedDeficitAmount = state.spoke.getUserTotalDebt(reserveId, alice);
         // for debt asset being liquidated, some debt is restored prior to deficit creation
       } else {
@@ -389,7 +389,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
         // debt asset deficit shares are the initial amount minus the amount restored during liquidation
         state.expectedDeficitShares = expectedDeficitShares =
-          state.spoke.getUserPosition(reserveId, alice).baseDrawnShares -
+          state.spoke.getUserPosition(reserveId, alice).drawnShares -
           hub.convertToDrawnShares(assetId, basedDebtRestored);
         // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
         state.expectedDeficitAmount = expectedDeficitAmount =

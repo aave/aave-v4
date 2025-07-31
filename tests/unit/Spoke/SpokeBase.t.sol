@@ -534,10 +534,10 @@ contract SpokeBase is Base {
     uint256 assetId,
     DataTypes.UserPosition memory userPos
   ) internal view returns (DebtData memory userDebt) {
-    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares) -
+    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPos.premiumShares) -
       userPos.premiumOffset;
     userDebt.premiumDebt = userPos.realizedPremium + accruedPremium;
-    userDebt.baseDebt = hub.convertToDrawnAssets(assetId, userPos.baseDrawnShares);
+    userDebt.baseDebt = hub.convertToDrawnAssets(assetId, userPos.drawnShares);
     userDebt.totalDebt = userDebt.baseDebt + userDebt.premiumDebt;
   }
 
@@ -565,14 +565,14 @@ contract SpokeBase is Base {
       string.concat('user supplied shares ', label)
     );
     assertEq(
-      userPos.baseDrawnShares,
-      expectedUserPos.baseDrawnShares,
-      string.concat('user baseDrawnShares ', label)
+      userPos.drawnShares,
+      expectedUserPos.drawnShares,
+      string.concat('user drawnShares ', label)
     );
     assertEq(
-      userPos.premiumDrawnShares,
-      expectedUserPos.premiumDrawnShares,
-      string.concat('user premiumDrawnShares ', label)
+      userPos.premiumShares,
+      expectedUserPos.premiumShares,
+      string.concat('user premiumShares ', label)
     );
     assertApproxEqAbs(
       userPos.premiumOffset,
@@ -618,11 +618,9 @@ contract SpokeBase is Base {
   ) internal view returns (DataTypes.UserPosition memory userPos) {
     (uint256 riskPremium, , , , ) = spoke.getUserAccountData(user);
 
-    userPos.baseDrawnShares = hub.convertToDrawnShares(assetId, debtAmount);
-    userPos.premiumDrawnShares = hub.convertToDrawnShares(assetId, debtAmount).percentMulUp(
-      riskPremium
-    );
-    userPos.premiumOffset = hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares);
+    userPos.drawnShares = hub.convertToDrawnShares(assetId, debtAmount);
+    userPos.premiumShares = hub.convertToDrawnShares(assetId, debtAmount).percentMulUp(riskPremium);
+    userPos.premiumOffset = hub.convertToDrawnAssets(assetId, userPos.premiumShares);
     userPos.realizedPremium = expectedRealizedPremium;
     userPos.suppliedShares = hub.convertToAddedShares(assetId, suppliedAmount);
   }
@@ -636,7 +634,7 @@ contract SpokeBase is Base {
   ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     DataTypes.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
-    return hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares) - userPos.premiumOffset;
+    return hub.convertToDrawnAssets(assetId, userPos.premiumShares) - userPos.premiumOffset;
   }
 
   /// assert that realized premium matches naively calculated value
@@ -649,13 +647,13 @@ contract SpokeBase is Base {
   ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 accruedBase = MathUtils
-      .calculateLinearInterest(hub.getAsset(assetId).baseDrawRate, lastTimestamp)
+      .calculateLinearInterest(hub.getAsset(assetId).drawnRate, lastTimestamp)
       .rayMulUp(prevBaseDebt);
 
     // equivalent to multiplying by risk premium (RP = premium drawn shares / base drawn shares)
     assertApproxEqAbs(
       userPos.realizedPremium,
-      ((accruedBase - prevBaseDebt) * (userPos.premiumDrawnShares)) / (userPos.baseDrawnShares),
+      ((accruedBase - prevBaseDebt) * (userPos.premiumShares)) / (userPos.drawnShares),
       3, // precision loss due to calcs in asset amount and conversion to
       'realized premium naive calc'
     );
@@ -685,13 +683,13 @@ contract SpokeBase is Base {
 
       assertEq(
         baseDebt,
-        hub.convertToDrawnAssets(assetId, userData.baseDrawnShares),
+        hub.convertToDrawnAssets(assetId, userData.drawnShares),
         string.concat('user ', vm.toString(i), ' base debt ', label)
       );
       assertEq(
         premiumDebt,
         userData.realizedPremium +
-          hub.convertToDrawnAssets(assetId, userData.premiumDrawnShares) -
+          hub.convertToDrawnAssets(assetId, userData.premiumShares) -
           userData.premiumOffset,
         string.concat('user ', vm.toString(i), ' premium debt ', label)
       );
@@ -727,17 +725,17 @@ contract SpokeBase is Base {
     DataTypes.UserPosition memory b
   ) internal pure {
     assertEq(a.suppliedShares, b.suppliedShares, 'suppliedShares');
-    assertEq(a.baseDrawnShares, b.baseDrawnShares, 'baseDrawnShares');
-    assertEq(a.premiumDrawnShares, b.premiumDrawnShares, 'premiumDrawnShares');
+    assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
+    assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffset, b.premiumOffset, 'premiumOffset');
-    assertEq(a.realizedPremium, b.baseDrawnShares, 'realizedPremium');
+    assertEq(a.realizedPremium, b.drawnShares, 'realizedPremium');
     assertEq(a.configKey, b.configKey, 'configKey');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
   function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
     DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    uint256 riskPremiumStored = pos.premiumDrawnShares.percentDivDown(pos.baseDrawnShares);
+    uint256 riskPremiumStored = pos.premiumShares.percentDivDown(pos.drawnShares);
     (uint256 riskPremiumCurrent, , , , ) = spoke.getUserAccountData(user);
     assertEq(riskPremiumCurrent, riskPremiumStored, 'user risk premium mismatch');
   }
@@ -750,11 +748,11 @@ contract SpokeBase is Base {
     DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
     // sanity check
     assertTrue(
-      pos.baseDrawnShares > 0 || pos.premiumDrawnShares == 0,
+      pos.drawnShares > 0 || pos.premiumShares == 0,
       'if base is zero, premium must be zero'
     );
-    if (pos.baseDrawnShares == 0) return 0;
-    return pos.premiumDrawnShares.percentDivDown(pos.baseDrawnShares);
+    if (pos.drawnShares == 0) return 0;
+    return pos.premiumShares.percentDivDown(pos.drawnShares);
   }
 
   function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {

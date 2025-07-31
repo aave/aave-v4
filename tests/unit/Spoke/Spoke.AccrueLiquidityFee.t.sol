@@ -61,8 +61,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, reserveId, bob, borrowAmount, bob);
 
-    uint256 baseDrawRate = hub.getBaseDrawRate(assetId);
-    uint256 initialBaseIndex = hub.getAsset(assetId).baseDrawnIndex;
+    uint256 drawnRate = hub.getBaseDrawRate(assetId);
+    uint256 initialBaseIndex = hub.getAsset(assetId).drawnIndex;
     uint256 userRp = spoke1.getUserRiskPremium(bob);
 
     // withdraw any treasury fees
@@ -73,9 +73,9 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(reserveId, bob);
     {
-      uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, baseDrawRate, startTime);
-      uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(userRp);
-      uint256 expectedPremiumDebt = hub.convertToDrawnAssets(assetId, expectedPremiumDrawnShares) -
+      uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, drawnRate, startTime);
+      uint256 expectedpremiumShares = bobPosition.drawnShares.percentMulUp(userRp);
+      uint256 expectedPremiumDebt = hub.convertToDrawnAssets(assetId, expectedpremiumShares) -
         bobPosition.premiumOffset +
         bobPosition.realizedPremium;
 
@@ -96,10 +96,10 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 expectedFeeShares = hub.convertToAddedShares(
       assetId,
       _calculateExpectedFeesAmount({
-        initialDrawnShares: bobPosition.baseDrawnShares,
-        initialPremiumShares: bobPosition.premiumDrawnShares,
+        initialDrawnShares: bobPosition.drawnShares,
+        initialPremiumShares: bobPosition.premiumShares,
         liquidityFee: _getLiquidityFee(assetId),
-        indexDelta: hub.getAsset(assetId).baseDrawnIndex - initialBaseIndex
+        indexDelta: hub.getAsset(assetId).drawnIndex - initialBaseIndex
       })
     );
 
@@ -116,7 +116,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     spoke1.updateUserRiskPremium(bob);
 
     // refresh
-    initialBaseIndex = hub.getAsset(assetId).baseDrawnIndex;
+    initialBaseIndex = hub.getAsset(assetId).drawnIndex;
 
     // withdraw any treasury fees
     withdrawLiquidityFees(assetId, type(uint256).max);
@@ -133,10 +133,10 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     expectedFeeShares = hub.convertToAddedShares(
       assetId,
       _calculateExpectedFeesAmount({
-        initialDrawnShares: bobPosition.baseDrawnShares,
+        initialDrawnShares: bobPosition.drawnShares,
         initialPremiumShares: 0,
         liquidityFee: _getLiquidityFee(assetId),
-        indexDelta: hub.getAsset(assetId).baseDrawnIndex - initialBaseIndex
+        indexDelta: hub.getAsset(assetId).drawnIndex - initialBaseIndex
       })
     );
 

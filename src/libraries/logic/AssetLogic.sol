@@ -49,12 +49,12 @@ library AssetLogic {
   }
 
   function drawn(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDrawnShares.rayMulUp(asset.getDrawnIndex());
+    return asset.drawnShares.rayMulUp(asset.getDrawnIndex());
   }
 
   function premium(DataTypes.Asset storage asset) internal view returns (uint256) {
     // sanity: utilize solc underflow check
-    uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumDrawnShares) - asset.premiumOffset;
+    uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumShares) - asset.premiumOffset;
     return asset.realizedPremium + accruedPremium;
   }
   function totalOwed(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -66,7 +66,7 @@ library AssetLogic {
   }
 
   function totalAddedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.addedShares + asset.getFeeShares(asset.getDrawnIndex(), asset.baseDrawnIndex);
+    return asset.addedShares + asset.getFeeShares(asset.getDrawnIndex(), asset.drawnIndex);
   }
 
   function toAddedAssetsUp(
@@ -105,10 +105,10 @@ library AssetLogic {
         drawn: asset.drawn(),
         premium: asset.premium()
       });
-    asset.baseDrawRate = newBorrowRate;
+    asset.drawnRate = newBorrowRate;
 
     // asset accrual should have already occurred
-    emit IHub.AssetUpdated(assetId, asset.baseDrawnIndex, newBorrowRate, asset.lastUpdateTimestamp);
+    emit IHub.AssetUpdated(assetId, asset.drawnIndex, newBorrowRate, asset.lastUpdateTimestamp);
   }
 
   /**
@@ -122,10 +122,10 @@ library AssetLogic {
     DataTypes.SpokeData storage feeReceiver
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
-    uint256 feeShares = asset.getFeeShares(drawnIndex, asset.baseDrawnIndex);
+    uint256 feeShares = asset.getFeeShares(drawnIndex, asset.drawnIndex);
 
     // Accrue interest and fees
-    asset.baseDrawnIndex = drawnIndex;
+    asset.drawnIndex = drawnIndex;
     if (feeShares > 0) {
       feeReceiver.addedShares += feeShares;
       asset.addedShares += feeShares;
@@ -141,14 +141,14 @@ library AssetLogic {
    * @return The resulting drawn index.
    */
   function getDrawnIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
-    uint256 previousIndex = asset.baseDrawnIndex;
+    uint256 previousIndex = asset.drawnIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (lastUpdateTimestamp == block.timestamp || asset.baseDrawnShares == 0) {
+    if (lastUpdateTimestamp == block.timestamp || asset.drawnShares == 0) {
       return previousIndex;
     }
     return
       previousIndex.rayMulUp(
-        MathUtils.calculateLinearInterest(asset.baseDrawRate, uint40(lastUpdateTimestamp))
+        MathUtils.calculateLinearInterest(asset.drawnRate, uint40(lastUpdateTimestamp))
       );
   }
 
@@ -171,8 +171,8 @@ library AssetLogic {
 
     // prettier-ignore
     uint256 feesAmount = (
-      asset.baseDrawnShares.rayMulDown(nextDrawnIndex - currentDrawnIndex) +
-      asset.premiumDrawnShares.rayMulDown(nextDrawnIndex) - asset.premiumOffset
+      asset.drawnShares.rayMulDown(nextDrawnIndex - currentDrawnIndex) +
+      asset.premiumShares.rayMulDown(nextDrawnIndex) - asset.premiumOffset
     ).percentMulDown(liquidityFee);
 
     return feesAmount.toSharesDown(asset.totalAddedAssets() - feesAmount, asset.addedShares);
@@ -185,6 +185,6 @@ library AssetLogic {
    * @return The amount of shares corresponding to the fees
    */
   function unrealizedFeeShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.getFeeShares(asset.getDrawnIndex(), asset.baseDrawnIndex);
+    return asset.getFeeShares(asset.getDrawnIndex(), asset.drawnIndex);
   }
 }

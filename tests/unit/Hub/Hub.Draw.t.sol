@@ -26,7 +26,7 @@ contract HubDrawTest is HubBase {
         (
           assetId,
           assetBefore.availableLiquidity - amount,
-          hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+          hub.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
           premium
         )
       )
@@ -39,7 +39,7 @@ contract HubDrawTest is HubBase {
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         availableLiquidity: assetBefore.availableLiquidity - amount,
-        drawn: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+        drawn: hub.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
         premium: premium
       }),
       vm.getBlockTimestamp()
@@ -70,9 +70,9 @@ contract HubDrawTest is HubBase {
       'available liquidity after draw'
     );
     assertEq(
-      hub.getAsset(assetId).baseDrawnShares,
-      assetBefore.baseDrawnShares + shares,
-      'baseDrawnShares after draw'
+      hub.getAsset(assetId).drawnShares,
+      assetBefore.drawnShares + shares,
+      'drawnShares after draw'
     );
     assertBorrowRateSynced(hub, assetId, 'hub.draw');
     // spoke
@@ -106,7 +106,7 @@ contract HubDrawTest is HubBase {
         (
           assetId,
           assetBefore.availableLiquidity - amount,
-          hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+          hub.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
           premium
         )
       )
@@ -119,7 +119,7 @@ contract HubDrawTest is HubBase {
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         availableLiquidity: assetBefore.availableLiquidity - amount,
-        drawn: hub.convertToDrawnAssets(assetId, assetBefore.baseDrawnShares + shares),
+        drawn: hub.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
         premium: premium
       }),
       vm.getBlockTimestamp()
@@ -138,9 +138,9 @@ contract HubDrawTest is HubBase {
       'available liquidity after draw'
     );
     assertEq(
-      hub.getAsset(assetId).baseDrawnShares,
-      assetBefore.baseDrawnShares + shares,
-      'baseDrawnShares after draw'
+      hub.getAsset(assetId).drawnShares,
+      assetBefore.drawnShares + shares,
+      'drawnShares after draw'
     );
 
     assertBorrowRateSynced(hub, assetId, 'hub.draw');

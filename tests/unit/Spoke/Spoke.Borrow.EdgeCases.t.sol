@@ -63,8 +63,8 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
 
     // bob benefits by having less debt shares than carol
     assertLt(
-      spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
-      spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), carol).drawnShares,
       'bob should have < debt shares than carol'
     );
     // but both users have the same amount of drawn asset
@@ -132,9 +132,9 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     vm.assume(hub.convertToDrawnAssets(daiAssetId, 1e18) > 1e18);
     // ensure that shares conversion of smaller amounts individually are greater than shares of total sum
     vm.assume(
-      amount1.toSharesUp(baseDebt, hub.getAsset(daiAssetId).baseDrawnShares) +
-        amount2.toSharesUp(baseDebt, hub.getAsset(daiAssetId).baseDrawnShares) >
-        (amount1 + amount2).toSharesUp(baseDebt, hub.getAsset(daiAssetId).baseDrawnShares)
+      amount1.toSharesUp(baseDebt, hub.getAsset(daiAssetId).drawnShares) +
+        amount2.toSharesUp(baseDebt, hub.getAsset(daiAssetId).drawnShares) >
+        (amount1 + amount2).toSharesUp(baseDebt, hub.getAsset(daiAssetId).drawnShares)
     );
 
     uint256 carolDaiBefore = tokenList.dai.balanceOf(carol);
@@ -152,8 +152,8 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
 
     // bob benefits by having less debt shares than carol
     assertLt(
-      spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
-      spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), carol).drawnShares,
       'bob should have < debt shares than carol'
     );
     // but both users have the same amount of drawn asset
@@ -202,8 +202,8 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
 
     // both users have the same amount of debt shares
     assertEq(
-      spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
-      spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), carol).drawnShares,
       'debt shares should match'
     );
     // both users have the same amount of drawn asset
@@ -258,17 +258,14 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     (uint256 baseDebt, ) = hub.getAssetOwed(daiAssetId);
 
     // drawn shares are rounded up
-    uint256 expectedDebtShares = amount1.toSharesUp(
-      baseDebt,
-      hub.getAsset(daiAssetId).baseDrawnShares
-    );
+    uint256 expectedDebtShares = amount1.toSharesUp(baseDebt, hub.getAsset(daiAssetId).drawnShares);
 
     vm.prank(bob);
     spoke1.borrow(_daiReserveId(spoke1), amount1, bob);
 
     assertEq(
       expectedDebtShares,
-      spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares,
       'base drawn shares'
     );
   }

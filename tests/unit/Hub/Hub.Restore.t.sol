@@ -916,7 +916,7 @@ contract HubRestoreTest is HubBase {
     //       INIT_BASE_BORROW_INDEX,
     //       'hub dai baseBorrowIndex post-restore'
     //     );
-    //     assertEq(hubData.daiData.baseDrawRate, rate, 'hub dai baseDrawRate post-restore');
+    //     assertEq(hubData.daiData.drawnRate, rate, 'hub dai drawnRate post-restore');
     //     assertEq(hubData.daiData.riskPremium, 0, 'hub dai riskPremium post-restore');
     //     assertEq(
     //       hubData.daiData.lastUpdateTimestamp,
@@ -944,7 +944,7 @@ contract HubRestoreTest is HubBase {
     //       INIT_BASE_BORROW_INDEX,
     //       'hub weth baseBorrowIndex post-restore'
     //     );
-    //     assertEq(hubData.wethData.baseDrawRate, rate, 'hub weth baseDrawRate post-restore');
+    //     assertEq(hubData.wethData.drawnRate, rate, 'hub weth drawnRate post-restore');
     //     assertEq(hubData.wethData.riskPremium, 0, 'hub weth riskPremium post-restore');
     //     assertEq(
     //       hubData.wethData.lastUpdateTimestamp,

@@ -425,7 +425,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
       // Handle case that bob isn't already borrowing dai by borrowing 1 share
       bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
-      if (bobPosition.baseDrawnShares == 0) {
+      if (bobPosition.drawnShares == 0) {
         Utils.borrow(
           spoke2,
           _daiReserveId(spoke2),
@@ -472,7 +472,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         expectedPremiumDebt,
         'dai before second accrual'
       );
-      baseShares.dai = bobPosition.baseDrawnShares;
+      baseShares.dai = bobPosition.drawnShares;
 
       bobPosition = spoke2.getUserPosition(_wethReserveId(spoke2), bob);
       expectedPremiumDebt = bobPosition.realizedPremium;
@@ -484,7 +484,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         expectedPremiumDebt,
         'weth before second accrual'
       );
-      baseShares.weth = bobPosition.baseDrawnShares;
+      baseShares.weth = bobPosition.drawnShares;
 
       bobPosition = spoke2.getUserPosition(_usdxReserveId(spoke2), bob);
       expectedPremiumDebt = bobPosition.realizedPremium;
@@ -496,7 +496,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         expectedPremiumDebt,
         'usdx before second accrual'
       );
-      baseShares.usdx = bobPosition.baseDrawnShares;
+      baseShares.usdx = bobPosition.drawnShares;
 
       bobPosition = spoke2.getUserPosition(_wbtcReserveId(spoke2), bob);
       expectedPremiumDebt = bobPosition.realizedPremium;
@@ -508,7 +508,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         expectedPremiumDebt,
         'wbtc before second accrual'
       );
-      baseShares.wbtc = bobPosition.baseDrawnShares;
+      baseShares.wbtc = bobPosition.drawnShares;
 
       // Store index before accrual, and use this for calculating expected base debt
       Indices memory indices;
@@ -577,7 +577,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       );
       bobPosition = spoke2.getUserPosition(_wethReserveId(spoke2), bob);
       assertEq(
-        bobPosition.baseDrawnShares,
+        bobPosition.drawnShares,
         baseShares.weth,
         'weth base drawn shares after second accrual'
       );

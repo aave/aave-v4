@@ -277,7 +277,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     // debt asset deficit shares are the initial amount minus the amount restored during liquidation
     state.expectedDeficitShares =
-      state.spoke.getUserPosition(debtReserveId, alice).baseDrawnShares -
+      state.spoke.getUserPosition(debtReserveId, alice).drawnShares -
       hub.convertToDrawnShares(debtAssetId, basedDebtRestored);
     // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
     state.expectedDeficitAmount =

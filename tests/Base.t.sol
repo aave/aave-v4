@@ -173,16 +173,16 @@ abstract contract Base is Test {
     uint256 assetId;
     uint256 addedShares;
     uint256 addedAmount;
-    uint256 baseDrawnShares;
+    uint256 drawnShares;
     uint256 drawn;
-    uint256 premiumDrawnShares;
+    uint256 premiumShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
     uint256 premium;
     uint40 lastUpdateTimestamp;
     uint256 availableLiquidity;
-    uint256 baseDrawnIndex;
-    uint256 baseDrawRate;
+    uint256 drawnIndex;
+    uint256 drawnRate;
   }
 
   struct SpokePosition {
@@ -190,9 +190,9 @@ abstract contract Base is Test {
     uint256 assetId;
     uint256 addedShares;
     uint256 addedAmount;
-    uint256 baseDrawnShares;
+    uint256 drawnShares;
     uint256 drawn;
-    uint256 premiumDrawnShares;
+    uint256 premiumShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
     uint256 premium;
@@ -1218,7 +1218,7 @@ abstract contract Base is Test {
   }
 
   function getBaseDrawRate(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.getAsset(assetId).baseDrawRate;
+    return hub.getAsset(assetId).drawnRate;
   }
 
   /// TODO: Once inflation protection implemented, can remove boolean param since rate should always monotonically increase
@@ -2043,7 +2043,7 @@ abstract contract Base is Test {
     (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
 
     vm.assertEq(
-      asset.baseDrawRate,
+      asset.drawnRate,
       IBasicInterestRateStrategy(asset.config.irStrategy).calculateInterestRate(
         assetId,
         asset.availableLiquidity,
@@ -2105,15 +2105,15 @@ abstract contract Base is Test {
         availableLiquidity: assetData.availableLiquidity,
         addedShares: assetData.addedShares,
         addedAmount: targetHub.getAssetAddedAmount(assetId),
-        baseDrawnShares: assetData.baseDrawnShares,
+        drawnShares: assetData.drawnShares,
         drawn: drawn,
-        premiumDrawnShares: assetData.premiumDrawnShares,
+        premiumShares: assetData.premiumShares,
         premiumOffset: assetData.premiumOffset,
         realizedPremium: assetData.realizedPremium,
         premium: premium,
         lastUpdateTimestamp: uint40(assetData.lastUpdateTimestamp),
-        baseDrawnIndex: assetData.baseDrawnIndex,
-        baseDrawRate: assetData.baseDrawRate
+        drawnIndex: assetData.drawnIndex,
+        drawnRate: assetData.drawnRate
       });
   }
 
@@ -2137,9 +2137,9 @@ abstract contract Base is Test {
         assetId: assetId,
         addedShares: spokeData.addedShares,
         addedAmount: hub.getSpokeAddedAmount(assetId, address(spoke)),
-        baseDrawnShares: spokeData.baseDrawnShares,
+        drawnShares: spokeData.drawnShares,
         drawn: drawn,
-        premiumDrawnShares: spokeData.premiumDrawnShares,
+        premiumShares: spokeData.premiumShares,
         premiumOffset: spokeData.premiumOffset,
         realizedPremium: spokeData.realizedPremium,
         premium: premium
@@ -2150,9 +2150,9 @@ abstract contract Base is Test {
     assertEq(a.assetId, b.assetId, 'assetId');
     assertEq(a.addedShares, b.addedShares, 'addedShares');
     assertEq(a.addedAmount, b.addedAmount, 'addedAmount');
-    assertEq(a.baseDrawnShares, b.baseDrawnShares, 'baseDrawnShares');
+    assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
     assertEq(a.drawn, b.drawn, 'baseDebt');
-    assertEq(a.premiumDrawnShares, b.premiumDrawnShares, 'premiumDrawnShares');
+    assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffset, b.premiumOffset, 'premiumOffset');
     assertEq(a.realizedPremium, b.realizedPremium, 'realizedPremium');
     assertEq(a.premium, b.premium, 'premium');
@@ -2163,9 +2163,9 @@ abstract contract Base is Test {
     assertEq(a.assetId, b.assetId, 'assetId');
     assertEq(a.addedShares, b.addedShares, 'addedShares');
     assertEq(a.addedAmount, b.addedAmount, 'addedAmount');
-    assertEq(a.baseDrawnShares, b.baseDrawnShares, 'baseDrawnShares');
+    assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
     assertEq(a.drawn, b.drawn, 'drawn');
-    assertEq(a.premiumDrawnShares, b.premiumDrawnShares, 'premiumDrawnShares');
+    assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffset, b.premiumOffset, 'premiumOffset');
     assertEq(a.realizedPremium, b.realizedPremium, 'realizedPremium');
     assertEq(a.premium, b.premium, 'premium');
