@@ -65,13 +65,13 @@ interface ILiquidityHub is IAccessManaged {
   event AccrueFees(uint256 indexed assetId, uint256 shares);
 
   /**
-   * @notice Emitted when a deficit is cleared.
+   * @notice Emitted when some deficit is eliminated.
    * @param assetId The identifier of the asset.
-   * @param spoke The spoke that cleared the deficit, and had supplied shares removed.
+   * @param spoke The spoke that eliminated the deficit, and had supplied shares removed.
    * @param removedShares The amount of shares removed.
-   * @param amount The amount of deficit cleared.
+   * @param amount The amount of deficit eliminated.
    */
-  event DeficitCleared(
+  event DeficitEliminated(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 removedShares,
@@ -104,7 +104,6 @@ interface ILiquidityHub is IAccessManaged {
   error SurplusDeficitReported(uint256 amount);
   error SpokeNotActive();
   error InvalidFeeShares();
-  error InvalidClearDeficitAmount();
 
   /**
    * @notice Adds a new asset to the hub.
@@ -236,13 +235,13 @@ interface ILiquidityHub is IAccessManaged {
   ) external returns (uint256);
 
   /**
-   * @notice Clears deficit by removing supplied shares of caller spoke.
+   * @notice Eliminates deficit by removing supplied shares of caller spoke.
    * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
-   * @param amount The amount of deficit to clear.
+   * @param amount The amount of deficit to eliminate.
    * @return The amount of shares removed.
    */
-  function clearDeficit(uint256 assetId, uint256 amount) external returns (uint256);
+  function eliminateDeficit(uint256 assetId, uint256 amount) external returns (uint256);
 
   /**
    * @notice Converts the specified amount of assets to shares amount added upon an Add action.

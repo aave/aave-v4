@@ -3,24 +3,24 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
-contract LiquidityHubClearDeficitTest is LiquidityHubBase {
-  function test_clearDeficit_revertsWith_InvalidClearDeficitAmount() public {
+contract LiquidityHubEliminateDeficitTest is LiquidityHubBase {
+  function test_eliminateDeficit_revertsWith_InvalidDeficitAmount() public {
     uint256 assetId = _randomAssetId(hub);
-    vm.expectRevert(ILiquidityHub.InvalidClearDeficitAmount.selector);
+    vm.expectRevert(ILiquidityHub.InvalidDeficitAmount.selector);
     vm.prank(address(spoke1));
-    hub.clearDeficit(assetId, 0);
+    hub.eliminateDeficit(assetId, 0);
   }
 
-  function test_clearDeficit_revertsWith_SpokeNotActive(address caller) public {
+  function test_eliminateDeficit_revertsWith_SpokeNotActive(address caller) public {
     uint256 assetId = _randomAssetId(hub);
     vm.assume(!hub.getSpoke(assetId, caller).config.active);
 
     vm.expectRevert(ILiquidityHub.SpokeNotActive.selector);
     vm.prank(caller);
-    hub.clearDeficit(assetId, vm.randomUint());
+    hub.eliminateDeficit(assetId, vm.randomUint());
   }
 
-  function test_clearDeficit() public {
+  function test_eliminateDeficit() public {
     uint256 assetId = _randomAssetId(hub);
     uint256 deficit = 1000e6;
 
@@ -37,14 +37,14 @@ contract LiquidityHubClearDeficitTest is LiquidityHubBase {
     uint256 supplyExRate = getSupplyExRate(assetId);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DeficitCleared(
+    emit ILiquidityHub.DeficitEliminated(
       assetId,
       address(spoke1),
       expectedRemoveShares,
       clearedDeficit
     );
     vm.prank(address(spoke1));
-    uint256 removedShares = hub.clearDeficit(assetId, clearedDeficit);
+    uint256 removedShares = hub.eliminateDeficit(assetId, clearedDeficit);
 
     assertEq(removedShares, expectedRemoveShares);
     assertEq(hub.getDeficit(assetId), deficit - clearedDeficit);
@@ -54,10 +54,10 @@ contract LiquidityHubClearDeficitTest is LiquidityHubBase {
       spokeSuppliedShares - expectedRemoveShares
     );
     assertGe(getSupplyExRate(assetId), supplyExRate);
-    assertBorrowRateSynced(hub, assetId, 'clearDeficit');
+    assertBorrowRateSynced(hub, assetId, 'eliminateDeficit');
   }
 
-  function test_clearDeficit_partial() public {
+  function test_eliminateDeficit_partial() public {
     uint256 assetId = _randomAssetId(hub);
     uint256 deficit = 1000e6;
 
@@ -71,21 +71,21 @@ contract LiquidityHubClearDeficitTest is LiquidityHubBase {
     uint256 expectedRemoveShares = hub.previewRemoveByAssets(assetId, clearedDeficit);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DeficitCleared(
+    emit ILiquidityHub.DeficitEliminated(
       assetId,
       address(spoke1),
       expectedRemoveShares,
       clearedDeficit
     );
     vm.prank(address(spoke1));
-    uint256 removedShares = hub.clearDeficit(assetId, clearedDeficit);
+    uint256 removedShares = hub.eliminateDeficit(assetId, clearedDeficit);
 
     assertEq(removedShares, expectedRemoveShares);
     assertEq(hub.getDeficit(assetId), deficit - clearedDeficit);
-    assertBorrowRateSynced(hub, assetId, 'clearDeficit');
+    assertBorrowRateSynced(hub, assetId, 'eliminateDeficit');
   }
 
-  function test_clearDeficit_excess() public {
+  function test_eliminateDeficit_excess() public {
     uint256 assetId = _randomAssetId(hub);
     uint256 deficit = 1000e6;
 
@@ -98,13 +98,13 @@ contract LiquidityHubClearDeficitTest is LiquidityHubBase {
     uint256 expectedRemoveShares = hub.previewRemoveByAssets(assetId, deficit);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DeficitCleared(assetId, address(spoke1), expectedRemoveShares, deficit);
+    emit ILiquidityHub.DeficitEliminated(assetId, address(spoke1), expectedRemoveShares, deficit);
     vm.prank(address(spoke1));
-    uint256 removedShares = hub.clearDeficit(assetId, vm.randomUint(deficit, UINT256_MAX));
+    uint256 removedShares = hub.eliminateDeficit(assetId, vm.randomUint(deficit, UINT256_MAX));
 
     assertEq(removedShares, expectedRemoveShares);
     assertEq(hub.getDeficit(assetId), 0);
-    assertBorrowRateSynced(hub, assetId, 'clearDeficit');
+    assertBorrowRateSynced(hub, assetId, 'eliminateDeficit');
   }
 
   function _createDeficit(uint256 assetId, ISpoke spoke, uint256 amount) internal {

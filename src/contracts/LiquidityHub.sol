@@ -276,12 +276,12 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   /// @inheritdoc ILiquidityHub
-  function clearDeficit(uint256 assetId, uint256 amount) external returns (uint256) {
+  function eliminateDeficit(uint256 assetId, uint256 amount) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-    _validateClearDeficit(spoke, amount);
+    _validateEliminateDeficit(spoke, amount);
 
     uint256 deficit = asset.deficit;
     if (amount > deficit) amount = deficit;
@@ -293,7 +293,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     asset.updateBorrowRate(assetId);
 
-    emit DeficitCleared(assetId, msg.sender, removedShares, amount);
+    emit DeficitEliminated(assetId, msg.sender, removedShares, amount);
 
     return removedShares;
   }
@@ -654,9 +654,12 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // we should have already restored premium debt
   }
 
-  function _validateClearDeficit(DataTypes.SpokeData storage spoke, uint256 amount) internal view {
+  function _validateEliminateDeficit(
+    DataTypes.SpokeData storage spoke,
+    uint256 amount
+  ) internal view {
     require(spoke.config.active, SpokeNotActive());
-    require(amount != 0, InvalidClearDeficitAmount());
+    require(amount != 0, InvalidDeficitAmount());
   }
 
   // handles underflow
