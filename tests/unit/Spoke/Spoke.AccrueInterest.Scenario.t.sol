@@ -523,7 +523,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       skip(skipTime);
 
       // Check bob's base debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
-      indices.daiIndex = _calculateExpectedDebtIndex(
+      indices.daiIndex = _calculateExpectedDrawnIndex(
         indices.daiIndex,
         rates.daiBaseBorrowRate,
         startTime
@@ -570,7 +570,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         'dai after second accrual'
       );
 
-      indices.wethIndex = _calculateExpectedDebtIndex(
+      indices.wethIndex = _calculateExpectedDrawnIndex(
         indices.wethIndex,
         rates.wethBaseBorrowRate,
         startTime
@@ -622,7 +622,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         'weth after second accrual'
       );
 
-      indices.usdxIndex = _calculateExpectedDebtIndex(
+      indices.usdxIndex = _calculateExpectedDrawnIndex(
         indices.usdxIndex,
         rates.usdxBaseBorrowRate,
         startTime
@@ -669,7 +669,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         'usdx after second accrual'
       );
 
-      indices.wbtcIndex = _calculateExpectedDebtIndex(
+      indices.wbtcIndex = _calculateExpectedDrawnIndex(
         indices.wbtcIndex,
         rates.wbtcBaseBorrowRate,
         startTime

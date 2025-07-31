@@ -40,7 +40,7 @@ export class Hub {
   public offset = 0n;
   public realisedPremium = 0n;
 
-  public baseDebtIndex = RAY;
+  public baseDrawnIndex = RAY;
 
   public liquidity = 0n;
 
@@ -49,12 +49,12 @@ export class Hub {
   // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
   toDrawnAssets(shares: bigint, rounding = Rounding.FLOOR) {
     this.accrue();
-    return rayMul(shares, this.baseDebtIndex, rounding);
+    return rayMul(shares, this.baseDrawnIndex, rounding);
   }
 
   toDrawnShares(assets: bigint, rounding = Rounding.FLOOR) {
     this.accrue();
-    return rayDiv(assets, this.baseDebtIndex, rounding);
+    return rayDiv(assets, this.baseDrawnIndex, rounding);
   }
 
   baseDebt() {
@@ -89,7 +89,7 @@ export class Hub {
   accrue() {
     if (this.lastUpdateTimestamp === currentTime) return;
     this.lastUpdateTimestamp = currentTime;
-    this.baseDebtIndex = rayMul(this.baseDebtIndex, randomIndex());
+    this.baseDrawnIndex = rayMul(this.baseDrawnIndex, randomIndex());
   }
 
   supply(amount: bigint, spoke: Spoke) {

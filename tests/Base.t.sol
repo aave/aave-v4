@@ -1689,23 +1689,23 @@ abstract contract Base is Test {
   }
 
   /// @dev Calculate expected debt index based on input params
-  function _calculateExpectedDebtIndex(
-    uint256 initialDebtIndex,
+  function _calculateExpectedDrawnIndex(
+    uint256 initialDrawnIndex,
     uint256 borrowRate,
     uint40 startTime
   ) internal view returns (uint256) {
-    return initialDebtIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
+    return initialDrawnIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
   }
 
   /// @dev Calculate expected debt index and base debt based on input params
   function calculateExpectedDebt(
     uint256 initialDrawnShares,
-    uint256 initialDebtIndex,
+    uint256 initialDrawnIndex,
     uint256 borrowRate,
     uint40 startTime
-  ) internal view returns (uint256 newDebtIndex, uint256 newBaseDebt) {
-    newDebtIndex = _calculateExpectedDebtIndex(initialDebtIndex, borrowRate, startTime);
-    newBaseDebt = initialDrawnShares.rayMulUp(newDebtIndex);
+  ) internal view returns (uint256 newDrawnIndex, uint256 newBaseDebt) {
+    newDrawnIndex = _calculateExpectedDrawnIndex(initialDrawnIndex, borrowRate, startTime);
+    newBaseDebt = initialDrawnShares.rayMulUp(newDrawnIndex);
   }
 
   /// @dev Calculate expected base debt based on specified borrow rate
