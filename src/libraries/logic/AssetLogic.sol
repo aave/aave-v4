@@ -179,6 +179,7 @@ library AssetLogic {
       return 0;
     }
 
+    // liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee
     // prettier-ignore
     uint256 feesAmount = (
       asset.baseDrawnShares.rayMulDown(nextDrawnIndex - currentDrawnIndex) +
