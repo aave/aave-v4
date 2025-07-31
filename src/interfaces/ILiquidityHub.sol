@@ -46,20 +46,20 @@ interface ILiquidityHub is IAccessManaged {
     uint256 indexed assetId,
     address indexed spoke,
     uint256 baseRestoredShares,
-    uint256 totalRestoredAmount
+    DataTypes.PremiumDelta premiumDelta,
+    uint256 baseRestoredAmount,
+    uint256 premiumRestoredAmount
   );
   event RefreshPremiumDebt(
     uint256 indexed assetId,
     address indexed spoke,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+    DataTypes.PremiumDelta premiumDelta
   );
   event DeficitReported(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 baseRestoredShares,
+    DataTypes.PremiumDelta premiumDelta,
     uint256 totalRestoredAmount
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
@@ -183,6 +183,7 @@ interface ILiquidityHub is IAccessManaged {
    * @param assetId The identifier of the asset.
    * @param baseAmount The base debt to repay.
    * @param premiumAmount The premium debt to repay.
+   * @param premiumDelta The premium debt delta to apply which signal premium debt repayment.
    * @param from The address to pull assets from.
    * @return The amount of base debt shares restored.
    */
@@ -190,26 +191,20 @@ interface ILiquidityHub is IAccessManaged {
     uint256 assetId,
     uint256 baseAmount,
     uint256 premiumAmount,
+    DataTypes.PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256);
 
   /**
    * @notice Refreshes premium debt accounting.
-   * @dev To be called when moving accrued premium to realized premium.
-   * @dev Only callable by active spokes.
-   * @dev Premium debt can only decrease by at most the amount of realized premium taken.
+   * @dev Only callable by active spokes, reverts with `SpokeNotActive` otherwise.
+   * @dev Overall premium debt should not decrease, reverts with `InvalidDebtChange` otherwise.
    * @param assetId The identifier of the asset.
-   * @param premiumDrawnSharesDelta The change in premium drawn shares.
-   * @param premiumOffsetDelta The change in premium offset.
-   * @param realizedPremiumAdded The increase of realized premium.
-   * @param realizedPremiumTaken The decrease of realized premium.
+   * @param premiumDelta The change in premium debt.
    */
   function refreshPremiumDebt(
     uint256 assetId,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+    DataTypes.PremiumDelta calldata premiumDelta
   ) external;
 
   /**
@@ -226,12 +221,14 @@ interface ILiquidityHub is IAccessManaged {
    * @param assetId The identifier of the asset.
    * @param baseAmount The base debt to report as deficit.
    * @param premiumAmount The premium debt to report as deficit.
+   * @param premiumDelta The premium debt delta to apply which signal premium debt deficit.
    * @return The amount of base debt shares reported as deficit.
    */
   function reportDeficit(
     uint256 assetId,
     uint256 baseAmount,
-    uint256 premiumAmount
+    uint256 premiumAmount,
+    DataTypes.PremiumDelta calldata premiumDelta
   ) external returns (uint256);
 
   /**

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Base} from 'tests/Base.t.sol';
+import 'tests/Base.t.sol';
 
 /// forge-config: default.isolate = true
 contract LiquidityHubOperations_Gas_Tests is Base {
@@ -56,14 +56,14 @@ contract LiquidityHubOperations_Gas_Tests is Base {
     skip(1000);
 
     (baseDebtRemaining, premiumDebtRemaining) = hub.getSpokeDebt(daiAssetId, address(spoke1));
-    hub.restore(daiAssetId, baseDebtRemaining / 2, premiumDebtRemaining, alice);
+    hub.restore(daiAssetId, baseDebtRemaining / 2, 0, DataTypes.PremiumDelta(0, 0, 0), alice);
     // todo: do refresh call to fully encapsulate a `hub.restore` call
     vm.snapshotGasLastCall('Hub.Operations', 'restore: partial');
 
     skip(100);
 
     (baseDebtRemaining, premiumDebtRemaining) = hub.getSpokeDebt(daiAssetId, address(spoke1));
-    hub.restore(daiAssetId, baseDebtRemaining, premiumDebtRemaining, alice);
+    hub.restore(daiAssetId, baseDebtRemaining, 0, DataTypes.PremiumDelta(0, 0, 0), alice);
     vm.snapshotGasLastCall('Hub.Operations', 'restore: full');
     vm.stopPrank();
   }

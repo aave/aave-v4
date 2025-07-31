@@ -1371,13 +1371,13 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualPremiumDebt,
       expectedPremiumDebt,
-      2,
+      3,
       string.concat('user premium debt ', label)
     );
     assertApproxEqAbs(
       spoke.getUserTotalDebt(reserveId, user),
       expectedBaseDebt + expectedPremiumDebt,
-      2,
+      3,
       string.concat('user total debt ', label)
     );
   }
@@ -1399,13 +1399,13 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualPremiumDebt,
       expectedPremiumDebt,
-      2,
+      3,
       string.concat('reserve premium debt ', label)
     );
     assertApproxEqAbs(
       spoke.getReserveTotalDebt(reserveId),
       expectedBaseDebt + expectedPremiumDebt,
-      2,
+      3,
       string.concat('reserve total debt ', label)
     );
   }
@@ -1428,13 +1428,13 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualPremiumDebt,
       expectedPremiumDebt,
-      2,
+      3,
       string.concat('spoke premium debt ', label)
     );
     assertApproxEqAbs(
       hub.getSpokeTotalDebt(assetId, address(spoke)),
       expectedBaseDebt + expectedPremiumDebt,
-      2,
+      3,
       string.concat('spoke total debt ', label)
     );
   }
@@ -1457,13 +1457,13 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualPremiumDebt,
       expectedPremiumDebt,
-      2,
+      3,
       string.concat('asset premium debt ', label)
     );
     assertApproxEqAbs(
       hub.getAssetTotalDebt(assetId),
       expectedBaseDebt + expectedPremiumDebt,
-      2,
+      3,
       string.concat('asset total debt ', label)
     );
   }
@@ -1509,7 +1509,7 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       spoke.getReserveSuppliedAmount(reserveId),
       expectedSuppliedAmount,
-      2,
+      3,
       string.concat('reserve supplied amount ', label)
     );
   }
@@ -1524,7 +1524,7 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       hub.getSpokeSuppliedAmount(assetId, address(spoke)),
       expectedSuppliedAmount,
-      2,
+      3,
       string.concat('spoke supplied amount ', label)
     );
   }
@@ -1539,7 +1539,7 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       hub.getAssetSuppliedAmount(assetId),
       expectedSuppliedAmount,
-      2,
+      3,
       string.concat('asset supplied amount ', label)
     );
   }

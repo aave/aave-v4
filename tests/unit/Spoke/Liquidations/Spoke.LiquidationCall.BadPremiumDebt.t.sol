@@ -268,6 +268,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
 
     uint256 debtAssetId = state.debtReserve.assetId;
+    DataTypes.UserPosition memory userPosition = state.spoke.getUserPosition(debtReserveId, alice);
     (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
       state.userBaseDebt.balanceBefore,
       state.userPremiumDebt.balanceBefore,
@@ -277,21 +278,34 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     // debt asset deficit shares are the initial amount minus the amount restored during liquidation
     state.expectedDeficitShares =
-      state.spoke.getUserPosition(debtReserveId, alice).baseDrawnShares -
+      userPosition.baseDrawnShares -
       hub.convertToDrawnShares(debtAssetId, basedDebtRestored);
     // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
     state.expectedDeficitAmount =
       hub.convertToDrawnAssets(debtAssetId, state.expectedDeficitShares) +
       state.userPremiumDebt.balanceBefore -
       premDebtRestored;
+    {
+      uint256 accruedPremium = hub.convertToDrawnAssets(
+        debtAssetId,
+        userPosition.premiumDrawnShares
+      ) - userPosition.premiumOffset;
+      // premium shares & offset were reset in the prior restore, and the remaining realized premium is now restored as deficit
+      DataTypes.PremiumDelta memory expectedDeficitPremiumDelta = DataTypes.PremiumDelta(
+        0,
+        0,
+        int256(premDebtRestored) - int256(accruedPremium)
+      );
 
-    vm.expectEmit(address(hub));
-    emit ILiquidityHub.DeficitReported(
-      debtAssetId,
-      address(state.spoke),
-      state.expectedDeficitShares,
-      state.expectedDeficitAmount
-    );
+      vm.expectEmit(address(hub));
+      emit ILiquidityHub.DeficitReported(
+        debtAssetId,
+        address(state.spoke),
+        state.expectedDeficitShares,
+        expectedDeficitPremiumDelta,
+        state.expectedDeficitAmount
+      );
+    }
 
     vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(

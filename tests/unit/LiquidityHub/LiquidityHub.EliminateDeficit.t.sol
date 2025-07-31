@@ -111,7 +111,7 @@ contract LiquidityHubEliminateDeficitTest is LiquidityHubBase {
     _addLiquidity(assetId, amount);
     _drawLiquidityFromSpoke(address(spoke), assetId, amount, 322 days, true);
     vm.prank(address(spoke));
-    hub.reportDeficit(assetId, amount, 0);
+    hub.reportDeficit(assetId, amount, 0, DataTypes.PremiumDelta(0, 0, 0));
 
     assertEq(hub.getDeficit(assetId), amount);
   }

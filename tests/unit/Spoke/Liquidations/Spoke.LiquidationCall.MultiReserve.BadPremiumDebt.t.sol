@@ -11,12 +11,18 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 requiredDebtInBase;
     uint256 remaining;
   }
+  struct DeficitReportedEvent {
+    uint256 assetId;
+    address spoke;
+    uint256 deficitShares;
+    DataTypes.PremiumDelta premiumDelta;
+    uint256 deficitAmount;
+  }
 
   /// @dev coll: weth; bad debt: wbtc, dai, usdx
   /// deficit covers base debt and premium debt
   function test_liquidationCall_multi_reserve_badPremiumDebt_scenario1_base_and_premium() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
-
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1({
       liqConfig: DataTypes.LiquidationConfig({
         closeFactor: 1.5e18,
@@ -368,18 +374,28 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
 
+    DeficitReportedEvent[] memory expectedLogs = new DeficitReportedEvent[](debtReserveIds.length);
+
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       uint256 reserveId = debtReserveIds[i];
       uint256 assetId = state.debtReserves[i].assetId;
 
       uint256 expectedDeficitShares;
       uint256 expectedDeficitAmount;
+      DataTypes.PremiumDelta memory expectedDeficitPremiumDelta;
 
       if (reserveId != state.debtReserve.reserveId) {
-        expectedDeficitShares = state.spoke.getUserPosition(reserveId, alice).baseDrawnShares;
+        DataTypes.UserPosition memory userPosition = state.spoke.getUserPosition(reserveId, alice);
+        expectedDeficitShares = userPosition.baseDrawnShares;
         expectedDeficitAmount = state.spoke.getUserTotalDebt(reserveId, alice);
+        expectedDeficitPremiumDelta = DataTypes.PremiumDelta(
+          -int256(userPosition.premiumDrawnShares),
+          -int256(userPosition.premiumOffset),
+          -int256(userPosition.realizedPremium)
+        );
         // for debt asset being liquidated, some debt is restored prior to deficit creation
       } else {
+        DataTypes.UserPosition memory userPosition = state.spoke.getUserPosition(reserveId, alice);
         (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
           state.userBaseDebt.balanceBefore,
           state.userPremiumDebt.balanceBefore,
@@ -389,19 +405,48 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
         // debt asset deficit shares are the initial amount minus the amount restored during liquidation
         state.expectedDeficitShares = expectedDeficitShares =
-          state.spoke.getUserPosition(reserveId, alice).baseDrawnShares -
+          userPosition.baseDrawnShares -
           hub.convertToDrawnShares(assetId, basedDebtRestored);
         // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
         state.expectedDeficitAmount = expectedDeficitAmount =
           hub.convertToDrawnAssets(assetId, expectedDeficitShares) +
           state.userPremiumDebt.balanceBefore -
           premDebtRestored;
+        uint256 accruedPremium = hub.convertToDrawnAssets(
+          assetId,
+          userPosition.premiumDrawnShares
+        ) - userPosition.premiumOffset;
+        // premium shares & offset were reset in the prior restore, and the remaining realized premium is now restored as deficit
+        expectedDeficitPremiumDelta = DataTypes.PremiumDelta(
+          0,
+          0,
+          int256(premDebtRestored) - int256(accruedPremium)
+        );
       }
-      vm.expectEmit(address(hub));
+      expectedLogs[i] = DeficitReportedEvent({
+        assetId: assetId,
+        spoke: address(state.spoke),
+        deficitShares: expectedDeficitShares,
+        premiumDelta: expectedDeficitPremiumDelta,
+        deficitAmount: expectedDeficitAmount
+      });
+
+      // @dev We omit checking data (deficitShares, premiumDelta, deficitAmount) here since premiumDelta.realizedDelta
+      // can be off by 2 wei due to exchange rate changing because of 2 wei instant premium debt during restore before deficit
+      // in the case when liquidated asset is also reported in deficit.
+      // It will be checked within 2 wei, rest exact, in the post action checks since we'll record the actual logs. (_checkDeficitReportedEvents)
+      vm.expectEmit({
+        checkTopic1: true,
+        checkTopic2: true,
+        checkTopic3: true,
+        checkData: false,
+        emitter: address(hub)
+      });
       emit ILiquidityHub.DeficitReported(
         assetId,
         address(state.spoke),
         expectedDeficitShares,
+        expectedDeficitPremiumDelta,
         expectedDeficitAmount
       );
     }
@@ -417,6 +462,9 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       state.collToLiq,
       LIQUIDATOR
     );
+
+    vm.recordLogs();
+
     vm.prank(LIQUIDATOR);
     state.spoke.liquidationCall(
       collateralReserveId,
@@ -426,8 +474,63 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     );
 
     state = _getAccountingInfoAfterLiquidation(state);
+    _checkDeficitReportedEvents(expectedLogs, vm.getRecordedLogs());
 
     return state;
+  }
+
+  /// @dev check deficit reported events data against actual logs, all exact except for realizedDelta which is checked within 2 wei
+  function _checkDeficitReportedEvents(
+    DeficitReportedEvent[] memory expectedLogs,
+    Vm.Log[] memory actualLogs
+  ) internal view {
+    uint256 expectedLogCounter = 0;
+    for (uint256 i = 0; i < actualLogs.length; ++i) {
+      Vm.Log memory actualLog = actualLogs[i];
+      if (actualLog.topics[0] != ILiquidityHub.DeficitReported.selector) continue;
+
+      DeficitReportedEvent memory expectedLog = expectedLogs[expectedLogCounter++];
+      assertEq(actualLog.emitter, address(hub), 'deficit reported event: emitter');
+      assertEq(
+        uint256(actualLog.topics[1]),
+        expectedLog.assetId,
+        'deficit reported event: assetId'
+      );
+      assertEq(
+        address(uint160(uint256(actualLog.topics[2]))),
+        expectedLog.spoke,
+        'deficit reported event: spoke'
+      );
+      (
+        uint256 deficitShares,
+        DataTypes.PremiumDelta memory premiumDelta,
+        uint256 deficitAmount
+      ) = abi.decode(actualLog.data, (uint256, DataTypes.PremiumDelta, uint256));
+      assertEq(deficitShares, expectedLog.deficitShares, 'deficit reported event: deficitShares');
+      assertEq(deficitAmount, expectedLog.deficitAmount, 'deficit reported event: deficitAmount');
+      assertEq(
+        premiumDelta.drawnSharesDelta,
+        expectedLog.premiumDelta.drawnSharesDelta,
+        'deficit reported event: premiumDelta.drawnSharesDelta'
+      );
+      assertEq(
+        premiumDelta.offsetDelta,
+        expectedLog.premiumDelta.offsetDelta,
+        'deficit reported event: premiumDelta.offsetDelta'
+      );
+      assertApproxEqAbs(
+        premiumDelta.realizedDelta,
+        expectedLog.premiumDelta.realizedDelta,
+        2,
+        'deficit reported event: premiumDelta.realizedDelta'
+      );
+    }
+
+    assertEq(
+      expectedLogCounter,
+      expectedLogs.length,
+      'all deficit reported events should be checked'
+    );
   }
 
   /// @dev Borrow random amounts from multiple reserves to ensure the health factor is above the desired HF

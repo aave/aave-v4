@@ -126,7 +126,10 @@ contract LiquidityHubBase is Base {
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(tempSpoke);
-      hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
+      hub.refreshPremiumDebt(
+        assetId,
+        DataTypes.PremiumDelta(premiumDrawnSharesDelta, premiumOffsetDelta, 0)
+      );
     }
 
     Utils.draw(hub, assetId, tempSpoke, tempUser, amount);
@@ -142,10 +145,7 @@ contract LiquidityHubBase is Base {
       vm.prank(tempSpoke);
       hub.refreshPremiumDebt(
         assetId,
-        -premiumDrawnSharesDelta,
-        -premiumOffsetDelta,
-        premiumDebt,
-        0
+        DataTypes.PremiumDelta(-premiumDrawnSharesDelta, -premiumOffsetDelta, int256(premiumDebt))
       );
     }
   }
@@ -168,7 +168,10 @@ contract LiquidityHubBase is Base {
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(spoke);
-      hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
+      hub.refreshPremiumDebt(
+        assetId,
+        DataTypes.PremiumDelta(premiumDrawnSharesDelta, premiumOffsetDelta, 0)
+      );
     }
 
     Utils.draw({hub: hub, assetId: assetId, caller: spoke, amount: amount, to: tempUser});
@@ -184,10 +187,7 @@ contract LiquidityHubBase is Base {
       vm.prank(spoke);
       hub.refreshPremiumDebt(
         assetId,
-        -premiumDrawnSharesDelta,
-        -premiumOffsetDelta,
-        premiumDebt,
-        0
+        DataTypes.PremiumDelta(-premiumDrawnSharesDelta, -premiumOffsetDelta, int256(premiumDebt))
       );
     }
   }
