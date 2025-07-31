@@ -117,6 +117,12 @@ library DataTypes {
     uint256 liquidationBonusFactor; // BPS, as a percentage of effective lb, TODO: use smaller uint
   }
 
+  struct PremiumDelta {
+    int256 drawnSharesDelta;
+    int256 offsetDelta;
+    int256 realizedDelta;
+  }
+
   struct LiquidationCallLocalVars {
     uint256 collateralReserveId;
     uint256 debtReserveId;
@@ -161,6 +167,7 @@ library DataTypes {
     uint256 collateralReserveId;
     uint256 baseDebt;
     uint256 premiumDebt;
+    uint256 accruedPremium;
     uint256 collateralToLiquidate;
     uint256 liquidationFeeAmount;
     uint256 liquidationFeeShares;
@@ -174,6 +181,7 @@ library DataTypes {
     uint256 totalLiquidationFeeShares;
     uint256 usersLength;
     uint256 liquidatedSuppliedShares;
+    DataTypes.PremiumDelta premiumDelta;
     bool hasDeficit;
     address collateralUnderlying;
     address debtUnderlying;
@@ -186,11 +194,11 @@ library DataTypes {
     uint256 assetId;
     uint256 baseDebt;
     uint256 premiumDebt;
+    uint256 accruedPremium;
     uint256 baseDebtRestored;
     uint256 premiumDebtRestored;
     uint256 userPremiumDrawnShares;
     uint256 userPremiumOffset;
-    uint256 accruedPremium;
     uint256 newUserRiskPremium;
     uint256 restoredShares;
   }

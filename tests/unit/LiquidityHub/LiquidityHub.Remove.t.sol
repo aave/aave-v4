@@ -120,15 +120,15 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     skip(skipTime);
 
     (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(assetId);
+    assertEq(premiumDebt, 0);
     vm.assume(baseDebt + premiumDebt <= MAX_SUPPLY_AMOUNT);
 
     // restore all drawn liquidity
-    Utils.restore({
+    Utils.restoreBase({
       hub: hub,
       assetId: assetId,
       caller: address(spoke3),
       baseAmount: baseDebt,
-      premiumAmount: premiumDebt,
       repayer: bob
     });
 
@@ -209,14 +209,12 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       daiAssetId,
       address(spoke1)
     );
-
-    // alice restores all debt including accrual for spoke1
-    Utils.restore({
+    assertEq(premiumDebtRestored, 0);
+    Utils.restoreBase({
       hub: hub,
       assetId: daiAssetId,
       caller: address(spoke1),
       baseAmount: baseDebtRestored,
-      premiumAmount: premiumDebtRestored,
       repayer: alice
     });
 
@@ -320,14 +318,12 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
       daiAssetId,
       address(spoke1)
     );
-
-    // alice restores all debt including accrual
-    Utils.restore({
+    assertEq(premiumDebtRestored, 0);
+    Utils.restoreBase({
       hub: hub,
       assetId: daiAssetId,
       caller: address(spoke1),
       baseAmount: baseDebtRestored,
-      premiumAmount: premiumDebtRestored,
       repayer: alice
     });
 

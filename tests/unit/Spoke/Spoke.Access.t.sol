@@ -18,10 +18,10 @@ contract SpokeAccessTest is SpokeBase {
     hub.draw(daiAssetId, 1000e18, bob);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SpokeNotActive.selector));
-    hub.restore(daiAssetId, 1000e18, 0, bob);
+    hub.restore(daiAssetId, 1000e18, 0, DataTypes.PremiumDelta(0, 0, 0), bob);
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SpokeNotActive.selector));
-    hub.refreshPremiumDebt(daiAssetId, 0, 0, 0, 0);
+    hub.refreshPremiumDebt(daiAssetId, DataTypes.PremiumDelta(0, 0, 0));
 
     // A spoke is allowed to call the hub functions
     deal(address(tokenList.dai), address(spoke1), 1000e18);
@@ -30,9 +30,9 @@ contract SpokeAccessTest is SpokeBase {
     deal(address(tokenList.dai), address(spoke1), 1000e18);
     hub.add(daiAssetId, 1000e18, address(spoke1));
     hub.draw(daiAssetId, 500e18, address(spoke1));
-    hub.restore(daiAssetId, 500e18, 0, address(spoke1));
+    hub.restore(daiAssetId, 500e18, 0, DataTypes.PremiumDelta(0, 0, 0), address(spoke1));
     hub.remove(daiAssetId, 1000e18, address(spoke1));
-    hub.refreshPremiumDebt(daiAssetId, 0, 0, 0, 0);
+    hub.refreshPremiumDebt(daiAssetId, DataTypes.PremiumDelta(0, 0, 0));
     vm.stopPrank();
   }
 
@@ -69,12 +69,7 @@ contract SpokeAccessTest is SpokeBase {
       address(hub),
       4,
       reserveSource,
-      DataTypes.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        collateralRisk: 0
-      }),
+      DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
         liquidationBonus: 100_00,
@@ -88,12 +83,7 @@ contract SpokeAccessTest is SpokeBase {
       address(hub),
       4,
       reserveSource,
-      DataTypes.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        collateralRisk: 0
-      }),
+      DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
         liquidationBonus: 100_00,
@@ -107,24 +97,14 @@ contract SpokeAccessTest is SpokeBase {
     );
     spoke1.updateReserveConfig(
       _daiReserveId(spoke1),
-      DataTypes.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        collateralRisk: 0
-      })
+      DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0})
     );
 
     // Spoke admin can call updateReserveConfig
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(
       _daiReserveId(spoke1),
-      DataTypes.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        collateralRisk: 0
-      })
+      DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0})
     );
 
     // addDynamicReserveConfig only callable by spoke admin
@@ -202,12 +182,7 @@ contract SpokeAccessTest is SpokeBase {
       address(hub),
       5,
       reserveSource,
-      DataTypes.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        collateralRisk: 0
-      }),
+      DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
         liquidationBonus: 100_00,
@@ -226,12 +201,7 @@ contract SpokeAccessTest is SpokeBase {
       address(hub),
       5,
       reserveSource,
-      DataTypes.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        collateralRisk: 0
-      }),
+      DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
         liquidationBonus: 100_00,

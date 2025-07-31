@@ -150,10 +150,7 @@ interface ISpoke is IMulticall, IAccessManaged {
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
     address indexed user,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+    DataTypes.PremiumDelta premiumDelta
   );
   event OracleUpdated(address indexed oracle);
   event ReservePriceSourceUpdated(uint256 indexed reserveId, address indexed priceSource);

@@ -46,17 +46,16 @@ library Utils {
     return hub.remove(assetId, amount, to);
   }
 
-  function restore(
+  function restoreBase(
     ILiquidityHub hub,
     uint256 assetId,
     address caller,
     uint256 baseAmount,
-    uint256 premiumAmount,
     address repayer
   ) internal returns (uint256) {
-    approve(hub, assetId, repayer, baseAmount + premiumAmount);
+    approve(hub, assetId, repayer, baseAmount);
     vm.prank(caller);
-    return hub.restore(assetId, baseAmount, premiumAmount, repayer);
+    return hub.restore(assetId, baseAmount, 0, DataTypes.PremiumDelta(0, 0, 0), repayer);
   }
 
   function addSpoke(
