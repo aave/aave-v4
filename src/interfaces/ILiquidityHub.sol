@@ -63,6 +63,12 @@ interface ILiquidityHub is IAccessManaged {
     uint256 totalRestoredAmount
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
+  event MovedSuppliedShares(
+    uint256 indexed assetId,
+    uint256 shares,
+    address fromSpoke,
+    address toSpoke
+  );
 
   error InvalidSharesAmount();
   error InvalidAddAmount();
@@ -216,6 +222,15 @@ interface ILiquidityHub is IAccessManaged {
     uint256 premiumAmount,
     DataTypes.PremiumDelta calldata premiumDelta
   ) external returns (uint256);
+
+  /**
+   * @notice Allows a spoke to transfer its supplied shares of an asset to another spoke.
+   * @dev Only callable by spokes.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to move.
+   * @param toSpoke The address of the spoke to move shares to.
+   */
+  function moveSuppliedShares(uint256 assetId, uint256 shares, address toSpoke) external;
 
   /**
    * @notice Converts the specified amount of assets to shares amount added upon an Add action.

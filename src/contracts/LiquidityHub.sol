@@ -327,6 +327,25 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     emit Add(assetId, feeReceiver, feeShares, feeAmount);
   }
 
+  /// @inheritdoc ILiquidityHub
+  function moveSuppliedShares(uint256 assetId, uint256 shares, address toSpoke) external {
+    DataTypes.SpokeData storage fromSpoke = _spokes[assetId][msg.sender];
+    require(fromSpoke.config.active, SpokeNotActive());
+    DataTypes.SpokeData storage targetSpoke = _spokes[assetId][toSpoke];
+
+    require(shares > 0 && shares <= fromSpoke.suppliedShares, InvalidSharesAmount());
+    require(
+      targetSpoke.suppliedShares + _assets[assetId].toSuppliedAssetsDown(shares) <=
+        targetSpoke.config.supplyCap,
+      SupplyCapExceeded(targetSpoke.config.supplyCap)
+    );
+
+    targetSpoke.suppliedShares += shares;
+    fromSpoke.suppliedShares -= shares;
+
+    emit MovedSuppliedShares(assetId, shares, msg.sender, toSpoke);
+  }
+
   /**
    * @dev Applies premium deltas on asset and spoke debt, and validates that total premium debt
    * cannot decrease by more than `premiumAmount`.
