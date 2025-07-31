@@ -115,15 +115,15 @@ contract HubRemoveTest is HubBase {
     skip(skipTime);
 
     (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
+    assertEq(premium, 0);
     vm.assume(drawn + premium <= MAX_SUPPLY_AMOUNT);
 
     // restore all drawn liquidity
-    Utils.restore({
+    Utils.restoreBase({
       hub: hub,
       assetId: assetId,
       caller: address(spoke3),
-      baseAmount: drawn,
-      premiumAmount: premium,
+      drawnAmount: drawn,
       restorer: bob
     });
 
@@ -204,14 +204,12 @@ contract HubRemoveTest is HubBase {
       daiAssetId,
       address(spoke1)
     );
-
-    // alice restores all debt including accrual for spoke1
-    Utils.restore({
+    assertEq(premiumRestored, 0);
+    Utils.restoreBase({
       hub: hub,
       assetId: daiAssetId,
       caller: address(spoke1),
-      baseAmount: drawnRestored,
-      premiumAmount: premiumRestored,
+      drawnAmount: drawnRestored,
       restorer: alice
     });
 
@@ -315,14 +313,12 @@ contract HubRemoveTest is HubBase {
       daiAssetId,
       address(spoke1)
     );
-
-    // alice restores all debt including accrual
-    Utils.restore({
+    assertEq(premiumRestored, 0);
+    Utils.restoreBase({
       hub: hub,
       assetId: daiAssetId,
       caller: address(spoke1),
-      baseAmount: drawnRestored,
-      premiumAmount: premiumRestored,
+      drawnAmount: drawnRestored,
       restorer: alice
     });
 

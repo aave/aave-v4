@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Base} from 'tests/Base.t.sol';
+import 'tests/Base.t.sol';
 
 /// forge-config: default.isolate = true
 contract HubOperations_Gas_Tests is Base {
@@ -43,7 +43,7 @@ contract HubOperations_Gas_Tests is Base {
   }
 
   function test_restore() public {
-    uint256 baseDebtRemaining;
+    uint256 drawnRemaining;
     uint256 premiumRemaining;
     vm.prank(address(spoke2));
     hub.add(daiAssetId, 1000e18, bob);
@@ -55,15 +55,15 @@ contract HubOperations_Gas_Tests is Base {
 
     skip(1000);
 
-    (baseDebtRemaining, premiumRemaining) = hub.getSpokeOwed(daiAssetId, address(spoke1));
-    hub.restore(daiAssetId, baseDebtRemaining / 2, premiumRemaining, alice);
+    (drawnRemaining, premiumRemaining) = hub.getSpokeOwed(daiAssetId, address(spoke1));
+    hub.restore(daiAssetId, drawnRemaining / 2, 0, DataTypes.PremiumDelta(0, 0, 0), alice);
     // todo: do refresh call to fully encapsulate a `hub.restore` call
     vm.snapshotGasLastCall('Hub.Operations', 'restore: partial');
 
     skip(100);
 
-    (baseDebtRemaining, premiumRemaining) = hub.getSpokeOwed(daiAssetId, address(spoke1));
-    hub.restore(daiAssetId, baseDebtRemaining, premiumRemaining, alice);
+    (drawnRemaining, premiumRemaining) = hub.getSpokeOwed(daiAssetId, address(spoke1));
+    hub.restore(daiAssetId, drawnRemaining, 0, DataTypes.PremiumDelta(0, 0, 0), alice);
     vm.snapshotGasLastCall('Hub.Operations', 'restore: full');
     vm.stopPrank();
   }

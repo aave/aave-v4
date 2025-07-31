@@ -139,10 +139,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
     // Store base borrow rates
     Rates memory rates;
-    rates.daiBaseBorrowRate = hub.getBaseDrawRate(daiAssetId);
-    rates.wethBaseBorrowRate = hub.getBaseDrawRate(wethAssetId);
-    rates.usdxBaseBorrowRate = hub.getBaseDrawRate(usdxAssetId);
-    rates.wbtcBaseBorrowRate = hub.getBaseDrawRate(wbtcAssetId);
+    rates.daiBaseBorrowRate = hub.getAssetDrawnRate(daiAssetId);
+    rates.wethBaseBorrowRate = hub.getAssetDrawnRate(wethAssetId);
+    rates.usdxBaseBorrowRate = hub.getAssetDrawnRate(usdxAssetId);
+    rates.wbtcBaseBorrowRate = hub.getAssetDrawnRate(wbtcAssetId);
 
     // Check bob's base debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     uint256 baseDebt = _calculateExpectedBaseDebt(
@@ -454,10 +454,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       (amounts.wbtcBorrowAmount, ) = spoke2.getUserDebt(_wbtcReserveId(spoke2), bob);
 
       // Refresh base borrow rates
-      rates.daiBaseBorrowRate = hub.getBaseDrawRate(daiAssetId);
-      rates.wethBaseBorrowRate = hub.getBaseDrawRate(wethAssetId);
-      rates.usdxBaseBorrowRate = hub.getBaseDrawRate(usdxAssetId);
-      rates.wbtcBaseBorrowRate = hub.getBaseDrawRate(wbtcAssetId);
+      rates.daiBaseBorrowRate = hub.getAssetDrawnRate(daiAssetId);
+      rates.wethBaseBorrowRate = hub.getAssetDrawnRate(wethAssetId);
+      rates.usdxBaseBorrowRate = hub.getAssetDrawnRate(usdxAssetId);
+      rates.wbtcBaseBorrowRate = hub.getAssetDrawnRate(wbtcAssetId);
 
       BaseShares memory baseShares;
 

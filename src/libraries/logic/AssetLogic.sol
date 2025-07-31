@@ -97,7 +97,7 @@ library AssetLogic {
     return assets.toSharesDown(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
-  function updateDrawRate(DataTypes.Asset storage asset, uint256 assetId) internal {
+  function updateDrawnRate(DataTypes.Asset storage asset, uint256 assetId) internal {
     uint256 newBorrowRate = IBasicInterestRateStrategy(asset.config.irStrategy)
       .calculateInterestRate({
         assetId: assetId,
@@ -169,6 +169,7 @@ library AssetLogic {
       return 0;
     }
 
+    // liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee
     // prettier-ignore
     uint256 feesAmount = (
       asset.drawnShares.rayMulDown(nextDrawnIndex - currentDrawnIndex) +

@@ -467,7 +467,7 @@ contract HubConfigTest is HubBase {
     rewind(365 days);
 
     AssetInterestRateStrategy newIrStrategy = new AssetInterestRateStrategy(address(hub));
-    _mockInterestRateRay(address(newIrStrategy), hub.getBaseDrawRate(assetId) * 10);
+    _mockInterestRateRay(address(newIrStrategy), hub.getAssetDrawnRate(assetId) * 10);
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.irStrategy = address(newIrStrategy);
     Utils.updateAssetConfig(hub, ADMIN, assetId, config);

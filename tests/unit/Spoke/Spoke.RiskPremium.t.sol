@@ -951,7 +951,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     assertEq(spoke3.getUserRiskPremium(bob), expectedUserRiskPremium, 'user risk premium');
 
     // Get the base rate of wbtc
-    uint256 baseRate = hub.getBaseDrawRate(wbtcAssetId);
+    uint256 baseRate = hub.getAssetDrawnRate(wbtcAssetId);
     uint256 baseDebt = wbtcInfo.borrowAmount;
     (uint256 actualBaseDebt, uint256 actualPremium) = spoke3.getUserDebt(wbtcInfo.reserveId, bob);
     uint40 startTime = uint40(vm.getBlockTimestamp());
@@ -1072,7 +1072,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     DebtChecks memory debtChecks;
 
     // Get the base rate of wbtc
-    uint256 baseRateWbtc = hub.getBaseDrawRate(wbtcAssetId);
+    uint256 baseRateWbtc = hub.getAssetDrawnRate(wbtcAssetId);
     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wbtcInfo.reserveId,
       bob
@@ -1083,7 +1083,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     assertEq(debtChecks.actualPremium, 0, 'user premium debt');
 
     // Get the base rate of weth
-    uint256 baseRateWeth = hub.getBaseDrawRate(wethAssetId);
+    uint256 baseRateWeth = hub.getAssetDrawnRate(wethAssetId);
     (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wethInfo.reserveId,
       bob

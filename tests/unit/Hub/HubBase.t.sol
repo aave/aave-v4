@@ -121,7 +121,10 @@ contract HubBase is Base {
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(tempSpoke);
-      hub.refreshPremium(assetId, premiumSharesDelta, premiumOffsetDelta, 0, 0);
+      hub.refreshPremium(
+        assetId,
+        DataTypes.PremiumDelta(premiumSharesDelta, premiumOffsetDelta, 0)
+      );
     }
 
     Utils.draw(hub, assetId, tempSpoke, tempUser, amount);
@@ -135,7 +138,10 @@ contract HubBase is Base {
       assertGt(premium, 0); // non-zero premium debt
       // restore premium data
       vm.prank(tempSpoke);
-      hub.refreshPremium(assetId, -premiumSharesDelta, -premiumOffsetDelta, premium, 0);
+      hub.refreshPremium(
+        assetId,
+        DataTypes.PremiumDelta(-premiumSharesDelta, -premiumOffsetDelta, int256(premium))
+      );
     }
   }
 
@@ -157,7 +163,10 @@ contract HubBase is Base {
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(spoke);
-      hub.refreshPremium(assetId, premiumSharesDelta, premiumOffsetDelta, 0, 0);
+      hub.refreshPremium(
+        assetId,
+        DataTypes.PremiumDelta(premiumSharesDelta, premiumOffsetDelta, 0)
+      );
     }
 
     Utils.draw({hub: hub, assetId: assetId, caller: spoke, amount: amount, to: tempUser});
@@ -171,7 +180,10 @@ contract HubBase is Base {
       assertGt(premium, 0); // non-zero premium debt
       // restore premium data
       vm.prank(spoke);
-      hub.refreshPremium(assetId, -premiumSharesDelta, -premiumOffsetDelta, premium, 0);
+      hub.refreshPremium(
+        assetId,
+        DataTypes.PremiumDelta(-premiumSharesDelta, -premiumOffsetDelta, int256(premium))
+      );
     }
   }
 

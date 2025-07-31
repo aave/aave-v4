@@ -90,7 +90,7 @@ contract HubAccrueInterestTest is Base {
 
     Utils.add(hub, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
-    uint256 drawnRate = hub.getBaseDrawRate(daiAssetId);
+    uint256 drawnRate = hub.getAssetDrawnRate(daiAssetId);
 
     // Time passes
     skip(elapsed);
@@ -114,7 +114,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt1, 'drawn');
 
     startTime = vm.getBlockTimestamp();
-    drawnRate = hub.getBaseDrawRate(daiAssetId);
+    drawnRate = hub.getAssetDrawnRate(daiAssetId);
 
     // calculate expected drawn to restore
     (uint256 expectedDebtIndex2, uint256 expectedBaseDebt2) = calculateExpectedDebt(
@@ -124,8 +124,8 @@ contract HubAccrueInterestTest is Base {
       uint40(startTime)
     );
 
-    // Full restore, so back to zero drawn
-    Utils.restore(hub, daiAssetId, address(spoke1), borrowAmount + interest, 0, address(spoke1));
+    // Full repayment, so back to zero debt
+    Utils.restoreBase(hub, daiAssetId, address(spoke1), borrowAmount + interest, address(spoke1));
 
     assertEq(expectedDebtIndex2, expectedDebtIndex1, 'expectedDebtIndex');
     assertEq(expectedBaseDebt2, expectedBaseDebt1, 'expectedBaseDebt');
@@ -168,7 +168,7 @@ contract HubAccrueInterestTest is Base {
 
     Utils.add(hub, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
-    uint256 drawnRate = hub.getBaseDrawRate(daiAssetId);
+    uint256 drawnRate = hub.getAssetDrawnRate(daiAssetId);
 
     // Time passes
     skip(elapsed);
@@ -207,7 +207,7 @@ contract HubAccrueInterestTest is Base {
 
     Utils.add(hub, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
-    uint256 drawnRate = hub.getBaseDrawRate(daiAssetId);
+    uint256 drawnRate = hub.getAssetDrawnRate(daiAssetId);
 
     // Time passes
     skip(elapsed);
@@ -243,7 +243,7 @@ contract HubAccrueInterestTest is Base {
     // Utils.add(hub, daiAssetId, address(spoke1), addAmount, address(spoke1), address(spoke1));
     // Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount, address(spoke1));
     // // refresh risk premium
-    // uint256 drawnRate = hub.getBaseDrawRate(daiAssetId);
+    // uint256 drawnRate = hub.getAssetDrawnRate(daiAssetId);
 
     // // Time passes
     // skip(elapsed);
@@ -284,7 +284,7 @@ contract HubAccrueInterestTest is Base {
     //     vm.startPrank(address(spoke1));
     //     hub.add(daiAssetId, addAmount, 0, address(spoke1));
     //     hub.draw(daiAssetId, borrowAmount, riskPremium, address(spoke1));
-    //     uint256 drawnRate = hub.getBaseDrawRate(daiAssetId);
+    //     uint256 drawnRate = hub.getAssetDrawnRate(daiAssetId);
     //     vm.stopPrank();
 
     //     // Time passes

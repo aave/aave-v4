@@ -2,9 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
-import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 /**
  * @title IHub
@@ -28,20 +26,37 @@ interface IHub is IAccessManaged {
   );
   event Add(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
   event Remove(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
-  event Draw(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
-  event Restore(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
+  event Draw(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 drawnShares,
+    uint256 drawnAmount
+  );
+  event Restore(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 drawnShares,
+    DataTypes.PremiumDelta premiumDelta,
+    uint256 drawnAmount,
+    uint256 premiumAmount
+  );
   event RefreshPremium(
     uint256 indexed assetId,
     address indexed spoke,
-    int256 premiumSharesDelta,
-    int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+    uint256 suppliedShares,
+    uint256 suppliedAmount
+  );
+
+  event RefreshPremiumDebt(
+    uint256 indexed assetId,
+    address indexed spoke,
+    DataTypes.PremiumDelta premiumDelta
   );
   event DeficitReported(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 baseRestoredShares,
+    DataTypes.PremiumDelta premiumDelta,
     uint256 totalRestoredAmount
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
@@ -115,8 +130,8 @@ interface IHub is IAccessManaged {
   function setInterestRateData(uint256 assetId, bytes calldata data) external;
 
   /**
-   * @notice Add asset on behalf of user.
-   * @dev Only callable by spokes.
+   * @notice Add/Supply asset on behalf of user.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to add.
    * @param from The address which we pull assets from (user).
@@ -125,8 +140,8 @@ interface IHub is IAccessManaged {
   function add(uint256 assetId, uint256 amount, address from) external returns (uint256);
 
   /**
-   * @notice Remove added assets on behalf of user.
-   * @dev Only callable by spokes.
+   * @notice Remove/Withdraw supplied asset on behalf of user.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to remove.
    * @param to The address to transfer the assets to.
@@ -135,8 +150,8 @@ interface IHub is IAccessManaged {
   function remove(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
   /**
-   * @notice Draw assets on behalf of user.
-   * @dev Only callable by spokes.
+   * @notice Draw/Borrow debt on behalf of user.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of asset to draw.
    * @param to The address to transfer the underlying assets to.
@@ -145,12 +160,13 @@ interface IHub is IAccessManaged {
   function draw(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
   /**
-   * @notice Restores assets on behalf of user.
-   * @dev Only callable by spokes.
+   * @notice Restores/Repays debt on behalf of user.
+   * @dev Only callable by active spokes.
    * @dev Interest is always paid off first from premium, then from base.
    * @param assetId The identifier of the asset.
-   * @param baseAmount The base amount to restore.
-   * @param premiumAmount The premium amount to restore.
+   * @param baseAmount The base debt to repay.
+   * @param premiumAmount The premium debt to repay.
+   * @param premiumDelta The premium debt delta to apply which signal premium debt repayment.
    * @param from The address to pull assets from.
    * @return The amount of base shares restored.
    */
@@ -158,31 +174,22 @@ interface IHub is IAccessManaged {
     uint256 assetId,
     uint256 baseAmount,
     uint256 premiumAmount,
+    DataTypes.PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256);
 
   /**
-   * @notice Refreshes premium accounting.
-   * @dev To be called when moving accrued premium to realized premium.
-   * @dev Only callable by spokes.
-   * @dev Premium can only decrease by at most the amount of realized premium taken.
+   * @notice Refreshes premium debt accounting.
+   * @dev Only callable by active spokes, reverts with `SpokeNotActive` otherwise.
+   * @dev Overall premium debt should not decrease, reverts with `InvalidDebtChange` otherwise.
    * @param assetId The identifier of the asset.
-   * @param premiumSharesDelta The change in premium drawn shares.
-   * @param premiumOffsetDelta The change in premium offset.
-   * @param realizedPremiumAdded The increase of realized premium.
-   * @param realizedPremiumTaken The decrease of realized premium.
+   * @param premiumDelta The change in premium debt.
    */
-  function refreshPremium(
-    uint256 assetId,
-    int256 premiumSharesDelta,
-    int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
-  ) external;
+  function refreshPremium(uint256 assetId, DataTypes.PremiumDelta calldata premiumDelta) external;
 
   /**
    * @notice Pay existing liquidity to feeReceiver.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to pay to feeReceiver.
    */
@@ -194,12 +201,14 @@ interface IHub is IAccessManaged {
    * @param assetId The identifier of the asset.
    * @param baseAmount The base debt to report as deficit.
    * @param premiumAmount The premium debt to report as deficit.
+   * @param premiumDelta The premium debt delta to apply which signal premium debt deficit.
    * @return The amount of base debt shares reported as deficit.
    */
   function reportDeficit(
     uint256 assetId,
     uint256 baseAmount,
-    uint256 premiumAmount
+    uint256 premiumAmount,
+    DataTypes.PremiumDelta calldata premiumDelta
   ) external returns (uint256);
 
   /**
@@ -341,8 +350,6 @@ interface IHub is IAccessManaged {
   function getTotalAddedShares(uint256 assetId) external view returns (uint256);
 
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
-
-  function getBaseDrawRate(uint256 assetId) external view returns (uint256);
 
   function getSpokeCount(uint256 assetId) external view returns (uint256);
 

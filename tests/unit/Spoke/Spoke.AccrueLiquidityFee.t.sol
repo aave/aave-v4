@@ -61,7 +61,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, reserveId, bob, borrowAmount, bob);
 
-    uint256 drawnRate = hub.getBaseDrawRate(assetId);
+    uint256 drawnRate = hub.getAssetDrawnRate(assetId);
     uint256 initialBaseIndex = hub.getAsset(assetId).drawnIndex;
     uint256 userRp = spoke1.getUserRiskPremium(bob);
 

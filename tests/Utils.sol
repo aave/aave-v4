@@ -46,17 +46,16 @@ library Utils {
     return hub.remove(assetId, amount, to);
   }
 
-  function restore(
+  function restoreBase(
     IHub hub,
     uint256 assetId,
     address caller,
-    uint256 baseAmount,
-    uint256 premiumAmount,
+    uint256 drawnAmount,
     address restorer
   ) internal returns (uint256) {
-    approve(hub, assetId, restorer, baseAmount + premiumAmount);
+    approve(hub, assetId, restorer, drawnAmount);
     vm.prank(caller);
-    return hub.restore(assetId, baseAmount, premiumAmount, restorer);
+    return hub.restore(assetId, drawnAmount, 0, DataTypes.PremiumDelta(0, 0, 0), restorer);
   }
 
   function addSpoke(

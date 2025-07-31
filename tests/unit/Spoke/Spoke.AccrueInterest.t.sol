@@ -93,7 +93,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     Utils.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
-    uint256 drawnRate = hub.getBaseDrawRate(daiAssetId);
+    uint256 drawnRate = hub.getAssetDrawnRate(daiAssetId);
     uint256 userRp = spoke1.getUserRiskPremium(bob);
 
     // Time passes
@@ -121,7 +121,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
 
     startTime = uint40(vm.getBlockTimestamp());
-    drawnRate = hub.getBaseDrawRate(daiAssetId);
+    drawnRate = hub.getAssetDrawnRate(daiAssetId);
 
     // Full repayment, so back to zero debt
     Utils.repay(spoke1, daiReserveId, bob, type(uint256).max, bob);
@@ -169,7 +169,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     Utils.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
-    uint256 drawnRate = hub.getBaseDrawRate(daiAssetId);
+    uint256 drawnRate = hub.getAssetDrawnRate(daiAssetId);
     uint256 userRp = spoke1.getUserRiskPremium(bob);
 
     // Time passes
@@ -216,7 +216,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // User risk premium should be 10%
     uint256 riskPremium = spoke1.getUserRiskPremium(bob);
     assertEq(riskPremium, 10_00, 'user risk premium');
-    uint256 drawnRate = hub.getBaseDrawRate(usdxAssetId);
+    uint256 drawnRate = hub.getAssetDrawnRate(usdxAssetId);
 
     skip(skipTime);
 
@@ -334,10 +334,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Store base borrow rates
     Rates memory rates;
-    rates.daiBaseBorrowRate = hub.getBaseDrawRate(daiAssetId);
-    rates.wethBaseBorrowRate = hub.getBaseDrawRate(wethAssetId);
-    rates.usdxBaseBorrowRate = hub.getBaseDrawRate(usdxAssetId);
-    rates.wbtcBaseBorrowRate = hub.getBaseDrawRate(wbtcAssetId);
+    rates.daiBaseBorrowRate = hub.getAssetDrawnRate(daiAssetId);
+    rates.wethBaseBorrowRate = hub.getAssetDrawnRate(wethAssetId);
+    rates.usdxBaseBorrowRate = hub.getAssetDrawnRate(usdxAssetId);
+    rates.wbtcBaseBorrowRate = hub.getAssetDrawnRate(wbtcAssetId);
 
     // Check bob's base debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     uint256 baseDebt = _calculateExpectedBaseDebt(

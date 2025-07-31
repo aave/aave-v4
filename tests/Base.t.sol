@@ -1217,7 +1217,7 @@ abstract contract Base is Test {
     return hub.getAsset(assetId).deficit;
   }
 
-  function getBaseDrawRate(IHub hub, uint256 assetId) internal view returns (uint256) {
+  function getAssetDrawnRate(IHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.getAsset(assetId).drawnRate;
   }
 

@@ -112,7 +112,7 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
     asset.config = config;
-    asset.updateDrawRate(assetId);
+    asset.updateDrawnRate(assetId);
 
     emit AssetConfigUpdated(assetId, config);
   }
@@ -169,7 +169,7 @@ contract Hub is IHub, AccessManaged {
     spoke.addedShares += shares;
     asset.availableLiquidity += amount;
 
-    asset.updateDrawRate(assetId);
+    asset.updateDrawnRate(assetId);
 
     // TODO: fee-on-transfer
     IERC20(asset.underlying).safeTransferFrom(from, address(this), amount);
@@ -192,7 +192,7 @@ contract Hub is IHub, AccessManaged {
     spoke.addedShares -= shares;
     asset.availableLiquidity -= amount;
 
-    asset.updateDrawRate(assetId);
+    asset.updateDrawnRate(assetId);
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
@@ -214,7 +214,7 @@ contract Hub is IHub, AccessManaged {
     spoke.drawnShares += shares;
     asset.availableLiquidity -= amount;
 
-    asset.updateDrawRate(assetId);
+    asset.updateDrawnRate(assetId);
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
@@ -226,40 +226,39 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function restore(
     uint256 assetId,
-    uint256 baseAmount,
+    uint256 drawnAmount,
     uint256 premiumAmount,
+    DataTypes.PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256) {
-    // global & spoke premium (premium, offset, realized) is *expected* to be updated on the `refreshPremium` callback
-
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+    _validateRestore(asset, spoke, drawnAmount, premiumAmount, from);
 
-    _validateRestore(asset, spoke, baseAmount, premiumAmount, from);
-
-    uint256 shares = previewRestoreByAssets(assetId, baseAmount);
-    asset.drawnShares -= shares;
-    spoke.drawnShares -= shares;
-    uint256 totalAmount = baseAmount + premiumAmount;
+    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
+    uint256 drawnShares = previewRestoreByAssets(assetId, drawnAmount);
+    asset.drawnShares -= drawnShares;
+    spoke.drawnShares -= drawnShares;
+    uint256 totalAmount = drawnAmount + premiumAmount;
     asset.availableLiquidity += totalAmount;
 
-    /// @dev premium must be restored in `refreshPremium` before calling this function
-    asset.updateDrawRate(assetId);
+    asset.updateDrawnRate(assetId);
 
     IERC20(asset.underlying).safeTransferFrom(from, address(this), totalAmount);
 
-    emit Restore(assetId, msg.sender, shares, totalAmount);
+    emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
-    return shares;
+    return drawnShares;
   }
 
   /// @inheritdoc IHub
   function reportDeficit(
     uint256 assetId,
     uint256 baseAmount,
-    uint256 premiumAmount
+    uint256 premiumAmount,
+    DataTypes.PremiumDelta calldata premiumDelta
   ) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -268,46 +267,38 @@ contract Hub is IHub, AccessManaged {
 
     _validateReportDeficit(asset, spoke, baseAmount, premiumAmount);
 
-    uint256 totalDeficitAmount = baseAmount + premiumAmount;
+    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
     uint256 drawnSharesRestored = previewRestoreByAssets(assetId, baseAmount);
     asset.drawnShares -= drawnSharesRestored;
     spoke.drawnShares -= drawnSharesRestored;
+    uint256 totalDeficitAmount = baseAmount + premiumAmount;
     asset.deficit += totalDeficitAmount;
 
-    /// @dev premium must be restored in `refreshPremium` before calling this function
-    asset.updateDrawRate(assetId);
+    asset.updateDrawnRate(assetId);
 
-    emit DeficitReported(assetId, msg.sender, drawnSharesRestored, totalDeficitAmount);
+    emit DeficitReported(
+      assetId,
+      msg.sender,
+      drawnSharesRestored,
+      premiumDelta,
+      totalDeficitAmount
+    );
 
     return drawnSharesRestored;
   }
 
   /// @inheritdoc IHub
-  function refreshPremium(
-    uint256 assetId,
-    int256 premiumSharesDelta,
-    int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
-  ) external {
-    require(_spokes[assetId][msg.sender].config.active, SpokeNotActive());
-
+  function refreshPremium(uint256 assetId, DataTypes.PremiumDelta calldata premiumDelta) external {
     DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    uint256 premiumBefore = asset.premium();
-    _refresh(
-      assetId,
-      msg.sender,
-      premiumSharesDelta,
-      premiumOffsetDelta,
-      realizedPremiumAdded,
-      realizedPremiumTaken
-    );
-    uint256 premiumAfter = asset.premium();
-    // can increase due to precision loss on premium (base unchanged)
-    // todo mathematically find premium diff ceiling and replace the `2`
-    // if no premium is restored, premium remains unchanged
-    require(premiumAfter + realizedPremiumTaken - premiumBefore <= 2, InvalidPremiumChange());
+    require(spoke.config.active, SpokeNotActive());
+    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+
+    // no premium debt change allowed
+    _applyPremiumDelta(asset, spoke, premiumDelta, 0);
+
+    emit RefreshPremiumDebt(assetId, msg.sender, premiumDelta);
   }
 
   /// @inheritdoc IHub
@@ -333,36 +324,29 @@ contract Hub is IHub, AccessManaged {
     emit Add(assetId, feeReceiver, shares, feeAmount);
   }
 
-  function _refresh(
-    uint256 assetId,
-    address spokeAddress,
-    int256 premiumSharesDelta,
-    int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+  /**
+   * @dev Applies premium deltas on asset and spoke debt, and validates that total premium debt
+   * cannot decrease by more than `premiumAmount`.
+   */
+  function _applyPremiumDelta(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
+    DataTypes.PremiumDelta calldata premium,
+    uint256 premiumAmount
   ) internal {
-    DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
+    uint256 premiumBefore = asset.premium();
 
-    // accrue interest and liquidity fees
-    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+    asset.premiumShares = asset.premiumShares.add(premium.drawnSharesDelta);
+    asset.premiumOffset = asset.premiumOffset.add(premium.offsetDelta);
+    asset.realizedPremium = asset.realizedPremium.add(premium.realizedDelta);
 
-    asset.premiumShares = asset.premiumShares.add(premiumSharesDelta);
-    asset.premiumOffset = asset.premiumOffset.add(premiumOffsetDelta);
-    asset.realizedPremium = asset.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
+    spoke.premiumShares = spoke.premiumShares.add(premium.drawnSharesDelta);
+    spoke.premiumOffset = spoke.premiumOffset.add(premium.offsetDelta);
+    spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta);
 
-    spoke.premiumShares = spoke.premiumShares.add(premiumSharesDelta);
-    spoke.premiumOffset = spoke.premiumOffset.add(premiumOffsetDelta);
-    spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
-
-    emit RefreshPremium(
-      assetId,
-      spokeAddress,
-      premiumSharesDelta,
-      premiumOffsetDelta,
-      realizedPremiumAdded,
-      realizedPremiumTaken
-    );
+    // can increase due to precision loss on premium debt (base unchanged)
+    // todo mathematically find premium diff ceiling and replace the `2`
+    require(asset.premium() + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
   }
 
   /// @inheritdoc IHub
@@ -588,16 +572,16 @@ contract Hub is IHub, AccessManaged {
   function _validateRestore(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
-    uint256 baseAmount,
+    uint256 drawnAmount,
     uint256 premiumAmount,
     address from
   ) internal view {
     require(from != address(this), InvalidFromAddress());
-    require(baseAmount + premiumAmount > 0, InvalidRestoreAmount());
+    require(drawnAmount + premiumAmount > 0, InvalidRestoreAmount());
     require(spoke.config.active, SpokeNotActive());
-    (uint256 drawn, ) = _getSpokeOwed(asset, spoke);
-    require(baseAmount <= drawn, SurplusAmountRestored(drawn));
-    // we should have already restored premium
+    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeOwed(asset, spoke);
+    require(drawnAmount <= baseDebt, SurplusAmountRestored(baseDebt));
+    require(premiumAmount <= premiumDebt, SurplusAmountRestored(premiumDebt));
   }
 
   function _getSpokeOwed(
@@ -617,9 +601,15 @@ contract Hub is IHub, AccessManaged {
   ) internal view {
     require(spoke.config.active, SpokeNotActive());
     require(baseAmount + premiumAmount != 0, InvalidDeficitAmount());
-    (uint256 drawn, ) = _getSpokeOwed(asset, spoke);
-    require(baseAmount <= drawn, SurplusDeficitReported(drawn));
-    // we should have already restored premium
+    (uint256 baseDebt, uint256 premiumDebt) = _getSpokeOwed(asset, spoke);
+    require(baseAmount <= baseDebt, SurplusDeficitReported(baseDebt));
+    require(premiumAmount <= premiumDebt, SurplusDeficitReported(premiumDebt));
+  }
+
+  // handles underflow
+  function _add(uint256 a, int256 b) internal pure returns (uint256) {
+    if (b >= 0) return a + uint256(b);
+    return a - uint256(-b);
   }
 
   function _validatePayFee(
