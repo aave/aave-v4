@@ -719,13 +719,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.PremiumDelta memory premiumDelta
   ) internal {
     _applyPremiumDelta(reserve, premiumDelta);
-    _settlePremiumDebt(userPosition, premiumDelta);
-  }
-
-  function _settlePremiumDebt(
-    DataTypes.UserPosition storage userPosition,
-    DataTypes.PremiumDelta memory premiumDelta
-  ) internal {
     userPosition.premiumDrawnShares = 0;
     userPosition.premiumOffset = 0;
     userPosition.realizedPremium = _add(userPosition.realizedPremium, premiumDelta.realizedDelta);
