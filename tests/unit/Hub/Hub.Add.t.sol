@@ -213,7 +213,7 @@ contract HubAddTest is HubBase {
     IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
 
     (uint256 drawnBefore, uint256 premiumBefore) = hub.getAssetOwed(assetId);
-    uint256 liquidityBefore = hub.getAvailableLiquidity(assetId);
+    uint256 liquidityBefore = hub.getLiquidity(assetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
@@ -303,7 +303,7 @@ contract HubAddTest is HubBase {
       'asset addedShares after'
     );
     assertEq(hub.getAssetAddedAmount(assetId), amount, 'asset addedAmount after');
-    assertEq(hub.getAvailableLiquidity(assetId), amount, 'asset liquidity after');
+    assertEq(hub.getLiquidity(assetId), amount, 'asset liquidity after');
     assertEq(
       hub.getAsset(assetId).lastUpdateTimestamp,
       timestamp,
@@ -324,7 +324,7 @@ contract HubAddTest is HubBase {
       hub.convertToAddedShares(assetId2, amount2),
       'asset2 addedShares after'
     );
-    assertEq(hub.getAvailableLiquidity(assetId2), amount2, 'asset2 liquidity after');
+    assertEq(hub.getLiquidity(assetId2), amount2, 'asset2 liquidity after');
     assertEq(
       hub.getAsset(assetId2).lastUpdateTimestamp,
       timestamp,
@@ -446,7 +446,7 @@ contract HubAddTest is HubBase {
     uint256 addedSharesBefore = hub.getAssetAddedShares(daiAssetId);
 
     (uint256 drawnBefore, uint256 premiumBefore) = hub.getAssetOwed(daiAssetId);
-    uint256 liquidityBefore = hub.getAvailableLiquidity(daiAssetId);
+    uint256 liquidityBefore = hub.getLiquidity(daiAssetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
@@ -599,7 +599,7 @@ contract HubAddTest is HubBase {
       'hub addedShares after'
     );
     assertEq(
-      hub.getAvailableLiquidity(daiAssetId),
+      hub.getLiquidity(daiAssetId),
       amount + addAmount - drawnAmount,
       'asset liquidity after'
     );
@@ -705,7 +705,7 @@ contract HubAddTest is HubBase {
       // hub
       assertGe(hub.getAssetAddedAmount(assetId), params.assetAddedAmount, 'hub addedAmount after');
       assertGe(hub.getAssetAddedShares(assetId), params.assetAddedShares, 'hub addedShares after');
-      assertEq(hub.getAvailableLiquidity(assetId), params.availableLiq, 'asset liquidity after');
+      assertEq(hub.getLiquidity(assetId), params.availableLiq, 'asset liquidity after');
       assertEq(
         hub.getAsset(assetId).lastUpdateTimestamp,
         vm.getBlockTimestamp(),

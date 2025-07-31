@@ -192,7 +192,7 @@ contract HubBase is Base {
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
 
-    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
+    uint256 initialLiq = hub.getLiquidity(assetId);
 
     address underlying = hub.getAsset(assetId).underlying;
     deal(underlying, tempUser, amount);
@@ -209,6 +209,6 @@ contract HubBase is Base {
 
     Utils.add({hub: hub, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
 
-    assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
+    assertEq(hub.getLiquidity(assetId), initialLiq + amount);
   }
 }

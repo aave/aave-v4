@@ -342,7 +342,7 @@ interface IHub is IAccessManaged {
 
   function getTotalAddedShares(uint256 assetId) external view returns (uint256);
 
-  function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
+  function getLiquidity(uint256 assetId) external view returns (uint256);
 
   function getSpokeCount(uint256 assetId) external view returns (uint256);
 

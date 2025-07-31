@@ -290,7 +290,7 @@ contract HubConfigTest is HubBase {
     _assumeValidAssetConfig(assetId, newConfig);
     _mockInterestRateBps(newConfig.irStrategy, 5_00);
 
-    uint256 liquidity = hub.getAvailableLiquidity(assetId);
+    uint256 liquidity = hub.getLiquidity(assetId);
     (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
 
     vm.expectEmit(address(hub));

@@ -58,7 +58,7 @@ contract HubDrawTest is HubBase {
     assertEq(hub.getAssetTotalOwed(assetId), amount, 'asset totalDebt after');
     assertEq(drawn, amount, 'asset drawn after');
     assertEq(premium, 0, 'asset premium after');
-    assertEq(hub.getAvailableLiquidity(assetId), 0, 'asset liquidity after');
+    assertEq(hub.getLiquidity(assetId), 0, 'asset liquidity after');
     assertEq(
       hub.getAsset(assetId).lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -156,7 +156,7 @@ contract HubDrawTest is HubBase {
   function test_draw_revertsWith_NotAvailableLiquidity() public {
     uint256 drawAmount = 1;
 
-    assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
+    assertTrue(hub.getLiquidity(daiAssetId) == 0);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.NotAvailableLiquidity.selector, 0));
     vm.prank(address(spoke1));
@@ -170,7 +170,7 @@ contract HubDrawTest is HubBase {
     assetId = bound(assetId, 0, hub.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
-    assertTrue(hub.getAvailableLiquidity(assetId) == 0);
+    assertTrue(hub.getLiquidity(assetId) == 0);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.NotAvailableLiquidity.selector, 0));
     vm.prank(address(spoke2));
@@ -197,7 +197,7 @@ contract HubDrawTest is HubBase {
       to: bob
     });
 
-    assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
+    assertTrue(hub.getLiquidity(daiAssetId) == 0);
 
     uint256 drawAmount = 1;
 
@@ -228,7 +228,7 @@ contract HubDrawTest is HubBase {
       to: bob
     });
 
-    assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
+    assertTrue(hub.getLiquidity(daiAssetId) == 0);
 
     uint256 drawAmount = 1;
 
@@ -257,7 +257,7 @@ contract HubDrawTest is HubBase {
       to: bob
     });
 
-    assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
+    assertTrue(hub.getLiquidity(daiAssetId) == 0);
 
     uint256 drawAmount = 1;
 
@@ -286,7 +286,7 @@ contract HubDrawTest is HubBase {
       to: bob
     });
 
-    assertTrue(hub.getAvailableLiquidity(daiAssetId) == 0);
+    assertTrue(hub.getLiquidity(daiAssetId) == 0);
 
     uint256 drawAmount = 1;
 

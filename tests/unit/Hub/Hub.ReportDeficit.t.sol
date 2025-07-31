@@ -116,7 +116,7 @@ contract HubReportDeficitTest is HubBase {
 
     params.deficitBefore = getDeficit(hub, usdxAssetId);
     params.supplyExchangeRateBefore = hub.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
-    params.liquidityBefore = hub.getAvailableLiquidity(usdxAssetId);
+    params.liquidityBefore = hub.getLiquidity(usdxAssetId);
     params.balanceBefore = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
     uint256 drawnSharesBefore = hub.getAsset(usdxAssetId).drawnShares;
     uint256 totalDeficit = baseAmount + premiumAmount;
@@ -142,7 +142,7 @@ contract HubReportDeficitTest is HubBase {
 
     params.deficitAfter = getDeficit(hub, usdxAssetId);
     params.supplyExchangeRateAfter = hub.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
-    params.liquidityAfter = hub.getAvailableLiquidity(usdxAssetId);
+    params.liquidityAfter = hub.getLiquidity(usdxAssetId);
     params.balanceAfter = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
     uint256 drawnSharesAfter = hub.getAsset(usdxAssetId).drawnShares;
 
