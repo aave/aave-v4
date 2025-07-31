@@ -5,8 +5,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccrueInterestTest is SpokeBase {
   using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   struct TestAmounts {
     uint256 daiSupplyAmount;
@@ -93,7 +93,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     Utils.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
-    uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
+    uint256 baseDrawRate = hub.getBaseDrawRate(daiAssetId);
     uint256 userRp = spoke1.getUserRiskPremium(bob);
 
     // Time passes
@@ -121,7 +121,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
 
     startTime = uint40(vm.getBlockTimestamp());
-    baseDrawRate = hub.getBaseInterestRate(daiAssetId);
+    baseDrawRate = hub.getBaseDrawRate(daiAssetId);
 
     // Full repayment, so back to zero debt
     Utils.repay(spoke1, daiReserveId, bob, type(uint256).max, bob);
@@ -169,7 +169,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     Utils.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
-    uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
+    uint256 baseDrawRate = hub.getBaseDrawRate(daiAssetId);
     uint256 userRp = spoke1.getUserRiskPremium(bob);
 
     // Time passes
@@ -216,7 +216,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // User risk premium should be 10%
     uint256 riskPremium = spoke1.getUserRiskPremium(bob);
     assertEq(riskPremium, 10_00, 'user risk premium');
-    uint256 baseDrawRate = hub.getBaseInterestRate(usdxAssetId);
+    uint256 baseDrawRate = hub.getBaseDrawRate(usdxAssetId);
 
     skip(skipTime);
 
@@ -334,10 +334,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Store base borrow rates
     Rates memory rates;
-    rates.daiBaseBorrowRate = hub.getBaseInterestRate(daiAssetId);
-    rates.wethBaseBorrowRate = hub.getBaseInterestRate(wethAssetId);
-    rates.usdxBaseBorrowRate = hub.getBaseInterestRate(usdxAssetId);
-    rates.wbtcBaseBorrowRate = hub.getBaseInterestRate(wbtcAssetId);
+    rates.daiBaseBorrowRate = hub.getBaseDrawRate(daiAssetId);
+    rates.wethBaseBorrowRate = hub.getBaseDrawRate(wethAssetId);
+    rates.usdxBaseBorrowRate = hub.getBaseDrawRate(usdxAssetId);
+    rates.wbtcBaseBorrowRate = hub.getBaseDrawRate(wbtcAssetId);
 
     // Check bob's base debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     uint256 baseDebt = _calculateExpectedBaseDebt(
@@ -1113,6 +1113,6 @@ contract SpokeAccrueInterestTest is SpokeBase {
   }
 
   function _bpsToRay(uint256 bps) internal pure returns (uint256) {
-    return (bps * WadRayMathExtended.RAY) / PercentageMath.PERCENTAGE_FACTOR;
+    return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
   }
 }

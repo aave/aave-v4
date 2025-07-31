@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubRemoveTest is HubBase {
-  using WadRayMathExtended for uint256;
+  using WadRayMath for uint256;
 
   function test_remove() public {
     uint256 amount = 100e18;
@@ -38,7 +38,7 @@ contract HubRemoveTest is HubBase {
     assertEq(assetData.availableLiquidity, 0, 'asset availableLiquidity after');
     assertEq(assetData.drawn, 0, 'asset drawn after');
     assertEq(assetData.premium, 0, 'asset premium after');
-    assertEq(assetData.baseDrawnIndex, WadRayMathExtended.RAY, 'asset baseBorrowIndex after');
+    assertEq(assetData.baseDrawnIndex, WadRayMath.RAY, 'asset baseDrawnIndex after');
     assertEq(assetData.baseDrawRate, uint256(5_00).bpsToRay(), 'asset baseDrawRate after');
     assertEq(
       assetData.lastUpdateTimestamp,

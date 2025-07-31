@@ -22,7 +22,7 @@ struct TestDrawAmountAndRiskPremiumInput {
 
 contract HubRiskPremiumTest_Base is Base {
   using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
+  using WadRayMath for uint256;
   using PercentageMath for uint256;
 
   uint256 daiAmount = 2000e18;
@@ -57,7 +57,7 @@ contract HubRiskPremiumTest_Base is Base {
 }
 
 contract HubRiskPremium_ConstantTimeAndRiskPremium is HubRiskPremiumTest_Base {
-  using WadRayMathExtended for uint256;
+  using WadRayMath for uint256;
 
   function test_riskPremiumOnNoDraw() public {
     vm.skip(true, 'pending refactor');
@@ -222,7 +222,7 @@ contract HubRiskPremium_ConstantTimeAndRiskPremium is HubRiskPremiumTest_Base {
 }
 
 contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest_Base {
-  using WadRayMathExtended for uint256;
+  using WadRayMath for uint256;
 
   function test_fuzzMultipleDrawWhileAccruingInterest(
     uint256 timeToSkip,
@@ -257,7 +257,7 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
 
     //     skip(timeToSkip);
     //     uint256 spoke1AccruedDebt = spoke1DrawAmount.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
 
     //     // spoke 2 draws
@@ -283,10 +283,10 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
 
     //     spoke1DrawAmount += spoke1AccruedDebt;
     //     spoke1AccruedDebt = spoke1DrawAmount.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
     //     uint256 spoke2AccruedDebt = spoke2DrawAmount.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
 
     //     // spoke 3 draws remaining liquidity
@@ -345,7 +345,7 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
 
     //     skip(timeToSkip);
     //     uint256 spoke1AccruedDebt = spoke1DrawAmount.rayMul(
-    //       MathUtils.calculateLinearInterest(rate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(rate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
 
     //     // borrow rate changes with this action
@@ -379,10 +379,10 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
 
     //     spoke1DrawAmount += spoke1AccruedDebt;
     //     spoke1AccruedDebt = spoke1DrawAmount.rayMul(
-    //       MathUtils.calculateLinearInterest(rate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(rate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
     //     uint256 spoke2AccruedDebt = spoke2DrawAmount.rayMul(
-    //       MathUtils.calculateLinearInterest(rate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(rate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
 
     //     // spoke 3 draws remaining liquidity
@@ -435,7 +435,7 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
 
     //     skip(timeToSkip);
     //     uint256 spoke1AccruedDebt = p.drawAmount.spoke1.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
 
     //     // borrow baseDrawRate changes with this action
@@ -469,10 +469,10 @@ contract HubRiskPremium_VariableTimeAndConstantRiskPremium is HubRiskPremiumTest
 
     //     p.drawAmount.spoke1 += spoke1AccruedDebt;
     //     spoke1AccruedDebt = p.drawAmount.spoke1.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
     //     uint256 spoke2AccruedDebt = p.drawAmount.spoke2.rayMul(
-    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMathExtended.RAY
+    //       MathUtils.calculateLinearInterest(baseDrawRate, lastUpdateTimestamp) - WadRayMath.RAY
     //     );
 
     //     // spoke 3 draws remaining liquidity

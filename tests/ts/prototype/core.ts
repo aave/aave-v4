@@ -728,37 +728,32 @@ export class System {
     let fail = false,
       diff = 0n;
     const hubBaseDebt = this.hub.getDebt().baseDebt;
-    const spokeBaseDebt = this.spokes.reduce((sum, spoke) => sum + spoke.getDebt().baseDebt, 0n);
+    const spokeDrawn = this.spokes.reduce((sum, spoke) => sum + spoke.getDebt().baseDebt, 0n);
     const userBaseDebt = this.users.reduce((sum, user) => sum + user.getDebt().baseDebt, 0n);
-    if ((diff = absDiff(hubBaseDebt, spokeBaseDebt)) > PRECISION) {
-      console.error('hubBaseDebt !== spokeBaseDebt, diff', f(hubBaseDebt), f(spokeBaseDebt), diff);
+    if ((diff = absDiff(hubBaseDebt, spokeDrawn)) > PRECISION) {
+      console.error('hubBaseDebt !== spokeDrawn, diff', f(hubBaseDebt), f(spokeDrawn), diff);
       fail = true;
     }
-    if ((diff = absDiff(spokeBaseDebt, userBaseDebt)) > PRECISION) {
-      console.error(
-        'spokeBaseDebt !== userBaseDebt, diff',
-        f(spokeBaseDebt),
-        f(userBaseDebt),
-        diff
-      );
+    if ((diff = absDiff(spokeDrawn, userBaseDebt)) > PRECISION) {
+      console.error('spokeDrawn !== userBaseDebt, diff', f(spokeDrawn), f(userBaseDebt), diff);
       fail = true;
     }
-    if ((diff = maxAbsDiff(hubBaseDebt, spokeBaseDebt, userBaseDebt)) > PRECISION) {
+    if ((diff = maxAbsDiff(hubBaseDebt, spokeDrawn, userBaseDebt)) > PRECISION) {
       console.error(
-        'maxAbsDiff(hubBaseDebt, spokeBaseDebt, userBaseDebt) > PRECISION, diff',
+        'maxAbsDiff(hubBaseDebt, spokeDrawn, userBaseDebt) > PRECISION, diff',
         f(hubBaseDebt),
-        f(spokeBaseDebt),
+        f(spokeDrawn),
         f(userBaseDebt),
         diff
       );
       fail = true;
     }
 
-    if (hubBaseDebt === 0n && spokeBaseDebt + userBaseDebt !== 0n) {
+    if (hubBaseDebt === 0n && spokeDrawn + userBaseDebt !== 0n) {
       console.error(
         'spoke & user dust baseDebt remaining when hub baseDebt is completely repaid',
-        'spokeBaseDebt %d, userBaseDebt %d',
-        f(spokeBaseDebt),
+        'spokeDrawn %d, userBaseDebt %d',
+        f(spokeDrawn),
         f(userBaseDebt)
       );
       fail = true;
@@ -772,24 +767,21 @@ export class System {
     let fail = false,
       diff = 0n;
     const hubPremiumDebt = this.hub.getDebt().premiumDebt;
-    const spokePremiumDebt = this.spokes.reduce(
-      (sum, spoke) => sum + spoke.getDebt().premiumDebt,
-      0n
-    );
+    const spokePremium = this.spokes.reduce((sum, spoke) => sum + spoke.getDebt().premiumDebt, 0n);
     const userPremiumDebt = this.users.reduce((sum, user) => sum + user.getDebt().premiumDebt, 0n);
-    if ((diff = absDiff(hubPremiumDebt, spokePremiumDebt)) > PRECISION) {
+    if ((diff = absDiff(hubPremiumDebt, spokePremium)) > PRECISION) {
       console.error(
-        'hubPremiumDebt !== spokePremiumDebt, diff',
+        'hubPremiumDebt !== spokePremium, diff',
         f(hubPremiumDebt),
-        f(spokePremiumDebt),
+        f(spokePremium),
         diff
       );
       fail = true;
     }
-    if ((diff = absDiff(spokePremiumDebt, userPremiumDebt)) > PRECISION) {
+    if ((diff = absDiff(spokePremium, userPremiumDebt)) > PRECISION) {
       console.error(
-        'spokePremiumDebt !== userPremiumDebt, diff',
-        f(spokePremiumDebt),
+        'spokePremium !== userPremiumDebt, diff',
+        f(spokePremium),
         f(userPremiumDebt),
         diff
       );
@@ -811,11 +803,11 @@ export class System {
       }
     });
 
-    if (hubPremiumDebt === 0n && spokePremiumDebt + userPremiumDebt !== 0n) {
+    if (hubPremiumDebt === 0n && spokePremium + userPremiumDebt !== 0n) {
       console.error(
         'spoke & user dust premiumDebt remaining when hub premiumDebt is completely repaid',
-        'spokePremiumDebt %d, userPremiumDebt %d',
-        f(spokePremiumDebt),
+        'spokePremium %d, userPremiumDebt %d',
+        f(spokePremium),
         f(userPremiumDebt)
       );
       fail = true;

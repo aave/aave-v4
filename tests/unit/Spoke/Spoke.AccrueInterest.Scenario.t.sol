@@ -5,8 +5,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccrueInterestScenarioTest is SpokeBase {
   using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   struct TestAmounts {
     uint256 daiSupplyAmount;
@@ -139,10 +139,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
     // Store base borrow rates
     Rates memory rates;
-    rates.daiBaseBorrowRate = hub.getBaseInterestRate(daiAssetId);
-    rates.wethBaseBorrowRate = hub.getBaseInterestRate(wethAssetId);
-    rates.usdxBaseBorrowRate = hub.getBaseInterestRate(usdxAssetId);
-    rates.wbtcBaseBorrowRate = hub.getBaseInterestRate(wbtcAssetId);
+    rates.daiBaseBorrowRate = hub.getBaseDrawRate(daiAssetId);
+    rates.wethBaseBorrowRate = hub.getBaseDrawRate(wethAssetId);
+    rates.usdxBaseBorrowRate = hub.getBaseDrawRate(usdxAssetId);
+    rates.wbtcBaseBorrowRate = hub.getBaseDrawRate(wbtcAssetId);
 
     // Check bob's base debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     uint256 baseDebt = _calculateExpectedBaseDebt(
@@ -454,10 +454,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       (amounts.wbtcBorrowAmount, ) = spoke2.getUserDebt(_wbtcReserveId(spoke2), bob);
 
       // Refresh base borrow rates
-      rates.daiBaseBorrowRate = hub.getBaseInterestRate(daiAssetId);
-      rates.wethBaseBorrowRate = hub.getBaseInterestRate(wethAssetId);
-      rates.usdxBaseBorrowRate = hub.getBaseInterestRate(usdxAssetId);
-      rates.wbtcBaseBorrowRate = hub.getBaseInterestRate(wbtcAssetId);
+      rates.daiBaseBorrowRate = hub.getBaseDrawRate(daiAssetId);
+      rates.wethBaseBorrowRate = hub.getBaseDrawRate(wethAssetId);
+      rates.usdxBaseBorrowRate = hub.getBaseDrawRate(usdxAssetId);
+      rates.wbtcBaseBorrowRate = hub.getBaseDrawRate(wbtcAssetId);
 
       BaseShares memory baseShares;
 
@@ -823,6 +823,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
   }
 
   function _bpsToRay(uint256 bps) internal pure returns (uint256) {
-    return (bps * WadRayMathExtended.RAY) / PercentageMath.PERCENTAGE_FACTOR;
+    return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
   }
 }

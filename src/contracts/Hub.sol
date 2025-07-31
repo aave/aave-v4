@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// external
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
@@ -9,9 +10,9 @@ import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 // libraries
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
-import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
-import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 // interfaces
@@ -22,9 +23,9 @@ import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrat
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
-  using WadRayMathExtended for uint256;
+  using WadRayMath for uint256;
   using SharesMath for uint256;
-  using PercentageMathExtended for uint256;
+  using PercentageMath for uint256;
   using AssetLogic for DataTypes.Asset;
   using MathUtils for uint256;
 
@@ -67,7 +68,7 @@ contract Hub is IHub, AccessManaged {
       premium: 0
     });
 
-    uint256 baseDrawnIndex = WadRayMathExtended.RAY;
+    uint256 baseDrawnIndex = WadRayMath.RAY;
     uint256 lastUpdateTimestamp = block.timestamp;
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
       feeReceiver: feeReceiver,
@@ -86,6 +87,7 @@ contract Hub is IHub, AccessManaged {
       baseDrawnIndex: baseDrawnIndex,
       baseDrawRate: baseDrawRate,
       lastUpdateTimestamp: lastUpdateTimestamp,
+      deficit: 0,
       config: config
     });
 
@@ -102,7 +104,7 @@ contract Hub is IHub, AccessManaged {
     DataTypes.AssetConfig calldata config
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
-    require(config.liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR, InvalidLiquidityFee());
+    require(config.liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
     require(config.feeReceiver != address(0), InvalidFeeReceiver());
     require(config.irStrategy != address(0), InvalidIrStrategy());
 
@@ -254,9 +256,36 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
+  function reportDeficit(
+    uint256 assetId,
+    uint256 baseAmount,
+    uint256 premiumAmount
+  ) external returns (uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+
+    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+
+    _validateReportDeficit(asset, spoke, baseAmount, premiumAmount);
+
+    uint256 totalDeficitAmount = baseAmount + premiumAmount;
+    uint256 baseDrawnSharesRestored = previewRestoreByAssets(assetId, baseAmount);
+    asset.baseDrawnShares -= baseDrawnSharesRestored;
+    spoke.baseDrawnShares -= baseDrawnSharesRestored;
+    asset.deficit += totalDeficitAmount;
+
+    /// @dev premium debt must be restored in `refreshPremium` before calling this function
+    asset.updateDrawRate(assetId);
+
+    emit DeficitReported(assetId, msg.sender, baseDrawnSharesRestored, totalDeficitAmount);
+
+    return baseDrawnSharesRestored;
+  }
+
+  /// @inheritdoc IHub
   function refreshPremium(
     uint256 assetId,
-    int256 premiumDrawnShareDelta,
+    int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
@@ -269,7 +298,7 @@ contract Hub is IHub, AccessManaged {
     _refresh(
       assetId,
       msg.sender,
-      premiumDrawnShareDelta,
+      premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
       realizedPremiumTaken
@@ -307,7 +336,7 @@ contract Hub is IHub, AccessManaged {
   function _refresh(
     uint256 assetId,
     address spokeAddress,
-    int256 premiumDrawnShareDelta,
+    int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
@@ -318,18 +347,18 @@ contract Hub is IHub, AccessManaged {
     // accrue interest and liquidity fees
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
-    asset.premiumDrawnShares = asset.premiumDrawnShares.add(premiumDrawnShareDelta);
+    asset.premiumDrawnShares = asset.premiumDrawnShares.add(premiumDrawnSharesDelta);
     asset.premiumOffset = asset.premiumOffset.add(premiumOffsetDelta);
     asset.realizedPremium = asset.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
-    spoke.premiumDrawnShares = spoke.premiumDrawnShares.add(premiumDrawnShareDelta);
+    spoke.premiumDrawnShares = spoke.premiumDrawnShares.add(premiumDrawnSharesDelta);
     spoke.premiumOffset = spoke.premiumOffset.add(premiumOffsetDelta);
     spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
     emit RefreshPremium(
       assetId,
       spokeAddress,
-      premiumDrawnShareDelta,
+      premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
       realizedPremiumTaken
@@ -440,7 +469,7 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].getDrawnIndex();
   }
 
-  function getBaseInterestRate(uint256 assetId) external view returns (uint256) {
+  function getBaseDrawRate(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].baseDrawRate;
   }
 
@@ -578,6 +607,19 @@ contract Hub is IHub, AccessManaged {
     // sanity: utilize solc underflow check
     uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset;
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
+  }
+
+  function _validateReportDeficit(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
+    uint256 baseAmount,
+    uint256 premiumAmount
+  ) internal view {
+    require(spoke.config.active, SpokeNotActive());
+    require(baseAmount + premiumAmount != 0, InvalidDeficitAmount());
+    (uint256 drawn, ) = _getSpokeOwed(asset, spoke);
+    require(baseAmount <= drawn, SurplusDeficitReported(drawn));
+    // we should have already restored premium
   }
 
   function _validatePayFee(

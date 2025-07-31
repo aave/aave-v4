@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccrueLiquidityFeeTest is SpokeBase {
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   function test_accrueLiquidityFee_NoActionTaken() public view {
     assertEq(hub.getSpokeAddedShares(daiAssetId, address(treasurySpoke)), 0);
@@ -61,7 +61,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, reserveId, bob, borrowAmount, bob);
 
-    uint256 baseDrawRate = hub.getBaseInterestRate(assetId);
+    uint256 baseDrawRate = hub.getBaseDrawRate(assetId);
     uint256 initialBaseIndex = hub.getAsset(assetId).baseDrawnIndex;
     uint256 userRp = spoke1.getUserRiskPremium(bob);
 

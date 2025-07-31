@@ -4,9 +4,7 @@ pragma solidity ^0.8.10;
 import 'tests/Base.t.sol';
 
 contract AssetInterestRateStrategyTest is Base {
-  using WadRayMathExtended for uint16;
-  using WadRayMathExtended for uint32;
-  using WadRayMathExtended for uint256;
+  using WadRayMath for *;
 
   uint256 mockAssetId = uint256(keccak256('mockAssetId'));
 
@@ -249,7 +247,7 @@ contract AssetInterestRateStrategyTest is Base {
         .variableRateSlope2
         .bpsToRay()
         .rayMulUp(utilizationRatioRay - rateData.optimalUsageRatio.bpsToRay())
-        .rayDivUp(WadRayMathExtended.RAY - rateData.optimalUsageRatio.bpsToRay());
+        .rayDivUp(WadRayMath.RAY - rateData.optimalUsageRatio.bpsToRay());
 
     if (drawn >= 1e27) {
       assertEq(variableBorrowRate, expectedVariableRate);
@@ -270,9 +268,9 @@ contract AssetInterestRateStrategyTest is Base {
     // utilizationRatio = drawn / (drawn + availableLiquidity)
     // utilizationRatio * drawn + utilizationRatio * availableLiquidity = drawn
     // availableLiquidity = drawn * (1 - utilizationRatio) / utilizationRatio
-    availableLiquidity = drawn
-      .rayMulUp(WadRayMathExtended.RAY - targetUtilizationRatioRay)
-      .rayDivUp(targetUtilizationRatioRay);
+    availableLiquidity = drawn.rayMulUp(WadRayMath.RAY - targetUtilizationRatioRay).rayDivUp(
+      targetUtilizationRatioRay
+    );
 
     // unused in the current IR strategy
     premium = vm.randomUint();

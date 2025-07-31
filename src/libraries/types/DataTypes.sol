@@ -27,6 +27,7 @@ library DataTypes {
     uint256 baseDrawnIndex;
     uint256 baseDrawRate;
     uint256 lastUpdateTimestamp;
+    uint256 deficit;
     DataTypes.AssetConfig config;
   }
 
@@ -142,6 +143,18 @@ library DataTypes {
     uint256 collateralAssetPrice;
     uint256 collateralAssetUnit;
     uint256 liquidationFee;
+    bool hasDeficit;
+  }
+
+  struct CalculateAvailableCollateralToLiquidate {
+    uint256 userCollateralBalanceInBaseCurrency;
+    uint256 baseCollateral;
+    uint256 maxCollateralToLiquidate;
+    uint256 collateralAmount;
+    uint256 debtAmountNeeded;
+    uint256 collateralToLiquidateInBaseCurrency;
+    uint256 debtToLiquidateInBaseCurrency;
+    bool hasDeficit;
   }
 
   struct ExecuteLiquidationLocalVars {
@@ -161,20 +174,16 @@ library DataTypes {
     uint256 restoredShares;
     uint256 withdrawnShares;
     uint256 newUserRiskPremium;
-    uint256 userPremiumDrawnShares;
-    uint256 userPremiumOffset;
-    uint256 userRealizedPremium;
     uint256 totalRestoredShares;
     uint256 totalWithdrawnShares;
-    uint256 totalCollateralToLiquidate;
     uint256 totalLiquidationFeeShares;
-    int256 totalUserDebtPremiumDrawnSharesDelta;
-    int256 totalUserDebtPremiumOffsetDelta;
-    int256 totalUserCollateralPremiumDrawnSharesDelta;
-    int256 totalUserCollateralPremiumOffsetDelta;
-    uint256 totalDebtToLiquidate;
     uint256 usersLength;
     uint256 liquidatedSuppliedShares;
+    bool hasDeficit;
+    address collateralUnderlying;
+    address debtUnderlying;
+    IHub collateralReserveHub;
+    IHub debtReserveHub;
   }
 
   struct ExecuteRepayLocalVars {
@@ -184,6 +193,9 @@ library DataTypes {
     uint256 premiumDebt;
     uint256 baseDebtRestored;
     uint256 premiumDebtRestored;
+    uint256 userPremiumDrawnShares;
+    uint256 userPremiumOffset;
+    uint256 accruedPremium;
     uint256 newUserRiskPremium;
     uint256 restoredShares;
   }

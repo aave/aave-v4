@@ -50,7 +50,7 @@ contract HubAccrueInterestTest is Base {
   function test_accrueInterest_NoActionTaken() public view {
     DataTypes.Asset memory daiInfo = hub.getAsset(daiAssetId);
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
-    assertEq(daiInfo.baseDrawnIndex, WadRayMathExtended.RAY);
+    assertEq(daiInfo.baseDrawnIndex, WadRayMath.RAY);
     assertEq(daiInfo.realizedPremium, 0);
     assertEq(hub.getAssetAddedAmount(daiAssetId), 0);
     assertEq(getAssetBaseDebt(daiAssetId), 0);
@@ -73,7 +73,7 @@ contract HubAccrueInterestTest is Base {
 
     // Timestamp does not update when no interest accrued
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
-    assertEq(daiInfo.baseDrawnIndex, WadRayMathExtended.RAY, 'baseDrawnIndex');
+    assertEq(daiInfo.baseDrawnIndex, WadRayMath.RAY, 'baseDrawnIndex');
     assertEq(hub.getAssetAddedAmount(daiAssetId), addAmount * 2);
     assertEq(getAssetBaseDebt(daiAssetId), 0);
   }
@@ -86,11 +86,11 @@ contract HubAccrueInterestTest is Base {
     uint256 addAmount2 = 100e18;
     uint256 startTime = vm.getBlockTimestamp();
     uint256 borrowAmount = 100e18;
-    uint256 initialDebtIndex = WadRayMathExtended.RAY;
+    uint256 initialDebtIndex = WadRayMath.RAY;
 
     Utils.add(hub, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
-    uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
+    uint256 baseDrawRate = hub.getBaseDrawRate(daiAssetId);
 
     // Time passes
     skip(elapsed);
@@ -114,7 +114,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(getAssetBaseDebt(daiAssetId), expectedBaseDebt1, 'drawn');
 
     startTime = vm.getBlockTimestamp();
-    baseDrawRate = hub.getBaseInterestRate(daiAssetId);
+    baseDrawRate = hub.getBaseDrawRate(daiAssetId);
 
     // calculate expected drawn to restore
     (uint256 expectedDebtIndex2, uint256 expectedBaseDebt2) = calculateExpectedDebt(
@@ -164,11 +164,11 @@ contract HubAccrueInterestTest is Base {
     uint256 addAmount2 = 100e18;
     uint256 startTime = vm.getBlockTimestamp();
     uint256 borrowAmount = 100e18;
-    uint256 initialDebtIndex = WadRayMathExtended.RAY;
+    uint256 initialDebtIndex = WadRayMath.RAY;
 
     Utils.add(hub, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
-    uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
+    uint256 baseDrawRate = hub.getBaseDrawRate(daiAssetId);
 
     // Time passes
     skip(elapsed);
@@ -203,11 +203,11 @@ contract HubAccrueInterestTest is Base {
     uint256 startTime = vm.getBlockTimestamp();
     uint256 addAmount = borrowAmount * 2;
     uint256 addAmount2 = 100e18;
-    uint256 initialDebtIndex = WadRayMathExtended.RAY;
+    uint256 initialDebtIndex = WadRayMath.RAY;
 
     Utils.add(hub, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
-    uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
+    uint256 baseDrawRate = hub.getBaseDrawRate(daiAssetId);
 
     // Time passes
     skip(elapsed);
@@ -237,13 +237,13 @@ contract HubAccrueInterestTest is Base {
 
     // uint256 startTime = vm.getBlockTimestamp();
     // uint256 addAmount = borrowAmount * 2;
-    // uint256 initialDebtIndex = WadRayMathExtended.RAY;
+    // uint256 initialDebtIndex = WadRayMath.RAY;
     // uint32 riskPremium = 10_00;
 
     // Utils.add(hub, daiAssetId, address(spoke1), addAmount, address(spoke1), address(spoke1));
     // Utils.draw(hub, daiAssetId, address(spoke1), address(spoke1), borrowAmount, address(spoke1));
     // // refresh risk premium
-    // uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
+    // uint256 baseDrawRate = hub.getBaseDrawRate(daiAssetId);
 
     // // Time passes
     // skip(elapsed);
@@ -284,7 +284,7 @@ contract HubAccrueInterestTest is Base {
     //     vm.startPrank(address(spoke1));
     //     hub.add(daiAssetId, addAmount, 0, address(spoke1));
     //     hub.draw(daiAssetId, borrowAmount, riskPremium, address(spoke1));
-    //     uint256 baseDrawRate = hub.getBaseInterestRate(daiAssetId);
+    //     uint256 baseDrawRate = hub.getBaseDrawRate(daiAssetId);
     //     vm.stopPrank();
 
     //     // Time passes
@@ -314,7 +314,7 @@ contract HubAccrueInterestTest is Base {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     borrowRate = bound(borrowRate, 0, MAX_BORROW_RATE);
     elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
-    uint256 initialDebtIndex = WadRayMathExtended.RAY;
+    uint256 initialDebtIndex = WadRayMath.RAY;
     uint256 addAmount2 = 1000e18;
 
     Timestamps memory timestamps;

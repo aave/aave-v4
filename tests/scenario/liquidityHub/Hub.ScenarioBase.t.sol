@@ -63,7 +63,7 @@ abstract contract HubScenarioBaseTest is Base {
   struct CalculatedStates {
     Timestamps cumulatedBaseInterest;
     Timestamps cumulatedBaseDebt;
-    Timestamps[NUM_SPOKES] cumulatedSpokeBaseDebt;
+    Timestamps[NUM_SPOKES] cumulatedspokeDrawn;
   }
 
   struct SpokeActions {

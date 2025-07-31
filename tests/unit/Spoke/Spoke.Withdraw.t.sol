@@ -130,7 +130,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // Withdraw all supplied assets
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(supplyExRate, getSupplyExRate(daiAssetId), true, 'after withdraw');
@@ -159,7 +159,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // Withdraw all supplied assets
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(supplyExRate, getSupplyExRate(daiAssetId), true, 'after withdraw');
@@ -209,7 +209,7 @@ contract SpokeWithdrawTest is SpokeBase {
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: bob,
-      amount: type(uint256).max,
+      amount: UINT256_MAX,
       onBehalfOf: bob
     });
 
@@ -217,10 +217,10 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // bob withdraws all
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, type(uint256).max);
+    withdrawLiquidityFees(daiAssetId, UINT256_MAX);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(supplyExRate, getSupplyExRate(daiAssetId), true, 'after withdraw');
@@ -274,14 +274,14 @@ contract SpokeWithdrawTest is SpokeBase {
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: bob,
-      amount: type(uint256).max,
+      amount: UINT256_MAX,
       onBehalfOf: bob
     });
 
     uint256 supplyExRate = getSupplyExRate(daiAssetId);
 
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
+    spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
 
     // treasury spoke withdraw fees
     withdrawLiquidityFees(daiAssetId, type(uint256).max);

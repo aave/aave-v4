@@ -2,13 +2,13 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
-import {PercentageMathExtendedWrapper} from 'tests/mocks/PercentageMathWrapper.sol';
+import {PercentageMathWrapper} from 'tests/mocks/PercentageMathWrapper.sol';
 
-contract PercentageMathExtendedTests is Test {
-  PercentageMathExtendedWrapper internal w;
+contract PercentageMathTests is Test {
+  PercentageMathWrapper internal w;
 
   function setUp() public {
-    w = new PercentageMathExtendedWrapper();
+    w = new PercentageMathWrapper();
   }
 
   function test_constants() public view {
@@ -16,7 +16,7 @@ contract PercentageMathExtendedTests is Test {
   }
 
   function test_percentMul_fuzz(uint256 value, uint256 percentage) public {
-    if (!(percentage == 0 || !(value > type(uint256).max / percentage))) {
+    if (!(percentage == 0 || !(value > UINT256_MAX / percentage))) {
       vm.expectRevert();
       w.percentMulDown(value, percentage);
       vm.expectRevert();
@@ -31,7 +31,7 @@ contract PercentageMathExtendedTests is Test {
   }
 
   function test_percentDiv_fuzz(uint256 value, uint256 percentage) public {
-    if (percentage == 0 || value > type(uint256).max / w.PERCENTAGE_FACTOR()) {
+    if (percentage == 0 || value > UINT256_MAX / w.PERCENTAGE_FACTOR()) {
       vm.expectRevert();
       w.percentDivDown(value, percentage);
       vm.expectRevert();
@@ -65,9 +65,9 @@ contract PercentageMathExtendedTests is Test {
     assertEq(w.percentDivUp(9087312e27, 13_33), 68171882970742685671417854463615904);
   }
 
-  function test_fromBps() public view {
-    assertEq(w.fromBps(1e18), 1e14);
-    assertEq(w.fromBps(1e3), 0);
+  function test_fromBpsDown() public view {
+    assertEq(w.fromBpsDown(1e18), 1e14);
+    assertEq(w.fromBpsDown(1e3), 0);
   }
 
   /// percentDivUp by >=100% should never exceed original value
