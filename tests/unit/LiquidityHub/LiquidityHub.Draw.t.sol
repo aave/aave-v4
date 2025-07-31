@@ -315,6 +315,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     updateDrawCap(hub, daiAssetId, address(spoke1), drawCap);
 
     _supplyAndDrawLiquidity({
+      liquidityHub: hub,
       assetId: daiAssetId,
       supplyUser: bob,
       supplySpoke: address(spoke2),
@@ -359,6 +360,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
 
     _mockInterestRateBps(rate);
     _supplyAndDrawLiquidity({
+      liquidityHub: hub,
       assetId: daiAssetId,
       supplyUser: bob,
       supplySpoke: address(spoke2),
@@ -399,6 +401,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     updateDrawCap(hub, daiAssetId, address(spoke2), drawCap);
 
     _supplyAndDrawLiquidity({
+      liquidityHub: hub,
       assetId: daiAssetId,
       supplyUser: bob,
       supplySpoke: address(spoke2),

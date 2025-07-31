@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './LiquidityHubBase.t.sol';
+import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubClearDeficitTest is LiquidityHubBase {
   function test_clearDeficit_revertsWith_InvalidClearDeficitAmount() public {
@@ -25,9 +25,7 @@ contract LiquidityHubClearDeficitTest is LiquidityHubBase {
     uint256 deficit = 1000e6;
 
     _createDeficit(assetId, spoke1, deficit);
-    // arbitrarily inflate index
-    Utils.add(hub, assetId, address(spoke2), vm.randomUint(1, MAX_SUPPLY_AMOUNT), bob);
-    Utils.add(hub, assetId, address(spoke3), vm.randomUint(1, MAX_SUPPLY_AMOUNT), derl);
+    _inflateIndex(hub, assetId);
 
     uint256 clearedDeficit = vm.randomUint(1, deficit);
     _supply(hub, spoke1, assetId, clearedDeficit);
@@ -64,9 +62,7 @@ contract LiquidityHubClearDeficitTest is LiquidityHubBase {
     uint256 deficit = 1000e6;
 
     _createDeficit(assetId, spoke1, deficit);
-    // arbitrarily inflate index
-    Utils.add(hub, assetId, address(spoke2), vm.randomUint(1, MAX_SUPPLY_AMOUNT), bob);
-    Utils.add(hub, assetId, address(spoke3), vm.randomUint(1, MAX_SUPPLY_AMOUNT), derl);
+    _inflateIndex(hub, assetId);
 
     uint256 clearedDeficit = vm.randomUint(1, deficit - 1);
     _supply(hub, spoke1, assetId, clearedDeficit);
@@ -94,9 +90,7 @@ contract LiquidityHubClearDeficitTest is LiquidityHubBase {
     uint256 deficit = 1000e6;
 
     _createDeficit(assetId, spoke1, deficit);
-    // arbitrarily inflate index
-    Utils.add(hub, assetId, address(spoke2), vm.randomUint(1, MAX_SUPPLY_AMOUNT), bob);
-    Utils.add(hub, assetId, address(spoke3), vm.randomUint(1, MAX_SUPPLY_AMOUNT), derl);
+    _inflateIndex(hub, assetId);
 
     _supply(hub, spoke1, assetId, deficit);
     assertGe(hub.getSpokeSuppliedAmount(assetId, address(spoke1)), deficit);
@@ -106,7 +100,7 @@ contract LiquidityHubClearDeficitTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.DeficitCleared(assetId, address(spoke1), expectedRemoveShares, deficit);
     vm.prank(address(spoke1));
-    uint256 removedShares = hub.clearDeficit(assetId, vm.randomUint(deficit, type(uint256).max));
+    uint256 removedShares = hub.clearDeficit(assetId, vm.randomUint(deficit, UINT256_MAX));
 
     assertEq(removedShares, expectedRemoveShares);
     assertEq(hub.getDeficit(assetId), 0);
@@ -123,13 +117,27 @@ contract LiquidityHubClearDeficitTest is LiquidityHubBase {
   }
 
   function _supply(
-    ILiquidityHub liqHub,
+    ILiquidityHub liquidityHub,
     ISpoke spoke,
     uint256 assetId,
     uint256 assetAmount
   ) internal {
-    uint256 shares = liqHub.previewRemoveByAssets(assetId, assetAmount) + 1;
-    uint256 exactAssetAmount = liqHub.previewRemoveByShares(assetId, shares);
-    Utils.add(liqHub, assetId, address(spoke), exactAssetAmount, alice);
+    uint256 shares = liquidityHub.previewRemoveByAssets(assetId, assetAmount) + 1;
+    uint256 exactAssetAmount = liquidityHub.previewRemoveByShares(assetId, shares);
+    Utils.add(liquidityHub, assetId, address(spoke), exactAssetAmount, alice);
+  }
+
+  function _inflateIndex(ILiquidityHub liquidityHub, uint256 assetId) internal {
+    _supplyAndDrawLiquidity({
+      liquidityHub: liquidityHub,
+      assetId: assetId,
+      supplyUser: bob,
+      supplySpoke: address(spoke2),
+      supplyAmount: 1000e6,
+      drawUser: alice,
+      drawSpoke: address(spoke3),
+      drawAmount: 1000e6,
+      skipTime: 312 days
+    });
   }
 }
