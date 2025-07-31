@@ -1114,12 +1114,12 @@ abstract contract Base is Test {
     address spoke,
     bool newActive
   ) internal pausePrank {
-    DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spoke);
+    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.active = newActive;
     vm.prank(HUB_ADMIN);
-    hub1.updateSpokeConfig(assetId, spoke, spokeConfig);
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
 
-    assertEq(hub1.getSpokeConfig(assetId, spoke), spokeConfig);
+    assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
   function updateDrawCap(
@@ -1128,12 +1128,12 @@ abstract contract Base is Test {
     address spoke,
     uint256 newDrawCap
   ) internal pausePrank {
-    DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spoke);
+    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;
     vm.prank(HUB_ADMIN);
-    hub1.updateSpokeConfig(assetId, spoke, spokeConfig);
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
 
-    assertEq(hub1.getSpokeConfig(assetId, spoke), spokeConfig);
+    assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
   function getUserInfo(
@@ -1190,7 +1190,7 @@ abstract contract Base is Test {
 
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
   function minimumAssetsPerDrawnShare(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub1.previewDrawByShares(assetId, 1);
+    return hub.previewDrawByShares(assetId, 1);
   }
 
   /// @dev Helper function to calculate expected supplied assets based on amount to supply and current exchange rate
@@ -1214,11 +1214,11 @@ abstract contract Base is Test {
   }
 
   function getDeficit(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub1.getAsset(assetId).deficit;
+    return hub.getAsset(assetId).deficit;
   }
 
   function getAssetDrawnRate(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub1.getAsset(assetId).drawnRate;
+    return hub.getAsset(assetId).drawnRate;
   }
 
   /// TODO: Once inflation protection implemented, can remove boolean param since rate should always monotonically increase
