@@ -1251,8 +1251,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
 
     // Bob repays using the max value to signal full repayment
-    vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), type(uint256).max, bob);
+    Utils.repay(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
 
     bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);

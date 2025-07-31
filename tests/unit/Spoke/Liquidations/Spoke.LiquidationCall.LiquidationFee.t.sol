@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
-contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
+contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
 
@@ -11,7 +11,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   /// single debt reserve, single collateral reserve
   /// user health factor position varies across possible desiredHf values
   /// close factor = 1e18
-  function test_liquidationCall_fuzz_protocolFee(
+  function test_liquidationCall_fuzz_liquidationFee(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
@@ -34,13 +34,13 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
       liquidationFee,
       skipTime
     );
-    _checkLiquidation(state, spoke1, 'test_liquidationCall_fuzz_protocolFee');
+    _checkLiquidation(state, 'test_liquidationCall_fuzz_liquidationFee');
     return state;
   }
 
   /// coll: weth / debt: dai
-  function test_liquidationCall_protocolFee_scenario1() public {
-    test_liquidationCall_fuzz_protocolFee({
+  function test_liquidationCall_liquidationFee_scenario1() public {
+    test_liquidationCall_fuzz_liquidationFee({
       collateralReserveId: _wethReserveId(spoke1),
       debtReserveId: _daiReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
@@ -57,8 +57,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   }
 
   /// coll: weth / debt: usdx
-  function test_liquidationCall_protocolFee_scenario2() public {
-    test_liquidationCall_fuzz_protocolFee({
+  function test_liquidationCall_liquidationFee_scenario2() public {
+    test_liquidationCall_fuzz_liquidationFee({
       collateralReserveId: _wethReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
@@ -75,8 +75,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: weth
-  function test_liquidationCall_protocolFee_scenario3() public {
-    test_liquidationCall_fuzz_protocolFee({
+  function test_liquidationCall_liquidationFee_scenario3() public {
+    test_liquidationCall_fuzz_liquidationFee({
       collateralReserveId: _usdxReserveId(spoke1),
       debtReserveId: _wethReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
@@ -93,8 +93,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: dai
-  function test_liquidationCall_protocolFee_scenario4() public {
-    test_liquidationCall_fuzz_protocolFee({
+  function test_liquidationCall_liquidationFee_scenario4() public {
+    test_liquidationCall_fuzz_liquidationFee({
       collateralReserveId: _usdxReserveId(spoke1),
       debtReserveId: _daiReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
@@ -111,8 +111,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   }
 
   /// coll: dai / debt: weth
-  function test_liquidationCall_protocolFee_scenario5() public {
-    test_liquidationCall_fuzz_protocolFee({
+  function test_liquidationCall_liquidationFee_scenario5() public {
+    test_liquidationCall_fuzz_liquidationFee({
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _wethReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
@@ -129,8 +129,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   }
 
   /// coll: dai / debt: usdx
-  function test_liquidationCall_protocolFee_scenario6() public {
-    test_liquidationCall_fuzz_protocolFee({
+  function test_liquidationCall_liquidationFee_scenario6() public {
+    test_liquidationCall_fuzz_liquidationFee({
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
@@ -147,8 +147,8 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
   }
 
   /// with 0 liquidation bonus, the protocol fee should also be 0
-  function test_liquidationCall_fuzz_protocolFee_liqBonus_zero(uint256 liquidationFee) public {
-    LiquidationTestLocalParams memory state = test_liquidationCall_fuzz_protocolFee({
+  function test_liquidationCall_fuzz_liquidationFee_liqBonus_zero(uint256 liquidationFee) public {
+    LiquidationTestLocalParams memory state = test_liquidationCall_fuzz_liquidationFee({
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
@@ -165,7 +165,7 @@ contract LiquidationCallProtocolFeeTest is SpokeLiquidationBase {
 
     uint256 liquidationFee = hub.convertToSuppliedAssets(
       state.collateralReserve.assetId,
-      state.treasury.balanceChange
+      state.feeReceiverAmount.balanceChange
     );
     assertEq(liquidationFee, 0, 'liquidationFee = 0');
   }

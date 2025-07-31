@@ -156,9 +156,62 @@ contract TreasurySpokeTest is SpokeBase {
     assertEq(_testToken.balanceOf(recipient), transferAmount);
   }
 
+  function test_withdraw_maxLiquidityFee() public {
+    test_withdraw_fuzz_maxLiquidityFee(_daiReserveId(spoke1), 1000e18, 340 days);
+  }
+
+  function test_withdraw_fuzz_maxLiquidityFee(
+    uint256 reserveId,
+    uint256 amount,
+    uint256 skipTime
+  ) public {
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+    updateLiquidityFee(hub, spoke1.getReserve(reserveId).assetId, 100_00);
+
+    assertEq(treasurySpoke.getSuppliedShares(reserveId), 0);
+
+    // create debt
+    address tempUser = _openDebtPosition(spoke1, reserveId, amount, true);
+
+    skip(skipTime);
+
+    uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
+
+    assertApproxEqAbs(
+      hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
+      hub.getAssetTotalDebt(assetId) - amount,
+      3,
+      'treasury spoke supplied amount on hub'
+    );
+    assertApproxEqAbs(
+      fees,
+      hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
+      3,
+      'treasury spoke supplied amount on spoke'
+    );
+
+    if (fees > 0) {
+      IERC20 asset = IERC20(spoke1.getReserve(reserveId).underlying);
+      uint256 balanceBefore = asset.balanceOf(TREASURY_ADMIN);
+
+      deal(address(asset), tempUser, UINT256_MAX);
+      Utils.repay(spoke1, reserveId, tempUser, UINT256_MAX, tempUser);
+      Utils.withdraw(_treasurySpoke(), assetId, TREASURY_ADMIN, fees, address(treasurySpoke));
+
+      assertEq(balanceBefore + fees, asset.balanceOf(TREASURY_ADMIN), 'Treasury admin balance');
+      assertEq(
+        0,
+        hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
+        'treasury spoke remaining supplied amount'
+      );
+    }
+  }
+
   function _treasurySpoke() internal view returns (ISpoke) {
     return ISpoke(address(treasurySpoke));
   }
-
-  // todo: add test for 100% liquidity fee
 }

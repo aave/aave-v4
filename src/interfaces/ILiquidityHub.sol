@@ -57,6 +57,12 @@ interface ILiquidityHub is IAccessManaged {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   );
+  event DeficitReported(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 baseRestoredShares,
+    uint256 totalRestoredAmount
+  );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
 
   error InvalidSharesAmount();
@@ -80,7 +86,9 @@ interface ILiquidityHub is IAccessManaged {
   error InvalidLiquidityFee();
   error InvalidUnderlying();
   error InvalidDebtChange();
+  error InvalidDeficitAmount();
   error InvalidFeeReceiver();
+  error SurplusDeficitReported(uint256 amount);
   error SpokeNotActive();
   error InvalidFeeShares();
 
@@ -198,6 +206,20 @@ interface ILiquidityHub is IAccessManaged {
    * @param shares The amount of shares to pay to feeReceiver.
    */
   function payFee(uint256 assetId, uint256 shares) external;
+
+  /**
+   * @notice Reports deficit.
+   * @dev Only callable by spokes.
+   * @param assetId The identifier of the asset.
+   * @param baseAmount The base debt to report as deficit.
+   * @param premiumAmount The premium debt to report as deficit.
+   * @return The amount of base debt shares reported as deficit.
+   */
+  function reportDeficit(
+    uint256 assetId,
+    uint256 baseAmount,
+    uint256 premiumAmount
+  ) external returns (uint256);
 
   /**
    * @notice Converts the specified amount of assets to shares amount added upon an Add action.

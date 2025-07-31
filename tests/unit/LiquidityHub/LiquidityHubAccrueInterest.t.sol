@@ -129,7 +129,14 @@ contract LiquidityHubAccrueInterestTest is Base {
     );
 
     // Full repayment, so back to zero debt
-    Utils.restore(hub, daiAssetId, address(spoke1), borrowAmount + interest, 0, address(spoke1));
+    Utils.restore({
+      hub: hub,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      baseAmount: borrowAmount + interest,
+      premiumAmount: 0,
+      repayer: address(spoke1)
+    });
 
     assertEq(expectedDebtIndex2, expectedDebtIndex1, 'expectedDebtIndex');
     assertEq(expectedBaseDebt2, expectedBaseDebt1, 'expectedBaseDebt');

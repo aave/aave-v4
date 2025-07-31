@@ -14,6 +14,8 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 balanceAfter;
     uint256 balanceChange;
     uint256 baseChange;
+    uint256 balanceSkipTime;
+    uint256 balanceChangeSkipTime;
   }
 
   struct ConvertedValues {
@@ -27,43 +29,78 @@ contract SpokeLiquidationBase is SpokeBase {
   }
 
   struct LiquidationTestLocalParams {
+    ILiquidityHub collateralHub;
+    ILiquidityHub debtHub;
+    ISpoke spoke;
     Balance liquidatorDebt;
     Balance liquidatorCollateral;
-    Balance user;
-    Balance treasury;
-    Balance collateral;
-    Balance debt;
-    Balance supply;
-    Balance supplyShares;
-    uint256 liquidationBonus;
-    uint256 collateralAssetId;
-    uint256 debtAssetId;
-    uint256 liquidationFee;
+    Balance feeReceiverAmount;
+    Balance feeReceiverShares;
+    Balance userTotalDebt;
+    Balance userBaseDebt;
+    Balance userPremiumDebt;
+    Balance spokeTotalDebt;
+    Balance spokeBaseDebt;
+    Balance spokePremiumDebt;
+    Balance reserveTotalDebt;
+    Balance reserveBaseDebt;
+    Balance reservePremiumDebt;
+    Balance userSuppliedAmount;
+    Balance userSuppliedShares;
+    Balance spokeSuppliedAmount;
+    Balance spokeSuppliedShares;
+    Balance reserveSuppliedAmount;
+    Balance reserveSuppliedShares;
+    Balance deficit;
+    Balance totalCollateralInBaseCurrency;
+    Balance totalDebtInBaseCurrency;
+    Balance[] deficits;
+    Balance[] userTotalDebts;
+    Balance[] spokeTotalDebts;
     DataTypes.DynamicReserveConfig collDynConfig;
-    DataTypes.Reserve collateralReserve;
-    DataTypes.Reserve debtReserve;
     DataTypes.DynamicReserveConfig[] collDynConfigs;
     DataTypes.Reserve[] collateralReserves;
     DataTypes.Reserve[] debtReserves;
-    uint256 collateralReserveId;
-    uint256 debtReserveId;
+    DataTypes.Reserve collateralReserve; // collateral reserve being liquidated
+    DataTypes.Reserve debtReserve; // debt reserve being liquidated
+    address user;
+    uint256 liquidationBonus;
     uint256 desiredHf;
     SupplyExchangeRate rate;
     uint256 collToLiq;
     uint256 debtToLiq;
+    uint256 liquidationFee;
     uint256 liquidationFeeAmount;
     uint256 liquidationFeeShares;
+    bool hasDeficit;
+    uint256 outstandingDebt;
+    uint256 userRp;
+    uint256 finalHf;
+    uint256 initialHf;
+    bool usingAsCollateral;
+    bool isBorrowing;
+    uint256 debtReserveIndex;
+    uint256 collateralReserveIndex;
+    uint256 hfBadDebtThreshold;
+    uint256 debtReserveId;
+    uint256 collateralReserveId;
+    uint256 closeFactor;
+    uint256 collateralAssetId;
+    uint256 debtAssetId;
+    uint256 expectedDeficitAmount;
+    uint256 expectedDeficitShares;
+    uint256 assetAmountOfOneDrawnShare;
   }
 
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26;
 
   function setUp() public virtual override {
     super.setUp();
-    _addBorrowableLiquidity(MAX_SUPPLY_AMOUNT);
+    _addBorrowableLiquidities(MAX_SUPPLY_AMOUNT);
   }
 
   /// @notice Deploys max borrowable liquidity for all reserves in spoke1.
-  function _addBorrowableLiquidity(uint256 amount) public {
+  function _addBorrowableLiquidities(uint256 amount) public {
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), amount);
     _openSupplyPosition(spoke1, _wethReserveId(spoke1), amount);
     _openSupplyPosition(spoke1, _wbtcReserveId(spoke1), amount);
@@ -71,7 +108,7 @@ contract SpokeLiquidationBase is SpokeBase {
     _openSupplyPosition(spoke1, _usdyReserveId(spoke1), amount);
   }
 
-  /// bound liquidation config to full range of possible values
+  /// @notice Bound liquidation config to full range of possible values
   function _bound(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
@@ -90,7 +127,23 @@ contract SpokeLiquidationBase is SpokeBase {
     return liqConfig;
   }
 
-  /// execute generic liquidation call fuzz test with a desired initial user health factor
+  /// @notice Bound liqConfig close factor.
+  /// Set non-variable liquidation bonus to simplify calcs for desiredHf.
+  function _boundCloseFactor(
+    DataTypes.LiquidationConfig memory liqConfig
+  ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
+    liqConfig.closeFactor = bound(
+      liqConfig.closeFactor,
+      MIN_CLOSE_FACTOR,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
+    );
+    liqConfig.liquidationBonusFactor = 0;
+    liqConfig.healthFactorForMaxBonus = 0;
+
+    return liqConfig;
+  }
+
+  /// @notice Execute generic liquidation call fuzz test with a desired initial user health factor.
   /// @param desiredHf Desired user health factor prior to liquidation.
   function _execLiqCallFuzzTest(
     DataTypes.LiquidationConfig memory liqConfig,
@@ -103,9 +156,19 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 skipTime
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
-    state.collateralReserve = spoke1.getReserve(collateralReserveId);
-    state.debtReserve = spoke1.getReserve(debtReserveId);
-    state.collDynConfig = _getUserDynConfig(spoke1, alice, collateralReserveId);
+    state.collateralReserves = new DataTypes.Reserve[](1);
+    state.debtReserves = new DataTypes.Reserve[](1);
+    state.spoke = spoke1;
+    state.user = alice;
+
+    state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
+      collateralReserveId
+    );
+    state.debtReserves[state.debtReserveIndex] = state.spoke.getReserve(debtReserveId);
+    state.collateralReserve = state.collateralReserves[state.collateralReserveIndex];
+    state.debtReserve = state.debtReserves[state.debtReserveIndex];
+
+    state.collDynConfig = _getUserDynConfig(spoke1, state.user, collateralReserveId);
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(
@@ -118,38 +181,35 @@ contract SpokeLiquidationBase is SpokeBase {
     // bound supply amount to max supply amount
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(spoke1, collateralReserveId, MIN_AMOUNT_IN_BASE_CURRENCY),
+      _convertBaseCurrencyToAmount(
+        state.spoke,
+        state.collateralReserve.reserveId,
+        MIN_AMOUNT_IN_BASE_CURRENCY
+      ),
       _min(
-        _convertBaseCurrencyToAmount(spoke1, collateralReserveId, MAX_SUPPLY_IN_BASE_CURRENCY),
-        MAX_SUPPLY_AMOUNT
+        _convertBaseCurrencyToAmount(
+          state.spoke,
+          state.collateralReserve.reserveId,
+          MAX_SUPPLY_IN_BASE_CURRENCY
+        ),
+        MAX_SUPPLY_AMOUNT / 10 // buffer for growth due to interest accrual
       )
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     state.liquidationFee = liquidationFee;
 
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateLiquidationConfig(liqConfig);
-    updateLiquidationBonus(spoke1, collateralReserveId, liqBonus);
-    updateLiquidationFee(spoke1, collateralReserveId, state.liquidationFee);
+    updateLiquidationConfig(state.spoke, liqConfig);
+    updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
+    updateLiquidationFee(state.spoke, collateralReserveId, state.liquidationFee);
 
-    if (!spoke1.isUsingAsCollateral(collateralReserveId, alice)) {
-      Utils.supplyCollateral({
-        spoke: spoke1,
-        reserveId: collateralReserveId,
-        caller: alice,
-        amount: supplyAmount,
-        onBehalfOf: alice
-      });
-    } else {
-      Utils.supply({
-        spoke: spoke1,
-        reserveId: collateralReserveId,
-        caller: alice,
-        amount: supplyAmount,
-        onBehalfOf: alice
-      });
-    }
+    Utils.supplyCollateral({
+      spoke: state.spoke,
+      reserveId: collateralReserveId,
+      caller: state.user,
+      amount: supplyAmount,
+      onBehalfOf: state.user
+    });
 
     _borrowWithoutHfCheck({
       spoke: spoke1,
@@ -160,22 +220,23 @@ contract SpokeLiquidationBase is SpokeBase {
     skip(skipTime);
 
     vm.assume(
-      _getRequiredDebtAmountForLtHf(spoke1, alice, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
+      _getRequiredDebtAmountForLtHf(spoke1, state.user, debtReserveId, desiredHf) <=
+        MAX_SUPPLY_AMOUNT
     );
     // borrow some amount of debt reserve to end up below hf threshold
     (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
-      spoke1,
-      alice,
+      state.spoke,
+      state.user,
       debtReserveId,
       desiredHf
     );
-    state.liquidationBonus = spoke1.getVariableLiquidationBonus(
+    state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
       collateralReserveId,
-      alice,
+      state.user,
       hfAfterBorrow
     );
 
-    state = _getAccountingInfoBeforeLiq(state);
+    state = _getAccountingInfoBeforeLiquidation(state);
 
     // Get alice's dynamic config key before liquidation
     DynamicConfig[] memory configKeysBefore = _getUserDynConfigKeys(spoke1, alice);
@@ -183,8 +244,9 @@ contract SpokeLiquidationBase is SpokeBase {
     (
       state.collToLiq,
       state.debtToLiq,
-      state.liquidationFeeAmount
-    ) = _calculateAvailableCollateralToLiquidate(spoke1, state, requiredDebtAmount);
+      state.liquidationFeeAmount,
+
+    ) = _calculateAvailableCollateralToLiquidate(state, requiredDebtAmount);
 
     state.liquidationFeeShares =
       hub.previewRemoveByAssets(
@@ -213,7 +275,7 @@ contract SpokeLiquidationBase is SpokeBase {
       );
     }
 
-    vm.expectEmit(address(spoke1));
+    vm.expectEmit(address(state.spoke));
     emit ISpoke.LiquidationCall(
       state.collateralReserve.underlying,
       state.debtReserve.underlying,
@@ -223,116 +285,247 @@ contract SpokeLiquidationBase is SpokeBase {
       LIQUIDATOR
     );
     vm.prank(LIQUIDATOR);
-    spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
+    state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
 
-    state = _getAccountingInfoAfterLiq(state);
+    state = _getAccountingInfoAfterLiquidation(state);
 
     // Validate alice's dynamic config key unchanged after liquidation
     assertEq(_getUserDynConfigKeys(spoke1, alice), configKeysBefore);
 
-    // with a close factor, it is impossible to liquidate all debt unless deficit is reported
-    assertTrue(
-      stdMath.delta(state.debt.balanceAfter, state.debt.balanceBefore) < requiredDebtAmount
-    );
-
     return state;
   }
 
+  /// post-liquidation checks
   function _checkLiquidation(
     LiquidationTestLocalParams memory state,
-    ISpoke spoke,
     string memory label
-  ) internal view {
-    _assertUserAccountData(state, spoke, label);
+  ) internal {
     _assertLiquidationFeeEarned(state, label);
     _assertLiquidationBonusEarned(state, label);
     _assertSupplyExchangeRate(state, label);
-    _assertSetUsingAsCollateral(spoke, alice, state, label);
-    _assertRemainingSpokeCollateral(state, spoke, label);
+    _assertSetUsingAsCollateral(state, label);
+    if (state.hasDeficit) {
+      _assertBadDebt(state, label);
+    } else {
+      _assertNoBadDebt(state, label);
+      _assertUserAccountData(state, label);
+    }
+    _assertLiquidationAccounting(state, label);
+    _assertLiquidationAccountingWithSkipTime(state, label);
   }
 
-  function _assertRemainingSpokeCollateral(
+  // accounting assertions with skip time after a liquidation
+  function _assertLiquidationAccountingWithSkipTime(
     LiquidationTestLocalParams memory state,
-    ISpoke spoke,
     string memory label
-  ) internal view {
+  ) internal {
+    skip(340 days);
+
+    // user debt
+    (state.userBaseDebt.balanceSkipTime, state.userPremiumDebt.balanceSkipTime) = state
+      .spoke
+      .getUserDebt(state.debtReserve.reserveId, state.user);
+    state.userTotalDebt.balanceSkipTime =
+      state.userBaseDebt.balanceSkipTime +
+      state.userPremiumDebt.balanceSkipTime;
+    // reserve debt
+    (state.reserveBaseDebt.balanceSkipTime, state.reservePremiumDebt.balanceSkipTime) = state
+      .spoke
+      .getReserveDebt(state.debtReserveId);
+    state.reserveTotalDebt.balanceSkipTime =
+      state.reserveBaseDebt.balanceSkipTime +
+      state.reservePremiumDebt.balanceSkipTime;
+    // spoke debt
+    (state.spokeBaseDebt.balanceSkipTime, state.spokePremiumDebt.balanceSkipTime) = hub
+      .getSpokeDebt(state.debtReserve.assetId, address(state.spoke));
+    state.spokeTotalDebt.balanceSkipTime =
+      state.spokeBaseDebt.balanceSkipTime +
+      state.spokePremiumDebt.balanceSkipTime;
+
+    // balance changes before/after liquidation
+    state.userTotalDebt.balanceChangeSkipTime = stdMath.delta(
+      state.userTotalDebt.balanceSkipTime,
+      state.userTotalDebt.balanceAfter
+    );
+    state.spokeTotalDebt.balanceChangeSkipTime = stdMath.delta(
+      state.spokeTotalDebt.balanceSkipTime,
+      state.spokeTotalDebt.balanceAfter
+    );
+    state.reserveTotalDebt.balanceChangeSkipTime = stdMath.delta(
+      state.reserveTotalDebt.balanceSkipTime,
+      state.reserveTotalDebt.balanceAfter
+    );
+
+    if (state.userTotalDebt.balanceBefore == state.spokeTotalDebt.balanceBefore) {
+      // if user and spoke debts initially match, they should accrue at the same rate
+      assertEq(
+        state.userTotalDebt.balanceChangeSkipTime,
+        state.spokeTotalDebt.balanceChangeSkipTime,
+        string.concat('user/spoke total debt accounting after skipTime ', label)
+      );
+    } else {
+      // otherwise debt interest accrual is at min the amount from user position
+      assertLe(
+        state.userTotalDebt.balanceChangeSkipTime,
+        state.spokeTotalDebt.balanceChangeSkipTime,
+        string.concat('user/spoke total debt accounting after skipTime ', label)
+      );
+    }
+    // interest accrual should match between spoke/hub
     assertEq(
-      IERC20(state.collateralReserve.underlying).balanceOf(address(spoke)),
-      0,
-      string.concat('no spoke collateral underlying should remain ', label)
+      state.reserveTotalDebt.balanceChangeSkipTime,
+      state.spokeTotalDebt.balanceChangeSkipTime,
+      string.concat('reserve/spoke total debt change accounting after skipTime ', label)
+    );
+    assertEq(
+      state.reserveTotalDebt.balanceSkipTime,
+      state.spokeTotalDebt.balanceSkipTime,
+      string.concat('reserve/spoke total debt accounting after skipTime ', label)
     );
   }
 
-  /// assert that the user account data is correct after liquidation
+  /// @dev check that spoke accounting from hub matches user accounting from spoke
+  function _assertLiquidationAccounting(
+    LiquidationTestLocalParams memory state,
+    string memory label
+  ) internal view {
+    // debt asset - user vs spoke accounting
+    assertApproxEqAbs(
+      state.userTotalDebt.balanceChange,
+      state.spokeTotalDebt.balanceChange,
+      3,
+      string.concat('user/spoke total debt accounting ', label)
+    );
+    assertApproxEqAbs(
+      state.userBaseDebt.balanceChange,
+      state.spokeBaseDebt.balanceChange,
+      1,
+      string.concat('user/spoke base debt accounting ', label)
+    );
+    assertApproxEqAbs(
+      state.userPremiumDebt.balanceChange,
+      state.spokePremiumDebt.balanceChange,
+      2,
+      string.concat('user/spoke premium debt accounting ', label)
+    );
+    // debt asset - reserve vs spoke accounting
+    assertEq(
+      state.reserveTotalDebt.balanceChange,
+      state.spokeTotalDebt.balanceChange,
+      string.concat('reserve/spoke total debt accounting ', label)
+    );
+    assertEq(
+      state.reserveBaseDebt.balanceChange,
+      state.spokeBaseDebt.balanceChange,
+      string.concat('reserve/spoke base debt accounting ', label)
+    );
+    assertEq(
+      state.reservePremiumDebt.balanceChange,
+      state.spokePremiumDebt.balanceChange,
+      string.concat('reserve/spoke premium debt accounting ', label)
+    );
+    // collateral asset - user vs spoke accounting
+    assertEq(
+      state.userSuppliedShares.balanceChange,
+      state.spokeSuppliedShares.balanceChange,
+      string.concat('user/spoke supplied shares collateral accounting ', label)
+    );
+    // collateral asset - reserve vs spoke accounting
+    assertEq(
+      state.reserveSuppliedShares.balanceChange,
+      state.spokeSuppliedShares.balanceChange,
+      string.concat('reserve/spoke supplied shares collateral accounting ', label)
+    );
+    assertEq(
+      IERC20(state.collateralReserve.underlying).balanceOf(address(state.spoke)),
+      0,
+      string.concat('no spoke collateral underlying should remain ', label)
+    );
+    assertBorrowRateSynced(
+      state.collateralHub,
+      state.collateralAssetId,
+      'liquidationCall collateral'
+    );
+    assertBorrowRateSynced(state.debtHub, state.debtAssetId, 'liquidationCall debt');
+  }
+
+  /// assert that the user account data is correct after liquidation, without deficit
   function _assertUserAccountData(
     LiquidationTestLocalParams memory state,
-    ISpoke spoke,
     string memory label
   ) internal view virtual {
-    (uint256 userRp, , uint256 finalHf, , ) = spoke1.getUserAccountData(alice);
-
     // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
     if (
-      _convertAmountToBaseCurrency(spoke, state.debtReserve.reserveId, state.debt.balanceAfter) >
+      _convertAmountToBaseCurrency(
+        state.spoke,
+        state.debtReserve.reserveId,
+        state.userTotalDebt.balanceAfter
+      ) >
       MIN_AMOUNT_IN_BASE_CURRENCY &&
       _convertAmountToBaseCurrency(
-        spoke,
+        state.spoke,
         state.collateralReserve.reserveId,
-        state.supply.balanceAfter
+        state.userSuppliedAmount.balanceAfter
       ) >
       MIN_AMOUNT_IN_BASE_CURRENCY
     ) {
       // ensure HF is lte close factor
       assertLe(
-        finalHf,
-        _getCloseFactor(spoke),
+        state.finalHf,
+        state.closeFactor,
         string.concat('Health factor <= close factor ', label)
       );
       uint256 bpsError = 20;
       // should also be close to the desired CF
       assertApproxEqRel(
-        finalHf,
-        _getCloseFactor(spoke),
+        state.finalHf,
+        state.closeFactor,
         _approxRelFromBps(bpsError),
         string.concat('HF matches closeFactor within ', vm.toString(bpsError), ' bps')
       );
-    } else if (state.supply.balanceAfter == 0 && state.debt.balanceAfter > 0) {
-      // if bad debt, HF should be 0 and userRp should be 0
-      assertEq(finalHf, 0, string.concat('HF = 0 if bad debt ', label));
-      assertEq(userRp, 0, string.concat('userRp = 0 if bad debt ', label));
     } else {
       // HF should always be lte close factor
       assertLe(
-        finalHf,
-        _getCloseFactor(spoke),
+        state.finalHf,
+        state.closeFactor,
         string.concat('Health factor <= close factor ', label)
       );
     }
+    assertEq(
+      state.userRp,
+      _calculateExpectedUserRP(state.user, state.spoke),
+      string.concat('userRp after liq ', label)
+    );
   }
 
   function _assertLiquidationFeeEarned(
     LiquidationTestLocalParams memory state,
     string memory label
-  ) internal pure {
-    uint256 totalLiqBonusAmount = state.supply.balanceChange -
-      state.supply.balanceChange.percentDivUp(state.liquidationBonus);
-    uint256 liquidationFeeAmount = state.treasury.balanceChange;
+  ) internal view {
+    uint256 totalLiqBonusAmount = state.userSuppliedAmount.balanceChange -
+      state.userSuppliedAmount.balanceChange.percentDivUp(state.liquidationBonus);
+    uint256 expectedLiquidationFeeShares = state
+      .collateralReserve
+      .hub
+      .convertToSuppliedShares(state.collateralReserve.assetId, totalLiqBonusAmount)
+      .percentMulUp(state.liquidationFee);
+    uint256 liquidationFeeShares = state.feeReceiverShares.balanceChange;
+
     // TODO: resolve precision loss difference
     assertApproxEqAbs(
-      liquidationFeeAmount,
-      totalLiqBonusAmount.percentMulUp(state.liquidationFee),
+      liquidationFeeShares,
+      expectedLiquidationFeeShares,
       2,
-      string.concat('protocol fee amount ', label)
+      string.concat('liquidationFeeShares ', label)
     );
   }
 
   function _assertLiquidationBonusEarned(
     LiquidationTestLocalParams memory state,
-    // ConvertedValues memory totalLiqBonus,
     string memory label
   ) internal view {
-    uint256 totalLiqBonusAmount = state.supply.balanceChange -
-      state.supply.balanceChange.percentDivDown(state.liquidationBonus);
+    uint256 totalLiqBonusAmount = state.userSuppliedAmount.balanceChange -
+      state.userSuppliedAmount.balanceChange.percentDivDown(state.liquidationBonus);
 
     uint256 totalCollateralSeized = (state.collToLiq + state.liquidationFeeAmount);
     // liquidationBonus == PERCENTAGE_FACTOR represents liq bonus being 0
@@ -361,27 +554,102 @@ contract SpokeLiquidationBase is SpokeBase {
   }
 
   function _assertSetUsingAsCollateral(
-    ISpoke spoke,
-    address user,
     LiquidationTestLocalParams memory state,
     string memory label
-  ) internal view {
-    // usingAsCollateral should remain True after liquidation
+  ) internal pure {
+    // usingAsCollateral should never be disabled during liquidation
     assertTrue(
-      spoke.isUsingAsCollateral(state.collateralReserve.reserveId, user),
-      string.concat('isUsingAsCollateral should remain true ', label)
+      state.usingAsCollateral,
+      string.concat('isUsingAsCollateral should be true with remaining collateral ', label)
     );
   }
 
-  /// @notice Calculate output from LiquidationLogic.calculateAvailableCollateralToLiquidate.
-  /// @param spoke Spoke contract.
-  /// @param state LiquidationTestLocalParams struct containing local params.
-  /// @param debtToCover Desired amount of debt to cover.
-  /// @return actualCollateralToLiquidate Amount of actual collateral to liquidate.
-  /// @return actualDebtToLiquidate Amount of actual debt to liquidate.
-  /// @return liquidationFeeAmount Amount of protocol fee (in asset).
+  /// assertions when bad debt remains and is reported as deficit
+  function _assertBadDebt(
+    LiquidationTestLocalParams memory state,
+    string memory label
+  ) internal pure {
+    // all collateral seized; all debt liquidated and moved to deficit
+    assertEq(
+      state.userSuppliedShares.balanceAfter,
+      0,
+      string.concat('supply shares should be 0 ', label)
+    );
+    assertEq(state.userTotalDebt.balanceAfter, 0, string.concat('debt amount should be 0 ', label));
+    assertTrue(state.hasDeficit, string.concat('supply shares & total debt should be 0 ', label));
+    // HF should be max value and userRp should be 0 (due to no coll remaining)
+    assertEq(state.finalHf, UINT256_MAX, string.concat('HF = 0 if bad debt ', label));
+    assertEq(state.userRp, 0, string.concat('userRp = 0 if bad debt ', label));
+    assertGe(
+      state.deficit.balanceChange,
+      state.outstandingDebt,
+      string.concat('deficit can only exceed amount restored due to rounding direction ', label)
+    );
+    // precision error is asset equivalent of 1 share, due to rounding in restore
+    // and 1 wei due to rounding of premium debt
+    // outstanding debt should be moved to deficit
+    assertApproxEqAbs(
+      state.deficit.balanceChange,
+      state.outstandingDebt,
+      state.assetAmountOfOneDrawnShare + 1,
+      string.concat('deficit should match restored amount ', label)
+    );
+    assertEq(state.isBorrowing, false, string.concat('isBorrowing should be false ', label));
+  }
+
+  /// generic assertions in non bad debt scenarios
+  function _assertNoBadDebt(
+    LiquidationTestLocalParams memory state,
+    string memory label
+  ) internal view {
+    // total debt/collateral in user's position should be > 0
+    assertGt(
+      state.totalCollateralInBaseCurrency.balanceAfter,
+      0,
+      string.concat('totalCollateralInBaseCurrency should be > 0 ', label)
+    );
+    assertGt(
+      state.totalDebtInBaseCurrency.balanceAfter,
+      0,
+      string.concat('totalDebtInBaseCurrency should be > 0 ', label)
+    );
+    // with collateral/debt remaining, user rp should only be 0 if all coll reserves have liquidity premium == 0
+    if (_shouldUserRpBeZero(state.spoke, state.user)) {
+      assertEq(state.userRp, 0, string.concat('user rp should be 0 ', label));
+    } else {
+      assertNotEq(state.userRp, 0, string.concat('user rp should not equal 0 ', label));
+    }
+
+    // deficit should remain unchanged
+    assertEq(state.deficit.balanceChange, 0, string.concat('deficit should be unchanged ', label));
+  }
+
+  /// @dev User's RP should be 0 if all coll reserves have liquidity premium == 0.
+  /// @return bool True if user's RP is expected to be 0, False otherwise.
+  function _shouldUserRpBeZero(ISpoke spoke, address user) internal view returns (bool) {
+    for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
+      DataTypes.Reserve memory reserve = spoke.getReserve(i);
+      if (
+        reserve.config.collateralRisk > 0 &&
+        spoke.getUserSuppliedShares(reserve.reserveId, user) > 0 &&
+        spoke.isUsingAsCollateral(reserve.reserveId, user)
+      ) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * @dev Calculate output from LiquidationLogic.calculateAvailableCollateralToLiquidate.
+   * @param state LiquidationTestLocalParams struct containing local params.
+   * @param debtToCover Desired amount of debt to cover.
+   * @return actualCollateralToLiquidate Amount of actual collateral to liquidate.
+   * @return actualDebtToLiquidate Amount of actual debt to liquidate.
+   * @return liquidationFeeAmount Amount of protocol fee (in asset).
+   * @return hasDeficit Boolean indicating if there is a deficit in the liquidation.
+   */
   function _calculateAvailableCollateralToLiquidate(
-    ISpoke spoke,
     LiquidationTestLocalParams memory state,
     uint256 debtToCover
   )
@@ -390,43 +658,39 @@ contract SpokeLiquidationBase is SpokeBase {
     returns (
       uint256 actualCollateralToLiquidate,
       uint256 actualDebtToLiquidate,
-      uint256 liquidationFeeAmount
+      uint256 liquidationFeeAmount,
+      bool hasDeficit
     )
   {
-    IPriceOracle oracle = spoke.oracle();
+    IPriceOracle oracle = state.spoke.oracle();
     DataTypes.LiquidationCallLocalVars memory params;
 
-    params.userCollateralBalance = spoke.getUserSuppliedAmount(
+    params.userCollateralBalance = state.spoke.getUserSuppliedAmount(
       state.collateralReserve.reserveId,
       alice
     );
     params.collateralAssetUnit = 10 ** state.collateralReserve.decimals;
     params.collateralReserveId = state.collateralReserve.reserveId;
     params.collateralAssetPrice = oracle.getReservePrice(state.collateralReserve.reserveId);
-
     params.debtAssetUnit = 10 ** state.debtReserve.decimals;
     params.debtReserveId = state.debtReserve.reserveId;
     params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
-
     params.liquidationBonus = state.liquidationBonus;
     params.liquidationFee = state.liquidationFee;
 
-    params.actualDebtToLiquidate = _calculateActualDebtToLiquidate(spoke, state, debtToCover);
-
+    params.actualDebtToLiquidate = _calculateActualDebtToLiquidate(state, debtToCover);
     return LiquidationLogic.calculateAvailableCollateralToLiquidate(params);
   }
 
   /// helper to calculate actual collateral to liquidate, replicating LiquidationLogic.calculateActualDebtToLiquidate.
   /// @return actualDebtToLiquidate Amount of actual debt to liquidate.
   function _calculateActualDebtToLiquidate(
-    ISpoke spoke,
     LiquidationTestLocalParams memory state,
     uint256 debtToCover
   ) internal view returns (uint256 actualDebtToLiquidate) {
     // find minimum between user's totalDebt of debt asset, debtToCover, and debtToRestoreCloseFactor
-    uint256 userTotalDebt = state.debt.balanceBefore;
-    uint256 debtToRestoreCloseFactor = _calcDebtToRestoreCloseFactor(spoke, state);
-
+    uint256 userTotalDebt = state.userTotalDebt.balanceBefore;
+    uint256 debtToRestoreCloseFactor = _calcDebtToRestoreCloseFactor(state.spoke, state);
     return _min(_min(userTotalDebt, debtToCover), debtToRestoreCloseFactor);
   }
 
@@ -447,13 +711,12 @@ contract SpokeLiquidationBase is SpokeBase {
     params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
 
     (, , params.healthFactor, , params.totalDebtInBaseCurrency) = spoke.getUserAccountData(alice);
-
     // duplicated logic from LiquidationLogic.calculateDebtToRestoreCloseFactor
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.toWad())
       .percentMulDown(params.collateralFactor)
       .fromBpsDown();
     if (params.closeFactor < effectiveLiquidationPenalty) {
-      return type(uint256).max;
+      return UINT256_MAX;
     }
     return
       (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
@@ -463,22 +726,20 @@ contract SpokeLiquidationBase is SpokeBase {
   }
 
   /// @notice Calc user's lowest possible health factor whereby a liqudation can still restore HF to close factor.
+  /// for multiple collateral assets
   /// @return healthFactor in WAD
-  function _calcLowestHfToRestoreCloseFactor(
+  function _calcLowestHfForBadDebt(
     ISpoke spoke,
-    DataTypes.DynamicReserveConfig memory collDynConfig,
+    address user,
     uint256 liquidationBonus
   ) internal view returns (uint256) {
-    return
-      _calcLowestHfForCloseFactorFromCollateralFactor(
-        collDynConfig.collateralFactor,
-        liquidationBonus
-      );
+    (, uint256 avgCollateralFactor, , , ) = spoke.getUserAccountData(user);
+    return _calcLowestHfForBadDebt(avgCollateralFactor.fromWadDown(), liquidationBonus);
   }
 
   /// given collateral factor and liquidation bonus, calculate the lowest health factor possible
   /// whereby a liquidation can still restore HF to close factor
-  function _calcLowestHfForCloseFactorFromCollateralFactor(
+  function _calcLowestHfForBadDebt(
     uint256 collateralFactor,
     uint256 liquidationBonus
   ) internal pure returns (uint256 healthFactor) {
@@ -500,36 +761,100 @@ contract SpokeLiquidationBase is SpokeBase {
     );
   }
 
-  /// @notice Get accounting info before liquidation, in base currency and amount.
-  /// @return LiquidationTestLocalParams struct with updated balances.
-  /// debt field is total user debt accounting.
-  /// supply field is total user supply accounting.
-  /// liquidatorCollateral and liquidatorDebt are the collateral/debt balances of the liquidator.
-  /// rate field is the supply exchange rate of the collateral reserve, applied to a RAY.
-  function _getAccountingInfoBeforeLiq(
+  /**
+   * @dev Get accounting info before liquidation, in base currency and amount.
+   * @return LiquidationTestLocalParams struct with updated balances.
+   */
+  function _getAccountingInfoBeforeLiquidation(
     LiquidationTestLocalParams memory state
   ) internal view returns (LiquidationTestLocalParams memory) {
-    state.collateralAssetId = state.collateralReserve.assetId;
+    state.debtReserveId = state.debtReserve.reserveId;
     state.debtAssetId = state.debtReserve.assetId;
+    state.collateralReserveId = state.collateralReserve.reserveId;
+    state.collateralAssetId = state.collateralReserve.assetId;
+    state.closeFactor = _getCloseFactor(state.spoke);
 
-    state.debt.balanceBefore = spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice);
+    state.collateralHub = state.collateralReserve.hub;
+    state.debtHub = state.debtReserve.hub;
+
+    (state.userBaseDebt.balanceBefore, state.userPremiumDebt.balanceBefore) = state
+      .spoke
+      .getUserDebt(state.debtReserve.reserveId, state.user);
+    state.userTotalDebt.balanceBefore =
+      state.userBaseDebt.balanceBefore +
+      state.userPremiumDebt.balanceBefore;
     state.liquidatorCollateral.balanceBefore = IERC20(state.collateralReserve.underlying).balanceOf(
       LIQUIDATOR
     );
     state.liquidatorDebt.balanceBefore = IERC20(state.debtReserve.underlying).balanceOf(LIQUIDATOR);
-    state.supply.balanceBefore = spoke1.getUserSuppliedAmount(
+    state.userSuppliedAmount.balanceBefore = state.spoke.getUserSuppliedAmount(
       state.collateralReserve.reserveId,
-      alice
+      state.user
     );
-    state.supplyShares.balanceBefore = spoke1.getUserSuppliedShares(
+    state.userSuppliedShares.balanceBefore = state.spoke.getUserSuppliedShares(
       state.collateralReserve.reserveId,
-      alice
+      state.user
     );
-    state.rate.rateBefore = hub.convertToSuppliedAssets(
+    state.spokeSuppliedAmount.balanceBefore = state.collateralHub.getSpokeSuppliedAmount(
+      state.collateralReserve.assetId,
+      address(state.spoke)
+    );
+    state.spokeSuppliedShares.balanceBefore = state.collateralHub.getSpokeSuppliedShares(
+      state.collateralReserve.assetId,
+      address(state.spoke)
+    );
+    state.reserveSuppliedAmount.balanceBefore = state.spoke.getReserveSuppliedAmount(
+      state.collateralReserveId
+    );
+    state.reserveSuppliedShares.balanceBefore = state.spoke.getReserveSuppliedShares(
+      state.collateralReserveId
+    );
+    state.rate.rateBefore = state.collateralHub.convertToSuppliedAssets(
       state.collateralReserve.assetId,
       WadRayMath.RAY
     );
-    state.treasury.balanceBefore = hub.getSpokeSuppliedAmount(
+    state.deficit.balanceBefore = getDeficit(state.debtHub, state.debtReserve.assetId);
+
+    (state.spokeBaseDebt.balanceBefore, state.spokePremiumDebt.balanceBefore) = state
+      .collateralHub
+      .getSpokeDebt(state.debtReserve.assetId, address(state.spoke));
+    state.spokeTotalDebt.balanceBefore =
+      state.spokeBaseDebt.balanceBefore +
+      state.spokePremiumDebt.balanceBefore;
+
+    (state.reserveBaseDebt.balanceBefore, state.reservePremiumDebt.balanceBefore) = state
+      .spoke
+      .getReserveDebt(state.debtReserveId);
+    state.reserveTotalDebt.balanceBefore =
+      state.reserveBaseDebt.balanceBefore +
+      state.reservePremiumDebt.balanceBefore;
+
+    (
+      ,
+      ,
+      state.initialHf,
+      state.totalCollateralInBaseCurrency.balanceBefore,
+      state.totalDebtInBaseCurrency.balanceBefore
+    ) = state.spoke.getUserAccountData(state.user);
+
+    // multi reserve accounting
+    state.userTotalDebts = new Balance[](state.debtReserves.length);
+    state.deficits = new Balance[](state.debtReserves.length);
+    for (uint256 i = 0; i < state.debtReserves.length; i++) {
+      state.deficits[i].balanceBefore = getDeficit(
+        state.debtReserves[i].hub,
+        state.debtReserves[i].assetId
+      );
+      state.userTotalDebts[i].balanceBefore = state.spoke.getUserTotalDebt(
+        state.debtReserves[i].reserveId,
+        state.user
+      );
+    }
+    state.feeReceiverAmount.balanceBefore = hub.getSpokeSuppliedAmount(
+      state.collateralReserve.assetId,
+      _getFeeReceiver(state.collateralReserve.assetId)
+    );
+    state.feeReceiverShares.balanceBefore = hub.getSpokeSuppliedShares(
       state.collateralReserve.assetId,
       _getFeeReceiver(state.collateralReserve.assetId)
     );
@@ -539,15 +864,14 @@ contract SpokeLiquidationBase is SpokeBase {
 
   /// @notice Get accounting info after liquidation, in base currency and amount.
   /// @return LiquidationTestLocalParams struct with updated balances.
-  /// debt field is total user debt accounting.
-  /// treasury balance change is read from emitted event, in shares.
-  /// supply field is total user supply accounting.
-  /// liquidatorCollateral and liquidatorDebt are the collateral/debt balances of the liquidator.
-  /// rate field is the supply exchange rate of the collateral reserve, applied to a RAY.
-  function _getAccountingInfoAfterLiq(
+  function _getAccountingInfoAfterLiquidation(
     LiquidationTestLocalParams memory state
   ) internal view returns (LiquidationTestLocalParams memory) {
-    state.treasury.balanceAfter = hub.getSpokeSuppliedAmount(
+    state.feeReceiverAmount.balanceAfter = hub.getSpokeSuppliedAmount(
+      state.collateralReserve.assetId,
+      _getFeeReceiver(state.collateralReserve.assetId)
+    );
+    state.feeReceiverShares.balanceAfter = hub.getSpokeSuppliedShares(
       state.collateralReserve.assetId,
       _getFeeReceiver(state.collateralReserve.assetId)
     );
@@ -555,19 +879,53 @@ contract SpokeLiquidationBase is SpokeBase {
       LIQUIDATOR
     );
     state.liquidatorDebt.balanceAfter = IERC20(state.debtReserve.underlying).balanceOf(LIQUIDATOR);
-    state.debt.balanceAfter = spoke1.getUserTotalDebt(state.debtReserve.reserveId, alice);
-    state.supply.balanceAfter = spoke1.getUserSuppliedAmount(
-      state.collateralReserve.reserveId,
-      alice
+    (state.userBaseDebt.balanceAfter, state.userPremiumDebt.balanceAfter) = state.spoke.getUserDebt(
+      state.debtReserve.reserveId,
+      state.user
     );
-    state.supplyShares.balanceAfter = spoke1.getUserSuppliedShares(
+    state.userTotalDebt.balanceAfter =
+      state.userBaseDebt.balanceAfter +
+      state.userPremiumDebt.balanceAfter;
+    state.userSuppliedAmount.balanceAfter = state.spoke.getUserSuppliedAmount(
       state.collateralReserve.reserveId,
-      alice
+      state.user
     );
-    state.rate.rateAfter = hub.convertToSuppliedAssets(
+    state.userSuppliedShares.balanceAfter = state.spoke.getUserSuppliedShares(
+      state.collateralReserve.reserveId,
+      state.user
+    );
+    state.spokeSuppliedAmount.balanceAfter = state.collateralHub.getSpokeSuppliedAmount(
+      state.collateralReserve.assetId,
+      address(state.spoke)
+    );
+    state.spokeSuppliedShares.balanceAfter = state.collateralHub.getSpokeSuppliedShares(
+      state.collateralReserve.assetId,
+      address(state.spoke)
+    );
+    state.reserveSuppliedAmount.balanceAfter = state.spoke.getReserveSuppliedAmount(
+      state.collateralReserveId
+    );
+    state.reserveSuppliedShares.balanceAfter = state.spoke.getReserveSuppliedShares(
+      state.collateralReserveId
+    );
+    state.rate.rateAfter = state.collateralHub.convertToSuppliedAssets(
       state.collateralReserve.assetId,
       WadRayMath.RAY
     );
+    state.deficit.balanceAfter = getDeficit(state.debtReserve.hub, state.debtReserve.assetId);
+    (state.spokeBaseDebt.balanceAfter, state.spokePremiumDebt.balanceAfter) = hub.getSpokeDebt(
+      state.debtReserve.assetId,
+      address(state.spoke)
+    );
+    state.spokeTotalDebt.balanceAfter =
+      state.spokeBaseDebt.balanceAfter +
+      state.spokePremiumDebt.balanceAfter;
+    (state.reserveBaseDebt.balanceAfter, state.reservePremiumDebt.balanceAfter) = state
+      .spoke
+      .getReserveDebt(state.debtReserveId);
+    state.reserveTotalDebt.balanceAfter =
+      state.reserveBaseDebt.balanceAfter +
+      state.reservePremiumDebt.balanceAfter;
 
     // balance changes before/after liquidation
     state.liquidatorCollateral.balanceChange = stdMath.delta(
@@ -578,40 +936,142 @@ contract SpokeLiquidationBase is SpokeBase {
       state.liquidatorDebt.balanceAfter,
       state.liquidatorDebt.balanceBefore
     );
-    state.debt.balanceChange = stdMath.delta(state.debt.balanceAfter, state.debt.balanceBefore);
-    state.supply.balanceChange = stdMath.delta(
-      state.supply.balanceAfter,
-      state.supply.balanceBefore
+    state.userTotalDebt.balanceChange = stdMath.delta(
+      state.userTotalDebt.balanceAfter,
+      state.userTotalDebt.balanceBefore
     );
-    state.supplyShares.balanceChange = stdMath.delta(
-      state.supplyShares.balanceAfter,
-      state.supplyShares.balanceBefore
+    state.userBaseDebt.balanceChange = stdMath.delta(
+      state.userBaseDebt.balanceAfter,
+      state.userBaseDebt.balanceBefore
     );
-    state.treasury.balanceChange = stdMath.delta(
-      state.treasury.balanceAfter,
-      state.treasury.balanceBefore
+    state.userPremiumDebt.balanceChange = stdMath.delta(
+      state.userPremiumDebt.balanceAfter,
+      state.userPremiumDebt.balanceBefore
+    );
+    state.spokeTotalDebt.balanceChange = stdMath.delta(
+      state.spokeTotalDebt.balanceAfter,
+      state.spokeTotalDebt.balanceBefore
+    );
+    state.spokeBaseDebt.balanceChange = stdMath.delta(
+      state.spokeBaseDebt.balanceAfter,
+      state.spokeBaseDebt.balanceBefore
+    );
+    state.spokePremiumDebt.balanceChange = stdMath.delta(
+      state.spokePremiumDebt.balanceAfter,
+      state.spokePremiumDebt.balanceBefore
+    );
+    state.reserveTotalDebt.balanceChange = stdMath.delta(
+      state.reserveTotalDebt.balanceAfter,
+      state.reserveTotalDebt.balanceBefore
+    );
+    state.reserveBaseDebt.balanceChange = stdMath.delta(
+      state.reserveBaseDebt.balanceAfter,
+      state.reserveBaseDebt.balanceBefore
+    );
+    state.reservePremiumDebt.balanceChange = stdMath.delta(
+      state.reservePremiumDebt.balanceAfter,
+      state.reservePremiumDebt.balanceBefore
+    );
+    state.userSuppliedAmount.balanceChange = stdMath.delta(
+      state.userSuppliedAmount.balanceAfter,
+      state.userSuppliedAmount.balanceBefore
+    );
+    state.userSuppliedShares.balanceChange = stdMath.delta(
+      state.userSuppliedShares.balanceAfter,
+      state.userSuppliedShares.balanceBefore
+    );
+    state.spokeSuppliedAmount.balanceChange = stdMath.delta(
+      state.spokeSuppliedAmount.balanceAfter,
+      state.spokeSuppliedAmount.balanceBefore
+    );
+    state.spokeSuppliedShares.balanceChange = stdMath.delta(
+      state.spokeSuppliedShares.balanceAfter,
+      state.spokeSuppliedShares.balanceBefore
+    );
+    state.reserveSuppliedAmount.balanceChange = stdMath.delta(
+      state.reserveSuppliedAmount.balanceAfter,
+      state.reserveSuppliedAmount.balanceBefore
+    );
+    state.reserveSuppliedShares.balanceChange = stdMath.delta(
+      state.reserveSuppliedShares.balanceAfter,
+      state.reserveSuppliedShares.balanceBefore
+    );
+    state.deficit.balanceChange = stdMath.delta(
+      state.deficit.balanceAfter,
+      state.deficit.balanceBefore
+    );
+    state.feeReceiverAmount.balanceChange = stdMath.delta(
+      state.feeReceiverAmount.balanceAfter,
+      state.feeReceiverAmount.balanceBefore
+    );
+    state.feeReceiverShares.balanceChange = stdMath.delta(
+      state.feeReceiverShares.balanceAfter,
+      state.feeReceiverShares.balanceBefore
     );
 
     // convert amount to base currency
     state.liquidatorCollateral.baseChange = _convertAmountToBaseCurrency(
-      spoke1,
+      state.spoke,
       state.collateralReserve.reserveId,
       state.liquidatorCollateral.balanceChange
     );
     state.liquidatorDebt.baseChange = _convertAmountToBaseCurrency(
-      spoke1,
+      state.spoke,
       state.collateralReserve.reserveId,
       state.liquidatorDebt.balanceChange
     );
-    state.debt.baseChange = _convertAmountToBaseCurrency(
-      spoke1,
+    state.userTotalDebt.baseChange = _convertAmountToBaseCurrency(
+      state.spoke,
       state.debtReserve.reserveId,
-      state.debt.balanceChange
+      state.userTotalDebt.balanceChange
     );
-    state.supply.baseChange = _convertAmountToBaseCurrency(
-      spoke1,
+    state.userSuppliedAmount.baseChange = _convertAmountToBaseCurrency(
+      state.spoke,
       state.collateralReserve.reserveId,
-      state.supply.balanceChange
+      state.userSuppliedAmount.balanceChange
+    );
+
+    state.outstandingDebt = state.userTotalDebt.balanceBefore - state.debtToLiq;
+    (
+      state.userRp,
+      ,
+      state.finalHf,
+      state.totalCollateralInBaseCurrency.balanceAfter,
+      state.totalDebtInBaseCurrency.balanceAfter
+    ) = state.spoke.getUserAccountData(state.user);
+
+    state.hasDeficit =
+      state.userSuppliedAmount.balanceAfter == 0 &&
+      state.userTotalDebt.balanceAfter == 0;
+    state.usingAsCollateral = state.spoke.isUsingAsCollateral(
+      state.collateralReserve.reserveId,
+      state.user
+    );
+    state.isBorrowing = state.spoke.isBorrowing(state.debtReserve.reserveId, state.user);
+
+    // multi reserve accounting
+    for (uint256 i = 0; i < state.debtReserves.length; i++) {
+      state.deficits[i].balanceAfter = getDeficit(
+        state.debtReserves[i].hub,
+        state.debtReserves[i].assetId
+      );
+      state.deficits[i].balanceChange = stdMath.delta(
+        state.deficits[i].balanceAfter,
+        state.deficits[i].balanceBefore
+      );
+      state.userTotalDebts[i].balanceAfter = state.spoke.getUserTotalDebt(
+        state.debtReserves[i].reserveId,
+        state.user
+      );
+      state.userTotalDebts[i].balanceChange = stdMath.delta(
+        state.userTotalDebts[i].balanceAfter,
+        state.userTotalDebts[i].balanceBefore
+      );
+    }
+
+    state.assetAmountOfOneDrawnShare = minimumAssetsPerDrawnShare(
+      state.debtHub,
+      state.debtReserve.assetId
     );
 
     return state;

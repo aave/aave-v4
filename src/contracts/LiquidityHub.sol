@@ -80,6 +80,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       baseDebtIndex: baseDebtIndex,
       baseBorrowRate: baseBorrowRate,
       lastUpdateTimestamp: lastUpdateTimestamp,
+      deficit: 0,
       config: config
     });
 
@@ -248,9 +249,36 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   /// @inheritdoc ILiquidityHub
+  function reportDeficit(
+    uint256 assetId,
+    uint256 baseAmount,
+    uint256 premiumAmount
+  ) external returns (uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+
+    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+
+    _validateReportDeficit(asset, spoke, baseAmount, premiumAmount);
+
+    uint256 totalDeficitAmount = baseAmount + premiumAmount;
+    uint256 baseDrawnSharesRestored = previewRestoreByAssets(assetId, baseAmount);
+    asset.baseDrawnShares -= baseDrawnSharesRestored;
+    spoke.baseDrawnShares -= baseDrawnSharesRestored;
+    asset.deficit += totalDeficitAmount;
+
+    /// @dev premium debt must be restored in `refreshPremiumDebt` before calling this function
+    asset.updateBorrowRate(assetId);
+
+    emit DeficitReported(assetId, msg.sender, baseDrawnSharesRestored, totalDeficitAmount);
+
+    return baseDrawnSharesRestored;
+  }
+
+  /// @inheritdoc ILiquidityHub
   function refreshPremiumDebt(
     uint256 assetId,
-    int256 premiumDrawnShareDelta,
+    int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
@@ -263,7 +291,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     _refresh(
       assetId,
       msg.sender,
-      premiumDrawnShareDelta,
+      premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
       realizedPremiumTaken
@@ -301,7 +329,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   function _refresh(
     uint256 assetId,
     address spokeAddress,
-    int256 premiumDrawnShareDelta,
+    int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
@@ -312,18 +340,18 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // accrue interest and liquidity fees
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
-    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
+    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnSharesDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
     asset.realizedPremium = asset.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
-    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
+    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnSharesDelta);
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
     spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
     emit RefreshPremiumDebt(
       assetId,
       spokeAddress,
-      premiumDrawnShareDelta,
+      premiumDrawnSharesDelta,
       premiumOffsetDelta,
       realizedPremiumAdded,
       realizedPremiumTaken
@@ -584,6 +612,19 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // sanity: utilize solc underflow check
     uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset;
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
+  }
+
+  function _validateReportDeficit(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
+    uint256 baseAmount,
+    uint256 premiumAmount
+  ) internal view {
+    require(spoke.config.active, SpokeNotActive());
+    require(baseAmount + premiumAmount != 0, InvalidDeficitAmount());
+    (uint256 baseDebt, ) = _getSpokeDebt(asset, spoke);
+    require(baseAmount <= baseDebt, SurplusDeficitReported(baseDebt));
+    // we should have already restored premium debt
   }
 
   // handles underflow

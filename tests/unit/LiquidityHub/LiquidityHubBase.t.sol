@@ -103,35 +103,6 @@ contract LiquidityHubBase is Base {
     // return debtData;
   }
 
-  /// @dev Adds liquidity to the Hub via a random spoke
-  function _addLiquidity(uint256 assetId, uint256 amount) public {
-    address tempSpoke = vm.randomAddress();
-    address tempUser = vm.randomAddress();
-
-    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
-
-    address underlying = hub.getAsset(assetId).underlying;
-    deal(underlying, tempUser, amount);
-
-    vm.prank(tempUser);
-    IERC20(underlying).approve(address(hub), type(uint256).max);
-
-    vm.prank(ADMIN);
-    hub.addSpoke(
-      assetId,
-      tempSpoke,
-      DataTypes.SpokeConfig({
-        active: true,
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max
-      })
-    );
-
-    Utils.add({hub: hub, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
-
-    assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
-  }
-
   /// @dev Draws liquidity from the Hub via a random spoke
   function _drawLiquidity(uint256 assetId, uint256 amount, bool withPremium) internal {
     address tempSpoke = vm.randomAddress();
@@ -176,5 +147,72 @@ contract LiquidityHubBase is Base {
         0
       );
     }
+  }
+
+  /// @dev Draws liquidity from the Hub via a specific spoke which is already active
+  function _drawLiquidityFromSpoke(
+    address spoke,
+    uint256 assetId,
+    uint256 amount,
+    uint256 skipTime,
+    bool withPremium
+  ) internal returns (uint256 baseDebt, uint256 premiumDebt) {
+    address tempUser = vm.randomAddress();
+
+    int256 premiumDrawnSharesDelta = 1000;
+    int256 premiumOffsetDelta = 1000;
+
+    assertTrue(hub.getSpoke(assetId, spoke).config.active);
+
+    if (withPremium) {
+      // inflate premium data to create premium debt
+      vm.prank(spoke);
+      hub.refreshPremiumDebt(assetId, premiumDrawnSharesDelta, premiumOffsetDelta, 0, 0);
+    }
+
+    Utils.draw({hub: hub, assetId: assetId, caller: spoke, amount: amount, to: tempUser});
+
+    skip(skipTime);
+
+    (baseDebt, premiumDebt) = hub.getAssetDebt(assetId);
+    assertGt(baseDebt, 0); // non-zero premium debt
+
+    if (withPremium) {
+      assertGt(premiumDebt, 0); // non-zero premium debt
+      // restore premium data
+      vm.prank(spoke);
+      hub.refreshPremiumDebt(
+        assetId,
+        -premiumDrawnSharesDelta,
+        -premiumOffsetDelta,
+        premiumDebt,
+        0
+      );
+    }
+  }
+
+  /// @dev Adds liquidity to the Hub via a random spoke
+  function _addLiquidity(uint256 assetId, uint256 amount) public {
+    address tempSpoke = vm.randomAddress();
+    address tempUser = vm.randomAddress();
+
+    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
+
+    address underlying = hub.getAsset(assetId).underlying;
+    deal(underlying, tempUser, amount);
+
+    vm.prank(tempUser);
+    IERC20(underlying).approve(address(hub), UINT256_MAX);
+
+    vm.prank(ADMIN);
+    hub.addSpoke(
+      assetId,
+      tempSpoke,
+      DataTypes.SpokeConfig({supplyCap: UINT256_MAX, drawCap: UINT256_MAX, active: true})
+    );
+
+    Utils.add({hub: hub, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
+
+    assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
   }
 }

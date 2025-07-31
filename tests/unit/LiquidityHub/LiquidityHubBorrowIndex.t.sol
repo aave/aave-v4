@@ -237,11 +237,7 @@ contract LiquidityHubBorrowIndex is Base {
     hub.addSpoke(
       assetId,
       address(spoke),
-      DataTypes.SpokeConfig({
-        active: true,
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max
-      })
+      DataTypes.SpokeConfig({supplyCap: UINT256_MAX, drawCap: UINT256_MAX, active: true})
     );
     return address(spoke);
   }
