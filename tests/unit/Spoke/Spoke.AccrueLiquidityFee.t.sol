@@ -222,7 +222,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
     withdrawLiquidityFees(assetId, type(uint256).max);
-    _assertEventNotEmitted(ILiquidityHub.Add.selector);
+    _assertEventNotEmitted(ILiquidityHubBase.Add.selector);
     _assertEventNotEmitted(ILiquidityHub.AccrueFees.selector);
 
     expectedBaseDebtAccrual = 750e18; // 50% of 1500 (base debt accrual)
@@ -263,7 +263,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
     withdrawLiquidityFees(assetId, type(uint256).max);
-    _assertEventNotEmitted(ILiquidityHub.Add.selector);
+    _assertEventNotEmitted(ILiquidityHubBase.Add.selector);
     _assertEventNotEmitted(ILiquidityHub.AccrueFees.selector);
 
     expectedBaseDebtAccrual = 1125e18; // 50% of 2250 (base debt accrual)
@@ -345,7 +345,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
     withdrawLiquidityFees(assetId, type(uint256).max);
-    _assertEventNotEmitted(ILiquidityHub.Add.selector);
+    _assertEventNotEmitted(ILiquidityHubBase.Add.selector);
     _assertEventNotEmitted(ILiquidityHub.AccrueFees.selector);
 
     expectedBaseDebtAccrual = expectedBaseDebt.percentMulUp(rate);
@@ -386,7 +386,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
     withdrawLiquidityFees(assetId, type(uint256).max);
-    _assertEventNotEmitted(ILiquidityHub.Add.selector);
+    _assertEventNotEmitted(ILiquidityHubBase.Add.selector);
     _assertEventNotEmitted(ILiquidityHub.AccrueFees.selector);
 
     expectedBaseDebtAccrual = expectedBaseDebt.percentMulUp(rate);

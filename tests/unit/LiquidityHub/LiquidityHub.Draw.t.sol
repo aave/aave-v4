@@ -47,7 +47,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.expectEmit(address(hub.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Draw(assetId, address(spoke1), shares, amount);
+    emit ILiquidityHubBase.Draw(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
     hub.draw(assetId, amount, alice);
@@ -127,7 +127,7 @@ contract LiquidityHubDrawTest is LiquidityHubBase {
     vm.expectEmit(address(hub.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Draw(assetId, address(spoke1), shares, amount);
+    emit ILiquidityHubBase.Draw(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
     hub.draw(assetId, amount, alice);

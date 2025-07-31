@@ -230,7 +230,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(user, address(hub), amount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(assetId, address(spoke1), shares, amount);
+    emit ILiquidityHubBase.Add(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
     hub.add(assetId, amount, user);
@@ -281,7 +281,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(alice, address(hub), amount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(assetId, address(spoke1), amount, amount);
+    emit ILiquidityHubBase.Add(assetId, address(spoke1), amount, amount);
 
     vm.prank(address(spoke1));
     hub.add(assetId, amount, alice);
@@ -289,7 +289,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     vm.expectEmit(address(underlying2));
     emit IERC20.Transfer(alice, address(hub), amount2);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(assetId2, address(spoke2), amount2, amount2);
+    emit ILiquidityHubBase.Add(assetId2, address(spoke2), amount2, amount2);
 
     vm.prank(address(spoke2));
     hub.add(assetId2, amount2, alice);
@@ -465,7 +465,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     vm.expectEmit(address(tokenList.dai));
     emit IERC20.Transfer(alice, address(hub), supplyAmount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(daiAssetId, address(spoke2), shares, supplyAmount);
+    emit ILiquidityHubBase.Add(daiAssetId, address(spoke2), shares, supplyAmount);
 
     vm.prank(address(spoke2));
     hub.add(daiAssetId, supplyAmount, alice);

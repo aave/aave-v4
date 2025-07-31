@@ -111,7 +111,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error InvalidCollateralFactor();
   error InvalidLiquidationBonus();
   error IncompatibleCollateralFactorAndLiquidationBonus();
-  error InvalidReserveDecimals();
   error HealthFactorBelowThreshold();
   error InvalidCloseFactor();
   error InvalidHubAddress();

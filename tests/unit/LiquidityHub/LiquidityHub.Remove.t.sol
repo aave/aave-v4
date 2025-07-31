@@ -24,7 +24,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(address(hub), alice, amount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Remove(
+    emit ILiquidityHubBase.Remove(
       assetId,
       address(spoke1),
       hub.previewRemoveByAssets(assetId, amount),

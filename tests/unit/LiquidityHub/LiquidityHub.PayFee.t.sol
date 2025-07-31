@@ -100,9 +100,9 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Remove(daiAssetId, address(spoke1), feeShares, feeAmount);
+    emit ILiquidityHubBase.Remove(daiAssetId, address(spoke1), feeShares, feeAmount);
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(daiAssetId, _getFeeReceiver(daiAssetId), feeShares, feeAmount);
+    emit ILiquidityHubBase.Add(daiAssetId, _getFeeReceiver(daiAssetId), feeShares, feeAmount);
 
     vm.prank(address(spoke1));
     hub.payFee(daiAssetId, feeShares);

@@ -11,6 +11,7 @@ import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
+import {ILiquidityHubBase} from 'src/interfaces/ILiquidityHubBase.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
 import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
 import {AaveOracle, IAaveOracle} from 'src/contracts/AaveOracle.sol';
