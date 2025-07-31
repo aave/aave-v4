@@ -91,6 +91,7 @@ library DataTypes {
     uint256 reserveId;
     uint256 assetId;
     ILiquidityHub hub;
+    DataTypes.PremiumDelta premiumDelta;
   }
 
   struct CalculateUserAccountDataVars {

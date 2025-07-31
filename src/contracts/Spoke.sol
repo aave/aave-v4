@@ -708,17 +708,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     userPosition.realizedPremium = _add(userPosition.realizedPremium, premiumDelta.realizedDelta);
   }
 
-  function _refreshPremiumDebt(
-    ILiquidityHub hub,
-    uint256 assetId,
-    uint256 reserveId,
-    address user,
-    DataTypes.PremiumDelta memory premiumDelta
-  ) internal {
-    hub.refreshPremiumDebt(assetId, premiumDelta);
-    emit RefreshPremiumDebt(reserveId, user, premiumDelta);
-  }
-
   function _isPositionManager(address user, address manager) private view returns (bool) {
     if (user == manager) return true;
     DataTypes.PositionManagerConfig storage config = _positionManager[manager];
@@ -906,7 +895,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
         uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
         uint256 oldUserPremiumOffset = userPosition.premiumOffset;
-        uint256 accruedUserPremium = vars.hub.convertToDrawnAssets(
+        uint256 accruedUserPremium = vars.hub.previewRestoreByShares(
           vars.assetId,
           oldUserPremiumDrawnShares
         ) - oldUserPremiumOffset;
@@ -921,23 +910,16 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         );
         userPosition.realizedPremium += accruedUserPremium;
 
-        int256 premiumDrawnSharesDelta = _signedDiff(
-          userPosition.premiumDrawnShares,
-          oldUserPremiumDrawnShares
-        );
-        if (!vars.premiumIncrease) vars.premiumIncrease = premiumDrawnSharesDelta > 0;
+        vars.premiumDelta = DataTypes.PremiumDelta({
+          drawnSharesDelta: _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
+          offsetDelta: _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset),
+          realizedDelta: int256(accruedUserPremium)
+        });
 
-        _refreshPremiumDebt(
-          vars.hub,
-          vars.assetId,
-          vars.reserveId,
-          user,
-          DataTypes.PremiumDelta({
-            drawnSharesDelta: premiumDrawnSharesDelta,
-            offsetDelta: _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset),
-            realizedDelta: int256(accruedUserPremium)
-          })
-        );
+        if (!vars.premiumIncrease) vars.premiumIncrease = vars.premiumDelta.drawnSharesDelta > 0;
+
+        vars.hub.refreshPremiumDebt(vars.assetId, vars.premiumDelta);
+        emit RefreshPremiumDebt(vars.reserveId, user, vars.premiumDelta);
       }
       unchecked {
         ++vars.reserveId;
