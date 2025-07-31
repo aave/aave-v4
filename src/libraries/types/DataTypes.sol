@@ -177,8 +177,6 @@ library DataTypes {
     uint256 restoredShares;
     uint256 withdrawnShares;
     uint256 newUserRiskPremium;
-    uint256 totalRestoredShares;
-    uint256 totalWithdrawnShares;
     uint256 totalLiquidationFeeShares;
     uint256 usersLength;
     uint256 liquidatedSuppliedShares;

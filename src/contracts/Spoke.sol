@@ -1084,7 +1084,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         // debt accounting
         _settlePremiumDebt(userDebtPosition, vars.premiumDelta);
         userDebtPosition.baseDrawnShares -= vars.restoredShares;
-        vars.totalRestoredShares += vars.restoredShares;
       }
 
       if (userDebtPosition.baseDrawnShares == 0) {
@@ -1099,7 +1098,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         _notifyRiskPremiumUpdate(vars.user, vars.newUserRiskPremium);
       }
 
-      vars.totalWithdrawnShares += vars.withdrawnShares;
       vars.totalLiquidationFeeShares += vars.liquidationFeeShares;
 
       emit LiquidationCall(
