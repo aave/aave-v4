@@ -29,19 +29,19 @@ contract HubReportDeficitTest is HubBase {
   }
 
   function test_reportDeficit_revertsWith_SpokeNotActive(address caller) public {
-    vm.assume(!hub.getSpoke(usdxAssetId, caller).config.active);
+    vm.assume(!hub1.getSpoke(usdxAssetId, caller).config.active);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
 
     vm.prank(caller);
-    hub.reportDeficit(usdxAssetId, 0, 0, DataTypes.PremiumDelta(0, 0, 0));
+    hub1.reportDeficit(usdxAssetId, 0, 0, DataTypes.PremiumDelta(0, 0, 0));
   }
 
   function test_reportDeficit_revertsWith_InvalidDeficitAmount() public {
     vm.expectRevert(IHub.InvalidDeficitAmount.selector);
 
     vm.prank(address(spoke1));
-    hub.reportDeficit(usdxAssetId, 0, 0, DataTypes.PremiumDelta(0, 0, 0));
+    hub1.reportDeficit(usdxAssetId, 0, 0, DataTypes.PremiumDelta(0, 0, 0));
   }
 
   function test_reportDeficit_fuzz_revertsWith_SurplusDeficitReported(
@@ -55,7 +55,7 @@ contract HubReportDeficitTest is HubBase {
 
     // draw usdx liquidity to be restored
     Utils.draw({
-      hub: hub,
+      hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
       amount: drawnAmount,
@@ -65,14 +65,14 @@ contract HubReportDeficitTest is HubBase {
     // skip to accrue interest
     skip(skipTime);
 
-    (uint256 drawn, ) = hub.getSpokeOwed(usdxAssetId, address(spoke1));
+    (uint256 drawn, ) = hub1.getSpokeOwed(usdxAssetId, address(spoke1));
     vm.assume(baseAmount > drawn);
 
     premiumAmount = bound(premiumAmount, 0, UINT256_MAX - baseAmount);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDeficitReported.selector, drawn));
     vm.prank(address(spoke1));
-    hub.reportDeficit(
+    hub1.reportDeficit(
       usdxAssetId,
       baseAmount,
       premiumAmount,
@@ -114,11 +114,11 @@ contract HubReportDeficitTest is HubBase {
     premiumAmount = bound(premiumAmount, 0, params.premium);
     vm.assume(baseAmount + premiumAmount > 0);
 
-    params.deficitBefore = getDeficit(hub, usdxAssetId);
-    params.supplyExchangeRateBefore = hub.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
-    params.liquidityBefore = hub.getLiquidity(usdxAssetId);
-    params.balanceBefore = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
-    uint256 drawnSharesBefore = hub.getAsset(usdxAssetId).drawnShares;
+    params.deficitBefore = getDeficit(hub1, usdxAssetId);
+    params.supplyExchangeRateBefore = hub1.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
+    params.liquidityBefore = hub1.getLiquidity(usdxAssetId);
+    params.balanceBefore = IERC20(hub1.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
+    uint256 drawnSharesBefore = hub1.getAsset(usdxAssetId).drawnShares;
     uint256 totalDeficit = baseAmount + premiumAmount;
 
     DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
@@ -127,36 +127,36 @@ contract HubReportDeficitTest is HubBase {
       realizedDelta: -int256(premiumAmount)
     });
 
-    vm.expectEmit(address(hub));
+    vm.expectEmit(address(hub1));
     emit IHub.DeficitReported(
       usdxAssetId,
       address(spoke1),
-      hub.convertToDrawnShares(usdxAssetId, baseAmount),
+      hub1.convertToDrawnShares(usdxAssetId, baseAmount),
       premiumDelta,
       totalDeficit
     );
     vm.prank(address(spoke1));
-    hub.reportDeficit(usdxAssetId, baseAmount, premiumAmount, premiumDelta);
+    hub1.reportDeficit(usdxAssetId, baseAmount, premiumAmount, premiumDelta);
 
-    (params.drawnAfter, params.premiumAfter) = hub.getAssetOwed(usdxAssetId);
+    (params.drawnAfter, params.premiumAfter) = hub1.getAssetOwed(usdxAssetId);
 
-    params.deficitAfter = getDeficit(hub, usdxAssetId);
-    params.supplyExchangeRateAfter = hub.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
-    params.liquidityAfter = hub.getLiquidity(usdxAssetId);
-    params.balanceAfter = IERC20(hub.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
-    uint256 drawnSharesAfter = hub.getAsset(usdxAssetId).drawnShares;
+    params.deficitAfter = getDeficit(hub1, usdxAssetId);
+    params.supplyExchangeRateAfter = hub1.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
+    params.liquidityAfter = hub1.getLiquidity(usdxAssetId);
+    params.balanceAfter = IERC20(hub1.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
+    uint256 drawnSharesAfter = hub1.getAsset(usdxAssetId).drawnShares;
 
     // due to rounding of donation, base debt can differ by asset amount of one share
     // and 1 wei imprecision
     assertApproxEqAbs(
       params.drawnAfter,
       params.drawn - baseAmount,
-      minimumAssetsPerDrawnShare(hub, usdxAssetId) + 1,
+      minimumAssetsPerDrawnShare(hub1, usdxAssetId) + 1,
       'base debt'
     );
     assertEq(
       drawnSharesAfter,
-      drawnSharesBefore - hub.convertToDrawnShares(usdxAssetId, baseAmount),
+      drawnSharesBefore - hub1.convertToDrawnShares(usdxAssetId, baseAmount),
       'base drawn shares'
     );
     assertEq(params.premiumAfter, params.premium - premiumAmount, 'premium debt');
@@ -168,6 +168,6 @@ contract HubReportDeficitTest is HubBase {
       params.supplyExchangeRateBefore,
       'supply exchange rate should increase'
     );
-    assertBorrowRateSynced(hub, usdxAssetId, 'reportDeficit');
+    assertBorrowRateSynced(hub1, usdxAssetId, 'reportDeficit');
   }
 }

@@ -65,18 +65,18 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     );
 
     // Add asset A to the canonical hub
-    hub.addAsset(
+    hub1.addAsset(
       address(assetA),
       assetA.decimals(),
       address(treasurySpoke),
       address(irStrategy), // Use the canonical hub's interest rate strategy
       encodedIrData
     );
-    siloedVars.assetAId = hub.getAssetCount() - 1;
+    siloedVars.assetAId = hub1.getAssetCount() - 1;
 
     // Add A reserve to spoke 1
     siloedVars.reserveAId = spoke1.addReserve(
-      address(hub),
+      address(hub1),
       siloedVars.assetAId,
       _deployMockPriceFeed(spoke1, 50_000e8),
       DataTypes.ReserveConfig({
@@ -89,7 +89,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     );
 
     // Link canonical hub and spoke 1 for asset A
-    hub.addSpoke(
+    hub1.addSpoke(
       siloedVars.assetAId,
       address(spoke1),
       DataTypes.SpokeConfig({active: true, addCap: type(uint256).max, drawCap: type(uint256).max})
@@ -97,7 +97,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
 
     // Add reserve A from canonical hub to the new spoke
     siloedVars.reserveAIdNewSpoke = newSpoke.addReserve(
-      address(hub),
+      address(hub1),
       siloedVars.assetAId,
       _deployMockPriceFeed(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
@@ -110,7 +110,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     );
 
     // Link canonical hub and new spoke for asset A, 500k supply cap, 0 borrow cap
-    hub.addSpoke(
+    hub1.addSpoke(
       siloedVars.assetAId,
       address(newSpoke),
       DataTypes.SpokeConfig({active: true, addCap: siloedVars.assetAAddCap, drawCap: 0})
@@ -119,7 +119,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
 
     // Approvals
     vm.prank(bob);
-    assetA.approve(address(hub), type(uint256).max);
+    assetA.approve(address(hub1), type(uint256).max);
 
     vm.prank(alice);
     assetB.approve(address(newHub), type(uint256).max);
@@ -131,7 +131,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
 
   /* @dev Test showcasing a possible configuration for siloed mode
    * A new hub and spoke are deployed with Assets A and B, where B is the only borrowable asset.
-   * Users can use usdx as collateral on the new spoke, which supplies to the canonical hub.
+   * Users can use usdx as collateral on the new spoke, which supplies to the canonical hub1.
    * Users may not borrow usdx from the new spoke, but can use it as collateral to borrow the
    * only borrowable asset: Asset B.
    */
@@ -154,7 +154,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       'bob using asset A as collateral on new spoke'
     );
     assertEq(
-      hub.getAssetAddedAmount(siloedVars.assetAId),
+      hub1.getAssetAddedAmount(siloedVars.assetAId),
       siloedVars.assetAAddCap,
       'total supplied amount of asset A on canonical hub'
     );

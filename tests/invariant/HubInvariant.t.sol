@@ -10,11 +10,11 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 contract HubInvariant is StdInvariant, Test {
   HubHandler hubHandler;
-  Hub hub;
+  Hub hub1;
 
   function setUp() public {
     hubHandler = new HubHandler();
-    hub = hubHandler.hub();
+    hub1 = hubHandler.hub1();
     targetContract(address(hubHandler));
     bytes4[] memory selectors = new bytes4[](1);
     selectors[0] = HubHandler.supply.selector;
@@ -29,12 +29,12 @@ contract HubInvariant is StdInvariant, Test {
     vm.skip(true);
     // TODO: manage asset listed multiple times
     // TODO: manage interest
-    for (uint256 i; i < hub.getAssetCount(); ++i) {
-      DataTypes.Asset memory reserveData = hub.getAsset(i);
-      address underlying = hub.getAsset(i).underlying;
+    for (uint256 i; i < hub1.getAssetCount(); ++i) {
+      DataTypes.Asset memory reserveData = hub1.getAsset(i);
+      address underlying = hub1.getAsset(i).underlying;
       // todo implement
       // assertEq(
-      //   hub.getTotalAssets(reserveData.id),
+      //   hub1.getTotalAssets(reserveData.id),
       //   IERC20(underlying).balanceOf(address(hub)) - hubHandler.getAssetDonated(underlying),
       //   'wrong total assets'
       // );
@@ -45,12 +45,12 @@ contract HubInvariant is StdInvariant, Test {
   function invariant_exchangeRateMonotonicallyIncreasing() public {
     vm.skip(true);
     // TODO this can be improved with borrows OR changes in borrowRate
-    for (uint256 id = 0; id < hub.getAssetCount(); id++) {
-      DataTypes.Asset memory reserveData = hub.getAsset(id);
+    for (uint256 id = 0; id < hub1.getAssetCount(); id++) {
+      DataTypes.Asset memory reserveData = hub1.getAsset(id);
       // todo migrate
       // uint256 calcExchangeRate = reserveData.suppliedShares == 0
       //   ? 0
-      //   : hub.getTotalAssets(reserveData.id) / reserveData.suppliedShares;
+      //   : hub1.getTotalAssets(reserveData.id) / reserveData.suppliedShares;
 
       // assertTrue(hubHandler.getLastExchangeRate(id) <= calcExchangeRate, 'supply index decrease');
     }

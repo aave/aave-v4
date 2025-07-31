@@ -164,7 +164,7 @@ contract SpokeBase is Base {
       onBehalfOf: tempUser
     });
 
-    assertEq(hub.getLiquidity(assetId), initialLiq + amount);
+    assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
   }
 
   /// @dev Opens a debt position for a random user, using same asset as collateral and borrow
@@ -290,7 +290,7 @@ contract SpokeBase is Base {
     // index has increased, ie now the shares are less than the amount
     assertGt(
       borrow.supplyAmount,
-      hub.convertToAddedShares(state.borrowReserveAssetId, borrow.supplyAmount)
+      hub1.convertToAddedShares(state.borrowReserveAssetId, borrow.supplyAmount)
     );
 
     return (
@@ -319,11 +319,11 @@ contract SpokeBase is Base {
     }
     (state.collateralReserveAssetId, ) = getAssetByReserveId(spoke, collateral.reserveId);
     (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
-    state.collateralSupplyShares = hub.convertToAddedShares(
+    state.collateralSupplyShares = hub1.convertToAddedShares(
       state.collateralReserveAssetId,
       collateral.supplyAmount
     );
-    state.borrowSupplyShares = hub.convertToAddedShares(
+    state.borrowSupplyShares = hub1.convertToAddedShares(
       state.borrowReserveAssetId,
       borrow.supplyAmount
     );
@@ -388,15 +388,15 @@ contract SpokeBase is Base {
   ) internal {
     uint256 reserveId = _assetReserveId(spoke);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 assetOwedWithoutSpoke = hub.getAssetTotalOwed(assetId) -
-      hub.getSpokeTotalOwed(assetId, address(spoke));
+    uint256 assetOwedWithoutSpoke = hub1.getAssetTotalOwed(assetId) -
+      hub1.getSpokeTotalOwed(assetId, address(spoke));
 
     address[4] memory users = [alice, bob, carol, derl];
     for (uint256 i; i < users.length; ++i) {
       address user = users[i];
       uint256 debt = spoke.getUserTotalDebt(reserveId, user);
       if (debt > 0) {
-        deal(hub.getAsset(assetId).underlying, user, debt);
+        deal(hub1.getAsset(assetId).underlying, user, debt);
         vm.prank(user);
         spoke.repay(reserveId, debt, user);
         assertEq(spoke.getUserTotalDebt(reserveId, user), 0, 'user debt not zero');
@@ -409,9 +409,9 @@ contract SpokeBase is Base {
     }
 
     assertEq(spoke.getReserveTotalDebt(reserveId), 0, 'reserve total debt not zero');
-    assertEq(hub.getSpokeTotalOwed(assetId, address(spoke)), 0, 'hub spoke total debt not zero');
+    assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke)), 0, 'hub spoke total debt not zero');
     assertEq(
-      hub.getAssetTotalOwed(assetId),
+      hub1.getAssetTotalOwed(assetId),
       assetOwedWithoutSpoke,
       'hub asset total debt not settled'
     );
@@ -440,7 +440,7 @@ contract SpokeBase is Base {
 
   function getTokenBalances(IERC20 token, address spoke) internal view returns (TokenData memory) {
     return
-      TokenData({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(address(hub))});
+      TokenData({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(address(hub1))});
   }
 
   function _calcMinimumCollAmount(
@@ -455,10 +455,10 @@ contract SpokeBase is Base {
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
     DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
     uint256 collPrice = oracle.getReservePrice(collReserveId);
-    uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).decimals;
+    uint256 collAssetUnits = 10 ** hub1.getAsset(collData.assetId).decimals;
 
     DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
-    uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).decimals;
+    uint256 debtAssetUnits = 10 ** hub1.getAsset(debtData.assetId).decimals;
     uint256 debtPrice = oracle.getReservePrice(debtReserveId);
 
     uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadDivDown(debtAssetUnits);
@@ -480,10 +480,10 @@ contract SpokeBase is Base {
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
     DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
     uint256 collPrice = oracle.getReservePrice(collReserveId);
-    uint256 collAssetUnits = 10 ** hub.getAsset(collData.assetId).decimals;
+    uint256 collAssetUnits = 10 ** hub1.getAsset(collData.assetId).decimals;
 
     DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
-    uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).decimals;
+    uint256 debtAssetUnits = 10 ** hub1.getAsset(debtData.assetId).decimals;
     uint256 debtPrice = oracle.getReservePrice(debtReserveId);
 
     uint256 normalizedDebtAmount = (debtPrice).wadDivDown(debtAssetUnits);
@@ -534,10 +534,10 @@ contract SpokeBase is Base {
     uint256 assetId,
     DataTypes.UserPosition memory userPos
   ) internal view returns (DebtData memory userDebt) {
-    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPos.premiumShares) -
+    uint256 accruedPremium = hub1.convertToDrawnAssets(assetId, userPos.premiumShares) -
       userPos.premiumOffset;
     userDebt.premiumDebt = userPos.realizedPremium + accruedPremium;
-    userDebt.drawnDebt = hub.convertToDrawnAssets(assetId, userPos.drawnShares);
+    userDebt.drawnDebt = hub1.convertToDrawnAssets(assetId, userPos.drawnShares);
     userDebt.totalDebt = userDebt.drawnDebt + userDebt.premiumDebt;
   }
 
@@ -622,11 +622,13 @@ contract SpokeBase is Base {
   ) internal view returns (DataTypes.UserPosition memory userPos) {
     (uint256 riskPremium, , , , ) = spoke.getUserAccountData(user);
 
-    userPos.drawnShares = hub.convertToDrawnShares(assetId, debtAmount);
-    userPos.premiumShares = hub.convertToDrawnShares(assetId, debtAmount).percentMulUp(riskPremium);
-    userPos.premiumOffset = hub.convertToDrawnAssets(assetId, userPos.premiumShares);
+    userPos.drawnShares = hub1.convertToDrawnShares(assetId, debtAmount);
+    userPos.premiumShares = hub1.convertToDrawnShares(assetId, debtAmount).percentMulUp(
+      riskPremium
+    );
+    userPos.premiumOffset = hub1.convertToDrawnAssets(assetId, userPos.premiumShares);
     userPos.realizedPremium = expectedRealizedPremium;
-    userPos.suppliedShares = hub.convertToAddedShares(assetId, suppliedAmount);
+    userPos.suppliedShares = hub1.convertToAddedShares(assetId, suppliedAmount);
   }
 
   /// calculated expected realized premium
@@ -638,7 +640,7 @@ contract SpokeBase is Base {
   ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     DataTypes.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
-    return hub.convertToDrawnAssets(assetId, userPos.premiumShares) - userPos.premiumOffset;
+    return hub1.convertToDrawnAssets(assetId, userPos.premiumShares) - userPos.premiumOffset;
   }
 
   /// assert that realized premium matches naively calculated value
@@ -651,7 +653,7 @@ contract SpokeBase is Base {
   ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 accruedBase = MathUtils
-      .calculateLinearInterest(hub.getAsset(assetId).drawnRate, lastTimestamp)
+      .calculateLinearInterest(hub1.getAsset(assetId).drawnRate, lastTimestamp)
       .rayMulUp(prevBaseDebt);
 
     // equivalent to multiplying by risk premium (RP = premium drawn shares / base drawn shares)
@@ -687,13 +689,13 @@ contract SpokeBase is Base {
 
       assertEq(
         drawnDebt,
-        hub.convertToDrawnAssets(assetId, userData.drawnShares),
+        hub1.convertToDrawnAssets(assetId, userData.drawnShares),
         string.concat('user ', vm.toString(i), ' base debt ', label)
       );
       assertEq(
         premiumDebt,
         userData.realizedPremium +
-          hub.convertToDrawnAssets(assetId, userData.premiumShares) -
+          hub1.convertToDrawnAssets(assetId, userData.premiumShares) -
           userData.premiumOffset,
         string.concat('user ', vm.toString(i), ' premium debt ', label)
       );
@@ -847,7 +849,7 @@ contract SpokeBase is Base {
       (uint256 collateralRisk, uint256 reserveId) = reserveCollateralRisk.get(idx);
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      uint256 suppliedAssets = hub.convertToAddedAssets(assetId, userPosition.suppliedShares);
+      uint256 suppliedAssets = hub1.convertToAddedAssets(assetId, userPosition.suppliedShares);
       uint256 supplyAmount = _getValueInBaseCurrency(spoke, reserveId, suppliedAssets);
 
       if (supplyAmount >= totalDebt) {

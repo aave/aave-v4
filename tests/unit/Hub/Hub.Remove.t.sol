@@ -17,19 +17,19 @@ contract HubRemoveTest is HubBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
+    IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
-    Utils.add({hub: hub, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
+    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
 
     vm.expectEmit(address(underlying));
-    emit IERC20.Transfer(address(hub), alice, amount);
-    vm.expectEmit(address(hub));
-    emit IHub.Remove(assetId, address(spoke1), hub.previewRemoveByAssets(assetId, amount), amount);
+    emit IERC20.Transfer(address(hub1), alice, amount);
+    vm.expectEmit(address(hub1));
+    emit IHub.Remove(assetId, address(spoke1), hub1.previewRemoveByAssets(assetId, amount), amount);
 
     vm.prank(address(spoke1));
-    hub.remove(assetId, amount, alice);
+    hub1.remove(assetId, amount, alice);
 
-    AssetPosition memory assetData = getAssetPosition(hub, assetId);
+    AssetPosition memory assetData = getAssetPosition(hub1, assetId);
     SpokePosition memory spokeData = getSpokePosition(spoke1, reserveId);
 
     // hub
@@ -49,7 +49,7 @@ contract HubRemoveTest is HubBase {
     assertEq(spokeData, assetData);
     // dai
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance after');
-    assertEq(underlying.balanceOf(address(hub)), 0, 'hub token balance after');
+    assertEq(underlying.balanceOf(address(hub1)), 0, 'hub token balance after');
     assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
   }
 
@@ -59,15 +59,15 @@ contract HubRemoveTest is HubBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT - 1);
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
 
-    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
+    IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
-    Utils.add({hub: hub, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
-    Utils.add({hub: hub, assetId: assetId, caller: address(spoke2), amount: amount2, user: alice});
+    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
+    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke2), amount: amount2, user: alice});
 
-    Utils.remove(hub, assetId, address(spoke1), amount, alice);
-    Utils.remove(hub, assetId, address(spoke2), amount2, alice);
+    Utils.remove(hub1, assetId, address(spoke1), amount, alice);
+    Utils.remove(hub1, assetId, address(spoke2), amount2, alice);
 
-    AssetPosition memory assetData = getAssetPosition(hub, assetId);
+    AssetPosition memory assetData = getAssetPosition(hub1, assetId);
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
 
@@ -88,7 +88,7 @@ contract HubRemoveTest is HubBase {
     // asset
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
-    assertEq(underlying.balanceOf(address(hub)), 0, 'hub token balance after');
+    assertEq(underlying.balanceOf(address(hub1)), 0, 'hub token balance after');
     assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
   }
 
@@ -105,22 +105,22 @@ contract HubRemoveTest is HubBase {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     uint256 assetId = daiAssetId;
-    IERC20 underlying = IERC20(hub.getAsset(assetId).underlying);
+    IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
-    Utils.add({hub: hub, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
-    Utils.add({hub: hub, assetId: assetId, caller: address(spoke2), amount: amount2, user: alice});
+    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
+    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke2), amount: amount2, user: alice});
 
     // draw liquidity to accrue interest using spoke3
-    Utils.draw({hub: hub, assetId: assetId, caller: address(spoke3), amount: drawAmount, to: bob});
+    Utils.draw({hub: hub1, assetId: assetId, caller: address(spoke3), amount: drawAmount, to: bob});
     skip(skipTime);
 
-    (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
+    (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
     assertEq(premium, 0);
     vm.assume(drawn + premium <= MAX_SUPPLY_AMOUNT);
 
     // restore all drawn liquidity
     Utils.restoreBase({
-      hub: hub,
+      hub: hub1,
       assetId: assetId,
       caller: address(spoke3),
       drawnAmount: drawn,
@@ -128,13 +128,13 @@ contract HubRemoveTest is HubBase {
     });
 
     uint256 aliceBalanceBefore = underlying.balanceOf(alice);
-    uint256 spoke1Amount = hub.getSpokeAddedAmount(assetId, address(spoke1));
-    Utils.remove(hub, assetId, address(spoke1), spoke1Amount, alice);
+    uint256 spoke1Amount = hub1.getSpokeAddedAmount(assetId, address(spoke1));
+    Utils.remove(hub1, assetId, address(spoke1), spoke1Amount, alice);
 
-    uint256 spoke2Amount = hub.getSpokeAddedAmount(assetId, address(spoke2));
-    Utils.remove(hub, assetId, address(spoke2), spoke2Amount, alice);
+    uint256 spoke2Amount = hub1.getSpokeAddedAmount(assetId, address(spoke2));
+    Utils.remove(hub1, assetId, address(spoke2), spoke2Amount, alice);
 
-    AssetPosition memory assetData = getAssetPosition(hub, assetId);
+    AssetPosition memory assetData = getAssetPosition(hub1, assetId);
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
 
@@ -144,17 +144,17 @@ contract HubRemoveTest is HubBase {
     // only remaining added amount are fees
     assertEq(
       assetData.addedAmount,
-      hub.getSpokeAddedAmount(assetId, feeReceiver),
+      hub1.getSpokeAddedAmount(assetId, feeReceiver),
       'asset addedAmount after'
     );
     assertEq(
       assetData.addedShares,
-      hub.getSpokeAddedShares(assetId, feeReceiver),
+      hub1.getSpokeAddedShares(assetId, feeReceiver),
       'asset addedShares after'
     );
     assertEq(
       assetData.liquidity,
-      hub.getSpokeAddedAmount(assetId, feeReceiver),
+      hub1.getSpokeAddedAmount(assetId, feeReceiver),
       'asset liquidity after'
     );
     assertEq(
@@ -170,7 +170,7 @@ contract HubRemoveTest is HubBase {
     // underlying
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
-    assertEq(underlying.balanceOf(address(hub)), assetData.liquidity, 'hub token balance after');
+    assertEq(underlying.balanceOf(address(hub1)), assetData.liquidity, 'hub token balance after');
     assertApproxEqAbs(
       underlying.balanceOf(alice),
       aliceBalanceBefore + spoke1Amount + spoke2Amount,
@@ -181,7 +181,7 @@ contract HubRemoveTest is HubBase {
 
   function test_remove_all_with_interest() public {
     uint256 addAmount = 100e18;
-    uint256 initialAvailableLiquidity = hub.getAsset(daiAssetId).liquidity;
+    uint256 initialAvailableLiquidity = hub1.getAsset(daiAssetId).liquidity;
 
     // add and draw dai liquidity to accrue interest
     // add from spoke2, draw from spoke1
@@ -196,20 +196,20 @@ contract HubRemoveTest is HubBase {
       skipTime: 365 days
     });
 
-    (uint256 drawnRestored, uint256 premiumRestored) = hub.getSpokeOwed(
+    (uint256 drawnRestored, uint256 premiumRestored) = hub1.getSpokeOwed(
       daiAssetId,
       address(spoke1)
     );
     assertEq(premiumRestored, 0);
     Utils.restoreBase({
-      hub: hub,
+      hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
       drawnAmount: drawnRestored,
       restorer: alice
     });
 
-    AssetPosition memory asset = getAssetPosition(hub, daiAssetId);
+    AssetPosition memory asset = getAssetPosition(hub1, daiAssetId);
     assertEq(
       asset.liquidity,
       initialAvailableLiquidity + drawnRestored + premiumRestored,
@@ -217,17 +217,17 @@ contract HubRemoveTest is HubBase {
     );
 
     // reset available liquidity variable
-    initialAvailableLiquidity = hub.getAsset(daiAssetId).liquidity;
+    initialAvailableLiquidity = hub1.getAsset(daiAssetId).liquidity;
 
-    uint256 removeAmount = hub.getSpokeAddedAmount(daiAssetId, address(spoke2));
+    uint256 removeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke2));
     uint256 daiBalanceBefore = tokenList.dai.balanceOf(bob);
-    uint256 feeAmount = hub.getSpokeAddedAmount(
+    uint256 feeAmount = hub1.getSpokeAddedAmount(
       daiAssetId,
-      hub.getAssetConfig(daiAssetId).feeReceiver
+      hub1.getAssetConfig(daiAssetId).feeReceiver
     );
-    uint256 feeShares = hub.getSpokeAddedShares(
+    uint256 feeShares = hub1.getSpokeAddedShares(
       daiAssetId,
-      hub.getAssetConfig(daiAssetId).feeReceiver
+      hub1.getAssetConfig(daiAssetId).feeReceiver
     );
 
     // removable amount should exceed initial added amount due to accrued interest
@@ -236,11 +236,11 @@ contract HubRemoveTest is HubBase {
     // bob removes all possible liquidity
     // some has gone to feeReceiver
     vm.prank(address(spoke2));
-    hub.remove(daiAssetId, removeAmount, bob);
+    hub1.remove(daiAssetId, removeAmount, bob);
 
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
-    asset = getAssetPosition(hub, daiAssetId);
+    asset = getAssetPosition(hub1, daiAssetId);
 
     // hub
     assertApproxEqAbs(asset.addedAmount, feeAmount, 1, 'asset addedAmount');
@@ -292,58 +292,58 @@ contract HubRemoveTest is HubBase {
       skipTime: skipTime
     });
 
-    uint256 initialAvailableLiquidity = hub.getAsset(daiAssetId).liquidity;
+    uint256 initialAvailableLiquidity = hub1.getAsset(daiAssetId).liquidity;
 
     // bob adds more DAI
     uint256 add2Amount = 10e18;
 
     Utils.add({
-      hub: hub,
+      hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke2),
       amount: add2Amount,
       user: bob
     });
 
-    (uint256 drawnRestored, uint256 premiumRestored) = hub.getSpokeOwed(
+    (uint256 drawnRestored, uint256 premiumRestored) = hub1.getSpokeOwed(
       daiAssetId,
       address(spoke1)
     );
     assertEq(premiumRestored, 0);
     Utils.restoreBase({
-      hub: hub,
+      hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
       drawnAmount: drawnRestored,
       restorer: alice
     });
 
-    AssetPosition memory asset = getAssetPosition(hub, daiAssetId);
+    AssetPosition memory asset = getAssetPosition(hub1, daiAssetId);
     assertEq(
       asset.liquidity,
       initialAvailableLiquidity + drawnRestored + premiumRestored + add2Amount,
       'dai liquidity'
     );
 
-    uint256 removeAmount = hub.getSpokeAddedAmount(daiAssetId, address(spoke2));
+    uint256 removeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke2));
     uint256 daiBalanceBefore = tokenList.dai.balanceOf(bob);
-    uint256 feeAmount = hub.getSpokeAddedAmount(
+    uint256 feeAmount = hub1.getSpokeAddedAmount(
       daiAssetId,
-      hub.getAssetConfig(daiAssetId).feeReceiver
+      hub1.getAssetConfig(daiAssetId).feeReceiver
     );
-    uint256 feeShares = hub.getSpokeAddedShares(
+    uint256 feeShares = hub1.getSpokeAddedShares(
       daiAssetId,
-      hub.getAssetConfig(daiAssetId).feeReceiver
+      hub1.getAssetConfig(daiAssetId).feeReceiver
     );
 
     // bob removes all possible liquidity
     // some has gone to feeReceiver
     vm.prank(address(spoke2));
-    hub.remove(daiAssetId, removeAmount, bob);
+    hub1.remove(daiAssetId, removeAmount, bob);
 
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
-    asset = getAssetPosition(hub, daiAssetId);
+    asset = getAssetPosition(hub1, daiAssetId);
 
     // hub
     assertApproxEqAbs(asset.addedAmount, feeAmount, 1, 'hub addedAmount');
@@ -370,7 +370,7 @@ contract HubRemoveTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, 0));
     vm.prank(address(spoke1));
-    hub.remove(daiAssetId, amount, address(spoke1));
+    hub1.remove(daiAssetId, amount, address(spoke1));
   }
 
   function test_remove_revertsWith_AddedAmountExceeded() public {
@@ -379,7 +379,7 @@ contract HubRemoveTest is HubBase {
 
     // User add
     Utils.add({
-      hub: hub,
+      hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
       amount: amount,
@@ -388,48 +388,54 @@ contract HubRemoveTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, amount));
     vm.prank(address(spoke1));
-    hub.remove(daiAssetId, amount + 1, alice);
+    hub1.remove(daiAssetId, amount + 1, alice);
 
     // advance time, but no accrual
     skip(1e18);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, amount));
     vm.prank(address(spoke1));
-    hub.remove(daiAssetId, amount + 1, alice);
+    hub1.remove(daiAssetId, amount + 1, alice);
   }
 
   function test_remove_revertsWith_NotAvailableLiquidity() public {
     uint256 amount = 100e18;
     Utils.add({
-      hub: hub,
+      hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
       amount: amount,
       user: alice
     });
     // spoke1 draw all of dai reserve liquidity
-    Utils.draw({hub: hub, assetId: daiAssetId, caller: address(spoke1), amount: amount, to: alice});
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: amount,
+      to: alice
+    });
     vm.expectRevert(abi.encodeWithSelector(IHub.NotAvailableLiquidity.selector, 0));
     vm.prank(address(spoke1));
-    hub.remove(daiAssetId, amount, address(spoke1));
+    hub1.remove(daiAssetId, amount, address(spoke1));
   }
 
   function test_remove_revertsWith_InvalidRemoveAmount() public {
     vm.expectRevert(IHub.InvalidRemoveAmount.selector);
     vm.prank(address(spoke1));
-    hub.remove(daiAssetId, 0, alice);
+    hub1.remove(daiAssetId, 0, alice);
   }
 
   function test_remove_revertsWith_SpokeNotActive() public {
-    updateSpokeActive(hub, daiAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
-    hub.remove(daiAssetId, 100e18, alice);
+    hub1.remove(daiAssetId, 100e18, alice);
   }
 
   function test_remove_revertsWith_InvalidToAddress() public {
     vm.expectRevert(IHub.InvalidToAddress.selector);
     vm.prank(address(spoke1));
-    hub.remove(daiAssetId, 100e18, address(hub));
+    hub1.remove(daiAssetId, 100e18, address(hub1));
   }
 }

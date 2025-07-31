@@ -70,7 +70,7 @@ contract SpokePositionManagerTest is SpokeBase {
     DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
 
     vm.expectEmit(address(tokenList.usdx));
-    emit IERC20.Transfer(address(POSITION_MANAGER), address(hub), amount);
+    emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), amount);
     vm.expectEmit(address(spoke1));
     emit ISpoke.Supply(reserveId, POSITION_MANAGER, alice, amount);
     Utils.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
@@ -99,7 +99,7 @@ contract SpokePositionManagerTest is SpokeBase {
     amount /= 2;
 
     vm.expectEmit(address(tokenList.usdx));
-    emit IERC20.Transfer(address(hub), address(POSITION_MANAGER), amount);
+    emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
     emit ISpoke.Withdraw(reserveId, POSITION_MANAGER, alice, amount);
     Utils.withdraw(spoke1, reserveId, POSITION_MANAGER, amount, alice);
@@ -127,7 +127,7 @@ contract SpokePositionManagerTest is SpokeBase {
     DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
 
     vm.expectEmit(address(tokenList.usdx));
-    emit IERC20.Transfer(address(hub), address(POSITION_MANAGER), amount);
+    emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
     emit ISpoke.Borrow(reserveId, POSITION_MANAGER, alice, amount);
     Utils.borrow(spoke1, reserveId, POSITION_MANAGER, amount, alice);
@@ -159,7 +159,7 @@ contract SpokePositionManagerTest is SpokeBase {
     uint256 repayAmount = amount / 3;
 
     vm.expectEmit(address(tokenList.usdx));
-    emit IERC20.Transfer(address(POSITION_MANAGER), address(hub), repayAmount);
+    emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), repayAmount);
     vm.expectEmit(address(spoke1));
     emit ISpoke.Repay(reserveId, POSITION_MANAGER, alice, repayAmount);
     Utils.repay(spoke1, reserveId, POSITION_MANAGER, repayAmount, alice);
@@ -302,6 +302,6 @@ contract SpokePositionManagerTest is SpokeBase {
 
   function _resetTokenAllowance(address who) internal {
     vm.prank(who);
-    tokenList.usdx.approve(address(hub), 0);
+    tokenList.usdx.approve(address(hub1), 0);
   }
 }

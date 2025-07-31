@@ -126,15 +126,15 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       skipTime: skipTime
     });
 
-    (uint256 drawnDebt, ) = hub.getAssetOwed(daiAssetId);
+    (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
 
     // ensure inflated exch rate
-    vm.assume(hub.convertToDrawnAssets(daiAssetId, 1e18) > 1e18);
+    vm.assume(hub1.convertToDrawnAssets(daiAssetId, 1e18) > 1e18);
     // ensure that shares conversion of smaller amounts individually are greater than shares of total sum
     vm.assume(
-      amount1.toSharesUp(drawnDebt, hub.getAsset(daiAssetId).drawnShares) +
-        amount2.toSharesUp(drawnDebt, hub.getAsset(daiAssetId).drawnShares) >
-        (amount1 + amount2).toSharesUp(drawnDebt, hub.getAsset(daiAssetId).drawnShares)
+      amount1.toSharesUp(drawnDebt, hub1.getAsset(daiAssetId).drawnShares) +
+        amount2.toSharesUp(drawnDebt, hub1.getAsset(daiAssetId).drawnShares) >
+        (amount1 + amount2).toSharesUp(drawnDebt, hub1.getAsset(daiAssetId).drawnShares)
     );
 
     uint256 carolDaiBefore = tokenList.dai.balanceOf(carol);
@@ -255,12 +255,12 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       skipTime: skipTime
     });
 
-    (uint256 drawnDebt, ) = hub.getAssetOwed(daiAssetId);
+    (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
 
     // drawn shares are rounded up
     uint256 expectedDebtShares = amount1.toSharesUp(
       drawnDebt,
-      hub.getAsset(daiAssetId).drawnShares
+      hub1.getAsset(daiAssetId).drawnShares
     );
 
     vm.prank(bob);

@@ -10,10 +10,10 @@ contract SpokeOperations_Gas_Tests is Base {
     initEnvironment();
 
     vm.startPrank(address(spoke2));
-    hub.add(daiAssetId, 1000e18, bob);
-    hub.add(wethAssetId, 1000e18, bob);
-    hub.add(usdxAssetId, 1000e6, bob);
-    hub.add(wbtcAssetId, 1000e8, bob);
+    hub1.add(daiAssetId, 1000e18, bob);
+    hub1.add(wethAssetId, 1000e18, bob);
+    hub1.add(usdxAssetId, 1000e6, bob);
+    hub1.add(wbtcAssetId, 1000e8, bob);
     vm.stopPrank();
   }
 

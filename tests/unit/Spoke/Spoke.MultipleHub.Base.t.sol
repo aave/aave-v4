@@ -36,11 +36,11 @@ contract SpokeMultipleHubBase is SpokeBase {
     vm.startPrank(ADMIN);
     accessManager = new AccessManager(ADMIN);
     // Canonical hub and spoke
-    hub = new Hub(address(accessManager));
+    hub1 = new Hub(address(accessManager));
     spoke1 = new Spoke(address(accessManager));
     oracle1 = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
-    treasurySpoke = new TreasurySpoke(ADMIN, address(hub));
-    irStrategy = new AssetInterestRateStrategy(address(hub));
+    treasurySpoke = new TreasurySpoke(ADMIN, address(hub1));
+    irStrategy = new AssetInterestRateStrategy(address(hub1));
 
     // New hub and spoke
     newHub = new Hub(address(accessManager));
@@ -88,7 +88,7 @@ contract SpokeMultipleHubBase is SpokeBase {
     hubSelectors[2] = IHub.addSpoke.selector;
     hubSelectors[3] = IHub.updateSpokeConfig.selector;
 
-    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(address(hub1), hubSelectors, Roles.HUB_ADMIN_ROLE);
     accessManager.setTargetFunctionRole(address(newHub), hubSelectors, Roles.HUB_ADMIN_ROLE);
     vm.stopPrank();
   }

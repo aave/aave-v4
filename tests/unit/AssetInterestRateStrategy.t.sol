@@ -13,7 +13,7 @@ contract AssetInterestRateStrategyTest is Base {
   bytes public encodedRateData;
 
   function setUp() public override {
-    rateStrategy = new AssetInterestRateStrategy(address(hub));
+    rateStrategy = new AssetInterestRateStrategy(address(hub1));
 
     rateData = IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 80_00, // 80.00%
@@ -23,7 +23,7 @@ contract AssetInterestRateStrategyTest is Base {
     });
     encodedRateData = abi.encode(rateData);
 
-    vm.prank(address(hub));
+    vm.prank(address(hub1));
     rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
@@ -96,7 +96,7 @@ contract AssetInterestRateStrategyTest is Base {
       rateData.optimalUsageRatio = invalidOptimalUsageRatios[i];
       encodedRateData = abi.encode(rateData);
       vm.expectRevert(IAssetInterestRateStrategy.InvalidOptimalUsageRatio.selector);
-      vm.prank(address(hub));
+      vm.prank(address(hub1));
       rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
     }
   }
@@ -108,7 +108,7 @@ contract AssetInterestRateStrategyTest is Base {
     );
     encodedRateData = abi.encode(rateData);
     vm.expectRevert(IAssetInterestRateStrategy.Slope2MustBeGteSlope1.selector);
-    vm.prank(address(hub));
+    vm.prank(address(hub1));
     rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
@@ -119,14 +119,14 @@ contract AssetInterestRateStrategyTest is Base {
       1;
     encodedRateData = abi.encode(rateData);
     vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxRate.selector);
-    vm.prank(address(hub));
+    vm.prank(address(hub1));
     rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
   function test_setInterestRateData_revertsWith_InvalidRateData() public {
     encodedRateData = abi.encode('invalid');
     vm.expectRevert();
-    vm.prank(address(hub));
+    vm.prank(address(hub1));
     rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
@@ -148,7 +148,7 @@ contract AssetInterestRateStrategyTest is Base {
       uint256(rateData.variableRateSlope2)
     );
 
-    vm.prank(address(hub));
+    vm.prank(address(hub1));
     rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
 
     test_getInterestRateData();

@@ -42,11 +42,11 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
   function setUp() public override {
     super.setUp();
-    updateLiquidityFee(hub, daiAssetId, 0);
-    updateLiquidityFee(hub, wethAssetId, 0);
-    updateLiquidityFee(hub, usdxAssetId, 0);
-    updateLiquidityFee(hub, wbtcAssetId, 0);
-    updateLiquidityFee(hub, dai2AssetId, 0);
+    updateLiquidityFee(hub1, daiAssetId, 0);
+    updateLiquidityFee(hub1, wethAssetId, 0);
+    updateLiquidityFee(hub1, usdxAssetId, 0);
+    updateLiquidityFee(hub1, wbtcAssetId, 0);
+    updateLiquidityFee(hub1, dai2AssetId, 0);
   }
 
   /// Second accrual after an action - which should update the user rp
@@ -139,10 +139,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
     // Store base borrow rates
     Rates memory rates;
-    rates.daiBaseBorrowRate = hub.getAssetDrawnRate(daiAssetId);
-    rates.wethBaseBorrowRate = hub.getAssetDrawnRate(wethAssetId);
-    rates.usdxBaseBorrowRate = hub.getAssetDrawnRate(usdxAssetId);
-    rates.wbtcBaseBorrowRate = hub.getAssetDrawnRate(wbtcAssetId);
+    rates.daiBaseBorrowRate = hub1.getAssetDrawnRate(daiAssetId);
+    rates.wethBaseBorrowRate = hub1.getAssetDrawnRate(wethAssetId);
+    rates.usdxBaseBorrowRate = hub1.getAssetDrawnRate(usdxAssetId);
+    rates.wbtcBaseBorrowRate = hub1.getAssetDrawnRate(wbtcAssetId);
 
     // Check bob's base debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     uint256 drawnDebt = _calculateExpectedBaseDebt(
@@ -430,11 +430,11 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           spoke2,
           _daiReserveId(spoke2),
           bob,
-          hub.convertToDrawnAssets(daiAssetId, 1),
+          hub1.convertToDrawnAssets(daiAssetId, 1),
           bob
         );
       }
-      // Workaround for precision loss with RP calc: https://github.com/aave/aave-v4/issues/421
+      // Workaround for precision loss with RP calc: https://github1.com/aave/aave-v4/issues/421
       // Construct mock call so we can see the same user rp calc as within the borrow function
       vm.mockCall(
         address(spoke2),
@@ -454,10 +454,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       (amounts.wbtcBorrowAmount, ) = spoke2.getUserDebt(_wbtcReserveId(spoke2), bob);
 
       // Refresh base borrow rates
-      rates.daiBaseBorrowRate = hub.getAssetDrawnRate(daiAssetId);
-      rates.wethBaseBorrowRate = hub.getAssetDrawnRate(wethAssetId);
-      rates.usdxBaseBorrowRate = hub.getAssetDrawnRate(usdxAssetId);
-      rates.wbtcBaseBorrowRate = hub.getAssetDrawnRate(wbtcAssetId);
+      rates.daiBaseBorrowRate = hub1.getAssetDrawnRate(daiAssetId);
+      rates.wethBaseBorrowRate = hub1.getAssetDrawnRate(wethAssetId);
+      rates.usdxBaseBorrowRate = hub1.getAssetDrawnRate(usdxAssetId);
+      rates.wbtcBaseBorrowRate = hub1.getAssetDrawnRate(wbtcAssetId);
 
       BaseShares memory baseShares;
 
@@ -512,10 +512,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
       // Store index before accrual, and use this for calculating expected base debt
       Indices memory indices;
-      indices.daiIndex = hub.getAssetDrawnIndex(daiAssetId);
-      indices.wethIndex = hub.getAssetDrawnIndex(wethAssetId);
-      indices.usdxIndex = hub.getAssetDrawnIndex(usdxAssetId);
-      indices.wbtcIndex = hub.getAssetDrawnIndex(wbtcAssetId);
+      indices.daiIndex = hub1.getAssetDrawnIndex(daiAssetId);
+      indices.wethIndex = hub1.getAssetDrawnIndex(wethAssetId);
+      indices.usdxIndex = hub1.getAssetDrawnIndex(usdxAssetId);
+      indices.wbtcIndex = hub1.getAssetDrawnIndex(wbtcAssetId);
 
       // Store timestamp before next skip time
       startTime = uint40(vm.getBlockTimestamp());

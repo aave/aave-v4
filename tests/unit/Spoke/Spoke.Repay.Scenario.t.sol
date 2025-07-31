@@ -971,7 +971,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     assertEq(bobDaiBefore.totalDebt, action1.borrowAmount, 'bob dai debt before');
     assertEq(
       spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob),
-      hub.convertToAddedShares(wethAssetId, action1.supplyAmount)
+      hub1.convertToAddedShares(wethAssetId, action1.supplyAmount)
     );
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
     assertEq(bobDaiBefore.premiumDebt, 0, 'bob dai premium debt before');
@@ -1001,7 +1001,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         _daiReserveId(spoke1),
         bob,
         bob,
-        hub.convertToDrawnShares(daiAssetId, baseRestored)
+        hub1.convertToDrawnShares(daiAssetId, baseRestored)
       );
     }
 
@@ -1024,7 +1024,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
     assertEq(
       spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob),
-      hub.convertToAddedShares(wethAssetId, action1.supplyAmount)
+      hub1.convertToAddedShares(wethAssetId, action1.supplyAmount)
     );
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
@@ -1066,7 +1066,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     assertEq(bobDaiDataBefore.suppliedShares, 0);
     assertEq(
       spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob),
-      hub.convertToAddedShares(wethAssetId, action1.supplyAmount + action2.supplyAmount)
+      hub1.convertToAddedShares(wethAssetId, action1.supplyAmount + action2.supplyAmount)
     );
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
@@ -1098,7 +1098,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         _daiReserveId(spoke1),
         bob,
         bob,
-        hub.convertToDrawnShares(daiAssetId, baseRestored)
+        hub1.convertToDrawnShares(daiAssetId, baseRestored)
       );
     }
 
@@ -1121,7 +1121,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
     assertEq(
       spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob),
-      hub.convertToAddedShares(wethAssetId, action1.supplyAmount + action2.supplyAmount)
+      hub1.convertToAddedShares(wethAssetId, action1.supplyAmount + action2.supplyAmount)
     );
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
@@ -1192,7 +1192,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub.convertToDrawnShares(daiAssetId, baseRestored)
+      hub1.convertToDrawnShares(daiAssetId, baseRestored)
     );
 
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, partialRepayAmount, bob);
@@ -1228,7 +1228,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // verify LH asset debt is decreased by partial repayment
     assertApproxEqAbs(
-      hub.getAssetTotalOwed(_daiReserveId(spoke1)),
+      hub1.getAssetTotalOwed(_daiReserveId(spoke1)),
       fullDebt - baseRestored - premiumRestored,
       2
     );
@@ -1247,7 +1247,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub.convertToDrawnShares(daiAssetId, baseRestored)
+      hub1.convertToDrawnShares(daiAssetId, baseRestored)
     );
 
     // Bob repays using the max value to signal full repayment
@@ -1278,7 +1278,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     assertEq(premiumDaiDebt, 0);
 
     // verify LH asset debt is 0
-    assertEq(hub.getAssetTotalOwed(_daiReserveId(spoke1)), 0);
+    assertEq(hub1.getAssetTotalOwed(_daiReserveId(spoke1)), 0);
   }
 
   /// User supplies appropriate collateral, then borrows, immediately repays, check delta on share amounts
@@ -1312,18 +1312,18 @@ contract SpokeRepayScenarioTest is SpokeBase {
     supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
     deal(reserve.underlying, caller, supplyAmount);
     vm.prank(caller);
-    IERC20(reserve.underlying).approve(address(hub), supplyAmount);
+    IERC20(reserve.underlying).approve(address(hub1), supplyAmount);
     Utils.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
 
     // Borrow
-    uint256 shares1 = hub.convertToDrawnShares(reserve.assetId, assets);
+    uint256 shares1 = hub1.convertToDrawnShares(reserve.assetId, assets);
     vm.startPrank(caller);
     spoke1.borrow(reserveId, assets, caller);
 
     // Repay
-    uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
+    uint256 shares2 = hub1.convertToDrawnShares(reserve.assetId, assets);
     deal(reserve.underlying, caller, assets);
-    IERC20(reserve.underlying).approve(address(hub), assets);
+    IERC20(reserve.underlying).approve(address(hub1), assets);
     spoke1.repay(reserveId, assets, caller);
     vm.stopPrank();
 
@@ -1365,19 +1365,19 @@ contract SpokeRepayScenarioTest is SpokeBase {
     supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
     deal(reserve.underlying, caller, supplyAmount);
     vm.prank(caller);
-    IERC20(reserve.underlying).approve(address(hub), supplyAmount);
+    IERC20(reserve.underlying).approve(address(hub1), supplyAmount);
     Utils.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
     Utils.borrow(spoke1, reserveId, caller, callerStartingDebt, caller);
 
     // Repay
-    uint256 shares1 = hub.convertToDrawnShares(reserve.assetId, assets);
+    uint256 shares1 = hub1.convertToDrawnShares(reserve.assetId, assets);
     deal(reserve.underlying, caller, assets);
     vm.startPrank(caller);
-    IERC20(reserve.underlying).approve(address(hub), assets);
+    IERC20(reserve.underlying).approve(address(hub1), assets);
     spoke1.repay(reserveId, assets, caller);
 
     // Borrow
-    uint256 shares2 = hub.convertToDrawnShares(reserve.assetId, assets);
+    uint256 shares2 = hub1.convertToDrawnShares(reserve.assetId, assets);
     spoke1.borrow(reserveId, assets, caller);
     vm.stopPrank();
 

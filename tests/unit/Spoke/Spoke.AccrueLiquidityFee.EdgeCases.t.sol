@@ -30,7 +30,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
-    updateLiquidityFee(hub, assetId, MAX_LIQUIDITY_FEE);
+    updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
 
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     _mockInterestRateBps(rate);
@@ -50,14 +50,14 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       'alice does not earn anything'
     );
     assertApproxEqAbs(
-      hub.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
       spoke1.getUserTotalDebt(reserveId, alice) - borrowAmount,
       3,
       'fees == total user accrued'
     );
     assertApproxEqAbs(
-      hub.getSpokeAddedAmount(assetId, address(treasurySpoke)),
-      hub.getSpokeTotalOwed(assetId, address(spoke1)) - borrowAmount,
+      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub1.getSpokeTotalOwed(assetId, address(spoke1)) - borrowAmount,
       3,
       'fees == total spoke accrued'
     );
@@ -78,7 +78,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
-    updateLiquidityFee(hub, spoke1.getReserve(reserveId).assetId, MAX_LIQUIDITY_FEE);
+    updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, MAX_LIQUIDITY_FEE);
 
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     uint256 supplyAmount2 = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount2);
@@ -105,7 +105,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       'bob does not earn anything'
     );
 
-    uint256 totalAccruedToTreasury = hub.getSpokeAddedAmount(assetId, address(treasurySpoke));
+    uint256 totalAccruedToTreasury = hub1.getSpokeAddedAmount(assetId, address(treasurySpoke));
     assertLe(
       totalAccruedToTreasury,
       spoke1.getUserTotalDebt(reserveId, alice) -
@@ -116,7 +116,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     );
     assertApproxEqAbs(
       totalAccruedToTreasury,
-      hub.getSpokeTotalOwed(assetId, address(spoke1)) - borrowAmount - borrowAmount2,
+      hub1.getSpokeTotalOwed(assetId, address(spoke1)) - borrowAmount - borrowAmount2,
       3,
       'fees == total spoke accrued'
     );
@@ -125,7 +125,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
   function test_accrueLiquidityFee_maxLiquidityFee_multi_user() public {
     uint256 reserveId = _randomReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    updateLiquidityFee(hub, assetId, MAX_LIQUIDITY_FEE);
+    updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
 
     uint256 totalBorrowed;
     uint256 count = vm.randomUint(10, 1000);
@@ -147,22 +147,22 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       totalRepaid += debt;
     }
 
-    assertEq(hub.getSpokeTotalOwed(assetId, address(spoke1)), 0, 'all debt should be repaid');
-    uint256 feesAccruedToTreasury = hub.getSpokeAddedAmount(assetId, address(treasurySpoke));
+    assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke1)), 0, 'all debt should be repaid');
+    uint256 feesAccruedToTreasury = hub1.getSpokeAddedAmount(assetId, address(treasurySpoke));
     assertLe(feesAccruedToTreasury, totalRepaid - totalBorrowed, 'fees <= accrued');
     assertApproxEqRel(feesAccruedToTreasury, totalRepaid - totalBorrowed, 0.0000001e18); // 0.00001%
   }
 
   function test_accrueLiquidityFee_maxLiquidityFee_multi_spoke() public {
     uint256 assetId = daiAssetId; // on all spokes
-    uint256 spokeCount = hub.getSpokeCount(assetId);
-    updateLiquidityFee(hub, assetId, MAX_LIQUIDITY_FEE);
+    uint256 spokeCount = hub1.getSpokeCount(assetId);
+    updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
     // build spoke list excluding treasury spoke
     ISpoke[] memory spokes = new ISpoke[](spokeCount - 1);
     uint256 spokeIndex;
     for (uint256 i; i < spokeCount; ++i) {
-      if (hub.getSpokeAddress(assetId, i) != address(treasurySpoke)) {
-        spokes[spokeIndex++] = ISpoke(hub.getSpokeAddress(assetId, i));
+      if (hub1.getSpokeAddress(assetId, i) != address(treasurySpoke)) {
+        spokes[spokeIndex++] = ISpoke(hub1.getSpokeAddress(assetId, i));
       }
     }
 
@@ -190,7 +190,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       totalRepaid += debt;
     }
 
-    uint256 feesAccruedToTreasury = hub.getSpokeAddedAmount(assetId, address(treasurySpoke));
+    uint256 feesAccruedToTreasury = hub1.getSpokeAddedAmount(assetId, address(treasurySpoke));
     assertLe(feesAccruedToTreasury, totalRepaid - totalBorrowed, 'fees <= accrued');
     assertApproxEqRel(feesAccruedToTreasury, totalRepaid - totalBorrowed, 0.0000001e18); // 0.00001%
   }

@@ -32,42 +32,42 @@ contract HubAccessTest is HubBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
+    hub1.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
 
     // Hub Admin can add assets to the hub
     vm.prank(HUB_ADMIN);
-    hub.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
-    uint256 assetAId = hub.getAssetCount() - 1; // Asset A Id
+    hub1.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
+    uint256 assetAId = hub1.getAssetCount() - 1; // Asset A Id
 
     // Only Hub Admin can update asset config
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.updateAssetConfig(daiAssetId, assetConfig);
+    hub1.updateAssetConfig(daiAssetId, assetConfig);
 
     // Hub Admin can update asset config
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(daiAssetId, assetConfig);
+    hub1.updateAssetConfig(daiAssetId, assetConfig);
 
     // Only Hub Admin can add spoke
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.addSpoke(assetAId, address(spoke1), spokeConfig);
+    hub1.addSpoke(assetAId, address(spoke1), spokeConfig);
 
     // Hub Admin can add spoke
     vm.prank(HUB_ADMIN);
-    hub.addSpoke(assetAId, address(spoke1), spokeConfig);
+    hub1.addSpoke(assetAId, address(spoke1), spokeConfig);
 
     // Only Hub Admin can update spoke config
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
+    hub1.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
 
     // Hub Admin can update spoke config
     vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
+    hub1.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
   }
 
   function test_setInterestRateData_access() public {
@@ -85,18 +85,18 @@ contract HubAccessTest is HubBase {
     irStrategy.setInterestRateData(daiAssetId, encodedIrData);
 
     // Hub can set interest rates
-    vm.prank(address(hub));
+    vm.prank(address(hub1));
     irStrategy.setInterestRateData(daiAssetId, encodedIrData);
 
     // Only Hub Admin can call function on hub to set interest rates
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
 
     // Hub Admin can call function on hub to set interest rates
     vm.prank(HUB_ADMIN);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
   }
 
   /// @dev Test showcasing ability to change role responsibility for a function selector.
@@ -114,22 +114,22 @@ contract HubAccessTest is HubBase {
     bytes4[] memory hubSelectors = new bytes4[](1);
     hubSelectors[0] = IHub.setInterestRateData.selector;
     vm.prank(ADMIN);
-    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.DEFAULT_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(address(hub1), hubSelectors, Roles.DEFAULT_ADMIN_ROLE);
 
     // The old role (HUB_ADMIN) should no longer have access
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, HUB_ADMIN)
     );
     vm.prank(HUB_ADMIN);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
 
     // The new role (DEFAULT_ADMIN_ROLE) should have access
     vm.prank(ADMIN);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
 
     // HUB_ADMIN can still access the other hub functions for which it has permissions
     vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(
+    hub1.updateSpokeConfig(
       daiAssetId,
       address(spoke1),
       DataTypes.SpokeConfig({active: true, addCap: 1000e18, drawCap: 1000e18})
@@ -156,33 +156,33 @@ contract HubAccessTest is HubBase {
     vm.stopPrank();
 
     vm.prank(alice);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(bob);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(carol);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
 
     // Now, we change the role responsible for setting interest rate data to SET_INTEREST_RATE role.
     uint64 SET_INTEREST_RATE_ROLE = 4;
     bytes4[] memory hubSelectors = new bytes4[](1);
     hubSelectors[0] = IHub.setInterestRateData.selector;
     vm.prank(ADMIN);
-    accessManager.setTargetFunctionRole(address(hub), hubSelectors, SET_INTEREST_RATE_ROLE);
+    accessManager.setTargetFunctionRole(address(hub1), hubSelectors, SET_INTEREST_RATE_ROLE);
 
     // Alice, Bob, and Carol should no longer have access to set interest rate data.
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, bob));
     vm.prank(bob);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, carol)
     );
     vm.prank(carol);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
 
     // Now, we grant SET_INTEREST_RATE role to Alice, Bob, and Carol with 0 delay
     vm.startPrank(ADMIN);
@@ -193,14 +193,14 @@ contract HubAccessTest is HubBase {
 
     // Alice, Bob, and Carol should now be able to set interest rate data.
     vm.prank(alice);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(bob);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(carol);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
 
     // Alice, Bob, and Carol currently have both HUB_ADMIN and SET_INTEREST_RATE roles.
-    IAccessManager accessManager = IAccessManager(hub.authority());
+    IAccessManager accessManager = IAccessManager(hub1.authority());
     assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, alice));
     assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, bob));
     assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, carol));
@@ -223,19 +223,19 @@ contract HubAccessTest is HubBase {
 
     // Can still call setInterestRateData since they have SET_INTEREST_RATE role.
     vm.prank(alice);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(bob);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(carol);
-    hub.setInterestRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
   }
 
   /// @dev Test showcasing authority contract can be accessed via hub contract.
   function test_hub_access_manager_exposure() public {
-    assertEq(address(hub.authority()), address(accessManager));
+    assertEq(address(hub1.authority()), address(accessManager));
   }
 
-  /// @dev Test showcasing ability to change the authority contract governing access control on the hub.
+  /// @dev Test showcasing ability to change the authority contract governing access control on the hub1.
   function test_change_authority() public {
     DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
       feeReceiver: address(treasurySpoke),
@@ -248,7 +248,7 @@ contract HubAccessTest is HubBase {
       drawCap: 1000e18
     });
 
-    IAccessManager authority = IAccessManager(hub.authority());
+    IAccessManager authority = IAccessManager(hub1.authority());
     address NEW_ADMIN = makeAddr('NEW_ADMIN');
     IAccessManager newAuthority = new AccessManager(NEW_ADMIN);
 
@@ -257,7 +257,7 @@ contract HubAccessTest is HubBase {
     newAuthority.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
     bytes4[] memory selectors = new bytes4[](1);
     selectors[0] = IHub.updateAssetConfig.selector;
-    newAuthority.setTargetFunctionRole(address(hub), selectors, Roles.HUB_ADMIN_ROLE);
+    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_ADMIN_ROLE);
     vm.stopPrank();
 
     // Only Admin can change the authority contract
@@ -268,32 +268,32 @@ contract HubAccessTest is HubBase {
         Roles.DEFAULT_ADMIN_ROLE
       )
     );
-    authority.updateAuthority(address(hub), address(newAuthority));
+    authority.updateAuthority(address(hub1), address(newAuthority));
 
     // Admin can change the authority contract
     vm.prank(ADMIN);
-    authority.updateAuthority(address(hub), address(newAuthority));
+    authority.updateAuthority(address(hub1), address(newAuthority));
 
-    assertEq(hub.authority(), address(newAuthority), 'Authority not changed');
+    assertEq(hub1.authority(), address(newAuthority), 'Authority not changed');
 
     // Hub admin can call update asset config on the hub after authority change
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(daiAssetId, assetConfig);
+    hub1.updateAssetConfig(daiAssetId, assetConfig);
 
     // Hub admin cannot call update spoke config on the hub after authority change
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, HUB_ADMIN)
     );
     vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(daiAssetId, address(spoke1), spokeConfig);
+    hub1.updateSpokeConfig(daiAssetId, address(spoke1), spokeConfig);
 
     // Now we also give the hub admin role capability to update spoke config on new authority
     selectors[0] = IHub.updateSpokeConfig.selector;
     vm.prank(NEW_ADMIN);
-    newAuthority.setTargetFunctionRole(address(hub), selectors, Roles.HUB_ADMIN_ROLE);
+    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_ADMIN_ROLE);
 
     // Hub admin can now call update spoke config on the hub after authority change
     vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(daiAssetId, address(spoke1), spokeConfig);
+    hub1.updateSpokeConfig(daiAssetId, address(spoke1), spokeConfig);
   }
 }

@@ -37,7 +37,7 @@ contract SpokeWithdrawTest is SpokeBase {
     TestUserData[2] memory bobData;
     TokenData[2] memory tokenData;
 
-    uint256 expectedSupplyShares = hub.convertToAddedShares(daiAssetId, amount);
+    uint256 expectedSupplyShares = hub1.convertToAddedShares(daiAssetId, amount);
 
     // Bob supplies DAI
     Utils.supply({
@@ -199,7 +199,7 @@ contract SpokeWithdrawTest is SpokeBase {
     skip(365 days);
 
     // Ensure interest has accrued
-    vm.assume(hub.getAssetAddedAmount(daiAssetId) > supplyAmount);
+    vm.assume(hub1.getAssetAddedAmount(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -264,7 +264,7 @@ contract SpokeWithdrawTest is SpokeBase {
     skip(elapsed);
 
     // Ensure interest has accrued
-    vm.assume(hub.getAssetAddedAmount(daiAssetId) > supplyAmount);
+    vm.assume(hub1.getAssetAddedAmount(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -324,7 +324,7 @@ contract SpokeWithdrawTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    state.withdrawAmount = hub.getSpokeAddedAmount(daiAssetId, address(spoke1));
+    state.withdrawAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
 
     assertGt(
       spoke1.getUserSuppliedAmount(state.reserveId, bob),
@@ -333,7 +333,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     stage = 1;
-    state.withdrawnShares = hub.previewRemoveByAssets(daiAssetId, state.withdrawAmount);
+    state.withdrawnShares = hub1.previewRemoveByAssets(daiAssetId, state.withdrawAmount);
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
@@ -468,7 +468,7 @@ contract SpokeWithdrawTest is SpokeBase {
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
-    state.withdrawAmount = hub.getSpokeAddedAmount(state.reserveId, address(spoke1));
+    state.withdrawAmount = hub1.getSpokeAddedAmount(state.reserveId, address(spoke1));
 
     // bob's supplied amount has grown due to index increase
     assertGt(
@@ -482,7 +482,7 @@ contract SpokeWithdrawTest is SpokeBase {
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
-    state.withdrawnShares = hub.previewRemoveByAssets(assetId, state.withdrawAmount);
+    state.withdrawnShares = hub1.previewRemoveByAssets(assetId, state.withdrawAmount);
     uint256 supplyExRateBefore = getSupplyExRate(assetId);
 
     // bob withdraws all
@@ -567,7 +567,7 @@ contract SpokeWithdrawTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    state.withdrawAmount = hub.getSpokeAddedAmount(daiAssetId, address(spoke1)); // withdraw all liquidity
+    state.withdrawAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1)); // withdraw all liquidity
 
     assertGt(
       spoke1.getUserSuppliedAmount(state.reserveId, bob),
@@ -576,7 +576,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     stage = 1;
-    state.withdrawnShares = hub.previewRemoveByAssets(daiAssetId, state.withdrawAmount);
+    state.withdrawnShares = hub1.previewRemoveByAssets(daiAssetId, state.withdrawAmount);
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
@@ -704,7 +704,7 @@ contract SpokeWithdrawTest is SpokeBase {
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
-    state.withdrawAmount = hub.getSpokeAddedAmount(state.reserveId, address(spoke1));
+    state.withdrawAmount = hub1.getSpokeAddedAmount(state.reserveId, address(spoke1));
 
     (, state.alicePremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
 
@@ -720,7 +720,7 @@ contract SpokeWithdrawTest is SpokeBase {
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
-    state.withdrawnShares = hub.previewRemoveByAssets(assetId, state.withdrawAmount);
+    state.withdrawnShares = hub1.previewRemoveByAssets(assetId, state.withdrawAmount);
     uint256 supplyExRateBefore = getSupplyExRate(assetId);
 
     // bob withdraws all
@@ -789,25 +789,25 @@ contract SpokeWithdrawTest is SpokeBase {
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount / 2, bob); // introduce debt
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice); // alice supply
 
-    uint256 supplyExchangeRatio = hub.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    uint256 debtExchangeRatio = hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 supplyExchangeRatio = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 debtExchangeRatio = hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
 
     Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, amount / 2, alice);
 
-    assertGe(hub.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGe(hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGe(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGe(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
     skip(delay); // with interest accrual, both ex rates should strictly
 
-    assertGt(hub.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGt(hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGt(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGt(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
-    supplyExchangeRatio = hub.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    debtExchangeRatio = hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    supplyExchangeRatio = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    debtExchangeRatio = hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
 
     Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, amount / 2, alice);
 
-    assertGe(hub.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGe(hub.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGe(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGe(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
   }
 }

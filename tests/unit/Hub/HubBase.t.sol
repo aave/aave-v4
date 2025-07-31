@@ -49,10 +49,10 @@ contract HubBase is Base {
   }
 
   function _updateAddCap(uint256 assetId, address spoke, uint256 newAddCap) internal {
-    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spoke);
     spokeConfig.addCap = newAddCap;
     vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+    hub1.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
 
   /// @dev mocks rate, addSpoke (addUser) adds asset, drawSpoke (drawUser) draws asset, skips time
@@ -67,7 +67,7 @@ contract HubBase is Base {
     uint256 skipTime
   ) internal returns (uint256 addedShares, uint256 drawnShares) {
     addedShares = Utils.add({
-      hub: hub,
+      hub: hub1,
       assetId: assetId,
       caller: addSpoke,
       amount: addAmount,
@@ -75,7 +75,7 @@ contract HubBase is Base {
     });
 
     drawnShares = Utils.draw({
-      hub: hub,
+      hub: hub1,
       assetId: assetId,
       to: drawUser,
       caller: drawSpoke,
@@ -89,13 +89,13 @@ contract HubBase is Base {
     revert('implement me');
 
     // DrawnData memory drawnData;
-    // drawnData.asset.cumulativeDebt = hub.getAssetCumulativeDebt(assetId);
-    // (drawnData.asset.drawn, drawnData.asset.outstandingPremium) = hub.getAssetOwed(assetId);
+    // drawnData.asset.cumulativeDebt = hub1.getAssetCumulativeDebt(assetId);
+    // (drawnData.asset.drawn, drawnData.asset.outstandingPremium) = hub1.getAssetOwed(assetId);
 
     // address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
     // for (uint256 i = 0; i < 3; i++) {
-    //   drawnData.spoke[i].cumulativeDebt = hub.getSpokeCumulativeDebt(assetId, address(spokes[i]));
-    //   (drawnData.spoke[i].drawn, drawnData.spoke[i].outstandingPremium) = hub.getSpokeOwed(
+    //   drawnData.spoke[i].cumulativeDebt = hub1.getSpokeCumulativeDebt(assetId, address(spokes[i]));
+    //   (drawnData.spoke[i].drawn, drawnData.spoke[i].outstandingPremium) = hub1.getSpokeOwed(
     //     assetId,
     //     spokes[i]
     //   );
@@ -112,7 +112,7 @@ contract HubBase is Base {
     int256 premiumOffsetDelta = 1000;
 
     vm.prank(HUB_ADMIN);
-    hub.addSpoke(
+    hub1.addSpoke(
       assetId,
       tempSpoke,
       DataTypes.SpokeConfig({active: true, addCap: type(uint256).max, drawCap: type(uint256).max})
@@ -121,24 +121,24 @@ contract HubBase is Base {
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(tempSpoke);
-      hub.refreshPremium(
+      hub1.refreshPremium(
         assetId,
         DataTypes.PremiumDelta(premiumSharesDelta, premiumOffsetDelta, 0)
       );
     }
 
-    Utils.draw(hub, assetId, tempSpoke, tempUser, amount);
+    Utils.draw(hub1, assetId, tempSpoke, tempUser, amount);
 
     skip(365 days);
 
-    (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
+    (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
     assertGt(drawn, 0); // non-zero premium debt
 
     if (withPremium) {
       assertGt(premium, 0); // non-zero premium debt
       // restore premium data
       vm.prank(tempSpoke);
-      hub.refreshPremium(
+      hub1.refreshPremium(
         assetId,
         DataTypes.PremiumDelta(-premiumSharesDelta, -premiumOffsetDelta, int256(premium))
       );
@@ -158,29 +158,29 @@ contract HubBase is Base {
     int256 premiumSharesDelta = 1000;
     int256 premiumOffsetDelta = 1000;
 
-    assertTrue(hub.getSpoke(assetId, spoke).config.active);
+    assertTrue(hub1.getSpoke(assetId, spoke).config.active);
 
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(spoke);
-      hub.refreshPremium(
+      hub1.refreshPremium(
         assetId,
         DataTypes.PremiumDelta(premiumSharesDelta, premiumOffsetDelta, 0)
       );
     }
 
-    Utils.draw({hub: hub, assetId: assetId, caller: spoke, amount: amount, to: tempUser});
+    Utils.draw({hub: hub1, assetId: assetId, caller: spoke, amount: amount, to: tempUser});
 
     skip(skipTime);
 
-    (drawn, premium) = hub.getAssetOwed(assetId);
+    (drawn, premium) = hub1.getAssetOwed(assetId);
     assertGt(drawn, 0); // non-zero premium debt
 
     if (withPremium) {
       assertGt(premium, 0); // non-zero premium debt
       // restore premium data
       vm.prank(spoke);
-      hub.refreshPremium(
+      hub1.refreshPremium(
         assetId,
         DataTypes.PremiumDelta(-premiumSharesDelta, -premiumOffsetDelta, int256(premium))
       );
@@ -192,23 +192,23 @@ contract HubBase is Base {
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
 
-    uint256 initialLiq = hub.getLiquidity(assetId);
+    uint256 initialLiq = hub1.getLiquidity(assetId);
 
-    address underlying = hub.getAsset(assetId).underlying;
+    address underlying = hub1.getAsset(assetId).underlying;
     deal(underlying, tempUser, amount);
 
     vm.prank(tempUser);
-    IERC20(underlying).approve(address(hub), UINT256_MAX);
+    IERC20(underlying).approve(address(hub1), UINT256_MAX);
 
     vm.prank(ADMIN);
-    hub.addSpoke(
+    hub1.addSpoke(
       assetId,
       tempSpoke,
       DataTypes.SpokeConfig({addCap: UINT256_MAX, drawCap: UINT256_MAX, active: true})
     );
 
-    Utils.add({hub: hub, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
+    Utils.add({hub: hub1, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
 
-    assertEq(hub.getLiquidity(assetId), initialLiq + amount);
+    assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
   }
 }

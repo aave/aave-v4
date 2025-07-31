@@ -424,14 +424,14 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     // debt asset deficit shares are the initial amount minus the amount restored during liquidation
     state.expectedDeficitShares =
       userPosition.drawnShares -
-      hub.convertToDrawnShares(debtAssetId, basedDebtRestored);
+      hub1.convertToDrawnShares(debtAssetId, basedDebtRestored);
     // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
     state.expectedDeficitAmount =
-      hub.convertToDrawnAssets(debtAssetId, state.expectedDeficitShares) +
+      hub1.convertToDrawnAssets(debtAssetId, state.expectedDeficitShares) +
       state.userPremiumDebt.balanceBefore -
       premDebtRestored;
 
-    uint256 accruedPremium = hub.convertToDrawnAssets(debtAssetId, userPosition.premiumShares) -
+    uint256 accruedPremium = hub1.convertToDrawnAssets(debtAssetId, userPosition.premiumShares) -
       userPosition.premiumOffset;
     // premium shares & offset were reset in the prior restore, and the remaining realized premium is now restored as deficit
     DataTypes.PremiumDelta memory expectedDeficitPremiumDelta = DataTypes.PremiumDelta(
@@ -439,7 +439,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       0,
       int256(premDebtRestored) - int256(accruedPremium)
     );
-    vm.expectEmit(address(hub));
+    vm.expectEmit(address(hub1));
     emit IHub.DeficitReported(
       debtAssetId,
       address(state.spoke),

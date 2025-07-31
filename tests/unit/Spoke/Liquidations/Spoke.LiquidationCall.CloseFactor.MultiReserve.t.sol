@@ -372,7 +372,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     vm.startPrank(user);
     for (uint256 i = 0; i < collateralReserves.length; i++) {
       uint256 assetId = spoke.getReserve(collateralReserves[i].reserveId).assetId;
-      initialExRate[i] = hub.convertToAddedAssets(assetId, WadRayMath.RAY.toWad());
+      initialExRate[i] = hub1.convertToAddedAssets(assetId, WadRayMath.RAY.toWad());
       // mock price to 0 to circumvent borrow validation
       vm.mockCall(
         address(oracle1),
@@ -390,7 +390,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     skip(skipTime);
 
     for (uint256 i = 0; i < collateralReserves.length; i++) {
-      finalExRate[i] = hub.convertToAddedAssets(
+      finalExRate[i] = hub1.convertToAddedAssets(
         spoke.getReserve(collateralReserves[i].reserveId).assetId,
         WadRayMath.RAY.toWad()
       );

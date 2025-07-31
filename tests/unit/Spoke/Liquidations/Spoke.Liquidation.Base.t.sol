@@ -249,17 +249,17 @@ contract SpokeLiquidationBase is SpokeBase {
     ) = _calculateAvailableCollateralToLiquidate(state, requiredDebtAmount);
 
     state.liquidationFeeShares =
-      hub.previewRemoveByAssets(
+      hub1.previewRemoveByAssets(
         state.collateralReserve.assetId,
         state.collToLiq + state.liquidationFeeAmount
       ) -
-      hub.previewRemoveByAssets(state.collateralReserve.assetId, state.collToLiq);
+      hub1.previewRemoveByAssets(state.collateralReserve.assetId, state.collToLiq);
 
     if (collateralReserveId != debtReserveId) {
       vm.expectCall(
-        address(hub),
+        address(hub1),
         abi.encodeWithSelector(
-          hub.payFee.selector,
+          hub1.payFee.selector,
           state.collateralReserve.assetId,
           state.liquidationFeeShares
         ),
@@ -269,8 +269,8 @@ contract SpokeLiquidationBase is SpokeBase {
       // precision loss can occur when coll and debt reserve are the same
       // during a restore action that includes donation
       vm.expectCall(
-        address(hub),
-        abi.encodeWithSelector(hub.payFee.selector),
+        address(hub1),
+        abi.encodeWithSelector(hub1.payFee.selector),
         state.liquidationFeeShares > 0 ? 1 : 0
       );
     }
@@ -867,11 +867,11 @@ contract SpokeLiquidationBase is SpokeBase {
   function _getAccountingInfoAfterLiquidation(
     LiquidationTestLocalParams memory state
   ) internal view returns (LiquidationTestLocalParams memory) {
-    state.feeReceiverAmount.balanceAfter = hub.getSpokeAddedAmount(
+    state.feeReceiverAmount.balanceAfter = state.collateralHub.getSpokeAddedAmount(
       state.collateralReserve.assetId,
       _getFeeReceiver(state.collateralReserve.assetId)
     );
-    state.feeReceiverShares.balanceAfter = hub.getSpokeAddedShares(
+    state.feeReceiverShares.balanceAfter = state.collateralHub.getSpokeAddedShares(
       state.collateralReserve.assetId,
       _getFeeReceiver(state.collateralReserve.assetId)
     );

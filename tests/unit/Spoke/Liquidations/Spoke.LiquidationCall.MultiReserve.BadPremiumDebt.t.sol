@@ -406,13 +406,13 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         // debt asset deficit shares are the initial amount minus the amount restored during liquidation
         state.expectedDeficitShares = expectedDeficitShares =
           userPosition.drawnShares -
-          hub.convertToDrawnShares(assetId, basedDebtRestored);
+          hub1.convertToDrawnShares(assetId, basedDebtRestored);
         // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
         state.expectedDeficitAmount = expectedDeficitAmount =
-          hub.convertToDrawnAssets(assetId, expectedDeficitShares) +
+          hub1.convertToDrawnAssets(assetId, expectedDeficitShares) +
           state.userPremiumDebt.balanceBefore -
           premDebtRestored;
-        uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPosition.premiumShares) -
+        uint256 accruedPremium = hub1.convertToDrawnAssets(assetId, userPosition.premiumShares) -
           userPosition.premiumOffset;
         // premium shares & offset were reset in the prior restore, and the remaining realized premium is now restored as deficit
         expectedDeficitPremiumDelta = DataTypes.PremiumDelta(
@@ -438,7 +438,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         checkTopic2: true,
         checkTopic3: true,
         checkData: false,
-        emitter: address(hub)
+        emitter: address(hub1)
       });
       emit IHub.DeficitReported(
         assetId,
@@ -488,7 +488,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       if (actualLog.topics[0] != IHub.DeficitReported.selector) continue;
 
       DeficitReportedEvent memory expectedLog = expectedLogs[expectedLogCounter++];
-      assertEq(actualLog.emitter, address(hub), 'deficit reported event: emitter');
+      assertEq(actualLog.emitter, address(hub1), 'deficit reported event: emitter');
       assertEq(
         uint256(actualLog.topics[1]),
         expectedLog.assetId,

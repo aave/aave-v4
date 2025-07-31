@@ -7,38 +7,38 @@ contract HubPayFeeTest is HubBase {
   function test_payFee_revertsWith_InvalidFeeShares() public {
     vm.expectRevert(IHub.InvalidFeeShares.selector);
     vm.prank(address(spoke1));
-    hub.payFee(daiAssetId, 0);
+    hub1.payFee(daiAssetId, 0);
   }
 
   function test_payFee_revertsWith_SpokeNotActive() public {
-    updateSpokeActive(hub, daiAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
-    hub.payFee(daiAssetId, 1);
+    hub1.payFee(daiAssetId, 1);
   }
 
   function test_payFee_revertsWith_AddedAmountExceeded() public {
     uint256 addAmount = 100e18;
     Utils.add({
-      hub: hub,
+      hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
       amount: addAmount,
       user: alice
     });
 
-    uint256 feeShares = hub.getSpokeAddedShares(daiAssetId, address(spoke1));
-    uint256 feeAmount = hub.getSpokeAddedAmount(daiAssetId, address(spoke1));
+    uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
+    uint256 feeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
 
     vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, feeAmount));
     vm.prank(address(spoke1));
-    hub.payFee(daiAssetId, feeShares + 1);
+    hub1.payFee(daiAssetId, feeShares + 1);
   }
 
   function test_payFee_revertsWith_AddedAmountExceeded_with_interest() public {
     uint256 addAmount = 100e18;
     Utils.add({
-      hub: hub,
+      hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
       amount: addAmount,
@@ -48,15 +48,15 @@ contract HubPayFeeTest is HubBase {
     _addLiquidity(daiAssetId, addAmount);
     _drawLiquidity(daiAssetId, addAmount, true);
 
-    uint256 feeShares = hub.getSpokeAddedShares(daiAssetId, address(spoke1));
-    uint256 feeAmount = hub.getSpokeAddedAmount(daiAssetId, address(spoke1));
+    uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
+    uint256 feeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
 
     // add ex rate increases due to interest
     assertGt(feeAmount, feeShares);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, feeAmount));
     vm.prank(address(spoke1));
-    hub.payFee(daiAssetId, feeShares + 1);
+    hub1.payFee(daiAssetId, feeShares + 1);
   }
 
   function test_payFee_fuzz(uint256 addAmount, uint256 feeShares) public {
@@ -72,7 +72,7 @@ contract HubPayFeeTest is HubBase {
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
 
     Utils.add({
-      hub: hub,
+      hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
       amount: addAmount,
@@ -82,29 +82,29 @@ contract HubPayFeeTest is HubBase {
     _addLiquidity(daiAssetId, 100e18);
     _drawLiquidity(daiAssetId, 100e18, true);
 
-    uint256 spokeSharesBefore = hub.getSpokeAddedShares(daiAssetId, address(spoke1));
+    uint256 spokeSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
 
     // supply ex rate increases due to interest
-    assertGe(hub.convertToAddedAssets(daiAssetId, WadRayMath.RAY), WadRayMath.RAY);
+    assertGe(hub1.convertToAddedAssets(daiAssetId, WadRayMath.RAY), WadRayMath.RAY);
 
     feeShares = bound(feeShares, 1, spokeSharesBefore);
-    uint256 feeAmount = hub.convertToAddedAssets(daiAssetId, feeShares);
+    uint256 feeAmount = hub1.convertToAddedAssets(daiAssetId, feeShares);
 
-    uint256 feeReceiverSharesBefore = hub.getSpokeAddedShares(
+    uint256 feeReceiverSharesBefore = hub1.getSpokeAddedShares(
       daiAssetId,
       _getFeeReceiver(daiAssetId)
     );
 
-    vm.expectEmit(address(hub));
+    vm.expectEmit(address(hub1));
     emit IHub.Remove(daiAssetId, address(spoke1), feeShares, feeAmount);
-    vm.expectEmit(address(hub));
+    vm.expectEmit(address(hub1));
     emit IHub.Add(daiAssetId, _getFeeReceiver(daiAssetId), feeShares, feeAmount);
 
     vm.prank(address(spoke1));
-    hub.payFee(daiAssetId, feeShares);
+    hub1.payFee(daiAssetId, feeShares);
 
-    uint256 spokeSharesAfter = hub.getSpokeAddedShares(daiAssetId, address(spoke1));
-    uint256 feeReceiverSharesAfter = hub.getSpokeAddedShares(
+    uint256 spokeSharesAfter = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
+    uint256 feeReceiverSharesAfter = hub1.getSpokeAddedShares(
       daiAssetId,
       _getFeeReceiver(daiAssetId)
     );

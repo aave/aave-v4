@@ -148,7 +148,7 @@ contract SpokeConfigTest is SpokeBase {
     address reserveSource = _deployMockPriceFeed(spoke1, 2000e8);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveAdded(reserveId, wethAssetId, address(hub));
+    emit ISpoke.ReserveAdded(reserveId, wethAssetId, address(hub1));
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdated(reserveId, newReserveConfig);
     vm.expectEmit(address(spoke1));
@@ -160,7 +160,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
-      address(hub),
+      address(hub1),
       wethAssetId,
       reserveSource,
       newReserveConfig,
@@ -172,7 +172,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_fuzz_revertsWith_InvalidAssetId() public {
-    uint256 assetId = vm.randomUint(hub.getAssetCount(), type(uint256).max); // invalid assetId
+    uint256 assetId = vm.randomUint(hub1.getAssetCount(), type(uint256).max); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       paused: true,
@@ -189,11 +189,11 @@ contract SpokeConfigTest is SpokeBase {
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(address(hub), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
   function test_addReserve_fuzz_reverts_invalid_assetId(uint256 assetId) public {
-    assetId = bound(assetId, hub.getAssetCount(), UINT256_MAX); // invalid assetId
+    assetId = bound(assetId, hub1.getAssetCount(), UINT256_MAX); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       paused: true,
@@ -211,7 +211,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(address(hub), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
   function test_addReserve_revertsWith_InvalidOracle() public {
@@ -232,7 +232,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectRevert(ISpoke.InvalidOracle.selector);
     vm.prank(ADMIN);
     newSpoke.addReserve(
-      address(hub),
+      address(hub1),
       wethAssetId,
       address(0),
       newReserveConfig,
