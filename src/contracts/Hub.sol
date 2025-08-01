@@ -5,6 +5,9 @@ import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+
+// libraries
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -18,11 +21,12 @@ import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrat
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
+  using SafeCast for uint256;
   using WadRayMath for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
   using AssetLogic for DataTypes.Asset;
-  using MathUtils for uint256;
+  using MathUtils for uint128;
 
   uint8 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
 
@@ -79,9 +83,9 @@ contract Hub is IHub, AccessManaged {
       premiumShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
-      drawnIndex: drawnIndex,
-      drawnRate: drawnRate,
-      lastUpdateTimestamp: lastUpdateTimestamp,
+      drawnIndex: drawnIndex.toUint128(),
+      drawnRate: drawnRate.toUint128(),
+      lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
       deficit: 0,
       config: config
     });
@@ -154,11 +158,11 @@ contract Hub is IHub, AccessManaged {
     _validateAdd(asset, spoke, assetId, amount, from);
 
     // todo: Mitigate inflation attack
-    uint256 shares = previewAddByAssets(assetId, amount);
+    uint128 shares = previewAddByAssets(assetId, amount).toUint128();
     require(shares != 0, InvalidSharesAmount());
     asset.addedShares += shares;
     spoke.addedShares += shares;
-    asset.liquidity += amount;
+    asset.liquidity += amount.toUint128();
 
     asset.updateDrawnRate(assetId);
 
@@ -177,10 +181,10 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateRemove(asset, spoke, assetId, amount, to);
 
-    uint256 shares = previewRemoveByAssets(assetId, amount); // non zero since we round up
+    uint128 shares = previewRemoveByAssets(assetId, amount).toUint128(); // non zero since we round up
     asset.addedShares -= shares;
     spoke.addedShares -= shares;
-    asset.liquidity -= amount;
+    asset.liquidity -= amount.toUint128();
 
     asset.updateDrawnRate(assetId);
 
@@ -199,10 +203,10 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateDraw(asset, spoke, assetId, amount, to);
 
-    uint256 drawnShares = previewDrawByAssets(assetId, amount); // non zero since we round up
+    uint128 drawnShares = previewDrawByAssets(assetId, amount).toUint128(); // non zero since we round up
     asset.drawnShares += drawnShares;
     spoke.drawnShares += drawnShares;
-    asset.liquidity -= amount;
+    asset.liquidity -= amount.toUint128();
 
     asset.updateDrawnRate(assetId);
 
@@ -228,10 +232,10 @@ contract Hub is IHub, AccessManaged {
     _validateRestore(asset, spoke, assetId, drawnAmount, premiumAmount, from);
 
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
-    uint256 drawnShares = previewRestoreByAssets(assetId, drawnAmount);
+    uint128 drawnShares = previewRestoreByAssets(assetId, drawnAmount).toUint128();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
-    uint256 totalAmount = drawnAmount + premiumAmount;
+    uint128 totalAmount = (drawnAmount + premiumAmount).toUint128();
     asset.liquidity += totalAmount;
 
     asset.updateDrawnRate(assetId);
@@ -258,10 +262,10 @@ contract Hub is IHub, AccessManaged {
     _validateReportDeficit(asset, spoke, assetId, drawnAmount, premiumAmount);
 
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
-    uint256 drawnShares = previewRestoreByAssets(assetId, drawnAmount);
+    uint128 drawnShares = previewRestoreByAssets(assetId, drawnAmount).toUint128();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
-    uint256 totalDeficitAmount = drawnAmount + premiumAmount;
+    uint128 totalDeficitAmount = (drawnAmount + premiumAmount).toUint128();
     asset.deficit += totalDeficitAmount;
 
     asset.updateDrawnRate(assetId);
@@ -279,10 +283,10 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
     _validateEliminateDeficit(asset, spoke, amount);
 
-    uint256 shares = previewRemoveByAssets(assetId, amount);
+    uint128 shares = previewRemoveByAssets(assetId, amount).toUint128();
     asset.addedShares -= shares;
     spoke.addedShares -= shares;
-    asset.deficit -= amount;
+    asset.deficit -= amount.toUint128();
 
     asset.updateDrawnRate(assetId);
 
@@ -528,13 +532,13 @@ contract Hub is IHub, AccessManaged {
   ) internal {
     uint256 premiumBefore = asset.premium();
 
-    asset.premiumShares = asset.premiumShares.add(premium.sharesDelta);
-    asset.premiumOffset = asset.premiumOffset.add(premium.offsetDelta);
-    asset.realizedPremium = asset.realizedPremium.add(premium.realizedDelta);
+    asset.premiumShares = asset.premiumShares.add(premium.sharesDelta).toUint128();
+    asset.premiumOffset = asset.premiumOffset.add(premium.offsetDelta).toUint128();
+    asset.realizedPremium = asset.realizedPremium.add(premium.realizedDelta).toUint128();
 
-    spoke.premiumShares = spoke.premiumShares.add(premium.sharesDelta);
-    spoke.premiumOffset = spoke.premiumOffset.add(premium.offsetDelta);
-    spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta);
+    spoke.premiumShares = spoke.premiumShares.add(premium.sharesDelta).toUint128();
+    spoke.premiumOffset = spoke.premiumOffset.add(premium.offsetDelta).toUint128();
+    spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta).toUint128();
 
     // can increase due to precision loss on premium (drawn unchanged)
     // todo mathematically find premium diff ceiling and replace the `2`
@@ -549,8 +553,8 @@ contract Hub is IHub, AccessManaged {
     uint256 addedShares = sender.addedShares;
     require(shares <= addedShares, AddedSharesExceeded(addedShares));
 
-    sender.addedShares = addedShares - shares;
-    receiver.addedShares += shares;
+    sender.addedShares = (addedShares - shares).toUint128();
+    receiver.addedShares += shares.toUint128();
   }
 
   function _getSpokeOwed(
@@ -578,8 +582,8 @@ contract Hub is IHub, AccessManaged {
     require(spoke.config.active, SpokeNotActive());
     uint256 addCap = spoke.config.addCap;
     require(
-      addCap == type(uint256).max ||
-        addCap >= previewAddByShares(assetId, spoke.addedShares) + amount,
+      addCap == type(uint64).max ||
+        addCap * 10 ** asset.decimals >= previewAddByShares(assetId, spoke.addedShares) + amount,
       AddCapExceeded(addCap)
     );
   }
@@ -612,7 +616,7 @@ contract Hub is IHub, AccessManaged {
     uint256 drawCap = spoke.config.drawCap;
     (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spoke, assetId);
     require(
-      drawCap == type(uint256).max || drawCap >= drawn + premium + amount,
+      drawCap == type(uint64).max || drawCap * 10 ** asset.decimals >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
     );
     require(amount <= asset.liquidity, NotLiquidity(asset.liquidity));
@@ -675,7 +679,8 @@ contract Hub is IHub, AccessManaged {
     require(sender.config.active && receiver.config.active, SpokeNotActive());
     require(shares > 0, InvalidSharesAmount());
     require(
-      previewRemoveByShares(assetId, receiver.addedShares + shares) <= receiver.config.addCap,
+      receiver.config.addCap * 10 ** asset.decimals >=
+        previewRemoveByShares(assetId, receiver.addedShares + shares),
       AddCapExceeded(receiver.config.addCap)
     );
   }

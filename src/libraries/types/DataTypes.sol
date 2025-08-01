@@ -5,41 +5,40 @@ import {IHub} from 'src/interfaces/IHub.sol';
 
 library DataTypes {
   // Hub types
-  // todo pack
   struct SpokeData {
-    uint256 addedShares;
-    uint256 drawnShares;
-    uint256 premiumShares;
-    uint256 premiumOffset; // todo make signed
-    uint256 realizedPremium;
+    uint128 addedShares;
+    uint128 drawnShares;
+    uint128 premiumShares;
+    uint128 premiumOffset;
+    uint128 realizedPremium;
     DataTypes.SpokeConfig config;
   }
 
   struct Asset {
     address underlying;
     uint8 decimals;
-    uint256 addedShares;
-    uint256 liquidity;
-    uint256 drawnShares;
-    uint256 premiumShares;
-    uint256 premiumOffset; // todo make signed
-    uint256 realizedPremium;
-    uint256 drawnIndex;
-    uint256 drawnRate;
-    uint256 lastUpdateTimestamp;
-    uint256 deficit;
+    uint40 lastUpdateTimestamp;
+    uint128 addedShares;
+    uint128 liquidity;
+    uint128 drawnShares;
+    uint128 premiumShares;
+    uint128 premiumOffset;
+    uint128 realizedPremium;
+    uint128 drawnIndex;
+    uint128 drawnRate;
+    uint128 deficit;
     DataTypes.AssetConfig config;
   }
 
   struct SpokeConfig {
     bool active;
-    uint256 addCap;
-    uint256 drawCap;
+    uint64 addCap;
+    uint64 drawCap;
   }
 
   struct AssetConfig {
     address feeReceiver;
-    uint256 liquidityFee;
+    uint16 liquidityFee;
     address irStrategy;
   }
 

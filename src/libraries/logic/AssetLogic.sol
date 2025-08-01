@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
 import {IHub} from 'src/interfaces/IHub.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -13,8 +14,9 @@ library AssetLogic {
   using AssetLogic for DataTypes.Asset;
   using PercentageMath for uint256;
   using SharesMath for uint256;
-  using WadRayMath for uint256;
+  using WadRayMath for *;
   using MathUtils for uint256;
+  using SafeCast for uint256;
 
   // todo: option for cached object
   // todo: add virtual offset for inflation attack
@@ -57,6 +59,7 @@ library AssetLogic {
     uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumShares) - asset.premiumOffset;
     return asset.realizedPremium + accruedPremium;
   }
+
   function totalOwed(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.drawn() + asset.premium();
   }
@@ -105,7 +108,7 @@ library AssetLogic {
         drawn: asset.drawn(),
         premium: asset.premium()
       });
-    asset.drawnRate = newBorrowRate;
+    asset.drawnRate = newBorrowRate.toUint128();
 
     // asset accrual should have already occurred
     emit IHub.AssetUpdated(assetId, asset.drawnIndex, newBorrowRate, asset.lastUpdateTimestamp);
@@ -122,17 +125,17 @@ library AssetLogic {
     DataTypes.SpokeData storage feeReceiver
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
-    uint256 feeShares = asset.getFeeShares(drawnIndex, asset.drawnIndex);
+    uint128 feeShares = asset.getFeeShares(drawnIndex, asset.drawnIndex).toUint128();
 
     // Accrue interest and fees
-    asset.drawnIndex = drawnIndex;
+    asset.drawnIndex = drawnIndex.toUint128();
     if (feeShares > 0) {
       feeReceiver.addedShares += feeShares;
       asset.addedShares += feeShares;
       emit IHub.AccrueFees(assetId, feeShares);
     }
 
-    asset.lastUpdateTimestamp = block.timestamp;
+    asset.lastUpdateTimestamp = block.timestamp.toUint40();
   }
 
   /**

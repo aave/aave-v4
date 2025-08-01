@@ -127,18 +127,11 @@ contract SpokeBorrowValidationTest is SpokeBase {
     spoke1.borrow(reserveId, 0, bob);
   }
 
-  function test_borrow_revertsWith_DrawCapExceeded() public {
-    uint256 daiReserveId = _daiReserveId(spoke1);
-    uint256 drawCap = 100e18;
-
-    test_borrow_fuzz_revertsWith_DrawCapExceeded(daiReserveId, drawCap);
-  }
-
-  function test_borrow_fuzz_revertsWith_DrawCapExceeded(uint256 reserveId, uint256 drawCap) public {
+  function test_borrow_fuzz_revertsWith_DrawCapExceeded(uint256 reserveId, uint64 drawCap) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT);
+    drawCap = uint64(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
 
-    uint256 drawAmount = drawCap + 1;
+    uint256 drawAmount = drawCap * 10 ** tokenList.dai.decimals() + 1;
 
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
     updateDrawCap(hub1, assetId, address(spoke1), drawCap);
@@ -150,20 +143,16 @@ contract SpokeBorrowValidationTest is SpokeBase {
     spoke1.borrow(reserveId, drawAmount, bob);
   }
 
-  function test_borrow_revertsWith_DrawCapExceeded_due_to_interest() public {
-    test_borrow_fuzz_revertsWith_DrawCapExceeded_due_to_interest(365 days);
-  }
-
   function test_borrow_fuzz_revertsWith_DrawCapExceeded_due_to_interest(uint256 skipTime) public {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
 
-    uint256 daiAmount = 100e18;
-    uint256 drawCap = daiAmount;
+    uint64 drawCap = 100;
+    uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
     uint256 wethSupplyAmount = 10e18;
-    uint256 drawAmount = drawCap - 1;
+    uint256 drawAmount = daiAmount - 1;
 
     updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
     assertEq(hub1.getSpoke(daiAssetId, address(spoke1)).config.drawCap, drawCap);

@@ -298,59 +298,15 @@ contract HubDrawTest is HubBase {
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  function test_draw_revertsWith_DrawCapExceeded_due_to_interest() public {
-    // Set collateral risk of dai to 0
-    updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
-    assertEq(_getCollateralRisk(spoke1, _daiReserveId(spoke1)), 0);
-
-    uint256 daiAmount = 100e18;
-    uint256 drawCap = daiAmount;
-    uint256 drawAmount = drawCap;
-
-    updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
-
-    _addAndDrawLiquidity({
-      hub: hub1,
-      assetId: daiAssetId,
-      addUser: bob,
-      addSpoke: address(spoke2),
-      addAmount: daiAmount,
-      drawUser: alice,
-      drawSpoke: address(spoke1),
-      drawAmount: drawAmount,
-      skipTime: 365 days
-    });
-
-    (uint256 drawn, ) = hub1.getAssetOwed(daiAssetId);
-    assertGt(drawn, drawCap);
-
-    // restore to provide liquidity
-    // Must restore at least one full share
-    vm.startPrank(address(spoke1));
-    hub1.restore({
-      assetId: daiAssetId,
-      drawnAmount: minimumAssetsPerDrawnShare(daiAssetId),
-      premiumAmount: 0,
-      premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
-      from: alice
-    });
-
-    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
-    hub1.draw({assetId: daiAssetId, amount: 1, to: bob});
-    vm.stopPrank();
-  }
-
   function test_draw_fuzz_revertsWith_DrawCapExceeded_due_to_interest(
-    uint256 daiAmount,
+    uint64 drawCap,
     uint256 rate,
     uint256 skipTime
   ) public {
-    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
+    drawCap = uint64(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals() - 1;
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-
-    uint256 drawCap = daiAmount;
-    uint256 drawAmount = drawCap;
 
     updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
 
@@ -390,9 +346,9 @@ contract HubDrawTest is HubBase {
 
   /// Tests that the draw cap is checked against spoke's debt, not the hub's debt
   function test_draw_DifferentSpokes() public {
-    uint256 daiAmount = 100e18;
-    uint256 drawCap = daiAmount;
-    uint256 drawAmount = drawCap;
+    uint64 drawCap = 100;
+    uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
+    uint256 drawAmount = daiAmount;
 
     updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
     updateDrawCap(hub1, daiAssetId, address(spoke2), drawCap);
@@ -432,22 +388,10 @@ contract HubDrawTest is HubBase {
     hub1.draw({assetId: daiAssetId, amount: 1, to: bob});
   }
 
-  function test_draw_revertsWith_DrawCapExceeded() public {
-    uint256 daiAmount = 100e18;
-    uint256 drawCap = daiAmount;
-    uint256 drawAmount = drawCap + 1;
-
-    updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
-
-    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
-    vm.prank(address(spoke1));
-    hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
-  }
-
-  function test_draw_fuzz_revertsWith_DrawCapExceeded(uint256 daiAmount) public {
-    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
-    uint256 drawCap = daiAmount;
-    uint256 drawAmount = drawCap + 1;
+  function test_draw_fuzz_revertsWith_DrawCapExceeded(uint64 drawCap) public {
+    drawCap = uint64(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
+    uint256 drawAmount = daiAmount + 1;
 
     updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
 

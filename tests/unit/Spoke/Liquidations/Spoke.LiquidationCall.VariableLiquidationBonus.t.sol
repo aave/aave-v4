@@ -20,6 +20,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
   ) public {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
     debtReserveId = bound(debtReserveId, 0, spoke1.getReserveCount() - 1);
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
 
     LiquidationTestLocalParams memory state = _execLiqCallFuzzTest({
       liqConfig: liqConfig,

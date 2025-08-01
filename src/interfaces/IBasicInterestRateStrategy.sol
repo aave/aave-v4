@@ -20,5 +20,5 @@ interface IBasicInterestRateStrategy {
     uint256 liquidity,
     uint256 drawn,
     uint256 premium
-  ) external view returns (uint256);
+  ) external view returns (uint256 variableBorrowRate);
 }

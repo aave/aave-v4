@@ -6,6 +6,46 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubAddTest is HubBase {
   using SharesMath for uint256;
 
+  uint256 zeroDecimalAssetId;
+
+  function setUp() public override {
+    super.setUp();
+
+    /// @dev add a zero decimal asset to test add cap rounding
+    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+      active: true,
+      addCap: type(uint64).max,
+      drawCap: type(uint64).max
+    });
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
+    );
+    vm.startPrank(ADMIN);
+    zeroDecimalAssetId = hub1.addAsset(
+      address(tokenList.dai),
+      0,
+      address(treasurySpoke),
+      address(irStrategy),
+      encodedIrData
+    );
+    hub1.addSpoke(zeroDecimalAssetId, address(treasurySpoke), spokeConfig);
+    hub1.updateAssetConfig(
+      zeroDecimalAssetId,
+      DataTypes.AssetConfig({
+        liquidityFee: 5_00,
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy)
+      })
+    );
+    hub1.addSpoke(zeroDecimalAssetId, address(spoke1), spokeConfig);
+    vm.stopPrank();
+  }
+
   function test_add_revertsWith_ERC20InsufficientAllowance() public {
     uint256 amount = 100e18;
 
@@ -42,24 +82,31 @@ contract HubAddTest is HubBase {
     hub1.add(daiAssetId, 100e18, alice);
   }
 
-  function test_add_revertsWith_AddCapExceeded() public {
-    uint256 amount = 100e18;
-
-    uint256 newAddCap = amount - 1;
+  function test_add_fuzz_revertsWith_AddCapExceeded(uint64 newAddCap) public {
+    newAddCap = uint64(bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
-
+    uint256 amount = newAddCap * 10 ** tokenList.dai.decimals() + 1;
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount, alice);
   }
 
+  function test_add_fuzz_AddCapReachedButNotExceeded(uint64 newAddCap) public {
+    newAddCap = uint64(bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    _updateAddCap(daiAssetId, address(spoke1), newAddCap);
+    uint256 amount = newAddCap * 10 ** tokenList.dai.decimals();
+    vm.prank(address(spoke1));
+    hub1.add(daiAssetId, amount, alice);
+    assertEq(hub1.getSpokeAddedAmount(daiAssetId, address(spoke1)), amount);
+  }
+
   /// add reverts if the cap is exceeded, with proper rounding (up) applied to shares into assets conversion
   function test_add_revertsWith_AddCapExceeded_due_to_rounding() public {
-    _addLiquidity(daiAssetId, 100e18);
-    _drawLiquidity(daiAssetId, 45e18, true);
+    _addLiquidity(zeroDecimalAssetId, 100e18);
+    _drawLiquidity(zeroDecimalAssetId, 45e18, true);
 
-    uint256 totalAddedAssets = hub1.getTotalAddedAssets(daiAssetId);
-    uint256 totalAddedShares = hub1.getAssetAddedShares(daiAssetId);
+    uint256 totalAddedAssets = hub1.getTotalAddedAssets(zeroDecimalAssetId);
+    uint256 totalAddedShares = hub1.getAssetAddedShares(zeroDecimalAssetId);
 
     // Depending on the borrow rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
@@ -76,7 +123,7 @@ contract HubAddTest is HubBase {
 
     Utils.add({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: zeroDecimalAssetId,
       caller: address(spoke1),
       amount: addedAmount,
       user: alice
@@ -84,64 +131,29 @@ contract HubAddTest is HubBase {
 
     // set add cap to amount of assets added * 2 - 1, given
     // that the same asset amount is provided again below
-    uint256 newAddCap = 2 * addedAmount - 1;
-    _updateAddCap(daiAssetId, address(spoke1), newAddCap);
+    uint64 newAddCap = uint64(2 * addedAmount - 1);
+    _updateAddCap(zeroDecimalAssetId, address(spoke1), newAddCap);
 
     // this cap will be exceeded only if the existing added
     // shares are rounded up
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, addedAmount, alice);
+    hub1.add(zeroDecimalAssetId, addedAmount, alice);
 
     // check that add cap is not exceeded if assets are rounded down
-    uint256 addedAssetsRoundedDown = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
+    uint256 addedAssetsRoundedDown = hub1.getSpokeAddedAmount(zeroDecimalAssetId, address(spoke1));
     assertEq(addedAssetsRoundedDown + addedAmount, newAddCap);
   }
 
-  function test_add_fuzz_revertsWith_AddCapExceeded(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-
-    uint256 newAddCap = amount - 1;
-    _updateAddCap(daiAssetId, address(spoke1), newAddCap);
-
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
-    vm.prank(address(spoke1));
-    hub1.add(daiAssetId, amount, alice);
-  }
-
-  function test_add_revertsWith_AddCapExceeded_due_to_interest() public {
-    uint256 daiAmount = 100e18;
-
-    uint256 newAddCap = daiAmount + 1;
-    _updateAddCap(daiAssetId, address(spoke2), newAddCap);
-
-    _addAndDrawLiquidity({
-      hub: hub1,
-      assetId: daiAssetId,
-      addUser: bob,
-      addSpoke: address(spoke2),
-      addAmount: daiAmount,
-      drawUser: alice,
-      drawSpoke: address(spoke1),
-      drawAmount: daiAmount,
-      skipTime: 365 days
-    });
-
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
-    vm.prank(address(spoke2));
-    hub1.add(daiAssetId, 1, alice);
-  }
-
   function test_add_fuzz_revertsWith_AddCapExceeded_due_to_interest(
-    uint256 daiAmount,
+    uint64 newAddCap,
     uint256 drawAmount,
     uint256 skipTime
   ) public {
-    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
+    newAddCap = uint64(bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    uint256 daiAmount = newAddCap * 10 ** tokenList.dai.decimals() -  1;
     drawAmount = bound(drawAmount, 1, daiAmount);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-
-    uint256 newAddCap = daiAmount + 1;
 
     _updateAddCap(daiAssetId, address(spoke2), newAddCap);
     _addAndDrawLiquidity({
@@ -157,18 +169,19 @@ contract HubAddTest is HubBase {
     });
     vm.assume(hub1.convertToAddedShares(daiAssetId, daiAmount) < daiAmount);
 
+    uint256 addAmount = hub1.previewAddByShares(daiAssetId, 1);
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke2));
-    hub1.add(daiAssetId, 1, alice); // cannot add any additional amount
+    hub1.add(daiAssetId, addAmount, alice); // cannot add any additional amount
   }
 
   // add succeeds if cap is reached but not exceeded
-  function test_add_AddCapReachedButNotExceeded() public {
-    _addLiquidity(daiAssetId, 100e18);
-    _drawLiquidity(daiAssetId, 45e18, true);
+  function test_add_AddCapReachedButNotExceeded_rounding() public {
+    _addLiquidity(zeroDecimalAssetId, 100);
+    _drawLiquidity(zeroDecimalAssetId, 45, true);
 
-    uint256 totalAddedAssets = hub1.getTotalAddedAssets(daiAssetId);
-    uint256 totalAddedShares = hub1.getAssetAddedShares(daiAssetId);
+    uint256 totalAddedAssets = hub1.getTotalAddedAssets(zeroDecimalAssetId);
+    uint256 totalAddedShares = hub1.getAssetAddedShares(zeroDecimalAssetId);
 
     // Depending on the borrow rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
@@ -183,18 +196,18 @@ contract HubAddTest is HubBase {
     // amount of assets added
     uint256 addedAmount = totalAddedAssets / totalAddedShares + 1;
 
-    uint256 spokeAddedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
+    uint256 spokeAddedShares = hub1.getSpokeAddedShares(zeroDecimalAssetId, address(spoke1));
     uint256 spokeAddedAssetsRoundedUp = spokeAddedShares.toAssetsUp(
       totalAddedAssets,
       totalAddedShares
     );
 
-    uint256 newAddCap = spokeAddedAssetsRoundedUp + addedAmount;
-    _updateAddCap(daiAssetId, address(spoke1), newAddCap);
+    uint64 newAddCap = uint64(spokeAddedAssetsRoundedUp + addedAmount);
+    _updateAddCap(zeroDecimalAssetId, address(spoke1), newAddCap);
 
     Utils.add({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: zeroDecimalAssetId,
       caller: address(spoke1),
       amount: addedAmount,
       user: alice

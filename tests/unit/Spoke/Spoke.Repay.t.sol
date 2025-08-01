@@ -1093,6 +1093,7 @@ contract SpokeRepayTest is SpokeBase {
     uint40 skipTime
   ) public {
     daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
 
     // update collateral risk to zero
     updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);

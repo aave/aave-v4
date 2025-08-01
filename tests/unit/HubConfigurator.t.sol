@@ -5,6 +5,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubConfiguratorTest is HubBase {
   HubConfigurator public hubConfigurator;
+  using SafeCast for uint256;
 
   address public HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
   uint256 public assetId;
@@ -129,8 +130,8 @@ contract HubConfiguratorTest is HubBase {
       irStrategy: interestRateStrategy
     });
     DataTypes.SpokeConfig memory expectedSpokeConfig = DataTypes.SpokeConfig({
-      addCap: type(uint256).max,
-      drawCap: type(uint256).max,
+      addCap: type(uint64).max,
+      drawCap: type(uint64).max,
       active: true
     });
 
@@ -172,7 +173,7 @@ contract HubConfiguratorTest is HubBase {
 
   function test_updateLiquidityFee() public {
     DataTypes.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
-    expectedConfig.liquidityFee = PercentageMath.PERCENTAGE_FACTOR - 1;
+    expectedConfig.liquidityFee = (PercentageMath.PERCENTAGE_FACTOR - 1).toUint16();
 
     vm.expectCall(address(hub1), abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig)));
 
@@ -219,8 +220,8 @@ contract HubConfiguratorTest is HubBase {
               assetId,
               feeReceiver,
               DataTypes.SpokeConfig({
-                addCap: type(uint256).max,
-                drawCap: type(uint256).max,
+                addCap: type(uint64).max,
+                drawCap: type(uint64).max,
                 active: true
               })
             )
@@ -235,8 +236,8 @@ contract HubConfiguratorTest is HubBase {
               assetId,
               feeReceiver,
               DataTypes.SpokeConfig({
-                addCap: type(uint256).max,
-                drawCap: type(uint256).max,
+                addCap: type(uint64).max,
+                drawCap: type(uint64).max,
                 active: hub1.getSpokeConfig(assetId, feeReceiver).active
               })
             )
@@ -280,8 +281,8 @@ contract HubConfiguratorTest is HubBase {
     });
   }
 
-  function test_updateFeeConfig_fuzz(uint256 liquidityFee, address feeReceiver) public {
-    liquidityFee = bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
+  function test_updateFeeConfig_fuzz(uint16 liquidityFee, address feeReceiver) public {
+    liquidityFee = bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     assumeNotZeroAddress(feeReceiver);
 
     DataTypes.AssetConfig memory oldConfig = hub1.getAssetConfig(assetId);
@@ -312,8 +313,8 @@ contract HubConfiguratorTest is HubBase {
               assetId,
               feeReceiver,
               DataTypes.SpokeConfig({
-                addCap: type(uint256).max,
-                drawCap: type(uint256).max,
+                addCap: type(uint64).max,
+                drawCap: type(uint64).max,
                 active: true
               })
             )
@@ -328,8 +329,8 @@ contract HubConfiguratorTest is HubBase {
               assetId,
               feeReceiver,
               DataTypes.SpokeConfig({
-                addCap: type(uint256).max,
-                drawCap: type(uint256).max,
+                addCap: type(uint64).max,
+                drawCap: type(uint64).max,
                 active: hub1.getSpokeConfig(assetId, feeReceiver).active
               })
             )
@@ -426,8 +427,8 @@ contract HubConfiguratorTest is HubBase {
           assetId,
           newAssetConfig.feeReceiver,
           DataTypes.SpokeConfig({
-            addCap: type(uint256).max,
-            drawCap: type(uint256).max,
+            addCap: type(uint64).max,
+            drawCap: type(uint64).max,
             active: true
           })
         )
@@ -607,7 +608,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateSpokeSupplyCap() public {
-    uint256 newSupplyCap = 100;
+    uint64 newSupplyCap = 100;
     DataTypes.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
     expectedSpokeConfig.addCap = newSupplyCap;
     vm.expectCall(
@@ -626,7 +627,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateSpokeDrawCap() public {
-    uint256 newDrawCap = 100;
+    uint64 newDrawCap = 100;
     DataTypes.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
     expectedSpokeConfig.drawCap = newDrawCap;
     vm.expectCall(
@@ -645,8 +646,8 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateSpokeCaps() public {
-    uint256 newSupplyCap = 100;
-    uint256 newDrawCap = 200;
+    uint64 newSupplyCap = 100;
+    uint64 newDrawCap = 200;
     DataTypes.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
     expectedSpokeConfig.addCap = newSupplyCap;
     expectedSpokeConfig.drawCap = newDrawCap;

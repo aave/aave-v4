@@ -72,13 +72,14 @@ contract HubTransferSharesTest is HubBase {
   }
 
   function test_transferShares_revertsWith_AddCapExceeded() public {
-    uint256 supplyAmount = 1000e18;
+    uint64 newSupplyCap = 1000;
+
+    uint256 supplyAmount = newSupplyCap * 10 ** tokenList.dai.decimals() + 1;
     Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     assertEq(suppliedShares, hub1.convertToAddedAssets(daiAssetId, supplyAmount));
 
-    uint256 newSupplyCap = supplyAmount - 1;
     _updateAddCap(daiAssetId, address(spoke2), newSupplyCap);
 
     // attempting transfer of supplied shares exceeding cap on spoke2

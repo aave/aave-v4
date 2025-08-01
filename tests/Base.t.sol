@@ -360,8 +360,8 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
-      addCap: UINT256_MAX,
-      drawCap: UINT256_MAX
+      addCap: type(uint64).max,
+      drawCap: type(uint64).max
     });
 
     bytes memory encodedIrData = abi.encode(
@@ -1054,7 +1054,7 @@ abstract contract Base is Test {
 
   function updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal pausePrank {
     DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
-    config.liquidityFee = liquidityFee;
+    config.liquidityFee = liquidityFee.toUint16();
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, config);
 
@@ -1128,7 +1128,7 @@ abstract contract Base is Test {
     IHub hub,
     uint256 assetId,
     address spoke,
-    uint256 newDrawCap
+    uint64 newDrawCap
   ) internal pausePrank {
     DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;

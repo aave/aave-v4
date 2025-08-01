@@ -15,8 +15,8 @@ contract HubAccessTest is HubBase {
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
-      addCap: 1000e18,
-      drawCap: 1000e18
+      addCap: 1000,
+      drawCap: 1000
     });
 
     bytes memory encodedIrData = abi.encode(
@@ -132,7 +132,7 @@ contract HubAccessTest is HubBase {
     hub1.updateSpokeConfig(
       daiAssetId,
       address(spoke1),
-      DataTypes.SpokeConfig({active: true, addCap: 1000e18, drawCap: 1000e18})
+      DataTypes.SpokeConfig({active: true, addCap: 1000, drawCap: 1000})
     );
   }
 
@@ -244,8 +244,8 @@ contract HubAccessTest is HubBase {
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
-      addCap: 1000e18,
-      drawCap: 1000e18
+      addCap: 1000,
+      drawCap: 1000
     });
 
     IAccessManager authority = IAccessManager(hub1.authority());

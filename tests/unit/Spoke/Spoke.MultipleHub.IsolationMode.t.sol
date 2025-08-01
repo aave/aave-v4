@@ -73,12 +73,12 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     newHub.addSpoke(
       isolationVars.assetAId,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, addCap: type(uint256).max, drawCap: type(uint256).max})
+      DataTypes.SpokeConfig({active: true, addCap: type(uint64).max, drawCap: type(uint64).max})
     );
     newHub.addSpoke(
       isolationVars.assetBId,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, addCap: type(uint256).max, drawCap: type(uint256).max})
+      DataTypes.SpokeConfig({active: true, addCap: type(uint64).max, drawCap: type(uint64).max})
     );
     vm.stopPrank();
 
@@ -111,7 +111,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     hub1.addSpoke(
       isolationVars.assetBIdMainHub,
       address(spoke1),
-      DataTypes.SpokeConfig({active: true, addCap: type(uint256).max, drawCap: type(uint256).max})
+      DataTypes.SpokeConfig({active: true, addCap: type(uint64).max, drawCap: type(uint64).max})
     );
     vm.stopPrank();
 
@@ -183,7 +183,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     hub1.addSpoke(
       isolationVars.assetBIdMainHub,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, addCap: 0, drawCap: 100_000e18})
+      DataTypes.SpokeConfig({active: true, addCap: 0, drawCap: 100_000})
     );
     vm.stopPrank();
 
@@ -214,7 +214,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     assertEq(hub1.getAssetTotalOwed(isolationVars.assetBIdMainHub), 100_000e18);
 
     // Bob cannot borrow asset B from main hub via new spoke past draw cap
-    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 100_000e18));
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 100_000));
     Utils.borrow(newSpoke, isolationVars.reserveBIdMainHub, bob, 1, bob);
 
     // Bob cannot supply B to main hub via new spoke because supply cap is 0

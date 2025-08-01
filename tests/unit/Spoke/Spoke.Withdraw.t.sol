@@ -233,6 +233,7 @@ contract SpokeWithdrawTest is SpokeBase {
   ) public {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
+    elapsed = uint40(bound(elapsed, 0, MAX_SKIP_TIME));
 
     Utils.supplyCollateral({
       spoke: spoke1,

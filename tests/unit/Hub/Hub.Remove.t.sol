@@ -389,7 +389,7 @@ contract HubRemoveTest is HubBase {
     hub1.remove(daiAssetId, amount + 1, alice);
 
     // advance time, but no accrual
-    skip(1e18);
+    skip(365 days);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, amount));
     vm.prank(address(spoke1));

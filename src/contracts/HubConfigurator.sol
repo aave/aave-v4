@@ -3,6 +3,7 @@ pragma solidity ^0.8.10;
 
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {IHub} from 'src/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/interfaces/IHubConfigurator.sol';
@@ -14,6 +15,8 @@ import {IHubConfigurator} from 'src/interfaces/IHubConfigurator.sol';
  * @dev Must be granted permission by the Hub
  */
 contract HubConfigurator is Ownable, IHubConfigurator {
+  using SafeCast for uint256;
+
   /**
    * @dev Constructor
    * @param owner_ The address of the owner
@@ -41,7 +44,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     targetHub.addSpoke(
       assetId,
       feeReceiver,
-      DataTypes.SpokeConfig({addCap: type(uint256).max, drawCap: type(uint256).max, active: true})
+      DataTypes.SpokeConfig({addCap: type(uint64).max, drawCap: type(uint64).max, active: true})
     );
 
     return assetId;
@@ -63,7 +66,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     targetHub.addSpoke(
       assetId,
       feeReceiver,
-      DataTypes.SpokeConfig({addCap: type(uint256).max, drawCap: type(uint256).max, active: true})
+      DataTypes.SpokeConfig({addCap: type(uint64).max, drawCap: type(uint64).max, active: true})
     );
 
     return assetId;
@@ -77,7 +80,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    config.liquidityFee = liquidityFee;
+    config.liquidityFee = liquidityFee.toUint16();
     targetHub.updateAssetConfig(assetId, config);
   }
 
@@ -104,7 +107,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     _updateFeeReceiverSpokeConfig(targetHub, assetId, config.feeReceiver, feeReceiver);
-    config.liquidityFee = liquidityFee;
+    config.liquidityFee = liquidityFee.toUint16();
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config);
   }
@@ -204,7 +207,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-    config.addCap = addCap;
+    config.addCap = addCap.toUint64();
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
@@ -217,7 +220,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-    config.drawCap = drawCap;
+    config.drawCap = drawCap.toUint64();
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
@@ -270,10 +273,10 @@ contract HubConfigurator is Ownable, IHubConfigurator {
       hub.addSpoke(
         assetId,
         newFeeReceiver,
-        DataTypes.SpokeConfig({addCap: type(uint256).max, drawCap: type(uint256).max, active: true})
+        DataTypes.SpokeConfig({addCap: type(uint64).max, drawCap: type(uint64).max, active: true})
       );
     } else {
-      _updateSpokeCaps(hub, assetId, newFeeReceiver, type(uint256).max, type(uint256).max);
+      _updateSpokeCaps(hub, assetId, newFeeReceiver, type(uint64).max, type(uint64).max);
     }
   }
 
@@ -293,8 +296,8 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     uint256 drawCap
   ) internal {
     DataTypes.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
-    config.addCap = addCap;
-    config.drawCap = drawCap;
+    config.addCap = addCap.toUint64();
+    config.drawCap = drawCap.toUint64();
     hub.updateSpokeConfig(assetId, spoke, config);
   }
 }
