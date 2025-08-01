@@ -195,6 +195,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     // supply and draw dai liquidity to accrue interest
     // supply from spoke2, draw from spoke1
     _supplyAndDrawLiquidity({
+      liquidityHub: hub,
       assetId: daiAssetId,
       supplyUser: bob,
       supplySpoke: address(spoke2),
@@ -291,6 +292,7 @@ contract LiquidityHubRemoveTest is LiquidityHubBase {
     // supply and draw dai liquidity to accrue interest
     // supply from spoke2, draw from spoke1
     _supplyAndDrawLiquidity({
+      liquidityHub: hub,
       assetId: daiAssetId,
       supplyUser: bob,
       supplySpoke: address(spoke2),

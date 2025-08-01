@@ -288,6 +288,26 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   /// @inheritdoc ILiquidityHub
+  function eliminateDeficit(uint256 assetId, uint256 amount) external returns (uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+
+    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+    _validateEliminateDeficit(asset, spoke, amount);
+
+    uint256 removedShares = previewRemoveByAssets(assetId, amount);
+    asset.suppliedShares -= removedShares;
+    spoke.suppliedShares -= removedShares;
+    asset.deficit -= amount;
+
+    asset.updateBorrowRate(assetId);
+
+    emit DeficitEliminated(assetId, msg.sender, removedShares, amount);
+
+    return removedShares;
+  }
+
+  /// @inheritdoc ILiquidityHub
   function refreshPremiumDebt(
     uint256 assetId,
     DataTypes.PremiumDelta calldata premiumDelta
@@ -325,31 +345,6 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     emit Remove(assetId, msg.sender, feeShares, feeAmount);
     emit Add(assetId, feeReceiver, feeShares, feeAmount);
-  }
-
-  /**
-   * @dev Applies premium deltas on asset and spoke debt, and validates that total premium debt
-   * cannot decrease by more than `premiumAmount`.
-   */
-  function _applyPremiumDelta(
-    DataTypes.Asset storage asset,
-    DataTypes.SpokeData storage spoke,
-    DataTypes.PremiumDelta calldata premium,
-    uint256 premiumAmount
-  ) internal {
-    uint256 premiumDebtBefore = asset.premiumDebt();
-
-    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premium.drawnSharesDelta);
-    asset.premiumOffset = _add(asset.premiumOffset, premium.offsetDelta);
-    asset.realizedPremium = _add(asset.realizedPremium, premium.realizedDelta);
-
-    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premium.drawnSharesDelta);
-    spoke.premiumOffset = _add(spoke.premiumOffset, premium.offsetDelta);
-    spoke.realizedPremium = _add(spoke.realizedPremium, premium.realizedDelta);
-
-    // can increase due to precision loss on premium debt (base unchanged)
-    // todo mathematically find premium diff ceiling and replace the `2`
-    require(asset.premiumDebt() + premiumAmount - premiumDebtBefore <= 2, InvalidDebtChange());
   }
 
   /// @inheritdoc ILiquidityHub
@@ -527,6 +522,10 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return _assets[assetId].availableLiquidity;
   }
 
+  function getDeficit(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].deficit;
+  }
+
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
     return _assets[assetId].config;
   }
@@ -534,6 +533,31 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   //
   // Internal
   //
+
+  /**
+   * @dev Applies premium deltas on asset and spoke debt, and validates that total premium debt
+   * cannot decrease by more than `premiumAmount`.
+   */
+  function _applyPremiumDelta(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
+    DataTypes.PremiumDelta calldata premium,
+    uint256 premiumAmount
+  ) internal {
+    uint256 premiumDebtBefore = asset.premiumDebt();
+
+    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premium.drawnSharesDelta);
+    asset.premiumOffset = _add(asset.premiumOffset, premium.offsetDelta);
+    asset.realizedPremium = _add(asset.realizedPremium, premium.realizedDelta);
+
+    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premium.drawnSharesDelta);
+    spoke.premiumOffset = _add(spoke.premiumOffset, premium.offsetDelta);
+    spoke.realizedPremium = _add(spoke.realizedPremium, premium.realizedDelta);
+
+    // can increase due to precision loss on premium debt (base unchanged)
+    // todo mathematically find premium diff ceiling and replace the `2`
+    require(asset.premiumDebt() + premiumAmount - premiumDebtBefore <= 2, InvalidDebtChange());
+  }
 
   function _validateAdd(
     DataTypes.Asset storage asset,
@@ -621,10 +645,13 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     require(premiumAmount <= premiumDebt, SurplusDeficitReported(premiumDebt));
   }
 
-  // handles underflow
-  function _add(uint256 a, int256 b) internal pure returns (uint256) {
-    if (b >= 0) return a + uint256(b);
-    return a - uint256(-b);
+  function _validateEliminateDeficit(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
+    uint256 amount
+  ) internal view {
+    require(spoke.config.active, SpokeNotActive());
+    require(amount != 0 && amount <= asset.deficit, InvalidDeficitAmount());
   }
 
   function _validatePayFee(
@@ -633,5 +660,11 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   ) internal view {
     require(senderSpoke.config.active, SpokeNotActive());
     require(feeShares != 0, InvalidFeeShares());
+  }
+
+  // handles underflow
+  function _add(uint256 a, int256 b) internal pure returns (uint256) {
+    if (b >= 0) return a + uint256(b);
+    return a - uint256(-b);
   }
 }
