@@ -48,7 +48,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, 0);
+    emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0);
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
@@ -356,7 +356,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // Repay
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, 0);
+    emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0);
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), repayAmount, bob);
 
@@ -474,7 +474,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(
+    emit ISpokeBase.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -575,7 +575,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     assertGt(daiRepayAmount, 0); // interest is not zero
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(
+    emit ISpokeBase.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,

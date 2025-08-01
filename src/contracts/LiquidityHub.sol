@@ -5,7 +5,7 @@ import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {ILiquidityHubBase, ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
@@ -147,7 +147,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   // Spoke Actions
   // /////
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc ILiquidityHubBase
   function add(uint256 assetId, uint256 amount, address from) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -172,7 +172,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return suppliedShares;
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc ILiquidityHubBase
   function remove(uint256 assetId, uint256 amount, address to) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -194,7 +194,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return withdrawnShares;
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc ILiquidityHubBase
   function draw(uint256 assetId, uint256 amount, address to) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -216,7 +216,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return drawnShares;
   }
 
-  /// @inheritdoc ILiquidityHub
+  /// @inheritdoc ILiquidityHubBase
   function restore(
     uint256 assetId,
     uint256 baseAmount,

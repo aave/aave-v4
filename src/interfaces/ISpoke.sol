@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
 
 /**
  * @title ISpoke
  * @author Aave Labs
- * @notice Basic interface for Spoke
+ * @notice Full interface for Spoke
  */
-interface ISpoke is IMulticall, IAccessManaged {
+interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
 
@@ -54,62 +55,6 @@ interface ISpoke is IMulticall, IAccessManaged {
    * @param reserveId The identifier of the reserve.
    */
   event UserDynamicConfigRefreshedSingle(address indexed user, uint256 reserveId);
-
-  /**
-   * @notice Emitted on the supply action.
-   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator, and supplier of the underlying asset.
-   * @param user The owner of the modified position.
-   * @param suppliedShares The amount of supply shares minted.
-   */
-  event Supply(
-    uint256 indexed reserveId,
-    address indexed caller,
-    address indexed user,
-    uint256 suppliedShares
-  );
-
-  /**
-   * @notice Emitted on the withdraw action.
-   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator, and recipient of the underlying asset being withdrawn.
-   * @param user The owner of the modified position.
-   * @param suppliedShares The amount of supply shares burned.
-   */
-  event Withdraw(
-    uint256 indexed reserveId,
-    address indexed caller,
-    address indexed user,
-    uint256 suppliedShares
-  );
-
-  /**
-   * @notice Emitted on the borrow action.
-   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator, and recipient of the underlying asset being borrowed.
-   * @param user The owner of the position on which debt is generated.
-   * @param drawnShares The amount of debt shares minted.
-   */
-  event Borrow(
-    uint256 indexed reserveId,
-    address indexed caller,
-    address indexed user,
-    uint256 drawnShares
-  );
-
-  /**
-   * @notice Emitted on the repay action.
-   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator, and supplier of the underlying asset being repaid.
-   * @param user The owner of the position whose debt is being repaid.
-   * @param drawnShares The amount of debt shares burned.
-   */
-  event Repay(
-    uint256 indexed reserveId,
-    address indexed caller,
-    address indexed user,
-    uint256 drawnShares
-  );
 
   /**
    * @notice Emitted on setUsingAsCollateral action.
@@ -156,24 +101,6 @@ interface ISpoke is IMulticall, IAccessManaged {
   event ReservePriceSourceUpdated(uint256 indexed reserveId, address indexed priceSource);
   event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
 
-  /**
-   * @dev Emitted when a borrower is liquidated.
-   * @param collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
-   * @param debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
-   * @param user The address of the borrower getting liquidated.
-   * @param liquidatedDebt The debt amount of borrowed asset to be liquidated.
-   * @param liquidatedCollateral The amount of collateral received by the liquidator.
-   * @param liquidator The address of the liquidator.
-   */
-  event LiquidationCall(
-    address indexed collateralAsset,
-    address indexed debtAsset,
-    address indexed user,
-    uint256 liquidatedDebt,
-    uint256 liquidatedCollateral,
-    address liquidator
-  );
-
   error ReserveNotListed();
   error AssetNotListed();
   error InvalidCollateralRisk();
@@ -184,10 +111,8 @@ interface ISpoke is IMulticall, IAccessManaged {
   error InvalidCollateralFactor();
   error InvalidLiquidationBonus();
   error IncompatibleCollateralFactorAndLiquidationBonus();
-  error InvalidReserveDecimals();
   error HealthFactorBelowThreshold();
   error InvalidCloseFactor();
-  error InvalidHubAddress();
   error InvalidHealthFactorForMaxBonus();
   error InvalidLiquidationBonusFactor();
   error HealthFactorNotBelowThreshold();
@@ -248,62 +173,6 @@ interface ISpoke is IMulticall, IAccessManaged {
    * @param active True if positionManager is to be set as active, false otherwise.
    */
   function updatePositionManager(address positionManager, bool active) external;
-
-  /**
-   * @notice Supply an amount of underlying asset of the specified reserve.
-   * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior token approval is required.
-   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
-   * @param reserveId The reserve identifier.
-   * @param amount The amount of asset to supply.
-   * @param onBehalfOf The owner of position to add supply shares to.
-   */
-  function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external;
-
-  /**
-   * @notice Withdraws a specified amount of underlying asset from the given reserve.
-   * @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
-   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
-   * @dev Caller receives the underlying asset withdrawn.
-   * @param reserveId The identifier of the reserve.
-   * @param amount The amount of asset to withdraw.
-   * @param onBehalfOf The owner of position to remove supply shares from.
-   */
-  function withdraw(uint256 reserveId, uint256 amount, address onBehalfOf) external;
-
-  /**
-   * @notice Borrows a specified amount of underlying asset from the given reserve
-   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
-   * @dev Caller receives the underlying asset borrowed.
-   * @param reserveId The identifier of the reserve.
-   * @param amount The amount of asset to borrow.
-   * @param onBehalfOf The owner of the position against which debt is generated.
-   */
-  function borrow(uint256 reserveId, uint256 amount, address onBehalfOf) external;
-
-  /**
-   * @notice Repays a specified amount of underlying asset to a given reserve.
-   * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior approval is required.
-   * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
-   * @param reserveId The identifier of the reserve.
-   * @param amount The amount of asset to repay.
-   * @param onBehalfOf The owner of the position whose debt is repaid.
-   */
-  function repay(uint256 reserveId, uint256 amount, address onBehalfOf) external;
-
-  /**
-   * @notice Liquidates a user position.
-   * @dev Invokes Liquidity Hub restore, and pulls underlying repaid debt asset from caller (Liquidator), hence it needs prior approval.
-   * @param collateralReserveId The reserveId of the underlying asset used as collateral by the liquidated user.
-   * @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator during liquidation.
-   * @param user The address of the user to liquidate.
-   * @param debtToCover The amount of debt to cover.
-   */
-  function liquidationCall(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user,
-    uint256 debtToCover
-  ) external;
 
   /**
    * @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.

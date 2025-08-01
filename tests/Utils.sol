@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {ISpoke} from 'src/interfaces/ISpoke.sol';
+import {ILiquidityHubBase, ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
@@ -25,7 +25,7 @@ library Utils {
   }
 
   function draw(
-    ILiquidityHub hub,
+    ILiquidityHubBase hub,
     uint256 assetId,
     address caller,
     address to,
@@ -36,7 +36,7 @@ library Utils {
   }
 
   function remove(
-    ILiquidityHub hub,
+    ILiquidityHubBase hub,
     uint256 assetId,
     address caller,
     uint256 amount,
@@ -116,7 +116,7 @@ library Utils {
   }
 
   function supply(
-    ISpoke spoke,
+    ISpokeBase spoke,
     uint256 reserveId,
     address caller,
     uint256 amount,
@@ -138,7 +138,7 @@ library Utils {
   }
 
   function withdraw(
-    ISpoke spoke,
+    ISpokeBase spoke,
     uint256 reserveId,
     address caller,
     uint256 amount,
@@ -149,7 +149,7 @@ library Utils {
   }
 
   function borrow(
-    ISpoke spoke,
+    ISpokeBase spoke,
     uint256 reserveId,
     address caller,
     uint256 amount,
@@ -160,7 +160,7 @@ library Utils {
   }
 
   function repay(
-    ISpoke spoke,
+    ISpokeBase spoke,
     uint256 reserveId,
     address caller,
     uint256 amount,

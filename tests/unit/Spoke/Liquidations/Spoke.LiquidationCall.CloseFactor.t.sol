@@ -513,7 +513,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     }
 
     vm.expectEmit(address(state.spoke));
-    emit ISpoke.LiquidationCall(
+    emit ISpokeBase.LiquidationCall(
       state.collateralReserve.underlying,
       state.debtReserve.underlying,
       state.user,

@@ -81,7 +81,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // Bob withdraws immediately in the same block
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Withdraw(_daiReserveId(spoke1), bob, bob, amount);
+    emit ISpokeBase.Withdraw(_daiReserveId(spoke1), bob, bob, amount);
     vm.prank(bob);
     spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
 

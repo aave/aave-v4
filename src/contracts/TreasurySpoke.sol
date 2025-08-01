@@ -5,7 +5,7 @@ import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {ITreasurySpoke} from 'src/interfaces/ITreasurySpoke.sol';
+import {ITreasurySpoke, ISpokeBase} from 'src/interfaces/ITreasurySpoke.sol';
 
 /**
  * @title TreasurySpoke
@@ -14,7 +14,7 @@ import {ITreasurySpoke} from 'src/interfaces/ITreasurySpoke.sol';
  * @dev Utilizes all assets from the Hub without restrictions, making reserve and asset identifiers aligned.
  * @dev Allows withdraw to claim fees and supply to invest back into the Hub via this dedicated spoke.
  */
-contract TreasurySpoke is Ownable, ITreasurySpoke {
+contract TreasurySpoke is ITreasurySpoke, Ownable {
   using SafeERC20 for IERC20;
 
   /// @inheritdoc ITreasurySpoke
@@ -59,5 +59,25 @@ contract TreasurySpoke is Ownable, ITreasurySpoke {
   /// @inheritdoc ITreasurySpoke
   function getSuppliedShares(uint256 reserveId) external view returns (uint256) {
     return HUB.getSpokeSuppliedShares(reserveId, address(this));
+  }
+
+  /// @inheritdoc ISpokeBase
+  function borrow(uint256 reserveId, uint256 amount, address) external {
+    /// intentionally left blank
+  }
+
+  /// @inheritdoc ISpokeBase
+  function repay(uint256 reserveId, uint256 amount, address) external {
+    /// intentionally left blank
+  }
+
+  /// @inheritdoc ISpokeBase
+  function liquidationCall(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover
+  ) external {
+    /// intentionally left blank
   }
 }

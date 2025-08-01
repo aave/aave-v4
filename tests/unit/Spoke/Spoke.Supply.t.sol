@@ -87,7 +87,7 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(bobData[stage].data.realizedPremium, 0);
     assertEq(bobData[stage].data.suppliedShares, 0);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supply(_daiReserveId(spoke1), bob, bob, amount);
+    emit ISpokeBase.Supply(_daiReserveId(spoke1), bob, bob, amount);
     vm.prank(bob);
     spoke1.supply(_daiReserveId(spoke1), amount, bob);
     stage = 1;
@@ -165,7 +165,7 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(bobData[stage].data.suppliedShares, 0);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supply(_daiReserveId(spoke1), bob, bob, amount);
+    emit ISpokeBase.Supply(_daiReserveId(spoke1), bob, bob, amount);
     vm.prank(bob);
     spoke1.supply(_daiReserveId(spoke1), amount, bob);
 
@@ -234,7 +234,7 @@ contract SpokeSupplyTest is SpokeBase {
     deal(address(tokenList.dai), carol, amount);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supply(_daiReserveId(spoke1), carol, carol, expectedShares);
+    emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares);
     vm.prank(carol);
     spoke1.supply(_daiReserveId(spoke1), amount, carol);
     stage = 1;
@@ -347,7 +347,7 @@ contract SpokeSupplyTest is SpokeBase {
     vm.assume(expectedSuppliedShares > 0);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supply(reserveId, carol, carol, expectedSuppliedShares);
+    emit ISpokeBase.Supply(reserveId, carol, carol, expectedSuppliedShares);
     vm.prank(carol);
     spoke1.supply(reserveId, amount, carol);
     stage = 1;
@@ -422,7 +422,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supply(_daiReserveId(spoke1), carol, carol, expectedShares);
+    emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares);
     spoke1.supply(_daiReserveId(spoke1), amount, carol);
     stage = 1;
 
@@ -516,7 +516,7 @@ contract SpokeSupplyTest is SpokeBase {
     deal(address(underlying), carol, amount);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supply(reserveId, carol, carol, expectedShares);
+    emit ISpokeBase.Supply(reserveId, carol, carol, expectedShares);
     vm.prank(carol);
     spoke1.supply(reserveId, amount, carol);
 
