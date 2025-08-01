@@ -338,9 +338,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 suppliedShares = sender.suppliedShares;
     require(feeShares <= suppliedShares, SuppliedSharesExceeded(suppliedShares));
 
-    unchecked {
-      sender.suppliedShares = suppliedShares - feeShares;
-    }
+    sender.suppliedShares = suppliedShares - feeShares;
     receiver.suppliedShares += feeShares;
 
     emit TransferShares(assetId, feeShares, msg.sender, feeReceiver);
@@ -358,9 +356,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 suppliedShares = sender.suppliedShares;
     require(shares <= suppliedShares, SuppliedSharesExceeded(suppliedShares));
 
-    unchecked {
-      sender.suppliedShares = suppliedShares - shares;
-    }
+    sender.suppliedShares = suppliedShares - shares;
     receiver.suppliedShares += shares;
 
     emit TransferShares(assetId, shares, msg.sender, toSpoke);
