@@ -333,13 +333,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage receiver = _spokes[assetId][feeReceiver];
 
-    asset.accrue(assetId, receiver);
-
-    uint256 suppliedShares = sender.suppliedShares;
-    require(feeShares <= suppliedShares, SuppliedSharesExceeded(suppliedShares));
-
-    sender.suppliedShares = suppliedShares - feeShares;
-    receiver.suppliedShares += feeShares;
+    _transferShares(asset, sender, receiver, assetId, feeShares);
 
     emit TransferShares(assetId, feeShares, msg.sender, feeReceiver);
   }
@@ -351,13 +345,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.Asset storage asset = _assets[assetId];
     _validateTransferShares(asset, sender, receiver, assetId, shares);
 
-    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-
-    uint256 suppliedShares = sender.suppliedShares;
-    require(shares <= suppliedShares, SuppliedSharesExceeded(suppliedShares));
-
-    sender.suppliedShares = suppliedShares - shares;
-    receiver.suppliedShares += shares;
+    _transferShares(asset, sender, receiver, assetId, shares);
 
     emit TransferShares(assetId, shares, msg.sender, toSpoke);
   }
@@ -566,6 +554,22 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // can increase due to precision loss on premium debt (base unchanged)
     // todo mathematically find premium diff ceiling and replace the `2`
     require(asset.premiumDebt() + premiumAmount - premiumDebtBefore <= 2, InvalidDebtChange());
+  }
+
+  function _transferShares(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage sender,
+    DataTypes.SpokeData storage receiver,
+    uint256 assetId,
+    uint256 shares
+  ) internal {
+    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+
+    uint256 suppliedShares = sender.suppliedShares;
+    require(shares <= suppliedShares, SuppliedSharesExceeded(suppliedShares));
+
+    sender.suppliedShares = suppliedShares - shares;
+    receiver.suppliedShares += shares;
   }
 
   function _validateAdd(
