@@ -63,7 +63,7 @@ interface ILiquidityHub is IAccessManaged {
     uint256 totalRestoredAmount
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
-  event MovedSuppliedShares(
+  event TransferredAddedShares(
     uint256 indexed assetId,
     uint256 shares,
     address fromSpoke,
@@ -93,6 +93,7 @@ interface ILiquidityHub is IAccessManaged {
   error InvalidRemoveAmount();
   error InvalidRestoreAmount();
   error SuppliedAmountExceeded(uint256 suppliedAmount);
+  error SuppliedSharesExceeded(uint256 suppliedShares);
   error NotAvailableLiquidity(uint256 availableLiquidity);
   error InvalidDrawAmount();
   error DrawCapExceeded(uint256 drawCap);
@@ -244,7 +245,7 @@ interface ILiquidityHub is IAccessManaged {
    * @param shares The amount of shares to move.
    * @param toSpoke The address of the spoke to move shares to.
    */
-  function moveSuppliedShares(uint256 assetId, uint256 shares, address toSpoke) external;
+  function transferAddedShares(uint256 assetId, uint256 shares, address toSpoke) external;
 
   /**
    * @notice Eliminates deficit by removing supplied shares of caller spoke.

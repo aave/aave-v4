@@ -31,7 +31,7 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     uint256 feeAmount = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
 
     vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, feeAmount)
+      abi.encodeWithSelector(ILiquidityHub.SuppliedSharesExceeded.selector, feeShares)
     );
     vm.prank(address(spoke1));
     hub.payFee(daiAssetId, feeShares + 1);
@@ -57,7 +57,7 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     assertGt(feeAmount, feeShares);
 
     vm.expectRevert(
-      abi.encodeWithSelector(ILiquidityHub.SuppliedAmountExceeded.selector, feeAmount)
+      abi.encodeWithSelector(ILiquidityHub.SuppliedSharesExceeded.selector, feeShares)
     );
     vm.prank(address(spoke1));
     hub.payFee(daiAssetId, feeShares + 1);
@@ -100,9 +100,12 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.Remove(daiAssetId, address(spoke1), feeShares, feeAmount);
-    vm.expectEmit(address(hub));
-    emit ILiquidityHub.Add(daiAssetId, _getFeeReceiver(daiAssetId), feeShares, feeAmount);
+    emit ILiquidityHub.TransferredAddedShares(
+      daiAssetId,
+      feeShares,
+      address(spoke1),
+      _getFeeReceiver(daiAssetId)
+    );
 
     vm.prank(address(spoke1));
     hub.payFee(daiAssetId, feeShares);

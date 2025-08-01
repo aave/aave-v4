@@ -336,34 +336,24 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     asset.accrue(assetId, receiver);
 
     uint256 suppliedShares = sender.suppliedShares;
-    uint256 suppliedAssets = asset.toSuppliedAssetsDown(suppliedShares);
-    uint256 feeAmount = asset.toSuppliedAssetsDown(feeShares);
-    require(feeAmount <= suppliedAssets, SuppliedAmountExceeded(suppliedAssets));
+    require(feeShares <= suppliedShares, SuppliedSharesExceeded(suppliedShares));
 
     sender.suppliedShares = suppliedShares - feeShares;
     receiver.suppliedShares += feeShares;
 
-    emit Remove(assetId, msg.sender, feeShares, feeAmount);
-    emit Add(assetId, feeReceiver, feeShares, feeAmount);
+    emit TransferredAddedShares(assetId, feeShares, msg.sender, feeReceiver);
   }
 
   /// @inheritdoc ILiquidityHub
-  function moveSuppliedShares(uint256 assetId, uint256 shares, address toSpoke) external {
+  function transferAddedShares(uint256 assetId, uint256 shares, address toSpoke) external {
     DataTypes.SpokeData storage fromSpoke = _spokes[assetId][msg.sender];
-    require(fromSpoke.config.active, SpokeNotActive());
     DataTypes.SpokeData storage targetSpoke = _spokes[assetId][toSpoke];
-
-    require(shares > 0 && shares <= fromSpoke.suppliedShares, InvalidSharesAmount());
-    require(
-      targetSpoke.suppliedShares + _assets[assetId].toSuppliedAssetsDown(shares) <=
-        targetSpoke.config.supplyCap,
-      SupplyCapExceeded(targetSpoke.config.supplyCap)
-    );
+    _validateTransferAddedShares(fromSpoke, targetSpoke, assetId, shares);
 
     targetSpoke.suppliedShares += shares;
     fromSpoke.suppliedShares -= shares;
 
-    emit MovedSuppliedShares(assetId, shares, msg.sender, toSpoke);
+    emit TransferredAddedShares(assetId, shares, msg.sender, toSpoke);
   }
 
   /// @inheritdoc ILiquidityHub
@@ -446,28 +436,22 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   /// @inheritdoc ILiquidityHub
-  function convertToSuppliedAssets(
-    uint256 assetId,
-    uint256 shares
-  ) external view returns (uint256) {
+  function convertToSuppliedAssets(uint256 assetId, uint256 shares) public view returns (uint256) {
     return _assets[assetId].toSuppliedAssetsDown(shares);
   }
 
   /// @inheritdoc ILiquidityHub
-  function convertToSuppliedShares(
-    uint256 assetId,
-    uint256 assets
-  ) external view returns (uint256) {
+  function convertToSuppliedShares(uint256 assetId, uint256 assets) public view returns (uint256) {
     return _assets[assetId].toSuppliedSharesDown(assets);
   }
 
   /// @inheritdoc ILiquidityHub
-  function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
+  function convertToDrawnAssets(uint256 assetId, uint256 shares) public view returns (uint256) {
     return _assets[assetId].toDrawnAssetsUp(shares);
   }
 
   /// @inheritdoc ILiquidityHub
-  function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
+  function convertToDrawnShares(uint256 assetId, uint256 assets) public view returns (uint256) {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
@@ -679,6 +663,23 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   ) internal view {
     require(senderSpoke.config.active, SpokeNotActive());
     require(feeShares != 0, InvalidFeeShares());
+  }
+
+  function _validateTransferAddedShares(
+    DataTypes.SpokeData storage fromSpoke,
+    DataTypes.SpokeData storage targetSpoke,
+    uint256 assetId,
+    uint256 shares
+  ) internal view {
+    require(fromSpoke.config.active && targetSpoke.config.active, SpokeNotActive());
+    require(shares > 0, InvalidSharesAmount());
+    require(shares <= fromSpoke.suppliedShares, SuppliedSharesExceeded(fromSpoke.suppliedShares));
+    require(
+      convertToSuppliedAssets(assetId, targetSpoke.suppliedShares) +
+        convertToSuppliedAssets(assetId, shares) <=
+        targetSpoke.config.supplyCap,
+      SupplyCapExceeded(targetSpoke.config.supplyCap)
+    );
   }
 
   // handles underflow

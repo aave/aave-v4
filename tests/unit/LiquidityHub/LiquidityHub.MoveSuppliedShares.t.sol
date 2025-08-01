@@ -23,7 +23,7 @@ contract LiquidityHubMoveSuppliedSharesTest is LiquidityHubBase {
 
     // move supplied shares from spoke1 to spoke2
     vm.prank(address(spoke1));
-    hub.moveSuppliedShares(daiAssetId, moveAmount, address(spoke2));
+    hub.transferAddedShares(daiAssetId, moveAmount, address(spoke2));
 
     assertEq(hub.getSpokeSuppliedShares(daiAssetId, address(spoke1)), suppliedShares - moveAmount);
     assertEq(hub.getSpokeSuppliedShares(daiAssetId, address(spoke2)), moveAmount);
@@ -31,7 +31,7 @@ contract LiquidityHubMoveSuppliedSharesTest is LiquidityHubBase {
   }
 
   /// @dev Test moving more shares than a spoke has supplied
-  function test_moveSuppliedShares_fuzz_exceedingSuppliedShares_revertsWith_InvalidSharesAmount(
+  function test_moveSuppliedShares_fuzz_exceedingSuppliedShares_revertsWith_SuppliedSharesExceeded(
     uint256 supplyAmount
   ) public {
     uint256 supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT - 1);
@@ -45,14 +45,16 @@ contract LiquidityHubMoveSuppliedSharesTest is LiquidityHubBase {
 
     // try to move more supplied shares than spoke1 has
     vm.prank(address(spoke1));
-    vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
-    hub.moveSuppliedShares(daiAssetId, suppliedShares + 1, address(spoke2));
+    vm.expectRevert(
+      abi.encodeWithSelector(ILiquidityHub.SuppliedSharesExceeded.selector, suppliedShares)
+    );
+    hub.transferAddedShares(daiAssetId, suppliedShares + 1, address(spoke2));
   }
 
   function test_moveSuppliedShares_zeroShares_revertsWith_InvalidSharesAmount() public {
     vm.prank(address(spoke1));
     vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
-    hub.moveSuppliedShares(daiAssetId, 0, address(spoke2));
+    hub.transferAddedShares(daiAssetId, 0, address(spoke2));
   }
 
   function test_moveSuppliedShares_revertsWith_InactiveSpoke() public {
@@ -73,7 +75,7 @@ contract LiquidityHubMoveSuppliedSharesTest is LiquidityHubBase {
     // try to move supplied shares from inactive spoke1
     vm.prank(address(spoke1));
     vm.expectRevert(ILiquidityHub.SpokeNotActive.selector);
-    hub.moveSuppliedShares(daiAssetId, suppliedShares, address(spoke2));
+    hub.transferAddedShares(daiAssetId, suppliedShares, address(spoke2));
   }
 
   function test_moveSuppliedShares_exceedingCap_revertsWith_InvalidSharesAmount() public {
@@ -95,6 +97,6 @@ contract LiquidityHubMoveSuppliedSharesTest is LiquidityHubBase {
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
-    hub.moveSuppliedShares(daiAssetId, suppliedShares, address(spoke2));
+    hub.transferAddedShares(daiAssetId, suppliedShares, address(spoke2));
   }
 }
