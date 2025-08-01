@@ -333,7 +333,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage receiver = _spokes[assetId][feeReceiver];
 
-    _transferShares(asset, sender, receiver, assetId, feeShares);
+    asset.accrue(assetId, receiver);
+
+    _transferShares(sender, receiver, feeShares);
 
     emit TransferShares(assetId, feeShares, msg.sender, feeReceiver);
   }
@@ -343,9 +345,11 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.SpokeData storage sender = _spokes[assetId][msg.sender];
     DataTypes.SpokeData storage receiver = _spokes[assetId][toSpoke];
     DataTypes.Asset storage asset = _assets[assetId];
-    _validateTransferShares(asset, sender, receiver, assetId, shares);
+    _validateTransferShares(asset, sender, receiver, shares);
 
-    _transferShares(asset, sender, receiver, assetId, shares);
+    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+
+    _transferShares(sender, receiver, shares);
 
     emit TransferShares(assetId, shares, msg.sender, toSpoke);
   }
@@ -557,14 +561,10 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   function _transferShares(
-    DataTypes.Asset storage asset,
     DataTypes.SpokeData storage sender,
     DataTypes.SpokeData storage receiver,
-    uint256 assetId,
     uint256 shares
   ) internal {
-    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-
     uint256 suppliedShares = sender.suppliedShares;
     require(shares <= suppliedShares, SuppliedSharesExceeded(suppliedShares));
 
@@ -677,17 +677,15 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
   function _validateTransferShares(
     DataTypes.Asset storage asset,
-    DataTypes.SpokeData storage senderSpoke,
-    DataTypes.SpokeData storage receiverSpoke,
-    uint256 assetId,
+    DataTypes.SpokeData storage sender,
+    DataTypes.SpokeData storage receiver,
     uint256 shares
   ) internal view {
-    require(senderSpoke.config.active && receiverSpoke.config.active, SpokeNotActive());
+    require(sender.config.active && receiver.config.active, SpokeNotActive());
     require(shares > 0, InvalidSharesAmount());
     require(
-      asset.toSuppliedAssetsDown(receiverSpoke.suppliedShares + shares) <=
-        receiverSpoke.config.supplyCap,
-      SupplyCapExceeded(receiverSpoke.config.supplyCap)
+      asset.toSuppliedAssetsDown(receiver.suppliedShares + shares) <= receiver.config.supplyCap,
+      SupplyCapExceeded(receiver.config.supplyCap)
     );
   }
 
