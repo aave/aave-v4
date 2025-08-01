@@ -517,7 +517,7 @@ contract Hub is IHub, AccessManaged {
   //
 
   /**
-   * @dev Applies premium deltas on asset and spoke debt, and validates that total premium debt
+   * @dev Applies premium deltas on asset and spoke owed, and validates that total premium
    * cannot decrease by more than `premiumAmount`.
    */
   function _applyPremiumDelta(

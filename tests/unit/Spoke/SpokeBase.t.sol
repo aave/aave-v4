@@ -937,10 +937,10 @@ contract SpokeBase is Base {
     return vm.randomUint(0, type(uint16).max).toUint16();
   }
 
-  function _randomSpoke(IHub liqHub, uint256 assetId) internal returns (ISpoke) {
-    uint256 spokeCount = liqHub.getSpokeCount(assetId);
+  function _randomSpoke(IHub hub, uint256 assetId) internal returns (ISpoke) {
+    uint256 spokeCount = hub.getSpokeCount(assetId);
     uint256 spokeIndex = vm.randomUint(0, spokeCount - 1);
-    return ISpoke(liqHub.getSpokeAddress(assetId, spokeIndex));
+    return ISpoke(hub.getSpokeAddress(assetId, spokeIndex));
   }
 
   function _reserveId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {
@@ -980,12 +980,12 @@ contract SpokeBase is Base {
   /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
   function getReserveIdByAssetId(
     ISpoke spoke,
-    IHub liqHub,
+    IHub hub,
     uint256 assetId
   ) internal view returns (uint256) {
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
       DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-      if (address(liqHub) == address(reserve.hub) && assetId == reserve.assetId) {
+      if (address(hub) == address(reserve.hub) && assetId == reserve.assetId) {
         return reserveId;
       }
     }
