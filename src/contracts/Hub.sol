@@ -265,8 +265,8 @@ contract Hub is IHub, AccessManaged {
     uint128 drawnShares = previewRestoreByAssets(assetId, drawnAmount).toUint128();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
-    uint128 totalDeficitAmount = (drawnAmount + premiumAmount).toUint128();
-    asset.deficit += totalDeficitAmount;
+    uint256 totalDeficitAmount = drawnAmount + premiumAmount;
+    asset.deficit += totalDeficitAmount.toUint128();
 
     asset.updateDrawnRate(assetId);
 
