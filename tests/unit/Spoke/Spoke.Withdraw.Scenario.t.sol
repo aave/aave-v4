@@ -274,7 +274,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     (uint256 reserveBaseDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(params.reserveId);
     assertEq(reserveBaseDebt, 0, 'reserveData base debt');
     assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
-    assertEq(reserveData[state.stage].data.suppliedShares, 0, 'reserveData supplied shares');
+    assertEq(reserveData[state.stage].data.addedShares, 0, 'reserveData added shares');
 
     // alice
     (uint256 userBaseDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(params.reserveId, alice);

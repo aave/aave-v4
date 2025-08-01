@@ -116,6 +116,7 @@ contract HubAddTest is HubBase {
     _updateAddCap(daiAssetId, address(spoke2), newAddCap);
 
     _addAndDrawLiquidity({
+      hub: hub1,
       assetId: daiAssetId,
       addUser: bob,
       addSpoke: address(spoke2),
@@ -144,6 +145,7 @@ contract HubAddTest is HubBase {
 
     _updateAddCap(daiAssetId, address(spoke2), newAddCap);
     _addAndDrawLiquidity({
+      hub: hub1,
       assetId: daiAssetId,
       addUser: bob,
       addSpoke: address(spoke2),
@@ -368,6 +370,7 @@ contract HubAddTest is HubBase {
     uint256 drawAmount = daiAmount;
 
     _addAndDrawLiquidity({
+      hub: hub1,
       assetId: daiAssetId,
       addUser: bob,
       addSpoke: address(spoke2),
@@ -397,6 +400,7 @@ contract HubAddTest is HubBase {
     daiAmount = bound(daiAmount, 1e20, MAX_SUPPLY_AMOUNT);
     skipTime = bound(skipTime, 365 days, 100 * 365 days);
     _addAndDrawLiquidity({
+      hub: hub1,
       assetId: daiAssetId,
       addUser: bob,
       addSpoke: address(spoke2),
@@ -429,6 +433,7 @@ contract HubAddTest is HubBase {
     uint256 daiAmount = 100e18;
 
     _addAndDrawLiquidity({
+      hub: hub1,
       assetId: daiAssetId,
       addUser: bob,
       addSpoke: address(spoke2),
@@ -554,6 +559,7 @@ contract HubAddTest is HubBase {
     uint256 amount = 100e18;
 
     (, uint256 drawnAmount) = _addAndDrawLiquidity({
+      hub: hub1,
       assetId: daiAssetId,
       addUser: bob,
       addSpoke: address(spoke2),
@@ -661,6 +667,7 @@ contract HubAddTest is HubBase {
 
     TestAddParams memory params;
     (params.assetAddedShares, params.drawnShares) = _addAndDrawLiquidity({
+      hub: hub1,
       assetId: assetId,
       addUser: bob,
       addSpoke: address(spoke2),

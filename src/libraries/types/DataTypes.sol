@@ -47,11 +47,6 @@ library DataTypes {
   struct Reserve {
     uint256 reserveId;
     uint256 assetId;
-    uint256 suppliedShares;
-    uint256 drawnShares;
-    uint256 premiumShares;
-    uint256 premiumOffset;
-    uint256 realizedPremium;
     ReserveConfig config;
     uint16 dynamicConfigKey; // key of the last reserve config
     uint8 decimals;
@@ -96,6 +91,7 @@ library DataTypes {
     uint256 reserveId;
     uint256 assetId;
     IHub hub;
+    DataTypes.PremiumDelta premiumDelta;
   }
 
   struct CalculateUserAccountDataVars {
@@ -181,8 +177,6 @@ library DataTypes {
     uint256 restoredShares;
     uint256 withdrawnShares;
     uint256 newUserRiskPremium;
-    uint256 totalRestoredShares;
-    uint256 totalWithdrawnShares;
     uint256 totalLiquidationFeeShares;
     uint256 usersLength;
     uint256 liquidatedSuppliedShares;

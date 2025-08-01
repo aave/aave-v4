@@ -186,6 +186,7 @@ contract HubRemoveTest is HubBase {
     // add and draw dai liquidity to accrue interest
     // add from spoke2, draw from spoke1
     _addAndDrawLiquidity({
+      hub: hub1,
       assetId: daiAssetId,
       addUser: bob,
       addSpoke: address(spoke2),
@@ -282,6 +283,7 @@ contract HubRemoveTest is HubBase {
     // add and draw dai liquidity to accrue interest
     // add from spoke2, draw from spoke1
     _addAndDrawLiquidity({
+      hub: hub1,
       assetId: daiAssetId,
       addUser: bob,
       addSpoke: address(spoke2),

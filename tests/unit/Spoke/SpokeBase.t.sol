@@ -18,8 +18,8 @@ contract SpokeBase is Base {
   }
 
   struct TestData {
-    DataTypes.Reserve data;
-    uint256 suppliedAmount;
+    SpokePosition data;
+    uint256 addedAmount;
   }
 
   struct TestUserData {
@@ -421,10 +421,11 @@ contract SpokeBase is Base {
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (TestData memory) {
-    TestData memory reserveInfo;
-    reserveInfo.data = getReserveInfo(spoke, reserveId);
-    reserveInfo.suppliedAmount = spoke.getReserveSuppliedAmount(reserveId);
-    return reserveInfo;
+    return
+      TestData({
+        data: getSpokePosition(spoke, reserveId),
+        addedAmount: spoke.getReserveSuppliedAmount(reserveId)
+      });
   }
 
   function loadUserInfo(
@@ -977,10 +978,15 @@ contract SpokeBase is Base {
   }
 
   /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
-  function getReserveIdByAssetId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {
-    for (uint256 i; i < spoke.getReserveCount(); ++i) {
-      if (assetId == spoke.getReserve(i).assetId) {
-        return i;
+  function getReserveIdByAssetId(
+    ISpoke spoke,
+    IHub liqHub,
+    uint256 assetId
+  ) internal view returns (uint256) {
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+      DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
+      if (address(liqHub) == address(reserve.hub) && assetId == reserve.assetId) {
+        return reserveId;
       }
     }
     revert('not found');

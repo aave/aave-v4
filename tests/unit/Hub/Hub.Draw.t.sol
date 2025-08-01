@@ -315,6 +315,7 @@ contract HubDrawTest is HubBase {
     updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
 
     _addAndDrawLiquidity({
+      hub: hub1,
       assetId: daiAssetId,
       addUser: bob,
       addSpoke: address(spoke2),
@@ -360,6 +361,7 @@ contract HubDrawTest is HubBase {
 
     _mockInterestRateBps(rate);
     _addAndDrawLiquidity({
+      hub: hub1,
       assetId: daiAssetId,
       addUser: bob,
       addSpoke: address(spoke2),
@@ -401,6 +403,7 @@ contract HubDrawTest is HubBase {
     updateDrawCap(hub1, daiAssetId, address(spoke2), drawCap);
 
     _addAndDrawLiquidity({
+      hub: hub1,
       assetId: daiAssetId,
       addUser: bob,
       addSpoke: address(spoke2),

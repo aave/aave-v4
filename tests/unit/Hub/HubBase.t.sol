@@ -57,6 +57,7 @@ contract HubBase is Base {
 
   /// @dev mocks rate, addSpoke (addUser) adds asset, drawSpoke (drawUser) draws asset, skips time
   function _addAndDrawLiquidity(
+    IHub hub,
     uint256 assetId,
     address addUser,
     address addSpoke,
@@ -67,7 +68,7 @@ contract HubBase is Base {
     uint256 skipTime
   ) internal returns (uint256 addedShares, uint256 drawnShares) {
     addedShares = Utils.add({
-      hub: hub1,
+      hub: hub,
       assetId: assetId,
       caller: addSpoke,
       amount: addAmount,
@@ -75,7 +76,7 @@ contract HubBase is Base {
     });
 
     drawnShares = Utils.draw({
-      hub: hub1,
+      hub: hub,
       assetId: assetId,
       to: drawUser,
       caller: drawSpoke,
@@ -210,5 +211,9 @@ contract HubBase is Base {
     Utils.add({hub: hub1, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
 
     assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
+  }
+
+  function _randomAssetId(IHub hub) internal returns (uint256) {
+    return vm.randomUint(0, hub.getAssetCount() - 1);
   }
 }

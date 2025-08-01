@@ -55,9 +55,9 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 supplyExRate = getSupplyExRate(daiAssetId);
 
     // Reserve assertions before withdrawal
-    assertEq(daiData[stage].suppliedAmount, amount, 'reserve suppliedAmount pre-withdraw');
+    assertEq(daiData[stage].addedAmount, amount, 'reserve addedAmount pre-withdraw');
     assertEq(
-      daiData[stage].data.suppliedShares,
+      daiData[stage].data.addedShares,
       expectedSupplyShares,
       'reserve suppliedShares pre-withdraw'
     );
@@ -91,8 +91,8 @@ contract SpokeWithdrawTest is SpokeBase {
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
     // Reserve assertions after withdrawal
-    assertEq(daiData[stage].suppliedAmount, 0, 'reserve suppliedAmount post-withdraw');
-    assertEq(daiData[stage].data.suppliedShares, 0, 'reserve suppliedShares post-withdraw');
+    assertEq(daiData[stage].addedAmount, 0, 'reserve addedAmount post-withdraw');
+    assertEq(daiData[stage].data.addedShares, 0, 'reserve addedShares post-withdraw');
 
     // Bob assertions after withdrawal
     assertEq(bobData[stage].suppliedAmount, 0, 'bob suppliedAmount post-withdraw');
@@ -357,7 +357,7 @@ contract SpokeWithdrawTest is SpokeBase {
     (uint256 reserveBaseDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(state.reserveId);
     assertEq(reserveBaseDebt, 0, 'reserveData base debt');
     assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
-    assertEq(reserveData[stage].data.suppliedShares, 0, 'reserveData supplied shares');
+    assertEq(reserveData[stage].data.addedShares, 0, 'reserveData added shares');
 
     // alice
     (uint256 userBaseDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
@@ -502,7 +502,7 @@ contract SpokeWithdrawTest is SpokeBase {
     (uint256 reserveBaseDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(state.reserveId);
     assertEq(reserveBaseDebt, 0, 'reserveData base debt');
     assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
-    assertEq(reserveData[stage].data.suppliedShares, 0, 'reserveData supplied shares');
+    assertEq(reserveData[stage].data.addedShares, 0, 'reserveData added shares');
 
     // alice
     (uint256 userBaseDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
@@ -600,9 +600,9 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(reserveBaseDebt, 0, 'reserveData base debt');
     assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
     assertEq(
-      reserveData[stage].data.suppliedShares,
-      reserveData[1].data.suppliedShares - state.withdrawnShares,
-      'reserveData supplied shares'
+      reserveData[stage].data.addedShares,
+      reserveData[1].data.addedShares - state.withdrawnShares,
+      'reserveData added shares'
     );
 
     // alice
@@ -740,7 +740,7 @@ contract SpokeWithdrawTest is SpokeBase {
     (uint256 reserveBaseDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(state.reserveId);
     assertEq(reserveBaseDebt, 0, 'reserveData base debt');
     assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
-    assertEq(reserveData[stage].data.suppliedShares, 0, 'reserveData supplied shares');
+    assertEq(reserveData[stage].data.addedShares, 0, 'reserveData added shares');
 
     // alice
     (uint256 userBaseDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);

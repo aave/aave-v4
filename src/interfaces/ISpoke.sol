@@ -375,8 +375,6 @@ interface ISpoke is IMulticall, IAccessManaged {
     uint16 configKey
   ) external view returns (DataTypes.DynamicReserveConfig memory);
 
-  function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);
-
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
 
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
@@ -416,8 +414,6 @@ interface ISpoke is IMulticall, IAccessManaged {
   function isBorrowing(uint256 reserveId, address user) external view returns (bool);
 
   function getReserveCount() external view returns (uint256);
-
-  function reservesList(uint256) external view returns (uint256);
 
   function getVariableLiquidationBonus(
     uint256 reserveId,

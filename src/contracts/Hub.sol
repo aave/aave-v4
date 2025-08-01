@@ -282,6 +282,26 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
+  function eliminateDeficit(uint256 assetId, uint256 amount) external returns (uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+
+    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+    _validateEliminateDeficit(asset, spoke, amount);
+
+    uint256 shares = previewRemoveByAssets(assetId, amount);
+    asset.addedShares -= shares;
+    spoke.addedShares -= shares;
+    asset.deficit -= amount;
+
+    asset.updateDrawnRate(assetId);
+
+    emit DeficitEliminated(assetId, msg.sender, shares, amount);
+
+    return shares;
+  }
+
+  /// @inheritdoc IHub
   function refreshPremium(uint256 assetId, DataTypes.PremiumDelta calldata premiumDelta) external {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -316,31 +336,6 @@ contract Hub is IHub, AccessManaged {
 
     emit Remove(assetId, msg.sender, shares, feeAmount);
     emit Add(assetId, feeReceiver, shares, feeAmount);
-  }
-
-  /**
-   * @dev Applies premium deltas on asset and spoke owed, and validates that total premium
-   * cannot decrease by more than `premiumAmount`.
-   */
-  function _applyPremiumDelta(
-    DataTypes.Asset storage asset,
-    DataTypes.SpokeData storage spoke,
-    DataTypes.PremiumDelta calldata premium,
-    uint256 premiumAmount
-  ) internal {
-    uint256 premiumBefore = asset.premium();
-
-    asset.premiumShares = asset.premiumShares.add(premium.premiumSharesDelta);
-    asset.premiumOffset = asset.premiumOffset.add(premium.offsetDelta);
-    asset.realizedPremium = asset.realizedPremium.add(premium.realizedDelta);
-
-    spoke.premiumShares = spoke.premiumShares.add(premium.premiumSharesDelta);
-    spoke.premiumOffset = spoke.premiumOffset.add(premium.offsetDelta);
-    spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta);
-
-    // can increase due to precision loss on premium (drawn unchanged)
-    // todo mathematically find premium diff ceiling and replace the `2`
-    require(asset.premium() + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
   }
 
   /// @inheritdoc IHub
@@ -509,6 +504,10 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].liquidity;
   }
 
+  function getDeficit(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].deficit;
+  }
+
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
     return _assets[assetId].config;
   }
@@ -516,6 +515,31 @@ contract Hub is IHub, AccessManaged {
   //
   // Internal
   //
+
+  /**
+   * @dev Applies premium deltas on asset and spoke debt, and validates that total premium debt
+   * cannot decrease by more than `premiumAmount`.
+   */
+  function _applyPremiumDelta(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
+    DataTypes.PremiumDelta calldata premium,
+    uint256 premiumAmount
+  ) internal {
+    uint256 premiumDebtBefore = asset.premium();
+
+    asset.premiumShares = asset.premiumShares.add(premium.premiumSharesDelta);
+    asset.premiumOffset = asset.premiumOffset.add(premium.offsetDelta);
+    asset.realizedPremium = asset.realizedPremium.add(premium.realizedDelta);
+
+    spoke.premiumShares = spoke.premiumShares.add(premium.premiumSharesDelta);
+    spoke.premiumOffset = spoke.premiumOffset.add(premium.offsetDelta);
+    spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta);
+
+    // can increase due to precision loss on premium (drawn unchanged)
+    // todo mathematically find premium diff ceiling and replace the `2`
+    require(asset.premium() + premiumAmount - premiumDebtBefore <= 2, InvalidPremiumChange());
+  }
 
   function _validateAdd(
     DataTypes.Asset storage asset,
@@ -599,6 +623,15 @@ contract Hub is IHub, AccessManaged {
     (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spoke);
     require(drawnAmount <= drawn, SurplusDeficitReported(drawn));
     require(premiumAmount <= premium, SurplusDeficitReported(premium));
+  }
+
+  function _validateEliminateDeficit(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
+    uint256 amount
+  ) internal view {
+    require(spoke.config.active, SpokeNotActive());
+    require(amount != 0 && amount <= asset.deficit, InvalidDeficitAmount());
   }
 
   function _validatePayFee(
