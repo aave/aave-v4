@@ -8,6 +8,11 @@ pragma solidity ^0.8.0;
  */
 interface ISpokeBase {
   /**
+   * @notice Error thrown when the hub address is invalid.
+   */
+  error InvalidHubAddress();
+
+  /**
    * @notice Emitted on the supply action.
    * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
    * @param caller The transaction initiator, and supplier of the underlying asset.
