@@ -2041,7 +2041,7 @@ abstract contract Base is Test {
 
     vm.assertEq(
       asset.drawnRate,
-      IBasicInterestRateStrategy(asset.config.irStrategy).calculateInterestRate(
+      IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate(
         assetId,
         asset.liquidity,
         drawn,

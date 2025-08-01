@@ -11,23 +11,27 @@ library DataTypes {
     uint128 premiumShares;
     uint128 premiumOffset;
     uint128 realizedPremium;
-    DataTypes.SpokeConfig config;
+    uint64 addCap;
+    uint64 drawCap;
+    bool active;
   }
 
   struct Asset {
-    address underlying;
-    uint8 decimals;
-    uint40 lastUpdateTimestamp;
-    uint128 addedShares;
     uint128 liquidity;
+    uint128 deficit;
+    uint128 addedShares;
     uint128 drawnShares;
     uint128 premiumShares;
     uint128 premiumOffset;
-    uint128 realizedPremium;
     uint128 drawnIndex;
+    uint128 realizedPremium;
+    address underlying;
+    uint40 lastUpdateTimestamp;
+    uint8 decimals;
     uint128 drawnRate;
-    uint128 deficit;
-    DataTypes.AssetConfig config;
+    address irStrategy;
+    address feeReceiver;
+    uint16 liquidityFee;
   }
 
   struct SpokeConfig {

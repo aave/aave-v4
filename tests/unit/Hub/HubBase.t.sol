@@ -156,7 +156,7 @@ contract HubBase is Base {
     int256 sharesDelta = 1000;
     int256 premiumOffsetDelta = 1000;
 
-    assertTrue(hub1.getSpoke(assetId, spoke).config.active);
+    assertTrue(hub1.getSpoke(assetId, spoke).active);
 
     if (withPremium) {
       // inflate premium data to create premium debt

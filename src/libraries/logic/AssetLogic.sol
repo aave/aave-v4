@@ -101,13 +101,12 @@ library AssetLogic {
   }
 
   function updateDrawnRate(DataTypes.Asset storage asset, uint256 assetId) internal {
-    uint256 newBorrowRate = IBasicInterestRateStrategy(asset.config.irStrategy)
-      .calculateInterestRate({
-        assetId: assetId,
-        liquidity: asset.liquidity,
-        drawn: asset.drawn(),
-        premium: asset.premium()
-      });
+    uint256 newBorrowRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
+      assetId: assetId,
+      liquidity: asset.liquidity,
+      drawn: asset.drawn(),
+      premium: asset.premium()
+    });
     asset.drawnRate = newBorrowRate.toUint128();
 
     // asset accrual should have already occurred
@@ -167,7 +166,7 @@ library AssetLogic {
     uint256 nextDrawnIndex,
     uint256 currentDrawnIndex
   ) internal view returns (uint256) {
-    uint256 liquidityFee = asset.config.liquidityFee;
+    uint256 liquidityFee = asset.liquidityFee;
     if (nextDrawnIndex == currentDrawnIndex || liquidityFee == 0) {
       return 0;
     }

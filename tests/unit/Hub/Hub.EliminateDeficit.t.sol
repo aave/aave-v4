@@ -27,7 +27,7 @@ contract HubEliminateDeficitTest is HubBase {
 
   function test_eliminateDeficit_revertsWith_SpokeNotActive(address caller) public {
     uint256 assetId = _randomAssetId(hub1);
-    vm.assume(!hub1.getSpoke(assetId, caller).config.active);
+    vm.assume(!hub1.getSpoke(assetId, caller).active);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(caller);

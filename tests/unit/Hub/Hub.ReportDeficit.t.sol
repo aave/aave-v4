@@ -29,7 +29,7 @@ contract HubReportDeficitTest is HubBase {
   }
 
   function test_reportDeficit_revertsWith_SpokeNotActive(address caller) public {
-    vm.assume(!hub1.getSpoke(usdxAssetId, caller).config.active);
+    vm.assume(!hub1.getSpoke(usdxAssetId, caller).active);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
 
