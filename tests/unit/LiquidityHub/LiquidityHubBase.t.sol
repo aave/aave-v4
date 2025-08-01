@@ -57,6 +57,7 @@ contract LiquidityHubBase is Base {
 
   /// @dev mocks rate, supplySpoke (supplyUser) supplies asset, drawSpoke (drawUser) draws asset, skips time
   function _supplyAndDrawLiquidity(
+    ILiquidityHub liquidityHub,
     uint256 assetId,
     address supplyUser,
     address supplySpoke,
@@ -67,7 +68,7 @@ contract LiquidityHubBase is Base {
     uint256 skipTime
   ) internal returns (uint256 supplyShares, uint256 drawnShares) {
     supplyShares = Utils.add({
-      hub: hub,
+      hub: liquidityHub,
       assetId: assetId,
       caller: supplySpoke,
       amount: supplyAmount,
@@ -75,7 +76,7 @@ contract LiquidityHubBase is Base {
     });
 
     drawnShares = Utils.draw({
-      hub: hub,
+      hub: liquidityHub,
       assetId: assetId,
       to: drawUser,
       caller: drawSpoke,
@@ -214,5 +215,9 @@ contract LiquidityHubBase is Base {
     Utils.add({hub: hub, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
 
     assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
+  }
+
+  function _randomAssetId(ILiquidityHub liqHub) internal returns (uint256) {
+    return vm.randomUint(0, liqHub.getAssetCount() - 1);
   }
 }

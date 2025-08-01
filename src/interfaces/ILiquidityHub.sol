@@ -70,6 +70,20 @@ interface ILiquidityHub is IAccessManaged {
     address toSpoke
   );
 
+  /**
+   * @notice Emitted when some deficit is eliminated.
+   * @param assetId The identifier of the asset.
+   * @param spoke The spoke that eliminated the deficit, and had supplied shares removed.
+   * @param removedShares The amount of shares removed.
+   * @param amount The amount of deficit eliminated.
+   */
+  event DeficitEliminated(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 removedShares,
+    uint256 amount
+  );
+
   error InvalidSharesAmount();
   error InvalidAddAmount();
   error InvalidFromAddress();
@@ -209,7 +223,7 @@ interface ILiquidityHub is IAccessManaged {
 
   /**
    * @notice Reports deficit.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param baseAmount The base debt to report as deficit.
    * @param premiumAmount The premium debt to report as deficit.
@@ -231,6 +245,15 @@ interface ILiquidityHub is IAccessManaged {
    * @param toSpoke The address of the spoke to move shares to.
    */
   function moveSuppliedShares(uint256 assetId, uint256 shares, address toSpoke) external;
+
+  /**
+   * @notice Eliminates deficit by removing supplied shares of caller spoke.
+   * @dev Only callable by active spokes.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount of deficit to eliminate.
+   * @return The amount of shares removed.
+   */
+  function eliminateDeficit(uint256 assetId, uint256 amount) external returns (uint256);
 
   /**
    * @notice Converts the specified amount of assets to shares amount added upon an Add action.
@@ -364,6 +387,8 @@ interface ILiquidityHub is IAccessManaged {
   function getTotalSuppliedShares(uint256 assetId) external view returns (uint256);
 
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
+
+  function getDeficit(uint256 assetId) external view returns (uint256);
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
 

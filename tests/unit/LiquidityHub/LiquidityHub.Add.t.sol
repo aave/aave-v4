@@ -116,6 +116,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
 
     _supplyAndDrawLiquidity({
+      liquidityHub: hub,
       assetId: daiAssetId,
       supplyUser: bob,
       supplySpoke: address(spoke2),
@@ -144,6 +145,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
 
     _updateSupplyCap(daiAssetId, address(spoke2), newSupplyCap);
     _supplyAndDrawLiquidity({
+      liquidityHub: hub,
       assetId: daiAssetId,
       supplyUser: bob,
       supplySpoke: address(spoke2),
@@ -368,6 +370,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     uint256 drawAmount = daiAmount;
 
     _supplyAndDrawLiquidity({
+      liquidityHub: hub,
       assetId: daiAssetId,
       supplyUser: bob,
       supplySpoke: address(spoke2),
@@ -397,6 +400,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     daiAmount = bound(daiAmount, 1e20, MAX_SUPPLY_AMOUNT);
     skipTime = bound(skipTime, 365 days, 100 * 365 days);
     _supplyAndDrawLiquidity({
+      liquidityHub: hub,
       assetId: daiAssetId,
       supplyUser: bob,
       supplySpoke: address(spoke2),
@@ -429,6 +433,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     uint256 daiAmount = 100e18;
 
     _supplyAndDrawLiquidity({
+      liquidityHub: hub,
       assetId: daiAssetId,
       supplyUser: bob,
       supplySpoke: address(spoke2),
@@ -554,6 +559,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
     uint256 amount = 100e18;
 
     (, uint256 drawnAmount) = _supplyAndDrawLiquidity({
+      liquidityHub: hub,
       assetId: daiAssetId,
       supplyUser: bob,
       supplySpoke: address(spoke2),
@@ -661,6 +667,7 @@ contract LiquidityHubAddTest is LiquidityHubBase {
 
     TestSupplyParams memory params;
     (params.assetSuppliedShares, params.drawnShares) = _supplyAndDrawLiquidity({
+      liquidityHub: hub,
       assetId: assetId,
       supplyUser: bob,
       supplySpoke: address(spoke2),

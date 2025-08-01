@@ -55,7 +55,7 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 suppliedAssetsBefore = treasurySpoke.getSuppliedAmount(daiAssetId);
 
     // create debt
-    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, daiAssetId), 100e18, true);
+    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub, daiAssetId), 100e18, true);
 
     skip(365 days);
 
@@ -79,7 +79,7 @@ contract TreasurySpokeTest is SpokeBase {
     assertEq(treasurySpoke.getSuppliedShares(daiAssetId), 0);
 
     // create debt
-    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, daiAssetId), 100e18, true);
+    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub, daiAssetId), 100e18, true);
 
     skip(365 days);
 
@@ -100,7 +100,7 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 suppliedAssetsBefore = treasurySpoke.getSuppliedAmount(daiAssetId);
 
     // create debt
-    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, daiAssetId), 100e18, true);
+    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub, daiAssetId), 100e18, true);
 
     skip(365 days);
 
