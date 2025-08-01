@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// external
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 
-// libraries
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -15,11 +13,9 @@ import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
-// interfaces
 import {IHub} from 'src/interfaces/IHub.sol';
 import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
-// @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
@@ -150,10 +146,6 @@ contract Hub is IHub, AccessManaged {
     IAssetInterestRateStrategy(asset.config.irStrategy).setInterestRateData(assetId, data);
   }
 
-  // /////
-  // Spoke Actions
-  // /////
-
   /// @inheritdoc IHub
   function add(uint256 assetId, uint256 amount, address from) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
@@ -171,7 +163,6 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    // TODO: fee-on-transfer
     IERC20(asset.underlying).safeTransferFrom(from, address(this), amount);
 
     emit Add(assetId, msg.sender, shares, amount);
@@ -512,10 +503,6 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].config;
   }
 
-  //
-  // Internal
-  //
-
   /**
    * @dev Applies premium deltas on asset and spoke owed, and validates that total premium
    * cannot decrease by more than `premiumAmount`.
@@ -528,11 +515,11 @@ contract Hub is IHub, AccessManaged {
   ) internal {
     uint256 premiumDebtBefore = asset.premium();
 
-    asset.premiumShares = asset.premiumShares.add(premium.premiumSharesDelta);
+    asset.premiumShares = asset.premiumShares.add(premium.sharesDelta);
     asset.premiumOffset = asset.premiumOffset.add(premium.offsetDelta);
     asset.realizedPremium = asset.realizedPremium.add(premium.realizedDelta);
 
-    spoke.premiumShares = spoke.premiumShares.add(premium.premiumSharesDelta);
+    spoke.premiumShares = spoke.premiumShares.add(premium.sharesDelta);
     spoke.premiumOffset = spoke.premiumOffset.add(premium.offsetDelta);
     spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta);
 

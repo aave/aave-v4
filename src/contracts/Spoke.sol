@@ -273,7 +273,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
 
     DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
-      premiumSharesDelta: -int256(userPosition.premiumShares),
+      sharesDelta: -int256(userPosition.premiumShares),
       offsetDelta: -int256(userPosition.premiumOffset),
       realizedDelta: int256(vars.accruedPremium) - int256(vars.premiumDebtRestored)
     });
@@ -896,11 +896,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.assetId = reserve.assetId;
         vars.hub = reserve.hub;
 
-        uint256 oldUserpremiumShares = userPosition.premiumShares;
+        uint256 oldUserPremiumShares = userPosition.premiumShares;
         uint256 oldUserPremiumOffset = userPosition.premiumOffset;
         uint256 accruedUserPremium = vars.hub.previewRestoreByShares(
           vars.assetId,
-          oldUserpremiumShares
+          oldUserPremiumShares
         ) - oldUserPremiumOffset;
 
         userPosition.premiumShares = userPosition.drawnShares.percentMulUp(newUserRiskPremium);
@@ -912,12 +912,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         userPosition.realizedPremium += accruedUserPremium;
 
         vars.premiumDelta = DataTypes.PremiumDelta({
-          premiumSharesDelta: userPosition.premiumShares.signedSub(oldUserpremiumShares),
+          sharesDelta: userPosition.premiumShares.signedSub(oldUserPremiumShares),
           offsetDelta: userPosition.premiumOffset.signedSub(oldUserPremiumOffset),
           realizedDelta: int256(accruedUserPremium)
         });
 
-        if (!vars.premiumIncrease) vars.premiumIncrease = vars.premiumDelta.premiumSharesDelta > 0;
+        if (!vars.premiumIncrease) vars.premiumIncrease = vars.premiumDelta.sharesDelta > 0;
 
         vars.hub.refreshPremium(vars.assetId, vars.premiumDelta);
         emit RefreshPremiumDebt(vars.reserveId, user, vars.premiumDelta);
@@ -955,7 +955,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         ) = _getUserDebt(hub, assetId, userPosition);
 
         DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
-          premiumSharesDelta: -int256(userPosition.premiumShares),
+          sharesDelta: -int256(userPosition.premiumShares),
           offsetDelta: -int256(userPosition.premiumOffset),
           realizedDelta: int256(accruedPremium) - int256(premiumDebtRestored)
         });
@@ -1074,7 +1074,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       // repay debt
       {
         vars.premiumDelta = DataTypes.PremiumDelta({
-          premiumSharesDelta: -int256(userDebtPosition.premiumShares),
+          sharesDelta: -int256(userDebtPosition.premiumShares),
           offsetDelta: -int256(userDebtPosition.premiumOffset),
           realizedDelta: int256(vars.accruedPremium) - int256(vars.premiumDebtToLiquidate)
         });

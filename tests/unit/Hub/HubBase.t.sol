@@ -109,7 +109,7 @@ contract HubBase is Base {
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
 
-    int256 premiumSharesDelta = 1000;
+    int256 sharesDelta = 1000;
     int256 premiumOffsetDelta = 1000;
 
     vm.prank(HUB_ADMIN);
@@ -122,10 +122,7 @@ contract HubBase is Base {
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(tempSpoke);
-      hub1.refreshPremium(
-        assetId,
-        DataTypes.PremiumDelta(premiumSharesDelta, premiumOffsetDelta, 0)
-      );
+      hub1.refreshPremium(assetId, DataTypes.PremiumDelta(sharesDelta, premiumOffsetDelta, 0));
     }
 
     Utils.draw(hub1, assetId, tempSpoke, tempUser, amount);
@@ -141,7 +138,7 @@ contract HubBase is Base {
       vm.prank(tempSpoke);
       hub1.refreshPremium(
         assetId,
-        DataTypes.PremiumDelta(-premiumSharesDelta, -premiumOffsetDelta, int256(premium))
+        DataTypes.PremiumDelta(-sharesDelta, -premiumOffsetDelta, int256(premium))
       );
     }
   }
@@ -156,7 +153,7 @@ contract HubBase is Base {
   ) internal returns (uint256 drawn, uint256 premium) {
     address tempUser = vm.randomAddress();
 
-    int256 premiumSharesDelta = 1000;
+    int256 sharesDelta = 1000;
     int256 premiumOffsetDelta = 1000;
 
     assertTrue(hub1.getSpoke(assetId, spoke).config.active);
@@ -164,10 +161,7 @@ contract HubBase is Base {
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(spoke);
-      hub1.refreshPremium(
-        assetId,
-        DataTypes.PremiumDelta(premiumSharesDelta, premiumOffsetDelta, 0)
-      );
+      hub1.refreshPremium(assetId, DataTypes.PremiumDelta(sharesDelta, premiumOffsetDelta, 0));
     }
 
     Utils.draw({hub: hub1, assetId: assetId, caller: spoke, amount: amount, to: tempUser});
@@ -183,7 +177,7 @@ contract HubBase is Base {
       vm.prank(spoke);
       hub1.refreshPremium(
         assetId,
-        DataTypes.PremiumDelta(-premiumSharesDelta, -premiumOffsetDelta, int256(premium))
+        DataTypes.PremiumDelta(-sharesDelta, -premiumOffsetDelta, int256(premium))
       );
     }
   }

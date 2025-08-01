@@ -122,7 +122,7 @@ contract HubReportDeficitTest is HubBase {
     uint256 totalDeficit = baseAmount + premiumAmount;
 
     DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
-      premiumSharesDelta: 0,
+      sharesDelta: 0,
       offsetDelta: 0,
       realizedDelta: -int256(premiumAmount)
     });

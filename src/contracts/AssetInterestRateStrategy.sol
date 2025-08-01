@@ -100,7 +100,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
-    uint256 premium
+    uint256 premium // unused
   ) external view virtual override returns (uint256) {
     InterestRateData memory rateData = _interestRateData[assetId];
     require(rateData.optimalUsageRatio != 0, InterestRateDataNotSet(assetId));

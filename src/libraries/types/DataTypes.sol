@@ -119,7 +119,7 @@ library DataTypes {
   }
 
   struct PremiumDelta {
-    int256 premiumSharesDelta;
+    int256 sharesDelta;
     int256 offsetDelta;
     int256 realizedDelta;
   }
@@ -196,7 +196,7 @@ library DataTypes {
     uint256 accruedPremium;
     uint256 drawnDebtRestored;
     uint256 premiumDebtRestored;
-    uint256 userpremiumShares;
+    uint256 userPremiumShares;
     uint256 userPremiumOffset;
     uint256 newUserRiskPremium;
     uint256 restoredShares;

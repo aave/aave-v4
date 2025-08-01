@@ -507,8 +507,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       assertEq(deficitShares, expectedLog.deficitShares, 'deficit reported event: deficitShares');
       assertEq(deficitAmount, expectedLog.deficitAmount, 'deficit reported event: deficitAmount');
       assertEq(
-        premiumDelta.premiumSharesDelta,
-        expectedLog.premiumDelta.premiumSharesDelta,
+        premiumDelta.sharesDelta,
+        expectedLog.premiumDelta.sharesDelta,
         'deficit reported event: premiumDelta.drawnSharesDelta'
       );
       assertEq(
