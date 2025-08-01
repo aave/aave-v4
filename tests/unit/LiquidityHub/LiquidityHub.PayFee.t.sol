@@ -100,7 +100,7 @@ contract LiquidityHubPayFeeTest is LiquidityHubBase {
     );
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.TransferredAddedShares(
+    emit ILiquidityHub.TransferShares(
       daiAssetId,
       feeShares,
       address(spoke1),

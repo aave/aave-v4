@@ -23,7 +23,7 @@ contract LiquidityHubMoveSuppliedSharesTest is LiquidityHubBase {
 
     // move supplied shares from spoke1 to spoke2
     vm.prank(address(spoke1));
-    hub.transferAddedShares(daiAssetId, moveAmount, address(spoke2));
+    hub.transferShares(daiAssetId, moveAmount, address(spoke2));
 
     assertEq(hub.getSpokeSuppliedShares(daiAssetId, address(spoke1)), suppliedShares - moveAmount);
     assertEq(hub.getSpokeSuppliedShares(daiAssetId, address(spoke2)), moveAmount);
@@ -48,13 +48,13 @@ contract LiquidityHubMoveSuppliedSharesTest is LiquidityHubBase {
     vm.expectRevert(
       abi.encodeWithSelector(ILiquidityHub.SuppliedSharesExceeded.selector, suppliedShares)
     );
-    hub.transferAddedShares(daiAssetId, suppliedShares + 1, address(spoke2));
+    hub.transferShares(daiAssetId, suppliedShares + 1, address(spoke2));
   }
 
   function test_moveSuppliedShares_zeroShares_revertsWith_InvalidSharesAmount() public {
     vm.prank(address(spoke1));
     vm.expectRevert(ILiquidityHub.InvalidSharesAmount.selector);
-    hub.transferAddedShares(daiAssetId, 0, address(spoke2));
+    hub.transferShares(daiAssetId, 0, address(spoke2));
   }
 
   function test_moveSuppliedShares_revertsWith_InactiveSpoke() public {
@@ -75,7 +75,7 @@ contract LiquidityHubMoveSuppliedSharesTest is LiquidityHubBase {
     // try to move supplied shares from inactive spoke1
     vm.prank(address(spoke1));
     vm.expectRevert(ILiquidityHub.SpokeNotActive.selector);
-    hub.transferAddedShares(daiAssetId, suppliedShares, address(spoke2));
+    hub.transferShares(daiAssetId, suppliedShares, address(spoke2));
   }
 
   function test_moveSuppliedShares_exceedingCap_revertsWith_InvalidSharesAmount() public {
@@ -97,6 +97,6 @@ contract LiquidityHubMoveSuppliedSharesTest is LiquidityHubBase {
 
     vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
-    hub.transferAddedShares(daiAssetId, suppliedShares, address(spoke2));
+    hub.transferShares(daiAssetId, suppliedShares, address(spoke2));
   }
 }

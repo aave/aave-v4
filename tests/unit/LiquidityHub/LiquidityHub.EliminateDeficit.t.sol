@@ -51,7 +51,7 @@ contract LiquidityHubEliminateDeficitTest is LiquidityHubBase {
     uint256 supplyExRate = getSupplyExRate(assetId);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DeficitEliminated(
+    emit ILiquidityHub.EliminateDeficit(
       assetId,
       address(spoke1),
       expectedRemoveShares,
@@ -85,7 +85,7 @@ contract LiquidityHubEliminateDeficitTest is LiquidityHubBase {
     uint256 expectedRemoveShares = hub.previewRemoveByAssets(assetId, clearedDeficit);
 
     vm.expectEmit(address(hub));
-    emit ILiquidityHub.DeficitEliminated(
+    emit ILiquidityHub.EliminateDeficit(
       assetId,
       address(spoke1),
       expectedRemoveShares,

@@ -63,12 +63,7 @@ interface ILiquidityHub is IAccessManaged {
     uint256 totalRestoredAmount
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
-  event TransferredAddedShares(
-    uint256 indexed assetId,
-    uint256 shares,
-    address fromSpoke,
-    address toSpoke
-  );
+  event TransferShares(uint256 indexed assetId, uint256 shares, address fromSpoke, address toSpoke);
 
   /**
    * @notice Emitted when some deficit is eliminated.
@@ -77,7 +72,7 @@ interface ILiquidityHub is IAccessManaged {
    * @param removedShares The amount of shares removed.
    * @param amount The amount of deficit eliminated.
    */
-  event DeficitEliminated(
+  event EliminateDeficit(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 removedShares,
@@ -245,7 +240,7 @@ interface ILiquidityHub is IAccessManaged {
    * @param shares The amount of shares to move.
    * @param toSpoke The address of the spoke to move shares to.
    */
-  function transferAddedShares(uint256 assetId, uint256 shares, address toSpoke) external;
+  function transferShares(uint256 assetId, uint256 shares, address toSpoke) external;
 
   /**
    * @notice Eliminates deficit by removing supplied shares of caller spoke.
