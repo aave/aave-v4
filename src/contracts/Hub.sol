@@ -5,7 +5,6 @@ import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
-
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -13,7 +12,7 @@ import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
-import {IHub} from 'src/interfaces/IHub.sol';
+import {IHubBase, IHub} from 'src/interfaces/IHub.sol';
 import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 contract Hub is IHub, AccessManaged {
@@ -146,7 +145,7 @@ contract Hub is IHub, AccessManaged {
     IAssetInterestRateStrategy(asset.config.irStrategy).setInterestRateData(assetId, data);
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function add(uint256 assetId, uint256 amount, address from) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -170,7 +169,7 @@ contract Hub is IHub, AccessManaged {
     return shares;
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function remove(uint256 assetId, uint256 amount, address to) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -192,7 +191,7 @@ contract Hub is IHub, AccessManaged {
     return shares;
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function draw(uint256 assetId, uint256 amount, address to) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -214,7 +213,7 @@ contract Hub is IHub, AccessManaged {
     return drawnShares;
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function restore(
     uint256 assetId,
     uint256 drawnAmount,
@@ -287,7 +286,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    emit DeficitEliminated(assetId, msg.sender, shares, amount);
+    emit EliminateDeficit(assetId, msg.sender, shares, amount);
 
     return shares;
   }
@@ -317,16 +316,23 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue(assetId, receiver);
 
-    uint256 addedShares = sender.addedShares;
-    uint256 addedAssets = asset.toAddedAssetsDown(addedShares);
-    uint256 feeAmount = asset.toAddedAssetsDown(shares);
-    require(feeAmount <= addedAssets, AddedAmountExceeded(addedAssets));
+    _transferShares(sender, receiver, shares);
 
-    sender.addedShares = addedShares - shares;
-    receiver.addedShares += shares;
+    emit TransferShares(assetId, shares, msg.sender, feeReceiver);
+  }
 
-    emit Remove(assetId, msg.sender, shares, feeAmount);
-    emit Add(assetId, feeReceiver, shares, feeAmount);
+  /// @inheritdoc IHub
+  function transferShares(uint256 assetId, uint256 shares, address toSpoke) external {
+    DataTypes.SpokeData storage sender = _spokes[assetId][msg.sender];
+    DataTypes.SpokeData storage receiver = _spokes[assetId][toSpoke];
+    DataTypes.Asset storage asset = _assets[assetId];
+    _validateTransferShares(asset, sender, receiver, shares);
+
+    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
+
+    _transferShares(sender, receiver, shares);
+
+    emit TransferShares(assetId, shares, msg.sender, toSpoke);
   }
 
   /// @inheritdoc IHub
@@ -528,6 +534,18 @@ contract Hub is IHub, AccessManaged {
     require(asset.premium() + premiumAmount - premiumDebtBefore <= 2, InvalidPremiumChange());
   }
 
+  function _transferShares(
+    DataTypes.SpokeData storage sender,
+    DataTypes.SpokeData storage receiver,
+    uint256 shares
+  ) internal {
+    uint256 addedShares = sender.addedShares;
+    require(shares <= addedShares, AddedSharesExceeded(addedShares));
+
+    sender.addedShares = addedShares - shares;
+    receiver.addedShares += shares;
+  }
+
   function _validateAdd(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
@@ -627,5 +645,19 @@ contract Hub is IHub, AccessManaged {
   ) internal view {
     require(senderSpoke.config.active, SpokeNotActive());
     require(feeShares != 0, InvalidFeeShares());
+  }
+
+  function _validateTransferShares(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage sender,
+    DataTypes.SpokeData storage receiver,
+    uint256 shares
+  ) internal view {
+    require(sender.config.active && receiver.config.active, SpokeNotActive());
+    require(shares > 0, InvalidSharesAmount());
+    require(
+      asset.toAddedAssetsDown(receiver.addedShares + shares) <= receiver.config.addCap,
+      AddCapExceeded(receiver.config.addCap)
+    );
   }
 }

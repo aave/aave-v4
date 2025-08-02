@@ -270,13 +270,13 @@ contract SpokeLiquidationBase is SpokeBase {
       // during a restore action that includes donation
       vm.expectCall(
         address(hub1),
-        abi.encodeWithSelector(hub1.payFee.selector),
+        abi.encodeWithSelector(IHub.payFee.selector),
         state.liquidationFeeShares > 0 ? 1 : 0
       );
     }
 
     vm.expectEmit(address(state.spoke));
-    emit ISpoke.LiquidationCall(
+    emit ISpokeBase.LiquidationCall(
       state.collateralReserve.underlying,
       state.debtReserve.underlying,
       alice,

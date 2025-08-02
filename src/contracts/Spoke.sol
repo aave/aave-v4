@@ -18,7 +18,7 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 // interfaces
 import {IHub} from 'src/interfaces/IHub.sol';
-import {ISpoke} from 'src/interfaces/ISpoke.sol';
+import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
 contract Spoke is ISpoke, Multicall, AccessManaged {
@@ -174,7 +174,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // Users
   // /////
 
-  /// @inheritdoc ISpoke
+  /// @inheritdoc ISpokeBase
   function supply(
     uint256 reserveId,
     uint256 amount,
@@ -192,7 +192,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares);
   }
 
-  /// @inheritdoc ISpoke
+  /// @inheritdoc ISpokeBase
   function withdraw(
     uint256 reserveId,
     uint256 amount,
@@ -220,7 +220,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
   }
 
-  /// @inheritdoc ISpoke
+  /// @inheritdoc ISpokeBase
   function borrow(
     uint256 reserveId,
     uint256 amount,
@@ -248,7 +248,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
   }
 
-  /// @inheritdoc ISpoke
+  /// @inheritdoc ISpokeBase
   function repay(
     uint256 reserveId,
     uint256 amount,
@@ -297,7 +297,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit Repay(reserveId, msg.sender, onBehalfOf, vars.restoredShares); // todo: add premiumDelta
   }
 
-  /// @inheritdoc ISpoke
+  /// @inheritdoc ISpokeBase
   function liquidationCall(
     uint256 collateralReserveId,
     uint256 debtReserveId,

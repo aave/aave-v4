@@ -47,7 +47,7 @@ contract HubDrawTest is HubBase {
     vm.expectEmit(address(hub1.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub1), alice, amount);
     vm.expectEmit(address(hub1));
-    emit IHub.Draw(assetId, address(spoke1), shares, amount);
+    emit IHubBase.Draw(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
     hub1.draw(assetId, amount, alice);
@@ -127,7 +127,7 @@ contract HubDrawTest is HubBase {
     vm.expectEmit(address(hub1.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub1), alice, amount);
     vm.expectEmit(address(hub1));
-    emit IHub.Draw(assetId, address(spoke1), shares, amount);
+    emit IHubBase.Draw(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
     hub1.draw(assetId, amount, alice);

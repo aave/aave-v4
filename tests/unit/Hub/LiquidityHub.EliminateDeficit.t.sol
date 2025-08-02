@@ -51,7 +51,7 @@ contract HubEliminateDeficitTest is HubBase {
     uint256 supplyExRate = getSupplyExRate(assetId);
 
     vm.expectEmit(address(hub1));
-    emit IHub.DeficitEliminated(assetId, address(spoke1), expectedRemoveShares, clearedDeficit);
+    emit IHub.EliminateDeficit(assetId, address(spoke1), expectedRemoveShares, clearedDeficit);
     vm.prank(address(spoke1));
     uint256 removedShares = hub1.eliminateDeficit(assetId, clearedDeficit);
 
@@ -80,7 +80,7 @@ contract HubEliminateDeficitTest is HubBase {
     uint256 expectedRemoveShares = hub1.previewRemoveByAssets(assetId, clearedDeficit);
 
     vm.expectEmit(address(hub1));
-    emit IHub.DeficitEliminated(assetId, address(spoke1), expectedRemoveShares, clearedDeficit);
+    emit IHub.EliminateDeficit(assetId, address(spoke1), expectedRemoveShares, clearedDeficit);
     vm.prank(address(spoke1));
     uint256 removedShares = hub1.eliminateDeficit(assetId, clearedDeficit);
 

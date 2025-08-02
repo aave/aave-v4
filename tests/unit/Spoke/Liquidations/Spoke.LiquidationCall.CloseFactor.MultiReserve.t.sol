@@ -281,7 +281,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     ) = _calculateAvailableCollateralToLiquidate(state, requiredDebtAmounts[debtReserveIndex]);
 
     vm.expectEmit(address(state.spoke));
-    emit ISpoke.LiquidationCall(
+    emit ISpokeBase.LiquidationCall(
       state.collateralReserve.underlying,
       state.debtReserve.underlying,
       alice,

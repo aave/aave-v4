@@ -4,12 +4,15 @@ pragma solidity ^0.8.0;
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
+import {IHubBase} from 'src/interfaces/IHubBase.sol';
+
 /**
  * @title IHub
  * @author Aave Labs
- * @notice Basic interface for Hub
+ * @notice Full interface for Hub
  */
-interface IHub is IAccessManaged {
+interface IHub is IHubBase, IAccessManaged {
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
   event AssetAdded(uint256 indexed assetId, address indexed underlying, uint8 decimals);
   event AssetConfigUpdated(uint256 indexed assetId, DataTypes.AssetConfig config);
@@ -24,22 +27,6 @@ interface IHub is IAccessManaged {
     uint256 drawnRate,
     uint256 latestUpdateTimestamp
   );
-  event Add(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
-  event Remove(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
-  event Draw(
-    uint256 indexed assetId,
-    address indexed spoke,
-    uint256 drawnShares,
-    uint256 drawnAmount
-  );
-  event Restore(
-    uint256 indexed assetId,
-    address indexed spoke,
-    uint256 drawnShares,
-    DataTypes.PremiumDelta premiumDelta,
-    uint256 drawnAmount,
-    uint256 premiumAmount
-  );
   event RefreshPremium(
     uint256 indexed assetId,
     address indexed spoke,
@@ -53,6 +40,7 @@ interface IHub is IAccessManaged {
     uint256 totalRestoredAmount
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
+  event TransferShares(uint256 indexed assetId, uint256 shares, address fromSpoke, address toSpoke);
 
   /**
    * @notice Emitted when some deficit is eliminated.
@@ -61,7 +49,7 @@ interface IHub is IAccessManaged {
    * @param removedShares The amount of shares removed.
    * @param amount The amount of deficit eliminated.
    */
-  event DeficitEliminated(
+  event EliminateDeficit(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 removedShares,
@@ -77,6 +65,7 @@ interface IHub is IAccessManaged {
   error InvalidRemoveAmount();
   error InvalidRestoreAmount();
   error AddedAmountExceeded(uint256 addedAmount);
+  error AddedSharesExceeded(uint256 addedShares);
   error NotAvailableLiquidity(uint256 liquidity);
   error InvalidDrawAmount();
   error DrawCapExceeded(uint256 drawCap);
@@ -137,55 +126,6 @@ interface IHub is IAccessManaged {
   function setInterestRateData(uint256 assetId, bytes calldata data) external;
 
   /**
-   * @notice Add/Supply asset on behalf of user.
-   * @dev Only callable by active spokes.
-   * @param assetId The identifier of the asset.
-   * @param amount The amount of asset liquidity to add.
-   * @param from The address which we pull assets from (user).
-   * @return The amount of shares added.
-   */
-  function add(uint256 assetId, uint256 amount, address from) external returns (uint256);
-
-  /**
-   * @notice Remove/Withdraw supplied asset on behalf of user.
-   * @dev Only callable by active spokes.
-   * @param assetId The identifier of the asset.
-   * @param amount The amount of asset liquidity to remove.
-   * @param to The address to transfer the assets to.
-   * @return The amount of shares removed.
-   */
-  function remove(uint256 assetId, uint256 amount, address to) external returns (uint256);
-
-  /**
-   * @notice Draw/Borrow debt on behalf of user.
-   * @dev Only callable by active spokes.
-   * @param assetId The identifier of the asset.
-   * @param amount The amount of asset to draw.
-   * @param to The address to transfer the underlying assets to.
-   * @return The amount of base shares drawn.
-   */
-  function draw(uint256 assetId, uint256 amount, address to) external returns (uint256);
-
-  /**
-   * @notice Restores/Repays debt on behalf of user.
-   * @dev Only callable by active spokes.
-   * @dev Interest is always paid off first from premium, then from base.
-   * @param assetId The identifier of the asset.
-   * @param baseAmount The base debt to repay.
-   * @param premiumAmount The premium debt to repay.
-   * @param premiumDelta The premium debt delta to apply which signal premium debt repayment.
-   * @param from The address to pull assets from.
-   * @return The amount of base shares restored.
-   */
-  function restore(
-    uint256 assetId,
-    uint256 baseAmount,
-    uint256 premiumAmount,
-    DataTypes.PremiumDelta calldata premiumDelta,
-    address from
-  ) external returns (uint256);
-
-  /**
    * @notice Refreshes premium debt accounting.
    * @dev Only callable by active spokes, reverts with `SpokeNotActive` otherwise.
    * @dev Overall premium debt should not decrease, reverts with `InvalidDebtChange` otherwise.
@@ -217,6 +157,15 @@ interface IHub is IAccessManaged {
     uint256 premiumAmount,
     DataTypes.PremiumDelta calldata premiumDelta
   ) external returns (uint256);
+
+  /**
+   * @notice Allows a spoke to transfer its supplied shares of an asset to another spoke.
+   * @dev Only callable by spokes.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to move.
+   * @param toSpoke The address of the spoke to move shares to.
+   */
+  function transferShares(uint256 assetId, uint256 shares, address toSpoke) external;
 
   /**
    * @notice Eliminates deficit by removing supplied shares of caller spoke.

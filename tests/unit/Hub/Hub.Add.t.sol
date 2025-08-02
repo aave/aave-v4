@@ -232,7 +232,7 @@ contract HubAddTest is HubBase {
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(user, address(hub1), amount);
     vm.expectEmit(address(hub1));
-    emit IHub.Add(assetId, address(spoke1), shares, amount);
+    emit IHubBase.Add(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
     hub1.add(assetId, amount, user);
@@ -283,7 +283,7 @@ contract HubAddTest is HubBase {
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(alice, address(hub1), amount);
     vm.expectEmit(address(hub1));
-    emit IHub.Add(assetId, address(spoke1), amount, amount);
+    emit IHubBase.Add(assetId, address(spoke1), amount, amount);
 
     vm.prank(address(spoke1));
     hub1.add(assetId, amount, alice);
@@ -291,7 +291,7 @@ contract HubAddTest is HubBase {
     vm.expectEmit(address(underlying2));
     emit IERC20.Transfer(alice, address(hub1), amount2);
     vm.expectEmit(address(hub1));
-    emit IHub.Add(assetId2, address(spoke2), amount2, amount2);
+    emit IHubBase.Add(assetId2, address(spoke2), amount2, amount2);
 
     vm.prank(address(spoke2));
     hub1.add(assetId2, amount2, alice);
@@ -470,7 +470,7 @@ contract HubAddTest is HubBase {
     vm.expectEmit(address(tokenList.dai));
     emit IERC20.Transfer(alice, address(hub1), addAmount);
     vm.expectEmit(address(hub1));
-    emit IHub.Add(daiAssetId, address(spoke2), shares, addAmount);
+    emit IHubBase.Add(daiAssetId, address(spoke2), shares, addAmount);
 
     vm.prank(address(spoke2));
     hub1.add(daiAssetId, addAmount, alice);

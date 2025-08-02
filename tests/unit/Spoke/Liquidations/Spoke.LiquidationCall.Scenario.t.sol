@@ -532,7 +532,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     liquidatorWbtc.balanceBefore = tokenList.wbtc.balanceOf(LIQUIDATOR);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.LiquidationCall(
+    emit ISpokeBase.LiquidationCall(
       address(tokenList.wbtc),
       address(tokenList.weth),
       alice,

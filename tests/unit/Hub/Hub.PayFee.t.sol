@@ -30,7 +30,7 @@ contract HubPayFeeTest is HubBase {
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 feeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, feeAmount));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddedSharesExceeded.selector, feeShares));
     vm.prank(address(spoke1));
     hub1.payFee(daiAssetId, feeShares + 1);
   }
@@ -51,10 +51,10 @@ contract HubPayFeeTest is HubBase {
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 feeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
 
-    // add ex rate increases due to interest
+    // supply ex rate increases due to interest
     assertGt(feeAmount, feeShares);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, feeAmount));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddedSharesExceeded.selector, feeShares));
     vm.prank(address(spoke1));
     hub1.payFee(daiAssetId, feeShares + 1);
   }
@@ -96,9 +96,7 @@ contract HubPayFeeTest is HubBase {
     );
 
     vm.expectEmit(address(hub1));
-    emit IHub.Remove(daiAssetId, address(spoke1), feeShares, feeAmount);
-    vm.expectEmit(address(hub1));
-    emit IHub.Add(daiAssetId, _getFeeReceiver(daiAssetId), feeShares, feeAmount);
+    emit IHub.TransferShares(daiAssetId, feeShares, address(spoke1), _getFeeReceiver(daiAssetId));
 
     vm.prank(address(spoke1));
     hub1.payFee(daiAssetId, feeShares);
@@ -109,11 +107,11 @@ contract HubPayFeeTest is HubBase {
       _getFeeReceiver(daiAssetId)
     );
 
-    assertEq(spokeSharesAfter, spokeSharesBefore - feeShares, 'spoke added shares after');
+    assertEq(spokeSharesAfter, spokeSharesBefore - feeShares, 'spoke supplied shares after');
     assertEq(
       feeReceiverSharesAfter,
       feeReceiverSharesBefore + feeShares,
-      'fee receiver added shares after'
+      'fee receiver supplied shares after'
     );
   }
 }

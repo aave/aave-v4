@@ -23,6 +23,12 @@ contract SpokeAccessTest is SpokeBase {
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
     hub1.refreshPremium(daiAssetId, DataTypes.PremiumDelta(0, 0, 0));
 
+    vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
+    hub1.payFee(daiAssetId, 1000e18);
+
+    vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
+    hub1.transferShares(daiAssetId, 1000e18, bob);
+
     // A spoke is allowed to call the hub functions
     deal(address(tokenList.dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));
@@ -33,6 +39,13 @@ contract SpokeAccessTest is SpokeBase {
     hub1.restore(daiAssetId, 500e18, 0, DataTypes.PremiumDelta(0, 0, 0), address(spoke1));
     hub1.remove(daiAssetId, 1000e18, address(spoke1));
     hub1.refreshPremium(daiAssetId, DataTypes.PremiumDelta(0, 0, 0));
+    hub1.add(daiAssetId, 1000e18, address(spoke1));
+    hub1.payFee(daiAssetId, 1e18);
+    hub1.transferShares(
+      daiAssetId,
+      hub1.getSpokeAddedShares(daiAssetId, address(spoke1)),
+      address(spoke2)
+    );
     vm.stopPrank();
   }
 
