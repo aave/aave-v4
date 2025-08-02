@@ -33,7 +33,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     skip(skipTime); // initial increase in index, no time passes for subsequent checks
 
     Debts memory bobDebt = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
-    uint256 supplyExRateBefore = getSupplyExRate(daiAssetId);
+    uint256 addExRateBefore = getAddExRate(daiAssetId);
     uint256 debtExRateBefore = getDebtExRate(daiAssetId);
 
     // repay partial premium debt
@@ -53,8 +53,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
     _checkSupplyRateIncreasing(
-      supplyExRateBefore,
-      getSupplyExRate(daiAssetId),
+      addExRateBefore,
+      getAddExRate(daiAssetId),
       false,
       'after partial premium debt repay'
     );
@@ -68,14 +68,14 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // repay partial base debt
     daiRepayAmount = bobDebt.premiumDebt + bound(vm.randomUint(), 1, bobDebt.drawnDebt - 1);
-    supplyExRateBefore = getSupplyExRate(daiAssetId);
+    addExRateBefore = getAddExRate(daiAssetId);
     debtExRateBefore = getDebtExRate(daiAssetId);
 
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, daiRepayAmount, bob);
 
     _checkSupplyRateIncreasing(
-      supplyExRateBefore,
-      getSupplyExRate(daiAssetId),
+      addExRateBefore,
+      getAddExRate(daiAssetId),
       false,
       'after partial base debt repay'
     );
@@ -85,14 +85,14 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       'after partial base debt repay'
     );
 
-    supplyExRateBefore = getSupplyExRate(daiAssetId);
+    addExRateBefore = getAddExRate(daiAssetId);
     debtExRateBefore = getDebtExRate(daiAssetId);
 
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
 
     _checkSupplyRateIncreasing(
-      supplyExRateBefore,
-      getSupplyExRate(daiAssetId),
+      addExRateBefore,
+      getAddExRate(daiAssetId),
       false,
       'after partial full debt repay'
     );
@@ -118,7 +118,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     skip(365 days);
 
     // inflated to 1.5
-    uint256 supplyExRateBefore = getSupplyExRate(daiAssetId);
+    uint256 addExRateBefore = getAddExRate(daiAssetId);
     uint256 exchangeRateBefore = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertEq(exchangeRateBefore, 1.5e30);
 
@@ -132,20 +132,15 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.prank(bob);
     spoke1.borrow(_daiReserveId(spoke1), 15, bob);
 
-    _checkSupplyRateIncreasing(
-      supplyExRateBefore,
-      getSupplyExRate(daiAssetId),
-      false,
-      'after borrows'
-    );
-    supplyExRateBefore = getSupplyExRate(daiAssetId);
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), false, 'after borrows');
+    addExRateBefore = getAddExRate(daiAssetId);
 
     // alice repays full
     Utils.repay(spoke1, _daiReserveId(spoke1), alice, UINT256_MAX, alice);
 
     _checkSupplyRateIncreasing(
-      supplyExRateBefore,
-      getSupplyExRate(daiAssetId),
+      addExRateBefore,
+      getAddExRate(daiAssetId),
       false,
       'after alice full repay'
     );

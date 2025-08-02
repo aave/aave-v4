@@ -1207,7 +1207,7 @@ abstract contract Base is Test {
       sharesAmount.toAssetsDown(totalAddedAssets + assetsAmount, totalAddedShares + sharesAmount);
   }
 
-  function getSupplyExRate(uint256 assetId) internal view returns (uint256) {
+  function getAddExRate(uint256 assetId) internal view returns (uint256) {
     return hub1.convertToAddedAssets(assetId, MAX_SUPPLY_AMOUNT);
   }
 

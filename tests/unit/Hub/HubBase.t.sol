@@ -32,7 +32,7 @@ contract HubBase is Base {
     DataTypes.SpokeData spoke2DaiData;
     uint256 timestamp;
     uint256 accruedBase;
-    uint256 initialAvailableLiquidity;
+    uint256 initialLiquidity;
     uint256 initialAddShares;
     uint256 add2Amount;
     uint256 expectedAdd2Shares;

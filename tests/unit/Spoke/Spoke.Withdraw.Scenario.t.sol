@@ -87,7 +87,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     );
 
     // Fetch supply exchange rate before partial withdraw
-    uint256 supplyExRateBefore = getSupplyExRate(daiAssetId);
+    uint256 addExRateBefore = getAddExRate(daiAssetId);
 
     // Withdraw partial supplied assets
     Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, partialWithdrawAmount, bob);
@@ -108,14 +108,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // Check supply rate monotonically increasing after partial withdraw
     _checkSupplyRateIncreasing(
-      supplyExRateBefore,
-      getSupplyExRate(daiAssetId),
+      addExRateBefore,
+      getAddExRate(daiAssetId),
       false,
       'after partial withdraw'
     );
 
     // Fetch supply exchange rate before withdraw
-    supplyExRateBefore = getSupplyExRate(daiAssetId);
+    addExRateBefore = getAddExRate(daiAssetId);
 
     // Withdraw all supplied assets
     Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, type(uint256).max, bob);
@@ -126,12 +126,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
     // Check supply rate monotonically increasing after withdraw
-    _checkSupplyRateIncreasing(
-      supplyExRateBefore,
-      getSupplyExRate(daiAssetId),
-      true,
-      'after withdraw'
-    );
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), true, 'after withdraw');
   }
 
   // multiple users, same asset
@@ -207,7 +202,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
     bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
     tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
-    uint256 supplyExRate = getSupplyExRate(state.assetId);
+    uint256 addExRate = getAddExRate(state.assetId);
 
     // make sure alice has a share to withdraw
     vm.assume(
@@ -224,8 +219,8 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     });
 
     _checkSupplyRateIncreasing(
-      supplyExRate,
-      getSupplyExRate(state.assetId),
+      addExRate,
+      getAddExRate(state.assetId),
       false,
       'after alice withdraw'
     );
@@ -238,7 +233,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
     bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
     tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
-    supplyExRate = getSupplyExRate(state.assetId);
+    addExRate = getAddExRate(state.assetId);
 
     // make sure bob has a share to withdraw
     vm.assume(
@@ -254,12 +249,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    _checkSupplyRateIncreasing(
-      supplyExRate,
-      getSupplyExRate(state.assetId),
-      true,
-      'after bob withdraw'
-    );
+    _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), true, 'after bob withdraw');
 
     // treasury spoke withdraw fees
     withdrawLiquidityFees(state.assetId, type(uint256).max);

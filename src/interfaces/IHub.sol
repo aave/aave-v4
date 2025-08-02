@@ -65,7 +65,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidRestoreAmount();
   error AddedAmountExceeded(uint256 addedAmount);
   error AddedSharesExceeded(uint256 addedShares);
-  error NotAvailableLiquidity(uint256 liquidity);
+  error NotLiquidity(uint256 liquidity);
   error InvalidDrawAmount();
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);

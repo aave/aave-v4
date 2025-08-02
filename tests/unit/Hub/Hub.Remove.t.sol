@@ -186,7 +186,7 @@ contract HubRemoveTest is HubBase {
 
   function test_remove_all_with_interest() public {
     uint256 addAmount = 100e18;
-    uint256 initialAvailableLiquidity = hub1.getAsset(daiAssetId).liquidity;
+    uint256 initialLiquidity = hub1.getAsset(daiAssetId).liquidity;
 
     // add and draw dai liquidity to accrue interest
     // add from spoke2, draw from spoke1
@@ -216,14 +216,10 @@ contract HubRemoveTest is HubBase {
     });
 
     AssetPosition memory asset = getAssetPosition(hub1, daiAssetId);
-    assertEq(
-      asset.liquidity,
-      initialAvailableLiquidity + drawnRestored + premiumRestored,
-      'dai liquidity'
-    );
+    assertEq(asset.liquidity, initialLiquidity + drawnRestored + premiumRestored, 'dai liquidity');
 
     // reset available liquidity variable
-    initialAvailableLiquidity = hub1.getAsset(daiAssetId).liquidity;
+    initialLiquidity = hub1.getAsset(daiAssetId).liquidity;
 
     uint256 removeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke2));
     uint256 daiBalanceBefore = tokenList.dai.balanceOf(bob);
@@ -251,12 +247,7 @@ contract HubRemoveTest is HubBase {
     // hub
     assertApproxEqAbs(asset.addedAmount, feeAmount, 1, 'asset addedAmount');
     assertEq(asset.addedShares, feeShares, 'asset addedShares');
-    assertApproxEqAbs(
-      asset.liquidity,
-      initialAvailableLiquidity - removeAmount,
-      1,
-      'dai liquidity'
-    );
+    assertApproxEqAbs(asset.liquidity, initialLiquidity - removeAmount, 1, 'dai liquidity');
     assertEq(asset.drawn, 0, 'dai drawn');
     assertEq(asset.premium, 0, 'dai premium');
     assertEq(asset.lastUpdateTimestamp, vm.getBlockTimestamp(), 'dai lastUpdateTimestamp');
@@ -299,7 +290,7 @@ contract HubRemoveTest is HubBase {
       skipTime: skipTime
     });
 
-    uint256 initialAvailableLiquidity = hub1.getAsset(daiAssetId).liquidity;
+    uint256 initialLiquidity = hub1.getAsset(daiAssetId).liquidity;
 
     // bob adds more DAI
     uint256 add2Amount = 10e18;
@@ -328,7 +319,7 @@ contract HubRemoveTest is HubBase {
     AssetPosition memory asset = getAssetPosition(hub1, daiAssetId);
     assertEq(
       asset.liquidity,
-      initialAvailableLiquidity + drawnRestored + premiumRestored + add2Amount,
+      initialLiquidity + drawnRestored + premiumRestored + add2Amount,
       'dai liquidity'
     );
 
@@ -405,7 +396,7 @@ contract HubRemoveTest is HubBase {
     hub1.remove(daiAssetId, amount + 1, alice);
   }
 
-  function test_remove_revertsWith_NotAvailableLiquidity() public {
+  function test_remove_revertsWith_NotLiquidity() public {
     uint256 amount = 100e18;
     Utils.add({
       hub: hub1,
@@ -422,7 +413,7 @@ contract HubRemoveTest is HubBase {
       amount: amount,
       to: alice
     });
-    vm.expectRevert(abi.encodeWithSelector(IHub.NotAvailableLiquidity.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.NotLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, amount, address(spoke1));
   }

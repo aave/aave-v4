@@ -573,7 +573,7 @@ contract Hub is IHub, AccessManaged {
     require(spoke.config.active, SpokeNotActive());
     uint256 withdrawable = asset.toAddedAssetsDown(spoke.addedShares);
     require(amount <= withdrawable, AddedAmountExceeded(withdrawable));
-    require(amount <= asset.liquidity, NotAvailableLiquidity(asset.liquidity));
+    require(amount <= asset.liquidity, NotLiquidity(asset.liquidity));
   }
 
   function _validateDraw(
@@ -591,7 +591,7 @@ contract Hub is IHub, AccessManaged {
       drawCap == type(uint256).max || drawCap >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
     );
-    require(amount <= asset.liquidity, NotAvailableLiquidity(asset.liquidity));
+    require(amount <= asset.liquidity, NotLiquidity(asset.liquidity));
   }
 
   function _validateRestore(

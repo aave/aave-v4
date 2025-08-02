@@ -81,15 +81,15 @@ contract SpokeBorrowValidationTest is SpokeBase {
     spoke1.borrow(reserveId, 1, bob);
   }
 
-  function test_borrow_revertsWith_NotAvailableLiquidity() public {
-    test_borrow_fuzz_revertsWith_NotAvailableLiquidity({
+  function test_borrow_revertsWith_NotLiquidity() public {
+    test_borrow_fuzz_revertsWith_NotLiquidity({
       daiAmount: 100e18,
       wethAmount: 10e18,
       borrowAmount: 100e18 + 1
     });
   }
 
-  function test_borrow_fuzz_revertsWith_NotAvailableLiquidity(
+  function test_borrow_fuzz_revertsWith_NotLiquidity(
     uint256 daiAmount,
     uint256 wethAmount,
     uint256 borrowAmount
@@ -108,7 +108,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     Utils.supply(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // Bob draw more than supplied dai amount
-    vm.expectRevert(abi.encodeWithSelector(IHub.NotAvailableLiquidity.selector, daiAmount));
+    vm.expectRevert(abi.encodeWithSelector(IHub.NotLiquidity.selector, daiAmount));
     vm.prank(bob);
     spoke1.borrow(daiReserveId, borrowAmount, bob);
   }
