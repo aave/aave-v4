@@ -151,7 +151,7 @@ contract Hub is IHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-    _validateAdd(asset, spoke, amount, from);
+    _validateAdd(asset, spoke, assetId, amount, from);
 
     // todo: Mitigate inflation attack
     uint256 shares = previewAddByAssets(assetId, amount);
@@ -175,7 +175,7 @@ contract Hub is IHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-    _validateRemove(asset, spoke, amount, to);
+    _validateRemove(asset, spoke, assetId, amount, to);
 
     uint256 shares = previewRemoveByAssets(assetId, amount); // non zero since we round up
     asset.addedShares -= shares;
@@ -197,7 +197,7 @@ contract Hub is IHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-    _validateDraw(asset, spoke, amount, to);
+    _validateDraw(asset, spoke, assetId, amount, to);
 
     uint256 drawnShares = previewDrawByAssets(assetId, amount); // non zero since we round up
     asset.drawnShares += drawnShares;
@@ -225,7 +225,7 @@ contract Hub is IHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-    _validateRestore(asset, spoke, drawnAmount, premiumAmount, from);
+    _validateRestore(asset, spoke, assetId, drawnAmount, premiumAmount, from);
 
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
     uint256 drawnShares = previewRestoreByAssets(assetId, drawnAmount);
@@ -255,7 +255,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
-    _validateReportDeficit(asset, spoke, drawnAmount, premiumAmount);
+    _validateReportDeficit(asset, spoke, assetId, drawnAmount, premiumAmount);
 
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
     uint256 drawnShares = previewRestoreByAssets(assetId, drawnAmount);
@@ -326,7 +326,7 @@ contract Hub is IHub, AccessManaged {
     DataTypes.SpokeData storage sender = _spokes[assetId][msg.sender];
     DataTypes.SpokeData storage receiver = _spokes[assetId][toSpoke];
     DataTypes.Asset storage asset = _assets[assetId];
-    _validateTransferShares(asset, sender, receiver, shares);
+    _validateTransferShares(asset, sender, receiver, assetId, shares);
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
@@ -382,7 +382,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function previewAddByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
+  function previewAddByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
     return _assets[assetId].toAddedAssetsUp(shares);
   }
 
@@ -392,7 +392,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function previewRemoveByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
+  function previewRemoveByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
     return _assets[assetId].toAddedAssetsDown(shares);
   }
 
@@ -412,7 +412,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
+  function previewRestoreByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
     return _assets[assetId].toDrawnAssetsUp(shares);
   }
 
@@ -451,17 +451,21 @@ contract Hub is IHub, AccessManaged {
   }
 
   function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256) {
-    return _getSpokeOwed(_assets[assetId], _spokes[assetId][spoke]);
+    return _getSpokeOwed(_assets[assetId], _spokes[assetId][spoke], assetId);
   }
 
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256) {
-    (uint256 drawn, uint256 premium) = _getSpokeOwed(_assets[assetId], _spokes[assetId][spoke]);
+    (uint256 drawn, uint256 premium) = _getSpokeOwed(
+      _assets[assetId],
+      _spokes[assetId][spoke],
+      assetId
+    );
     return drawn + premium;
   }
 
   function getAssetAddedAmount(uint256 assetId) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
-    return asset.toAddedAssetsDown(asset.addedShares);
+    return previewRemoveByShares(assetId, asset.addedShares);
   }
 
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
@@ -484,9 +488,12 @@ contract Hub is IHub, AccessManaged {
     DataTypes.Asset storage asset = _assets[assetId];
     if (spoke == asset.config.feeReceiver) {
       return
-        asset.toAddedAssetsDown(_spokes[assetId][spoke].addedShares + asset.unrealizedFeeShares());
+        previewRemoveByShares(
+          assetId,
+          _spokes[assetId][spoke].addedShares + asset.unrealizedFeeShares()
+        );
     }
-    return asset.toAddedAssetsDown(_spokes[assetId][spoke].addedShares);
+    return previewRemoveByShares(assetId, _spokes[assetId][spoke].addedShares);
   }
 
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256) {
@@ -546,9 +553,23 @@ contract Hub is IHub, AccessManaged {
     receiver.addedShares += shares;
   }
 
+  function _getSpokeOwed(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
+    uint256 assetId
+  ) internal view returns (uint256, uint256) {
+    uint256 accruedPremium = previewRestoreByShares(assetId, spoke.premiumShares) -
+      spoke.premiumOffset;
+    return (
+      previewRestoreByShares(assetId, spoke.drawnShares),
+      spoke.realizedPremium + accruedPremium
+    );
+  }
+
   function _validateAdd(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
+    uint256 assetId,
     uint256 amount,
     address from
   ) internal view {
@@ -557,7 +578,8 @@ contract Hub is IHub, AccessManaged {
     require(spoke.config.active, SpokeNotActive());
     uint256 addCap = spoke.config.addCap;
     require(
-      addCap == type(uint256).max || addCap >= asset.toAddedAssetsUp(spoke.addedShares) + amount,
+      addCap == type(uint256).max ||
+        addCap >= previewAddByShares(assetId, spoke.addedShares) + amount,
       AddCapExceeded(addCap)
     );
   }
@@ -565,13 +587,14 @@ contract Hub is IHub, AccessManaged {
   function _validateRemove(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
+    uint256 assetId,
     uint256 amount,
     address to
   ) internal view {
     require(to != address(this), InvalidToAddress());
     require(amount > 0, InvalidRemoveAmount());
     require(spoke.config.active, SpokeNotActive());
-    uint256 withdrawable = asset.toAddedAssetsDown(spoke.addedShares);
+    uint256 withdrawable = previewRemoveByShares(assetId, spoke.addedShares);
     require(amount <= withdrawable, AddedAmountExceeded(withdrawable));
     require(amount <= asset.liquidity, NotLiquidity(asset.liquidity));
   }
@@ -579,6 +602,7 @@ contract Hub is IHub, AccessManaged {
   function _validateDraw(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
+    uint256 assetId,
     uint256 amount,
     address to
   ) internal view {
@@ -586,7 +610,7 @@ contract Hub is IHub, AccessManaged {
     require(amount > 0, InvalidDrawAmount());
     require(spoke.config.active, SpokeNotActive());
     uint256 drawCap = spoke.config.drawCap;
-    (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spoke);
+    (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spoke, assetId);
     require(
       drawCap == type(uint256).max || drawCap >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
@@ -597,6 +621,7 @@ contract Hub is IHub, AccessManaged {
   function _validateRestore(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
+    uint256 assetId,
     uint256 drawnAmount,
     uint256 premiumAmount,
     address from
@@ -604,28 +629,21 @@ contract Hub is IHub, AccessManaged {
     require(from != address(this), InvalidFromAddress());
     require(drawnAmount + premiumAmount > 0, InvalidRestoreAmount());
     require(spoke.config.active, SpokeNotActive());
-    (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spoke);
+    (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spoke, assetId);
     require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
     require(premiumAmount <= premium, SurplusAmountRestored(premium));
-  }
-
-  function _getSpokeOwed(
-    DataTypes.Asset storage asset,
-    DataTypes.SpokeData storage spoke
-  ) internal view returns (uint256, uint256) {
-    uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumShares) - spoke.premiumOffset;
-    return (asset.toDrawnAssetsUp(spoke.drawnShares), spoke.realizedPremium + accruedPremium);
   }
 
   function _validateReportDeficit(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
+    uint256 assetId,
     uint256 drawnAmount,
     uint256 premiumAmount
   ) internal view {
     require(spoke.config.active, SpokeNotActive());
     require(drawnAmount + premiumAmount != 0, InvalidDeficitAmount());
-    (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spoke);
+    (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spoke, assetId);
     require(drawnAmount <= drawn, SurplusDeficitReported(drawn));
     require(premiumAmount <= premium, SurplusDeficitReported(premium));
   }
@@ -651,12 +669,13 @@ contract Hub is IHub, AccessManaged {
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage sender,
     DataTypes.SpokeData storage receiver,
+    uint256 assetId,
     uint256 shares
   ) internal view {
     require(sender.config.active && receiver.config.active, SpokeNotActive());
     require(shares > 0, InvalidSharesAmount());
     require(
-      asset.toAddedAssetsDown(receiver.addedShares + shares) <= receiver.config.addCap,
+      previewRemoveByShares(assetId, receiver.addedShares + shares) <= receiver.config.addCap,
       AddCapExceeded(receiver.config.addCap)
     );
   }
