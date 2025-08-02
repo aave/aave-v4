@@ -1182,17 +1182,17 @@ abstract contract Base is Test {
 
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
   function minimumAssetsPerDrawnShare(uint256 assetId) internal view returns (uint256) {
-    return hub1.previewRestoreByShares(assetId, 1);
+    return minimumAssetsPerDrawnShare(hub1, assetId);
   }
 
   /// @dev Helper function to calculate asset amount corresponding to single added share
-  function minimumAssetsPerAddedShare(uint256 assetId) internal view returns (uint256) {
-    return hub1.previewAddByShares(assetId, 1);
+  function minimumAssetsPerAddedShare(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return hub.previewAddByShares(assetId, 1);
   }
 
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
   function minimumAssetsPerDrawnShare(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.previewDrawByShares(assetId, 1);
+    return hub.previewRestoreByShares(assetId, 1);
   }
 
   /// @dev Helper function to calculate expected supplied assets based on amount to supply and current exchange rate

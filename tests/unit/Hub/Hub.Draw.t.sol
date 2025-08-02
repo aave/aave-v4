@@ -334,7 +334,7 @@ contract HubDrawTest is HubBase {
     vm.startPrank(address(spoke1));
     hub1.restore({
       assetId: daiAssetId,
-      baseAmount: minimumAssetsPerDrawnShare(daiAssetId),
+      drawnAmount: minimumAssetsPerDrawnShare(daiAssetId),
       premiumAmount: 0,
       premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
       from: alice
@@ -382,7 +382,7 @@ contract HubDrawTest is HubBase {
     vm.startPrank(address(spoke1));
     hub1.restore({
       assetId: daiAssetId,
-      baseAmount: singleShareInAssets,
+      drawnAmount: singleShareInAssets,
       premiumAmount: 0,
       premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
       from: alice
@@ -419,7 +419,7 @@ contract HubDrawTest is HubBase {
     vm.startPrank(address(spoke1));
     hub1.restore({
       assetId: daiAssetId,
-      baseAmount: minimumAssetsPerDrawnShare(daiAssetId),
+      drawnAmount: minimumAssetsPerDrawnShare(daiAssetId),
       premiumAmount: 0,
       premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
       from: alice

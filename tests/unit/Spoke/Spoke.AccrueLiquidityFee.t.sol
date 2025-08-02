@@ -90,7 +90,13 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     }
 
     // Alice supplies 1 share to trigger interest accrual
-    Utils.supplyCollateral(spoke1, reserveId, alice, minimumAssetsPerAddedShare(assetId), alice);
+    Utils.supplyCollateral(
+      spoke1,
+      reserveId,
+      alice,
+      minimumAssetsPerAddedShare(hub1, assetId),
+      alice
+    );
 
     // treasury
     uint256 expectedFeeShares = hub1.convertToAddedShares(
@@ -127,7 +133,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     skip(skipTime);
 
     // Alice supplies 1 share to trigger interest accrual
-    Utils.supply(spoke1, reserveId, alice, minimumAssetsPerAddedShare(assetId), alice);
+    Utils.supply(spoke1, reserveId, alice, minimumAssetsPerAddedShare(hub1, assetId), alice);
 
     // treasury
     expectedFeeShares = hub1.convertToAddedShares(
@@ -157,7 +163,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     skip(skipTime);
 
     // Alice supplies 1 share to trigger interest accrual
-    Utils.supply(spoke1, reserveId, alice, minimumAssetsPerAddedShare(assetId), alice);
+    Utils.supply(spoke1, reserveId, alice, minimumAssetsPerAddedShare(hub1, assetId), alice);
 
     // treasury
     expectedFeeShares = 0;
@@ -251,7 +257,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
-    Utils.supply(spoke1, reserveId, bob, minimumAssetsPerAddedShare(assetId), bob);
+    Utils.supply(spoke1, reserveId, bob, minimumAssetsPerAddedShare(hub1, assetId), bob);
     _assertEventNotEmitted(IHub.AccrueFees.selector);
 
     vm.recordLogs();
@@ -368,7 +374,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
-    Utils.supply(spoke1, reserveId, bob, minimumAssetsPerAddedShare(assetId), bob);
+    Utils.supply(spoke1, reserveId, bob, minimumAssetsPerAddedShare(hub1, assetId), bob);
     _assertEventNotEmitted(IHub.AccrueFees.selector);
 
     vm.recordLogs();

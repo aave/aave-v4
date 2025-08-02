@@ -575,7 +575,7 @@ contract HubAddTest is HubBase {
     uint256 addedAssetsBefore2 = hub1.getSpokeAddedAmount(daiAssetId, address(spoke2));
     uint256 addedSharesBefore2 = hub1.getSpokeAddedShares(daiAssetId, address(spoke2));
     uint256 addShares = 1; // minimum for 1 share
-    uint256 addAmount = minimumAssetsPerAddedShare(daiAssetId);
+    uint256 addAmount = minimumAssetsPerAddedShare(hub1, daiAssetId);
     // effective add amount (taking into account potential donation)
     uint256 spokeAddedAmount = calculateEffectiveAddedAssets(
       addAmount,
@@ -690,7 +690,7 @@ contract HubAddTest is HubBase {
     uint256 addShares = 1; // minimum for 1 share
     uint256 addAmount;
     for (uint256 i = 0; i < numAdds; i++) {
-      addAmount = minimumAssetsPerAddedShare(assetId);
+      addAmount = minimumAssetsPerAddedShare(hub1, assetId);
 
       // bob add minimal amount
       Utils.add({

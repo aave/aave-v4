@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IHubBase} from 'src/interfaces/IHubBase.sol';
@@ -35,12 +34,12 @@ interface IHub is IHubBase, IAccessManaged {
   event DeficitReported(
     uint256 indexed assetId,
     address indexed spoke,
-    uint256 baseRestoredShares,
+    uint256 drawnShares,
     DataTypes.PremiumDelta premiumDelta,
-    uint256 totalRestoredAmount
+    uint256 drawnAmount
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
-  event TransferShares(uint256 indexed assetId, uint256 shares, address fromSpoke, address toSpoke);
+  event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
 
   /**
    * @notice Emitted when some deficit is eliminated.

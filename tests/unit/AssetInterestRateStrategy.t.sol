@@ -240,7 +240,7 @@ contract AssetInterestRateStrategyTest is Base {
         .rayMulUp(utilizationRatioRay - rateData.optimalUsageRatio.bpsToRay())
         .rayDivUp(WadRayMath.RAY - rateData.optimalUsageRatio.bpsToRay());
 
-    if (drawn >= 1e27) {
+    if (drawn >= WadRayMath.RAY) {
       assertEq(variableBorrowRate, expectedVariableRate);
     } else {
       assertApproxEqAbs(variableBorrowRate, expectedVariableRate, 0.0001e27);

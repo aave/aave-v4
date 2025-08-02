@@ -519,7 +519,7 @@ contract Hub is IHub, AccessManaged {
     DataTypes.PremiumDelta calldata premium,
     uint256 premiumAmount
   ) internal {
-    uint256 premiumDebtBefore = asset.premium();
+    uint256 premiumBefore = asset.premium();
 
     asset.premiumShares = asset.premiumShares.add(premium.sharesDelta);
     asset.premiumOffset = asset.premiumOffset.add(premium.offsetDelta);
@@ -531,7 +531,7 @@ contract Hub is IHub, AccessManaged {
 
     // can increase due to precision loss on premium (drawn unchanged)
     // todo mathematically find premium diff ceiling and replace the `2`
-    require(asset.premium() + premiumAmount - premiumDebtBefore <= 2, InvalidPremiumChange());
+    require(asset.premium() + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
   }
 
   function _transferShares(
