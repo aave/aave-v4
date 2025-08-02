@@ -350,7 +350,7 @@ export class Spoke {
       user.realisedPremium - userRealisedPremium,
       user
     ); // settle premium debt
-    const drawnShares = this.hub.restore(drawnDebtRestored, premiumDebtRestored, this); // settle base debt
+    const drawnShares = this.hub.restore(drawnDebtRestored, premiumDebtRestored, this); // settle drawn debt
 
     this.drawnShares -= drawnShares;
     user.drawnShares -= drawnShares;
@@ -678,7 +678,7 @@ export class System {
   runInvariants() {
     this.invariant_valuesWithinBounds();
     this.invariant_hubSpokeAccounting();
-    this.invariant_sumOfBaseDebt();
+    this.invariant_sumOfDrawnDebt();
     this.invariant_sumOfPremiumDebt();
     this.invariant_sumOfSuppliedShares();
     this.invariant_hubSpokeAccounting();
@@ -718,43 +718,43 @@ export class System {
     this.handleFailure(fail, 'invariant_valuesWithinBounds');
   }
 
-  invariant_sumOfBaseDebt() {
+  invariant_sumOfDrawnDebt() {
     let fail = false,
       diff = 0n;
-    const hubBaseDebt = this.hub.getDebt().drawnDebt;
+    const hubDrawnDebt = this.hub.getDebt().drawnDebt;
     const spokeDrawn = this.spokes.reduce((sum, spoke) => sum + spoke.getDebt().drawnDebt, 0n);
-    const userBaseDebt = this.users.reduce((sum, user) => sum + user.getDebt().drawnDebt, 0n);
-    if ((diff = absDiff(hubBaseDebt, spokeDrawn)) > PRECISION) {
-      console.error('hubBaseDebt !== spokeDrawn, diff', f(hubBaseDebt), f(spokeDrawn), diff);
+    const userDrawnDebt = this.users.reduce((sum, user) => sum + user.getDebt().drawnDebt, 0n);
+    if ((diff = absDiff(hubDrawnDebt, spokeDrawn)) > PRECISION) {
+      console.error('hubDrawnDebt !== spokeDrawn, diff', f(hubDrawnDebt), f(spokeDrawn), diff);
       fail = true;
     }
-    if ((diff = absDiff(spokeDrawn, userBaseDebt)) > PRECISION) {
-      console.error('spokeDrawn !== userBaseDebt, diff', f(spokeDrawn), f(userBaseDebt), diff);
+    if ((diff = absDiff(spokeDrawn, userDrawnDebt)) > PRECISION) {
+      console.error('spokeDrawn !== userDrawnDebt, diff', f(spokeDrawn), f(userDrawnDebt), diff);
       fail = true;
     }
-    if ((diff = maxAbsDiff(hubBaseDebt, spokeDrawn, userBaseDebt)) > PRECISION) {
+    if ((diff = maxAbsDiff(hubDrawnDebt, spokeDrawn, userDrawnDebt)) > PRECISION) {
       console.error(
-        'maxAbsDiff(hubBaseDebt, spokeDrawn, userBaseDebt) > PRECISION, diff',
-        f(hubBaseDebt),
+        'maxAbsDiff(hubDrawnDebt, spokeDrawn, userDrawnDebt) > PRECISION, diff',
+        f(hubDrawnDebt),
         f(spokeDrawn),
-        f(userBaseDebt),
+        f(userDrawnDebt),
         diff
       );
       fail = true;
     }
 
-    if (hubBaseDebt === 0n && spokeDrawn + userBaseDebt !== 0n) {
+    if (hubDrawnDebt === 0n && spokeDrawn + userDrawnDebt !== 0n) {
       console.error(
         'spoke & user dust drawnDebt remaining when hub drawnDebt is completely repaid',
-        'spokeDrawn %d, userBaseDebt %d',
+        'spokeDrawn %d, userDrawnDebt %d',
         f(spokeDrawn),
-        f(userBaseDebt)
+        f(userDrawnDebt)
       );
       fail = true;
     }
 
     // this.handleFailure(fail, arguments.callee.name);
-    this.handleFailure(fail, 'invariant_sumOfBaseDebt');
+    this.handleFailure(fail, 'invariant_sumOfDrawnDebt');
   }
 
   invariant_sumOfPremiumDebt() {

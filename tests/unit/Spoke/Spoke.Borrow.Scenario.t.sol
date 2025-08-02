@@ -538,7 +538,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       hub1.getAsset(daiAssetId).drawnRate,
       lastTimestamp
     );
-    uint256 expectedBaseDebt = cumulatedInterest.rayMulUp(borrowAmount1) + borrowAmount2;
+    uint256 expectedDrawnDebt = cumulatedInterest.rayMulUp(borrowAmount1) + borrowAmount2;
 
     // calculate expected realized premium prior to action
     state.daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
@@ -559,8 +559,8 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     spoke1.borrow(state.daiReserveId, borrowAmount2, bob);
 
     (drawnDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
-    // check that accrued base debt matches expected
-    assertApproxEqAbs(drawnDebt, expectedBaseDebt, 3, 'base debt after borrow2');
+    // check that accrued drawn debt matches expected
+    assertApproxEqAbs(drawnDebt, expectedDrawnDebt, 3, 'drawn debt after borrow2');
 
     // assertions for 2nd borrow
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'spoke1 bob dai after');

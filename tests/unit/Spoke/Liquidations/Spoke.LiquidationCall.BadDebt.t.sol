@@ -410,8 +410,8 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
 
     uint256 debtAssetId = state.debtReserve.assetId;
-    (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
-      state.userBaseDebt.balanceBefore,
+    (uint256 drawnDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
+      state.userDrawnDebt.balanceBefore,
       state.userPremiumDebt.balanceBefore,
       state.debtToLiq,
       debtAssetId
@@ -423,8 +423,8 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     // debt asset deficit shares are the initial amount minus the amount restored during liquidation
     state.expectedDeficitShares =
       userPosition.drawnShares -
-      hub1.convertToDrawnShares(debtAssetId, basedDebtRestored);
-    // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
+      hub1.convertToDrawnShares(debtAssetId, drawnDebtRestored);
+    // total debt asset deficit is the expected drawn debt and remaining premium debt after settlement during liquidation
     state.expectedDeficitAmount =
       hub1.convertToDrawnAssets(debtAssetId, state.expectedDeficitShares) +
       state.userPremiumDebt.balanceBefore -

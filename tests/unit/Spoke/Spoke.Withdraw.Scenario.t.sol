@@ -261,20 +261,22 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
 
     // reserve
-    (uint256 reserveBaseDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(params.reserveId);
-    assertEq(reserveBaseDebt, 0, 'reserveData base debt');
+    (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(
+      params.reserveId
+    );
+    assertEq(reserveDrawnDebt, 0, 'reserveData drawn debt');
     assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
     assertEq(reserveData[state.stage].data.addedShares, 0, 'reserveData added shares');
 
     // alice
-    (uint256 userBaseDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(params.reserveId, alice);
-    assertEq(userBaseDebt, 0, 'aliceData base debt');
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(params.reserveId, alice);
+    assertEq(userDrawnDebt, 0, 'aliceData drawn debt');
     assertEq(userPremiumDebt, 0, 'aliceData premium debt');
     assertEq(aliceData[state.stage].data.suppliedShares, 0, 'aliceData supplied shares');
 
     // bob
-    (userBaseDebt, userPremiumDebt) = spoke1.getUserDebt(params.reserveId, bob);
-    assertEq(userBaseDebt, 0, 'bobData base debt');
+    (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(params.reserveId, bob);
+    assertEq(userDrawnDebt, 0, 'bobData drawn debt');
     assertEq(userPremiumDebt, 0, 'bobData premium debt');
     assertEq(bobData[state.stage].data.suppliedShares, 0, 'bobData supplied shares');
 

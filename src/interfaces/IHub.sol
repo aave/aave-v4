@@ -125,11 +125,11 @@ interface IHub is IHubBase, IAccessManaged {
   function setInterestRateData(uint256 assetId, bytes calldata data) external;
 
   /**
-   * @notice Refreshes premium debt accounting.
+   * @notice Refreshes premium accounting.
    * @dev Only callable by active spokes, reverts with `SpokeNotActive` otherwise.
-   * @dev Overall premium debt should not decrease, reverts with `InvalidDebtChange` otherwise.
+   * @dev Overall premium should not decrease, reverts with `InvalidPremiumChange` otherwise.
    * @param assetId The identifier of the asset.
-   * @param premiumDelta The change in premium debt.
+   * @param premiumDelta The change in premium.
    */
   function refreshPremium(uint256 assetId, DataTypes.PremiumDelta calldata premiumDelta) external;
 
@@ -145,14 +145,14 @@ interface IHub is IHubBase, IAccessManaged {
    * @notice Reports deficit.
    * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
-   * @param baseAmount The base debt to report as deficit.
-   * @param premiumAmount The premium debt to report as deficit.
-   * @param premiumDelta The premium debt delta to apply which signal premium debt deficit.
-   * @return The amount of base debt shares reported as deficit.
+   * @param drawnAmount The drawn amount to report as deficit.
+   * @param premiumAmount The premium amount to report as deficit.
+   * @param premiumDelta The premium delta to apply which signal premium deficit.
+   * @return The amount of drawn shares reported as deficit.
    */
   function reportDeficit(
     uint256 assetId,
-    uint256 baseAmount,
+    uint256 drawnAmount,
     uint256 premiumAmount,
     DataTypes.PremiumDelta calldata premiumDelta
   ) external returns (uint256);

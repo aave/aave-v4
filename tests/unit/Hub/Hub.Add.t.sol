@@ -257,7 +257,7 @@ contract HubAddTest is HubBase {
       'hub available liquidity after'
     );
     (uint256 drawnAfter, ) = hub1.getAssetOwed(assetId);
-    assertEq(drawnAfter, drawnBefore, 'hub base debt after');
+    assertEq(drawnAfter, drawnBefore, 'hub drawn debt after');
     assertBorrowRateSynced(hub1, assetId, 'hub1.add');
     // token balance
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-add');
@@ -502,7 +502,7 @@ contract HubAddTest is HubBase {
       'hub available liquidity after'
     );
     (uint256 drawnAfter, ) = hub1.getAssetOwed(daiAssetId);
-    assertEq(drawnAfter, drawnBefore, 'hub base debt after');
+    assertEq(drawnAfter, drawnBefore, 'hub drawn debt after');
     assertBorrowRateSynced(hub1, daiAssetId, 'hub1.add');
   }
 

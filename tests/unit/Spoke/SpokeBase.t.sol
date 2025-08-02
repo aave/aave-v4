@@ -77,10 +77,10 @@ contract SpokeBase is Base {
     uint256 borrowSupplyShares;
     uint256 reserveSharesBefore;
     uint256 userSharesBefore;
-    uint256 borrowerBaseDebtBefore;
-    uint256 reserveBaseDebtBefore;
-    uint256 borrowerBaseDebtAfter;
-    uint256 reserveBaseDebtAfter;
+    uint256 borrowerDrawnDebtBefore;
+    uint256 reserveDrawnDebtBefore;
+    uint256 borrowerDrawnDebtAfter;
+    uint256 reserveDrawnDebtAfter;
   }
 
   struct RepayMultipleLocal {
@@ -363,8 +363,8 @@ contract SpokeBase is Base {
       state.userSharesBefore + state.borrowSupplyShares,
       spoke.getUserSuppliedShares(borrow.reserveId, borrow.supplier)
     );
-    (state.borrowerBaseDebtBefore, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
-    (state.reserveBaseDebtBefore, ) = spoke.getReserveDebt(borrow.reserveId);
+    (state.borrowerDrawnDebtBefore, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
+    (state.reserveDrawnDebtBefore, ) = spoke.getReserveDebt(borrow.reserveId);
     // borrower borrows asset
     Utils.borrow({
       spoke: spoke,
@@ -373,10 +373,10 @@ contract SpokeBase is Base {
       amount: borrow.borrowAmount,
       onBehalfOf: borrow.borrower
     });
-    (state.borrowerBaseDebtAfter, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
-    (state.reserveBaseDebtAfter, ) = spoke.getReserveDebt(borrow.reserveId);
-    assertEq(state.borrowerBaseDebtBefore + borrow.borrowAmount, state.borrowerBaseDebtAfter);
-    assertEq(state.reserveBaseDebtBefore + borrow.borrowAmount, state.reserveBaseDebtAfter);
+    (state.borrowerDrawnDebtAfter, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
+    (state.reserveDrawnDebtAfter, ) = spoke.getReserveDebt(borrow.reserveId);
+    assertEq(state.borrowerDrawnDebtBefore + borrow.borrowAmount, state.borrowerDrawnDebtAfter);
+    assertEq(state.reserveDrawnDebtBefore + borrow.borrowAmount, state.reserveDrawnDebtAfter);
     // skip time to increase index
     skip(skipTime);
     return (state.collateralSupplyShares, state.borrowSupplyShares);
@@ -596,7 +596,7 @@ contract SpokeBase is Base {
     assertEq(
       userDebt.drawnDebt,
       expectedUserDebt.drawnDebt,
-      string.concat('user base debt ', label)
+      string.concat('user drawn debt ', label)
     );
     assertApproxEqAbs(
       userDebt.premiumDebt,
@@ -648,19 +648,19 @@ contract SpokeBase is Base {
   function _assertRealizedPremiumCalcMatchesNaive(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 prevBaseDebt,
+    uint256 prevDrawnDebt,
     DataTypes.UserPosition memory userPos,
     uint40 lastTimestamp
   ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 accruedBase = MathUtils
       .calculateLinearInterest(hub1.getAsset(assetId).drawnRate, lastTimestamp)
-      .rayMulUp(prevBaseDebt);
+      .rayMulUp(prevDrawnDebt);
 
     // equivalent to multiplying by risk premium (RP = premium drawn shares / base drawn shares)
     assertApproxEqAbs(
       userPos.realizedPremium,
-      ((accruedBase - prevBaseDebt) * (userPos.premiumShares)) / (userPos.drawnShares),
+      ((accruedBase - prevDrawnDebt) * (userPos.premiumShares)) / (userPos.drawnShares),
       3, // precision loss due to calcs in asset amount and conversion to
       'realized premium naive calc'
     );
@@ -691,7 +691,7 @@ contract SpokeBase is Base {
       assertEq(
         drawnDebt,
         hub1.convertToDrawnAssets(assetId, userData.drawnShares),
-        string.concat('user ', vm.toString(i), ' base debt ', label)
+        string.concat('user ', vm.toString(i), ' drawn debt ', label)
       );
       assertEq(
         premiumDebt,
@@ -705,7 +705,7 @@ contract SpokeBase is Base {
     assertEq(
       reserveDebt.drawnDebt,
       usersDebt.drawnDebt,
-      string.concat('reserve vs sum users base debt ', label)
+      string.concat('reserve vs sum users drawn debt ', label)
     );
     assertEq(
       reserveDebt.premiumDebt,
@@ -796,7 +796,7 @@ contract SpokeBase is Base {
 
   // todo: merge with _assertUserDebt
   function assertEq(Debts memory a, Debts memory b) internal pure {
-    assertEq(a.drawnDebt, b.drawnDebt, 'base debt');
+    assertEq(a.drawnDebt, b.drawnDebt, 'drawn debt');
     assertEq(a.premiumDebt, b.premiumDebt, 'premium debt');
     assertEq(a.totalDebt, b.totalDebt, 'total debt');
     assertEq(keccak256(abi.encode(a)), keccak256(abi.encode(b)), 'debt data'); // sanity

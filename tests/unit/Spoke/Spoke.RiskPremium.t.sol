@@ -21,7 +21,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
   struct DebtChecks {
     uint256 drawnDebt;
     uint256 premiumDebt;
-    uint256 actualBaseDebt;
+    uint256 actualDrawnDebt;
     uint256 actualPremium;
     uint256 reserveDebt;
     uint256 reservePremium;
@@ -953,10 +953,10 @@ contract SpokeRiskPremiumTest is SpokeBase {
     // Get the base rate of wbtc
     uint256 baseRate = hub1.getAssetDrawnRate(wbtcAssetId);
     uint256 drawnDebt = wbtcInfo.borrowAmount;
-    (uint256 actualBaseDebt, uint256 actualPremium) = spoke3.getUserDebt(wbtcInfo.reserveId, bob);
+    (uint256 actualDrawnDebt, uint256 actualPremium) = spoke3.getUserDebt(wbtcInfo.reserveId, bob);
     uint40 startTime = uint40(vm.getBlockTimestamp());
 
-    assertEq(drawnDebt, actualBaseDebt, 'user base debt');
+    assertEq(drawnDebt, actualDrawnDebt, 'user drawn debt');
     assertEq(actualPremium, 0, 'user premium debt');
 
     // Wait a year
@@ -969,10 +969,10 @@ contract SpokeRiskPremiumTest is SpokeBase {
       'bob risk premium after time skip'
     );
 
-    // See if base debt of wbtc changes appropriately
+    // See if drawn debt of wbtc changes appropriately
     drawnDebt = MathUtils.calculateLinearInterest(baseRate, startTime).rayMulUp(drawnDebt);
-    (actualBaseDebt, actualPremium) = spoke3.getUserDebt(wbtcInfo.reserveId, bob);
-    assertEq(drawnDebt, actualBaseDebt, 'user base debt');
+    (actualDrawnDebt, actualPremium) = spoke3.getUserDebt(wbtcInfo.reserveId, bob);
+    assertEq(drawnDebt, actualDrawnDebt, 'user drawn debt');
 
     // See if premium debt changes proportionally to user risk premium change
     uint256 premiumDebt = (drawnDebt - wbtcInfo.borrowAmount).percentMulUp(expectedUserRiskPremium);
@@ -980,16 +980,16 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Since Bob is only user, reserve debt should be equal to user debt
     (uint256 reserveDebt, uint256 reservePremium) = spoke3.getReserveDebt(wbtcInfo.reserveId);
-    assertEq(reserveDebt, drawnDebt, 'reserve base debt');
+    assertEq(reserveDebt, drawnDebt, 'reserve drawn debt');
     assertApproxEqAbs(reservePremium, premiumDebt, 1, 'reserve premium debt');
 
     // See if values are reflected on hub side as well
     (uint256 spokeOwed, uint256 spokePremium) = hub1.getSpokeOwed(wbtcAssetId, address(spoke3));
-    assertEq(spokeOwed, drawnDebt, 'hub spoke base debt');
+    assertEq(spokeOwed, drawnDebt, 'hub spoke drawn debt');
     assertApproxEqAbs(spokePremium, premiumDebt, 1, 'hub spoke premium debt');
 
     (uint256 assetOwed, uint256 assetPremium) = hub1.getAssetOwed(wbtcAssetId);
-    assertEq(assetOwed, drawnDebt, 'hub asset base debt');
+    assertEq(assetOwed, drawnDebt, 'hub asset drawn debt');
     assertApproxEqAbs(assetPremium, premiumDebt, 1, 'hub asset premium debt');
   }
 
@@ -1073,23 +1073,23 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Get the base rate of wbtc
     uint256 baseRateWbtc = hub1.getAssetDrawnRate(wbtcAssetId);
-    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
+    (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wbtcInfo.reserveId,
       bob
     );
     uint256 startTime = vm.getBlockTimestamp();
 
-    assertEq(wbtcInfo.borrowAmount, debtChecks.actualBaseDebt, 'user base debt');
+    assertEq(wbtcInfo.borrowAmount, debtChecks.actualDrawnDebt, 'user drawn debt');
     assertEq(debtChecks.actualPremium, 0, 'user premium debt');
 
     // Get the base rate of weth
     uint256 baseRateWeth = hub1.getAssetDrawnRate(wethAssetId);
-    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
+    (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wethInfo.reserveId,
       bob
     );
 
-    assertEq(wethInfo.borrowAmount, debtChecks.actualBaseDebt, 'user base debt');
+    assertEq(wethInfo.borrowAmount, debtChecks.actualDrawnDebt, 'user drawn debt');
     assertEq(debtChecks.actualPremium, 0, 'user premium debt');
 
     // Wait a year
@@ -1102,15 +1102,15 @@ contract SpokeRiskPremiumTest is SpokeBase {
       'bob risk premium after time skip'
     );
 
-    // See if base debt of wbtc changes appropriately
+    // See if drawn debt of wbtc changes appropriately
     debtChecks.drawnDebt = MathUtils
       .calculateLinearInterest(baseRateWbtc, uint40(startTime))
       .rayMulUp(wbtcInfo.borrowAmount);
-    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
+    (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wbtcInfo.reserveId,
       bob
     );
-    assertEq(debtChecks.drawnDebt, debtChecks.actualBaseDebt, 'user base debt');
+    assertEq(debtChecks.drawnDebt, debtChecks.actualDrawnDebt, 'user drawn debt');
 
     // See if premium debt changes proportionally to user risk premium
     debtChecks.premiumDebt = (debtChecks.drawnDebt - wbtcInfo.borrowAmount).percentMulUp(
@@ -1125,7 +1125,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Since Bob is only user, reserve debt should be equal to user debt
     (debtChecks.reserveDebt, debtChecks.reservePremium) = spoke3.getReserveDebt(wbtcInfo.reserveId);
-    assertEq(debtChecks.reserveDebt, debtChecks.drawnDebt, 'reserve base debt after accrual');
+    assertEq(debtChecks.reserveDebt, debtChecks.drawnDebt, 'reserve drawn debt after accrual');
     assertApproxEqAbs(
       debtChecks.reservePremium,
       debtChecks.premiumDebt,
@@ -1138,7 +1138,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
       wbtcAssetId,
       address(spoke3)
     );
-    assertEq(debtChecks.spokeOwed, debtChecks.drawnDebt, 'hub spoke base debt after accrual');
+    assertEq(debtChecks.spokeOwed, debtChecks.drawnDebt, 'hub spoke drawn debt after accrual');
     assertApproxEqAbs(
       debtChecks.spokePremium,
       debtChecks.premiumDebt,
@@ -1147,7 +1147,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     (debtChecks.assetOwed, debtChecks.assetPremium) = hub1.getAssetOwed(wbtcAssetId);
-    assertEq(debtChecks.assetOwed, debtChecks.drawnDebt, 'hub asset base debt after accrual');
+    assertEq(debtChecks.assetOwed, debtChecks.drawnDebt, 'hub asset drawn debt after accrual');
     assertApproxEqAbs(
       debtChecks.assetPremium,
       debtChecks.premiumDebt,
@@ -1155,15 +1155,15 @@ contract SpokeRiskPremiumTest is SpokeBase {
       'hub asset premium debt after accrual'
     );
 
-    // See if base debt of weth changes appropriately
+    // See if drawn debt of weth changes appropriately
     debtChecks.drawnDebt = MathUtils
       .calculateLinearInterest(baseRateWeth, uint40(startTime))
       .rayMulUp(wethInfo.borrowAmount);
-    (debtChecks.actualBaseDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
+    (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wethInfo.reserveId,
       bob
     );
-    assertEq(debtChecks.drawnDebt, debtChecks.actualBaseDebt, 'user base debt');
+    assertEq(debtChecks.drawnDebt, debtChecks.actualDrawnDebt, 'user drawn debt');
 
     // See if premium debt changes proportionally to user risk premium
     debtChecks.premiumDebt = (debtChecks.drawnDebt - wethInfo.borrowAmount).percentMulUp(
@@ -1178,7 +1178,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Since Bob is only user, reserve debt should be equal to user debt
     (debtChecks.reserveDebt, debtChecks.reservePremium) = spoke3.getReserveDebt(wethInfo.reserveId);
-    assertEq(debtChecks.reserveDebt, debtChecks.drawnDebt, 'reserve base debt after accrual');
+    assertEq(debtChecks.reserveDebt, debtChecks.drawnDebt, 'reserve drawn debt after accrual');
     assertApproxEqAbs(
       debtChecks.reservePremium,
       debtChecks.premiumDebt,
@@ -1191,7 +1191,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
       wethAssetId,
       address(spoke3)
     );
-    assertEq(debtChecks.spokeOwed, debtChecks.drawnDebt, 'hub spoke base debt after accrual');
+    assertEq(debtChecks.spokeOwed, debtChecks.drawnDebt, 'hub spoke drawn debt after accrual');
     assertApproxEqAbs(
       debtChecks.spokePremium,
       debtChecks.premiumDebt,
@@ -1200,7 +1200,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     (debtChecks.assetOwed, debtChecks.assetPremium) = hub1.getAssetOwed(wethAssetId);
-    assertEq(debtChecks.assetOwed, debtChecks.drawnDebt, 'hub asset base debt after accrual');
+    assertEq(debtChecks.assetOwed, debtChecks.drawnDebt, 'hub asset drawn debt after accrual');
     assertApproxEqAbs(
       debtChecks.assetPremium,
       debtChecks.premiumDebt,

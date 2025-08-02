@@ -1275,7 +1275,7 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to calculate the amount of base and premium debt to restore
-  // @return drawnRestored amount of base debt to restore
+  // @return drawnRestored amount of drawn debt to restore
   // @return premiumRestored amount of premium debt to restore
   function _calculateExactRestoreAmount(
     uint256 drawn,
@@ -1287,7 +1287,7 @@ abstract contract Base is Test {
       return (0, restoreAmount);
     }
     uint256 drawnRestored = _min(drawn, restoreAmount - premium);
-    // round base debt to nearest whole share
+    // round drawn debt to nearest whole share
     drawnRestored = hub1.convertToDrawnAssets(
       assetId,
       hub1.convertToDrawnShares(assetId, drawnRestored)
@@ -1351,12 +1351,17 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId,
     address user,
-    uint256 expectedBaseDebt,
+    uint256 expectedDrawnDebt,
     uint256 expectedPremiumDebt,
     string memory label
   ) internal view {
-    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = spoke.getUserDebt(reserveId, user);
-    assertApproxEqAbs(actualBaseDebt, expectedBaseDebt, 1, string.concat('user base debt ', label));
+    (uint256 actualDrawnDebt, uint256 actualPremiumDebt) = spoke.getUserDebt(reserveId, user);
+    assertApproxEqAbs(
+      actualDrawnDebt,
+      expectedDrawnDebt,
+      1,
+      string.concat('user drawn debt ', label)
+    );
     assertApproxEqAbs(
       actualPremiumDebt,
       expectedPremiumDebt,
@@ -1365,7 +1370,7 @@ abstract contract Base is Test {
     );
     assertApproxEqAbs(
       spoke.getUserTotalDebt(reserveId, user),
-      expectedBaseDebt + expectedPremiumDebt,
+      expectedDrawnDebt + expectedPremiumDebt,
       3,
       string.concat('user total debt ', label)
     );
@@ -1374,16 +1379,16 @@ abstract contract Base is Test {
   function _assertReserveDebt(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 expectedBaseDebt,
+    uint256 expectedDrawnDebt,
     uint256 expectedPremiumDebt,
     string memory label
   ) internal view {
-    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = spoke.getReserveDebt(reserveId);
+    (uint256 actualDrawnDebt, uint256 actualPremiumDebt) = spoke.getReserveDebt(reserveId);
     assertApproxEqAbs(
-      actualBaseDebt,
-      expectedBaseDebt,
+      actualDrawnDebt,
+      expectedDrawnDebt,
       1,
-      string.concat('reserve base debt ', label)
+      string.concat('reserve drawn debt ', label)
     );
     assertApproxEqAbs(
       actualPremiumDebt,
@@ -1393,7 +1398,7 @@ abstract contract Base is Test {
     );
     assertApproxEqAbs(
       spoke.getReserveTotalDebt(reserveId),
-      expectedBaseDebt + expectedPremiumDebt,
+      expectedDrawnDebt + expectedPremiumDebt,
       3,
       string.concat('reserve total debt ', label)
     );
@@ -1402,20 +1407,20 @@ abstract contract Base is Test {
   function _assertSpokeDebt(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 expectedBaseDebt,
+    uint256 expectedDrawnDebt,
     uint256 expectedPremiumDebt,
     string memory label
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = hub1.getSpokeOwed(
+    (uint256 actualDrawnDebt, uint256 actualPremiumDebt) = hub1.getSpokeOwed(
       assetId,
       address(spoke)
     );
     assertApproxEqAbs(
-      actualBaseDebt,
-      expectedBaseDebt,
+      actualDrawnDebt,
+      expectedDrawnDebt,
       1,
-      string.concat('spoke base debt ', label)
+      string.concat('spoke drawn debt ', label)
     );
     assertApproxEqAbs(
       actualPremiumDebt,
@@ -1425,7 +1430,7 @@ abstract contract Base is Test {
     );
     assertApproxEqAbs(
       hub1.getSpokeTotalOwed(assetId, address(spoke)),
-      expectedBaseDebt + expectedPremiumDebt,
+      expectedDrawnDebt + expectedPremiumDebt,
       3,
       string.concat('spoke total debt ', label)
     );
@@ -1434,17 +1439,17 @@ abstract contract Base is Test {
   function _assertAssetDebt(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 expectedBaseDebt,
+    uint256 expectedDrawnDebt,
     uint256 expectedPremiumDebt,
     string memory label
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    (uint256 actualBaseDebt, uint256 actualPremiumDebt) = hub1.getAssetOwed(assetId);
+    (uint256 actualDrawnDebt, uint256 actualPremiumDebt) = hub1.getAssetOwed(assetId);
     assertApproxEqAbs(
-      actualBaseDebt,
-      expectedBaseDebt,
+      actualDrawnDebt,
+      expectedDrawnDebt,
       1,
-      string.concat('asset base debt ', label)
+      string.concat('asset drawn debt ', label)
     );
     assertApproxEqAbs(
       actualPremiumDebt,
@@ -1454,7 +1459,7 @@ abstract contract Base is Test {
     );
     assertApproxEqAbs(
       hub1.getAssetTotalOwed(assetId),
-      expectedBaseDebt + expectedPremiumDebt,
+      expectedDrawnDebt + expectedPremiumDebt,
       3,
       string.concat('asset total debt ', label)
     );
@@ -1464,17 +1469,17 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId,
     address user,
-    uint256 expectedBaseDebt,
+    uint256 expectedDrawnDebt,
     uint256 expectedPremiumDebt,
     string memory label
   ) internal view {
-    _assertUserDebt(spoke, reserveId, user, expectedBaseDebt, expectedPremiumDebt, label);
+    _assertUserDebt(spoke, reserveId, user, expectedDrawnDebt, expectedPremiumDebt, label);
 
-    _assertReserveDebt(spoke, reserveId, expectedBaseDebt, expectedPremiumDebt, label);
+    _assertReserveDebt(spoke, reserveId, expectedDrawnDebt, expectedPremiumDebt, label);
 
-    _assertSpokeDebt(spoke, reserveId, expectedBaseDebt, expectedPremiumDebt, label);
+    _assertSpokeDebt(spoke, reserveId, expectedDrawnDebt, expectedPremiumDebt, label);
 
-    _assertAssetDebt(spoke, reserveId, expectedBaseDebt, expectedPremiumDebt, label);
+    _assertAssetDebt(spoke, reserveId, expectedDrawnDebt, expectedPremiumDebt, label);
   }
 
   function _assertUserSupply(
@@ -1703,19 +1708,19 @@ abstract contract Base is Test {
     return initialDrawnIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
   }
 
-  /// @dev Calculate expected debt index and base debt based on input params
+  /// @dev Calculate expected debt index and drawn debt based on input params
   function calculateExpectedDebt(
     uint256 initialDrawnShares,
     uint256 initialDrawnIndex,
     uint256 borrowRate,
     uint40 startTime
-  ) internal view returns (uint256 newDrawnIndex, uint256 newBaseDebt) {
+  ) internal view returns (uint256 newDrawnIndex, uint256 newDrawnDebt) {
     newDrawnIndex = _calculateExpectedDrawnIndex(initialDrawnIndex, borrowRate, startTime);
-    newBaseDebt = initialDrawnShares.rayMulUp(newDrawnIndex);
+    newDrawnDebt = initialDrawnShares.rayMulUp(newDrawnIndex);
   }
 
-  /// @dev Calculate expected base debt based on specified borrow rate
-  function _calculateExpectedBaseDebt(
+  /// @dev Calculate expected drawn debt based on specified borrow rate
+  function _calculateExpectedDrawnDebt(
     uint256 initialDebt,
     uint256 borrowRate,
     uint40 startTime
@@ -1723,17 +1728,17 @@ abstract contract Base is Test {
     return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(initialDebt);
   }
 
-  /// @dev Calculate expected premium debt based on change in base debt and user rp
+  /// @dev Calculate expected premium debt based on change in drawn debt and user rp
   function _calculateExpectedPremiumDebt(
-    uint256 initialBaseDebt,
-    uint256 currentBaseDebt,
+    uint256 initialDrawnDebt,
+    uint256 currentDrawnDebt,
     uint256 userRiskPremium
   ) internal pure returns (uint256) {
-    return (currentBaseDebt - initialBaseDebt).percentMulUp(userRiskPremium);
+    return (currentDrawnDebt - initialDrawnDebt).percentMulUp(userRiskPremium);
   }
 
-  /// @dev Helper function to get asset base debt
-  function getAssetBaseDebt(uint256 assetId) internal view returns (uint256) {
+  /// @dev Helper function to get asset drawn debt
+  function getAssetDrawnDebt(uint256 assetId) internal view returns (uint256) {
     (uint256 drawn, ) = hub1.getAssetOwed(assetId);
     return drawn;
   }

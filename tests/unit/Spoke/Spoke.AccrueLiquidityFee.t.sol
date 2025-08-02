@@ -73,7 +73,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(reserveId, bob);
     {
-      uint256 drawnDebt = _calculateExpectedBaseDebt(borrowAmount, drawnRate, startTime);
+      uint256 drawnDebt = _calculateExpectedDrawnDebt(borrowAmount, drawnRate, startTime);
       uint256 expectedpremiumShares = bobPosition.drawnShares.percentMulUp(userRp);
       uint256 expectedPremiumDebt = hub1.convertToDrawnAssets(assetId, expectedpremiumShares) -
         bobPosition.premiumOffset +
@@ -116,7 +116,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       'treasury shares'
     );
 
-    // now only base debt grows
+    // now only drawn debt grows
     updateCollateralRisk(spoke1, reserveId, 0);
     vm.prank(bob);
     spoke1.updateUserRiskPremium(bob);
@@ -188,10 +188,10 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     uint256 rate = 50_00; // 50.00% base borrow rate
-    uint256 expectedBaseDebtAccrual = 500e18; // 50% of 1000 (base debt accrual)
-    uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
-    uint256 expectedPremiumDebt = 50e18; // 10% of 500 (premium on base debt)
-    uint256 expectedTreasuryFees = 27.5e18; // 5% of 550 (liquidity fee on base debt)
+    uint256 expectedDrawnDebtAccrual = 500e18; // 50% of 1000 (drawn debt accrual)
+    uint256 expectedDrawnDebt = borrowAmount + expectedDrawnDebtAccrual;
+    uint256 expectedPremiumDebt = 50e18; // 10% of 500 (premium on drawn debt)
+    uint256 expectedTreasuryFees = 27.5e18; // 5% of 550 (liquidity fee on drawn debt)
 
     _mockInterestRateBps(rate);
 
@@ -203,7 +203,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     _assertSpokeDebt(
       spoke1,
       reserveId,
-      expectedBaseDebt,
+      expectedDrawnDebt,
       expectedPremiumDebt,
       'after base and premium debt accrual'
     );
@@ -228,24 +228,24 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     _assertEventNotEmitted(IHubBase.Add.selector);
     _assertEventNotEmitted(IHub.AccrueFees.selector);
 
-    expectedBaseDebtAccrual = 750e18; // 50% of 1500 (base debt accrual)
-    expectedBaseDebt += expectedBaseDebtAccrual;
+    expectedDrawnDebtAccrual = 750e18; // 50% of 1500 (drawn debt accrual)
+    expectedDrawnDebt += expectedDrawnDebtAccrual;
     expectedPremiumDebt += 0;
-    expectedTreasuryFees = 37.5e18; // 5% of 750 (liquidity fee on base debt)
+    expectedTreasuryFees = 37.5e18; // 5% of 750 (liquidity fee on drawn debt)
 
     skip(365 days);
 
     _assertSpokeDebt(
       spoke1,
       reserveId,
-      expectedBaseDebt,
+      expectedDrawnDebt,
       expectedPremiumDebt,
-      'after base debt accrual'
+      'after drawn debt accrual'
     );
     assertEq(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       hub1.convertToAddedShares(assetId, expectedTreasuryFees),
-      'treasury fees after base debt accrual'
+      'treasury fees after drawn debt accrual'
     );
 
     vm.expectEmit(address(hub1));
@@ -266,8 +266,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     _assertEventNotEmitted(IHubBase.Add.selector);
     _assertEventNotEmitted(IHub.AccrueFees.selector);
 
-    expectedBaseDebtAccrual = 1125e18; // 50% of 2250 (base debt accrual)
-    expectedBaseDebt += expectedBaseDebtAccrual;
+    expectedDrawnDebtAccrual = 1125e18; // 50% of 2250 (drawn debt accrual)
+    expectedDrawnDebt += expectedDrawnDebtAccrual;
     expectedPremiumDebt += 0;
     expectedTreasuryFees = 0;
 
@@ -276,14 +276,14 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     _assertSpokeDebt(
       spoke1,
       reserveId,
-      expectedBaseDebt,
+      expectedDrawnDebt,
       expectedPremiumDebt,
-      'after base debt accrual'
+      'after drawn debt accrual'
     );
     assertEq(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       hub1.convertToAddedShares(assetId, expectedTreasuryFees),
-      'treasury fees after base debt accrual'
+      'treasury fees after drawn debt accrual'
     );
   }
 
@@ -299,10 +299,10 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     uint256 rate = 50_00; // 50.00% base borrow rate
-    uint256 expectedBaseDebtAccrual = borrowAmount.percentMulUp(rate);
-    uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
-    uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMulUp(expectedRp);
-    uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMulUp(
+    uint256 expectedDrawnDebtAccrual = borrowAmount.percentMulUp(rate);
+    uint256 expectedDrawnDebt = borrowAmount + expectedDrawnDebtAccrual;
+    uint256 expectedPremiumDebt = expectedDrawnDebtAccrual.percentMulUp(expectedRp);
+    uint256 expectedTreasuryFees = (expectedDrawnDebtAccrual + expectedPremiumDebt).percentMulUp(
       liquidityFee
     );
 
@@ -318,7 +318,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     _assertSpokeDebt(
       spoke1,
       reserveId,
-      expectedBaseDebt,
+      expectedDrawnDebt,
       expectedPremiumDebt,
       'after base and premium debt accrual'
     );
@@ -345,24 +345,24 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     _assertEventNotEmitted(IHubBase.Add.selector);
     _assertEventNotEmitted(IHub.AccrueFees.selector);
 
-    expectedBaseDebtAccrual = expectedBaseDebt.percentMulUp(rate);
-    expectedBaseDebt += expectedBaseDebtAccrual;
+    expectedDrawnDebtAccrual = expectedDrawnDebt.percentMulUp(rate);
+    expectedDrawnDebt += expectedDrawnDebtAccrual;
     expectedPremiumDebt += 0;
-    expectedTreasuryFees = expectedBaseDebtAccrual.percentMulUp(liquidityFee);
+    expectedTreasuryFees = expectedDrawnDebtAccrual.percentMulUp(liquidityFee);
 
     skip(365 days);
 
     _assertSpokeDebt(
       spoke1,
       reserveId,
-      expectedBaseDebt,
+      expectedDrawnDebt,
       expectedPremiumDebt,
-      'after base debt accrual'
+      'after drawn debt accrual'
     );
     assertEq(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       hub1.convertToAddedShares(assetId, expectedTreasuryFees),
-      'treasury fees after base debt accrual'
+      'treasury fees after drawn debt accrual'
     );
 
     vm.expectEmit(address(hub1));
@@ -383,8 +383,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     _assertEventNotEmitted(IHubBase.Add.selector);
     _assertEventNotEmitted(IHub.AccrueFees.selector);
 
-    expectedBaseDebtAccrual = expectedBaseDebt.percentMulUp(rate);
-    expectedBaseDebt += expectedBaseDebtAccrual;
+    expectedDrawnDebtAccrual = expectedDrawnDebt.percentMulUp(rate);
+    expectedDrawnDebt += expectedDrawnDebtAccrual;
     expectedPremiumDebt += 0;
     expectedTreasuryFees = 0;
 
@@ -393,14 +393,14 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     _assertSpokeDebt(
       spoke1,
       reserveId,
-      expectedBaseDebt,
+      expectedDrawnDebt,
       expectedPremiumDebt,
-      'after base debt accrual'
+      'after drawn debt accrual'
     );
     assertEq(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       hub1.convertToAddedShares(assetId, expectedTreasuryFees),
-      'treasury fees after base debt accrual'
+      'treasury fees after drawn debt accrual'
     );
   }
 
@@ -426,10 +426,10 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount) * 2;
     uint256 supplyAmount2 = _calcMinimumCollAmount(spoke1, reserveId2, reserveId, borrowAmount) * 2;
     uint256 rate = 50_00; // 50.00% base borrow rate
-    uint256 expectedBaseDebtAccrual = borrowAmount.percentMulUp(rate);
-    uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
-    uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMulUp(expectedRp);
-    uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMulUp(
+    uint256 expectedDrawnDebtAccrual = borrowAmount.percentMulUp(rate);
+    uint256 expectedDrawnDebt = borrowAmount + expectedDrawnDebtAccrual;
+    uint256 expectedPremiumDebt = expectedDrawnDebtAccrual.percentMulUp(expectedRp);
+    uint256 expectedTreasuryFees = (expectedDrawnDebtAccrual + expectedPremiumDebt).percentMulUp(
       liquidityFee
     );
 
@@ -446,7 +446,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     _assertSpokeDebt(
       spoke1,
       reserveId,
-      expectedBaseDebt,
+      expectedDrawnDebt,
       expectedPremiumDebt,
       'after base and premium debt accrual'
     );
@@ -465,7 +465,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     _assertSpokeDebt(
       spoke1,
       reserveId,
-      expectedBaseDebt,
+      expectedDrawnDebt,
       expectedPremiumDebt,
       'after base and premium debt accrual'
     );
@@ -487,12 +487,12 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     uint256 rate = 50_00; // 50.00% base borrow rate
-    uint256 expectedBaseDebtAccrual = borrowAmount.percentMulUp(rate);
-    uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
-    uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMulUp(
+    uint256 expectedDrawnDebtAccrual = borrowAmount.percentMulUp(rate);
+    uint256 expectedDrawnDebt = borrowAmount + expectedDrawnDebtAccrual;
+    uint256 expectedPremiumDebt = expectedDrawnDebtAccrual.percentMulUp(
       _getCollateralRisk(spoke1, reserveId)
     );
-    uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMulUp(
+    uint256 expectedTreasuryFees = (expectedDrawnDebtAccrual + expectedPremiumDebt).percentMulUp(
       liquidityFee
     );
     _mockInterestRateBps(rate);
@@ -505,7 +505,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     _assertSpokeDebt(
       spoke1,
       reserveId,
-      expectedBaseDebt,
+      expectedDrawnDebt,
       expectedPremiumDebt,
       'after base and premium debt accrual'
     );
@@ -522,7 +522,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
     assertEq(
       hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
-      expectedBaseDebtAccrual + expectedPremiumDebt,
+      expectedDrawnDebtAccrual + expectedPremiumDebt,
       'treasury all accumulated interest'
     );
   }

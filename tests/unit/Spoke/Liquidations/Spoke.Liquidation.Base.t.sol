@@ -37,13 +37,13 @@ contract SpokeLiquidationBase is SpokeBase {
     Balance feeReceiverAmount;
     Balance feeReceiverShares;
     Balance userTotalDebt;
-    Balance userBaseDebt;
+    Balance userDrawnDebt;
     Balance userPremiumDebt;
     Balance spokeTotalDebt;
     Balance spokeDrawn;
     Balance spokePremium;
     Balance reserveTotalDebt;
-    Balance reserveBaseDebt;
+    Balance reserveDrawnDebt;
     Balance reservePremiumDebt;
     Balance userSuppliedAmount;
     Balance userSuppliedShares;
@@ -322,18 +322,18 @@ contract SpokeLiquidationBase is SpokeBase {
     skip(340 days);
 
     // user debt
-    (state.userBaseDebt.balanceSkipTime, state.userPremiumDebt.balanceSkipTime) = state
+    (state.userDrawnDebt.balanceSkipTime, state.userPremiumDebt.balanceSkipTime) = state
       .spoke
       .getUserDebt(state.debtReserve.reserveId, state.user);
     state.userTotalDebt.balanceSkipTime =
-      state.userBaseDebt.balanceSkipTime +
+      state.userDrawnDebt.balanceSkipTime +
       state.userPremiumDebt.balanceSkipTime;
     // reserve debt
-    (state.reserveBaseDebt.balanceSkipTime, state.reservePremiumDebt.balanceSkipTime) = state
+    (state.reserveDrawnDebt.balanceSkipTime, state.reservePremiumDebt.balanceSkipTime) = state
       .spoke
       .getReserveDebt(state.debtReserveId);
     state.reserveTotalDebt.balanceSkipTime =
-      state.reserveBaseDebt.balanceSkipTime +
+      state.reserveDrawnDebt.balanceSkipTime +
       state.reservePremiumDebt.balanceSkipTime;
     // spoke debt
     (state.spokeDrawn.balanceSkipTime, state.spokePremium.balanceSkipTime) = state
@@ -398,10 +398,10 @@ contract SpokeLiquidationBase is SpokeBase {
       string.concat('user/spoke total debt accounting ', label)
     );
     assertApproxEqAbs(
-      state.userBaseDebt.balanceChange,
+      state.userDrawnDebt.balanceChange,
       state.spokeDrawn.balanceChange,
       1,
-      string.concat('user/spoke base debt accounting ', label)
+      string.concat('user/spoke drawn debt accounting ', label)
     );
     assertApproxEqAbs(
       state.userPremiumDebt.balanceChange,
@@ -416,9 +416,9 @@ contract SpokeLiquidationBase is SpokeBase {
       string.concat('reserve/spoke total debt accounting ', label)
     );
     assertEq(
-      state.reserveBaseDebt.balanceChange,
+      state.reserveDrawnDebt.balanceChange,
       state.spokeDrawn.balanceChange,
-      string.concat('reserve/spoke base debt accounting ', label)
+      string.concat('reserve/spoke drawn debt accounting ', label)
     );
     assertEq(
       state.reservePremiumDebt.balanceChange,
@@ -777,11 +777,11 @@ contract SpokeLiquidationBase is SpokeBase {
     state.collateralHub = state.collateralReserve.hub;
     state.debtHub = state.debtReserve.hub;
 
-    (state.userBaseDebt.balanceBefore, state.userPremiumDebt.balanceBefore) = state
+    (state.userDrawnDebt.balanceBefore, state.userPremiumDebt.balanceBefore) = state
       .spoke
       .getUserDebt(state.debtReserve.reserveId, state.user);
     state.userTotalDebt.balanceBefore =
-      state.userBaseDebt.balanceBefore +
+      state.userDrawnDebt.balanceBefore +
       state.userPremiumDebt.balanceBefore;
     state.liquidatorCollateral.balanceBefore = IERC20(state.collateralReserve.underlying).balanceOf(
       LIQUIDATOR
@@ -822,11 +822,11 @@ contract SpokeLiquidationBase is SpokeBase {
       state.spokeDrawn.balanceBefore +
       state.spokePremium.balanceBefore;
 
-    (state.reserveBaseDebt.balanceBefore, state.reservePremiumDebt.balanceBefore) = state
+    (state.reserveDrawnDebt.balanceBefore, state.reservePremiumDebt.balanceBefore) = state
       .spoke
       .getReserveDebt(state.debtReserveId);
     state.reserveTotalDebt.balanceBefore =
-      state.reserveBaseDebt.balanceBefore +
+      state.reserveDrawnDebt.balanceBefore +
       state.reservePremiumDebt.balanceBefore;
 
     (
@@ -879,12 +879,11 @@ contract SpokeLiquidationBase is SpokeBase {
       LIQUIDATOR
     );
     state.liquidatorDebt.balanceAfter = IERC20(state.debtReserve.underlying).balanceOf(LIQUIDATOR);
-    (state.userBaseDebt.balanceAfter, state.userPremiumDebt.balanceAfter) = state.spoke.getUserDebt(
-      state.debtReserve.reserveId,
-      state.user
-    );
+    (state.userDrawnDebt.balanceAfter, state.userPremiumDebt.balanceAfter) = state
+      .spoke
+      .getUserDebt(state.debtReserve.reserveId, state.user);
     state.userTotalDebt.balanceAfter =
-      state.userBaseDebt.balanceAfter +
+      state.userDrawnDebt.balanceAfter +
       state.userPremiumDebt.balanceAfter;
     state.userSuppliedAmount.balanceAfter = state.spoke.getUserSuppliedAmount(
       state.collateralReserve.reserveId,
@@ -920,11 +919,11 @@ contract SpokeLiquidationBase is SpokeBase {
     state.spokeTotalDebt.balanceAfter =
       state.spokeDrawn.balanceAfter +
       state.spokePremium.balanceAfter;
-    (state.reserveBaseDebt.balanceAfter, state.reservePremiumDebt.balanceAfter) = state
+    (state.reserveDrawnDebt.balanceAfter, state.reservePremiumDebt.balanceAfter) = state
       .spoke
       .getReserveDebt(state.debtReserveId);
     state.reserveTotalDebt.balanceAfter =
-      state.reserveBaseDebt.balanceAfter +
+      state.reserveDrawnDebt.balanceAfter +
       state.reservePremiumDebt.balanceAfter;
 
     // balance changes before/after liquidation
@@ -940,9 +939,9 @@ contract SpokeLiquidationBase is SpokeBase {
       state.userTotalDebt.balanceAfter,
       state.userTotalDebt.balanceBefore
     );
-    state.userBaseDebt.balanceChange = stdMath.delta(
-      state.userBaseDebt.balanceAfter,
-      state.userBaseDebt.balanceBefore
+    state.userDrawnDebt.balanceChange = stdMath.delta(
+      state.userDrawnDebt.balanceAfter,
+      state.userDrawnDebt.balanceBefore
     );
     state.userPremiumDebt.balanceChange = stdMath.delta(
       state.userPremiumDebt.balanceAfter,
@@ -964,9 +963,9 @@ contract SpokeLiquidationBase is SpokeBase {
       state.reserveTotalDebt.balanceAfter,
       state.reserveTotalDebt.balanceBefore
     );
-    state.reserveBaseDebt.balanceChange = stdMath.delta(
-      state.reserveBaseDebt.balanceAfter,
-      state.reserveBaseDebt.balanceBefore
+    state.reserveDrawnDebt.balanceChange = stdMath.delta(
+      state.reserveDrawnDebt.balanceAfter,
+      state.reserveDrawnDebt.balanceBefore
     );
     state.reservePremiumDebt.balanceChange = stdMath.delta(
       state.reservePremiumDebt.balanceAfter,

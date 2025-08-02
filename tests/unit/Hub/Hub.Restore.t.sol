@@ -159,18 +159,18 @@ contract HubRestoreTest is HubBase {
     //       rate,
     //       uint40(spoke1DaiData.lastUpdateTimestamp)
     //     );
-    //     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    //     assertTrue(cumulatedBaseDebt > 0);
+    //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
+    //     assertTrue(cumulatedDrawnDebt > 0);
 
     //     // alice restore invalid amount > drawn amount (no premium)
     //     vm.expectRevert(
-    //       abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, cumulatedBaseDebt)
+    //       abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, cumulatedDrawnDebt)
     //     );
 
     //     vm.prank(address(spoke1));
     //     hub.restore({
     //       assetId: daiAssetId,
-    //       amount: cumulatedBaseDebt + 1,
+    //       amount: cumulatedDrawnDebt + 1,
     //       riskPremium: 0,
     //       restorer: alice
     //     });
@@ -248,18 +248,18 @@ contract HubRestoreTest is HubBase {
     //       rate,
     //       uint40(spoke1DaiData.lastUpdateTimestamp)
     //     );
-    //     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    //     vm.assume(cumulatedBaseDebt > 0);
+    //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
+    //     vm.assume(cumulatedDrawnDebt > 0);
 
     //     // alice restore invalid amount > drawn amount (no premium)
     //     vm.expectRevert(
-    //       abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, cumulatedBaseDebt)
+    //       abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, cumulatedDrawnDebt)
     //     );
 
     //     vm.prank(address(spoke1));
     //     hub.restore({
     //       assetId: daiAssetId,
-    //       amount: cumulatedBaseDebt + 1,
+    //       amount: cumulatedDrawnDebt + 1,
     //       riskPremium: 0,
     //       restorer: alice
     //     });
@@ -334,22 +334,22 @@ contract HubRestoreTest is HubBase {
     //       rate,
     //       uint40(spoke1DaiData.lastUpdateTimestamp)
     //     );
-    //     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    //     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).percentMul(riskPremium);
+    //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
+    //     uint256 accruedPremium = (cumulatedDrawnDebt - drawAmount).percentMul(riskPremium);
     //     assertTrue(accruedPremium > 0);
 
     //     // alice restore invalid amount > drawn amount AND premium
     //     vm.expectRevert(
     //       abi.encodeWithSelector(
     //         IHub.SurplusAmountRestored.selector,
-    //         cumulatedBaseDebt + accruedPremium
+    //         cumulatedDrawnDebt + accruedPremium
     //       )
     //     );
 
     //     vm.prank(address(spoke1));
     //     hub.restore({
     //       assetId: daiAssetId,
-    //       amount: cumulatedBaseDebt + accruedPremium + 1,
+    //       amount: cumulatedDrawnDebt + accruedPremium + 1,
     //       riskPremium: 0,
     //       restorer: alice
     //     });
@@ -429,22 +429,22 @@ contract HubRestoreTest is HubBase {
     //       rate,
     //       uint40(spoke1DaiData.lastUpdateTimestamp)
     //     );
-    //     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    //     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).percentMul(riskPremium);
-    //     vm.assume(accruedPremium > 0); // accrued premium can round to 0 in edge case - ex. (cumulatedBaseDebt - drawAmount) = 1, riskPremium = 1
+    //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
+    //     uint256 accruedPremium = (cumulatedDrawnDebt - drawAmount).percentMul(riskPremium);
+    //     vm.assume(accruedPremium > 0); // accrued premium can round to 0 in edge case - ex. (cumulatedDrawnDebt - drawAmount) = 1, riskPremium = 1
 
     //     // alice restore invalid amount > drawn amount AND premium
     //     vm.expectRevert(
     //       abi.encodeWithSelector(
     //         IHub.SurplusAmountRestored.selector,
-    //         cumulatedBaseDebt + accruedPremium
+    //         cumulatedDrawnDebt + accruedPremium
     //       )
     //     );
 
     //     vm.prank(address(spoke1));
     //     hub.restore({
     //       assetId: daiAssetId,
-    //       amount: cumulatedBaseDebt + accruedPremium + 1,
+    //       amount: cumulatedDrawnDebt + accruedPremium + 1,
     //       riskPremium: 0,
     //       restorer: alice
     //     });
@@ -475,8 +475,8 @@ contract HubRestoreTest is HubBase {
     //       rate,
     //       uint40(daiData.lastUpdateTimestamp)
     //     );
-    //     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
-    //     uint256 accruedPremium = accruedBaseDebt.percentMul(riskPremium);
+    //     uint256 accruedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
+    //     uint256 accruedPremium = accruedDrawnDebt.percentMul(riskPremium);
 
     //     assertTrue(accruedPremium > 0);
 
@@ -492,7 +492,7 @@ contract HubRestoreTest is HubBase {
     //     // hub
     //     assertEq(
     //       hub.getTotalAssets(daiAssetId),
-    //       daiAmount + accruedPremium + accruedBaseDebt,
+    //       daiAmount + accruedPremium + accruedDrawnDebt,
     //       'hub dai total assets'
     //     );
     //     assertEq(
@@ -500,7 +500,7 @@ contract HubRestoreTest is HubBase {
     //       accruedPremium - restoreAmount,
     //       'hub dai outstandingPremium'
     //     );
-    //     assertEq(daiData.drawn, accruedBaseDebt + drawAmount, 'hub dai drawn');
+    //     assertEq(daiData.drawn, accruedDrawnDebt + drawAmount, 'hub dai drawn');
     //     assertEq(
     //       daiData.liquidity,
     //       daiAmount - drawAmount + restoreAmount,
@@ -513,7 +513,7 @@ contract HubRestoreTest is HubBase {
     //       daiData.drawn + daiData.outstandingPremium,
     //       'asset cumulativeDebt'
     //     );
-    //     assertEq(daiDebtData.asset.drawn, accruedBaseDebt + drawAmount, 'asset drawn');
+    //     assertEq(daiDebtData.asset.drawn, accruedDrawnDebt + drawAmount, 'asset drawn');
     //     assertEq(
     //       daiDebtData.asset.outstandingPremium,
     //       accruedPremium - restoreAmount,
@@ -536,7 +536,7 @@ contract HubRestoreTest is HubBase {
     //       daiData.drawn + daiData.outstandingPremium,
     //       'spoke1 cumulativeDebt'
     //     );
-    //     assertEq(daiDebtData.spoke[0].drawn, accruedBaseDebt + drawAmount, 'spoke1 drawn');
+    //     assertEq(daiDebtData.spoke[0].drawn, accruedDrawnDebt + drawAmount, 'spoke1 drawn');
     //     assertEq(
     //       daiDebtData.spoke[0].outstandingPremium,
     //       accruedPremium - restoreAmount,
@@ -577,8 +577,8 @@ contract HubRestoreTest is HubBase {
     //       rate,
     //       uint40(daiData.lastUpdateTimestamp)
     //     );
-    //     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
-    //     uint256 accruedPremium = accruedBaseDebt.percentMul(riskPremium);
+    //     uint256 accruedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
+    //     uint256 accruedPremium = accruedDrawnDebt.percentMul(riskPremium);
 
     //     vm.assume(accruedPremium > 0);
 
@@ -593,7 +593,7 @@ contract HubRestoreTest is HubBase {
     //     // hub
     //     assertEq(
     //       hub.getTotalAssets(daiAssetId),
-    //       daiAmount + accruedPremium + accruedBaseDebt,
+    //       daiAmount + accruedPremium + accruedDrawnDebt,
     //       'hub dai total assets'
     //     );
     //     assertEq(
@@ -601,7 +601,7 @@ contract HubRestoreTest is HubBase {
     //       accruedPremium - restoreAmount,
     //       'hub dai outstandingPremium'
     //     );
-    //     assertEq(daiData.drawn, accruedBaseDebt + drawAmount, 'hub dai drawn');
+    //     assertEq(daiData.drawn, accruedDrawnDebt + drawAmount, 'hub dai drawn');
     //     assertEq(
     //       daiData.liquidity,
     //       daiAmount - drawAmount + restoreAmount,
@@ -614,7 +614,7 @@ contract HubRestoreTest is HubBase {
     //       daiData.drawn + daiData.outstandingPremium,
     //       'asset cumulativeDebt'
     //     );
-    //     assertEq(daiDebtData.asset.drawn, accruedBaseDebt + drawAmount, 'asset drawn');
+    //     assertEq(daiDebtData.asset.drawn, accruedDrawnDebt + drawAmount, 'asset drawn');
     //     assertEq(
     //       daiDebtData.asset.outstandingPremium,
     //       accruedPremium - restoreAmount,
@@ -637,7 +637,7 @@ contract HubRestoreTest is HubBase {
     //       daiData.drawn + daiData.outstandingPremium,
     //       'spoke1 cumulativeDebt'
     //     );
-    //     assertEq(daiDebtData.spoke[0].drawn, accruedBaseDebt + drawAmount, 'spoke1 drawn');
+    //     assertEq(daiDebtData.spoke[0].drawn, accruedDrawnDebt + drawAmount, 'spoke1 drawn');
     //     assertEq(
     //       daiDebtData.spoke[0].outstandingPremium,
     //       accruedPremium - restoreAmount,
@@ -645,7 +645,7 @@ contract HubRestoreTest is HubBase {
     //     );
   }
 
-  /// @dev Restore more than premium but partial amount to eat into base debt
+  /// @dev Restore more than premium but partial amount to eat into drawn debt
   function test_restore_partial_premium_and_base() public {
     vm.skip(true, 'pending refactor');
 
@@ -670,10 +670,10 @@ contract HubRestoreTest is HubBase {
     //       rate,
     //       uint40(daiData.lastUpdateTimestamp)
     //     );
-    //     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
-    //     uint256 accruedPremium = accruedBaseDebt.percentMul(riskPremium);
+    //     uint256 accruedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
+    //     uint256 accruedPremium = accruedDrawnDebt.percentMul(riskPremium);
     //     assertTrue(accruedPremium > 0);
-    //     uint256 restoreAmount = accruedPremium + 1; // restore amount partially contributes to base debt
+    //     uint256 restoreAmount = accruedPremium + 1; // restore amount partially contributes to drawn debt
 
     //     vm.prank(address(spoke1));
     //     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, restorer: alice});
@@ -685,11 +685,11 @@ contract HubRestoreTest is HubBase {
     //     // hub
     //     assertEq(
     //       hub.getTotalAssets(daiAssetId),
-    //       daiAmount + accruedPremium + accruedBaseDebt,
+    //       daiAmount + accruedPremium + accruedDrawnDebt,
     //       'hub dai total assets'
     //     );
     //     assertEq(daiData.outstandingPremium, 0, 'hub dai outstandingPremium');
-    //     assertEq(daiData.drawn, accruedBaseDebt + drawAmount - 1, 'hub dai drawn');
+    //     assertEq(daiData.drawn, accruedDrawnDebt + drawAmount - 1, 'hub dai drawn');
     //     assertEq(
     //       daiData.liquidity,
     //       daiAmount - drawAmount + restoreAmount,
@@ -699,10 +699,10 @@ contract HubRestoreTest is HubBase {
 
     //     assertEq(
     //       daiDebtData.asset.cumulativeDebt,
-    //       accruedBaseDebt + drawAmount - 1,
+    //       accruedDrawnDebt + drawAmount - 1,
     //       'asset cumulativeDebt'
     //     );
-    //     assertEq(daiDebtData.asset.drawn, accruedBaseDebt + drawAmount - 1, 'asset drawn');
+    //     assertEq(daiDebtData.asset.drawn, accruedDrawnDebt + drawAmount - 1, 'asset drawn');
     //     assertEq(daiDebtData.asset.outstandingPremium, 0, 'asset outstandingPremium');
     //     // spoke1
     //     assertEq(
@@ -718,14 +718,14 @@ contract HubRestoreTest is HubBase {
     //     );
     //     assertEq(
     //       daiDebtData.spoke[0].cumulativeDebt,
-    //       accruedBaseDebt + drawAmount - 1,
+    //       accruedDrawnDebt + drawAmount - 1,
     //       'spoke1 cumulativeDebt'
     //     );
-    //     assertEq(daiDebtData.spoke[0].drawn, accruedBaseDebt + drawAmount - 1, 'spoke1 drawn');
+    //     assertEq(daiDebtData.spoke[0].drawn, accruedDrawnDebt + drawAmount - 1, 'spoke1 drawn');
     //     assertEq(daiDebtData.spoke[0].outstandingPremium, 0, 'spoke1 outstandingPremium');
   }
 
-  /// @dev Restore more than premium but partial amount to eat into base debt
+  /// @dev Restore more than premium but partial amount to eat into drawn debt
   function test_restore_fuzz_partial_premium_and_base(
     uint256 drawAmount,
     uint256 skipTime,
@@ -758,14 +758,14 @@ contract HubRestoreTest is HubBase {
     //       rate,
     //       uint40(daiData.lastUpdateTimestamp)
     //     );
-    //     uint256 accruedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
-    //     uint256 accruedPremium = accruedBaseDebt.percentMul(riskPremium);
+    //     uint256 accruedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
+    //     uint256 accruedPremium = accruedDrawnDebt.percentMul(riskPremium);
     //     vm.assume(accruedPremium > 0);
 
     //     restoreAmount = bound(
     //       restoreAmount,
     //       accruedPremium + 1,
-    //       accruedPremium + accruedBaseDebt + drawAmount
+    //       accruedPremium + accruedDrawnDebt + drawAmount
     //     ); // more than accrued premium, less than total debt
 
     //     vm.prank(address(spoke1));
@@ -778,13 +778,13 @@ contract HubRestoreTest is HubBase {
     //     // hub
     //     assertEq(
     //       hub.getTotalAssets(daiAssetId),
-    //       daiAmount + accruedPremium + accruedBaseDebt,
+    //       daiAmount + accruedPremium + accruedDrawnDebt,
     //       'hub dai total assets'
     //     );
     //     assertEq(daiData.outstandingPremium, 0, 'hub dai outstandingPremium');
     //     assertEq(
     //       daiData.drawn,
-    //       accruedBaseDebt + drawAmount - (restoreAmount - accruedPremium), // eat into base debt after premium is consumed
+    //       accruedDrawnDebt + drawAmount - (restoreAmount - accruedPremium), // eat into drawn debt after premium is consumed
     //       'hub dai drawn'
     //     );
     //     assertEq(
@@ -795,12 +795,12 @@ contract HubRestoreTest is HubBase {
     //     assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
     //     assertEq(
     //       daiDebtData.asset.cumulativeDebt,
-    //       accruedBaseDebt + drawAmount - (restoreAmount - accruedPremium),
+    //       accruedDrawnDebt + drawAmount - (restoreAmount - accruedPremium),
     //       'asset cumulativeDebt'
     //     );
     //     assertEq(
     //       daiDebtData.asset.drawn,
-    //       accruedBaseDebt + drawAmount - (restoreAmount - accruedPremium),
+    //       accruedDrawnDebt + drawAmount - (restoreAmount - accruedPremium),
     //       'asset drawn'
     //     );
     //     assertEq(daiDebtData.asset.outstandingPremium, 0, 'asset outstandingPremium');
@@ -818,12 +818,12 @@ contract HubRestoreTest is HubBase {
     //     );
     //     assertEq(
     //       daiDebtData.spoke[0].cumulativeDebt,
-    //       accruedBaseDebt + drawAmount - (restoreAmount - accruedPremium),
+    //       accruedDrawnDebt + drawAmount - (restoreAmount - accruedPremium),
     //       'spoke1 cumulativeDebt'
     //     );
     //     assertEq(
     //       daiDebtData.spoke[0].drawn,
-    //       accruedBaseDebt + drawAmount - (restoreAmount - accruedPremium),
+    //       accruedDrawnDebt + drawAmount - (restoreAmount - accruedPremium),
     //       'spoke1 drawn'
     //     );
     //     assertEq(daiDebtData.spoke[0].outstandingPremium, 0, 'spoke1 outstandingPremium');
@@ -1123,12 +1123,12 @@ contract HubRestoreTest is HubBase {
     //       rate,
     //       uint40(spoke1DaiData.lastUpdateTimestamp)
     //     );
-    //     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    //     assertTrue(cumulatedBaseDebt > 0);
+    //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
+    //     assertTrue(cumulatedDrawnDebt > 0);
 
     //     // alice restore amount = drawn amount
     //     vm.prank(address(spoke1));
-    //     hub.restore({assetId: daiAssetId, amount: cumulatedBaseDebt, riskPremium: 0, restorer: alice});
+    //     hub.restore({assetId: daiAssetId, amount: cumulatedDrawnDebt, riskPremium: 0, restorer: alice});
 
     //     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
     //     DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
@@ -1221,13 +1221,13 @@ contract HubRestoreTest is HubBase {
     //       rate,
     //       uint40(spoke1DaiData.lastUpdateTimestamp)
     //     );
-    //     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    //     vm.assume(cumulatedBaseDebt > 0);
+    //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
+    //     vm.assume(cumulatedDrawnDebt > 0);
 
     //     // alice restore amount = drawn amount (no premium)
 
     //     vm.prank(address(spoke1));
-    //     hub.restore({assetId: daiAssetId, amount: cumulatedBaseDebt, riskPremium: 0, restorer: alice});
+    //     hub.restore({assetId: daiAssetId, amount: cumulatedDrawnDebt, riskPremium: 0, restorer: alice});
 
     //     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
     //     DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
@@ -1317,8 +1317,8 @@ contract HubRestoreTest is HubBase {
     //       rate,
     //       uint40(spoke1DaiData.lastUpdateTimestamp)
     //     );
-    //     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    //     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).percentMul(riskPremium);
+    //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
+    //     uint256 accruedPremium = (cumulatedDrawnDebt - drawAmount).percentMul(riskPremium);
     //     assertTrue(accruedPremium > 0);
 
     //     // alice restore amount = drawn amount AND premium
@@ -1326,7 +1326,7 @@ contract HubRestoreTest is HubBase {
     //     vm.prank(address(spoke1));
     //     hub.restore({
     //       assetId: daiAssetId,
-    //       amount: cumulatedBaseDebt + accruedPremium,
+    //       amount: cumulatedDrawnDebt + accruedPremium,
     //       riskPremium: 0,
     //       restorer: alice
     //     });
@@ -1424,16 +1424,16 @@ contract HubRestoreTest is HubBase {
     //       rate,
     //       uint40(spoke1DaiData.lastUpdateTimestamp)
     //     );
-    //     uint256 cumulatedBaseDebt = drawAmount.rayMul(cumulatedBaseInterest);
-    //     uint256 accruedPremium = (cumulatedBaseDebt - drawAmount).percentMul(riskPremium);
-    //     vm.assume(accruedPremium > 0); // accrued premium can round to 0 in edge case - ex. (cumulatedBaseDebt - drawAmount) = 1, riskPremium = 1
+    //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
+    //     uint256 accruedPremium = (cumulatedDrawnDebt - drawAmount).percentMul(riskPremium);
+    //     vm.assume(accruedPremium > 0); // accrued premium can round to 0 in edge case - ex. (cumulatedDrawnDebt - drawAmount) = 1, riskPremium = 1
 
     //     // alice restore amount = drawn amount AND premium
 
     //     vm.prank(address(spoke1));
     //     hub.restore({
     //       assetId: daiAssetId,
-    //       amount: cumulatedBaseDebt + accruedPremium,
+    //       amount: cumulatedDrawnDebt + accruedPremium,
     //       riskPremium: 0,
     //       restorer: alice
     //     });

@@ -20,7 +20,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   }
 
   /// @dev coll: weth; bad debt: wbtc, dai, usdx
-  /// deficit covers base debt and premium debt
+  /// deficit covers drawn debt and premium debt
   function test_liquidationCall_multi_reserve_badPremiumDebt_scenario1_base_and_premium() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1({
@@ -98,7 +98,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: weth; bad debt: wbtc, dai, usdx
-  /// deficit covers base debt and premium debt
+  /// deficit covers drawn debt and premium debt
   function test_liquidationCall_multi_reserve_badPremiumDebt_scenario2_only_premium() public {
     uint256 collateralReserveId = _wbtcReserveId(spoke1);
 
@@ -179,7 +179,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   }
 
   /// coll: usdy; bad debt: dai, usdx, usdy
-  /// deficit covers base debt and premium debt
+  /// deficit covers drawn debt and premium debt
   function test_liquidationCall_multi_reserve_badPremiumDebt_scenario3_base_and_premium() public {
     uint256 collateralReserveId = _usdyReserveId(spoke1);
 
@@ -396,8 +396,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         // for debt asset being liquidated, some debt is restored prior to deficit creation
       } else {
         DataTypes.UserPosition memory userPosition = state.spoke.getUserPosition(reserveId, alice);
-        (uint256 basedDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
-          state.userBaseDebt.balanceBefore,
+        (uint256 drawnDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
+          state.userDrawnDebt.balanceBefore,
           state.userPremiumDebt.balanceBefore,
           state.debtToLiq,
           assetId
@@ -406,8 +406,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         // debt asset deficit shares are the initial amount minus the amount restored during liquidation
         state.expectedDeficitShares = expectedDeficitShares =
           userPosition.drawnShares -
-          hub1.convertToDrawnShares(assetId, basedDebtRestored);
-        // total debt asset deficit is the expected base debt and remaining premium debt after settlement during liquidation
+          hub1.convertToDrawnShares(assetId, drawnDebtRestored);
+        // total debt asset deficit is the expected drawn debt and remaining premium debt after settlement during liquidation
         state.expectedDeficitAmount = expectedDeficitAmount =
           hub1.convertToDrawnAssets(assetId, expectedDeficitShares) +
           state.userPremiumDebt.balanceBefore -

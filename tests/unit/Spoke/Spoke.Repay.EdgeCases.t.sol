@@ -66,7 +66,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     bobDebt = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
-    // repay partial base debt
+    // repay partial drawn debt
     daiRepayAmount = bobDebt.premiumDebt + bound(vm.randomUint(), 1, bobDebt.drawnDebt - 1);
     addExRateBefore = getAddExRate(daiAssetId);
     debtExRateBefore = getDebtExRate(daiAssetId);
@@ -77,12 +77,12 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       addExRateBefore,
       getAddExRate(daiAssetId),
       false,
-      'after partial base debt repay'
+      'after partial drawn debt repay'
     );
     _checkDebtRateConstant(
       debtExRateBefore,
       getDebtExRate(daiAssetId),
-      'after partial base debt repay'
+      'after partial drawn debt repay'
     );
 
     addExRateBefore = getAddExRate(daiAssetId);
@@ -263,7 +263,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     assertEq(getUserDebt(spoke1, bob, _daiReserveId(spoke1)), bobDaiDebtBefore);
   }
 
-  // repay less than 1 share of base debt, but nonzero premium debt
+  // repay less than 1 share of drawn debt, but nonzero premium debt
   function test_repay_zero_shares_nonzero_premium_debt() public {
     // update collateral risk of weth to 20%
     updateCollateralRisk(spoke1, _wethReserveId(spoke1), 20_00);
@@ -345,7 +345,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       daiAssetId
     );
 
-    // Ensure we are repaying only premium debt, not base debt
+    // Ensure we are repaying only premium debt, not drawn debt
     assertEq(baseRestored, 0, 'Base debt nonzero');
     assertGt(premiumRestored, 0, 'Premium debt zero');
 
@@ -393,7 +393,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
   }
 
-  /// repay all accrued base debt interest when premium debt is already repaid
+  /// repay all accrued drawn debt interest when premium debt is already repaid
   function test_repay_only_base_debt_interest() public {
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;
@@ -458,7 +458,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // Premium debt can be off by 1 due to rounding
     assertApproxEqAbs(bobDaiBefore.premiumDebt, 0, 1, 'bob dai premium debt after premium repay');
 
-    // Bob repays base debt
+    // Bob repays drawn debt
     uint256 daiRepayAmount = bobDaiBefore.drawnDebt - daiBorrowAmount;
     assertGt(daiRepayAmount, 0); // interest is not zero
     (uint256 baseRestored, ) = _calculateExactRestoreAmount(
@@ -494,7 +494,12 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertApproxEqAbs(bobDaiAfter.drawnDebt, daiBorrowAmount, 2, 'bob dai base debt final balance');
+    assertApproxEqAbs(
+      bobDaiAfter.drawnDebt,
+      daiBorrowAmount,
+      2,
+      'bob dai drawn debt final balance'
+    );
     assertApproxEqAbs(bobDaiAfter.premiumDebt, 0, 1, 'bob dai premium debt final balance');
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethAfter.totalDebt, bobWethBefore.totalDebt);
@@ -506,7 +511,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
   }
 
-  /// repay all accrued base debt interest when premium debt is zero
+  /// repay all accrued drawn debt interest when premium debt is zero
   function test_repay_only_base_debt_no_premium() public {
     // update collateral risk to zero
     updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
@@ -565,7 +570,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(bobDaiBefore.premiumDebt, 0, 'bob dai premium debt before');
 
-    // Bob repays base debt
+    // Bob repays drawn debt
     uint256 daiRepayAmount = bobDaiBefore.drawnDebt - daiBorrowAmount;
     assertGt(daiRepayAmount, 0); // interest is not zero
 
@@ -595,7 +600,12 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertApproxEqAbs(bobDaiAfter.drawnDebt, daiBorrowAmount, 2, 'bob dai base debt final balance');
+    assertApproxEqAbs(
+      bobDaiAfter.drawnDebt,
+      daiBorrowAmount,
+      2,
+      'bob dai drawn debt final balance'
+    );
     assertEq(bobDaiAfter.premiumDebt, 0, 'bob dai premium debt final balance');
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethAfter.totalDebt, bobWethBefore.totalDebt);

@@ -146,13 +146,13 @@ contract HubReportDeficitTest is HubBase {
     params.balanceAfter = IERC20(hub1.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
     uint256 drawnSharesAfter = hub1.getAsset(usdxAssetId).drawnShares;
 
-    // due to rounding of donation, base debt can differ by asset amount of one share
+    // due to rounding of donation, drawn debt can differ by asset amount of one share
     // and 1 wei imprecision
     assertApproxEqAbs(
       params.drawnAfter,
       params.drawn - baseAmount,
       minimumAssetsPerDrawnShare(hub1, usdxAssetId) + 1,
-      'base debt'
+      'drawn debt'
     );
     assertEq(
       drawnSharesAfter,

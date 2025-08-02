@@ -1172,7 +1172,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       _daiReserveId(spoke1),
       bob
     );
-    // Bob's debt (base debt + premium) is greater than the original borrow amount
+    // Bob's debt (drawn debt + premium) is greater than the original borrow amount
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'Accrued interest increased bob dai debt');
 
     // Calculate full debt before repayment
