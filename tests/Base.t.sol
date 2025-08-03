@@ -1156,11 +1156,11 @@ abstract contract Base is Test {
   function getSpokeInfo(
     uint256 assetId,
     address spoke
-  ) internal view returns (DataTypes.SpokeData memory) {
+  ) internal view returns (IHub.Spoke memory) {
     return hub1.getSpoke(assetId, spoke);
   }
 
-  function getAssetInfo(uint256 assetId) internal view returns (DataTypes.Asset memory) {
+  function getAssetInfo(uint256 assetId) internal view returns (IHub.Asset memory) {
     return hub1.getAsset(assetId);
   }
 
@@ -2036,7 +2036,7 @@ abstract contract Base is Test {
     uint256 assetId,
     string memory operation
   ) internal view {
-    DataTypes.Asset memory asset = targetHub.getAsset(assetId);
+    IHub.Asset memory asset = targetHub.getAsset(assetId);
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
 
     vm.assertEq(
@@ -2094,7 +2094,7 @@ abstract contract Base is Test {
     IHub targetHub,
     uint256 assetId
   ) internal view returns (AssetPosition memory) {
-    DataTypes.Asset memory assetData = targetHub.getAsset(assetId);
+    IHub.Asset memory assetData = targetHub.getAsset(assetId);
     (uint256 drawn, uint256 premium) = targetHub.getAssetOwed(assetId);
     return
       AssetPosition({
@@ -2126,7 +2126,7 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (SpokePosition memory) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    DataTypes.SpokeData memory spokeData = hub1.getSpoke(assetId, address(spoke));
+    IHub.Spoke memory spokeData = hub1.getSpoke(assetId, address(spoke));
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(assetId, address(spoke));
     return
       SpokePosition({

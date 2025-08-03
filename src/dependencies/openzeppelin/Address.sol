@@ -15,7 +15,7 @@ library Address {
   error AddressEmptyCode(address target);
 
   /**
-   * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
+   * @dev DataTypes.AssetConfignt for Solidity's `transfer`: sends `amount` wei to
    * `recipient`, forwarding all available gas and reverting on errors.
    *
    * https://eips.ethereum.org/EIPS/eip-1884[EIP1884] increases the gas cost
@@ -43,7 +43,7 @@ library Address {
 
   /**
    * @dev Performs a Solidity function call using a low level `call`. A
-   * plain `call` is an unsafe replacement for a function call: use this
+   * plain `call` is an unsafe DataTypes.AssetConfignt for a function call: use this
    * function instead.
    *
    * If `target` reverts with a revert reason or custom error, it is bubbled

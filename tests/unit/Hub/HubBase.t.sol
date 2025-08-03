@@ -21,15 +21,15 @@ contract HubBase is Base {
   }
 
   struct HubData {
-    DataTypes.Asset daiData;
-    DataTypes.Asset daiData1;
-    DataTypes.Asset daiData2;
-    DataTypes.Asset daiData3;
-    DataTypes.Asset wethData;
-    DataTypes.SpokeData spoke1WethData;
-    DataTypes.SpokeData spoke1DaiData;
-    DataTypes.SpokeData spoke2WethData;
-    DataTypes.SpokeData spoke2DaiData;
+    IHub.Asset daiData;
+    IHub.Asset daiData1;
+    IHub.Asset daiData2;
+    IHub.Asset daiData3;
+    IHub.Asset wethData;
+    IHub.Spoke spoke1WethData;
+    IHub.Spoke spoke1DaiData;
+    IHub.Spoke spoke2WethData;
+    IHub.Spoke spoke2DaiData;
     uint256 timestamp;
     uint256 accruedBase;
     uint256 initialLiquidity;

@@ -676,7 +676,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Bob borrows dai from spoke 1
     if (amounts.daiBorrowAmount > 0) {
-      DataTypes.Asset memory asset = hub1.getAsset(daiAssetId);
+      IHub.Asset memory asset = hub1.getAsset(daiAssetId);
       uint256 daiBorrowShares = hub1.previewDrawByAssets(daiAssetId, amounts.daiBorrowAmount);
       (, uint256 premium) = hub1.getAssetOwed(daiAssetId);
       _mockInterestRateRay({
@@ -691,7 +691,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Bob borrows weth from spoke 1
     if (amounts.wethBorrowAmount > 0) {
-      DataTypes.Asset memory asset = hub1.getAsset(wethAssetId);
+      IHub.Asset memory asset = hub1.getAsset(wethAssetId);
       uint256 wethBorrowShares = hub1.previewDrawByAssets(wethAssetId, amounts.wethBorrowAmount);
       (, uint256 premium) = hub1.getAssetOwed(wethAssetId);
       _mockInterestRateRay({
@@ -706,7 +706,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Bob borrows usdx from spoke 1
     if (amounts.usdxBorrowAmount > 0) {
-      DataTypes.Asset memory asset = hub1.getAsset(usdxAssetId);
+      IHub.Asset memory asset = hub1.getAsset(usdxAssetId);
       uint256 usdxBorrowShares = hub1.previewDrawByAssets(usdxAssetId, amounts.usdxBorrowAmount);
       (, uint256 premium) = hub1.getAssetOwed(usdxAssetId);
       _mockInterestRateRay({
@@ -721,7 +721,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Bob borrows wbtc from spoke 1
     if (amounts.wbtcBorrowAmount > 0) {
-      DataTypes.Asset memory asset = hub1.getAsset(wbtcAssetId);
+      IHub.Asset memory asset = hub1.getAsset(wbtcAssetId);
       uint256 wbtcBorrowShares = hub1.previewDrawByAssets(wbtcAssetId, amounts.wbtcBorrowAmount);
       (, uint256 premium) = hub1.getAssetOwed(wbtcAssetId);
       _mockInterestRateRay({

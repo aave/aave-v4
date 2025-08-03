@@ -140,7 +140,7 @@ contract HubRestoreTest is HubBase {
     //       onBehalfOf: address(spoke1)
     //     });
 
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Spoke memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     //     skip(skipTime);
 
@@ -229,7 +229,7 @@ contract HubRestoreTest is HubBase {
     //       onBehalfOf: address(spoke1)
     //     });
 
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Spoke memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     //     skip(skipTime);
 
@@ -315,7 +315,7 @@ contract HubRestoreTest is HubBase {
     //       onBehalfOf: address(spoke1)
     //     });
 
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Spoke memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     //     skip(skipTime);
 
@@ -410,7 +410,7 @@ contract HubRestoreTest is HubBase {
     //       onBehalfOf: address(spoke1)
     //     });
 
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Spoke memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     //     skip(skipTime);
 
@@ -467,7 +467,7 @@ contract HubRestoreTest is HubBase {
     //       riskPremium: riskPremium,
     //       rate: rate
     //     });
-    //     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
+    //     IHub.Asset memory daiData = hub.getAsset(daiAssetId);
 
     //     skip(365 days);
 
@@ -486,7 +486,7 @@ contract HubRestoreTest is HubBase {
     //     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, restorer: alice});
 
     //     daiData = hub.getAsset(daiAssetId);
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Spoke memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     //     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     //     // hub
@@ -569,7 +569,7 @@ contract HubRestoreTest is HubBase {
     //       riskPremium: riskPremium,
     //       rate: rate
     //     });
-    //     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
+    //     IHub.Asset memory daiData = hub.getAsset(daiAssetId);
 
     //     skip(skipTime);
 
@@ -587,7 +587,7 @@ contract HubRestoreTest is HubBase {
     //     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, restorer: alice});
 
     //     daiData = hub.getAsset(daiAssetId);
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Spoke memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     //     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     //     // hub
@@ -662,7 +662,7 @@ contract HubRestoreTest is HubBase {
     //       riskPremium: riskPremium,
     //       rate: rate
     //     });
-    //     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
+    //     IHub.Asset memory daiData = hub.getAsset(daiAssetId);
 
     //     skip(365 days);
 
@@ -679,7 +679,7 @@ contract HubRestoreTest is HubBase {
     //     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, restorer: alice});
 
     //     daiData = hub.getAsset(daiAssetId);
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Spoke memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     //     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     //     // hub
@@ -750,7 +750,7 @@ contract HubRestoreTest is HubBase {
     //       riskPremium: riskPremium,
     //       rate: rate
     //     });
-    //     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
+    //     IHub.Asset memory daiData = hub.getAsset(daiAssetId);
 
     //     skip(skipTime);
 
@@ -772,7 +772,7 @@ contract HubRestoreTest is HubBase {
     //     hub.restore({assetId: daiAssetId, amount: restoreAmount, riskPremium: 0, restorer: alice});
 
     //     daiData = hub.getAsset(daiAssetId);
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Spoke memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
     //     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     //     // hub
@@ -1104,7 +1104,7 @@ contract HubRestoreTest is HubBase {
     //       onBehalfOf: address(spoke1)
     //     });
 
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Spoke memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     //     skip(skipTime);
 
@@ -1130,8 +1130,8 @@ contract HubRestoreTest is HubBase {
     //     vm.prank(address(spoke1));
     //     hub.restore({assetId: daiAssetId, amount: cumulatedDrawnDebt, riskPremium: 0, restorer: alice});
 
-    //     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
-    //     DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Asset memory daiData = hub.getAsset(daiAssetId);
+    //     IHub.Spoke memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
     //     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     //     // asset
@@ -1202,7 +1202,7 @@ contract HubRestoreTest is HubBase {
     //       onBehalfOf: address(spoke1)
     //     });
 
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Spoke memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     //     skip(skipTime);
 
@@ -1229,8 +1229,8 @@ contract HubRestoreTest is HubBase {
     //     vm.prank(address(spoke1));
     //     hub.restore({assetId: daiAssetId, amount: cumulatedDrawnDebt, riskPremium: 0, restorer: alice});
 
-    //     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
-    //     DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Asset memory daiData = hub.getAsset(daiAssetId);
+    //     IHub.Spoke memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
     //     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     //     // asset
@@ -1298,7 +1298,7 @@ contract HubRestoreTest is HubBase {
     //       onBehalfOf: address(spoke1)
     //     });
 
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Spoke memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     //     skip(skipTime);
 
@@ -1331,8 +1331,8 @@ contract HubRestoreTest is HubBase {
     //       restorer: alice
     //     });
 
-    //     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
-    //     DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Asset memory daiData = hub.getAsset(daiAssetId);
+    //     IHub.Spoke memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
     //     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     //     // asset
@@ -1405,7 +1405,7 @@ contract HubRestoreTest is HubBase {
     //       onBehalfOf: address(spoke1)
     //     });
 
-    //     DataTypes.SpokeData memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Spoke memory spoke1DaiData = hub.getSpoke(daiAssetId, address(spoke1));
 
     //     skip(skipTime);
 
@@ -1438,8 +1438,8 @@ contract HubRestoreTest is HubBase {
     //       restorer: alice
     //     });
 
-    //     DataTypes.Asset memory daiData = hub.getAsset(daiAssetId);
-    //     DataTypes.SpokeData memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
+    //     IHub.Asset memory daiData = hub.getAsset(daiAssetId);
+    //     IHub.Spoke memory spoke1Data = hub.getSpoke(daiAssetId, address(spoke1));
     //     DebtData memory daiDebtData = _getDebt(daiAssetId);
 
     //     // asset

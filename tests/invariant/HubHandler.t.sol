@@ -144,7 +144,7 @@ contract HubHandler is Test {
   function _updateState(uint256 assetId) internal {
     revert('implement me');
 
-    // DataTypes.Asset memory reserveData = hub1.getAsset(assetId);
+    // IHub.Asset memory reserveData = hub1.getAsset(assetId);
     // // todo: remove last exchange rate, bad idea to store like this, looses precision
     // s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
     //   ? 0
