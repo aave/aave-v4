@@ -1,5 +1,7 @@
 {
-  "borrow": "315484",
+  "borrow: 0 asset borrows, 0 user borrows": "315484",
+  "borrow: 1 asset borrows, 1 user borrows": "285937",
+  "borrow: 2 asset borrows, 0 user borrows": "300189",
   "liquidationCall: full": "346403",
   "liquidationCall: partial": "457450",
   "repay: full": "202023",
