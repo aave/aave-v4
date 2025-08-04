@@ -1181,11 +1181,6 @@ abstract contract Base is Test {
     return spoke.getUserSuppliedAmount(reserveId, user);
   }
 
-  /// @dev Helper function to calculate asset amount corresponding to single drawn share
-  function minimumAssetsPerDrawnShare(uint256 assetId) internal view returns (uint256) {
-    return minimumAssetsPerDrawnShare(hub1, assetId);
-  }
-
   /// @dev Helper function to calculate asset amount corresponding to single added share
   function minimumAssetsPerAddedShare(IHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.previewAddByShares(assetId, 1);

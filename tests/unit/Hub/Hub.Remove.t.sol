@@ -124,7 +124,7 @@ contract HubRemoveTest is HubBase {
     vm.assume(drawn + premium <= MAX_SUPPLY_AMOUNT);
 
     // restore all drawn liquidity
-    Utils.restoreBase({
+    Utils.restoreDrawn({
       hub: hub1,
       assetId: assetId,
       caller: address(spoke3),
@@ -207,7 +207,7 @@ contract HubRemoveTest is HubBase {
       address(spoke1)
     );
     assertEq(premiumRestored, 0);
-    Utils.restoreBase({
+    Utils.restoreDrawn({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -308,7 +308,7 @@ contract HubRemoveTest is HubBase {
       address(spoke1)
     );
     assertEq(premiumRestored, 0);
-    Utils.restoreBase({
+    Utils.restoreDrawn({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
