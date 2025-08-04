@@ -19,7 +19,6 @@ library AssetLogic {
   using SafeCast for uint256;
 
   // todo: option for cached object
-  // todo: add virtual offset for inflation attack
 
   // drawn exchange rate does not include premium to accrue base rate separately
   function toDrawnAssetsUp(

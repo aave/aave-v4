@@ -6,6 +6,7 @@ import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 library SharesMath {
   using Math for uint256;
 
+  /// @dev Virtual assets and shares are used to mitigate share manipulation attacks
   uint256 internal constant VIRTUAL_ASSETS = 1e6;
   uint256 internal constant VIRTUAL_SHARES = 1e6;
 
