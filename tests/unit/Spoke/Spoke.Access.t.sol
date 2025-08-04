@@ -80,7 +80,7 @@ contract SpokeAccessTest is SpokeBase {
     );
     spoke1.addReserve(
       address(hub1),
-      4,
+      dai2AssetId,
       reserveSource,
       DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
@@ -94,7 +94,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      4,
+      dai2AssetId,
       reserveSource,
       DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
