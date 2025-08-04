@@ -48,7 +48,7 @@ contract HubBase is Base {
     initEnvironment();
   }
 
-  function _updateAddCap(uint256 assetId, address spoke, uint64 newAddCap) internal {
+  function _updateAddCap(uint256 assetId, address spoke, uint56 newAddCap) internal {
     DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spoke);
     spokeConfig.addCap = newAddCap;
     vm.prank(HUB_ADMIN);
@@ -116,7 +116,7 @@ contract HubBase is Base {
     hub1.addSpoke(
       assetId,
       tempSpoke,
-      DataTypes.SpokeConfig({active: true, addCap: type(uint64).max, drawCap: type(uint64).max})
+      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
     );
 
     if (withPremium) {
@@ -199,7 +199,7 @@ contract HubBase is Base {
     hub1.addSpoke(
       assetId,
       tempSpoke,
-      DataTypes.SpokeConfig({addCap: type(uint64).max, drawCap: type(uint64).max, active: true})
+      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
     );
 
     Utils.add({hub: hub1, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});

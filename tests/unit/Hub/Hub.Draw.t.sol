@@ -299,11 +299,11 @@ contract HubDrawTest is HubBase {
   }
 
   function test_draw_fuzz_revertsWith_DrawCapExceeded_due_to_interest(
-    uint64 drawCap,
+    uint56 drawCap,
     uint256 rate,
     uint256 skipTime
   ) public {
-    drawCap = uint64(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    drawCap = uint56(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals() - 1;
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -346,7 +346,7 @@ contract HubDrawTest is HubBase {
 
   /// Tests that the draw cap is checked against spoke's debt, not the hub's debt
   function test_draw_DifferentSpokes() public {
-    uint64 drawCap = 100;
+    uint56 drawCap = 100;
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
     uint256 drawAmount = daiAmount;
 
@@ -388,8 +388,8 @@ contract HubDrawTest is HubBase {
     hub1.draw({assetId: daiAssetId, amount: 1, to: bob});
   }
 
-  function test_draw_fuzz_revertsWith_DrawCapExceeded(uint64 drawCap) public {
-    drawCap = uint64(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+  function test_draw_fuzz_revertsWith_DrawCapExceeded(uint56 drawCap) public {
+    drawCap = uint56(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
     uint256 drawAmount = daiAmount + 1;
 

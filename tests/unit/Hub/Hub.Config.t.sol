@@ -95,7 +95,7 @@ contract HubConfigTest is HubBase {
     assumeNotZeroAddress(feeReceiver);
     assumeNotZeroAddress(interestRateStrategy);
 
-    decimals = uint8(bound(decimals, hub1.MAX_ALLOWED_ASSET_DECIMALS() + 1, type(uint8).max));
+    decimals = uint8(bound(decimals, Constants.MAX_ALLOWED_ASSET_DECIMALS + 1, type(uint8).max));
 
     vm.expectRevert(IHub.InvalidAssetDecimals.selector);
     Utils.addAsset(
@@ -134,7 +134,7 @@ contract HubConfigTest is HubBase {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(interestRateStrategy);
 
-    decimals = uint8(bound(decimals, 0, hub1.MAX_ALLOWED_ASSET_DECIMALS()));
+    decimals = uint8(bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS));
 
     vm.expectRevert(IHub.InvalidFeeReceiver.selector);
     Utils.addAsset(
@@ -156,7 +156,7 @@ contract HubConfigTest is HubBase {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
 
-    decimals = uint8(bound(decimals, 0, hub1.MAX_ALLOWED_ASSET_DECIMALS()));
+    decimals = uint8(bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS));
 
     vm.expectRevert(IHub.InvalidIrStrategy.selector);
     Utils.addAsset(hub1, ADMIN, underlying, decimals, feeReceiver, address(0), encodedIrData);
@@ -171,7 +171,7 @@ contract HubConfigTest is HubBase {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
     assumeNotZeroAddress(interestRateStrategy);
-    decimals = uint8(bound(decimals, 0, hub1.MAX_ALLOWED_ASSET_DECIMALS()));
+    decimals = uint8(bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS));
 
     vm.expectRevert();
     Utils.addAsset(
@@ -203,7 +203,7 @@ contract HubConfigTest is HubBase {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
 
-    decimals = uint8(bound(decimals, 0, hub1.MAX_ALLOWED_ASSET_DECIMALS()));
+    decimals = uint8(bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS));
 
     uint256 expectedAssetId = hub1.getAssetCount();
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));

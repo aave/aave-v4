@@ -68,8 +68,8 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
-      addCap: type(uint64).max,
-      drawCap: type(uint64).max
+      addCap: Constants.MAX_CAP,
+      drawCap: Constants.MAX_CAP
     });
 
     // Connect hub 2 and spoke 1 for dai

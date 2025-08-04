@@ -14,8 +14,8 @@ contract HubAddTest is HubBase {
     /// @dev add a zero decimal asset to test add cap rounding
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
-      addCap: type(uint64).max,
-      drawCap: type(uint64).max
+      addCap: Constants.MAX_CAP,
+      drawCap: Constants.MAX_CAP
     });
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
@@ -112,8 +112,8 @@ contract HubAddTest is HubBase {
     hub1.add(daiAssetId, amount, alice);
   }
 
-  function test_add_fuzz_revertsWith_AddCapExceeded(uint64 newAddCap) public {
-    newAddCap = uint64(bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+  function test_add_fuzz_revertsWith_AddCapExceeded(uint56 newAddCap) public {
+    newAddCap = uint56(bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals() + 1;
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
@@ -121,8 +121,8 @@ contract HubAddTest is HubBase {
     hub1.add(daiAssetId, amount, alice);
   }
 
-  function test_add_fuzz_AddCapReachedButNotExceeded(uint64 newAddCap) public {
-    newAddCap = uint64(bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+  function test_add_fuzz_AddCapReachedButNotExceeded(uint56 newAddCap) public {
+    newAddCap = uint56(bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals();
     vm.prank(address(spoke1));
@@ -161,7 +161,7 @@ contract HubAddTest is HubBase {
 
     // set add cap to amount of assets added * 2 - 1, given
     // that the same asset amount is provided again below
-    uint64 newAddCap = uint64(2 * addedAmount - 1);
+    uint56 newAddCap = uint56(2 * addedAmount - 1);
     _updateAddCap(zeroDecimalAssetId, address(spoke1), newAddCap);
 
     // this cap will be exceeded only if the existing added
@@ -176,11 +176,11 @@ contract HubAddTest is HubBase {
   }
 
   function test_add_fuzz_revertsWith_AddCapExceeded_due_to_interest(
-    uint64 newAddCap,
+    uint56 newAddCap,
     uint256 drawAmount,
     uint256 skipTime
   ) public {
-    newAddCap = uint64(bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    newAddCap = uint56(bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
     uint256 daiAmount = newAddCap * 10 ** tokenList.dai.decimals() -  1;
     drawAmount = bound(drawAmount, 1, daiAmount);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -232,7 +232,7 @@ contract HubAddTest is HubBase {
       totalAddedShares
     );
 
-    uint64 newAddCap = uint64(spokeAddedAssetsRoundedUp + addedAmount);
+    uint56 newAddCap = uint56(spokeAddedAssetsRoundedUp + addedAmount);
     _updateAddCap(zeroDecimalAssetId, address(spoke1), newAddCap);
 
     Utils.add({

@@ -11,8 +11,8 @@ library DataTypes {
     uint128 premiumShares;
     uint128 premiumOffset;
     uint128 realizedPremium;
-    uint64 addCap;
-    uint64 drawCap;
+    uint56 addCap;
+    uint56 drawCap;
     bool active;
   }
 
@@ -36,8 +36,8 @@ library DataTypes {
 
   struct SpokeConfig {
     bool active;
-    uint64 addCap;
-    uint64 drawCap;
+    uint56 addCap;
+    uint56 drawCap;
   }
 
   struct AssetConfig {

@@ -73,12 +73,12 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     newHub.addSpoke(
       isolationVars.assetAId,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, addCap: type(uint64).max, drawCap: type(uint64).max})
+      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
     );
     newHub.addSpoke(
       isolationVars.assetBId,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, addCap: type(uint64).max, drawCap: type(uint64).max})
+      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
     );
     vm.stopPrank();
 
@@ -111,7 +111,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     hub1.addSpoke(
       isolationVars.assetBIdMainHub,
       address(spoke1),
-      DataTypes.SpokeConfig({active: true, addCap: type(uint64).max, drawCap: type(uint64).max})
+      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
     );
     vm.stopPrank();
 

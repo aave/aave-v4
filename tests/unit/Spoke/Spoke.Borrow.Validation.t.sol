@@ -127,9 +127,9 @@ contract SpokeBorrowValidationTest is SpokeBase {
     spoke1.borrow(reserveId, 0, bob);
   }
 
-  function test_borrow_fuzz_revertsWith_DrawCapExceeded(uint256 reserveId, uint64 drawCap) public {
+  function test_borrow_fuzz_revertsWith_DrawCapExceeded(uint256 reserveId, uint56 drawCap) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    drawCap = uint64(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    drawCap = uint56(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
 
     uint256 drawAmount = drawCap * 10 ** tokenList.dai.decimals() + 1;
 
@@ -149,7 +149,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
 
-    uint64 drawCap = 100;
+    uint56 drawCap = 100;
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
     uint256 wethSupplyAmount = 10e18;
     uint256 drawAmount = daiAmount - 1;

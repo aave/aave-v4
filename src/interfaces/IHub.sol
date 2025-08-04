@@ -342,6 +342,4 @@ interface IHub is IHubBase, IAccessManaged {
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256);
 
   function getAssetCount() external view returns (uint256);
-
-  function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint8);
 }

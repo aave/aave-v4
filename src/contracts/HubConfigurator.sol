@@ -5,6 +5,7 @@ import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {Constants} from 'src/libraries/helpers/Constants.sol';
 import {IHub} from 'src/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/interfaces/IHubConfigurator.sol';
 
@@ -44,7 +45,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     targetHub.addSpoke(
       assetId,
       feeReceiver,
-      DataTypes.SpokeConfig({addCap: type(uint64).max, drawCap: type(uint64).max, active: true})
+      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
     );
 
     return assetId;
@@ -66,7 +67,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     targetHub.addSpoke(
       assetId,
       feeReceiver,
-      DataTypes.SpokeConfig({addCap: type(uint64).max, drawCap: type(uint64).max, active: true})
+      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
     );
 
     return assetId;
@@ -207,7 +208,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-    config.addCap = addCap.toUint64();
+    config.addCap = addCap.toUint56();
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
@@ -220,7 +221,7 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-    config.drawCap = drawCap.toUint64();
+    config.drawCap = drawCap.toUint56();
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
@@ -273,10 +274,10 @@ contract HubConfigurator is Ownable, IHubConfigurator {
       hub.addSpoke(
         assetId,
         newFeeReceiver,
-        DataTypes.SpokeConfig({addCap: type(uint64).max, drawCap: type(uint64).max, active: true})
+        DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
       );
     } else {
-      _updateSpokeCaps(hub, assetId, newFeeReceiver, type(uint64).max, type(uint64).max);
+      _updateSpokeCaps(hub, assetId, newFeeReceiver, Constants.MAX_CAP, Constants.MAX_CAP);
     }
   }
 
@@ -296,8 +297,8 @@ contract HubConfigurator is Ownable, IHubConfigurator {
     uint256 drawCap
   ) internal {
     DataTypes.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
-    config.addCap = addCap.toUint64();
-    config.drawCap = drawCap.toUint64();
+    config.addCap = addCap.toUint56();
+    config.drawCap = drawCap.toUint56();
     hub.updateSpokeConfig(assetId, spoke, config);
   }
 }

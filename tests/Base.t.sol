@@ -24,6 +24,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {Constants} from 'src/libraries/helpers/Constants.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
@@ -360,8 +361,8 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
-      addCap: type(uint64).max,
-      drawCap: type(uint64).max
+      addCap: Constants.MAX_CAP,
+      drawCap: Constants.MAX_CAP
     });
 
     bytes memory encodedIrData = abi.encode(
@@ -1128,7 +1129,7 @@ abstract contract Base is Test {
     IHub hub,
     uint256 assetId,
     address spoke,
-    uint64 newDrawCap
+    uint56 newDrawCap
   ) internal pausePrank {
     DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;

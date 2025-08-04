@@ -7,8 +7,8 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
   struct SiloedLocalVars {
     uint256 assetAId;
     uint256 assetBId;
-    uint64 assetAAddCap;
-    uint64 assetBDrawCap;
+    uint56 assetAAddCap;
+    uint56 assetBDrawCap;
     uint256 reserveAId;
     uint256 reserveBId;
     uint256 reserveAIdNewSpoke;
@@ -61,7 +61,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     newHub.addSpoke(
       siloedVars.assetBId,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, addCap: type(uint64).max, drawCap: siloedVars.assetBDrawCap})
+      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: siloedVars.assetBDrawCap})
     );
 
     // Add asset A to the canonical hub
@@ -92,7 +92,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     hub1.addSpoke(
       siloedVars.assetAId,
       address(spoke1),
-      DataTypes.SpokeConfig({active: true, addCap: type(uint64).max, drawCap: type(uint64).max})
+      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
     );
 
     // Add reserve A from canonical hub to the new spoke
