@@ -2080,8 +2080,8 @@ abstract contract Base is Test {
 
   function _assertDynamicConfigRefreshEventsNotEmitted() internal {
     _assertEventsNotEmitted(
-      ISpoke.RefreshUserDynamicConfigAll.selector,
-      ISpoke.RefreshUserDynamicConfigSingle.selector
+      ISpoke.RefreshAllUserDynamicConfig.selector,
+      ISpoke.RefreshSingleUserDynamicConfig.selector
     );
   }
 

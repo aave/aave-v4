@@ -43,7 +43,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     address newOracle = makeAddr('NEW_ORACLE');
     vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateOracle, (newOracle)));
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateOracle(newOracle);
+    emit ISpoke.OracleUpdate(newOracle);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateOracle(spokeAddr, newOracle);
   }
@@ -61,7 +61,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateReservePriceSource, (reserveId, newPriceSource))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateReservePriceSource(reserveId, newPriceSource);
+    emit ISpoke.ReservePriceSourceUpdate(reserveId, newPriceSource);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateReservePriceSource(spokeAddr, reserveId, newPriceSource);
   }
@@ -83,7 +83,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateLiquidationConfig, (expectedLiquidationConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
+    emit ISpoke.LiquidationConfigUpdate(expectedLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationCloseFactor(spokeAddr, newCloseFactor);
 
@@ -107,7 +107,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateLiquidationConfig, (expectedLiquidationConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
+    emit ISpoke.LiquidationConfigUpdate(expectedLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateHealthFactorForMaxBonus(spokeAddr, newHealthFactorForMaxBonus);
 
@@ -131,7 +131,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateLiquidationConfig, (expectedLiquidationConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
+    emit ISpoke.LiquidationConfigUpdate(expectedLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationBonusFactor(spokeAddr, newLiquidationBonusFactor);
 
@@ -494,7 +494,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke));
-    emit ISpoke.DynamicUpdateReserveConfig(reserveId, configKeyToUpdate, newDynamicReserveConfig);
+    emit ISpoke.DynamicReserveConfigUpdate(reserveId, configKeyToUpdate, newDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateDynamicReserveConfig(
       spokeAddr,

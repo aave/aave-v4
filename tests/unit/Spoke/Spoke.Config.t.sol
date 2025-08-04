@@ -13,7 +13,7 @@ contract SpokeConfigTest is SpokeBase {
       vm.getNonce(address(this))
     );
     vm.expectEmit(predictedSpokeAddress);
-    emit ISpoke.UpdateLiquidationConfig(
+    emit ISpoke.LiquidationConfigUpdate(
       DataTypes.LiquidationConfig({
         closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
         healthFactorForMaxBonus: 0,
@@ -41,7 +41,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateOracle() public {
     address newOracle = address(new AaveOracle(SPOKE_ADMIN, 18, 'New Aave Oracle'));
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateOracle(newOracle);
+    emit ISpoke.OracleUpdate(newOracle);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateOracle(newOracle);
   }
@@ -68,7 +68,7 @@ contract SpokeConfigTest is SpokeBase {
     uint256 reserveId = 0;
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateReservePriceSource(reserveId, reserveSource);
+    emit ISpoke.ReservePriceSourceUpdate(reserveId, reserveSource);
     vm.expectCall(
       address(oracle1),
       abi.encodeCall(IAaveOracle.setReserveSource, (reserveId, reserveSource))
@@ -253,7 +253,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.closeFactor = newCloseFactor;
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateLiquidationConfig(liquidationConfig);
+    emit ISpoke.LiquidationConfigUpdate(liquidationConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
 
@@ -289,7 +289,7 @@ contract SpokeConfigTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateLiquidationConfig(liquidationConfig);
+    emit ISpoke.LiquidationConfigUpdate(liquidationConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
 

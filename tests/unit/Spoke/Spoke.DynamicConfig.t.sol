@@ -226,7 +226,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     dynConf.liquidationFee = _randomBps();
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.DynamicUpdateReserveConfig(reserveId, configKey, dynConf);
+    emit ISpoke.DynamicReserveConfigUpdate(reserveId, configKey, dynConf);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(reserveId, configKey, dynConf);
 

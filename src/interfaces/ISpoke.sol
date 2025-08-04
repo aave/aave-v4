@@ -37,7 +37,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param configKey The key of the updated dynamic config.
    * @param config The dynamic reserve config.
    */
-  event DynamicUpdateReserveConfig(
+  event DynamicReserveConfigUpdate(
     uint256 indexed reserveId,
     uint16 indexed configKey,
     DataTypes.DynamicReserveConfig config
@@ -47,14 +47,14 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @notice Emitted when a user's dynamic config is refreshed for all reserves to their latest config key.
    * @param user The address of the user.
    */
-  event RefreshUserDynamicConfigAll(address indexed user);
+  event RefreshAllUserDynamicConfig(address indexed user);
 
   /**
    * @notice Emitted when a user's dynamic config is refreshed for a single reserve to its latest config key.
    * @param user The address of the user.
    * @param reserveId The identifier of the reserve.
    */
-  event RefreshUserDynamicConfigSingle(address indexed user, uint256 reserveId);
+  event RefreshSingleUserDynamicConfig(address indexed user, uint256 reserveId);
 
   /**
    * @notice Emitted on setUsingAsCollateral action.
@@ -75,7 +75,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param user The owner of the position being modified.
    * @param riskPremium The new risk premium (BPS) value of user.
    */
-  event UpdateUserRiskPremium(address indexed user, uint256 riskPremium);
+  event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
 
   /**
    * @notice Emitted on setUserPositionManager or renouncePositionManagerRole action.
@@ -90,16 +90,16 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param positionManager The address of the position manager.
    * @param active True if position manager has become active, false otherwise.
    */
-  event UpdatePositionManager(address indexed positionManager, bool active);
+  event PositionManagerUpdate(address indexed positionManager, bool active);
 
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
     address indexed user,
     DataTypes.PremiumDelta premiumDelta
   );
-  event UpdateOracle(address indexed oracle);
-  event UpdateReservePriceSource(uint256 indexed reserveId, address indexed priceSource);
-  event UpdateLiquidationConfig(DataTypes.LiquidationConfig config);
+  event OracleUpdate(address indexed oracle);
+  event ReservePriceSourceUpdate(uint256 indexed reserveId, address indexed priceSource);
+  event LiquidationConfigUpdate(DataTypes.LiquidationConfig config);
 
   error ReserveNotListed();
   error AssetNotListed();

@@ -54,7 +54,7 @@ contract HubConfigTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.AddSpoke(assetId, newSpoke);
     vm.expectEmit(address(hub1));
-    emit IHub.SpokeConfigUpdated(assetId, newSpoke, spokeConfig);
+    emit IHub.SpokeConfigUpdate(assetId, newSpoke, spokeConfig);
     Utils.addSpoke(hub1, ADMIN, assetId, newSpoke, spokeConfig);
 
     assertEq(hub1.getSpokeConfig(assetId, newSpoke), spokeConfig);
@@ -79,7 +79,7 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
 
     vm.expectEmit(address(hub1));
-    emit IHub.SpokeConfigUpdated(assetId, address(spoke1), spokeConfig);
+    emit IHub.SpokeConfigUpdate(assetId, address(spoke1), spokeConfig);
 
     Utils.updateSpokeConfig(hub1, ADMIN, assetId, address(spoke1), spokeConfig);
     assertEq(hub1.getSpokeConfig(assetId, address(spoke1)), spokeConfig);
@@ -242,9 +242,9 @@ contract HubConfigTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.AddAsset(expectedAssetId, underlying, decimals);
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAssetConfig(expectedAssetId, expectedConfig);
+    emit IHub.AssetConfigUpdate(expectedAssetId, expectedConfig);
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(
+    emit IHub.AssetUpdate(
       expectedAssetId,
       WadRayMath.RAY,
       baseVariableBorrowRate.bpsToRay(),
@@ -331,7 +331,7 @@ contract HubConfigTest is HubBase {
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
 
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(
+    emit IHub.AssetUpdate(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
@@ -343,7 +343,7 @@ contract HubConfigTest is HubBase {
       vm.getBlockTimestamp()
     );
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAssetConfig(assetId, newConfig);
+    emit IHub.AssetConfigUpdate(assetId, newConfig);
 
     Utils.updateAssetConfig(hub1, ADMIN, assetId, newConfig);
 

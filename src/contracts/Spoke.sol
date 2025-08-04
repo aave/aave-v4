@@ -59,7 +59,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   constructor(address authority_) AccessManaged(authority_) {
     // todo move to `initialize` when adding upgradeability
     _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-    emit UpdateLiquidationConfig(_liquidationConfig);
+    emit LiquidationConfigUpdate(_liquidationConfig);
   }
 
   // /////
@@ -69,7 +69,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function updateOracle(address newOracle) external restricted {
     require(newOracle != address(0), InvalidOracle());
     oracle = IAaveOracle(newOracle);
-    emit UpdateOracle(newOracle);
+    emit OracleUpdate(newOracle);
   }
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
@@ -82,7 +82,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) external restricted {
     _validateLiquidationConfig(liquidationConfig);
     _liquidationConfig = liquidationConfig;
-    emit UpdateLiquidationConfig(liquidationConfig);
+    emit LiquidationConfigUpdate(liquidationConfig);
   }
 
   function addReserve(
@@ -161,13 +161,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(_dynamicConfig[reserveId][configKey].liquidationBonus != 0, ConfigKeyUninitialized());
     _validateDynamicReserveConfig(dynamicConfig);
     _dynamicConfig[reserveId][configKey] = dynamicConfig;
-    emit DynamicUpdateReserveConfig(reserveId, configKey, dynamicConfig);
+    emit DynamicReserveConfigUpdate(reserveId, configKey, dynamicConfig);
   }
 
   /// @inheritdoc ISpoke
   function updatePositionManager(address positionManager, bool active) external restricted {
     _positionManager[positionManager].active = active;
-    emit UpdatePositionManager(positionManager, active);
+    emit PositionManagerUpdate(positionManager, active);
   }
 
   // /////
@@ -603,7 +603,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
     require(address(oracle) != address(0), InvalidOracle());
     oracle.setReserveSource(reserveId, priceSource);
-    emit UpdateReservePriceSource(reserveId, priceSource);
+    emit ReservePriceSourceUpdate(reserveId, priceSource);
   }
 
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
@@ -926,7 +926,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         ++vars.reserveId;
       }
     }
-    emit UpdateUserRiskPremium(user, newUserRiskPremium);
+    emit UserRiskPremiumUpdate(user, newUserRiskPremium);
 
     return vars.premiumIncrease;
   }
@@ -975,7 +975,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         ++reserveId;
       }
     }
-    emit UpdateUserRiskPremium(user, 0);
+    emit UserRiskPremiumUpdate(user, 0);
   }
 
   function _refreshDynamicConfig(address user) internal {
@@ -989,12 +989,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         ++reserveId;
       }
     }
-    emit RefreshUserDynamicConfigAll(user);
+    emit RefreshAllUserDynamicConfig(user);
   }
 
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
     _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
-    emit RefreshUserDynamicConfigSingle(user, reserveId);
+    emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 
   /**

@@ -33,7 +33,7 @@ contract HubDrawTest is HubBase {
     );
 
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(
+    emit IHub.AssetUpdate(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
@@ -113,7 +113,7 @@ contract HubDrawTest is HubBase {
     );
 
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(
+    emit IHub.AssetUpdate(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({

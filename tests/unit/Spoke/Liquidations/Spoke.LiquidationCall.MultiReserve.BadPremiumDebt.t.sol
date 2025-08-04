@@ -449,7 +449,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       );
     }
     vm.expectEmit(address(state.spoke));
-    emit ISpoke.UpdateUserRiskPremium(state.user, 0);
+    emit ISpoke.UserRiskPremiumUpdate(state.user, 0);
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
