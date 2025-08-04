@@ -78,7 +78,6 @@ interface IHub is IHubBase, IAccessManaged {
   error SurplusDeficitReported(uint256 amount);
   error SpokeNotActive();
   error InvalidFeeShares();
-  error InvalidZeroAddress();
 
   /**
    * @notice Adds a new asset to the hub.

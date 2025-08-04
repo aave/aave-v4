@@ -37,7 +37,7 @@ contract HubConfigTest is HubBase {
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.InvalidZeroAddress.selector));
+    vm.expectRevert(abi.encodeWithSelector(IHubBase.InvalidZeroAddress.selector));
     Utils.addSpoke({
       hub: hub1,
       hubAdmin: ADMIN,
@@ -120,7 +120,7 @@ contract HubConfigTest is HubBase {
     address feeReceiver,
     address interestRateStrategy
   ) public {
-    vm.expectRevert(IHub.InvalidZeroAddress.selector);
+    vm.expectRevert(IHubBase.InvalidZeroAddress.selector);
     Utils.addAsset({
       hub: hub1,
       hubAdmin: ADMIN,
@@ -142,7 +142,7 @@ contract HubConfigTest is HubBase {
 
     decimals = uint8(bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS));
 
-    vm.expectRevert(IHub.InvalidZeroAddress.selector);
+    vm.expectRevert(IHubBase.InvalidZeroAddress.selector);
     Utils.addAsset({
       hub: hub1,
       hubAdmin: ADMIN,
@@ -164,7 +164,7 @@ contract HubConfigTest is HubBase {
 
     decimals = uint8(bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS));
 
-    vm.expectRevert(IHub.InvalidZeroAddress.selector);
+    vm.expectRevert(IHubBase.InvalidZeroAddress.selector);
     Utils.addAsset({
       hub: hub1,
       hubAdmin: ADMIN,
@@ -289,7 +289,7 @@ contract HubConfigTest is HubBase {
     _assumeValidAssetConfig(assetId, newConfig);
     newConfig.irStrategy = address(0);
 
-    vm.expectRevert(IHub.InvalidZeroAddress.selector);
+    vm.expectRevert(IHubBase.InvalidZeroAddress.selector);
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig);
   }
@@ -316,7 +316,7 @@ contract HubConfigTest is HubBase {
     _assumeValidAssetConfig(assetId, newConfig);
     newConfig.liquidityFee = vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     newConfig.feeReceiver = address(0);
-    vm.expectRevert(IHub.InvalidZeroAddress.selector);
+    vm.expectRevert(IHubBase.InvalidZeroAddress.selector);
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig);
   }

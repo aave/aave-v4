@@ -32,8 +32,8 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateOracle(vm.randomAddress());
   }
 
-  function test_updateOracle_revertsWith_InvalidOracle() public {
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
+  function test_updateOracle_revertsWith_InvalidZeroAddress() public {
+    vm.expectRevert(ISpokeBase.InvalidZeroAddress.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateOracle(address(0));
   }
@@ -214,7 +214,7 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
-  function test_addReserve_revertsWith_InvalidOracle() public {
+  function test_addReserve_revertsWith_InvalidZeroAddress_priceSource() public {
     Spoke newSpoke = new Spoke(address(accessManager));
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
@@ -229,15 +229,42 @@ contract SpokeConfigTest is SpokeBase {
       liquidationFee: 10_00
     });
 
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
+    vm.expectRevert(ISpokeBase.InvalidZeroAddress.selector);
     vm.prank(ADMIN);
-    newSpoke.addReserve(
-      address(hub1),
-      wethAssetId,
-      address(0),
-      newReserveConfig,
-      newDynReserveConfig
-    );
+    newSpoke.addReserve({
+      hub: address(hub1),
+      assetId: wethAssetId,
+      priceSource: address(0),
+      config: newReserveConfig,
+      dynamicConfig: newDynReserveConfig
+    });
+  }
+
+  function test_addReserve_revertsWith_InvalidZeroAddress_hub() public {
+    uint256 reserveId = spoke1.getReserveCount();
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      paused: vm.randomBool(),
+      frozen: vm.randomBool(),
+      borrowable: vm.randomBool(),
+      collateralRisk: vm.randomUint(0, 100_00)
+    });
+    DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: uint16(vm.randomUint(0, 100_00)),
+      liquidationBonus: uint16(vm.randomUint(MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS)),
+      liquidationFee: uint16(vm.randomUint(0, 100_00))
+    });
+
+    address reserveSource = _deployMockPriceFeed(spoke1, 2000e8);
+
+    vm.expectRevert(ISpokeBase.InvalidZeroAddress.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve({
+      hub: address(0),
+      assetId: wethAssetId,
+      priceSource: reserveSource,
+      config: newReserveConfig,
+      dynConfig: newDynReserveConfig
+    });
   }
 
   function test_updateLiquidationConfig_closeFactor() public {

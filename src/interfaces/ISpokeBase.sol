@@ -8,9 +8,9 @@ pragma solidity ^0.8.0;
  */
 interface ISpokeBase {
   /**
-   * @notice Error thrown when the hub address is invalid.
+   * @notice Error thrown for invalid zero address.
    */
-  error InvalidHubAddress();
+  error InvalidZeroAddress();
 
   /**
    * @notice Emitted on the supply action.

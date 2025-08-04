@@ -120,7 +120,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();
   error InvalidLiquidationFee();
-  error InvalidOracle();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
   error ConfigKeyUninitialized();

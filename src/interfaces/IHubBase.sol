@@ -9,6 +9,11 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @notice Minimal interface for Hub
  */
 interface IHubBase {
+  /**
+   * @notice Error thrown for invalid zero address.
+   */
+  error InvalidZeroAddress();
+
   event Add(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
   event Remove(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
   event Draw(

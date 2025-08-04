@@ -67,7 +67,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // /////
 
   function updateOracle(address newOracle) external restricted {
-    require(newOracle != address(0), InvalidOracle());
+    require(newOracle != address(0), InvalidZeroAddress());
     oracle = IAaveOracle(newOracle);
     emit OracleUpdated(newOracle);
   }
@@ -92,7 +92,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
-    require(hub != address(0), InvalidHubAddress());
+    require(hub != address(0), InvalidZeroAddress());
 
     _validateReserveConfig(config);
     uint256 reserveId = _reserveCount++;
@@ -601,7 +601,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
-    require(address(oracle) != address(0), InvalidOracle());
+    require(address(oracle) != address(0), InvalidZeroAddress());
     oracle.setReserveSource(reserveId, priceSource);
     emit ReservePriceSourceUpdated(reserveId, priceSource);
   }
