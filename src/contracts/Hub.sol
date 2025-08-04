@@ -128,12 +128,9 @@ contract Hub is IHub, AccessManaged {
     require(!_assetToSpokes[assetId].contains(spoke), SpokeAlreadyListed());
 
     _assetToSpokes[assetId].add(spoke);
-    _spokes[assetId][spoke].active = config.active;
-    _spokes[assetId][spoke].addCap = config.addCap;
-    _spokes[assetId][spoke].drawCap = config.drawCap;
-
     emit SpokeAdded(assetId, spoke);
-    emit SpokeConfigUpdated(assetId, spoke, config);
+
+    _updateSpokeConfig(assetId, spoke, config);
   }
 
   function updateSpokeConfig(
@@ -142,10 +139,7 @@ contract Hub is IHub, AccessManaged {
     DataTypes.SpokeConfig calldata config
   ) external restricted {
     require(_assetToSpokes[assetId].contains(spoke), SpokeNotListed());
-    _spokes[assetId][spoke].active = config.active;
-    _spokes[assetId][spoke].addCap = config.addCap;
-    _spokes[assetId][spoke].drawCap = config.drawCap;
-    emit SpokeConfigUpdated(assetId, spoke, config);
+    _updateSpokeConfig(assetId, spoke, config);
   }
 
   /// @inheritdoc IHub
@@ -534,6 +528,17 @@ contract Hub is IHub, AccessManaged {
         liquidityFee: _assets[assetId].liquidityFee,
         irStrategy: _assets[assetId].irStrategy
       });
+  }
+
+  function _updateSpokeConfig(
+    uint256 assetId,
+    address spoke,
+    DataTypes.SpokeConfig calldata config
+  ) internal {
+    _spokes[assetId][spoke].active = config.active;
+    _spokes[assetId][spoke].addCap = config.addCap;
+    _spokes[assetId][spoke].drawCap = config.drawCap;
+    emit SpokeConfigUpdated(assetId, spoke, config);
   }
 
   /**

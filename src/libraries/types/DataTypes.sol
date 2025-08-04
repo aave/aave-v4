@@ -6,10 +6,13 @@ import {IHub} from 'src/interfaces/IHub.sol';
 library DataTypes {
   // Hub types
   struct SpokeData {
+    //
     uint128 addedShares;
     uint128 drawnShares;
+    //
     uint128 premiumShares;
     uint128 premiumOffset;
+    //
     uint128 realizedPremium;
     uint56 addCap;
     uint56 drawCap;
@@ -17,19 +20,27 @@ library DataTypes {
   }
 
   struct Asset {
+    //
     uint128 liquidity;
     uint128 deficit;
+    //
     uint128 addedShares;
-    uint128 drawnShares;
+    uint128 realizedPremium;
+    //
     uint128 premiumShares;
     uint128 premiumOffset;
+    //
     uint128 drawnIndex;
-    uint128 realizedPremium;
-    address underlying;
+    uint128 drawnShares;
+    //
+    uint128 drawnRate;
     uint40 lastUpdateTimestamp;
     uint8 decimals;
-    uint128 drawnRate;
+    //
+    address underlying;
+    //
     address irStrategy;
+    //
     address feeReceiver;
     uint16 liquidityFee;
   }

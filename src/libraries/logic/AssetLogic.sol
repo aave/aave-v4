@@ -101,16 +101,16 @@ library AssetLogic {
   }
 
   function updateDrawnRate(DataTypes.Asset storage asset, uint256 assetId) internal {
-    uint256 newBorrowRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
+    uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
       assetId: assetId,
       liquidity: asset.liquidity,
       drawn: asset.drawn(),
       premium: asset.premium()
     });
-    asset.drawnRate = newBorrowRate.toUint128();
+    asset.drawnRate = newDrawnRate.toUint128();
 
     // asset accrual should have already occurred
-    emit IHub.AssetUpdated(assetId, asset.drawnIndex, newBorrowRate, asset.lastUpdateTimestamp);
+    emit IHub.AssetUpdated(assetId, asset.drawnIndex, newDrawnRate, asset.lastUpdateTimestamp);
   }
 
   /**
