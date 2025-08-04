@@ -7,7 +7,6 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
-// libraries
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -86,12 +85,12 @@ contract Hub is IHub, AccessManaged {
       liquidityFee: 0
     });
 
-    emit AssetAdded(assetId, underlying, decimals);
-    emit AssetConfigUpdated(
+    emit AddAsset(assetId, underlying, decimals);
+    emit UpdateAssetConfig(
       assetId,
       DataTypes.AssetConfig({feeReceiver: feeReceiver, liquidityFee: 0, irStrategy: irStrategy})
     );
-    emit AssetUpdated(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
+    emit UpdateAsset(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
 
     return assetId;
   }
@@ -115,7 +114,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    emit AssetConfigUpdated(assetId, config);
+    emit UpdateAssetConfig(assetId, config);
   }
 
   function addSpoke(
@@ -128,7 +127,7 @@ contract Hub is IHub, AccessManaged {
     require(!_assetToSpokes[assetId].contains(spoke), SpokeAlreadyListed());
 
     _assetToSpokes[assetId].add(spoke);
-    emit SpokeAdded(assetId, spoke);
+    emit AddSpoke(assetId, spoke);
 
     _updateSpokeConfig(assetId, spoke, config);
   }
@@ -270,7 +269,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    emit DeficitReported(assetId, msg.sender, drawnShares, premiumDelta, totalDeficitAmount);
+    emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, totalDeficitAmount);
 
     return drawnShares;
   }

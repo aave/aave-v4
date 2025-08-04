@@ -12,15 +12,15 @@ import {IHubBase} from 'src/interfaces/IHubBase.sol';
  * @notice Full interface for Hub
  */
 interface IHub is IHubBase, IAccessManaged {
-  event SpokeAdded(uint256 indexed assetId, address indexed spoke);
-  event AssetAdded(uint256 indexed assetId, address indexed underlying, uint8 decimals);
-  event AssetConfigUpdated(uint256 indexed assetId, DataTypes.AssetConfig config);
+  event AddSpoke(uint256 indexed assetId, address indexed spoke);
+  event AddAsset(uint256 indexed assetId, address indexed underlying, uint8 decimals);
+  event UpdateAssetConfig(uint256 indexed assetId, DataTypes.AssetConfig config);
   event SpokeConfigUpdated(
     uint256 indexed assetId,
     address indexed spoke,
     DataTypes.SpokeConfig config
   );
-  event AssetUpdated(
+  event UpdateAsset(
     uint256 indexed assetId,
     uint256 drawnIndex,
     uint256 drawnRate,
@@ -31,7 +31,7 @@ interface IHub is IHubBase, IAccessManaged {
     address indexed spoke,
     DataTypes.PremiumDelta premiumDelta
   );
-  event DeficitReported(
+  event ReportDeficit(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 drawnShares,

@@ -128,7 +128,7 @@ contract HubReportDeficitTest is HubBase {
     });
 
     vm.expectEmit(address(hub1));
-    emit IHub.DeficitReported(
+    emit IHub.ReportDeficit(
       usdxAssetId,
       address(spoke1),
       hub1.convertToDrawnShares(usdxAssetId, baseAmount),
