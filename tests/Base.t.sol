@@ -1741,6 +1741,7 @@ abstract contract Base is Test {
     return drawn;
   }
 
+  /// @dev Helper function to calculate burnt interest in assets terms (originated from virtual shares and assets)
   function _calculateBurntInterest(
     IHub hub,
     uint256 assetId

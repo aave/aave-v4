@@ -6,6 +6,8 @@ import 'tests/unit/Hub/HubBase.t.sol';
 import {Utils} from 'tests/Utils.sol';
 
 contract HubRoundingTest is HubBase {
+  using Math for uint256;
+
   /// @dev Added share price is not significantly affected by multiple donations
   function test_sharePriceWithMultipleDonations() public {
     // add and draw 1 dai and wait 12 seconds to start accruing interest
@@ -20,6 +22,10 @@ contract HubRoundingTest is HubBase {
       drawAmount: 1,
       skipTime: 12
     });
+
+    uint256 initialSharePrice = getAddExRate(daiAssetId);
+    assertGt(initialSharePrice, 1e30);
+    assertLt(initialSharePrice, 1.000001e30);
 
     for (uint256 i = 0; i < 1e4; ++i) {
       Utils.supply({
@@ -38,11 +44,7 @@ contract HubRoundingTest is HubBase {
         onBehalfOf: alice
       });
 
-      assertApproxEqAbs(_sharePrice(daiAssetId), 1e18, 0.011e18);
+      assertLt(getAddExRate(daiAssetId), initialSharePrice + initialSharePrice.mulDiv(i + 1, SharesMath.VIRTUAL_ASSETS, Math.Rounding.Ceil));
     }
-  }
-
-  function _sharePrice(uint256 assetId) public view returns (uint256) {
-    return hub1.convertToAddedAssets(assetId, 1e18);
   }
 }
