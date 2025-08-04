@@ -88,7 +88,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralRisk: config.collateralRisk + 1
     });
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateReserveConfig(daiReserveId, newReserveConfig);
+    emit ISpoke.ReserveConfigUpdate(daiReserveId, newReserveConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
 
@@ -105,7 +105,7 @@ contract SpokeConfigTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateReserveConfig(daiReserveId, newReserveConfig);
+    emit ISpoke.ReserveConfigUpdate(daiReserveId, newReserveConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
 
@@ -150,7 +150,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.AddReserve(reserveId, wethAssetId, address(hub1));
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateReserveConfig(reserveId, newReserveConfig);
+    emit ISpoke.ReserveConfigUpdate(reserveId, newReserveConfig);
     vm.expectEmit(address(spoke1));
     emit ISpoke.AddDynamicReserveConfig({
       reserveId: reserveId,

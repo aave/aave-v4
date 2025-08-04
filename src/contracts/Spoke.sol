@@ -115,7 +115,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
 
     emit AddReserve(reserveId, assetId, hub);
-    emit UpdateReserveConfig(reserveId, config);
+    emit ReserveConfigUpdate(reserveId, config);
     emit AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
 
     return reserveId;
@@ -130,7 +130,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     _validateReserveConfig(config);
     reserve.config = config;
-    emit UpdateReserveConfig(reserveId, config);
+    emit ReserveConfigUpdate(reserveId, config);
   }
 
   /// @inheritdoc ISpoke

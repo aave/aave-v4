@@ -14,7 +14,7 @@ import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
  */
 interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event AddReserve(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
-  event UpdateReserveConfig(uint256 indexed reserveId, DataTypes.ReserveConfig config);
+  event ReserveConfigUpdate(uint256 indexed reserveId, DataTypes.ReserveConfig config);
 
   /**
    * @notice Emitted when a dynamic reserve config is added.

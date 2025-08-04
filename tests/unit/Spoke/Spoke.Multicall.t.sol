@@ -172,9 +172,9 @@ contract SpokeMulticall is SpokeBase {
     calls[1] = abi.encodeCall(ISpoke.updateReserveConfig, (usdxReserveId, newUsdx.config));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateReserveConfig(daiReserveId, newDai.config);
+    emit ISpoke.ReserveConfigUpdate(daiReserveId, newDai.config);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateReserveConfig(usdxReserveId, newUsdx.config);
+    emit ISpoke.ReserveConfigUpdate(usdxReserveId, newUsdx.config);
 
     // Execute the multicall
     vm.prank(SPOKE_ADMIN);

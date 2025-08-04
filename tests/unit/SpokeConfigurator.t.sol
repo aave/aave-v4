@@ -186,7 +186,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.AddReserve(expectedReserveId, daiAssetId, address(hub1));
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateReserveConfig(expectedReserveId, config);
+    emit ISpoke.ReserveConfigUpdate(expectedReserveId, config);
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(expectedReserveId, 0, dynamicConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
@@ -219,7 +219,7 @@ contract SpokeConfiguratorTest is SpokeBase {
         abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
       );
       vm.expectEmit(address(spoke));
-      emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
+      emit ISpoke.ReserveConfigUpdate(reserveId, expectedReserveConfig);
       vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updatePaused(spokeAddr, reserveId, expectedReserveConfig.paused);
 
@@ -244,7 +244,7 @@ contract SpokeConfiguratorTest is SpokeBase {
         abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
       );
       vm.expectEmit(address(spoke));
-      emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
+      emit ISpoke.ReserveConfigUpdate(reserveId, expectedReserveConfig);
       vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updateFrozen(spokeAddr, reserveId, expectedReserveConfig.frozen);
 
@@ -269,7 +269,7 @@ contract SpokeConfiguratorTest is SpokeBase {
         abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
       );
       vm.expectEmit(address(spoke));
-      emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
+      emit ISpoke.ReserveConfigUpdate(reserveId, expectedReserveConfig);
       vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updateBorrowable(spokeAddr, reserveId, expectedReserveConfig.borrowable);
 
@@ -294,7 +294,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
+    emit ISpoke.ReserveConfigUpdate(reserveId, expectedReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateCollateralRisk(spokeAddr, reserveId, newCollateralRisk);
 
@@ -411,7 +411,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, newReserveConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateReserveConfig(reserveId, newReserveConfig);
+    emit ISpoke.ReserveConfigUpdate(reserveId, newReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateReserveConfig(spokeAddr, reserveId, newReserveConfig);
 
@@ -521,7 +521,7 @@ contract SpokeConfiguratorTest is SpokeBase {
         abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig))
       );
       vm.expectEmit(address(spoke));
-      emit ISpoke.UpdateReserveConfig(reserveId, reserveConfig);
+      emit ISpoke.ReserveConfigUpdate(reserveId, reserveConfig);
     }
 
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
@@ -544,7 +544,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       reserveConfig.frozen = true;
       vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateReserveConfig, (id, reserveConfig)));
       vm.expectEmit(address(spoke));
-      emit ISpoke.UpdateReserveConfig(id, reserveConfig);
+      emit ISpoke.ReserveConfigUpdate(id, reserveConfig);
     }
 
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
