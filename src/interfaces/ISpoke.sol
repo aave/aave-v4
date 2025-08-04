@@ -37,7 +37,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param configKey The key of the updated dynamic config.
    * @param config The dynamic reserve config.
    */
-  event DynamicReserveConfigUpdate(
+  event UpdateDynamicReserveConfig(
     uint256 indexed reserveId,
     uint16 indexed configKey,
     DataTypes.DynamicReserveConfig config

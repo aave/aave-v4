@@ -161,7 +161,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(_dynamicConfig[reserveId][configKey].liquidationBonus != 0, ConfigKeyUninitialized());
     _validateDynamicReserveConfig(dynamicConfig);
     _dynamicConfig[reserveId][configKey] = dynamicConfig;
-    emit DynamicReserveConfigUpdate(reserveId, configKey, dynamicConfig);
+    emit UpdateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
   }
 
   /// @inheritdoc ISpoke

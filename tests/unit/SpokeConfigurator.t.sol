@@ -494,7 +494,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke));
-    emit ISpoke.DynamicReserveConfigUpdate(reserveId, configKeyToUpdate, newDynamicReserveConfig);
+    emit ISpoke.UpdateDynamicReserveConfig(reserveId, configKeyToUpdate, newDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateDynamicReserveConfig(
       spokeAddr,
