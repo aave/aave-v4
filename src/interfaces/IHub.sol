@@ -42,16 +42,16 @@ interface IHub is IHubBase, IAccessManaged {
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
 
   /**
-   * @notice Emitted when some deficit is eliminated.
+   * @notice Emitted when deficit is eliminated.
    * @param assetId The identifier of the asset.
    * @param spoke The spoke that eliminated the deficit, and had supplied shares removed.
-   * @param removedShares The amount of shares removed.
+   * @param shares The amount of shares removed.
    * @param amount The amount of deficit eliminated.
    */
   event EliminateDeficit(
     uint256 indexed assetId,
     address indexed spoke,
-    uint256 removedShares,
+    uint256 shares,
     uint256 amount
   );
 
