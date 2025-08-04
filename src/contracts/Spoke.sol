@@ -99,7 +99,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint16 dynamicConfigKey; // 0 as first key to use
 
     require(assetId < IHub(hub).getAssetCount(), AssetNotListed());
-    IHub.Asset memory asset = IHub(hub).getAsset(assetId);
+    DataTypes.Asset memory asset = IHub(hub).getAsset(assetId);
 
     _updateReservePriceSource(reserveId, priceSource);
 

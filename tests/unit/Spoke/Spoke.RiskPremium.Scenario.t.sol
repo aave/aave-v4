@@ -1167,7 +1167,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Verify spoke debts on hub for dai
-    IHub.Spoke memory spoke = hub1.getSpoke(daiAssetId, address(spoke1));
+    DataTypes.SpokeData memory spoke = hub1.getSpoke(daiAssetId, address(spoke1));
     assertApproxEqAbs(
       spoke.drawnShares,
       hub1.convertToDrawnShares(daiAssetId, bobDaiInfo.drawnDebt + aliceDaiInfo.drawnDebt),
@@ -1195,7 +1195,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Verify asset debts on hub
-    IHub.Asset memory asset = hub1.getAsset(daiAssetId);
+    DataTypes.Asset memory asset = hub1.getAsset(daiAssetId);
     assertApproxEqAbs(
       asset.drawnShares,
       hub1.convertToDrawnShares(daiAssetId, bobDaiInfo.drawnDebt + aliceDaiInfo.drawnDebt),

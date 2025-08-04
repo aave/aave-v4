@@ -5,15 +5,45 @@ import {IHub} from 'src/interfaces/IHub.sol';
 
 library DataTypes {
   // Hub types
-  struct AssetConfig {
+  struct SpokeData {
+    uint128 addedShares;
+    uint128 drawnShares;
+    uint128 premiumShares;
+    uint128 premiumOffset;
+    uint128 realizedPremium;
+    uint64 addCap;
+    uint64 drawCap;
+    bool active;
+  }
+
+  struct Asset {
+    uint128 liquidity;
+    uint128 deficit;
+    uint128 addedShares;
+    uint128 drawnShares;
+    uint128 premiumShares;
+    uint128 premiumOffset;
+    uint128 drawnIndex;
+    uint128 realizedPremium;
+    address underlying;
+    uint40 lastUpdateTimestamp;
+    uint8 decimals;
+    uint128 drawnRate;
+    address irStrategy;
     address feeReceiver;
     uint16 liquidityFee;
-    address irStrategy;
   }
+
   struct SpokeConfig {
     bool active;
     uint64 addCap;
     uint64 drawCap;
+  }
+
+  struct AssetConfig {
+    address feeReceiver;
+    uint16 liquidityFee;
+    address irStrategy;
   }
 
   // Spoke types

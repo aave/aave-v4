@@ -17,7 +17,7 @@ contract HubDrawTest is HubBase {
 
     uint256 shares = hub1.previewDrawByAssets(assetId, amount);
 
-    IHub.Asset memory assetBefore = hub1.getAsset(assetId);
+    DataTypes.Asset memory assetBefore = hub1.getAsset(assetId);
     (, uint256 premium) = hub1.getAssetOwed(assetId);
     vm.expectCall(
       address(irStrategy),
@@ -97,7 +97,7 @@ contract HubDrawTest is HubBase {
 
     uint256 shares = hub1.previewDrawByAssets(assetId, amount);
 
-    IHub.Asset memory assetBefore = hub1.getAsset(assetId);
+    DataTypes.Asset memory assetBefore = hub1.getAsset(assetId);
     (, uint256 premium) = hub1.getAssetOwed(assetId);
     vm.expectCall(
       address(irStrategy),

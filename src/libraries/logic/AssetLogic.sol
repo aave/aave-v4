@@ -11,7 +11,7 @@ import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
 library AssetLogic {
-  using AssetLogic for IHub.Asset;
+  using AssetLogic for DataTypes.Asset;
   using PercentageMath for uint256;
   using SharesMath for uint256;
   using WadRayMath for *;
@@ -23,84 +23,84 @@ library AssetLogic {
 
   // drawn exchange rate does not include premium to accrue base rate separately
   function toDrawnAssetsUp(
-    IHub.Asset storage asset,
+    DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
     return shares.rayMulUp(asset.getDrawnIndex());
   }
 
   function toDrawnAssetsDown(
-    IHub.Asset storage asset,
+    DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
     return shares.rayMulDown(asset.getDrawnIndex());
   }
 
   function toDrawnSharesUp(
-    IHub.Asset storage asset,
+    DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
     return assets.rayDivUp(asset.getDrawnIndex());
   }
 
   function toDrawnSharesDown(
-    IHub.Asset storage asset,
+    DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
     return assets.rayDivDown(asset.getDrawnIndex());
   }
 
-  function drawn(IHub.Asset storage asset) internal view returns (uint256) {
+  function drawn(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.drawnShares.rayMulUp(asset.getDrawnIndex());
   }
 
-  function premium(IHub.Asset storage asset) internal view returns (uint256) {
+  function premium(DataTypes.Asset storage asset) internal view returns (uint256) {
     // sanity: utilize solc underflow check
     uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumShares) - asset.premiumOffset;
     return asset.realizedPremium + accruedPremium;
   }
 
-  function totalOwed(IHub.Asset storage asset) internal view returns (uint256) {
+  function totalOwed(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.drawn() + asset.premium();
   }
 
-  function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
+  function totalAddedAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.liquidity + asset.deficit + asset.totalOwed();
   }
 
-  function totalAddedShares(IHub.Asset storage asset) internal view returns (uint256) {
+  function totalAddedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.addedShares + asset.getFeeShares(asset.getDrawnIndex(), asset.drawnIndex);
   }
 
   function toAddedAssetsUp(
-    IHub.Asset storage asset,
+    DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
     return shares.toAssetsUp(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
   function toAddedAssetsDown(
-    IHub.Asset storage asset,
+    DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
     return shares.toAssetsDown(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
   function toAddedSharesUp(
-    IHub.Asset storage asset,
+    DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
     return assets.toSharesUp(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
   function toAddedSharesDown(
-    IHub.Asset storage asset,
+    DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
     return assets.toSharesDown(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
-  function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
+  function updateDrawnRate(DataTypes.Asset storage asset, uint256 assetId) internal {
     uint256 newBorrowRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
       assetId: assetId,
       liquidity: asset.liquidity,
@@ -119,9 +119,9 @@ library AssetLogic {
    * @param feeReceiver The data struct of the fee receiver spoke associated with the asset
    */
   function accrue(
-    IHub.Asset storage asset,
+    DataTypes.Asset storage asset,
     uint256 assetId,
-    IHub.Spoke storage feeReceiver
+    DataTypes.SpokeData storage feeReceiver
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
     uint128 feeShares = asset.getFeeShares(drawnIndex, asset.drawnIndex).toUint128();
@@ -142,7 +142,7 @@ library AssetLogic {
    * @param asset The data struct of the asset whose index is increasing.
    * @return The resulting drawn index.
    */
-  function getDrawnIndex(IHub.Asset storage asset) internal view returns (uint256) {
+  function getDrawnIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
     uint256 previousIndex = asset.drawnIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
     if (lastUpdateTimestamp == block.timestamp || asset.drawnShares == 0) {
@@ -162,7 +162,7 @@ library AssetLogic {
    * @return The amount of shares corresponding to the fees.
    */
   function getFeeShares(
-    IHub.Asset storage asset,
+    DataTypes.Asset storage asset,
     uint256 nextDrawnIndex,
     uint256 currentDrawnIndex
   ) internal view returns (uint256) {
@@ -187,7 +187,7 @@ library AssetLogic {
    * @param asset The data struct of the asset with accruing interest
    * @return The amount of shares corresponding to the fees
    */
-  function unrealizedFeeShares(IHub.Asset storage asset) internal view returns (uint256) {
+  function unrealizedFeeShares(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.getFeeShares(asset.getDrawnIndex(), asset.drawnIndex);
   }
 }

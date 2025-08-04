@@ -12,35 +12,6 @@ import {IHubBase} from 'src/interfaces/IHubBase.sol';
  * @notice Full interface for Hub
  */
 interface IHub is IHubBase, IAccessManaged {
-  struct Asset {
-    uint128 liquidity;
-    uint128 deficit;
-    uint128 addedShares;
-    uint128 drawnShares;
-    uint128 premiumShares;
-    uint128 premiumOffset;
-    uint128 drawnIndex;
-    uint128 realizedPremium;
-    address underlying;
-    uint40 lastUpdateTimestamp;
-    uint8 decimals;
-    uint128 drawnRate;
-    address irStrategy;
-    address feeReceiver;
-    uint16 liquidityFee;
-  }
-
-  struct Spoke {
-    uint128 addedShares;
-    uint128 drawnShares;
-    uint128 premiumShares;
-    uint128 premiumOffset;
-    uint128 realizedPremium;
-    uint64 addCap;
-    uint64 drawCap;
-    bool active;
-  }
-
   event SpokeAdded(uint256 indexed assetId, address indexed spoke);
   event AssetAdded(uint256 indexed assetId, address indexed underlying, uint8 decimals);
   event AssetConfigUpdated(uint256 indexed assetId, DataTypes.AssetConfig config);
@@ -326,7 +297,7 @@ interface IHub is IHubBase, IAccessManaged {
    */
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
 
-  function getAsset(uint256 assetId) external view returns (Asset memory);
+  function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
 
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
 
@@ -352,7 +323,10 @@ interface IHub is IHubBase, IAccessManaged {
 
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
 
-  function getSpoke(uint256 assetId, address spoke) external view returns (Spoke memory);
+  function getSpoke(
+    uint256 assetId,
+    address spoke
+  ) external view returns (DataTypes.SpokeData memory);
 
   function getSpokeConfig(
     uint256 assetId,
