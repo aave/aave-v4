@@ -5,7 +5,6 @@ import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubConfiguratorTest is HubBase {
   HubConfigurator public hubConfigurator;
-  using SafeCast for uint256;
 
   address public HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
   uint256 public assetId;
@@ -173,7 +172,7 @@ contract HubConfiguratorTest is HubBase {
 
   function test_updateLiquidityFee() public {
     DataTypes.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
-    expectedConfig.liquidityFee = (PercentageMath.PERCENTAGE_FACTOR - 1).toUint16();
+    expectedConfig.liquidityFee = uint16(PercentageMath.PERCENTAGE_FACTOR - 1);
 
     vm.expectCall(address(hub1), abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig)));
 
@@ -282,7 +281,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateFeeConfig_fuzz(uint16 liquidityFee, address feeReceiver) public {
-    liquidityFee = bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+    liquidityFee = uint16(bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR));
     assumeNotZeroAddress(feeReceiver);
 
     DataTypes.AssetConfig memory oldConfig = hub1.getAssetConfig(assetId);
