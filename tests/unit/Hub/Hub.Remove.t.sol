@@ -159,7 +159,7 @@ contract HubRemoveTest is HubBase {
     );
     assertEq(
       assetData.liquidity,
-      hub1.getSpokeAddedAmount(assetId, feeReceiver),
+      hub1.getSpokeAddedAmount(assetId, feeReceiver) + _calculateBurntInterest(hub1, assetId),
       'asset liquidity after'
     );
     assertEq(
@@ -269,7 +269,6 @@ contract HubRemoveTest is HubBase {
     uint256 skipTime
   ) public {
     uint256 daiAmount = 100e18;
-    uint256 wethAmount = 10e18;
 
     drawAmount = bound(drawAmount, 1, daiAmount); // within added dai amount
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -346,7 +345,7 @@ contract HubRemoveTest is HubBase {
     // hub
     assertApproxEqAbs(asset.addedAmount, feeAmount, 1, 'hub addedAmount');
     assertEq(asset.addedShares, feeShares, 'hub addedShares');
-    assertApproxEqAbs(asset.liquidity, feeAmount, 1, 'dai liquidity');
+    assertApproxEqAbs(asset.liquidity, feeAmount + _calculateBurntInterest(hub1, daiAssetId), 1, 'dai liquidity');
     assertEq(asset.drawn, 0, 'dai drawn');
     assertEq(asset.premium, 0, 'dai premium');
     assertEq(asset.lastUpdateTimestamp, vm.getBlockTimestamp(), 'dai lastUpdateTimestamp');

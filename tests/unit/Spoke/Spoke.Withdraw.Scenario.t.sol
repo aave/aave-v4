@@ -283,7 +283,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // token
     assertEq(tokenData[state.stage].spokeBalance, 0, 'tokenData spoke balance');
-    assertEq(tokenData[state.stage].hubBalance, 0, 'tokenData hub balance');
+    assertEq(tokenData[state.stage].hubBalance, _calculateBurntInterest(hub1, state.assetId), 'tokenData hub balance');
     assertEq(
       state.underlying.balanceOf(alice),
       MAX_SUPPLY_AMOUNT - params.aliceAmount + aliceData[0].suppliedAmount,

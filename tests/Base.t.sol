@@ -47,6 +47,7 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
+import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 
@@ -1493,7 +1494,7 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       spoke.getUserSuppliedAmount(reserveId, user),
       expectedSuppliedAmount,
-      2,
+      3,
       string.concat('user supplied amount ', label)
     );
   }
@@ -1742,6 +1743,13 @@ abstract contract Base is Test {
   function getAssetDrawnDebt(uint256 assetId) internal view returns (uint256) {
     (uint256 drawn, ) = hub1.getAssetOwed(assetId);
     return drawn;
+  }
+
+  function _calculateBurntInterest(
+    IHub hub,
+    uint256 assetId
+  ) internal view returns (uint256) {
+    return hub.getTotalAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getTotalAddedShares(assetId));
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke

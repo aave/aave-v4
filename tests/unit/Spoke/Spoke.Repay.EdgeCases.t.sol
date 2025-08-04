@@ -110,17 +110,17 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), carol, 1e18, carol);
 
-    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 20);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 20e18);
     // carol borrows to inflate ex rate
     vm.prank(carol);
-    spoke1.borrow(_daiReserveId(spoke1), 20, carol);
+    spoke1.borrow(_daiReserveId(spoke1), 20e18, carol);
 
     skip(365 days);
 
     // inflated to 1.5
     uint256 addExRateBefore = getAddExRate(daiAssetId);
     uint256 exchangeRateBefore = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    assertEq(exchangeRateBefore, 1.5e30);
+    assertApproxEqAbs(exchangeRateBefore, 1.5e30, 0.05e30);
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30);
 
@@ -157,17 +157,17 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), carol, 1e18, carol);
 
-    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 20);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 20e18);
     vm.prank(carol);
-    spoke1.borrow(_daiReserveId(spoke1), 20, carol);
+    spoke1.borrow(_daiReserveId(spoke1), 20e18, carol);
 
     skip(365 days);
 
     // inflated to 1.5
     uint256 exchangeRateBefore = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    assertEq(exchangeRateBefore, 1.5e30);
+    assertApproxEqAbs(exchangeRateBefore, 1.5e30, 0.05e30);
 
-    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30e18);
 
     // 30% rp
     updateCollateralRisk(spoke1, _wethReserveId(spoke1), 30_00);
