@@ -104,6 +104,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     _mockInterestRateBps(50_00);
     updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
     updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
+    updateLiquidityFee(hub1, daiAssetId, 0);
 
     // enough coll
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
@@ -120,7 +121,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // inflated to 1.5
     uint256 addExRateBefore = getAddExRate(daiAssetId);
     uint256 exchangeRateBefore = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    assertApproxEqAbs(exchangeRateBefore, 1.5e30, 0.05e30);
+    assertApproxEqAbs(exchangeRateBefore, 1.5e30, 0.0000001e30);
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30);
 
@@ -151,6 +152,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     _mockInterestRateBps(50_00);
     updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
     updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
+    updateLiquidityFee(hub1, daiAssetId, 0);
 
     // enough coll
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
@@ -165,7 +167,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // inflated to 1.5
     uint256 exchangeRateBefore = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    assertApproxEqAbs(exchangeRateBefore, 1.5e30, 0.05e30);
+    assertApproxEqAbs(exchangeRateBefore, 1.5e30, 0.0000001e30);
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30e18);
 
