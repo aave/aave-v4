@@ -52,10 +52,11 @@ contract Hub is IHub, AccessManaged {
     address irStrategy,
     bytes calldata data
   ) external restricted returns (uint256) {
-    require(underlying != address(0), InvalidUnderlying());
+    require(
+      underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
+      InvalidZeroAddress()
+    );
     require(decimals <= Constants.MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
-    require(feeReceiver != address(0), InvalidFeeReceiver());
-    require(irStrategy != address(0), InvalidIrStrategy());
 
     uint256 assetId = _assetCount++;
     IAssetInterestRateStrategy(irStrategy).setInterestRateData(assetId, data);
@@ -103,8 +104,10 @@ contract Hub is IHub, AccessManaged {
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     require(config.liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
-    require(config.feeReceiver != address(0), InvalidFeeReceiver());
-    require(config.irStrategy != address(0), InvalidIrStrategy());
+    require(
+      config.feeReceiver != address(0) && config.irStrategy != address(0),
+      InvalidZeroAddress()
+    );
 
     DataTypes.Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
