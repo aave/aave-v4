@@ -36,7 +36,7 @@ contract SpokeUpdateUserRiskPremium is SpokeBase {
       );
     } else {
       vm.expectEmit(address(spoke1));
-      emit ISpoke.UserRiskPremiumUpdate(alice, riskPremiumAfter);
+      emit ISpoke.UpdateUserRiskPremium(alice, riskPremiumAfter);
     }
     vm.prank(caller);
     spoke1.updateUserRiskPremium(alice);

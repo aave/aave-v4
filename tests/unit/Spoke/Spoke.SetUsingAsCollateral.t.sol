@@ -84,8 +84,8 @@ contract SpokeConfigTest is SpokeBase {
     Utils.setUsingAsCollateral(spoke1, daiReserveId, bob, true, bob);
     _assertEventsNotEmitted(
       ISpoke.UsingAsCollateral.selector,
-      ISpoke.UserDynamicConfigRefreshedSingle.selector,
-      ISpoke.UserDynamicConfigRefreshedAll.selector
+      ISpoke.RefreshUserDynamicConfigSingle.selector,
+      ISpoke.RefreshUserDynamicConfigAll.selector
     );
 
     assertTrue(spoke1.isUsingAsCollateral(daiReserveId, bob));
