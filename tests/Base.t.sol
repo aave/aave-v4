@@ -1225,17 +1225,13 @@ abstract contract Base is Test {
     return hub.getAsset(assetId).drawnRate;
   }
 
-  /// TODO: Once inflation protection implemented, can remove boolean param since rate should always monotonically increase
   /// @dev Helper function to ensure supply exchange rate is monotonically increasing
   function _checkSupplyRateIncreasing(
     uint256 oldRate,
     uint256 newRate,
-    bool allWithdrawn,
     string memory label
   ) internal pure {
-    if (!allWithdrawn) {
-      assertGe(newRate, oldRate, string.concat('supply rate monotonically increasing ', label));
-    }
+    assertGe(newRate, oldRate, string.concat('supply rate monotonically increasing ', label));
   }
 
   function _checkDebtRateConstant(

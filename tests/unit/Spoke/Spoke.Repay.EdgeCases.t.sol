@@ -55,7 +55,6 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     _checkSupplyRateIncreasing(
       addExRateBefore,
       getAddExRate(daiAssetId),
-      false,
       'after partial premium debt repay'
     );
     _checkDebtRateConstant(
@@ -76,7 +75,6 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     _checkSupplyRateIncreasing(
       addExRateBefore,
       getAddExRate(daiAssetId),
-      false,
       'after partial drawn debt repay'
     );
     _checkDebtRateConstant(
@@ -93,7 +91,6 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     _checkSupplyRateIncreasing(
       addExRateBefore,
       getAddExRate(daiAssetId),
-      false,
       'after partial full debt repay'
     );
     _checkDebtRateConstant(debtExRateBefore, getDebtExRate(daiAssetId), 'after full debt repay');
@@ -133,7 +130,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.prank(bob);
     spoke1.borrow(_daiReserveId(spoke1), 15, bob);
 
-    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), false, 'after borrows');
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after borrows');
     addExRateBefore = getAddExRate(daiAssetId);
 
     // alice repays full
@@ -142,7 +139,6 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     _checkSupplyRateIncreasing(
       addExRateBefore,
       getAddExRate(daiAssetId),
-      false,
       'after alice full repay'
     );
   }

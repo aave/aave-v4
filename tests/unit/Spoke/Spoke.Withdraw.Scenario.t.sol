@@ -111,7 +111,6 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSupplyRateIncreasing(
       addExRateBefore,
       getAddExRate(daiAssetId),
-      false,
       'after partial withdraw'
     );
 
@@ -127,7 +126,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
     // Check supply rate monotonically increasing after withdraw
-    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), true, 'after withdraw');
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after withdraw');
   }
 
   // multiple users, same asset
@@ -222,7 +221,6 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSupplyRateIncreasing(
       addExRate,
       getAddExRate(state.assetId),
-      false,
       'after alice withdraw'
     );
 
@@ -250,7 +248,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), true, 'after bob withdraw');
+    _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), 'after bob withdraw');
 
     // treasury spoke withdraw fees
     withdrawLiquidityFees(state.assetId, type(uint256).max);
