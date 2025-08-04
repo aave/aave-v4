@@ -31,14 +31,20 @@ contract HubConfigTest is HubBase {
     Utils.addSpoke(hub1, ADMIN, assetId, address(spoke1), spokeConfig);
   }
 
-  function test_addSpoke_fuzz_revertsWith_InvalidSpoke(
+  function test_addSpoke_fuzz_revertsWith_InvalidZeroAddress_spoke(
     uint256 assetId,
     DataTypes.SpokeConfig calldata spokeConfig
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.InvalidSpoke.selector));
-    Utils.addSpoke(hub1, ADMIN, assetId, address(0), spokeConfig);
+    vm.expectRevert(abi.encodeWithSelector(IHub.InvalidZeroAddress.selector));
+    Utils.addSpoke({
+      hub: hub1,
+      hubAdmin: ADMIN,
+      assetId: assetId,
+      spoke: address(0),
+      spokeConfig: spokeConfig
+    });
   }
 
   function test_addSpoke_revertsWith_SpokeAlreadyListed() public {

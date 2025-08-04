@@ -69,7 +69,6 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidDrawAmount();
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);
-  error InvalidSpoke();
   error SpokeNotListed();
   error SpokeAlreadyListed();
   error InvalidAssetDecimals();
