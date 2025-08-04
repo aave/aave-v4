@@ -1250,7 +1250,7 @@ abstract contract Base is Test {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
       (amount * oracle.getReservePrice(reserveId).toWad()) /
-      (10 ** hub1.getAsset(assetId).decimals);
+      (10 ** spoke.getReserve(reserveId).hub.getAsset(assetId).decimals);
   }
 
   /// @notice Convert 1 asset amount to equivalent amount in another asset.
