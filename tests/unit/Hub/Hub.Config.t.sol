@@ -185,6 +185,20 @@ contract HubConfigTest is HubBase {
     );
   }
 
+  function test_addAsset_revertsWith_DrawnRateDowncastOverflow() public {
+    uint256 drawnRateRay = uint256(type(uint128).max) + 1;
+    _mockInterestRateRay(drawnRateRay);
+    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 128, drawnRateRay));
+    Utils.addAsset(hub1, ADMIN, address(tokenList.dai), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
+  }
+
+  function test_addAsset_revertsWith_BlockTimestampDowncastOverflow() public {
+    uint256 blockTimestamp = uint256(type(uint40).max) + 1;
+    vm.warp(blockTimestamp);
+    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 40, blockTimestamp));
+    Utils.addAsset(hub1, ADMIN, address(tokenList.dai), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
+  }
+
   function test_addAsset_fuzz(address underlying, uint8 decimals, address feeReceiver) public {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);

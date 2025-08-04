@@ -82,6 +82,36 @@ contract HubAddTest is HubBase {
     hub1.add(daiAssetId, 100e18, alice);
   }
 
+  function test_add_revertsWith_SharesDowncastOverflow() public {
+    uint256 shares = uint256(type(uint128).max) + 1;
+    uint256 amount = hub1.previewAddByShares(daiAssetId, shares);
+    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 128, shares));
+    vm.prank(address(spoke1));
+    hub1.add(daiAssetId, amount, alice);
+  }
+
+  function test_add_revertsWith_AmountDowncastOverflow() public {
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addSpoke: address(spoke2),
+      addAmount: 1,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: 1,
+      skipTime: 365 days
+    });
+
+    uint256 shares = uint256(type(uint128).max) - 2;
+    uint256 amount = hub1.previewAddByShares(daiAssetId, shares);
+    assertGt(amount, type(uint128).max);
+
+    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 128, amount));
+    vm.prank(address(spoke1));
+    hub1.add(daiAssetId, amount, alice);
+  }
+
   function test_add_fuzz_revertsWith_AddCapExceeded(uint64 newAddCap) public {
     newAddCap = uint64(bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
