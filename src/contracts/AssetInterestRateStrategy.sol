@@ -53,7 +53,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
 
     _interestRateData[assetId] = rateData;
 
-    emit UpdateRateData(
+    emit RateDataUpdate(
       assetId,
       rateData.optimalUsageRatio,
       rateData.baseVariableBorrowRate,

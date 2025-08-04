@@ -17,7 +17,7 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
    * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal  borrow usage ratio, in bps.
    * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal borrow usage ratio, in bps.
    */
-  event UpdateRateData(
+  event RateDataUpdate(
     uint256 indexed assetId,
     uint256 optimalUsageRatio,
     uint256 baseVariableBorrowRate,

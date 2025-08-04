@@ -140,7 +140,7 @@ contract AssetInterestRateStrategyTest is Base {
     encodedRateData = abi.encode(rateData);
 
     vm.expectEmit(address(rateStrategy));
-    emit IAssetInterestRateStrategy.UpdateRateData(
+    emit IAssetInterestRateStrategy.RateDataUpdate(
       mockAssetId,
       uint256(rateData.optimalUsageRatio),
       uint256(rateData.baseVariableBorrowRate),
