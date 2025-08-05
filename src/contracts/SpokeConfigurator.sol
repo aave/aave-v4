@@ -120,7 +120,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateCollateralFactor(
+  function addCollateralFactor(
     address spoke,
     uint256 reserveId,
     uint16 collateralFactor
@@ -133,7 +133,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateLiquidationBonus(
+  function addLiquidationBonus(
     address spoke,
     uint256 reserveId,
     uint256 liquidationBonus
@@ -146,7 +146,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateLiquidationFee(
+  function addLiquidationFee(
     address spoke,
     uint256 reserveId,
     uint256 liquidationFee

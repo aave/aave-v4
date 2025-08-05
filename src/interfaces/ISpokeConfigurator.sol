@@ -114,11 +114,7 @@ interface ISpokeConfigurator {
    * @param reserveId The identifier of the reserve.
    * @param collateralFactor The new collateral factor.
    */
-  function updateCollateralFactor(
-    address spoke,
-    uint256 reserveId,
-    uint16 collateralFactor
-  ) external;
+  function addCollateralFactor(address spoke, uint256 reserveId, uint16 collateralFactor) external;
 
   /**
    * @notice Updates the liquidation bonus of a reserve.
@@ -126,11 +122,7 @@ interface ISpokeConfigurator {
    * @param reserveId The identifier of the reserve.
    * @param liquidationBonus The new liquidation bonus.
    */
-  function updateLiquidationBonus(
-    address spoke,
-    uint256 reserveId,
-    uint256 liquidationBonus
-  ) external;
+  function addLiquidationBonus(address spoke, uint256 reserveId, uint256 liquidationBonus) external;
 
   /**
    * @notice Updates the liquidation fee of a reserve.
@@ -138,7 +130,7 @@ interface ISpokeConfigurator {
    * @param reserveId The identifier of the reserve.
    * @param liquidationFee The new liquidation fee.
    */
-  function updateLiquidationFee(address spoke, uint256 reserveId, uint256 liquidationFee) external;
+  function addLiquidationFee(address spoke, uint256 reserveId, uint256 liquidationFee) external;
 
   /**
    * @notice Updates the config of a reserve.
