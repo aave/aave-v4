@@ -76,7 +76,14 @@ contract HubConfiguratorTest is HubBase {
 
     vm.expectRevert(IHub.InvalidAssetDecimals.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    _addAsset(true, underlying, decimals, feeReceiver, interestRateStrategy, encodedIrData);
+    _addAsset(
+      fetchErc20Decimals,
+      underlying,
+      decimals,
+      feeReceiver,
+      interestRateStrategy,
+      encodedIrData
+    );
   }
 
   function test_addAsset_revertsWith_InvalidUnderlying() public {
