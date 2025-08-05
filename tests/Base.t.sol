@@ -76,9 +76,9 @@ abstract contract Base is Test {
   uint32 internal constant MIN_LIQUIDATION_BONUS = uint32(PercentageMath.PERCENTAGE_FACTOR); // 100% == 0% bonus
   uint32 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
   uint16 internal constant MAX_LIQUIDATION_BONUS_FACTOR = uint16(PercentageMath.PERCENTAGE_FACTOR); // 100%
-  uint256 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
-  uint256 internal constant MIN_CLOSE_FACTOR = 1e18;
-  uint256 internal constant MAX_CLOSE_FACTOR = 2e18;
+  uint128 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
+  uint128 internal constant MIN_CLOSE_FACTOR = 1e18;
+  uint128 internal constant MAX_CLOSE_FACTOR = 2e18;
   uint256 internal constant MAX_COLLATERAL_FACTOR = 100_00;
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8; // $100M per token
   uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =

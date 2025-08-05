@@ -73,7 +73,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateLiquidationCloseFactor() public {
-    uint128 newCloseFactor = uint128(Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2);
+    uint128 newCloseFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2;
 
     DataTypes.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
     expectedLiquidationConfig.closeFactor = newCloseFactor;
@@ -97,7 +97,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateHealthFactorForMaxBonus() public {
-    uint64 newHealthFactorForMaxBonus = uint64(Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2);
+    uint64 newHealthFactorForMaxBonus = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2;
 
     DataTypes.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
     expectedLiquidationConfig.healthFactorForMaxBonus = newHealthFactorForMaxBonus;

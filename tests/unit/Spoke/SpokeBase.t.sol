@@ -722,13 +722,13 @@ contract SpokeBase is Base {
     assertEq(a.reserveId, b.reserveId, 'reserve Id');
     assertEq(address(a.hub), address(b.hub), 'hub');
     assertEq(a.assetId, b.assetId, 'asset Id');
+    assertEq(a.decimals, b.decimals, 'decimals');
+    assertEq(a.underlying, b.underlying, 'underlying');
+    assertEq(a.dynamicConfigKey, b.dynamicConfigKey, 'dynamicConfigKey');
     assertEq(a.paused, b.paused, 'paused');
     assertEq(a.frozen, b.frozen, 'frozen');
     assertEq(a.borrowable, b.borrowable, 'borrowable');
     assertEq(a.collateralRisk, b.collateralRisk, 'collateralRisk');
-    assertEq(a.dynamicConfigKey, b.dynamicConfigKey, 'dynamicConfigKey');
-    assertEq(a.decimals, b.decimals, 'decimals');
-    assertEq(a.underlying, b.underlying, 'underlying');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 

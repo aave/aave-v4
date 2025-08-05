@@ -22,7 +22,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 skipTime,
     uint256 desiredHf
   ) public {
-    liqConfig.closeFactor = uint128(HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     test_liquidationCall_fuzz_closeFactor(
       collateralReserveId,
       debtReserveId,
