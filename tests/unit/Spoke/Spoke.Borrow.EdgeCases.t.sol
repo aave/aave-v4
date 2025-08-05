@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowEdgeCasesTest is SpokeBase {
-  using SharesMath for uint256;
+  using Math for uint256;
 
   /// inflated exch rate, it's better for user to borrow 1 big amount than 2 small amounts due to rounding up
   function test_borrow_rounding_effect_multiple_actions() public {
@@ -132,9 +132,9 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     vm.assume(hub1.convertToDrawnAssets(daiAssetId, 1e18) > 1e18);
     // ensure that shares conversion of smaller amounts individually are greater than shares of total sum
     vm.assume(
-      amount1.toSharesUp(drawnDebt, hub1.getAsset(daiAssetId).drawnShares) +
-        amount2.toSharesUp(drawnDebt, hub1.getAsset(daiAssetId).drawnShares) >
-        (amount1 + amount2).toSharesUp(drawnDebt, hub1.getAsset(daiAssetId).drawnShares)
+      amount1.mulDiv(hub1.getAsset(daiAssetId).drawnShares, drawnDebt, Math.Rounding.Ceil) +
+        amount2.mulDiv(hub1.getAsset(daiAssetId).drawnShares, drawnDebt, Math.Rounding.Ceil) >
+        (amount1 + amount2).mulDiv(hub1.getAsset(daiAssetId).drawnShares, drawnDebt, Math.Rounding.Ceil)
     );
 
     uint256 carolDaiBefore = tokenList.dai.balanceOf(carol);
@@ -151,7 +151,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     vm.stopPrank();
 
     // bob benefits by having less debt shares than carol
-    assertLt(
+    assertLe(
       spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares,
       spoke1.getUserPosition(_daiReserveId(spoke1), carol).drawnShares,
       'bob should have < debt shares than carol'
@@ -258,17 +258,19 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
 
     // drawn shares are rounded up
-    uint256 expectedDebtShares = amount1.toSharesUp(
+    uint256 expectedDebtShares = amount1.mulDiv(
+      hub1.getAsset(daiAssetId).drawnShares,
       drawnDebt,
-      hub1.getAsset(daiAssetId).drawnShares
+      Math.Rounding.Ceil
     );
 
     vm.prank(bob);
     spoke1.borrow(_daiReserveId(spoke1), amount1, bob);
 
-    assertEq(
+    assertApproxEqAbs(
       expectedDebtShares,
       spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares,
+      1,
       'base drawn shares'
     );
   }

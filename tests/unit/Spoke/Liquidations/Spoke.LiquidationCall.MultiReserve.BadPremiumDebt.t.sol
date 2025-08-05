@@ -11,7 +11,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 requiredDebtInBase;
     uint256 remaining;
   }
-  struct DeficitReportedEvent {
+  struct ReportDeficitEvent {
     uint256 assetId;
     address spoke;
     uint256 deficitShares;
@@ -374,7 +374,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
 
-    DeficitReportedEvent[] memory expectedLogs = new DeficitReportedEvent[](debtReserveIds.length);
+    ReportDeficitEvent[] memory expectedLogs = new ReportDeficitEvent[](debtReserveIds.length);
 
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       uint256 reserveId = debtReserveIds[i];
@@ -421,7 +421,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
           int256(premDebtRestored) - int256(accruedPremium)
         );
       }
-      expectedLogs[i] = DeficitReportedEvent({
+      expectedLogs[i] = ReportDeficitEvent({
         assetId: assetId,
         spoke: address(state.spoke),
         deficitShares: expectedDeficitShares,
@@ -432,7 +432,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       // @dev We omit checking data (deficitShares, premiumDelta, deficitAmount) here since premiumDelta.realizedDelta
       // can be off by 2 wei due to exchange rate changing because of 2 wei instant premium debt during restore before deficit
       // in the case when liquidated asset is also reported in deficit.
-      // It will be checked within 2 wei, rest exact, in the post action checks since we'll record the actual logs. (_checkDeficitReportedEvents)
+      // It will be checked within 2 wei, rest exact, in the post action checks since we'll record the actual logs. (_checkReportDeficitEvents)
       vm.expectEmit({
         checkTopic1: true,
         checkTopic2: true,
@@ -440,7 +440,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         checkData: false,
         emitter: address(hub1)
       });
-      emit IHub.DeficitReported(
+      emit IHub.ReportDeficit(
         assetId,
         address(state.spoke),
         expectedDeficitShares,
@@ -472,22 +472,22 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     );
 
     state = _getAccountingInfoAfterLiquidation(state);
-    _checkDeficitReportedEvents(expectedLogs, vm.getRecordedLogs());
+    _checkReportDeficitEvents(expectedLogs, vm.getRecordedLogs());
 
     return state;
   }
 
   /// @dev check deficit reported events data against actual logs, all exact except for realizedDelta which is checked within 2 wei
-  function _checkDeficitReportedEvents(
-    DeficitReportedEvent[] memory expectedLogs,
+  function _checkReportDeficitEvents(
+    ReportDeficitEvent[] memory expectedLogs,
     Vm.Log[] memory actualLogs
   ) internal view {
     uint256 expectedLogCounter = 0;
     for (uint256 i = 0; i < actualLogs.length; ++i) {
       Vm.Log memory actualLog = actualLogs[i];
-      if (actualLog.topics[0] != IHub.DeficitReported.selector) continue;
+      if (actualLog.topics[0] != IHub.ReportDeficit.selector) continue;
 
-      DeficitReportedEvent memory expectedLog = expectedLogs[expectedLogCounter++];
+      ReportDeficitEvent memory expectedLog = expectedLogs[expectedLogCounter++];
       assertEq(actualLog.emitter, address(hub1), 'deficit reported event: emitter');
       assertEq(
         uint256(actualLog.topics[1]),

@@ -140,16 +140,16 @@ contract HubAddTest is HubBase {
 
     // Depending on the borrow rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
-    assertNotEq(
-      totalAddedAssets % totalAddedShares,
+    assertEq(
+      uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares).toSharesDown(totalAddedAssets, totalAddedShares),
       0,
-      'totalAddedAssets % totalAddedShares is zero'
+      'share price is a whole number'
     );
 
     // The asset amount is 1 share worth of assets (rounded down) + 1
     // The added share is 1, which rounded up is equal to the
     // amount of assets added
-    uint256 addedAmount = totalAddedAssets / totalAddedShares + 1;
+    uint256 addedAmount = uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares) + 1;
 
     Utils.add({
       hub: hub1,
@@ -207,24 +207,24 @@ contract HubAddTest is HubBase {
 
   // add succeeds if cap is reached but not exceeded
   function test_add_AddCapReachedButNotExceeded_rounding() public {
-    _addLiquidity(zeroDecimalAssetId, 100);
-    _drawLiquidity(zeroDecimalAssetId, 45, true);
+    _addLiquidity(zeroDecimalAssetId, 100e18);
+    _drawLiquidity(zeroDecimalAssetId, 45e18, true);
 
     uint256 totalAddedAssets = hub1.getTotalAddedAssets(zeroDecimalAssetId);
     uint256 totalAddedShares = hub1.getAssetAddedShares(zeroDecimalAssetId);
 
     // Depending on the borrow rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
-    assertNotEq(
-      totalAddedAssets % totalAddedShares,
+    assertEq(
+      uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares).toSharesDown(totalAddedAssets, totalAddedShares),
       0,
-      'totalAddedAssets % totalAddedShares is zero'
+      'share price is a whole number'
     );
 
     // The asset amount is 1 share worth of assets (rounded down) + 1
     // The added share is 1, which rounded up is equal to the
     // amount of assets added
-    uint256 addedAmount = totalAddedAssets / totalAddedShares + 1;
+    uint256 addedAmount = uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares) + 1;
 
     uint256 spokeAddedShares = hub1.getSpokeAddedShares(zeroDecimalAssetId, address(spoke1));
     uint256 spokeAddedAssetsRoundedUp = spokeAddedShares.toAssetsUp(

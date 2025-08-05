@@ -256,7 +256,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       drawnDebt,
       bobRp
     );
-    uint256 interest = (drawnDebt + expectedPremiumDebt) - amounts.daiBorrowAmount;
+    uint256 interest = (drawnDebt + expectedPremiumDebt) - amounts.daiBorrowAmount - _calculateBurntInterest(hub1, daiAssetId);
     _assertSingleUserProtocolDebt(
       spoke2,
       _daiReserveId(spoke2),
@@ -298,7 +298,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       startTime
     );
     expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wethBorrowAmount, drawnDebt, bobRp);
-    interest = (drawnDebt + expectedPremiumDebt) - amounts.wethBorrowAmount;
+    interest = (drawnDebt + expectedPremiumDebt) - amounts.wethBorrowAmount - _calculateBurntInterest(hub1, wethAssetId);
     _assertSingleUserProtocolDebt(
       spoke2,
       _wethReserveId(spoke2),
@@ -340,7 +340,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       startTime
     );
     expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.usdxBorrowAmount, drawnDebt, bobRp);
-    interest = (drawnDebt + expectedPremiumDebt) - amounts.usdxBorrowAmount;
+    interest = (drawnDebt + expectedPremiumDebt) - amounts.usdxBorrowAmount - _calculateBurntInterest(hub1, usdxAssetId);
     _assertSingleUserProtocolDebt(
       spoke2,
       _usdxReserveId(spoke2),
@@ -382,7 +382,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       startTime
     );
     expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wbtcBorrowAmount, drawnDebt, bobRp);
-    interest = (drawnDebt + expectedPremiumDebt) - amounts.wbtcBorrowAmount;
+    interest = (drawnDebt + expectedPremiumDebt) - amounts.wbtcBorrowAmount - _calculateBurntInterest(hub1, wbtcAssetId);
     _assertSingleUserProtocolDebt(
       spoke2,
       _wbtcReserveId(spoke2),
@@ -533,7 +533,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       expectedPremiumDebt =
         _calculateExpectedPremiumDebt(amounts.daiBorrowAmount, drawnDebt, bobRp) +
         bobPosition.realizedPremium;
-      interest = (drawnDebt + expectedPremiumDebt) - (originalAmounts.daiBorrowAmount + 1e18); // subtract out the extra amount we borrowed
+      interest = (drawnDebt + expectedPremiumDebt) - (originalAmounts.daiBorrowAmount + 1e18) - _calculateBurntInterest(hub1, daiAssetId); // subtract out the extra amount we borrowed
       _assertSingleUserProtocolDebt(
         spoke2,
         _daiReserveId(spoke2),
@@ -585,7 +585,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       expectedPremiumDebt =
         _calculateExpectedPremiumDebt(amounts.wethBorrowAmount, drawnDebt, bobRp) +
         bobPosition.realizedPremium;
-      interest = (drawnDebt + expectedPremiumDebt) - originalAmounts.wethBorrowAmount;
+      interest = (drawnDebt + expectedPremiumDebt) - originalAmounts.wethBorrowAmount - _calculateBurntInterest(hub1, wethAssetId);
       _assertSingleUserProtocolDebt(
         spoke2,
         _wethReserveId(spoke2),
@@ -632,7 +632,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       expectedPremiumDebt =
         _calculateExpectedPremiumDebt(amounts.usdxBorrowAmount, drawnDebt, bobRp) +
         bobPosition.realizedPremium;
-      interest = (drawnDebt + expectedPremiumDebt) - originalAmounts.usdxBorrowAmount;
+      interest = (drawnDebt + expectedPremiumDebt) - originalAmounts.usdxBorrowAmount - _calculateBurntInterest(hub1, usdxAssetId);
       _assertSingleUserProtocolDebt(
         spoke2,
         _usdxReserveId(spoke2),
@@ -679,7 +679,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       expectedPremiumDebt =
         _calculateExpectedPremiumDebt(amounts.wbtcBorrowAmount, drawnDebt, bobRp) +
         bobPosition.realizedPremium;
-      interest = (drawnDebt + expectedPremiumDebt) - originalAmounts.wbtcBorrowAmount;
+      interest = (drawnDebt + expectedPremiumDebt) - originalAmounts.wbtcBorrowAmount - _calculateBurntInterest(hub1, wbtcAssetId);
       _assertSingleUserProtocolDebt(
         spoke2,
         _wbtcReserveId(spoke2),

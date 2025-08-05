@@ -439,7 +439,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       int256(premDebtRestored) - int256(accruedPremium)
     );
     vm.expectEmit(address(hub1));
-    emit IHub.DeficitReported(
+    emit IHub.ReportDeficit(
       debtAssetId,
       address(state.spoke),
       state.expectedDeficitShares,

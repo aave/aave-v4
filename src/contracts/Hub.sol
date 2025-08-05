@@ -7,7 +7,6 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
-// libraries
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -86,12 +85,12 @@ contract Hub is IHub, AccessManaged {
       liquidityFee: 0
     });
 
-    emit AssetAdded(assetId, underlying, decimals);
-    emit AssetConfigUpdated(
+    emit AddAsset(assetId, underlying, decimals);
+    emit AssetConfigUpdate(
       assetId,
       DataTypes.AssetConfig({feeReceiver: feeReceiver, liquidityFee: 0, irStrategy: irStrategy})
     );
-    emit AssetUpdated(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
+    emit AssetUpdate(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
 
     return assetId;
   }
@@ -115,7 +114,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    emit AssetConfigUpdated(assetId, config);
+    emit AssetConfigUpdate(assetId, config);
   }
 
   function addSpoke(
@@ -128,7 +127,7 @@ contract Hub is IHub, AccessManaged {
     require(!_assetToSpokes[assetId].contains(spoke), SpokeAlreadyListed());
 
     _assetToSpokes[assetId].add(spoke);
-    emit SpokeAdded(assetId, spoke);
+    emit AddSpoke(assetId, spoke);
 
     _updateSpokeConfig(assetId, spoke, config);
   }
@@ -157,7 +156,6 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     _validateAdd(asset, spoke, assetId, amount, from);
 
-    // todo: Mitigate inflation attack
     uint128 shares = previewAddByAssets(assetId, amount).toUint128();
     require(shares != 0, InvalidSharesAmount());
     asset.addedShares += shares;
@@ -270,7 +268,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    emit DeficitReported(assetId, msg.sender, drawnShares, premiumDelta, totalDeficitAmount);
+    emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, totalDeficitAmount);
 
     return drawnShares;
   }
@@ -538,7 +536,7 @@ contract Hub is IHub, AccessManaged {
     _spokes[assetId][spoke].active = config.active;
     _spokes[assetId][spoke].addCap = config.addCap;
     _spokes[assetId][spoke].drawCap = config.drawCap;
-    emit SpokeConfigUpdated(assetId, spoke, config);
+    emit SpokeConfigUpdate(assetId, spoke, config);
   }
 
   /**

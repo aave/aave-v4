@@ -249,17 +249,17 @@ contract SpokeLiquidationBase is SpokeBase {
     ) = _calculateAvailableCollateralToLiquidate(state, requiredDebtAmount);
 
     state.liquidationFeeShares =
-      hub1.previewRemoveByAssets(
+      state.collateralHub.previewRemoveByAssets(
         state.collateralReserve.assetId,
         state.collToLiq + state.liquidationFeeAmount
       ) -
-      hub1.previewRemoveByAssets(state.collateralReserve.assetId, state.collToLiq);
+      state.collateralHub.previewRemoveByAssets(state.collateralReserve.assetId, state.collToLiq);
 
     if (collateralReserveId != debtReserveId) {
       vm.expectCall(
-        address(hub1),
+        address(state.collateralHub),
         abi.encodeWithSelector(
-          hub1.payFee.selector,
+          state.collateralHub.payFee.selector,
           state.collateralReserve.assetId,
           state.liquidationFeeShares
         ),
@@ -269,7 +269,7 @@ contract SpokeLiquidationBase is SpokeBase {
       // precision loss can occur when coll and debt reserve are the same
       // during a restore action that includes donation
       vm.expectCall(
-        address(hub1),
+        address(state.collateralHub),
         abi.encodeWithSelector(IHub.payFee.selector),
         state.liquidationFeeShares > 0 ? 1 : 0
       );
