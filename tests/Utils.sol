@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {IHub} from 'src/interfaces/IHub.sol';
+import {IHub, IHubBase} from 'src/interfaces/IHub.sol';
 import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -25,7 +25,7 @@ library Utils {
   }
 
   function draw(
-    IHub hub,
+    IHubBase hub,
     uint256 assetId,
     address caller,
     address to,
@@ -36,7 +36,7 @@ library Utils {
   }
 
   function remove(
-    IHub hub,
+    IHubBase hub,
     uint256 assetId,
     address caller,
     uint256 amount,
@@ -46,7 +46,7 @@ library Utils {
     return hub.remove(assetId, amount, to);
   }
 
-  function restoreBase(
+  function restoreDrawn(
     IHub hub,
     uint256 assetId,
     address caller,

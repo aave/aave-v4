@@ -13,8 +13,8 @@ import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
  * @notice Full interface for Spoke
  */
 interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
-  event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
-  event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
+  event AddReserve(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
+  event ReserveConfigUpdate(uint256 indexed reserveId, DataTypes.ReserveConfig config);
 
   /**
    * @notice Emitted when a dynamic reserve config is added.
@@ -25,7 +25,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param configKey The key of the added dynamic config.
    * @param config The dynamic reserve config.
    */
-  event DynamicReserveConfigAdded(
+  event AddDynamicReserveConfig(
     uint256 indexed reserveId,
     uint16 indexed configKey,
     DataTypes.DynamicReserveConfig config
@@ -37,7 +37,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param configKey The key of the updated dynamic config.
    * @param config The dynamic reserve config.
    */
-  event DynamicReserveConfigUpdated(
+  event UpdateDynamicReserveConfig(
     uint256 indexed reserveId,
     uint16 indexed configKey,
     DataTypes.DynamicReserveConfig config
@@ -47,14 +47,14 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @notice Emitted when a user's dynamic config is refreshed for all reserves to their latest config key.
    * @param user The address of the user.
    */
-  event UserDynamicConfigRefreshedAll(address indexed user);
+  event RefreshAllUserDynamicConfig(address indexed user);
 
   /**
    * @notice Emitted when a user's dynamic config is refreshed for a single reserve to its latest config key.
    * @param user The address of the user.
    * @param reserveId The identifier of the reserve.
    */
-  event UserDynamicConfigRefreshedSingle(address indexed user, uint256 reserveId);
+  event RefreshSingleUserDynamicConfig(address indexed user, uint256 reserveId);
 
   /**
    * @notice Emitted on setUsingAsCollateral action.
@@ -83,23 +83,23 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param positionManager The address of the position manager.
    * @param approve True if position manager approval was granted, false if it was revoked.
    */
-  event UserPositionManagerSet(address indexed user, address indexed positionManager, bool approve);
+  event SetUserPositionManager(address indexed user, address indexed positionManager, bool approve);
 
   /**
    * @notice Emitted on updatePositionManager action.
    * @param positionManager The address of the position manager.
    * @param active True if position manager has become active, false otherwise.
    */
-  event PositionManagerUpdated(address indexed positionManager, bool active);
+  event PositionManagerUpdate(address indexed positionManager, bool active);
 
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
     address indexed user,
     DataTypes.PremiumDelta premiumDelta
   );
-  event OracleUpdated(address indexed oracle);
-  event ReservePriceSourceUpdated(uint256 indexed reserveId, address indexed priceSource);
-  event LiquidationConfigUpdated(DataTypes.LiquidationConfig config);
+  event OracleUpdate(address indexed oracle);
+  event ReservePriceSourceUpdate(uint256 indexed reserveId, address indexed priceSource);
+  event LiquidationConfigUpdate(DataTypes.LiquidationConfig config);
 
   error ReserveNotListed();
   error AssetNotListed();

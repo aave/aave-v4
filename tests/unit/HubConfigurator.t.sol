@@ -510,7 +510,7 @@ contract HubConfiguratorTest is HubBase {
     });
 
     vm.expectEmit(address(hub1));
-    emit IHub.SpokeAdded(daiAssetId, newSpoke);
+    emit IHub.AddSpoke(daiAssetId, newSpoke);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.addSpoke(address(hub1), newSpoke, daiAssetId, daiSpokeConfig);
 
@@ -566,9 +566,9 @@ contract HubConfiguratorTest is HubBase {
     spokeConfigs[1] = wethSpokeConfig;
 
     vm.expectEmit(address(hub1));
-    emit IHub.SpokeAdded(daiAssetId, newSpoke);
+    emit IHub.AddSpoke(daiAssetId, newSpoke);
     vm.expectEmit(address(hub1));
-    emit IHub.SpokeAdded(wethAssetId, newSpoke);
+    emit IHub.AddSpoke(wethAssetId, newSpoke);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.addSpokeToAssets(address(hub1), newSpoke, assetIds, spokeConfigs);
 

@@ -111,7 +111,6 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSupplyRateIncreasing(
       addExRateBefore,
       getAddExRate(daiAssetId),
-      false,
       'after partial withdraw'
     );
 
@@ -127,7 +126,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
     // Check supply rate monotonically increasing after withdraw
-    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), true, 'after withdraw');
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after withdraw');
   }
 
   // multiple users, same asset
@@ -222,7 +221,6 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSupplyRateIncreasing(
       addExRate,
       getAddExRate(state.assetId),
-      false,
       'after alice withdraw'
     );
 
@@ -250,7 +248,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), true, 'after bob withdraw');
+    _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), 'after bob withdraw');
 
     // treasury spoke withdraw fees
     withdrawLiquidityFees(state.assetId, type(uint256).max);
@@ -283,7 +281,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // token
     assertEq(tokenData[state.stage].spokeBalance, 0, 'tokenData spoke balance');
-    assertEq(tokenData[state.stage].hubBalance, 0, 'tokenData hub balance');
+    assertEq(tokenData[state.stage].hubBalance, _calculateBurntInterest(hub1, state.assetId), 'tokenData hub balance');
     assertEq(
       state.underlying.balanceOf(alice),
       MAX_SUPPLY_AMOUNT - params.aliceAmount + aliceData[0].suppliedAmount,

@@ -12,15 +12,15 @@ import {IHubBase} from 'src/interfaces/IHubBase.sol';
  * @notice Full interface for Hub
  */
 interface IHub is IHubBase, IAccessManaged {
-  event SpokeAdded(uint256 indexed assetId, address indexed spoke);
-  event AssetAdded(uint256 indexed assetId, address indexed underlying, uint8 decimals);
-  event AssetConfigUpdated(uint256 indexed assetId, DataTypes.AssetConfig config);
-  event SpokeConfigUpdated(
+  event AddSpoke(uint256 indexed assetId, address indexed spoke);
+  event AddAsset(uint256 indexed assetId, address indexed underlying, uint8 decimals);
+  event AssetConfigUpdate(uint256 indexed assetId, DataTypes.AssetConfig config);
+  event SpokeConfigUpdate(
     uint256 indexed assetId,
     address indexed spoke,
     DataTypes.SpokeConfig config
   );
-  event AssetUpdated(
+  event AssetUpdate(
     uint256 indexed assetId,
     uint256 drawnIndex,
     uint256 drawnRate,
@@ -31,7 +31,7 @@ interface IHub is IHubBase, IAccessManaged {
     address indexed spoke,
     DataTypes.PremiumDelta premiumDelta
   );
-  event DeficitReported(
+  event ReportDeficit(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 drawnShares,
@@ -42,16 +42,16 @@ interface IHub is IHubBase, IAccessManaged {
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
 
   /**
-   * @notice Emitted when some deficit is eliminated.
+   * @notice Emitted when deficit is eliminated.
    * @param assetId The identifier of the asset.
    * @param spoke The spoke that eliminated the deficit, and had supplied shares removed.
-   * @param removedShares The amount of shares removed.
+   * @param shares The amount of shares removed.
    * @param amount The amount of deficit eliminated.
    */
   event EliminateDeficit(
     uint256 indexed assetId,
     address indexed spoke,
-    uint256 removedShares,
+    uint256 shares,
     uint256 amount
   );
 

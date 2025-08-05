@@ -296,7 +296,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
       );
 
       vm.expectEmit(address(hub1));
-      emit IHub.DeficitReported(
+      emit IHub.ReportDeficit(
         debtAssetId,
         address(state.spoke),
         state.expectedDeficitShares,

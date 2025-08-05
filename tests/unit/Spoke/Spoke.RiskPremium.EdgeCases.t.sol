@@ -590,7 +590,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
       caller: alice,
-      amount: 1,
+      amount: 1e6,
       onBehalfOf: alice
     });
 

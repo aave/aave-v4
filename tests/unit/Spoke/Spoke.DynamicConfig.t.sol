@@ -199,7 +199,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.DynamicReserveConfigAdded(reserveId, expectedConfigKey, dynConf);
+    emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, dynConf);
     vm.prank(SPOKE_ADMIN);
     spoke1.addDynamicReserveConfig(reserveId, dynConf);
 
@@ -226,7 +226,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     dynConf.liquidationFee = _randomBps();
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.DynamicReserveConfigUpdated(reserveId, configKey, dynConf);
+    emit ISpoke.UpdateDynamicReserveConfig(reserveId, configKey, dynConf);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(reserveId, configKey, dynConf);
 
@@ -244,7 +244,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
       DataTypes.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
       dynConf.collateralFactor = _randomBps();
       vm.expectEmit(address(spoke1));
-      emit ISpoke.DynamicReserveConfigAdded(reserveId, dynamicConfigKey, dynConf);
+      emit ISpoke.AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
       vm.prank(SPOKE_ADMIN);
       spoke1.addDynamicReserveConfig(reserveId, dynConf);
 
@@ -266,7 +266,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
       dynConf.collateralFactor = _randomBps();
 
       vm.expectEmit(address(spoke1));
-      emit ISpoke.DynamicReserveConfigAdded(reserveId, dynamicConfigKey, dynConf);
+      emit ISpoke.AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
       vm.prank(SPOKE_ADMIN);
       spoke1.addDynamicReserveConfig(reserveId, dynConf);
 
@@ -292,7 +292,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
         : _randomBps();
 
       vm.expectEmit(address(spoke1));
-      emit ISpoke.DynamicReserveConfigAdded(reserveId, dynamicConfigKey, dynConf);
+      emit ISpoke.AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
       vm.prank(SPOKE_ADMIN);
       spoke1.addDynamicReserveConfig(reserveId, dynConf);
 

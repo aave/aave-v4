@@ -33,7 +33,7 @@ contract HubDrawTest is HubBase {
     );
 
     vm.expectEmit(address(hub1));
-    emit IHub.AssetUpdated(
+    emit IHub.AssetUpdate(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
@@ -113,7 +113,7 @@ contract HubDrawTest is HubBase {
     );
 
     vm.expectEmit(address(hub1));
-    emit IHub.AssetUpdated(
+    emit IHub.AssetUpdate(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
@@ -324,7 +324,7 @@ contract HubDrawTest is HubBase {
     });
 
     (uint256 drawn, ) = hub1.getAssetOwed(daiAssetId);
-    uint256 singleShareInAssets = minimumAssetsPerDrawnShare(daiAssetId);
+    uint256 singleShareInAssets = minimumAssetsPerDrawnShare(hub1, daiAssetId);
     // Need the drawn to be greater than the drawCap from interest, past the share we restore
     vm.assume(drawn > drawCap + singleShareInAssets);
 
@@ -370,7 +370,7 @@ contract HubDrawTest is HubBase {
     vm.startPrank(address(spoke1));
     hub1.restore({
       assetId: daiAssetId,
-      drawnAmount: minimumAssetsPerDrawnShare(daiAssetId),
+      drawnAmount: minimumAssetsPerDrawnShare(hub1, daiAssetId),
       premiumAmount: 0,
       premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
       from: alice

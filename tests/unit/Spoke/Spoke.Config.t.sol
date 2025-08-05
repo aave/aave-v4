@@ -13,7 +13,7 @@ contract SpokeConfigTest is SpokeBase {
       vm.getNonce(address(this))
     );
     vm.expectEmit(predictedSpokeAddress);
-    emit ISpoke.LiquidationConfigUpdated(
+    emit ISpoke.LiquidationConfigUpdate(
       DataTypes.LiquidationConfig({
         closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
         healthFactorForMaxBonus: 0,
@@ -41,7 +41,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateOracle() public {
     address newOracle = address(new AaveOracle(SPOKE_ADMIN, 18, 'New Aave Oracle'));
     vm.expectEmit(address(spoke1));
-    emit ISpoke.OracleUpdated(newOracle);
+    emit ISpoke.OracleUpdate(newOracle);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateOracle(newOracle);
   }
@@ -68,7 +68,7 @@ contract SpokeConfigTest is SpokeBase {
     uint256 reserveId = 0;
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReservePriceSourceUpdated(reserveId, reserveSource);
+    emit ISpoke.ReservePriceSourceUpdate(reserveId, reserveSource);
     vm.expectCall(
       address(oracle1),
       abi.encodeCall(IAaveOracle.setReserveSource, (reserveId, reserveSource))
@@ -88,7 +88,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralRisk: config.collateralRisk + 1
     });
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
+    emit ISpoke.ReserveConfigUpdate(daiReserveId, newReserveConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
 
@@ -105,7 +105,7 @@ contract SpokeConfigTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
+    emit ISpoke.ReserveConfigUpdate(daiReserveId, newReserveConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
 
@@ -148,11 +148,11 @@ contract SpokeConfigTest is SpokeBase {
     address reserveSource = _deployMockPriceFeed(spoke1, 2000e8);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveAdded(reserveId, wethAssetId, address(hub1));
+    emit ISpoke.AddReserve(reserveId, wethAssetId, address(hub1));
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdated(reserveId, newReserveConfig);
+    emit ISpoke.ReserveConfigUpdate(reserveId, newReserveConfig);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.DynamicReserveConfigAdded({
+    emit ISpoke.AddDynamicReserveConfig({
       reserveId: reserveId,
       configKey: 0,
       config: newDynReserveConfig
@@ -253,7 +253,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.closeFactor = newCloseFactor;
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.LiquidationConfigUpdated(liquidationConfig);
+    emit ISpoke.LiquidationConfigUpdate(liquidationConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
 
@@ -289,7 +289,7 @@ contract SpokeConfigTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.LiquidationConfigUpdated(liquidationConfig);
+    emit ISpoke.LiquidationConfigUpdate(liquidationConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
 

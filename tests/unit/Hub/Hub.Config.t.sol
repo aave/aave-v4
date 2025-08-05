@@ -52,9 +52,9 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
     vm.expectEmit(address(hub1));
-    emit IHub.SpokeAdded(assetId, newSpoke);
+    emit IHub.AddSpoke(assetId, newSpoke);
     vm.expectEmit(address(hub1));
-    emit IHub.SpokeConfigUpdated(assetId, newSpoke, spokeConfig);
+    emit IHub.SpokeConfigUpdate(assetId, newSpoke, spokeConfig);
     Utils.addSpoke(hub1, ADMIN, assetId, newSpoke, spokeConfig);
 
     assertEq(hub1.getSpokeConfig(assetId, newSpoke), spokeConfig);
@@ -79,7 +79,7 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
 
     vm.expectEmit(address(hub1));
-    emit IHub.SpokeConfigUpdated(assetId, address(spoke1), spokeConfig);
+    emit IHub.SpokeConfigUpdate(assetId, address(spoke1), spokeConfig);
 
     Utils.updateSpokeConfig(hub1, ADMIN, assetId, address(spoke1), spokeConfig);
     assertEq(hub1.getSpokeConfig(assetId, address(spoke1)), spokeConfig);
@@ -188,15 +188,35 @@ contract HubConfigTest is HubBase {
   function test_addAsset_revertsWith_DrawnRateDowncastOverflow() public {
     uint256 drawnRateRay = uint256(type(uint128).max) + 1;
     _mockInterestRateRay(drawnRateRay);
-    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 128, drawnRateRay));
-    Utils.addAsset(hub1, ADMIN, address(tokenList.dai), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
+    vm.expectRevert(
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 128, drawnRateRay)
+    );
+    Utils.addAsset(
+      hub1,
+      ADMIN,
+      address(tokenList.dai),
+      18,
+      address(treasurySpoke),
+      address(irStrategy),
+      encodedIrData
+    );
   }
 
   function test_addAsset_revertsWith_BlockTimestampDowncastOverflow() public {
     uint256 blockTimestamp = uint256(type(uint40).max) + 1;
     vm.warp(blockTimestamp);
-    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 40, blockTimestamp));
-    Utils.addAsset(hub1, ADMIN, address(tokenList.dai), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
+    vm.expectRevert(
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 40, blockTimestamp)
+    );
+    Utils.addAsset(
+      hub1,
+      ADMIN,
+      address(tokenList.dai),
+      18,
+      address(treasurySpoke),
+      address(irStrategy),
+      encodedIrData
+    );
   }
 
   function test_addAsset_fuzz(address underlying, uint8 decimals, address feeReceiver) public {
@@ -220,11 +240,11 @@ contract HubConfigTest is HubBase {
     );
 
     vm.expectEmit(address(hub1));
-    emit IHub.AssetAdded(expectedAssetId, underlying, decimals);
+    emit IHub.AddAsset(expectedAssetId, underlying, decimals);
     vm.expectEmit(address(hub1));
-    emit IHub.AssetConfigUpdated(expectedAssetId, expectedConfig);
+    emit IHub.AssetConfigUpdate(expectedAssetId, expectedConfig);
     vm.expectEmit(address(hub1));
-    emit IHub.AssetUpdated(
+    emit IHub.AssetUpdate(
       expectedAssetId,
       WadRayMath.RAY,
       baseVariableBorrowRate.bpsToRay(),
@@ -266,7 +286,9 @@ contract HubConfigTest is HubBase {
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
-    newConfig.liquidityFee = vm.randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max).toUint16();
+    newConfig.liquidityFee = vm
+      .randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
+      .toUint16();
     vm.expectRevert(IHub.InvalidLiquidityFee.selector);
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig);
@@ -309,7 +331,7 @@ contract HubConfigTest is HubBase {
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
 
     vm.expectEmit(address(hub1));
-    emit IHub.AssetUpdated(
+    emit IHub.AssetUpdate(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
@@ -321,7 +343,7 @@ contract HubConfigTest is HubBase {
       vm.getBlockTimestamp()
     );
     vm.expectEmit(address(hub1));
-    emit IHub.AssetConfigUpdated(assetId, newConfig);
+    emit IHub.AssetConfigUpdate(assetId, newConfig);
 
     Utils.updateAssetConfig(hub1, ADMIN, assetId, newConfig);
 
@@ -495,7 +517,8 @@ contract HubConfigTest is HubBase {
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
   ) internal pure {
-    newConfig.liquidityFee = bound(newConfig.liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+    newConfig.liquidityFee = bound(newConfig.liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR)
+      .toUint16();
     vm.assume(address(newConfig.feeReceiver) != address(0) || newConfig.liquidityFee == 0);
     assumeNotPrecompile(newConfig.feeReceiver);
     assumeNotForgeAddress(newConfig.feeReceiver);
