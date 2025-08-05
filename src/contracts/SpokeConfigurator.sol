@@ -132,6 +132,19 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
+  function updateCollateralFactor(
+    address spoke,
+    uint256 reserveId,
+    uint16 configKey,
+    uint16 collateralFactor
+  ) external onlyOwner {
+    ISpoke targetSpoke = ISpoke(spoke);
+    DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
+      .getDynamicReserveConfig(reserveId, configKey);
+    dynamicReserveConfig.collateralFactor = collateralFactor;
+    targetSpoke.updateDynamicReserveConfig(reserveId, configKey, dynamicReserveConfig);
+  }
+
   /// @inheritdoc ISpokeConfigurator
   function addLiquidationBonus(
     address spoke,
@@ -145,6 +158,19 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
+  function updateLiquidationBonus(
+    address spoke,
+    uint256 reserveId,
+    uint16 configKey,
+    uint256 liquidationBonus
+  ) external onlyOwner {
+    ISpoke targetSpoke = ISpoke(spoke);
+    DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
+      .getDynamicReserveConfig(reserveId, configKey);
+    dynamicReserveConfig.liquidationBonus = liquidationBonus;
+    targetSpoke.updateDynamicReserveConfig(reserveId, configKey, dynamicReserveConfig);
+  }
+
   /// @inheritdoc ISpokeConfigurator
   function addLiquidationFee(
     address spoke,
@@ -156,6 +182,19 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
       .getDynamicReserveConfig(reserveId);
     dynamicReserveConfig.liquidationFee = liquidationFee;
     targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
+  }
+
+  function updateLiquidationFee(
+    address spoke,
+    uint256 reserveId,
+    uint16 configKey,
+    uint256 liquidationFee
+  ) external onlyOwner {
+    ISpoke targetSpoke = ISpoke(spoke);
+    DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
+      .getDynamicReserveConfig(reserveId, configKey);
+    dynamicReserveConfig.liquidationFee = liquidationFee;
+    targetSpoke.updateDynamicReserveConfig(reserveId, configKey, dynamicReserveConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator

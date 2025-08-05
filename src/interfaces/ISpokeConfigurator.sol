@@ -109,12 +109,26 @@ interface ISpokeConfigurator {
   function updateCollateralRisk(address spoke, uint256 reserveId, uint256 collateralRisk) external;
 
   /**
-   * @notice Updates the collateral factor of a reserve.
+   * @notice Adds a new collateral factor to a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
    * @param collateralFactor The new collateral factor.
    */
   function addCollateralFactor(address spoke, uint256 reserveId, uint16 collateralFactor) external;
+
+  /**
+   * @notice Updates an existing collateral factor of a reserve at the specified key.
+   * @param spoke The address of the spoke.
+   * @param reserveId The identifier of the reserve.
+   * @param configKey The key of the dynamic config to update.
+   * @param collateralFactor The new collateral factor.
+   */
+  function updateCollateralFactor(
+    address spoke,
+    uint256 reserveId,
+    uint16 configKey,
+    uint16 collateralFactor
+  ) external;
 
   /**
    * @notice Updates the liquidation bonus of a reserve.
@@ -125,12 +139,40 @@ interface ISpokeConfigurator {
   function addLiquidationBonus(address spoke, uint256 reserveId, uint256 liquidationBonus) external;
 
   /**
+   * @notice Updates an existing liquidation bonus of a reserve at the specified key.
+   * @param spoke The address of the spoke.
+   * @param reserveId The identifier of the reserve.
+   * @param configKey The key of the dynamic config to update.
+   * @param liquidationBonus The new liquidation bonus.
+   */
+  function updateLiquidationBonus(
+    address spoke,
+    uint256 reserveId,
+    uint16 configKey,
+    uint256 liquidationBonus
+  ) external;
+
+  /**
    * @notice Updates the liquidation fee of a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
    * @param liquidationFee The new liquidation fee.
    */
   function addLiquidationFee(address spoke, uint256 reserveId, uint256 liquidationFee) external;
+
+  /**
+   * @notice Updates an existing liquidation fee of a reserve at the specified key.
+   * @param spoke The address of the spoke.
+   * @param reserveId The identifier of the reserve.
+   * @param configKey The key of the dynamic config to update.
+   * @param liquidationFee The new liquidation fee.
+   */
+  function updateLiquidationFee(
+    address spoke,
+    uint256 reserveId,
+    uint16 configKey,
+    uint256 liquidationFee
+  ) external;
 
   /**
    * @notice Updates the config of a reserve.
