@@ -5,7 +5,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccrueLiquidityFeeTest is SpokeBase {
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
+  using PercentageMath for *;
 
   function test_accrueLiquidityFee_NoActionTaken() public view {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(treasurySpoke)), 0);
@@ -180,7 +180,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
-    uint256 expectedRp = 10_00;
+    uint24 expectedRp = 10_00;
     updateCollateralRisk(spoke1, reserveId, expectedRp);
     uint256 liquidityFee = 5_00;
     updateLiquidityFee(hub1, assetId, liquidityFee);
@@ -291,7 +291,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
-    uint256 expectedRp = 10_00;
+    uint24 expectedRp = 10_00;
     updateCollateralRisk(spoke1, reserveId, expectedRp);
     uint256 liquidityFee = 5_00;
     updateLiquidityFee(hub1, assetId, liquidityFee);
@@ -413,7 +413,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 reserveId2 = _wethReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
-    uint256 expectedRp = 10_00;
+    uint24 expectedRp = 10_00;
     updateCollateralRisk(spoke1, reserveId, expectedRp);
     // 50.00% premium for second collateral asset
     updateCollateralRisk(spoke1, reserveId2, 50_00);

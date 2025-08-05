@@ -164,13 +164,13 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   /// fuzz test with multiple collateral/debt reserves
   function _execLiqCallCloseFactorTestMulti(
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmountInBase,
     uint256[] memory collateralReserveIds,
     uint256[] memory debtReserveIds,
     uint256 collateralReserveIndex,
     uint256 debtReserveIndex,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) internal returns (LiquidationTestLocalParams memory) {
@@ -189,14 +189,14 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
     }
     liqConfig = _boundCloseFactor(liqConfig);
-    liqBonus = bound(
+    liqBonus = uint32(bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
       PercentageMath.PERCENTAGE_FACTOR.percentDivDown(
         state.collDynConfigs[collateralReserveIndex].collateralFactor
       )
-    );
-    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
+    ));
+    liquidationFee = uint16(bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR));
     supplyAmountInBase = bound(
       supplyAmountInBase,
       dustInBase * state.debtReserves.length, // enough to cover dust for all debt reserves

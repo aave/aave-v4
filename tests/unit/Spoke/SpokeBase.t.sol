@@ -6,9 +6,8 @@ import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.s
 
 contract SpokeBase is Base {
   using SafeCast for *;
-  using PercentageMath for uint256;
+  using PercentageMath for *;
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
   struct Debts {
@@ -197,7 +196,7 @@ contract SpokeBase is Base {
     });
 
     // debt
-    uint256 cachedCollateralRisk;
+    uint24 cachedCollateralRisk;
     if (withPremium) {
       cachedCollateralRisk = _getCollateralRisk(spoke, reserveId);
       updateCollateralRisk(spoke, reserveId, 50_00);
@@ -623,13 +622,13 @@ contract SpokeBase is Base {
   ) internal view returns (DataTypes.UserPosition memory userPos) {
     (uint256 riskPremium, , , , ) = spoke.getUserAccountData(user);
 
-    userPos.drawnShares = hub1.convertToDrawnShares(assetId, debtAmount);
-    userPos.premiumShares = hub1.convertToDrawnShares(assetId, debtAmount).percentMulUp(
+    userPos.drawnShares = uint128(hub1.convertToDrawnShares(assetId, debtAmount));
+    userPos.premiumShares = uint128(hub1.convertToDrawnShares(assetId, debtAmount).percentMulUp(
       riskPremium
-    );
-    userPos.premiumOffset = hub1.convertToDrawnAssets(assetId, userPos.premiumShares);
-    userPos.realizedPremium = expectedRealizedPremium;
-    userPos.suppliedShares = hub1.convertToAddedShares(assetId, suppliedAmount);
+    ));
+    userPos.premiumOffset = uint128(hub1.convertToDrawnAssets(assetId, userPos.premiumShares));
+    userPos.realizedPremium = uint128(expectedRealizedPremium);
+    userPos.suppliedShares = uint128(hub1.convertToAddedShares(assetId, suppliedAmount));
   }
 
   /// calculated expected realized premium
@@ -638,10 +637,10 @@ contract SpokeBase is Base {
     ISpoke spoke,
     uint256 reserveId,
     address user
-  ) internal view returns (uint256) {
+  ) internal view returns (uint128) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     DataTypes.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
-    return hub1.convertToDrawnAssets(assetId, userPos.premiumShares) - userPos.premiumOffset;
+    return uint128(hub1.convertToDrawnAssets(assetId, userPos.premiumShares) - userPos.premiumOffset);
   }
 
   /// assert that realized premium matches naively calculated value
@@ -721,9 +720,15 @@ contract SpokeBase is Base {
 
   function assertEq(DataTypes.Reserve memory a, DataTypes.Reserve memory b) internal pure {
     assertEq(a.reserveId, b.reserveId, 'reserve Id');
+    assertEq(address(a.hub), address(b.hub), 'hub');
     assertEq(a.assetId, b.assetId, 'asset Id');
-    assertEq(a.underlying, b.underlying, 'Asset addresses mismatch');
-    assertEq(a.config, b.config);
+    assertEq(a.paused, b.paused, 'paused');
+    assertEq(a.frozen, b.frozen, 'frozen');
+    assertEq(a.borrowable, b.borrowable, 'borrowable');
+    assertEq(a.collateralRisk, b.collateralRisk, 'collateralRisk');
+    assertEq(a.dynamicConfigKey, b.dynamicConfigKey, 'dynamicConfigKey');
+    assertEq(a.decimals, b.decimals, 'decimals');
+    assertEq(a.underlying, b.underlying, 'underlying');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 

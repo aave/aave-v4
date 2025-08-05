@@ -73,9 +73,9 @@ abstract contract Base is Test {
   uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
-  uint256 internal constant MIN_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR; // 100% == 0% bonus
-  uint256 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
-  uint256 internal constant MAX_LIQUIDATION_BONUS_FACTOR = PercentageMath.PERCENTAGE_FACTOR; // 100%
+  uint32 internal constant MIN_LIQUIDATION_BONUS = uint32(PercentageMath.PERCENTAGE_FACTOR); // 100% == 0% bonus
+  uint32 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
+  uint16 internal constant MAX_LIQUIDATION_BONUS_FACTOR = uint16(PercentageMath.PERCENTAGE_FACTOR); // 100%
   uint256 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
   uint256 internal constant MIN_CLOSE_FACTOR = 1e18;
   uint256 internal constant MAX_CLOSE_FACTOR = 2e18;
@@ -971,7 +971,7 @@ abstract contract Base is Test {
   function updateLiquidationBonus(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 newLiquidationBonus
+    uint32 newLiquidationBonus
   ) internal pausePrank returns (uint16) {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationBonus = newLiquidationBonus;
@@ -986,7 +986,7 @@ abstract contract Base is Test {
   function updateLiquidationFee(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 newLiquidationFee
+    uint16 newLiquidationFee
   ) internal pausePrank returns (uint16) {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationFee = newLiquidationFee;
@@ -1044,7 +1044,7 @@ abstract contract Base is Test {
   function updateCollateralRisk(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 newCollateralRisk
+    uint24 newCollateralRisk
   ) internal pausePrank {
     DataTypes.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
     config.collateralRisk = newCollateralRisk;
@@ -1063,7 +1063,7 @@ abstract contract Base is Test {
     assertEq(hub1.getAssetConfig(assetId), config);
   }
 
-  function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal pausePrank {
+  function updateCloseFactor(ISpoke spoke, uint128 newCloseFactor) internal pausePrank {
     DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
     liqConfig.closeFactor = newCloseFactor;
     vm.prank(SPOKE_ADMIN);
@@ -1665,7 +1665,7 @@ abstract contract Base is Test {
     return a < b ? a : b;
   }
 
-  function _getCloseFactor(ISpoke spoke) internal view returns (uint256) {
+  function _getCloseFactor(ISpoke spoke) internal view returns (uint128) {
     return spoke.getLiquidationConfig().closeFactor;
   }
 
@@ -1775,11 +1775,11 @@ abstract contract Base is Test {
     return hub1.getAssetConfig(assetId).feeReceiver;
   }
 
-  function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+  function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint24) {
     return spoke.getReserveConfig(reserveId).collateralRisk;
   }
 
-  function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+  function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
     return spoke.getDynamicReserveConfig(reserveId).collateralFactor;
   }
 

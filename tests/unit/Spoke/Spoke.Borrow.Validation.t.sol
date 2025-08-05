@@ -19,7 +19,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
 
     // set reserve not borrowable
     updateReserveBorrowableFlag(spoke1, reserveId, false);
-    assertFalse(spoke1.getReserve(reserveId).config.borrowable);
+    assertFalse(spoke1.getReserve(reserveId).borrowable);
 
     // Bob tries to draw
     vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotBorrowable.selector, reserveId));
@@ -54,7 +54,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     updateReservePausedFlag(spoke1, reserveId, true);
-    assertTrue(spoke1.getReserve(reserveId).config.paused);
+    assertTrue(spoke1.getReserve(reserveId).paused);
 
     // Bob try to draw
     vm.expectRevert(ISpoke.ReservePaused.selector);
@@ -73,7 +73,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     updateReserveFrozenFlag(spoke1, reserveId, true);
-    assertTrue(spoke1.getReserve(reserveId).config.frozen);
+    assertTrue(spoke1.getReserve(reserveId).frozen);
 
     // Bob try to draw
     vm.expectRevert(ISpoke.ReserveFrozen.selector);

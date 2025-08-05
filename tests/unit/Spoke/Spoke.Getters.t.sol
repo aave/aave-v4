@@ -46,20 +46,20 @@ contract SpokeGettersTest is SpokeBase {
   function test_getVariableLiquidationBonus_fuzz_configured(
     uint256 reserveId,
     uint256 healthFactor,
-    uint256 liquidationBonusFactor,
-    uint256 healthFactorForMaxBonus
+    uint16 liquidationBonusFactor,
+    uint64 healthFactorForMaxBonus
   ) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    liquidationBonusFactor = bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
-    healthFactorForMaxBonus = bound(
+    liquidationBonusFactor = uint16(bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
+    healthFactorForMaxBonus = uint64(bound(
       healthFactorForMaxBonus,
       0,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
-    );
+    ));
 
     DataTypes.LiquidationConfig memory config = DataTypes.LiquidationConfig({
-      closeFactor: WadRayMath.WAD,
+      closeFactor: uint128(WadRayMath.WAD),
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor
     });

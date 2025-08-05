@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallScenarioTest is SpokeLiquidationBase {
-  using PercentageMath for uint256;
+  using PercentageMath for *;
   using WadRayMath for uint256;
 
   struct Amount {
@@ -616,7 +616,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     assertEq(
       userRP,
-      spoke1.getReserve(state.daiReserveId).config.collateralRisk,
+      spoke1.getReserve(state.daiReserveId).collateralRisk,
       'userRP matches collateral risk of dai coll'
     );
     assertEq(
@@ -695,7 +695,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     uint256 usdxAmount = 10_000 * 10 ** decimals.usdx; // $10k usdx
     // debt: dai
     uint256 borrowAmount = 15_000 * 10 ** decimals.dai; // $15k dai
-    uint256 closeFactor = 1.07e18;
+    uint128 closeFactor = 1.07e18;
 
     updateCloseFactor(spoke1, closeFactor);
     updateLiquidationFee(spoke1, usdxReserveId, 5_00);

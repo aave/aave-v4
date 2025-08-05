@@ -15,10 +15,10 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
     uint256 desiredHf,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime
   ) public returns (LiquidationTestLocalParams memory) {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
@@ -147,7 +147,7 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
   }
 
   /// with 0 liquidation bonus, the protocol fee should also be 0
-  function test_liquidationCall_fuzz_liquidationFee_liqBonus_zero(uint256 liquidationFee) public {
+  function test_liquidationCall_fuzz_liquidationFee_liqBonus_zero(uint16 liquidationFee) public {
     LiquidationTestLocalParams memory state = test_liquidationCall_fuzz_liquidationFee({
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),

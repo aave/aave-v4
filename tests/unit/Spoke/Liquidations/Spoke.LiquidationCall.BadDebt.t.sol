@@ -256,9 +256,9 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) public {
@@ -285,13 +285,13 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) public {
-    liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    liqConfig.closeFactor = uint128(HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     test_liquidationCall_fuzz_badDebt(
       collateralReserveId,
       debtReserveId,
@@ -309,11 +309,11 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   /// liquidating all collateral is insufficient to cover debt
   function _execLiqCallCloseFactorBadDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) internal returns (LiquidationTestLocalParams memory) {
@@ -333,13 +333,13 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
 
     // bound close factor, with a static liq bonus
     liqConfig = _boundCloseFactor(liqConfig);
-    liqBonus = bound(
+    liqBonus = uint32(bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
       PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
-    );
+    ));
 
-    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
+    liquidationFee = uint16(bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR));
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e25),

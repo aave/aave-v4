@@ -69,7 +69,7 @@ contract SpokeLiquidationBase is SpokeBase {
     SupplyExchangeRate rate;
     uint256 collToLiq;
     uint256 debtToLiq;
-    uint256 liquidationFee;
+    uint16 liquidationFee;
     uint256 liquidationFeeAmount;
     uint256 liquidationFeeShares;
     bool hasDeficit;
@@ -112,17 +112,17 @@ contract SpokeLiquidationBase is SpokeBase {
   function _bound(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
-    liqConfig.closeFactor = bound(
+    liqConfig.closeFactor = uint128(bound(
       liqConfig.closeFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       MAX_CLOSE_FACTOR
-    );
-    liqConfig.healthFactorForMaxBonus = bound(
+    ));
+    liqConfig.healthFactorForMaxBonus = uint64(bound(
       liqConfig.healthFactorForMaxBonus,
       0.01e18,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
-    );
-    liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00);
+    ));
+    liqConfig.liquidationBonusFactor = uint16(bound(liqConfig.liquidationBonusFactor, 0, 100_00));
 
     return liqConfig;
   }
@@ -132,11 +132,11 @@ contract SpokeLiquidationBase is SpokeBase {
   function _boundCloseFactor(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
-    liqConfig.closeFactor = bound(
+    liqConfig.closeFactor = uint128(bound(
       liqConfig.closeFactor,
       MIN_CLOSE_FACTOR,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
-    );
+    ));
     liqConfig.liquidationBonusFactor = 0;
     liqConfig.healthFactorForMaxBonus = 0;
 
@@ -147,12 +147,12 @@ contract SpokeLiquidationBase is SpokeBase {
   /// @param desiredHf Desired user health factor prior to liquidation.
   function _execLiqCallFuzzTest(
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
     uint256 desiredHf,
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
@@ -171,13 +171,13 @@ contract SpokeLiquidationBase is SpokeBase {
     state.collDynConfig = _getUserDynConfig(spoke1, state.user, collateralReserveId);
 
     liqConfig = _bound(liqConfig);
-    liqBonus = bound(
+    liqBonus = uint32(bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
       PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
-    );
+    ));
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.01e18);
-    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
+    liquidationFee = uint16(bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR));
     // bound supply amount to max supply amount
     supplyAmount = bound(
       supplyAmount,
@@ -630,7 +630,7 @@ contract SpokeLiquidationBase is SpokeBase {
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
       DataTypes.Reserve memory reserve = spoke.getReserve(i);
       if (
-        reserve.config.collateralRisk > 0 &&
+        reserve.collateralRisk > 0 &&
         spoke.getUserSuppliedShares(reserve.reserveId, user) > 0 &&
         spoke.isUsingAsCollateral(reserve.reserveId, user)
       ) {

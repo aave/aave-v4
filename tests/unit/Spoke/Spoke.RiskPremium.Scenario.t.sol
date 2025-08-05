@@ -6,7 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeRiskPremiumScenarioTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
+  using PercentageMath for *;
 
   struct GeneralLocalVars {
     uint256 usdxSupplyAmount;
@@ -574,8 +574,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     UserBorrowAction memory bobUsdxAction,
     UserBorrowAction memory aliceDaiAction,
     UserBorrowAction memory aliceUsdxAction,
-    uint256 daiCollateralRisk,
-    uint256 usdxCollateralRisk,
+    uint16 daiCollateralRisk,
+    uint16 usdxCollateralRisk,
     uint40[3] memory timeSkip
   ) public {
     bobDaiAction = _boundUserBorrowAction(bobDaiAction);
@@ -583,8 +583,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     aliceDaiAction = _boundUserBorrowAction(aliceDaiAction);
     aliceUsdxAction = _boundUserBorrowAction(aliceUsdxAction);
 
-    daiCollateralRisk = bound(daiCollateralRisk, 0, MAX_RISK_PREMIUM_BPS);
-    usdxCollateralRisk = bound(usdxCollateralRisk, 0, MAX_RISK_PREMIUM_BPS);
+    daiCollateralRisk = uint16(bound(daiCollateralRisk, 0, MAX_RISK_PREMIUM_BPS));
+    usdxCollateralRisk = uint16(bound(usdxCollateralRisk, 0, MAX_RISK_PREMIUM_BPS));
 
     timeSkip[0] = uint40(bound(timeSkip[0], 0, MAX_SKIP_TIME));
     timeSkip[1] = uint40(bound(timeSkip[1], 0, MAX_SKIP_TIME));

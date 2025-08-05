@@ -12,9 +12,9 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 skipTimeToAccruePremium
   ) public {
@@ -169,11 +169,11 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
   /// non-variable liquidation bonus
   function _execLiqCallCloseFactorBadPremiumDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 skipTimeForPremiumAccrual
   ) internal returns (LiquidationTestLocalParams memory) {
@@ -192,12 +192,12 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
 
     liqConfig = _boundCloseFactor(liqConfig);
-    liqBonus = bound(
+    liqBonus = uint32(bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
       PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
-    );
-    liquidationFee = bound(liquidationFee, 0, 100_00);
+    ));
+    liquidationFee = uint16(bound(liquidationFee, 0, 100_00));
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 10e26),

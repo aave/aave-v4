@@ -6,7 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeAccrueInterestTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
+  using PercentageMath for *;
 
   struct TestAmounts {
     uint256 daiSupplyAmount;

@@ -14,7 +14,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 supplyAmount;
     uint256 borrowAmount;
     uint256 price;
-    uint256 collateralRisk;
+    uint24 collateralRisk;
     uint256 riskPremium;
   }
 
@@ -77,7 +77,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     DataTypes.Reserve memory daiInfo = getReserveInfo(spoke1, daiReserveId);
 
     // With single collateral, user rp will match collateral risk of collateral
-    assertEq(userRiskPremium, daiInfo.config.collateralRisk, 'user risk premium');
+    assertEq(userRiskPremium, daiInfo.collateralRisk, 'user risk premium');
   }
 
   /// When supplying and borrowing one reserve (fuzzed amounts), user risk premium matches the collateral risk of that reserve.
@@ -714,12 +714,12 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 usdxSupplyAmount,
     uint256 wbtcSupplyAmount,
     uint256 borrowAmount,
-    uint256 newCrValue
+    uint16 newCrValue
   ) public {
     uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
 
     // Bound collateral risk to below dai2 so reserve is still used in rp calc
-    newCrValue = bound(newCrValue, 0, 99_99);
+    newCrValue = uint16(bound(newCrValue, 0, 99_99));
 
     daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
     wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
@@ -841,10 +841,10 @@ contract SpokeRiskPremiumTest is SpokeBase {
     usdxInfo.price = bound(usdxInfo.price, 1, 1e16);
     wbtcInfo.price = bound(wbtcInfo.price, 1, 1e16);
 
-    daiInfo.collateralRisk = bound(daiInfo.collateralRisk, 0, 1000_00);
-    wethInfo.collateralRisk = bound(wethInfo.collateralRisk, 0, 1000_00);
-    usdxInfo.collateralRisk = bound(usdxInfo.collateralRisk, 0, 1000_00);
-    wbtcInfo.collateralRisk = bound(wbtcInfo.collateralRisk, 0, 1000_00);
+    daiInfo.collateralRisk = uint16(bound(daiInfo.collateralRisk, 0, 1000_00));
+    wethInfo.collateralRisk = uint16(bound(wethInfo.collateralRisk, 0, 1000_00));
+    usdxInfo.collateralRisk = uint16(bound(usdxInfo.collateralRisk, 0, 1000_00));
+    wbtcInfo.collateralRisk = uint16(bound(wbtcInfo.collateralRisk, 0, 1000_00));
 
     // Bob supply dai into spoke2
     if (daiInfo.supplyAmount > 0) {

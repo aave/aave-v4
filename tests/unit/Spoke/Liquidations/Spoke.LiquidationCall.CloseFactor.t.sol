@@ -16,13 +16,13 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) public {
-    liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    liqConfig.closeFactor = uint128(HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     test_liquidationCall_fuzz_closeFactor(
       collateralReserveId,
       debtReserveId,
@@ -40,9 +40,9 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) public {
@@ -360,7 +360,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 supplyAmount,
     uint256 skipTime,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 desiredHf
   ) public {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
@@ -385,11 +385,11 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   /// fuzz tests where liquidation results in health factor = close factor
   function _execLiqCallCloseFactorTest(
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) internal returns (LiquidationTestLocalParams memory) {
@@ -408,16 +408,16 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
 
     liqConfig = _boundCloseFactor(liqConfig);
-    liqBonus = bound(
+    liqBonus = uint32(bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,
       PercentageMath
         .PERCENTAGE_FACTOR
         .percentDivDown(state.collDynConfig.collateralFactor)
         .percentMulDown(99_00) // add buffer so that amount to restore is > 0
-    );
+    ));
 
-    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
+    liquidationFee = uint16(bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR));
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e26),

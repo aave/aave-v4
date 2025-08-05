@@ -57,7 +57,7 @@ contract SpokeAccessTest is SpokeBase {
     );
     spoke1.updateLiquidationConfig(
       DataTypes.LiquidationConfig({
-        closeFactor: WadRayMath.WAD,
+        closeFactor: uint128(WadRayMath.WAD),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18
       })
@@ -67,7 +67,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(address(SPOKE_ADMIN));
     spoke1.updateLiquidationConfig(
       DataTypes.LiquidationConfig({
-        closeFactor: WadRayMath.WAD,
+        closeFactor: uint128(WadRayMath.WAD),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18
       })
@@ -179,7 +179,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(
       DataTypes.LiquidationConfig({
-        closeFactor: WadRayMath.WAD,
+        closeFactor: uint128(WadRayMath.WAD),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18
       })
