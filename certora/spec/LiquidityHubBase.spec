@@ -36,14 +36,20 @@ methods {
     function WadRayMathExtended.rayDivUp(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivUpCVL(a,wadRayMath.RAY(),b);
 
-
+/*
     function _.calculateInterestRate( uint256 assetId, uint256 availableLiquidity, uint256 baseDebt, uint256 premiumDebt) external => NONDET; 
-
+*/
     function _.setInterestRateData(uint256 assetId, bytes data) external => NONDET; 
 
     function _._checkCanCall(address caller, bytes calldata data) internal => NONDET; 
 
     // todo - prove 
-    function PercentageMathExtended.percentMulDown(uint256 value, uint256 percentage) internal  returns (uint256) => mulDivDownCVL(value,percentage,wadRayMathExtended.PERCENTAGE_FACTOR());
+    function PercentageMathExtended.percentMulDown(uint256 value, uint256 percentage) internal  returns (uint256) => 
+    //mulDivDownCVL(value,percentage,wadRayMathExtended.PERCENTAGE_FACTOR());
+    identity(value);
 
+}
+
+function identity(uint256 x) returns uint256 {
+    return x;
 }

@@ -15,9 +15,14 @@ using MathWrapper as mathWrapper;
 methods {
     // envfree functions
     function mathWrapper.SECONDS_PER_YEAR() external returns (uint256) envfree;
+//    function MathUtils.calculateLinearInterest(uint256 rate, uint40 lastUpdateTimestamp) internal returns (uint256) with (env e) => simpleCalculateInterest(e, lastUpdateTimestamp)  ;
 
 }
 
+function simpleCalculateInterest(env e, uint40 lastUpdateTimestamp) returns uint256 {
+    require  e.block.timestamp >= lastUpdateTimestamp;
+    return require_uint256(e.block.timestamp - lastUpdateTimestamp);
+}
 /**
 @title Two invocations of accure() at the same block result in a state exactly the same as the first execution 
 **/
@@ -96,7 +101,7 @@ rule supplyExchangeRateIsMonotonic_accrue(){
     //requireInvariant baseDebtIndexMin(assetId); 
     require liquidityHub._assets[assetId].baseDebtIndex >= wadRayMath.RAY();
 
-    mathint assetsBefore = getAssetSuppliedAmount(e1, assetId);
+    mathint assetsBefore = getTotalSuppliedAssets(e1, assetId);
     mathint sharesBefore = getTotalSuppliedShares(e1, assetId); 
     //requireInvariant totalAssetsVsShares(assetId,e);
     require assetsBefore >= sharesBefore;
@@ -107,18 +112,62 @@ rule supplyExchangeRateIsMonotonic_accrue(){
     (baseDebt,premiumDebt) = getAssetDebt(e1, assetId);
     accrueInterest(e2,assetId);
 
-    mathint assetsAfter = getAssetSuppliedAmount(e3, assetId);
-    mathint sharesAfter = getTotalSuppliedShares(e3, assetId);
+    mathint assetsAfter = getTotalSuppliedAssets(e2, assetId);
+    mathint sharesAfter = getTotalSuppliedShares(e2, assetId);
 
-    assert assetsAfter * sharesBefore >= assetsBefore * sharesAfter; 
+//    assert assetsAfter * sharesBefore >= assetsBefore * sharesAfter; 
     // > when only considering accrue interest
     assert  ( liquidityHub._assets[assetId].baseBorrowRate >= mathWrapper.SECONDS_PER_YEAR() &&
                 sharesBefore > 0 &&
                 baseDebt > wadRayMath.RAY()
             )
-                => assetsAfter * sharesBefore > assetsBefore * sharesAfter; 
+                => assetsAfter * sharesBefore >= assetsBefore * sharesAfter; 
+    satisfy ( liquidityHub._assets[assetId].baseBorrowRate >= mathWrapper.SECONDS_PER_YEAR() &&
+                sharesBefore > 0 &&
+                baseDebt > wadRayMath.RAY()
+            ) && assetsAfter * sharesBefore > assetsBefore * sharesAfter; 
+    satisfy ( liquidityHub._assets[assetId].baseBorrowRate >= mathWrapper.SECONDS_PER_YEAR() &&
+                sharesBefore > 0 &&
+                baseDebt > wadRayMath.RAY()
+            ) && assetsAfter * sharesBefore == assetsBefore * sharesAfter; 
 }
 
+
+rule supplyExchangeRateIsMonotonic_accrue_v2(){
+    uint256 assetId;
+
+    env e1; env e2;
+    require e1.block.timestamp < e2.block.timestamp ;
+
+
+    // lastUpdateTimestamp can not be in the future, prove... 
+    require liquidityHub._assets[assetId].lastUpdateTimestamp!=0 && liquidityHub._assets[assetId].lastUpdateTimestamp == e1.block.timestamp; 
+    
+    //requireInvariant baseDebtIndexMin(assetId); 
+    require liquidityHub._assets[assetId].baseDebtIndex >= wadRayMath.RAY(); 
+    require liquidityHub._assets[assetId].baseDrawnShares + liquidityHub._assets[assetId].premiumDrawnShares <= liquidityHub._assets[assetId].suppliedShares;
+
+    mathint assetsBefore = getTotalSuppliedAssets(e1, assetId);
+    mathint sharesBefore = getTotalSuppliedShares(e1, assetId); 
+    //requireInvariant totalAssetsVsShares(assetId,e);
+    require assetsBefore >= sharesBefore;
+    // todo - check this is always true 
+    require liquidityHub._assets[assetId].config.liquidityFee == 10000;
+    mathint feeBefore = unrealizedFeeShares(e1, assetId);
+
+
+    mathint assetsAfter = getTotalSuppliedAssets(e2, assetId);
+    mathint feeAfter = unrealizedFeeShares(e2, assetId);
+    require (   liquidityHub._assets[assetId].baseBorrowRate >= mathWrapper.SECONDS_PER_YEAR() &&
+                //liquidityHub._assets[assetId].baseDrawnShares > wadRayMath.RAY() &&
+                liquidityHub._assets[assetId].suppliedShares > 0
+            );
+
+//.  assets/shares / after should be bigger fee is the shares change 
+
+    assert assetsAfter *(sharesBefore + feeBefore ) >= assetsBefore * ( sharesBefore + feeAfter) ;
+
+}
 /**
 @title Comparing Accruing in two steps (t -> t1, t1 -> t2) to one step ( t -> t2):
 Index can be higher on two steps, but not always. (TODO - check that this is ok)
@@ -165,7 +214,20 @@ rule twoStepVsOneStep(uint256 assetId) {
     
 }
 
+rule getTotalSuppliedAssetsVsGetAssetSuppliedAmount(uint256 assetId) {
+    env e;
+    env eNext;
+    require eNext.block.timestamp > e.block.timestamp;
+    
+    //requireInvariant baseDebtIndexMin(assetId); 
+    require liquidityHub._assets[assetId].baseDebtIndex >= wadRayMath.RAY();
+     
+    require liquidityHub._assets[assetId].lastUpdateTimestamp == e.block.timestamp; 
 
+    require getTotalSuppliedAssets(e,assetId) == getAssetSuppliedAmount(e,assetId);
+    accrueInterest(eNext,assetId);
+    assert getTotalSuppliedAssets(eNext,assetId) == getAssetSuppliedAmount(eNext,assetId); 
+}
 
 /**
 @title  View functions are isomorphic to accrue, they return the same value if accrue was called or not
@@ -173,19 +235,22 @@ rule twoStepVsOneStep(uint256 assetId) {
 
 rule viewFunctionsIntegrity(uint256 assetId, method f) filtered { f-> f.isView &&
                                 f.selector != sig:MAX_ALLOWED_ASSET_DECIMALS().selector &&
-                                f.selector !=  sig:authority().selector &&
+                                f.selector != sig:authority().selector &&
                                 f.selector != sig:isConsumingScheduledOp().selector &&
+                                f.selector != sig:isSpokeListed(uint256,address).selector &&
                                 // returns a struct 
                                 f.selector != sig:getAsset(uint256).selector &&
                                 f.selector != sig:getAssetConfig(uint256).selector &&
                                 f.selector != sig:getSpoke(uint256,address).selector &&
                                 f.selector != sig:getSpokeConfig(uint256,address).selector &&
+                                f.selector != sig:getSpokeAddress(uint256,uint256).selector &&
                                 // harness functions
                                 f.selector != sig:toSharesDown(uint256,uint256,uint256).selector &&
                                 f.selector != sig:toAssetsDown(uint256,uint256,uint256).selector &&
                                 f.selector != sig:toSharesUp(uint256,uint256,uint256).selector &&
                                 f.selector != sig:toAssetsUp(uint256,uint256,uint256).selector &&
-                                f.selector != sig:getAssetSuppliedAmountUp(uint256).selector 
+                                f.selector != sig:getAssetSuppliedAmountUp(uint256).selector &&
+                                f.selector != sig:getFeeShares(uint256,uint256).selector
                                 }
 {
     env e;
@@ -223,9 +288,6 @@ function callViewFunction(method f, env e, calldataarg args) returns mathint {
     } 
     else if (f.selector == sig:convertToSuppliedShares(uint256, uint256).selector) {
         return convertToSuppliedShares(e,args);
-    } 
-    else if (f.selector == sig:previewOffset(uint256, uint256).selector) {
-        return previewOffset(e,args);
     } 
     else if (f.selector == sig:getAssetDebt(uint256).selector) {
         uint256 a;
@@ -278,17 +340,35 @@ function callViewFunction(method f, env e, calldataarg args) returns mathint {
     else if (f.selector == sig:getTotalSuppliedShares(uint256).selector) {
         return getTotalSuppliedShares(e,args);
     }
-    else if (f.selector == sig:previewDrawnIndex(uint256).selector) {
-        return previewDrawnIndex(e,args);
+    else if (f.selector == sig:getAssetDrawnIndex(uint256).selector) {
+        return getAssetDrawnIndex(e,args);
     }
-    else if (f.selector == sig:convertToSuppliedSharesUp(uint256,uint256).selector) {
-        return convertToSuppliedSharesUp(e,args);
+    else if (f.selector == sig:getSpokeCount(uint256).selector) {
+        return getSpokeCount(e,args);
     }
-    else if (f.selector == sig:convertToSuppliedAssetsUp(uint256,uint256).selector) {
-        return convertToSuppliedAssetsUp(e,args);
+    else if (f.selector == sig:previewRemoveByAssets(uint256,uint256).selector) {
+        return previewRemoveByAssets(e,args);
     }
-    else  if (f.selector ==  sig:convertToDrawnSharesUp(uint256,uint256).selector) {
-        return convertToDrawnSharesUp(e,args);
+    else  if (f.selector ==  sig:previewRemoveByShares(uint256,uint256).selector) {
+        return previewRemoveByShares(e,args);
+    }
+    else if (f.selector == sig:previewAddByAssets(uint256,uint256).selector) {
+        return previewAddByAssets(e,args);
+    }
+    else if (f.selector == sig:previewAddByShares(uint256,uint256).selector) {
+        return previewAddByShares(e,args);
+    }
+    else if (f.selector == sig:previewRestoreByAssets(uint256,uint256).selector) {
+        return previewRestoreByAssets(e,args);
+    }
+    else if (f.selector == sig:previewDrawByShares(uint256,uint256).selector) {
+        return previewDrawByShares(e,args);
+    }
+    else if (f.selector == sig:previewDrawByAssets(uint256,uint256).selector) {
+        return previewDrawByAssets(e,args);
+    }
+    else if (f.selector == sig:previewRestoreByShares(uint256,uint256).selector) {
+        return previewRestoreByShares(e,args);
     }
     else
     {

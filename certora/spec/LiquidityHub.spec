@@ -39,21 +39,23 @@ methods {
   function _validateRemove(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
-    uint256 amount
+    uint256 amount,
+    address to
   ) internal => NONDET;
 
   function LiquidityHub._validateDraw(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 amount,
-    uint256 drawCap
+    address to
   ) internal => NONDET;
 
   function LiquidityHub._validateRestore(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 baseAmountRestored,
-    uint256 premiumAmountRestored
+    uint256 premiumAmountRestored,
+    address from
   ) internal => NONDET;
 
 
@@ -75,19 +77,29 @@ ghost mapping(uint256 /*assetId*/  => mapping(address /*spoke*/ => uint256 )) sp
     init_state axiom forall uint256 X. (usum address a. spokeSupplyPerAssetMirror[X][a]) == 0; 
 }
 
-
-ghost bool accrueCalledOnAsset;
-//record accessed to debt fields before accrue
-ghost bool unsafeAccessBeforeAccrue;
-
-
-
+ghost mapping(uint256 /*assetId*/  => mapping(address /*spoke*/ => uint256 )) spokePremiumDrawnSharesPerAssetMirror {
+    init_state axiom forall uint256 X. forall address Y. spokePremiumDrawnSharesPerAssetMirror[X][Y] == 0 ;
+    init_state axiom forall uint256 X. (usum address a. spokePremiumDrawnSharesPerAssetMirror[X][a]) == 0; 
+}
 
 ghost mapping(uint256 /*assetId*/  => mapping(address /*spoke*/ => uint256 )) spokeBaseDrawnPerAssetMirror {
     init_state axiom forall uint256 X. forall address Y. spokeBaseDrawnPerAssetMirror[X][Y] == 0 ;
     init_state axiom forall uint256 X. (usum address a. spokeBaseDrawnPerAssetMirror[X][a]) == 0; 
 }
 
+ghost mapping(uint256 /*assetId*/  => mapping(address /*spoke*/ => uint256 )) spokePremiumOffsetPerAssetMirror {
+    init_state axiom forall uint256 X. forall address Y. spokePremiumOffsetPerAssetMirror[X][Y] == 0 ;
+    init_state axiom forall uint256 X. (usum address a. spokePremiumOffsetPerAssetMirror[X][a]) == 0; 
+}
+
+ghost mapping(uint256 /*assetId*/  => mapping(address /*spoke*/ => uint256 )) spokeRealizedPremiumPerAssetMirror {
+    init_state axiom forall uint256 X. forall address Y. spokeRealizedPremiumPerAssetMirror[X][Y] == 0 ;
+    init_state axiom forall uint256 X. (usum address a. spokeRealizedPremiumPerAssetMirror[X][a]) == 0; 
+}
+
+ghost bool accrueCalledOnAsset;
+//record accessed to debt fields before accrue
+ghost bool unsafeAccessBeforeAccrue;
 /********** Function summary *****/
 function accrueCalled() {
     accrueCalledOnAsset = true; 
@@ -116,20 +128,54 @@ hook Sload uint256 value _assets[KEY uint256 assetId].suppliedShares  {
 
 hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].baseDrawnShares uint256 new_value (uint256 old_value) {
     spokeBaseDrawnPerAssetMirror[assetId][spoke] = new_value;
-
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
 hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].baseDrawnShares {
     require spokeBaseDrawnPerAssetMirror[assetId][spoke] == value;
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
 hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].suppliedShares uint256 new_value (uint256 old_value) {
     spokeSupplyPerAssetMirror[assetId][spoke] = new_value;
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
 hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].suppliedShares {
     require spokeSupplyPerAssetMirror[assetId][spoke] == value;
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
+
+hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].premiumDrawnShares uint256 new_value (uint256 old_value) {
+    spokePremiumDrawnSharesPerAssetMirror[assetId][spoke] = new_value;
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
+}
+
+hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].premiumDrawnShares {
+    require spokePremiumDrawnSharesPerAssetMirror[assetId][spoke] == value;
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
+}
+
+hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].premiumOffset uint256 new_value (uint256 old_value) {
+    spokePremiumOffsetPerAssetMirror[assetId][spoke] = new_value;
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
+}
+
+hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].premiumOffset {
+    require spokePremiumOffsetPerAssetMirror[assetId][spoke] == value;
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
+}
+
+hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].realizedPremium uint256 new_value (uint256 old_value) {
+    spokeRealizedPremiumPerAssetMirror[assetId][spoke] = new_value;
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
+}
+
+hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].realizedPremium {
+    require spokeRealizedPremiumPerAssetMirror[assetId][spoke] == value;
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
+}
+
 /**
 @title External balance is at least as internal accounting 
 https://prover.certora.com/output/40726/1223726233564eeabef3da5a94096d92/?anonymousKey=7a23564895baca924f339ac7720029b2aa50a758
@@ -168,9 +214,18 @@ invariant solvency_internal(uint256 assetId, env e)
     */
 
 
-rule solvency_internal_tautology(uint256 assetId, env e) {
+rule solvency_internal(uint256 assetId, env e) {
 //    requireAllInvariants(assetId, e);
     assert getAvailableLiquidity(e, assetId) >= getAssetSuppliedAmount(e, assetId) - getAssetTotalDebt(e, assetId);
+    }
+
+
+invariant getTotalSuppliedAssetsVsGetAssetSuppliedAmount(uint256 assetId, env e) 
+    getTotalSuppliedAssets(e,assetId) == getAssetSuppliedAmount(e,assetId)  {
+        preserved with (env eInv) {
+            require eInv.block.timestamp == e.block.timestamp;
+            requireAllInvariants(assetId, e);
+        }
     }
 
 
@@ -191,6 +246,7 @@ invariant totalAssetsAndSharesZero(uint256 assetId, env e)
             requireAllInvariants(assetId, e);
         }
     }
+
 
 
 // when not accruing interest, every function should increase supply exchange rate (except liquidate which is wip)
@@ -232,6 +288,7 @@ rule noChangeToOtherSpoke(address spoke, uint256 assetId, address otherSpoke, me
     env eOther;
     require e.block.timestamp == eOther.block.timestamp; 
     require otherSpoke != spoke && eOther.msg.sender == otherSpoke; 
+    address feeReceiver = liquidityHub._assets[assetId].config.feeReceiver;
 
     require liquidityHub._assets[assetId].lastUpdateTimestamp == e.block.timestamp; 
     requireAllInvariants(assetId, e);
@@ -246,10 +303,9 @@ rule noChangeToOtherSpoke(address spoke, uint256 assetId, address otherSpoke, me
     f(eOther,args);
 
     assert cumulativeDebt_ >= getSpokeTotalDebt(e, assetId, spoke);  
-    assert shares_ == getSpokeSuppliedShares(e, assetId, spoke);
+    assert spoke != feeReceiver => shares_ == getSpokeSuppliedShares(e, assetId, spoke);
     // asset can increase due to other's operations 
-    assert assets <= getSpokeSuppliedAmount(e, assetId, spoke);
-    // debt can decrease - TODO 
+    assert assets <= getSpokeSuppliedAmount(e, assetId, spoke); 
 } 
 
 
@@ -283,11 +339,20 @@ definition emptyAsset(uint256 assetId) returns bool =
     liquidityHub._assets[assetId].suppliedShares == 0 &&
         liquidityHub._assets[assetId].availableLiquidity == 0 &&
         liquidityHub._assets[assetId].baseDrawnShares == 0 &&
+        liquidityHub._assets[assetId].premiumDrawnShares == 0 &&
+        liquidityHub._assets[assetId].baseDrawnShares == 0 &&
+        liquidityHub._assets[assetId].premiumOffset == 0 &&
         liquidityHub._assets[assetId].realizedPremium == 0 &&
+        liquidityHub._assets[assetId].baseDrawnShares == 0 &&
+        liquidityHub._assets[assetId].baseDebtIndex == 0 &&
+        liquidityHub._assets[assetId].baseBorrowRate == 0 &&
+        liquidityHub._assets[assetId].lastUpdateTimestamp == 0 &&
         ( forall address spoke. 
             liquidityHub._spokes[assetId][spoke].suppliedShares == 0 &&
             liquidityHub._spokes[assetId][spoke].baseDrawnShares == 0 &&
-            liquidityHub._spokes[assetId][spoke].realizedPremium == 0  
+            liquidityHub._spokes[assetId][spoke].premiumDrawnShares == 0  &&
+            liquidityHub._spokes[assetId][spoke].premiumOffset == 0 &&
+            liquidityHub._spokes[assetId][spoke].realizedPremium == 0 
         ) && 
         liquidityHub._assets[assetId].underlying == 0;
 
@@ -326,6 +391,30 @@ invariant sumOfSpokeDrawnShares(uint256 assetId)
         }
     }
 
+invariant sumOfSpokePremiumDrawnShares(uint256 assetId) 
+    liquidityHub._assets[assetId].premiumDrawnShares == (usum address spoke. spokePremiumDrawnSharesPerAssetMirror[assetId][spoke]) 
+    {
+        preserved {
+            requireInvariant validAssetId(assetId);
+        }
+    }
+
+invariant sumOfSpokePremiumOffset(uint256 assetId) 
+    liquidityHub._assets[assetId].premiumOffset == (usum address spoke. spokePremiumOffsetPerAssetMirror[assetId][spoke]) 
+    {
+        preserved {
+            requireInvariant validAssetId(assetId);
+        }
+    }
+
+invariant sumOfSpokeRealizedPremium(uint256 assetId) 
+    liquidityHub._assets[assetId].realizedPremium == (usum address spoke. spokeRealizedPremiumPerAssetMirror[assetId][spoke]) 
+    {
+        preserved {
+            requireInvariant validAssetId(assetId);
+        }
+    }
+
 invariant baseDebtIndexMin(uint256 assetId) 
     liquidityHub._assets[assetId].baseDebtIndex==0 || liquidityHub._assets[assetId].baseDebtIndex >= wadRayMath.RAY()
     {
@@ -340,15 +429,23 @@ ghost uint256 supplyAmountBefore;
 ghost uint256 supplyShareBefore;
 
 function requireAllInvariants(uint256 assetId, env e)  {
-    // optimize the calls to 
+    // optimize (reuse) the calls to getAssetSuppliedAmount() and getAssetSuppliedShares()
     supplyAmountBefore = getAssetSuppliedAmount(e,assetId);
     supplyShareBefore = getAssetSuppliedShares(e,assetId); 
     //requireInvariant totalAssetsVsShares(assetId,e);
-    require supplyAmountBefore >= supplyShareBefore;
+    require supplyAmountBefore >= supplyShareBefore, "optimization";
+    
+    // requireInvariant totalAssetsAndSharesZero(assetId,e);
+    require supplyAmountBefore == 0 <=> supplyShareBefore == 0, "optimization";
 
-
+    requireInvariant solvency_external(liquidityHub._assets[assetId].underlying);
     requireInvariant sumOfSpokeDrawnShares(assetId);
     requireInvariant sumOfSpokeSupplyShares(assetId);
+    requireInvariant sumOfSpokePremiumDrawnShares(assetId);
+    requireInvariant sumOfSpokePremiumOffset(assetId);
+    requireInvariant sumOfSpokeRealizedPremium(assetId);
+    requireInvariant baseDebtIndexMin(assetId);
+    requireInvariant validAssetId(assetId);
     requireInvariant baseDebtIndexMin(assetId); 
 }   
 
@@ -356,4 +453,26 @@ function requireAllInvariants(uint256 assetId, env e)  {
  * @title liquidityFee upper bound: config.liquidityFee must not exceed PercentageMathExtended.PERCENTAGE_FACTOR
  */
 invariant liquidityFee_upper_bound(uint256 assetId) 
-    liquidityHub._assets[assetId].config.liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR;
+    liquidityHub._assets[assetId].config.liquidityFee <= wadRayMathExtended.PERCENTAGE_FACTOR();
+
+
+// once can remove his shares
+rule frontRunOnRemove(uint256 assetId, method f) {
+    env e;
+    env eBefore; calldataarg args;
+    require eBefore.msg.sender != e.msg.sender;
+
+    requireAllInvariants(assetId,e);
+
+    storage init_state = lastStorage;
+    // once should still be able to remove his shares
+    uint256 amount; 
+    address from;
+    remove(e,assetId, amount, from);
+    
+    f(eBefore,args) at init_state;
+    remove@withrevert(e,assetId, amount, from);
+    assert !lastReverted;
+    // it is possible for everyone to remove and than zero shares left
+    satisfy !lastReverted && supplyAmountBefore!=0 && getAssetSuppliedAmount(e,assetId) == 0;
+}
