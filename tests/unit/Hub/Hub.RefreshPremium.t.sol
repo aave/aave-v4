@@ -66,7 +66,6 @@ contract HubRefreshPremiumTest is HubBase {
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
 
     DataTypes.Asset memory asset = hub1.getAsset(assetId);
-    DataTypes.SpokeData memory spoke = hub1.getSpoke(assetId, address(spoke1));
 
     sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares);
     offsetDeltaPos = bound(offsetDeltaPos, sharesDeltaPos, sharesDeltaPos + 2);
@@ -82,6 +81,50 @@ contract HubRefreshPremiumTest is HubBase {
       offsetDelta: offsetDelta,
       realizedDelta: realizedDelta
     });
+
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(assetId, premiumDelta);
+  }
+
+  function test_refreshPremium_negativeNumbers_withAccrual(
+    uint256 sharesDeltaPos,
+    uint256 offsetDeltaPos
+  ) public {
+    // Bob supplies and borrows dai via spoke 1
+    uint256 assetId = daiAssetId;
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 10000e18, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
+
+    skip(322 days);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 1e18, bob);
+
+    DataTypes.Asset memory asset = hub1.getAsset(assetId);
+
+    sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares);
+    offsetDeltaPos = bound(offsetDeltaPos, 0, asset.premiumOffset);
+    uint256 realizedDeltaPos;
+    uint256 premiumAssetsPos = hub1.convertToDrawnAssets(assetId, sharesDeltaPos);
+
+    // If we introduced debt with shares vs offset, capture with realized delta
+    if (offsetDeltaPos > premiumAssetsPos) {
+      realizedDeltaPos = offsetDeltaPos - premiumAssetsPos;
+    } else {
+      realizedDeltaPos = 0;
+    }
+
+    int256 sharesDelta = -int256(sharesDeltaPos);
+    int256 offsetDelta = -int256(offsetDeltaPos);
+    int256 realizedDelta = -int256(realizedDeltaPos);
+    DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
+      sharesDelta: sharesDelta,
+      offsetDelta: offsetDelta,
+      realizedDelta: realizedDelta
+    });
+    if (realizedDeltaPos > asset.realizedPremium) {
+      vm.expectRevert(stdError.arithmeticError);
+    } else if (premiumAssetsPos > offsetDeltaPos) {
+      vm.expectRevert(stdError.arithmeticError);
+    }
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(assetId, premiumDelta);
