@@ -65,26 +65,25 @@ library DataTypes {
     IHub hub;
     //
     uint16 assetId;
+    uint8 decimals;
+    address underlying;
+    uint16 dynamicConfigKey; // key of the last reserve config
     bool paused;
     bool frozen;
     bool borrowable;
     uint24 collateralRisk;
-    uint16 dynamicConfigKey; // key of the last reserve config
-    uint8 decimals;
-    address underlying;
-  }
-
-  struct ReserveConfig {
-    bool paused;
-    bool frozen;
-    bool borrowable;
-    uint24 collateralRisk; // BPS
   }
 
   struct DynamicReserveConfig {
     uint16 collateralFactor;
     uint32 liquidationBonus; // BPS, 100_00 represent a 0% bonus
     uint16 liquidationFee; // BPS
+  }
+
+  struct LiquidationConfig {
+    uint128 closeFactor; // WAD, HF value to restore to during a liquidation
+    uint64 healthFactorForMaxBonus; // WAD, health factor under which liquidation bonus is max
+    uint16 liquidationBonusFactor; // BPS, as a percentage of effective lb
   }
 
   struct UserPosition {
@@ -108,10 +107,11 @@ library DataTypes {
     mapping(uint256 slot => uint256 status) map;
   }
 
-  struct LiquidationConfig {
-    uint128 closeFactor; // BPS, HF value to restore to during a liquidation
-    uint64 healthFactorForMaxBonus; // health factor under which liquidation bonus is max
-    uint16 liquidationBonusFactor; // BPS, as a percentage of effective lb
+  struct ReserveConfig {
+    bool paused;
+    bool frozen;
+    bool borrowable;
+    uint24 collateralRisk; // BPS
   }
 
   struct NotifyRiskPremiumUpdateVars {

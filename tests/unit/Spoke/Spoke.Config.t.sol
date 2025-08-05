@@ -99,7 +99,7 @@ contract SpokeConfigTest is SpokeBase {
     newReserveConfig.collateralRisk = uint24(bound(
       newReserveConfig.collateralRisk,
       0,
-      spoke1.MAX_COLLATERAL_RISK()
+      Constants.MAX_COLLATERAL_RISK
     ));
 
     uint256 daiReserveId = _daiReserveId(spoke1);

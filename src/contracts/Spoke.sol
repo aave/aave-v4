@@ -12,6 +12,7 @@ import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
+import {Constants} from 'src/libraries/helpers/Constants.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
@@ -32,9 +33,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using PositionStatus for DataTypes.PositionStatus;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
   using MathUtils for uint128;
-
-  uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
-  uint256 public constant MAX_COLLATERAL_RISK = 1000_00; // 1000.00%
 
   IAaveOracle public oracle;
 
@@ -60,7 +58,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    */
   constructor(address authority_) AccessManaged(authority_) {
     // todo move to `initialize` when adding upgradeability
-    _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD.toUint128();
+    _liquidationConfig.closeFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     emit LiquidationConfigUpdate(_liquidationConfig);
   }
 
@@ -491,7 +489,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       _liquidationConfig.calculateVariableLiquidationBonus(
         healthFactor,
         _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey].liquidationBonus,
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+        Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       );
   }
 
@@ -624,12 +622,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // @dev refresh user position dynamic config only on borrow, withdraw, disableUsingAsCollateral
     _refreshDynamicConfig(user); // opt: merge with _calculateUserAccountData
     (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
-    require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorBelowThreshold());
+    require(
+      healthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      HealthFactorBelowThreshold()
+    );
     return userRiskPremium;
   }
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal pure {
-    require(config.collateralRisk <= MAX_COLLATERAL_RISK, InvalidCollateralRisk()); // max 1000.00%
+    require(config.collateralRisk <= Constants.MAX_COLLATERAL_RISK, InvalidCollateralRisk()); // max 1000.00%
   }
 
   function _validateDynamicReserveConfig(
@@ -652,13 +653,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       InvalidLiquidationBonusFactor()
     );
     require(
-      config.healthFactorForMaxBonus < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      config.healthFactorForMaxBonus < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       InvalidHealthFactorForMaxBonus()
     );
   }
 
   function _validateCloseFactor(uint256 closeFactor) internal pure {
-    require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
+    require(closeFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
   }
 
   function _validateLiquidationCall(
@@ -676,7 +677,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       ReserveNotListed()
     );
     require(!collateralReserve.paused && !debtReserve.paused, ReservePaused());
-    require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
+    require(
+      healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      HealthFactorNotBelowThreshold()
+    );
     bool isCollateralEnabled = _positionStatus[user].isUsingAsCollateral(
       collateralReserve.reserveId
     ) && collateralFactor != 0;
