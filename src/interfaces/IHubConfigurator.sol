@@ -165,13 +165,13 @@ interface IHubConfigurator {
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
-   * @param supplyCap The new supply cap.
+   * @param addCap The new supply cap.
    */
   function updateSpokeSupplyCap(
     address hub,
     uint256 assetId,
     address spoke,
-    uint256 supplyCap
+    uint256 addCap
   ) external;
 
   /**
@@ -193,14 +193,14 @@ interface IHubConfigurator {
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
-   * @param supplyCap The new supply cap.
+   * @param addCap The new supply cap.
    * @param drawCap The new draw cap.
    */
   function updateSpokeCaps(
     address hub,
     uint256 assetId,
     address spoke,
-    uint256 supplyCap,
+    uint256 addCap,
     uint256 drawCap
   ) external;
 

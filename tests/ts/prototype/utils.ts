@@ -1,4 +1,4 @@
-import {User, Spoke, LiquidityHub, System} from './core.ts';
+import {User, Spoke, Hub, System} from './core.ts';
 
 export const DEBUG = true;
 const SEED = 4333;
@@ -22,11 +22,11 @@ export const MAX_INDEX = parseRay(1.99); // 99% interest
 
 export const PRECISION = 3000n; // max abs delta allowed
 
-export function logDebt(who: User | Spoke | LiquidityHub) {
-  const hub = who instanceof LiquidityHub ? who : who.hub;
+export function logDebt(who: User | Spoke | Hub) {
+  const hub = who instanceof Hub ? who : who.hub;
   console.log(
     'debt: base %d + premium %d (ghost %d, offset %d, unrealised %d) = %d',
-    f(who.getDebt().baseDebt),
+    f(who.getDebt().drawnDebt),
     f(who.getDebt().premiumDebt),
     f(hub.toDrawnAssets(who.ghostDrawnShares)),
     f(who.offset),

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowScenarioTest is SpokeBase {
-  using WadRayMathExtended for uint256;
+  using WadRayMath for uint256;
 
   /// fuzz - 2 users borrowing 2 assets from 1 spoke
   function test_borrow_fuzz_single_spoke_multi_reserves_multi_user(
@@ -530,15 +530,15 @@ contract SpokeBorrowScenarioTest is SpokeBase {
 
     state.daiBob.userPosBefore = spoke1.getUserPosition(state.daiReserveId, bob);
     uint40 lastTimestamp = uint40(vm.getBlockTimestamp());
-    (uint256 baseDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
+    (uint256 drawnDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
 
     skip(skipTime);
 
     uint256 cumulatedInterest = MathUtils.calculateLinearInterest(
-      hub.getAsset(daiAssetId).baseBorrowRate,
+      hub1.getAsset(daiAssetId).drawnRate,
       lastTimestamp
     );
-    uint256 expectedBaseDebt = cumulatedInterest.rayMulUp(borrowAmount1) + borrowAmount2;
+    uint256 expectedDrawnDebt = cumulatedInterest.rayMulUp(borrowAmount1) + borrowAmount2;
 
     // calculate expected realized premium prior to action
     state.daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
@@ -549,7 +549,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     _assertRealizedPremiumCalcMatchesNaive(
       spoke1,
       state.daiReserveId,
-      baseDebt,
+      drawnDebt,
       state.daiBob.userPosBefore,
       lastTimestamp
     );
@@ -558,9 +558,9 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     vm.prank(bob);
     spoke1.borrow(state.daiReserveId, borrowAmount2, bob);
 
-    (baseDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
-    // check that accrued base debt matches expected
-    assertApproxEqAbs(baseDebt, expectedBaseDebt, 3, 'base debt after borrow2');
+    (drawnDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
+    // check that accrued drawn debt matches expected
+    assertApproxEqAbs(drawnDebt, expectedDrawnDebt, 3, 'drawn debt after borrow2');
 
     // assertions for 2nd borrow
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'spoke1 bob dai after');
@@ -568,7 +568,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       spoke: spoke1,
       reserveId: state.daiReserveId,
       user: bob,
-      debtAmount: baseDebt,
+      debtAmount: drawnDebt,
       suppliedAmount: state.daiBob.supplyAmount,
       expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
       label: 'bob dai data after'

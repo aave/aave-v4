@@ -5,7 +5,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeMultipleHubBase is SpokeBase {
   // New hub and spoke
-  ILiquidityHub internal newHub;
+  IHub internal newHub;
   AaveOracle internal newOracle;
   ISpoke internal newSpoke;
   IAssetInterestRateStrategy internal newIrStrategy;
@@ -36,14 +36,14 @@ contract SpokeMultipleHubBase is SpokeBase {
     vm.startPrank(ADMIN);
     accessManager = new AccessManager(ADMIN);
     // Canonical hub and spoke
-    hub = new LiquidityHub(address(accessManager));
+    hub1 = new Hub(address(accessManager));
     spoke1 = new Spoke(address(accessManager));
     oracle1 = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
-    treasurySpoke = new TreasurySpoke(ADMIN, address(hub));
-    irStrategy = new AssetInterestRateStrategy(address(hub));
+    treasurySpoke = new TreasurySpoke(ADMIN, address(hub1));
+    irStrategy = new AssetInterestRateStrategy(address(hub1));
 
     // New hub and spoke
-    newHub = new LiquidityHub(address(accessManager));
+    newHub = new Hub(address(accessManager));
     newSpoke = new Spoke(address(accessManager));
     newOracle = new AaveOracle(address(newSpoke), 8, 'New Spoke (USD)');
     newIrStrategy = new AssetInterestRateStrategy(address(newHub));
@@ -81,14 +81,14 @@ contract SpokeMultipleHubBase is SpokeBase {
     accessManager.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
     accessManager.setTargetFunctionRole(address(newSpoke), selectors, Roles.SPOKE_ADMIN_ROLE);
 
-    // Liquidity Hub Admin functionalities
+    // Hub Admin functionalities
     bytes4[] memory hubSelectors = new bytes4[](4);
-    hubSelectors[0] = ILiquidityHub.addAsset.selector;
-    hubSelectors[1] = ILiquidityHub.updateAssetConfig.selector;
-    hubSelectors[2] = ILiquidityHub.addSpoke.selector;
-    hubSelectors[3] = ILiquidityHub.updateSpokeConfig.selector;
+    hubSelectors[0] = IHub.addAsset.selector;
+    hubSelectors[1] = IHub.updateAssetConfig.selector;
+    hubSelectors[2] = IHub.addSpoke.selector;
+    hubSelectors[3] = IHub.updateSpokeConfig.selector;
 
-    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(address(hub1), hubSelectors, Roles.HUB_ADMIN_ROLE);
     accessManager.setTargetFunctionRole(address(newHub), hubSelectors, Roles.HUB_ADMIN_ROLE);
     vm.stopPrank();
   }

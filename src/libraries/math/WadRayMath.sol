@@ -1,165 +1,200 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-
 /**
  * @title WadRayMath library
  * @author Aave
- * @notice Provides functions to perform calculations with Wad and Ray units
+ * @notice Provides functions to perform calculations with Wad and Ray units with explicit rounding
  * @dev Provides mul and div function for wads (decimal numbers with 18 digits of precision) and rays (decimal numbers
  * with 27 digits of precision)
- * @dev Operations are rounded. If a value is >=.5, will be rounded up, otherwise rounded down.
  */
+
 library WadRayMath {
-  // HALF_WAD and HALF_RAY expressed with extended notation as constant with operations are not supported in Yul assembly
-  uint256 internal constant HALF_RAD = 0.5e8;
-
   uint256 internal constant WAD = 1e18;
-  uint256 internal constant HALF_WAD = 0.5e18;
-
   uint256 internal constant RAY = 1e27;
-  uint256 internal constant HALF_RAY = 0.5e27;
-
-  uint256 internal constant WAD_RAY_RATIO = 1e9;
+  uint256 internal constant PERCENTAGE_FACTOR = 1e4;
 
   /**
-   * @dev Multiplies two wad, rounding half up to the nearest wad
+   * @dev Multiplies two wad, rounding down
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param a Wad
    * @param b Wad
-   * @return c = a*b, in wad
+   * @return c = floor(a*b), in wad
    */
-  function wadMul(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    // to avoid overflow, a <= (type(uint256).max - HALF_WAD) / b
-    assembly {
-      if iszero(or(iszero(b), iszero(gt(a, div(sub(not(0), HALF_WAD), b))))) {
+  function wadMulDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    // to avoid overflow, a <= type(uint256).max / b
+    assembly ('memory-safe') {
+      if iszero(or(iszero(b), iszero(gt(a, div(not(0), b))))) {
         revert(0, 0)
       }
 
-      c := div(add(mul(a, b), HALF_WAD), WAD)
+      c := div(mul(a, b), WAD)
     }
   }
 
   /**
-   * @dev Divides two wad, rounding half up to the nearest wad
+   * @dev Multiplies two wad, rounding up
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param a Wad
    * @param b Wad
-   * @return c = a/b, in wad
+   * @return c = ceil(a*b), in wad
    */
-  function wadDiv(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    // to avoid overflow, a <= (type(uint256).max - halfB) / WAD
-    assembly {
-      if or(iszero(b), iszero(iszero(gt(a, div(sub(not(0), div(b, 2)), WAD))))) {
+  function wadMulUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    // to avoid overflow, a <= type(uint256).max / b
+    assembly ('memory-safe') {
+      if iszero(or(iszero(b), iszero(gt(a, div(not(0), b))))) {
         revert(0, 0)
       }
-
-      c := div(add(mul(a, WAD), div(b, 2)), b)
+      c := mul(a, b)
+      // Add 1 if (a * b) % WAD > 0 to round up the division of (a * b) by WAD
+      c := add(div(c, WAD), gt(mod(c, WAD), 0))
     }
   }
 
   /**
-   * @notice Multiplies two ray, rounding half up to the nearest ray
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Ray
-   * @param b Ray
-   * @return c = a raymul b
-   */
-  function rayMul(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    // to avoid overflow, a <= (type(uint256).max - HALF_RAY) / b
-    assembly {
-      if iszero(or(iszero(b), iszero(gt(a, div(sub(not(0), HALF_RAY), b))))) {
-        revert(0, 0)
-      }
-
-      c := div(add(mul(a, b), HALF_RAY), RAY)
-    }
-  }
-
-  /**
-   * @notice Divides two ray, rounding half up to the nearest ray
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Ray
-   * @param b Ray
-   * @return c = a raydiv b
-   */
-  function rayDiv(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    // to avoid overflow, a <= (type(uint256).max - halfB) / RAY
-    assembly {
-      if or(iszero(b), iszero(iszero(gt(a, div(sub(not(0), div(b, 2)), RAY))))) {
-        revert(0, 0)
-      }
-
-      c := div(add(mul(a, RAY), div(b, 2)), b)
-    }
-  }
-
-  /**
-   * @dev Casts ray down to wad
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Ray
-   * @return b = a converted to wad, rounded half up to the nearest wad
-   */
-  function rayToWad(uint256 a) internal pure returns (uint256 b) {
-    assembly {
-      b := div(a, WAD_RAY_RATIO)
-      let remainder := mod(a, WAD_RAY_RATIO)
-      if iszero(lt(remainder, div(WAD_RAY_RATIO, 2))) {
-        b := add(b, 1)
-      }
-    }
-  }
-
-  /**
-   * @dev Converts wad up to ray
+   * @dev Divides two wad, rounding down
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param a Wad
-   * @return b = a converted in ray
+   * @param b Wad
+   * @return c = floor(a/b), in wad
    */
-  function wadToRay(uint256 a) internal pure returns (uint256 b) {
-    // to avoid overflow, b/WAD_RAY_RATIO == a
-    assembly {
-      b := mul(a, WAD_RAY_RATIO)
-
-      if iszero(eq(div(b, WAD_RAY_RATIO), a)) {
+  function wadDivDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    // to avoid overflow, a <= type(uint256).max / WAD
+    assembly ('memory-safe') {
+      if or(iszero(b), iszero(iszero(gt(a, div(not(0), WAD))))) {
         revert(0, 0)
       }
+
+      c := div(mul(a, WAD), b)
     }
   }
 
   /**
-   * @notice Casts value to Ray, adding 27 digits of precision
+   * @dev Divides two wad, rounding up
+   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
+   * @param a Wad
+   * @param b Wad
+   * @return c = ceil(a/b), in wad
+   */
+  function wadDivUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    // to avoid overflow, a <= type(uint256).max / WAD
+    assembly ('memory-safe') {
+      if or(iszero(b), iszero(iszero(gt(a, div(not(0), WAD))))) {
+        revert(0, 0)
+      }
+      c := mul(a, WAD)
+      // Add 1 if (a * WAD) % b > 0 to round up the division of (a * WAD) by b
+      c := add(div(c, b), gt(mod(c, b), 0))
+    }
+  }
+
+  /**
+   * @dev Multiplies two ray, rounding down
+   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
+   * @param a Ray
+   * @param b Ray
+   * @return c = floor(a*b), in ray
+   */
+  function rayMulDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    // to avoid overflow, a <= type(uint256).max / b
+    assembly ('memory-safe') {
+      if iszero(or(iszero(b), iszero(gt(a, div(not(0), b))))) {
+        revert(0, 0)
+      }
+
+      c := div(mul(a, b), RAY)
+    }
+  }
+
+  /**
+   * @dev Multiplies two ray, rounding up
+   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
+   * @param a Ray
+   * @param b Ray
+   * @return c = ceil(a*b), in ray
+   */
+  function rayMulUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    // to avoid overflow, a <= type(uint256).max / b
+    assembly ('memory-safe') {
+      if iszero(or(iszero(b), iszero(gt(a, div(not(0), b))))) {
+        revert(0, 0)
+      }
+      c := mul(a, b)
+      // Add 1 if (a * b) % RAY > 0 to round up the division of (a * b) by RAY
+      c := add(div(c, RAY), gt(mod(c, RAY), 0))
+    }
+  }
+
+  /**
+   * @dev Divides two ray, rounding down
+   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
+   * @param a Ray
+   * @param b Ray
+   * @return c = floor(a/b), in ray
+   */
+  function rayDivDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    // to avoid overflow, a <= type(uint256).max / RAY
+    assembly ('memory-safe') {
+      if or(iszero(b), iszero(iszero(gt(a, div(not(0), RAY))))) {
+        revert(0, 0)
+      }
+
+      c := div(mul(a, RAY), b)
+    }
+  }
+
+  /**
+   * @dev Divides two ray, rounding up
+   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
+   * @param a Ray
+   * @param b Ray
+   * @return c = ceil(a/b), in ray
+   */
+  function rayDivUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    // to avoid overflow, a <= type(uint256).max / RAY
+    assembly ('memory-safe') {
+      if or(iszero(b), iszero(iszero(gt(a, div(not(0), RAY))))) {
+        revert(0, 0)
+      }
+      c := mul(a, RAY)
+      // Add 1 if (a * RAY) % b > 0 to round up the division of (a * RAY) by b
+      c := add(div(c, b), gt(mod(c, b), 0))
+    }
+  }
+
+  /**
+   * @notice Casts value to Wad, adding 18 digits of precision
    * @param a The number
-   * @return b (= a * 1e27)
+   * @return b (= a * 1e18)
    */
-  function rayify(uint256 a) internal pure returns (uint256 b) {
-    // to avoid overflow, b/RAY == a
+  function toWad(uint256 a) internal pure returns (uint256 b) {
+    // to avoid overflow, b/WAD == a
     assembly {
-      b := mul(a, RAY)
+      b := mul(a, WAD)
 
-      if iszero(eq(div(b, RAY), a)) {
+      if iszero(eq(div(b, WAD), a)) {
         revert(0, 0)
       }
     }
   }
 
   /**
-   * @notice Truncates number from Ray precision
-   * @param a The number in Ray precision
-   * @return b (= a / 1e27)
+   * @notice Truncates number from Wad precision
+   * @param a The number in Wad precision
+   * @return b (= a / 1e18)
    */
-  function derayify(uint256 a) internal pure returns (uint256 b) {
+  function fromWadDown(uint256 a) internal pure returns (uint256 b) {
     assembly {
-      b := div(a, RAY)
+      b := div(a, WAD)
     }
   }
 
+  /**
+   * @notice Converts value from basis points to ray
+   * @param a The value in basis points
+   * @return The value in ray (= a * 1e27 / 1e4)
+   */
   function bpsToRay(uint256 a) internal pure returns (uint256) {
-    return (a * RAY) / PercentageMath.PERCENTAGE_FACTOR;
-  }
-
-  function rayToBps(uint256 a) internal pure returns (uint256) {
-    return (a * PercentageMath.PERCENTAGE_FACTOR) / RAY;
+    return (a * RAY) / PERCENTAGE_FACTOR;
   }
 }

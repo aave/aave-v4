@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTest {
-  using PercentageMathExtended for uint256;
+  using PercentageMath for uint256;
 
   DataTypes.LiquidationConfig internal _config;
 
