@@ -96,7 +96,11 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateReserveConfig_fuzz(DataTypes.ReserveConfig memory newReserveConfig) public {
-    newReserveConfig.collateralRisk = bound(newReserveConfig.collateralRisk, 0, Constants.MAX_COLLATERAL_RISK).toUint24();
+    newReserveConfig.collateralRisk = bound(
+      newReserveConfig.collateralRisk,
+      0,
+      Constants.MAX_COLLATERAL_RISK
+    ).toUint24();
 
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -111,7 +115,9 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateReserveConfig_revertsWith_InvalidCollateralRisk() public {
     uint256 reserveId = _randomReserveId(spoke1);
     DataTypes.ReserveConfig memory config = spoke1.getReserveConfig(reserveId);
-    config.collateralRisk = vm.randomUint(PercentageMath.PERCENTAGE_FACTOR * 10 + 1, type(uint24).max).toUint24();
+    config.collateralRisk = vm
+      .randomUint(PercentageMath.PERCENTAGE_FACTOR * 10 + 1, type(uint24).max)
+      .toUint24();
 
     vm.expectRevert(ISpoke.InvalidCollateralRisk.selector);
     vm.prank(SPOKE_ADMIN);
@@ -243,7 +249,8 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateLiquidationConfig_fuzz_closeFactor(uint128 newCloseFactor) public {
-    newCloseFactor = bound(newCloseFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, type(uint128).max).toUint128();
+    newCloseFactor = bound(newCloseFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, type(uint128).max)
+      .toUint128();
 
     DataTypes.LiquidationConfig memory liquidationConfig;
     liquidationConfig.closeFactor = newCloseFactor;
@@ -268,13 +275,21 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateLiquidationConfig_fuzz_liqBonusConfig(
     DataTypes.LiquidationConfig memory liquidationConfig
   ) public {
-    liquidationConfig.healthFactorForMaxBonus = bound(liquidationConfig.healthFactorForMaxBonus, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1).toUint64();
+    liquidationConfig.healthFactorForMaxBonus = bound(
+      liquidationConfig.healthFactorForMaxBonus,
+      0,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
+    ).toUint64();
     liquidationConfig.liquidationBonusFactor = bound(
       liquidationConfig.liquidationBonusFactor,
       0,
       MAX_LIQUIDATION_BONUS_FACTOR
     ).toUint16();
-    liquidationConfig.closeFactor = bound(liquidationConfig.closeFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, type(uint128).max).toUint128();
+    liquidationConfig.closeFactor = bound(
+      liquidationConfig.closeFactor,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      type(uint128).max
+    ).toUint128();
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.LiquidationConfigUpdate(liquidationConfig);
@@ -306,13 +321,21 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateLiquidationConfig_fuzz_revertsWith_InvalidHealthFactorForMaxBonus(
     DataTypes.LiquidationConfig memory liquidationConfig
   ) public {
-    liquidationConfig.healthFactorForMaxBonus = bound(liquidationConfig.healthFactorForMaxBonus, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, type(uint64).max).toUint64();
+    liquidationConfig.healthFactorForMaxBonus = bound(
+      liquidationConfig.healthFactorForMaxBonus,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      type(uint64).max
+    ).toUint64();
     liquidationConfig.liquidationBonusFactor = bound(
       liquidationConfig.liquidationBonusFactor,
       0,
       MAX_LIQUIDATION_BONUS_FACTOR
     ).toUint16();
-    liquidationConfig.closeFactor = bound(liquidationConfig.closeFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, type(uint128).max).toUint128(); // valid values
+    liquidationConfig.closeFactor = bound(
+      liquidationConfig.closeFactor,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      type(uint128).max
+    ).toUint128(); // valid values
 
     vm.expectRevert(ISpoke.InvalidHealthFactorForMaxBonus.selector);
     vm.prank(SPOKE_ADMIN);
@@ -334,13 +357,21 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateVariableLiquidationBonusConfig_fuzz_revertsWith_InvalidLiquidationBonusFactor(
     DataTypes.LiquidationConfig memory liquidationConfig
   ) public {
-    liquidationConfig.healthFactorForMaxBonus = bound(liquidationConfig.healthFactorForMaxBonus, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD).toUint64();
+    liquidationConfig.healthFactorForMaxBonus = bound(
+      liquidationConfig.healthFactorForMaxBonus,
+      0,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    ).toUint64();
     liquidationConfig.liquidationBonusFactor = bound(
       liquidationConfig.liquidationBonusFactor,
       MAX_LIQUIDATION_BONUS_FACTOR + 1,
       type(uint16).max
     ).toUint16();
-    liquidationConfig.closeFactor = bound(liquidationConfig.closeFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, type(uint128).max).toUint128(); // valid values
+    liquidationConfig.closeFactor = bound(
+      liquidationConfig.closeFactor,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      type(uint128).max
+    ).toUint128(); // valid values
 
     vm.expectRevert(ISpoke.InvalidLiquidationBonusFactor.selector);
     vm.prank(SPOKE_ADMIN);

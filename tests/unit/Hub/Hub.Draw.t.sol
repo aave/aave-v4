@@ -6,7 +6,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubDrawTest is HubBase {
   using SharesMath for uint256;
   using SafeCast for uint256;
-  
+
   function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 amount) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);

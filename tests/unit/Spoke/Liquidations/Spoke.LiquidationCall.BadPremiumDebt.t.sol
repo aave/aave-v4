@@ -193,7 +193,11 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
 
     liqConfig = _boundCloseFactor(liqConfig);
-    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)).toUint32();
+    liqBonus = bound(
+      liqBonus,
+      MIN_LIQUIDATION_BONUS,
+      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
+    ).toUint32();
     liquidationFee = bound(liquidationFee, 0, 100_00).toUint16();
     supplyAmount = bound(
       supplyAmount,

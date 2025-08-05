@@ -5,7 +5,7 @@ import 'tests/Base.t.sol';
 
 contract AaveOracleTest is Base {
   using SafeCast for uint256;
-  
+
   AaveOracle public oracle;
 
   uint8 private constant _decimals = 8;

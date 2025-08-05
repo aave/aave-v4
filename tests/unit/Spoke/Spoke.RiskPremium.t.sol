@@ -842,10 +842,14 @@ contract SpokeRiskPremiumTest is SpokeBase {
     usdxInfo.price = bound(usdxInfo.price, 1, 1e16);
     wbtcInfo.price = bound(wbtcInfo.price, 1, 1e16);
 
-    daiInfo.collateralRisk = bound(daiInfo.collateralRisk, 0, Constants.MAX_COLLATERAL_RISK).toUint24();
-    wethInfo.collateralRisk = bound(wethInfo.collateralRisk, 0, Constants.MAX_COLLATERAL_RISK).toUint24();
-    usdxInfo.collateralRisk = bound(usdxInfo.collateralRisk, 0, Constants.MAX_COLLATERAL_RISK).toUint24();
-    wbtcInfo.collateralRisk = bound(wbtcInfo.collateralRisk, 0, Constants.MAX_COLLATERAL_RISK).toUint24();
+    daiInfo.collateralRisk = bound(daiInfo.collateralRisk, 0, Constants.MAX_COLLATERAL_RISK)
+      .toUint24();
+    wethInfo.collateralRisk = bound(wethInfo.collateralRisk, 0, Constants.MAX_COLLATERAL_RISK)
+      .toUint24();
+    usdxInfo.collateralRisk = bound(usdxInfo.collateralRisk, 0, Constants.MAX_COLLATERAL_RISK)
+      .toUint24();
+    wbtcInfo.collateralRisk = bound(wbtcInfo.collateralRisk, 0, Constants.MAX_COLLATERAL_RISK)
+      .toUint24();
 
     // Bob supply dai into spoke2
     if (daiInfo.supplyAmount > 0) {

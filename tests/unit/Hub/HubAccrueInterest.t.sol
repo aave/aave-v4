@@ -5,7 +5,7 @@ import 'tests/Base.t.sol';
 
 contract HubAccrueInterestTest is Base {
   using SafeCast for uint256;
-  
+
   struct Timestamps {
     uint40 t0;
     uint40 t1;

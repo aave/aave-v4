@@ -190,7 +190,13 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
     }
     liqConfig = _boundCloseFactor(liqConfig);
-    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfigs[collateralReserveIndex].collateralFactor)).toUint32();
+    liqBonus = bound(
+      liqBonus,
+      MIN_LIQUIDATION_BONUS,
+      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(
+        state.collDynConfigs[collateralReserveIndex].collateralFactor
+      )
+    ).toUint32();
     liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     supplyAmountInBase = bound(
       supplyAmountInBase,

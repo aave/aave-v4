@@ -5,7 +5,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeWithdrawScenarioTest is SpokeBase {
   using SafeCast for uint256;
-  
+
   struct MultiUserTestState {
     IERC20 underlying;
     uint256 assetId;

@@ -182,7 +182,7 @@ contract HubAddTest is HubBase {
     uint256 skipTime
   ) public {
     newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
-    uint256 daiAmount = newAddCap * 10 ** tokenList.dai.decimals() -  1;
+    uint256 daiAmount = newAddCap * 10 ** tokenList.dai.decimals() - 1;
     drawAmount = bound(drawAmount, 1, daiAmount);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 

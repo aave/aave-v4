@@ -106,10 +106,10 @@ contract HubConfiguratorTest is HubBase {
     uint32 remainingAfterBase = MAX_BORROW_RATE.toUint32() - baseVariableBorrowRate;
     variableRateSlope1 = bound(variableRateSlope1, 0, remainingAfterBase / 2).toUint32();
     variableRateSlope2 = bound(
-        variableRateSlope2,
-        variableRateSlope1,
-        MAX_BORROW_RATE - baseVariableBorrowRate - variableRateSlope1
-      ).toUint32();
+      variableRateSlope2,
+      variableRateSlope1,
+      MAX_BORROW_RATE - baseVariableBorrowRate - variableRateSlope1
+    ).toUint32();
 
     uint256 expectedAssetId = hub1.getAssetCount();
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
