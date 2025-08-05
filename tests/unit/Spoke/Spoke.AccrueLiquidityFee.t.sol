@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeAccrueLiquidityFeeTest is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for *;
+  using SafeCast for uint256;
 
   function test_accrueLiquidityFee_NoActionTaken() public view {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(treasurySpoke)), 0);
@@ -21,7 +22,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
   /// Supply an asset only, and check no interest accrued.
   function test_accrueLiquidityFee_NoInterest_OnlySupply(uint40 skipTime) public {
-    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
     uint256 amount = 1000e18;
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -51,9 +52,9 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint40 skipTime
   ) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME / 3));
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 3).toUint40();
     uint256 supplyAmount = borrowAmount * 2;
-    uint40 startTime = uint40(vm.getBlockTimestamp());
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 

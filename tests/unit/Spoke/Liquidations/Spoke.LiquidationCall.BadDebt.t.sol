@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 /// tests where liquidation results in bad debt (debt > 0, collateral = 0)
 contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
+  using SafeCast for uint256;
 
   /// coll: weth / debt: dai
   function test_liquidationCall_badDebt_scenario1() public {
@@ -333,15 +334,9 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
 
     // bound close factor, with a static liq bonus
     liqConfig = _boundCloseFactor(liqConfig);
-    liqBonus = uint32(
-      bound(
-        liqBonus,
-        MIN_LIQUIDATION_BONUS,
-        PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
-      )
-    );
+    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)).toUint32();
 
-    liquidationFee = uint16(bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR));
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e25),

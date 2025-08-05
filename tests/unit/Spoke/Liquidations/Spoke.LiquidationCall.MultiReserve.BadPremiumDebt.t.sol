@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 /// tests with bad debt across multiple reserves that includes accrued premium debt
 contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
+  using SafeCast for uint256;
 
   struct BorrowMultipleReservesToBeAboveHealthyHf {
     uint256 requiredDebtInBase;
@@ -294,14 +295,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
 
     liqConfig = _boundCloseFactor(liqConfig);
-    liqBonus = uint32(
-      bound(
-        liqBonus,
-        MIN_LIQUIDATION_BONUS,
-        PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
-      )
-    );
-    state.liquidationFee = uint16(bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR));
+    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)).toUint32();
+    state.liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 10e26),

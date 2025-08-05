@@ -8,6 +8,7 @@ import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 contract SpokeLiquidationBase is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
+  using SafeCast for uint256;
 
   struct Balance {
     uint256 balanceBefore;
@@ -112,13 +113,9 @@ contract SpokeLiquidationBase is SpokeBase {
   function _bound(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
-    liqConfig.closeFactor = uint128(
-      bound(liqConfig.closeFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, MAX_CLOSE_FACTOR)
-    );
-    liqConfig.healthFactorForMaxBonus = uint64(
-      bound(liqConfig.healthFactorForMaxBonus, 0.01e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1)
-    );
-    liqConfig.liquidationBonusFactor = uint16(bound(liqConfig.liquidationBonusFactor, 0, 100_00));
+    liqConfig.closeFactor = bound(liqConfig.closeFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, MAX_CLOSE_FACTOR).toUint128();
+    liqConfig.healthFactorForMaxBonus = bound(liqConfig.healthFactorForMaxBonus, 0.01e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1).toUint64();
+    liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00).toUint16();
 
     return liqConfig;
   }
@@ -128,9 +125,7 @@ contract SpokeLiquidationBase is SpokeBase {
   function _boundCloseFactor(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
-    liqConfig.closeFactor = uint128(
-      bound(liqConfig.closeFactor, MIN_CLOSE_FACTOR, HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10)
-    );
+    liqConfig.closeFactor = bound(liqConfig.closeFactor, MIN_CLOSE_FACTOR, HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10).toUint128();
     liqConfig.liquidationBonusFactor = 0;
     liqConfig.healthFactorForMaxBonus = 0;
 
@@ -165,15 +160,9 @@ contract SpokeLiquidationBase is SpokeBase {
     state.collDynConfig = _getUserDynConfig(spoke1, state.user, collateralReserveId);
 
     liqConfig = _bound(liqConfig);
-    liqBonus = uint32(
-      bound(
-        liqBonus,
-        MIN_LIQUIDATION_BONUS,
-        PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
-      )
-    );
+    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)).toUint32();
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.01e18);
-    liquidationFee = uint16(bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR));
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     // bound supply amount to max supply amount
     supplyAmount = bound(
       supplyAmount,

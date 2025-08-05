@@ -6,6 +6,7 @@ import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 
 contract SpokeGettersTest is SpokeBase {
   using LiquidationLogic for DataTypes.LiquidationConfig;
+  using SafeCast for uint256;
 
   DataTypes.LiquidationConfig internal _config;
 
@@ -51,15 +52,11 @@ contract SpokeGettersTest is SpokeBase {
   ) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    liquidationBonusFactor = uint16(
-      bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR)
-    );
-    healthFactorForMaxBonus = uint64(
-      bound(healthFactorForMaxBonus, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1)
-    );
+    liquidationBonusFactor = bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+    healthFactorForMaxBonus = bound(healthFactorForMaxBonus, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1).toUint64();
 
     DataTypes.LiquidationConfig memory config = DataTypes.LiquidationConfig({
-      closeFactor: uint128(WadRayMath.WAD),
+      closeFactor: WadRayMath.WAD.toUint128(),
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor
     });

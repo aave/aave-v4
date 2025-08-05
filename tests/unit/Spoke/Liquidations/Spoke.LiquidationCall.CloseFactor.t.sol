@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
+  using SafeCast for uint256;
 
   /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
   /// single debt reserve, single collateral reserve
@@ -408,18 +409,9 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
 
     liqConfig = _boundCloseFactor(liqConfig);
-    liqBonus = uint32(
-      bound(
-        liqBonus,
-        MIN_LIQUIDATION_BONUS,
-        PercentageMath
-          .PERCENTAGE_FACTOR
-          .percentDivDown(state.collDynConfig.collateralFactor)
-          .percentMulDown(99_00) // add buffer so that amount to restore is > 0
-      )
-    );
+    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor).percentMulDown(99_00)).toUint32();
 
-    liquidationFee = uint16(bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR));
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e26),

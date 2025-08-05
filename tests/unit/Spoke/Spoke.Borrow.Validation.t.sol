@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowValidationTest is SpokeBase {
+  using SafeCast for uint256;
+
   function test_borrow_revertsWith_ReserveNotBorrowable() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -129,7 +131,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
 
   function test_borrow_fuzz_revertsWith_DrawCapExceeded(uint256 reserveId, uint56 drawCap) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    drawCap = uint56(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
 
     uint256 drawAmount = drawCap * 10 ** tokenList.dai.decimals() + 1;
 

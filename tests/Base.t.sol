@@ -2109,7 +2109,7 @@ abstract contract Base is Test {
         premiumOffset: assetData.premiumOffset,
         realizedPremium: assetData.realizedPremium,
         premium: premium,
-        lastUpdateTimestamp: uint40(assetData.lastUpdateTimestamp),
+        lastUpdateTimestamp: assetData.lastUpdateTimestamp.toUint40(),
         drawnIndex: assetData.drawnIndex,
         drawnRate: assetData.drawnRate
       });

@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
+  using SafeCast for uint256;
 
   uint256 internal dustInBase = 10e26; // $10 in base currency
 
@@ -189,16 +190,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
     }
     liqConfig = _boundCloseFactor(liqConfig);
-    liqBonus = uint32(
-      bound(
-        liqBonus,
-        MIN_LIQUIDATION_BONUS,
-        PercentageMath.PERCENTAGE_FACTOR.percentDivDown(
-          state.collDynConfigs[collateralReserveIndex].collateralFactor
-        )
-      )
-    );
-    liquidationFee = uint16(bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR));
+    liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfigs[collateralReserveIndex].collateralFactor)).toUint32();
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     supplyAmountInBase = bound(
       supplyAmountInBase,
       dustInBase * state.debtReserves.length, // enough to cover dust for all debt reserves
