@@ -14,7 +14,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     uint256 collateralAssetPrice;
     uint256 debtAssetUnit;
     uint256 liquidationBonus;
-    uint256 userCollateralBalance;
+    uint256 borrowerCollateralBalance;
     uint256 liquidationFee;
     uint256 actualDebtToLiquidate;
   }
@@ -26,7 +26,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
   }
 
   /// fuzz test where actualDebtToLiquidate = 0
-  /// forces maxCollateralToLiquidate <= userCollateralBalanceInBaseCurrency
+  /// forces maxCollateralToLiquidate <= borrowerCollateralBalanceInBaseCurrency
   function test_calculateAvailableCollateralToLiquidate_fuzz_actualDebtToLiquidate_zero(
     TestAvailableCollateralParams memory params
   ) public pure {
@@ -116,15 +116,15 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
 
     (uint256 collateralAmount, uint256 protocolLiquidationFee) = _calcLiquidationFeeAmount(
       params,
-      params.userCollateralBalance
+      params.borrowerCollateralBalance
     );
     assertEq(res.actualCollateralToLiquidate, collateralAmount, 'actualCollateralToLiquidate');
     assertEq(res.actualDebtToLiquidate, 0, 'actualDebtToLiquidate');
     assertEq(res.liquidationFeeAmount, protocolLiquidationFee, 'liquidationFeeAmount');
   }
 
-  /// fuzz test where userCollateralBalance < maxCollateralToLiquidate
-  function test_calculateAvailableCollateralToLiquidate_fuzz_userCollateralBalance_lt_maxCollateralToLiquidate(
+  /// fuzz test where borrowerCollateralBalance < maxCollateralToLiquidate
+  function test_calculateAvailableCollateralToLiquidate_fuzz_borrowerCollateralBalance_lt_maxCollateralToLiquidate(
     TestAvailableCollateralParams memory params
   ) public pure {
     params = _bound(params);
@@ -132,7 +132,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     params.collateralAssetPrice = bound(
       params.collateralAssetPrice,
       1,
-      1e59 / params.userCollateralBalance
+      1e59 / params.borrowerCollateralBalance
     );
     params.actualDebtToLiquidate = bound(
       params.actualDebtToLiquidate,
@@ -143,9 +143,9 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     uint256 maxCollateralToLiquidate = _calcMaxCollateralToLiquidate(params);
 
     vm.assume(maxCollateralToLiquidate < 1e59 / params.collateralAssetUnit);
-    // so that maxCollateralToLiquidate <= userCollateralBalanceInBaseCurrency
+    // so that maxCollateralToLiquidate <= borrowerCollateralBalanceInBaseCurrency
     vm.assume(
-      params.userCollateralBalance <=
+      params.borrowerCollateralBalance <=
         (maxCollateralToLiquidate * params.collateralAssetUnit).fromWadDown() /
           params.collateralAssetPrice
     );
@@ -163,7 +163,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     if (params.liquidationFee == 0) {
       assertEq(
         res.actualCollateralToLiquidate,
-        params.userCollateralBalance,
+        params.borrowerCollateralBalance,
         'actualCollateralToLiquidate without lpfp'
       );
       assertEq(
@@ -175,7 +175,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     } else {
       (uint256 collateralAmount, uint256 liquidationFeeAmount) = _calcLiquidationFeeAmount(
         params,
-        params.userCollateralBalance
+        params.borrowerCollateralBalance
       );
 
       assertEq(res.actualCollateralToLiquidate, collateralAmount, 'actualCollateralToLiquidate');
@@ -184,20 +184,20 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     }
   }
 
-  function test_calculateAvailableCollateralToLiquidate_fuzz_userCollateralBalance_gte_maxCollateralToLiquidate(
+  function test_calculateAvailableCollateralToLiquidate_fuzz_borrowerCollateralBalance_gte_maxCollateralToLiquidate(
     TestAvailableCollateralParams memory params
   ) public pure {
     params = _bound(params);
     // prevent overflow
-    vm.assume(params.userCollateralBalance * params.collateralAssetPrice < 1e59);
+    vm.assume(params.borrowerCollateralBalance * params.collateralAssetPrice < 1e59);
     vm.assume(params.actualDebtToLiquidate * params.debtAssetPrice < 1e59);
 
     uint256 maxCollateralToLiquidate = _calcMaxCollateralToLiquidate(params);
 
     vm.assume(maxCollateralToLiquidate < 1e59 / params.collateralAssetUnit);
-    // so that maxCollateralToLiquidate > userCollateralBalanceInBaseCurrency
+    // so that maxCollateralToLiquidate > borrowerCollateralBalanceInBaseCurrency
     vm.assume(
-      params.userCollateralBalance >
+      params.borrowerCollateralBalance >
         (maxCollateralToLiquidate * params.collateralAssetUnit).fromWadDown() /
           params.collateralAssetPrice
     );
@@ -251,7 +251,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     result.collateralAssetPrice = params.collateralAssetPrice;
     result.debtAssetUnit = params.debtAssetUnit;
     result.liquidationBonus = params.liquidationBonus;
-    result.userCollateralBalance = params.userCollateralBalance;
+    result.borrowerCollateralBalance = params.borrowerCollateralBalance;
     result.liquidationFee = params.liquidationFee;
   }
 
@@ -271,7 +271,11 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       MIN_LIQUIDATION_BONUS,
       MAX_LIQUIDATION_BONUS
     );
-    params.userCollateralBalance = bound(params.userCollateralBalance, 1, MAX_SUPPLY_AMOUNT);
+    params.borrowerCollateralBalance = bound(
+      params.borrowerCollateralBalance,
+      1,
+      MAX_SUPPLY_AMOUNT
+    );
     params.liquidationFee = bound(
       params.liquidationFee,
       0,
@@ -303,15 +307,15 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
   }
 
   /// calc amount of debt needed to cover the collateral
-  /// needed when maxCollateralToLiquidate > userCollateralBalanceInBaseCurrency
+  /// needed when maxCollateralToLiquidate > borrowerCollateralBalanceInBaseCurrency
   function _calcDebtAmountNeeded(
     TestAvailableCollateralParams memory params
   ) internal pure returns (uint256) {
-    uint256 userCollateralBalanceInBaseCurrency = (params.userCollateralBalance *
+    uint256 borrowerCollateralBalanceInBaseCurrency = (params.borrowerCollateralBalance *
       params.collateralAssetPrice).toWad() / params.collateralAssetUnit;
 
     return
-      ((params.debtAssetUnit * userCollateralBalanceInBaseCurrency) / params.debtAssetPrice)
+      ((params.debtAssetUnit * borrowerCollateralBalanceInBaseCurrency) / params.debtAssetPrice)
         .percentDivDown(params.liquidationBonus)
         .fromWadDown();
   }

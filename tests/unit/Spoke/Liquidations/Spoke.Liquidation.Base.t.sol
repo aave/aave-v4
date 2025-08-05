@@ -665,7 +665,7 @@ contract SpokeLiquidationBase is SpokeBase {
     IPriceOracle oracle = state.spoke.oracle();
     DataTypes.LiquidationCallLocalVars memory params;
 
-    params.userCollateralBalance = state.spoke.getUserSuppliedAmount(
+    params.borrowerCollateralBalance = state.spoke.getUserSuppliedAmount(
       state.collateralReserve.reserveId,
       alice
     );

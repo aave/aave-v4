@@ -1128,8 +1128,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @param debtReserve The debt reserve being repaid during liquidation.
    * @param user The address of the user being liquidated.
    * @param debtToCover The amount of debt to cover.
-   * @param drawnDebt The drawn debt of the user.
-   * @param premiumDebt The premium debt of the user.
+   * @param drawnReserveDebt The drawn debt of the user for the given debt reserve.
+   * @param premiumReserveDebt The premium debt of the user for the given debt reserve.
    * @return actualCollateralToLiquidate The amount of collateral to liquidate.
    * @return liquidationFeeAmount The amount of protocol fee.
    * @return drawnDebtToLiquidate The amount of drawn debt to repay.
@@ -1141,14 +1141,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.Reserve storage debtReserve,
     address user,
     uint256 debtToCover,
-    uint256 drawnDebt,
-    uint256 premiumDebt
+    uint256 drawnReserveDebt,
+    uint256 premiumReserveDebt
   ) internal view returns (uint256, uint256, uint256, uint256, bool) {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;
-    vars.userCollateralBalance = getUserSuppliedAmount(vars.collateralReserveId, user);
-    vars.totalDebt = drawnDebt + premiumDebt;
+    vars.borrowerCollateralBalance = getUserSuppliedAmount(vars.collateralReserveId, user);
+    vars.totalBorrowerReserveDebt = drawnReserveDebt + premiumReserveDebt;
     DataTypes.DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[
       vars.collateralReserveId
     ][_userPositions[user][vars.collateralReserveId].configKey];
@@ -1167,7 +1167,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       debtReserve,
       user,
       debtToCover,
-      vars.totalDebt,
+      vars.totalBorrowerReserveDebt,
       vars.healthFactor,
       vars.collateralFactor
     );
@@ -1195,8 +1195,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.hasDeficit
     ) = vars.calculateAvailableCollateralToLiquidate();
     (vars.drawnDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
-      drawnDebt,
-      premiumDebt,
+      drawnReserveDebt,
+      premiumReserveDebt,
       vars.actualDebtToLiquidate
     );
 

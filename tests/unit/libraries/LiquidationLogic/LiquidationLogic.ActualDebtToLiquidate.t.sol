@@ -46,8 +46,8 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     assertEq(actualDebtToLiquidate, 0, 'if debtToCover == 0, actualDebtToLiquidate should be 0');
   }
 
-  /// test calculateActualDebtToLiquidate when debtToRestoreCloseFactor <= totalDebt
-  function test_calculateActualDebtToLiquidate_fuzz_debtToRestoreCloseFactor_lte_totalDebt(
+  /// test calculateActualDebtToLiquidate when debtToRestoreCloseFactor <= totalBorrowerReserveDebt
+  function test_calculateActualDebtToLiquidate_fuzz_debtToRestoreCloseFactor_lte_totalBorrowerReserveDebt(
     uint256 debtToCover,
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
@@ -56,14 +56,14 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
 
     uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
 
-    vm.assume(debtToRestoreCloseFactor > args.totalDebt);
+    vm.assume(debtToRestoreCloseFactor > args.totalBorrowerReserveDebt);
 
     uint256 actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate(
       debtToCover,
       args
     );
 
-    uint256 maxLiquidatableDebt = _min(debtToRestoreCloseFactor, args.totalDebt);
+    uint256 maxLiquidatableDebt = _min(debtToRestoreCloseFactor, args.totalBorrowerReserveDebt);
 
     assertEq(
       actualDebtToLiquidate,
@@ -81,16 +81,16 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
-    // args.totalDebt is the max liquidatable debt
+    // args.totalBorrowerReserveDebt is the max liquidatable debt
     // ie user total debt for the debt reserve of interest
-    vm.assume(debtToRestoreCloseFactor <= args.totalDebt);
+    vm.assume(debtToRestoreCloseFactor <= args.totalBorrowerReserveDebt);
 
     uint256 actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate(
       debtToCover,
       args
     );
 
-    uint256 maxLiquidatableDebt = _min(debtToRestoreCloseFactor, args.totalDebt);
+    uint256 maxLiquidatableDebt = _min(debtToRestoreCloseFactor, args.totalBorrowerReserveDebt);
 
     assertEq(
       actualDebtToLiquidate,

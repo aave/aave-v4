@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -12,6 +13,14 @@ library LiquidationLogic {
   using WadRayMath for uint256;
   using MathUtils for uint256;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
+
+  /**
+   * @dev This constant represents the minimum amount of assets in base currency that need to be leftover after a liquidation, if not clearing a position completely.
+   * @notice The default value assumes that the basePrice is usd denominated by 26 decimals and needs to be adjusted in a non USD-denominated pool.
+   */
+  uint256 constant MIN_LEFTOVER_BASE = 1000e26;
+
+  error MustNotLeaveDust();
 
   function calculateVariableLiquidationBonus(
     DataTypes.LiquidationConfig storage config,
@@ -43,7 +52,7 @@ library LiquidationLogic {
 
   /**
    * @notice Calculates the actual amount of debt possible to repay in the liquidation.
-   * @dev The amount of debt to repay is capped by the total debt of the user and the amount of debt
+   * @dev The amount of debt to repay is capped by the total debt of the user and the amount of debt.
    * @param debtToCover The amount of debt to cover.
    * @param params LiquidationCallLocalVars params struct.
    * @return The amount of debt to repay in the liquidation.
@@ -52,10 +61,33 @@ library LiquidationLogic {
     uint256 debtToCover,
     DataTypes.LiquidationCallLocalVars memory params
   ) internal pure returns (uint256) {
-    uint256 maxLiquidatableDebt = params.totalDebt; // for current debt asset, in amount
+    uint256 maxLiquidatableDebt = debtToCover.min(params.totalBorrowerReserveDebt);
     uint256 debtToRestoreCloseFactor = params.calculateDebtToRestoreCloseFactor();
-    maxLiquidatableDebt = maxLiquidatableDebt.min(debtToRestoreCloseFactor);
-    return debtToCover.min(maxLiquidatableDebt);
+    uint256 actualDebtToLiquidate = maxLiquidatableDebt.min(debtToRestoreCloseFactor);
+    uint256 remainingDebtInBaseCurrency = ((params.totalBorrowerReserveDebt -
+      actualDebtToLiquidate) * params.debtAssetPrice).toWad() / params.debtAssetUnit;
+
+    if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE) {
+      if (actualDebtToLiquidate == debtToCover) {
+        revert MustNotLeaveDust();
+      }
+      if (actualDebtToLiquidate == debtToRestoreCloseFactor) {
+        // debtToRestoreCloseFactor is lowest, but don't know if debtToCover is less than totalBorrowerReserveDebt
+        // prevents underflow if debtToCover > totalBorrowerReserveDebt
+        if (
+          debtToCover < params.totalBorrowerReserveDebt &&
+          ((params.totalBorrowerReserveDebt - debtToCover) * params.debtAssetPrice).toWad() /
+            params.debtAssetUnit <
+          MIN_LEFTOVER_BASE
+        ) {
+          revert MustNotLeaveDust();
+        } else {
+          actualDebtToLiquidate = maxLiquidatableDebt;
+        }
+      }
+    }
+
+    return actualDebtToLiquidate;
   }
 
   /**
@@ -99,8 +131,8 @@ library LiquidationLogic {
     DataTypes.CalculateAvailableCollateralToLiquidate memory vars;
 
     // convert existing collateral to base currency
-    vars.userCollateralBalanceInBaseCurrency =
-      (params.userCollateralBalance * params.collateralAssetPrice).toWad() /
+    vars.borrowerCollateralBalanceInBaseCurrency =
+      (params.borrowerCollateralBalance * params.collateralAssetPrice).toWad() /
       params.collateralAssetUnit;
 
     // find collateral in base currency that corresponds to the debt to cover
@@ -111,11 +143,11 @@ library LiquidationLogic {
     // account for additional collateral required due to liquidation bonus
     vars.maxCollateralToLiquidate = vars.baseCollateral.percentMulDown(params.liquidationBonus);
 
-    if (vars.maxCollateralToLiquidate >= vars.userCollateralBalanceInBaseCurrency) {
-      vars.collateralAmount = params.userCollateralBalance;
-      vars.debtAmountNeeded = ((params.debtAssetUnit * vars.userCollateralBalanceInBaseCurrency)
+    if (vars.maxCollateralToLiquidate >= vars.borrowerCollateralBalanceInBaseCurrency) {
+      vars.collateralAmount = params.borrowerCollateralBalance;
+      vars.debtAmountNeeded = ((params.debtAssetUnit * vars.borrowerCollateralBalanceInBaseCurrency)
         .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).fromWadDown();
-      vars.collateralToLiquidateInBaseCurrency = vars.userCollateralBalanceInBaseCurrency;
+      vars.collateralToLiquidateInBaseCurrency = vars.borrowerCollateralBalanceInBaseCurrency;
       vars.debtToLiquidateInBaseCurrency =
         (vars.debtAmountNeeded * params.debtAssetPrice).toWad() /
         params.debtAssetUnit;
