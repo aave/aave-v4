@@ -5,8 +5,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   using SharesMath for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   /// Bob supplies 2 collateral assets, borrows an amount such that both of them cover it, and then repays any amount of debt
   /// Bob's user risk premium should decrease or remain same after repay
@@ -141,9 +141,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Get Bob's risk premium
     uint256 riskPremium = spoke2.getUserRiskPremium(bob);
     // Get Bob's premium drawn shares as proxy for stored user rp
-    uint256 premiumDrawnShares = spoke2
-      .getUserPosition(_dai2ReserveId(spoke2), bob)
-      .premiumDrawnShares;
+    uint256 premiumShares = spoke2.getUserPosition(_dai2ReserveId(spoke2), bob).premiumShares;
 
     // Now bob disables dai as collateral
     vm.prank(bob);
@@ -156,8 +154,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
 
     assertGe(
-      spoke2.getUserPosition(_dai2ReserveId(spoke2), bob).premiumDrawnShares,
-      premiumDrawnShares,
+      spoke2.getUserPosition(_dai2ReserveId(spoke2), bob).premiumShares,
+      premiumShares,
       'Bob premium drawn shares should not decrease due to unset as collateral triggering rp update'
     );
 
@@ -304,7 +302,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
 
     // usage ratio is ~45%, which is ~half to the kink point of 90%
     // borrow rate ~= base borrow rate (5%) + slope1 (5%) / 2
-    assertApproxEqAbs(hub.getAsset(wethAssetId).baseBorrowRate, uint256(7_50).bpsToRay(), 1e18);
+    assertApproxEqAbs(hub1.getAsset(wethAssetId).drawnRate, uint256(7_50).bpsToRay(), 1e18);
 
     // Alice supplies collateral in order to borrow
     uint256 aliceCollateralAmount = _calcMinimumCollAmount(
@@ -339,7 +337,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     });
 
     // usage ratio is 100%, borrow rate is max
-    assertEq(hub.getAsset(daiAssetId).baseBorrowRate, uint256(15_00).bpsToRay());
+    assertEq(hub1.getAsset(daiAssetId).drawnRate, uint256(15_00).bpsToRay());
 
     // Bob's current risk premium should be greater than or equal collateral risk of dai, since debt is not fully covered by it (and due to rounding)
     assertGt(
@@ -592,7 +590,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
       caller: alice,
-      amount: 1,
+      amount: 1e6,
       onBehalfOf: alice
     });
 

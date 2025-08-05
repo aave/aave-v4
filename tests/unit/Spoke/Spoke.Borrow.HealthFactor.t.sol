@@ -635,7 +635,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // invalid HF
     vm.assume(spoke1.getHealthFactor(bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    vm.assume(hub.getAvailableLiquidity(usdxAssetId) > 0);
+    vm.assume(hub1.getLiquidity(usdxAssetId) > 0);
 
     // cannot borrow more usdx
     vm.prank(bob);

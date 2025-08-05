@@ -7,7 +7,7 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {AaveOracle} from 'src/contracts/AaveOracle.sol';
-import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
+import {Hub} from 'src/contracts/Hub.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 import {TreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
@@ -15,13 +15,13 @@ import {MockPriceFeed} from '../mocks/MockPriceFeed.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.sol';
 
-contract LiquidityHubHandler is Test {
+contract HubHandler is Test {
   IERC20 public usdc;
   IERC20 public dai;
   IERC20 public usdt;
 
   IPriceOracle public oracle;
-  LiquidityHub public hub;
+  Hub public hub1;
   Spoke public spoke1;
   TreasurySpoke public treasurySpoke;
   AccessManager public accessManager;
@@ -41,12 +41,12 @@ contract LiquidityHubHandler is Test {
   constructor() {
     vm.startPrank(hubAdmin);
     accessManager = new AccessManager(hubAdmin);
-    hub = new LiquidityHub(address(accessManager));
-    irStrategy = new AssetInterestRateStrategy(address(hub));
+    hub1 = new Hub(address(accessManager));
+    irStrategy = new AssetInterestRateStrategy(address(hub1));
     spoke1 = new Spoke(address(accessManager));
     oracle = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
     spoke1.updateOracle(address(oracle));
-    treasurySpoke = new TreasurySpoke(hubAdmin, address(hub));
+    treasurySpoke = new TreasurySpoke(hubAdmin, address(hub1));
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
@@ -63,8 +63,8 @@ contract LiquidityHubHandler is Test {
 
     vm.startPrank(hubAdmin);
     // Add dai
-    hub.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
-    hub.updateAssetConfig(
+    hub1.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
+    hub1.updateAssetConfig(
       0,
       DataTypes.AssetConfig({
         feeReceiver: address(treasurySpoke),
@@ -73,15 +73,10 @@ contract LiquidityHubHandler is Test {
       })
     );
     spoke1.addReserve(
-      address(hub),
+      address(hub1),
       0,
       _deployMockPriceFeed(spoke1, 1e8),
-      DataTypes.ReserveConfig({
-        frozen: false,
-        paused: false,
-        collateralRisk: 0,
-        borrowable: false
-      }),
+      DataTypes.ReserveConfig({frozen: false, paused: false, collateralRisk: 0, borrowable: false}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 0,
         liquidationBonus: 100_00,
@@ -108,12 +103,12 @@ contract LiquidityHubHandler is Test {
   }
 
   function supply(uint256 assetId, address user, uint256 amount, address onBehalfOf) public {
-    vm.assume(user != address(hub) && user != address(0) && onBehalfOf != address(0));
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+    vm.assume(user != address(hub1) && user != address(0) && onBehalfOf != address(0));
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    deal(hub.getAsset(assetId).underlying, user, amount);
-    Utils.add({hub: hub, assetId: assetId, caller: address(spoke1), amount: amount, user: user});
+    deal(hub1.getAsset(assetId).underlying, user, amount);
+    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, user: user});
 
     _updateState(assetId);
     s.reserveSupplied[assetId] += amount;
@@ -121,11 +116,11 @@ contract LiquidityHubHandler is Test {
   }
 
   function withdraw(uint256 assetId, address user, uint256 amount, address to) public {
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     // TODO: bound by spoke1 user balance
     amount = bound(amount, 1, 2);
 
-    Utils.remove({hub: hub, assetId: assetId, caller: address(spoke1), amount: amount, to: to});
+    Utils.remove({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, to: to});
 
     _updateState(assetId);
     s.reserveSupplied[assetId] -= amount;
@@ -133,15 +128,15 @@ contract LiquidityHubHandler is Test {
   }
 
   function donate(uint256 assetId, address user, uint256 amount) public {
-    vm.assume(user != address(hub) && user != address(0));
-    assetId = bound(assetId, 0, hub.getAssetCount() - 1);
+    vm.assume(user != address(hub1) && user != address(0));
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    address underlying = hub.getAsset(assetId).underlying;
+    address underlying = hub1.getAsset(assetId).underlying;
 
     deal(underlying, user, amount);
     vm.prank(user);
-    IERC20(underlying).transfer(address(hub), amount);
+    IERC20(underlying).transfer(address(hub1), amount);
 
     s.assetDonated[underlying] += amount;
   }
@@ -149,11 +144,11 @@ contract LiquidityHubHandler is Test {
   function _updateState(uint256 assetId) internal {
     revert('implement me');
 
-    // DataTypes.Asset memory reserveData = hub.getAsset(assetId);
+    // DataTypes.Asset memory reserveData = hub1.getAsset(assetId);
     // // todo: remove last exchange rate, bad idea to store like this, looses precision
     // s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
     //   ? 0
-    //   : hub.getTotalAssets(assetId) / reserveData.suppliedShares;
+    //   : hub1.getTotalAssets(assetId) / reserveData.suppliedShares;
   }
 
   function _deployMockPriceFeed(Spoke spoke, uint256 price) internal returns (address) {

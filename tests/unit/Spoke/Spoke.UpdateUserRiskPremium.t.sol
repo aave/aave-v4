@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SpokeUpdateUserRiskPremium is SpokeBase {
+contract SpokeUserRiskPremiumUpdate is SpokeBase {
   function test_updateUserRiskPremium_on_rpIncrease(address caller) public {
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 2500e18);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice); // 2k usd

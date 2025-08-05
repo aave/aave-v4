@@ -5,7 +5,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeConfigTest is SpokeBase {
   using SafeCast for uint256;
-  using PercentageMathExtended for uint256;
+  using PercentageMath for uint256;
 
   function test_spoke_deploy() public {
     address predictedSpokeAddress = vm.computeCreateAddress(
@@ -13,7 +13,7 @@ contract SpokeConfigTest is SpokeBase {
       vm.getNonce(address(this))
     );
     vm.expectEmit(predictedSpokeAddress);
-    emit ISpoke.LiquidationConfigUpdated(
+    emit ISpoke.LiquidationConfigUpdate(
       DataTypes.LiquidationConfig({
         closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
         healthFactorForMaxBonus: 0,
@@ -41,7 +41,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateOracle() public {
     address newOracle = address(new AaveOracle(SPOKE_ADMIN, 18, 'New Aave Oracle'));
     vm.expectEmit(address(spoke1));
-    emit ISpoke.OracleUpdated(newOracle);
+    emit ISpoke.OracleUpdate(newOracle);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateOracle(newOracle);
   }
@@ -68,7 +68,7 @@ contract SpokeConfigTest is SpokeBase {
     uint256 reserveId = 0;
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReservePriceSourceUpdated(reserveId, reserveSource);
+    emit ISpoke.ReservePriceSourceUpdate(reserveId, reserveSource);
     vm.expectCall(
       address(oracle1),
       abi.encodeCall(IAaveOracle.setReserveSource, (reserveId, reserveSource))
@@ -88,7 +88,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralRisk: config.collateralRisk + 1
     });
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
+    emit ISpoke.ReserveConfigUpdate(daiReserveId, newReserveConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
 
@@ -105,7 +105,7 @@ contract SpokeConfigTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdated(daiReserveId, newReserveConfig);
+    emit ISpoke.ReserveConfigUpdate(daiReserveId, newReserveConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
 
@@ -115,10 +115,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateReserveConfig_revertsWith_InvalidCollateralRisk() public {
     uint256 reserveId = _randomReserveId(spoke1);
     DataTypes.ReserveConfig memory config = spoke1.getReserveConfig(reserveId);
-    config.collateralRisk = vm.randomUint(
-      PercentageMath.PERCENTAGE_FACTOR * 10 + 1,
-      type(uint256).max
-    );
+    config.collateralRisk = vm.randomUint(PercentageMath.PERCENTAGE_FACTOR * 10 + 1, UINT256_MAX);
 
     vm.expectRevert(ISpoke.InvalidCollateralRisk.selector);
     vm.prank(SPOKE_ADMIN);
@@ -151,11 +148,11 @@ contract SpokeConfigTest is SpokeBase {
     address reserveSource = _deployMockPriceFeed(spoke1, 2000e8);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveAdded(reserveId, wethAssetId, address(hub));
+    emit ISpoke.AddReserve(reserveId, wethAssetId, address(hub1));
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdated(reserveId, newReserveConfig);
+    emit ISpoke.ReserveConfigUpdate(reserveId, newReserveConfig);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.DynamicReserveConfigAdded({
+    emit ISpoke.AddDynamicReserveConfig({
       reserveId: reserveId,
       configKey: 0,
       config: newDynReserveConfig
@@ -163,7 +160,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
-      address(hub),
+      address(hub1),
       wethAssetId,
       reserveSource,
       newReserveConfig,
@@ -175,7 +172,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_fuzz_revertsWith_InvalidAssetId() public {
-    uint256 assetId = vm.randomUint(hub.getAssetCount(), type(uint256).max); // invalid assetId
+    uint256 assetId = vm.randomUint(hub1.getAssetCount(), type(uint256).max); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       paused: true,
@@ -192,11 +189,11 @@ contract SpokeConfigTest is SpokeBase {
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(address(hub), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
   function test_addReserve_fuzz_reverts_invalid_assetId(uint256 assetId) public {
-    assetId = bound(assetId, hub.getAssetCount(), type(uint256).max); // invalid assetId
+    assetId = bound(assetId, hub1.getAssetCount(), UINT256_MAX); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       paused: true,
@@ -214,7 +211,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(address(hub), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
   function test_addReserve_revertsWith_InvalidOracle() public {
@@ -235,7 +232,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectRevert(ISpoke.InvalidOracle.selector);
     vm.prank(ADMIN);
     newSpoke.addReserve(
-      address(hub),
+      address(hub1),
       wethAssetId,
       address(0),
       newReserveConfig,
@@ -250,13 +247,13 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateLiquidationConfig_fuzz_closeFactor(uint256 newCloseFactor) public {
-    newCloseFactor = bound(newCloseFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, type(uint256).max);
+    newCloseFactor = bound(newCloseFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, UINT256_MAX);
 
     DataTypes.LiquidationConfig memory liquidationConfig;
     liquidationConfig.closeFactor = newCloseFactor;
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.LiquidationConfigUpdated(liquidationConfig);
+    emit ISpoke.LiquidationConfigUpdate(liquidationConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
 
@@ -288,11 +285,11 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.closeFactor = bound(
       liquidationConfig.closeFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint256).max
+      UINT256_MAX
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.LiquidationConfigUpdated(liquidationConfig);
+    emit ISpoke.LiquidationConfigUpdate(liquidationConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
 
@@ -324,7 +321,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.healthFactorForMaxBonus = bound(
       liquidationConfig.healthFactorForMaxBonus,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint256).max
+      UINT256_MAX
     );
     liquidationConfig.liquidationBonusFactor = bound(
       liquidationConfig.liquidationBonusFactor,
@@ -334,7 +331,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.closeFactor = bound(
       liquidationConfig.closeFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint256).max
+      UINT256_MAX
     ); // valid values
 
     vm.expectRevert(ISpoke.InvalidHealthFactorForMaxBonus.selector);
@@ -365,12 +362,12 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.liquidationBonusFactor = bound(
       liquidationConfig.liquidationBonusFactor,
       MAX_LIQUIDATION_BONUS_FACTOR + 1,
-      type(uint256).max
+      UINT256_MAX
     );
     liquidationConfig.closeFactor = bound(
       liquidationConfig.closeFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint256).max
+      UINT256_MAX
     ); // valid values
 
     vm.expectRevert(ISpoke.InvalidLiquidationBonusFactor.selector);

@@ -20,6 +20,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
   ) public {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
     debtReserveId = bound(debtReserveId, 0, spoke1.getReserveCount() - 1);
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
 
     LiquidationTestLocalParams memory state = _execLiqCallFuzzTest({
       liqConfig: liqConfig,
@@ -32,7 +33,24 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       skipTime: skipTime
     });
 
-    _checkLiquidation(state, spoke1, 'liquidationCall_fuzz_variableLiqBonus');
+    _checkLiquidation(state, 'liquidationCall_fuzz_variableLiqBonus');
+  }
+
+  /// Liq Call with dust amounts of collateral remaining
+  function test_liquidationCall_remainingDustCollateral() public {
+    test_liquidationCall_fuzz_variable_liqBonus({
+      collateralReserveId: 1,
+      debtReserveId: 0,
+      liqConfig: DataTypes.LiquidationConfig({
+        closeFactor: 1.00000000000003579e18,
+        healthFactorForMaxBonus: 9.90000000000009341e17,
+        liquidationBonusFactor: 1.056e3
+      }),
+      liqBonus: 11865,
+      supplyAmount: 2909,
+      desiredHf: 890000000000003462,
+      skipTime: 15851
+    });
   }
 
   /// coll: weth / debt: dai

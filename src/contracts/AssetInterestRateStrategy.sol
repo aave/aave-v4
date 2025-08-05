@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 
 /**
@@ -11,7 +11,7 @@ import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/interf
  * @dev Strategies are hub-specific, due to the usage of asset id as index of the _interestRateData.
  */
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
-  using WadRayMathExtended for *;
+  using WadRayMath for *;
 
   /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MAX_BORROW_RATE = 1000_00; // 1000.00% in BPS
@@ -23,7 +23,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   uint256 public constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS
 
   /// @inheritdoc IAssetInterestRateStrategy
-  address public immutable LIQUIDITY_HUB;
+  address public immutable HUB;
 
   /// @dev Map of assetId and their interest rate data (assetId => interestRateData)
   mapping(uint256 assetId => InterestRateData data) internal _interestRateData;
@@ -31,13 +31,13 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /**
    * @dev Constructor.
    */
-  constructor(address liquidityHub_) {
-    LIQUIDITY_HUB = liquidityHub_;
+  constructor(address hub_) {
+    HUB = hub_;
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
   function setInterestRateData(uint256 assetId, bytes calldata data) external {
-    require(LIQUIDITY_HUB == msg.sender, OnlyLiquidityHub());
+    require(HUB == msg.sender, OnlyHub());
     InterestRateData memory rateData = abi.decode(data, (InterestRateData));
     require(
       MIN_OPTIMAL_RATIO <= rateData.optimalUsageRatio &&
@@ -98,19 +98,19 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @inheritdoc IBasicInterestRateStrategy
   function calculateInterestRate(
     uint256 assetId,
-    uint256 availableLiquidity,
-    uint256 baseDebt,
-    uint256 premiumDebt
+    uint256 liquidity,
+    uint256 drawn,
+    uint256 premium // unused
   ) external view virtual override returns (uint256) {
     InterestRateData memory rateData = _interestRateData[assetId];
     require(rateData.optimalUsageRatio != 0, InterestRateDataNotSet(assetId));
 
     uint256 currentVariableBorrowRateRay = rateData.baseVariableBorrowRate.bpsToRay();
-    if (baseDebt == 0) {
+    if (drawn == 0) {
       return currentVariableBorrowRateRay;
     }
 
-    uint256 usageRatioRay = baseDebt.rayDivUp(availableLiquidity + baseDebt);
+    uint256 usageRatioRay = drawn.rayDivUp(liquidity + drawn);
     uint256 optimalUsageRatioRay = rateData.optimalUsageRatio.bpsToRay();
 
     if (usageRatioRay <= optimalUsageRatioRay) {
@@ -126,7 +126,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
           .variableRateSlope2
           .bpsToRay()
           .rayMulUp(usageRatioRay - optimalUsageRatioRay)
-          .rayDivUp(WadRayMathExtended.RAY - optimalUsageRatioRay);
+          .rayDivUp(WadRayMath.RAY - optimalUsageRatioRay);
     }
 
     return currentVariableBorrowRateRay;
