@@ -7,7 +7,7 @@ import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 
 contract SpokeLiquidationBase is SpokeBase {
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
+  using PercentageMath for *;
   using SafeCast for uint256;
 
   struct Balance {
@@ -745,7 +745,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 collateralFactor,
     uint256 liquidationBonus
   ) internal pure returns (uint256 healthFactor) {
-    healthFactor = uint256(HEALTH_FACTOR_LIQUIDATION_THRESHOLD)
+    healthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       .percentMulUp(collateralFactor)
       .percentMulUp(liquidationBonus);
   }

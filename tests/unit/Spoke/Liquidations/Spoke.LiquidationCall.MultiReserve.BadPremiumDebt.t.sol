@@ -6,7 +6,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 /// tests with bad debt across multiple reserves that includes accrued premium debt
 contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
-  using SafeCast for uint256;
+  using SafeCast for *;
 
   struct BorrowMultipleReservesToBeAboveHealthyHf {
     uint256 requiredDebtInBase;
@@ -390,9 +390,9 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         expectedDeficitShares = userPosition.drawnShares;
         expectedDeficitAmount = state.spoke.getUserTotalDebt(reserveId, alice);
         expectedDeficitPremiumDelta = DataTypes.PremiumDelta(
-          -int256(uint256(userPosition.premiumShares)),
-          -int256(uint256(userPosition.premiumOffset)),
-          -int256(uint256(userPosition.realizedPremium))
+          -userPosition.premiumShares.toInt256(),
+          -userPosition.premiumOffset.toInt256(),
+          -userPosition.realizedPremium.toInt256()
         );
         // for debt asset being liquidated, some debt is restored prior to deficit creation
       } else {

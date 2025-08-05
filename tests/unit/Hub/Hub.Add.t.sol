@@ -104,7 +104,7 @@ contract HubAddTest is HubBase {
       skipTime: 365 days
     });
 
-    uint256 shares = uint256(type(uint128).max) - 2;
+    uint256 shares = type(uint128).max - 2;
     uint256 amount = hub1.previewAddByShares(daiAssetId, shares);
     assertGt(amount, type(uint128).max);
 

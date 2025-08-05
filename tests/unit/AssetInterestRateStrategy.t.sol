@@ -143,10 +143,10 @@ contract AssetInterestRateStrategyTest is Base {
     vm.expectEmit(address(rateStrategy));
     emit IAssetInterestRateStrategy.RateDataUpdate(
       mockAssetId,
-      uint256(rateData.optimalUsageRatio),
-      uint256(rateData.baseVariableBorrowRate),
-      uint256(rateData.variableRateSlope1),
-      uint256(rateData.variableRateSlope2)
+      rateData.optimalUsageRatio,
+      rateData.baseVariableBorrowRate,
+      rateData.variableRateSlope1,
+      rateData.variableRateSlope2
     );
 
     vm.prank(address(hub1));
