@@ -333,11 +333,13 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
 
     // bound close factor, with a static liq bonus
     liqConfig = _boundCloseFactor(liqConfig);
-    liqBonus = uint32(bound(
-      liqBonus,
-      MIN_LIQUIDATION_BONUS,
-      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
-    ));
+    liqBonus = uint32(
+      bound(
+        liqBonus,
+        MIN_LIQUIDATION_BONUS,
+        PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
+      )
+    );
 
     liquidationFee = uint16(bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR));
     supplyAmount = bound(

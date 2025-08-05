@@ -51,12 +51,12 @@ contract SpokeGettersTest is SpokeBase {
   ) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    liquidationBonusFactor = uint16(bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
-    healthFactorForMaxBonus = uint64(bound(
-      healthFactorForMaxBonus,
-      0,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
-    ));
+    liquidationBonusFactor = uint16(
+      bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR)
+    );
+    healthFactorForMaxBonus = uint64(
+      bound(healthFactorForMaxBonus, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1)
+    );
 
     DataTypes.LiquidationConfig memory config = DataTypes.LiquidationConfig({
       closeFactor: uint128(WadRayMath.WAD),

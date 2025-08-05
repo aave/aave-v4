@@ -623,9 +623,9 @@ contract SpokeBase is Base {
     (uint256 riskPremium, , , , ) = spoke.getUserAccountData(user);
 
     userPos.drawnShares = uint128(hub1.convertToDrawnShares(assetId, debtAmount));
-    userPos.premiumShares = uint128(hub1.convertToDrawnShares(assetId, debtAmount).percentMulUp(
-      riskPremium
-    ));
+    userPos.premiumShares = uint128(
+      hub1.convertToDrawnShares(assetId, debtAmount).percentMulUp(riskPremium)
+    );
     userPos.premiumOffset = uint128(hub1.convertToDrawnAssets(assetId, userPos.premiumShares));
     userPos.realizedPremium = uint128(expectedRealizedPremium);
     userPos.suppliedShares = uint128(hub1.convertToAddedShares(assetId, suppliedAmount));
@@ -640,7 +640,8 @@ contract SpokeBase is Base {
   ) internal view returns (uint128) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     DataTypes.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
-    return uint128(hub1.convertToDrawnAssets(assetId, userPos.premiumShares) - userPos.premiumOffset);
+    return
+      uint128(hub1.convertToDrawnAssets(assetId, userPos.premiumShares) - userPos.premiumOffset);
   }
 
   /// assert that realized premium matches naively calculated value
