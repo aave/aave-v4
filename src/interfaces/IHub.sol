@@ -110,7 +110,7 @@ interface IHub is IHubBase, IAccessManaged {
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external;
 
   /**
-   * @notice Registers a new spoke for a specific asset in the hub's internal accounting.
+   * @notice Registers a new spoke for a specific asset in the hub.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke to add.
    * @param params The configuration parameters for the spoke.

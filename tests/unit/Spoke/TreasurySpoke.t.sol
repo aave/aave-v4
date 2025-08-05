@@ -210,4 +210,8 @@ contract TreasurySpokeTest is SpokeBase {
       );
     }
   }
+
+  function _treasurySpoke() internal view returns (ISpoke) {
+    return ISpoke(address(treasurySpoke));
+  }
 }

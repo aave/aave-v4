@@ -167,6 +167,69 @@ contract SpokeBase is Base {
     assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
   }
 
+  /// @dev Opens a debt position for a random user, using same asset as collateral and borrow
+  function _openDebtPosition(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount,
+    bool withPremium
+  ) internal returns (address) {
+    address tempUser = makeUser();
+
+    // add collateral
+    uint256 supplyAmount = _calcMinimumCollAmount({
+      spoke: spoke,
+      collReserveId: reserveId,
+      debtReserveId: reserveId,
+      debtAmount: amount
+    });
+
+    deal(spoke, reserveId, tempUser, supplyAmount);
+    Utils.approve(spoke, reserveId, tempUser, UINT256_MAX);
+
+    Utils.supplyCollateral({
+      spoke: spoke,
+      reserveId: reserveId,
+      caller: tempUser,
+      amount: supplyAmount,
+      onBehalfOf: tempUser
+    });
+
+    // debt
+    uint256 cachedCollateralRisk;
+    if (withPremium) {
+      cachedCollateralRisk = _getCollateralRisk(spoke, reserveId);
+      updateCollateralRisk(spoke, reserveId, 50_00);
+    }
+
+    Utils.borrow({
+      spoke: spoke,
+      reserveId: reserveId,
+      caller: tempUser,
+      amount: amount,
+      onBehalfOf: tempUser
+    });
+    skip(365 days);
+
+    (uint256 drawnDebt, uint256 premiumDebt) = spoke.getReserveDebt(reserveId);
+    assertGt(drawnDebt, 0); // non-zero premium debt
+
+    if (withPremium) {
+      assertGt(premiumDebt, 0);
+      // restore cached collateral risk
+      updateCollateralRisk(spoke, reserveId, cachedCollateralRisk);
+    }
+
+    return tempUser;
+  }
+
+  function deal(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
+    IERC20 underlying = IERC20(spoke.getReserve(reserveId).underlying);
+    if (underlying.balanceOf(user) < amount) {
+      deal(address(underlying), user, amount);
+    }
+  }
+
   // @dev Borrows reserve by minimum required collateral for the same reserve
   function _backedBorrow(
     ISpoke spoke,

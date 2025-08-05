@@ -309,8 +309,17 @@ contract HubConfiguratorTest is HubBase {
     );
 
     // Create debt to build up fees on the existing treasury spoke
-    _openDebtPosition(spoke1, _daiReserveId(spoke1), 100e18, true);
-    skip(365 days);
+    _addAndDrawLiquidity(
+      hub1,
+      daiAssetId,
+      bob,
+      address(spoke1),
+      1000e18,
+      bob,
+      address(spoke1),
+      100e18,
+      365 days
+    );
 
     assertGe(treasurySpoke.getSuppliedShares(daiAssetId), 0);
     uint256 fees = treasurySpoke.getSuppliedAmount(daiAssetId);
@@ -331,7 +340,13 @@ contract HubConfiguratorTest is HubBase {
     );
 
     // Withdraw fees from the old treasury spoke
-    Utils.withdraw(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, fees, address(treasurySpoke));
+    Utils.withdraw(
+      ISpoke(address(treasurySpoke)),
+      daiAssetId,
+      TREASURY_ADMIN,
+      fees,
+      address(treasurySpoke)
+    );
 
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), 0, 'old treasury spoke should be empty');
 
@@ -356,8 +371,17 @@ contract HubConfiguratorTest is HubBase {
     );
 
     // Create debt to build up fees on the existing treasury spoke
-    _openDebtPosition(spoke1, _daiReserveId(spoke1), 100e18, true);
-    skip(365 days);
+    _addAndDrawLiquidity(
+      hub1,
+      daiAssetId,
+      bob,
+      address(spoke1),
+      1000e18,
+      bob,
+      address(spoke1),
+      100e18,
+      365 days
+    );
 
     assertGe(treasurySpoke.getSuppliedShares(daiAssetId), 0);
     uint256 feeShares = treasurySpoke.getSuppliedShares(daiAssetId);
@@ -382,7 +406,7 @@ contract HubConfiguratorTest is HubBase {
 
     // Withdraw half the fee shares from the old treasury spoke
     Utils.withdraw(
-      _treasurySpoke(),
+      ISpoke(address(treasurySpoke)),
       daiAssetId,
       TREASURY_ADMIN,
       hub1.convertToAddedAssets(daiAssetId, feeShares / 2),
@@ -409,7 +433,7 @@ contract HubConfiguratorTest is HubBase {
 
     // Now withdraw remaining fee shares from old treasury spoke
     Utils.withdraw(
-      _treasurySpoke(),
+      ISpoke(address(treasurySpoke)),
       daiAssetId,
       TREASURY_ADMIN,
       UINT256_MAX,
