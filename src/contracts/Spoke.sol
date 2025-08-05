@@ -105,15 +105,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     _reserves[reserveId] = DataTypes.Reserve({
       reserveId: reserveId,
+      hub: IHub(hub),
       assetId: assetId.toUint16(),
+      decimals: asset.decimals,
+      underlying: asset.underlying,
+      dynamicConfigKey: dynamicConfigKey,
       paused: config.paused,
       frozen: config.frozen,
       borrowable: config.borrowable,
-      collateralRisk: config.collateralRisk,
-      dynamicConfigKey: dynamicConfigKey,
-      decimals: asset.decimals,
-      underlying: asset.underlying,
-      hub: IHub(hub)
+      collateralRisk: config.collateralRisk
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
 
