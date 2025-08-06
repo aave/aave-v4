@@ -102,6 +102,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event LiquidationConfigUpdate(DataTypes.LiquidationConfig config);
 
   error ReserveNotListed();
+  error ReserveExists();
   error AssetNotListed();
   error InvalidCollateralRisk();
   error InsufficientSupply(uint256 supply);

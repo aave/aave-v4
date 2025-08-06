@@ -180,11 +180,11 @@ contract SpokeConfiguratorTest is SpokeBase {
       spokeAddr,
       abi.encodeCall(
         ISpoke.addReserve,
-        (address(hub1), daiAssetId, newPriceSource, config, dynamicConfig)
+        (address(hub1), dai2AssetId, newPriceSource, config, dynamicConfig)
       )
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.AddReserve(expectedReserveId, daiAssetId, address(hub1));
+    emit ISpoke.AddReserve(expectedReserveId, dai2AssetId, address(hub1));
     vm.expectEmit(address(spoke));
     emit ISpoke.ReserveConfigUpdate(expectedReserveId, config);
     vm.expectEmit(address(spoke));
@@ -193,7 +193,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     uint256 actualReserveId = spokeConfigurator.addReserve({
       spoke: spokeAddr,
       hub: address(hub1),
-      assetId: daiAssetId,
+      assetId: dai2AssetId,
       priceSource: newPriceSource,
       config: config,
       dynamicConfig: dynamicConfig
