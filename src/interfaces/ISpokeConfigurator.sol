@@ -109,7 +109,7 @@ interface ISpokeConfigurator {
   function updateCollateralRisk(address spoke, uint256 reserveId, uint256 collateralRisk) external;
 
   /**
-   * @notice Adds a new collateral factor to a reserve.
+   * @notice Adds a dynamic config to a reserve, identical to the latest one but with the specified collateral factor.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
    * @param collateralFactor The new collateral factor.
@@ -131,7 +131,7 @@ interface ISpokeConfigurator {
   ) external;
 
   /**
-   * @notice Updates the liquidation bonus of a reserve.
+   * @notice Adds a dynamic config to a reserve, identical to the latest one but with the specified liquidation bonus.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
    * @param liquidationBonus The new liquidation bonus.
@@ -153,7 +153,7 @@ interface ISpokeConfigurator {
   ) external;
 
   /**
-   * @notice Updates the liquidation fee of a reserve.
+   * @notice Adds a dynamic config to a reserve, identical to the latest one but with the specified liquidation fee.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
    * @param liquidationFee The new liquidation fee.
@@ -187,7 +187,7 @@ interface ISpokeConfigurator {
   ) external;
 
   /**
-   * @notice Add a dynamic config of a reserve.
+   * @notice Adds a dynamic config to a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
    * @param dynamicConfig The new dynamic config.

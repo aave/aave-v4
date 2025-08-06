@@ -132,6 +132,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
+  /// @inheritdoc ISpokeConfigurator
   function updateCollateralFactor(
     address spoke,
     uint256 reserveId,
@@ -158,6 +159,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
+  /// @inheritdoc ISpokeConfigurator
   function updateLiquidationBonus(
     address spoke,
     uint256 reserveId,
@@ -184,6 +186,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
+  /// @inheritdoc ISpokeConfigurator
   function updateLiquidationFee(
     address spoke,
     uint256 reserveId,
