@@ -120,6 +120,10 @@ contract LiquidationLogicBaseTest is SpokeBase {
       params.debtAssetUnit
     );
 
+    console.log(
+      'remainingDebtInBaseCurrency < LiquidationLogic.MIN_LEFTOVER_BASE',
+      remainingDebtInBaseCurrency < LiquidationLogic.MIN_LEFTOVER_BASE
+    );
     console.log('naiveDebtToLiquidate %e', naiveDebtToLiquidate);
     console.log('remainingDebtInBaseCurrency %e', remainingDebtInBaseCurrency);
 

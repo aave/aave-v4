@@ -61,14 +61,17 @@ library LiquidationLogic {
     DataTypes.LiquidationCallLocalVars memory params,
     uint256 debtToCover
   ) internal pure returns (uint256) {
-    uint256 maxLiquidatableDebt = debtToCover.min(params.totalBorrowerReserveDebt);
-    uint256 actualDebtToLiquidate = maxLiquidatableDebt.min(params.debtToRestoreCloseFactor);
+    uint256 maxLiquidatableDebt = params.debtToRestoreCloseFactor.min(
+      params.totalBorrowerReserveDebt
+    );
+    uint256 actualDebtToLiquidate = maxLiquidatableDebt.min(debtToCover);
     uint256 remainingDebtInBaseCurrency = ((params.totalBorrowerReserveDebt -
       actualDebtToLiquidate) * params.debtAssetPrice).toWad() / params.debtAssetUnit;
 
     console.log('LL remainingDebtInBaseCurrency %e', remainingDebtInBaseCurrency);
     console.log('LL actualDebtToLiquidate %e', actualDebtToLiquidate);
     console.log('LL debtToRestoreCloseFactor %e', params.debtToRestoreCloseFactor);
+    console.log('LL actualDebtToLiquidate == debtToCover', actualDebtToLiquidate == debtToCover);
 
     if (
       remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE &&
