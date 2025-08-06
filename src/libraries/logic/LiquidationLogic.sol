@@ -53,23 +53,22 @@ library LiquidationLogic {
   /**
    * @notice Calculates the actual amount of debt possible to repay in the liquidation.
    * @dev The amount of debt to repay is capped by the total debt of the user and the amount of debt.
-   * @param debtToCover The amount of debt to cover.
    * @param params LiquidationCallLocalVars params struct.
+   * @param debtToCover The amount of debt to cover.
    * @return The amount of debt to repay in the liquidation.
    */
   function calculateActualDebtToLiquidate(
-    uint256 debtToCover,
-    DataTypes.LiquidationCallLocalVars memory params
+    DataTypes.LiquidationCallLocalVars memory params,
+    uint256 debtToCover
   ) internal pure returns (uint256) {
     uint256 maxLiquidatableDebt = debtToCover.min(params.totalBorrowerReserveDebt);
-    uint256 debtToRestoreCloseFactor = params.calculateDebtToRestoreCloseFactor();
-    uint256 actualDebtToLiquidate = maxLiquidatableDebt.min(debtToRestoreCloseFactor);
+    uint256 actualDebtToLiquidate = maxLiquidatableDebt.min(params.debtToRestoreCloseFactor);
     uint256 remainingDebtInBaseCurrency = ((params.totalBorrowerReserveDebt -
       actualDebtToLiquidate) * params.debtAssetPrice).toWad() / params.debtAssetUnit;
 
     console.log('LL remainingDebtInBaseCurrency %e', remainingDebtInBaseCurrency);
     console.log('LL actualDebtToLiquidate %e', actualDebtToLiquidate);
-    console.log('LL debtToRestoreCloseFactor %e', debtToRestoreCloseFactor);
+    console.log('LL debtToRestoreCloseFactor %e', params.debtToRestoreCloseFactor);
 
     if (
       remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE &&

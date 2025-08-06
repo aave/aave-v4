@@ -23,6 +23,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     uint256 debtAssetUnit;
     uint256 healthFactor;
     uint256 totalBorrowerReserveDebt;
+    uint256 debtToRestoreCloseFactor;
   }
 
   function setUp() public virtual override {
@@ -63,8 +64,10 @@ contract LiquidationLogicBaseTest is SpokeBase {
     result.debtAssetUnit = params.debtAssetUnit;
     result.healthFactor = params.healthFactor;
     result.totalBorrowerReserveDebt = params.totalBorrowerReserveDebt;
+    result.debtToRestoreCloseFactor = params.debtToRestoreCloseFactor;
   }
 
+  // generic bounds for liquidation logic params
   function _bound(
     TestDebtToRestoreCloseFactorParams memory params
   ) internal virtual returns (TestDebtToRestoreCloseFactorParams memory) {
@@ -79,6 +82,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
       1,
       MAX_SUPPLY_IN_BASE_CURRENCY
     );
+    params.totalBorrowerReserveDebt = bound(params.totalBorrowerReserveDebt, 1, MAX_SUPPLY_AMOUNT);
     params.debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_ASSET_PRICE);
     params.closeFactor = bound(
       params.closeFactor,
@@ -87,6 +91,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     );
     params.healthFactor = bound(params.healthFactor, 0, params.closeFactor);
     params.debtAssetUnit = 10 ** bound(params.debtAssetUnit, 0, MAX_TOKEN_DECIMALS_SUPPORTED);
+    params.debtToRestoreCloseFactor = bound(params.debtToRestoreCloseFactor, 0, MAX_SUPPLY_AMOUNT);
 
     return params;
   }
@@ -95,9 +100,9 @@ contract LiquidationLogicBaseTest is SpokeBase {
     uint256 debtToCover,
     DataTypes.LiquidationCallLocalVars memory params
   ) internal returns (uint256) {
-    uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
     // without accounting for dust, naively return min of debtToCover, totalBorrowerReserveDebt, and debtToRestoreCloseFactor
-    return _min(params.totalBorrowerReserveDebt, _min(debtToRestoreCloseFactor, debtToCover));
+    return
+      _min(params.totalBorrowerReserveDebt, _min(params.debtToRestoreCloseFactor, debtToCover));
   }
 
   function isDustAmountExpected(

@@ -1183,11 +1183,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.collateralAssetPrice = oracle.getReservePrice(vars.collateralReserveId);
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.liquidationFee = collateralDynConfig.liquidationFee;
+    vars.debtToRestoreCloseFactor = vars.calculateDebtToRestoreCloseFactor();
 
-    vars.actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate({
-      debtToCover: debtToCover,
-      params: vars
-    });
+    vars.actualDebtToLiquidate = vars.calculateActualDebtToLiquidate(debtToCover);
     (
       vars.actualCollateralToLiquidate,
       vars.actualDebtToLiquidate,

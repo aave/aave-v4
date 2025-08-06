@@ -150,6 +150,7 @@ library DataTypes {
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
     uint256 totalBorrowerReserveDebt;
+    uint256 debtToRestoreCloseFactor;
     uint256 healthFactor;
     uint256 liquidationBonus;
     uint256 drawnDebtToLiquidate;
