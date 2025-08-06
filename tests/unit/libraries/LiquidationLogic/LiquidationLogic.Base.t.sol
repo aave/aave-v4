@@ -22,7 +22,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
     uint256 healthFactor;
-    uint256 totalDebt;
+    uint256 totalBorrowerReserveDebt;
   }
 
   function setUp() public virtual override {
@@ -62,6 +62,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     result.debtAssetPrice = params.debtAssetPrice;
     result.debtAssetUnit = params.debtAssetUnit;
     result.healthFactor = params.healthFactor;
+    result.totalBorrowerReserveDebt = params.totalBorrowerReserveDebt;
   }
 
   function _bound(
@@ -85,8 +86,36 @@ contract LiquidationLogicBaseTest is SpokeBase {
       MAX_CLOSE_FACTOR
     );
     params.healthFactor = bound(params.healthFactor, 0, params.closeFactor);
-    params.debtAssetUnit = bound(params.debtAssetUnit, 1, 10 ** MAX_TOKEN_DECIMALS_SUPPORTED);
+    params.debtAssetUnit = 10 ** bound(params.debtAssetUnit, 0, MAX_TOKEN_DECIMALS_SUPPORTED);
 
     return params;
+  }
+
+  function calcNaiveDebtToLiquidate(
+    uint256 debtToCover,
+    DataTypes.LiquidationCallLocalVars memory params
+  ) internal returns (uint256) {
+    uint256 debtToRestoreCloseFactor = LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
+    // without accounting for dust, naively return min of debtToCover, totalBorrowerReserveDebt, and debtToRestoreCloseFactor
+    return _min(params.totalBorrowerReserveDebt, _min(debtToRestoreCloseFactor, debtToCover));
+  }
+
+  function isDustAmountExpected(
+    uint256 debtToCover,
+    DataTypes.LiquidationCallLocalVars memory params
+  ) internal returns (bool) {
+    uint256 initialDebtToLiquidate = calcNaiveDebtToLiquidate(debtToCover, params);
+    uint256 remainingDebtInBaseCurrency = _convertAmountToBaseCurrency(
+      params.totalBorrowerReserveDebt - initialDebtToLiquidate,
+      params.debtAssetPrice,
+      params.debtAssetUnit
+    );
+
+    console.log('initialDebtToLiquidate %e', initialDebtToLiquidate);
+    console.log('remainingDebtInBaseCurrency %e', remainingDebtInBaseCurrency);
+
+    return
+      remainingDebtInBaseCurrency < LiquidationLogic.MIN_LEFTOVER_BASE &&
+      remainingDebtInBaseCurrency > 0;
   }
 }

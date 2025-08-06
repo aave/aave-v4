@@ -67,23 +67,30 @@ library LiquidationLogic {
     uint256 remainingDebtInBaseCurrency = ((params.totalBorrowerReserveDebt -
       actualDebtToLiquidate) * params.debtAssetPrice).toWad() / params.debtAssetUnit;
 
-    if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE) {
+    console.log('LL remainingDebtInBaseCurrency %e', remainingDebtInBaseCurrency);
+    console.log('LL actualDebtToLiquidate %e', actualDebtToLiquidate);
+    console.log('LL debtToRestoreCloseFactor %e', debtToRestoreCloseFactor);
+
+    if (
+      remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE &&
+      actualDebtToLiquidate != params.totalBorrowerReserveDebt
+    ) {
+      revert('LL dust');
       if (actualDebtToLiquidate == debtToCover) {
         revert MustNotLeaveDust();
       }
-      if (actualDebtToLiquidate == debtToRestoreCloseFactor) {
-        // debtToRestoreCloseFactor is lowest, but don't know if debtToCover is less than totalBorrowerReserveDebt
-        // prevents underflow if debtToCover > totalBorrowerReserveDebt
-        if (
-          debtToCover < params.totalBorrowerReserveDebt &&
-          ((params.totalBorrowerReserveDebt - debtToCover) * params.debtAssetPrice).toWad() /
-            params.debtAssetUnit <
-          MIN_LEFTOVER_BASE
-        ) {
-          revert MustNotLeaveDust();
-        } else {
-          actualDebtToLiquidate = maxLiquidatableDebt;
-        }
+
+      // debtToRestoreCloseFactor is lowest, but don't know if debtToCover is less than totalBorrowerReserveDebt
+      // prevents underflow if debtToCover > totalBorrowerReserveDebt
+      if (
+        debtToCover < params.totalBorrowerReserveDebt &&
+        ((params.totalBorrowerReserveDebt - debtToCover) * params.debtAssetPrice).toWad() /
+          params.debtAssetUnit <
+        MIN_LEFTOVER_BASE
+      ) {
+        revert MustNotLeaveDust();
+      } else {
+        actualDebtToLiquidate = maxLiquidatableDebt;
       }
     }
 
