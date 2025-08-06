@@ -100,39 +100,41 @@ contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTe
     LiquidationLogic.calculateActualDebtToLiquidate(params, debtToCover);
   }
 
-  // /// forge-config: default.allow_internal_expect_revert = true
-  // function test_calculateActualDebtToLiquidate_fuzz_debtToCover_dustdebug() public {
-  //   TestDebtToRestoreCloseFactorParams memory params2;
-  //   params2 = _bound(params2);
-  //   DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params2);
-  //   params.totalBorrowerReserveDebt = 100;
-  //   params.debtToRestoreCloseFactor = 100;
-  //   uint256 debtToCover = 90;
+  /// forge-config: default.allow_internal_expect_revert = true
+  function test_calculateActualDebtToLiquidate_fuzz_debtToRestoreCloseFactor_dust(
+    uint256 debtToCover,
+    TestDebtToRestoreCloseFactorParams memory params
+  ) public {
+    params = _bound(params);
+    DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
+    vm.assume(params.totalBorrowerReserveDebt > minLeftoverAmount);
+    // ensure that liquidating debtToCover will leave dust
+    params.debtToRestoreCloseFactor = bound(
+      params.debtToRestoreCloseFactor,
+      params.totalBorrowerReserveDebt - minLeftoverAmount + 1,
+      params.totalBorrowerReserveDebt - 1
+    );
+    // ensure debtToRestoreCloseFactor is lowest value
+    vm.assume(debtToCover > params.totalBorrowerReserveDebt);
 
-  //   // vm.expectRevert(abi.encodeWithSelector(LiquidationLogic.MustNotLeaveDust.selector));
-  //   vm.expectRevert(LiquidationLogic.MustNotLeaveDust.selector);
-  //   LiquidationLogic.calculateActualDebtToLiquidate(params, debtToCover);
+    (bool isDustAmountExpected, , uint256 naiveDebtToLiquidate) = isDustAmountExpected(
+      debtToCover,
+      params
+    );
 
-  //   // try this.calculateActualDebtToLiquidateWrapper(params, debtToCover) {
-  //   //   console.log('Should have reverted');
-  //   // } catch (bytes memory reason) {
-  //   //   console.log('Actual revert selector:');
-  //   //   console.logBytes4(bytes4(reason));
-  //   //   assertEq(bytes4(reason), LiquidationLogic.MustNotLeaveDust.selector);
-  //   // }
-  // }
+    assertTrue(isDustAmountExpected);
+    assertEq(naiveDebtToLiquidate, params.debtToRestoreCloseFactor);
 
-  function calculateActualDebtToLiquidateWrapper(
-    DataTypes.LiquidationCallLocalVars memory params,
-    uint256 debtToCover
-  ) external returns (uint256) {
-    // console.log('debtToCover %e', debtToCover);
-    // console.log('params.totalBorrowerReserveDebt %e', params.totalBorrowerReserveDebt);
-    // console.log('params.debtToRestoreCloseFactor %e', params.debtToRestoreCloseFactor);
-    // console.log('params.debtAssetPrice %e', params.debtAssetPrice);
-    // console.log('params.debtAssetUnit %e', params.debtAssetUnit);
-    // console.log('params.debtAssetPrice %e', params.debtAssetPrice);
-    return LiquidationLogic.calculateActualDebtToLiquidate(params, debtToCover);
+    // should return min(debtToCover, totalBorrowerReserveDebt)
+    uint256 actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate(
+      params,
+      debtToCover
+    );
+    assertEq(
+      actualDebtToLiquidate,
+      params.totalBorrowerReserveDebt,
+      'should return totalBorrowerReserveDebt'
+    );
   }
 
   // function test_calculateActualDebtToLiquidate_fuzz(
