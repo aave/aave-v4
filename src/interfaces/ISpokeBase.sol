@@ -70,16 +70,16 @@ interface ISpokeBase {
 
   /**
    * @dev Emitted when a borrower is liquidated.
-   * @param collateralAsset The address of the underlying asset used as collateral, to receive as result of the liquidation.
-   * @param debtAsset The address of the underlying borrowed asset to be repaid with the liquidation.
+   * @param collateralAssetId The identifier of the asset used as collateral, to receive as result of the liquidation.
+   * @param debtAssetId The identifier of the asset to be repaid with the liquidation.
    * @param user The address of the borrower getting liquidated.
    * @param liquidatedDebt The debt amount of borrowed asset to be liquidated.
    * @param liquidatedCollateral The amount of collateral received by the liquidator.
    * @param liquidator The address of the liquidator.
    */
   event LiquidationCall(
-    address indexed collateralAsset,
-    address indexed debtAsset,
+    uint256 indexed collateralAssetId,
+    uint256 indexed debtAssetId,
     address indexed user,
     uint256 liquidatedDebt,
     uint256 liquidatedCollateral,

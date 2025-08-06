@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
@@ -13,6 +14,8 @@ import {ISpokeConfigurator} from 'src/interfaces/ISpokeConfigurator.sol';
  * @dev Must be granted permission by the Spoke
  */
 contract SpokeConfigurator is Ownable, ISpokeConfigurator {
+  using SafeCast for uint256;
+
   /**
    * @dev Constructor
    * @param owner_ The address of the owner
@@ -37,7 +40,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   function updateLiquidationCloseFactor(address spoke, uint256 closeFactor) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     DataTypes.LiquidationConfig memory liquidationConfig = targetSpoke.getLiquidationConfig();
-    liquidationConfig.closeFactor = closeFactor;
+    liquidationConfig.closeFactor = closeFactor.toUint128();
     targetSpoke.updateLiquidationConfig(liquidationConfig);
   }
 
@@ -48,7 +51,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     DataTypes.LiquidationConfig memory liquidationConfig = targetSpoke.getLiquidationConfig();
-    liquidationConfig.healthFactorForMaxBonus = healthFactorForMaxBonus;
+    liquidationConfig.healthFactorForMaxBonus = healthFactorForMaxBonus.toUint64();
     targetSpoke.updateLiquidationConfig(liquidationConfig);
   }
 
@@ -59,7 +62,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     DataTypes.LiquidationConfig memory liquidationConfig = targetSpoke.getLiquidationConfig();
-    liquidationConfig.liquidationBonusFactor = liquidationBonusFactor;
+    liquidationConfig.liquidationBonusFactor = liquidationBonusFactor.toUint16();
     targetSpoke.updateLiquidationConfig(liquidationConfig);
   }
 
@@ -115,7 +118,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     DataTypes.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
-    reserveConfig.collateralRisk = collateralRisk;
+    reserveConfig.collateralRisk = collateralRisk.toUint24();
     targetSpoke.updateReserveConfig(reserveId, reserveConfig);
   }
 
@@ -155,7 +158,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     ISpoke targetSpoke = ISpoke(spoke);
     DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
       .getDynamicReserveConfig(reserveId);
-    dynamicReserveConfig.liquidationBonus = liquidationBonus;
+    dynamicReserveConfig.liquidationBonus = liquidationBonus.toUint32();
     targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
@@ -169,7 +172,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     ISpoke targetSpoke = ISpoke(spoke);
     DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
       .getDynamicReserveConfig(reserveId, configKey);
-    dynamicReserveConfig.liquidationBonus = liquidationBonus;
+    dynamicReserveConfig.liquidationBonus = liquidationBonus.toUint32();
     targetSpoke.updateDynamicReserveConfig(reserveId, configKey, dynamicReserveConfig);
   }
 
@@ -182,7 +185,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     ISpoke targetSpoke = ISpoke(spoke);
     DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
       .getDynamicReserveConfig(reserveId);
-    dynamicReserveConfig.liquidationFee = liquidationFee;
+    dynamicReserveConfig.liquidationFee = liquidationFee.toUint16();
     targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
@@ -196,7 +199,7 @@ contract SpokeConfigurator is Ownable, ISpokeConfigurator {
     ISpoke targetSpoke = ISpoke(spoke);
     DataTypes.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke
       .getDynamicReserveConfig(reserveId, configKey);
-    dynamicReserveConfig.liquidationFee = liquidationFee;
+    dynamicReserveConfig.liquidationFee = liquidationFee.toUint16();
     targetSpoke.updateDynamicReserveConfig(reserveId, configKey, dynamicReserveConfig);
   }
 

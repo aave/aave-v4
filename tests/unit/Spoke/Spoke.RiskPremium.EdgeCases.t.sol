@@ -7,6 +7,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
+  using SafeCast for uint256;
 
   /// Bob supplies 2 collateral assets, borrows an amount such that both of them cover it, and then repays any amount of debt
   /// Bob's user risk premium should decrease or remain same after repay
@@ -267,7 +268,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       _wethReserveId(spoke2)
     ) + 1; // Borrow more than dai supply value so 2 collaterals cover debt
     uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
-    skipTime = uint40(bound(skipTime, 365 days, MAX_SKIP_TIME)); // At least skip one year to ensure sufficient accrual
+    skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME).toUint40(); // At least skip one year to ensure sufficient accrual
 
     // Deal bob dai to cover dai and dai2 supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
@@ -418,7 +419,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       _daiReserveId(spoke2)
     );
     uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
-    skipTime = uint40(bound(skipTime, 365 days, MAX_SKIP_TIME)); // At least skip one year to ensure sufficient accrual
+    skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME).toUint40(); // At least skip one year to ensure sufficient accrual
 
     // Deal bob dai to cover dai and dai2 supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
@@ -528,7 +529,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       wethBorrowAmount,
       _daiReserveId(spoke2)
     ); // Dai collateral will fully cover initial weth borrow
-    skipTime = uint40(bound(skipTime, 365 days, MAX_SKIP_TIME)); // At least skip one year to ensure sufficient accrual
+    skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME).toUint40(); // At least skip one year to ensure sufficient accrual
 
     // Deal bob dai to cover dai and dai2 supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);

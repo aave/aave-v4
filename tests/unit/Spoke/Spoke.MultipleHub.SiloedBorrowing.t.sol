@@ -180,7 +180,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     assertEq(newSpoke.getUserTotalDebt(siloedVars.reserveBId, bob), assetBDrawCapAmount);
     assertEq(newHub.getAssetTotalOwed(siloedVars.assetBId), assetBDrawCapAmount);
     assertEq(
-      newSpoke.getReserve(siloedVars.reserveBId).underlying,
+      address(getAssetUnderlyingByReserveId(newSpoke, siloedVars.reserveBId)),
       address(assetB),
       'Bob borrowed asset B from new spoke'
     );

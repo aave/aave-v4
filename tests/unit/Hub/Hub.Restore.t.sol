@@ -157,7 +157,7 @@ contract HubRestoreTest is HubBase {
 
     //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
     //       rate,
-    //       uint40(spoke1DaiData.lastUpdateTimestamp)
+    //       spoke1DaiData.lastUpdateTimestamp.toUint40()
     //     );
     //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
     //     assertTrue(cumulatedDrawnDebt > 0);
@@ -246,7 +246,7 @@ contract HubRestoreTest is HubBase {
 
     //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
     //       rate,
-    //       uint40(spoke1DaiData.lastUpdateTimestamp)
+    //       spoke1DaiData.lastUpdateTimestamp.toUint40()
     //     );
     //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
     //     vm.assume(cumulatedDrawnDebt > 0);
@@ -332,7 +332,7 @@ contract HubRestoreTest is HubBase {
 
     //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
     //       rate,
-    //       uint40(spoke1DaiData.lastUpdateTimestamp)
+    //       spoke1DaiData.lastUpdateTimestamp.toUint40()
     //     );
     //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
     //     uint256 accruedPremium = (cumulatedDrawnDebt - drawAmount).percentMul(riskPremium);
@@ -427,7 +427,7 @@ contract HubRestoreTest is HubBase {
 
     //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
     //       rate,
-    //       uint40(spoke1DaiData.lastUpdateTimestamp)
+    //       spoke1DaiData.lastUpdateTimestamp.toUint40()
     //     );
     //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
     //     uint256 accruedPremium = (cumulatedDrawnDebt - drawAmount).percentMul(riskPremium);
@@ -473,7 +473,7 @@ contract HubRestoreTest is HubBase {
 
     //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
     //       rate,
-    //       uint40(daiData.lastUpdateTimestamp)
+    //       daiData.lastUpdateTimestamp.toUint40()
     //     );
     //     uint256 accruedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     //     uint256 accruedPremium = accruedDrawnDebt.percentMul(riskPremium);
@@ -575,7 +575,7 @@ contract HubRestoreTest is HubBase {
 
     //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
     //       rate,
-    //       uint40(daiData.lastUpdateTimestamp)
+    //       daiData.lastUpdateTimestamp.toUint40()
     //     );
     //     uint256 accruedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     //     uint256 accruedPremium = accruedDrawnDebt.percentMul(riskPremium);
@@ -668,7 +668,7 @@ contract HubRestoreTest is HubBase {
 
     //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
     //       rate,
-    //       uint40(daiData.lastUpdateTimestamp)
+    //       daiData.lastUpdateTimestamp.toUint40()
     //     );
     //     uint256 accruedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     //     uint256 accruedPremium = accruedDrawnDebt.percentMul(riskPremium);
@@ -756,7 +756,7 @@ contract HubRestoreTest is HubBase {
 
     //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
     //       rate,
-    //       uint40(daiData.lastUpdateTimestamp)
+    //       daiData.lastUpdateTimestamp.toUint40()
     //     );
     //     uint256 accruedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest) - drawAmount;
     //     uint256 accruedPremium = accruedDrawnDebt.percentMul(riskPremium);
@@ -1121,7 +1121,7 @@ contract HubRestoreTest is HubBase {
 
     //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
     //       rate,
-    //       uint40(spoke1DaiData.lastUpdateTimestamp)
+    //       spoke1DaiData.lastUpdateTimestamp.toUint40()
     //     );
     //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
     //     assertTrue(cumulatedDrawnDebt > 0);
@@ -1219,7 +1219,7 @@ contract HubRestoreTest is HubBase {
 
     //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
     //       rate,
-    //       uint40(spoke1DaiData.lastUpdateTimestamp)
+    //       spoke1DaiData.lastUpdateTimestamp.toUint40()
     //     );
     //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
     //     vm.assume(cumulatedDrawnDebt > 0);
@@ -1315,7 +1315,7 @@ contract HubRestoreTest is HubBase {
 
     //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
     //       rate,
-    //       uint40(spoke1DaiData.lastUpdateTimestamp)
+    //       spoke1DaiData.lastUpdateTimestamp.toUint40()
     //     );
     //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
     //     uint256 accruedPremium = (cumulatedDrawnDebt - drawAmount).percentMul(riskPremium);
@@ -1422,7 +1422,7 @@ contract HubRestoreTest is HubBase {
 
     //     uint256 cumulatedBaseInterest = MathUtils.calculateLinearInterest(
     //       rate,
-    //       uint40(spoke1DaiData.lastUpdateTimestamp)
+    //       spoke1DaiData.lastUpdateTimestamp.toUint40()
     //     );
     //     uint256 cumulatedDrawnDebt = drawAmount.rayMul(cumulatedBaseInterest);
     //     uint256 accruedPremium = (cumulatedDrawnDebt - drawAmount).percentMul(riskPremium);

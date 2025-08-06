@@ -4,6 +4,8 @@ pragma solidity ^0.8.10;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubConfiguratorTest is HubBase {
+  using SafeCast for uint256;
+
   HubConfigurator public hubConfigurator;
 
   address public HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
@@ -41,7 +43,7 @@ contract HubConfiguratorTest is HubBase {
     _addAsset({
       fetchErc20Decimals: vm.randomBool(),
       underlying: vm.randomAddress(),
-      decimals: uint8(vm.randomUint()),
+      decimals: bound(vm.randomUint(), 0, Constants.MAX_ALLOWED_ASSET_DECIMALS).toUint8(),
       feeReceiver: vm.randomAddress(),
       interestRateStrategy: vm.randomAddress(),
       encodedIrData: encodedIrData
@@ -54,7 +56,7 @@ contract HubConfiguratorTest is HubBase {
     _addAsset({
       fetchErc20Decimals: vm.randomBool(),
       underlying: vm.randomAddress(),
-      decimals: uint8(10),
+      decimals: 10,
       feeReceiver: vm.randomAddress(),
       interestRateStrategy: vm.randomAddress(),
       encodedIrData: abi.encode('invalid')
@@ -72,7 +74,7 @@ contract HubConfiguratorTest is HubBase {
     assumeNotZeroAddress(feeReceiver);
     assumeNotZeroAddress(interestRateStrategy);
 
-    decimals = uint8(bound(decimals, Constants.MAX_ALLOWED_ASSET_DECIMALS + 1, type(uint8).max));
+    decimals = bound(decimals, Constants.MAX_ALLOWED_ASSET_DECIMALS + 1, type(uint8).max).toUint8();
 
     vm.expectRevert(IHub.InvalidAssetDecimals.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -119,19 +121,17 @@ contract HubConfiguratorTest is HubBase {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
 
-    decimals = uint8(bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS));
-    optimalUsageRatio = uint16(bound(optimalUsageRatio, MIN_OPTIMAL_RATIO, MAX_OPTIMAL_RATIO));
+    decimals = bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS).toUint8();
+    optimalUsageRatio = bound(optimalUsageRatio, MIN_OPTIMAL_RATIO, MAX_OPTIMAL_RATIO).toUint16();
 
-    baseVariableBorrowRate = uint32(bound(baseVariableBorrowRate, 0, MAX_BORROW_RATE / 3));
-    uint32 remainingAfterBase = uint32(MAX_BORROW_RATE - baseVariableBorrowRate);
-    variableRateSlope1 = uint32(bound(variableRateSlope1, 0, remainingAfterBase / 2));
-    variableRateSlope2 = uint32(
-      bound(
-        variableRateSlope2,
-        variableRateSlope1,
-        MAX_BORROW_RATE - baseVariableBorrowRate - variableRateSlope1
-      )
-    );
+    baseVariableBorrowRate = bound(baseVariableBorrowRate, 0, MAX_BORROW_RATE / 3).toUint32();
+    uint32 remainingAfterBase = MAX_BORROW_RATE.toUint32() - baseVariableBorrowRate;
+    variableRateSlope1 = bound(variableRateSlope1, 0, remainingAfterBase / 2).toUint32();
+    variableRateSlope2 = bound(
+      variableRateSlope2,
+      variableRateSlope1,
+      MAX_BORROW_RATE - baseVariableBorrowRate - variableRateSlope1
+    ).toUint32();
 
     uint256 expectedAssetId = hub1.getAssetCount();
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));

@@ -293,9 +293,5 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
 
-  function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
-
-  function MAX_COLLATERAL_RISK() external view returns (uint256);
-
   function oracle() external view returns (IAaveOracle);
 }

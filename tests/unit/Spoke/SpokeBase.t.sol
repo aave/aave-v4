@@ -6,9 +6,8 @@ import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.s
 
 contract SpokeBase is Base {
   using SafeCast for *;
-  using PercentageMath for uint256;
+  using PercentageMath for *;
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
   struct Debts {
@@ -196,7 +195,7 @@ contract SpokeBase is Base {
     });
 
     // debt
-    uint256 cachedCollateralRisk;
+    uint24 cachedCollateralRisk;
     if (withPremium) {
       cachedCollateralRisk = _getCollateralRisk(spoke, reserveId);
       updateCollateralRisk(spoke, reserveId, 50_00);
@@ -244,7 +243,7 @@ contract SpokeBase is Base {
   }
 
   function deal(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
-    IERC20 underlying = IERC20(spoke.getReserve(reserveId).underlying);
+    IERC20 underlying = getAssetUnderlyingByReserveId(spoke, reserveId);
     if (underlying.balanceOf(user) < amount) {
       deal(address(underlying), user, amount);
     }
@@ -595,13 +594,14 @@ contract SpokeBase is Base {
   ) internal view returns (DataTypes.UserPosition memory userPos) {
     (uint256 riskPremium, , , , ) = spoke.getUserAccountData(user);
 
-    userPos.drawnShares = hub1.convertToDrawnShares(assetId, debtAmount);
-    userPos.premiumShares = hub1.convertToDrawnShares(assetId, debtAmount).percentMulUp(
-      riskPremium
-    );
-    userPos.premiumOffset = hub1.convertToDrawnAssets(assetId, userPos.premiumShares);
-    userPos.realizedPremium = expectedRealizedPremium;
-    userPos.suppliedShares = hub1.convertToAddedShares(assetId, suppliedAmount);
+    userPos.drawnShares = hub1.convertToDrawnShares(assetId, debtAmount).toUint128();
+    userPos.premiumShares = hub1
+      .convertToDrawnShares(assetId, debtAmount)
+      .percentMulUp(riskPremium)
+      .toUint128();
+    userPos.premiumOffset = hub1.convertToDrawnAssets(assetId, userPos.premiumShares).toUint128();
+    userPos.realizedPremium = expectedRealizedPremium.toUint128();
+    userPos.suppliedShares = hub1.convertToAddedShares(assetId, suppliedAmount).toUint128();
   }
 
   /// calculated expected realized premium
@@ -610,10 +610,12 @@ contract SpokeBase is Base {
     ISpoke spoke,
     uint256 reserveId,
     address user
-  ) internal view returns (uint256) {
+  ) internal view returns (uint128) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     DataTypes.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
-    return hub1.convertToDrawnAssets(assetId, userPos.premiumShares) - userPos.premiumOffset;
+    return
+      (hub1.convertToDrawnAssets(assetId, userPos.premiumShares) - userPos.premiumOffset)
+        .toUint128();
   }
 
   /// assert that realized premium matches naively calculated value
@@ -693,9 +695,14 @@ contract SpokeBase is Base {
 
   function assertEq(DataTypes.Reserve memory a, DataTypes.Reserve memory b) internal pure {
     assertEq(a.reserveId, b.reserveId, 'reserve Id');
+    assertEq(address(a.hub), address(b.hub), 'hub');
     assertEq(a.assetId, b.assetId, 'asset Id');
-    assertEq(a.underlying, b.underlying, 'Asset addresses mismatch');
-    assertEq(a.config, b.config);
+    assertEq(a.decimals, b.decimals, 'decimals');
+    assertEq(a.dynamicConfigKey, b.dynamicConfigKey, 'dynamicConfigKey');
+    assertEq(a.paused, b.paused, 'paused');
+    assertEq(a.frozen, b.frozen, 'frozen');
+    assertEq(a.borrowable, b.borrowable, 'borrowable');
+    assertEq(a.collateralRisk, b.collateralRisk, 'collateralRisk');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
@@ -926,7 +933,7 @@ contract SpokeBase is Base {
 
   function _nextDynamicConfigKey(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
     uint16 dynamicConfigKey = spoke.getReserve(reserveId).dynamicConfigKey;
-    return uint16(uint256(dynamicConfigKey + 1) % type(uint16).max);
+    return (dynamicConfigKey + 1) % type(uint16).max;
   }
 
   function _randomUninitializedConfigKey(
@@ -944,7 +951,7 @@ contract SpokeBase is Base {
     uint16 configKey = _nextDynamicConfigKey(spoke, reserveId);
     if (spoke.getDynamicReserveConfig(reserveId, configKey).liquidationBonus != 0) {
       // all config keys are initialized
-      return vm.randomUint(0, uint256(type(uint16).max)).toUint16();
+      return vm.randomUint(0, type(uint16).max).toUint16();
     }
     return vm.randomUint(0, spoke.getReserve(reserveId).dynamicConfigKey).toUint16();
   }
