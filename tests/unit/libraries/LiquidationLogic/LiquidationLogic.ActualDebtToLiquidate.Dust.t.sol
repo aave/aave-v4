@@ -205,27 +205,6 @@ contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTe
     LiquidationLogic.calculateActualDebtToLiquidate(params, debtToCover);
   }
 
-  // function test_calculateActualDebtToLiquidate_fuzz(
-  //   uint256 debtToCover,
-  //   TestDebtToRestoreCloseFactorParams memory params
-  // ) public {
-  //   params = _bound(params);
-  //   DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
-
-  //   vm.assume(debtToCover > 0);
-
-  //   (
-  //     bool isDustAmountExpected,
-  //     uint256 remainingDebtInBaseCurrency,
-  //     uint256 naiveDebtToLiquidate
-  //   ) = isDustAmountExpected(debtToCover, params);
-  //   vm.assume(isDustAmountExpected);
-
-  //   uint256 actualDebtToLiquidate = params.calculateActualDebtToLiquidate(debtToCover);
-
-  //   assertEq(actualDebtToLiquidate, naiveDebtToLiquidate, 'should return naive debt to liquidate');
-  // }
-
   // bound fuzz inputs
   function _bound(
     TestDebtToRestoreCloseFactorParams memory params
