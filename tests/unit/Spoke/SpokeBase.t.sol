@@ -244,7 +244,7 @@ contract SpokeBase is Base {
   }
 
   function deal(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
-    IERC20 underlying = IERC20(spoke.getReserve(reserveId).underlying);
+    IERC20 underlying = getAssetUnderlyingByReserveId(spoke, reserveId);
     if (underlying.balanceOf(user) < amount) {
       deal(address(underlying), user, amount);
     }
@@ -726,7 +726,6 @@ contract SpokeBase is Base {
     assertEq(address(a.hub), address(b.hub), 'hub');
     assertEq(a.assetId, b.assetId, 'asset Id');
     assertEq(a.decimals, b.decimals, 'decimals');
-    assertEq(a.underlying, b.underlying, 'underlying');
     assertEq(a.dynamicConfigKey, b.dynamicConfigKey, 'dynamicConfigKey');
     assertEq(a.paused, b.paused, 'paused');
     assertEq(a.frozen, b.frozen, 'frozen');

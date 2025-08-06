@@ -1171,7 +1171,14 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (uint256, IERC20) {
     DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    return (reserve.assetId, IERC20(reserve.underlying));
+    return (reserve.assetId, IERC20(reserve.hub.getAsset(reserve.assetId).underlying));
+  }
+
+  function getAssetUnderlyingByReserveId(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (IERC20) {
+    return IERC20(spoke.getReserve(reserveId).hub.getAsset(spoke.getReserve(reserveId).assetId).underlying);
   }
 
   function getWithdrawalLimit(

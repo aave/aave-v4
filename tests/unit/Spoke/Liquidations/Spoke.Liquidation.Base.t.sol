@@ -279,8 +279,8 @@ contract SpokeLiquidationBase is SpokeBase {
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.underlying,
-      state.debtReserve.underlying,
+      state.collateralReserve.assetId,
+      state.debtReserve.assetId,
       alice,
       state.debtToLiq,
       state.collToLiq,
@@ -440,7 +440,7 @@ contract SpokeLiquidationBase is SpokeBase {
       string.concat('reserve/spoke supplied shares collateral accounting ', label)
     );
     assertEq(
-      IERC20(state.collateralReserve.underlying).balanceOf(address(state.spoke)),
+      getAssetUnderlyingByReserveId(state.spoke, state.collateralReserveId).balanceOf(address(state.spoke)),
       0,
       string.concat('no spoke collateral underlying should remain ', label)
     );
@@ -785,10 +785,10 @@ contract SpokeLiquidationBase is SpokeBase {
     state.userTotalDebt.balanceBefore =
       state.userDrawnDebt.balanceBefore +
       state.userPremiumDebt.balanceBefore;
-    state.liquidatorCollateral.balanceBefore = IERC20(state.collateralReserve.underlying).balanceOf(
+    state.liquidatorCollateral.balanceBefore = getAssetUnderlyingByReserveId(state.spoke, state.collateralReserveId).balanceOf(
       LIQUIDATOR
     );
-    state.liquidatorDebt.balanceBefore = IERC20(state.debtReserve.underlying).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceBefore = getAssetUnderlyingByReserveId(state.spoke, state.debtReserveId).balanceOf(LIQUIDATOR);
     state.userSuppliedAmount.balanceBefore = state.spoke.getUserSuppliedAmount(
       state.collateralReserve.reserveId,
       state.user
@@ -877,10 +877,10 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       _getFeeReceiver(state.collateralReserve.assetId)
     );
-    state.liquidatorCollateral.balanceAfter = IERC20(state.collateralReserve.underlying).balanceOf(
+    state.liquidatorCollateral.balanceAfter = getAssetUnderlyingByReserveId(state.spoke, state.collateralReserveId).balanceOf(
       LIQUIDATOR
     );
-    state.liquidatorDebt.balanceAfter = IERC20(state.debtReserve.underlying).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceAfter = getAssetUnderlyingByReserveId(state.spoke, state.debtReserveId).balanceOf(LIQUIDATOR);
     (state.userDrawnDebt.balanceAfter, state.userPremiumDebt.balanceAfter) = state
       .spoke
       .getUserDebt(state.debtReserve.reserveId, state.user);

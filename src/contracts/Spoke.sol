@@ -108,7 +108,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       hub: IHub(hub),
       assetId: assetId.toUint16(),
       decimals: asset.decimals,
-      underlying: asset.underlying,
       dynamicConfigKey: dynamicConfigKey,
       paused: config.paused,
       frozen: config.frozen,
@@ -559,7 +558,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   // internal
   function _validateSupply(DataTypes.Reserve storage reserve) internal view {
-    require(reserve.underlying != address(0), ReserveNotListed());
+    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     require(!reserve.frozen, ReserveFrozen());
   }
@@ -569,7 +568,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.UserPosition storage userPosition,
     uint256 amount
   ) internal view {
-    require(reserve.underlying != address(0), ReserveNotListed());
+    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     uint256 suppliedAmount = reserve.hub.previewRemoveByShares(
       reserve.assetId,
@@ -579,7 +578,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _validateBorrow(DataTypes.Reserve storage reserve) internal view {
-    require(reserve.underlying != address(0), ReserveNotListed());
+    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     require(!reserve.frozen, ReserveFrozen());
     require(reserve.borrowable, ReserveNotBorrowable(reserve.reserveId));
@@ -588,7 +587,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   // TODO: Place this and LH equivalent in a generic logic library
   function _validateRepay(DataTypes.Reserve storage reserve) internal view {
-    require(reserve.underlying != address(0), ReserveNotListed());
+    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     // todo validate user not trying to repay more
     // todo NoExplicitAmountToRepayOnBehalf
@@ -673,7 +672,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal view {
     require(debtToCover > 0, InvalidDebtToCover());
     require(
-      collateralReserve.underlying != address(0) && debtReserve.underlying != address(0),
+      address(collateralReserve.hub) != address(0) && address(debtReserve.hub) != address(0),
       ReserveNotListed()
     );
     require(!collateralReserve.paused && !debtReserve.paused, ReservePaused());
@@ -1041,11 +1040,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.collateralReserveHub = collateralReserve.hub;
     vars.collateralAssetId = collateralReserve.assetId;
     vars.collateralReserveId = collateralReserve.reserveId;
-    vars.collateralUnderlying = collateralReserve.underlying;
     vars.debtReserveHub = debtReserve.hub;
     vars.debtAssetId = debtReserve.assetId;
     vars.debtReserveId = debtReserve.reserveId;
-    vars.debtUnderlying = debtReserve.underlying;
 
     while (vars.i < users.length) {
       vars.user = users[vars.i];
@@ -1129,8 +1126,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.totalLiquidationFeeShares += vars.liquidationFeeShares;
 
       emit LiquidationCall(
-        vars.collateralUnderlying,
-        vars.debtUnderlying,
+        vars.collateralAssetId,
+        vars.debtAssetId,
         vars.user,
         vars.drawnDebtToLiquidate + vars.premiumDebtToLiquidate,
         vars.collateralToLiquidate,

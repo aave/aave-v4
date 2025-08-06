@@ -319,10 +319,12 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
 
+    IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
+
     // Deal caller the balance to deposit, and approve hub
-    deal(reserve.underlying, caller, assets);
+    deal(address(underlying), caller, assets);
     vm.prank(caller);
-    IERC20(reserve.underlying).approve(address(hub1), assets);
+    underlying.approve(address(hub1), assets);
 
     // Supply and confirm share amount from event emission
     uint256 shares1 = hub1.convertToAddedShares(reserve.assetId, assets);
@@ -372,10 +374,12 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
 
+    IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
+
     // Deal caller the balance they will supply, and approve hub
-    deal(reserve.underlying, caller, callerStartingBalance);
+    deal(address(underlying), caller, callerStartingBalance);
     vm.prank(caller);
-    IERC20(reserve.underlying).approve(address(hub1), UINT256_MAX);
+    underlying.approve(address(hub1), UINT256_MAX);
 
     // Set up initial state of caller by supplying their starting balance
     Utils.supply({

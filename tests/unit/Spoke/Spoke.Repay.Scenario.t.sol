@@ -1310,11 +1310,13 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
 
+    IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
+
     // Deal caller max collateral amount, approve hub, supply
     supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
-    deal(reserve.underlying, caller, supplyAmount);
+    deal(address(underlying), caller, supplyAmount);
     vm.prank(caller);
-    IERC20(reserve.underlying).approve(address(hub1), supplyAmount);
+    underlying.approve(address(hub1), supplyAmount);
     Utils.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
 
     // Borrow
@@ -1324,8 +1326,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Repay
     uint256 shares2 = hub1.convertToDrawnShares(reserve.assetId, assets);
-    deal(reserve.underlying, caller, assets);
-    IERC20(reserve.underlying).approve(address(hub1), assets);
+    deal(address(underlying), caller, assets);
+    underlying.approve(address(hub1), assets);
     spoke1.repay(reserveId, assets, caller);
     vm.stopPrank();
 
@@ -1363,19 +1365,21 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
 
+    IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
+
     // Set up caller initial debt position
     supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
-    deal(reserve.underlying, caller, supplyAmount);
+    deal(address(underlying), caller, supplyAmount);
     vm.prank(caller);
-    IERC20(reserve.underlying).approve(address(hub1), supplyAmount);
+    underlying.approve(address(hub1), supplyAmount);
     Utils.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
     Utils.borrow(spoke1, reserveId, caller, callerStartingDebt, caller);
 
     // Repay
     uint256 shares1 = hub1.convertToDrawnShares(reserve.assetId, assets);
-    deal(reserve.underlying, caller, assets);
+    deal(address(underlying), caller, assets);
     vm.startPrank(caller);
-    IERC20(reserve.underlying).approve(address(hub1), assets);
+    underlying.approve(address(hub1), assets);
     spoke1.repay(reserveId, assets, caller);
 
     // Borrow

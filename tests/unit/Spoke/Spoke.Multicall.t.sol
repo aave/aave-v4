@@ -116,7 +116,6 @@ contract SpokeMulticall is SpokeBase {
     DataTypes.Reserve memory dai2ReserveExpected;
     dai2ReserveExpected.reserveId = dai2ReserveId;
     dai2ReserveExpected.assetId = daiAssetId.toUint16();
-    dai2ReserveExpected.underlying = address(tokenList.dai);
     dai2ReserveExpected.paused = dai2Config.paused;
     dai2ReserveExpected.frozen = dai2Config.frozen;
     dai2ReserveExpected.borrowable = dai2Config.borrowable;
@@ -124,7 +123,6 @@ contract SpokeMulticall is SpokeBase {
     DataTypes.Reserve memory dai3ReserveExpected;
     dai3ReserveExpected.reserveId = dai3ReserveId;
     dai3ReserveExpected.assetId = daiAssetId.toUint16();
-    dai3ReserveExpected.underlying = address(tokenList.dai);
     dai3ReserveExpected.paused = dai3Config.paused;
     dai3ReserveExpected.frozen = dai3Config.frozen;
     dai3ReserveExpected.borrowable = dai3Config.borrowable;

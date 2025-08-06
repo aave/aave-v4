@@ -63,10 +63,8 @@ library DataTypes {
     uint256 reserveId;
     //
     IHub hub;
-    //
     uint16 assetId;
     uint8 decimals;
-    address underlying;
     uint16 dynamicConfigKey; // key of the last reserve config
     bool paused;
     bool frozen;
@@ -205,8 +203,6 @@ library DataTypes {
     uint256 liquidatedSuppliedShares;
     DataTypes.PremiumDelta premiumDelta;
     bool hasDeficit;
-    address collateralUnderlying;
-    address debtUnderlying;
     IHub collateralReserveHub;
     IHub debtReserveHub;
   }
