@@ -81,16 +81,16 @@ library LiquidationLogic {
         // revert('LL dust');
       }
 
-      // debtToRestoreCloseFactor is lowest, but don't know if debtToCover is less than totalBorrowerReserveDebt
-      // prevents underflow if debtToCover > totalBorrowerReserveDebt
+      // debtToRestoreCloseFactor is lowest
+      // if debtToCover also returns dust, revert
       if (
         debtToCover < params.totalBorrowerReserveDebt &&
         ((params.totalBorrowerReserveDebt - debtToCover) * params.debtAssetPrice).toWad() /
           params.debtAssetUnit <
         MIN_LEFTOVER_BASE
       ) {
-        // revert MustNotLeaveDust();
-        revert('LL MustNotLeaveDust');
+        revert MustNotLeaveDust();
+        // revert('LL MustNotLeaveDust');
       } else {
         actualDebtToLiquidate = maxLiquidatableDebt;
       }

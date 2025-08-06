@@ -45,7 +45,7 @@ contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTe
   /// debtToCover is the lowest value, and would leave dust
   /// scenario where totalBorrowerReserveDebt starts off greater than minLeftoverAmount
   /// forge-config: default.allow_internal_expect_revert = true
-  function test_calculateActualDebtToLiquidate_fuzz_debtToCover_dust(
+  function test_calculateActualDebtToLiquidate_fuzz_debtToCover_revertsWith_MustNotLeaveDust(
     uint256 debtToCover,
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
@@ -76,7 +76,7 @@ contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTe
   /// debtToCover is the lowest value, and would leave dust
   /// scenario where totalBorrowerReserveDebt starts off already <= minLeftoverAmount
   /// forge-config: default.allow_internal_expect_revert = true
-  function test_calculateActualDebtToLiquidate_fuzz_debtToCover_dust_totalBorrowerReserveDebt_lte_minLeftoverAmount(
+  function test_calculateActualDebtToLiquidate_fuzz_debtToCover_totalBorrowerReserveDebt_revertsWith_MustNotLeaveDust(
     uint256 debtToCover,
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
@@ -170,6 +170,39 @@ contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTe
       params.totalBorrowerReserveDebt,
       'should return totalBorrowerReserveDebt'
     );
+  }
+
+  /// forge-config: default.allow_internal_expect_revert = true
+  function test_calculateActualDebtToLiquidate_fuzz_debtToRestoreCloseFactor_dust_revertsWith_MustNotLeaveDust(
+    uint256 debtToCover,
+    TestDebtToRestoreCloseFactorParams memory params
+  ) public {
+    params = _bound(params);
+    DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
+    vm.assume(params.totalBorrowerReserveDebt > minLeftoverAmount);
+    // ensure that liquidating debtToRestoreCloseFactor will leave dust
+    params.debtToRestoreCloseFactor = bound(
+      params.debtToRestoreCloseFactor,
+      params.totalBorrowerReserveDebt - minLeftoverAmount + 1,
+      params.totalBorrowerReserveDebt - 1
+    );
+    // ensure debtToRestoreCloseFactor is lowest value
+    debtToCover = bound(
+      debtToCover,
+      params.debtToRestoreCloseFactor,
+      params.totalBorrowerReserveDebt - 1
+    );
+
+    (bool isDustAmountExpected, , uint256 naiveDebtToLiquidate) = isDustAmountExpected(
+      debtToCover,
+      params
+    );
+
+    assertTrue(isDustAmountExpected);
+    assertEq(naiveDebtToLiquidate, params.debtToRestoreCloseFactor);
+
+    vm.expectRevert(LiquidationLogic.MustNotLeaveDust.selector);
+    LiquidationLogic.calculateActualDebtToLiquidate(params, debtToCover);
   }
 
   // function test_calculateActualDebtToLiquidate_fuzz(
