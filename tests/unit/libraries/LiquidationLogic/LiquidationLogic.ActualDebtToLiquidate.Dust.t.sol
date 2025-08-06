@@ -3,31 +3,21 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
-contract LiquidationLogicWrapper {
-  function calculateActualDebtToLiquidate(
-    DataTypes.LiquidationCallLocalVars memory params,
-    uint256 debtToCover
-  ) external returns (uint256) {
-    // console.log('debtToCover %e', debtToCover);
-    // console.log('params.totalBorrowerReserveDebt %e', params.totalBorrowerReserveDebt);
-    // console.log('params.debtToRestoreCloseFactor %e', params.debtToRestoreCloseFactor);
-    // console.log('params.debtAssetPrice %e', params.debtAssetPrice);
-    // console.log('params.debtAssetUnit %e', params.debtAssetUnit);
-    // console.log('params.debtAssetPrice %e', params.debtAssetPrice);
-    return LiquidationLogic.calculateActualDebtToLiquidate(params, debtToCover);
-  }
-}
-
 contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTest {
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
   uint256 constant MIN_LEFTOVER_BASE = LiquidationLogic.MIN_LEFTOVER_BASE;
-
-  LiquidationLogicWrapper internal wrapper;
+  uint256 constant DEBT_ASSET_PRICE = 1e8; // hardcode values to simplify test
+  uint256 constant DEBT_ASSET_UNIT = 1e18; // hardcode values to simplify test
+  uint256 internal minLeftoverAmount;
 
   function setUp() public override {
     super.setUp();
-    wrapper = new LiquidationLogicWrapper();
+    minLeftoverAmount = _convertBaseCurrencyToAmount(
+      MIN_LEFTOVER_BASE,
+      DEBT_ASSET_PRICE,
+      DEBT_ASSET_UNIT
+    );
   }
 
   /// if totalBorrowerReserveDebt is the lowest value, then it is always returned, and unaffected by dust prevention
@@ -61,54 +51,47 @@ contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTe
   ) public {
     params = _bound(params);
     DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
-    uint256 minLeftoverAmount = _convertBaseCurrencyToAmount(
-      MIN_LEFTOVER_BASE,
-      params.debtAssetPrice,
-      params.debtAssetUnit
-    );
     vm.assume(params.totalBorrowerReserveDebt > minLeftoverAmount);
-    // uint256 maxLiquidatableDebt = _min(
-    //   params.totalBorrowerReserveDebt,
-    //   params.debtToRestoreCloseFactor
-    // );
-    // uint256 maxLiquidatableDebtInBaseCurrency = _convertAmountToBaseCurrency(
-    //   maxLiquidatableDebt,
-    //   params.debtAssetPrice,
-    //   params.debtAssetUnit
-    // );
+    // ensure that liquidating debtToCover will leave dust
     uint256 debtToCover = bound(
       debtToCover,
       params.totalBorrowerReserveDebt - minLeftoverAmount + 1,
       params.totalBorrowerReserveDebt - 1
     );
+    // ensure debtToCover is lowest value
     vm.assume(params.debtToRestoreCloseFactor > debtToCover);
-    // ensure debtToCover is less than totalBorrowerReserveDebt and debtToRestoreCloseFactor
-    // and that liquidating debtToCover will leave dust
-
-    // assertLe(
-    //   debtToCover,
-    //   params.totalBorrowerReserveDebt,
-    //   'debtToCover <= totalBorrowerReserveDebt'
-    // );
-    // assertLe(
-    //   debtToCover,
-    //   params.debtToRestoreCloseFactor,
-    //   'debtToCover <= debtToRestoreCloseFactor'
-    // );
 
     (bool isDustAmountExpected, , uint256 naiveDebtToLiquidate) = isDustAmountExpected(
       debtToCover,
       params
     );
 
-    console.log('isDustAmountExpected', isDustAmountExpected);
-    console.log('naiveDebtToLiquidate %e', naiveDebtToLiquidate);
+    assertTrue(isDustAmountExpected);
+    assertEq(naiveDebtToLiquidate, debtToCover);
 
-    // console.log('debtToCover %e', debtToCover);
-    // console.log('params.totalBorrowerReserveDebt %e', params.totalBorrowerReserveDebt);
-    // console.log('params.debtToRestoreCloseFactor %e', params.debtToRestoreCloseFactor);
+    vm.expectRevert(LiquidationLogic.MustNotLeaveDust.selector);
+    LiquidationLogic.calculateActualDebtToLiquidate(params, debtToCover);
+  }
 
-    // calculate
+  /// debtToCover is the lowest value, and would leave dust
+  /// scenario where totalBorrowerReserveDebt starts off already <= minLeftoverAmount
+  /// forge-config: default.allow_internal_expect_revert = true
+  function test_calculateActualDebtToLiquidate_fuzz_debtToCover_dust_totalBorrowerReserveDebt_lte_minLeftoverAmount(
+    uint256 debtToCover,
+    TestDebtToRestoreCloseFactorParams memory params
+  ) public {
+    params = _bound(params);
+    DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
+    params.totalBorrowerReserveDebt = bound(params.totalBorrowerReserveDebt, 2, minLeftoverAmount); // start from 2 so that dust guaranteed when debtToCover is subtracted
+    // ensure that liquidating debtToCover will leave dust
+    uint256 debtToCover = bound(debtToCover, 1, params.totalBorrowerReserveDebt - 1);
+    // ensure debtToCover is lowest value
+    vm.assume(params.debtToRestoreCloseFactor > debtToCover);
+
+    (bool isDustAmountExpected, , uint256 naiveDebtToLiquidate) = isDustAmountExpected(
+      debtToCover,
+      params
+    );
 
     assertTrue(isDustAmountExpected);
     assertEq(naiveDebtToLiquidate, debtToCover);
@@ -178,8 +161,8 @@ contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTe
     TestDebtToRestoreCloseFactorParams memory params
   ) internal override returns (TestDebtToRestoreCloseFactorParams memory) {
     params = super._bound(params);
-    params.debtAssetPrice = 1e8;
-    params.debtAssetUnit = 1e18;
+    params.debtAssetPrice = DEBT_ASSET_PRICE;
+    params.debtAssetUnit = DEBT_ASSET_UNIT;
     return params;
   }
 }
