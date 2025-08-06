@@ -18,7 +18,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     params.totalBorrowerReserveDebt = 0;
     DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
 
-    bool isDustAmountExpected = isDustAmountExpected(debtToCover, params);
+    (bool isDustAmountExpected, , ) = isDustAmountExpected(debtToCover, params);
     vm.assume(!isDustAmountExpected);
 
     uint256 actualDebtToLiquidate = params.calculateActualDebtToLiquidate(debtToCover);
@@ -41,7 +41,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     // zero debtToCover; should be reverted by validation in practice
     uint256 debtToCover = 0;
 
-    bool isDustAmountExpected = isDustAmountExpected(debtToCover, params);
+    (bool isDustAmountExpected, , ) = isDustAmountExpected(debtToCover, params);
     vm.assume(!isDustAmountExpected);
 
     uint256 actualDebtToLiquidate = params.calculateActualDebtToLiquidate(debtToCover);
@@ -61,7 +61,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
     params.debtToRestoreCloseFactor = 0;
 
-    bool isDustAmountExpected = isDustAmountExpected(debtToCover, params);
+    (bool isDustAmountExpected, , ) = isDustAmountExpected(debtToCover, params);
     vm.assume(!isDustAmountExpected);
 
     uint256 actualDebtToLiquidate = params.calculateActualDebtToLiquidate(debtToCover);
@@ -84,11 +84,13 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
       _min(params.totalBorrowerReserveDebt, debtToCover)
     );
 
-    bool isDustAmountExpected = isDustAmountExpected(debtToCover, params);
+    (bool isDustAmountExpected, , uint256 expectedDebtToLiquidate) = isDustAmountExpected(
+      debtToCover,
+      params
+    );
     vm.assume(!isDustAmountExpected);
 
     uint256 actualDebtToLiquidate = params.calculateActualDebtToLiquidate(debtToCover);
-    uint256 expectedDebtToLiquidate = calcNaiveDebtToLiquidate(debtToCover, params);
 
     assertEq(actualDebtToLiquidate, expectedDebtToLiquidate, 'should return min allowed');
   }
@@ -109,11 +111,13 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
       debtToCover
     );
 
-    bool isDustAmountExpected = isDustAmountExpected(debtToCover, params);
+    (bool isDustAmountExpected, , uint256 expectedDebtToLiquidate) = isDustAmountExpected(
+      debtToCover,
+      params
+    );
     vm.assume(!isDustAmountExpected);
 
     uint256 actualDebtToLiquidate = params.calculateActualDebtToLiquidate(debtToCover);
-    uint256 expectedDebtToLiquidate = calcNaiveDebtToLiquidate(debtToCover, params);
 
     assertEq(actualDebtToLiquidate, expectedDebtToLiquidate, 'should return min allowed');
   }
@@ -134,11 +138,13 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
       params.totalBorrowerReserveDebt
     );
 
-    bool isDustAmountExpected = isDustAmountExpected(debtToCover, params);
+    (bool isDustAmountExpected, , uint256 expectedDebtToLiquidate) = isDustAmountExpected(
+      debtToCover,
+      params
+    );
     vm.assume(!isDustAmountExpected);
 
     uint256 actualDebtToLiquidate = params.calculateActualDebtToLiquidate(debtToCover);
-    uint256 expectedDebtToLiquidate = calcNaiveDebtToLiquidate(debtToCover, params);
 
     assertEq(actualDebtToLiquidate, expectedDebtToLiquidate, 'should return min allowed');
   }
@@ -151,11 +157,13 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     params = _bound(params);
     DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
 
-    bool isDustAmountExpected = isDustAmountExpected(debtToCover, params);
+    (bool isDustAmountExpected, , uint256 expectedDebtToLiquidate) = isDustAmountExpected(
+      debtToCover,
+      params
+    );
     vm.assume(!isDustAmountExpected);
 
     uint256 actualDebtToLiquidate = params.calculateActualDebtToLiquidate(debtToCover);
-    uint256 expectedDebtToLiquidate = calcNaiveDebtToLiquidate(debtToCover, params);
 
     assertEq(actualDebtToLiquidate, expectedDebtToLiquidate, 'should return min allowed');
   }

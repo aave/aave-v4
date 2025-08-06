@@ -105,22 +105,29 @@ contract LiquidationLogicBaseTest is SpokeBase {
       _min(params.totalBorrowerReserveDebt, _min(params.debtToRestoreCloseFactor, debtToCover));
   }
 
+  /// @dev Check if the remaining debt in base currency is less than the minimum leftover base and greater than 0
+  /// @return isDustAmountExpected True if the remaining debt in base currency is less than the minimum leftover base and greater than 0 (non zero dust remains)
+  /// @return remainingDebtInBaseCurrency The remaining debt in base currency after naive debt to liquidate is applied
+  /// @return naiveDebtToLiquidate The naive debt to liquidate, without adjustment for dust
   function isDustAmountExpected(
     uint256 debtToCover,
     DataTypes.LiquidationCallLocalVars memory params
-  ) internal returns (bool) {
-    uint256 initialDebtToLiquidate = calcNaiveDebtToLiquidate(debtToCover, params);
+  ) internal returns (bool, uint256, uint256) {
+    uint256 naiveDebtToLiquidate = calcNaiveDebtToLiquidate(debtToCover, params);
     uint256 remainingDebtInBaseCurrency = _convertAmountToBaseCurrency(
-      params.totalBorrowerReserveDebt - initialDebtToLiquidate,
+      params.totalBorrowerReserveDebt - naiveDebtToLiquidate,
       params.debtAssetPrice,
       params.debtAssetUnit
     );
 
-    console.log('initialDebtToLiquidate %e', initialDebtToLiquidate);
+    console.log('naiveDebtToLiquidate %e', naiveDebtToLiquidate);
     console.log('remainingDebtInBaseCurrency %e', remainingDebtInBaseCurrency);
 
-    return
+    return (
       remainingDebtInBaseCurrency < LiquidationLogic.MIN_LEFTOVER_BASE &&
-      remainingDebtInBaseCurrency > 0;
+        remainingDebtInBaseCurrency > 0,
+      remainingDebtInBaseCurrency,
+      naiveDebtToLiquidate
+    );
   }
 }
