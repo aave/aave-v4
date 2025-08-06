@@ -71,17 +71,16 @@ library LiquidationLogic {
     console.log('LL debtToRestoreCloseFactor %e', params.debtToRestoreCloseFactor);
     console.log('LL actualDebtToLiquidate == debtToCover', actualDebtToLiquidate == debtToCover);
 
-    if (
-      remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE &&
-      actualDebtToLiquidate != params.totalBorrowerReserveDebt
-    ) {
-      // revert('LL dust');
-      if (actualDebtToLiquidate == debtToCover) {
+    // only adjust actualDebtToLiquidate if there is non zero dust remaining
+    if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE && remainingDebtInBaseCurrency != 0) {
+      console.log('LL dust');
+
+      // revert if debtToCover is the min value and has been set too low
+      if (debtToCover == actualDebtToLiquidate) {
         revert MustNotLeaveDust();
-        // revert('LL dust');
       }
 
-      // debtToRestoreCloseFactor is lowest
+      // at this point, debtToRestoreCloseFactor is min value
       // if debtToCover also returns dust, revert
       if (
         debtToCover < params.totalBorrowerReserveDebt &&
@@ -90,11 +89,16 @@ library LiquidationLogic {
         MIN_LEFTOVER_BASE
       ) {
         revert MustNotLeaveDust();
-        // revert('LL MustNotLeaveDust');
       } else {
+        // if debtToCover is valid, return min(debtToCover, totalBorrowerReserveDebt)
         actualDebtToLiquidate = maxLiquidatableDebt;
       }
     }
+
+    console.log('LL actualDebtToLiquidate %e', actualDebtToLiquidate);
+    console.log('LL debtToCover %e', debtToCover);
+    console.log('LL params.totalBorrowerReserveDebt %e', params.totalBorrowerReserveDebt);
+    // LL actualDebtToLiquidate 2.273916836289619104e18
 
     return actualDebtToLiquidate;
   }
@@ -153,6 +157,7 @@ library LiquidationLogic {
     vars.maxCollateralToLiquidate = vars.baseCollateral.percentMulDown(params.liquidationBonus);
 
     if (vars.maxCollateralToLiquidate >= vars.borrowerCollateralBalanceInBaseCurrency) {
+      console.log('LL maxCollateralToLiquidate >= borrowerCollateralBalanceInBaseCurrency');
       vars.collateralAmount = params.borrowerCollateralBalance;
       vars.debtAmountNeeded = ((params.debtAssetUnit * vars.borrowerCollateralBalanceInBaseCurrency)
         .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).fromWadDown();
@@ -161,6 +166,7 @@ library LiquidationLogic {
         (vars.debtAmountNeeded * params.debtAssetPrice).toWad() /
         params.debtAssetUnit;
     } else {
+      console.log('LL maxCollateralToLiquidate < borrowerCollateralBalanceInBaseCurrency');
       // add 1 to round collateral amount up, ensuring HF is always <= close factor
       vars.collateralAmount =
         ((vars.maxCollateralToLiquidate * params.collateralAssetUnit) / params.collateralAssetPrice)

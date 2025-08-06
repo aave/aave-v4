@@ -537,18 +537,25 @@ contract SpokeLiquidationBase is SpokeBase {
       _convertAmountToBaseCurrency(spoke1, state.collateralReserveId, totalLiqBonusAmount) >
       MIN_AMOUNT_IN_BASE_CURRENCY
     ) {
+      uint256 bpsError = 1;
       assertApproxEqRel(
         totalLiqBonusAmount,
         expectedLiqBonusAmount,
-        _approxRelFromBps(1),
-        string.concat('liquidationBonus earned in base currency, rel 20 bps ', label)
+        _approxRelFromBps(bpsError),
+        string.concat('liquidationBonus earned amount, rel bps ', vm.toString(bpsError), ' ', label)
       );
     } else {
+      uint256 approxError = 1;
       assertApproxEqAbs(
         totalLiqBonusAmount,
         expectedLiqBonusAmount,
-        1,
-        string.concat('liquidationBonus earned in base currency, eq abs 1 ', label)
+        approxError,
+        string.concat(
+          'liquidationBonus earned amount, eq abs ',
+          vm.toString(approxError),
+          ' ',
+          label
+        )
       );
     }
   }
