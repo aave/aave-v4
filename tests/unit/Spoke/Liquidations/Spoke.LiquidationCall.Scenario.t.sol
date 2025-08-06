@@ -533,8 +533,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.LiquidationCall(
-      address(tokenList.wbtc),
-      address(tokenList.weth),
+      state.wbtcReserveId,
+      state.wethReserveId,
       alice,
       state.liquidatedDebt,
       state.collAmount.wbtc,

@@ -453,8 +453,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.underlying,
-      state.debtReserve.underlying,
+      collateralReserveId,
+      debtReserveIds[state.debtReserveIndex],
       state.user,
       state.debtToLiq,
       state.collToLiq,

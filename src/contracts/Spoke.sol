@@ -310,13 +310,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256[] memory debtsToCover = new uint256[](1);
     debtsToCover[0] = debtToCover;
 
-    _executeLiquidationCall(
-      _reserves[collateralReserveId],
-      _reserves[debtReserveId],
-      users,
-      debtsToCover,
-      msg.sender
-    );
+    _executeLiquidationCall(collateralReserveId, debtReserveId, users, debtsToCover, msg.sender);
   }
 
   /// @inheritdoc ISpoke
@@ -1001,22 +995,21 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @dev Executes liquidation call across all users in the array, for a given pair of debt/collateral reserves.
    */
   function _executeLiquidationCall(
-    DataTypes.Reserve storage collateralReserve,
-    DataTypes.Reserve storage debtReserve,
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
     address[] memory users,
     uint256[] memory debtsToCover,
     address liquidator
   ) internal {
     require(users.length == debtsToCover.length, UsersAndDebtLengthMismatch());
 
-    IHub collateralReserveHub = collateralReserve.hub;
-    IHub debtReserveHub = debtReserve.hub;
+    DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
+    DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
 
     DataTypes.ExecuteLiquidationLocalVars memory vars;
 
     vars.collateralReserveHub = collateralReserve.hub;
     vars.collateralAssetId = collateralReserve.assetId;
-    vars.collateralReserveId = collateralReserve.reserveId;
     vars.collateralUnderlying = collateralReserve.underlying;
     vars.debtReserveHub = debtReserve.hub;
     vars.debtAssetId = debtReserve.assetId;
@@ -1026,7 +1019,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     while (vars.i < users.length) {
       vars.user = users[vars.i];
       DataTypes.UserPosition storage userCollateralPosition = _userPositions[vars.user][
-        vars.collateralReserveId
+        collateralReserveId
       ];
       DataTypes.UserPosition storage userDebtPosition = _userPositions[vars.user][
         vars.debtReserveId
@@ -1047,6 +1040,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       ) = _calculateLiquidationParameters(
         collateralReserve,
         debtReserve,
+        collateralReserveId,
+        debtReserveId,
         vars.user,
         debtsToCover[vars.i],
         vars.drawnDebt,
@@ -1105,8 +1100,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.totalLiquidationFeeShares += vars.liquidationFeeShares;
 
       emit LiquidationCall(
-        vars.collateralUnderlying,
-        vars.debtUnderlying,
+        collateralReserveId,
+        debtReserveId,
         vars.user,
         vars.drawnDebtToLiquidate + vars.premiumDebtToLiquidate,
         vars.collateralToLiquidate,
@@ -1139,15 +1134,17 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function _calculateLiquidationParameters(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
     address user,
     uint256 debtToCover,
     uint256 drawnReserveDebt,
     uint256 premiumReserveDebt
   ) internal view returns (uint256, uint256, uint256, uint256, bool) {
     DataTypes.LiquidationCallLocalVars memory vars;
-    vars.collateralReserveId = collateralReserve.reserveId;
-    vars.debtReserveId = debtReserve.reserveId;
-    vars.borrowerCollateralBalance = getUserSuppliedAmount(vars.collateralReserveId, user);
+    vars.collateralReserveId = collateralReserveId;
+    vars.debtReserveId = debtReserveId;
+    vars.borrowerCollateralBalance = getUserSuppliedAmount(collateralReserveId, user);
     vars.totalBorrowerReserveDebt = drawnReserveDebt + premiumReserveDebt;
     DataTypes.DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[
       vars.collateralReserveId

@@ -277,8 +277,8 @@ contract SpokeLiquidationBase is SpokeBase {
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.underlying,
-      state.debtReserve.underlying,
+      collateralReserveId,
+      debtReserveId,
       alice,
       state.debtToLiq,
       state.collToLiq,
