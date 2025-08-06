@@ -170,17 +170,9 @@ library AssetLogic {
     // liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee
     // prettier-ignore
     uint256 feesAmount = (
-        asset.drawnShares.rayMulDown(indexDelta) +
-        asset.premiumShares.rayMulDown(indexDelta)
-      ).percentMulDown(liquidityFee);
-
-    // uint256 feesAmount = ((asset.drawnShares + asset.premiumShares).rayMulDown(
-    //   nextDrawnIndex - currentDrawnIndex
-    // )).percentMulDown(liquidityFee);
-
-    // uint256 feesAmount = (asset.drawnShares.rayMulDown(nextDrawnIndex - currentDrawnIndex) +
-    //   asset.premiumShares.rayMulDown(nextDrawnIndex) -
-    //   asset.premiumOffset).percentMulDown(liquidityFee);
+      asset.drawnShares.rayMulDown(indexDelta) +
+      asset.premiumShares.rayMulDown(indexDelta)
+    ).percentMulDown(liquidityFee);
 
     return feesAmount.toSharesDown(asset.totalAddedAssets() - feesAmount, asset.addedShares);
   }
