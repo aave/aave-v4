@@ -7,7 +7,8 @@ import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 
 contract SpokeLiquidationBase is SpokeBase {
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
+  using PercentageMath for *;
+  using SafeCast for uint256;
 
   struct Balance {
     uint256 balanceBefore;
@@ -69,7 +70,7 @@ contract SpokeLiquidationBase is SpokeBase {
     SupplyExchangeRate rate;
     uint256 collToLiq;
     uint256 debtToLiq;
-    uint256 liquidationFee;
+    uint16 liquidationFee;
     uint256 liquidationFeeAmount;
     uint256 liquidationFeeShares;
     bool hasDeficit;
@@ -116,13 +117,14 @@ contract SpokeLiquidationBase is SpokeBase {
       liqConfig.closeFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       MAX_CLOSE_FACTOR
-    );
+    ).toUint128();
     liqConfig.healthFactorForMaxBonus = bound(
       liqConfig.healthFactorForMaxBonus,
       0.01e18,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
-    );
-    liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00);
+    ).toUint64();
+    liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00)
+      .toUint16();
 
     return liqConfig;
   }
@@ -136,7 +138,7 @@ contract SpokeLiquidationBase is SpokeBase {
       liqConfig.closeFactor,
       MIN_CLOSE_FACTOR,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
-    );
+    ).toUint128();
     liqConfig.liquidationBonusFactor = 0;
     liqConfig.healthFactorForMaxBonus = 0;
 
@@ -147,12 +149,12 @@ contract SpokeLiquidationBase is SpokeBase {
   /// @param desiredHf Desired user health factor prior to liquidation.
   function _execLiqCallFuzzTest(
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
     uint256 desiredHf,
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
@@ -175,9 +177,9 @@ contract SpokeLiquidationBase is SpokeBase {
       liqBonus,
       MIN_LIQUIDATION_BONUS,
       PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
-    );
+    ).toUint32();
     desiredHf = bound(desiredHf, 0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.01e18);
-    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     // bound supply amount to max supply amount
     supplyAmount = bound(
       supplyAmount,
@@ -277,8 +279,8 @@ contract SpokeLiquidationBase is SpokeBase {
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.underlying,
-      state.debtReserve.underlying,
+      state.collateralReserve.assetId,
+      state.debtReserve.assetId,
       alice,
       state.debtToLiq,
       state.collToLiq,
@@ -438,7 +440,7 @@ contract SpokeLiquidationBase is SpokeBase {
       string.concat('reserve/spoke supplied shares collateral accounting ', label)
     );
     assertEq(
-      IERC20(state.collateralReserve.underlying).balanceOf(address(state.spoke)),
+      getAssetUnderlyingByReserveId(state.spoke, state.collateralReserveId).balanceOf(address(state.spoke)),
       0,
       string.concat('no spoke collateral underlying should remain ', label)
     );
@@ -630,7 +632,7 @@ contract SpokeLiquidationBase is SpokeBase {
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
       DataTypes.Reserve memory reserve = spoke.getReserve(i);
       if (
-        reserve.config.collateralRisk > 0 &&
+        reserve.collateralRisk > 0 &&
         spoke.getUserSuppliedShares(reserve.reserveId, user) > 0 &&
         spoke.isUsingAsCollateral(reserve.reserveId, user)
       ) {
@@ -743,7 +745,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 collateralFactor,
     uint256 liquidationBonus
   ) internal pure returns (uint256 healthFactor) {
-    healthFactor = uint256(HEALTH_FACTOR_LIQUIDATION_THRESHOLD)
+    healthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD
       .percentMulUp(collateralFactor)
       .percentMulUp(liquidationBonus);
   }
@@ -783,10 +785,10 @@ contract SpokeLiquidationBase is SpokeBase {
     state.userTotalDebt.balanceBefore =
       state.userDrawnDebt.balanceBefore +
       state.userPremiumDebt.balanceBefore;
-    state.liquidatorCollateral.balanceBefore = IERC20(state.collateralReserve.underlying).balanceOf(
+    state.liquidatorCollateral.balanceBefore = getAssetUnderlyingByReserveId(state.spoke, state.collateralReserveId).balanceOf(
       LIQUIDATOR
     );
-    state.liquidatorDebt.balanceBefore = IERC20(state.debtReserve.underlying).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceBefore = getAssetUnderlyingByReserveId(state.spoke, state.debtReserveId).balanceOf(LIQUIDATOR);
     state.userSuppliedAmount.balanceBefore = state.spoke.getUserSuppliedAmount(
       state.collateralReserve.reserveId,
       state.user
@@ -875,10 +877,10 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.assetId,
       _getFeeReceiver(state.collateralReserve.assetId)
     );
-    state.liquidatorCollateral.balanceAfter = IERC20(state.collateralReserve.underlying).balanceOf(
+    state.liquidatorCollateral.balanceAfter = getAssetUnderlyingByReserveId(state.spoke, state.collateralReserveId).balanceOf(
       LIQUIDATOR
     );
-    state.liquidatorDebt.balanceAfter = IERC20(state.debtReserve.underlying).balanceOf(LIQUIDATOR);
+    state.liquidatorDebt.balanceAfter = getAssetUnderlyingByReserveId(state.spoke, state.debtReserveId).balanceOf(LIQUIDATOR);
     (state.userDrawnDebt.balanceAfter, state.userPremiumDebt.balanceAfter) = state
       .spoke
       .getUserDebt(state.debtReserve.reserveId, state.user);

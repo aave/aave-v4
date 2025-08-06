@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeWithdrawTest is SpokeBase {
+  using SafeCast for uint256;
+
   struct TestState {
     uint256 reserveId;
     uint256 collateralReserveId;
@@ -233,7 +235,7 @@ contract SpokeWithdrawTest is SpokeBase {
   ) public {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
-    elapsed = uint40(bound(elapsed, 0, MAX_SKIP_TIME));
+    elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint40();
 
     Utils.supplyCollateral({
       spoke: spoke1,

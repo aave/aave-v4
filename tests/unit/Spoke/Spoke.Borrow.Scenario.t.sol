@@ -5,6 +5,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowScenarioTest is SpokeBase {
   using WadRayMath for uint256;
+  using SafeCast for uint256;
 
   /// fuzz - 2 users borrowing 2 assets from 1 spoke
   function test_borrow_fuzz_single_spoke_multi_reserves_multi_user(
@@ -529,7 +530,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     });
 
     state.daiBob.userPosBefore = spoke1.getUserPosition(state.daiReserveId, bob);
-    uint40 lastTimestamp = uint40(vm.getBlockTimestamp());
+    uint40 lastTimestamp = vm.getBlockTimestamp().toUint40();
     (uint256 drawnDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
 
     skip(skipTime);

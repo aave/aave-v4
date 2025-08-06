@@ -18,7 +18,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 amount = 100e18;
 
     updateReservePausedFlag(spoke1, daiReserveId, true);
-    assertTrue(spoke1.getReserve(daiReserveId).config.paused);
+    assertTrue(spoke1.getReserve(daiReserveId).paused);
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(bob);
@@ -30,7 +30,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 amount = 100e18;
 
     updateReserveFrozenFlag(spoke1, daiReserveId, true);
-    assertTrue(spoke1.getReserve(daiReserveId).config.frozen);
+    assertTrue(spoke1.getReserve(daiReserveId).frozen);
 
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
     vm.prank(bob);

@@ -6,7 +6,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeRiskPremiumScenarioTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
+  using PercentageMath for *;
+  using SafeCast for uint256;
 
   struct GeneralLocalVars {
     uint256 usdxSupplyAmount;
@@ -129,7 +130,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       'premium drawn shares match expected'
     );
 
-    vars.lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
+    vars.lastUpdateTimestamp = vm.getBlockTimestamp().toUint40();
     uint40 startTime = vars.lastUpdateTimestamp;
     skip(vars.delay);
 
@@ -191,7 +192,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Store alice's position before timeskip to calc expected premium debt
     alicePosition = spoke1.getUserPosition(reservesIds.dai, alice);
 
-    vars.lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
+    vars.lastUpdateTimestamp = vm.getBlockTimestamp().toUint40();
     skip(vars.delay);
 
     // Now we supply more weth such that new total debt from now on is covered by weth
@@ -378,7 +379,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // See if Bob's drawn debt of dai changes appropriately
     bobDaiInfo.drawnDebt = MathUtils
-      .calculateLinearInterest(rates.baseRateDai, uint40(startTime))
+      .calculateLinearInterest(rates.baseRateDai, startTime.toUint40())
       .rayMulUp(bobDaiInfo.borrowAmount);
     (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
       daiInfo.reserveId,
@@ -394,7 +395,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // See if Bob's drawn debt of usdx changes appropriately
     bobUsdxInfo.drawnDebt = MathUtils
-      .calculateLinearInterest(rates.baseRateUsdx, uint40(startTime))
+      .calculateLinearInterest(rates.baseRateUsdx, startTime.toUint40())
       .rayMulUp(bobUsdxInfo.borrowAmount);
     (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
       usdxInfo.reserveId,
@@ -410,7 +411,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // See if Alice's drawn debt of dai changes appropriately
     aliceDaiInfo.drawnDebt = MathUtils
-      .calculateLinearInterest(rates.baseRateDai, uint40(startTime))
+      .calculateLinearInterest(rates.baseRateDai, startTime.toUint40())
       .rayMulUp(aliceDaiInfo.borrowAmount);
     (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
       daiInfo.reserveId,
@@ -430,7 +431,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // See if Alice's drawn debt of usdx changes appropriately
     aliceUsdxInfo.drawnDebt = MathUtils
-      .calculateLinearInterest(rates.baseRateUsdx, uint40(startTime))
+      .calculateLinearInterest(rates.baseRateUsdx, startTime.toUint40())
       .rayMulUp(aliceUsdxInfo.borrowAmount);
     (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
       usdxInfo.reserveId,
@@ -574,8 +575,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     UserBorrowAction memory bobUsdxAction,
     UserBorrowAction memory aliceDaiAction,
     UserBorrowAction memory aliceUsdxAction,
-    uint256 daiCollateralRisk,
-    uint256 usdxCollateralRisk,
+    uint16 daiCollateralRisk,
+    uint16 usdxCollateralRisk,
     uint40[3] memory timeSkip
   ) public {
     bobDaiAction = _boundUserBorrowAction(bobDaiAction);
@@ -583,12 +584,12 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     aliceDaiAction = _boundUserBorrowAction(aliceDaiAction);
     aliceUsdxAction = _boundUserBorrowAction(aliceUsdxAction);
 
-    daiCollateralRisk = bound(daiCollateralRisk, 0, MAX_RISK_PREMIUM_BPS);
-    usdxCollateralRisk = bound(usdxCollateralRisk, 0, MAX_RISK_PREMIUM_BPS);
+    daiCollateralRisk = bound(daiCollateralRisk, 0, MAX_RISK_PREMIUM_BPS).toUint16();
+    usdxCollateralRisk = bound(usdxCollateralRisk, 0, MAX_RISK_PREMIUM_BPS).toUint16();
 
-    timeSkip[0] = uint40(bound(timeSkip[0], 0, MAX_SKIP_TIME));
-    timeSkip[1] = uint40(bound(timeSkip[1], 0, MAX_SKIP_TIME));
-    timeSkip[2] = uint40(bound(timeSkip[2], 0, MAX_SKIP_TIME));
+    timeSkip[0] = bound(timeSkip[0], 0, MAX_SKIP_TIME).toUint40();
+    timeSkip[1] = bound(timeSkip[1], 0, MAX_SKIP_TIME).toUint40();
+    timeSkip[2] = bound(timeSkip[2], 0, MAX_SKIP_TIME).toUint40();
 
     // Set collateral risks
     updateCollateralRisk(spoke1, _daiReserveId(spoke1), daiCollateralRisk);
@@ -761,7 +762,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Bob's dai debt after 1 year
     if (bobDaiInfo.borrowAmount > 0) {
       bobDaiInfo.drawnDebt = MathUtils
-        .calculateLinearInterest(hub1.getAssetDrawnRate(daiAssetId), uint40(startTime))
+        .calculateLinearInterest(hub1.getAssetDrawnRate(daiAssetId), startTime.toUint40())
         .rayMulUp(bobDaiInfo.borrowAmount);
 
       (debtChecks.actualDrawnDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), bob);
@@ -771,7 +772,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Bob's usdx debt after 1 year
     if (bobUsdxInfo.borrowAmount > 0) {
       bobUsdxInfo.drawnDebt = MathUtils
-        .calculateLinearInterest(hub1.getAssetDrawnRate(usdxAssetId), uint40(startTime))
+        .calculateLinearInterest(hub1.getAssetDrawnRate(usdxAssetId), startTime.toUint40())
         .rayMulUp(bobUsdxInfo.borrowAmount);
 
       (debtChecks.actualDrawnDebt, ) = spoke1.getUserDebt(_usdxReserveId(spoke1), bob);
@@ -781,7 +782,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Alice's dai debt after 1 year
     if (aliceDaiInfo.borrowAmount > 0) {
       aliceDaiInfo.drawnDebt = MathUtils
-        .calculateLinearInterest(hub1.getAssetDrawnRate(daiAssetId), uint40(startTime))
+        .calculateLinearInterest(hub1.getAssetDrawnRate(daiAssetId), startTime.toUint40())
         .rayMulUp(aliceDaiInfo.borrowAmount);
 
       (debtChecks.actualDrawnDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
@@ -791,7 +792,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Alice's usdx debt after 1 year
     if (aliceUsdxInfo.borrowAmount > 0) {
       aliceUsdxInfo.drawnDebt = MathUtils
-        .calculateLinearInterest(hub1.getAssetDrawnRate(usdxAssetId), uint40(startTime))
+        .calculateLinearInterest(hub1.getAssetDrawnRate(usdxAssetId), startTime.toUint40())
         .rayMulUp(aliceUsdxInfo.borrowAmount);
 
       (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke1.getUserDebt(
@@ -912,7 +913,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     UserBorrowAction memory wbtcAmounts,
     uint40 skipTime
   ) public {
-    skipTime = uint40(bound(skipTime, 1, MAX_SKIP_TIME));
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint40();
 
     daiAmounts.supplyAmount = bound(daiAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
     wethAmounts.supplyAmount = bound(wethAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);

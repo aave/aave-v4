@@ -5,6 +5,7 @@ import 'tests/Base.t.sol';
 
 contract AssetInterestRateStrategyTest is Base {
   using WadRayMath for *;
+  using SafeCast for uint256;
 
   uint256 mockAssetId = uint256(keccak256('mockAssetId'));
 
@@ -89,8 +90,8 @@ contract AssetInterestRateStrategyTest is Base {
 
   function test_setInterestRateData_revertsWith_InvalidOptimalUsageRatio() public {
     uint16[] memory invalidOptimalUsageRatios = new uint16[](2);
-    invalidOptimalUsageRatios[0] = uint16(rateStrategy.MIN_OPTIMAL_RATIO()) - 1;
-    invalidOptimalUsageRatios[1] = uint16(rateStrategy.MAX_OPTIMAL_RATIO()) + 1;
+    invalidOptimalUsageRatios[0] = rateStrategy.MIN_OPTIMAL_RATIO().toUint16() - 1;
+    invalidOptimalUsageRatios[1] = rateStrategy.MAX_OPTIMAL_RATIO().toUint16() + 1;
 
     for (uint256 i; i < invalidOptimalUsageRatios.length; i++) {
       rateData.optimalUsageRatio = invalidOptimalUsageRatios[i];
@@ -114,7 +115,7 @@ contract AssetInterestRateStrategyTest is Base {
 
   function test_setInterestRateData_revertsWith_InvalidMaxRate() public {
     rateData.baseVariableBorrowRate = rateData.variableRateSlope1 = rateData.variableRateSlope2 =
-      uint32(rateStrategy.MAX_BORROW_RATE()) /
+      rateStrategy.MAX_BORROW_RATE().toUint32() /
       3 +
       1;
     encodedRateData = abi.encode(rateData);
@@ -142,10 +143,10 @@ contract AssetInterestRateStrategyTest is Base {
     vm.expectEmit(address(rateStrategy));
     emit IAssetInterestRateStrategy.RateDataUpdate(
       mockAssetId,
-      uint256(rateData.optimalUsageRatio),
-      uint256(rateData.baseVariableBorrowRate),
-      uint256(rateData.variableRateSlope1),
-      uint256(rateData.variableRateSlope2)
+      rateData.optimalUsageRatio,
+      rateData.baseVariableBorrowRate,
+      rateData.variableRateSlope1,
+      rateData.variableRateSlope2
     );
 
     vm.prank(address(hub1));
