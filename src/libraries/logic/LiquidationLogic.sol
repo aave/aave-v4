@@ -74,9 +74,10 @@ library LiquidationLogic {
       remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE &&
       actualDebtToLiquidate != params.totalBorrowerReserveDebt
     ) {
-      revert('LL dust');
+      // revert('LL dust');
       if (actualDebtToLiquidate == debtToCover) {
         revert MustNotLeaveDust();
+        // revert('LL dust');
       }
 
       // debtToRestoreCloseFactor is lowest, but don't know if debtToCover is less than totalBorrowerReserveDebt

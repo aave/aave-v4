@@ -168,6 +168,26 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     assertEq(actualDebtToLiquidate, expectedDebtToLiquidate, 'should return min allowed');
   }
 
+  /// if totalBorrowerReserveDebt is lowest, then naive debt to liquidate is always totalBorrowerReserveDebt
+  function test_calculateActualDebtToLiquidate_fuzz_totalBorrowerReserveDebt_lowest(
+    uint256 debtToCover,
+    TestDebtToRestoreCloseFactorParams memory params
+  ) public {
+    params = _bound(params);
+    DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
+
+    vm.assume(params.totalBorrowerReserveDebt < _min(debtToCover, params.debtToRestoreCloseFactor));
+    (bool isDustAmountExpected, , ) = isDustAmountExpected(debtToCover, params);
+    vm.assume(!isDustAmountExpected);
+
+    uint256 actualDebtToLiquidate = params.calculateActualDebtToLiquidate(debtToCover);
+    assertEq(
+      actualDebtToLiquidate,
+      params.totalBorrowerReserveDebt,
+      'should return totalBorrowerReserveDebt'
+    );
+  }
+
   /// bound fuzz inputs
   function _bound(
     TestDebtToRestoreCloseFactorParams memory params

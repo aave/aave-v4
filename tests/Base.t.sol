@@ -1673,6 +1673,10 @@ abstract contract Base is Test {
     return a < b ? a : b;
   }
 
+  function _max(uint256 a, uint256 b) internal pure returns (uint256) {
+    return a > b ? a : b;
+  }
+
   function _getCloseFactor(ISpoke spoke) internal view returns (uint256) {
     return spoke.getLiquidationConfig().closeFactor;
   }
