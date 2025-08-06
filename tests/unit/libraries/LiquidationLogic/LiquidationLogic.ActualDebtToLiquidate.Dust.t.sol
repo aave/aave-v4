@@ -100,7 +100,6 @@ contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTe
     LiquidationLogic.calculateActualDebtToLiquidate(params, debtToCover);
   }
 
-  /// forge-config: default.allow_internal_expect_revert = true
   function test_calculateActualDebtToLiquidate_fuzz_debtToRestoreCloseFactor_dust(
     uint256 debtToCover,
     TestDebtToRestoreCloseFactorParams memory params
@@ -108,10 +107,46 @@ contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTe
     params = _bound(params);
     DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
     vm.assume(params.totalBorrowerReserveDebt > minLeftoverAmount);
-    // ensure that liquidating debtToCover will leave dust
+    // ensure that liquidating debtToRestoreCloseFactor will leave dust
     params.debtToRestoreCloseFactor = bound(
       params.debtToRestoreCloseFactor,
       params.totalBorrowerReserveDebt - minLeftoverAmount + 1,
+      params.totalBorrowerReserveDebt - 1
+    );
+    // ensure debtToRestoreCloseFactor is lowest value
+    vm.assume(debtToCover > params.totalBorrowerReserveDebt);
+
+    (bool isDustAmountExpected, , uint256 naiveDebtToLiquidate) = isDustAmountExpected(
+      debtToCover,
+      params
+    );
+
+    assertTrue(isDustAmountExpected);
+    assertEq(naiveDebtToLiquidate, params.debtToRestoreCloseFactor);
+
+    // should return min(debtToCover, totalBorrowerReserveDebt)
+    uint256 actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate(
+      params,
+      debtToCover
+    );
+    assertEq(
+      actualDebtToLiquidate,
+      params.totalBorrowerReserveDebt,
+      'should return totalBorrowerReserveDebt'
+    );
+  }
+
+  function test_calculateActualDebtToLiquidate_fuzz_debtToRestoreCloseFactor_dust_totalBorrowerReserveDebt_lte_minLeftoverAmount(
+    uint256 debtToCover,
+    TestDebtToRestoreCloseFactorParams memory params
+  ) public {
+    params = _bound(params);
+    DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
+    params.totalBorrowerReserveDebt = bound(params.totalBorrowerReserveDebt, 2, minLeftoverAmount);
+    // ensure that liquidating debtToRestoreCloseFactor will leave dust
+    params.debtToRestoreCloseFactor = bound(
+      params.debtToRestoreCloseFactor,
+      1,
       params.totalBorrowerReserveDebt - 1
     );
     // ensure debtToRestoreCloseFactor is lowest value
