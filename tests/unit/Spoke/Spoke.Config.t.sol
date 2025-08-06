@@ -145,10 +145,10 @@ contract SpokeConfigTest is SpokeBase {
       liquidationFee: 10_00
     });
 
-    address reserveSource = _deployMockPriceFeed(spoke1, 2000e8);
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.AddReserve(reserveId, wethAssetId, address(hub1));
+    emit ISpoke.AddReserve(reserveId, dai2AssetId, address(hub1));
     vm.expectEmit(address(spoke1));
     emit ISpoke.ReserveConfigUpdate(reserveId, newReserveConfig);
     vm.expectEmit(address(spoke1));
@@ -161,7 +161,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      wethAssetId,
+      dai2AssetId,
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
@@ -235,6 +235,41 @@ contract SpokeConfigTest is SpokeBase {
       address(hub1),
       wethAssetId,
       address(0),
+      newReserveConfig,
+      newDynReserveConfig
+    );
+  }
+
+  function test_addReserve_revertsWith_ReserveExists() public {
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      paused: true,
+      frozen: true,
+      borrowable: true,
+      collateralRisk: 10_00
+    });
+    DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 10_00,
+      liquidationBonus: 110_00,
+      liquidationFee: 10_00
+    });
+
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
+
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(
+      address(hub1),
+      dai2AssetId,
+      reserveSource,
+      newReserveConfig,
+      newDynReserveConfig
+    );
+
+    vm.expectRevert(ISpoke.ReserveExists.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(
+      address(hub1),
+      dai2AssetId,
+      reserveSource,
       newReserveConfig,
       newDynReserveConfig
     );

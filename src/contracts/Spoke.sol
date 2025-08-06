@@ -45,6 +45,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   DataTypes.LiquidationConfig internal _liquidationConfig;
+  mapping(address hub => mapping(uint256 assetId => bool exists)) internal _reserveExists;
 
   modifier onlyPositionManager(address onBehalfOf) {
     require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
@@ -93,6 +94,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
     require(hub != address(0), InvalidHubAddress());
+    require(!_reserveExists[hub][assetId], ReserveExists());
 
     _validateReserveConfig(config);
     uint256 reserveId = _reserveCount++;
@@ -113,6 +115,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       hub: IHub(hub)
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
+    _reserveExists[hub][assetId] = true;
 
     emit AddReserve(reserveId, assetId, hub);
     emit ReserveConfigUpdate(reserveId, config);

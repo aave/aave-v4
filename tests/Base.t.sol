@@ -19,8 +19,6 @@ import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/contracts/HubConfigurator.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/contracts/SpokeConfigurator.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -54,7 +52,6 @@ import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 abstract contract Base is Test {
   using WadRayMath for uint256;
   using SharesMath for uint256;
-  using PercentageMath for uint256;
   using PercentageMath for uint256;
   using SafeCast for *;
 
@@ -1669,6 +1666,33 @@ abstract contract Base is Test {
     return spoke.getLiquidationConfig().closeFactor;
   }
 
+  function _calcMinimumCollAmount(
+    ISpoke spoke,
+    uint256 collReserveId,
+    uint256 debtReserveId,
+    uint256 debtAmount
+  ) internal view returns (uint256) {
+    if (debtAmount == 0) return 1;
+
+    IPriceOracle oracle = spoke.oracle();
+    DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
+    DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
+    uint256 collPrice = oracle.getReservePrice(collReserveId);
+    uint256 collAssetUnits = 10 ** hub1.getAsset(collData.assetId).decimals;
+
+    DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
+    uint256 debtAssetUnits = 10 ** hub1.getAsset(debtData.assetId).decimals;
+    uint256 debtPrice = oracle.getReservePrice(debtReserveId);
+
+    uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadDivDown(debtAssetUnits);
+    uint256 normalizedCollPrice = collPrice.wadDivDown(collAssetUnits);
+
+    return
+      normalizedDebtAmount.wadDivUp(
+        normalizedCollPrice.toWad().percentMulDown(colDynConf.collateralFactor)
+      );
+  }
+
   /// @dev Helper function to borrow without health factor check
   function _borrowWithoutHfCheck(
     ISpoke spoke,
@@ -1737,11 +1761,10 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to calculate burnt interest in assets terms (originated from virtual shares and assets)
-  function _calculateBurntInterest(
-    IHub hub,
-    uint256 assetId
-  ) internal view returns (uint256) {
-    return hub.getTotalAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getTotalAddedShares(assetId));
+  function _calculateBurntInterest(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return
+      hub.getTotalAddedAssets(assetId) -
+      hub.previewRemoveByShares(assetId, hub.getTotalAddedShares(assetId));
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke

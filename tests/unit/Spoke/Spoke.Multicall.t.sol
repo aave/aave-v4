@@ -111,14 +111,33 @@ contract SpokeMulticall is SpokeBase {
       liquidationFee: 0
     });
 
+    // Add a third dai to hub
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
+    );
+    vm.prank(HUB_ADMIN);
+    hub1.addAsset(
+      address(tokenList.dai),
+      18,
+      address(treasurySpoke),
+      address(irStrategy),
+      encodedIrData
+    );
+    uint256 dai3AssetId = hub1.getAssetCount() - 1;
+
     DataTypes.Reserve memory dai2ReserveExpected;
     dai2ReserveExpected.reserveId = dai2ReserveId;
-    dai2ReserveExpected.assetId = daiAssetId;
+    dai2ReserveExpected.assetId = dai2AssetId;
     dai2ReserveExpected.underlying = address(tokenList.dai);
     dai2ReserveExpected.config = dai2Config;
     DataTypes.Reserve memory dai3ReserveExpected;
     dai3ReserveExpected.reserveId = dai3ReserveId;
-    dai3ReserveExpected.assetId = daiAssetId;
+    dai3ReserveExpected.assetId = dai3AssetId;
     dai3ReserveExpected.underlying = address(tokenList.dai);
     dai3ReserveExpected.config = dai3Config;
 
@@ -126,17 +145,17 @@ contract SpokeMulticall is SpokeBase {
     bytes[] memory calls = new bytes[](2);
     calls[0] = abi.encodeCall(
       ISpoke.addReserve,
-      (address(hub1), daiAssetId, _deployMockPriceFeed(spoke1, 1e8), dai2Config, dai2DynConfig)
+      (address(hub1), dai2AssetId, _deployMockPriceFeed(spoke1, 1e8), dai2Config, dai2DynConfig)
     );
     calls[1] = abi.encodeCall(
       ISpoke.addReserve,
-      (address(hub1), daiAssetId, _deployMockPriceFeed(spoke1, 1e8), dai3Config, dai3DynConfig)
+      (address(hub1), dai3AssetId, _deployMockPriceFeed(spoke1, 1e8), dai3Config, dai3DynConfig)
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.AddReserve(dai2ReserveId, daiAssetId, address(hub1));
+    emit ISpoke.AddReserve(dai2ReserveId, dai2AssetId, address(hub1));
     vm.expectEmit(address(spoke1));
-    emit ISpoke.AddReserve(dai3ReserveId, daiAssetId, address(hub1));
+    emit ISpoke.AddReserve(dai3ReserveId, dai3AssetId, address(hub1));
 
     // Execute the multicall
     vm.prank(SPOKE_ADMIN);

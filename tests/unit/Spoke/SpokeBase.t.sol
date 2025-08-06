@@ -168,7 +168,6 @@ contract SpokeBase is Base {
   }
 
   /// @dev Opens a debt position for a random user, using same asset as collateral and borrow
-  /// @return user address
   function _openDebtPosition(
     ISpoke spoke,
     uint256 reserveId,
@@ -442,33 +441,6 @@ contract SpokeBase is Base {
   function getTokenBalances(IERC20 token, address spoke) internal view returns (TokenData memory) {
     return
       TokenData({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(address(hub1))});
-  }
-
-  function _calcMinimumCollAmount(
-    ISpoke spoke,
-    uint256 collReserveId,
-    uint256 debtReserveId,
-    uint256 debtAmount
-  ) internal view returns (uint256) {
-    if (debtAmount == 0) return 1;
-
-    IPriceOracle oracle = spoke.oracle();
-    DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
-    DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
-    uint256 collPrice = oracle.getReservePrice(collReserveId);
-    uint256 collAssetUnits = 10 ** hub1.getAsset(collData.assetId).decimals;
-
-    DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
-    uint256 debtAssetUnits = 10 ** hub1.getAsset(debtData.assetId).decimals;
-    uint256 debtPrice = oracle.getReservePrice(debtReserveId);
-
-    uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadDivDown(debtAssetUnits);
-    uint256 normalizedCollPrice = collPrice.wadDivDown(collAssetUnits);
-
-    return
-      normalizedDebtAmount.wadDivUp(
-        normalizedCollPrice.toWad().percentMulDown(colDynConf.collateralFactor)
-      );
   }
 
   function _calcMaxDebtAmount(
