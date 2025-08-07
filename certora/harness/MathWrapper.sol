@@ -2,8 +2,7 @@
 
 import {Math} from '../../src/dependencies/openzeppelin/Math.sol';
 import {WadRayMath} from '../../src/libraries/math/WadRayMath.sol';
-import {WadRayMathExtended} from '../../src/libraries/math/WadRayMathExtended.sol';
-import {PercentageMathExtended} from '../../src/libraries/math/PercentageMathExtended.sol';
+import {PercentageMath} from '../../src/libraries/math/PercentageMath.sol';
 pragma solidity ^0.8.0;
 
 
@@ -18,33 +17,26 @@ contract MathWrapper  {
     }
 
     function RAY() public pure returns (uint256) {
-        return WadRayMathExtended.RAY;
+        return WadRayMath.RAY;
     }
 
-    function rayMul(uint256 a, uint256 b) public pure returns (uint256) {
-        return WadRayMath.rayMul(a, b);
-    }
-
-    function rayDiv(uint256 a, uint256 b) public pure returns (uint256) {
-    return WadRayMath.rayDiv(a, b);
-    }
 
     function rayMulDown(uint256 a, uint256 b) public pure returns (uint256) {
-        return WadRayMathExtended.rayMulDown(a, b);
+        return WadRayMath.rayMulDown(a, b);
     }
 
     function rayMulUp(uint256 a, uint256 b) public pure returns (uint256) {
-        return WadRayMathExtended.rayMulUp(a, b);
+        return WadRayMath.rayMulUp(a, b);
     }
 
     function rayDivDown(uint256 a, uint256 b) public pure returns (uint256) {
-        return WadRayMathExtended.rayDivDown(a, b);
+        return WadRayMath.rayDivDown(a, b);
     }
     function rayDivUp(uint256 a, uint256 b) public pure returns (uint256) {
-        return WadRayMathExtended.rayDivUp(a, b);
+        return WadRayMath.rayDivUp(a, b);
     }
 
     function percentMulDown(uint256 value,uint256 percentage) public pure returns (uint256) {
-        return PercentageMathExtended.percentMulDown(value, percentage);
+        return PercentageMath.percentMulDown(value, percentage);
     }
 }

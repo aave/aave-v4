@@ -10,16 +10,17 @@ library SummaryLibrary {
     using SharesMath for uint256;
 
 function getFeeShares(
-    DataTypes.Asset storage asset,
-    uint256 indexDelta 
+      DataTypes.Asset storage asset,
+    uint256 nextDrawnIndex,
+    uint256 currentDrawnIndex 
     ) external view returns (uint256) {
-      uint256 liquidityFee = asset.config.liquidityFee;
-      if (indexDelta == 0 || liquidityFee == 0) {
+      uint256 liquidityFee = asset.liquidityFee;
+      if (nextDrawnIndex == currentDrawnIndex|| liquidityFee == 0) {
         return 0;
       }
-      uint256 totalDrawnShares = asset.baseDrawnShares + asset.premiumDrawnShares;
-      uint256 feesAmount = calcFees(indexDelta,totalDrawnShares, liquidityFee);
-      return feesAmount.toSharesDown(asset.totalSuppliedAssets() -  feesAmount, asset.suppliedShares);
+      uint256 totalDrawnShares = asset.drawnShares + asset.premiumShares;
+      uint256 feesAmount = calcFees(nextDrawnIndex - currentDrawnIndex,totalDrawnShares, liquidityFee);
+      return feesAmount.toSharesDown(asset.totalAddedAssets() -  feesAmount, asset.addedShares);
   }
 
   function calcFees(uint256 indexDelta, uint256 totalDrawnShares, uint256 liquidityFee) internal view returns (uint256 r) {
@@ -27,7 +28,7 @@ function getFeeShares(
   }
 
   function getDrawnIndex(DataTypes.Asset storage asset) external view returns (uint256) {
-    return  asset.baseDebtIndex;
+    return  asset.drawnIndex;
     }
 
 }

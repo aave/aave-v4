@@ -16,39 +16,10 @@ To run this spec file:
     methods {
         // envfree functions
         function RAY() external returns (uint256) envfree;
-        function rayMul(uint256 a, uint256 b) external returns (uint256) envfree;
-        function rayDiv(uint256 a, uint256 b) external returns (uint256) envfree;
         function rayMulDown(uint256 a, uint256 b) external returns (uint256) envfree;
         function rayMulUp(uint256 a, uint256 b) external returns (uint256) envfree;
         function rayDivDown(uint256 a, uint256 b) external returns (uint256) envfree;
         function rayDivUp(uint256 a, uint256 b) external returns (uint256) envfree;
-    }
-
-/** @title Prove:
-    function WadRayMath.rayMul(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivHalf(a,b,wadRayMath.RAY());
-*/
-    rule WadRayMath_rayMul(uint256 a, uint256 b)  {
-        uint256 cvlResult = mulDivHalf@withrevert(a, b, RAY());
-        bool cvlReverted = lastReverted;
-        uint256 solResult = rayMul@withrevert(a, b);
-        bool solReverted = lastReverted;
-        assert cvlReverted == solReverted;
-        assert !cvlReverted => cvlResult == solResult;
-    }
-
-    
-/** @title Prove:
-    function WadRayMath.rayDiv(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivHalf(a, wadRayMath.RAY(), b);
-*/
-    rule WadRayMath_rayDiv(uint256 a, uint256 b)  {
-        uint256 cvlResult = mulDivHalf@withrevert(a, RAY(), b);
-        bool cvlReverted = lastReverted;
-        uint256 solResult = rayDiv@withrevert(a, b);
-        bool solReverted = lastReverted;
-        assert cvlReverted == solReverted;
-        assert !cvlReverted => cvlResult == solResult;
     }
 
 

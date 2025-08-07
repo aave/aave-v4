@@ -1,14 +1,14 @@
 
 import "./ERC20s_CVL.spec";
 import "./Math_CVL.spec";
-import "./LiquidityHubAdvanceSummary.spec";
+import "./HubAdvanceSummary.spec";
 
 
-using LiquidityHub as liquidityHub;
+using Hub as hub;
 
 /***
 
-Verify LiquidityHub 
+Verify Hub 
 
 ***/
 
@@ -17,7 +17,7 @@ methods {
 
     // assume that borrow rate was already updated.
     //rules concerning updateBorrowRate are in ...
-  function AssetLogic.updateBorrowRate(
+  function AssetLogic.updateDrawnRate(
     DataTypes.Asset storage asset,
     uint256 assetId
   ) internal => NONDET;
@@ -28,7 +28,7 @@ methods {
     uint256 rate,
     uint40 lastUpdateTimestamp
   ) internal returns (uint256) => ghostLinearInterest(rate, lastUpdateTimestamp);
-
+/*
   function _validateAdd(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
@@ -43,14 +43,14 @@ methods {
     address to
   ) internal => NONDET;
 
-  function LiquidityHub._validateDraw(
+  function Hub._validateDraw(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 amount,
     address to
   ) internal => NONDET;
 
-  function LiquidityHub._validateRestore(
+  function Hub._validateRestore(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     uint256 baseAmountRestored,
@@ -58,7 +58,7 @@ methods {
     address from
   ) internal => NONDET;
 
-
+*/
 
 }
 
@@ -67,9 +67,9 @@ methods {
 ghost  ghostLinearInterest( uint256 /*rate*/, uint40 /*lastUpdateTimestamp*/) returns uint256; 
 
 // track all assetsIds of the same asset 
-/// sumAvailableLiquidity[asset] is the sum of _assets[KEY uint256 assetId].availableLiquidity  for all assetIds of asset 
-ghost mapping(address /*IERC20*/ => mathint ) sumAvailableLiquidity {
-    init_state axiom forall address X. sumAvailableLiquidity[X] == 0;
+/// sumLiquidity[asset] is the sum of _assets[KEY uint256 assetId].liquidity  for all assetIds of asset 
+ghost mapping(address /*IERC20*/ => mathint ) sumLiquidity {
+    init_state axiom forall address X. sumLiquidity[X] == 0;
 }
 
 ghost mapping(uint256 /*assetId*/  => mapping(address /*spoke*/ => uint256 )) spokeSupplyPerAssetMirror {
@@ -106,72 +106,72 @@ function accrueCalled() {
 } 
 
 /************ Hooks  ************/
-/// Update sumAvailableLiquidity[t] on update to availableLiquidity of assetId for token t
-hook Sstore _assets[KEY uint256 assetId].availableLiquidity uint256 new_value (uint256 old_value) {
-    sumAvailableLiquidity[currentContract._assets[assetId].underlying] = sumAvailableLiquidity[currentContract._assets[assetId].underlying] + new_value - old_value;
+/// Update sumLiquidity[t] on update to availableLiquidity of assetId for token t
+hook Sstore _assets[KEY uint256 assetId].liquidity uint128 new_value (uint128 old_value) {
+    sumLiquidity[currentContract._assets[assetId].underlying] = sumLiquidity[currentContract._assets[assetId].underlying] + new_value - old_value;
 }
 
-hook Sstore _assets[KEY uint256 assetId].baseDebtIndex uint256 new_value (uint256 old_value) {
+hook Sstore _assets[KEY uint256 assetId].drawnIndex uint128 new_value (uint128 old_value) {
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
-hook Sload uint256 value _assets[KEY uint256 assetId].baseDebtIndex  {
+hook Sload uint128 value _assets[KEY uint256 assetId].drawnIndex  {
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
-hook Sstore _assets[KEY uint256 assetId].suppliedShares uint256 new_value (uint256 old_value) {
-    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
-}
-
-hook Sload uint256 value _assets[KEY uint256 assetId].suppliedShares  {
+hook Sstore _assets[KEY uint256 assetId].addedShares uint128 new_value (uint128 old_value) {
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
-hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].baseDrawnShares uint256 new_value (uint256 old_value) {
+hook Sload uint128 value _assets[KEY uint256 assetId].addedShares  {
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
+}
+
+hook Sstore hub._spokes[KEY uint256 assetId][KEY address spoke].drawnShares uint128 new_value (uint128 old_value) {
     spokeBaseDrawnPerAssetMirror[assetId][spoke] = new_value;
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
-hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].baseDrawnShares {
+hook Sload uint128 value hub._spokes[KEY uint256 assetId][KEY address spoke].drawnShares {
     require spokeBaseDrawnPerAssetMirror[assetId][spoke] == value;
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
-hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].suppliedShares uint256 new_value (uint256 old_value) {
+hook Sstore hub._spokes[KEY uint256 assetId][KEY address spoke].addedShares uint128 new_value (uint128 old_value) {
     spokeSupplyPerAssetMirror[assetId][spoke] = new_value;
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
-hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].suppliedShares {
+hook Sload uint128 value hub._spokes[KEY uint256 assetId][KEY address spoke].addedShares {
     require spokeSupplyPerAssetMirror[assetId][spoke] == value;
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
-hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].premiumDrawnShares uint256 new_value (uint256 old_value) {
+hook Sstore hub._spokes[KEY uint256 assetId][KEY address spoke].premiumShares uint128 new_value (uint128 old_value) {
     spokePremiumDrawnSharesPerAssetMirror[assetId][spoke] = new_value;
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
-hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].premiumDrawnShares {
+hook Sload uint128 value hub._spokes[KEY uint256 assetId][KEY address spoke].premiumShares {
     require spokePremiumDrawnSharesPerAssetMirror[assetId][spoke] == value;
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
-hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].premiumOffset uint256 new_value (uint256 old_value) {
+hook Sstore hub._spokes[KEY uint256 assetId][KEY address spoke].premiumOffset uint128 new_value (uint128 old_value) {
     spokePremiumOffsetPerAssetMirror[assetId][spoke] = new_value;
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
-hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].premiumOffset {
+hook Sload uint128 value hub._spokes[KEY uint256 assetId][KEY address spoke].premiumOffset {
     require spokePremiumOffsetPerAssetMirror[assetId][spoke] == value;
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
-hook Sstore liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].realizedPremium uint256 new_value (uint256 old_value) {
+hook Sstore hub._spokes[KEY uint256 assetId][KEY address spoke].realizedPremium uint128 new_value (uint128 old_value) {
     spokeRealizedPremiumPerAssetMirror[assetId][spoke] = new_value;
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
-hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address spoke].realizedPremium {
+hook Sload uint128 value hub._spokes[KEY uint256 assetId][KEY address spoke].realizedPremium {
     require spokeRealizedPremiumPerAssetMirror[assetId][spoke] == value;
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
@@ -179,20 +179,20 @@ hook Sload uint256 value liquidityHub._spokes[KEY uint256 assetId][KEY address s
 /**
 @title External balance is at least as internal accounting 
 https://prover.certora.com/output/40726/1223726233564eeabef3da5a94096d92/?anonymousKey=7a23564895baca924f339ac7720029b2aa50a758
-@status, fails on 'add' and 'restore' when 'from' is liquidityHub
+@status, fails on 'add' and 'restore' when 'from' is hub
 
 otherwise passes violation: https://prover.certora.com/output/40726/1c96eb0569424739acd95562ffcbd9b2/?anonymousKey=b2530ed45dc0a161001d1893849e3d2bbfe3e907
 **/
 strong invariant solvency_external(address asset )
-    balanceByToken[asset][liquidityHub] >=  sumAvailableLiquidity[asset]  {
+    balanceByToken[asset][hub] >=  sumLiquidity[asset]  {
 
         /*
-        preserved LiquidityHub.add(uint256 assetId, uint256 amount, address from) with (env e){
-            require from != liquidityHub;
+        preserved Hub.add(uint256 assetId, uint256 amount, address from) with (env e){
+            require from != hub;
         }
 
-        preserved LiquidityHub.restore(uint256 assetId, uint256 baseAmount, uint256 premiumAmount, address from)  with (env e) {
-                require from != liquidityHub;
+        preserved Hub.restore(uint256 assetId, uint256 baseAmount, uint256 premiumAmount, address from)  with (env e) {
+                require from != hub;
         }
         */
     }
@@ -204,7 +204,7 @@ strong invariant solvency_external(address asset )
 **/ 
 /* not an invariant, it's a tuatology 
 invariant solvency_internal(uint256 assetId, env e)
-    getAvailableLiquidity(e, assetId) >= getAssetSuppliedAmount(e, assetId) - getAssetTotalDebt(e, assetId)  {
+    getAvailableLiquidity(e, assetId) >= getAssetAddedAmount(e, assetId) - getAssetOwed(e, assetId)  {
         preserved with (env eInv) {
             //todo - need to prove time changing 
             require eInv.block.timestamp == e.block.timestamp;
@@ -216,12 +216,12 @@ invariant solvency_internal(uint256 assetId, env e)
 
 rule solvency_internal(uint256 assetId, env e) {
 //    requireAllInvariants(assetId, e);
-    assert getAvailableLiquidity(e, assetId) >= getAssetSuppliedAmount(e, assetId) - getAssetTotalDebt(e, assetId);
+    assert hub._assets[assetId].liquidity >= getAssetAddedAmount(e, assetId) - getAssetTotalOwed(e, assetId);
     }
 
 
-invariant getTotalSuppliedAssetsVsGetAssetSuppliedAmount(uint256 assetId, env e) 
-    getTotalSuppliedAssets(e,assetId) == getAssetSuppliedAmount(e,assetId)  {
+invariant getTotalAddedAssetsVsGetAssetAddedAmount(uint256 assetId, env e) 
+    getTotalAddedAssets(e,assetId) == getAssetAddedAmount(e,assetId)  {
         preserved with (env eInv) {
             require eInv.block.timestamp == e.block.timestamp;
             requireAllInvariants(assetId, e);
@@ -230,7 +230,7 @@ invariant getTotalSuppliedAssetsVsGetAssetSuppliedAmount(uint256 assetId, env e)
 
 
 invariant totalAssetsVsShares(uint256 assetId, env e) 
-    getAssetSuppliedAmount(e,assetId) >=  getAssetSuppliedShares(e,assetId) {
+    getAssetAddedAmount(e,assetId) >=  getTotalAddedShares(e,assetId) {
         preserved with (env eInv) {
             //todo - need to prove time changing 
             require eInv.block.timestamp == e.block.timestamp;
@@ -239,7 +239,7 @@ invariant totalAssetsVsShares(uint256 assetId, env e)
     }
 
 invariant totalAssetsAndSharesZero(uint256 assetId, env e) 
-    getAssetSuppliedAmount(e,assetId) == 0 <=> getAssetSuppliedShares(e,assetId) == 0 {
+    getAssetAddedAmount(e,assetId) == 0 <=> getTotalAddedShares(e,assetId) == 0 {
         preserved with (env eInv) {
             //todo - need to prove time changing 
             require eInv.block.timestamp == e.block.timestamp;
@@ -263,13 +263,13 @@ filtered {
     mathint sharesBefore = supplyShareBefore;
 
     // todo filter out when no time pass
-    require liquidityHub._assets[assetId].lastUpdateTimestamp == e.block.timestamp; 
+    require hub._assets[assetId].lastUpdateTimestamp == e.block.timestamp; 
 
 
     f(e, args);
 
-    mathint assetsAfter = getAssetSuppliedAmount(e,assetId);
-    mathint sharesAfter = getAssetSuppliedShares(e,assetId);
+    mathint assetsAfter = getAssetAddedAmount(e,assetId);
+    mathint sharesAfter = getTotalAddedShares(e,assetId);
 
     // > when only considering accrue interest
     assert assetsAfter * sharesBefore >= assetsBefore * sharesAfter;
@@ -288,24 +288,24 @@ rule noChangeToOtherSpoke(address spoke, uint256 assetId, address otherSpoke, me
     env eOther;
     require e.block.timestamp == eOther.block.timestamp; 
     require otherSpoke != spoke && eOther.msg.sender == otherSpoke; 
-    address feeReceiver = liquidityHub._assets[assetId].config.feeReceiver;
+    address feeReceiver = hub._assets[assetId].feeReceiver;
 
-    require liquidityHub._assets[assetId].lastUpdateTimestamp == e.block.timestamp; 
+    require hub._assets[assetId].lastUpdateTimestamp == e.block.timestamp; 
     requireAllInvariants(assetId, e);
     
-    uint256 cumulativeDebt_  = getSpokeTotalDebt(e, assetId, spoke); 
+    uint256 cumulativeDebt_  = getSpokeTotalOwed(e, assetId, spoke); 
 
-    uint256 shares_ = getSpokeSuppliedShares(e, assetId, spoke);
-    uint256 assets = getSpokeSuppliedAmount(e, assetId, spoke);
+    uint256 shares_ = getSpokeAddedShares(e, assetId, spoke);
+    uint256 assets = getSpokeAddedAmount(e, assetId, spoke);
 
     
     calldataarg args; 
     f(eOther,args);
 
-    assert cumulativeDebt_ >= getSpokeTotalDebt(e, assetId, spoke);  
-    assert spoke != feeReceiver => shares_ == getSpokeSuppliedShares(e, assetId, spoke);
+    assert cumulativeDebt_ >= getSpokeTotalOwed(e, assetId, spoke);  
+    assert spoke != feeReceiver => shares_ == getSpokeAddedShares(e, assetId, spoke);
     // asset can increase due to other's operations 
-    assert assets <= getSpokeSuppliedAmount(e, assetId, spoke); 
+    assert assets <= getSpokeAddedAmount(e, assetId, spoke); 
 } 
 
 
@@ -323,12 +323,12 @@ rule accrueWasCalled(uint256 assetId, method f) filtered { f-> !f.isView} {
 
 rule lastUpdateTimestamp_notInFuture(uint256 assetId, method f) filtered { f-> !f.isView} {
     env e;
-    require liquidityHub._assets[assetId].lastUpdateTimestamp <= e.block.timestamp;
+    require hub._assets[assetId].lastUpdateTimestamp <= e.block.timestamp;
     
     calldataarg args;
     f(e,args);
 
-    assert liquidityHub._assets[assetId].lastUpdateTimestamp <= e.block.timestamp;
+    assert hub._assets[assetId].lastUpdateTimestamp <= e.block.timestamp;
 
 
 }
@@ -336,25 +336,25 @@ rule lastUpdateTimestamp_notInFuture(uint256 assetId, method f) filtered { f-> !
 
 
 definition emptyAsset(uint256 assetId) returns bool =
-    liquidityHub._assets[assetId].suppliedShares == 0 &&
-        liquidityHub._assets[assetId].availableLiquidity == 0 &&
-        liquidityHub._assets[assetId].baseDrawnShares == 0 &&
-        liquidityHub._assets[assetId].premiumDrawnShares == 0 &&
-        liquidityHub._assets[assetId].baseDrawnShares == 0 &&
-        liquidityHub._assets[assetId].premiumOffset == 0 &&
-        liquidityHub._assets[assetId].realizedPremium == 0 &&
-        liquidityHub._assets[assetId].baseDrawnShares == 0 &&
-        liquidityHub._assets[assetId].baseDebtIndex == 0 &&
-        liquidityHub._assets[assetId].baseBorrowRate == 0 &&
-        liquidityHub._assets[assetId].lastUpdateTimestamp == 0 &&
+    hub._assets[assetId].addedShares == 0 &&
+        hub._assets[assetId].liquidity == 0 &&
+        hub._assets[assetId].drawnShares == 0 &&
+        hub._assets[assetId].premiumShares == 0 &&
+        hub._assets[assetId].drawnShares == 0 &&
+        hub._assets[assetId].premiumOffset == 0 &&
+        hub._assets[assetId].realizedPremium == 0 &&
+        hub._assets[assetId].drawnShares == 0 &&
+        hub._assets[assetId].drawnIndex == 0 &&
+        hub._assets[assetId].drawnRate == 0 &&
+        hub._assets[assetId].lastUpdateTimestamp == 0 &&
         ( forall address spoke. 
-            liquidityHub._spokes[assetId][spoke].suppliedShares == 0 &&
-            liquidityHub._spokes[assetId][spoke].baseDrawnShares == 0 &&
-            liquidityHub._spokes[assetId][spoke].premiumDrawnShares == 0  &&
-            liquidityHub._spokes[assetId][spoke].premiumOffset == 0 &&
-            liquidityHub._spokes[assetId][spoke].realizedPremium == 0 
+            hub._spokes[assetId][spoke].addedShares == 0 &&
+            hub._spokes[assetId][spoke].drawnShares == 0 &&
+            hub._spokes[assetId][spoke].premiumShares == 0  &&
+            hub._spokes[assetId][spoke].premiumOffset == 0 &&
+            hub._spokes[assetId][spoke].realizedPremium == 0 
         ) && 
-        liquidityHub._assets[assetId].underlying == 0;
+        hub._assets[assetId].underlying == 0;
 
 
 /** @title integrity of a validAsset 
@@ -363,28 +363,28 @@ in the case that assetId is not listed yet
 **/
 
 invariant validAssetId(uint256 assetId)  
-    assetId >= liquidityHub._assetCount => emptyAsset(assetId);
+    assetId >= hub._assetCount => emptyAsset(assetId);
 
 
 
 
-/** @title the sum of  liquidityHub._spokes[assetId][spoke].suppliedShares for all spoke equals to liquidityHub._assets[assetId].suppliedShares
+/** @title the sum of  hub._spokes[assetId][spoke].addedShares for all spoke equals to hub._assets[assetId].addedShares
 @status fails on addSpoke and addSpokes as they can re-add an existing spoke 
 https://prover.certora.com/output/40726/cb1ee5d64b7f432f8769be106d6f3bc4?anonymousKey=bf86ab21b57e6979814f430901bd42d3bb540c02 
 */
 invariant sumOfSpokeSupplyShares(uint256 assetId) 
-    liquidityHub._assets[assetId].suppliedShares == (usum address spoke. spokeSupplyPerAssetMirror[assetId][spoke]) 
+    hub._assets[assetId].addedShares == (usum address spoke. spokeSupplyPerAssetMirror[assetId][spoke]) 
     {
         preserved {
             requireInvariant validAssetId(assetId);
         }
     }
 
-/** @title the sum of  liquidityHub._spokes[assetId][spoke].baseDrawnShares for all spoke equals to liquidityHub._assets[assetId].baseDrawnShares
+/** @title the sum of  hub._spokes[assetId][spoke].drawnShares for all spoke equals to hub._assets[assetId].drawnShares
 same failures on addSpoke and addSpokes as they can re-add an existing spoke 
 */
 invariant sumOfSpokeDrawnShares(uint256 assetId) 
-    liquidityHub._assets[assetId].baseDrawnShares == (usum address spoke. spokeBaseDrawnPerAssetMirror[assetId][spoke]) 
+    hub._assets[assetId].drawnShares == (usum address spoke. spokeBaseDrawnPerAssetMirror[assetId][spoke]) 
     {
         preserved {
             requireInvariant validAssetId(assetId);
@@ -392,7 +392,7 @@ invariant sumOfSpokeDrawnShares(uint256 assetId)
     }
 
 invariant sumOfSpokePremiumDrawnShares(uint256 assetId) 
-    liquidityHub._assets[assetId].premiumDrawnShares == (usum address spoke. spokePremiumDrawnSharesPerAssetMirror[assetId][spoke]) 
+    hub._assets[assetId].premiumShares == (usum address spoke. spokePremiumDrawnSharesPerAssetMirror[assetId][spoke]) 
     {
         preserved {
             requireInvariant validAssetId(assetId);
@@ -400,7 +400,7 @@ invariant sumOfSpokePremiumDrawnShares(uint256 assetId)
     }
 
 invariant sumOfSpokePremiumOffset(uint256 assetId) 
-    liquidityHub._assets[assetId].premiumOffset == (usum address spoke. spokePremiumOffsetPerAssetMirror[assetId][spoke]) 
+    hub._assets[assetId].premiumOffset == (usum address spoke. spokePremiumOffsetPerAssetMirror[assetId][spoke]) 
     {
         preserved {
             requireInvariant validAssetId(assetId);
@@ -408,15 +408,15 @@ invariant sumOfSpokePremiumOffset(uint256 assetId)
     }
 
 invariant sumOfSpokeRealizedPremium(uint256 assetId) 
-    liquidityHub._assets[assetId].realizedPremium == (usum address spoke. spokeRealizedPremiumPerAssetMirror[assetId][spoke]) 
+    hub._assets[assetId].realizedPremium == (usum address spoke. spokeRealizedPremiumPerAssetMirror[assetId][spoke]) 
     {
         preserved {
             requireInvariant validAssetId(assetId);
         }
     }
 
-invariant baseDebtIndexMin(uint256 assetId) 
-    liquidityHub._assets[assetId].baseDebtIndex==0 || liquidityHub._assets[assetId].baseDebtIndex >= wadRayMath.RAY()
+invariant drawnIndexMin(uint256 assetId) 
+    hub._assets[assetId].drawnIndex==0 || hub._assets[assetId].drawnIndex >= wadRayMath.RAY()
     {
         preserved {
             requireInvariant validAssetId(assetId);
@@ -429,31 +429,31 @@ ghost uint256 supplyAmountBefore;
 ghost uint256 supplyShareBefore;
 
 function requireAllInvariants(uint256 assetId, env e)  {
-    // optimize (reuse) the calls to getAssetSuppliedAmount() and getAssetSuppliedShares()
-    supplyAmountBefore = getAssetSuppliedAmount(e,assetId);
-    supplyShareBefore = getAssetSuppliedShares(e,assetId); 
+    // optimize (reuse) the calls to getAssetAddedAmount() and getTotalAddedShares()
+    supplyAmountBefore = getAssetAddedAmount(e,assetId);
+    supplyShareBefore = getTotalAddedShares(e,assetId); 
     //requireInvariant totalAssetsVsShares(assetId,e);
     require supplyAmountBefore >= supplyShareBefore, "optimization";
     
     // requireInvariant totalAssetsAndSharesZero(assetId,e);
     require supplyAmountBefore == 0 <=> supplyShareBefore == 0, "optimization";
 
-    requireInvariant solvency_external(liquidityHub._assets[assetId].underlying);
+    requireInvariant solvency_external(hub._assets[assetId].underlying);
     requireInvariant sumOfSpokeDrawnShares(assetId);
     requireInvariant sumOfSpokeSupplyShares(assetId);
     requireInvariant sumOfSpokePremiumDrawnShares(assetId);
     requireInvariant sumOfSpokePremiumOffset(assetId);
     requireInvariant sumOfSpokeRealizedPremium(assetId);
-    requireInvariant baseDebtIndexMin(assetId);
+    requireInvariant drawnIndexMin(assetId);
     requireInvariant validAssetId(assetId);
-    requireInvariant baseDebtIndexMin(assetId); 
+    requireInvariant drawnIndexMin(assetId); 
 }   
 
 /**
  * @title liquidityFee upper bound: config.liquidityFee must not exceed PercentageMathExtended.PERCENTAGE_FACTOR
  */
 invariant liquidityFee_upper_bound(uint256 assetId) 
-    liquidityHub._assets[assetId].config.liquidityFee <= wadRayMathExtended.PERCENTAGE_FACTOR();
+    hub._assets[assetId].liquidityFee <= wadRayMath.PERCENTAGE_FACTOR();
 
 
 // once can remove his shares
@@ -474,5 +474,15 @@ rule frontRunOnRemove(uint256 assetId, method f) {
     remove@withrevert(e,assetId, amount, from);
     assert !lastReverted;
     // it is possible for everyone to remove and than zero shares left
-    satisfy !lastReverted && supplyAmountBefore!=0 && getAssetSuppliedAmount(e,assetId) == 0;
+    satisfy !lastReverted && supplyAmountBefore!=0 && getAssetAddedAmount(e,assetId) == 0;
 }
+
+invariant premiumOffset_Integrity(uint256 assetId) 
+    hub._assets[assetId].premiumOffset <= hub._assets[assetId].premiumShares * hub._assets[assetId].drawnRate / wadRayMath.RAY()
+    {
+        preserved  {
+            env e;
+            requireAllInvariants(assetId, e);
+            
+        }
+    }

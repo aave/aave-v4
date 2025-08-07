@@ -1,7 +1,7 @@
 
 import "./ERC20s_CVL.spec";
 import "./Math_CVL.spec";
-import "./LiquidityHubAdvanceSummary.spec";
+import "./HubAdvanceSummary.spec";
 import "./SharesMath.spec";
 
 methods {
@@ -79,11 +79,11 @@ rule addAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address fr
 
     add(e, assetId, amountX, from);
     add(e, assetId, amountY, from);
-    uint256 afterTwoSteps = getSpokeSuppliedShares(e, assetId, spoke);
+    uint256 afterTwoSteps = getSpokeAddedShares(e, assetId, spoke);
 
     //expecting the code to enforce that amountX+amountY can not overflow
     add(e, assetId, assert_uint256(amountX + amountY), from)at init;
-    uint256 afterOneStep = getSpokeSuppliedShares(e, assetId, spoke);
+    uint256 afterOneStep = getSpokeAddedShares(e, assetId, spoke);
 
     //rounding should be in favor of the house
     assert afterOneStep >= afterTwoSteps;
@@ -102,11 +102,11 @@ rule removeAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address
 
     remove(e, assetId, amountX, from);
     remove(e, assetId, amountY, from);
-    uint256 afterTwoSteps = getSpokeSuppliedShares(e, assetId, spoke);
+    uint256 afterTwoSteps = getSpokeAddedShares(e, assetId, spoke);
 
     //expecting the code to enforce that amountX+amountY can not overflow
     remove(e, assetId, assert_uint256(amountX + amountY), from)at init;
-    uint256 afterOneStep = getSpokeSuppliedShares(e, assetId, spoke);
+    uint256 afterOneStep = getSpokeAddedShares(e, assetId, spoke);
 
     //rounding should be in favor of the house
     assert afterOneStep >= afterTwoSteps;
@@ -121,8 +121,8 @@ ghost uint256 supplyShareBefore;
 
 function requireAllInvariants(uint256 assetId, env e)  {
     // optimize the calls to 
-    supplyAmountBefore = getAssetSuppliedAmount(e,assetId);
-    supplyShareBefore = getAssetSuppliedShares(e,assetId); 
+    supplyAmountBefore = getAssetAddedAmount(e,assetId);
+    supplyShareBefore = getAssetAddedShares(e,assetId); 
     //requireInvariant totalAssetsVsShares(assetId,e);
     require supplyAmountBefore >= supplyShareBefore;
 }

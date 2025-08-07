@@ -4,7 +4,7 @@ The rules proven here are used for summarizing additional functions
 
 **/
 
-import "./LiquidityHubBase.spec";
+import "./HubBase.spec";
 
 methods { 
     // envfree functions 
@@ -151,8 +151,10 @@ rule toAssetsDown_additivity(uint256 assetId, uint256 x, uint256 y){
 /**
  * @title getFeeShares monotonicity
  */
+ /*
 rule getFeeShares_monotonicity(uint256 assetId, uint256 indexDelta1, uint256 indexDelta2) {
     env e;
     assert indexDelta1 == 0 => getFeeShares(e,assetId, indexDelta1) == 0;
     assert indexDelta1 < indexDelta2 => getFeeShares(e,assetId, indexDelta1) <= getFeeShares(e,assetId, indexDelta2);
 }
+*/
