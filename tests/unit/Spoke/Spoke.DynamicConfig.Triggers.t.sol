@@ -99,7 +99,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -125,7 +125,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
     Utils.withdraw(spoke1, _usdxReserveId(spoke1), alice, 500e6, alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -152,7 +152,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     // when enabling, only the relevant asset is refreshed
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedSingle(alice, _wethReserveId(spoke1));
+    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _wethReserveId(spoke1));
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, alice);
 
@@ -164,7 +164,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     // when disabling all configs are refreshed
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
@@ -186,7 +186,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     // manually trigger update
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
     vm.prank(alice);
     spoke1.updateUserDynamicConfig(alice);
 
@@ -247,7 +247,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     uint256 snapshotId = vm.snapshotState();
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
     vm.prank(caller);
     spoke1.updateUserDynamicConfig(alice);
 

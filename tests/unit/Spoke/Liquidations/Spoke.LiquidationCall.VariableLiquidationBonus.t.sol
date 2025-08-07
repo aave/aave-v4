@@ -13,7 +13,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
     uint256 desiredHf,
     uint256 skipTime

@@ -16,7 +16,7 @@ contract SpokeConfigTest is SpokeBase {
     assertFalse(spoke1.isUsingAsCollateral(daiReserveId, bob), 'bob not using as collateral');
 
     updateReserveFrozenFlag(spoke1, daiReserveId, true);
-    assertTrue(spoke1.getReserve(daiReserveId).config.frozen, 'reserve status frozen');
+    assertTrue(spoke1.getReserve(daiReserveId).frozen, 'reserve status frozen');
 
     // disallow when activating
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
@@ -36,7 +36,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_setUsingAsCollateral_revertsWith_ReservePaused() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     updateReservePausedFlag(spoke1, daiReserveId, true);
-    assertTrue(spoke1.getReserve(daiReserveId).config.paused);
+    assertTrue(spoke1.getReserve(daiReserveId).paused);
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(alice);
@@ -84,8 +84,8 @@ contract SpokeConfigTest is SpokeBase {
     Utils.setUsingAsCollateral(spoke1, daiReserveId, bob, true, bob);
     _assertEventsNotEmitted(
       ISpoke.UsingAsCollateral.selector,
-      ISpoke.UserDynamicConfigRefreshedSingle.selector,
-      ISpoke.UserDynamicConfigRefreshedAll.selector
+      ISpoke.RefreshSingleUserDynamicConfig.selector,
+      ISpoke.RefreshAllUserDynamicConfig.selector
     );
 
     assertTrue(spoke1.isUsingAsCollateral(daiReserveId, bob));

@@ -5,6 +5,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubAddTest is HubBase {
   using SharesMath for uint256;
+  using SafeCast for uint256;
 
   uint256 zeroDecimalAssetId;
 
@@ -103,7 +104,7 @@ contract HubAddTest is HubBase {
       skipTime: 365 days
     });
 
-    uint256 shares = uint256(type(uint128).max) - 2;
+    uint256 shares = type(uint128).max - 2;
     uint256 amount = hub1.previewAddByShares(daiAssetId, shares);
     assertGt(amount, type(uint128).max);
 
@@ -113,7 +114,7 @@ contract HubAddTest is HubBase {
   }
 
   function test_add_fuzz_revertsWith_AddCapExceeded(uint56 newAddCap) public {
-    newAddCap = uint56(bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals() + 1;
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
@@ -122,7 +123,7 @@ contract HubAddTest is HubBase {
   }
 
   function test_add_fuzz_AddCapReachedButNotExceeded(uint56 newAddCap) public {
-    newAddCap = uint56(bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals();
     vm.prank(address(spoke1));
@@ -140,16 +141,16 @@ contract HubAddTest is HubBase {
 
     // Depending on the borrow rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
-    assertNotEq(
-      totalAddedAssets % totalAddedShares,
+    assertEq(
+      uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares).toSharesDown(totalAddedAssets, totalAddedShares),
       0,
-      'totalAddedAssets % totalAddedShares is zero'
+      'share price is a whole number'
     );
 
     // The asset amount is 1 share worth of assets (rounded down) + 1
     // The added share is 1, which rounded up is equal to the
     // amount of assets added
-    uint256 addedAmount = totalAddedAssets / totalAddedShares + 1;
+    uint256 addedAmount = uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares) + 1;
 
     Utils.add({
       hub: hub1,
@@ -161,7 +162,7 @@ contract HubAddTest is HubBase {
 
     // set add cap to amount of assets added * 2 - 1, given
     // that the same asset amount is provided again below
-    uint56 newAddCap = uint56(2 * addedAmount - 1);
+    uint56 newAddCap = (2 * addedAmount - 1).toUint56();
     _updateAddCap(zeroDecimalAssetId, address(spoke1), newAddCap);
 
     // this cap will be exceeded only if the existing added
@@ -180,8 +181,8 @@ contract HubAddTest is HubBase {
     uint256 drawAmount,
     uint256 skipTime
   ) public {
-    newAddCap = uint56(bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
-    uint256 daiAmount = newAddCap * 10 ** tokenList.dai.decimals() -  1;
+    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
+    uint256 daiAmount = newAddCap * 10 ** tokenList.dai.decimals() - 1;
     drawAmount = bound(drawAmount, 1, daiAmount);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
@@ -207,24 +208,24 @@ contract HubAddTest is HubBase {
 
   // add succeeds if cap is reached but not exceeded
   function test_add_AddCapReachedButNotExceeded_rounding() public {
-    _addLiquidity(zeroDecimalAssetId, 100);
-    _drawLiquidity(zeroDecimalAssetId, 45, true);
+    _addLiquidity(zeroDecimalAssetId, 100e18);
+    _drawLiquidity(zeroDecimalAssetId, 45e18, true);
 
     uint256 totalAddedAssets = hub1.getTotalAddedAssets(zeroDecimalAssetId);
     uint256 totalAddedShares = hub1.getAssetAddedShares(zeroDecimalAssetId);
 
     // Depending on the borrow rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
-    assertNotEq(
-      totalAddedAssets % totalAddedShares,
+    assertEq(
+      uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares).toSharesDown(totalAddedAssets, totalAddedShares),
       0,
-      'totalAddedAssets % totalAddedShares is zero'
+      'share price is a whole number'
     );
 
     // The asset amount is 1 share worth of assets (rounded down) + 1
     // The added share is 1, which rounded up is equal to the
     // amount of assets added
-    uint256 addedAmount = totalAddedAssets / totalAddedShares + 1;
+    uint256 addedAmount = uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares) + 1;
 
     uint256 spokeAddedShares = hub1.getSpokeAddedShares(zeroDecimalAssetId, address(spoke1));
     uint256 spokeAddedAssetsRoundedUp = spokeAddedShares.toAssetsUp(
@@ -232,7 +233,7 @@ contract HubAddTest is HubBase {
       totalAddedShares
     );
 
-    uint56 newAddCap = uint56(spokeAddedAssetsRoundedUp + addedAmount);
+    uint56 newAddCap = (spokeAddedAssetsRoundedUp + addedAmount).toUint56();
     _updateAddCap(zeroDecimalAssetId, address(spoke1), newAddCap);
 
     Utils.add({

@@ -121,10 +121,8 @@ contract SpokeMultipleHubTest is SpokeBase {
     assertEq(hub2.getAssetTotalOwed(daiAssetId), hub2BorrowAmount);
 
     // Verify Dai is indeed the asset Bob is borrowing from both hubs
-    DataTypes.Reserve memory daiReserve = spoke1.getReserve(_daiReserveId(spoke1));
-    assertEq(daiReserve.underlying, address(tokenList.dai));
-    daiReserve = spoke1.getReserve(daiHub2ReserveId);
-    assertEq(daiReserve.underlying, address(tokenList.dai));
+    assertEq(address(getAssetUnderlyingByReserveId(spoke1, _daiReserveId(spoke1))), address(tokenList.dai));
+    assertEq(address(getAssetUnderlyingByReserveId(spoke1, daiHub2ReserveId)), address(tokenList.dai));
 
     // Bob can partially repay both debt positions on hub 1 and hub 2
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, hub1RepayAmount, bob);

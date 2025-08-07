@@ -9,7 +9,7 @@ contract SpokeRepayValidationTest is SpokeBase {
     uint256 amount = 100e18;
 
     updateReservePausedFlag(spoke1, daiReserveId, true);
-    assertTrue(spoke1.getReserve(daiReserveId).config.paused);
+    assertTrue(spoke1.getReserve(daiReserveId).paused);
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(bob);

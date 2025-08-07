@@ -16,7 +16,7 @@ contract SpokePositionManagerTest is SpokeBase {
       vm.expectRevert(ISpoke.InactivePositionManager.selector);
     } else {
       vm.expectEmit(address(spoke1));
-      emit ISpoke.UserPositionManagerSet(user, positionManager, approve);
+      emit ISpoke.SetUserPositionManager(user, positionManager, approve);
     }
 
     vm.prank(user);
@@ -39,7 +39,7 @@ contract SpokePositionManagerTest is SpokeBase {
     assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserPositionManagerSet(alice, POSITION_MANAGER, false);
+    emit ISpoke.SetUserPositionManager(alice, POSITION_MANAGER, false);
     vm.prank(alice);
     spoke1.setUserPositionManager(POSITION_MANAGER, false);
   }
@@ -51,7 +51,7 @@ contract SpokePositionManagerTest is SpokeBase {
     address positionManager = vm.randomAddress();
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserPositionManagerSet(user, positionManager, false);
+    emit ISpoke.SetUserPositionManager(user, positionManager, false);
     vm.prank(positionManager);
     spoke1.renouncePositionManagerRole(user);
   }
@@ -258,7 +258,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserDynamicConfig(alice);
 
@@ -278,12 +278,12 @@ contract SpokePositionManagerTest is SpokeBase {
     assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.PositionManagerUpdated(POSITION_MANAGER, true);
+    emit ISpoke.PositionManagerUpdate(POSITION_MANAGER, true);
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(POSITION_MANAGER, true);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserPositionManagerSet(who, POSITION_MANAGER, true);
+    emit ISpoke.SetUserPositionManager(who, POSITION_MANAGER, true);
     vm.prank(who);
     spoke1.setUserPositionManager(POSITION_MANAGER, true);
 
@@ -293,7 +293,7 @@ contract SpokePositionManagerTest is SpokeBase {
 
   function _disablePositionManager() internal {
     vm.expectEmit(address(spoke1));
-    emit ISpoke.PositionManagerUpdated(POSITION_MANAGER, false);
+    emit ISpoke.PositionManagerUpdate(POSITION_MANAGER, false);
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(POSITION_MANAGER, false);
 

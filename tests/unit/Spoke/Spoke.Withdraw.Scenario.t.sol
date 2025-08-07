@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeWithdrawScenarioTest is SpokeBase {
+  using SafeCast for uint256;
+
   struct MultiUserTestState {
     IERC20 underlying;
     uint256 assetId;
@@ -30,7 +32,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
     partialWithdrawAmount = bound(partialWithdrawAmount, 1, supplyAmount - 1);
-    elapsed = uint40(bound(elapsed, 0, MAX_SKIP_TIME));
+    elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint40();
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -111,7 +113,6 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSupplyRateIncreasing(
       addExRateBefore,
       getAddExRate(daiAssetId),
-      false,
       'after partial withdraw'
     );
 
@@ -127,7 +128,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
     // Check supply rate monotonically increasing after withdraw
-    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), true, 'after withdraw');
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after withdraw');
   }
 
   // multiple users, same asset
@@ -222,7 +223,6 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSupplyRateIncreasing(
       addExRate,
       getAddExRate(state.assetId),
-      false,
       'after alice withdraw'
     );
 
@@ -250,7 +250,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), true, 'after bob withdraw');
+    _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), 'after bob withdraw');
 
     // treasury spoke withdraw fees
     withdrawLiquidityFees(state.assetId, type(uint256).max);
@@ -283,7 +283,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // token
     assertEq(tokenData[state.stage].spokeBalance, 0, 'tokenData spoke balance');
-    assertEq(tokenData[state.stage].hubBalance, 0, 'tokenData hub balance');
+    assertEq(tokenData[state.stage].hubBalance, _calculateBurntInterest(hub1, state.assetId), 'tokenData hub balance');
     assertEq(
       state.underlying.balanceOf(alice),
       MAX_SUPPLY_AMOUNT - params.aliceAmount + aliceData[0].suppliedAmount,
@@ -319,10 +319,12 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
 
+    IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
+
     // Deal caller the balance to deposit, and approve hub
-    deal(reserve.underlying, caller, assets);
+    deal(address(underlying), caller, assets);
     vm.prank(caller);
-    IERC20(reserve.underlying).approve(address(hub1), assets);
+    underlying.approve(address(hub1), assets);
 
     // Supply and confirm share amount from event emission
     uint256 shares1 = hub1.convertToAddedShares(reserve.assetId, assets);
@@ -372,10 +374,12 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
 
+    IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
+
     // Deal caller the balance they will supply, and approve hub
-    deal(reserve.underlying, caller, callerStartingBalance);
+    deal(address(underlying), caller, callerStartingBalance);
     vm.prank(caller);
-    IERC20(reserve.underlying).approve(address(hub1), UINT256_MAX);
+    underlying.approve(address(hub1), UINT256_MAX);
 
     // Set up initial state of caller by supplying their starting balance
     Utils.supply({

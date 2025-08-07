@@ -6,13 +6,21 @@ import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 library SharesMath {
   using Math for uint256;
 
+  /// @dev Virtual assets and shares are used to mitigate share manipulation attacks
+  uint256 internal constant VIRTUAL_ASSETS = 1e6;
+  uint256 internal constant VIRTUAL_SHARES = 1e6;
+
   function toSharesDown(
     uint256 assets,
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
-    if (totalShares == 0) return assets;
-    return assets.mulDiv(totalShares, totalAssets, Math.Rounding.Floor);
+    return
+      assets.mulDiv(
+        totalShares + VIRTUAL_SHARES,
+        totalAssets + VIRTUAL_ASSETS,
+        Math.Rounding.Floor
+      );
   }
 
   function toAssetsDown(
@@ -20,8 +28,12 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
-    if (totalShares == 0) return shares;
-    return shares.mulDiv(totalAssets, totalShares, Math.Rounding.Floor);
+    return
+      shares.mulDiv(
+        totalAssets + VIRTUAL_ASSETS,
+        totalShares + VIRTUAL_SHARES,
+        Math.Rounding.Floor
+      );
   }
 
   function toSharesUp(
@@ -29,8 +41,8 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
-    if (totalShares == 0) return assets;
-    return assets.mulDiv(totalShares, totalAssets, Math.Rounding.Ceil);
+    return
+      assets.mulDiv(totalShares + VIRTUAL_SHARES, totalAssets + VIRTUAL_ASSETS, Math.Rounding.Ceil);
   }
 
   function toAssetsUp(
@@ -38,7 +50,7 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
-    if (totalShares == 0) return shares;
-    return shares.mulDiv(totalAssets, totalShares, Math.Rounding.Ceil);
+    return
+      shares.mulDiv(totalAssets + VIRTUAL_ASSETS, totalShares + VIRTUAL_SHARES, Math.Rounding.Ceil);
   }
 }
