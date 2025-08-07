@@ -6,7 +6,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeAccrueInterestTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
+  using PercentageMath for *;
+  using SafeCast for uint256;
 
   struct TestAmounts {
     uint256 daiSupplyAmount;
@@ -54,7 +55,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
   /// Supply an asset only, and check no interest accrued.
   function test_accrueInterest_NoInterest_OnlySupply(uint40 skipTime) public {
-    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
     uint256 amount = 1000e18;
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -83,10 +84,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
   /// no interest accrued when no debt after repay
   function test_accrueInterest_NoInterest_NoDebt(uint40 elapsed) public {
-    elapsed = uint40(bound(elapsed, 1, MAX_SKIP_TIME));
+    elapsed = bound(elapsed, 1, MAX_SKIP_TIME).toUint40();
 
     uint256 supplyAmount = 1000e18;
-    uint40 startTime = uint40(vm.getBlockTimestamp());
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
     uint256 borrowAmount = 100e18;
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -120,7 +121,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       'after accrual'
     );
 
-    startTime = uint40(vm.getBlockTimestamp());
+    startTime = vm.getBlockTimestamp().toUint40();
     drawnRate = hub1.getAssetDrawnRate(daiAssetId);
 
     // Full repayment, so back to zero debt
@@ -160,9 +161,9 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint40 skipTime
   ) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
     uint256 supplyAmount = borrowAmount * 2;
-    uint40 startTime = uint40(vm.getBlockTimestamp());
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     // Bob supplies and borrows through spoke 1
@@ -198,9 +199,9 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
   function test_accrueInterest_TenPercentRp(uint256 borrowAmount, uint40 skipTime) public {
     borrowAmount = bound(borrowAmount, 1e6, MAX_SUPPLY_AMOUNT / 2);
-    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
     uint256 supplyAmount = borrowAmount * 2;
-    uint40 startTime = uint40(vm.getBlockTimestamp());
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
     uint256 usdxReserveId = _usdxReserveId(spoke1);
 
     // Set collateral risk of usdx on spoke1 to 10%
@@ -251,12 +252,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint40 skipTime
   ) public {
     amounts = _bound(amounts);
-    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
 
     // Ensure bob does not draw more than half his normalized supply value
     amounts = _ensureSufficientCollateral(spoke1, amounts);
 
-    uint40 startTime = uint40(vm.getBlockTimestamp());
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
 
     // Bob supply dai on spoke 1
     if (amounts.daiSupplyAmount > 0) {
@@ -617,12 +618,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
   ) public {
     amounts = _bound(amounts);
     rates = _bound(rates);
-    skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
 
     // Ensure bob does not draw more than half his normalized supply value
     amounts = _ensureSufficientCollateral(spoke1, amounts);
 
-    uint40 startTime = uint40(vm.getBlockTimestamp());
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
 
     // Bob supply dai on spoke 1
     if (amounts.daiSupplyAmount > 0) {

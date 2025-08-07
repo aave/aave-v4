@@ -8,13 +8,14 @@ contract SpokeRiskPremiumTest is SpokeBase {
   using WadRayMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
+  using SafeCast for uint256;
 
   struct ReserveInfoLocal {
     uint256 reserveId;
     uint256 supplyAmount;
     uint256 borrowAmount;
     uint256 price;
-    uint256 collateralRisk;
+    uint24 collateralRisk;
     uint256 riskPremium;
   }
 
@@ -77,7 +78,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     DataTypes.Reserve memory daiInfo = getReserveInfo(spoke1, daiReserveId);
 
     // With single collateral, user rp will match collateral risk of collateral
-    assertEq(userRiskPremium, daiInfo.config.collateralRisk, 'user risk premium');
+    assertEq(userRiskPremium, daiInfo.collateralRisk, 'user risk premium');
   }
 
   /// When supplying and borrowing one reserve (fuzzed amounts), user risk premium matches the collateral risk of that reserve.
@@ -714,12 +715,12 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 usdxSupplyAmount,
     uint256 wbtcSupplyAmount,
     uint256 borrowAmount,
-    uint256 newCrValue
+    uint24 newCrValue
   ) public {
     uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
 
     // Bound collateral risk to below dai2 so reserve is still used in rp calc
-    newCrValue = bound(newCrValue, 0, 99_99);
+    newCrValue = bound(newCrValue, 0, 99_99).toUint24();
 
     daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
     wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
@@ -841,10 +842,14 @@ contract SpokeRiskPremiumTest is SpokeBase {
     usdxInfo.price = bound(usdxInfo.price, 1, 1e16);
     wbtcInfo.price = bound(wbtcInfo.price, 1, 1e16);
 
-    daiInfo.collateralRisk = bound(daiInfo.collateralRisk, 0, 1000_00);
-    wethInfo.collateralRisk = bound(wethInfo.collateralRisk, 0, 1000_00);
-    usdxInfo.collateralRisk = bound(usdxInfo.collateralRisk, 0, 1000_00);
-    wbtcInfo.collateralRisk = bound(wbtcInfo.collateralRisk, 0, 1000_00);
+    daiInfo.collateralRisk = bound(daiInfo.collateralRisk, 0, Constants.MAX_COLLATERAL_RISK)
+      .toUint24();
+    wethInfo.collateralRisk = bound(wethInfo.collateralRisk, 0, Constants.MAX_COLLATERAL_RISK)
+      .toUint24();
+    usdxInfo.collateralRisk = bound(usdxInfo.collateralRisk, 0, Constants.MAX_COLLATERAL_RISK)
+      .toUint24();
+    wbtcInfo.collateralRisk = bound(wbtcInfo.collateralRisk, 0, Constants.MAX_COLLATERAL_RISK)
+      .toUint24();
 
     // Bob supply dai into spoke2
     if (daiInfo.supplyAmount > 0) {
@@ -954,7 +959,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 baseRate = hub1.getAssetDrawnRate(wbtcAssetId);
     uint256 drawnDebt = wbtcInfo.borrowAmount;
     (uint256 actualDrawnDebt, uint256 actualPremium) = spoke3.getUserDebt(wbtcInfo.reserveId, bob);
-    uint40 startTime = uint40(vm.getBlockTimestamp());
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
 
     assertEq(drawnDebt, actualDrawnDebt, 'user drawn debt');
     assertEq(actualPremium, 0, 'user premium debt');
@@ -1104,7 +1109,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // See if drawn debt of wbtc changes appropriately
     debtChecks.drawnDebt = MathUtils
-      .calculateLinearInterest(baseRateWbtc, uint40(startTime))
+      .calculateLinearInterest(baseRateWbtc, startTime.toUint40())
       .rayMulUp(wbtcInfo.borrowAmount);
     (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wbtcInfo.reserveId,
@@ -1157,7 +1162,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // See if drawn debt of weth changes appropriately
     debtChecks.drawnDebt = MathUtils
-      .calculateLinearInterest(baseRateWeth, uint40(startTime))
+      .calculateLinearInterest(baseRateWeth, startTime.toUint40())
       .rayMulUp(wethInfo.borrowAmount);
     (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wethInfo.reserveId,
