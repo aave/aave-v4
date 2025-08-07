@@ -248,7 +248,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.liquidationFeeAmount,
       ,
       state.hasDust
-    ) = _calculateAvailableCollateralToLiquidate(state, requiredDebtAmount);
+    ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
 
     state.liquidationFeeShares =
       hub1.previewRemoveByAssets(
@@ -287,7 +287,7 @@ contract SpokeLiquidationBase is SpokeBase {
       LIQUIDATOR
     );
     vm.prank(LIQUIDATOR);
-    state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, requiredDebtAmount);
+    state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, UINT256_MAX);
 
     state = _getAccountingInfoAfterLiquidation(state);
 

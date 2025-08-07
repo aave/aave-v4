@@ -279,7 +279,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.liquidationFeeAmount,
       ,
       state.hasDust
-    ) = _calculateAvailableCollateralToLiquidate(state, requiredDebtAmounts[debtReserveIndex]);
+    ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
@@ -295,7 +295,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       collateralReserveIds[collateralReserveIndex],
       debtReserveIds[debtReserveIndex],
       alice,
-      requiredDebtAmounts[debtReserveIndex]
+      UINT256_MAX
     );
 
     _getAccountingInfoAfterLiquidation(state);
