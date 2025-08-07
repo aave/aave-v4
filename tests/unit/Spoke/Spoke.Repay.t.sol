@@ -893,16 +893,12 @@ contract SpokeRepayTest is SpokeBase {
     daiRepayAmount = baseRestored + premiumRestored;
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    if (daiRepayAmount >= bobDaiBefore.totalDebt) {
-      assertApproxEqAbs(bobDaiAfterTotalDebt, 0, 2, 'bob dai debt final balance');
-    } else {
-      assertApproxEqAbs(
-        bobDaiAfterTotalDebt,
-        bobDaiBefore.totalDebt - daiRepayAmount,
-        2,
-        'bob dai debt final balance'
-      );
-    }
+    assertApproxEqAbs(
+      bobDaiAfterTotalDebt,
+      daiRepayAmount >= bobDaiBefore.totalDebt ? 0 : bobDaiBefore.totalDebt - daiRepayAmount,
+      2,
+      'bob dai debt final balance'
+    );
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
