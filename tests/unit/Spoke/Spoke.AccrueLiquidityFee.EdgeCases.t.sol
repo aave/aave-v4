@@ -140,9 +140,10 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     uint256 feesAccrued;
     for (uint256 i; i < count; ++i) {
       address user = makeUser(i); // deterministic operation
-      Utils.repay(spoke1, reserveId, user, 1, user); // accrue interest & realize premium
-
       uint256 totalOwedAfter = hub1.getAssetTotalOwed(assetId);
+      Utils.repay(spoke1, reserveId, user, 1, user); // accrue interest & realize premium
+      assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
+
       feesAccrued += totalOwedAfter - totalOwedBefore;
       totalOwedBefore = totalOwedAfter;
 
@@ -184,9 +185,10 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       address user = makeUser(i); // deterministic operation
       ISpoke spoke = spokes[i % spokes.length]; // deterministic operation
       uint256 reserveId = _reserveId(spoke, assetId);
-      Utils.repay(spoke, reserveId, user, 1, user); // accrue interest & realize premium
-
       uint256 totalOwedAfter = hub1.getAssetTotalOwed(assetId);
+      Utils.repay(spoke, reserveId, user, 1, user); // accrue interest & realize premium
+      assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
+
       feesAccrued += totalOwedAfter - totalOwedBefore;
       totalOwedBefore = totalOwedAfter;
 
