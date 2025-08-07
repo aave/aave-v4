@@ -168,7 +168,7 @@ library AssetLogic {
     uint256 liquidityFee = asset.liquidityFee;
     if (liquidityFee == 0) return 0;
 
-    // @dev Keep multiplications separate to avoid overestimating due to rounding
+    // @dev we do not simplify further to avoid overestimating the liquidity growth
     uint256 feesAmount = liquidityFee.percentMulDown(
       asset.drawnShares.rayMulDown(indexDelta) + asset.premiumShares.rayMulDown(indexDelta)
     );
