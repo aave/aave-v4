@@ -155,6 +155,7 @@ library AssetLogic {
 
   /**
    * @dev Calculates the amount of fee shares derived from the index growth due to interest accrual.
+   * @dev The true liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee.
    * @param asset The data struct of the asset whose index is increasing.
    * @param indexDelta The delta between the current and next drawn index.
    * @return The amount of shares corresponding to the fees.
@@ -167,12 +168,10 @@ library AssetLogic {
     uint256 liquidityFee = asset.liquidityFee;
     if (liquidityFee == 0) return 0;
 
-    // liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee
-    // prettier-ignore
-    uint256 feesAmount = (
-      asset.drawnShares.rayMulDown(indexDelta) +
-      asset.premiumShares.rayMulDown(indexDelta)
-    ).percentMulDown(liquidityFee);
+    // @dev Keep multiplications separate to avoid overestimating due to rounding
+    uint256 feesAmount = liquidityFee.percentMulDown(
+      asset.drawnShares.rayMulDown(indexDelta) + asset.premiumShares.rayMulDown(indexDelta)
+    );
 
     return feesAmount.toSharesDown(asset.totalAddedAssets() - feesAmount, asset.addedShares);
   }
