@@ -932,6 +932,7 @@ contract HubConfiguratorTest is HubBase {
 
   function test_pauseSpoke() public {
     /// @dev Spoke3 is listed on hub1 on 4 assets: dai, weth, wbtc, usdx
+    assertGt(hub1.getAssetCount(), 4, 'hub1 has less than 4 assets listed');
 
     for (uint256 assetId = 0; assetId < 4; ++assetId) {
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
@@ -947,7 +948,6 @@ contract HubConfiguratorTest is HubBase {
       );
     }
 
-    assert(4 < hub1.getAssetCount());
     for (uint256 assetId = 4; assetId < hub1.getAssetCount(); ++assetId) {
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
     }
@@ -969,6 +969,7 @@ contract HubConfiguratorTest is HubBase {
 
   function test_freezeSpoke() public {
     /// @dev Spoke3 is listed on hub1 on 4 assets: dai, weth, wbtc, usdx
+    assertGt(hub1.getAssetCount(), 4, 'hub1 has less than 4 assets listed');
 
     for (uint256 assetId = 0; assetId < 4; ++assetId) {
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
@@ -985,7 +986,6 @@ contract HubConfiguratorTest is HubBase {
       );
     }
 
-    assert(4 < hub1.getAssetCount());
     for (uint256 assetId = 4; assetId < hub1.getAssetCount(); ++assetId) {
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
     }
