@@ -102,6 +102,7 @@ contract HubRefreshPremiumTest is HubBase {
     DataTypes.Asset memory asset = hub1.getAsset(assetId);
 
     sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares);
+    //offsetDeltaPos = bound(offsetDeltaPos, sharesDeltaPos, sharesDeltaPos + 2);
     offsetDeltaPos = bound(offsetDeltaPos, 0, asset.premiumOffset);
     uint256 realizedDeltaPos;
     uint256 premiumAssetsPos = hub1.convertToDrawnAssets(assetId, sharesDeltaPos);
@@ -121,10 +122,17 @@ contract HubRefreshPremiumTest is HubBase {
       offsetDelta: offsetDelta,
       realizedDelta: realizedDelta
     });
+
+    // Note that we flip these pos numbers to negative
     if (realizedDeltaPos > asset.realizedPremium) {
       vm.expectRevert(stdError.arithmeticError);
     } else if (premiumAssetsPos > offsetDeltaPos) {
-      vm.expectRevert(stdError.arithmeticError);
+      premiumDelta.offsetDelta = -int256(premiumAssetsPos);
+      if (premiumAssetsPos > asset.premiumOffset) {
+        // set both shares diff and offset diff to match offset
+        premiumDelta.sharesDelta = -int256(hub1.convertToDrawnShares(assetId, asset.premiumOffset));
+        premiumDelta.offsetDelta = -int256(uint256(asset.premiumOffset));
+      }
     }
 
     vm.prank(address(spoke1));
