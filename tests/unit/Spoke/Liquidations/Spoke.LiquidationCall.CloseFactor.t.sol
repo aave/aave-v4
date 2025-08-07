@@ -475,7 +475,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       state.user,
       hfAfterBorrow
     );
-    state = _getAccountingInfoBeforeLiquidation(state);
+    state = _getAccountingInfoBeforeLiquidation(collateralReserveId, debtReserveId, state);
 
     uint16 configKeyBefore = spoke1.getUserPosition(collateralReserveId, state.user).configKey;
     (

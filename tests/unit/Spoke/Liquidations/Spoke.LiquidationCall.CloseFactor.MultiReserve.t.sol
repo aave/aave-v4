@@ -212,14 +212,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     state.user = alice;
 
     updateLiquidationConfig(state.spoke, liqConfig);
-    updateLiquidationBonus(
-      state.spoke,
-      state.collateralReserves[collateralReserveIndex].reserveId,
-      liqBonus
-    );
+    updateLiquidationBonus(state.spoke, collateralReserveIds[collateralReserveIndex], liqBonus);
     updateLiquidationFee(
       state.spoke,
-      state.collateralReserves[collateralReserveIndex].reserveId,
+      collateralReserveIds[collateralReserveIndex],
       state.liquidationFee
     );
 
@@ -270,7 +266,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     // ensure position is liquidatable
     assertLt(state.spoke.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    _getAccountingInfoBeforeLiquidation(state);
+    state = _getAccountingInfoBeforeLiquidation(
+      collateralReserveIds[collateralReserveIndex],
+      debtReserveIds[debtReserveIndex],
+      state
+    );
     DynamicConfig[] memory configKeysBefore = _getUserDynConfigKeys(spoke1, alice);
 
     (
@@ -280,6 +280,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       ,
       state.hasDust
     ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
+
+    console.log('test state.debtToLiq %e', state.debtToLiq);
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(

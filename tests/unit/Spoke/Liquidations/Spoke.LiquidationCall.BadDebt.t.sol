@@ -401,7 +401,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       hfAfterBorrow
     );
 
-    state = _getAccountingInfoBeforeLiquidation(state);
+    state = _getAccountingInfoBeforeLiquidation(collateralReserveId, debtReserveId, state);
     (
       state.collToLiq,
       state.debtToLiq,

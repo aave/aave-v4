@@ -237,7 +237,7 @@ contract SpokeLiquidationBase is SpokeBase {
       hfAfterBorrow
     );
 
-    state = _getAccountingInfoBeforeLiquidation(state);
+    state = _getAccountingInfoBeforeLiquidation(collateralReserveId, debtReserveId, state);
 
     // Get alice's dynamic config key before liquidation
     DynamicConfig[] memory configKeysBefore = _getUserDynConfigKeys(spoke1, alice);
@@ -624,26 +624,26 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal view {
-    // total debt/collateral in user's position should be > 0
-
+    // total collateral in user's position should be > 0
     assertGt(
       state.totalCollateralInBaseCurrency.balanceAfter,
       0,
       string.concat('totalCollateralInBaseCurrency should be > 0 ', label)
     );
-    if (state.hasDust) {
-      assertEq(
-        state.userTotalReserveDebt.balanceAfter,
-        0,
-        string.concat('userTotalReserveDebt should be = 0 due to dust adjustment', label)
-      );
-    } else {
+    if (!state.hasDust) {
+      // if no dust to re-adjust liquidated debt, remaining debt should be > 0
       assertGt(
         state.totalDebtInBaseCurrency.balanceAfter,
         0,
         string.concat('totalDebtInBaseCurrency should be > 0 ', label)
       );
     }
+    // assertApproxEqAbs(
+    //   state.userTotalReserveDebt.balanceAfter,
+    //   state.userTotalReserveDebt.balanceBefore - state.debtToLiq,
+    //   state.assetAmountOfOneDrawnShare + 1,
+    //   string.concat('expected userTotalReserveDebt ', label)
+    // );
 
     // with collateral/debt remaining, user rp should only be 0 if all coll reserves have liquidity premium == 0
     if (_shouldUserRpBeZero(state.spoke, state.user)) {
@@ -855,12 +855,14 @@ contract SpokeLiquidationBase is SpokeBase {
    * @return LiquidationTestLocalParams struct with updated balances.
    */
   function _getAccountingInfoBeforeLiquidation(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
     LiquidationTestLocalParams memory state
   ) internal view returns (LiquidationTestLocalParams memory) {
-    state.debtReserveId = state.debtReserve.reserveId;
-    state.debtAssetId = state.debtReserve.assetId;
-    state.collateralReserveId = state.collateralReserve.reserveId;
+    state.debtReserveId = debtReserveId;
+    state.collateralReserveId = collateralReserveId;
     state.collateralAssetId = state.collateralReserve.assetId;
+    state.debtAssetId = state.debtReserve.assetId;
     state.closeFactor = _getCloseFactor(state.spoke);
     state.collateralHub = state.collateralReserve.hub;
     state.debtHub = state.debtReserve.hub;

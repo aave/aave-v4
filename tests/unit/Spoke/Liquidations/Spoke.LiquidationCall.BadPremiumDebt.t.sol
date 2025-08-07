@@ -252,7 +252,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     // causes bad debt to remain
     vm.assume(state.spoke.getHealthFactor(alice) < hfBadDebtThreshold);
 
-    state = _getAccountingInfoBeforeLiquidation(state);
+    state = _getAccountingInfoBeforeLiquidation(collateralReserveId, debtReserveId, state);
 
     assertGt(
       state.userPremiumDebt.balanceBefore,

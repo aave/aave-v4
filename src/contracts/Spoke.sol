@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -1082,7 +1084,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         );
         // debt accounting
         _settlePremiumDebt(userDebtPosition, vars.premiumDelta);
+        console.log('SP remaining debt shares', userDebtPosition.drawnShares);
         userDebtPosition.drawnShares -= vars.restoredShares;
+
+        console.log('SP remaining debt shares', userDebtPosition.drawnShares);
       }
 
       if (userDebtPosition.drawnShares == 0) {
@@ -1188,6 +1193,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.liquidationFeeAmount,
       vars.hasDeficit
     ) = vars.calculateAvailableCollateralToLiquidate();
+
+    console.log(
+      'debt %e, debt to liq %e',
+      drawnReserveDebt + premiumReserveDebt,
+      vars.actualDebtToLiquidate
+    );
+
     (vars.drawnDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
       drawnReserveDebt,
       premiumReserveDebt,

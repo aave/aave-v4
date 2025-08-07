@@ -133,10 +133,10 @@ contract SpokeOperations_Gas_Tests is Base {
 
   function test_liquidation() public {
     vm.prank(bob);
-    spoke1.supply(_daiReserveId(spoke1), 1000e18, bob);
+    spoke1.supply(_daiReserveId(spoke1), 1_000_000e18, bob);
 
     vm.startPrank(alice);
-    spoke1.supply(_usdxReserveId(spoke1), 1000e6, alice);
+    spoke1.supply(_usdxReserveId(spoke1), 1_000_000e6, alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
     vm.stopPrank();
 
@@ -145,7 +145,7 @@ contract SpokeOperations_Gas_Tests is Base {
     skip(365 days);
 
     vm.startPrank(bob);
-    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100e18);
+    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100_000e18);
     vm.snapshotGasLastCall('Spoke.Operations', 'liquidationCall: partial');
 
     spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, type(uint256).max);

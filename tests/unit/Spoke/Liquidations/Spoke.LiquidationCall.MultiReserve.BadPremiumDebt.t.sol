@@ -276,7 +276,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
     state.collateralReserves = new DataTypes.Reserve[](1);
-
     state.spoke = spoke1;
     state.user = alice;
 
@@ -342,7 +341,11 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     // skip time to accrue premium debt
     skip(skipTimeForPremiumAccrual);
 
-    state = _getAccountingInfoBeforeLiquidation(state);
+    state = _getAccountingInfoBeforeLiquidation(
+      collateralReserveId,
+      debtReserveIds[state.debtReserveIndex],
+      state
+    );
 
     state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
       collateralReserveId,
