@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+
 /**
  * @title ISpokeBase
  * @author Aave Labs
@@ -60,12 +62,14 @@ interface ISpokeBase {
    * @param caller The transaction initiator, and supplier of the underlying asset being repaid.
    * @param user The owner of the position whose debt is being repaid.
    * @param drawnShares The amount of debt shares burned.
+   * @param premiumDelta A struct representing the changes to premium debt after repayment.
    */
   event Repay(
     uint256 indexed reserveId,
     address indexed caller,
     address indexed user,
-    uint256 drawnShares
+    uint256 drawnShares,
+    DataTypes.PremiumDelta premiumDelta
   );
 
   /**

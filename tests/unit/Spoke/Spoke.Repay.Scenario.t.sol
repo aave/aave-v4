@@ -993,6 +993,13 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
+    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      bob,
+      _daiReserveId(spoke1),
+      action1.repayAmount
+    );
+
     if (action1.repayAmount == 0) {
       vm.expectRevert(IHub.InvalidRestoreAmount.selector);
     } else {
@@ -1001,7 +1008,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
         _daiReserveId(spoke1),
         bob,
         bob,
-        hub1.convertToDrawnShares(daiAssetId, baseRestored)
+        hub1.convertToDrawnShares(daiAssetId, baseRestored),
+        expectedPremiumDelta
       );
     }
 
@@ -1063,10 +1071,12 @@ contract SpokeRepayScenarioTest is SpokeBase {
     bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
 
+    uint256 totalSuppliedFromActions = action1.supplyAmount + action2.supplyAmount;
+
     assertEq(bobDaiDataBefore.suppliedShares, 0);
     assertEq(
       spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob),
-      hub1.convertToAddedShares(wethAssetId, action1.supplyAmount + action2.supplyAmount)
+      hub1.convertToAddedShares(wethAssetId, totalSuppliedFromActions)
     );
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
@@ -1090,6 +1100,13 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
+    expectedPremiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      bob,
+      _daiReserveId(spoke1),
+      action2.repayAmount
+    );
+
     if (action2.repayAmount == 0) {
       vm.expectRevert(IHub.InvalidRestoreAmount.selector);
     } else {
@@ -1098,7 +1115,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
         _daiReserveId(spoke1),
         bob,
         bob,
-        hub1.convertToDrawnShares(daiAssetId, baseRestored)
+        hub1.convertToDrawnShares(daiAssetId, baseRestored),
+        expectedPremiumDelta
       );
     }
 
@@ -1121,7 +1139,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
     assertEq(
       spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob),
-      hub1.convertToAddedShares(wethAssetId, action1.supplyAmount + action2.supplyAmount)
+      hub1.convertToAddedShares(wethAssetId, totalSuppliedFromActions)
     );
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
@@ -1186,13 +1204,21 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
+    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      bob,
+      _daiReserveId(spoke1),
+      partialRepayAmount
+    );
+
     // Partial repay
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub1.convertToDrawnShares(daiAssetId, baseRestored)
+      hub1.convertToDrawnShares(daiAssetId, baseRestored),
+      expectedPremiumDelta
     );
 
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, partialRepayAmount, bob);
@@ -1241,13 +1267,21 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
+    expectedPremiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      bob,
+      _daiReserveId(spoke1),
+      UINT256_MAX
+    );
+
     // Full repay
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub1.convertToDrawnShares(daiAssetId, baseRestored)
+      hub1.convertToDrawnShares(daiAssetId, baseRestored),
+      expectedPremiumDelta
     );
 
     // Bob repays using the max value to signal full repayment
