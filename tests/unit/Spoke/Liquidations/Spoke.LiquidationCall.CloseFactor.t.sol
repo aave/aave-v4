@@ -482,7 +482,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       state.collToLiq,
       state.debtToLiq,
       state.liquidationFeeAmount,
-
+      ,
+      state.hasDust
     ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
 
     state.liquidationFeeShares =

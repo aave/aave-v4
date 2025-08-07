@@ -371,7 +371,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       state.collToLiq,
       state.debtToLiq,
       state.liquidationFeeAmount,
-
+      ,
+      state.hasDust
     ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
 
     DeficitReportedEvent[] memory expectedLogs = new DeficitReportedEvent[](debtReserveIds.length);
@@ -592,12 +593,12 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   ) internal pure {
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       assertEq(
-        state.userTotalDebts[i].balanceAfter,
+        state.userTotalReserveDebts[i].balanceAfter,
         0,
         'remaining debt should be 0 (reported as deficit)'
       );
       if (i != state.debtReserveIndex) {
-        uint256 expectedDeficitAmount = state.userTotalDebts[i].balanceChange; // for other debt assets, total debt should be reported as deficit
+        uint256 expectedDeficitAmount = state.userTotalReserveDebts[i].balanceChange; // for other debt assets, total debt should be reported as deficit
         assertEq(
           state.deficits[i].balanceChange,
           expectedDeficitAmount,

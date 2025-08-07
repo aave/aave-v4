@@ -1181,7 +1181,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.liquidationFee = collateralDynConfig.liquidationFee;
     vars.debtToRestoreCloseFactor = vars.calculateDebtToRestoreCloseFactor();
-
     vars.actualDebtToLiquidate = vars.calculateActualDebtToLiquidate(debtToCover);
     (
       vars.actualCollateralToLiquidate,
