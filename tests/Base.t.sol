@@ -1871,6 +1871,17 @@ abstract contract Base is Test {
     assertEq(abi.encode(a), abi.encode(b));
   }
 
+  function assertEq(
+    IAssetInterestRateStrategy.InterestRateData memory a,
+    IAssetInterestRateStrategy.InterestRateData memory b
+  ) internal pure {
+    assertEq(a.optimalUsageRatio, b.optimalUsageRatio, 'optimalUsageRatio');
+    assertEq(a.baseVariableBorrowRate, b.baseVariableBorrowRate, 'baseVariableBorrowRate');
+    assertEq(a.variableRateSlope1, b.variableRateSlope1, 'variableRateSlope1');
+    assertEq(a.variableRateSlope2, b.variableRateSlope2, 'variableRateSlope2');
+    assertEq(abi.encode(a), abi.encode(b));
+  }
+
   function _calculateExpectedFees(
     uint256 drawnIncrease,
     uint256 premiumIncrease,

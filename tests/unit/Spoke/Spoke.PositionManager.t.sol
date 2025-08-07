@@ -158,10 +158,17 @@ contract SpokePositionManagerTest is SpokeBase {
     DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
     uint256 repayAmount = amount / 3;
 
+    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      reserveId,
+      repayAmount
+    );
+
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), repayAmount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(reserveId, POSITION_MANAGER, alice, repayAmount);
+    emit ISpokeBase.Repay(reserveId, POSITION_MANAGER, alice, repayAmount, expectedPremiumDelta);
     Utils.repay(spoke1, reserveId, POSITION_MANAGER, repayAmount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
