@@ -30,14 +30,12 @@ contract HubRefreshPremiumTest is HubBase {
   }
 
   /// @dev offsetDelta can't be more than sharesDelta or else underflow
-  /// @dev sharesDelta can't be more than 2 more than offsetDelta
-  /// @dev realizedDelta can't be more than 2
+  /// @dev sharesDelta + realizedDelta can't be more than 2 more than offsetDelta
   function test_refreshPremium(
     uint256 sharesDelta,
     uint256 offsetDelta,
     uint256 realizedDelta
   ) public {
-    //DataTypes.Asset memory asset = hub1.getAsset(assetId);
     sharesDelta = bound(sharesDelta, 0, MAX_SUPPLY_AMOUNT);
     offsetDelta = bound(offsetDelta, 0, MAX_SUPPLY_AMOUNT);
     realizedDelta = bound(realizedDelta, 0, MAX_SUPPLY_AMOUNT);
@@ -61,7 +59,6 @@ contract HubRefreshPremiumTest is HubBase {
     uint256 sharesDeltaPos,
     uint256 offsetDeltaPos
   ) public {
-    // Bob supplies and borrows dai via spoke 1
     uint256 assetId = daiAssetId;
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 10000e18, bob);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
@@ -91,7 +88,6 @@ contract HubRefreshPremiumTest is HubBase {
     uint256 sharesDeltaPos,
     uint256 offsetDeltaPos
   ) public {
-    // Bob supplies and borrows dai via spoke 1
     uint256 assetId = daiAssetId;
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 10000e18, bob);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
@@ -102,7 +98,6 @@ contract HubRefreshPremiumTest is HubBase {
     DataTypes.Asset memory asset = hub1.getAsset(assetId);
 
     sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares);
-    //offsetDeltaPos = bound(offsetDeltaPos, sharesDeltaPos, sharesDeltaPos + 2);
     offsetDeltaPos = bound(offsetDeltaPos, 0, asset.premiumOffset);
     uint256 realizedDeltaPos;
     uint256 premiumAssetsPos = hub1.convertToDrawnAssets(assetId, sharesDeltaPos);
@@ -141,7 +136,7 @@ contract HubRefreshPremiumTest is HubBase {
 
   /*
   // TODO: Write a fuzz test with positive or negative numbers, with debt accrual
-  // TODO: Fuzz just 1 number, like sharesDelta, and make the others work around it
+  // TODO: If I can't generalize, fuzz just 1 number, like sharesDelta, and make the others work around it
   function test_refreshPremium_fuzz_withAccrual(int256 sharesDelta) public {
     // Bob supplies and borrows dai via spoke 1
     uint256 assetId = daiAssetId;
