@@ -134,6 +134,8 @@ contract HubRefreshPremiumTest is HubBase {
     hub1.refreshPremium(assetId, premiumDelta);
   }
 
+  // TODO: A strategy where I just calculate what will happen in advance and proceed accordingly
+  // TODO: A strategy where I fix one number and adjust the rest to follow
   function test_refreshPremium_fuzz_withAccrual(
     int256 sharesDelta,
     int256 offsetDelta,
@@ -170,35 +172,41 @@ contract HubRefreshPremiumTest is HubBase {
       realizedDelta: int256(realizedDelta)
     });
 
+    int256 premiumAssetsDelta;
+
     if (
       (sharesDelta < 0 && -sharesDelta > int256(uint256(asset.premiumShares))) ||
       (offsetDelta < 0 && -offsetDelta > int256(uint256(asset.premiumOffset))) ||
       (realizedDelta < 0 && -realizedDelta > int256(uint256(asset.realizedPremium)))
     ) {
       vm.expectRevert(stdError.arithmeticError);
-    }
-    // TODO: Handle sharesDelta positive and negative cases separately
-    // TODO: If shares delta is negative, that means we need to convert to positive when converting to drawn assets
-    else if (sharesDelta >= 0) {
-      int256 premiumAssetsDelta = int256(hub1.convertToDrawnAssets(assetId, uint256(sharesDelta)));
+    } else if (sharesDelta >= 0) {
+      console.log('positive shares delta case');
+      premiumAssetsDelta = int256(hub1.convertToDrawnAssets(assetId, uint256(sharesDelta)));
       // If we introduced debt with shares vs offset, capture with realized delta
       if (premiumAssetsDelta > offsetDelta) {
         premiumDelta.realizedDelta = -int256(premiumAssetsDelta - offsetDelta);
+        console.log('case that premium assets delta greater than offset delta');
+        if (-premiumDelta.realizedDelta > int256(uint256(asset.realizedPremium))) {
+          vm.expectRevert(stdError.arithmeticError);
+        }
       } else {
         premiumDelta.realizedDelta = 0;
       }
 
       if (offsetDelta > premiumAssetsDelta) {
         vm.expectRevert(stdError.arithmeticError);
+        console.log('case that offset delta greater than premium assets delta');
       }
     } else {
-      int256 premiumAssetsDelta = -int256(
-        hub1.convertToDrawnAssets(assetId, uint256(-sharesDelta))
-      );
+      premiumAssetsDelta = -int256(hub1.convertToDrawnAssets(assetId, uint256(-sharesDelta)));
 
       // If we introduced debt with shares vs offset, capture with realized delta
       if (premiumAssetsDelta > offsetDelta) {
-        premiumDelta.realizedDelta = int256(premiumAssetsDelta - offsetDelta);
+        premiumDelta.realizedDelta = -int256(premiumAssetsDelta - offsetDelta);
+        if (-premiumDelta.realizedDelta > int256(uint256(asset.realizedPremium))) {
+          vm.expectRevert(stdError.arithmeticError);
+        }
       } else {
         premiumDelta.realizedDelta = 0;
       }
@@ -225,7 +233,11 @@ contract HubRefreshPremiumTest is HubBase {
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
     }
     */
-
+    if (premiumAssetsDelta > 0) {
+      console.log('premiumAssetsDelta: %s', uint256(premiumAssetsDelta));
+    } else {
+      console.log('premiumAssetsDelta : %s', uint256(-premiumAssetsDelta));
+    }
     console.log(
       'sharesDelta: %s, offsetDelta: %s, realizedDelta: %s',
       premiumDelta.sharesDelta >= 0
@@ -241,10 +253,10 @@ contract HubRefreshPremiumTest is HubBase {
     if (premiumDelta.sharesDelta < 0) {
       console.log('sharesDelta negative');
     }
-    if (offsetDelta < 0) {
+    if (premiumDelta.offsetDelta < 0) {
       console.log('offsetDelta negative');
     }
-    if (realizedDelta < 0) {
+    if (premiumDelta.realizedDelta < 0) {
       console.log('realizedDelta negative');
     }
 
