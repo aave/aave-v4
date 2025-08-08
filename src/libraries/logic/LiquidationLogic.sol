@@ -184,7 +184,7 @@ library LiquidationLogic {
       vars.debtToLiquidateInBaseCurrency < params.totalDebtInBaseCurrency &&
       vars.collateralToLiquidateInBaseCurrency == params.totalCollateralInBaseCurrency;
 
-    // if deficit, then potential dust debt will be reported as deficit
+    // dust is allowed in debt reserve if all reserve collateral is seized
     if (
       vars.collateralAmount < params.borrowerCollateralBalance &&
       vars.debtAmountNeeded < params.totalBorrowerReserveDebt
