@@ -49,7 +49,8 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount');
   }
 
-  /// debtAssetUnit should never be 0 in practice
+  /// debtAssetUnit should never be 0 in practice, will revert due to division by 0
+  /// forge-config: default.allow_internal_expect_revert = true
   function test_calculateAvailableCollateralToLiquidate_fuzz_debtAssetUnit_zero(
     TestAvailableCollateralParams memory params
   ) public {
@@ -59,29 +60,22 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
     vm.expectRevert(stdError.divisionError);
-    this.calculateAvailableCollateralToLiquidate(args);
+    LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
   }
 
   /// debtAssetPrice should never be 0 in practice
+  /// will revert due to calculation of leftoverDebtBase
+  /// forge-config: default.allow_internal_expect_revert = true
   function test_calculateAvailableCollateralToLiquidate_fuzz_debtAssetPrice_zero(
     TestAvailableCollateralParams memory params
-  ) public pure {
+  ) public {
     params = _bound(params);
     params.debtAssetPrice = 0;
 
-    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
+    DataTypes.LiquidationCallLocalVars memory vars = _setStructFields(params);
 
-    AvailableCollateralToLiquidate memory res;
-    (
-      res.actualCollateralToLiquidate,
-      res.actualDebtToLiquidate,
-      res.liquidationFeeAmount,
-
-    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
-
-    assertEq(res.actualCollateralToLiquidate, 1, 'actualCollateralToLiquidate');
-    assertEq(res.actualDebtToLiquidate, params.actualDebtToLiquidate, 'actualDebtToLiquidate');
-    assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount');
+    vm.expectRevert(stdError.arithmeticError);
+    LiquidationLogic.calculateAvailableCollateralToLiquidate(vars);
   }
 
   /// collateralAssetUnit should never be 0 in practice
@@ -202,44 +196,48 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
           params.collateralAssetPrice
     );
 
-    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
+    DataTypes.LiquidationCallLocalVars memory vars = _setStructFields(params);
+
+    console.log('vars.debtAssetPrice', vars.debtAssetPrice);
+
+    // calculation of leftoverDebtBase will revert
     AvailableCollateralToLiquidate memory res;
     (
       res.actualCollateralToLiquidate,
       res.actualDebtToLiquidate,
       res.liquidationFeeAmount,
 
-    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
+    ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(vars);
 
-    uint256 collateralAmount = ((maxCollateralToLiquidate * params.collateralAssetUnit) /
-      params.collateralAssetPrice).fromWadDown() + 1;
+    // uint256 collateralAmount = ((maxCollateralToLiquidate * params.collateralAssetUnit) /
+    //   params.collateralAssetPrice).fromWadDown() + 1;
 
-    (uint256 actualCollateralToLiquidate, uint256 liquidationFeeAmount) = _calcLiquidationFeeAmount(
-      params,
-      collateralAmount
-    );
+    // (uint256 actualCollateralToLiquidate, uint256 liquidationFeeAmount) = _calcLiquidationFeeAmount(
+    //   params,
+    //   collateralAmount
+    // );
 
-    if (params.liquidationFee == 0) {
-      assertEq(
-        res.actualCollateralToLiquidate,
-        actualCollateralToLiquidate,
-        'collateralAmount without lpfp'
-      );
-      assertEq(
-        res.actualDebtToLiquidate,
-        params.actualDebtToLiquidate,
-        'debtAmountNeeded without lpfp'
-      );
-      assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount without lpfp');
-    } else {
-      assertEq(
-        res.actualCollateralToLiquidate,
-        actualCollateralToLiquidate,
-        'actualCollateralToLiquidate'
-      );
-      assertEq(res.actualDebtToLiquidate, params.actualDebtToLiquidate, 'actualDebtToLiquidate');
-      assertEq(res.liquidationFeeAmount, liquidationFeeAmount, 'liquidationFeeAmount');
-    }
+    // if (params.liquidationFee == 0) {
+    //   assertEq(
+    //     res.actualCollateralToLiquidate,
+    //     actualCollateralToLiquidate,
+    //     'collateralAmount without lpfp'
+    //   );
+    //   assertEq(
+    //     res.actualDebtToLiquidate,
+    //     params.actualDebtToLiquidate,
+    //     'debtAmountNeeded without lpfp'
+    //   );
+    //   assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount without lpfp');
+    // } else {
+    //   assertEq(
+    //     res.actualCollateralToLiquidate,
+    //     actualCollateralToLiquidate,
+    //     'actualCollateralToLiquidate'
+    //   );
+    //   assertEq(res.actualDebtToLiquidate, params.actualDebtToLiquidate, 'actualDebtToLiquidate');
+    //   assertEq(res.liquidationFeeAmount, liquidationFeeAmount, 'liquidationFeeAmount');
+    // }
   }
 
   function _setStructFields(

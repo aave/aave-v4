@@ -91,7 +91,8 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 expectedDeficitAmount;
     uint256 expectedDeficitShares;
     uint256 assetAmountOfOneDrawnShare;
-    bool hasDust;
+    bool hasDustFromDebt; // if dust remains from calculateActualDebtToLiquidate; debtToLiquidate amount will be adjusted
+    bool hasDustFromAvailableCollateral; // if dust remains from naive calculateAvailableCollateralToLiquidate; will revert
     bool isMultiDebtReserve;
     uint256 minLeftoverAmount;
     uint256 naiveLeftoverDebtAmount;
@@ -252,7 +253,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.debtToLiq,
       state.liquidationFeeAmount,
       ,
-      state.hasDust
+      state.hasDustFromDebt
     ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
     state.liquidationFeeShares =
@@ -325,10 +326,14 @@ contract SpokeLiquidationBase is SpokeBase {
   function _assertNoDustRemains(
     LiquidationTestLocalParams memory state,
     string memory label
-  ) internal {
+  ) internal pure {
     console.log('debtAssetId', state.debtReserve.assetId);
     console.log('collAssetId', state.collateralReserve.assetId);
-    console.log('dust %e %e', state.userTotalReserveDebt.balanceAfter, state.minLeftoverAmount);
+    console.log(
+      'dust assertion %e minLeftoverAmt %e',
+      state.userTotalReserveDebt.balanceAfter,
+      state.minLeftoverAmount
+    );
     // either position is fully liquidated, or no dust remains
     assertTrue(
       state.userTotalReserveDebt.balanceAfter == 0 ||
@@ -480,7 +485,7 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal view virtual {
-    if (state.hasDust) {
+    if (state.hasDustFromDebt) {
       if (!state.isMultiDebtReserve) {
         /// HF > CloseFactor holds for single debt reserve, bc more debt was liquidated than expected
         /// for multi reserve, liquidating the whole debt may or may not bring HF below CF
@@ -653,7 +658,7 @@ contract SpokeLiquidationBase is SpokeBase {
       0,
       string.concat('totalCollateralInBaseCurrency should be > 0 ', label)
     );
-    if (!state.hasDust) {
+    if (!state.hasDustFromDebt) {
       // if no dust to re-adjust liquidated debt, remaining debt should be > 0
       assertGt(
         state.totalDebtInBaseCurrency.balanceAfter,
@@ -724,7 +729,7 @@ contract SpokeLiquidationBase is SpokeBase {
       uint256 actualDebtToLiquidate,
       uint256 liquidationFeeAmount,
       bool hasDeficit,
-      bool hasDust
+      bool hasDustFromDebt
     )
   {
     IPriceOracle oracle = state.spoke.oracle();
@@ -750,7 +755,10 @@ contract SpokeLiquidationBase is SpokeBase {
       params.totalDebtInBaseCurrency
     ) = state.spoke.getUserAccountData(state.user);
 
-    (params.actualDebtToLiquidate, hasDust) = _calculateActualDebtToLiquidate(state, debtToCover);
+    (params.actualDebtToLiquidate, hasDustFromDebt) = _calculateActualDebtToLiquidate(
+      state,
+      debtToCover
+    );
 
     // if actualDebtToLiquidate is 0, it should revert in practice
     if (params.actualDebtToLiquidate != 0) {
@@ -847,7 +855,7 @@ contract SpokeLiquidationBase is SpokeBase {
   function _calculateActualDebtToLiquidate(
     LiquidationTestLocalParams memory state,
     uint256 debtToCover
-  ) internal view returns (uint256 actualDebtToLiquidate, bool hasDust) {
+  ) internal view returns (uint256 actualDebtToLiquidate, bool hasDustFromDebt) {
     uint256 totalBorrowerReserveDebt = state.userTotalReserveDebt.balanceBefore;
     uint256 debtToRestoreCloseFactor = _calcDebtToRestoreCloseFactor(state.spoke, state);
 
@@ -879,13 +887,13 @@ contract SpokeLiquidationBase is SpokeBase {
         actualDebtToLiquidate = 0;
       } else {
         actualDebtToLiquidate = maxLiquidatableDebt;
-        hasDust = true;
+        hasDustFromDebt = true;
       }
     }
 
     console.log('test actualDebtToLiquidate %e', actualDebtToLiquidate);
 
-    return (actualDebtToLiquidate, hasDust);
+    return (actualDebtToLiquidate, hasDustFromDebt);
   }
 
   /// @notice Calculate amount of debt to liquidate to restore HF to close factor.

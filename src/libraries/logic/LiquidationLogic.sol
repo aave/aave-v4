@@ -179,21 +179,25 @@ library LiquidationLogic {
       vars.debtToLiquidateInBaseCurrency = vars.baseCollateral;
     }
 
-    console.log('LL totalDebtInBaseCurrency %e', params.totalDebtInBaseCurrency);
-    console.log('LL debtToLiquidateInBaseCurrency %e', vars.debtToLiquidateInBaseCurrency);
-
-    vars.leftoverDebtBase =
-      ((params.totalBorrowerReserveDebt - vars.debtAmountNeeded) * params.debtAssetPrice).toWad() /
-      params.debtAssetUnit;
-
-    console.log('LL leftoverDebtBase %e', vars.leftoverDebtBase);
-    if (vars.leftoverDebtBase != 0 && vars.leftoverDebtBase < MIN_LEFTOVER_BASE) {
-      revert MustNotLeaveDust();
-    }
-
     vars.hasDeficit =
       vars.debtToLiquidateInBaseCurrency < params.totalDebtInBaseCurrency &&
       vars.collateralToLiquidateInBaseCurrency == params.totalCollateralInBaseCurrency;
+
+    // if deficit, then potential dust debt will be reported as deficit
+    if (!vars.hasDeficit) {
+      console.log('LL totalBorrowerReserveDebt %e', params.totalBorrowerReserveDebt);
+      console.log('LL debtAmountNeeded %e', vars.debtAmountNeeded);
+
+      vars.leftoverDebtBase =
+        ((params.totalBorrowerReserveDebt - vars.debtAmountNeeded) * params.debtAssetPrice)
+          .toWad() /
+        params.debtAssetUnit;
+
+      console.log('LL leftoverDebtBase %e', vars.leftoverDebtBase);
+      if (vars.leftoverDebtBase != 0 && vars.leftoverDebtBase < MIN_LEFTOVER_BASE) {
+        revert MustNotLeaveDust();
+      }
+    }
 
     if (params.liquidationFee != 0) {
       uint256 bonusCollateral = vars.collateralAmount -
