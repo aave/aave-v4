@@ -95,6 +95,7 @@ library LiquidationLogic {
         console.log('LL dust debtToRestoreCloseFactor');
         revert MustNotLeaveDust();
       } else {
+        console.log('LL dust readjust');
         // if debtToCover is valid, return min(debtToCover, totalBorrowerReserveDebt)
         actualDebtToLiquidate = maxLiquidatableDebt;
       }

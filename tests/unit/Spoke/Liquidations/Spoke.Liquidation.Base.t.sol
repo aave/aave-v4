@@ -960,6 +960,34 @@ contract SpokeLiquidationBase is SpokeBase {
         .fromWadDown();
   }
 
+  function calcDebtToRestoreCloseFactor(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 liquidationBonus,
+    uint256 closeFactor
+  ) internal view returns (uint256) {
+    IPriceOracle oracle = spoke.oracle();
+    DataTypes.LiquidationCallLocalVars memory params;
+
+    params.debtAssetUnit = 10 ** spoke.getReserve(reserveId).decimals;
+    params.debtAssetPrice = oracle.getReservePrice(reserveId);
+
+    (, , params.healthFactor, , params.totalDebtInBaseCurrency) = spoke.getUserAccountData(user);
+
+    // duplicated logic from LiquidationLogic.calculateDebtToRestoreCloseFactor
+    uint256 effectiveLiquidationPenalty = (liquidationBonus.toWad())
+      .percentMulDown(_getCollateralFactor(spoke, reserveId))
+      .fromBpsDown();
+    if (closeFactor < effectiveLiquidationPenalty) {
+      return UINT256_MAX;
+    }
+    return
+      (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
+        (closeFactor - params.healthFactor)) /
+        ((closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice)).fromWadDown();
+  }
+
   /// @notice Calc user's lowest possible health factor whereby a liqudation can still restore HF to close factor.
   /// for multiple collateral assets
   /// @return healthFactor in WAD
