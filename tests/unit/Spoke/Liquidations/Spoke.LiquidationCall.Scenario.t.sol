@@ -7,36 +7,6 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
   using PercentageMath for *;
   using WadRayMath for uint256;
 
-  struct Amount {
-    uint256 wbtc;
-    uint256 weth;
-    uint256 dai;
-    uint256 usdx;
-  }
-
-  struct LiqScenarioTestData {
-    uint256 daiReserveId;
-    uint256 wethReserveId;
-    uint256 usdxReserveId;
-    uint256 wbtcReserveId;
-    Amount collAmount;
-    Amount debtAmount;
-    Balance userTotalReserveDebt;
-    Balance userSuppliedAmount;
-    Balance liquidatorDebt;
-    Balance liquidatorCollateral;
-    Balance user;
-    uint256 closeFactor;
-    uint256 liqBonus;
-    uint256 initialDebt;
-    uint256 finalDebt;
-    uint256 liquidatedDebt;
-    uint256 healthFactor;
-    uint256 userRp;
-    DataTypes.UserPosition wbtcPosition;
-    DataTypes.UserPosition wethPosition;
-  }
-
   /// liquidation with realized premium debt
   function test_liquidationCall_debt_realized_premium() public {
     LiqScenarioTestData memory state;

@@ -98,7 +98,38 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 naiveLeftoverDebtAmount;
   }
 
+  struct Amount {
+    uint256 wbtc;
+    uint256 weth;
+    uint256 dai;
+    uint256 usdx;
+  }
+
+  struct LiqScenarioTestData {
+    uint256 daiReserveId;
+    uint256 wethReserveId;
+    uint256 usdxReserveId;
+    uint256 wbtcReserveId;
+    Amount collAmount;
+    Amount debtAmount;
+    Balance userTotalReserveDebt;
+    Balance userSuppliedAmount;
+    Balance liquidatorDebt;
+    Balance liquidatorCollateral;
+    Balance user;
+    uint256 closeFactor;
+    uint256 liqBonus;
+    uint256 initialDebt;
+    uint256 finalDebt;
+    uint256 liquidatedDebt;
+    uint256 healthFactor;
+    uint256 userRp;
+    DataTypes.UserPosition wbtcPosition;
+    DataTypes.UserPosition wethPosition;
+  }
+
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26;
+  uint256 internal constant MIN_LEFTOVER_BASE = LiquidationLogic.MIN_LEFTOVER_BASE;
 
   function setUp() public virtual override {
     super.setUp();
