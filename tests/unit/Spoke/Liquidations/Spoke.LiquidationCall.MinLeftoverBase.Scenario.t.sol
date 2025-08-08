@@ -57,22 +57,35 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     assertEq(spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice), 0);
   }
 
-  function test_liquidationCall_fuzz_dust_scenario1(uint256 daiAmount, uint256 usdxAmount) public {
+  function test_liquidationCall_fuzz_dust_scenario1_deficit(
+    uint256 daiAmount,
+    uint256 usdxAmount
+  ) public {
     daiAmount = bound(
       daiAmount,
-      _convertBaseCurrencyToAmount(spoke1, _daiReserveId(spoke1), 2e26), // $2 - $1000
-      minLeftoverAmount[_daiReserveId(spoke1)]
+      _convertBaseCurrencyToAmount(spoke1, _daiReserveId(spoke1), 1e26), // $1 - $500
+      minLeftoverAmount[_daiReserveId(spoke1)] / 2
     );
     usdxAmount = bound(
       usdxAmount,
-      _convertBaseCurrencyToAmount(spoke1, _usdxReserveId(spoke1), 1e26), // $1 - $500
-      minLeftoverAmount[_usdxReserveId(spoke1)] / 2
+      _convertBaseCurrencyToAmount(
+        spoke1,
+        _usdxReserveId(spoke1),
+        _convertAmountToBaseCurrency(spoke1, _daiReserveId(spoke1), daiAmount)
+      ) + 1, // ensure deficit
+      minLeftoverAmount[_usdxReserveId(spoke1)]
     );
 
     LiqScenarioTestData memory state;
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
     _borrowWithoutHfCheck(spoke1, alice, _usdxReserveId(spoke1), usdxAmount);
+
+    console.log(
+      'coll %e debt %e',
+      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), alice),
+      spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice)
+    );
 
     // deficit should be reported
     vm.expectCall(address(hub1), abi.encodeWithSelector(hub1.reportDeficit.selector));
@@ -84,9 +97,14 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
       user: alice,
       debtToCover: UINT256_MAX
     });
+    console.log(
+      'coll %e debt %e',
+      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), alice),
+      spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice)
+    );
 
-    assertEq(spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), alice), 0);
-    assertEq(spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice), 0);
+    assertEq(spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), alice), 0, 'collateral');
+    assertEq(spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice), 0, 'debt');
   }
 
   function test_liquidationCall_fuzz_dust_scenario1_revertsWith_MustNotLeaveDust_debtToCover(
