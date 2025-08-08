@@ -92,6 +92,9 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 expectedDeficitShares;
     uint256 assetAmountOfOneDrawnShare;
     bool hasDust;
+    bool isMultiDebtReserve;
+    uint256 minLeftoverAmount;
+    uint256 naiveLeftoverDebtAmount;
   }
 
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26;
@@ -250,7 +253,7 @@ contract SpokeLiquidationBase is SpokeBase {
       state.liquidationFeeAmount,
       ,
       state.hasDust
-    ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
+    ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
     state.liquidationFeeShares =
       state.collateralHub.previewRemoveByAssets(
@@ -315,7 +318,23 @@ contract SpokeLiquidationBase is SpokeBase {
       _assertUserAccountData(state, label);
     }
     _assertLiquidationAccounting(state, label);
+    _assertNoDustRemains(state, label);
     _assertLiquidationAccountingWithSkipTime(state, label);
+  }
+
+  function _assertNoDustRemains(
+    LiquidationTestLocalParams memory state,
+    string memory label
+  ) internal {
+    console.log('debtAssetId', state.debtReserve.assetId);
+    console.log('collAssetId', state.collateralReserve.assetId);
+    console.log('dust %e %e', state.userTotalReserveDebt.balanceAfter, state.minLeftoverAmount);
+    // either position is fully liquidated, or no dust remains
+    assertTrue(
+      state.userTotalReserveDebt.balanceAfter == 0 ||
+        state.userTotalReserveDebt.balanceAfter >= state.minLeftoverAmount,
+      string.concat('no dust ', label)
+    );
   }
 
   // accounting assertions with skip time after a liquidation
@@ -462,11 +481,11 @@ contract SpokeLiquidationBase is SpokeBase {
     string memory label
   ) internal view virtual {
     if (state.hasDust) {
-      assertGt(
-        state.finalHf,
-        state.closeFactor,
-        string.concat('HF exceeds closeFactor if dust remains, as more debt was liquidated')
-      );
+      if (!state.isMultiDebtReserve) {
+        /// HF > CloseFactor holds for single debt reserve, bc more debt was liquidated than expected
+        /// for multi reserve, liquidating the whole debt may or may not bring HF below CF
+        assertGt(state.finalHf, state.closeFactor, string.concat('HF should exceed closeFactor'));
+      }
     } else {
       // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
       if (
@@ -642,12 +661,12 @@ contract SpokeLiquidationBase is SpokeBase {
         string.concat('totalDebtInBaseCurrency should be > 0 ', label)
       );
     }
-    // assertApproxEqAbs(
-    //   state.userTotalReserveDebt.balanceAfter,
-    //   state.userTotalReserveDebt.balanceBefore - state.debtToLiq,
-    //   state.assetAmountOfOneDrawnShare + 1,
-    //   string.concat('expected userTotalReserveDebt ', label)
-    // );
+    assertApproxEqAbs(
+      state.userTotalReserveDebt.balanceAfter,
+      state.userTotalReserveDebt.balanceBefore - state.debtToLiq,
+      state.assetAmountOfOneDrawnShare + 1,
+      string.concat('expected userTotalReserveDebt ', label)
+    );
 
     // with collateral/debt remaining, user rp should only be 0 if all coll reserves have liquidity premium == 0
     if (_shouldUserRpBeZero(state.spoke, state.user)) {
@@ -694,7 +713,7 @@ contract SpokeLiquidationBase is SpokeBase {
    * @return liquidationFeeAmount Amount of protocol fee (in asset).
    * @return hasDeficit Boolean indicating if there is a deficit in the liquidation.
    */
-  function _calculateAvailableCollateralToLiquidate(
+  function _calculateCollateralAndDebtToLiquidate(
     LiquidationTestLocalParams memory state,
     uint256 debtToCover
   )
@@ -723,8 +742,16 @@ contract SpokeLiquidationBase is SpokeBase {
     params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
     params.liquidationBonus = state.liquidationBonus;
     params.liquidationFee = state.liquidationFee;
+    (
+      ,
+      ,
+      params.healthFactor,
+      params.totalCollateralInBaseCurrency,
+      params.totalDebtInBaseCurrency
+    ) = state.spoke.getUserAccountData(state.user);
 
     (params.actualDebtToLiquidate, hasDust) = _calculateActualDebtToLiquidate(state, debtToCover);
+
     // if actualDebtToLiquidate is 0, it should revert in practice
     if (params.actualDebtToLiquidate != 0) {
       (
@@ -732,12 +759,86 @@ contract SpokeLiquidationBase is SpokeBase {
         actualDebtToLiquidate,
         liquidationFeeAmount,
         hasDeficit
-      ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(params);
+      ) = _calculateCollateralAndDebtToLiquidate(state, params, debtToCover);
     } else {
       actualCollateralToLiquidate = 0;
       actualDebtToLiquidate = 0;
       liquidationFeeAmount = 0;
       hasDeficit = false;
+    }
+  }
+
+  function _calculateCollateralAndDebtToLiquidate(
+    LiquidationTestLocalParams memory state,
+    DataTypes.LiquidationCallLocalVars memory params,
+    uint256 debtToCover
+  )
+    internal
+    view
+    returns (
+      uint256 actualCollateralToLiquidate,
+      uint256 actualDebtToLiquidate,
+      uint256 liquidationFeeAmount,
+      bool hasDeficit
+    )
+  {
+    DataTypes.CalculateAvailableCollateralToLiquidate memory vars;
+
+    // convert existing collateral to base currency
+    vars.borrowerCollateralBalanceInBaseCurrency =
+      (params.borrowerCollateralBalance * params.collateralAssetPrice).toWad() /
+      params.collateralAssetUnit;
+
+    // find collateral in base currency that corresponds to the debt to cover
+    vars.baseCollateral =
+      (params.actualDebtToLiquidate * params.debtAssetPrice).toWad() /
+      params.debtAssetUnit;
+
+    // account for additional collateral required due to liquidation bonus
+    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMulDown(params.liquidationBonus);
+
+    if (vars.maxCollateralToLiquidate >= vars.borrowerCollateralBalanceInBaseCurrency) {
+      console.log('TEST maxCollateralToLiquidate >= borrowerCollateralBalanceInBaseCurrency');
+      vars.collateralAmount = params.borrowerCollateralBalance;
+      vars.debtAmountNeeded = ((params.debtAssetUnit * vars.borrowerCollateralBalanceInBaseCurrency)
+        .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).fromWadDown();
+      vars.collateralToLiquidateInBaseCurrency = vars.borrowerCollateralBalanceInBaseCurrency;
+      vars.debtToLiquidateInBaseCurrency =
+        (vars.debtAmountNeeded * params.debtAssetPrice).toWad() /
+        params.debtAssetUnit;
+    } else {
+      console.log('TEST maxCollateralToLiquidate < borrowerCollateralBalanceInBaseCurrency');
+      // add 1 to round collateral amount up, ensuring HF is always <= close factor
+      vars.collateralAmount =
+        ((vars.maxCollateralToLiquidate * params.collateralAssetUnit) / params.collateralAssetPrice)
+          .fromWadDown() +
+        1;
+      vars.debtAmountNeeded = params.actualDebtToLiquidate;
+      vars.collateralToLiquidateInBaseCurrency =
+        (vars.collateralAmount * params.collateralAssetPrice).toWad() /
+        params.collateralAssetUnit;
+      vars.debtToLiquidateInBaseCurrency = vars.baseCollateral;
+    }
+
+    console.log('LL totalDebtInBaseCurrency %e', params.totalDebtInBaseCurrency);
+    console.log('LL debtToLiquidateInBaseCurrency %e', vars.debtToLiquidateInBaseCurrency);
+
+    vars.hasDeficit =
+      vars.debtToLiquidateInBaseCurrency < params.totalDebtInBaseCurrency &&
+      vars.collateralToLiquidateInBaseCurrency == params.totalCollateralInBaseCurrency;
+
+    if (params.liquidationFee != 0) {
+      uint256 bonusCollateral = vars.collateralAmount -
+        vars.collateralAmount.percentDivUp(params.liquidationBonus);
+      uint256 liquidationFeeAmount = bonusCollateral.percentMulUp(params.liquidationFee);
+      return (
+        vars.collateralAmount - liquidationFeeAmount,
+        vars.debtAmountNeeded,
+        liquidationFeeAmount,
+        vars.hasDeficit
+      );
+    } else {
+      return (vars.collateralAmount, vars.debtAmountNeeded, 0, vars.hasDeficit);
     }
   }
 
@@ -870,6 +971,12 @@ contract SpokeLiquidationBase is SpokeBase {
     state.closeFactor = _getCloseFactor(state.spoke);
     state.collateralHub = state.collateralReserve.hub;
     state.debtHub = state.debtReserve.hub;
+
+    state.minLeftoverAmount = _convertBaseCurrencyToAmount(
+      state.spoke,
+      state.debtReserveId,
+      LiquidationLogic.MIN_LEFTOVER_BASE
+    );
 
     (state.userDrawnDebt.balanceBefore, state.userPremiumDebt.balanceBefore) = state
       .spoke

@@ -409,7 +409,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       state.liquidationFeeAmount,
       ,
       state.hasDust
-    ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
+    ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
     uint256 debtAssetId = state.debtReserve.assetId;
     (uint256 drawnDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(

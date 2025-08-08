@@ -107,8 +107,13 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       desiredHf: 0.95e18
     });
 
-    _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario3');
-    assertFalse(state.hasDeficit, 'should not have deficit');
+    if (
+      !(state.naiveLeftoverDebtAmount < state.minLeftoverAmount &&
+        state.naiveLeftoverDebtAmount != 0)
+    ) {
+      _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario3');
+      assertFalse(state.hasDeficit, 'should not have deficit');
+    }
   }
 
   function test_liquidationCall_closeFactor_fuzz_multi_reserve(
@@ -158,8 +163,13 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       desiredHf: desiredHf
     });
 
-    _checkLiquidation(state, 'test_liquidationCall_closeFactor_fuzz_multi_reserve');
-    assertFalse(state.hasDeficit, 'should not have deficit');
+    if (
+      !(state.naiveLeftoverDebtAmount < state.minLeftoverAmount &&
+        state.naiveLeftoverDebtAmount != 0)
+    ) {
+      _checkLiquidation(state, 'test_liquidationCall_closeFactor_fuzz_multi_reserve');
+      assertFalse(state.hasDeficit, 'should not have deficit');
+    }
   }
 
   /// fuzz test with multiple collateral/debt reserves
@@ -181,6 +191,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
     state.collateralReserveIndex = collateralReserveIndex;
     state.debtReserveIndex = debtReserveIndex;
+    state.isMultiDebtReserve = debtReserveIds.length > 1;
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
       state.collateralReserves[i] = spoke1.getReserve(collateralReserveIds[i]);
       state.collDynConfigs[i] = _getUserDynConfig(spoke1, alice, collateralReserveIds[i]); // utilize user's dynamic config
@@ -280,19 +291,41 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.liquidationFeeAmount,
       ,
       state.hasDust
-    ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
+    ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
-    console.log('test state.debtToLiq %e', state.debtToLiq);
-
-    vm.expectEmit(address(state.spoke));
-    emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.assetId,
-      state.debtReserve.assetId,
-      alice,
+    console.log(
+      'test state.debtToLiq %e %e',
       state.debtToLiq,
-      state.collToLiq,
-      LIQUIDATOR
+      state.userTotalReserveDebt.balanceBefore
     );
+    console.log(
+      'test leftover %e',
+      _convertAmountToBaseCurrency(
+        state.spoke,
+        state.debtReserve.assetId,
+        state.userTotalReserveDebt.balanceBefore - state.debtToLiq
+      )
+    );
+    console.log('test state.minLeftoverAmount %e', state.minLeftoverAmount);
+
+    state.naiveLeftoverDebtAmount = state.userTotalReserveDebt.balanceBefore - state.debtToLiq;
+    if (
+      !(state.naiveLeftoverDebtAmount < state.minLeftoverAmount &&
+        state.naiveLeftoverDebtAmount != 0)
+    ) {
+      vm.expectEmit(address(state.spoke));
+      emit ISpokeBase.LiquidationCall(
+        state.collateralReserve.assetId,
+        state.debtReserve.assetId,
+        alice,
+        state.debtToLiq,
+        state.collToLiq,
+        LIQUIDATOR
+      );
+    } else {
+      vm.expectRevert(LiquidationLogic.MustNotLeaveDust.selector);
+    }
+
     vm.prank(LIQUIDATOR);
     state.spoke.liquidationCall(
       collateralReserveIds[collateralReserveIndex],

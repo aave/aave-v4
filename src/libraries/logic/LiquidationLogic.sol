@@ -179,6 +179,18 @@ library LiquidationLogic {
       vars.debtToLiquidateInBaseCurrency = vars.baseCollateral;
     }
 
+    console.log('LL totalDebtInBaseCurrency %e', params.totalDebtInBaseCurrency);
+    console.log('LL debtToLiquidateInBaseCurrency %e', vars.debtToLiquidateInBaseCurrency);
+
+    vars.leftoverDebtBase =
+      ((params.totalBorrowerReserveDebt - vars.debtAmountNeeded) * params.debtAssetPrice).toWad() /
+      params.debtAssetUnit;
+
+    console.log('LL leftoverDebtBase %e', vars.leftoverDebtBase);
+    if (vars.leftoverDebtBase != 0 && vars.leftoverDebtBase < MIN_LEFTOVER_BASE) {
+      revert MustNotLeaveDust();
+    }
+
     vars.hasDeficit =
       vars.debtToLiquidateInBaseCurrency < params.totalDebtInBaseCurrency &&
       vars.collateralToLiquidateInBaseCurrency == params.totalCollateralInBaseCurrency;

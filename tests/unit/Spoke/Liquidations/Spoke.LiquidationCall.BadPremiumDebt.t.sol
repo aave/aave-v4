@@ -267,7 +267,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
       state.liquidationFeeAmount,
       ,
       state.hasDust
-    ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
+    ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
     uint256 debtAssetId = state.debtReserve.assetId;
     DataTypes.UserPosition memory userPosition = state.spoke.getUserPosition(debtReserveId, alice);

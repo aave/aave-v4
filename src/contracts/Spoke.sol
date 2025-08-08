@@ -1185,6 +1185,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.totalDebtInBaseCurrency
     ) = _calculateUserAccountData(user);
 
+    console.log('SP totalDebtInBaseCurrency %e', vars.totalDebtInBaseCurrency);
+
     _validateLiquidationCall(
       collateralReserve,
       debtReserve,

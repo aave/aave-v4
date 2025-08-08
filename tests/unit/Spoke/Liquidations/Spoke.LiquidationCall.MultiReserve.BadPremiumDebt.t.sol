@@ -377,7 +377,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       state.liquidationFeeAmount,
       ,
       state.hasDust
-    ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
+    ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
     ReportDeficitEvent[] memory expectedLogs = new ReportDeficitEvent[](debtReserveIds.length);
 
