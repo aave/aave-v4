@@ -41,22 +41,7 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_getInterestRateData() public view {
-    assertEq(
-      rateStrategy.getInterestRateData(mockAssetId).optimalUsageRatio,
-      rateData.optimalUsageRatio
-    );
-    assertEq(
-      rateStrategy.getInterestRateData(mockAssetId).baseVariableBorrowRate,
-      rateData.baseVariableBorrowRate
-    );
-    assertEq(
-      rateStrategy.getInterestRateData(mockAssetId).variableRateSlope1,
-      rateData.variableRateSlope1
-    );
-    assertEq(
-      rateStrategy.getInterestRateData(mockAssetId).variableRateSlope2,
-      rateData.variableRateSlope2
-    );
+    assertEq(rateStrategy.getInterestRateData(mockAssetId), rateData);
   }
 
   function test_getOptimalUsageRatio() public view {

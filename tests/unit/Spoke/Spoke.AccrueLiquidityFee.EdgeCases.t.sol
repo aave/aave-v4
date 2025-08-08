@@ -127,30 +127,32 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
     updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
 
-    uint256 totalBorrowed;
     uint256 count = vm.randomUint(10, 1000);
     for (uint256 i; i < count; ++i) {
       address user = makeUser(i);
       uint256 borrowAmount = vm.randomUint(1, MAX_SUPPLY_AMOUNT / count);
       _backedBorrow(spoke1, user, reserveId, reserveId, borrowAmount);
-      totalBorrowed += borrowAmount;
     }
+    uint256 totalOwedBefore = hub1.getAssetTotalOwed(assetId);
 
     skip(vm.randomUint(1, MAX_SKIP_TIME));
 
-    uint256 totalRepaid;
+    uint256 feesAccrued;
     for (uint256 i; i < count; ++i) {
       address user = makeUser(i); // deterministic operation
-      uint256 debt = spoke1.getUserTotalDebt(reserveId, user);
-      deal(spoke1, reserveId, user, debt);
-      Utils.repay(spoke1, reserveId, user, debt, user);
-      totalRepaid += debt;
-    }
+      uint256 totalOwedAfter = hub1.getAssetTotalOwed(assetId);
+      Utils.repay(spoke1, reserveId, user, 1, user); // accrue interest & realize premium
+      assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
 
-    assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke1)), 0, 'all debt should be repaid');
-    uint256 feesAccruedToTreasury = hub1.getSpokeAddedAmount(assetId, address(treasurySpoke));
-    assertLe(feesAccruedToTreasury, totalRepaid - totalBorrowed, 'fees <= accrued');
-    assertApproxEqRel(feesAccruedToTreasury, totalRepaid - totalBorrowed, 0.0000001e18); // 0.00001%
+      feesAccrued += totalOwedAfter - totalOwedBefore;
+      totalOwedBefore = totalOwedAfter;
+
+      uint256 actualFeesAccrued = hub1.getSpokeAddedAmount(assetId, address(treasurySpoke));
+      assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18); // 0.00001%
+      assertLe(actualFeesAccrued, feesAccrued, 'actual fees <= expected fees');
+
+      skip(vm.randomUint(0, MAX_SKIP_TIME / count));
+    }
   }
 
   function test_accrueLiquidityFee_maxLiquidityFee_multi_spoke() public {
@@ -166,7 +168,6 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       }
     }
 
-    uint256 totalBorrowed;
     uint256 count = vm.randomUint(10, 1000);
     for (uint256 i; i < count; ++i) {
       address user = makeUser(i);
@@ -174,24 +175,28 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       ISpoke spoke = spokes[i % spokes.length]; // to deterministically pick random spoke
       uint256 reserveId = _reserveId(spoke, assetId);
       _backedBorrow(spoke, user, reserveId, reserveId, borrowAmount);
-      totalBorrowed += borrowAmount;
     }
+    uint256 totalOwedBefore = hub1.getAssetTotalOwed(assetId);
 
     skip(vm.randomUint(1, MAX_SKIP_TIME));
 
-    uint256 totalRepaid;
+    uint256 feesAccrued;
     for (uint256 i; i < count; ++i) {
       address user = makeUser(i); // deterministic operation
       ISpoke spoke = spokes[i % spokes.length]; // deterministic operation
       uint256 reserveId = _reserveId(spoke, assetId);
-      uint256 debt = spoke.getUserTotalDebt(reserveId, user);
-      deal(spoke, reserveId, user, debt);
-      Utils.repay(spoke, reserveId, user, debt, user);
-      totalRepaid += debt;
-    }
+      uint256 totalOwedAfter = hub1.getAssetTotalOwed(assetId);
+      Utils.repay(spoke, reserveId, user, 1, user); // accrue interest & realize premium
+      assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
 
-    uint256 feesAccruedToTreasury = hub1.getSpokeAddedAmount(assetId, address(treasurySpoke));
-    assertLe(feesAccruedToTreasury, totalRepaid - totalBorrowed, 'fees <= accrued');
-    assertApproxEqRel(feesAccruedToTreasury, totalRepaid - totalBorrowed, 0.0000001e18); // 0.00001%
+      feesAccrued += totalOwedAfter - totalOwedBefore;
+      totalOwedBefore = totalOwedAfter;
+
+      uint256 actualFeesAccrued = hub1.getSpokeAddedAmount(assetId, address(treasurySpoke));
+      assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18); // 0.00001%
+      assertLe(actualFeesAccrued, feesAccrued, 'actual fees <= expected fees');
+
+      skip(vm.randomUint(0, MAX_SKIP_TIME / count));
+    }
   }
 }
