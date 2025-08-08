@@ -266,10 +266,12 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       bob
     );
 
-    (
-      uint256 hfAfterBorrow,
-      uint256[] memory requiredDebtAmounts
-    ) = _borrowMultipleReservesToBeBelowHf(state.spoke, alice, debtReserveIds, state.desiredHf);
+    (uint256 hfAfterBorrow, ) = _borrowMultipleReservesToBeBelowHf(
+      state.spoke,
+      alice,
+      debtReserveIds,
+      state.desiredHf
+    );
 
     state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
       state.collateralReserves[collateralReserveIndex].reserveId,
@@ -295,6 +297,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
     console.log(
+      'test state.collToLiq %e %e',
+      state.collToLiq + state.liquidationFeeAmount,
+      state.userSuppliedAmount.balanceBefore
+    );
+    console.log(
       'test state.debtToLiq %e %e',
       state.debtToLiq,
       state.userTotalReserveDebt.balanceBefore
@@ -310,10 +317,15 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     console.log('test state.minLeftoverAmount %e', state.minLeftoverAmount);
 
     state.naiveLeftoverDebtAmount = state.userTotalReserveDebt.balanceBefore - state.debtToLiq;
+    // conditions for dust remaining that results in revert:
+    // 1. naiveLeftoverDebtAmount < minLeftoverAmount threshold
+    // 2. naiveLeftoverDebtAmount != 0 (non-zero dust)
+    // 3. total collateral seized (incl liq fee) != userSuppliedAmount.balanceBefore (collateral reserve is not fully liquidated)
     state.hasDustFromAvailableCollateral = (state.naiveLeftoverDebtAmount <
       state.minLeftoverAmount &&
-      state.naiveLeftoverDebtAmount != 0);
-    // if dust remains after accounting for available collateral, revert
+      state.naiveLeftoverDebtAmount != 0 &&
+      state.collToLiq + state.liquidationFeeAmount != state.userSuppliedAmount.balanceBefore);
+    // if debt dust remains after accounting for available collateral, revert
     if (state.hasDustFromAvailableCollateral) {
       vm.expectRevert(LiquidationLogic.MustNotLeaveDust.selector);
     } else {

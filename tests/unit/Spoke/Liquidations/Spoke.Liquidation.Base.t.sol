@@ -335,10 +335,12 @@ contract SpokeLiquidationBase is SpokeBase {
       state.minLeftoverAmount
     );
     // either position is fully liquidated, or no dust remains
+    // however, dust can remain if collateral reserve is fully liquidated
     assertTrue(
       state.userTotalReserveDebt.balanceAfter == 0 ||
-        state.userTotalReserveDebt.balanceAfter >= state.minLeftoverAmount,
-      string.concat('no dust ', label)
+        state.userTotalReserveDebt.balanceAfter >= state.minLeftoverAmount ||
+        state.userSuppliedShares.balanceAfter == 0,
+      string.concat('no remaining dust ', label)
     );
   }
 
@@ -767,7 +769,7 @@ contract SpokeLiquidationBase is SpokeBase {
         actualDebtToLiquidate,
         liquidationFeeAmount,
         hasDeficit
-      ) = _calculateCollateralAndDebtToLiquidate(state, params, debtToCover);
+      ) = calculateAvailableCollateralToLiquidate(state, params, debtToCover);
     } else {
       actualCollateralToLiquidate = 0;
       actualDebtToLiquidate = 0;
@@ -776,7 +778,7 @@ contract SpokeLiquidationBase is SpokeBase {
     }
   }
 
-  function _calculateCollateralAndDebtToLiquidate(
+  function calculateAvailableCollateralToLiquidate(
     LiquidationTestLocalParams memory state,
     DataTypes.LiquidationCallLocalVars memory params,
     uint256 debtToCover

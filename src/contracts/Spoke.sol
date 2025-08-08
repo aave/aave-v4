@@ -1218,7 +1218,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     ) = vars.calculateAvailableCollateralToLiquidate();
 
     console.log(
-      'debt %e, debt to liq %e',
+      'SP initial debt %e, debt to liq %e',
       drawnReserveDebt + premiumReserveDebt,
       vars.actualDebtToLiquidate
     );

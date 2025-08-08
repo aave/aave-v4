@@ -65,6 +65,7 @@ library LiquidationLogic {
     uint256 actualDebtToLiquidate = maxLiquidatableDebt.min(params.debtToRestoreCloseFactor);
     uint256 remainingDebtInBaseCurrency = ((params.totalBorrowerReserveDebt -
       actualDebtToLiquidate) * params.debtAssetPrice).toWad() / params.debtAssetUnit;
+    /// debt to collateral conversion?
 
     console.log('LL remainingDebtInBaseCurrency %e', remainingDebtInBaseCurrency);
     console.log('LL actualDebtToLiquidate %e', actualDebtToLiquidate);
@@ -184,7 +185,10 @@ library LiquidationLogic {
       vars.collateralToLiquidateInBaseCurrency == params.totalCollateralInBaseCurrency;
 
     // if deficit, then potential dust debt will be reported as deficit
-    if (!vars.hasDeficit) {
+    if (
+      vars.collateralAmount < params.borrowerCollateralBalance &&
+      vars.debtAmountNeeded < params.totalBorrowerReserveDebt
+    ) {
       console.log('LL totalBorrowerReserveDebt %e', params.totalBorrowerReserveDebt);
       console.log('LL debtAmountNeeded %e', vars.debtAmountNeeded);
 
@@ -194,7 +198,7 @@ library LiquidationLogic {
         params.debtAssetUnit;
 
       console.log('LL leftoverDebtBase %e', vars.leftoverDebtBase);
-      if (vars.leftoverDebtBase != 0 && vars.leftoverDebtBase < MIN_LEFTOVER_BASE) {
+      if (vars.leftoverDebtBase < MIN_LEFTOVER_BASE) {
         revert MustNotLeaveDust();
       }
     }
