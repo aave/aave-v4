@@ -19,6 +19,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
         MIN_LEFTOVER_BASE
       );
     }
+    updateCloseFactor(spoke1, 1.05e18);
   }
 
   /// single coll/debt reserve, no fee, no bonus
@@ -61,13 +62,8 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
 
     LiqScenarioTestData memory state;
 
-    // collateral: dai
-    state.collAmount.dai = 500 * 10 ** decimals.dai; // $500 dai
-    // debt: usdx
-    state.debtAmount.usdx = 1_000 * 10 ** decimals.usdx; // $1k usdx
-
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, state.collAmount.dai, alice);
-    _borrowWithoutHfCheck(spoke1, alice, _usdxReserveId(spoke1), state.debtAmount.usdx);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
+    _borrowWithoutHfCheck(spoke1, alice, _usdxReserveId(spoke1), usdxAmount);
 
     // deficit should be reported
     vm.expectCall(address(hub1), abi.encodeWithSelector(hub1.reportDeficit.selector));
@@ -91,25 +87,24 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
   ) public {
     daiAmount = bound(
       daiAmount,
-      _convertBaseCurrencyToAmount(spoke1, _daiReserveId(spoke1), 2e26), // $2 - $1000
-      minLeftoverAmount[_daiReserveId(spoke1)]
+      _convertBaseCurrencyToAmount(spoke1, _daiReserveId(spoke1), 1e26), // $1 - $500
+      minLeftoverAmount[_daiReserveId(spoke1)] / 2
     );
     usdxAmount = bound(
       usdxAmount,
-      _convertBaseCurrencyToAmount(spoke1, _usdxReserveId(spoke1), 1e26), // $1 - $500
-      minLeftoverAmount[_usdxReserveId(spoke1)] / 2
+      _convertBaseCurrencyToAmount(
+        spoke1,
+        _usdxReserveId(spoke1),
+        _convertAmountToBaseCurrency(spoke1, _daiReserveId(spoke1), daiAmount) * 2
+      ), // at least double the collateral
+      minLeftoverAmount[_usdxReserveId(spoke1)]
     );
-    debtToCover = bound(debtToCover, 1, usdxAmount);
+    debtToCover = bound(debtToCover, 1, usdxAmount - 1);
 
     LiqScenarioTestData memory state;
 
-    // collateral: dai
-    state.collAmount.dai = 500 * 10 ** decimals.dai; // $500 dai
-    // debt: usdx
-    state.debtAmount.usdx = 1_000 * 10 ** decimals.usdx; // $1k usdx
-
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, state.collAmount.dai, alice);
-    _borrowWithoutHfCheck(spoke1, alice, _usdxReserveId(spoke1), state.debtAmount.usdx);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
+    _borrowWithoutHfCheck(spoke1, alice, _usdxReserveId(spoke1), usdxAmount);
 
     vm.expectRevert(abi.encodeWithSelector(LiquidationLogic.MustNotLeaveDust.selector));
 

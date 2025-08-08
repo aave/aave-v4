@@ -69,7 +69,9 @@ library LiquidationLogic {
 
     console.log('LL remainingDebtInBaseCurrency %e', remainingDebtInBaseCurrency);
     console.log('LL actualDebtToLiquidate %e', actualDebtToLiquidate);
+    console.log('LL debtToCover %e', debtToCover);
     console.log('LL debtToRestoreCloseFactor %e', params.debtToRestoreCloseFactor);
+    console.log('LL totalBorrowerReserveDebt %e', params.totalBorrowerReserveDebt);
     console.log('LL actualDebtToLiquidate == debtToCover', actualDebtToLiquidate == debtToCover);
 
     // only adjust actualDebtToLiquidate if there is non zero dust remaining
@@ -78,6 +80,7 @@ library LiquidationLogic {
 
       // revert if debtToCover is the min value and has been set too low
       if (debtToCover == actualDebtToLiquidate) {
+        console.log('LL dust debtToCover');
         revert MustNotLeaveDust();
       }
 
@@ -89,6 +92,7 @@ library LiquidationLogic {
           params.debtAssetUnit <
         MIN_LEFTOVER_BASE
       ) {
+        console.log('LL dust debtToRestoreCloseFactor');
         revert MustNotLeaveDust();
       } else {
         // if debtToCover is valid, return min(debtToCover, totalBorrowerReserveDebt)
