@@ -81,6 +81,7 @@ library LiquidationLogic {
       // revert if debtToCover is the min value and has been set too low
       if (debtToCover == actualDebtToLiquidate) {
         console.log('LL dust debtToCover');
+        // revert('LL dust debtToCover');
         revert MustNotLeaveDust();
       }
 
@@ -92,9 +93,10 @@ library LiquidationLogic {
           params.debtAssetUnit <
         MIN_LEFTOVER_BASE
       ) {
-        console.log('LL dust debtToRestoreCloseFactor');
+        // revert('LL dust debtToRestoreCloseFactor');
         revert MustNotLeaveDust();
       } else {
+        revert('readjust');
         console.log('LL dust readjust');
         // if debtToCover is valid, return min(debtToCover, totalBorrowerReserveDebt)
         actualDebtToLiquidate = maxLiquidatableDebt;
