@@ -94,9 +94,10 @@ library LiquidationLogic {
         MIN_LEFTOVER_BASE
       ) {
         // revert('LL dust debtToRestoreCloseFactor');
+        console.log('LL dust debtToRestoreCloseFactor');
         revert MustNotLeaveDust();
       } else {
-        revert('readjust');
+        // revert('readjust');
         console.log('LL dust readjust');
         // if debtToCover is valid, return min(debtToCover, totalBorrowerReserveDebt)
         actualDebtToLiquidate = maxLiquidatableDebt;
@@ -191,24 +192,25 @@ library LiquidationLogic {
       vars.debtToLiquidateInBaseCurrency < params.totalDebtInBaseCurrency &&
       vars.collateralToLiquidateInBaseCurrency == params.totalCollateralInBaseCurrency;
 
-    // dust is allowed in debt reserve if all reserve collateral is seized
-    if (
-      vars.collateralAmount < params.borrowerCollateralBalance &&
-      vars.debtAmountNeeded < params.totalBorrowerReserveDebt
-    ) {
-      console.log('LL totalBorrowerReserveDebt %e', params.totalBorrowerReserveDebt);
-      console.log('LL debtAmountNeeded %e', vars.debtAmountNeeded);
+    // // dust is allowed in debt reserve if all reserve collateral is seized
+    // if (
+    //   vars.collateralAmount < params.borrowerCollateralBalance &&
+    //   vars.debtAmountNeeded < params.totalBorrowerReserveDebt
+    // ) {
+    //   console.log('LL totalBorrowerReserveDebt %e', params.totalBorrowerReserveDebt);
+    //   console.log('LL debtAmountNeeded %e', vars.debtAmountNeeded);
 
-      vars.leftoverDebtBase =
-        ((params.totalBorrowerReserveDebt - vars.debtAmountNeeded) * params.debtAssetPrice)
-          .toWad() /
-        params.debtAssetUnit;
+    //   vars.leftoverDebtBase =
+    //     ((params.totalBorrowerReserveDebt - vars.debtAmountNeeded) * params.debtAssetPrice)
+    //       .toWad() /
+    //     params.debtAssetUnit;
 
-      console.log('LL leftoverDebtBase %e', vars.leftoverDebtBase);
-      if (vars.leftoverDebtBase < MIN_LEFTOVER_BASE) {
-        revert MustNotLeaveDust();
-      }
-    }
+    //   console.log('LL leftoverDebtBase %e', vars.leftoverDebtBase);
+    //   if (vars.leftoverDebtBase < MIN_LEFTOVER_BASE) {
+    //     revert MustNotLeaveDust();
+    //     // revert('dust after liquidation');
+    //   }
+    // }
 
     if (params.liquidationFee != 0) {
       uint256 bonusCollateral = vars.collateralAmount -
