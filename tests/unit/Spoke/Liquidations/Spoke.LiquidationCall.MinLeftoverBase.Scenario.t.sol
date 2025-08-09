@@ -94,31 +94,18 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
   {
     test_liquidationCall_fuzz_debtBelowThreshold_revertsWith_MustNotLeaveDust_debtToCover({
       daiAmount: 500e18,
-      usdxAmount: 1000e6,
       debtToCover: 100e6
     });
   }
 
   function test_liquidationCall_fuzz_debtBelowThreshold_revertsWith_MustNotLeaveDust_debtToCover(
     uint256 daiAmount,
-    uint256 usdxAmount,
     uint256 debtToCover
   ) public {
     daiAmount = bound(
       daiAmount,
       _convertBaseCurrencyToAmount(spoke1, _daiReserveId(spoke1), 1e26), // $1 - $500
       minLeftoverAmount[_daiReserveId(spoke1)] / 2
-    );
-    usdxAmount = bound(
-      usdxAmount,
-      _convertBaseCurrencyToAmount(
-        spoke1,
-        _usdxReserveId(spoke1),
-        _convertAmountToBaseCurrency(spoke1, _daiReserveId(spoke1), daiAmount).percentMulUp(
-          collateralFactor
-        )
-      ) + 1, // ensure liquidatable
-      minLeftoverAmount[_usdxReserveId(spoke1)]
     );
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
     (, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
@@ -189,7 +176,6 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     console.log('debtToRestoreCloseFactor %e', debtToRestoreCloseFactor);
 
     vm.expectRevert(abi.encodeWithSelector(LiquidationLogic.MustNotLeaveDust.selector));
-
     // liquidation call with invalid debt to cover
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
@@ -284,17 +270,6 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
     _borrowWithoutHfCheck(spoke1, alice, _usdxReserveId(spoke1), usdxAmount);
 
-    // console.log(
-    //   'coll %e debt %e',
-    //   spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), alice),
-    //   spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice)
-    // );
-
-    // either a valid input amount, or amount is adjusted to cover all debt, resulting in deficit
-    // bool shouldReportDeficit = debtToCover > usdxAmount ||
-    //   _convertAmountToBaseCurrency(spoke1, _usdxReserveId(spoke1), debtToCover) >=
-    //   _convertAmountToBaseCurrency(spoke1, _daiReserveId(spoke1), daiAmount);
-
     // deficit should be reported
     vm.expectCall(address(hub1), abi.encodeWithSelector(hub1.reportDeficit.selector));
     vm.prank(LIQUIDATOR);
@@ -331,11 +306,72 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     // // assertEq(spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice), 0, 'debt');
   }
 
-  // function test_liquidationCall_debtAboveThreshold_deficit_scenario3() public {
-  //   test_liquidationCall_fuzz_debtAboveThreshold_deficit({
-  //     daiAmount: 5_000e18,
-  //     usdxAmount: 5_500e6,
-  //     debtToCover: 4_000e6
-  //   });
-  // }
+  function test_liquidationCall_debtAboveThreshold_revertsWith_MustNotLeaveDust_debtToCover()
+    public
+  {
+    uint256 daiAmount = 5_000e18;
+    uint256 usdxAmount = 7_500e6;
+    uint256 debtToCover = 7_000e6;
+
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
+    _borrowWithoutHfCheck(spoke1, alice, _usdxReserveId(spoke1), usdxAmount);
+
+    // liquidation call with invalid debt to cover
+    vm.expectRevert(abi.encodeWithSelector(LiquidationLogic.MustNotLeaveDust.selector));
+    vm.prank(LIQUIDATOR);
+    spoke1.liquidationCall({
+      collateralReserveId: _daiReserveId(spoke1),
+      debtReserveId: _usdxReserveId(spoke1),
+      user: alice,
+      debtToCover: debtToCover
+    });
+  }
+
+  function test_liquidationCall_fuzz_debtAboveThreshold_revertsWith_MustNotLeaveDust_debtToCover(
+    uint256 daiAmount,
+    uint256 debtToCover
+  ) public {
+    daiAmount = bound(
+      daiAmount,
+      minLeftoverAmount[_daiReserveId(spoke1)],
+      minLeftoverAmount[_daiReserveId(spoke1)] * 1e6 // $1M
+    );
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
+    (, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
+      spoke1,
+      alice,
+      _usdxReserveId(spoke1),
+      0.75e18 // low HF to ensure that debtToRestoreCloseFactor is greater than requiredDebtAmount
+    );
+
+    uint256 debtToRestoreCloseFactor = calcDebtToRestoreCloseFactor(
+      spoke1,
+      _usdxReserveId(spoke1),
+      alice,
+      liquidationBonus,
+      closeFactor
+    );
+
+    console.log('debtToRestoreCloseFactor %e', debtToRestoreCloseFactor);
+    console.log('requiredDebtAmount %e', requiredDebtAmount);
+
+    // bound debtToCover to be an amount that results in dust debt
+    debtToCover = bound(
+      debtToCover,
+      _min(debtToRestoreCloseFactor, requiredDebtAmount) -
+        minLeftoverAmount[_usdxReserveId(spoke1)] +
+        1,
+      _min(debtToRestoreCloseFactor, requiredDebtAmount) - 1
+    );
+
+    // liquidation call with invalid debt to cover
+    vm.expectRevert(abi.encodeWithSelector(LiquidationLogic.MustNotLeaveDust.selector));
+    vm.prank(LIQUIDATOR);
+    spoke1.liquidationCall({
+      collateralReserveId: _daiReserveId(spoke1),
+      debtReserveId: _usdxReserveId(spoke1),
+      user: alice,
+      debtToCover: debtToCover
+    });
+  }
 }
