@@ -6,9 +6,8 @@ import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.s
 
 contract SpokeBase is Base {
   using SafeCast for *;
-  using PercentageMath for uint256;
+  using PercentageMath for *;
   using WadRayMath for uint256;
-  using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
   struct Debts {
@@ -168,7 +167,6 @@ contract SpokeBase is Base {
   }
 
   /// @dev Opens a debt position for a random user, using same asset as collateral and borrow
-  /// @return user address
   function _openDebtPosition(
     ISpoke spoke,
     uint256 reserveId,
@@ -197,7 +195,7 @@ contract SpokeBase is Base {
     });
 
     // debt
-    uint256 cachedCollateralRisk;
+    uint24 cachedCollateralRisk;
     if (withPremium) {
       cachedCollateralRisk = _getCollateralRisk(spoke, reserveId);
       updateCollateralRisk(spoke, reserveId, 50_00);
@@ -245,7 +243,7 @@ contract SpokeBase is Base {
   }
 
   function deal(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
-    IERC20 underlying = IERC20(spoke.getReserve(reserveId).underlying);
+    IERC20 underlying = getAssetUnderlyingByReserveId(spoke, reserveId);
     if (underlying.balanceOf(user) < amount) {
       deal(address(underlying), user, amount);
     }
@@ -444,33 +442,6 @@ contract SpokeBase is Base {
       TokenData({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(address(hub1))});
   }
 
-  function _calcMinimumCollAmount(
-    ISpoke spoke,
-    uint256 collReserveId,
-    uint256 debtReserveId,
-    uint256 debtAmount
-  ) internal view returns (uint256) {
-    if (debtAmount == 0) return 1;
-
-    IPriceOracle oracle = spoke.oracle();
-    DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
-    DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
-    uint256 collPrice = oracle.getReservePrice(collReserveId);
-    uint256 collAssetUnits = 10 ** hub1.getAsset(collData.assetId).decimals;
-
-    DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
-    uint256 debtAssetUnits = 10 ** hub1.getAsset(debtData.assetId).decimals;
-    uint256 debtPrice = oracle.getReservePrice(debtReserveId);
-
-    uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadDivDown(debtAssetUnits);
-    uint256 normalizedCollPrice = collPrice.wadDivDown(collAssetUnits);
-
-    return
-      normalizedDebtAmount.wadDivUp(
-        normalizedCollPrice.toWad().percentMulDown(colDynConf.collateralFactor)
-      );
-  }
-
   function _calcMaxDebtAmount(
     ISpoke spoke,
     uint256 collReserveId,
@@ -623,13 +594,14 @@ contract SpokeBase is Base {
   ) internal view returns (DataTypes.UserPosition memory userPos) {
     (uint256 riskPremium, , , , ) = spoke.getUserAccountData(user);
 
-    userPos.drawnShares = hub1.convertToDrawnShares(assetId, debtAmount);
-    userPos.premiumShares = hub1.convertToDrawnShares(assetId, debtAmount).percentMulUp(
-      riskPremium
-    );
-    userPos.premiumOffset = hub1.convertToDrawnAssets(assetId, userPos.premiumShares);
-    userPos.realizedPremium = expectedRealizedPremium;
-    userPos.suppliedShares = hub1.convertToAddedShares(assetId, suppliedAmount);
+    userPos.drawnShares = hub1.convertToDrawnShares(assetId, debtAmount).toUint128();
+    userPos.premiumShares = hub1
+      .convertToDrawnShares(assetId, debtAmount)
+      .percentMulUp(riskPremium)
+      .toUint128();
+    userPos.premiumOffset = hub1.convertToDrawnAssets(assetId, userPos.premiumShares).toUint128();
+    userPos.realizedPremium = expectedRealizedPremium.toUint128();
+    userPos.suppliedShares = hub1.convertToAddedShares(assetId, suppliedAmount).toUint128();
   }
 
   /// calculated expected realized premium
@@ -638,10 +610,12 @@ contract SpokeBase is Base {
     ISpoke spoke,
     uint256 reserveId,
     address user
-  ) internal view returns (uint256) {
+  ) internal view returns (uint128) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     DataTypes.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
-    return hub1.convertToDrawnAssets(assetId, userPos.premiumShares) - userPos.premiumOffset;
+    return
+      (hub1.convertToDrawnAssets(assetId, userPos.premiumShares) - userPos.premiumOffset)
+        .toUint128();
   }
 
   /// assert that realized premium matches naively calculated value
@@ -721,9 +695,14 @@ contract SpokeBase is Base {
 
   function assertEq(DataTypes.Reserve memory a, DataTypes.Reserve memory b) internal pure {
     assertEq(a.reserveId, b.reserveId, 'reserve Id');
+    assertEq(address(a.hub), address(b.hub), 'hub');
     assertEq(a.assetId, b.assetId, 'asset Id');
-    assertEq(a.underlying, b.underlying, 'Asset addresses mismatch');
-    assertEq(a.config, b.config);
+    assertEq(a.decimals, b.decimals, 'decimals');
+    assertEq(a.dynamicConfigKey, b.dynamicConfigKey, 'dynamicConfigKey');
+    assertEq(a.paused, b.paused, 'paused');
+    assertEq(a.frozen, b.frozen, 'frozen');
+    assertEq(a.borrowable, b.borrowable, 'borrowable');
+    assertEq(a.collateralRisk, b.collateralRisk, 'collateralRisk');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
@@ -870,6 +849,35 @@ contract SpokeBase is Base {
     return userRP / utilizedSupply;
   }
 
+  function _getExpectedPremiumDelta(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 repayAmount
+  ) internal returns (DataTypes.PremiumDelta memory) {
+    DataTypes.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
+    Debts memory userDebt = getUserDebt(spoke, user, reserveId);
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+
+    DataTypes.PremiumDelta memory expectedPremiumDelta = DataTypes.PremiumDelta({
+      sharesDelta: -int256(uint256(userPosition.premiumShares)),
+      offsetDelta: -int256(uint256(userPosition.premiumOffset)),
+      realizedDelta: 0
+    });
+
+    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPosition.premiumShares) -
+      userPosition.premiumOffset;
+    (, uint256 premiumDebtRestored) = _calculateExactRestoreAmount(
+      userDebt.drawnDebt,
+      userDebt.premiumDebt,
+      repayAmount,
+      assetId
+    );
+    expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumDebtRestored);
+
+    return expectedPremiumDelta;
+  }
+
   function _getSpokeDynConfigKeys(ISpoke spoke) internal view returns (DynamicConfig[] memory) {
     uint256 reserveCount = spoke.getReserveCount();
     DynamicConfig[] memory configs = new DynamicConfig[](reserveCount);
@@ -954,7 +962,7 @@ contract SpokeBase is Base {
 
   function _nextDynamicConfigKey(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
     uint16 dynamicConfigKey = spoke.getReserve(reserveId).dynamicConfigKey;
-    return uint16(uint256(dynamicConfigKey + 1) % type(uint16).max);
+    return (dynamicConfigKey + 1) % type(uint16).max;
   }
 
   function _randomUninitializedConfigKey(
@@ -972,7 +980,7 @@ contract SpokeBase is Base {
     uint16 configKey = _nextDynamicConfigKey(spoke, reserveId);
     if (spoke.getDynamicReserveConfig(reserveId, configKey).liquidationBonus != 0) {
       // all config keys are initialized
-      return vm.randomUint(0, uint256(type(uint16).max)).toUint16();
+      return vm.randomUint(0, type(uint16).max).toUint16();
     }
     return vm.randomUint(0, spoke.getReserve(reserveId).dynamicConfigKey).toUint16();
   }

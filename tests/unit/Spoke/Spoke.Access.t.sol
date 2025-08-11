@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccessTest is SpokeBase {
+  using SafeCast for uint256;
+
   /// @dev Test showing that the hub functions can only be called by spokes, and not by users.
   function testAccess_hub_functions_callable_by_spokes() public {
     // Users are not allowed to directly call the hub functions
@@ -57,7 +59,7 @@ contract SpokeAccessTest is SpokeBase {
     );
     spoke1.updateLiquidationConfig(
       DataTypes.LiquidationConfig({
-        closeFactor: WadRayMath.WAD,
+        closeFactor: WadRayMath.WAD.toUint128(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18
       })
@@ -67,7 +69,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(address(SPOKE_ADMIN));
     spoke1.updateLiquidationConfig(
       DataTypes.LiquidationConfig({
-        closeFactor: WadRayMath.WAD,
+        closeFactor: WadRayMath.WAD.toUint128(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18
       })
@@ -80,7 +82,7 @@ contract SpokeAccessTest is SpokeBase {
     );
     spoke1.addReserve(
       address(hub1),
-      4,
+      dai2AssetId,
       reserveSource,
       DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
@@ -94,7 +96,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      4,
+      dai2AssetId,
       reserveSource,
       DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
@@ -179,7 +181,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(
       DataTypes.LiquidationConfig({
-        closeFactor: WadRayMath.WAD,
+        closeFactor: WadRayMath.WAD.toUint128(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18
       })

@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 /// tests with bad debt across multiple reserves that includes accrued premium debt
 contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
+  using SafeCast for *;
 
   struct BorrowMultipleReservesToBeAboveHealthyHf {
     uint256 requiredDebtInBase;
@@ -64,9 +65,9 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   function test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1(
     uint256 collateralReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 skipTimeToAccruePremium,
     uint256 debtReserveIndex
@@ -146,9 +147,9 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   function test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2(
     uint256 collateralReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 skipTimeToAccruePremium,
     uint256 debtReserveIndex
@@ -227,9 +228,9 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   function test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario3(
     uint256 collateralReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 skipTimeToAccruePremium,
     uint256 debtReserveIndex
@@ -265,12 +266,12 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   /// non-variable liquidation bonus
   function _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
     uint256 collateralReserveId,
     uint256[] memory debtReserveIds,
     uint256 debtReserveIndex,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 skipTimeForPremiumAccrual
   ) internal returns (LiquidationTestLocalParams memory) {
@@ -298,8 +299,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       liqBonus,
       MIN_LIQUIDATION_BONUS,
       PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
-    );
-    state.liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
+    ).toUint32();
+    state.liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 10e26),
@@ -389,9 +390,9 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         expectedDeficitShares = userPosition.drawnShares;
         expectedDeficitAmount = state.spoke.getUserTotalDebt(reserveId, alice);
         expectedDeficitPremiumDelta = DataTypes.PremiumDelta(
-          -int256(userPosition.premiumShares),
-          -int256(userPosition.premiumOffset),
-          -int256(userPosition.realizedPremium)
+          -userPosition.premiumShares.toInt256(),
+          -userPosition.premiumOffset.toInt256(),
+          -userPosition.realizedPremium.toInt256()
         );
         // for debt asset being liquidated, some debt is restored prior to deficit creation
       } else {
@@ -453,8 +454,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.underlying,
-      state.debtReserve.underlying,
+      state.collateralReserve.assetId,
+      state.debtReserve.assetId,
       state.user,
       state.debtToLiq,
       state.collToLiq,

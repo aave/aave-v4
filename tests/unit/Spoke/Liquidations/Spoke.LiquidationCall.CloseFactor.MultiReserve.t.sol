@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
+  using SafeCast for uint256;
 
   uint256 internal dustInBase = 10e26; // $10 in base currency
 
@@ -164,13 +165,13 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   /// fuzz test with multiple collateral/debt reserves
   function _execLiqCallCloseFactorTestMulti(
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmountInBase,
     uint256[] memory collateralReserveIds,
     uint256[] memory debtReserveIds,
     uint256 collateralReserveIndex,
     uint256 debtReserveIndex,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) internal returns (LiquidationTestLocalParams memory) {
@@ -195,8 +196,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       PercentageMath.PERCENTAGE_FACTOR.percentDivDown(
         state.collDynConfigs[collateralReserveIndex].collateralFactor
       )
-    );
-    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
+    ).toUint32();
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     supplyAmountInBase = bound(
       supplyAmountInBase,
       dustInBase * state.debtReserves.length, // enough to cover dust for all debt reserves
@@ -282,8 +283,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.underlying,
-      state.debtReserve.underlying,
+      state.collateralReserve.assetId,
+      state.debtReserve.assetId,
       alice,
       state.debtToLiq,
       state.collToLiq,

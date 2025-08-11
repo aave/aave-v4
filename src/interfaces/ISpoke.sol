@@ -102,6 +102,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event LiquidationConfigUpdate(DataTypes.LiquidationConfig config);
 
   error ReserveNotListed();
+  error ReserveExists();
   error AssetNotListed();
   error InvalidCollateralRisk();
   error InsufficientSupply(uint256 supply);
@@ -291,10 +292,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   ) external view returns (uint256);
 
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
-
-  function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
-
-  function MAX_COLLATERAL_RISK() external view returns (uint256);
 
   function oracle() external view returns (IAaveOracle);
 }

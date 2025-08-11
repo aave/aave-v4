@@ -5,6 +5,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubDrawTest is HubBase {
   using SharesMath for uint256;
+  using SafeCast for uint256;
 
   function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 amount) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
@@ -303,7 +304,7 @@ contract HubDrawTest is HubBase {
     uint256 rate,
     uint256 skipTime
   ) public {
-    drawCap = uint56(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals() - 1;
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -389,7 +390,7 @@ contract HubDrawTest is HubBase {
   }
 
   function test_draw_fuzz_revertsWith_DrawCapExceeded(uint56 drawCap) public {
-    drawCap = uint56(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
     uint256 drawAmount = daiAmount + 1;
 
