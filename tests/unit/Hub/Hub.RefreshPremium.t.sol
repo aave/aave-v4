@@ -4,6 +4,41 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubRefreshPremiumTest is HubBase {
+  using SafeCast for *;
+
+  struct PremiumDataLocal {
+    uint256 premiumShares;
+    uint256 premiumOffset;
+    uint256 realizedPremium;
+  }
+
+  function _loadAssetPremiumData(uint256 assetId) internal view returns (PremiumDataLocal memory) {
+    DataTypes.Asset memory asset = hub1.getAsset(assetId);
+    return PremiumDataLocal(asset.premiumShares, asset.premiumOffset, asset.realizedPremium);
+  }
+
+  function _applyPremiumDelta(
+    PremiumDataLocal memory premiumData,
+    DataTypes.PremiumDelta memory premiumDelta
+  ) internal pure returns (PremiumDataLocal memory) {
+    premiumData.premiumShares = uint256(
+      int256(premiumData.premiumShares) + premiumDelta.sharesDelta
+    );
+    premiumData.premiumOffset = uint256(
+      int256(premiumData.premiumOffset) + premiumDelta.offsetDelta
+    );
+    premiumData.realizedPremium = uint256(
+      int256(premiumData.realizedPremium) + premiumDelta.realizedDelta
+    );
+    return premiumData;
+  }
+
+  function _assertEq(PremiumDataLocal memory a, PremiumDataLocal memory b) internal pure {
+    assertEq(a.premiumShares, b.premiumShares, 'premium shares do not match');
+    assertEq(a.premiumOffset, b.premiumOffset, 'premium offset do not match');
+    assertEq(a.realizedPremium, b.realizedPremium, 'realized premium do not match');
+  }
+
   function test_refreshPremium_revertsWith_SpokeNotActive() public {
     DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
       sharesDelta: 0,
@@ -17,6 +52,8 @@ contract HubRefreshPremiumTest is HubBase {
   }
 
   function test_refreshPremium_emitsEvent() public {
+    PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(daiAssetId);
+
     DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
       sharesDelta: 1,
       offsetDelta: 1,
@@ -27,6 +64,11 @@ contract HubRefreshPremiumTest is HubBase {
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
+
+    _assertEq(
+      _loadAssetPremiumData(daiAssetId),
+      _applyPremiumDelta(premiumDataBefore, premiumDelta)
+    );
   }
 
   /// @dev offsetDelta can't be more than sharesDelta or else underflow
@@ -44,15 +86,27 @@ contract HubRefreshPremiumTest is HubBase {
       offsetDelta: int256(offsetDelta),
       realizedDelta: int256(realizedDelta)
     });
+
     uint256 assetId = daiAssetId;
+    PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(assetId);
+    bool reverting;
 
     if (offsetDelta > sharesDelta) {
+      reverting = true;
       vm.expectRevert(stdError.arithmeticError);
     } else if (sharesDelta - offsetDelta + realizedDelta > 2) {
+      reverting = true;
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
     }
     vm.prank(address(spoke1));
     hub1.refreshPremium(assetId, premiumDelta);
+
+    if (!reverting) {
+      _assertEq(
+        _loadAssetPremiumData(assetId),
+        _applyPremiumDelta(premiumDataBefore, premiumDelta)
+      );
+    }
   }
 
   function test_refreshPremium_negativeNumbers(
@@ -64,6 +118,7 @@ contract HubRefreshPremiumTest is HubBase {
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
 
     DataTypes.Asset memory asset = hub1.getAsset(assetId);
+    PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(assetId);
 
     sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares);
     offsetDeltaPos = bound(offsetDeltaPos, sharesDeltaPos, sharesDeltaPos + 2);
@@ -82,6 +137,8 @@ contract HubRefreshPremiumTest is HubBase {
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(assetId, premiumDelta);
+
+    _assertEq(_loadAssetPremiumData(assetId), _applyPremiumDelta(premiumDataBefore, premiumDelta));
   }
 
   function test_refreshPremium_negativeNumbers_withAccrual(
@@ -96,6 +153,8 @@ contract HubRefreshPremiumTest is HubBase {
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 1e18, bob);
 
     DataTypes.Asset memory asset = hub1.getAsset(assetId);
+    PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(assetId);
+    bool reverting;
 
     sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares);
     offsetDeltaPos = bound(offsetDeltaPos, 0, asset.premiumOffset);
@@ -120,18 +179,26 @@ contract HubRefreshPremiumTest is HubBase {
 
     // Note that we flip these pos numbers to negative
     if (realizedDeltaPos > asset.realizedPremium) {
+      reverting = true;
       vm.expectRevert(stdError.arithmeticError);
     } else if (premiumAssetsPos > offsetDeltaPos) {
       premiumDelta.offsetDelta = -int256(premiumAssetsPos);
       if (premiumAssetsPos > asset.premiumOffset) {
         // set both shares diff and offset diff to match offset
         premiumDelta.sharesDelta = -int256(hub1.convertToDrawnShares(assetId, asset.premiumOffset));
-        premiumDelta.offsetDelta = -int256(uint256(asset.premiumOffset));
+        premiumDelta.offsetDelta = -asset.premiumOffset.toInt256();
       }
     }
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(assetId, premiumDelta);
+
+    if (!reverting) {
+      _assertEq(
+        _loadAssetPremiumData(assetId),
+        _applyPremiumDelta(premiumDataBefore, premiumDelta)
+      );
+    }
   }
 
   function test_refreshPremium_fuzz_withAccrual(
@@ -151,6 +218,8 @@ contract HubRefreshPremiumTest is HubBase {
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 1e18, bob);
 
     DataTypes.Asset memory asset = hub1.getAsset(assetId);
+    PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(assetId);
+    bool reverting;
 
     // Initial user position
     userPremiumShares = bound(userPremiumShares, 0, asset.premiumShares);
@@ -174,18 +243,25 @@ contract HubRefreshPremiumTest is HubBase {
     });
 
     if (
-      premiumDelta.sharesDelta < 0 &&
-      -premiumDelta.sharesDelta > int256(uint256(asset.premiumShares))
+      premiumDelta.sharesDelta < 0 && -premiumDelta.sharesDelta > asset.premiumShares.toInt256()
     ) {
+      reverting = true;
       vm.expectRevert(stdError.arithmeticError);
     } else if (
-      premiumDelta.offsetDelta < 0 &&
-      -premiumDelta.offsetDelta > int256(uint256(asset.premiumOffset))
+      premiumDelta.offsetDelta < 0 && -premiumDelta.offsetDelta > asset.premiumOffset.toInt256()
     ) {
+      reverting = true;
       vm.expectRevert(stdError.arithmeticError);
     }
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(assetId, premiumDelta);
+
+    if (!reverting) {
+      _assertEq(
+        _loadAssetPremiumData(assetId),
+        _applyPremiumDelta(premiumDataBefore, premiumDelta)
+      );
+    }
   }
 }
