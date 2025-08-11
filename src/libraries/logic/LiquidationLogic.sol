@@ -14,8 +14,8 @@ library LiquidationLogic {
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
   /**
-   * @dev This constant represents the minimum amount of assets in base currency that need to be leftover after a liquidation, if not clearing a position completely.
-   * @notice The default value assumes that the basePrice is usd denominated by 26 decimals and needs to be adjusted in a non USD-denominated pool.
+   * @dev This constant represents the minimum amount of assets in base currency that need to be leftover after a liquidation, if not clearing collateral on a position completely.
+   * @notice The default value assumes that the basePrice is usd denominated by 26 decimals.
    */
   uint256 constant MIN_LEFTOVER_BASE = 1000e26;
 
@@ -65,14 +65,14 @@ library LiquidationLogic {
     uint256 remainingDebtInBaseCurrency = ((params.totalBorrowerReserveDebt -
       actualDebtToLiquidate) * params.debtAssetPrice).toWad() / params.debtAssetUnit;
 
-    // only adjust actualDebtToLiquidate if there is non zero dust remaining
+    // check for non zero debt dust remaining
     if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE && remainingDebtInBaseCurrency != 0) {
-      // revert if debtToCover is the min value and has been set too low
+      // revert if debtToCover is the min value as it has been set too low
       if (debtToCover == actualDebtToLiquidate) {
         revert MustNotLeaveDust();
       }
       // at this point, debtToRestoreCloseFactor is min value
-      // if debtToCover also returns dust, revert
+      // check if debtToCover also returns dust; if so, revert
       if (
         debtToCover < params.totalBorrowerReserveDebt &&
         ((params.totalBorrowerReserveDebt - debtToCover) * params.debtAssetPrice).toWad() /
