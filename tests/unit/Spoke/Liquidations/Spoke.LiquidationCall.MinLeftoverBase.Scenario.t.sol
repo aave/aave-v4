@@ -31,15 +31,15 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     updateCloseFactor(spoke1, 1.05e18);
   }
 
-  function test_liquidationCall_debtBelowThreshold() public {
-    test_liquidationCall_fuzz_debtBelowThreshold_deficit({
+  function test_liquidationCall_borrowerReserveDebtBelowThreshold() public {
+    test_liquidationCall_fuzz_borrowerReserveDebtBelowThreshold_deficit({
       daiAmount: 500e18,
       usdxAmount: 1000e6,
       debtToCover: UINT256_MAX
     });
   }
 
-  function test_liquidationCall_fuzz_debtBelowThreshold_deficit(
+  function test_liquidationCall_fuzz_borrowerReserveDebtBelowThreshold_deficit(
     uint256 daiAmount,
     uint256 usdxAmount,
     uint256 debtToCover
@@ -89,16 +89,16 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     assertEq(spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice), 0, 'debt');
   }
 
-  function test_liquidationCall_debtBelowThreshold_revertsWith_MustNotLeaveDust_debtToCover()
+  function test_liquidationCall_borrowerReserveDebtBelowThreshold_revertsWith_MustNotLeaveDust_debtToCover()
     public
   {
-    test_liquidationCall_fuzz_debtBelowThreshold_revertsWith_MustNotLeaveDust_debtToCover({
+    test_liquidationCall_fuzz_borrowerReserveDebtBelowThreshold_revertsWith_MustNotLeaveDust_debtToCover({
       daiAmount: 500e18,
       debtToCover: 100e6
     });
   }
 
-  function test_liquidationCall_fuzz_debtBelowThreshold_revertsWith_MustNotLeaveDust_debtToCover(
+  function test_liquidationCall_fuzz_borrowerReserveDebtBelowThreshold_revertsWith_MustNotLeaveDust_debtToCover(
     uint256 daiAmount,
     uint256 debtToCover
   ) public {
@@ -137,15 +137,15 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     });
   }
 
-  function test_liquidationCall_debtBelowThreshold_revertsWith_MustNotLeaveDust_debtToRestoreCloseFactor()
+  function test_liquidationCall_borrowerReserveDebtBelowThreshold_revertsWith_MustNotLeaveDust_debtToRestoreCloseFactor()
     public
   {
-    test_liquidationCall_fuzz_debtBelowThreshold_revertsWith_MustNotLeaveDust_debtToRestoreCloseFactor({
+    test_liquidationCall_fuzz_borrowerReserveDebtBelowThreshold_revertsWith_MustNotLeaveDust_debtToRestoreCloseFactor({
       daiAmount: 500e18,
       debtToCover: 100e6
     });
   }
-  function test_liquidationCall_fuzz_debtBelowThreshold_revertsWith_MustNotLeaveDust_debtToRestoreCloseFactor(
+  function test_liquidationCall_fuzz_borrowerReserveDebtBelowThreshold_revertsWith_MustNotLeaveDust_debtToRestoreCloseFactor(
     uint256 daiAmount,
     uint256 debtToCover
   ) public {
@@ -186,7 +186,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     });
   }
 
-  function test_liquidationCall_fuzz_debtBelowThreshold_readjustActualDebtToLiquidate(
+  function test_liquidationCall_fuzz_borrowerReserveDebtBelowThreshold_readjustActualDebtToLiquidate(
     uint256 daiAmount,
     uint256 debtToCover
   ) public {
@@ -226,23 +226,26 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     assertEq(spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice), 0, 'debt');
   }
 
-  function test_liquidationCall_debtAboveThreshold_deficit_scenario1() public {
-    test_liquidationCall_fuzz_debtAboveThreshold_deficit({
+  /// when debtToCover is greater than collateral amount, results in deficit
+  function test_liquidationCall_borrowerReserveDebtThreshold_deficit_scenario1() public {
+    test_liquidationCall_fuzz_borrowerReserveDebtThreshold_deficit({
       daiAmount: 5_000e18,
       usdxAmount: 10_000e6,
-      debtToCover: UINT256_MAX
+      debtToCover: UINT256_MAX // greater than collateral amount, results in deficit
     });
   }
 
-  function test_liquidationCall_debtAboveThreshold_deficit_scenario2() public {
-    test_liquidationCall_fuzz_debtAboveThreshold_deficit({
+  /// when debtToCover exactly covers collateral, results in deficit
+  function test_liquidationCall_borrowerReserveDebtThreshold_deficit_scenario2() public {
+    test_liquidationCall_fuzz_borrowerReserveDebtThreshold_deficit({
       daiAmount: 5_000e18,
       usdxAmount: 10_000e6,
-      debtToCover: 5_000e6
+      debtToCover: 5000e6 // exactly covers collateral, results in deficit
     });
   }
 
-  function test_liquidationCall_fuzz_debtAboveThreshold_deficit(
+  /// when debtToCover >= borrowerReserveDebt and results in deficit
+  function test_liquidationCall_fuzz_borrowerReserveDebtThreshold_deficit(
     uint256 daiAmount,
     uint256 usdxAmount,
     uint256 debtToCover
@@ -306,7 +309,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     // // assertEq(spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice), 0, 'debt');
   }
 
-  function test_liquidationCall_debtAboveThreshold_revertsWith_MustNotLeaveDust_debtToCover()
+  function test_liquidationCall_borrowerReserveDebtThreshold_revertsWith_MustNotLeaveDust_debtToCover()
     public
   {
     uint256 daiAmount = 5_000e18;
@@ -327,7 +330,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     });
   }
 
-  function test_liquidationCall_fuzz_debtAboveThreshold_revertsWith_MustNotLeaveDust_debtToCover(
+  function test_liquidationCall_fuzz_borrowerReserveDebtThreshold_revertsWith_MustNotLeaveDust_debtToCover(
     uint256 daiAmount,
     uint256 debtToCover
   ) public {
@@ -373,5 +376,83 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
       user: alice,
       debtToCover: debtToCover
     });
+  }
+
+  /// successful liquidation scenario, where debtToCover is valid and results in remaining debt amount > dust
+  function test_liquidationCall_borrowerReserveDebtThreshold_valid(
+    uint256 daiAmount,
+    uint256 usdxAmount,
+    uint256 debtToCover
+  ) public {
+    usdxAmount = bound(
+      usdxAmount,
+      minLeftoverAmount[_usdxReserveId(spoke1)] + 1,
+      minLeftoverAmount[_usdxReserveId(spoke1)] * 1e6 // $1M
+    );
+    // ensure more collateral than debt, no deficit
+    // but not more than allowed by collateral factor, to ensure HF is < 1
+    uint256 minDaiAmount = _convertBaseCurrencyToAmount(
+      spoke1,
+      _daiReserveId(spoke1),
+      _convertAmountToBaseCurrency(spoke1, _usdxReserveId(spoke1), usdxAmount)
+    );
+    daiAmount = bound(
+      daiAmount,
+      minDaiAmount + 1, // min collateral that prevents deficit
+      minDaiAmount.percentDivDown(collateralFactor) - 1 // max collateral allowed that keeps HF < 1
+    );
+    // ensure debtToCover does not result in dust debt
+    debtToCover = bound(
+      debtToCover,
+      1,
+      _min(
+        usdxAmount - minLeftoverAmount[_usdxReserveId(spoke1)],
+        _convertBaseCurrencyToAmount(
+          spoke1,
+          _usdxReserveId(spoke1),
+          _convertAmountToBaseCurrency(spoke1, _daiReserveId(spoke1), daiAmount)
+        )
+      )
+    );
+
+    // console.log('usdxAmount %e', usdxAmount);
+    // console.log('daiAmount %e', daiAmount);
+    // console.log('debtToCover %e', debtToCover);
+
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
+    _borrowWithoutHfCheck(spoke1, alice, _usdxReserveId(spoke1), usdxAmount);
+
+    // console.log('HF %e', spoke1.getHealthFactor(alice));
+    // uint256 actualDebtToLiquidate = calcDebtToRestoreCloseFactor(
+    //   spoke1,
+    //   _usdxReserveId(spoke1),
+    //   alice,
+    //   liquidationBonus,
+    //   closeFactor
+    // );
+    // console.log('actualDebtToLiquidate %e', actualDebtToLiquidate);
+
+    // deficit should be reported
+    vm.expectCall(address(hub1), abi.encodeWithSelector(hub1.reportDeficit.selector), 0);
+    vm.prank(LIQUIDATOR);
+    spoke1.liquidationCall({
+      collateralReserveId: _daiReserveId(spoke1),
+      debtReserveId: _usdxReserveId(spoke1),
+      user: alice,
+      debtToCover: debtToCover
+    });
+    console.log(
+      'test remaining coll %e debt %e',
+      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), alice),
+      spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice)
+    );
+    // no deficit, so collateral should remain
+    assertGt(spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), alice), 0, 'collateral');
+    // no dust should remain
+    assertGe(
+      spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice),
+      minLeftoverAmount[_usdxReserveId(spoke1)],
+      'debt'
+    );
   }
 }

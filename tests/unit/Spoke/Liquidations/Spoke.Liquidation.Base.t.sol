@@ -788,7 +788,7 @@ contract SpokeLiquidationBase is SpokeBase {
       params.totalDebtInBaseCurrency
     ) = state.spoke.getUserAccountData(state.user);
 
-    (params.actualDebtToLiquidate, hasDustFromDebt) = _calculateActualDebtToLiquidate(
+    (params.actualDebtToLiquidate, hasDustFromDebt) = calculateActualDebtToLiquidate(
       state,
       debtToCover
     );
@@ -885,7 +885,7 @@ contract SpokeLiquidationBase is SpokeBase {
 
   /// helper to calculate actual collateral to liquidate, replicating LiquidationLogic.calculateActualDebtToLiquidate.
   /// @return actualDebtToLiquidate Amount of actual debt to liquidate.
-  function _calculateActualDebtToLiquidate(
+  function calculateActualDebtToLiquidate(
     LiquidationTestLocalParams memory state,
     uint256 debtToCover
   ) internal view returns (uint256 actualDebtToLiquidate, bool hasDustFromDebt) {
