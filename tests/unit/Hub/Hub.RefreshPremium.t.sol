@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubRefreshPremiumTest is HubBase {
@@ -134,6 +136,75 @@ contract HubRefreshPremiumTest is HubBase {
     hub1.refreshPremium(assetId, premiumDelta);
   }
 
+  // TODO: Test matching Dhairya's python script methodology
+  function test_refreshPremium_fuzz_withAccrual(
+    uint256 borrowAmount,
+    uint256 userPremiumShares,
+    uint256 userAccruedPremium,
+    uint256 userPremiumSharesNew
+  ) public {
+    uint256 assetId = daiAssetId;
+    uint256 skipTime = vm.randomUint(0, MAX_SKIP_TIME);
+
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
+    skip(skipTime);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 1e18, bob);
+
+    DataTypes.Asset memory asset = hub1.getAsset(assetId);
+
+    // Initial user position
+    userPremiumShares = bound(userPremiumShares, 0, asset.premiumShares);
+    //vm.assume(hub1.convertToDrawnAssets(assetId, asset.premiumShares) >= asset.premiumOffset);
+    userAccruedPremium = bound(
+      userAccruedPremium,
+      0,
+      hub1.convertToDrawnAssets(assetId, asset.premiumShares) - asset.premiumOffset
+    );
+    vm.assume(hub1.convertToDrawnAssets(assetId, userPremiumShares) >= userAccruedPremium);
+    uint256 userPremiumOffset = hub1.convertToDrawnAssets(assetId, userPremiumShares) -
+      userAccruedPremium;
+
+    // New user position
+    userPremiumSharesNew = bound(userPremiumSharesNew, 0, MAX_SUPPLY_AMOUNT / 2);
+    uint256 userPremiumOffsetNew = hub1.previewDrawByShares(assetId, userPremiumSharesNew);
+
+    console.log('userPremiumSharesNew: %s', userPremiumSharesNew);
+    console.log('userPremiumShares: %s', userPremiumShares);
+    console.log('userPremiumOffsetNew: %s', userPremiumOffsetNew);
+    console.log('userPremiumOffset: %s', userPremiumOffset);
+    console.log('userAccruedPremium: %s', userAccruedPremium);
+
+    DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
+      sharesDelta: int256(userPremiumSharesNew) - int256(userPremiumShares),
+      offsetDelta: int256(userPremiumOffsetNew) - int256(userPremiumOffset),
+      realizedDelta: int256(userAccruedPremium)
+    });
+
+    // Logging for debugging
+    if (premiumDelta.sharesDelta > 0) {
+      console.log('premium shares delta: %s', uint256(premiumDelta.sharesDelta));
+    } else {
+      console.log('premium shares delta: -%s', uint256(-premiumDelta.sharesDelta));
+    }
+    if (premiumDelta.offsetDelta > 0) {
+      console.log('premium offset delta: %s', uint256(premiumDelta.offsetDelta));
+    } else {
+      console.log('premium offset delta: -%s', uint256(-premiumDelta.offsetDelta));
+    }
+    if (premiumDelta.realizedDelta > 0) {
+      console.log('premium realized delta: %s', uint256(premiumDelta.realizedDelta));
+    } else {
+      console.log('premium realized delta: -%s', uint256(-premiumDelta.realizedDelta));
+    }
+
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(assetId, premiumDelta);
+  }
+
+  /*
   // TODO: A strategy where I just calculate what will happen in advance and proceed accordingly
   // TODO: A strategy where I fix one number and adjust the rest to follow
   function test_refreshPremium_fuzz_withAccrual(
@@ -224,8 +295,9 @@ contract HubRefreshPremiumTest is HubBase {
         }
       }
     }
+    */
 
-    /*
+  /*
     if (offsetDelta > sharesDelta) {
       vm.expectRevert(stdError.arithmeticError);
     } else if (sharesDelta - offsetDelta + realizedDelta > 2) {
@@ -233,6 +305,7 @@ contract HubRefreshPremiumTest is HubBase {
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
     }
     */
+  /*
     if (premiumAssetsDelta > 0) {
       console.log('premiumAssetsDelta: %s', uint256(premiumAssetsDelta));
     } else {
@@ -267,6 +340,7 @@ contract HubRefreshPremiumTest is HubBase {
     vm.prank(address(spoke1));
     hub1.refreshPremium(assetId, premiumDelta);
   }
+  */
 
   /*
   // TODO: Write a fuzz test with positive or negative numbers, with debt accrual
