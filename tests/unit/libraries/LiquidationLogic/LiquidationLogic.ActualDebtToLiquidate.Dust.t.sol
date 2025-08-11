@@ -226,10 +226,6 @@ contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTe
       params
     );
 
-    console.log('debtToCover', debtToCover);
-    console.log('params.debtToRestoreCloseFactor', params.debtToRestoreCloseFactor);
-    console.log('params.totalBorrowerReserveDebt', params.totalBorrowerReserveDebt);
-
     assertTrue(isDustAmountExpected);
     assertEq(naiveDebtToLiquidate, _min(params.debtToRestoreCloseFactor, debtToCover));
 
@@ -322,10 +318,6 @@ contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTe
     DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
     params.totalBorrowerReserveDebt = bound(params.totalBorrowerReserveDebt, 2, minLeftoverAmount);
     debtToCover = bound(debtToCover, 1, params.totalBorrowerReserveDebt - 1);
-
-    console.log('debtToCover', debtToCover);
-    console.log('params.totalBorrowerReserveDebt', params.totalBorrowerReserveDebt);
-    console.log('params.debtToRestoreCloseFactor', params.debtToRestoreCloseFactor);
 
     vm.expectRevert(LiquidationLogic.MustNotLeaveDust.selector);
     LiquidationLogic.calculateActualDebtToLiquidate(params, debtToCover);

@@ -358,13 +358,6 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state,
     string memory label
   ) internal pure {
-    console.log('debtAssetId', state.debtReserve.assetId);
-    console.log('collAssetId', state.collateralReserve.assetId);
-    console.log(
-      'dust assertion %e minLeftoverAmt %e',
-      state.userTotalReserveDebt.balanceAfter,
-      state.minLeftoverAmount
-    );
     // either position is fully liquidated, or no dust remains
     // however, dust can remain if collateral reserve is fully liquidated
     assertTrue(
@@ -739,7 +732,6 @@ contract SpokeLiquidationBase is SpokeBase {
     }
 
     isZero = !(hasCollateralWithRisk && totalDebtInBaseCurrency > 0);
-    console.log('test totalDebtInBaseCurrency %e', totalDebtInBaseCurrency, hasCollateralWithRisk);
   }
 
   /**
@@ -839,7 +831,6 @@ contract SpokeLiquidationBase is SpokeBase {
     vars.maxCollateralToLiquidate = vars.baseCollateral.percentMulDown(params.liquidationBonus);
 
     if (vars.maxCollateralToLiquidate >= vars.borrowerCollateralBalanceInBaseCurrency) {
-      console.log('TEST maxCollateralToLiquidate >= borrowerCollateralBalanceInBaseCurrency');
       vars.collateralAmount = params.borrowerCollateralBalance;
       vars.debtAmountNeeded = ((params.debtAssetUnit * vars.borrowerCollateralBalanceInBaseCurrency)
         .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).fromWadDown();
@@ -848,7 +839,6 @@ contract SpokeLiquidationBase is SpokeBase {
         (vars.debtAmountNeeded * params.debtAssetPrice).toWad() /
         params.debtAssetUnit;
     } else {
-      console.log('TEST maxCollateralToLiquidate < borrowerCollateralBalanceInBaseCurrency');
       // add 1 to round collateral amount up, ensuring HF is always <= close factor
       vars.collateralAmount =
         ((vars.maxCollateralToLiquidate * params.collateralAssetUnit) / params.collateralAssetPrice)
@@ -860,9 +850,6 @@ contract SpokeLiquidationBase is SpokeBase {
         params.collateralAssetUnit;
       vars.debtToLiquidateInBaseCurrency = vars.baseCollateral;
     }
-
-    console.log('LL totalDebtInBaseCurrency %e', params.totalDebtInBaseCurrency);
-    console.log('LL debtToLiquidateInBaseCurrency %e', vars.debtToLiquidateInBaseCurrency);
 
     vars.hasDeficit =
       vars.debtToLiquidateInBaseCurrency < params.totalDebtInBaseCurrency &&
@@ -923,8 +910,6 @@ contract SpokeLiquidationBase is SpokeBase {
         hasDustFromDebt = true;
       }
     }
-
-    console.log('test actualDebtToLiquidate %e', actualDebtToLiquidate);
 
     return (actualDebtToLiquidate, hasDustFromDebt);
   }

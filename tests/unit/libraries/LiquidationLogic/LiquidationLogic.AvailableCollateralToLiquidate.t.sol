@@ -91,13 +91,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
         calcDebtAmountNeeded(params) + calculateMinLeftoverBaseAmount(params) ||
         params.totalBorrowerReserveDebt == calcDebtAmountNeeded(params)
     );
-    // console.log('Test %e %e', params.totalBorrowerReserveDebt, calcDebtAmountNeeded(params));
-    // console.log(
-    //   'Test %e %e %e',
-    //   params.totalBorrowerReserveDebt,
-    //   calculateMinLeftoverBaseAmount(params),
-    //   calcDebtAmountNeeded(params) + calculateMinLeftoverBaseAmount(params)
-    // );
+
     uint256 leftoverDebtAmount = _convertAmountToBaseCurrency(
       params.totalBorrowerReserveDebt - calcDebtAmountNeeded(params),
       params.debtAssetPrice,
@@ -107,8 +101,6 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     DataTypes.LiquidationCallLocalVars memory vars = setStructFields(params);
 
     TestAvailableCollateralToLiquidate memory res;
-
-    console.log('leftoverDebtAmount %e', leftoverDebtAmount);
 
     if (leftoverDebtAmount < LiquidationLogic.MIN_LEFTOVER_BASE && leftoverDebtAmount != 0) {
       vm.expectRevert(LiquidationLogic.MustNotLeaveDust.selector);
@@ -323,7 +315,6 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     );
     params.actualDebtToLiquidate = bound(params.actualDebtToLiquidate, 1, MAX_SUPPLY_AMOUNT);
 
-    console.log('calculateMinLeftoverBaseAmount %e', calculateMinLeftoverBaseAmount(params));
     params.totalBorrowerReserveDebt = bound(
       params.totalBorrowerReserveDebt,
       calculateMinLeftoverBaseAmount(params),

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -1185,8 +1183,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.totalDebtInBaseCurrency
     ) = _calculateUserAccountData(user);
 
-    console.log('SP totalDebtInBaseCurrency %e', vars.totalDebtInBaseCurrency);
-
     _validateLiquidationCall(
       collateralReserve,
       debtReserve,
@@ -1216,12 +1212,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.liquidationFeeAmount,
       vars.hasDeficit
     ) = vars.calculateAvailableCollateralToLiquidate();
-
-    console.log(
-      'SP initial debt %e, debt to liq %e',
-      drawnReserveDebt + premiumReserveDebt,
-      vars.actualDebtToLiquidate
-    );
 
     (vars.drawnDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
       drawnReserveDebt,

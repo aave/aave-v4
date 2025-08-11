@@ -296,26 +296,6 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.hasDustFromDebt
     ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
-    console.log(
-      'test state.collToLiq %e %e',
-      state.collToLiq + state.liquidationFeeAmount,
-      state.userSuppliedAmount.balanceBefore
-    );
-    console.log(
-      'test state.debtToLiq %e %e',
-      state.debtToLiq,
-      state.userTotalReserveDebt.balanceBefore
-    );
-    console.log(
-      'test leftover %e',
-      _convertAmountToBaseCurrency(
-        state.spoke,
-        state.debtReserve.assetId,
-        state.userTotalReserveDebt.balanceBefore - state.debtToLiq
-      )
-    );
-    console.log('test state.minLeftoverAmount %e', state.minLeftoverAmount);
-
     state.naiveLeftoverDebtAmount = state.userTotalReserveDebt.balanceBefore - state.debtToLiq;
     // conditions for dust remaining that results in revert:
     // 1. naiveLeftoverDebtAmount < minLeftoverAmount threshold
