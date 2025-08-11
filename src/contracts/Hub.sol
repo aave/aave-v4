@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
@@ -303,13 +301,10 @@ contract Hub is IHub, AccessManaged {
     require(spoke.active, SpokeNotActive());
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
 
-    console.log('made it past accrue');
-
     // no premium change allowed
     _applyPremiumDelta(asset, spoke, premiumDelta, 0);
 
     emit RefreshPremium(assetId, msg.sender, premiumDelta);
-    console.log('exit from refreshPremium');
   }
 
   /// @inheritdoc IHub
@@ -557,31 +552,16 @@ contract Hub is IHub, AccessManaged {
     uint256 premiumBefore = asset.premium();
 
     asset.premiumShares = asset.premiumShares.add(premium.sharesDelta).toUint128();
-    console.log('added to asset premium shares');
     asset.premiumOffset = asset.premiumOffset.add(premium.offsetDelta).toUint128();
-    console.log('added to asset premium offset');
     asset.realizedPremium = asset.realizedPremium.add(premium.realizedDelta).toUint128();
-    console.log('added to asset realized premium');
 
     spoke.premiumShares = spoke.premiumShares.add(premium.sharesDelta).toUint128();
-    console.log('added to spoke premium shares');
     spoke.premiumOffset = spoke.premiumOffset.add(premium.offsetDelta).toUint128();
-    console.log('added to spoke premium offset');
     spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta).toUint128();
-    console.log('added to spoke realized premium');
-
-    console.log(
-      'in require statement, asset premium: %s, premiumAmount: %s, premiumBefore: %s',
-      asset.premium(),
-      premiumAmount,
-      premiumBefore
-    );
 
     // can increase due to precision loss on premium (drawn unchanged)
     // todo mathematically find premium diff ceiling and replace the `2`
     require(asset.premium() + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
-
-    console.log('past apply premium delta function');
   }
 
   function _transferShares(
