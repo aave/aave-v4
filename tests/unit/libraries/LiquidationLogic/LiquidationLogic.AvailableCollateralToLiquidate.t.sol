@@ -108,7 +108,9 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
 
     TestAvailableCollateralToLiquidate memory res;
 
-    if (leftoverDebtAmount < LiquidationLogic.MIN_LEFTOVER_BASE) {
+    console.log('leftoverDebtAmount %e', leftoverDebtAmount);
+
+    if (leftoverDebtAmount < LiquidationLogic.MIN_LEFTOVER_BASE && leftoverDebtAmount != 0) {
       vm.expectRevert(LiquidationLogic.MustNotLeaveDust.selector);
       LiquidationLogic.calculateAvailableCollateralToLiquidate(vars);
     }
@@ -130,7 +132,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
         calcDebtAmountNeeded(params),
         'actualDebtToLiquidate without lpfp'
       );
-      assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount without lpfp');
+      assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount without liquidationFee');
     } else {
       (uint256 collateralAmount, uint256 liquidationFeeAmount) = calcLiquidationFeeAmount(
         params,
