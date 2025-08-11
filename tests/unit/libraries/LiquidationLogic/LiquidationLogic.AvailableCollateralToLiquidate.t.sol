@@ -125,12 +125,12 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       assertEq(
         res.actualCollateralToLiquidate,
         params.borrowerCollateralBalance,
-        'actualCollateralToLiquidate without lpfp'
+        'actualCollateralToLiquidate without liquidationFee'
       );
       assertEq(
         res.actualDebtToLiquidate,
         calcDebtAmountNeeded(params),
-        'actualDebtToLiquidate without lpfp'
+        'actualDebtToLiquidate without liquidationFee'
       );
       assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount without liquidationFee');
     } else {
@@ -188,14 +188,14 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       assertEq(
         res.actualCollateralToLiquidate,
         actualCollateralToLiquidate,
-        'collateralAmount without lpfp'
+        'collateralAmount without liquidationFee'
       );
       assertEq(
         res.actualDebtToLiquidate,
         params.actualDebtToLiquidate,
-        'debtAmountNeeded without lpfp'
+        'debtAmountNeeded without liquidationFee'
       );
-      assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount without lpfp');
+      assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount without liquidationFee');
     } else {
       assertEq(
         res.actualCollateralToLiquidate,

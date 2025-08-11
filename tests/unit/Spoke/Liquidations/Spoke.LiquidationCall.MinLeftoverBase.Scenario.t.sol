@@ -70,7 +70,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     );
 
     // deficit should be reported
-    vm.expectCall(address(hub1), abi.encodeWithSelector(hub1.reportDeficit.selector));
+    vm.expectCall(address(hub1), abi.encodeWithSelector(hub1.reportDeficit.selector), 1);
     // liquidation call with max debt to cover, valid as it liquidates all debt
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
@@ -213,6 +213,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     );
     vm.assume(debtToCover >= requiredDebtAmount);
 
+    vm.expectCall(address(hub1), abi.encodeWithSelector(hub1.reportDeficit.selector), 0);
     // liquidation call with invalid debt to cover
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
@@ -224,6 +225,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
 
     // debt is readjusted to max liquidatable debt
     assertEq(spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice), 0, 'debt');
+    assertGt(spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), alice), 0, 'collateral');
   }
 
   /// when debtToCover is greater than collateral amount, results in deficit
@@ -274,7 +276,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     _borrowWithoutHfCheck(spoke1, alice, _usdxReserveId(spoke1), usdxAmount);
 
     // deficit should be reported
-    vm.expectCall(address(hub1), abi.encodeWithSelector(hub1.reportDeficit.selector));
+    vm.expectCall(address(hub1), abi.encodeWithSelector(hub1.reportDeficit.selector), 1);
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
       collateralReserveId: _daiReserveId(spoke1),
@@ -432,7 +434,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     // );
     // console.log('actualDebtToLiquidate %e', actualDebtToLiquidate);
 
-    // deficit should be reported
+    // deficit should not be reported
     vm.expectCall(address(hub1), abi.encodeWithSelector(hub1.reportDeficit.selector), 0);
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
