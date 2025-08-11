@@ -80,7 +80,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     debtReserveIds[1] = _daiReserveId(spoke1);
     debtReserveIds[2] = _usdxReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiReserveBadPremiumDebtTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -162,7 +162,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     debtReserveIds[1] = _wbtcReserveId(spoke1);
     debtReserveIds[2] = _usdyReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiReserveBadPremiumDebtTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -243,7 +243,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     debtReserveIds[1] = _usdxReserveId(spoke1);
     debtReserveIds[2] = _usdyReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiReserveBadPremiumDebtTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -264,7 +264,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   /// liquidating all collateral is insufficient to cover debt, bad debt remains
   /// close factor varies across range of values
   /// non-variable liquidation bonus
-  function _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
+  function _execLiqCallCloseFactorMultiReserveBadPremiumDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint32 liqBonus,
     uint256 supplyAmount,
@@ -458,8 +458,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.assetId,
-      state.debtReserve.assetId,
+      collateralReserveId,
+      debtReserveIds[state.debtReserveIndex],
       state.user,
       state.debtToLiq,
       state.collToLiq,

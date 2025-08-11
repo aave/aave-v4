@@ -1126,8 +1126,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.totalLiquidationFeeShares += vars.liquidationFeeShares;
 
       emit LiquidationCall(
-        vars.collateralAssetId,
-        vars.debtAssetId,
+        collateralReserveId,
+        debtReserveId,
         vars.user,
         vars.drawnDebtToLiquidate + vars.premiumDebtToLiquidate,
         vars.collateralToLiquidate,

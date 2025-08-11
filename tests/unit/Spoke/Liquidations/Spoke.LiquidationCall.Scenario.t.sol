@@ -527,8 +527,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.LiquidationCall(
-      spoke1.getReserve(state.wbtcReserveId).assetId,
-      spoke1.getReserve(state.wethReserveId).assetId,
+      state.wbtcReserveId,
+      state.wethReserveId,
       alice,
       state.liquidatedDebt,
       state.collAmount.wbtc,

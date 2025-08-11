@@ -331,8 +331,8 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     } else {
       vm.expectEmit(address(state.spoke));
       emit ISpokeBase.LiquidationCall(
-        state.collateralReserve.assetId,
-        state.debtReserve.assetId,
+        collateralReserveIds[collateralReserveIndex],
+        debtReserveIds[debtReserveIndex],
         alice,
         state.debtToLiq,
         state.collToLiq,
