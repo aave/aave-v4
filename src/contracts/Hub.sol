@@ -283,11 +283,11 @@ contract Hub is IHub, AccessManaged {
     uint128 assetShares = asset.drawnShares - drawnShares;
     uint128 spokeShares = spoke.drawnShares - drawnShares;
     uint256 totalDeficitAmount = drawnAmount + premiumAmount;
-    uint128 assetDeficit = asset.deficit + totalDeficitAmount.toUint128();
+    uint128 deficit = asset.deficit + totalDeficitAmount.toUint128();
 
     asset.drawnShares = assetShares;
     spoke.drawnShares = spokeShares;
-    asset.deficit = assetDeficit;
+    asset.deficit = deficit;
 
     asset.updateDrawnRate(assetId);
 
@@ -305,9 +305,13 @@ contract Hub is IHub, AccessManaged {
     _validateEliminateDeficit(asset, spoke, amount);
 
     uint128 shares = previewRemoveByAssets(assetId, amount).toUint128();
-    asset.addedShares -= shares;
-    spoke.addedShares -= shares;
-    asset.deficit -= amount.toUint128();
+    uint128 assetShares = asset.addedShares - shares;
+    uint128 spokeShares = spoke.addedShares - shares;
+    uint128 deficit = asset.deficit - amount.toUint128();
+
+    asset.addedShares = assetShares;
+    spoke.addedShares = spokeShares;
+    asset.deficit = deficit;
 
     asset.updateDrawnRate(assetId);
 
