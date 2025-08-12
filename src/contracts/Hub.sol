@@ -119,6 +119,7 @@ contract Hub is IHub, AccessManaged {
     asset.feeReceiver = config.feeReceiver;
     asset.liquidityFee = config.liquidityFee;
     asset.irStrategy = config.irStrategy;
+    asset.reinvestmentStrategy = config.reinvestmentStrategy;
 
     asset.updateDrawnRate(assetId);
 
@@ -237,10 +238,10 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     _validateRestore(asset, spoke, assetId, drawnAmount, premiumAmount, from);
 
-    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
     uint128 drawnShares = previewRestoreByAssets(assetId, drawnAmount).toUint128();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
+    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
     uint256 totalAmount = drawnAmount + premiumAmount;
     asset.liquidity += totalAmount.toUint128();
 
@@ -558,7 +559,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getswept(uint256 assetId) external view override returns (uint256) {
+  function getSwept(uint256 assetId) external view override returns (uint256) {
     return _assets[assetId].swept;
   }
 

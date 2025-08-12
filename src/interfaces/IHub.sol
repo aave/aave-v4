@@ -41,7 +41,18 @@ interface IHub is IHubBase, IAccessManaged {
   event AccrueFees(uint256 indexed assetId, uint256 shares);
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
 
+  /**
+   * @notice Emitted when an amount of liquidity is swept.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount swept.
+   */
   event Sweep(uint256 indexed assetId, uint256 amount);
+
+  /**
+   * @notice Emitted when an amount of liquidity is reclaimed.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount reclaimed.
+   */
   event Reclaim(uint256 indexed assetId, uint256 amount);
 
   /**
@@ -355,7 +366,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @param assetId The identifier of the asset.
    * @return The swept amount for the asset.
    */
-  function getswept(uint256 assetId) external view returns (uint256);
+  function getSwept(uint256 assetId) external view returns (uint256);
 
   function getDeficit(uint256 assetId) external view returns (uint256);
 

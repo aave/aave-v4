@@ -854,7 +854,7 @@ abstract contract Base is Test {
       tokenList.wbtc.decimals(),
       address(treasurySpoke),
       address(hub2IrStrategy),
-      address(0),      
+      address(0),
       encodedIrData
     );
     vm.stopPrank();
@@ -1195,7 +1195,8 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (IERC20) {
-    return IERC20(spoke.getReserve(reserveId).hub.getAsset(spoke.getReserve(reserveId).assetId).underlying);
+    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
+    return IERC20(reserve.hub.getAsset(reserve.assetId).underlying);
   }
 
   function getWithdrawalLimit(
@@ -1850,6 +1851,7 @@ abstract contract Base is Test {
     assertEq(a.feeReceiver, b.feeReceiver, 'feeReceiver');
     assertEq(a.liquidityFee, b.liquidityFee, 'liquidityFee');
     assertEq(a.irStrategy, b.irStrategy, 'irStrategy');
+    assertEq(a.reinvestmentStrategy, b.reinvestmentStrategy, 'reinvestmentStrategy');
     assertEq(abi.encode(a), abi.encode(b));
   }
 

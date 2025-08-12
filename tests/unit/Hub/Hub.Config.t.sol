@@ -162,7 +162,16 @@ contract HubConfigTest is HubBase {
     decimals = bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS).toUint8();
 
     vm.expectRevert(IHub.InvalidIrStrategy.selector);
-    Utils.addAsset(hub1, ADMIN, underlying, decimals, feeReceiver, address(0), address(0), encodedIrData);
+    Utils.addAsset(
+      hub1,
+      ADMIN,
+      underlying,
+      decimals,
+      feeReceiver,
+      address(0),
+      address(0),
+      encodedIrData
+    );
   }
 
   function test_addAsset_fuzz_reverts_InvalidIrData(
