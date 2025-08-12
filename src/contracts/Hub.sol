@@ -118,7 +118,7 @@ contract Hub is IHub, AccessManaged {
     asset.feeReceiver = config.feeReceiver;
     asset.liquidityFee = config.liquidityFee;
     asset.irStrategy = config.irStrategy;
-    asset.reinvestmentStrategy = config.reinvestmentStrategy;
+    asset.reinvestmentStrategy = config.reinvestmentStrategy; // optional
 
     asset.updateDrawnRate(assetId);
 

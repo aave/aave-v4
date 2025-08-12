@@ -136,7 +136,7 @@ contract HubConfiguratorTest is HubBase {
     uint256 expectedAssetId = hub1.getAssetCount();
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
 
-    bytes memory encodedIrData = abi.encode(
+    encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: optimalUsageRatio,
         baseVariableBorrowRate: baseVariableBorrowRate,
@@ -171,7 +171,7 @@ contract HubConfiguratorTest is HubBase {
     );
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    uint256 assetId = _addAsset(
+    assetId = _addAsset(
       fetchErc20Decimals,
       underlying,
       decimals,
@@ -185,6 +185,7 @@ contract HubConfiguratorTest is HubBase {
     assertEq(hub1.getAsset(assetId).decimals, decimals, 'asset decimals');
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
     assertEq(hub1.getSpokeConfig(assetId, feeReceiver), expectedSpokeConfig);
+    assertEq(hub1.getAsset(assetId).reinvestmentStrategy, address(0)); // should init to addr(0)
   }
 
   function test_updateLiquidityFee_revertsWith_OwnableUnauthorizedAccount() public {
@@ -194,7 +195,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateLiquidityFee_revertsWith_InvalidLiquidityFee() public {
-    uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+    assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
     uint16 liquidityFee = uint16(
       vm.randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
     );
@@ -229,7 +230,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateFeeReceiver_revertsWith_InvalidSpoke() public {
-    uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+    assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
 
     vm.expectRevert(IHub.InvalidSpoke.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -601,6 +602,24 @@ contract HubConfiguratorTest is HubBase {
     hubConfigurator.updateInterestRateStrategy(address(hub1), assetId, interestRateStrategy);
 
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
+  }
+
+  function test_updateReinvestmentStrategy_fuzz_revertsWith_OwnableUnauthorizedAccount(
+    address caller
+  ) public {
+    vm.assume(caller != HUB_CONFIGURATOR_ADMIN);
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
+    vm.prank(caller);
+    hubConfigurator.updateReinvestmentStrategy(address(hub1), vm.randomUint(), vm.randomAddress());
+  }
+
+  function test_updateReinvestmentStrategy() public {
+    address reinvestmentStrategy = makeAddr('newReinvestmentStrategy');
+    DataTypes.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
+    expectedConfig.reinvestmentStrategy = reinvestmentStrategy;
+    vm.expectCall(address(hub1), abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig)));
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateReinvestmentStrategy(address(hub1), assetId, reinvestmentStrategy);
   }
 
   function test_updateInterestRateStrategy_revertsWith_InvalidIrStrategy() public {
