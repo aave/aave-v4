@@ -364,8 +364,8 @@ contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTe
   // bound fuzz inputs
   function bound(
     TestDebtToRestoreCloseFactorParams memory params
-  ) internal override returns (TestDebtToRestoreCloseFactorParams memory) {
-    params = super.bound(params);
+  ) internal returns (TestDebtToRestoreCloseFactorParams memory) {
+    params = super._bound(params);
     // hardcode debt params for simplicity
     params.debtAssetPrice = DEBT_ASSET_PRICE;
     params.debtAssetUnit = DEBT_ASSET_UNIT;
