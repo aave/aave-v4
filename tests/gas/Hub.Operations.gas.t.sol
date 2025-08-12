@@ -68,18 +68,16 @@ contract HubOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  // todo validate refresh since notify will now call `refreshRiskPremium`
-  function test_accrueInterest() public {
-    vm.skip(true, 'to be replaced with refreshRiskPremium');
-    // vm.startPrank(address(spoke2));
-    // hub1.add(daiAssetId, 1000e18, bob);
-    // hub1.draw(daiAssetId, 500e18, bob);
-    // vm.stopPrank();
-    // vm.prank(address(spoke1));
-    // hub1.draw(daiAssetId, 500e18, alice);
-    // skip(100);
-    // vm.prank(address(spoke1));
-    // hub1.accrueInterest(daiAssetId);
-    // vm.snapshotGasLastCall('Hub.Operations', 'accrueInterest');
+  function test_refreshPremium() public {
+    vm.startPrank(address(spoke2));
+    hub1.add(daiAssetId, 1000e18, bob);
+    hub1.draw(daiAssetId, 500e18, bob);
+    vm.stopPrank();
+    vm.prank(address(spoke1));
+    hub1.draw(daiAssetId, 500e18, alice);
+    skip(100);
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(daiAssetId, DataTypes.PremiumDelta(1, 1, 1));
+    vm.snapshotGasLastCall('Hub.Operations', 'refreshPremium');
   }
 }
