@@ -161,11 +161,11 @@ contract Hub is IHub, AccessManaged {
 
     uint128 assetShares = asset.addedShares + shares;
     uint128 spokeShares = spoke.addedShares + shares;
-    uint128 assetLiquidity = asset.liquidity + amount.toUint128();
+    uint128 liquidity = asset.liquidity + amount.toUint128();
 
     asset.addedShares = assetShares;
     spoke.addedShares = spokeShares;
-    asset.liquidity = assetLiquidity;
+    asset.liquidity = liquidity;
 
     asset.updateDrawnRate(assetId);
 
@@ -185,9 +185,14 @@ contract Hub is IHub, AccessManaged {
     _validateRemove(asset, spoke, assetId, amount, to);
 
     uint128 shares = previewRemoveByAssets(assetId, amount).toUint128(); // non zero since we round up
-    asset.addedShares -= shares;
-    spoke.addedShares -= shares;
-    asset.liquidity -= amount.toUint128();
+
+    uint128 assetShares = asset.addedShares - shares;
+    uint128 spokeShares = spoke.addedShares - shares;
+    uint128 liquidity = asset.liquidity - amount.toUint128();
+
+    asset.addedShares = assetShares;
+    spoke.addedShares = spokeShares;
+    asset.liquidity = liquidity;
 
     asset.updateDrawnRate(assetId);
 
@@ -207,9 +212,14 @@ contract Hub is IHub, AccessManaged {
     _validateDraw(asset, spoke, assetId, amount, to);
 
     uint128 drawnShares = previewDrawByAssets(assetId, amount).toUint128(); // non zero since we round up
-    asset.drawnShares += drawnShares;
-    spoke.drawnShares += drawnShares;
-    asset.liquidity -= amount.toUint128();
+
+    uint128 assetShares = asset.drawnShares + drawnShares;
+    uint128 spokeShares = spoke.drawnShares + drawnShares;
+    uint128 liquidity = asset.liquidity - amount.toUint128();
+
+    asset.drawnShares = assetShares;
+    spoke.drawnShares = spokeShares;
+    asset.liquidity = liquidity;
 
     asset.updateDrawnRate(assetId);
 
@@ -235,15 +245,19 @@ contract Hub is IHub, AccessManaged {
     _validateRestore(asset, spoke, assetId, drawnAmount, premiumAmount, from);
 
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
+
     uint128 drawnShares = previewRestoreByAssets(assetId, drawnAmount).toUint128();
-    asset.drawnShares -= drawnShares;
-    spoke.drawnShares -= drawnShares;
-    uint256 totalAmount = drawnAmount + premiumAmount;
-    asset.liquidity += totalAmount.toUint128();
+    uint128 assetShares = asset.drawnShares - drawnShares;
+    uint128 spokeShares = spoke.drawnShares - drawnShares;
+    uint128 liquidity = asset.liquidity + (drawnAmount + premiumAmount).toUint128();
+
+    asset.drawnShares = assetShares;
+    spoke.drawnShares = spokeShares;
+    asset.liquidity = liquidity;
 
     asset.updateDrawnRate(assetId);
 
-    IERC20(asset.underlying).safeTransferFrom(from, address(this), totalAmount);
+    IERC20(asset.underlying).safeTransferFrom(from, address(this), drawnAmount + premiumAmount);
 
     emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
