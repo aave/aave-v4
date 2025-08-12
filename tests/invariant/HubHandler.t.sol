@@ -63,7 +63,7 @@ contract HubHandler is Test {
 
     vm.startPrank(hubAdmin);
     // Add dai
-    hub1.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy), address(0), encodedIrData);
+    hub1.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
     hub1.updateAssetConfig(
       0,
       DataTypes.AssetConfig({

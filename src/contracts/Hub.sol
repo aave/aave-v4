@@ -49,7 +49,6 @@ contract Hub is IHub, AccessManaged {
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
-    address reinvestmentStrategy,
     bytes calldata data
   ) external restricted returns (uint256) {
     require(underlying != address(0), InvalidUnderlying());
@@ -83,7 +82,7 @@ contract Hub is IHub, AccessManaged {
       decimals: decimals,
       drawnRate: drawnRate.toUint128(),
       irStrategy: irStrategy,
-      reinvestmentStrategy: reinvestmentStrategy,
+      reinvestmentStrategy: address(0),
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });

@@ -47,12 +47,6 @@ interface IHub is IHubBase, IAccessManaged {
    * @param amount The amount swept.
    */
   event Sweep(uint256 indexed assetId, uint256 amount);
-
-  /**
-   * @notice Emitted when an amount of liquidity is reclaimed.
-   * @param assetId The identifier of the asset.
-   * @param amount The amount reclaimed.
-   */
   event Reclaim(uint256 indexed assetId, uint256 amount);
 
   /**
@@ -107,7 +101,6 @@ interface IHub is IHubBase, IAccessManaged {
    * @param decimals The number of decimals of the asset.
    * @param feeReceiver The address of the fee receiver spoke.
    * @param irStrategy The address of the interest rate strategy contract.
-   * @param reinvestmentStrategy The address of the reinvestment strategy contract. Can be address(0) on initialization.
    * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
    * @return The unique identifier of the added asset.
    */
@@ -116,7 +109,6 @@ interface IHub is IHubBase, IAccessManaged {
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
-    address reinvestmentStrategy,
     bytes calldata data
   ) external returns (uint256);
 

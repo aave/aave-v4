@@ -380,7 +380,6 @@ abstract contract Base is Test {
       tokenList.weth.decimals(),
       address(treasurySpoke),
       address(irStrategy),
-      address(0),
       encodedIrData
     );
     hub1.addSpoke(wethAssetId, address(treasurySpoke), spokeConfig);
@@ -399,7 +398,6 @@ abstract contract Base is Test {
       tokenList.usdx.decimals(),
       address(treasurySpoke),
       address(irStrategy),
-      address(0),
       encodedIrData
     );
     hub1.addSpoke(usdxAssetId, address(treasurySpoke), spokeConfig);
@@ -418,7 +416,6 @@ abstract contract Base is Test {
       tokenList.dai.decimals(),
       address(treasurySpoke),
       address(irStrategy),
-      address(0),
       encodedIrData
     );
     hub1.addSpoke(daiAssetId, address(treasurySpoke), spokeConfig);
@@ -437,7 +434,6 @@ abstract contract Base is Test {
       tokenList.wbtc.decimals(),
       address(treasurySpoke),
       address(irStrategy),
-      address(0),
       encodedIrData
     );
     hub1.addSpoke(wbtcAssetId, address(treasurySpoke), spokeConfig);
@@ -456,7 +452,6 @@ abstract contract Base is Test {
       tokenList.usdy.decimals(),
       address(treasurySpoke),
       address(irStrategy),
-      address(0),
       encodedIrData
     );
     hub1.addSpoke(usdyAssetId, address(treasurySpoke), spokeConfig);
@@ -475,7 +470,6 @@ abstract contract Base is Test {
       tokenList.dai.decimals(),
       address(treasurySpoke),
       address(irStrategy),
-      address(0),
       encodedIrData
     );
     hub1.addSpoke(hub1.getAssetCount() - 1, address(treasurySpoke), spokeConfig);
@@ -824,7 +818,6 @@ abstract contract Base is Test {
       tokenList.weth.decimals(),
       address(treasurySpoke),
       address(hub2IrStrategy),
-      address(0),
       encodedIrData
     );
 
@@ -834,7 +827,6 @@ abstract contract Base is Test {
       tokenList.usdx.decimals(),
       address(treasurySpoke),
       address(hub2IrStrategy),
-      address(0),
       encodedIrData
     );
 
@@ -844,7 +836,6 @@ abstract contract Base is Test {
       tokenList.dai.decimals(),
       address(treasurySpoke),
       address(hub2IrStrategy),
-      address(0),
       encodedIrData
     );
 
@@ -854,7 +845,6 @@ abstract contract Base is Test {
       tokenList.wbtc.decimals(),
       address(treasurySpoke),
       address(hub2IrStrategy),
-      address(0),
       encodedIrData
     );
     vm.stopPrank();
@@ -892,7 +882,6 @@ abstract contract Base is Test {
       tokenList.dai.decimals(),
       address(treasurySpoke),
       address(hub3IrStrategy),
-      address(0),
       encodedIrData
     );
 
@@ -902,7 +891,6 @@ abstract contract Base is Test {
       tokenList.usdx.decimals(),
       address(treasurySpoke),
       address(hub3IrStrategy),
-      address(0),
       encodedIrData
     );
 
@@ -912,7 +900,6 @@ abstract contract Base is Test {
       tokenList.wbtc.decimals(),
       address(treasurySpoke),
       address(hub3IrStrategy),
-      address(0),
       encodedIrData
     );
 
@@ -922,7 +909,6 @@ abstract contract Base is Test {
       tokenList.weth.decimals(),
       address(treasurySpoke),
       address(hub3IrStrategy),
-      address(0),
       encodedIrData
     );
 

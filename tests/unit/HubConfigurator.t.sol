@@ -161,7 +161,7 @@ contract HubConfiguratorTest is HubBase {
       address(hub1),
       abi.encodeCall(
         IHub.addAsset,
-        (underlying, decimals, feeReceiver, interestRateStrategy, address(0), encodedIrData)
+        (underlying, decimals, feeReceiver, interestRateStrategy, encodedIrData)
       )
     );
 
@@ -1044,7 +1044,6 @@ contract HubConfiguratorTest is HubBase {
           underlying,
           feeReceiver,
           interestRateStrategy,
-          address(0),
           encodedIrData
         );
     } else {
@@ -1055,7 +1054,6 @@ contract HubConfiguratorTest is HubBase {
           decimals,
           feeReceiver,
           interestRateStrategy,
-          address(0),
           encodedIrData
         );
     }
