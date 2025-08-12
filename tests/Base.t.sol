@@ -920,17 +920,31 @@ abstract contract Base is Test {
   }
 
   function updateAssetFeeReceiver(
-    IHub targetHub,
+    IHub hub,
     uint256 assetId,
     address newFeeReceiver
   ) internal pausePrank {
-    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.feeReceiver = newFeeReceiver;
 
     vm.prank(HUB_ADMIN);
-    targetHub.updateAssetConfig(assetId, config);
+    hub.updateAssetConfig(assetId, config);
 
-    assertEq(targetHub.getAssetConfig(assetId), config);
+    assertEq(hub.getAssetConfig(assetId), config);
+  }
+
+  function updateAssetReinvestmentStrategy(
+    IHub hub,
+    uint256 assetId,
+    address newReinvestmentStrategy
+  ) internal pausePrank {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
+    config.reinvestmentStrategy = newReinvestmentStrategy;
+
+    vm.prank(HUB_ADMIN);
+    hub.updateAssetConfig(assetId, config);
+
+    assertEq(hub.getAssetConfig(assetId), config);
   }
 
   function updateReserveFrozenFlag(
