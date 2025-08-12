@@ -158,9 +158,14 @@ contract Hub is IHub, AccessManaged {
 
     uint128 shares = previewAddByAssets(assetId, amount).toUint128();
     require(shares != 0, InvalidSharesAmount());
-    asset.addedShares += shares;
-    spoke.addedShares += shares;
-    asset.liquidity += amount.toUint128();
+
+    uint128 assetShares = asset.addedShares + shares;
+    uint128 spokeShares = spoke.addedShares + shares;
+    uint128 assetLiquidity = asset.liquidity + amount.toUint128();
+
+    asset.addedShares = assetShares;
+    spoke.addedShares = spokeShares;
+    asset.liquidity = assetLiquidity;
 
     asset.updateDrawnRate(assetId);
 
