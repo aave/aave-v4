@@ -42,11 +42,17 @@ interface IHub is IHubBase, IAccessManaged {
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
 
   /**
-   * @notice Emitted when an amount of liquidity is swept.
+   * @notice Emitted when an amount of liquidity is swept (reinvested).
    * @param assetId The identifier of the asset.
    * @param amount The amount swept.
    */
   event Sweep(uint256 indexed assetId, uint256 amount);
+
+  /**
+   * @notice Emitted when an amount of liquidity is reclaimed.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount reclaimed.
+   */
   event Reclaim(uint256 indexed assetId, uint256 amount);
 
   /**
