@@ -280,10 +280,14 @@ contract Hub is IHub, AccessManaged {
 
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
     uint128 drawnShares = previewRestoreByAssets(assetId, drawnAmount).toUint128();
-    asset.drawnShares -= drawnShares;
-    spoke.drawnShares -= drawnShares;
+    uint128 assetShares = asset.drawnShares - drawnShares;
+    uint128 spokeShares = spoke.drawnShares - drawnShares;
     uint256 totalDeficitAmount = drawnAmount + premiumAmount;
-    asset.deficit += totalDeficitAmount.toUint128();
+    uint128 assetDeficit = asset.deficit + totalDeficitAmount.toUint128();
+
+    asset.drawnShares = assetShares;
+    spoke.drawnShares = spokeShares;
+    asset.deficit = assetDeficit;
 
     asset.updateDrawnRate(assetId);
 
