@@ -86,24 +86,6 @@ contract HubBase is Base {
     skip(skipTime);
   }
 
-  function _getDrawn(uint256 assetId) internal view returns (DrawnData memory) {
-    revert('implement me');
-
-    // DrawnData memory drawnData;
-    // drawnData.asset.cumulativeDebt = hub1.getAssetCumulativeDebt(assetId);
-    // (drawnData.asset.drawn, drawnData.asset.outstandingPremium) = hub1.getAssetOwed(assetId);
-
-    // address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
-    // for (uint256 i = 0; i < 3; i++) {
-    //   drawnData.spoke[i].cumulativeDebt = hub1.getSpokeCumulativeDebt(assetId, address(spokes[i]));
-    //   (drawnData.spoke[i].drawn, drawnData.spoke[i].outstandingPremium) = hub1.getSpokeOwed(
-    //     assetId,
-    //     spokes[i]
-    //   );
-    // }
-    // return drawnData;
-  }
-
   /// @dev Draws liquidity from the Hub via a random spoke
   function _drawLiquidity(uint256 assetId, uint256 amount, bool withPremium) internal {
     address tempSpoke = vm.randomAddress();

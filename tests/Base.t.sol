@@ -2107,7 +2107,7 @@ abstract contract Base is Test {
       asset.drawnRate,
       IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate(
         assetId,
-        asset.liquidity,
+        asset.liquidity + asset.swept,
         drawn,
         premium
       ),

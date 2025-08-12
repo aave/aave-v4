@@ -312,6 +312,8 @@ contract Hub is IHub, AccessManaged {
     // no premium change allowed
     _applyPremiumDelta(asset, spoke, premiumDelta, 0);
 
+    asset.updateDrawnRate(assetId);
+
     emit RefreshPremium(assetId, msg.sender, premiumDelta);
   }
 
@@ -663,7 +665,7 @@ contract Hub is IHub, AccessManaged {
     require(spoke.active, SpokeNotActive());
     uint256 withdrawable = previewRemoveByShares(assetId, spoke.addedShares);
     require(amount <= withdrawable, AddedAmountExceeded(withdrawable));
-    require(amount <= asset.liquidity, NotLiquidity(asset.liquidity));
+    require(amount <= asset.liquidity, InsufficientLiquidity(asset.liquidity));
   }
 
   function _validateDraw(
@@ -682,7 +684,7 @@ contract Hub is IHub, AccessManaged {
       drawCap == Constants.MAX_CAP || drawCap * 10 ** asset.decimals >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
     );
-    require(amount <= asset.liquidity, NotLiquidity(asset.liquidity));
+    require(amount <= asset.liquidity, InsufficientLiquidity(asset.liquidity));
   }
 
   function _validateRestore(
