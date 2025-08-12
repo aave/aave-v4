@@ -17,7 +17,6 @@ import {Constants} from 'src/libraries/helpers/Constants.sol';
 
 import {IHubBase, IHub} from 'src/interfaces/IHub.sol';
 import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
-import {IReinvestmentStrategy} from 'src/interfaces/IReinvestmentStrategy.sol';
 
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
@@ -72,7 +71,7 @@ contract Hub is IHub, AccessManaged {
     _assets[assetId] = DataTypes.Asset({
       liquidity: 0,
       deficit: 0,
-      swept: 0, 
+      swept: 0,
       addedShares: 0,
       drawnShares: 0,
       premiumShares: 0,
@@ -92,7 +91,12 @@ contract Hub is IHub, AccessManaged {
     emit AddAsset(assetId, underlying, decimals);
     emit AssetConfigUpdate(
       assetId,
-      DataTypes.AssetConfig({feeReceiver: feeReceiver, liquidityFee: 0, irStrategy: irStrategy, reinvestmentStrategy: address(0)})
+      DataTypes.AssetConfig({
+        feeReceiver: feeReceiver,
+        liquidityFee: 0,
+        irStrategy: irStrategy,
+        reinvestmentStrategy: address(0)
+      })
     );
     emit AssetUpdate(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
 
@@ -341,26 +345,35 @@ contract Hub is IHub, AccessManaged {
     emit TransferShares(assetId, shares, msg.sender, toSpoke);
   }
 
-
   /// @inheritdoc IHub
   function sweep(uint256 assetId, uint256 amount) external {
-    _validateSweep(assetId, amount);
-    DataTypes.Asset storage asset = _assets[assetId];  
+    DataTypes.Asset storage asset = _assets[assetId];
+    _validateSweep(asset, msg.sender, amount);
+
+    asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     asset.liquidity -= amount.toUint128();
     asset.swept += amount.toUint128();
+    asset.updateDrawnRate(assetId);
+
     IERC20(asset.underlying).safeTransfer(asset.reinvestmentStrategy, amount);
 
+    emit Sweep(assetId, amount);
   }
+
   /// @inheritdoc IHub
   function reclaim(uint256 assetId, uint256 amount) external {
-    _validateReclaim(assetId);
-    DataTypes.Asset storage asset = _assets[assetId];  
+    DataTypes.Asset storage asset = _assets[assetId];
+    _validateReclaim(asset, msg.sender, amount);
+
+    asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     asset.liquidity += amount.toUint128();
     asset.swept -= amount.toUint128();
+    asset.updateDrawnRate(assetId);
+
     IERC20(asset.underlying).safeTransferFrom(asset.reinvestmentStrategy, address(this), amount);
+
+    emit Reclaim(assetId, amount);
   }
-
-
 
   /// @inheritdoc IHub
   function getAssetCount() external view override returns (uint256) {
@@ -548,7 +561,6 @@ contract Hub is IHub, AccessManaged {
   function getswept(uint256 assetId) external view override returns (uint256) {
     return _assets[assetId].swept;
   }
-
 
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
     return
@@ -739,16 +751,20 @@ contract Hub is IHub, AccessManaged {
   }
 
   function _validateSweep(
-    uint256 assetId,
+    DataTypes.Asset storage asset,
+    address caller,
     uint256 amount
-   ) internal view {
-    require(msg.sender == _assets[assetId].reinvestmentStrategy, InvalidReinvestmentStrategy());
+  ) internal view {
+    require(caller == asset.reinvestmentStrategy, InvalidReinvestmentStrategy());
+    require(amount > 0, InvalidSweepAmount());
   }
 
   function _validateReclaim(
-    uint256 assetId
-   ) internal view {
-    require(msg.sender == _assets[assetId].reinvestmentStrategy, InvalidReinvestmentStrategy());
+    DataTypes.Asset storage asset,
+    address caller,
+    uint256 amount
+  ) internal view {
+    require(caller == asset.reinvestmentStrategy, InvalidReinvestmentStrategy());
+    require(amount > 0 && amount <= asset.swept, InvalidSweepAmount());
   }
-
 }

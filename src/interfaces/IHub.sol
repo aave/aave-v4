@@ -41,6 +41,9 @@ interface IHub is IHubBase, IAccessManaged {
   event AccrueFees(uint256 indexed assetId, uint256 shares);
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
 
+  event Sweep(uint256 indexed assetId, uint256 amount);
+  event Reclaim(uint256 indexed assetId, uint256 amount);
+
   /**
    * @notice Emitted when deficit is eliminated.
    * @param assetId The identifier of the asset.
@@ -190,6 +193,22 @@ interface IHub is IHubBase, IAccessManaged {
    * @return The amount of shares removed.
    */
   function eliminateDeficit(uint256 assetId, uint256 amount) external returns (uint256);
+
+  /**
+   * @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment strategy.
+   * @dev The strategy handles the actual reinvestment of the funds and the redistribution of the interest, and investment caps.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount swept.
+   */
+  function sweep(uint256 assetId, uint256 amount) external;
+
+  /**
+   * @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment strategy.
+   * @dev The strategy can only reclaim swept amount, all accrued interest is distributed offchain.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount swept.
+   */
+  function reclaim(uint256 assetId, uint256 amount) external;
 
   /**
    * @notice Converts the specified amount of assets to shares amount added upon an Add action.
@@ -365,19 +384,4 @@ interface IHub is IHubBase, IAccessManaged {
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256);
 
   function getAssetCount() external view returns (uint256);
-
-  /**
-   * @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the Reinvestment Strategy and updates accounting.
-   * @dev The Reinvestment Strategy handles the actual reinvestment of the funds and the redistribution of the interest.
-   * @param assetId The identifier of the asset.
-   * @param amount The amount swept.
-   */
-  function sweep(uint256 assetId, uint256 amount) external;
-
-  /**
-   * @notice Reclaims an amount of liquidity of the corresponding asset from the Reinvestment Strategy and updates accounting.
-   * @param assetId The identifier of the asset.
-   * @param amount The amount swept.
-   */
-  function reclaim(uint256 assetId, uint256 amount) external;
 }
