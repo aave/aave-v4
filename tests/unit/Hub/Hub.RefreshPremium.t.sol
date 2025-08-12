@@ -215,9 +215,9 @@ contract HubRefreshPremiumTest is HubBase {
     uint256 userPremiumOffsetNew = hub1.previewDrawByShares(assetId, userPremiumSharesNew);
 
     DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
-      sharesDelta: int256(userPremiumSharesNew) - int256(userPremiumShares),
-      offsetDelta: int256(userPremiumOffsetNew) - int256(userPremiumOffset),
-      realizedDelta: int256(userAccruedPremium)
+      sharesDelta: userPremiumSharesNew.toInt256() - userPremiumShares.toInt256(),
+      offsetDelta: userPremiumOffsetNew.toInt256() - userPremiumOffset.toInt256(),
+      realizedDelta: userAccruedPremium.toInt256()
     });
 
     if (
