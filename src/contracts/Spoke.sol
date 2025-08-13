@@ -1185,7 +1185,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 debtToCover,
     uint256 drawnDebt,
     uint256 premiumDebt
-  ) internal returns (uint256, uint256, uint256, uint256, bool) {
+  ) internal view returns (uint256, uint256, uint256, uint256, bool) {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveId = debtReserve.reserveId;
