@@ -42,14 +42,14 @@ interface IHub is IHubBase, IAccessManaged {
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
 
   /**
-   * @notice Emitted when an amount of liquidity is swept by the reinvestment strategy.
+   * @notice Emitted when an amount of liquidity is swept. (reinvested)
    * @param assetId The identifier of the asset.
    * @param amount The amount swept.
    */
   event Sweep(uint256 indexed assetId, uint256 amount);
 
   /**
-   * @notice Emitted when an amount of liquidity is reclaimed by the reinvestment strategy.
+   * @notice Emitted when an amount of liquidity is reclaimed. (from swept/reinvested liquidity)
    * @param assetId The identifier of the asset.
    * @param amount The amount reclaimed.
    */
@@ -216,7 +216,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment strategy.
    * @dev The strategy can only reclaim up to swept amount. All accrued interest is distributed offchain.
    * @param assetId The identifier of the asset.
-   * @param amount The amount reclaim.
+   * @param amount The amount to reclaim.
    */
   function reclaim(uint256 assetId, uint256 amount) external;
 
