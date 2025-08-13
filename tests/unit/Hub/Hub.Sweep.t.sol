@@ -99,7 +99,9 @@ contract HubSweepTest is HubBase {
         assetId: daiAssetId,
         liquidity: supplyAmount - drawAmount,
         drawn: drawn,
-        premium: vm.randomUint() // ignored
+        premium: vm.randomUint(), // ignored
+        deficit: vm.randomUint(), // ignored
+        swept: swept
       }),
       drawnRate
     );

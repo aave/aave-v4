@@ -367,7 +367,9 @@ contract HubConfigTest is HubBase {
         assetId: assetId,
         liquidity: liquidity,
         drawn: drawn,
-        premium: premium
+        premium: premium,
+        deficit: 0,
+        swept: 0
       }),
       vm.getBlockTimestamp()
     );

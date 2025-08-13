@@ -28,7 +28,9 @@ contract HubDrawTest is HubBase {
           assetId,
           assetBefore.liquidity - amount,
           hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-          premium
+          premium,
+          assetBefore.deficit,
+          assetBefore.swept
         )
       )
     );
@@ -41,7 +43,9 @@ contract HubDrawTest is HubBase {
         assetId: assetId,
         liquidity: assetBefore.liquidity - amount,
         drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-        premium: premium
+        premium: premium,
+        deficit: assetBefore.deficit,
+        swept: assetBefore.swept
       }),
       vm.getBlockTimestamp()
     );
@@ -108,7 +112,9 @@ contract HubDrawTest is HubBase {
           assetId,
           assetBefore.liquidity - amount,
           hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-          premium
+          premium,
+          assetBefore.deficit,
+          assetBefore.swept
         )
       )
     );
@@ -121,7 +127,9 @@ contract HubDrawTest is HubBase {
         assetId: assetId,
         liquidity: assetBefore.liquidity - amount,
         drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-        premium: premium
+        premium: premium,
+        deficit: assetBefore.deficit,
+        swept: assetBefore.swept
       }),
       vm.getBlockTimestamp()
     );

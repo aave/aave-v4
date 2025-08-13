@@ -102,9 +102,11 @@ library AssetLogic {
   function updateDrawnRate(DataTypes.Asset storage asset, uint256 assetId) internal {
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
       assetId: assetId,
-      liquidity: asset.liquidity + asset.swept,
+      liquidity: asset.liquidity,
       drawn: asset.drawn(),
-      premium: asset.premium()
+      premium: asset.premium(),
+      deficit: asset.deficit,
+      swept: asset.swept
     });
     asset.drawnRate = newDrawnRate.toUint128();
 
