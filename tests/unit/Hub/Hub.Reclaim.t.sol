@@ -4,18 +4,18 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubReclaimTest is HubBase {
-  function test_reclaim_revertsWith_InvalidReinvestmentStrategy_unset() public {
+  function test_reclaim_revertsWith_OnlyReinvestmentStrategy_init() public {
     assertEq(hub1.getAsset(daiAssetId).reinvestmentStrategy, address(0));
-    vm.expectRevert(IHub.InvalidReinvestmentStrategy.selector);
+    vm.expectRevert(IHub.OnlyReinvestmentStrategy.selector);
     hub1.reclaim(daiAssetId, vm.randomUint());
   }
 
-  function test_reclaim_revertsWith_InvalidReinvestmentStrategy(address caller) public {
+  function test_reclaim_revertsWith_OnlyReinvestmentStrategy(address caller) public {
     address reinvestmentStrategy = makeAddr('reinvestmentStrategy');
     vm.assume(caller != reinvestmentStrategy);
     updateAssetReinvestmentStrategy(hub1, daiAssetId, reinvestmentStrategy);
 
-    vm.expectRevert(IHub.InvalidReinvestmentStrategy.selector);
+    vm.expectRevert(IHub.OnlyReinvestmentStrategy.selector);
     vm.prank(caller);
     hub1.reclaim(daiAssetId, vm.randomUint());
   }

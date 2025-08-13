@@ -42,14 +42,14 @@ interface IHub is IHubBase, IAccessManaged {
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
 
   /**
-   * @notice Emitted when an amount of liquidity is swept (reinvested).
+   * @notice Emitted when an amount of liquidity is swept by the reinvestment strategy.
    * @param assetId The identifier of the asset.
    * @param amount The amount swept.
    */
   event Sweep(uint256 indexed assetId, uint256 amount);
 
   /**
-   * @notice Emitted when an amount of liquidity is reclaimed.
+   * @notice Emitted when an amount of liquidity is reclaimed by the reinvestment strategy.
    * @param assetId The identifier of the asset.
    * @param amount The amount reclaimed.
    */
@@ -98,6 +98,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidFeeShares();
   error InvalidReinvestmentStrategy();
   error InvalidSweepAmount();
+  error OnlyReinvestmentStrategy();
 
   /**
    * @notice Adds a new asset to the hub.
@@ -205,17 +206,17 @@ interface IHub is IHubBase, IAccessManaged {
 
   /**
    * @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment strategy.
-   * @dev The strategy handles the actual reinvestment of the funds and the redistribution of the interest, and investment caps.
+   * @dev The strategy handles the actual reinvestment of funds, redistribution of interest, and investment caps.
    * @param assetId The identifier of the asset.
-   * @param amount The amount swept.
+   * @param amount The amount to sweep.
    */
   function sweep(uint256 assetId, uint256 amount) external;
 
   /**
    * @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment strategy.
-   * @dev The strategy can only reclaim swept amount, all accrued interest is distributed offchain.
+   * @dev The strategy can only reclaim up to swept amount. All accrued interest is distributed offchain.
    * @param assetId The identifier of the asset.
-   * @param amount The amount swept.
+   * @param amount The amount reclaim.
    */
   function reclaim(uint256 assetId, uint256 amount) external;
 

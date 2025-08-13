@@ -761,8 +761,9 @@ contract Hub is IHub, AccessManaged {
     address caller,
     uint256 amount
   ) internal view {
-    require(caller == asset.reinvestmentStrategy, InvalidReinvestmentStrategy());
-    require(amount > 0, InvalidSweepAmount());
+    // sufficient check to disallow when strategy unset
+    require(caller == asset.reinvestmentStrategy, OnlyReinvestmentStrategy());
+    require(amount > 0 && amount <= asset.liquidity, InvalidSweepAmount());
   }
 
   function _validateReclaim(
@@ -770,7 +771,8 @@ contract Hub is IHub, AccessManaged {
     address caller,
     uint256 amount
   ) internal view {
-    require(caller == asset.reinvestmentStrategy, InvalidReinvestmentStrategy());
+    // sufficient check to disallow when strategy unset
+    require(caller == asset.reinvestmentStrategy, OnlyReinvestmentStrategy());
     require(amount > 0 && amount <= asset.swept, InvalidSweepAmount());
   }
 }
