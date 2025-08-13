@@ -299,7 +299,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
     }
 
-    (vars.newUserRiskPremium, , , , ) = _calculateAndRefreshUserAccountData(onBehalfOf, false);
+    (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
     _notifyRiskPremiumUpdate(onBehalfOf, vars.newUserRiskPremium);
 
     emit Repay(reserveId, msg.sender, onBehalfOf, vars.restoredShares, premiumDelta);
@@ -357,7 +357,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   /// @inheritdoc ISpoke
   function updateUserRiskPremium(address onBehalfOf) external {
-    (uint256 userRiskPremium, , , , ) = _calculateAndRefreshUserAccountData(onBehalfOf, false);
+    (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
     bool premiumIncrease = _notifyRiskPremiumUpdate(onBehalfOf, userRiskPremium);
 
     // check permissions if premium increases and not called by user
@@ -472,17 +472,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {
-    // SAFETY: function does not modify state when refreshConfig is false
-    (uint256 userRiskPremium, , , , ) = _castToView(_calculateAndRefreshUserAccountData)(
-      user,
-      false
-    );
+    (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(user);
     return userRiskPremium;
   }
 
   function getHealthFactor(address user) external view returns (uint256) {
-    // SAFETY: function does not modify state when refreshConfig is false
-    (, , uint256 healthFactor, , ) = _castToView(_calculateAndRefreshUserAccountData)(user, false);
+    (, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
     return healthFactor;
   }
 
@@ -518,14 +513,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     )
   {
     // todo separate getter with refreshed config for users trying to incrementally build hf?
-    // SAFETY: function does not modify state when refreshConfig is false
     (
       userRiskPremium,
       avgCollateralFactor,
       healthFactor,
       totalCollateralInBaseCurrency,
       totalDebtInBaseCurrency
-    ) = _castToView(_calculateAndRefreshUserAccountData)(user, false);
+    ) = _calculateUserAccountData(user);
   }
 
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory) {
@@ -629,10 +623,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
     // @dev refresh user position dynamic config only on borrow, withdraw, disableUsingAsCollateral
     (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateAndRefreshUserAccountData(
-      user,
-      true
+      user
     );
-    emit RefreshAllUserDynamicConfig(user);
     require(
       healthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
@@ -749,6 +741,20 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return config.active && config.approval[user];
   }
 
+  function _calculateUserAccountData(
+    address user
+  ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
+    // SAFETY: function does not modify state when refreshConfig is false
+    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
+  }
+
+  function _calculateAndRefreshUserAccountData(
+    address user
+  ) internal returns (uint256, uint256, uint256, uint256, uint256) {
+    emit RefreshAllUserDynamicConfig(user);
+    return _calculateAndPotentiallyRefreshUserAccountData(user, true);
+  }
+
   /**
    * @dev User rp calc runs until the first of either debt or collateral is exhausted
    * @param user address of the user
@@ -758,7 +764,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @return totalCollateralInBaseCurrency
    * @return totalDebtInBaseCurrency
    */
-  function _calculateAndRefreshUserAccountData(
+  function _calculateAndPotentiallyRefreshUserAccountData(
     address user,
     bool refreshConfig
   ) internal returns (uint256, uint256, uint256, uint256, uint256) {
@@ -1134,7 +1140,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         _reportDeficits(vars.user);
       } else {
         // new risk premium only needs to be propagated if no deficit exists
-        (vars.newUserRiskPremium, , , , ) = _calculateAndRefreshUserAccountData(vars.user, false);
+        (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(vars.user);
         _notifyRiskPremiumUpdate(vars.user, vars.newUserRiskPremium);
       }
 
@@ -1196,7 +1202,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.healthFactor,
       vars.totalCollateralInBaseCurrency,
       vars.totalDebtInBaseCurrency
-    ) = _calculateAndRefreshUserAccountData(user, false);
+    ) = _calculateUserAccountData(user);
 
     _validateLiquidationCall(
       collateralReserve,
