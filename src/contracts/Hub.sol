@@ -108,17 +108,21 @@ contract Hub is IHub, AccessManaged {
     DataTypes.AssetConfig calldata config
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
+    DataTypes.Asset storage asset = _assets[assetId];
+    asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
+
     require(config.liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
     require(config.feeReceiver != address(0), InvalidFeeReceiver());
     require(config.irStrategy != address(0), InvalidIrStrategy());
-
-    DataTypes.Asset storage asset = _assets[assetId];
-    asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
+    require(
+      config.reinvestmentStrategy != address(0) || asset.swept == 0,
+      InvalidReinvestmentStrategy()
+    );
 
     asset.feeReceiver = config.feeReceiver;
     asset.liquidityFee = config.liquidityFee;
     asset.irStrategy = config.irStrategy;
-    asset.reinvestmentStrategy = config.reinvestmentStrategy; // optional
+    asset.reinvestmentStrategy = config.reinvestmentStrategy;
 
     asset.updateDrawnRate(assetId);
 

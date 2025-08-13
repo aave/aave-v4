@@ -309,6 +309,33 @@ contract HubConfigTest is HubBase {
     hub1.updateAssetConfig(assetId, newConfig);
   }
 
+  // @dev can only reset reinvestment strategy if swept is zero
+  function test_updateAssetConfig_fuzz_revertsWith_InvalidReinvestmentStrategy() public {
+    uint256 assetId = _randomAssetId(hub1);
+    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
+
+    config.reinvestmentStrategy = address(0);
+    assertEq(hub1.getSwept(assetId), 0);
+
+    vm.prank(HUB_ADMIN);
+    hub1.updateAssetConfig(assetId, config);
+    assertEq(hub1.getAsset(assetId).reinvestmentStrategy, address(0));
+
+    address reinvestmentStrategy = makeAddr('reinvestmentStrategy');
+    updateAssetReinvestmentStrategy(hub1, assetId, reinvestmentStrategy);
+    _addLiquidity(assetId, 1000e18);
+    vm.prank(reinvestmentStrategy);
+    hub1.sweep(assetId, 100e18);
+
+    assertEq(hub1.getSwept(assetId), 100e18);
+    assertEq(config.reinvestmentStrategy, address(0));
+    assertNotEq(hub1.getAsset(assetId).reinvestmentStrategy, address(0));
+
+    vm.expectRevert(IHub.InvalidReinvestmentStrategy.selector);
+    vm.prank(HUB_ADMIN);
+    hub1.updateAssetConfig(assetId, config);
+  }
+
   function test_updateAssetConfig_fuzz_revertsWith_InterestRateStrategyReverts(
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
