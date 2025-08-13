@@ -87,7 +87,12 @@ contract HubBase is Base {
   }
 
   /// @dev Draws liquidity from the Hub via a random spoke
-  function _drawLiquidity(uint256 assetId, uint256 amount, bool withPremium) internal {
+  function _drawLiquidity(
+    uint256 assetId,
+    uint256 amount,
+    bool withPremium,
+    bool skipTime
+  ) internal {
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
 
@@ -109,7 +114,7 @@ contract HubBase is Base {
 
     Utils.draw(hub1, assetId, tempSpoke, tempUser, amount);
 
-    skip(365 days);
+    if (skipTime) skip(365 days);
 
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
     assertGt(drawn, 0); // non-zero premium debt
@@ -123,6 +128,11 @@ contract HubBase is Base {
         DataTypes.PremiumDelta(-sharesDelta, -premiumOffsetDelta, int256(premium))
       );
     }
+  }
+
+  // @dev Draws liquidity from the Hub via a random spoke and skips time
+  function _drawLiquidity(uint256 assetId, uint256 amount, bool premium) internal {
+    _drawLiquidity(assetId, amount, premium, true);
   }
 
   /// @dev Draws liquidity from the Hub via a specific spoke which is already active

@@ -83,7 +83,7 @@ contract HubSweepTest is HubBase {
     updateAssetReinvestmentStrategy(hub1, daiAssetId, reinvestmentStrategy);
 
     _addLiquidity(daiAssetId, supplyAmount);
-    _drawLiquidity(daiAssetId, drawAmount, true);
+    _drawLiquidity(daiAssetId, drawAmount, false, false);
     uint256 swept = vm.randomUint(1, supplyAmount - drawAmount);
 
     uint256 drawnRate = hub1.getAssetDrawnRate(daiAssetId);
