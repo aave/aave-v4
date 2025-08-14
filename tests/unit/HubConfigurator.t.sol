@@ -620,6 +620,8 @@ contract HubConfiguratorTest is HubBase {
     vm.expectCall(address(hub1), abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig)));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateReinvestmentStrategy(address(hub1), assetId, reinvestmentStrategy);
+
+    assertEq(hub1.getAssetConfig(assetId), expectedConfig);
   }
 
   function test_updateInterestRateStrategy_revertsWith_InvalidIrStrategy() public {
