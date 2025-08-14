@@ -70,6 +70,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function updateOracle(address newOracle) external restricted {
     require(newOracle != address(0), InvalidOracle());
     oracle = IAaveOracle(newOracle);
+    require(oracle.DECIMALS() == 8, InvalidOracle());
     emit OracleUpdate(newOracle);
   }
 

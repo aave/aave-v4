@@ -67,23 +67,8 @@ library LiquidationLogic {
 
     // check for non zero debt dust remaining
     if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE && remainingDebtInBaseCurrency != 0) {
-      // revert if debtToCover is the min value as it has been set too low
-      if (debtToCover == actualDebtToLiquidate) {
-        revert MustNotLeaveDust();
-      }
-      // at this point, debtToRestoreCloseFactor is min value
-      // check if debtToCover also returns dust; if so, revert
-      if (
-        debtToCover < params.totalBorrowerReserveDebt &&
-        ((params.totalBorrowerReserveDebt - debtToCover) * params.debtAssetPrice).toWad() /
-          params.debtAssetUnit <
-        MIN_LEFTOVER_BASE
-      ) {
-        revert MustNotLeaveDust();
-      } else {
-        // if debtToCover is valid, return min(debtToCover, totalBorrowerReserveDebt)
-        actualDebtToLiquidate = maxLiquidatableDebt;
-      }
+      require(debtToCover >= params.totalBorrowerReserveDebt, MustNotLeaveDust());
+      actualDebtToLiquidate = params.totalBorrowerReserveDebt;
     }
 
     return actualDebtToLiquidate;

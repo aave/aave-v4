@@ -179,7 +179,6 @@ library DataTypes {
     uint256 collateralToLiquidateInBaseCurrency;
     uint256 debtToLiquidateInBaseCurrency;
     bool hasDeficit;
-    uint256 leftoverDebtBase;
   }
 
   struct ExecuteLiquidationLocalVars {

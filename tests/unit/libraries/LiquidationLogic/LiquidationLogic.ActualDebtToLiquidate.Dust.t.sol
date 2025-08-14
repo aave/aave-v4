@@ -233,6 +233,7 @@ contract LiquidationLogicActualDebtToLiquidateDustTest is LiquidationLogicBaseTe
     LiquidationLogic.calculateActualDebtToLiquidate(params, debtToCover);
   }
 
+  /// debtToRestoreCloseFactor results in dust, and debtToCover is less than totalBorrowerReserveDebt
   /// forge-config: default.allow_internal_expect_revert = true
   function test_calculateActualDebtToLiquidate_fuzz_debtToRestoreCloseFactor_dust_revertsWith_MustNotLeaveDust(
     uint256 debtToCover,

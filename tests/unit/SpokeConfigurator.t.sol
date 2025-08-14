@@ -41,6 +41,7 @@ contract SpokeConfiguratorTest is SpokeBase {
 
   function test_updateOracle() public {
     address newOracle = makeAddr('NEW_ORACLE');
+    vm.mockCall(newOracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
     vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateOracle, (newOracle)));
     vm.expectEmit(address(spoke));
     emit ISpoke.OracleUpdate(newOracle);
