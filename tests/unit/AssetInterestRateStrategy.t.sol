@@ -273,7 +273,7 @@ contract AssetInterestRateStrategyTest is Base {
       targetUtilizationRatioRay
     );
     // Take a random portion of liquidity as swept
-    swept = liquidity > 0 ? vm.randomUint(0, liquidity) : 0;
+    swept = vm.randomUint(0, liquidity);
     liquidity -= swept;
 
     // premium and deficit unused in the current IR strategy

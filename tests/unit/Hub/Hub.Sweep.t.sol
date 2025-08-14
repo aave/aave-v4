@@ -97,7 +97,7 @@ contract HubSweepTest is HubBase {
     assertEq(
       IBasicInterestRateStrategy(hub1.getAsset(daiAssetId).irStrategy).calculateInterestRate({
         assetId: daiAssetId,
-        liquidity: supplyAmount - drawAmount,
+        liquidity: supplyAmount - drawAmount - swept,
         drawn: drawn,
         premium: vm.randomUint(), // ignored
         deficit: vm.randomUint(), // ignored
