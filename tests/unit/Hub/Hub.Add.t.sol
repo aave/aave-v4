@@ -275,7 +275,7 @@ contract HubAddTest is HubBase {
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, liquidityBefore + amount, drawnBefore, premiumBefore)
+        (assetId, liquidityBefore + amount, drawnBefore, premiumBefore, 0, 0)
       )
     );
 
@@ -515,7 +515,7 @@ contract HubAddTest is HubBase {
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (daiAssetId, liquidityBefore + addAmount, drawnBefore, premiumBefore)
+        (daiAssetId, liquidityBefore + addAmount, drawnBefore, premiumBefore, 0, 0)
       )
     );
 

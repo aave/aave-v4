@@ -62,7 +62,9 @@ contract Hub is IHub, AccessManaged {
       assetId: assetId,
       liquidity: 0,
       drawn: 0,
-      premium: 0
+      premium: 0,
+      deficit: 0,
+      swept: 0
     });
 
     uint256 drawnIndex = WadRayMath.RAY;
@@ -80,7 +82,7 @@ contract Hub is IHub, AccessManaged {
       underlying: underlying,
       lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
       decimals: decimals,
-      drawnRate: drawnRate.toUint128(),
+      drawnRate: drawnRate.toUint96(),
       irStrategy: irStrategy,
       reinvestmentStrategy: address(0),
       feeReceiver: feeReceiver,

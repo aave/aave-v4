@@ -2011,9 +2011,20 @@ abstract contract Base is Test {
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
-    uint256 premium
+    uint256 premium,
+    uint256 deficit,
+    uint256 swept
   ) internal {
-    _mockInterestRateBps(address(irStrategy), interestRateBps, assetId, liquidity, drawn, premium);
+    _mockInterestRateBps(
+      address(irStrategy),
+      interestRateBps,
+      assetId,
+      liquidity,
+      drawn,
+      premium,
+      deficit,
+      swept
+    );
   }
 
   function _mockInterestRateBps(
@@ -2022,13 +2033,15 @@ abstract contract Base is Test {
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
-    uint256 premium
+    uint256 premium,
+    uint256 deficit,
+    uint256 swept
   ) internal {
     vm.mockCall(
       interestRateStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, liquidity, drawn, premium)
+        (assetId, liquidity, drawn, premium, deficit, swept)
       ),
       abi.encode(interestRateBps.bpsToRay())
     );
@@ -2053,7 +2066,16 @@ abstract contract Base is Test {
     uint256 drawn,
     uint256 premium
   ) internal {
-    _mockInterestRateRay(address(irStrategy), interestRateRay, assetId, liquidity, drawn, premium);
+    _mockInterestRateRay(
+      address(irStrategy),
+      interestRateRay,
+      assetId,
+      liquidity,
+      drawn,
+      premium,
+      0,
+      0
+    );
   }
 
   function _mockInterestRateRay(
@@ -2062,13 +2084,15 @@ abstract contract Base is Test {
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
-    uint256 premium
+    uint256 premium,
+    uint256 deficit,
+    uint256 swept
   ) internal {
     vm.mockCall(
       interestRateStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, liquidity, drawn, premium)
+        (assetId, liquidity, drawn, premium, deficit, swept)
       ),
       abi.encode(interestRateRay)
     );
@@ -2111,9 +2135,11 @@ abstract contract Base is Test {
       asset.drawnRate,
       IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate(
         assetId,
-        asset.liquidity + asset.swept,
+        asset.liquidity,
         drawn,
-        premium
+        premium,
+        asset.deficit,
+        asset.swept
       ),
       string.concat('base borrow rate after ', operation)
     );

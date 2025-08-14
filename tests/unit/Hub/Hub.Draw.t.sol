@@ -26,9 +26,11 @@ contract HubDrawTest is HubBase {
         IBasicInterestRateStrategy.calculateInterestRate,
         (
           assetId,
-          assetBefore.liquidity - amount,
+          assetBefore.liquidity - assetBefore.swept - amount,
           hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-          premium
+          premium,
+          assetBefore.deficit,
+          assetBefore.swept
         )
       )
     );
@@ -39,9 +41,11 @@ contract HubDrawTest is HubBase {
       hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
-        liquidity: assetBefore.liquidity - amount,
+        liquidity: assetBefore.liquidity - assetBefore.swept - amount,
         drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-        premium: premium
+        premium: premium,
+        deficit: assetBefore.deficit,
+        swept: assetBefore.swept
       }),
       vm.getBlockTimestamp()
     );
@@ -106,9 +110,11 @@ contract HubDrawTest is HubBase {
         IBasicInterestRateStrategy.calculateInterestRate,
         (
           assetId,
-          assetBefore.liquidity - amount,
+          assetBefore.liquidity - assetBefore.swept - amount,
           hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-          premium
+          premium,
+          assetBefore.deficit,
+          assetBefore.swept
         )
       )
     );
@@ -119,9 +125,11 @@ contract HubDrawTest is HubBase {
       hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
-        liquidity: assetBefore.liquidity - amount,
+        liquidity: assetBefore.liquidity - assetBefore.swept - amount,
         drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-        premium: premium
+        premium: premium,
+        deficit: assetBefore.deficit,
+        swept: assetBefore.swept
       }),
       vm.getBlockTimestamp()
     );
