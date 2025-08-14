@@ -476,15 +476,16 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       state.user,
       hfAfterBorrow
     );
-    state = _getAccountingInfoBeforeLiquidation(state);
+    state = _getAccountingInfoBeforeLiquidation(collateralReserveId, debtReserveId, state);
 
     uint16 configKeyBefore = spoke1.getUserPosition(collateralReserveId, state.user).configKey;
     (
       state.collToLiq,
       state.debtToLiq,
       state.liquidationFeeAmount,
-
-    ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
+      ,
+      state.hasDustFromDebt
+    ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
     state.liquidationFeeShares =
       hub1.previewRemoveByAssets(
@@ -515,8 +516,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.assetId,
-      state.debtReserve.assetId,
+      collateralReserveId,
+      debtReserveId,
       state.user,
       state.debtToLiq,
       state.collToLiq,

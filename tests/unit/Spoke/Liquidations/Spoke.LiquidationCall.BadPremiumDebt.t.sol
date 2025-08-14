@@ -253,7 +253,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     // causes bad debt to remain
     vm.assume(state.spoke.getHealthFactor(alice) < hfBadDebtThreshold);
 
-    state = _getAccountingInfoBeforeLiquidation(state);
+    state = _getAccountingInfoBeforeLiquidation(collateralReserveId, debtReserveId, state);
 
     assertGt(
       state.userPremiumDebt.balanceBefore,
@@ -265,8 +265,9 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
       state.collToLiq,
       state.debtToLiq,
       state.liquidationFeeAmount,
-
-    ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
+      ,
+      state.hasDustFromDebt
+    ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
     uint256 debtAssetId = state.debtReserve.assetId;
     DataTypes.UserPosition memory userPosition = state.spoke.getUserPosition(debtReserveId, alice);
@@ -308,8 +309,8 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.assetId,
-      state.debtReserve.assetId,
+      collateralReserveId,
+      debtReserveId,
       alice,
       state.debtToLiq,
       state.collToLiq,
