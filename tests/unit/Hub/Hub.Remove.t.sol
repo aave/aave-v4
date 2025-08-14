@@ -345,7 +345,12 @@ contract HubRemoveTest is HubBase {
     // hub
     assertApproxEqAbs(asset.addedAmount, feeAmount, 1, 'hub addedAmount');
     assertEq(asset.addedShares, feeShares, 'hub addedShares');
-    assertApproxEqAbs(asset.liquidity, feeAmount + _calculateBurntInterest(hub1, daiAssetId), 1, 'dai liquidity');
+    assertApproxEqAbs(
+      asset.liquidity,
+      feeAmount + _calculateBurntInterest(hub1, daiAssetId),
+      1,
+      'dai liquidity'
+    );
     assertEq(asset.drawn, 0, 'dai drawn');
     assertEq(asset.premium, 0, 'dai premium');
     assertEq(asset.lastUpdateTimestamp, vm.getBlockTimestamp(), 'dai lastUpdateTimestamp');
@@ -395,7 +400,7 @@ contract HubRemoveTest is HubBase {
     hub1.remove(daiAssetId, amount + 1, alice);
   }
 
-  function test_remove_revertsWith_NotLiquidity() public {
+  function test_remove_revertsWith_InsufficientLiquidity() public {
     uint256 amount = 100e18;
     Utils.add({
       hub: hub1,
@@ -412,7 +417,7 @@ contract HubRemoveTest is HubBase {
       amount: amount,
       to: alice
     });
-    vm.expectRevert(abi.encodeWithSelector(IHub.NotLiquidity.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, amount, address(spoke1));
   }

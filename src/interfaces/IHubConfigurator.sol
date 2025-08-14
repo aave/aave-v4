@@ -97,6 +97,18 @@ interface IHubConfigurator {
   function updateInterestRateStrategy(address hub, uint256 assetId, address irStrategy) external;
 
   /**
+   * @notice Updates the reinvestment strategy of an asset.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param reinvestmentStrategy The new reinvestment strategy.
+   */
+  function updateReinvestmentStrategy(
+    address hub,
+    uint256 assetId,
+    address reinvestmentStrategy
+  ) external;
+
+  /**
    * @notice Updates the config of an asset.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.

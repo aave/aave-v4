@@ -5,6 +5,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 
 import {Utils} from 'tests/Utils.sol';
 
+/// forge-config: default.disable_block_gas_limit = true
 contract HubRoundingTest is HubBase {
   using Math for uint256;
 

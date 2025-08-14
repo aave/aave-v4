@@ -41,8 +41,12 @@ library DataTypes {
     //
     address irStrategy;
     //
+    address reinvestmentStrategy;
+    //
     address feeReceiver;
     uint16 liquidityFee;
+    //
+    uint128 swept;
   }
 
   struct SpokeConfig {
@@ -55,6 +59,7 @@ library DataTypes {
     address feeReceiver;
     uint16 liquidityFee;
     address irStrategy;
+    address reinvestmentStrategy;
   }
 
   // Spoke types

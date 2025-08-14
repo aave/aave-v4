@@ -388,7 +388,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add USDX
@@ -405,7 +406,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add DAI
@@ -422,7 +424,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add WBTC
@@ -439,7 +442,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add USDY
@@ -456,7 +460,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add DAI again
@@ -473,7 +478,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
 
@@ -914,17 +920,31 @@ abstract contract Base is Test {
   }
 
   function updateAssetFeeReceiver(
-    IHub targetHub,
+    IHub hub,
     uint256 assetId,
     address newFeeReceiver
   ) internal pausePrank {
-    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.feeReceiver = newFeeReceiver;
 
     vm.prank(HUB_ADMIN);
-    targetHub.updateAssetConfig(assetId, config);
+    hub.updateAssetConfig(assetId, config);
 
-    assertEq(targetHub.getAssetConfig(assetId), config);
+    assertEq(hub.getAssetConfig(assetId), config);
+  }
+
+  function updateAssetReinvestmentStrategy(
+    IHub hub,
+    uint256 assetId,
+    address newReinvestmentStrategy
+  ) internal pausePrank {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
+    config.reinvestmentStrategy = newReinvestmentStrategy;
+
+    vm.prank(HUB_ADMIN);
+    hub.updateAssetConfig(assetId, config);
+
+    assertEq(hub.getAssetConfig(assetId), config);
   }
 
   function updateReserveFrozenFlag(
@@ -1175,10 +1195,8 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (IERC20) {
-    return
-      IERC20(
-        spoke.getReserve(reserveId).hub.getAsset(spoke.getReserve(reserveId).assetId).underlying
-      );
+    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
+    return IERC20(reserve.hub.getAsset(reserve.assetId).underlying);
   }
 
   function getWithdrawalLimit(
@@ -1837,6 +1855,7 @@ abstract contract Base is Test {
     assertEq(a.feeReceiver, b.feeReceiver, 'feeReceiver');
     assertEq(a.liquidityFee, b.liquidityFee, 'liquidityFee');
     assertEq(a.irStrategy, b.irStrategy, 'irStrategy');
+    assertEq(a.reinvestmentStrategy, b.reinvestmentStrategy, 'reinvestmentStrategy');
     assertEq(abi.encode(a), abi.encode(b));
   }
 
@@ -2092,7 +2111,7 @@ abstract contract Base is Test {
       asset.drawnRate,
       IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate(
         assetId,
-        asset.liquidity,
+        asset.liquidity + asset.swept,
         drawn,
         premium
       ),

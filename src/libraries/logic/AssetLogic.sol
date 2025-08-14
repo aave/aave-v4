@@ -64,7 +64,7 @@ library AssetLogic {
   }
 
   function totalAddedAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.liquidity + asset.deficit + asset.totalOwed();
+    return asset.liquidity + asset.swept + asset.deficit + asset.totalOwed();
   }
 
   function totalAddedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -102,7 +102,7 @@ library AssetLogic {
   function updateDrawnRate(DataTypes.Asset storage asset, uint256 assetId) internal {
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
       assetId: assetId,
-      liquidity: asset.liquidity,
+      liquidity: asset.liquidity + asset.swept,
       drawn: asset.drawn(),
       premium: asset.premium()
     });
