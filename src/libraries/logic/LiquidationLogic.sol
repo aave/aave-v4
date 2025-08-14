@@ -62,11 +62,16 @@ library LiquidationLogic {
   ) internal pure returns (uint256) {
     uint256 maxLiquidatableDebt = debtToCover.min(params.totalBorrowerReserveDebt);
     uint256 actualDebtToLiquidate = maxLiquidatableDebt.min(params.debtToRestoreCloseFactor);
+
+    if (actualDebtToLiquidate == params.totalBorrowerReserveDebt) {
+      return actualDebtToLiquidate;
+    }
+
     uint256 remainingDebtInBaseCurrency = ((params.totalBorrowerReserveDebt -
       actualDebtToLiquidate) * params.debtAssetPrice).toWad() / params.debtAssetUnit;
 
-    // check for non zero debt dust remaining
-    if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE && remainingDebtInBaseCurrency != 0) {
+    // check for (non zero) debt dust remaining
+    if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE) {
       require(debtToCover >= params.totalBorrowerReserveDebt, MustNotLeaveDust());
       actualDebtToLiquidate = params.totalBorrowerReserveDebt;
     }
