@@ -108,7 +108,7 @@ library AssetLogic {
       deficit: asset.deficit,
       swept: asset.swept
     });
-    asset.drawnRate = newDrawnRate.toUint128();
+    asset.drawnRate = newDrawnRate.toUint96();
 
     // asset accrual should have already occurred
     emit IHub.AssetUpdate(assetId, asset.drawnIndex, newDrawnRate, asset.lastUpdateTimestamp);
