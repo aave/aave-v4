@@ -106,7 +106,7 @@ library AssetLogic {
       drawn: asset.drawn(),
       premium: asset.premium()
     });
-    asset.drawnRate = newDrawnRate.toUint128();
+    asset.drawnRate = newDrawnRate.toUint96();
 
     // asset accrual should have already occurred
     emit IHub.AssetUpdate(assetId, asset.drawnIndex, newDrawnRate, asset.lastUpdateTimestamp);

@@ -80,7 +80,7 @@ contract Hub is IHub, AccessManaged {
       underlying: underlying,
       lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
       decimals: decimals,
-      drawnRate: drawnRate.toUint128(),
+      drawnRate: drawnRate.toUint96(),
       irStrategy: irStrategy,
       reinvestmentStrategy: address(0),
       feeReceiver: feeReceiver,

@@ -22,10 +22,10 @@ library DataTypes {
   struct Asset {
     //
     uint128 liquidity;
-    uint128 deficit;
+    uint128 swept;
     //
+    uint128 deficit;
     uint128 addedShares;
-    uint128 realizedPremium;
     //
     uint128 premiumShares;
     uint128 premiumOffset;
@@ -33,20 +33,19 @@ library DataTypes {
     uint128 drawnIndex;
     uint128 drawnShares;
     //
-    uint128 drawnRate;
+    uint128 realizedPremium;
     uint40 lastUpdateTimestamp;
     uint8 decimals;
     //
     address underlying;
     //
+    uint96 drawnRate;
     address irStrategy;
     //
     address reinvestmentStrategy;
     //
     address feeReceiver;
     uint16 liquidityFee;
-    //
-    uint128 swept;
   }
 
   struct SpokeConfig {

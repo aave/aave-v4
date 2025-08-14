@@ -186,10 +186,10 @@ contract HubConfigTest is HubBase {
   }
 
   function test_addAsset_revertsWith_DrawnRateDowncastOverflow() public {
-    uint256 drawnRateRay = uint256(type(uint128).max) + 1;
+    uint256 drawnRateRay = uint256(type(uint96).max) + 1;
     _mockInterestRateRay(drawnRateRay);
     vm.expectRevert(
-      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 128, drawnRateRay)
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 96, drawnRateRay)
     );
     Utils.addAsset(
       hub1,
