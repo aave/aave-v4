@@ -62,7 +62,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
       ) + 1, // ensure deficit
       minLeftoverAmount[_usdxReserveId(spoke1)]
     );
-    vm.assume(debtToCover > usdxAmount); // debtToCover must be higher than usdxAmount to not trigger revert
+    debtToCover = bound(debtToCover, usdxAmount + 1, type(uint256).max); // debtToCover must be higher than usdxAmount to not trigger revert
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
     _borrowWithoutHfCheck(spoke1, alice, _usdxReserveId(spoke1), usdxAmount);
@@ -211,7 +211,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
       liquidationBonus,
       closeFactor
     );
-    vm.assume(debtToCover >= requiredDebtAmount);
+    debtToCover = bound(debtToCover, requiredDebtAmount, type(uint256).max);
     // no deficit should be reported
     vm.expectCall(address(hub1), abi.encodeWithSelector(hub1.reportDeficit.selector), 0);
     // liquidation call with invalid debt to cover

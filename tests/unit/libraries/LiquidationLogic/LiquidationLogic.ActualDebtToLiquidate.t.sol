@@ -74,7 +74,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
     uint256 debtToCover,
     TestDebtToRestoreCloseFactorParams memory params
   ) public {
-    vm.assume(debtToCover > 0);
+    debtToCover = bound(debtToCover, 1, type(uint256).max);
     params = _bound(params);
     DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
 
@@ -103,7 +103,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
   ) public {
     params = _bound(params);
     DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
-    vm.assume(debtToCover > params.totalBorrowerReserveDebt);
+    debtToCover = bound(debtToCover, params.totalBorrowerReserveDebt + 1, type(uint256).max);
 
     params.debtToRestoreCloseFactor = bound(
       params.debtToRestoreCloseFactor,
@@ -130,7 +130,7 @@ contract LiquidationLogicActualDebtToLiquidateTest is LiquidationLogicBaseTest {
   ) public {
     params = _bound(params);
     DataTypes.LiquidationCallLocalVars memory params = _setStructFields(params);
-    vm.assume(debtToCover < params.totalBorrowerReserveDebt);
+    debtToCover = bound(debtToCover, 0, params.totalBorrowerReserveDebt - 1);
 
     params.debtToRestoreCloseFactor = bound(
       params.debtToRestoreCloseFactor,
