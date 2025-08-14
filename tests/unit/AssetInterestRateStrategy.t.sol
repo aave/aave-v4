@@ -29,7 +29,7 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_maxBorrowRate() public view {
-    assertEq(rateStrategy.MAX_BORROW_RATE(), 7922_81);
+    assertEq(rateStrategy.MAX_BORROW_RATE(), 1000_00);
   }
 
   function test_minOptimalRatio() public view {

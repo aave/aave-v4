@@ -14,7 +14,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;
 
   /// @inheritdoc IAssetInterestRateStrategy
-  uint256 public constant MAX_BORROW_RATE = 7922_81; // 7922.81% in BPS
+  uint256 public constant MAX_BORROW_RATE = 1000_00; // 1000.00% in BPS
 
   /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS
