@@ -70,6 +70,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function updateOracle(address newOracle) external restricted {
     require(newOracle != address(0), InvalidOracle());
     oracle = IAaveOracle(newOracle);
+    require(oracle.DECIMALS() == 8, InvalidOracle());
     emit OracleUpdate(newOracle);
   }
 
@@ -318,13 +319,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256[] memory debtsToCover = new uint256[](1);
     debtsToCover[0] = debtToCover;
 
-    _executeLiquidationCall(
-      _reserves[collateralReserveId],
-      _reserves[debtReserveId],
-      users,
-      debtsToCover,
-      msg.sender
-    );
+    _executeLiquidationCall(collateralReserveId, debtReserveId, users, debtsToCover, msg.sender);
   }
 
   /// @inheritdoc ISpoke
@@ -1027,30 +1022,29 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @dev Executes liquidation call across all users in the array, for a given pair of debt/collateral reserves.
    */
   function _executeLiquidationCall(
-    DataTypes.Reserve storage collateralReserve,
-    DataTypes.Reserve storage debtReserve,
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
     address[] memory users,
     uint256[] memory debtsToCover,
     address liquidator
   ) internal {
     require(users.length == debtsToCover.length, UsersAndDebtLengthMismatch());
 
-    IHub collateralReserveHub = collateralReserve.hub;
-    IHub debtReserveHub = debtReserve.hub;
+    DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
+    DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
 
     DataTypes.ExecuteLiquidationLocalVars memory vars;
 
     vars.collateralReserveHub = collateralReserve.hub;
     vars.collateralAssetId = collateralReserve.assetId;
-    vars.collateralReserveId = collateralReserve.reserveId;
     vars.debtReserveHub = debtReserve.hub;
     vars.debtAssetId = debtReserve.assetId;
-    vars.debtReserveId = debtReserve.reserveId;
+    vars.debtReserveId = debtReserveId;
 
     while (vars.i < users.length) {
       vars.user = users[vars.i];
       DataTypes.UserPosition storage userCollateralPosition = _userPositions[vars.user][
-        vars.collateralReserveId
+        collateralReserveId
       ];
       DataTypes.UserPosition storage userDebtPosition = _userPositions[vars.user][
         vars.debtReserveId
@@ -1071,6 +1065,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       ) = _calculateLiquidationParameters(
         collateralReserve,
         debtReserve,
+        collateralReserveId,
+        debtReserveId,
         vars.user,
         debtsToCover[vars.i],
         vars.drawnDebt,
@@ -1129,8 +1125,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.totalLiquidationFeeShares += vars.liquidationFeeShares;
 
       emit LiquidationCall(
-        vars.collateralAssetId,
-        vars.debtAssetId,
+        collateralReserveId,
+        debtReserveId,
         vars.user,
         vars.drawnDebtToLiquidate + vars.premiumDebtToLiquidate,
         vars.collateralToLiquidate,
@@ -1152,8 +1148,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @param debtReserve The debt reserve being repaid during liquidation.
    * @param user The address of the user being liquidated.
    * @param debtToCover The amount of debt to cover.
-   * @param drawnDebt The drawn debt of the user.
-   * @param premiumDebt The premium debt of the user.
+   * @param drawnReserveDebt The drawn debt of the user for the given debt reserve.
+   * @param premiumReserveDebt The premium debt of the user for the given debt reserve.
    * @return actualCollateralToLiquidate The amount of collateral to liquidate.
    * @return liquidationFeeAmount The amount of protocol fee.
    * @return drawnDebtToLiquidate The amount of drawn debt to repay.
@@ -1163,16 +1159,18 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function _calculateLiquidationParameters(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
     address user,
     uint256 debtToCover,
-    uint256 drawnDebt,
-    uint256 premiumDebt
+    uint256 drawnReserveDebt,
+    uint256 premiumReserveDebt
   ) internal view returns (uint256, uint256, uint256, uint256, bool) {
     DataTypes.LiquidationCallLocalVars memory vars;
-    vars.collateralReserveId = collateralReserve.reserveId;
-    vars.debtReserveId = debtReserve.reserveId;
-    vars.userCollateralBalance = getUserSuppliedAmount(vars.collateralReserveId, user);
-    vars.totalDebt = drawnDebt + premiumDebt;
+    vars.collateralReserveId = collateralReserveId;
+    vars.debtReserveId = debtReserveId;
+    vars.borrowerCollateralBalance = getUserSuppliedAmount(collateralReserveId, user);
+    vars.totalBorrowerReserveDebt = drawnReserveDebt + premiumReserveDebt;
     DataTypes.DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[
       vars.collateralReserveId
     ][_userPositions[user][vars.collateralReserveId].configKey];
@@ -1191,7 +1189,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       debtReserve,
       user,
       debtToCover,
-      vars.totalDebt,
+      vars.totalBorrowerReserveDebt,
       vars.healthFactor,
       vars.collateralFactor
     );
@@ -1207,20 +1205,18 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.collateralAssetPrice = oracle.getReservePrice(vars.collateralReserveId);
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.liquidationFee = collateralDynConfig.liquidationFee;
-
-    vars.actualDebtToLiquidate = LiquidationLogic.calculateActualDebtToLiquidate({
-      debtToCover: debtToCover,
-      params: vars
-    });
+    vars.debtToRestoreCloseFactor = vars.calculateDebtToRestoreCloseFactor();
+    vars.actualDebtToLiquidate = vars.calculateActualDebtToLiquidate(debtToCover);
     (
       vars.actualCollateralToLiquidate,
       vars.actualDebtToLiquidate,
       vars.liquidationFeeAmount,
       vars.hasDeficit
     ) = vars.calculateAvailableCollateralToLiquidate();
+
     (vars.drawnDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
-      drawnDebt,
-      premiumDebt,
+      drawnReserveDebt,
+      premiumReserveDebt,
       vars.actualDebtToLiquidate
     );
 

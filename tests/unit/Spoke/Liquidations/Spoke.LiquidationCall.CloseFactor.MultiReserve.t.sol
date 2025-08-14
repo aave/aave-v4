@@ -39,8 +39,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       skipTime: 365 days,
       desiredHf: 0.95e18
     });
-    _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario1');
-    assertFalse(state.hasDeficit, 'should not have deficit');
+
+    if (!state.hasDustFromAvailableCollateral) {
+      _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario1');
+      assertFalse(state.hasDeficit, 'should not have deficit');
+    }
   }
 
   /// wbtc/weth collateral
@@ -73,8 +76,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       desiredHf: 0.95e18
     });
 
-    _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario2');
-    assertFalse(state.hasDeficit, 'should not have deficit');
+    // if dust remains after accounting for available collateral, tx will have reverted
+    if (!state.hasDustFromAvailableCollateral) {
+      _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario2');
+      assertFalse(state.hasDeficit, 'should not have deficit');
+    }
   }
 
   /// dai/usdy collateral
@@ -107,8 +113,11 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       desiredHf: 0.95e18
     });
 
-    _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario3');
-    assertFalse(state.hasDeficit, 'should not have deficit');
+    // if dust remains after accounting for available collateral, tx will have reverted
+    if (!state.hasDustFromAvailableCollateral) {
+      _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario3');
+      assertFalse(state.hasDeficit, 'should not have deficit');
+    }
   }
 
   function test_liquidationCall_closeFactor_fuzz_multi_reserve(
@@ -158,8 +167,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       desiredHf: desiredHf
     });
 
-    _checkLiquidation(state, 'test_liquidationCall_closeFactor_fuzz_multi_reserve');
-    assertFalse(state.hasDeficit, 'should not have deficit');
+    if (!state.hasDustFromAvailableCollateral) {
+      _checkLiquidation(state, 'test_liquidationCall_closeFactor_fuzz_multi_reserve');
+      assertFalse(state.hasDeficit, 'should not have deficit');
+    }
   }
 
   /// fuzz test with multiple collateral/debt reserves
@@ -181,6 +192,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
     state.collateralReserveIndex = collateralReserveIndex;
     state.debtReserveIndex = debtReserveIndex;
+    state.isMultiDebtReserve = debtReserveIds.length > 1;
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
       state.collateralReserves[i] = spoke1.getReserve(collateralReserveIds[i]);
       state.collDynConfigs[i] = _getUserDynConfig(spoke1, alice, collateralReserveIds[i]); // utilize user's dynamic config
@@ -213,14 +225,10 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     state.user = alice;
 
     updateLiquidationConfig(state.spoke, liqConfig);
-    updateLiquidationBonus(
-      state.spoke,
-      state.collateralReserves[collateralReserveIndex].reserveId,
-      liqBonus
-    );
+    updateLiquidationBonus(state.spoke, collateralReserveIds[collateralReserveIndex], liqBonus);
     updateLiquidationFee(
       state.spoke,
-      state.collateralReserves[collateralReserveIndex].reserveId,
+      collateralReserveIds[collateralReserveIndex],
       state.liquidationFee
     );
 
@@ -258,10 +266,12 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       bob
     );
 
-    (
-      uint256 hfAfterBorrow,
-      uint256[] memory requiredDebtAmounts
-    ) = _borrowMultipleReservesToBeBelowHf(state.spoke, alice, debtReserveIds, state.desiredHf);
+    (uint256 hfAfterBorrow, ) = _borrowMultipleReservesToBeBelowHf(
+      state.spoke,
+      alice,
+      debtReserveIds,
+      state.desiredHf
+    );
 
     state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
       state.collateralReserves[collateralReserveIndex].reserveId,
@@ -271,31 +281,50 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     // ensure position is liquidatable
     assertLt(state.spoke.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    _getAccountingInfoBeforeLiquidation(state);
+    state = _getAccountingInfoBeforeLiquidation(
+      collateralReserveIds[collateralReserveIndex],
+      debtReserveIds[debtReserveIndex],
+      state
+    );
     DynamicConfig[] memory configKeysBefore = _getUserDynConfigKeys(spoke1, alice);
 
     (
       state.collToLiq,
       state.debtToLiq,
       state.liquidationFeeAmount,
+      ,
+      state.hasDustFromDebt
+    ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
-    ) = _calculateAvailableCollateralToLiquidate(state, requiredDebtAmounts[debtReserveIndex]);
-
-    vm.expectEmit(address(state.spoke));
-    emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.assetId,
-      state.debtReserve.assetId,
-      alice,
-      state.debtToLiq,
-      state.collToLiq,
-      LIQUIDATOR
-    );
+    state.naiveLeftoverDebtAmount = state.userTotalReserveDebt.balanceBefore - state.debtToLiq;
+    // conditions for dust remaining that results in revert:
+    // 1. naiveLeftoverDebtAmount < minLeftoverAmount threshold
+    // 2. naiveLeftoverDebtAmount != 0 (non-zero dust)
+    // 3. total collateral seized (incl liq fee) != userSuppliedAmount.balanceBefore (collateral reserve is not fully liquidated)
+    state.hasDustFromAvailableCollateral = (state.naiveLeftoverDebtAmount <
+      state.minLeftoverAmount &&
+      state.naiveLeftoverDebtAmount != 0 &&
+      state.collToLiq + state.liquidationFeeAmount != state.userSuppliedAmount.balanceBefore);
+    // if debt dust remains after accounting for available collateral, revert
+    if (state.hasDustFromAvailableCollateral) {
+      vm.expectRevert(LiquidationLogic.MustNotLeaveDust.selector);
+    } else {
+      vm.expectEmit(address(state.spoke));
+      emit ISpokeBase.LiquidationCall(
+        collateralReserveIds[collateralReserveIndex],
+        debtReserveIds[debtReserveIndex],
+        alice,
+        state.debtToLiq,
+        state.collToLiq,
+        LIQUIDATOR
+      );
+    }
     vm.prank(LIQUIDATOR);
     state.spoke.liquidationCall(
       collateralReserveIds[collateralReserveIndex],
       debtReserveIds[debtReserveIndex],
       alice,
-      requiredDebtAmounts[debtReserveIndex]
+      UINT256_MAX
     );
 
     _getAccountingInfoAfterLiquidation(state);

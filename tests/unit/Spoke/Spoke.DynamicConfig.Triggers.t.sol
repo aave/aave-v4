@@ -47,9 +47,9 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
   function test_liquidate_does_not_trigger_dynamicConfigUpdate() public {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
-    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
-    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500e18);
-    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
+    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1_000_000e6, alice);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500_000e18);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500_000e18, alice);
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
 
@@ -62,7 +62,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     assertLe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);
-    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100e18);
+    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100_000e18);
 
     _assertDynamicConfigRefreshEventsNotEmitted();
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
