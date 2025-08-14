@@ -41,8 +41,12 @@ library DataTypes {
     //
     address irStrategy;
     //
+    address reinvestmentStrategy;
+    //
     address feeReceiver;
     uint16 liquidityFee;
+    //
+    uint128 swept;
   }
 
   struct SpokeConfig {
@@ -55,6 +59,7 @@ library DataTypes {
     address feeReceiver;
     uint16 liquidityFee;
     address irStrategy;
+    address reinvestmentStrategy;
   }
 
   // Spoke types
@@ -151,12 +156,13 @@ library DataTypes {
     uint256 actualCollateralToLiquidate;
     uint256 actualDebtToLiquidate;
     uint256 liquidationFeeAmount;
-    uint256 userCollateralBalance;
+    uint256 borrowerCollateralBalance;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
-    uint256 totalDebt;
+    uint256 totalBorrowerReserveDebt;
+    uint256 debtToRestoreCloseFactor;
     uint256 healthFactor;
     uint256 liquidationBonus;
     uint256 drawnDebtToLiquidate;
@@ -170,7 +176,7 @@ library DataTypes {
   }
 
   struct CalculateAvailableCollateralToLiquidate {
-    uint256 userCollateralBalanceInBaseCurrency;
+    uint256 borrowerCollateralBalanceInBaseCurrency;
     uint256 baseCollateral;
     uint256 maxCollateralToLiquidate;
     uint256 collateralAmount;

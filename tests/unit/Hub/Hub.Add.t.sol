@@ -40,7 +40,8 @@ contract HubAddTest is HubBase {
       DataTypes.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     hub1.addSpoke(zeroDecimalAssetId, address(spoke1), spokeConfig);
@@ -86,7 +87,9 @@ contract HubAddTest is HubBase {
   function test_add_revertsWith_SharesDowncastOverflow() public {
     uint256 shares = uint256(type(uint128).max) + 1;
     uint256 amount = hub1.previewAddByShares(daiAssetId, shares);
-    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 128, shares));
+    vm.expectRevert(
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 128, shares)
+    );
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount, alice);
   }
@@ -108,7 +111,9 @@ contract HubAddTest is HubBase {
     uint256 amount = hub1.previewAddByShares(daiAssetId, shares);
     assertGt(amount, type(uint128).max);
 
-    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 128, amount));
+    vm.expectRevert(
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 128, amount)
+    );
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount, alice);
   }
@@ -142,7 +147,10 @@ contract HubAddTest is HubBase {
     // Depending on the borrow rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
     assertEq(
-      uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares).toSharesDown(totalAddedAssets, totalAddedShares),
+      uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares).toSharesDown(
+        totalAddedAssets,
+        totalAddedShares
+      ),
       0,
       'share price is a whole number'
     );
@@ -217,7 +225,10 @@ contract HubAddTest is HubBase {
     // Depending on the borrow rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
     assertEq(
-      uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares).toSharesDown(totalAddedAssets, totalAddedShares),
+      uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares).toSharesDown(
+        totalAddedAssets,
+        totalAddedShares
+      ),
       0,
       'share price is a whole number'
     );

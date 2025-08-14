@@ -42,6 +42,20 @@ interface IHub is IHubBase, IAccessManaged {
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
 
   /**
+   * @notice Emitted when an amount of liquidity is swept/reinvested.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount swept.
+   */
+  event Sweep(uint256 indexed assetId, uint256 amount);
+
+  /**
+   * @notice Emitted when an amount of liquidity is reclaimed (from swept/reinvested liquidity).
+   * @param assetId The identifier of the asset.
+   * @param amount The amount reclaimed.
+   */
+  event Reclaim(uint256 indexed assetId, uint256 amount);
+
+  /**
    * @notice Emitted when deficit is eliminated.
    * @param assetId The identifier of the asset.
    * @param spoke The spoke that eliminated the deficit, and had supplied shares removed.
@@ -65,7 +79,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidRestoreAmount();
   error AddedAmountExceeded(uint256 addedAmount);
   error AddedSharesExceeded(uint256 addedShares);
-  error NotLiquidity(uint256 liquidity);
+  error InsufficientLiquidity(uint256 liquidity);
   error InvalidDrawAmount();
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);
@@ -82,6 +96,9 @@ interface IHub is IHubBase, IAccessManaged {
   error SurplusDeficitReported(uint256 amount);
   error SpokeNotActive();
   error InvalidFeeShares();
+  error InvalidReinvestmentStrategy();
+  error InvalidSweepAmount();
+  error OnlyReinvestmentStrategy();
 
   /**
    * @notice Adds a new asset to the hub.
@@ -186,6 +203,22 @@ interface IHub is IHubBase, IAccessManaged {
    * @return The amount of shares removed.
    */
   function eliminateDeficit(uint256 assetId, uint256 amount) external returns (uint256);
+
+  /**
+   * @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment strategy.
+   * @dev The strategy handles the actual reinvestment of funds, redistribution of interest, and investment caps.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount to sweep.
+   */
+  function sweep(uint256 assetId, uint256 amount) external;
+
+  /**
+   * @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment strategy.
+   * @dev The strategy can only reclaim up to swept amount. All accrued interest is distributed offchain.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount to reclaim.
+   */
+  function reclaim(uint256 assetId, uint256 amount) external;
 
   /**
    * @notice Converts the specified amount of assets to shares amount added upon an Add action.
@@ -326,6 +359,13 @@ interface IHub is IHubBase, IAccessManaged {
   function getTotalAddedShares(uint256 assetId) external view returns (uint256);
 
   function getLiquidity(uint256 assetId) external view returns (uint256);
+
+  /**
+   * @notice Return the amount swept (reinvested) for a certain assetId.
+   * @param assetId The identifier of the asset.
+   * @return The swept amount for the asset.
+   */
+  function getSwept(uint256 assetId) external view returns (uint256);
 
   function getDeficit(uint256 assetId) external view returns (uint256);
 

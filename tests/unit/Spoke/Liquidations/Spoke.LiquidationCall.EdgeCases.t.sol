@@ -55,7 +55,7 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
   /// fuzz test for liquidation call with max collateral amount equal to full collateral amount
   /// rare occurrence in single coll case, but can happen with multiple colls where 1 is fully liquidated
   function test_liquidationCall_fuzz_validMaxCollateralAmount(uint256 supplyAmountInBase) public {
-    supplyAmountInBase = bound(supplyAmountInBase, 10e26, 1e7 * 1e26); // $1 - $10M
+    supplyAmountInBase = bound(supplyAmountInBase, LiquidationLogic.MIN_LEFTOVER_BASE, 1e7 * 1e26); // $1000 - $10M
 
     // set collateral factor of coll as 100%
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 100_00);

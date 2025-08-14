@@ -322,7 +322,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       if (debtIndex == i) {
         params.debtAssetUnit = debtAssetUnit;
         params.debtAssetPrice = debtAssetPrice;
-        params.totalDebt += debts[i].amount;
+        params.totalBorrowerReserveDebt += debts[i].amount;
       }
     }
     params.totalDebtInBaseCurrency = totalAmount;
