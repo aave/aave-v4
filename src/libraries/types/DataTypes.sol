@@ -1,89 +1,102 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
+import {IHub} from 'src/interfaces/IHub.sol';
 
 library DataTypes {
-  // Liquidity Hub types
-  // todo pack
+  // Hub types
   struct SpokeData {
-    uint256 suppliedShares;
-    uint256 baseDrawnShares;
-    uint256 premiumDrawnShares;
-    uint256 premiumOffset; // todo make signed
-    uint256 realizedPremium;
-    uint256 lastUpdateTimestamp; // todo: unneeded?
-    DataTypes.SpokeConfig config;
+    //
+    uint128 addedShares;
+    uint128 drawnShares;
+    //
+    uint128 premiumShares;
+    uint128 premiumOffset;
+    //
+    uint128 realizedPremium;
+    uint56 addCap;
+    uint56 drawCap;
+    bool active;
   }
 
   struct Asset {
-    address underlying;
+    //
+    uint128 liquidity;
+    uint128 swept;
+    //
+    uint128 deficit;
+    uint128 addedShares;
+    //
+    uint128 premiumShares;
+    uint128 premiumOffset;
+    //
+    uint128 drawnIndex;
+    uint128 drawnShares;
+    //
+    uint128 realizedPremium;
+    uint40 lastUpdateTimestamp;
     uint8 decimals;
-    uint256 suppliedShares;
-    uint256 availableLiquidity;
-    uint256 baseDrawnShares;
-    uint256 premiumDrawnShares;
-    uint256 premiumOffset; // todo make signed
-    uint256 realizedPremium;
-    uint256 baseDebtIndex;
-    uint256 baseBorrowRate;
-    uint256 lastUpdateTimestamp;
-    DataTypes.AssetConfig config;
+    //
+    address underlying;
+    //
+    uint96 drawnRate;
+    address irStrategy;
+    //
+    address reinvestmentStrategy;
+    //
+    address feeReceiver;
+    uint16 liquidityFee;
   }
 
   struct SpokeConfig {
     bool active;
-    uint256 supplyCap;
-    uint256 drawCap;
+    uint56 addCap;
+    uint56 drawCap;
   }
 
   struct AssetConfig {
-    bool active;
-    bool paused;
-    bool frozen;
     address feeReceiver;
-    uint256 liquidityFee;
+    uint16 liquidityFee;
     address irStrategy;
+    address reinvestmentStrategy;
   }
 
   // Spoke types
   struct Reserve {
+    // todo: remove reserveId
     uint256 reserveId;
-    uint256 assetId;
-    uint256 suppliedShares;
-    uint256 baseDrawnShares;
-    uint256 premiumDrawnShares;
-    uint256 premiumOffset;
-    uint256 realizedPremium;
-    ReserveConfig config;
-    uint16 dynamicConfigKey; // key of the last reserve config
+    //
+    IHub hub;
+    uint16 assetId;
     uint8 decimals;
-    address underlying;
-    ILiquidityHub hub;
-  }
-
-  struct ReserveConfig {
-    bool active;
-    bool frozen;
+    uint16 dynamicConfigKey; // key of the last reserve config
     bool paused;
+    bool frozen;
     bool borrowable;
-    bool collateral;
-    uint256 collateralRisk; // BPS TODO: use smaller uint
+    uint24 collateralRisk;
   }
 
   struct DynamicReserveConfig {
     uint16 collateralFactor;
-    uint256 liquidationBonus; // BPS, 100_00 represent a 0% bonus TODO: use smaller uint
-    uint256 liquidationFee; // BPS TODO: use smaller uint
+    uint32 liquidationBonus; // BPS, 100_00 represent a 0% bonus
+    uint16 liquidationFee; // BPS
+  }
+
+  struct LiquidationConfig {
+    uint128 closeFactor; // WAD, HF value to restore to during a liquidation
+    uint64 healthFactorForMaxBonus; // WAD, health factor under which liquidation bonus is max
+    uint16 liquidationBonusFactor; // BPS, as a percentage of effective lb
   }
 
   struct UserPosition {
-    uint256 suppliedShares;
-    uint256 baseDrawnShares;
-    uint256 premiumDrawnShares;
-    uint256 premiumOffset;
-    uint256 realizedPremium;
+    //
+    uint128 suppliedShares;
+    uint128 drawnShares;
+    //
+    uint128 premiumShares;
+    uint128 premiumOffset;
+    //
+    uint128 realizedPremium;
     uint16 configKey; // key of the last user config
   }
 
@@ -96,12 +109,26 @@ library DataTypes {
     mapping(uint256 slot => uint256 status) map;
   }
 
+  struct ReserveConfig {
+    bool paused;
+    bool frozen;
+    bool borrowable;
+    uint24 collateralRisk; // BPS
+  }
+
   struct NotifyRiskPremiumUpdateVars {
     bool premiumIncrease;
     uint256 reserveCount;
     uint256 reserveId;
     uint256 assetId;
-    ILiquidityHub hub;
+    IHub hub;
+    DataTypes.PremiumDelta premiumDelta;
+  }
+
+  struct PremiumDelta {
+    int256 sharesDelta;
+    int256 offsetDelta;
+    int256 realizedDelta;
   }
 
   struct CalculateUserAccountDataVars {
@@ -122,33 +149,40 @@ library DataTypes {
     uint256 healthFactor;
   }
 
-  struct LiquidationConfig {
-    uint256 closeFactor; // BPS, HF value to restore to during a liquidation, TODO: use smaller uint
-    uint256 healthFactorForMaxBonus; // health factor under which liquidation bonus is max, TODO: use smaller uint
-    uint256 liquidationBonusFactor; // BPS, as a percentage of effective lb, TODO: use smaller uint
-  }
-
   struct LiquidationCallLocalVars {
     uint256 collateralReserveId;
     uint256 debtReserveId;
     uint256 actualCollateralToLiquidate;
     uint256 actualDebtToLiquidate;
     uint256 liquidationFeeAmount;
-    uint256 userCollateralBalance;
+    uint256 borrowerCollateralBalance;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
-    uint256 totalDebt;
+    uint256 totalBorrowerReserveDebt;
+    uint256 debtToRestoreCloseFactor;
     uint256 healthFactor;
     uint256 liquidationBonus;
-    uint256 baseDebtToLiquidate;
+    uint256 drawnDebtToLiquidate;
     uint256 premiumDebtToLiquidate;
     uint256 closeFactor;
     uint256 collateralFactor;
     uint256 collateralAssetPrice;
     uint256 collateralAssetUnit;
     uint256 liquidationFee;
+    bool hasDeficit;
+  }
+
+  struct CalculateAvailableCollateralToLiquidate {
+    uint256 borrowerCollateralBalanceInBaseCurrency;
+    uint256 baseCollateral;
+    uint256 maxCollateralToLiquidate;
+    uint256 collateralAmount;
+    uint256 debtAmountNeeded;
+    uint256 collateralToLiquidateInBaseCurrency;
+    uint256 debtToLiquidateInBaseCurrency;
+    bool hasDeficit;
   }
 
   struct ExecuteLiquidationLocalVars {
@@ -158,39 +192,36 @@ library DataTypes {
     uint256 collateralAssetId;
     uint256 debtReserveId;
     uint256 collateralReserveId;
-    uint256 baseDebt;
+    uint256 drawnDebt;
     uint256 premiumDebt;
+    uint256 accruedPremium;
     uint256 collateralToLiquidate;
     uint256 liquidationFeeAmount;
     uint256 liquidationFeeShares;
-    uint256 baseDebtToLiquidate;
+    uint256 drawnDebtToLiquidate;
     uint256 premiumDebtToLiquidate;
     uint256 restoredShares;
     uint256 withdrawnShares;
     uint256 newUserRiskPremium;
-    uint256 userPremiumDrawnShares;
-    uint256 userPremiumOffset;
-    uint256 userRealizedPremium;
-    uint256 totalRestoredShares;
-    uint256 totalWithdrawnShares;
-    uint256 totalCollateralToLiquidate;
     uint256 totalLiquidationFeeShares;
-    int256 totalUserDebtPremiumDrawnSharesDelta;
-    int256 totalUserDebtPremiumOffsetDelta;
-    int256 totalUserCollateralPremiumDrawnSharesDelta;
-    int256 totalUserCollateralPremiumOffsetDelta;
-    uint256 totalDebtToLiquidate;
     uint256 usersLength;
     uint256 liquidatedSuppliedShares;
+    DataTypes.PremiumDelta premiumDelta;
+    bool hasDeficit;
+    IHub collateralReserveHub;
+    IHub debtReserveHub;
   }
 
   struct ExecuteRepayLocalVars {
-    ILiquidityHub hub;
+    IHub hub;
     uint256 assetId;
-    uint256 baseDebt;
+    uint256 drawnDebt;
     uint256 premiumDebt;
-    uint256 baseDebtRestored;
+    uint256 accruedPremium;
+    uint256 drawnDebtRestored;
     uint256 premiumDebtRestored;
+    uint256 userPremiumShares;
+    uint256 userPremiumOffset;
     uint256 newUserRiskPremium;
     uint256 restoredShares;
   }

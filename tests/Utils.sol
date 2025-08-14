@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-import {ISpoke} from 'src/interfaces/ISpoke.sol';
+import {IHub, IHubBase} from 'src/interfaces/IHub.sol';
+import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
@@ -13,22 +13,19 @@ library Utils {
 
   // hub
   function add(
-    ILiquidityHub hub,
+    IHub hub,
     uint256 assetId,
     address caller,
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    vm.startPrank(user);
-    IERC20(hub.getAsset(assetId).underlying).approve(address(hub), amount);
-    vm.stopPrank();
-
+    approve(hub, assetId, caller, amount);
     vm.prank(caller);
     return hub.add(assetId, amount, user);
   }
 
   function draw(
-    ILiquidityHub hub,
+    IHubBase hub,
     uint256 assetId,
     address caller,
     address to,
@@ -39,7 +36,7 @@ library Utils {
   }
 
   function remove(
-    ILiquidityHub hub,
+    IHubBase hub,
     uint256 assetId,
     address caller,
     uint256 amount,
@@ -49,24 +46,20 @@ library Utils {
     return hub.remove(assetId, amount, to);
   }
 
-  function restore(
-    ILiquidityHub hub,
+  function restoreDrawn(
+    IHub hub,
     uint256 assetId,
     address caller,
-    uint256 baseAmount,
-    uint256 premiumAmount,
-    address repayer
+    uint256 drawnAmount,
+    address restorer
   ) internal returns (uint256) {
-    vm.startPrank(repayer);
-    IERC20(hub.getAsset(assetId).underlying).approve(address(hub), (baseAmount + premiumAmount));
-    vm.stopPrank();
-
+    approve(hub, assetId, restorer, drawnAmount);
     vm.prank(caller);
-    return hub.restore(assetId, baseAmount, premiumAmount, repayer);
+    return hub.restore(assetId, drawnAmount, 0, DataTypes.PremiumDelta(0, 0, 0), restorer);
   }
 
   function addSpoke(
-    ILiquidityHub hub,
+    IHub hub,
     address hubAdmin,
     uint256 assetId,
     address spoke,
@@ -77,7 +70,7 @@ library Utils {
   }
 
   function updateSpokeConfig(
-    ILiquidityHub hub,
+    IHub hub,
     address hubAdmin,
     uint256 assetId,
     address spoke,
@@ -88,7 +81,7 @@ library Utils {
   }
 
   function addAsset(
-    ILiquidityHub hub,
+    IHub hub,
     address hubAdmin,
     address underlying,
     uint8 decimals,
@@ -101,7 +94,7 @@ library Utils {
   }
 
   function updateAssetConfig(
-    ILiquidityHub hub,
+    IHub hub,
     address hubAdmin,
     uint256 assetId,
     DataTypes.AssetConfig memory config
@@ -123,7 +116,7 @@ library Utils {
   }
 
   function supply(
-    ISpoke spoke,
+    ISpokeBase spoke,
     uint256 reserveId,
     address caller,
     uint256 amount,
@@ -145,7 +138,7 @@ library Utils {
   }
 
   function withdraw(
-    ISpoke spoke,
+    ISpokeBase spoke,
     uint256 reserveId,
     address caller,
     uint256 amount,
@@ -156,7 +149,7 @@ library Utils {
   }
 
   function borrow(
-    ISpoke spoke,
+    ISpokeBase spoke,
     uint256 reserveId,
     address caller,
     uint256 amount,
@@ -167,7 +160,7 @@ library Utils {
   }
 
   function repay(
-    ISpoke spoke,
+    ISpokeBase spoke,
     uint256 reserveId,
     address caller,
     uint256 amount,
@@ -175,5 +168,29 @@ library Utils {
   ) internal {
     vm.prank(caller);
     spoke.repay(reserveId, amount, onBehalfOf);
+  }
+
+  function approve(ISpoke spoke, uint256 reserveId, address owner, uint256 amount) internal {
+    IHub hub = spoke.getReserve(reserveId).hub;
+    _approve(
+      IERC20(hub.getAsset(spoke.getReserve(reserveId).assetId).underlying),
+      owner,
+      address(hub),
+      amount
+    );
+  }
+
+  function approve(IHub hub, uint256 assetId, address owner, uint256 amount) internal {
+    _approve(IERC20(hub.getAsset(assetId).underlying), owner, address(hub), amount);
+  }
+
+  function _approve(IERC20 underlying, address owner, address spender, uint256 amount) private {
+    uint256 allowance = underlying.allowance(owner, spender);
+    if (allowance < amount) {
+      vm.startPrank(owner);
+      underlying.approve(spender, 0);
+      underlying.approve(spender, amount);
+      vm.stopPrank();
+    }
   }
 }

@@ -13,13 +13,14 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
     uint256 desiredHf,
     uint256 skipTime
   ) public {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
     debtReserveId = bound(debtReserveId, 0, spoke1.getReserveCount() - 1);
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
 
     LiquidationTestLocalParams memory state = _execLiqCallFuzzTest({
       liqConfig: liqConfig,
@@ -32,7 +33,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
       skipTime: skipTime
     });
 
-    _checkLiquidation(state, spoke1, 'liquidationCall_fuzz_variableLiqBonus');
+    _checkLiquidation(state, 'liquidationCall_fuzz_variableLiqBonus');
   }
 
   /// coll: weth / debt: dai

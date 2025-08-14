@@ -4,6 +4,8 @@ pragma solidity ^0.8.10;
 import 'tests/Base.t.sol';
 
 contract AaveOracleTest is Base {
+  using SafeCast for uint256;
+
   AaveOracle public oracle;
 
   uint8 private constant _decimals = 8;
@@ -30,7 +32,7 @@ contract AaveOracleTest is Base {
   }
 
   function test_fuzz_constructor(uint8 decimals) public {
-    decimals = uint8(bound(decimals, 0, 18));
+    decimals = bound(decimals, 0, 18).toUint8();
     oracle = new AaveOracle(address(spoke1), decimals, _description);
 
     test_spoke();
