@@ -265,5 +265,6 @@ contract HubRefreshPremiumTest is HubBase {
     assertEq(a.premiumShares, b.premiumShares, 'premium shares');
     assertEq(a.premiumOffset, b.premiumOffset, 'premium offset');
     assertEq(a.realizedPremium, b.realizedPremium, 'realized premium');
+    assertEq(abi.encode(a), abi.encode(b));
   }
 }
