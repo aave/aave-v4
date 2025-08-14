@@ -58,7 +58,8 @@ contract HubSweepTest is HubBase {
     assertBorrowRateSynced(hub1, daiAssetId, 'sweep');
   }
 
-  function test_swept_amount_is_not_withdrawable() public {
+  ///@dev swept amount is not withdrawable
+  function test_sweep_revertsWith_InsufficientLiquidity() public {
     updateAssetReinvestmentStrategy(hub1, daiAssetId, reinvestmentStrategy);
 
     uint256 initialLiquidity = vm.randomUint(2, MAX_SUPPLY_AMOUNT);
