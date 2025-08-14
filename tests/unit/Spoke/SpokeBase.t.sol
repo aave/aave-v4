@@ -694,7 +694,6 @@ contract SpokeBase is Base {
   }
 
   function assertEq(DataTypes.Reserve memory a, DataTypes.Reserve memory b) internal pure {
-    assertEq(a.reserveId, b.reserveId, 'reserve Id');
     assertEq(address(a.hub), address(b.hub), 'hub');
     assertEq(a.assetId, b.assetId, 'asset Id');
     assertEq(a.decimals, b.decimals, 'decimals');

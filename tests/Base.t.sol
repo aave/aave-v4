@@ -199,6 +199,18 @@ abstract contract Base is Test {
     uint256 premium;
   }
 
+  struct Reserve {
+    uint256 reserveId;
+    IHub hub;
+    uint16 assetId;
+    uint8 decimals;
+    uint16 dynamicConfigKey; // key of the last reserve config
+    bool paused;
+    bool frozen;
+    bool borrowable;
+    uint24 collateralRisk;
+  }
+
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
 
   function setUp() public virtual {
@@ -2234,6 +2246,22 @@ abstract contract Base is Test {
         premiumOffset: spokeData.premiumOffset,
         realizedPremium: spokeData.realizedPremium,
         premium: premium
+      });
+  }
+
+  function _getReserve(ISpoke spoke, uint256 reserveId) internal view returns (Reserve memory) {
+    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
+    return
+      Reserve({
+        reserveId: reserveId,
+        hub: reserve.hub,
+        assetId: reserve.assetId,
+        decimals: reserve.decimals,
+        dynamicConfigKey: reserve.dynamicConfigKey,
+        paused: reserve.paused,
+        frozen: reserve.frozen,
+        borrowable: reserve.borrowable,
+        collateralRisk: reserve.collateralRisk
       });
   }
 
