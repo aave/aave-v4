@@ -14,7 +14,7 @@ contract HubRestoreTest is HubBase {
 
     uint256 drawAmount = daiAmount / 2;
 
-    // spoke1 supply weth
+    // spoke1 add weth
     Utils.add({
       hub: hub1,
       assetId: wethAssetId,
@@ -23,7 +23,7 @@ contract HubRestoreTest is HubBase {
       user: alice
     });
 
-    // spoke2 supply dai
+    // spoke2 add dai
     Utils.add({
       hub: hub1,
       assetId: daiAssetId,
@@ -41,19 +41,19 @@ contract HubRestoreTest is HubBase {
       amount: drawAmount
     });
 
-    (uint256 baseDebt, uint256 premiumDebt) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
 
     DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
-      premiumDebtRestored: 0
+      premiumRestored: 0
     });
 
     // alice restore invalid amount > baseDebt
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, drawAmount));
     vm.prank(address(spoke1));
-    hub1.restore(daiAssetId, baseDebt + 1, premiumDebt, premiumDelta, alice);
+    hub1.restore(daiAssetId, drawn + 1, premium, premiumDelta, alice);
   }
 
   function test_restore_revertsWith_InvalidRestoreAmount_zero() public {
@@ -61,7 +61,7 @@ contract HubRestoreTest is HubBase {
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
-      premiumDebtRestored: 0
+      premiumRestored: 0
     });
 
     vm.expectRevert(IHub.InvalidRestoreAmount.selector);
@@ -136,7 +136,7 @@ contract HubRestoreTest is HubBase {
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
-      premiumDebtRestored: 0
+      premiumRestored: 0
     });
 
     // alice restore invalid amount > baseAmount
@@ -149,13 +149,13 @@ contract HubRestoreTest is HubBase {
     uint256 daiAmount = 100e18;
     uint256 drawAmount = daiAmount / 2;
     uint256 skipTime = 365 days;
-    uint256 premiumDebtRestored = 1;
+    uint256 premiumRestored = 1;
 
     test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest_and_premium(
       daiAmount,
       drawAmount,
       skipTime,
-      premiumDebtRestored
+      premiumRestored
     );
   }
 
@@ -164,7 +164,7 @@ contract HubRestoreTest is HubBase {
     uint256 daiAmount,
     uint256 drawAmount,
     uint256 skipTime,
-    uint256 premiumDebtRestored
+    uint256 premiumRestored
   ) public {
     daiAmount = bound(daiAmount, 1, 1000e18);
     drawAmount = bound(drawAmount, 1, daiAmount);
@@ -201,22 +201,22 @@ contract HubRestoreTest is HubBase {
 
     skip(skipTime);
 
-    (uint256 baseDebt, uint256 premiumDebt) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
-    assertGt(premiumDebt, 0);
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    assertGt(premium, 0);
 
-    premiumDebtRestored = bound(premiumDebtRestored, 1, premiumDebt);
+    premiumRestored = bound(premiumRestored, 1, premium);
 
     DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
-      premiumDebtRestored: premiumDebtRestored
+      premiumRestored: premiumRestored
     });
 
     // alice restore invalid drawn
-    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, baseDebt));
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, drawn));
     vm.prank(address(spoke1));
-    hub1.restore(daiAssetId, baseDebt + 1, premiumDebtRestored, premiumDelta, alice);
+    hub1.restore(daiAssetId, drawn + 1, premiumRestored, premiumDelta, alice);
   }
 
   /// @dev Restore partial amount of base debt after time has passed (no premium debt).
@@ -245,7 +245,7 @@ contract HubRestoreTest is HubBase {
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
-      premiumDebtRestored: premiumDebt
+      premiumRestored: premiumDebt
     });
 
     vm.prank(address(spoke1));
@@ -311,7 +311,7 @@ contract HubRestoreTest is HubBase {
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
-      premiumDebtRestored: premiumDebt
+      premiumRestored: premiumDebt
     });
 
     vm.expectEmit(address(hub1));
@@ -420,7 +420,7 @@ contract HubRestoreTest is HubBase {
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
-      premiumDebtRestored: premiumDebt
+      premiumRestored: premiumDebt
     });
 
     // spoke1 restore full base debt
@@ -476,7 +476,7 @@ contract HubRestoreTest is HubBase {
     uint256 daiAmount,
     uint256 drawAmount,
     uint256 skipTime,
-    uint256 premiumDebtRestored
+    uint256 premiumRestored
   ) public {
     daiAmount = bound(daiAmount, 1, 1000e18); // max 1000 DAI
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
@@ -513,31 +513,31 @@ contract HubRestoreTest is HubBase {
 
     skip(skipTime);
 
-    (uint256 baseDebt, uint256 premiumDebt) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
-    assertGt(premiumDebt, 0);
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    assertGt(premium, 0);
 
-    premiumDebtRestored = bound(premiumDebtRestored, 1, premiumDebt);
+    premiumRestored = bound(premiumRestored, 1, premium);
 
     DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
-      premiumDebtRestored: premiumDebtRestored
+      premiumRestored: premiumRestored
     });
 
     AssetPosition memory daiDataBefore = getAssetPosition(hub1, daiAssetId);
 
-    // spoke1 restore full base debt
+    // spoke1 restore full drawn
     vm.prank(address(spoke1));
-    hub1.restore(daiAssetId, baseDebt, premiumDebtRestored, premiumDelta, alice);
+    hub1.restore(daiAssetId, drawn, premiumRestored, premiumDelta, alice);
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
     address daiFeeReceiver = _getFeeReceiver(daiAssetId);
     address wethFeeReceiver = _getFeeReceiver(wethAssetId);
 
     // asset
-    assertEq(daiData.drawn, 0, 'asset baseDebt');
-    assertApproxEqAbs(daiData.premium, premiumDebt - premiumDebtRestored, 2, 'asset premiumDebt');
+    assertEq(daiData.drawn, 0, 'asset drawn');
+    assertApproxEqAbs(daiData.premium, premium - premiumRestored, 2, 'asset premium');
 
     // spoke
     assertApproxEqAbs(
@@ -554,16 +554,11 @@ contract HubRestoreTest is HubBase {
       1,
       'spoke addedShares'
     );
-    (uint256 spoke1DaiBaseDebt, uint256 spoke1DaiPremiumDebt) = hub1.getSpokeOwed(
+    (uint256 spoke1DaiDrawn, uint256 spoke1DaiPremium) = hub1.getSpokeOwed(
       daiAssetId,
       address(spoke1)
     );
-    assertEq(spoke1DaiBaseDebt, 0, 'spoke1 baseDebt');
-    assertApproxEqAbs(
-      spoke1DaiPremiumDebt,
-      premiumDebt - premiumDebtRestored,
-      2,
-      'spoke1 premiumDebt'
-    );
+    assertEq(spoke1DaiDrawn, 0, 'spoke1 drawn');
+    assertApproxEqAbs(spoke1DaiPremium, premium - premiumRestored, 2, 'spoke1 premium');
   }
 }

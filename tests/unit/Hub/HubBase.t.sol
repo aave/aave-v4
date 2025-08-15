@@ -203,7 +203,7 @@ contract HubBase is Base {
     ISpoke spoke,
     address user,
     uint256 reserveId,
-    uint256 premiumDebtRestored
+    uint256 premiumRestored
   ) internal returns (DataTypes.PremiumDelta memory) {
     DataTypes.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
     Debts memory userDebt = getUserDebt(spoke, user, reserveId);
@@ -218,7 +218,7 @@ contract HubBase is Base {
     uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPosition.premiumShares) -
       userPosition.premiumOffset;
 
-    expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumDebtRestored);
+    expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumRestored);
 
     return expectedPremiumDelta;
   }
