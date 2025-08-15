@@ -42,7 +42,6 @@ library KeyValueListInMemory {
 
   function sortByKey(List memory self) internal pure {
     // @dev since `key` is in the MSB, we can sort by the key by sorting the array
-    // todo consider using Solady's quick sort implementation, it being more gas efficient (cannot use if we pack more than 1 pair per slot)
     Arrays.sort(self._inner, ltComparator);
   }
 

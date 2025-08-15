@@ -18,8 +18,6 @@ library AssetLogic {
   using MathUtils for uint256;
   using SafeCast for uint256;
 
-  // todo: option for cached object
-
   // drawn exchange rate does not include premium to accrue base rate separately
   function toDrawnAssetsUp(
     DataTypes.Asset storage asset,
