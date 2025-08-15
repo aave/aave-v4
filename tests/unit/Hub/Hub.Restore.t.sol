@@ -204,10 +204,7 @@ contract HubRestoreTest is HubBase {
     (uint256 baseDebt, uint256 premiumDebt) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     assertGt(premiumDebt, 0);
 
-    // alice restore invalid baseAmount
-    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, baseDebt));
-
-    premiumDebtRestored = bound(premiumDebtRestored, 1, premiumDebt + 1);
+    premiumDebtRestored = bound(premiumDebtRestored, 1, premiumDebt);
 
     DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
@@ -216,6 +213,8 @@ contract HubRestoreTest is HubBase {
       premiumDebtRestored: premiumDebtRestored
     });
 
+    // alice restore invalid baseAmount
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, baseDebt));
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, baseDebt + 1, premiumDebtRestored, premiumDelta, alice);
   }
