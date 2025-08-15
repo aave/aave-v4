@@ -187,19 +187,19 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     uint256 desiredHf
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
-    state.collateralReserves = new DataTypes.Reserve[](collateralReserveIds.length);
+    state.collateralReserves = new Reserve[](collateralReserveIds.length);
     state.collDynConfigs = new DataTypes.DynamicReserveConfig[](collateralReserveIds.length);
-    state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
+    state.debtReserves = new Reserve[](debtReserveIds.length);
     state.collateralReserveIndex = collateralReserveIndex;
     state.debtReserveIndex = debtReserveIndex;
     state.isMultiDebtReserve = debtReserveIds.length > 1;
     for (uint256 i = 0; i < collateralReserveIds.length; i++) {
-      state.collateralReserves[i] = spoke1.getReserve(collateralReserveIds[i]);
+      state.collateralReserves[i] = _getReserve(spoke1, collateralReserveIds[i]);
       state.collDynConfigs[i] = _getUserDynConfig(spoke1, alice, collateralReserveIds[i]); // utilize user's dynamic config
     }
     state.collDynConfig = state.collDynConfigs[collateralReserveIndex];
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
-      state.debtReserves[i] = spoke1.getReserve(debtReserveIds[i]);
+      state.debtReserves[i] = _getReserve(spoke1, debtReserveIds[i]);
     }
     liqConfig = _boundCloseFactor(liqConfig);
     liqBonus = bound(
@@ -390,7 +390,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   // increase supply exchange rate across multiple reserves
   function _increaseReservesSupplyExchangeRate(
     ISpoke spoke,
-    DataTypes.Reserve[] memory collateralReserves,
+    Reserve[] memory collateralReserves,
     uint256 borrowAmount,
     uint256 skipTime,
     address user

@@ -289,7 +289,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     IPriceOracle oracle = spoke.oracle();
 
     for (uint256 i = 0; i < collaterals.length; i++) {
-      DataTypes.Reserve memory reserve = spoke.getReserve(collaterals[i].reserveId);
+      Reserve memory reserve = _getReserve(spoke, collaterals[i].reserveId);
       DataTypes.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
         collaterals[i].reserveId,
         reserve.dynamicConfigKey
@@ -310,7 +310,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
 
     totalAmount = 0;
     for (uint256 i = 0; i < debts.length; i++) {
-      DataTypes.Reserve memory reserve = spoke.getReserve(debts[i].reserveId);
+      Reserve memory reserve = _getReserve(spoke, debts[i].reserveId);
       uint256 debtAssetUnit = 10 ** reserve.decimals;
       uint256 debtAssetPrice = oracle.getReservePrice(reserve.reserveId);
       uint256 amountInBase = _convertAmountToBaseCurrency(

@@ -179,15 +179,16 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 skipTimeForPremiumAccrual
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
-    state.collateralReserves = new DataTypes.Reserve[](1);
-    state.debtReserves = new DataTypes.Reserve[](1);
+    state.collateralReserves = new Reserve[](1);
+    state.debtReserves = new Reserve[](1);
     state.spoke = spoke1;
     state.user = alice;
 
-    state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
+    state.collateralReserves[state.collateralReserveIndex] = _getReserve(
+      state.spoke,
       collateralReserveId
     );
-    state.debtReserves[state.debtReserveIndex] = state.spoke.getReserve(debtReserveId);
+    state.debtReserves[state.debtReserveIndex] = _getReserve(state.spoke, debtReserveId);
     state.collDynConfig = _getUserDynConfig(state.spoke, state.user, collateralReserveId);
     state.collateralReserve = state.collateralReserves[state.collateralReserveIndex];
     state.debtReserve = state.debtReserves[state.debtReserveIndex];

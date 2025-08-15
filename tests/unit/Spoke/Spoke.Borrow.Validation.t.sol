@@ -24,7 +24,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     assertFalse(spoke1.getReserve(reserveId).borrowable);
 
     // Bob tries to draw
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotBorrowable.selector, reserveId));
+    vm.expectRevert(ISpoke.ReserveNotBorrowable.selector);
     vm.prank(bob);
     spoke1.borrow(reserveId, amount, bob);
   }

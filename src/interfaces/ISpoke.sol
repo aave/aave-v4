@@ -106,7 +106,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error AssetNotListed();
   error InvalidCollateralRisk();
   error InsufficientSupply(uint256 supply);
-  error ReserveNotBorrowable(uint256 reserveId);
+  error ReserveNotBorrowable();
   error ReservePaused();
   error ReserveFrozen();
   error InvalidCollateralFactor();
