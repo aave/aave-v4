@@ -7,6 +7,7 @@ contract HubRestoreTest is HubBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
+  using SafeCast for *;
 
   HubConfigurator public hubConfigurator;
   address public HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
@@ -330,6 +331,209 @@ contract HubRestoreTest is HubBase {
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, drawn));
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawn + 1, premiumRestored, premiumDelta, alice);
+  }
+
+  function test_restore_premiumDeltas_twoWeiIncrease_realizedDelta() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke2 add dai
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      user: bob,
+      caller: address(spoke2)
+    });
+
+    // spoke1 draw liquidity
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn;
+    uint256 restoreAmount = drawnRestored + premium;
+
+    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      spoke: spoke1,
+      user: alice,
+      reserveId: daiAssetId,
+      premiumRestored: premium
+    });
+    premiumDelta.realizedDelta += vm.randomUint(0, 2).toInt256();
+
+    vm.expectEmit(address(hub1));
+    emit IHubBase.Restore(
+      daiAssetId,
+      address(spoke1),
+      hub1.convertToDrawnShares(daiAssetId, drawnRestored),
+      premiumDelta,
+      drawnRestored,
+      premium
+    );
+
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
+  }
+
+  function test_restore_revertsWith_InvalidPremiumChange_premiumIncrease() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke2 add dai
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      user: bob,
+      caller: address(spoke2)
+    });
+
+    // spoke1 draw liquidity
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn;
+    uint256 restoreAmount = drawnRestored + premium;
+
+    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      spoke: spoke1,
+      user: alice,
+      reserveId: daiAssetId,
+      premiumRestored: premium
+    });
+    premiumDelta.realizedDelta += 3;
+
+    vm.expectRevert(IHub.InvalidPremiumChange.selector);
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
+  }
+
+  function test_restore_revertsWith_underflow_offsetIncrease() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke2 add dai
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      user: bob,
+      caller: address(spoke2)
+    });
+
+    // spoke1 draw liquidity
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn;
+    uint256 restoreAmount = drawnRestored + premium;
+
+    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      spoke: spoke1,
+      user: alice,
+      reserveId: daiAssetId,
+      premiumRestored: premium
+    });
+    premiumDelta.offsetDelta += 1;
+
+    vm.expectRevert(stdError.arithmeticError);
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
+  }
+
+  function test_restore_two_wei_shares_delta_increase() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke2 add dai
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      user: bob,
+      caller: address(spoke2)
+    });
+
+    // spoke1 draw liquidity
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn;
+    uint256 restoreAmount = drawnRestored + premium;
+
+    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      spoke: spoke1,
+      user: alice,
+      reserveId: daiAssetId,
+      premiumRestored: premium
+    });
+    premiumDelta.sharesDelta += vm.randomUint(0, 2).toInt256();
+
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
+  }
+
+  function test_restore_revertsWith_InvalidPremiumChange_premiumSharesIncrease() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke2 add dai
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      user: bob,
+      caller: address(spoke2)
+    });
+
+    // spoke1 draw liquidity
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn;
+    uint256 restoreAmount = drawnRestored + premium;
+
+    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      spoke: spoke1,
+      user: alice,
+      reserveId: daiAssetId,
+      premiumRestored: premium
+    });
+    premiumDelta.sharesDelta += 3;
+
+    vm.expectRevert(IHub.InvalidPremiumChange.selector);
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
   }
 
   /// @dev Restore partial amount of drawn after time has passed (no premium).
