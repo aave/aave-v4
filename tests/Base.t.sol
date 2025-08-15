@@ -170,6 +170,13 @@ abstract contract Base is Test {
     uint256 premium;
   }
 
+  // TODO: Seems this should be replaced with DrawnAccounting struct
+  struct Debts {
+    uint256 drawnDebt;
+    uint256 premiumDebt;
+    uint256 totalDebt;
+  }
+
   struct AssetPosition {
     uint256 assetId;
     uint256 addedShares;
@@ -1175,6 +1182,15 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (DataTypes.UserPosition memory) {
     return spoke.getUserPosition(reserveId, user);
+  }
+
+  function getUserDebt(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId
+  ) internal view returns (Debts memory data) {
+    (data.drawnDebt, data.premiumDebt) = spoke.getUserDebt(reserveId, user);
+    data.totalDebt = data.drawnDebt + data.premiumDebt;
   }
 
   function getReserveInfo(

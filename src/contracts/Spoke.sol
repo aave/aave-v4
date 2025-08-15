@@ -60,7 +60,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @param authority_ The address of the authority contract which manages permissions.
    */
   constructor(address authority_) AccessManaged(authority_) {
-    // todo move to `initialize` when adding upgradeability
     _liquidationConfig.closeFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     emit LiquidationConfigUpdate(_liquidationConfig);
   }
@@ -129,7 +128,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId,
     DataTypes.ReserveConfig calldata config
   ) external restricted {
-    // TODO: More sophisticated
     require(reserveId < _reserveCount, ReserveNotListed());
     _validateReserveConfig(config);
     _reserves[reserveId] = _reserves[reserveId].setReserveConfig(config);
@@ -504,7 +502,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       uint256 totalDebtInBaseCurrency
     )
   {
-    // todo separate getter with refreshed config for users trying to incrementally build hf?
     (
       userRiskPremium,
       avgCollateralFactor,
@@ -574,12 +571,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // HF checked at the end of borrow action
   }
 
-  // TODO: Place this and LH equivalent in a generic logic library
   function _validateRepay(ReserveData reserve) internal pure {
     require(address(reserve.hub()) != address(0), ReserveNotListed());
     require(!reserve.paused(), ReservePaused());
-    // todo validate user not trying to repay more
-    // todo NoExplicitAmountToRepayOnBehalf
   }
 
   /**
@@ -882,7 +876,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
   }
 
-  // todo optimize, merge logic duped borrow/repay, rename
   /**
    * @dev Trigger risk premium update on all drawn reserves of `user`.
    * @param user The address of the user whose risk premium is being updated.
@@ -897,7 +890,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     while (vars.reserveId < vars.reserveCount) {
-      // todo keep borrowed assets in transient storage/pass through?
       if (positionStatus.isBorrowing(vars.reserveId)) {
         DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
         ReserveData reserve = _reserves[vars.reserveId];

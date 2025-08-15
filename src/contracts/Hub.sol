@@ -610,7 +610,6 @@ contract Hub is IHub, AccessManaged {
     spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta).toUint128();
 
     // can increase due to precision loss on premium (drawn unchanged)
-    // todo mathematically find premium diff ceiling and replace the `2`
     require(asset.premium() + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
   }
 

@@ -10,12 +10,6 @@ contract SpokeBase is Base {
   using WadRayMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
-  struct Debts {
-    uint256 drawnDebt;
-    uint256 premiumDebt;
-    uint256 totalDebt;
-  }
-
   struct TestData {
     SpokePosition data;
     uint256 addedAmount;
@@ -761,15 +755,6 @@ contract SpokeBase is Base {
     info.wbtcInfo.repayAmount = bound(info.wbtcInfo.repayAmount, 1, UINT256_MAX);
 
     return info;
-  }
-
-  function getUserDebt(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId
-  ) internal view returns (Debts memory data) {
-    (data.drawnDebt, data.premiumDebt) = spoke.getUserDebt(reserveId, user);
-    data.totalDebt = data.drawnDebt + data.premiumDebt;
   }
 
   // todo: merge with _assertUserDebt

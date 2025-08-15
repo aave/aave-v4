@@ -199,6 +199,30 @@ contract HubBase is Base {
     assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
   }
 
+  function _getExpectedPremiumDelta(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 premiumRestored
+  ) internal returns (DataTypes.PremiumDelta memory) {
+    DataTypes.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
+    Debts memory userDebt = getUserDebt(spoke, user, reserveId);
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+
+    DataTypes.PremiumDelta memory expectedPremiumDelta = DataTypes.PremiumDelta({
+      sharesDelta: -int256(uint256(userPosition.premiumShares)),
+      offsetDelta: -int256(uint256(userPosition.premiumOffset)),
+      realizedDelta: 0
+    });
+
+    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPosition.premiumShares) -
+      userPosition.premiumOffset;
+
+    expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumRestored);
+
+    return expectedPremiumDelta;
+  }
+
   function _randomAssetId(IHub hub) internal returns (uint256) {
     return vm.randomUint(0, hub.getAssetCount() - 1);
   }
