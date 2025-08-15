@@ -213,7 +213,7 @@ contract HubRestoreTest is HubBase {
     );
   }
 
-  /// @dev Restore an amount greater than the base debt, with base interest accrued (no premium debt).
+  /// @dev Restore an amount greater than drawn, with drawn interest accrued (no premium).
   function test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest(
     uint256 daiAmount,
     uint256 drawAmount,
@@ -223,7 +223,7 @@ contract HubRestoreTest is HubBase {
     drawAmount = bound(drawAmount, 1, daiAmount); // within added dai amount
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    // spoke2 supply dai
+    // spoke2 add dai
     Utils.add({
       hub: hub1,
       assetId: daiAssetId,
@@ -253,7 +253,7 @@ contract HubRestoreTest is HubBase {
       premiumRestored: 0
     });
 
-    // alice restore invalid amount > baseAmount
+    // alice restore invalid amount > drawn
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, drawn));
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawn + 1, premium, premiumDelta, alice);
@@ -705,7 +705,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawAmount,
     uint256 skipTime
   ) public {
-    daiAmount = bound(daiAmount, 1, 1000e18); // max 100 DAI
+    daiAmount = bound(daiAmount, 1, 1000e18); // max 1000 DAI
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
