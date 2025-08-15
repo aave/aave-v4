@@ -17,6 +17,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {ReserveData, ReserveDataLib} from 'src/libraries/types/ReserveData.sol';
 
 // interfaces
 import {IHub} from 'src/interfaces/IHub.sol';
@@ -33,16 +34,17 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using PositionStatus for DataTypes.PositionStatus;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
   using MathUtils for uint128;
+  using ReserveDataLib for *;
 
   IAaveOracle public oracle;
 
   uint256 internal _reserveCount;
-  mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
+  mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition))
     internal _userPositions;
-  mapping(address user => DataTypes.PositionStatus positionStatus) internal _positionStatus;
-  mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
+  mapping(address user => DataTypes.PositionStatus) internal _positionStatus;
+  mapping(uint256 reserveId => ReserveData) internal _reserves;
   mapping(address positionManager => DataTypes.PositionManagerConfig) internal _positionManager;
-  mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
+  mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   DataTypes.LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool exists)) internal _reserveExists;
@@ -106,16 +108,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     _updateReservePriceSource(reserveId, priceSource);
 
-    _reserves[reserveId] = DataTypes.Reserve({
-      hub: IHub(hub),
-      assetId: assetId.toUint16(),
-      decimals: asset.decimals,
-      dynamicConfigKey: dynamicConfigKey,
-      paused: config.paused,
-      frozen: config.frozen,
-      borrowable: config.borrowable,
-      collateralRisk: config.collateralRisk
-    });
+    _reserves[reserveId] = ReserveDataLib.init(
+      hub,
+      assetId.toUint16(),
+      asset.decimals,
+      dynamicConfigKey,
+      config
+    );
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
     _reserveExists[hub][assetId] = true;
 
@@ -132,12 +131,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) external restricted {
     // TODO: More sophisticated
     require(reserveId < _reserveCount, ReserveNotListed());
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
     _validateReserveConfig(config);
-    reserve.paused = config.paused;
-    reserve.frozen = config.frozen;
-    reserve.borrowable = config.borrowable;
-    reserve.collateralRisk = config.collateralRisk;
+    _reserves[reserveId] = _reserves[reserveId].setReserveConfig(config);
     emit ReserveConfigUpdate(reserveId, config);
   }
 
@@ -148,11 +143,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) external restricted returns (uint16) {
     require(reserveId < _reserveCount, ReserveNotListed());
     uint16 configKey;
+    ReserveData reserve = _reserves[reserveId];
     // @dev overflow is desired, we implicitly invalidate & override stale config
     unchecked {
-      configKey = ++_reserves[reserveId].dynamicConfigKey;
+      configKey = reserve.dynamicConfigKey() + 1;
     }
     _validateDynamicReserveConfig(dynamicConfig);
+    _reserves[reserveId] = reserve.setDynamicConfigKey(configKey);
     _dynamicConfig[reserveId][configKey] = dynamicConfig;
     emit AddDynamicReserveConfig(reserveId, configKey, dynamicConfig);
     return configKey;
@@ -188,12 +185,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    ReserveData reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
 
     _validateSupply(reserve);
 
-    uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount, msg.sender);
+    uint256 suppliedShares = reserve.hub().add(reserve.assetId(), amount, msg.sender);
 
     userPosition.suppliedShares += suppliedShares.toUint128();
 
@@ -206,10 +203,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    ReserveData reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    uint256 assetId = reserve.assetId;
-    IHub hub = reserve.hub;
+    uint256 assetId = reserve.assetId();
+    IHub hub = reserve.hub();
 
     // If uint256.max is passed, withdraw all user's supplied assets
     if (amount == type(uint256).max) {
@@ -234,11 +231,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    ReserveData reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    uint256 assetId = reserve.assetId;
-    IHub hub = reserve.hub;
+    uint256 assetId = reserve.assetId();
+    IHub hub = reserve.hub();
 
     _validateBorrow(reserve);
 
@@ -263,12 +260,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    ReserveData reserve = _reserves[reserveId];
     _validateRepay(reserve);
 
     DataTypes.ExecuteRepayLocalVars memory vars;
-    vars.hub = reserve.hub;
-    vars.assetId = reserve.assetId;
+    vars.hub = reserve.hub();
+    vars.assetId = reserve.assetId();
     (vars.drawnDebt, vars.premiumDebt, vars.accruedPremium) = _getUserDebt(
       vars.hub,
       vars.assetId,
@@ -334,7 +331,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       return;
     }
 
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    ReserveData reserve = _reserves[reserveId];
     _validateSetUsingAsCollateral(reserve, reserveId, usingAsCollateral);
 
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
@@ -403,10 +400,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
     DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    ReserveData reserve = _reserves[reserveId];
     (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
-      reserve.hub,
-      reserve.assetId,
+      reserve.hub(),
+      reserve.assetId(),
       userPosition
     );
     return (drawnDebt, premiumDebt);
@@ -414,10 +411,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
     DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    ReserveData reserve = _reserves[reserveId];
     (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
-      reserve.hub,
-      reserve.assetId,
+      reserve.hub(),
+      reserve.assetId(),
       userPosition
     );
     return drawnDebt + premiumDebt;
@@ -425,20 +422,21 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   /// @dev We do not differentiate between duplicate reserves (assetId) on the same hub
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    return reserve.hub.getSpokeAddedAmount(reserve.assetId, address(this));
+    ReserveData reserve = _reserves[reserveId];
+    return reserve.hub().getSpokeAddedAmount(reserve.assetId(), address(this));
   }
 
   /// @dev We do not differentiate between duplicate reserves (assetId) on the same hub
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    return reserve.hub.getSpokeAddedShares(reserve.assetId, address(this));
+    ReserveData reserve = _reserves[reserveId];
+    return reserve.hub().getSpokeAddedShares(reserve.assetId(), address(this));
   }
 
   function getUserSuppliedAmount(uint256 reserveId, address user) public view returns (uint256) {
+    ReserveData reserve = _reserves[reserveId];
     return
-      _reserves[reserveId].hub.previewRemoveByShares(
-        _reserves[reserveId].assetId,
+      reserve.hub().previewRemoveByShares(
+        reserve.assetId(),
         _userPositions[user][reserveId].suppliedShares
       );
   }
@@ -452,14 +450,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    return reserve.hub.getSpokeOwed(reserve.assetId, address(this));
+    ReserveData reserve = _reserves[reserveId];
+    return reserve.hub().getSpokeOwed(reserve.assetId(), address(this));
   }
 
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    (uint256 drawnDebt, uint256 premiumDebt) = reserve.hub.getSpokeOwed(
-      reserve.assetId,
+    ReserveData reserve = _reserves[reserveId];
+    (uint256 drawnDebt, uint256 premiumDebt) = reserve.hub().getSpokeOwed(
+      reserve.assetId(),
       address(this)
     );
     return drawnDebt + premiumDebt;
@@ -517,25 +515,19 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory) {
-    return _reserves[reserveId];
+    return _reserves[reserveId].reserve();
   }
 
   function getReserveConfig(
     uint256 reserveId
   ) external view returns (DataTypes.ReserveConfig memory) {
-    return
-      DataTypes.ReserveConfig({
-        paused: _reserves[reserveId].paused,
-        frozen: _reserves[reserveId].frozen,
-        borrowable: _reserves[reserveId].borrowable,
-        collateralRisk: _reserves[reserveId].collateralRisk
-      });
+    return _reserves[reserveId].reserveConfig();
   }
 
   function getDynamicReserveConfig(
     uint256 reserveId
   ) external view returns (DataTypes.DynamicReserveConfig memory) {
-    return _dynamicConfig[reserveId][_reserves[reserveId].dynamicConfigKey];
+    return _dynamicConfig[reserveId][_reserves[reserveId].dynamicConfigKey()];
   }
 
   function getDynamicReserveConfig(
@@ -554,38 +546,38 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   // internal
-  function _validateSupply(DataTypes.Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
-    require(!reserve.paused, ReservePaused());
-    require(!reserve.frozen, ReserveFrozen());
+  function _validateSupply(ReserveData reserve) internal view {
+    require(address(reserve.hub()) != address(0), ReserveNotListed());
+    require(!reserve.paused(), ReservePaused());
+    require(!reserve.frozen(), ReserveFrozen());
   }
 
   function _validateWithdraw(
-    DataTypes.Reserve storage reserve,
+    ReserveData reserve,
     DataTypes.UserPosition storage userPosition,
     uint256 amount
   ) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
-    require(!reserve.paused, ReservePaused());
-    uint256 suppliedAmount = reserve.hub.previewRemoveByShares(
-      reserve.assetId,
+    require(address(reserve.hub()) != address(0), ReserveNotListed());
+    require(!reserve.paused(), ReservePaused());
+    uint256 suppliedAmount = reserve.hub().previewRemoveByShares(
+      reserve.assetId(),
       userPosition.suppliedShares
     );
     require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 
-  function _validateBorrow(DataTypes.Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
-    require(!reserve.paused, ReservePaused());
-    require(!reserve.frozen, ReserveFrozen());
-    require(reserve.borrowable, ReserveNotBorrowable());
+  function _validateBorrow(ReserveData reserve) internal pure {
+    require(address(reserve.hub()) != address(0), ReserveNotListed());
+    require(!reserve.paused(), ReservePaused());
+    require(!reserve.frozen(), ReserveFrozen());
+    require(reserve.borrowable(), ReserveNotBorrowable());
     // HF checked at the end of borrow action
   }
 
   // TODO: Place this and LH equivalent in a generic logic library
-  function _validateRepay(DataTypes.Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
-    require(!reserve.paused, ReservePaused());
+  function _validateRepay(ReserveData reserve) internal pure {
+    require(address(reserve.hub()) != address(0), ReserveNotListed());
+    require(!reserve.paused(), ReservePaused());
     // todo validate user not trying to repay more
     // todo NoExplicitAmountToRepayOnBehalf
   }
@@ -659,8 +651,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _validateLiquidationCall(
-    DataTypes.Reserve storage collateralReserve,
-    DataTypes.Reserve storage debtReserve,
+    ReserveData collateralReserve,
+    ReserveData debtReserve,
     uint256 collateralReserveId,
     address user,
     uint256 debtToCover,
@@ -670,10 +662,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal view {
     require(debtToCover > 0, InvalidDebtToCover());
     require(
-      address(collateralReserve.hub) != address(0) && address(debtReserve.hub) != address(0),
+      address(collateralReserve.hub()) != address(0) && address(debtReserve.hub()) != address(0),
       ReserveNotListed()
     );
-    require(!collateralReserve.paused && !debtReserve.paused, ReservePaused());
+    require(!collateralReserve.paused() && !debtReserve.paused(), ReservePaused());
     require(
       healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorNotBelowThreshold()
@@ -692,13 +684,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
    */
   function _validateSetUsingAsCollateral(
-    DataTypes.Reserve storage reserve,
+    ReserveData reserve,
     uint256 reserveId,
     bool usingAsCollateral
   ) internal view {
-    require(!reserve.paused, ReservePaused());
+    require(!reserve.paused(), ReservePaused());
     // deactivation should be allowed
-    require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
+    require(!usingAsCollateral || !reserve.frozen(), ReserveFrozen());
   }
 
   // @dev allows donation on drawn debt
@@ -762,12 +754,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       }
 
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
-      DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
-      vars.assetId = reserve.assetId;
-      IHub hub = reserve.hub;
+      ReserveData reserve = _reserves[vars.reserveId];
+      vars.assetId = reserve.assetId();
+      IHub hub = reserve.hub();
       vars.assetPrice = oracle.getReservePrice(vars.reserveId);
       unchecked {
-        vars.assetUnit = 10 ** reserve.decimals;
+        vars.assetUnit = 10 ** reserve.decimals();
       }
 
       if (positionStatus.isUsingAsCollateral(vars.reserveId)) {
@@ -784,7 +776,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         );
 
         vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
-        list.add(vars.i, reserve.collateralRisk, vars.userCollateralInBaseCurrency);
+        list.add(vars.i, reserve.collateralRisk(), vars.userCollateralInBaseCurrency);
         vars.avgCollateralFactor += vars.userCollateralInBaseCurrency * dynConfig.collateralFactor;
 
         unchecked {
@@ -908,9 +900,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       // todo keep borrowed assets in transient storage/pass through?
       if (positionStatus.isBorrowing(vars.reserveId)) {
         DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
-        DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
-        vars.assetId = reserve.assetId;
-        vars.hub = reserve.hub;
+        ReserveData reserve = _reserves[vars.reserveId];
+        vars.assetId = reserve.assetId();
+        vars.hub = reserve.hub();
 
         uint256 oldUserPremiumShares = userPosition.premiumShares;
         uint256 oldUserPremiumOffset = userPosition.premiumOffset;
@@ -963,10 +955,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     while (reserveId < reservesLength) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       if (positionStatus.isBorrowing(reserveId)) {
-        DataTypes.Reserve storage reserve = _reserves[reserveId];
+        ReserveData reserve = _reserves[reserveId];
         // validation should already have occurred during liquidation
-        IHub hub = reserve.hub;
-        uint256 assetId = reserve.assetId;
+        IHub hub = reserve.hub();
+        uint256 assetId = reserve.assetId();
         (
           uint256 drawnDebtRestored,
           uint256 premiumDebtRestored,
@@ -1002,7 +994,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId;
     while (reserveId < reserveCount) {
       if (_positionStatus[user].isUsingAsCollateral(reserveId)) {
-        _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
+        _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey();
       }
       unchecked {
         ++reserveId;
@@ -1012,7 +1004,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
-    _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
+    _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey();
     emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 
@@ -1028,15 +1020,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal {
     require(users.length == debtsToCover.length, UsersAndDebtLengthMismatch());
 
-    DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
-    DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
+    ReserveData collateralReserve = _reserves[collateralReserveId];
+    ReserveData debtReserve = _reserves[debtReserveId];
 
     DataTypes.ExecuteLiquidationLocalVars memory vars;
 
-    vars.collateralReserveHub = collateralReserve.hub;
-    vars.collateralAssetId = collateralReserve.assetId;
-    vars.debtReserveHub = debtReserve.hub;
-    vars.debtAssetId = debtReserve.assetId;
+    vars.collateralReserveHub = collateralReserve.hub();
+    vars.collateralAssetId = collateralReserve.assetId();
+    vars.debtReserveHub = debtReserve.hub();
+    vars.debtAssetId = debtReserve.assetId();
     vars.debtReserveId = debtReserveId;
 
     while (vars.i < users.length) {
@@ -1155,8 +1147,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @return hasDeficit The flag representing if the user will have deficit to report.
    */
   function _calculateLiquidationParameters(
-    DataTypes.Reserve storage collateralReserve,
-    DataTypes.Reserve storage debtReserve,
+    ReserveData collateralReserve,
+    ReserveData debtReserve,
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
@@ -1194,7 +1186,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
 
     vars.debtAssetPrice = oracle.getReservePrice(vars.debtReserveId);
-    vars.debtAssetUnit = 10 ** debtReserve.decimals;
+    vars.debtAssetUnit = 10 ** debtReserve.decimals();
     vars.liquidationBonus = getVariableLiquidationBonus(
       vars.collateralReserveId,
       user,
@@ -1202,7 +1194,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
     vars.closeFactor = _liquidationConfig.closeFactor;
     vars.collateralAssetPrice = oracle.getReservePrice(vars.collateralReserveId);
-    vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
+    vars.collateralAssetUnit = 10 ** collateralReserve.decimals();
     vars.liquidationFee = collateralDynConfig.liquidationFee;
     vars.debtToRestoreCloseFactor = vars.calculateDebtToRestoreCloseFactor();
     vars.actualDebtToLiquidate = vars.calculateActualDebtToLiquidate(debtToCover);
