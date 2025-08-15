@@ -10,16 +10,16 @@ contract SpokeOperations_Gas_Tests is Base {
     initEnvironment();
 
     vm.startPrank(address(spoke2));
-    hub.add(daiAssetId, 1000e18, bob);
-    hub.add(wethAssetId, 1000e18, bob);
-    hub.add(usdxAssetId, 1000e6, bob);
-    hub.add(wbtcAssetId, 1000e8, bob);
+    hub1.add(daiAssetId, 1000e18, bob);
+    hub1.add(wethAssetId, 1000e18, bob);
+    hub1.add(usdxAssetId, 1000e6, bob);
+    hub1.add(wbtcAssetId, 1000e8, bob);
     vm.stopPrank();
   }
 
   function test_supply() public {
     vm.startPrank(alice);
-    vm.startSnapshotGas('Spoke.Operations', 'supply + enable usingAsCollateral');
+    vm.startSnapshotGas('Spoke.Operations', 'supply + enable collateral');
     spoke1.supply(_daiReserveId(spoke1), 100e18, alice);
     spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, alice);
     vm.stopSnapshotGas();
@@ -102,7 +102,12 @@ contract SpokeOperations_Gas_Tests is Base {
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
 
     spoke1.borrow(_daiReserveId(spoke1), 500e18, alice);
-    vm.snapshotGasLastCall('Spoke.Operations', 'borrow');
+    vm.snapshotGasLastCall('Spoke.Operations', 'borrow: first');
+
+    skip(60);
+
+    spoke1.borrow(_daiReserveId(spoke1), 1e18, alice);
+    vm.snapshotGasLastCall('Spoke.Operations', 'borrow: second action, same reserve');
     vm.stopPrank();
   }
 
@@ -126,6 +131,28 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
+  function test_liquidation() public {
+    vm.prank(bob);
+    spoke1.supply(_daiReserveId(spoke1), 1_000_000e18, bob);
+
+    vm.startPrank(alice);
+    spoke1.supply(_usdxReserveId(spoke1), 1_000_000e6, alice);
+    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
+    vm.stopPrank();
+
+    _borrowToBeBelowHf(spoke1, alice, _daiReserveId(spoke1), 0.9e18);
+
+    skip(365 days);
+
+    vm.startPrank(bob);
+    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100_000e18);
+    vm.snapshotGasLastCall('Spoke.Operations', 'liquidationCall: partial');
+
+    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, type(uint256).max);
+    vm.snapshotGasLastCall('Spoke.Operations', 'liquidationCall: full');
+    vm.stopPrank();
+  }
+
   function test_updateRiskPremium() public {
     vm.prank(bob);
     spoke1.supply(_daiReserveId(spoke1), 1000e18, bob);
@@ -146,25 +173,19 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_liquidation() public {
-    vm.prank(bob);
-    spoke1.supply(_daiReserveId(spoke1), 1000e18, bob);
-
+  function test_updateUserDynamicConfig() public {
     vm.startPrank(alice);
-    spoke1.supply(_usdxReserveId(spoke1), 1000e6, alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
-    vm.stopPrank();
+    updateLiquidationFee(spoke1, _usdxReserveId(spoke1), 10_00);
 
-    _borrowToBeBelowHf(spoke1, alice, _daiReserveId(spoke1), 0.9e18);
+    spoke1.updateUserDynamicConfig(alice);
+    vm.snapshotGasLastCall('Spoke.Operations', 'updateUserDynamicConfig: 1 collateral');
 
-    skip(365 days);
+    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, alice);
+    updateLiquidationFee(spoke1, _daiReserveId(spoke1), 15_00);
 
-    vm.startPrank(bob);
-    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100e18);
-    vm.snapshotGasLastCall('Spoke.Operations', 'liquidationCall: partial');
-
-    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, type(uint256).max);
-    vm.snapshotGasLastCall('Spoke.Operations', 'liquidationCall: full');
+    spoke1.updateUserDynamicConfig(alice);
+    vm.snapshotGasLastCall('Spoke.Operations', 'updateUserDynamicConfig: 2 collaterals');
     vm.stopPrank();
   }
 }

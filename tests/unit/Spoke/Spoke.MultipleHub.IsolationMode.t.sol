@@ -49,12 +49,10 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       isolationVars.assetAId,
       _deployMockPriceFeed(newSpoke, 2000e8),
       DataTypes.ReserveConfig({
-        active: true,
-        frozen: false,
         paused: false,
-        collateralRisk: 15_00,
+        frozen: false,
         borrowable: false,
-        collateral: true
+        collateralRisk: 15_00
       }),
       dynReserveConfig
     );
@@ -63,12 +61,10 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       isolationVars.assetBId,
       _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
-        active: true,
-        frozen: false,
         paused: false,
-        collateralRisk: 15_00,
+        frozen: false,
         borrowable: true,
-        collateral: false
+        collateralRisk: 15_00
       }),
       dynReserveConfig
     );
@@ -77,27 +73,19 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     newHub.addSpoke(
       isolationVars.assetAId,
       address(newSpoke),
-      DataTypes.SpokeConfig({
-        active: true,
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max
-      })
+      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
     );
     newHub.addSpoke(
       isolationVars.assetBId,
       address(newSpoke),
-      DataTypes.SpokeConfig({
-        active: true,
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max
-      })
+      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
     );
     vm.stopPrank();
 
     // List asset B on the canonical hub
     vm.startPrank(ADMIN);
-    isolationVars.assetBIdMainHub = hub.getAssetCount();
-    hub.addAsset(
+    isolationVars.assetBIdMainHub = hub1.getAssetCount();
+    hub1.addAsset(
       address(assetB),
       assetB.decimals(),
       address(treasurySpoke),
@@ -107,40 +95,34 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // List reserve B on spoke 1 for the canonical hub
     isolationVars.spoke1ReserveBId = spoke1.addReserve(
-      address(hub),
+      address(hub1),
       isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
-        active: true,
-        frozen: false,
         paused: false,
-        collateralRisk: 15_00,
+        frozen: false,
         borrowable: true,
-        collateral: true
+        collateralRisk: 15_00
       }),
       dynReserveConfig
     );
 
     // Link main hub and spoke 1 for asset B
-    hub.addSpoke(
+    hub1.addSpoke(
       isolationVars.assetBIdMainHub,
       address(spoke1),
-      DataTypes.SpokeConfig({
-        active: true,
-        supplyCap: type(uint256).max,
-        drawCap: type(uint256).max
-      })
+      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
     );
     vm.stopPrank();
 
     // Approvals
     vm.startPrank(bob);
     assetA.approve(address(newHub), type(uint256).max);
-    assetB.approve(address(hub), type(uint256).max);
+    assetB.approve(address(hub1), type(uint256).max);
     vm.stopPrank();
 
     vm.startPrank(alice);
-    assetB.approve(address(hub), type(uint256).max);
+    assetB.approve(address(hub1), type(uint256).max);
     assetB.approve(address(newHub), type(uint256).max);
     vm.stopPrank();
 
@@ -172,43 +154,41 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       'bob using reserve A as collateral on new spoke'
     );
     assertEq(
-      newHub.getAssetSuppliedAmount(isolationVars.assetAId),
+      newHub.getAssetAddedAmount(isolationVars.assetAId),
       MAX_SUPPLY_AMOUNT,
       'total supplied amount of assetA on new hub'
     );
 
     // Bob cannot borrow asset B because there is no liquidity
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     Utils.borrow(newSpoke, isolationVars.reserveBId, bob, 1, bob);
 
     // Add main hub reserve B to the new spoke
     vm.startPrank(ADMIN);
     isolationVars.reserveBIdMainHub = newSpoke.addReserve(
-      address(hub),
+      address(hub1),
       isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
       DataTypes.ReserveConfig({
-        active: true,
-        frozen: false,
         paused: false,
-        collateralRisk: 15_00,
+        frozen: false,
         borrowable: true,
-        collateral: true
+        collateralRisk: 15_00
       }),
       dynReserveConfig
     );
 
     // Link main hub and new spoke for asset B
     // 0 supply cap, 100k draw cap
-    hub.addSpoke(
+    hub1.addSpoke(
       isolationVars.assetBIdMainHub,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, supplyCap: 0, drawCap: 100_000e18})
+      DataTypes.SpokeConfig({active: true, addCap: 0, drawCap: 100_000})
     );
     vm.stopPrank();
 
     // Bob still cannot borrow asset B from the new hub because there is no liquidity
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.NotAvailableLiquidity.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     Utils.borrow(newSpoke, isolationVars.reserveBId, bob, 1, bob);
 
     // Alice can supply asset B to the main hub via spoke 1 (and will earn yield as usual)
@@ -221,7 +201,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       'alice supplied amount of reserve B on spoke 1'
     );
     assertEq(
-      hub.getAssetSuppliedAmount(isolationVars.assetBIdMainHub),
+      hub1.getAssetAddedAmount(isolationVars.assetBIdMainHub),
       500_000e18,
       'total supplied amount of asset B on main hub'
     );
@@ -231,14 +211,14 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Check Bob's total debt of asset B on the new spoke
     assertEq(newSpoke.getUserTotalDebt(isolationVars.reserveBIdMainHub, bob), 100_000e18);
-    assertEq(hub.getAssetTotalDebt(isolationVars.assetBIdMainHub), 100_000e18);
+    assertEq(hub1.getAssetTotalOwed(isolationVars.assetBIdMainHub), 100_000e18);
 
     // Bob cannot borrow asset B from main hub via new spoke past draw cap
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, 100_000e18));
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 100_000));
     Utils.borrow(newSpoke, isolationVars.reserveBIdMainHub, bob, 1, bob);
 
     // Bob cannot supply B to main hub via new spoke because supply cap is 0
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.SupplyCapExceeded.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, 0));
     Utils.supply(newSpoke, isolationVars.reserveBIdMainHub, bob, 1e18, bob);
 
     // Alice can supply B to the new hub via new spoke
@@ -246,7 +226,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Now there is liquidity for asset B on the new hub
     assertEq(
-      newHub.getAssetSuppliedAmount(isolationVars.assetBId),
+      newHub.getAssetAddedAmount(isolationVars.assetBId),
       MAX_SUPPLY_AMOUNT,
       'total supplied amount of asset B on new hub'
     );
@@ -259,23 +239,23 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // Bob will migrate to borrowing asset B from the new spoke, new hub, so repays canonical hub position
     Utils.repay(newSpoke, isolationVars.reserveBIdMainHub, bob, 100_000e18, bob);
     assertEq(newSpoke.getUserTotalDebt(isolationVars.reserveBIdMainHub, bob), 0);
-    assertEq(hub.getAssetTotalDebt(isolationVars.assetBIdMainHub), 0);
+    assertEq(hub1.getAssetTotalOwed(isolationVars.assetBIdMainHub), 0);
 
     // Bob opens new borrow position for asset B on the new spoke, new hub
     Utils.borrow(newSpoke, isolationVars.reserveBId, bob, 100_000e18, bob);
     assertEq(newSpoke.getUserTotalDebt(isolationVars.reserveBId, bob), 100_000e18);
-    assertEq(newHub.getAssetTotalDebt(isolationVars.assetBId), 100_000e18);
+    assertEq(newHub.getAssetTotalOwed(isolationVars.assetBId), 100_000e18);
 
     // DAO offboards credit line to new spoke from the canonical hub by setting Asset B draw cap to 0
     vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(
+    hub1.updateSpokeConfig(
       isolationVars.assetBIdMainHub,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, supplyCap: 0, drawCap: 0})
+      DataTypes.SpokeConfig({active: true, addCap: 0, drawCap: 0})
     );
 
     // Now Bob or any other users cannot draw any asset B from the new spoke main hub due to new draw cap of 0
-    vm.expectRevert(abi.encodeWithSelector(ILiquidityHub.DrawCapExceeded.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 0));
     Utils.borrow(newSpoke, isolationVars.reserveBIdMainHub, bob, 1e18, bob);
   }
 }

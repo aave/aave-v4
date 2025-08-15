@@ -15,21 +15,6 @@ interface IHubConfigurator {
   error MismatchedConfigs();
 
   /**
-   * @notice Registers the same spoke for multiple assets with the hub, each with their own configuration.
-   * @dev The i-th asset identifier in `assetIds` corresponds to the i-th configuration in `configs`.
-   * @param hub The address of the Hub contract.
-   * @param assetIds The list of asset identifiers to register the spoke for.
-   * @param spoke The address of the Spoke contract.
-   * @param configs The list of Spoke configurations to register.
-   */
-  function addSpokeToAssets(
-    address hub,
-    address spoke,
-    uint256[] calldata assetIds,
-    DataTypes.SpokeConfig[] calldata configs
-  ) external;
-
-  /**
    * @notice Adds a new asset to the hub.
    * @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
    * @dev The fee receiver is automatically added as a spoke with maximum caps.
@@ -68,30 +53,6 @@ interface IHubConfigurator {
     address irStrategy,
     bytes calldata data
   ) external returns (uint256);
-
-  /**
-   * @notice Updates the active flag of an asset.
-   * @param hub The address of the Hub contract.
-   * @param assetId The identifier of the asset.
-   * @param active The new active flag.
-   */
-  function updateActive(address hub, uint256 assetId, bool active) external;
-
-  /**
-   * @notice Updates the paused flag of an asset.
-   * @param hub The address of the Hub contract.
-   * @param assetId The identifier of the asset.
-   * @param paused The new paused flag.
-   */
-  function updatePaused(address hub, uint256 assetId, bool paused) external;
-
-  /**
-   * @notice Updates the frozen flag of an asset.
-   * @param hub The address of the Hub contract.
-   * @param assetId The identifier of the asset.
-   * @param frozen The new frozen flag.
-   */
-  function updateFrozen(address hub, uint256 assetId, bool frozen) external;
 
   /**
    * @notice Updates the liquidity fee of an asset.
@@ -136,6 +97,18 @@ interface IHubConfigurator {
   function updateInterestRateStrategy(address hub, uint256 assetId, address irStrategy) external;
 
   /**
+   * @notice Updates the reinvestment strategy of an asset.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param reinvestmentStrategy The new reinvestment strategy.
+   */
+  function updateReinvestmentStrategy(
+    address hub,
+    uint256 assetId,
+    address reinvestmentStrategy
+  ) external;
+
+  /**
    * @notice Updates the config of an asset.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
@@ -146,4 +119,136 @@ interface IHubConfigurator {
     uint256 assetId,
     DataTypes.AssetConfig calldata config
   ) external;
+
+  /**
+   * @notice Freezes an asset.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   */
+  function freezeAsset(address hub, uint256 assetId) external;
+
+  /**
+   * @notice Pauses an asset.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   */
+  function pauseAsset(address hub, uint256 assetId) external;
+
+  /**
+   * @notice Register the spoke for the specified asset in the hub.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset to register the spoke for.
+   * @param spoke The address of the Spoke contract.
+   * @param config The Spoke configuration to register.
+   */
+  function addSpoke(
+    address hub,
+    address spoke,
+    uint256 assetId,
+    DataTypes.SpokeConfig calldata config
+  ) external;
+
+  /**
+   * @notice Registers the same spoke for multiple assets with the hub, each with their own configuration.
+   * @dev The i-th asset identifier in `assetIds` corresponds to the i-th configuration in `configs`.
+   * @param hub The address of the Hub contract.
+   * @param assetIds The list of asset identifiers to register the spoke for.
+   * @param spoke The address of the Spoke contract.
+   * @param configs The list of Spoke configurations to register.
+   */
+  function addSpokeToAssets(
+    address hub,
+    address spoke,
+    uint256[] calldata assetIds,
+    DataTypes.SpokeConfig[] calldata configs
+  ) external;
+
+  /**
+   * @notice Updates the active flag of an asset's spoke.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param active The new active flag.
+   */
+  function updateSpokeActive(address hub, uint256 assetId, address spoke, bool active) external;
+
+  /**
+   * @notice Updates the supply cap of an asset's spoke.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param addCap The new supply cap.
+   */
+  function updateSpokeSupplyCap(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    uint256 addCap
+  ) external;
+
+  /**
+   * @notice Updates the draw cap of an asset's spoke.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param drawCap The new draw cap.
+   */
+  function updateSpokeDrawCap(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    uint256 drawCap
+  ) external;
+
+  /**
+   * @notice Updates the caps of an asset's spoke.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param addCap The new supply cap.
+   * @param drawCap The new draw cap.
+   */
+  function updateSpokeCaps(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    uint256 addCap,
+    uint256 drawCap
+  ) external;
+
+  /**
+   * @notice Updates the config of an asset's spoke.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param config The new spoke config.
+   */
+  function updateSpokeConfig(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    DataTypes.SpokeConfig calldata config
+  ) external;
+
+  /**
+   * @notice Pauses all assets of a spoke
+   * @param hub The address of the Hub contract.
+   * @param spoke The address of the spoke.
+   */
+  function pauseSpoke(address hub, address spoke) external;
+
+  /**
+   * @notice Freezes all assets of a spoke
+   * @param hub The address of the Hub contract.
+   * @param spoke The address of the spoke.
+   */
+  function freezeSpoke(address hub, address spoke) external;
+
+  /**
+   * @notice Updates the interest rate data for an asset.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
+   */
+  function updateInterestRateData(address hub, uint256 assetId, bytes calldata data) external;
 }

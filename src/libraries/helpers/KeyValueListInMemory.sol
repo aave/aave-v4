@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
 
-// todo: optimize by packing more elements each slot, keep pre-sorted
 library KeyValueListInMemory {
   error MaxKeySizeExceeded(uint256);
   error MaxValueSizeExceeded(uint256);
