@@ -63,9 +63,6 @@ library DataTypes {
 
   // Spoke types
   struct Reserve {
-    // todo: remove reserveId
-    uint256 reserveId;
-    //
     IHub hub;
     uint16 assetId;
     uint8 decimals;

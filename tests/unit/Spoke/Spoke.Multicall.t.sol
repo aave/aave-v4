@@ -132,14 +132,14 @@ contract SpokeMulticall is SpokeBase {
     );
     uint256 dai3AssetId = hub1.getAssetCount() - 1;
 
-    DataTypes.Reserve memory dai2ReserveExpected;
+    Reserve memory dai2ReserveExpected;
     dai2ReserveExpected.reserveId = dai2ReserveId;
     dai2ReserveExpected.assetId = daiAssetId.toUint16();
     dai2ReserveExpected.paused = dai2Config.paused;
     dai2ReserveExpected.frozen = dai2Config.frozen;
     dai2ReserveExpected.borrowable = dai2Config.borrowable;
     dai2ReserveExpected.collateralRisk = dai2Config.collateralRisk;
-    DataTypes.Reserve memory dai3ReserveExpected;
+    Reserve memory dai3ReserveExpected;
     dai3ReserveExpected.reserveId = dai3ReserveId;
     dai3ReserveExpected.assetId = daiAssetId.toUint16();
     dai3ReserveExpected.paused = dai3Config.paused;

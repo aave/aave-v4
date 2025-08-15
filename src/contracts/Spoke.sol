@@ -107,7 +107,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     _updateReservePriceSource(reserveId, priceSource);
 
     _reserves[reserveId] = DataTypes.Reserve({
-      reserveId: reserveId,
       hub: IHub(hub),
       assetId: assetId.toUint16(),
       decimals: asset.decimals,
@@ -579,7 +578,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     require(!reserve.frozen, ReserveFrozen());
-    require(reserve.borrowable, ReserveNotBorrowable(reserve.reserveId));
+    require(reserve.borrowable, ReserveNotBorrowable());
     // HF checked at the end of borrow action
   }
 
@@ -662,6 +661,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function _validateLiquidationCall(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
+    uint256 collateralReserveId,
     address user,
     uint256 debtToCover,
     uint256 totalDebt,
@@ -678,9 +678,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorNotBelowThreshold()
     );
-    bool isCollateralEnabled = _positionStatus[user].isUsingAsCollateral(
-      collateralReserve.reserveId
-    ) && collateralFactor != 0;
+    bool isCollateralEnabled = _positionStatus[user].isUsingAsCollateral(collateralReserveId) &&
+      collateralFactor != 0;
     require(isCollateralEnabled, CollateralCannotBeLiquidated());
     require(totalDebt > 0, SpecifiedCurrencyNotBorrowedByUser());
   }
@@ -989,7 +988,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         userPosition.drawnShares -= deficitShares.toUint128();
         // newUserRiskPremium is 0 due to no collateral remaining
         // non-zero deficit means user ends up with zero total debt
-        positionStatus.setBorrowing(reserve.reserveId, false);
+        positionStatus.setBorrowing(reserveId, false);
       }
       unchecked {
         ++reserveId;
@@ -1186,6 +1185,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     _validateLiquidationCall(
       collateralReserve,
       debtReserve,
+      collateralReserveId,
       user,
       debtToCover,
       vars.totalBorrowerReserveDebt,
