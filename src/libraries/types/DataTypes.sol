@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.10;
 
+import {ReserveFlags} from 'src/libraries/types/ReserveFlags.sol';
 import {IHub} from 'src/interfaces/IHub.sol';
 
 library DataTypes {
@@ -70,9 +71,7 @@ library DataTypes {
     uint16 assetId;
     uint8 decimals;
     uint16 dynamicConfigKey; // key of the last reserve config
-    bool paused;
-    bool frozen;
-    bool borrowable;
+    ReserveFlags flags;
     uint24 collateralRisk;
   }
 

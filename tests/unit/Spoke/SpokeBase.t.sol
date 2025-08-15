@@ -2,13 +2,13 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 
 contract SpokeBase is Base {
   using SafeCast for *;
   using PercentageMath for *;
   using WadRayMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
+  using ReserveFlagsLib for *;
 
   struct Debts {
     uint256 drawnDebt;
@@ -699,9 +699,9 @@ contract SpokeBase is Base {
     assertEq(a.assetId, b.assetId, 'asset Id');
     assertEq(a.decimals, b.decimals, 'decimals');
     assertEq(a.dynamicConfigKey, b.dynamicConfigKey, 'dynamicConfigKey');
-    assertEq(a.paused, b.paused, 'paused');
-    assertEq(a.frozen, b.frozen, 'frozen');
-    assertEq(a.borrowable, b.borrowable, 'borrowable');
+    assertEq(a.flags.isPaused(), b.flags.isPaused(), 'paused');
+    assertEq(a.flags.isFrozen(), b.flags.isFrozen(), 'frozen');
+    assertEq(a.flags.isBorrowable(), b.flags.isBorrowable(), 'borrowable');
     assertEq(a.collateralRisk, b.collateralRisk, 'collateralRisk');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }

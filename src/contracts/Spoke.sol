@@ -17,6 +17,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {ReserveFlags, ReserveFlagsLib} from 'src/libraries/types/ReserveFlags.sol';
 
 // interfaces
 import {IHub} from 'src/interfaces/IHub.sol';
@@ -32,6 +33,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using LiquidationLogic for DataTypes.LiquidationConfig;
   using PositionStatus for DataTypes.PositionStatus;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
+  using ReserveFlagsLib for *;
   using MathUtils for uint128;
 
   IAaveOracle public oracle;
@@ -112,9 +114,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       assetId: assetId.toUint16(),
       decimals: asset.decimals,
       dynamicConfigKey: dynamicConfigKey,
-      paused: config.paused,
-      frozen: config.frozen,
-      borrowable: config.borrowable,
+      flags: config.toReserveFlags(),
       collateralRisk: config.collateralRisk
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
@@ -135,9 +135,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(reserveId < _reserveCount, ReserveNotListed());
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     _validateReserveConfig(config);
-    reserve.paused = config.paused;
-    reserve.frozen = config.frozen;
-    reserve.borrowable = config.borrowable;
+    reserve.flags = config.toReserveFlags();
     reserve.collateralRisk = config.collateralRisk;
     emit ReserveConfigUpdate(reserveId, config);
   }
@@ -524,12 +522,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function getReserveConfig(
     uint256 reserveId
   ) external view returns (DataTypes.ReserveConfig memory) {
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    (bool paused, bool frozen, bool borrowable) = reserve.flags.getFlags();
     return
       DataTypes.ReserveConfig({
-        paused: _reserves[reserveId].paused,
-        frozen: _reserves[reserveId].frozen,
-        borrowable: _reserves[reserveId].borrowable,
-        collateralRisk: _reserves[reserveId].collateralRisk
+        paused: paused,
+        frozen: frozen,
+        borrowable: borrowable,
+        collateralRisk: reserve.collateralRisk
       });
   }
 
@@ -557,8 +557,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // internal
   function _validateSupply(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
-    require(!reserve.paused, ReservePaused());
-    require(!reserve.frozen, ReserveFrozen());
+    (bool paused, bool frozen, ) = ReserveFlagsLib.getFlags(reserve.flags);
+    require(!paused, ReservePaused());
+    require(!frozen, ReserveFrozen());
   }
 
   function _validateWithdraw(
@@ -567,7 +568,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 amount
   ) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
-    require(!reserve.paused, ReservePaused());
+    (bool paused, , ) = reserve.flags.getFlags();
+    require(!paused, ReservePaused());
     uint256 suppliedAmount = reserve.hub.previewRemoveByShares(
       reserve.assetId,
       userPosition.suppliedShares
@@ -577,16 +579,18 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _validateBorrow(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
-    require(!reserve.paused, ReservePaused());
-    require(!reserve.frozen, ReserveFrozen());
-    require(reserve.borrowable, ReserveNotBorrowable(reserve.reserveId));
+    (bool paused, bool frozen, bool borrowable) = reserve.flags.getFlags();
+    require(!paused, ReservePaused());
+    require(!frozen, ReserveFrozen());
+    require(borrowable, ReserveNotBorrowable(reserve.reserveId));
     // HF checked at the end of borrow action
   }
 
   // TODO: Place this and LH equivalent in a generic logic library
   function _validateRepay(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
-    require(!reserve.paused, ReservePaused());
+    (bool paused, , ) = reserve.flags.getFlags();
+    require(!paused, ReservePaused());
     // todo validate user not trying to repay more
     // todo NoExplicitAmountToRepayOnBehalf
   }
@@ -673,7 +677,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       address(collateralReserve.hub) != address(0) && address(debtReserve.hub) != address(0),
       ReserveNotListed()
     );
-    require(!collateralReserve.paused && !debtReserve.paused, ReservePaused());
+    require(!collateralReserve.flags.isPaused() && !debtReserve.flags.isPaused(), ReservePaused());
     require(
       healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorNotBelowThreshold()
@@ -697,9 +701,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId,
     bool usingAsCollateral
   ) internal view {
-    require(!reserve.paused, ReservePaused());
+    (bool paused, bool frozen, ) = reserve.flags.getFlags();
+    require(!paused, ReservePaused());
     // deactivation should be allowed
-    require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
+    require(!usingAsCollateral || !frozen, ReserveFrozen());
   }
 
   // @dev allows donation on drawn debt

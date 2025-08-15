@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallValidationTest is SpokeLiquidationBase {
+  using ReserveFlagsLib for *;
+
   function test_liquidationCall_revertsWith_ReservePaused_collateralReserve() public {
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -32,7 +34,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
       : (reserveId2, reserveId1);
 
     updateReservePausedFlag(spoke1, collateralReserveId, true);
-    assertTrue(spoke1.getReserve(collateralReserveId).paused);
+    assertTrue(spoke1.getReserve(collateralReserveId).flags.isPaused());
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
@@ -66,7 +68,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
       : (reserveId2, reserveId1);
 
     updateReservePausedFlag(spoke1, debtReserveId, true);
-    assertTrue(spoke1.getReserve(debtReserveId).paused);
+    assertTrue(spoke1.getReserve(debtReserveId).flags.isPaused());
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);

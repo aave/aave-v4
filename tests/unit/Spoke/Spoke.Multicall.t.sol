@@ -5,6 +5,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeMulticall is SpokeBase {
   using SafeCast for uint256;
+  using ReserveFlagsLib for *;
 
   /// Supply and set collateral using multicall
   function test_multicall_supply_setCollateral() public {
@@ -135,16 +136,12 @@ contract SpokeMulticall is SpokeBase {
     DataTypes.Reserve memory dai2ReserveExpected;
     dai2ReserveExpected.reserveId = dai2ReserveId;
     dai2ReserveExpected.assetId = daiAssetId.toUint16();
-    dai2ReserveExpected.paused = dai2Config.paused;
-    dai2ReserveExpected.frozen = dai2Config.frozen;
-    dai2ReserveExpected.borrowable = dai2Config.borrowable;
+    dai2ReserveExpected.flags = dai2Config.toReserveFlags();
     dai2ReserveExpected.collateralRisk = dai2Config.collateralRisk;
     DataTypes.Reserve memory dai3ReserveExpected;
     dai3ReserveExpected.reserveId = dai3ReserveId;
     dai3ReserveExpected.assetId = daiAssetId.toUint16();
-    dai3ReserveExpected.paused = dai3Config.paused;
-    dai3ReserveExpected.frozen = dai3Config.frozen;
-    dai3ReserveExpected.borrowable = dai3Config.borrowable;
+    dai3ReserveExpected.flags = dai3Config.toReserveFlags();
     dai3ReserveExpected.collateralRisk = dai3Config.collateralRisk;
 
     // Set up the multicall

@@ -4,12 +4,14 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRepayValidationTest is SpokeBase {
+  using ReserveFlagsLib for *;
+
   function test_repay_revertsWith_ReservePaused() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
 
     updateReservePausedFlag(spoke1, daiReserveId, true);
-    assertTrue(spoke1.getReserve(daiReserveId).paused);
+    assertTrue(spoke1.getReserve(daiReserveId).flags.isPaused());
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(bob);

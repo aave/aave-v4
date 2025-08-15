@@ -27,6 +27,8 @@ import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {ReserveFlags, ReserveFlagsLib} from 'src/libraries/types/ReserveFlags.sol';
+import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Utils} from 'tests/Utils.sol';
 
