@@ -217,6 +217,7 @@ contract HubBase is Base {
 
     uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPosition.premiumShares) -
       userPosition.premiumOffset;
+
     expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumDebtRestored);
 
     return expectedPremiumDelta;

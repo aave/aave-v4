@@ -245,7 +245,7 @@ contract HubRestoreTest is HubBase {
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
-      premiumDebtRestored: restoreBaseAmount
+      premiumDebtRestored: premiumDebt
     });
 
     vm.prank(address(spoke1));
@@ -525,6 +525,10 @@ contract HubRestoreTest is HubBase {
       premiumDebtRestored: premiumDebtRestored
     });
 
+    AssetPosition memory daiDataBefore = getAssetPosition(hub1, daiAssetId);
+    console.log('dai before premium ', daiDataBefore.premium);
+    console.log('premiumDebtRestored', premiumDebtRestored);
+
     // spoke1 restore full base debt
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, baseDebt, premiumDebtRestored, premiumDelta, alice);
@@ -533,9 +537,11 @@ contract HubRestoreTest is HubBase {
     address daiFeeReceiver = _getFeeReceiver(daiAssetId);
     address wethFeeReceiver = _getFeeReceiver(wethAssetId);
 
+    console.log('dai after premium ', daiData.premium);
+
     // asset
     assertEq(daiData.drawn, 0, 'asset baseDebt');
-    assertApproxEqAbs(daiData.premium, premiumDebt, 2, 'asset premiumDebt'); // premium debt is not changed on restore
+    assertApproxEqAbs(daiData.premium, premiumDebt - premiumDebtRestored, 2, 'asset premiumDebt');
 
     // spoke
     assertApproxEqAbs(
@@ -557,6 +563,11 @@ contract HubRestoreTest is HubBase {
       address(spoke1)
     );
     assertEq(spoke1DaiBaseDebt, 0, 'spoke1 baseDebt');
-    assertApproxEqAbs(spoke1DaiPremiumDebt, premiumDebt, 2, 'spoke1 premiumDebt');
+    assertApproxEqAbs(
+      spoke1DaiPremiumDebt,
+      premiumDebt - premiumDebtRestored,
+      2,
+      'spoke1 premiumDebt'
+    );
   }
 }
