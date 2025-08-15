@@ -8,6 +8,20 @@ contract HubRestoreTest is HubBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
+  HubConfigurator public hubConfigurator;
+  address public HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
+
+  function setUp() public override {
+    super.setUp();
+
+    // Set up a hub configurator to test freezing and pausing assets
+    hubConfigurator = new HubConfigurator(HUB_CONFIGURATOR_ADMIN);
+    IAccessManager accessManager = IAccessManager(hub1.authority());
+    // Grant hubConfigurator hub admin role with 0 delay
+    vm.prank(ADMIN);
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
+  }
+
   function test_restore_revertsWith_SurplusAmountRestored() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
@@ -69,23 +83,122 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, 0, 0, premiumDelta, alice);
   }
 
-  // TODO: Remove or invoke hub configurator to set inactive?
-  // function test_restore_revertsWith_AssetNotActive() public {
-  //   updateAssetActive(hub1, daiAssetId, false);
+  function test_restore_revertsWith_SpokeNotActive_whenPaused() public {
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.pauseAsset(address(hub1), daiAssetId);
 
-  //   vm.expectRevert(IHub.AssetNotActive.selector);
-  //   vm.prank(address(spoke1));
-  //   hub1.restore(daiAssetId, 1, 0, alice);
-  // }
+    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      spoke: spoke1,
+      user: alice,
+      reserveId: daiAssetId,
+      premiumRestored: 0
+    });
 
-  // TODO: Remove or invoke hub configurator to pause?
-  // function test_restore_revertsWith_AssetPaused() public {
-  //   _updateAssetPaused(hub1, daiAssetId, true);
+    vm.expectRevert(IHub.SpokeNotActive.selector);
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, 1, 0, premiumDelta, alice);
+  }
 
-  //   vm.expectRevert(IHub.AssetPaused.selector);
-  //   vm.prank(address(spoke1));
-  //   hub1.restore(daiAssetId, 1, 0, alice);
-  // }
+  /// @dev It's possible to restore even when asset is frozen
+  function test_restore_when_asset_frozen() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke2 add dai
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      user: bob,
+      caller: address(spoke2)
+    });
+
+    // spoke1 draw liquidity
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    // Freeze asset
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.freezeAsset(address(hub1), daiAssetId);
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn / 2;
+    uint256 restoreAmount = drawnRestored + premium;
+
+    // no premium accrued in the same block
+    assertEq(premium, 0);
+
+    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      spoke: spoke1,
+      user: alice,
+      reserveId: daiAssetId,
+      premiumRestored: premium
+    });
+
+    vm.expectEmit(address(hub1));
+    emit IHubBase.Restore(
+      daiAssetId,
+      address(spoke1),
+      hub1.convertToDrawnShares(daiAssetId, drawnRestored),
+      premiumDelta,
+      drawnRestored,
+      premium
+    );
+
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
+
+    AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
+
+    // hub dai data
+    assertEq(daiData.addedAmount, daiAmount, 'hub dai total assets post-restore');
+    assertEq(
+      daiData.addedShares,
+      hub1.convertToAddedShares(daiAssetId, daiAmount),
+      'hub dai total shares post-restore'
+    );
+    assertEq(
+      daiData.liquidity,
+      daiAmount - drawAmount + restoreAmount,
+      'hub dai liquidity post-restore'
+    );
+    assertEq(daiData.drawn, drawAmount - restoreAmount, 'hub dai drawn post-restore');
+    assertEq(daiData.premium, 0, 'hub dai premium post-restore');
+    assertEq(
+      daiData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'hub dai lastUpdateTimestamp post-restore'
+    );
+    // spoke1 dai data
+    assertEq(
+      hub1.getSpokeAddedShares(daiAssetId, address(spoke1)),
+      0,
+      'spoke1 total dai shares post-restore'
+    );
+    (uint256 spoke1DaiDrawn, uint256 spoke1DaiPremium) = hub1.getSpokeOwed(
+      daiAssetId,
+      address(spoke1)
+    );
+    assertEq(spoke1DaiDrawn, daiData.drawn, 'spoke1 drawn dai post-restore');
+    assertEq(spoke1DaiPremium, daiData.premium, 'spoke1 dai premium post-restore');
+
+    IERC20 dai = IERC20(hub1.getAsset(daiAssetId).underlying);
+
+    // dai token balance
+    assertEq(dai.balanceOf(address(hub1)), daiAmount - restoreAmount, 'hub dai final balance');
+    assertEq(
+      dai.balanceOf(alice),
+      drawAmount - restoreAmount + MAX_SUPPLY_AMOUNT,
+      'alice dai final balance'
+    );
+    assertEq(dai.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob dai final balance');
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
+  }
 
   function test_restore_revertsWith_SurplusAmountRestored_with_interest() public {
     uint256 daiAmount = 100e18;
