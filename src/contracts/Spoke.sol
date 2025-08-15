@@ -523,7 +523,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId
   ) external view returns (DataTypes.ReserveConfig memory) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    (bool paused, bool frozen, bool borrowable) = reserve.flags.getFlags();
+    (bool paused, bool frozen, bool borrowable) = reserve.flags.get();
     return
       DataTypes.ReserveConfig({
         paused: paused,
@@ -557,7 +557,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // internal
   function _validateSupply(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
-    (bool paused, bool frozen, ) = ReserveFlagsLib.getFlags(reserve.flags);
+    (bool paused, bool frozen, ) = reserve.flags.get();
     require(!paused, ReservePaused());
     require(!frozen, ReserveFrozen());
   }
@@ -568,7 +568,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 amount
   ) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
-    (bool paused, , ) = reserve.flags.getFlags();
+    (bool paused, , ) = reserve.flags.get();
     require(!paused, ReservePaused());
     uint256 suppliedAmount = reserve.hub.previewRemoveByShares(
       reserve.assetId,
@@ -579,7 +579,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _validateBorrow(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
-    (bool paused, bool frozen, bool borrowable) = reserve.flags.getFlags();
+    (bool paused, bool frozen, bool borrowable) = reserve.flags.get();
     require(!paused, ReservePaused());
     require(!frozen, ReserveFrozen());
     require(borrowable, ReserveNotBorrowable(reserve.reserveId));
@@ -589,7 +589,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // TODO: Place this and LH equivalent in a generic logic library
   function _validateRepay(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
-    (bool paused, , ) = reserve.flags.getFlags();
+    (bool paused, , ) = reserve.flags.get();
     require(!paused, ReservePaused());
     // todo validate user not trying to repay more
     // todo NoExplicitAmountToRepayOnBehalf
@@ -701,7 +701,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId,
     bool usingAsCollateral
   ) internal view {
-    (bool paused, bool frozen, ) = reserve.flags.getFlags();
+    (bool paused, bool frozen, ) = reserve.flags.get();
     require(!paused, ReservePaused());
     // deactivation should be allowed
     require(!usingAsCollateral || !frozen, ReserveFrozen());

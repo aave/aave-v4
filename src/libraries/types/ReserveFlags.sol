@@ -12,7 +12,7 @@ library ReserveFlagsLib {
   uint8 constant FROZEN_MASK = 1 << 1;
   uint8 constant BORROWABLE_MASK = 1 << 2;
 
-  function getFlags(
+  function get(
     ReserveFlags flags
   ) internal pure returns (bool paused, bool frozen, bool borrowable) {
     return (isPaused(flags), isFrozen(flags), isBorrowable(flags));
