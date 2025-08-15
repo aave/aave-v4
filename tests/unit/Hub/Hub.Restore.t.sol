@@ -50,7 +50,7 @@ contract HubRestoreTest is HubBase {
       premiumRestored: 0
     });
 
-    // alice restore invalid amount > baseDebt
+    // alice restore invalid amount > drawn
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, drawAmount));
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawn + 1, premium, premiumDelta, alice);
@@ -129,8 +129,8 @@ contract HubRestoreTest is HubBase {
 
     skip(skipTime);
 
-    (uint256 baseDebt, uint256 premiumDebt) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
-    assertEq(premiumDebt, 0);
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    assertEq(premium, 0);
 
     DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
@@ -140,9 +140,9 @@ contract HubRestoreTest is HubBase {
     });
 
     // alice restore invalid amount > baseAmount
-    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, baseDebt));
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, drawn));
     vm.prank(address(spoke1));
-    hub1.restore(daiAssetId, baseDebt + 1, premiumDebt, premiumDelta, alice);
+    hub1.restore(daiAssetId, drawn + 1, premium, premiumDelta, alice);
   }
 
   function test_restore_revertsWith_SurplusAmountRestored_with_interest_and_premium() public {
@@ -172,7 +172,7 @@ contract HubRestoreTest is HubBase {
 
     uint256 wethAmount = daiAmount; // to ensure enough collateralization
 
-    // spoke1 supply weth
+    // spoke1 add weth
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
@@ -181,7 +181,7 @@ contract HubRestoreTest is HubBase {
       onBehalfOf: alice
     });
 
-    // spoke2 supply dai
+    // spoke2 add dai
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
@@ -219,8 +219,8 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, drawn + 1, premiumRestored, premiumDelta, alice);
   }
 
-  /// @dev Restore partial amount of base debt after time has passed (no premium debt).
-  function test_restore_partial_base() public {
+  /// @dev Restore partial amount of drawn after time has passed (no premium).
+  function test_restore_partial_drawn() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
@@ -235,21 +235,21 @@ contract HubRestoreTest is HubBase {
       drawAmount: drawAmount,
       skipTime: 365 days
     });
-    (uint256 baseDebt, uint256 premiumDebt) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
-    uint256 restoreBaseAmount = baseDebt / 2;
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 restoreDrawnAmount = drawn / 2;
 
-    // no premium debt accrued
-    assertEq(premiumDebt, 0);
+    // no premium accrued
+    assertEq(premium, 0);
 
     DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
-      premiumRestored: premiumDebt
+      premiumRestored: premium
     });
 
     vm.prank(address(spoke1));
-    hub1.restore(daiAssetId, restoreBaseAmount, premiumDebt, premiumDelta, alice);
+    hub1.restore(daiAssetId, restoreDrawnAmount, premium, premiumDelta, alice);
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
     address feeReceiver = _getFeeReceiver(daiAssetId);
@@ -262,27 +262,27 @@ contract HubRestoreTest is HubBase {
       1,
       'hub dai total addedAmount'
     );
-    assertApproxEqAbs(daiData.drawn, baseDebt - restoreBaseAmount, 1, 'dai asset drawn');
+    assertApproxEqAbs(daiData.drawn, drawn - restoreDrawnAmount, 1, 'dai asset drawn');
     assertEq(daiData.premium, 0, 'dai premium');
-    assertEq(daiData.liquidity, daiAmount - drawAmount + restoreBaseAmount, 'hub dai liquidity');
+    assertEq(daiData.liquidity, daiAmount - drawAmount + restoreDrawnAmount, 'hub dai liquidity');
     assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
     // spoke1
     assertEq(hub1.getSpokeAddedAmount(daiAssetId, address(spoke1)), 0, 'hub spoke1 addedAmount');
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(spoke1)), 0, 'hub spoke1 addedShares');
-    (uint256 spoke1DaiBaseDebt, uint256 spoke1DaiPremiumDebt) = hub1.getSpokeOwed(
+    (uint256 spoke1DaiDrawn, uint256 spoke1DaiPremium) = hub1.getSpokeOwed(
       daiAssetId,
       address(spoke1)
     );
-    assertEq(spoke1DaiBaseDebt, daiData.drawn, 'hub spoke1 drawn');
-    assertEq(spoke1DaiPremiumDebt, daiData.premium, 'hub spoke1 premium');
+    assertEq(spoke1DaiDrawn, daiData.drawn, 'hub spoke1 drawn');
+    assertEq(spoke1DaiPremium, daiData.premium, 'hub spoke1 premium');
   }
 
-  /// @dev Restore partial amount of base debt in the same block as draw action.
+  /// @dev Restore partial amount of drawn in the same block as draw action.
   function test_restore_partial_same_block() public {
     uint256 daiAmount = 100e18;
     uint256 drawAmount = daiAmount / 2;
 
-    // spoke2 supply dai
+    // spoke2 add dai
     Utils.add({
       hub: hub1,
       assetId: daiAssetId,
@@ -300,32 +300,32 @@ contract HubRestoreTest is HubBase {
       amount: drawAmount
     });
 
-    (uint256 baseDebt, uint256 premiumDebt) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
-    uint256 baseDebtRestored = baseDebt / 2;
-    uint256 restoreAmount = baseDebtRestored + premiumDebt;
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn / 2;
+    uint256 restoreAmount = drawnRestored + premium;
 
-    // no premium debt accrued in the same block
-    assertEq(premiumDebt, 0);
+    // no premium accrued in the same block
+    assertEq(premium, 0);
 
     DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
-      premiumRestored: premiumDebt
+      premiumRestored: premium
     });
 
     vm.expectEmit(address(hub1));
     emit IHubBase.Restore(
       daiAssetId,
       address(spoke1),
-      hub1.convertToDrawnShares(daiAssetId, baseDebtRestored),
+      hub1.convertToDrawnShares(daiAssetId, drawnRestored),
       premiumDelta,
-      baseDebtRestored,
-      premiumDebt
+      drawnRestored,
+      premium
     );
 
     vm.prank(address(spoke1));
-    hub1.restore(daiAssetId, baseDebtRestored, premiumDebt, premiumDelta, alice);
+    hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
 
@@ -341,8 +341,8 @@ contract HubRestoreTest is HubBase {
       daiAmount - drawAmount + restoreAmount,
       'hub dai liquidity post-restore'
     );
-    assertEq(daiData.drawn, drawAmount - restoreAmount, 'hub dai baseDebt post-restore');
-    assertEq(daiData.premium, 0, 'hub dai premiumDebt post-restore');
+    assertEq(daiData.drawn, drawAmount - restoreAmount, 'hub dai drawn post-restore');
+    assertEq(daiData.premium, 0, 'hub dai premium post-restore');
     assertEq(
       daiData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -354,12 +354,12 @@ contract HubRestoreTest is HubBase {
       0,
       'spoke1 total dai shares post-restore'
     );
-    (uint256 spoke1DaiBaseDebt, uint256 spoke1DaiPremiumDebt) = hub1.getSpokeOwed(
+    (uint256 spoke1DaiDrawn, uint256 spoke1DaiPremium) = hub1.getSpokeOwed(
       daiAssetId,
       address(spoke1)
     );
-    assertEq(spoke1DaiBaseDebt, daiData.drawn, 'spoke1 base dai debt post-restore');
-    assertEq(spoke1DaiPremiumDebt, daiData.premium, 'spoke1 dai premiumDebt post-restore');
+    assertEq(spoke1DaiDrawn, daiData.drawn, 'spoke1 drawn dai post-restore');
+    assertEq(spoke1DaiPremium, daiData.premium, 'spoke1 dai premium post-restore');
 
     IERC20 dai = IERC20(hub1.getAsset(daiAssetId).underlying);
 
@@ -382,7 +382,7 @@ contract HubRestoreTest is HubBase {
     test_restore_fuzz_full_amount_with_interest(daiAmount, drawAmount, skipTime);
   }
 
-  /// @dev Restore full base debt amount after time has passed, with base interest accrued (no premium debt).
+  /// @dev Restore full drawn amount after time has passed, with drawn interest accrued (no premium).
   function test_restore_fuzz_full_amount_with_interest(
     uint256 daiAmount,
     uint256 drawAmount,
@@ -392,7 +392,7 @@ contract HubRestoreTest is HubBase {
     drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    // spoke2 supply dai
+    // spoke2 add dai
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
@@ -411,28 +411,28 @@ contract HubRestoreTest is HubBase {
     });
 
     skip(skipTime);
-    (uint256 baseDebt, uint256 premiumDebt) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
 
-    // no premium debt accrued
-    assertEq(premiumDebt, 0);
+    // no premium accrued
+    assertEq(premium, 0);
 
     DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
-      premiumRestored: premiumDebt
+      premiumRestored: premium
     });
 
-    // spoke1 restore full base debt
+    // spoke1 restore full drawn
     vm.prank(address(spoke1));
-    hub1.restore(daiAssetId, baseDebt, premiumDebt, premiumDelta, alice);
+    hub1.restore(daiAssetId, drawn, premium, premiumDelta, alice);
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
     address daiFeeReceiver = _getFeeReceiver(daiAssetId);
 
     // asset
-    assertEq(daiData.drawn, 0, 'asset baseDebt');
-    assertEq(daiData.premium, 0, 'asset premiumDebt');
+    assertEq(daiData.drawn, 0, 'asset drawn');
+    assertEq(daiData.premium, 0, 'asset premium');
 
     // spoke
     assertApproxEqAbs(
@@ -449,29 +449,29 @@ contract HubRestoreTest is HubBase {
       1,
       'spoke addedShares'
     );
-    (uint256 spoke1DaiBaseDebt, uint256 spoke1DaiPremiumDebt) = hub1.getSpokeOwed(
+    (uint256 spoke1DaiDrawn, uint256 spoke1DaiPremium) = hub1.getSpokeOwed(
       daiAssetId,
       address(spoke1)
     );
-    assertEq(spoke1DaiBaseDebt, 0, 'spoke1 baseDebt');
-    assertEq(spoke1DaiPremiumDebt, 0, 'spoke1 premiumDebt');
+    assertEq(spoke1DaiDrawn, 0, 'spoke1 drawn');
+    assertEq(spoke1DaiPremium, 0, 'spoke1 premium');
   }
 
   function test_restore_full_amount_with_interest_and_premium() public {
     uint256 daiAmount = 100e18;
     uint256 drawAmount = daiAmount / 2;
     uint256 skipTime = 365 days;
-    uint256 premiumDebtRestored = 1;
+    uint256 premiumRestored = 1;
 
     test_restore_fuzz_full_amount_with_interest_and_premium(
       daiAmount,
       drawAmount,
       skipTime,
-      premiumDebtRestored
+      premiumRestored
     );
   }
 
-  /// @dev Restore full base debt amount after time has passed, with base interest and premium debt accrued.
+  /// @dev Restore full drawn amount after time has passed, with drawn interest and premium accrued.
   function test_restore_fuzz_full_amount_with_interest_and_premium(
     uint256 daiAmount,
     uint256 drawAmount,
@@ -479,12 +479,12 @@ contract HubRestoreTest is HubBase {
     uint256 premiumRestored
   ) public {
     daiAmount = bound(daiAmount, 1, 1000e18); // max 1000 DAI
-    drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
+    drawAmount = bound(drawAmount, 1, daiAmount); // within added dai amount
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     uint256 wethAmount = daiAmount; // to ensure collateralization
 
-    // spoke1 supply weth
+    // spoke1 add weth
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
@@ -493,7 +493,7 @@ contract HubRestoreTest is HubBase {
       onBehalfOf: alice
     });
 
-    // spoke2 supply dai
+    // spoke2 add dai
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
@@ -502,7 +502,7 @@ contract HubRestoreTest is HubBase {
       onBehalfOf: bob
     });
 
-    // spoke1 liquidity
+    // spoke1 draw liquidity
     Utils.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
@@ -533,7 +533,6 @@ contract HubRestoreTest is HubBase {
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
     address daiFeeReceiver = _getFeeReceiver(daiAssetId);
-    address wethFeeReceiver = _getFeeReceiver(wethAssetId);
 
     // asset
     assertEq(daiData.drawn, 0, 'asset drawn');
