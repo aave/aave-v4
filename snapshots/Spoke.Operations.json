@@ -1,10 +1,10 @@
 {
-  "borrow: first": "278609",
-  "borrow: second action, same reserve": "266643",
-  "liquidationCall: full": "320028",
-  "liquidationCall: partial": "414536",
-  "repay: full": "188516",
-  "repay: partial": "255075",
+  "borrow: first": "284093",
+  "borrow: second action, same reserve": "272127",
+  "liquidationCall: full": "332065",
+  "liquidationCall: partial": "426573",
+  "repay: full": "197569",
+  "repay: partial": "267112",
   "supply + enable collateral": "200766",
   "supply: 0 borrows, collateral disabled": "138604",
   "supply: 0 borrows, collateral enabled": "141600",
@@ -12,12 +12,12 @@
   "supply: second action, same reserve": "107400",
   "updateUserDynamicConfig: 1 collateral": "54000",
   "updateUserDynamicConfig: 2 collaterals": "58612",
-  "updateUserRiskPremium: 1 borrow": "125581",
-  "updateUserRiskPremium: 2 borrows": "157004",
+  "updateUserRiskPremium: 1 borrow": "131065",
+  "updateUserRiskPremium: 2 borrows": "165472",
   "usingAsCollateral: 0 borrows, enable": "53792",
-  "usingAsCollateral: 1 borrow, disable": "138267",
+  "usingAsCollateral: 1 borrow, disable": "143751",
   "usingAsCollateral: 1 borrow, enable": "24717",
   "withdraw: 0 borrows, full": "143518",
   "withdraw: 0 borrows, partial": "149845",
-  "withdraw: 1 borrow, partial": "285258"
+  "withdraw: 1 borrow, partial": "290742"
 }

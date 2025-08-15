@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
@@ -242,11 +244,15 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     _validateRestore(asset, spoke, assetId, drawnAmount, premiumAmount, from);
+    console.log('out of validate restore');
 
     uint128 drawnShares = previewRestoreByAssets(assetId, drawnAmount).toUint128();
     asset.drawnShares -= drawnShares;
+    console.log('subtracted drawn shares from asset');
     spoke.drawnShares -= drawnShares;
+    console.log('subtracted drawn shares from spoke');
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
+    console.log('applied premium delta');
     uint256 totalAmount = drawnAmount + premiumAmount;
     asset.liquidity += totalAmount.toUint128();
 
@@ -609,6 +615,10 @@ contract Hub is IHub, AccessManaged {
     spoke.premiumOffset = spoke.premiumOffset.add(premium.offsetDelta).toUint128();
     spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta).toUint128();
 
+    console.log('_applyPremiumDelta, finished the diffs');
+    console.log('premium amount', asset.premium() + premiumAmount);
+    console.log('premium before', premiumBefore);
+
     // can increase due to precision loss on premium (drawn unchanged)
     // todo mathematically find premium diff ceiling and replace the `2`
     require(asset.premium() + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
@@ -703,7 +713,9 @@ contract Hub is IHub, AccessManaged {
     require(drawnAmount + premiumAmount > 0, InvalidRestoreAmount());
     require(spoke.active, SpokeNotActive());
     (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spoke, assetId);
+    console.log('drawn surplus check');
     require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
+    console.log('premium surplus check');
     require(premiumAmount <= premium, SurplusAmountRestored(premium));
   }
 
