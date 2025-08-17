@@ -171,10 +171,11 @@ library Utils {
   }
 
   function approve(ISpoke spoke, uint256 reserveId, address owner, uint256 amount) internal {
+    IHub hub = spoke.getReserve(reserveId).hub;
     _approve(
-      IERC20(spoke.getReserve(reserveId).underlying),
+      IERC20(hub.getAsset(spoke.getReserve(reserveId).assetId).underlying),
       owner,
-      address(spoke.getReserve(reserveId).hub),
+      address(hub),
       amount
     );
   }

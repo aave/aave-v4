@@ -126,6 +126,18 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
+  function updateReinvestmentStrategy(
+    address hub,
+    uint256 assetId,
+    address reinvestmentStrategy
+  ) external override onlyOwner {
+    IHub targetHub = IHub(hub);
+    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    config.reinvestmentStrategy = reinvestmentStrategy;
+    targetHub.updateAssetConfig(assetId, config);
+  }
+
+  /// @inheritdoc IHubConfigurator
   function updateAssetConfig(
     address hub,
     uint256 assetId,
@@ -245,6 +257,39 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     targetHub.updateSpokeConfig(assetId, spoke, config);
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function pauseSpoke(address hub, address spoke) external override onlyOwner {
+    IHub targetHub = IHub(hub);
+    uint256 assetCount = targetHub.getAssetCount();
+    for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
+      if (targetHub.isSpokeListed(assetId, spoke)) {
+        DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+        config.active = false;
+        targetHub.updateSpokeConfig(assetId, spoke, config);
+      }
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function freezeSpoke(address hub, address spoke) external override onlyOwner {
+    IHub targetHub = IHub(hub);
+    uint256 assetCount = targetHub.getAssetCount();
+    for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
+      if (targetHub.isSpokeListed(assetId, spoke)) {
+        _updateSpokeCaps(targetHub, assetId, spoke, 0, 0);
+      }
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function updateInterestRateData(
+    address hub,
+    uint256 assetId,
+    bytes calldata data
+  ) external override onlyOwner {
+    IHub(hub).setInterestRateData(assetId, data);
   }
 
   /**

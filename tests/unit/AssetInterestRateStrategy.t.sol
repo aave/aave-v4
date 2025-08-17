@@ -5,6 +5,7 @@ import 'tests/Base.t.sol';
 
 contract AssetInterestRateStrategyTest is Base {
   using WadRayMath for *;
+  using SafeCast for uint256;
 
   uint256 mockAssetId = uint256(keccak256('mockAssetId'));
 
@@ -40,22 +41,7 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_getInterestRateData() public view {
-    assertEq(
-      rateStrategy.getInterestRateData(mockAssetId).optimalUsageRatio,
-      rateData.optimalUsageRatio
-    );
-    assertEq(
-      rateStrategy.getInterestRateData(mockAssetId).baseVariableBorrowRate,
-      rateData.baseVariableBorrowRate
-    );
-    assertEq(
-      rateStrategy.getInterestRateData(mockAssetId).variableRateSlope1,
-      rateData.variableRateSlope1
-    );
-    assertEq(
-      rateStrategy.getInterestRateData(mockAssetId).variableRateSlope2,
-      rateData.variableRateSlope2
-    );
+    assertEq(rateStrategy.getInterestRateData(mockAssetId), rateData);
   }
 
   function test_getOptimalUsageRatio() public view {
@@ -89,8 +75,8 @@ contract AssetInterestRateStrategyTest is Base {
 
   function test_setInterestRateData_revertsWith_InvalidOptimalUsageRatio() public {
     uint16[] memory invalidOptimalUsageRatios = new uint16[](2);
-    invalidOptimalUsageRatios[0] = uint16(rateStrategy.MIN_OPTIMAL_RATIO()) - 1;
-    invalidOptimalUsageRatios[1] = uint16(rateStrategy.MAX_OPTIMAL_RATIO()) + 1;
+    invalidOptimalUsageRatios[0] = rateStrategy.MIN_OPTIMAL_RATIO().toUint16() - 1;
+    invalidOptimalUsageRatios[1] = rateStrategy.MAX_OPTIMAL_RATIO().toUint16() + 1;
 
     for (uint256 i; i < invalidOptimalUsageRatios.length; i++) {
       rateData.optimalUsageRatio = invalidOptimalUsageRatios[i];
@@ -114,7 +100,7 @@ contract AssetInterestRateStrategyTest is Base {
 
   function test_setInterestRateData_revertsWith_InvalidMaxRate() public {
     rateData.baseVariableBorrowRate = rateData.variableRateSlope1 = rateData.variableRateSlope2 =
-      uint32(rateStrategy.MAX_BORROW_RATE()) /
+      rateStrategy.MAX_BORROW_RATE().toUint32() /
       3 +
       1;
     encodedRateData = abi.encode(rateData);
@@ -142,10 +128,10 @@ contract AssetInterestRateStrategyTest is Base {
     vm.expectEmit(address(rateStrategy));
     emit IAssetInterestRateStrategy.RateDataUpdate(
       mockAssetId,
-      uint256(rateData.optimalUsageRatio),
-      uint256(rateData.baseVariableBorrowRate),
-      uint256(rateData.variableRateSlope1),
-      uint256(rateData.variableRateSlope2)
+      rateData.optimalUsageRatio,
+      rateData.baseVariableBorrowRate,
+      rateData.variableRateSlope1,
+      rateData.variableRateSlope2
     );
 
     vm.prank(address(hub1));
@@ -167,7 +153,14 @@ contract AssetInterestRateStrategyTest is Base {
         mockAssetId2
       )
     );
-    rateStrategy.calculateInterestRate({assetId: mockAssetId2, liquidity: 0, drawn: 0, premium: 0});
+    rateStrategy.calculateInterestRate({
+      assetId: mockAssetId2,
+      liquidity: 0,
+      drawn: 0,
+      premium: 0,
+      deficit: 0,
+      swept: 0
+    });
   }
 
   function test_calculateInterestRate_fuzz_ZeroDebt(uint256 liquidity) public view {
@@ -177,7 +170,9 @@ contract AssetInterestRateStrategyTest is Base {
       assetId: mockAssetId,
       liquidity: liquidity,
       drawn: 0,
-      premium: 0
+      premium: 0,
+      deficit: 0,
+      swept: 0
     });
 
     assertEq(variableBorrowRate, rateData.baseVariableBorrowRate.bpsToRay());
@@ -190,15 +185,21 @@ contract AssetInterestRateStrategyTest is Base {
   function test_calculateInterestRate_LeftToKinkPoint(uint256 utilizationRatio) public {
     uint256 utilizationRatioRay = bound(utilizationRatio, 1, rateData.optimalUsageRatio).bpsToRay();
 
-    (uint256 liquidity, uint256 drawn, uint256 premium) = _generateCalculateInterestRateParams(
-      utilizationRatioRay
-    );
+    (
+      uint256 liquidity,
+      uint256 drawn,
+      uint256 premium,
+      uint256 deficit,
+      uint256 swept
+    ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
       liquidity: liquidity,
       drawn: drawn,
-      premium: premium
+      premium: premium,
+      deficit: deficit,
+      swept: swept
     });
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
@@ -221,15 +222,21 @@ contract AssetInterestRateStrategyTest is Base {
     uint256 utilizationRatioRay = bound(utilizationRatio, rateData.optimalUsageRatio + 1, 100_00)
       .bpsToRay();
 
-    (uint256 liquidity, uint256 drawn, uint256 premium) = _generateCalculateInterestRateParams(
-      utilizationRatioRay
-    );
+    (
+      uint256 liquidity,
+      uint256 drawn,
+      uint256 premium,
+      uint256 deficit,
+      uint256 swept
+    ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
       liquidity: liquidity,
       drawn: drawn,
-      premium: premium
+      premium: premium,
+      deficit: deficit,
+      swept: swept
     });
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
@@ -253,7 +260,10 @@ contract AssetInterestRateStrategyTest is Base {
 
   function _generateCalculateInterestRateParams(
     uint256 targetUtilizationRatioRay
-  ) internal returns (uint256 liquidity, uint256 drawn, uint256 premium) {
+  )
+    internal
+    returns (uint256 liquidity, uint256 drawn, uint256 premium, uint256 deficit, uint256 swept)
+  {
     drawn = bound(vm.randomUint(), 1, MAX_SUPPLY_AMOUNT);
 
     // utilizationRatio = drawn / (drawn + liquidity)
@@ -262,8 +272,12 @@ contract AssetInterestRateStrategyTest is Base {
     liquidity = drawn.rayMulUp(WadRayMath.RAY - targetUtilizationRatioRay).rayDivUp(
       targetUtilizationRatioRay
     );
+    // Take a random portion of liquidity as swept
+    swept = vm.randomUint(0, liquidity);
+    liquidity -= swept;
 
-    // unused in the current IR strategy
+    // premium and deficit unused in the current IR strategy
     premium = vm.randomUint();
+    deficit = vm.randomUint();
   }
 }

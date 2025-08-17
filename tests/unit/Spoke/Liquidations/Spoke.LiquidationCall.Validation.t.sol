@@ -32,7 +32,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
       : (reserveId2, reserveId1);
 
     updateReservePausedFlag(spoke1, collateralReserveId, true);
-    assertTrue(spoke1.getReserve(collateralReserveId).config.paused);
+    assertTrue(spoke1.getReserve(collateralReserveId).paused);
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
@@ -66,7 +66,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
       : (reserveId2, reserveId1);
 
     updateReservePausedFlag(spoke1, debtReserveId, true);
-    assertTrue(spoke1.getReserve(debtReserveId).config.paused);
+    assertTrue(spoke1.getReserve(debtReserveId).paused);
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);

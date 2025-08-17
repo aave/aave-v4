@@ -6,15 +6,16 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 /// tests with bad debt with a single collateral/debt reserve that includes accrued premium debt
 contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
+  using SafeCast for uint256;
 
   /// tests where liquidation results in bad debt with premium debt > 0
   function test_liquidationCall_fuzz_badPremiumDebt(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 skipTimeToAccruePremium
   ) public {
@@ -169,24 +170,25 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
   /// non-variable liquidation bonus
   function _execLiqCallCloseFactorBadPremiumDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 skipTimeForPremiumAccrual
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
-    state.collateralReserves = new DataTypes.Reserve[](1);
-    state.debtReserves = new DataTypes.Reserve[](1);
+    state.collateralReserves = new Reserve[](1);
+    state.debtReserves = new Reserve[](1);
     state.spoke = spoke1;
     state.user = alice;
 
-    state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
+    state.collateralReserves[state.collateralReserveIndex] = _getReserve(
+      state.spoke,
       collateralReserveId
     );
-    state.debtReserves[state.debtReserveIndex] = state.spoke.getReserve(debtReserveId);
+    state.debtReserves[state.debtReserveIndex] = _getReserve(state.spoke, debtReserveId);
     state.collDynConfig = _getUserDynConfig(state.spoke, state.user, collateralReserveId);
     state.collateralReserve = state.collateralReserves[state.collateralReserveIndex];
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
@@ -196,8 +198,8 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
       liqBonus,
       MIN_LIQUIDATION_BONUS,
       PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
-    );
-    liquidationFee = bound(liquidationFee, 0, 100_00);
+    ).toUint32();
+    liquidationFee = bound(liquidationFee, 0, 100_00).toUint16();
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 10e26),
@@ -252,7 +254,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     // causes bad debt to remain
     vm.assume(state.spoke.getHealthFactor(alice) < hfBadDebtThreshold);
 
-    state = _getAccountingInfoBeforeLiquidation(state);
+    state = _getAccountingInfoBeforeLiquidation(collateralReserveId, debtReserveId, state);
 
     assertGt(
       state.userPremiumDebt.balanceBefore,
@@ -264,8 +266,9 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
       state.collToLiq,
       state.debtToLiq,
       state.liquidationFeeAmount,
-
-    ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
+      ,
+      state.hasDustFromDebt
+    ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
     uint256 debtAssetId = state.debtReserve.assetId;
     DataTypes.UserPosition memory userPosition = state.spoke.getUserPosition(debtReserveId, alice);
@@ -307,8 +310,8 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.underlying,
-      state.debtReserve.underlying,
+      collateralReserveId,
+      debtReserveId,
       alice,
       state.debtToLiq,
       state.collToLiq,

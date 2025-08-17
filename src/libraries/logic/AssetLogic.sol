@@ -18,8 +18,6 @@ library AssetLogic {
   using MathUtils for uint256;
   using SafeCast for uint256;
 
-  // todo: option for cached object
-
   // drawn exchange rate does not include premium to accrue base rate separately
   function toDrawnAssetsUp(
     DataTypes.Asset storage asset,
@@ -64,11 +62,11 @@ library AssetLogic {
   }
 
   function totalAddedAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.liquidity + asset.deficit + asset.totalOwed();
+    return asset.liquidity + asset.swept + asset.deficit + asset.totalOwed();
   }
 
   function totalAddedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.addedShares + asset.getFeeShares(asset.getDrawnIndex(), asset.drawnIndex);
+    return asset.addedShares + asset.getFeeShares(asset.getDrawnIndex() - asset.drawnIndex);
   }
 
   function toAddedAssetsUp(
@@ -104,9 +102,11 @@ library AssetLogic {
       assetId: assetId,
       liquidity: asset.liquidity,
       drawn: asset.drawn(),
-      premium: asset.premium()
+      premium: asset.premium(),
+      deficit: asset.deficit,
+      swept: asset.swept
     });
-    asset.drawnRate = newDrawnRate.toUint128();
+    asset.drawnRate = newDrawnRate.toUint96();
 
     // asset accrual should have already occurred
     emit IHub.AssetUpdate(assetId, asset.drawnIndex, newDrawnRate, asset.lastUpdateTimestamp);
@@ -123,7 +123,7 @@ library AssetLogic {
     DataTypes.SpokeData storage feeReceiver
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
-    uint128 feeShares = asset.getFeeShares(drawnIndex, asset.drawnIndex).toUint128();
+    uint128 feeShares = asset.getFeeShares(drawnIndex - asset.drawnIndex).toUint128();
 
     // Accrue interest and fees
     asset.drawnIndex = drawnIndex.toUint128();
@@ -155,27 +155,23 @@ library AssetLogic {
 
   /**
    * @dev Calculates the amount of fee shares derived from the index growth due to interest accrual.
+   * @dev The true liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee.
    * @param asset The data struct of the asset whose index is increasing.
-   * @param nextDrawnIndex The next value of the asset drawn index resulting from interest accrual.
-   * @param currentDrawnIndex The current value of the asset drawn index.
+   * @param indexDelta The delta between the current and next drawn index.
    * @return The amount of shares corresponding to the fees.
    */
   function getFeeShares(
     DataTypes.Asset storage asset,
-    uint256 nextDrawnIndex,
-    uint256 currentDrawnIndex
+    uint256 indexDelta
   ) internal view returns (uint256) {
+    if (indexDelta == 0) return 0;
     uint256 liquidityFee = asset.liquidityFee;
-    if (nextDrawnIndex == currentDrawnIndex || liquidityFee == 0) {
-      return 0;
-    }
+    if (liquidityFee == 0) return 0;
 
-    // liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee
-    // prettier-ignore
-    uint256 feesAmount = (
-      asset.drawnShares.rayMulDown(nextDrawnIndex - currentDrawnIndex) +
-      asset.premiumShares.rayMulDown(nextDrawnIndex) - asset.premiumOffset
-    ).percentMulDown(liquidityFee);
+    // @dev we do not simplify further to avoid overestimating the liquidity growth
+    uint256 feesAmount = liquidityFee.percentMulDown(
+      asset.drawnShares.rayMulDown(indexDelta) + asset.premiumShares.rayMulDown(indexDelta)
+    );
 
     return feesAmount.toSharesDown(asset.totalAddedAssets() - feesAmount, asset.addedShares);
   }
@@ -187,6 +183,6 @@ library AssetLogic {
    * @return The amount of shares corresponding to the fees
    */
   function unrealizedFeeShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.getFeeShares(asset.getDrawnIndex(), asset.drawnIndex);
+    return asset.getFeeShares(asset.getDrawnIndex() - asset.drawnIndex);
   }
 }

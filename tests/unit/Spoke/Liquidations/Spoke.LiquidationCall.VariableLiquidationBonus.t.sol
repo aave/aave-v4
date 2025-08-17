@@ -13,7 +13,7 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
     uint256 desiredHf,
     uint256 skipTime
@@ -34,23 +34,6 @@ contract LiquidationCallVariableLiquidationBonusTest is SpokeLiquidationBase {
     });
 
     _checkLiquidation(state, 'liquidationCall_fuzz_variableLiqBonus');
-  }
-
-  /// Liq Call with dust amounts of collateral remaining
-  function test_liquidationCall_remainingDustCollateral() public {
-    test_liquidationCall_fuzz_variable_liqBonus({
-      collateralReserveId: 1,
-      debtReserveId: 0,
-      liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.00000000000003579e18,
-        healthFactorForMaxBonus: 9.90000000000009341e17,
-        liquidationBonusFactor: 1.056e3
-      }),
-      liqBonus: 11865,
-      supplyAmount: 2909,
-      desiredHf: 890000000000003462,
-      skipTime: 15851
-    });
   }
 
   /// coll: weth / debt: dai

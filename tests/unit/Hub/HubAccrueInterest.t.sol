@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/Base.t.sol';
 
 contract HubAccrueInterestTest is Base {
+  using SafeCast for uint256;
+
   struct Timestamps {
     uint40 t0;
     uint40 t1;
@@ -58,7 +60,7 @@ contract HubAccrueInterestTest is Base {
 
   /// no interest accrued with only add
   function test_accrueInterest_NoInterest_OnlyAdd(uint40 elapsed) public {
-    elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
+    elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
 
     uint256 addAmount = 1000e18;
     Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
@@ -80,7 +82,7 @@ contract HubAccrueInterestTest is Base {
 
   /// no interest accrued when no debt after restore
   function test_accrueInterest_NoInterest_NoDebt(uint40 elapsed) public {
-    elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
+    elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
 
     uint256 addAmount = 1000e18;
     uint256 addAmount2 = 100e18;
@@ -103,7 +105,7 @@ contract HubAccrueInterestTest is Base {
       daiInfo.drawnShares,
       WadRayMath.RAY,
       drawnRate,
-      uint40(startTime)
+      startTime.toUint40()
     );
     uint256 interest = expectedDrawnDebt1 - borrowAmount;
 
@@ -120,7 +122,7 @@ contract HubAccrueInterestTest is Base {
       daiInfo.drawnShares,
       expectedDrawnIndex1,
       drawnRate,
-      uint40(startTime)
+      startTime.toUint40()
     );
 
     // Full repayment, so back to zero debt
@@ -157,7 +159,7 @@ contract HubAccrueInterestTest is Base {
 
   /// accrue interest after some time has passed
   function test_accrueInterest_fuzz_BorrowAndWait(uint40 elapsed) public {
-    elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
+    elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
 
     uint256 addAmount = 1000e18;
     uint256 addAmount2 = 100e18;
@@ -181,7 +183,7 @@ contract HubAccrueInterestTest is Base {
       daiInfo.drawnShares,
       initialDrawnIndex,
       drawnRate,
-      uint40(startTime)
+      startTime.toUint40()
     );
     uint256 interest = expectedDrawnDebt - borrowAmount;
 
@@ -197,7 +199,7 @@ contract HubAccrueInterestTest is Base {
     uint40 elapsed
   ) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
+    elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
 
     uint256 startTime = vm.getBlockTimestamp();
     uint256 addAmount = borrowAmount * 2;
@@ -220,7 +222,7 @@ contract HubAccrueInterestTest is Base {
       daiInfo.drawnShares,
       initialDrawnIndex,
       drawnRate,
-      uint40(startTime)
+      startTime.toUint40()
     );
     uint256 interest = expectedDrawnDebt - borrowAmount;
 
@@ -238,7 +240,7 @@ contract HubAccrueInterestTest is Base {
   ) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     borrowRate = bound(borrowRate, 0, MAX_BORROW_RATE);
-    elapsed = uint40(bound(elapsed, 1, type(uint40).max / 3));
+    elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
     uint256 initialDrawnIndex = WadRayMath.RAY;
     uint256 addAmount2 = 1000e18;
 
@@ -248,7 +250,7 @@ contract HubAccrueInterestTest is Base {
     CumulatedInterest memory cumulated;
 
     spoke1Amounts.add0 = borrowAmount * 2;
-    timestamps.t0 = uint40(vm.getBlockTimestamp());
+    timestamps.t0 = vm.getBlockTimestamp().toUint40();
 
     Utils.add(hub1, daiAssetId, address(spoke1), spoke1Amounts.add0, address(spoke1));
     Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
@@ -262,7 +264,7 @@ contract HubAccrueInterestTest is Base {
     Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
     assetData.t1 = hub1.getAsset(daiAssetId);
-    timestamps.t1 = uint40(vm.getBlockTimestamp());
+    timestamps.t1 = vm.getBlockTimestamp().toUint40();
     (uint256 expectedDrawnIndex, uint256 expectedDrawnDebt1) = calculateExpectedDebt(
       assetData.t0.drawnShares,
       initialDrawnIndex,
@@ -288,13 +290,13 @@ contract HubAccrueInterestTest is Base {
 
     // Time passes
     skip(elapsed);
-    timestamps.t2 = uint40(vm.getBlockTimestamp());
+    timestamps.t2 = vm.getBlockTimestamp().toUint40();
 
     // Spoke 2 does a add to accrue interest
     Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
     assetData.t2 = hub1.getAsset(daiAssetId);
-    timestamps.t2 = uint40(vm.getBlockTimestamp());
+    timestamps.t2 = vm.getBlockTimestamp().toUint40();
     uint256 expectedDrawnDebt2;
     (expectedDrawnIndex, expectedDrawnDebt2) = calculateExpectedDebt(
       assetData.t0.drawnShares,

@@ -195,7 +195,7 @@ contract TreasurySpokeTest is SpokeBase {
     );
 
     if (fees > 0) {
-      IERC20 asset = IERC20(spoke1.getReserve(reserveId).underlying);
+      IERC20 asset = getAssetUnderlyingByReserveId(spoke1, reserveId);
       uint256 balanceBefore = asset.balanceOf(TREASURY_ADMIN);
 
       deal(address(asset), tempUser, UINT256_MAX);
