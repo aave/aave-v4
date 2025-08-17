@@ -80,7 +80,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     debtReserveIds[1] = _daiReserveId(spoke1);
     debtReserveIds[2] = _usdxReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiReserveBadPremiumDebtTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -162,7 +162,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     debtReserveIds[1] = _wbtcReserveId(spoke1);
     debtReserveIds[2] = _usdyReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiReserveBadPremiumDebtTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -243,7 +243,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     debtReserveIds[1] = _usdxReserveId(spoke1);
     debtReserveIds[2] = _usdyReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
+    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiReserveBadPremiumDebtTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -264,7 +264,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   /// liquidating all collateral is insufficient to cover debt, bad debt remains
   /// close factor varies across range of values
   /// non-variable liquidation bonus
-  function _execLiqCallCloseFactorMultiAssetBadPremiumDebtTest(
+  function _execLiqCallCloseFactorMultiReserveBadPremiumDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint32 liqBonus,
     uint256 supplyAmount,
@@ -276,20 +276,20 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 skipTimeForPremiumAccrual
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
-    state.collateralReserves = new DataTypes.Reserve[](1);
-
+    state.collateralReserves = new Reserve[](1);
     state.spoke = spoke1;
     state.user = alice;
 
-    state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
+    state.collateralReserves[state.collateralReserveIndex] = _getReserve(
+      state.spoke,
       collateralReserveId
     );
     state.debtReserveIndex = bound(debtReserveIndex, 0, debtReserveIds.length - 1);
-    state.debtReserves = new DataTypes.Reserve[](debtReserveIds.length);
+    state.debtReserves = new Reserve[](debtReserveIds.length);
     state.collDynConfig = _getUserDynConfig(state.spoke, state.user, collateralReserveId);
 
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
-      state.debtReserves[i] = state.spoke.getReserve(debtReserveIds[i]);
+      state.debtReserves[i] = _getReserve(state.spoke, debtReserveIds[i]);
     }
     state.collateralReserve = state.collateralReserves[state.collateralReserveIndex];
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
@@ -343,7 +343,11 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     // skip time to accrue premium debt
     skip(skipTimeForPremiumAccrual);
 
-    state = _getAccountingInfoBeforeLiquidation(state);
+    state = _getAccountingInfoBeforeLiquidation(
+      collateralReserveId,
+      debtReserveIds[state.debtReserveIndex],
+      state
+    );
 
     state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
       collateralReserveId,
@@ -372,8 +376,9 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       state.collToLiq,
       state.debtToLiq,
       state.liquidationFeeAmount,
-
-    ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
+      ,
+      state.hasDustFromDebt
+    ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
     ReportDeficitEvent[] memory expectedLogs = new ReportDeficitEvent[](debtReserveIds.length);
 
@@ -454,8 +459,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.assetId,
-      state.debtReserve.assetId,
+      collateralReserveId,
+      debtReserveIds[state.debtReserveIndex],
       state.user,
       state.debtToLiq,
       state.collToLiq,
@@ -593,12 +598,12 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   ) internal pure {
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       assertEq(
-        state.userTotalDebts[i].balanceAfter,
+        state.userTotalReserveDebts[i].balanceAfter,
         0,
         'remaining debt should be 0 (reported as deficit)'
       );
       if (i != state.debtReserveIndex) {
-        uint256 expectedDeficitAmount = state.userTotalDebts[i].balanceChange; // for other debt assets, total debt should be reported as deficit
+        uint256 expectedDeficitAmount = state.userTotalReserveDebts[i].balanceChange; // for other debt assets, total debt should be reported as deficit
         assertEq(
           state.deficits[i].balanceChange,
           expectedDeficitAmount,

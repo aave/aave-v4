@@ -18,8 +18,6 @@ library AssetLogic {
   using MathUtils for uint256;
   using SafeCast for uint256;
 
-  // todo: option for cached object
-
   // drawn exchange rate does not include premium to accrue base rate separately
   function toDrawnAssetsUp(
     DataTypes.Asset storage asset,
@@ -64,7 +62,7 @@ library AssetLogic {
   }
 
   function totalAddedAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.liquidity + asset.deficit + asset.totalOwed();
+    return asset.liquidity + asset.swept + asset.deficit + asset.totalOwed();
   }
 
   function totalAddedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -104,9 +102,11 @@ library AssetLogic {
       assetId: assetId,
       liquidity: asset.liquidity,
       drawn: asset.drawn(),
-      premium: asset.premium()
+      premium: asset.premium(),
+      deficit: asset.deficit,
+      swept: asset.swept
     });
-    asset.drawnRate = newDrawnRate.toUint128();
+    asset.drawnRate = newDrawnRate.toUint96();
 
     // asset accrual should have already occurred
     emit IHub.AssetUpdate(assetId, asset.drawnIndex, newDrawnRate, asset.lastUpdateTimestamp);

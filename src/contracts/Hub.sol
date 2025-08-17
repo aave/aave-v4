@@ -62,7 +62,9 @@ contract Hub is IHub, AccessManaged {
       assetId: assetId,
       liquidity: 0,
       drawn: 0,
-      premium: 0
+      premium: 0,
+      deficit: 0,
+      swept: 0
     });
 
     uint256 drawnIndex = WadRayMath.RAY;
@@ -70,6 +72,7 @@ contract Hub is IHub, AccessManaged {
     _assets[assetId] = DataTypes.Asset({
       liquidity: 0,
       deficit: 0,
+      swept: 0,
       addedShares: 0,
       drawnShares: 0,
       premiumShares: 0,
@@ -79,8 +82,9 @@ contract Hub is IHub, AccessManaged {
       underlying: underlying,
       lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
       decimals: decimals,
-      drawnRate: drawnRate.toUint128(),
+      drawnRate: drawnRate.toUint96(),
       irStrategy: irStrategy,
+      reinvestmentStrategy: address(0),
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
@@ -88,7 +92,12 @@ contract Hub is IHub, AccessManaged {
     emit AddAsset(assetId, underlying, decimals);
     emit AssetConfigUpdate(
       assetId,
-      DataTypes.AssetConfig({feeReceiver: feeReceiver, liquidityFee: 0, irStrategy: irStrategy})
+      DataTypes.AssetConfig({
+        feeReceiver: feeReceiver,
+        liquidityFee: 0,
+        irStrategy: irStrategy,
+        reinvestmentStrategy: address(0)
+      })
     );
     emit AssetUpdate(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
 
@@ -101,16 +110,21 @@ contract Hub is IHub, AccessManaged {
     DataTypes.AssetConfig calldata config
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
+    DataTypes.Asset storage asset = _assets[assetId];
+    asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
+
     require(config.liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
     require(config.feeReceiver != address(0), InvalidFeeReceiver());
     require(config.irStrategy != address(0), InvalidIrStrategy());
-
-    DataTypes.Asset storage asset = _assets[assetId];
-    asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
+    require(
+      config.reinvestmentStrategy != address(0) || asset.swept == 0,
+      InvalidReinvestmentStrategy()
+    );
 
     asset.feeReceiver = config.feeReceiver;
     asset.liquidityFee = config.liquidityFee;
     asset.irStrategy = config.irStrategy;
+    asset.reinvestmentStrategy = config.reinvestmentStrategy;
 
     asset.updateDrawnRate(assetId);
 
@@ -229,10 +243,10 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     _validateRestore(asset, spoke, assetId, drawnAmount, premiumAmount, from);
 
-    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
     uint128 drawnShares = previewRestoreByAssets(assetId, drawnAmount).toUint128();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
+    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
     uint256 totalAmount = drawnAmount + premiumAmount;
     asset.liquidity += totalAmount.toUint128();
 
@@ -335,6 +349,36 @@ contract Hub is IHub, AccessManaged {
     _transferShares(sender, receiver, shares);
 
     emit TransferShares(assetId, shares, msg.sender, toSpoke);
+  }
+
+  /// @inheritdoc IHub
+  function sweep(uint256 assetId, uint256 amount) external {
+    DataTypes.Asset storage asset = _assets[assetId];
+    _validateSweep(asset, msg.sender, amount);
+
+    asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
+    asset.liquidity -= amount.toUint128();
+    asset.swept += amount.toUint128();
+    asset.updateDrawnRate(assetId);
+
+    IERC20(asset.underlying).safeTransfer(asset.reinvestmentStrategy, amount);
+
+    emit Sweep(assetId, amount);
+  }
+
+  /// @inheritdoc IHub
+  function reclaim(uint256 assetId, uint256 amount) external {
+    DataTypes.Asset storage asset = _assets[assetId];
+    _validateReclaim(asset, msg.sender, amount);
+
+    asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
+    asset.liquidity += amount.toUint128();
+    asset.swept -= amount.toUint128();
+    asset.updateDrawnRate(assetId);
+
+    IERC20(asset.underlying).safeTransferFrom(asset.reinvestmentStrategy, address(this), amount);
+
+    emit Reclaim(assetId, amount);
   }
 
   /// @inheritdoc IHub
@@ -519,12 +563,18 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].deficit;
   }
 
+  /// @inheritdoc IHub
+  function getSwept(uint256 assetId) external view override returns (uint256) {
+    return _assets[assetId].swept;
+  }
+
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
     return
       DataTypes.AssetConfig({
         feeReceiver: _assets[assetId].feeReceiver,
         liquidityFee: _assets[assetId].liquidityFee,
-        irStrategy: _assets[assetId].irStrategy
+        irStrategy: _assets[assetId].irStrategy,
+        reinvestmentStrategy: _assets[assetId].reinvestmentStrategy
       });
   }
 
@@ -560,7 +610,6 @@ contract Hub is IHub, AccessManaged {
     spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta).toUint128();
 
     // can increase due to precision loss on premium (drawn unchanged)
-    // todo mathematically find premium diff ceiling and replace the `2`
     require(asset.premium() + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
   }
 
@@ -619,7 +668,7 @@ contract Hub is IHub, AccessManaged {
     require(spoke.active, SpokeNotActive());
     uint256 withdrawable = previewRemoveByShares(assetId, spoke.addedShares);
     require(amount <= withdrawable, AddedAmountExceeded(withdrawable));
-    require(amount <= asset.liquidity, NotLiquidity(asset.liquidity));
+    require(amount <= asset.liquidity, InsufficientLiquidity(asset.liquidity));
   }
 
   function _validateDraw(
@@ -638,7 +687,7 @@ contract Hub is IHub, AccessManaged {
       drawCap == Constants.MAX_CAP || drawCap * 10 ** asset.decimals >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
     );
-    require(amount <= asset.liquidity, NotLiquidity(asset.liquidity));
+    require(amount <= asset.liquidity, InsufficientLiquidity(asset.liquidity));
   }
 
   function _validateRestore(
@@ -704,5 +753,25 @@ contract Hub is IHub, AccessManaged {
         previewRemoveByShares(assetId, receiver.addedShares + shares),
       AddCapExceeded(addCap)
     );
+  }
+
+  function _validateSweep(
+    DataTypes.Asset storage asset,
+    address caller,
+    uint256 amount
+  ) internal view {
+    // sufficient check to disallow when strategy unset
+    require(caller == asset.reinvestmentStrategy, OnlyReinvestmentStrategy());
+    require(amount > 0 && amount <= asset.liquidity, InvalidSweepAmount());
+  }
+
+  function _validateReclaim(
+    DataTypes.Asset storage asset,
+    address caller,
+    uint256 amount
+  ) internal view {
+    // sufficient check to disallow when strategy unset
+    require(caller == asset.reinvestmentStrategy, OnlyReinvestmentStrategy());
+    require(amount > 0 && amount <= asset.swept, InvalidSweepAmount());
   }
 }

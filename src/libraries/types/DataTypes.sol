@@ -22,10 +22,10 @@ library DataTypes {
   struct Asset {
     //
     uint128 liquidity;
-    uint128 deficit;
+    uint128 swept;
     //
+    uint128 deficit;
     uint128 addedShares;
-    uint128 realizedPremium;
     //
     uint128 premiumShares;
     uint128 premiumOffset;
@@ -33,13 +33,16 @@ library DataTypes {
     uint128 drawnIndex;
     uint128 drawnShares;
     //
-    uint128 drawnRate;
+    uint128 realizedPremium;
     uint40 lastUpdateTimestamp;
     uint8 decimals;
     //
     address underlying;
     //
+    uint96 drawnRate;
     address irStrategy;
+    //
+    address reinvestmentStrategy;
     //
     address feeReceiver;
     uint16 liquidityFee;
@@ -55,13 +58,11 @@ library DataTypes {
     address feeReceiver;
     uint16 liquidityFee;
     address irStrategy;
+    address reinvestmentStrategy;
   }
 
   // Spoke types
   struct Reserve {
-    // todo: remove reserveId
-    uint256 reserveId;
-    //
     IHub hub;
     uint16 assetId;
     uint8 decimals;
@@ -151,12 +152,13 @@ library DataTypes {
     uint256 actualCollateralToLiquidate;
     uint256 actualDebtToLiquidate;
     uint256 liquidationFeeAmount;
-    uint256 userCollateralBalance;
+    uint256 borrowerCollateralBalance;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
-    uint256 totalDebt;
+    uint256 totalBorrowerReserveDebt;
+    uint256 debtToRestoreCloseFactor;
     uint256 healthFactor;
     uint256 liquidationBonus;
     uint256 drawnDebtToLiquidate;
@@ -170,7 +172,7 @@ library DataTypes {
   }
 
   struct CalculateAvailableCollateralToLiquidate {
-    uint256 userCollateralBalanceInBaseCurrency;
+    uint256 borrowerCollateralBalanceInBaseCurrency;
     uint256 baseCollateral;
     uint256 maxCollateralToLiquidate;
     uint256 collateralAmount;
