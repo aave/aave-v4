@@ -4,28 +4,28 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubSweepTest is HubBase {
-  address public reinvestmentStrategy = makeAddr('reinvestmentStrategy');
+  address public reinvestmentController = makeAddr('reinvestmentController');
 
-  function test_sweep_revertsWith_OnlyReinvestmentStrategy_init() public {
-    assertEq(hub1.getAsset(daiAssetId).reinvestmentStrategy, address(0));
-    vm.expectRevert(IHub.OnlyReinvestmentStrategy.selector);
+  function test_sweep_revertsWith_OnlyReinvestmentController_init() public {
+    assertEq(hub1.getAsset(daiAssetId).reinvestmentController, address(0));
+    vm.expectRevert(IHub.OnlyReinvestmentController.selector);
     hub1.sweep(daiAssetId, vm.randomUint());
   }
 
-  function test_sweep_revertsWith_OnlyReinvestmentStrategy(address caller) public {
-    vm.assume(caller != reinvestmentStrategy);
-    updateAssetReinvestmentStrategy(hub1, daiAssetId, reinvestmentStrategy);
+  function test_sweep_revertsWith_OnlyReinvestmentController(address caller) public {
+    vm.assume(caller != reinvestmentController);
+    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
-    vm.expectRevert(IHub.OnlyReinvestmentStrategy.selector);
+    vm.expectRevert(IHub.OnlyReinvestmentController.selector);
     vm.prank(caller);
     hub1.sweep(daiAssetId, vm.randomUint());
   }
 
   function test_sweep_revertsWith_InvalidSweepAmount() public {
     assertEq(hub1.getAsset(daiAssetId).swept, 0);
-    updateAssetReinvestmentStrategy(hub1, daiAssetId, reinvestmentStrategy);
+    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
-    vm.prank(reinvestmentStrategy);
+    vm.prank(reinvestmentController);
     vm.expectRevert(IHub.InvalidSweepAmount.selector);
     hub1.sweep(daiAssetId, 0);
   }
@@ -38,19 +38,19 @@ contract HubSweepTest is HubBase {
     supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
     sweepAmount = bound(sweepAmount, 1, supplyAmount);
 
-    updateAssetReinvestmentStrategy(hub1, daiAssetId, reinvestmentStrategy);
+    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     _addLiquidity(daiAssetId, supplyAmount);
 
     uint256 assetLiquidity = hub1.getLiquidity(daiAssetId);
 
     vm.expectEmit(address(tokenList.dai));
-    emit IERC20.Transfer(address(hub1), reinvestmentStrategy, sweepAmount);
+    emit IERC20.Transfer(address(hub1), reinvestmentController, sweepAmount);
 
     vm.expectEmit(address(hub1));
     emit IHub.Sweep(daiAssetId, sweepAmount);
 
-    vm.prank(reinvestmentStrategy);
+    vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, sweepAmount);
 
     assertEq(hub1.getSwept(daiAssetId), sweepAmount);
@@ -60,7 +60,7 @@ contract HubSweepTest is HubBase {
 
   ///@dev swept amount is not withdrawable
   function test_sweep_revertsWith_InsufficientLiquidity() public {
-    updateAssetReinvestmentStrategy(hub1, daiAssetId, reinvestmentStrategy);
+    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     uint256 initialLiquidity = vm.randomUint(2, MAX_SUPPLY_AMOUNT);
     uint256 swept = vm.randomUint(1, initialLiquidity);
@@ -68,7 +68,7 @@ contract HubSweepTest is HubBase {
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, initialLiquidity, alice);
 
-    vm.prank(reinvestmentStrategy);
+    vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, swept);
 
     vm.expectRevert(
@@ -81,7 +81,7 @@ contract HubSweepTest is HubBase {
   function test_sweep_does_not_impact_utilization(uint256 supplyAmount, uint256 drawAmount) public {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     drawAmount = bound(drawAmount, 1, supplyAmount - 1);
-    updateAssetReinvestmentStrategy(hub1, daiAssetId, reinvestmentStrategy);
+    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     _addLiquidity(daiAssetId, supplyAmount);
     _drawLiquidity(daiAssetId, drawAmount, false, false);
@@ -89,7 +89,7 @@ contract HubSweepTest is HubBase {
 
     uint256 drawnRate = hub1.getAssetDrawnRate(daiAssetId);
 
-    vm.prank(reinvestmentStrategy);
+    vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, swept);
 
     assertEq(hub1.getAssetDrawnRate(daiAssetId), drawnRate, 'drawnRate');

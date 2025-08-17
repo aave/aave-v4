@@ -126,14 +126,14 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateReinvestmentStrategy(
+  function updateReinvestmentController(
     address hub,
     uint256 assetId,
-    address reinvestmentStrategy
+    address reinvestmentController
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    config.reinvestmentStrategy = reinvestmentStrategy;
+    config.reinvestmentController = reinvestmentController;
     targetHub.updateAssetConfig(assetId, config);
   }
 

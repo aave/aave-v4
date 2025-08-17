@@ -41,7 +41,7 @@ contract HubAddTest is HubBase {
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     hub1.addSpoke(zeroDecimalAssetId, address(spoke1), spokeConfig);
