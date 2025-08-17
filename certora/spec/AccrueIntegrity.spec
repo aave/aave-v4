@@ -70,6 +70,10 @@ rule baseDebtIndex_increasing(uint256 assetId) {
 
     env e;
     require e.block.timestamp >  liquidityHub._assets[assetId].lastUpdateTimestamp && e.block.timestamp <= max_uint40;
+    //proved in  Hub_ValidState.spec: invariant drawnShares_realizedPremium_zero
+    require hub._assets[assetId].drawnShares == 0 => hub._assets[assetId].realizedPremium == 0
+    // proved in Hub_ValidState.spec: invariant drawnShares_premiumShares_zero
+    require hub._assets[assetId].drawnShares == 0 => hub._assets[assetId].premiumShares == 0;
     uint256 baseDebt = getAssetTotalOwed(e, assetId);
 
     accrueInterest(e,assetId);
