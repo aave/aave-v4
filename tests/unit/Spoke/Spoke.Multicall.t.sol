@@ -228,4 +228,15 @@ contract SpokeMulticall is SpokeBase {
     assertEq(ret[3], abi.encode(_calculateExpectedUserRP(alice, spoke1)));
     assertEq(ret[4], abi.encode(80e18, 0));
   }
+
+  function test_multicall_forwards_first_revert() public {
+    bytes[] memory calls = new bytes[](3);
+    calls[0] = abi.encodeCall(ISpokeBase.supply, (_daiReserveId(spoke1), 120e18, alice));
+    calls[1] = abi.encodeCall(ISpokeBase.withdraw, (_daiReserveId(spoke1), 121e18, alice));
+    calls[2] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke1), true, alice));
+
+    vm.prank(alice);
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, 120e18));
+    spoke1.multicall(calls);
+  }
 }

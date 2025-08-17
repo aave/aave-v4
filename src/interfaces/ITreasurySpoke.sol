@@ -8,6 +8,8 @@ import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
  * @title ITreasurySpoke
  */
 interface ITreasurySpoke is ISpokeBase {
+  error UnsupportedAction();
+
   /**
    * @notice Supplies a specified amount of the underlying asset to a given reserve.
    * @dev The Hub pulls the underlying asset from the caller, so prior approval is required.

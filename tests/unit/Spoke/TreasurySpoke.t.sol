@@ -211,6 +211,26 @@ contract TreasurySpokeTest is SpokeBase {
     }
   }
 
+  function test_borrow_revertsWith_UnsupportedAction() public {
+    vm.expectRevert(ITreasurySpoke.UnsupportedAction.selector);
+    treasurySpoke.borrow(vm.randomUint(), vm.randomUint(), vm.randomAddress());
+  }
+
+  function test_repay_revertsWith_UnsupportedAction() public {
+    vm.expectRevert(ITreasurySpoke.UnsupportedAction.selector);
+    treasurySpoke.repay(vm.randomUint(), vm.randomUint(), vm.randomAddress());
+  }
+
+  function test_liquidationCall_revertsWith_UnsupportedAction() public {
+    vm.expectRevert(ITreasurySpoke.UnsupportedAction.selector);
+    treasurySpoke.liquidationCall(
+      vm.randomUint(),
+      vm.randomUint(),
+      vm.randomAddress(),
+      vm.randomUint()
+    );
+  }
+
   function _treasurySpoke() internal view returns (ISpoke) {
     return ISpoke(address(treasurySpoke));
   }
