@@ -133,6 +133,7 @@ contract HubRestoreTest is HubBase {
 
     // no premium accrued in the same block
     assertEq(premium, 0);
+    uint256 drawnShares = hub1.previewRestoreByAssets(daiAssetId, drawnRestored);
 
     DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
@@ -152,10 +153,10 @@ contract HubRestoreTest is HubBase {
     );
 
     vm.prank(address(spoke1));
-    hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
+    uint256 restoredShares = hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
 
+    assertEq(restoredShares, drawnShares);
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
-
     // hub dai data
     assertEq(daiData.addedAmount, daiAmount, 'hub dai total assets post-restore');
     assertEq(
@@ -188,17 +189,19 @@ contract HubRestoreTest is HubBase {
     assertEq(spoke1DaiDrawn, daiData.drawn, 'spoke1 drawn dai post-restore');
     assertEq(spoke1DaiPremium, daiData.premium, 'spoke1 dai premium post-restore');
 
-    IERC20 dai = IERC20(hub1.getAsset(daiAssetId).underlying);
-
     // dai token balance
-    assertEq(dai.balanceOf(address(hub1)), daiAmount - restoreAmount, 'hub dai final balance');
     assertEq(
-      dai.balanceOf(alice),
+      tokenList.dai.balanceOf(address(hub1)),
+      daiAmount - restoreAmount,
+      'hub dai final balance'
+    );
+    assertEq(
+      tokenList.dai.balanceOf(alice),
       drawAmount - restoreAmount + MAX_SUPPLY_AMOUNT,
       'alice dai final balance'
     );
-    assertEq(dai.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob dai final balance');
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
+    assertEq(tokenList.dai.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob dai final balance');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
   }
 
   function test_restore_revertsWith_SurplusAmountRestored_with_interest() public {

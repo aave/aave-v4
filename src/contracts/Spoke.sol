@@ -173,7 +173,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   /// @inheritdoc ISpoke
   function updatePositionManager(address positionManager, bool active) external restricted {
     _positionManager[positionManager].active = active;
-    emit PositionManagerUpdate(positionManager, active);
+    emit UpdatePositionManager(positionManager, active);
   }
 
   // /////

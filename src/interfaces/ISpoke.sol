@@ -90,7 +90,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param positionManager The address of the position manager.
    * @param active True if position manager has become active, false otherwise.
    */
-  event PositionManagerUpdate(address indexed positionManager, bool active);
+  event UpdatePositionManager(address indexed positionManager, bool active);
 
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
