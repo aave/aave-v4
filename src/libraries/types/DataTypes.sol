@@ -12,7 +12,6 @@ library DataTypes {
     //
     uint128 realizedPremium;
     uint128 drawnShares;
-  
     //
     uint128 addedShares;
     uint56 addCap;
