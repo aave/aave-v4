@@ -41,7 +41,7 @@ contract HubAddTest is HubBase {
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     hub1.addSpoke(zeroDecimalAssetId, address(spoke1), spokeConfig);
@@ -283,16 +283,17 @@ contract HubAddTest is HubBase {
     underlying.approve(address(hub1), amount);
     deal(address(underlying), user, amount);
 
-    uint256 shares = hub1.convertToAddedShares(assetId, amount);
+    uint256 shares = hub1.previewAddByAssets(assetId, amount);
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(user, address(hub1), amount);
     vm.expectEmit(address(hub1));
     emit IHubBase.Add(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
-    hub1.add(assetId, amount, user);
+    uint256 addedShares = hub1.add(assetId, amount, user);
 
     // hub
+    assertEq(addedShares, shares);
     assertEq(hub1.getAssetAddedAmount(assetId), amount, 'hub asset addedAmount after');
     assertEq(hub1.getAssetAddedShares(assetId), shares, 'hub asset addedShares after');
     assertEq(

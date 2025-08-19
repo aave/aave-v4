@@ -42,7 +42,7 @@ library DataTypes {
     uint96 drawnRate;
     address irStrategy;
     //
-    address reinvestmentStrategy;
+    address reinvestmentController;
     //
     address feeReceiver;
     uint16 liquidityFee;
@@ -58,7 +58,7 @@ library DataTypes {
     address feeReceiver;
     uint16 liquidityFee;
     address irStrategy;
-    address reinvestmentStrategy;
+    address reinvestmentController;
   }
 
   // Spoke types

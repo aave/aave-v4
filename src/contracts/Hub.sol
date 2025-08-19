@@ -84,7 +84,7 @@ contract Hub is IHub, AccessManaged {
       decimals: decimals,
       drawnRate: drawnRate.toUint96(),
       irStrategy: irStrategy,
-      reinvestmentStrategy: address(0),
+      reinvestmentController: address(0),
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
@@ -96,7 +96,7 @@ contract Hub is IHub, AccessManaged {
         feeReceiver: feeReceiver,
         liquidityFee: 0,
         irStrategy: irStrategy,
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     emit AssetUpdate(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
@@ -117,14 +117,14 @@ contract Hub is IHub, AccessManaged {
     require(config.feeReceiver != address(0), InvalidFeeReceiver());
     require(config.irStrategy != address(0), InvalidIrStrategy());
     require(
-      config.reinvestmentStrategy != address(0) || asset.swept == 0,
-      InvalidReinvestmentStrategy()
+      config.reinvestmentController != address(0) || asset.swept == 0,
+      InvalidReinvestmentController()
     );
 
     asset.feeReceiver = config.feeReceiver;
     asset.liquidityFee = config.liquidityFee;
     asset.irStrategy = config.irStrategy;
-    asset.reinvestmentStrategy = config.reinvestmentStrategy;
+    asset.reinvestmentController = config.reinvestmentController;
 
     asset.updateDrawnRate(assetId);
 
@@ -361,7 +361,7 @@ contract Hub is IHub, AccessManaged {
     asset.swept += amount.toUint128();
     asset.updateDrawnRate(assetId);
 
-    IERC20(asset.underlying).safeTransfer(asset.reinvestmentStrategy, amount);
+    IERC20(asset.underlying).safeTransfer(asset.reinvestmentController, amount);
 
     emit Sweep(assetId, amount);
   }
@@ -376,7 +376,7 @@ contract Hub is IHub, AccessManaged {
     asset.swept -= amount.toUint128();
     asset.updateDrawnRate(assetId);
 
-    IERC20(asset.underlying).safeTransferFrom(asset.reinvestmentStrategy, address(this), amount);
+    IERC20(asset.underlying).safeTransferFrom(asset.reinvestmentController, address(this), amount);
 
     emit Reclaim(assetId, amount);
   }
@@ -574,7 +574,7 @@ contract Hub is IHub, AccessManaged {
         feeReceiver: _assets[assetId].feeReceiver,
         liquidityFee: _assets[assetId].liquidityFee,
         irStrategy: _assets[assetId].irStrategy,
-        reinvestmentStrategy: _assets[assetId].reinvestmentStrategy
+        reinvestmentController: _assets[assetId].reinvestmentController
       });
   }
 
@@ -760,8 +760,8 @@ contract Hub is IHub, AccessManaged {
     address caller,
     uint256 amount
   ) internal view {
-    // sufficient check to disallow when strategy unset
-    require(caller == asset.reinvestmentStrategy, OnlyReinvestmentStrategy());
+    // sufficient check to disallow when controller unset
+    require(caller == asset.reinvestmentController, OnlyReinvestmentController());
     require(amount > 0 && amount <= asset.liquidity, InvalidSweepAmount());
   }
 
@@ -770,8 +770,8 @@ contract Hub is IHub, AccessManaged {
     address caller,
     uint256 amount
   ) internal view {
-    // sufficient check to disallow when strategy unset
-    require(caller == asset.reinvestmentStrategy, OnlyReinvestmentStrategy());
+    // sufficient check to disallow when controller unset
+    require(caller == asset.reinvestmentController, OnlyReinvestmentController());
     require(amount > 0 && amount <= asset.swept, InvalidSweepAmount());
   }
 }

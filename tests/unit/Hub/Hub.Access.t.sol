@@ -12,7 +12,7 @@ contract HubAccessTest is HubBase {
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
       irStrategy: address(irStrategy),
-      reinvestmentStrategy: address(0)
+      reinvestmentController: address(0)
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
@@ -242,7 +242,7 @@ contract HubAccessTest is HubBase {
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
       irStrategy: address(irStrategy),
-      reinvestmentStrategy: address(0)
+      reinvestmentController: address(0)
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,

@@ -693,7 +693,7 @@ contract SpokeConfiguratorTest is SpokeBase {
         abi.encodeCall(ISpoke.updatePositionManager, (newPositionManager, active))
       );
       vm.expectEmit(address(spoke));
-      emit ISpoke.PositionManagerUpdate(newPositionManager, active);
+      emit ISpoke.UpdatePositionManager(newPositionManager, active);
       vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updatePositionManager(spokeAddr, newPositionManager, active);
       assertEq(spoke.isPositionManagerActive(newPositionManager), active);

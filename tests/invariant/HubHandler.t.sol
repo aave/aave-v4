@@ -70,7 +70,7 @@ contract HubHandler is Test {
         feeReceiver: address(treasurySpoke),
         liquidityFee: 0,
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     spoke1.addReserve(

@@ -408,7 +408,7 @@ abstract contract Base is Test {
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     // add USDX
@@ -426,7 +426,7 @@ abstract contract Base is Test {
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     // add DAI
@@ -444,7 +444,7 @@ abstract contract Base is Test {
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     // add WBTC
@@ -462,7 +462,7 @@ abstract contract Base is Test {
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     // add USDY
@@ -480,7 +480,7 @@ abstract contract Base is Test {
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     // add DAI again
@@ -498,7 +498,7 @@ abstract contract Base is Test {
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
 
@@ -952,13 +952,13 @@ abstract contract Base is Test {
     assertEq(hub.getAssetConfig(assetId), config);
   }
 
-  function updateAssetReinvestmentStrategy(
+  function updateAssetReinvestmentController(
     IHub hub,
     uint256 assetId,
-    address newReinvestmentStrategy
+    address newReinvestmentController
   ) internal pausePrank {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
-    config.reinvestmentStrategy = newReinvestmentStrategy;
+    config.reinvestmentController = newReinvestmentController;
 
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(assetId, config);
@@ -1883,7 +1883,7 @@ abstract contract Base is Test {
     assertEq(a.feeReceiver, b.feeReceiver, 'feeReceiver');
     assertEq(a.liquidityFee, b.liquidityFee, 'liquidityFee');
     assertEq(a.irStrategy, b.irStrategy, 'irStrategy');
-    assertEq(a.reinvestmentStrategy, b.reinvestmentStrategy, 'reinvestmentStrategy');
+    assertEq(a.reinvestmentController, b.reinvestmentController, 'reinvestmentController');
     assertEq(abi.encode(a), abi.encode(b));
   }
 
