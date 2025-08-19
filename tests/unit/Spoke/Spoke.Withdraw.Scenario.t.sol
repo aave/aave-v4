@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -110,11 +111,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     );
 
     // Check supply rate monotonically increasing after partial withdraw
-    _checkSupplyRateIncreasing(
-      addExRateBefore,
-      getAddExRate(daiAssetId),
-      'after partial withdraw'
-    );
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after partial withdraw');
 
     // Fetch supply exchange rate before withdraw
     addExRateBefore = getAddExRate(daiAssetId);
@@ -220,11 +217,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    _checkSupplyRateIncreasing(
-      addExRate,
-      getAddExRate(state.assetId),
-      'after alice withdraw'
-    );
+    _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), 'after alice withdraw');
 
     // skip time to accrue interest for bob
     skip(params.skipTime[1]);
@@ -283,7 +276,11 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // token
     assertEq(tokenData[state.stage].spokeBalance, 0, 'tokenData spoke balance');
-    assertEq(tokenData[state.stage].hubBalance, _calculateBurntInterest(hub1, state.assetId), 'tokenData hub balance');
+    assertEq(
+      tokenData[state.stage].hubBalance,
+      _calculateBurntInterest(hub1, state.assetId),
+      'tokenData hub balance'
+    );
     assertEq(
       state.underlying.balanceOf(alice),
       MAX_SUPPLY_AMOUNT - params.aliceAmount + aliceData[0].suppliedAmount,

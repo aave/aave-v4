@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
@@ -7,7 +8,7 @@ contract MockPriceFeed is AggregatorV3Interface {
   uint8 public immutable override decimals;
   string public override description;
 
-  int256 private immutable _price; 
+  int256 private immutable _price;
 
   error OperationNotSupported();
 

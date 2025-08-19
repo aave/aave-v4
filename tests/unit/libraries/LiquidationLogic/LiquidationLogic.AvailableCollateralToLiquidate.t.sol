@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
@@ -273,6 +274,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
         params.debtAssetUnit
       );
   }
+
   function setStructFields(
     TestAvailableCollateralParams memory params
   ) internal pure returns (DataTypes.LiquidationCallLocalVars memory result) {
