@@ -113,15 +113,6 @@ library DataTypes {
     uint24 collateralRisk; // BPS
   }
 
-  struct NotifyRiskPremiumUpdateVars {
-    bool premiumIncrease;
-    uint256 reserveCount;
-    uint256 reserveId;
-    uint256 assetId;
-    IHub hub;
-    DataTypes.PremiumDelta premiumDelta;
-  }
-
   struct PremiumDelta {
     int256 sharesDelta;
     int256 offsetDelta;

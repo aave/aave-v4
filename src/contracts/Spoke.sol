@@ -886,20 +886,20 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     address user,
     uint256 newUserRiskPremium
   ) internal returns (bool) {
-    DataTypes.NotifyRiskPremiumUpdateVars memory vars;
-    vars.reserveCount = _reserveCount;
+    uint256 reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-    while (vars.reserveId < vars.reserveCount) {
-      if (positionStatus.isBorrowing(vars.reserveId)) {
-        DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
-        ReserveData reserve = _reserves[vars.reserveId];
-        vars.assetId = reserve.assetId();
-        vars.hub = reserve.hub();
+    uint256 reserveId;
+    bool premiumIncrease;
+    DataTypes.PremiumDelta memory premiumDelta;
+    while (reserveId < reserveCount) {
+      if (positionStatus.isBorrowing(reserveId)) {
+        DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
+        ReserveData reserve = _reserves[reserveId];
 
         uint256 oldUserPremiumShares = userPosition.premiumShares;
         uint256 oldUserPremiumOffset = userPosition.premiumOffset;
-        uint256 accruedUserPremium = vars.hub.previewRestoreByShares(
-          vars.assetId,
+        uint256 accruedUserPremium = reserve.hub().previewRestoreByShares(
+          reserve.assetId(),
           oldUserPremiumShares
         ) - oldUserPremiumOffset;
 
@@ -908,30 +908,30 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
           .percentMulUp(newUserRiskPremium)
           .toUint128();
         userPosition.premiumOffset = _previewOffset(
-          vars.hub,
-          vars.assetId,
+          reserve.hub(),
+          reserve.assetId(),
           userPosition.premiumShares
         ).toUint128();
         userPosition.realizedPremium += accruedUserPremium.toUint128();
 
-        vars.premiumDelta = DataTypes.PremiumDelta({
+        premiumDelta = DataTypes.PremiumDelta({
           sharesDelta: userPosition.premiumShares.signedSub(oldUserPremiumShares),
           offsetDelta: userPosition.premiumOffset.signedSub(oldUserPremiumOffset),
           realizedDelta: int256(accruedUserPremium)
         });
 
-        if (!vars.premiumIncrease) vars.premiumIncrease = vars.premiumDelta.sharesDelta > 0;
+        if (!premiumIncrease) premiumIncrease = premiumDelta.sharesDelta > 0;
 
-        vars.hub.refreshPremium(vars.assetId, vars.premiumDelta);
-        emit RefreshPremiumDebt(vars.reserveId, user, vars.premiumDelta);
+        reserve.hub().refreshPremium(reserve.assetId(), premiumDelta);
+        emit RefreshPremiumDebt(reserveId, user, premiumDelta);
       }
       unchecked {
-        ++vars.reserveId;
+        ++reserveId;
       }
     }
     emit UserRiskPremiumUpdate(user, newUserRiskPremium);
 
-    return vars.premiumIncrease;
+    return premiumIncrease;
   }
 
   /**
