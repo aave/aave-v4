@@ -88,7 +88,7 @@ contract MathUtilsTest is Test {
   }
 
   function test_uncheckedSub(uint256 a, uint256 b) public pure {
-    uint256 result = a > b ? a - b : UINT256_MAX - b + a + 1;
+    uint256 result = a >= b ? a - b : UINT256_MAX - b + a + 1;
     assertEq(MathUtils.uncheckedSub(a, b), result);
   }
 }
