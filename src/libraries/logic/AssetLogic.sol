@@ -66,7 +66,8 @@ library AssetLogic {
   }
 
   function totalAddedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.addedShares + asset.getFeeShares(asset.getDrawnIndex() - asset.drawnIndex);
+    return
+      asset.addedShares + asset.getFeeShares(asset.getDrawnIndex().uncheckedSub(asset.drawnIndex));
   }
 
   function toAddedAssetsUp(
@@ -123,7 +124,7 @@ library AssetLogic {
     DataTypes.SpokeData storage feeReceiver
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
-    uint128 feeShares = asset.getFeeShares(drawnIndex - asset.drawnIndex).toUint128();
+    uint128 feeShares = asset.getFeeShares(drawnIndex.uncheckedSub(asset.drawnIndex)).toUint128();
 
     // Accrue interest and fees
     asset.drawnIndex = drawnIndex.toUint128();
@@ -183,6 +184,6 @@ library AssetLogic {
    * @return The amount of shares corresponding to the fees
    */
   function unrealizedFeeShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.getFeeShares(asset.getDrawnIndex() - asset.drawnIndex);
+    return asset.getFeeShares(asset.getDrawnIndex().uncheckedSub(asset.drawnIndex));
   }
 }

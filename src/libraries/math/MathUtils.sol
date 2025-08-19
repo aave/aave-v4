@@ -64,4 +64,16 @@ library MathUtils {
   function signedSub(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b);
   }
+
+  /**
+   * @notice Subtracts an unsigned integer from an unsigned integer which does not revert on underflow.
+   * @param a The unsigned integer.
+   * @param b The unsigned integer.
+   * @return The unsigned result of the subtraction.
+   */
+  function uncheckedSub(uint256 a, uint256 b) internal pure returns (uint256) {
+    unchecked {
+      return a - b;
+    }
+  }
 }
