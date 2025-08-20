@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
@@ -111,7 +112,11 @@ contract HubAccrueInterestTest is Base {
 
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex1, 'drawnIndex');
-    assertEq(hub1.getAssetAddedAmount(daiAssetId) + _calculateBurntInterest(hub1, daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
+    assertEq(
+      hub1.getAssetAddedAmount(daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
+      addAmount + addAmount2 + interest,
+      'addAmount'
+    );
     assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt1, 'drawn');
 
     startTime = vm.getBlockTimestamp();
@@ -136,7 +141,11 @@ contract HubAccrueInterestTest is Base {
     // Timestamp does not update when no interest accrued
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex2, 'drawnIndex2');
-    assertEq(hub1.getAssetAddedAmount(daiAssetId) + _calculateBurntInterest(hub1, daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
+    assertEq(
+      hub1.getAssetAddedAmount(daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
+      addAmount + addAmount2 + interest,
+      'addAmount'
+    );
     assertEq(getAssetDrawnDebt(daiAssetId), 0, 'drawn');
 
     // Time passes
@@ -189,7 +198,11 @@ contract HubAccrueInterestTest is Base {
 
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex, 'drawnIndex');
-    assertEq(hub1.getAssetAddedAmount(daiAssetId) + _calculateBurntInterest(hub1, daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
+    assertEq(
+      hub1.getAssetAddedAmount(daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
+      addAmount + addAmount2 + interest,
+      'addAmount'
+    );
     assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt, 'drawn');
   }
 
@@ -228,7 +241,11 @@ contract HubAccrueInterestTest is Base {
 
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex, 'drawnIndex');
-    assertEq(hub1.getAssetAddedAmount(daiAssetId) + _calculateBurntInterest(hub1, daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
+    assertEq(
+      hub1.getAssetAddedAmount(daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
+      addAmount + addAmount2 + interest,
+      'addAmount'
+    );
     assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt, 'drawn');
   }
 

@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -134,7 +135,11 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     vm.assume(
       amount1.mulDiv(hub1.getAsset(daiAssetId).drawnShares, drawnDebt, Math.Rounding.Ceil) +
         amount2.mulDiv(hub1.getAsset(daiAssetId).drawnShares, drawnDebt, Math.Rounding.Ceil) >
-        (amount1 + amount2).mulDiv(hub1.getAsset(daiAssetId).drawnShares, drawnDebt, Math.Rounding.Ceil)
+        (amount1 + amount2).mulDiv(
+          hub1.getAsset(daiAssetId).drawnShares,
+          drawnDebt,
+          Math.Rounding.Ceil
+        )
     );
 
     uint256 carolDaiBefore = tokenList.dai.balanceOf(carol);
