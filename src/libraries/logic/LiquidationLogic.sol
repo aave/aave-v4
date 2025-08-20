@@ -27,7 +27,7 @@ library LiquidationLogic {
     uint256 healthFactor,
     uint256 liquidationBonus,
     uint256 healthFactorLiquidationThreshold
-  ) internal view returns (uint256) {
+  ) external view returns (uint256) {
     if (
       config.healthFactorForMaxBonus == 0 ||
       healthFactor <= config.healthFactorForMaxBonus ||
@@ -60,7 +60,7 @@ library LiquidationLogic {
   function calculateActualDebtToLiquidate(
     DataTypes.LiquidationCallLocalVars memory params,
     uint256 debtToCover
-  ) internal pure returns (uint256) {
+  ) external pure returns (uint256) {
     uint256 maxLiquidatableDebt = debtToCover.min(params.totalBorrowerReserveDebt);
     uint256 actualDebtToLiquidate = maxLiquidatableDebt.min(params.debtToRestoreCloseFactor);
 
