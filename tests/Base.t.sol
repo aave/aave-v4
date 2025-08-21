@@ -71,7 +71,7 @@ abstract contract Base is Test {
   uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
-  uint32 internal constant MIN_LIQUIDATION_BONUS = uint32(PercentageMath.PERCENTAGE_FACTOR); // 100% == 0% bonus
+  uint32 internal constant MIN_LIQUIDATION_BONUS = uint32(PercentageMath.PERCENTAGE_FACTOR) + 1; // 100% == 0% bonus
   uint32 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
   uint16 internal constant MAX_LIQUIDATION_BONUS_FACTOR = uint16(PercentageMath.PERCENTAGE_FACTOR); // 100%
   uint128 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
@@ -1043,6 +1043,10 @@ abstract contract Base is Test {
     uint256 reserveId = reserveIdFn(spoke);
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
+    // when collateralFactor is 0, liquidationBonus must also be 100.00%
+    if (newCollateralFactor == 0) {
+      config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR.toUint32();
+    }
 
     vm.prank(SPOKE_ADMIN);
     uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
@@ -1058,6 +1062,10 @@ abstract contract Base is Test {
   ) internal pausePrank returns (uint16) {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
+    // when collateralFactor is 0, liquidationBonus must also be 100.00%
+    if (newCollateralFactor == 0) {
+      config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR.toUint32();
+    }
     vm.prank(SPOKE_ADMIN);
     uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
 
@@ -1876,15 +1884,15 @@ abstract contract Base is Test {
     return hasRole;
   }
 
-  function _randomBps() internal returns (uint16) {
-    return _randomBpsGt(0);
+  function randomBps() internal returns (uint16) {
+    return randomBpsGt(0);
   }
 
-  function _randomBpsGt(uint256 min) internal returns (uint16) {
+  function randomBpsGt(uint256 min) internal returns (uint16) {
     return vm.randomUint(min, PercentageMath.PERCENTAGE_FACTOR).toUint16();
   }
 
-  function _randomBpsLt(uint256 max) internal returns (uint16) {
+  function randomBpsLt(uint256 max) internal returns (uint16) {
     return vm.randomUint(0, max).toUint16();
   }
 

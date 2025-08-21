@@ -9,14 +9,14 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), randomBps());
 
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500e18);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
     configs = _getUserDynConfigKeys(spoke1, alice);
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), randomBps());
 
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
 
@@ -95,7 +95,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     vm.prank(alice);
     spoke1.borrow(_daiReserveId(spoke1), 100e18, alice);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), randomBps());
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
@@ -121,7 +121,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     vm.prank(alice);
     spoke1.withdraw(_usdxReserveId(spoke1), 500e6, alice);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), randomBps());
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
@@ -147,7 +147,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), randomBps());
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supply(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 

@@ -182,7 +182,157 @@ contract SpokeConfigTest is SpokeBase {
     assertEq(spoke1.getDynamicReserveConfig(reserveId), newDynReserveConfig);
   }
 
-  function test_addReserve_fuzz_revertsWith_InvalidAssetId() public {
+  function test_addReserve_revertsWith_InvalidCollateralFactor() public {
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      paused: vm.randomBool(),
+      frozen: vm.randomBool(),
+      borrowable: vm.randomBool(),
+      collateralRisk: randomBps()
+    });
+    DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: vm
+        .randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
+        .toUint16(),
+      liquidationBonus: 0,
+      liquidationFee: 0
+    });
+    newDynReserveConfig.liquidationBonus = randomBpsLt(
+      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(newDynReserveConfig.collateralFactor)
+    ).toUint32();
+
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
+    vm.expectRevert(ISpoke.InvalidCollateralFactor.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(
+      address(hub1),
+      dai2AssetId,
+      reserveSource,
+      newReserveConfig,
+      newDynReserveConfig
+    );
+  }
+
+  function test_addReserve_revertsWith_InvalidLiquidationBonus(uint32 liquidationBonus) public {
+    vm.assume(liquidationBonus > PercentageMath.PERCENTAGE_FACTOR);
+
+    DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: randomBps(),
+      liquidationBonus: randomBpsLt(PercentageMath.PERCENTAGE_FACTOR),
+      liquidationFee: randomBps()
+    });
+
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      paused: vm.randomBool(),
+      frozen: vm.randomBool(),
+      borrowable: vm.randomBool(),
+      collateralRisk: randomBps()
+    });
+
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
+    vm.expectRevert(ISpoke.InvalidLiquidationBonus.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(
+      address(hub1),
+      dai2AssetId,
+      reserveSource,
+      newReserveConfig,
+      newDynReserveConfig
+    );
+  }
+
+  function test_addReserve_revertsWith_InvalidLiquidationBonus_zeroCollateralFactor(
+    uint32 liquidationBonus
+  ) public {
+    vm.assume(liquidationBonus > PercentageMath.PERCENTAGE_FACTOR);
+
+    DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 0,
+      liquidationBonus: liquidationBonus,
+      liquidationFee: randomBps()
+    });
+
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      paused: vm.randomBool(),
+      frozen: vm.randomBool(),
+      borrowable: vm.randomBool(),
+      collateralRisk: randomBps()
+    });
+
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
+    vm.expectRevert(ISpoke.InvalidLiquidationBonus.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(
+      address(hub1),
+      dai2AssetId,
+      reserveSource,
+      newReserveConfig,
+      newDynReserveConfig
+    );
+  }
+
+  function test_addReserve_fuzz_revertsWith_IncompatibleCollateralFactorAndLiquidationBonus(
+    uint16 collateralFactor,
+    uint32 liquidationBonus
+  ) public {
+    collateralFactor = bound(collateralFactor, 50_00, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+    vm.assume(liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR.percentDivUp(collateralFactor));
+
+    DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: collateralFactor,
+      liquidationBonus: liquidationBonus,
+      liquidationFee: randomBps()
+    });
+
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      paused: vm.randomBool(),
+      frozen: vm.randomBool(),
+      borrowable: vm.randomBool(),
+      collateralRisk: randomBps()
+    });
+
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
+    vm.expectRevert(ISpoke.IncompatibleCollateralFactorAndLiquidationBonus.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(
+      address(hub1),
+      dai2AssetId,
+      reserveSource,
+      newReserveConfig,
+      newDynReserveConfig
+    );
+  }
+
+  function test_addReserve_revertsWith_InvalidLiquidationFee() public {
+    DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: randomBps(),
+      liquidationBonus: 0,
+      liquidationFee: (PercentageMath.PERCENTAGE_FACTOR).toUint16() + 1
+    });
+
+    newDynReserveConfig.liquidationBonus = randomBpsLt(
+      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(newDynReserveConfig.collateralFactor)
+    ).toUint32();
+
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      paused: vm.randomBool(),
+      frozen: vm.randomBool(),
+      borrowable: vm.randomBool(),
+      collateralRisk: randomBps()
+    });
+
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
+    vm.expectRevert(ISpoke.InvalidLiquidationBonus.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(
+      address(hub1),
+      dai2AssetId,
+      reserveSource,
+      newReserveConfig,
+      newDynReserveConfig
+    );
+  }
+
+  function test_addReserve_revertsWith_InvalidAssetId() public {
     uint256 assetId = vm.randomUint(hub1.getAssetCount(), type(uint256).max); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
