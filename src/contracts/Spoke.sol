@@ -1308,14 +1308,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     }
   }
 
-  function _setUserPositionManager(address positionManager, address user, bool approve) private {
-    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
-    // @dev only allow approval when position manager is active for improved UX
-    require(!approve || config.active, InactivePositionManager());
-    config.approval[user] = approve;
-    emit SetUserPositionManager(user, positionManager, approve);
-  }
-
   function _castToView(
     function(address, bool) internal returns (uint256, uint256, uint256, uint256, uint256) fnIn
   )
@@ -1331,5 +1323,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     assembly ('memory-safe') {
       fnOut := fnIn
     }
+  }
+
+  function _setUserPositionManager(address positionManager, address user, bool approve) private {
+    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
+    // @dev only allow approval when position manager is active for improved UX
+    require(!approve || config.active, InactivePositionManager());
+    config.approval[user] = approve;
+    emit SetUserPositionManager(user, positionManager, approve);
   }
 }
