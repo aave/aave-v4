@@ -13,6 +13,9 @@ bytecode_hash = "none"
 gas_snapshot_check = false
 gas_limit = 1099511627776
 
+[lint]
+lint_on_build = false
+
 [profile.default.fuzz]
 runs = 1000
 seed = "0x640"
