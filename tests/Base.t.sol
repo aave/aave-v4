@@ -517,7 +517,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
     spokeInfo[spoke1].wbtc.reserveConfig = DataTypes.ReserveConfig({
@@ -528,7 +528,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
     spokeInfo[spoke1].dai.reserveConfig = DataTypes.ReserveConfig({
@@ -539,7 +539,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
     spokeInfo[spoke1].usdx.reserveConfig = DataTypes.ReserveConfig({
@@ -550,7 +550,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
     spokeInfo[spoke1].usdy.reserveConfig = DataTypes.ReserveConfig({
@@ -561,7 +561,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].usdy.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
 
@@ -616,7 +616,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
     spokeInfo[spoke2].weth.reserveConfig = DataTypes.ReserveConfig({
@@ -627,7 +627,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 76_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
     spokeInfo[spoke2].dai.reserveConfig = DataTypes.ReserveConfig({
@@ -638,7 +638,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
     spokeInfo[spoke2].usdx.reserveConfig = DataTypes.ReserveConfig({
@@ -649,7 +649,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
     spokeInfo[spoke2].usdy.reserveConfig = DataTypes.ReserveConfig({
@@ -660,7 +660,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].usdy.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
     spokeInfo[spoke2].dai2.reserveConfig = DataTypes.ReserveConfig({
@@ -671,7 +671,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].dai2.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 70_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
 
@@ -734,7 +734,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
     spokeInfo[spoke3].usdx.reserveConfig = DataTypes.ReserveConfig({
@@ -745,7 +745,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
     spokeInfo[spoke3].weth.reserveConfig = DataTypes.ReserveConfig({
@@ -756,7 +756,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 79_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
     spokeInfo[spoke3].wbtc.reserveConfig = DataTypes.ReserveConfig({
@@ -767,7 +767,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 77_00,
-      liquidationBonus: 100_00,
+      liquidationBonus: 100_01,
       liquidationFee: 0
     });
 
@@ -1877,7 +1877,15 @@ abstract contract Base is Test {
   }
 
   function _randomBps() internal returns (uint16) {
-    return vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+    return _randomBpsGt(0);
+  }
+
+  function _randomBpsGt(uint256 min) internal returns (uint16) {
+    return vm.randomUint(min, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+  }
+
+  function _randomBpsLt(uint256 max) internal returns (uint16) {
+    return vm.randomUint(0, max).toUint16();
   }
 
   function assertEq(DataTypes.AssetConfig memory a, DataTypes.AssetConfig memory b) internal pure {

@@ -98,6 +98,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(!_reserveExists[hub][assetId], ReserveExists());
 
     _validateReserveConfig(config);
+    _validateDynamicReserveConfig(dynamicConfig);
     uint256 reserveId = _reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
@@ -629,7 +630,19 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.DynamicReserveConfig calldata config
   ) internal pure {
     require(config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR, InvalidCollateralFactor()); // max 100.00%
-    require(config.liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationBonus()); // min 100.00%
+    if (config.collateralFactor != 0) {
+      // liquidation bonus must be bigger than 100.00%, otherwise the liquidator would receive less
+      // collateral than needed to cover the debt
+      require(
+        config.liquidationBonus > PercentageMath.PERCENTAGE_FACTOR,
+        InvalidLiquidationBonus()
+      );
+    } else {
+      require(
+        config.liquidationBonus == PercentageMath.PERCENTAGE_FACTOR,
+        InvalidLiquidationBonus()
+      );
+    }
     require(
       config.liquidationBonus.percentMulUp(config.collateralFactor) <=
         PercentageMath.PERCENTAGE_FACTOR,

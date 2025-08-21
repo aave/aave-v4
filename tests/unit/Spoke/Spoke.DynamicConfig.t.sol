@@ -11,7 +11,13 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function test_addDynamicReserveConfig_revertsWith_InvalidLiquidationBonus() public {
     uint256 reserveId = _randomReserveId(spoke1);
     DataTypes.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
-    config.liquidationBonus = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR - 1).toUint32();
+    config.liquidationBonus = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint32();
+
+    vm.expectRevert(ISpoke.InvalidLiquidationBonus.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(reserveId, config);
+
+    config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR.toUint32();
 
     vm.expectRevert(ISpoke.InvalidLiquidationBonus.selector);
     vm.prank(SPOKE_ADMIN);
@@ -247,7 +253,9 @@ contract SpokeDynamicConfigTest is SpokeBase {
       uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
       DataTypes.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
-      dynConf.collateralFactor = _randomBps();
+      dynConf.collateralFactor = _randomBpsLt(
+        PercentageMath.PERCENTAGE_FACTOR.percentDivDown(dynConf.liquidationBonus)
+      );
       vm.expectEmit(address(spoke1));
       emit ISpoke.AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
       vm.prank(SPOKE_ADMIN);
