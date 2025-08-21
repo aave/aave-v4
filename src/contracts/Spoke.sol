@@ -634,7 +634,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       // liquidation bonus must be bigger than 100.00%, otherwise the liquidator would receive less
       // collateral than needed to cover the debt
       require(
-        config.liquidationBonus > PercentageMath.PERCENTAGE_FACTOR,
+        config.liquidationBonus >= LiquidationLogic.MIN_LIQUIDATION_BONUS,
         InvalidLiquidationBonus()
       );
     } else {

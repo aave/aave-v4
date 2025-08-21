@@ -19,6 +19,7 @@ library LiquidationLogic {
    * @notice The default value assumes that the basePrice is usd denominated by 26 decimals.
    */
   uint256 constant MIN_LEFTOVER_BASE = 1000e26;
+  uint256 constant MIN_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR + 1;
 
   error MustNotLeaveDust();
 
@@ -35,8 +36,9 @@ library LiquidationLogic {
     ) {
       return liquidationBonus;
     }
-    uint256 minLiquidationBonus = (liquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
-      .percentMulDown(config.liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
+    uint256 minLiquidationBonus = (liquidationBonus - MIN_LIQUIDATION_BONUS).percentMulDown(
+      config.liquidationBonusFactor
+    ) + MIN_LIQUIDATION_BONUS;
     // if HF >= healthFactorLiquidationThreshold, liquidation bonus is min
     if (healthFactor >= healthFactorLiquidationThreshold) {
       return minLiquidationBonus;
