@@ -228,11 +228,7 @@ contract SpokeOperations_Gas_Tests is Base {
     spoke1.multicall(calls);
     vm.snapshotGasLastCall('Spoke.Operations', 'permitReserve + supply (multicall)');
 
-    skip(100);
-
     spoke1.borrow(_usdxReserveId(spoke1), 500e6, bob);
-    vm.snapshotGasLastCall('Spoke.Operations', 'borrow: 0 borrows, collateral disabled');
-
     skip(100);
 
     // repayWithPermit (usdx)
