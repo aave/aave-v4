@@ -13,7 +13,7 @@ import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Inte
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {Hub, IHub} from 'src/contracts/Hub.sol';
 import {IHubBase} from 'src/interfaces/IHubBase.sol';
-import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
+import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
 import {AaveOracle, IAaveOracle} from 'src/contracts/AaveOracle.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
@@ -30,6 +30,7 @@ import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Utils} from 'tests/Utils.sol';
+import {Deployer} from 'tests/Deployer.sol';
 
 // mocks
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
@@ -230,9 +231,9 @@ abstract contract Base is Test {
     accessManager = new AccessManager(ADMIN);
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
-    spoke1 = ISpoke(new Spoke(address(accessManager)));
-    spoke2 = ISpoke(new Spoke(address(accessManager)));
-    spoke3 = ISpoke(new Spoke(address(accessManager)));
+    spoke1 = Deployer.deploySpoke(address(accessManager), hex'01');
+    spoke2 = Deployer.deploySpoke(address(accessManager), hex'02');
+    spoke3 = Deployer.deploySpoke(address(accessManager), hex'03');
     oracle1 = IAaveOracle(new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)'));
     oracle2 = IAaveOracle(new AaveOracle(address(spoke2), 8, 'Spoke 2 (USD)'));
     oracle3 = IAaveOracle(new AaveOracle(address(spoke3), 8, 'Spoke 3 (USD)'));

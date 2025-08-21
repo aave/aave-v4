@@ -451,7 +451,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       // Construct mock call so we can see the same user rp calc as within the borrow function
       vm.mockCall(
         address(spoke2),
-        abi.encodeCall(Spoke.getUserTotalDebt, (_daiReserveId(spoke2), bob)),
+        abi.encodeCall(ISpoke.getUserTotalDebt, (_daiReserveId(spoke2), bob)),
         abi.encode(spoke2.getUserTotalDebt(_daiReserveId(spoke2), bob) + 1e18) // Debt amount seen in the borrow function when calculating user rp
       );
       bobRp = _calculateExpectedUserRP(bob, spoke2);

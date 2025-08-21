@@ -9,12 +9,13 @@ import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {AaveOracle} from 'src/contracts/AaveOracle.sol';
 import {Hub} from 'src/contracts/Hub.sol';
-import {Spoke} from 'src/contracts/Spoke.sol';
+import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {TreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
 import {MockPriceFeed} from '../mocks/MockPriceFeed.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.sol';
+import '../Deployer.sol';
 
 contract HubHandler is Test {
   IERC20 public usdc;
@@ -23,7 +24,7 @@ contract HubHandler is Test {
 
   IPriceOracle public oracle;
   Hub public hub1;
-  Spoke public spoke1;
+  ISpoke public spoke1;
   TreasurySpoke public treasurySpoke;
   AccessManager public accessManager;
   AssetInterestRateStrategy irStrategy;
@@ -44,7 +45,7 @@ contract HubHandler is Test {
     accessManager = new AccessManager(hubAdmin);
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
-    spoke1 = new Spoke(address(accessManager));
+    spoke1 = Deployer.deploySpoke(address(accessManager), hex'01');
     oracle = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
     spoke1.updateOracle(address(oracle));
     treasurySpoke = new TreasurySpoke(hubAdmin, address(hub1));
@@ -153,7 +154,7 @@ contract HubHandler is Test {
     //   : hub1.getTotalAssets(assetId) / reserveData.suppliedShares;
   }
 
-  function _deployMockPriceFeed(Spoke spoke, uint256 price) internal returns (address) {
+  function _deployMockPriceFeed(ISpoke spoke, uint256 price) internal returns (address) {
     AaveOracle oracle = AaveOracle(address(spoke.oracle()));
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
   }
