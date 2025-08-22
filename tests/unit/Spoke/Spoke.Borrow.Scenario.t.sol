@@ -577,7 +577,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     });
   }
 
-  function test_health_factor_does_not_include_zero_cf_collateral() public {
+  function test_userAccountData_factor_does_not_include_zero_cf_collateral() public {
     uint256 coll1ReserveId = _daiReserveId(spoke1);
     uint256 coll1Amount = 1000e18;
     uint256 coll2ReserveId = _wethReserveId(spoke1);
@@ -602,7 +602,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     assertEq(coll1InBaseCurrency + coll2InBaseCurrency, totalCollateralInBaseCurrency);
 
     uint16 configKey = spoke1.getUserPosition(coll1ReserveId, alice).configKey;
-    updateCollateralFactor(spoke1, coll1ReserveId, configKey, 0);
+    updateCollateralFactorAtKey(spoke1, coll1ReserveId, configKey, 0);
 
     (userRiskPremium, , , totalCollateralInBaseCurrency, ) = spoke1.getUserAccountData(alice);
     assertEq(_calculateExpectedUserRP(alice, spoke1), userRiskPremium);

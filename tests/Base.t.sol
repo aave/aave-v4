@@ -1065,7 +1065,7 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function updateCollateralFactor(
+  function updateCollateralFactorAtKey(
     ISpoke spoke,
     uint256 reserveId,
     uint16 configKey,
