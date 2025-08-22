@@ -51,6 +51,94 @@ library LiquidationLogic {
   }
 
   /**
+   * @dev Calculates the liquidation parameters for a user being liquidated.
+   * @param collateralReserve The collateral reserve being liquidated.
+   * @param debtReserve The debt reserve being repaid during liquidation.
+   * @param user The address of the user being liquidated.
+   * @param debtToCover The amount of debt to cover.
+   * @param drawnReserveDebt The drawn debt of the user for the given debt reserve.
+   * @param premiumReserveDebt The premium debt of the user for the given debt reserve.
+   * @return actualCollateralToLiquidate The amount of collateral to liquidate.
+   * @return liquidationFeeAmount The amount of protocol fee.
+   * @return drawnDebtToLiquidate The amount of drawn debt to repay.
+   * @return premiumDebtToLiquidate The amount of premium debt to repay.
+   * @return hasDeficit The flag representing if the user will have deficit to report.
+   */
+  function calculateLiquidationParameters(
+    DataTypes.Reserve storage collateralReserve,
+    DataTypes.Reserve storage debtReserve,
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover,
+    uint256 drawnReserveDebt,
+    uint256 premiumReserveDebt
+  ) external view returns (uint256, uint256, uint256, uint256, bool) {
+    DataTypes.LiquidationCallLocalVars memory vars;
+    vars.collateralReserveId = collateralReserveId;
+    vars.debtReserveId = debtReserveId;
+    vars.borrowerCollateralBalance = getUserSuppliedAmount(collateralReserveId, user);
+    vars.totalBorrowerReserveDebt = drawnReserveDebt + premiumReserveDebt;
+    DataTypes.DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[
+      vars.collateralReserveId
+    ][_userPositions[user][vars.collateralReserveId].configKey];
+    vars.collateralFactor = collateralDynConfig.collateralFactor;
+
+    (
+      ,
+      ,
+      vars.healthFactor,
+      vars.totalCollateralInBaseCurrency,
+      vars.totalDebtInBaseCurrency
+    ) = _calculateUserAccountData(user);
+
+    _validateLiquidationCall(
+      collateralReserve,
+      debtReserve,
+      collateralReserveId,
+      user,
+      debtToCover,
+      vars.totalBorrowerReserveDebt,
+      vars.healthFactor,
+      vars.collateralFactor
+    );
+
+    vars.debtAssetPrice = _oracle.getReservePrice(vars.debtReserveId);
+    vars.debtAssetUnit = 10 ** debtReserve.decimals;
+    vars.liquidationBonus = getVariableLiquidationBonus(
+      vars.collateralReserveId,
+      user,
+      vars.healthFactor
+    );
+    vars.closeFactor = _liquidationConfig.closeFactor;
+    vars.collateralAssetPrice = _oracle.getReservePrice(vars.collateralReserveId);
+    vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
+    vars.liquidationFee = collateralDynConfig.liquidationFee;
+    vars.debtToRestoreCloseFactor = vars.calculateDebtToRestoreCloseFactor();
+    vars.actualDebtToLiquidate = vars.calculateActualDebtToLiquidate(debtToCover);
+    (
+      vars.actualCollateralToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.liquidationFeeAmount,
+      vars.hasDeficit
+    ) = vars.calculateAvailableCollateralToLiquidate();
+
+    (vars.drawnDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
+      drawnReserveDebt,
+      premiumReserveDebt,
+      vars.actualDebtToLiquidate
+    );
+
+    return (
+      vars.actualCollateralToLiquidate,
+      vars.liquidationFeeAmount,
+      vars.drawnDebtToLiquidate,
+      vars.premiumDebtToLiquidate,
+      vars.hasDeficit
+    );
+  }
+
+  /**
    * @notice Calculates the actual amount of debt possible to repay in the liquidation.
    * @dev The amount of debt to repay is capped by the total debt of the user and the amount of debt.
    * @param params LiquidationCallLocalVars params struct.
@@ -60,7 +148,7 @@ library LiquidationLogic {
   function calculateActualDebtToLiquidate(
     DataTypes.LiquidationCallLocalVars memory params,
     uint256 debtToCover
-  ) external pure returns (uint256) {
+  ) internal pure returns (uint256) {
     uint256 maxLiquidatableDebt = debtToCover.min(params.totalBorrowerReserveDebt);
     uint256 actualDebtToLiquidate = maxLiquidatableDebt.min(params.debtToRestoreCloseFactor);
 
@@ -78,33 +166,6 @@ library LiquidationLogic {
     }
 
     return actualDebtToLiquidate;
-  }
-
-  /**
-   * @notice Calculates the amount of debt to liquidate to restore a user's health factor to the close factor.
-   * @param params LiquidationCallLocalVars params struct.
-   * @return The amount of debt asset to repay to restore health factor.
-   */
-  function calculateDebtToRestoreCloseFactor(
-    DataTypes.LiquidationCallLocalVars memory params
-  ) internal pure returns (uint256) {
-    // represents the effective value loss from the collateral per unit of debt repaid
-    // the greater the penalty, the more debt must be repaid to restore the user's health factor
-    uint256 effectiveLiquidationPenalty = (params.liquidationBonus.toWad())
-      .percentMulDown(params.collateralFactor)
-      .fromBpsDown();
-
-    // prevent underflow in denominator
-    if (params.closeFactor < effectiveLiquidationPenalty) {
-      return type(uint256).max;
-    }
-
-    // add 1 to denominator to round down, ensuring HF is always <= close factor
-    return
-      (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
-        (params.closeFactor - params.healthFactor)) /
-        ((params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice))
-        .fromWadDown();
   }
 
   /**
@@ -171,5 +232,32 @@ library LiquidationLogic {
     } else {
       return (vars.collateralAmount, vars.debtAmountNeeded, 0, vars.hasDeficit);
     }
+  }
+
+  /**
+   * @notice Calculates the amount of debt to liquidate to restore a user's health factor to the close factor.
+   * @param params LiquidationCallLocalVars params struct.
+   * @return The amount of debt asset to repay to restore health factor.
+   */
+  function calculateDebtToRestoreCloseFactor(
+    DataTypes.LiquidationCallLocalVars memory params
+  ) internal pure returns (uint256) {
+    // represents the effective value loss from the collateral per unit of debt repaid
+    // the greater the penalty, the more debt must be repaid to restore the user's health factor
+    uint256 effectiveLiquidationPenalty = (params.liquidationBonus.toWad())
+      .percentMulDown(params.collateralFactor)
+      .fromBpsDown();
+
+    // prevent underflow in denominator
+    if (params.closeFactor < effectiveLiquidationPenalty) {
+      return type(uint256).max;
+    }
+
+    // add 1 to denominator to round down, ensuring HF is always <= close factor
+    return
+      (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
+        (params.closeFactor - params.healthFactor)) /
+        ((params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice))
+        .fromWadDown();
   }
 }

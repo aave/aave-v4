@@ -35,8 +35,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
   using MathUtils for uint128;
 
-  IAaveOracle public oracle;
-
+  IAaveOracle internal _oracle;
   uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
@@ -69,8 +68,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function updateOracle(address newOracle) external restricted {
     require(newOracle != address(0), InvalidOracle());
-    oracle = IAaveOracle(newOracle);
-    require(oracle.DECIMALS() == 8, InvalidOracle());
+    _oracle = IAaveOracle(newOracle);
+    require(_oracle.DECIMALS() == 8, InvalidOracle());
     emit OracleUpdate(newOracle);
   }
 
@@ -551,6 +550,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return _userPositions[user][reserveId];
   }
 
+  function oracle() external view returns (IAaveOracle) {
+    return _oracle;
+  }
+
   // internal
   function _validateSupply(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
@@ -604,8 +607,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
-    require(address(oracle) != address(0), InvalidOracle());
-    oracle.setReserveSource(reserveId, priceSource);
+    require(address(_oracle) != address(0), InvalidOracle());
+    _oracle.setReserveSource(reserveId, priceSource);
     emit ReservePriceSourceUpdate(reserveId, priceSource);
   }
 
@@ -758,13 +761,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     bool refreshConfig
   ) internal returns (uint256, uint256, uint256, uint256, uint256) {
     DataTypes.CalculateUserAccountDataVars memory vars;
-    uint256 reserveCount = _reserveCount;
+    vars.reserveCount = _reserveCount;
+    IAaveOracle oracle = _oracle;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
-      positionStatus.collateralCount(reserveCount)
+      positionStatus.collateralCount(vars.reserveCount)
     );
 
-    while (vars.reserveId < reserveCount) {
+    while (vars.reserveId < vars.reserveCount) {
       if (!positionStatus.isUsingAsCollateralOrBorrowing(vars.reserveId)) {
         unchecked {
           ++vars.reserveId;
@@ -1149,94 +1153,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     if (vars.totalLiquidationFeeShares > 0) {
       vars.collateralReserveHub.payFee(vars.collateralAssetId, vars.totalLiquidationFeeShares);
     }
-  }
-
-  /**
-   * @dev Calculates the liquidation parameters for a user being liquidated.
-   * @param collateralReserve The collateral reserve being liquidated.
-   * @param debtReserve The debt reserve being repaid during liquidation.
-   * @param user The address of the user being liquidated.
-   * @param debtToCover The amount of debt to cover.
-   * @param drawnReserveDebt The drawn debt of the user for the given debt reserve.
-   * @param premiumReserveDebt The premium debt of the user for the given debt reserve.
-   * @return actualCollateralToLiquidate The amount of collateral to liquidate.
-   * @return liquidationFeeAmount The amount of protocol fee.
-   * @return drawnDebtToLiquidate The amount of drawn debt to repay.
-   * @return premiumDebtToLiquidate The amount of premium debt to repay.
-   * @return hasDeficit The flag representing if the user will have deficit to report.
-   */
-  function _calculateLiquidationParameters(
-    DataTypes.Reserve storage collateralReserve,
-    DataTypes.Reserve storage debtReserve,
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user,
-    uint256 debtToCover,
-    uint256 drawnReserveDebt,
-    uint256 premiumReserveDebt
-  ) internal view returns (uint256, uint256, uint256, uint256, bool) {
-    DataTypes.LiquidationCallLocalVars memory vars;
-    vars.collateralReserveId = collateralReserveId;
-    vars.debtReserveId = debtReserveId;
-    vars.borrowerCollateralBalance = getUserSuppliedAmount(collateralReserveId, user);
-    vars.totalBorrowerReserveDebt = drawnReserveDebt + premiumReserveDebt;
-    DataTypes.DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[
-      vars.collateralReserveId
-    ][_userPositions[user][vars.collateralReserveId].configKey];
-    vars.collateralFactor = collateralDynConfig.collateralFactor;
-
-    (
-      ,
-      ,
-      vars.healthFactor,
-      vars.totalCollateralInBaseCurrency,
-      vars.totalDebtInBaseCurrency
-    ) = _calculateUserAccountData(user);
-
-    _validateLiquidationCall(
-      collateralReserve,
-      debtReserve,
-      collateralReserveId,
-      user,
-      debtToCover,
-      vars.totalBorrowerReserveDebt,
-      vars.healthFactor,
-      vars.collateralFactor
-    );
-
-    vars.debtAssetPrice = oracle.getReservePrice(vars.debtReserveId);
-    vars.debtAssetUnit = 10 ** debtReserve.decimals;
-    vars.liquidationBonus = getVariableLiquidationBonus(
-      vars.collateralReserveId,
-      user,
-      vars.healthFactor
-    );
-    vars.closeFactor = _liquidationConfig.closeFactor;
-    vars.collateralAssetPrice = oracle.getReservePrice(vars.collateralReserveId);
-    vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
-    vars.liquidationFee = collateralDynConfig.liquidationFee;
-    vars.debtToRestoreCloseFactor = vars.calculateDebtToRestoreCloseFactor();
-    vars.actualDebtToLiquidate = vars.calculateActualDebtToLiquidate(debtToCover);
-    (
-      vars.actualCollateralToLiquidate,
-      vars.actualDebtToLiquidate,
-      vars.liquidationFeeAmount,
-      vars.hasDeficit
-    ) = vars.calculateAvailableCollateralToLiquidate();
-
-    (vars.drawnDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
-      drawnReserveDebt,
-      premiumReserveDebt,
-      vars.actualDebtToLiquidate
-    );
-
-    return (
-      vars.actualCollateralToLiquidate,
-      vars.liquidationFeeAmount,
-      vars.drawnDebtToLiquidate,
-      vars.premiumDebtToLiquidate,
-      vars.hasDeficit
-    );
   }
 
   function _castToView(
