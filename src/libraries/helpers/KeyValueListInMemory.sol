@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {LibSort} from 'src/dependencies/solady/LibSort.sol';
+import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
 
 library KeyValueListInMemory {
   error MaxKeySizeExceeded(uint256);
@@ -43,7 +43,7 @@ library KeyValueListInMemory {
 
   function sortByKey(List memory self) internal pure {
     // @dev since `key` is in the MSB, we can sort by the key by sorting the array
-    LibSort.insertionSort(self._inner);
+    Arrays.sort(self._inner, ltComparator);
   }
 
   // @dev key, value < ceiling checks are expected to be done before packing
@@ -61,5 +61,9 @@ library KeyValueListInMemory {
 
   function unpack(uint256 data) internal pure returns (uint256, uint256) {
     return (unpackKey(data), unpackValue(data));
+  }
+
+  function ltComparator(uint256 a, uint256 b) internal pure returns (bool) {
+    return a < b;
   }
 }
