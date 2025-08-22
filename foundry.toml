@@ -15,12 +15,12 @@ gas_snapshot_check = false
 gas_limit = 1099511627776
 
 additional_compiler_profiles = [
-  { name = "hub", optimizer = true, via_ir = false, optimizer_runs = 44444 },
+  { name = "hub", optimizer = true, via_ir = false, optimizer_runs = 4444 },
   { name = "spoke", optimizer = true, via_ir = true, optimizer_runs = 4444 }
 ]
 
 compilation_restrictions = [
-  { paths = "src/contracts/Hub.sol", optimizer = true, via_ir = false, optimizer_runs = 44444 },
+  { paths = "src/contracts/Hub.sol", optimizer = true, via_ir = false, optimizer_runs = 4444 },
   { paths = "src/contracts/Spoke.sol", optimizer = true, via_ir = true, optimizer_runs = 4444 }
 ]
 
