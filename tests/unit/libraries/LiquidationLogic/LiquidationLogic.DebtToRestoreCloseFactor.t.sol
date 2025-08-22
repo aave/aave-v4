@@ -50,7 +50,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     params.debtAssetPrice = 0;
     DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
-    vm.expectRevert(stdError.divisionError);
+    vm.expectRevert(); // MathUtils reverts with no data if division by zero
     this.calculateDebtToRestoreCloseFactor(args);
   }
 

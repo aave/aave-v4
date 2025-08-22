@@ -10,6 +10,7 @@ contract SpokeLiquidationBase is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for *;
   using SafeCast for uint256;
+  using MathUtils for uint256;
 
   struct Balance {
     uint256 balanceBefore;
@@ -825,27 +826,27 @@ contract SpokeLiquidationBase is SpokeBase {
       params.collateralAssetUnit;
 
     // find collateral in base currency that corresponds to the debt to cover
-    vars.baseCollateral =
-      (params.actualDebtToLiquidate * params.debtAssetPrice).toWad() /
-      params.debtAssetUnit;
+    vars.baseCollateral = (params.actualDebtToLiquidate * params.debtAssetPrice).wadDivUp(
+      params.debtAssetUnit
+    );
 
     // account for additional collateral required due to liquidation bonus
-    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMulDown(params.liquidationBonus);
+    vars.maxCollateralToLiquidate = vars.baseCollateral.percentMulUp(params.liquidationBonus);
 
     if (vars.maxCollateralToLiquidate >= vars.borrowerCollateralBalanceInBaseCurrency) {
       vars.collateralAmount = params.borrowerCollateralBalance;
       vars.debtAmountNeeded = ((params.debtAssetUnit * vars.borrowerCollateralBalanceInBaseCurrency)
         .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).fromWadDown();
       vars.collateralToLiquidateInBaseCurrency = vars.borrowerCollateralBalanceInBaseCurrency;
-      vars.debtToLiquidateInBaseCurrency =
-        (vars.debtAmountNeeded * params.debtAssetPrice).toWad() /
-        params.debtAssetUnit;
+      vars.debtToLiquidateInBaseCurrency = vars.debtAmountNeeded.mulDivUp(
+        params.debtAssetPrice.toWad(),
+        params.debtAssetUnit
+      );
     } else {
-      // add 1 to round collateral amount up, ensuring HF is always <= close factor
-      vars.collateralAmount =
-        ((vars.maxCollateralToLiquidate * params.collateralAssetUnit) / params.collateralAssetPrice)
-          .fromWadDown() +
-        1;
+      vars.collateralAmount = vars.maxCollateralToLiquidate.mulDivUp(
+        params.collateralAssetUnit,
+        params.collateralAssetPrice.toWad()
+      );
       vars.debtAmountNeeded = params.actualDebtToLiquidate;
       vars.collateralToLiquidateInBaseCurrency =
         (vars.collateralAmount * params.collateralAssetPrice).toWad() /
@@ -940,11 +941,12 @@ contract SpokeLiquidationBase is SpokeBase {
     if (params.closeFactor < effectiveLiquidationPenalty) {
       return UINT256_MAX;
     }
+
     return
-      (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
-        (params.closeFactor - params.healthFactor)) /
-        ((params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice))
-        .fromWadDown();
+      params.totalDebtInBaseCurrency.mulDivDown(
+        params.debtAssetUnit * (params.closeFactor - params.healthFactor),
+        (params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice.toWad()
+      );
   }
 
   function calcDebtToRestoreCloseFactor(

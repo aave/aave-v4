@@ -92,4 +92,86 @@ contract MathUtilsTest is Test {
     uint256 result = a >= b ? a - b : UINT256_MAX - b + a + 1;
     assertEq(MathUtils.uncheckedSub(a, b), result);
   }
+
+  function test_mulDivDown_WithRemainder() external pure {
+    assertEq(MathUtils.mulDivDown(2, 13, 3), 8); // 26 / 3 = 8.666 -> floor -> 8
+  }
+
+  function test_mulDivDown_NoRemainder() external pure {
+    assertEq(MathUtils.mulDivDown(12, 6, 4), 18); // 72 / 4 = 18, no floor
+  }
+
+
+  function test_mulDivDown_ZeroAOrB() external pure {
+    assertEq(MathUtils.mulDivDown(0, 10, 5), 0);
+    assertEq(MathUtils.mulDivDown(10, 0, 5), 0);
+  }
+
+
+  function test_mulDivDown_RevertOnDivByZero() external {
+    vm.expectRevert();
+    MathUtils.mulDivDown(10, 10, 0);
+  }
+
+
+  function test_mulDivDown_RevertOnOverflow() external {
+    uint256 max = type(uint256).max;
+    vm.expectRevert();
+    MathUtils.mulDivDown(max, 2, 1); // max * 2 will overflow
+  }
+
+  function test_fuzz_mulDivDown(uint256 a, uint256 b, uint256 c) external {
+    uint256 result;
+    bool safetyCheck;
+    unchecked {
+      result = a * b;
+      safetyCheck = b == 0 || result / b == a;
+    }
+
+    if (!safetyCheck || c == 0) {
+      vm.expectRevert();
+      MathUtils.mulDivDown(a, b, c);
+    } else {
+      assertEq(MathUtils.mulDivDown(a, b, c), result / c);
+    }
+  }
+
+  function test_mulDivUp_WithRemainder() external pure {
+    assertEq(MathUtils.mulDivUp(5, 5, 3), 9); // 25 / 3 = 8.333 -> ceil -> 9
+  }
+
+  function test_mulDivUp_NoRemainder() external pure {
+    assertEq(MathUtils.mulDivUp(12, 6, 4), 18); // 72 / 4 = 18, no ceil
+  }
+
+  function test_mulDivUp_ZeroAOrB() external pure {
+    assertEq(MathUtils.mulDivUp(0, 10, 5), 0);
+    assertEq(MathUtils.mulDivUp(10, 0, 5), 0);
+  }
+
+  function test_mulDivUp_RevertOnDivByZero() external {
+    vm.expectRevert();
+    MathUtils.mulDivUp(10, 10, 0);
+  }
+
+  function test_mulDivUp_RevertOnOverflow() external {
+    uint256 max = type(uint256).max;
+    vm.expectRevert();
+    MathUtils.mulDivUp(max, 2, 1); // max * 2 will overflow
+  }
+
+  function test_fuzz_mulDivUp(uint256 a, uint256 b, uint256 c) external {
+    uint256 result;
+    bool safetyCheck;
+    unchecked {
+      result = a * b;
+      safetyCheck = b == 0 || result / b == a;
+    }
+    if (!safetyCheck || c == 0) {
+      vm.expectRevert();
+      MathUtils.mulDivUp(a, b, c);
+    } else {
+      assertEq(MathUtils.mulDivUp(a, b, c), result / c + (result % c > 0 ? 1 : 0));
+    }
+  }
 }
