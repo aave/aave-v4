@@ -24,7 +24,6 @@ jobs:
 
       - name: Run Forge size
         uses: bgd-labs/github-workflows/.github/actions/foundry-size@main
-        continue-on-error: true
 
       - name: Run Gas snapshot check
         uses: bgd-labs/github-workflows/.github/actions/foundry-test@main

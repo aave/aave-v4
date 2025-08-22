@@ -280,6 +280,16 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
       debtAssetId
     );
 
+    vm.expectEmit(address(state.spoke));
+    emit ISpokeBase.LiquidationCall(
+      collateralReserveId,
+      debtReserveId,
+      alice,
+      state.debtToLiq,
+      state.collToLiq,
+      LIQUIDATOR
+    );
+
     // debt asset deficit shares are the initial amount minus the amount restored during liquidation
     state.expectedDeficitShares =
       userPosition.drawnShares -
@@ -309,15 +319,6 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
       );
     }
 
-    vm.expectEmit(address(state.spoke));
-    emit ISpokeBase.LiquidationCall(
-      collateralReserveId,
-      debtReserveId,
-      alice,
-      state.debtToLiq,
-      state.collToLiq,
-      LIQUIDATOR
-    );
     vm.prank(LIQUIDATOR);
     state.spoke.liquidationCall(collateralReserveId, debtReserveId, alice, UINT256_MAX);
 

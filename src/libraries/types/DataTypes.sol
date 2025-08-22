@@ -2,6 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
+import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 import {IHub} from 'src/interfaces/IHub.sol';
 
 library DataTypes {
@@ -116,7 +117,6 @@ library DataTypes {
 
   struct NotifyRiskPremiumUpdateVars {
     bool premiumIncrease;
-    uint256 reserveCount;
     uint256 reserveId;
     uint256 assetId;
     IHub hub;
@@ -131,10 +131,13 @@ library DataTypes {
 
   struct CalculateUserAccountDataVars {
     uint256 i;
+    uint256 reserveId;
+    bool borrowing;
+    bool collateral;
+    IAaveOracle oracle;
     uint256 assetId;
     uint256 assetPrice;
     uint256 assetUnit;
-    uint256 reserveId;
     uint256 reservePrice;
     uint256 collateralRisk;
     uint256 userCollateralInBaseCurrency;
@@ -201,6 +204,30 @@ library DataTypes {
     bool hasDeficit;
     IHub collateralReserveHub;
     IHub debtReserveHub;
+  }
+
+  struct LiquidationCallParams {
+    address user;
+    address oracle;
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
+    uint256 healthFactor;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+    uint256 debtToCover;
+    address liquidator;
+  }
+
+  struct CalculateLiquidationParametersParams {
+    address oracle;
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
+    uint256 debtToCover;
+    uint256 drawnReserveDebt;
+    uint256 premiumReserveDebt;
+    uint256 healthFactor;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
   }
 
   struct ExecuteRepayLocalVars {
