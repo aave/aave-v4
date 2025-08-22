@@ -139,9 +139,7 @@ contract Hub is IHub, AccessManaged {
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     require(spoke != address(0), InvalidSpoke());
-    require(!_assetToSpokes[assetId].contains(spoke), SpokeAlreadyListed());
-
-    _assetToSpokes[assetId].add(spoke);
+    require(_assetToSpokes[assetId].add(spoke), SpokeAlreadyListed());
     emit AddSpoke(assetId, spoke);
 
     _updateSpokeConfig(assetId, spoke, config);
@@ -331,13 +329,12 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function payFee(uint256 assetId, uint256 shares) external {
     DataTypes.SpokeData storage sender = _spokes[assetId][msg.sender];
-    _validatePayFee(sender, shares);
-
     address feeReceiver = _assets[assetId].feeReceiver;
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage receiver = _spokes[assetId][feeReceiver];
 
     asset.accrue(assetId, receiver);
+    _validatePayFee(sender, shares);
 
     _transferShares(sender, receiver, shares);
 
@@ -349,9 +346,9 @@ contract Hub is IHub, AccessManaged {
     DataTypes.SpokeData storage sender = _spokes[assetId][msg.sender];
     DataTypes.SpokeData storage receiver = _spokes[assetId][toSpoke];
     DataTypes.Asset storage asset = _assets[assetId];
-    _validateTransferShares(asset, sender, receiver, assetId, shares);
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
+    _validateTransferShares(asset, sender, receiver, assetId, shares);
 
     _transferShares(sender, receiver, shares);
 
@@ -361,9 +358,10 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function sweep(uint256 assetId, uint256 amount) external {
     DataTypes.Asset storage asset = _assets[assetId];
-    _validateSweep(asset, msg.sender, amount);
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
+    _validateSweep(asset, msg.sender, amount);
+
     asset.liquidity -= amount.toUint128();
     asset.swept += amount.toUint128();
     asset.updateDrawnRate(assetId);
@@ -376,9 +374,10 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function reclaim(uint256 assetId, uint256 amount) external {
     DataTypes.Asset storage asset = _assets[assetId];
-    _validateReclaim(asset, msg.sender, amount);
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
+    _validateReclaim(asset, msg.sender, amount);
+
     asset.liquidity += amount.toUint128();
     asset.swept -= amount.toUint128();
     asset.updateDrawnRate(assetId);
@@ -540,14 +539,10 @@ contract Hub is IHub, AccessManaged {
 
   function getSpokeAddedAmount(uint256 assetId, address spoke) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
-    if (spoke == asset.feeReceiver) {
-      return
-        previewRemoveByShares(
-          assetId,
-          _spokes[assetId][spoke].addedShares + asset.unrealizedFeeShares()
-        );
-    }
-    return previewRemoveByShares(assetId, _spokes[assetId][spoke].addedShares);
+    uint256 unrealizedFeeShares;
+    if (spoke == asset.feeReceiver) unrealizedFeeShares = asset.unrealizedFeeShares();
+    return
+      previewRemoveByShares(assetId, _spokes[assetId][spoke].addedShares + unrealizedFeeShares);
   }
 
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256) {
