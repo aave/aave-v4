@@ -842,7 +842,6 @@ contract SpokeLiquidationBase is SpokeBase {
         (vars.debtAmountNeeded * params.debtAssetPrice).toWad() /
         params.debtAssetUnit;
     } else {
-      // add 1 to round collateral amount up, ensuring HF is always <= close factor
       vars.collateralAmount = vars.maxCollateralToLiquidate.mulDivUp(
         params.collateralAssetUnit,
         params.collateralAssetPrice.toWad()

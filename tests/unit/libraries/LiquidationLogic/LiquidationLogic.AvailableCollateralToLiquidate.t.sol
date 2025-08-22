@@ -209,7 +209,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     params.debtAssetUnit = 0;
     DataTypes.LiquidationCallLocalVars memory args = setStructFields(params);
 
-    vm.expectRevert(); // WadMathRay reverts with no data if division by 0
+    vm.expectRevert(); // WadRayMath reverts with no data if division by 0
     LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
   }
 

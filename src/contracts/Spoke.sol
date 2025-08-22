@@ -1117,7 +1117,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       _notifyRiskPremiumUpdate(user, vars.newUserRiskPremium);
     }
 
-    if (vars.withdrawnShares - vars.liquidatedSuppliedShares > 0) {
+    if (vars.withdrawnShares > vars.liquidatedSuppliedShares) {
       vars.collateralReserveHub.payFee(
         vars.collateralAssetId,
         vars.withdrawnShares - vars.liquidatedSuppliedShares
