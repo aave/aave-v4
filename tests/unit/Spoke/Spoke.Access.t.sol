@@ -88,7 +88,7 @@ contract SpokeAccessTest is SpokeBase {
       DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
-        liquidationBonus: 100_00,
+        liquidationBonus: MIN_LIQUIDATION_BONUS,
         liquidationFee: 0
       })
     );
@@ -102,7 +102,7 @@ contract SpokeAccessTest is SpokeBase {
       DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
-        liquidationBonus: 100_00,
+        liquidationBonus: MIN_LIQUIDATION_BONUS,
         liquidationFee: 0
       })
     );
@@ -131,7 +131,7 @@ contract SpokeAccessTest is SpokeBase {
       _daiReserveId(spoke1),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
-        liquidationBonus: 100_00,
+        liquidationBonus: MIN_LIQUIDATION_BONUS,
         liquidationFee: 0
       })
     );
@@ -142,7 +142,7 @@ contract SpokeAccessTest is SpokeBase {
       _daiReserveId(spoke1),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
-        liquidationBonus: 100_00,
+        liquidationBonus: MIN_LIQUIDATION_BONUS,
         liquidationFee: 0
       })
     );
@@ -201,7 +201,7 @@ contract SpokeAccessTest is SpokeBase {
       DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
-        liquidationBonus: 100_00,
+        liquidationBonus: MIN_LIQUIDATION_BONUS,
         liquidationFee: 0
       })
     );
@@ -220,7 +220,7 @@ contract SpokeAccessTest is SpokeBase {
       DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
-        liquidationBonus: 100_00,
+        liquidationBonus: MIN_LIQUIDATION_BONUS,
         liquidationFee: 0
       })
     );

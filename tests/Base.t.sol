@@ -517,7 +517,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
     spokeInfo[spoke1].wbtc.reserveConfig = DataTypes.ReserveConfig({
@@ -528,7 +528,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
     spokeInfo[spoke1].dai.reserveConfig = DataTypes.ReserveConfig({
@@ -539,7 +539,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
     spokeInfo[spoke1].usdx.reserveConfig = DataTypes.ReserveConfig({
@@ -550,7 +550,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
     spokeInfo[spoke1].usdy.reserveConfig = DataTypes.ReserveConfig({
@@ -561,7 +561,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].usdy.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
 
@@ -616,7 +616,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
     spokeInfo[spoke2].weth.reserveConfig = DataTypes.ReserveConfig({
@@ -627,7 +627,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 76_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
     spokeInfo[spoke2].dai.reserveConfig = DataTypes.ReserveConfig({
@@ -638,7 +638,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
     spokeInfo[spoke2].usdx.reserveConfig = DataTypes.ReserveConfig({
@@ -649,7 +649,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
     spokeInfo[spoke2].usdy.reserveConfig = DataTypes.ReserveConfig({
@@ -660,7 +660,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].usdy.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
     spokeInfo[spoke2].dai2.reserveConfig = DataTypes.ReserveConfig({
@@ -671,7 +671,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].dai2.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 70_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
 
@@ -734,7 +734,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
     spokeInfo[spoke3].usdx.reserveConfig = DataTypes.ReserveConfig({
@@ -745,7 +745,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
     spokeInfo[spoke3].weth.reserveConfig = DataTypes.ReserveConfig({
@@ -756,7 +756,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 79_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
     spokeInfo[spoke3].wbtc.reserveConfig = DataTypes.ReserveConfig({
@@ -767,7 +767,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 77_00,
-      liquidationBonus: 100_01,
+      liquidationBonus: MIN_LIQUIDATION_BONUS,
       liquidationFee: 0
     });
 
@@ -1043,9 +1043,12 @@ abstract contract Base is Test {
     uint256 reserveId = reserveIdFn(spoke);
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
-    // when collateralFactor is 0, liquidationBonus must also be 100.00%
     if (newCollateralFactor == 0) {
+      // when collateralFactor is 0, liquidationBonus must also be 100.00%
       config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR.toUint32();
+    } else if (config.liquidationBonus == PercentageMath.PERCENTAGE_FACTOR) {
+      // otherwise ensure that liquidationBonus is at least MIN_LIQUIDATION_BONUS
+      config.liquidationBonus = MIN_LIQUIDATION_BONUS;
     }
 
     vm.prank(SPOKE_ADMIN);
@@ -1062,9 +1065,12 @@ abstract contract Base is Test {
   ) internal pausePrank returns (uint16) {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
-    // when collateralFactor is 0, liquidationBonus must also be 100.00%
     if (newCollateralFactor == 0) {
+      // when collateralFactor is 0, liquidationBonus must also be 100.00%
       config.liquidationBonus = PercentageMath.PERCENTAGE_FACTOR.toUint32();
+    } else if (config.liquidationBonus == PercentageMath.PERCENTAGE_FACTOR) {
+      // otherwise ensure that liquidationBonus is at least MIN_LIQUIDATION_BONUS
+      config.liquidationBonus = MIN_LIQUIDATION_BONUS;
     }
     vm.prank(SPOKE_ADMIN);
     uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);

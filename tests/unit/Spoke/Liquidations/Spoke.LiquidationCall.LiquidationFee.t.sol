@@ -147,8 +147,8 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
     });
   }
 
-  /// with 0 liquidation bonus, the protocol fee should also be 0
-  function test_liquidationCall_fuzz_liquidationFee_liqBonus_zero(uint16 liquidationFee) public {
+  /// with min liquidation bonus > 0, the protocol fee should always be > 0
+  function test_liquidationCall_fuzz_liquidationFee_liqBonus_min(uint16 liquidationFee) public {
     LiquidationTestLocalParams memory state = test_liquidationCall_fuzz_liquidationFee({
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
@@ -157,7 +157,7 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
-      liqBonus: 100_00, // 0% LB
+      liqBonus: MIN_LIQUIDATION_BONUS, // 0% LB
       supplyAmount: 10_000e18,
       desiredHf: 0.95e18,
       liquidationFee: liquidationFee,
@@ -168,6 +168,6 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
       state.collateralReserve.assetId,
       state.feeReceiverAmount.balanceChange
     );
-    assertEq(liquidationFee, 0, 'liquidationFee = 0');
+    assertGt(liquidationFee, 0, 'liquidationFee always > 0');
   }
 }

@@ -9,7 +9,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
 
   mapping(uint256 => uint256) internal minLeftoverAmount; // reserveId => min leftover amount
   uint256 internal collateralFactor = 90_00;
-  uint32 internal liquidationBonus = 100_00;
+  uint32 internal liquidationBonus = MIN_LIQUIDATION_BONUS;
   uint16 internal liquidationFee = 0;
   uint256 internal closeFactor = 1.05e18;
 

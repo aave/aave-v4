@@ -26,7 +26,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     // simplify accounting checks with no fee or bonus
     updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
-    updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
+    updateLiquidationBonus(spoke1, state.wbtcReserveId, MIN_LIQUIDATION_BONUS);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
@@ -135,7 +135,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     // simplify accounting checks with no fee or bonus
     updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
-    updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
+    updateLiquidationBonus(spoke1, state.wbtcReserveId, MIN_LIQUIDATION_BONUS);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
@@ -240,7 +240,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     // simplify accounting checks with no fee or bonus
     updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
-    updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
+    updateLiquidationBonus(spoke1, state.wbtcReserveId, MIN_LIQUIDATION_BONUS);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
@@ -333,7 +333,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     // simplify accounting checks with no fee or bonus
     updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
-    updateLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
+    updateLiquidationBonus(spoke1, state.wbtcReserveId, MIN_LIQUIDATION_BONUS);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);

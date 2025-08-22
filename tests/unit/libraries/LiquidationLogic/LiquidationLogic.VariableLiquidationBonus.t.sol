@@ -386,7 +386,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
     uint256 liquidationBonusFactor
   ) internal pure returns (uint256) {
     return
-      (liquidationBonus - PercentageMath.PERCENTAGE_FACTOR).percentMulDown(liquidationBonusFactor) +
-      PercentageMath.PERCENTAGE_FACTOR;
+      (liquidationBonus - MIN_LIQUIDATION_BONUS).percentMulDown(liquidationBonusFactor) +
+      MIN_LIQUIDATION_BONUS;
   }
 }
