@@ -359,10 +359,11 @@ library LiquidationLogic {
 
     vars.debtAssetPrice = params.oracle.getReservePrice(params.debtReserveId);
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
-    vars.liquidationBonus = getVariableLiquidationBonus(
-      collateralDynConfig,
+    vars.liquidationBonus = calculateVariableLiquidationBonus(
       liquidationConfig,
-      vars.healthFactor
+      vars.healthFactor,
+      collateralDynConfig.liquidationBonus,
+      Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
     vars.closeFactor = liquidationConfig.closeFactor;
     vars.collateralAssetPrice = params.oracle.getReservePrice(params.collateralReserveId);
@@ -452,21 +453,6 @@ library LiquidationLogic {
     DataTypes.UserPosition storage collateralPosition
   ) public view returns (uint256) {
     return reserve.hub.previewRemoveByShares(reserve.assetId, collateralPosition.suppliedShares);
-  }
-
-  function getVariableLiquidationBonus(
-    DataTypes.DynamicReserveConfig storage collateralDynConfig,
-    DataTypes.LiquidationConfig storage liquidationConfig,
-    uint256 healthFactor
-  ) public view returns (uint256) {
-    // if healthFactorForMaxBonus is 0, always returns liquidationBonus
-    return
-      calculateVariableLiquidationBonus(
-        liquidationConfig,
-        healthFactor,
-        collateralDynConfig.liquidationBonus,
-        Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-      );
   }
 
   function _settlePremiumDebt(
