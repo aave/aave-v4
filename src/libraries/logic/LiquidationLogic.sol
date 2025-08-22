@@ -315,7 +315,10 @@ library LiquidationLogic {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = params.collateralReserveId;
     vars.debtReserveId = params.debtReserveId;
-    vars.borrowerCollateralBalance = getUserSuppliedAmount(collateralReserve, collateralPosition);
+    vars.borrowerCollateralBalance = collateralReserve.hub.previewRemoveByShares(
+      collateralReserve.assetId,
+      collateralPosition.suppliedShares
+    );
     vars.totalBorrowerReserveDebt = params.drawnReserveDebt + params.premiumReserveDebt;
     vars.collateralFactor = collateralDynConfig.collateralFactor;
 
@@ -424,13 +427,6 @@ library LiquidationLogic {
       collateralFactor != 0;
     require(isCollateralEnabled, ISpoke.CollateralCannotBeLiquidated());
     require(totalDebt > 0, ISpoke.SpecifiedCurrencyNotBorrowedByUser());
-  }
-
-  function getUserSuppliedAmount(
-    DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage collateralPosition
-  ) public view returns (uint256) {
-    return reserve.hub.previewRemoveByShares(reserve.assetId, collateralPosition.suppliedShares);
   }
 
   function _settlePremiumDebt(

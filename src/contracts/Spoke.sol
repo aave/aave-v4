@@ -311,7 +311,41 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     address user,
     uint256 debtToCover
   ) external {
-    _executeLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, msg.sender);
+    DataTypes.LiquidationCallParams memory params;
+    params.user = user;
+    params.oracle = address(oracle);
+    params.collateralReserveId = collateralReserveId;
+    params.debtReserveId = debtReserveId;
+    params.debtToCover = debtToCover;
+    params.liquidator = msg.sender;
+
+    (
+      ,
+      ,
+      params.healthFactor,
+      params.totalCollateralInBaseCurrency,
+      params.totalDebtInBaseCurrency
+    ) = _calculateUserAccountData(user);
+
+    uint16 collateralConfigKey = _userPositions[user][collateralReserveId].configKey;
+    bool hasDeficit = LiquidationLogic.executeLiquidationCall(
+      _reserves[collateralReserveId],
+      _reserves[debtReserveId],
+      _userPositions[user][collateralReserveId],
+      _userPositions[user][debtReserveId],
+      _dynamicConfig[collateralReserveId][collateralConfigKey],
+      _positionStatus[user],
+      _liquidationConfig,
+      params
+    );
+
+    if (hasDeficit) {
+      _reportDeficits(user);
+    } else {
+      // new risk premium only needs to be propagated if no deficit exists
+      (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(user);
+      _notifyRiskPremiumUpdate(user, newUserRiskPremium);
+    }
   }
 
   /// @inheritdoc ISpoke
@@ -993,53 +1027,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
     _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
     emit RefreshSingleUserDynamicConfig(user, reserveId);
-  }
-
-  /**
-   * @dev Executes liquidation call for a given pair of debt/collateral reserves and a given user.
-   */
-  function _executeLiquidationCall(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user,
-    uint256 debtToCover,
-    address liquidator
-  ) internal {
-    DataTypes.LiquidationCallParams memory params;
-    params.user = user;
-    params.oracle = address(oracle);
-    params.collateralReserveId = collateralReserveId;
-    params.debtReserveId = debtReserveId;
-    params.debtToCover = debtToCover;
-    params.liquidator = liquidator;
-
-    (
-      ,
-      ,
-      params.healthFactor,
-      params.totalCollateralInBaseCurrency,
-      params.totalDebtInBaseCurrency
-    ) = _calculateUserAccountData(user);
-
-    uint16 collateralConfigKey = _userPositions[user][collateralReserveId].configKey;
-    bool hasDeficit = LiquidationLogic.executeLiquidationCall(
-      _reserves[collateralReserveId],
-      _reserves[debtReserveId],
-      _userPositions[user][collateralReserveId],
-      _userPositions[user][debtReserveId],
-      _dynamicConfig[collateralReserveId][collateralConfigKey],
-      _positionStatus[user],
-      _liquidationConfig,
-      params
-    );
-
-    if (hasDeficit) {
-      _reportDeficits(user);
-    } else {
-      // new risk premium only needs to be propagated if no deficit exists
-      (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(user);
-      _notifyRiskPremiumUpdate(user, newUserRiskPremium);
-    }
   }
 
   function _castToView(
