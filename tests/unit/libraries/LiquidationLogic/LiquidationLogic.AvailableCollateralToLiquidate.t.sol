@@ -8,6 +8,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
+  using MathUtils for uint256;
 
   struct TestAvailableCollateralParams {
     uint256 debtAssetPrice;
@@ -50,8 +51,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
 
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
-    // actualCollateralToLiquidate is always >= 1
-    assertEq(res.actualCollateralToLiquidate, 1, 'actualCollateralToLiquidate');
+    assertEq(res.actualCollateralToLiquidate, 0, 'actualCollateralToLiquidate');
     assertEq(res.actualDebtToLiquidate, 0, 'actualDebtToLiquidate');
     assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount');
   }
@@ -170,8 +170,10 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
 
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(vars);
 
-    uint256 collateralAmount = ((maxCollateralToLiquidate * params.collateralAssetUnit) /
-      params.collateralAssetPrice).fromWadDown() + 1;
+    uint256 collateralAmount = maxCollateralToLiquidate.mulDivUp(
+      params.collateralAssetUnit,
+      params.collateralAssetPrice.toWad()
+    );
     (uint256 actualCollateralToLiquidate, uint256 liquidationFeeAmount) = calcLiquidationFeeAmount(
       params,
       collateralAmount
@@ -207,7 +209,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     params.debtAssetUnit = 0;
     DataTypes.LiquidationCallLocalVars memory args = setStructFields(params);
 
-    vm.expectRevert(stdError.divisionError);
+    vm.expectRevert(); // WadRayMath reverts with no data if division by 0
     LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
   }
 
@@ -225,7 +227,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
 
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
 
-    assertEq(res.actualCollateralToLiquidate, 1, 'actualCollateralToLiquidate');
+    assertEq(res.actualCollateralToLiquidate, 0, 'actualCollateralToLiquidate');
     assertEq(res.actualDebtToLiquidate, params.actualDebtToLiquidate, 'actualDebtToLiquidate');
     assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount');
   }
@@ -237,7 +239,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     params.collateralAssetUnit = 0;
     DataTypes.LiquidationCallLocalVars memory args = setStructFields(params);
 
-    vm.expectRevert(stdError.divisionError);
+    vm.expectRevert(); // MathUtils reverts with no data if division by zero
     LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
   }
 
@@ -331,11 +333,9 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     TestAvailableCollateralParams memory params
   ) internal pure returns (uint256) {
     return
-      _convertAmountToBaseCurrency(
-        params.actualDebtToLiquidate,
-        params.debtAssetPrice,
-        params.debtAssetUnit
-      ).percentMulDown(params.liquidationBonus);
+      (params.actualDebtToLiquidate * params.debtAssetPrice)
+        .wadDivUp(params.debtAssetUnit)
+        .percentMulUp(params.liquidationBonus);
   }
 
   function calcLiquidationFeeAmount(

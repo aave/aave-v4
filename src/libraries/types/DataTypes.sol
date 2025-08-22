@@ -190,14 +190,11 @@ library DataTypes {
     uint256 accruedPremium;
     uint256 collateralToLiquidate;
     uint256 liquidationFeeAmount;
-    uint256 liquidationFeeShares;
     uint256 drawnDebtToLiquidate;
     uint256 premiumDebtToLiquidate;
     uint256 restoredShares;
     uint256 withdrawnShares;
     uint256 newUserRiskPremium;
-    uint256 totalLiquidationFeeShares;
-    uint256 usersLength;
     uint256 liquidatedSuppliedShares;
     DataTypes.PremiumDelta premiumDelta;
     bool hasDeficit;

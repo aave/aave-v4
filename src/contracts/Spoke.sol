@@ -840,7 +840,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   /**
-   * @dev Executes liquidation call across all users in the array, for a given pair of debt/collateral reserves.
+   * @dev Executes liquidation call for a given pair of debt/collateral reserves and a given user.
    */
   function _executeLiquidationCall(
     uint256 collateralReserveId,
@@ -903,7 +903,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.collateralToLiquidate,
       liquidator
     );
-    vars.liquidationFeeShares = vars.withdrawnShares - vars.liquidatedSuppliedShares;
 
     // repay debt
     {
@@ -943,7 +942,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       );
     }
 
-    vars.totalLiquidationFeeShares += vars.liquidationFeeShares;
+    if (vars.withdrawnShares > vars.liquidatedSuppliedShares) {
+      vars.collateralReserveHub.payFee(
+        vars.collateralAssetId,
+        vars.withdrawnShares - vars.liquidatedSuppliedShares
+      );
+    }
 
     emit LiquidationCall(
       collateralReserveId,
@@ -953,10 +957,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.collateralToLiquidate,
       liquidator
     );
-
-    if (vars.totalLiquidationFeeShares > 0) {
-      vars.collateralReserveHub.payFee(vars.collateralAssetId, vars.totalLiquidationFeeShares);
-    }
   }
 
   /**
@@ -1012,15 +1012,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.collateralFactor
     );
 
-    vars.debtAssetPrice = oracle.getReservePrice(vars.debtReserveId);
+    vars.debtAssetPrice = oracle.getReservePrice(debtReserveId);
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
     vars.liquidationBonus = getVariableLiquidationBonus(
-      vars.collateralReserveId,
+      collateralReserveId,
       user,
       vars.healthFactor
     );
     vars.closeFactor = _liquidationConfig.closeFactor;
-    vars.collateralAssetPrice = oracle.getReservePrice(vars.collateralReserveId);
+    vars.collateralAssetPrice = oracle.getReservePrice(collateralReserveId);
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.liquidationFee = collateralDynConfig.liquidationFee;
     vars.debtToRestoreCloseFactor = vars.calculateDebtToRestoreCloseFactor();
