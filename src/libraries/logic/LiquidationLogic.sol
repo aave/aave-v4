@@ -19,32 +19,9 @@ library LiquidationLogic {
   using WadRayMath for uint256;
   using MathUtils for *;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
+  using LiquidationLogic for DataTypes.LiquidationConfig;
   using SafeCast for *;
   using PositionStatus for DataTypes.PositionStatus;
-
-  struct LiquidationCallParams {
-    address user;
-    IAaveOracle oracle;
-    uint256 collateralReserveId;
-    uint256 debtReserveId;
-    uint256 healthFactor;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-    uint256 debtToCover;
-    address liquidator;
-  }
-
-  struct CalculateLiquidationParametersParams {
-    IAaveOracle oracle;
-    uint256 collateralReserveId;
-    uint256 debtReserveId;
-    uint256 debtToCover;
-    uint256 drawnReserveDebt;
-    uint256 premiumReserveDebt;
-    uint256 healthFactor;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-  }
 
   /**
    * @dev This constant represents the minimum amount of assets in base currency that need to be leftover after a liquidation, if not clearing collateral on a position completely.
@@ -216,7 +193,7 @@ library LiquidationLogic {
     DataTypes.DynamicReserveConfig storage collateralDynConfig,
     DataTypes.PositionStatus storage positionStatus,
     DataTypes.LiquidationConfig storage liquidationConfig,
-    LiquidationCallParams memory params
+    DataTypes.LiquidationCallParams memory params
   ) external returns (bool) {
     DataTypes.ExecuteLiquidationLocalVars memory vars;
 
@@ -244,7 +221,7 @@ library LiquidationLogic {
       liquidationConfig,
       positionStatus,
       collateralPosition,
-      CalculateLiquidationParametersParams({
+      DataTypes.CalculateLiquidationParametersParams({
         oracle: params.oracle,
         collateralReserveId: params.collateralReserveId,
         debtReserveId: params.debtReserveId,
@@ -333,7 +310,7 @@ library LiquidationLogic {
     DataTypes.LiquidationConfig storage liquidationConfig,
     DataTypes.PositionStatus storage positionStatus,
     DataTypes.UserPosition storage collateralPosition,
-    CalculateLiquidationParametersParams memory params
+    DataTypes.CalculateLiquidationParametersParams memory params
   ) internal view returns (uint256, uint256, uint256, uint256, bool) {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = params.collateralReserveId;
@@ -357,16 +334,17 @@ library LiquidationLogic {
       vars.collateralFactor
     );
 
-    vars.debtAssetPrice = params.oracle.getReservePrice(params.debtReserveId);
+    vars.debtAssetPrice = IAaveOracle(params.oracle).getReservePrice(params.debtReserveId);
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
-    vars.liquidationBonus = calculateVariableLiquidationBonus(
-      liquidationConfig,
+    vars.liquidationBonus = liquidationConfig.calculateVariableLiquidationBonus(
       vars.healthFactor,
       collateralDynConfig.liquidationBonus,
       Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
     vars.closeFactor = liquidationConfig.closeFactor;
-    vars.collateralAssetPrice = params.oracle.getReservePrice(params.collateralReserveId);
+    vars.collateralAssetPrice = IAaveOracle(params.oracle).getReservePrice(
+      params.collateralReserveId
+    );
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.liquidationFee = collateralDynConfig.liquidationFee;
     vars.debtToRestoreCloseFactor = vars.calculateDebtToRestoreCloseFactor();

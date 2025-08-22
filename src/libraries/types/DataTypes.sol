@@ -203,6 +203,30 @@ library DataTypes {
     IHub debtReserveHub;
   }
 
+  struct LiquidationCallParams {
+    address user;
+    address oracle;
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
+    uint256 healthFactor;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+    uint256 debtToCover;
+    address liquidator;
+  }
+
+  struct CalculateLiquidationParametersParams {
+    address oracle;
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
+    uint256 debtToCover;
+    uint256 drawnReserveDebt;
+    uint256 premiumReserveDebt;
+    uint256 healthFactor;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+  }
+
   struct ExecuteRepayLocalVars {
     IHub hub;
     uint256 assetId;

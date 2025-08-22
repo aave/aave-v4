@@ -1005,9 +1005,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 debtToCover,
     address liquidator
   ) internal {
-    LiquidationLogic.LiquidationCallParams memory params;
+    DataTypes.LiquidationCallParams memory params;
     params.user = user;
-    params.oracle = oracle;
+    params.oracle = address(oracle);
     params.collateralReserveId = collateralReserveId;
     params.debtReserveId = debtReserveId;
     params.debtToCover = debtToCover;
