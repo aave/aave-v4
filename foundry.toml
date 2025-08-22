@@ -19,6 +19,7 @@ include = ["src/libraries/types/EIP712Types.sol"]
 
 [lint]
 ignore = ["src/dependencies/**/*", "tests/**/*"]
+lint_on_build = false
 
 [profile.default.fuzz]
 runs = 1000
