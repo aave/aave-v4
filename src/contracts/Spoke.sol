@@ -70,7 +70,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function updateOracle(address newOracle) external restricted {
     require(newOracle != address(0), InvalidAddress());
     oracle = IAaveOracle(newOracle);
-    require(oracle.DECIMALS() == 8, InvalidParameter(DataTypes.SpokeParams.InvalidOracle));
+    require(oracle.DECIMALS() == 8, InvalidParameter(DataTypes.SpokeParams.OracleDecimals));
     emit OracleUpdate(newOracle);
   }
 
@@ -95,16 +95,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
     require(hub != address(0), InvalidAddress());
-    require(!_reserveExists[hub][assetId], InvalidParameter(DataTypes.SpokeParams.ReserveExists));
+    require(!_reserveExists[hub][assetId], InvalidParameter(DataTypes.SpokeParams.Reserve));
 
     _validateReserveConfig(config);
     uint256 reserveId = _reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
-    require(
-      assetId < IHub(hub).getAssetCount(),
-      InvalidParameter(DataTypes.SpokeParams.AssetNotListed)
-    );
+    require(assetId < IHub(hub).getAssetCount(), InvalidParameter(DataTypes.SpokeParams.AssetId));
     DataTypes.Asset memory asset = IHub(hub).getAsset(assetId);
 
     _updateReservePriceSource(reserveId, priceSource);
@@ -647,7 +644,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
     require(
       healthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidHealthFactor(true)
+      HealthFactorNotBelowThreshold()
     );
     return userRiskPremium;
   }

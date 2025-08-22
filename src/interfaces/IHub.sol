@@ -70,18 +70,14 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 amount
   );
 
-  error InvalidAddress();
   error InvalidFromAddress();
   error InvalidToAddress();
-  error AssetNotListed();
   error AddCapExceeded(uint256 addCap);
   error AddedAmountExceeded(uint256 addedAmount);
   error AddedSharesExceeded(uint256 addedShares);
   error InsufficientLiquidity(uint256 liquidity);
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);
-  error SpokeNotListed();
-  error SpokeAlreadyListed();
   error InvalidPremiumChange();
   error SurplusDeficitReported(uint256 amount);
   error SpokeNotActive();

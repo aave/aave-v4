@@ -253,16 +253,15 @@ library DataTypes {
     LiquidationBonusFactor,
     LiquidationFee,
     CollateralRisk,
-    ReserveExists,
-    AssetNotListed,
-    InvalidOracle
+    Reserve,
+    AssetId,
+    OracleDecimals
   }
 
   enum HubParams {
     LiquidityFee,
     AssetDecimals,
-    AssetNotListed,
-    SpokeAlreadyListed,
-    SpokeNotListed
+    AssetId,
+    Spoke
   }
 }

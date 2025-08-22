@@ -13,7 +13,7 @@ interface ISpokeBase {
   /**
    * @notice Error thrown for invalid zero address.
    */
-  error InvalidZeroAddress();
+  error InvalidAddress();
 
   /**
    * @notice Emitted on the supply action.

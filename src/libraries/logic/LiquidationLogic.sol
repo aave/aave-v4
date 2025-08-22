@@ -29,6 +29,7 @@ library LiquidationLogic {
    */
   uint256 constant MIN_LEFTOVER_BASE = 1000e26;
 
+  error HealthFactorNotBelowThreshold();
   error MustNotLeaveDust();
 
   function calculateVariableLiquidationBonus(
@@ -421,7 +422,7 @@ library LiquidationLogic {
     require(!collateralReserve.paused && !debtReserve.paused, ISpoke.ReservePaused());
     require(
       healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      ISpoke.InvalidHealthFactor(false)
+      HealthFactorNotBelowThreshold()
     );
     bool isCollateralEnabled = positionStatus.isUsingAsCollateral(collateralReserveId) &&
       collateralFactor != 0;

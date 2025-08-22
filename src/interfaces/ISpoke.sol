@@ -102,15 +102,13 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event ReservePriceSourceUpdate(uint256 indexed reserveId, address indexed priceSource);
   event LiquidationConfigUpdate(DataTypes.LiquidationConfig config);
 
-  error InvalidAddress();
   error ReserveNotListed();
-  error ReserveExists();
-  error AssetNotListed();
   error InsufficientSupply(uint256 supply);
   error ReserveNotBorrowable();
   error ReservePaused();
   error ReserveFrozen();
-  error InvalidHealthFactor(bool isBelowThreshold);
+  error HealthFactorNotBelowThreshold();
+  error InvalidHealthFactor();
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();

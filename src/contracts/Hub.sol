@@ -114,7 +114,7 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     DataTypes.AssetConfig calldata config
   ) external restricted {
-    require(assetId < _assetCount, AssetNotListed());
+    require(assetId < _assetCount, InvalidParameter(DataTypes.HubParams.AssetId));
     DataTypes.Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
 
@@ -143,12 +143,11 @@ contract Hub is IHub, AccessManaged {
     address spoke,
     DataTypes.SpokeConfig calldata config
   ) external restricted {
-    require(assetId < _assetCount, InvalidParameter(DataTypes.HubParams.AssetNotListed));
-    require(spoke != address(0), InvalidAddress());
     require(
-      !_assetToSpokes[assetId].contains(spoke),
-      InvalidParameter(DataTypes.HubParams.SpokeAlreadyListed)
+      assetId < _assetCount && !_assetToSpokes[assetId].contains(spoke),
+      InvalidParameter(DataTypes.HubParams.AssetId)
     );
+    require(spoke != address(0), InvalidParameter(DataTypes.HubParams.Spoke));
 
     _assetToSpokes[assetId].add(spoke);
     emit AddSpoke(assetId, spoke);
@@ -161,10 +160,7 @@ contract Hub is IHub, AccessManaged {
     address spoke,
     DataTypes.SpokeConfig calldata config
   ) external restricted {
-    require(
-      _assetToSpokes[assetId].contains(spoke),
-      InvalidParameter(DataTypes.HubParams.SpokeNotListed)
-    );
+    require(_assetToSpokes[assetId].contains(spoke), InvalidParameter(DataTypes.HubParams.AssetId));
     _updateSpokeConfig(assetId, spoke, config);
   }
 
