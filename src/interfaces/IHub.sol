@@ -72,8 +72,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   error InvalidSharesAmount();
   error InvalidAddAmount();
-  error InvalidFromAddress();
-  error InvalidToAddress();
+  error InvalidAddress();
   error AssetNotListed();
   error AddCapExceeded(uint256 addCap);
   error InvalidRemoveAmount();

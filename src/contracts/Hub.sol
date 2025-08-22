@@ -41,7 +41,7 @@ contract Hub is IHub, AccessManaged {
    * @param authority_ The address of the authority contract which manages permissions.
    */
   constructor(address authority_) AccessManaged(authority_) {
-    // Intentionally left blank
+    require(authority_ != address(0), InvalidAddress());
   }
 
   /// @inheritdoc IHub
@@ -647,7 +647,7 @@ contract Hub is IHub, AccessManaged {
     uint256 amount,
     address from
   ) internal view {
-    require(from != address(this), InvalidFromAddress());
+    require(from != address(this), InvalidAddress());
     require(amount > 0, InvalidAddAmount());
     require(spoke.active, SpokeNotActive());
     uint256 addCap = spoke.addCap;
@@ -664,7 +664,7 @@ contract Hub is IHub, AccessManaged {
     uint256 amount,
     address to
   ) internal view {
-    require(to != address(this), InvalidToAddress());
+    require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidRemoveAmount());
     require(spoke.active, SpokeNotActive());
     uint256 withdrawable = previewRemoveByShares(assetId, spoke.addedShares);
@@ -678,7 +678,7 @@ contract Hub is IHub, AccessManaged {
     uint256 amount,
     address to
   ) internal view {
-    require(to != address(this), InvalidToAddress());
+    require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidDrawAmount());
     require(spoke.active, SpokeNotActive());
     uint256 drawCap = spoke.drawCap;
@@ -696,7 +696,7 @@ contract Hub is IHub, AccessManaged {
     uint256 premiumAmount,
     address from
   ) internal view {
-    require(from != address(this), InvalidFromAddress());
+    require(from != address(this), InvalidAddress());
     require(drawnAmount + premiumAmount > 0, InvalidRestoreAmount());
     require(spoke.active, SpokeNotActive());
     (uint256 drawn, uint256 premium) = _getSpokeOwed(spoke, assetId);

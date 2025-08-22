@@ -415,8 +415,8 @@ contract HubDrawTest is HubBase {
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  function test_draw_fuzz_revertsWith_InvalidToAddress(uint256 daiAmount) public {
-    vm.expectRevert(IHub.InvalidToAddress.selector);
+  function test_draw_fuzz_revertsWith_InvalidAddress(uint256 daiAmount) public {
+    vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: daiAmount, to: address(hub1)});
   }
