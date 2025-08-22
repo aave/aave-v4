@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -149,7 +150,7 @@ contract HubConfiguratorTest is HubBase {
       liquidityFee: 0,
       feeReceiver: feeReceiver,
       irStrategy: interestRateStrategy,
-      reinvestmentStrategy: address(0)
+      reinvestmentController: address(0)
     });
     DataTypes.SpokeConfig memory expectedSpokeConfig = DataTypes.SpokeConfig({
       addCap: Constants.MAX_CAP,
@@ -185,7 +186,7 @@ contract HubConfiguratorTest is HubBase {
     assertEq(hub1.getAsset(assetId).decimals, decimals, 'asset decimals');
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
     assertEq(hub1.getSpokeConfig(assetId, feeReceiver), expectedSpokeConfig);
-    assertEq(hub1.getAsset(assetId).reinvestmentStrategy, address(0)); // should init to addr(0)
+    assertEq(hub1.getAsset(assetId).reinvestmentController, address(0)); // should init to addr(0)
   }
 
   function test_updateLiquidityFee_revertsWith_OwnableUnauthorizedAccount() public {
@@ -604,22 +605,26 @@ contract HubConfiguratorTest is HubBase {
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
   }
 
-  function test_updateReinvestmentStrategy_fuzz_revertsWith_OwnableUnauthorizedAccount(
+  function test_updateReinvestmentController_fuzz_revertsWith_OwnableUnauthorizedAccount(
     address caller
   ) public {
     vm.assume(caller != HUB_CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    hubConfigurator.updateReinvestmentStrategy(address(hub1), vm.randomUint(), vm.randomAddress());
+    hubConfigurator.updateReinvestmentController(
+      address(hub1),
+      vm.randomUint(),
+      vm.randomAddress()
+    );
   }
 
-  function test_updateReinvestmentStrategy() public {
-    address reinvestmentStrategy = makeAddr('newReinvestmentStrategy');
+  function test_updateReinvestmentController() public {
+    address reinvestmentController = makeAddr('newReinvestmentController');
     DataTypes.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
-    expectedConfig.reinvestmentStrategy = reinvestmentStrategy;
+    expectedConfig.reinvestmentController = reinvestmentController;
     vm.expectCall(address(hub1), abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig)));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateReinvestmentStrategy(address(hub1), assetId, reinvestmentStrategy);
+    hubConfigurator.updateReinvestmentController(address(hub1), assetId, reinvestmentController);
 
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
   }
@@ -654,7 +659,7 @@ contract HubConfiguratorTest is HubBase {
         liquidityFee: 0,
         feeReceiver: vm.randomAddress(),
         irStrategy: vm.randomAddress(),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
   }
@@ -664,7 +669,7 @@ contract HubConfiguratorTest is HubBase {
       liquidityFee: 0,
       feeReceiver: makeAddr('newFeeReceiver'),
       irStrategy: makeAddr('newInterestRateStrategy'),
-      reinvestmentStrategy: address(0)
+      reinvestmentController: address(0)
     });
     _mockInterestRateBps(newAssetConfig.irStrategy, 5_00);
 

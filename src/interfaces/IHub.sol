@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -96,9 +97,9 @@ interface IHub is IHubBase, IAccessManaged {
   error SurplusDeficitReported(uint256 amount);
   error SpokeNotActive();
   error InvalidFeeShares();
-  error InvalidReinvestmentStrategy();
+  error InvalidReinvestmentController();
   error InvalidSweepAmount();
-  error OnlyReinvestmentStrategy();
+  error OnlyReinvestmentController();
 
   /**
    * @notice Adds a new asset to the hub.
@@ -205,16 +206,16 @@ interface IHub is IHubBase, IAccessManaged {
   function eliminateDeficit(uint256 assetId, uint256 amount) external returns (uint256);
 
   /**
-   * @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment strategy.
-   * @dev The strategy handles the actual reinvestment of funds, redistribution of interest, and investment caps.
+   * @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment controller.
+   * @dev The controller handles the actual reinvestment of funds, redistribution of interest, and investment caps.
    * @param assetId The identifier of the asset.
    * @param amount The amount to sweep.
    */
   function sweep(uint256 assetId, uint256 amount) external;
 
   /**
-   * @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment strategy.
-   * @dev The strategy can only reclaim up to swept amount. All accrued interest is distributed offchain.
+   * @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment controller.
+   * @dev The controller can only reclaim up to swept amount. All accrued interest is distributed offchain.
    * @param assetId The identifier of the asset.
    * @param amount The amount to reclaim.
    */

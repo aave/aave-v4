@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -121,8 +122,14 @@ contract SpokeMultipleHubTest is SpokeBase {
     assertEq(hub2.getAssetTotalOwed(daiAssetId), hub2BorrowAmount);
 
     // Verify Dai is indeed the asset Bob is borrowing from both hubs
-    assertEq(address(getAssetUnderlyingByReserveId(spoke1, _daiReserveId(spoke1))), address(tokenList.dai));
-    assertEq(address(getAssetUnderlyingByReserveId(spoke1, daiHub2ReserveId)), address(tokenList.dai));
+    assertEq(
+      address(getAssetUnderlyingByReserveId(spoke1, _daiReserveId(spoke1))),
+      address(tokenList.dai)
+    );
+    assertEq(
+      address(getAssetUnderlyingByReserveId(spoke1, daiHub2ReserveId)),
+      address(tokenList.dai)
+    );
 
     // Bob can partially repay both debt positions on hub 1 and hub 2
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, hub1RepayAmount, bob);

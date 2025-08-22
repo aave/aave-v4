@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
@@ -62,22 +63,17 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
   }
 
   /// @inheritdoc ISpokeBase
-  function borrow(uint256 reserveId, uint256 amount, address) external {
-    /// intentionally left blank
+  function borrow(uint256, uint256, address) external pure {
+    revert UnsupportedAction();
   }
 
   /// @inheritdoc ISpokeBase
-  function repay(uint256 reserveId, uint256 amount, address) external {
-    /// intentionally left blank
+  function repay(uint256, uint256, address) external pure {
+    revert UnsupportedAction();
   }
 
   /// @inheritdoc ISpokeBase
-  function liquidationCall(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user,
-    uint256 debtToCover
-  ) external {
-    /// intentionally left blank
+  function liquidationCall(uint256, uint256, address, uint256) external pure {
+    revert UnsupportedAction();
   }
 }

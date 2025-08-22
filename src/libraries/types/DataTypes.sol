@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
 import {IHub} from 'src/interfaces/IHub.sol';
@@ -7,13 +8,13 @@ library DataTypes {
   // Hub types
   struct SpokeData {
     //
-    uint128 addedShares;
-    uint128 drawnShares;
-    //
     uint128 premiumShares;
     uint128 premiumOffset;
     //
     uint128 realizedPremium;
+    uint128 drawnShares;
+    //
+    uint128 addedShares;
     uint56 addCap;
     uint56 drawCap;
     bool active;
@@ -22,10 +23,10 @@ library DataTypes {
   struct Asset {
     //
     uint128 liquidity;
-    uint128 swept;
+    uint128 addedShares;
     //
     uint128 deficit;
-    uint128 addedShares;
+    uint128 swept;
     //
     uint128 premiumShares;
     uint128 premiumOffset;
@@ -34,6 +35,7 @@ library DataTypes {
     uint128 drawnShares;
     //
     uint128 realizedPremium;
+    uint16 liquidityFee;
     uint40 lastUpdateTimestamp;
     uint8 decimals;
     //
@@ -42,10 +44,9 @@ library DataTypes {
     uint96 drawnRate;
     address irStrategy;
     //
-    address reinvestmentStrategy;
+    address reinvestmentController;
     //
     address feeReceiver;
-    uint16 liquidityFee;
   }
 
   struct SpokeConfig {
@@ -58,7 +59,7 @@ library DataTypes {
     address feeReceiver;
     uint16 liquidityFee;
     address irStrategy;
-    address reinvestmentStrategy;
+    address reinvestmentController;
   }
 
   // Spoke types
@@ -87,13 +88,13 @@ library DataTypes {
 
   struct UserPosition {
     //
-    uint128 suppliedShares;
     uint128 drawnShares;
+    uint128 realizedPremium;
     //
     uint128 premiumShares;
     uint128 premiumOffset;
     //
-    uint128 realizedPremium;
+    uint128 suppliedShares;
     uint16 configKey; // key of the last user config
   }
 
@@ -183,25 +184,18 @@ library DataTypes {
   }
 
   struct ExecuteLiquidationLocalVars {
-    uint256 i;
-    address user;
     uint256 debtAssetId;
     uint256 collateralAssetId;
-    uint256 debtReserveId;
-    uint256 collateralReserveId;
     uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 accruedPremium;
     uint256 collateralToLiquidate;
     uint256 liquidationFeeAmount;
-    uint256 liquidationFeeShares;
     uint256 drawnDebtToLiquidate;
     uint256 premiumDebtToLiquidate;
     uint256 restoredShares;
     uint256 withdrawnShares;
     uint256 newUserRiskPremium;
-    uint256 totalLiquidationFeeShares;
-    uint256 usersLength;
     uint256 liquidatedSuppliedShares;
     DataTypes.PremiumDelta premiumDelta;
     bool hasDeficit;

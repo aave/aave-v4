@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -97,15 +98,15 @@ interface IHubConfigurator {
   function updateInterestRateStrategy(address hub, uint256 assetId, address irStrategy) external;
 
   /**
-   * @notice Updates the reinvestment strategy of an asset.
+   * @notice Updates the reinvestment controller of an asset.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
-   * @param reinvestmentStrategy The new reinvestment strategy.
+   * @param reinvestmentController The new reinvestment controller.
    */
-  function updateReinvestmentStrategy(
+  function updateReinvestmentController(
     address hub,
     uint256 assetId,
-    address reinvestmentStrategy
+    address reinvestmentController
   ) external;
 
   /**

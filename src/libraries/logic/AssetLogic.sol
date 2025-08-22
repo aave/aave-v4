@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -17,8 +18,6 @@ library AssetLogic {
   using WadRayMath for *;
   using MathUtils for uint256;
   using SafeCast for uint256;
-
-  // todo: option for cached object
 
   // drawn exchange rate does not include premium to accrue base rate separately
   function toDrawnAssetsUp(
@@ -68,7 +67,8 @@ library AssetLogic {
   }
 
   function totalAddedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.addedShares + asset.getFeeShares(asset.getDrawnIndex() - asset.drawnIndex);
+    return
+      asset.addedShares + asset.getFeeShares(asset.getDrawnIndex().uncheckedSub(asset.drawnIndex));
   }
 
   function toAddedAssetsUp(
@@ -125,7 +125,7 @@ library AssetLogic {
     DataTypes.SpokeData storage feeReceiver
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
-    uint128 feeShares = asset.getFeeShares(drawnIndex - asset.drawnIndex).toUint128();
+    uint128 feeShares = asset.getFeeShares(drawnIndex.uncheckedSub(asset.drawnIndex)).toUint128();
 
     // Accrue interest and fees
     asset.drawnIndex = drawnIndex.toUint128();
@@ -185,6 +185,6 @@ library AssetLogic {
    * @return The amount of shares corresponding to the fees
    */
   function unrealizedFeeShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.getFeeShares(asset.getDrawnIndex() - asset.drawnIndex);
+    return asset.getFeeShares(asset.getDrawnIndex().uncheckedSub(asset.drawnIndex));
   }
 }

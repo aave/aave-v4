@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
@@ -168,6 +169,13 @@ abstract contract Base is Test {
     uint256 totalOwed;
     uint256 drawn;
     uint256 premium;
+  }
+
+  // TODO: Seems this should be replaced with DrawnAccounting struct
+  struct Debts {
+    uint256 drawnDebt;
+    uint256 premiumDebt;
+    uint256 totalDebt;
   }
 
   struct AssetPosition {
@@ -401,7 +409,7 @@ abstract contract Base is Test {
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     // add USDX
@@ -419,7 +427,7 @@ abstract contract Base is Test {
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     // add DAI
@@ -437,7 +445,7 @@ abstract contract Base is Test {
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     // add WBTC
@@ -455,7 +463,7 @@ abstract contract Base is Test {
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     // add USDY
@@ -473,7 +481,7 @@ abstract contract Base is Test {
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     // add DAI again
@@ -491,7 +499,7 @@ abstract contract Base is Test {
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
 
@@ -945,13 +953,13 @@ abstract contract Base is Test {
     assertEq(hub.getAssetConfig(assetId), config);
   }
 
-  function updateAssetReinvestmentStrategy(
+  function updateAssetReinvestmentController(
     IHub hub,
     uint256 assetId,
-    address newReinvestmentStrategy
+    address newReinvestmentController
   ) internal pausePrank {
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
-    config.reinvestmentStrategy = newReinvestmentStrategy;
+    config.reinvestmentController = newReinvestmentController;
 
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(assetId, config);
@@ -1175,6 +1183,15 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (DataTypes.UserPosition memory) {
     return spoke.getUserPosition(reserveId, user);
+  }
+
+  function getUserDebt(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId
+  ) internal view returns (Debts memory data) {
+    (data.drawnDebt, data.premiumDebt) = spoke.getUserDebt(reserveId, user);
+    data.totalDebt = data.drawnDebt + data.premiumDebt;
   }
 
   function getReserveInfo(
@@ -1867,7 +1884,7 @@ abstract contract Base is Test {
     assertEq(a.feeReceiver, b.feeReceiver, 'feeReceiver');
     assertEq(a.liquidityFee, b.liquidityFee, 'liquidityFee');
     assertEq(a.irStrategy, b.irStrategy, 'irStrategy');
-    assertEq(a.reinvestmentStrategy, b.reinvestmentStrategy, 'reinvestmentStrategy');
+    assertEq(a.reinvestmentController, b.reinvestmentController, 'reinvestmentController');
     assertEq(abi.encode(a), abi.encode(b));
   }
 

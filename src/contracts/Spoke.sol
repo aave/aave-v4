@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {Multicall} from 'src/misc/Multicall.sol';
@@ -58,7 +59,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @param authority_ The address of the authority contract which manages permissions.
    */
   constructor(address authority_) AccessManaged(authority_) {
-    // todo move to `initialize` when adding upgradeability
     _liquidationConfig.closeFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     emit LiquidationConfigUpdate(_liquidationConfig);
   }
@@ -130,7 +130,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId,
     DataTypes.ReserveConfig calldata config
   ) external restricted {
-    // TODO: More sophisticated
     require(reserveId < _reserveCount, ReserveNotListed());
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     _validateReserveConfig(config);
@@ -175,7 +174,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   /// @inheritdoc ISpoke
   function updatePositionManager(address positionManager, bool active) external restricted {
     _positionManager[positionManager].active = active;
-    emit PositionManagerUpdate(positionManager, active);
+    emit UpdatePositionManager(positionManager, active);
   }
 
   // /////
@@ -312,13 +311,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     address user,
     uint256 debtToCover
   ) external {
-    address[] memory users = new address[](1);
-    users[0] = user;
-
-    uint256[] memory debtsToCover = new uint256[](1);
-    debtsToCover[0] = debtToCover;
-
-    _executeLiquidationCall(collateralReserveId, debtReserveId, users, debtsToCover, msg.sender);
+    _executeLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, msg.sender);
   }
 
   /// @inheritdoc ISpoke
@@ -506,7 +499,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       uint256 totalDebtInBaseCurrency
     )
   {
-    // todo separate getter with refreshed config for users trying to incrementally build hf?
     (
       userRiskPremium,
       avgCollateralFactor,
@@ -582,12 +574,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // HF checked at the end of borrow action
   }
 
-  // TODO: Place this and LH equivalent in a generic logic library
   function _validateRepay(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
-    // todo validate user not trying to repay more
-    // todo NoExplicitAmountToRepayOnBehalf
   }
 
   /**
@@ -616,8 +605,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
     // @dev refresh user position dynamic config only on borrow, withdraw, disableUsingAsCollateral
-    _refreshDynamicConfig(user); // opt: merge with _calculateUserAccountData
-    (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
+    (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateAndRefreshUserAccountData(
+      user
+    );
     require(
       healthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
@@ -734,6 +724,20 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return config.active && config.approval[user];
   }
 
+  function _calculateUserAccountData(
+    address user
+  ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
+    // SAFETY: function does not modify state when refreshConfig is false
+    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
+  }
+
+  function _calculateAndRefreshUserAccountData(
+    address user
+  ) internal returns (uint256, uint256, uint256, uint256, uint256) {
+    emit RefreshAllUserDynamicConfig(user);
+    return _calculateAndPotentiallyRefreshUserAccountData(user, true);
+  }
+
   /**
    * @dev User rp calc runs until the first of either debt or collateral is exhausted
    * @param user address of the user
@@ -743,9 +747,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @return totalCollateralInBaseCurrency
    * @return totalDebtInBaseCurrency
    */
-  function _calculateUserAccountData(
-    address user
-  ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
+  function _calculateAndPotentiallyRefreshUserAccountData(
+    address user,
+    bool refreshConfig
+  ) internal returns (uint256, uint256, uint256, uint256, uint256) {
     DataTypes.CalculateUserAccountDataVars memory vars;
     uint256 reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
@@ -772,7 +777,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
       if (positionStatus.isUsingAsCollateral(vars.reserveId)) {
         DataTypes.DynamicReserveConfig storage dynConfig = _dynamicConfig[vars.reserveId][
-          userPosition.configKey
+          refreshConfig
+            ? (userPosition.configKey = reserve.dynamicConfigKey)
+            : userPosition.configKey
         ];
 
         vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
@@ -890,7 +897,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
   }
 
-  // todo optimize, merge logic duped borrow/repay, rename
   /**
    * @dev Trigger risk premium update on all drawn reserves of `user`.
    * @param user The address of the user whose risk premium is being updated.
@@ -905,7 +911,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     while (vars.reserveId < vars.reserveCount) {
-      // todo keep borrowed assets in transient storage/pass through?
       if (positionStatus.isBorrowing(vars.reserveId)) {
         DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
         DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
@@ -1017,17 +1022,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   /**
-   * @dev Executes liquidation call across all users in the array, for a given pair of debt/collateral reserves.
+   * @dev Executes liquidation call for a given pair of debt/collateral reserves and a given user.
    */
   function _executeLiquidationCall(
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    address[] memory users,
-    uint256[] memory debtsToCover,
+    address user,
+    uint256 debtToCover,
     address liquidator
   ) internal {
-    require(users.length == debtsToCover.length, UsersAndDebtLengthMismatch());
-
     DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
     DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
 
@@ -1037,107 +1040,98 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.collateralAssetId = collateralReserve.assetId;
     vars.debtReserveHub = debtReserve.hub;
     vars.debtAssetId = debtReserve.assetId;
-    vars.debtReserveId = debtReserveId;
 
-    while (vars.i < users.length) {
-      vars.user = users[vars.i];
-      DataTypes.UserPosition storage userCollateralPosition = _userPositions[vars.user][
-        collateralReserveId
-      ];
-      DataTypes.UserPosition storage userDebtPosition = _userPositions[vars.user][
-        vars.debtReserveId
-      ];
+    DataTypes.UserPosition storage userCollateralPosition = _userPositions[user][
+      collateralReserveId
+    ];
+    DataTypes.UserPosition storage userDebtPosition = _userPositions[user][debtReserveId];
 
-      (vars.drawnDebt, vars.premiumDebt, vars.accruedPremium) = _getUserDebt(
-        vars.debtReserveHub,
+    (vars.drawnDebt, vars.premiumDebt, vars.accruedPremium) = _getUserDebt(
+      vars.debtReserveHub,
+      vars.debtAssetId,
+      userDebtPosition
+    );
+
+    (
+      vars.collateralToLiquidate,
+      vars.liquidationFeeAmount,
+      vars.drawnDebtToLiquidate,
+      vars.premiumDebtToLiquidate,
+      vars.hasDeficit
+    ) = _calculateLiquidationParameters(
+      collateralReserve,
+      debtReserve,
+      collateralReserveId,
+      debtReserveId,
+      user,
+      debtToCover,
+      vars.drawnDebt,
+      vars.premiumDebt
+    );
+
+    // expected total withdrawn shares includes liquidation fee
+    vars.withdrawnShares = vars.collateralReserveHub.previewRemoveByAssets(
+      vars.collateralAssetId,
+      vars.liquidationFeeAmount + vars.collateralToLiquidate
+    );
+
+    // perform collateral accounting first so that restore donations can not affect collateral shares calcs
+    // in case the same reserve is being repaid and liquidated
+    userCollateralPosition.suppliedShares -= vars.withdrawnShares.toUint128();
+
+    // remove collateral, send liquidated collateral directly to liquidator
+    vars.liquidatedSuppliedShares = vars.collateralReserveHub.remove(
+      vars.collateralAssetId,
+      vars.collateralToLiquidate,
+      liquidator
+    );
+
+    // repay debt
+    {
+      vars.premiumDelta = DataTypes.PremiumDelta({
+        sharesDelta: -userDebtPosition.premiumShares.toInt256(),
+        offsetDelta: -userDebtPosition.premiumOffset.toInt256(),
+        realizedDelta: vars.accruedPremium.toInt256() - vars.premiumDebtToLiquidate.toInt256()
+      });
+      vars.restoredShares = vars.debtReserveHub.restore(
         vars.debtAssetId,
-        userDebtPosition
-      );
-
-      (
-        vars.collateralToLiquidate,
-        vars.liquidationFeeAmount,
         vars.drawnDebtToLiquidate,
         vars.premiumDebtToLiquidate,
-        vars.hasDeficit
-      ) = _calculateLiquidationParameters(
-        collateralReserve,
-        debtReserve,
-        collateralReserveId,
-        debtReserveId,
-        vars.user,
-        debtsToCover[vars.i],
-        vars.drawnDebt,
-        vars.premiumDebt
-      );
-
-      // expected total withdrawn shares includes liquidation fee
-      vars.withdrawnShares = vars.collateralReserveHub.previewRemoveByAssets(
-        vars.collateralAssetId,
-        vars.liquidationFeeAmount + vars.collateralToLiquidate
-      );
-
-      // perform collateral accounting first so that restore donations can not affect collateral shares calcs
-      // in case the same reserve is being repaid and liquidated
-      userCollateralPosition.suppliedShares -= vars.withdrawnShares.toUint128();
-
-      // remove collateral, send liquidated collateral directly to liquidator
-      vars.liquidatedSuppliedShares = vars.collateralReserveHub.remove(
-        vars.collateralAssetId,
-        vars.collateralToLiquidate,
+        vars.premiumDelta,
         liquidator
       );
-      vars.liquidationFeeShares = vars.withdrawnShares - vars.liquidatedSuppliedShares;
+      // debt accounting
+      _settlePremiumDebt(userDebtPosition, vars.premiumDelta);
+      userDebtPosition.drawnShares -= vars.restoredShares.toUint128();
+    }
 
-      // repay debt
-      {
-        vars.premiumDelta = DataTypes.PremiumDelta({
-          sharesDelta: -userDebtPosition.premiumShares.toInt256(),
-          offsetDelta: -userDebtPosition.premiumOffset.toInt256(),
-          realizedDelta: vars.accruedPremium.toInt256() - vars.premiumDebtToLiquidate.toInt256()
-        });
-        vars.restoredShares = vars.debtReserveHub.restore(
-          vars.debtAssetId,
-          vars.drawnDebtToLiquidate,
-          vars.premiumDebtToLiquidate,
-          vars.premiumDelta,
-          liquidator
-        );
-        // debt accounting
-        _settlePremiumDebt(userDebtPosition, vars.premiumDelta);
-        userDebtPosition.drawnShares -= vars.restoredShares.toUint128();
-      }
+    if (userDebtPosition.drawnShares == 0) {
+      _positionStatus[user].setBorrowing(debtReserveId, false);
+    }
 
-      if (userDebtPosition.drawnShares == 0) {
-        _positionStatus[vars.user].setBorrowing(vars.debtReserveId, false);
-      }
+    if (vars.hasDeficit) {
+      _reportDeficits(user);
+    } else {
+      // new risk premium only needs to be propagated if no deficit exists
+      (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(user);
+      _notifyRiskPremiumUpdate(user, vars.newUserRiskPremium);
+    }
 
-      if (vars.hasDeficit) {
-        _reportDeficits(vars.user);
-      } else {
-        // new risk premium only needs to be propagated if no deficit exists
-        (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(vars.user);
-        _notifyRiskPremiumUpdate(vars.user, vars.newUserRiskPremium);
-      }
-
-      vars.totalLiquidationFeeShares += vars.liquidationFeeShares;
-
-      emit LiquidationCall(
-        collateralReserveId,
-        debtReserveId,
-        vars.user,
-        vars.drawnDebtToLiquidate + vars.premiumDebtToLiquidate,
-        vars.collateralToLiquidate,
-        liquidator
+    if (vars.withdrawnShares > vars.liquidatedSuppliedShares) {
+      vars.collateralReserveHub.payFee(
+        vars.collateralAssetId,
+        vars.withdrawnShares - vars.liquidatedSuppliedShares
       );
+    }
 
-      unchecked {
-        ++vars.i;
-      }
-    }
-    if (vars.totalLiquidationFeeShares > 0) {
-      vars.collateralReserveHub.payFee(vars.collateralAssetId, vars.totalLiquidationFeeShares);
-    }
+    emit LiquidationCall(
+      collateralReserveId,
+      debtReserveId,
+      user,
+      vars.drawnDebtToLiquidate + vars.premiumDebtToLiquidate,
+      vars.collateralToLiquidate,
+      liquidator
+    );
   }
 
   /**
@@ -1193,15 +1187,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.collateralFactor
     );
 
-    vars.debtAssetPrice = oracle.getReservePrice(vars.debtReserveId);
+    vars.debtAssetPrice = oracle.getReservePrice(debtReserveId);
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
     vars.liquidationBonus = getVariableLiquidationBonus(
-      vars.collateralReserveId,
+      collateralReserveId,
       user,
       vars.healthFactor
     );
     vars.closeFactor = _liquidationConfig.closeFactor;
-    vars.collateralAssetPrice = oracle.getReservePrice(vars.collateralReserveId);
+    vars.collateralAssetPrice = oracle.getReservePrice(collateralReserveId);
     vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
     vars.liquidationFee = collateralDynConfig.liquidationFee;
     vars.debtToRestoreCloseFactor = vars.calculateDebtToRestoreCloseFactor();
@@ -1226,5 +1220,22 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.premiumDebtToLiquidate,
       vars.hasDeficit
     );
+  }
+
+  function _castToView(
+    function(address, bool) internal returns (uint256, uint256, uint256, uint256, uint256) fnIn
+  )
+    internal
+    pure
+    returns (
+      function(address, bool)
+        internal
+        view
+        returns (uint256, uint256, uint256, uint256, uint256) fnOut
+    )
+  {
+    assembly ('memory-safe') {
+      fnOut := fnIn
+    }
   }
 }

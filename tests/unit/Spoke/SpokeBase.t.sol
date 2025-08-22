@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
@@ -9,12 +10,6 @@ contract SpokeBase is Base {
   using PercentageMath for *;
   using WadRayMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
-
-  struct Debts {
-    uint256 drawnDebt;
-    uint256 premiumDebt;
-    uint256 totalDebt;
-  }
 
   struct TestData {
     SpokePosition data;
@@ -761,15 +756,6 @@ contract SpokeBase is Base {
     info.wbtcInfo.repayAmount = bound(info.wbtcInfo.repayAmount, 1, UINT256_MAX);
 
     return info;
-  }
-
-  function getUserDebt(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId
-  ) internal view returns (Debts memory data) {
-    (data.drawnDebt, data.premiumDebt) = spoke.getUserDebt(reserveId, user);
-    data.totalDebt = data.drawnDebt + data.premiumDebt;
   }
 
   // todo: merge with _assertUserDebt

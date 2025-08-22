@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 /**
@@ -179,14 +180,23 @@ library WadRayMath {
   }
 
   /**
-   * @notice Truncates number from Wad precision
+   * @notice Converts number from Wad precision by rounding down
    * @param a The number in Wad precision
-   * @return b (= a / 1e18)
+   * @return b (= a / 1e18, rounded down)
    */
   function fromWadDown(uint256 a) internal pure returns (uint256 b) {
     assembly {
       b := div(a, WAD)
     }
+  }
+
+  /**
+   * @notice Converts value from basis points to wad
+   * @param a The value in basis points
+   * @return The value in wad (= a * 1e18 / 1e4)
+   */
+  function bpsToWad(uint256 a) internal pure returns (uint256) {
+    return (a * WAD) / PERCENTAGE_FACTOR;
   }
 
   /**

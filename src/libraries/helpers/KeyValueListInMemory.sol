@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
+import {LibSort} from 'src/dependencies/solady/LibSort.sol';
 
-// todo: optimize by packing more elements each slot, keep pre-sorted
 library KeyValueListInMemory {
   error MaxKeySizeExceeded(uint256);
   error MaxValueSizeExceeded(uint256);
@@ -43,8 +43,7 @@ library KeyValueListInMemory {
 
   function sortByKey(List memory self) internal pure {
     // @dev since `key` is in the MSB, we can sort by the key by sorting the array
-    // todo consider using Solady's quick sort implementation, it being more gas efficient (cannot use if we pack more than 1 pair per slot)
-    Arrays.sort(self._inner, ltComparator);
+    LibSort.insertionSort(self._inner);
   }
 
   // @dev key, value < ceiling checks are expected to be done before packing
@@ -62,9 +61,5 @@ library KeyValueListInMemory {
 
   function unpack(uint256 data) internal pure returns (uint256, uint256) {
     return (unpackKey(data), unpackValue(data));
-  }
-
-  function ltComparator(uint256 a, uint256 b) internal pure returns (bool) {
-    return a < b;
   }
 }
