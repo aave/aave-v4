@@ -11,9 +11,13 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
   /// test for liquidation call with max collateral amount equal to full collateral amount
   /// rare occurrence in single coll case, but can happen with multiple colls where 1 is fully liquidated
   function test_liquidationCall_validMaxCollateralAmount() public {
+    // set liquidation bonus to min value
+    updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), MIN_LIQUIDATION_BONUS);
+    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), MIN_LIQUIDATION_BONUS);
+
     // set collateral factor of coll as 100%
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 100_00);
-    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 100_00);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), MAX_COLLATERAL_FACTOR);
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), MAX_COLLATERAL_FACTOR);
     updateCloseFactor(spoke1, 10e18); // close factor that is too high to reach, thus all coll is liquidatable
 
     // 2 collaterals, so that even though one is fully liquidated, it does not become bad debt
@@ -22,8 +26,8 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     uint256 supplyAmount = 5 * 10 ** decimals.weth; // $10k weth
     uint256 supplyAmount2 = 1_000 * 10 ** decimals.usdx; // $1k usdx
     // debt: dai/usdy
-    uint256 borrowAmount = 10_000 * 10 ** decimals.dai; // $10k dai
-    uint256 borrowAmount2 = 1_000 * 10 ** decimals.usdy; // $1k usdy
+    uint256 borrowAmount = (10_000 * 10 ** decimals.dai).percentMulDown(50_00); // within collateral factor
+    uint256 borrowAmount2 = 1_001 * 10 ** decimals.usdy; // exceed usdx amount to seize all usdx collateral
 
     // supply
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, supplyAmount, alice);
@@ -42,7 +46,7 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     vm.prank(bob);
     spoke1.liquidationCall(_usdxReserveId(spoke1), _usdyReserveId(spoke1), alice, UINT256_MAX);
 
-    // Alice's usdx collateral unset
+    // Alice's usdx collateral is still set
     assertTrue(spoke1.isUsingAsCollateral(_usdxReserveId(spoke1), alice));
 
     // all collateral liquidated without overflowing
@@ -58,9 +62,13 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
   function test_liquidationCall_fuzz_validMaxCollateralAmount(uint256 supplyAmountInBase) public {
     supplyAmountInBase = bound(supplyAmountInBase, LiquidationLogic.MIN_LEFTOVER_BASE, 1e7 * 1e26); // $1000 - $10M
 
+    // set liquidation bonus to min value
+    updateLiquidationBonus(spoke1, _usdxReserveId(spoke1), MIN_LIQUIDATION_BONUS);
+    updateLiquidationBonus(spoke1, _wethReserveId(spoke1), MIN_LIQUIDATION_BONUS);
+
     // set collateral factor of coll as 100%
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 100_00);
-    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 100_00);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), MAX_COLLATERAL_FACTOR);
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), MAX_COLLATERAL_FACTOR);
     updateCloseFactor(spoke1, 10e18); // close factor that is too high to reach, thus all coll is liquidatable
 
     // 2 collaterals, so that even though one is fully liquidated, it does not become bad debt
@@ -93,7 +101,7 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     vm.prank(bob);
     spoke1.liquidationCall(_usdxReserveId(spoke1), _usdyReserveId(spoke1), alice, UINT256_MAX);
 
-    // Alice's usdx collateral unset
+    // Alice's usdx collateral is still set
     assertTrue(spoke1.isUsingAsCollateral(_usdxReserveId(spoke1), alice));
 
     // all collateral liquidated without overflowing

@@ -77,7 +77,7 @@ abstract contract Base is Test {
   uint128 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
   uint128 internal constant MIN_CLOSE_FACTOR = 1e18;
   uint128 internal constant MAX_CLOSE_FACTOR = 2e18;
-  uint256 internal constant MAX_COLLATERAL_FACTOR = 100_00;
+  uint256 internal constant MAX_COLLATERAL_FACTOR = 100_00 - 1;
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8; // $100M per token
   uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =
     PercentageMath.PERCENTAGE_FACTOR;
