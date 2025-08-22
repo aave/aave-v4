@@ -65,6 +65,8 @@ library DataTypes {
 
   // Spoke types
   struct Reserve {
+    address underlying;
+    //
     IHub hub;
     uint16 assetId;
     uint8 decimals;

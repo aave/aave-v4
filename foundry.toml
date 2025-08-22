@@ -4,7 +4,7 @@ test = 'tests'
 script = 'scripts'
 out = 'out'
 libs = ['lib']
-fs_permissions = [{ access = "write", path = "./reports" }]
+fs_permissions = [{ access = "read", path = "tests/mocks/JsonBindings.sol" }]
 solc_version = "0.8.28"
 evm_version = "cancun"
 optimizer = true
@@ -12,6 +12,14 @@ optimizer_runs = 200
 bytecode_hash = "none"
 gas_snapshot_check = false
 gas_limit = 1099511627776
+
+[bind_json]
+out = "tests/mocks/JsonBindings.sol"
+include = ["src/libraries/types/EIP712Types.sol"]
+
+[lint]
+ignore = ["src/dependencies/**/*", "tests/**/*"]
+lint_on_build = false
 
 [profile.default.fuzz]
 runs = 1000
