@@ -59,6 +59,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @param authority_ The address of the authority contract which manages permissions.
    */
   constructor(address authority_) AccessManaged(authority_) {
+    require(authority_ != address(0), InvalidAddress());
     _liquidationConfig.closeFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     emit LiquidationConfigUpdate(_liquidationConfig);
   }

@@ -127,6 +127,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error Unauthorized();
   error ConfigKeyUninitialized();
   error InactivePositionManager();
+  error InvalidAddress();
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 

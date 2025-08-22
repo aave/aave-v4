@@ -24,6 +24,11 @@ contract SpokeConfigTest is SpokeBase {
     new Spoke(address(accessManager));
   }
 
+  function test_spoke_deploy_revertsWith_InvalidAddress() public {
+    vm.expectRevert(ISpoke.InvalidAddress.selector);
+    new Spoke(address(0));
+  }
+
   function test_updateOracle_revertsWith_AccessManagedUnauthorized(address caller) public {
     vm.assume(caller != SPOKE_ADMIN && caller != ADMIN);
     vm.expectRevert(
