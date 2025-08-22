@@ -116,7 +116,6 @@ library DataTypes {
 
   struct NotifyRiskPremiumUpdateVars {
     bool premiumIncrease;
-    uint256 reserveCount;
     uint256 reserveId;
     uint256 assetId;
     IHub hub;
@@ -184,12 +183,8 @@ library DataTypes {
   }
 
   struct ExecuteLiquidationLocalVars {
-    uint256 i;
-    address user;
     uint256 debtAssetId;
     uint256 collateralAssetId;
-    uint256 debtReserveId;
-    uint256 collateralReserveId;
     uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 accruedPremium;
