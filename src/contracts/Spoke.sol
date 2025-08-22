@@ -644,7 +644,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
     require(
       healthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      HealthFactorNotBelowThreshold()
+      HealthFactorBelowThreshold()
     );
     return userRiskPremium;
   }

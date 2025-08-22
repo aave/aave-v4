@@ -72,7 +72,7 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, drawn + 1, premium, premiumDelta, alice);
   }
 
-  function test_restore_revertsWith_InvalidRestoreAmount_zero() public {
+  function test_restore_revertsWith_InvalidAmount_zero() public {
     DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
@@ -80,7 +80,7 @@ contract HubRestoreTest is HubBase {
       premiumRestored: 0
     });
 
-    vm.expectRevert(IHub.InvalidRestoreAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, 0, 0, premiumDelta, alice);
   }

@@ -225,7 +225,7 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
-  function test_addReserve_revertsWith_InvalidZeroAddress_priceSource() public {
+  function test_addReserve_revertsWith_InvalidAddress_priceSource() public {
     Spoke newSpoke = new Spoke(address(accessManager));
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
@@ -240,7 +240,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationFee: 10_00
     });
 
-    vm.expectRevert(ISpokeBase.InvalidZeroAddress.selector);
+    vm.expectRevert(ISpokeBase.InvalidAddress.selector);
     vm.prank(ADMIN);
     newSpoke.addReserve({
       hub: address(hub1),
@@ -251,7 +251,7 @@ contract SpokeConfigTest is SpokeBase {
     });
   }
 
-  function test_addReserve_revertsWith_InvalidZeroAddress_hub() public {
+  function test_addReserve_revertsWith_InvalidAddress_hub() public {
     uint256 reserveId = spoke1.getReserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       paused: vm.randomBool(),
@@ -267,7 +267,7 @@ contract SpokeConfigTest is SpokeBase {
 
     address reserveSource = _deployMockPriceFeed(spoke1, 2000e8);
 
-    vm.expectRevert(ISpokeBase.InvalidZeroAddress.selector);
+    vm.expectRevert(ISpokeBase.InvalidAddress.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve({
       hub: address(0),

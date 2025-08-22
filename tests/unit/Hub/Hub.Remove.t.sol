@@ -423,8 +423,8 @@ contract HubRemoveTest is HubBase {
     hub1.remove(daiAssetId, amount, address(spoke1));
   }
 
-  function test_remove_revertsWith_InvalidRemoveAmount() public {
-    vm.expectRevert(IHub.InvalidRemoveAmount.selector);
+  function test_remove_revertsWith_InvalidAmount() public {
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, 0, alice);
   }

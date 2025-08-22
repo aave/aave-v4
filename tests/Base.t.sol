@@ -27,6 +27,7 @@ import {Constants} from 'src/libraries/helpers/Constants.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
+import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Utils} from 'tests/Utils.sol';

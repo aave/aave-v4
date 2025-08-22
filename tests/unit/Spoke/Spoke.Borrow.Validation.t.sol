@@ -116,16 +116,16 @@ contract SpokeBorrowValidationTest is SpokeBase {
     spoke1.borrow(daiReserveId, borrowAmount, bob);
   }
 
-  function test_borrow_revertsWith_InvalidDrawAmount() public {
+  function test_borrow_revertsWith_InvalidAmount() public {
     // Bob draws 0 dai
-    test_borrow_fuzz_revertsWith_InvalidDrawAmount(_daiReserveId(spoke1));
+    test_borrow_fuzz_revertsWith_InvalidAmount(_daiReserveId(spoke1));
   }
 
-  function test_borrow_fuzz_revertsWith_InvalidDrawAmount(uint256 reserveId) public {
+  function test_borrow_fuzz_revertsWith_InvalidAmount(uint256 reserveId) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
 
     // Bob draws 0
-    vm.expectRevert(IHub.InvalidDrawAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(bob);
     spoke1.borrow(reserveId, 0, bob);
   }

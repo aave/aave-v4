@@ -12,8 +12,8 @@ contract TreasurySpokeTest is SpokeBase {
     _testToken = new MockERC20();
   }
 
-  function test_deploy_revertsWith_InvalidZeroAddress_hub() public {
-    vm.expectRevert(abi.encodeWithSelector(ISpokeBase.InvalidZeroAddress.selector));
+  function test_deploy_revertsWith_InvalidAddress_hub() public {
+    vm.expectRevert(abi.encodeWithSelector(ISpokeBase.InvalidAddress.selector));
     new TreasurySpoke(vm.randomAddress(), address(0));
   }
 

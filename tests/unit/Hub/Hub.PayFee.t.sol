@@ -5,8 +5,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubPayFeeTest is HubBase {
-  function test_payFee_revertsWith_InvalidFeeShares() public {
-    vm.expectRevert(IHub.InvalidFeeShares.selector);
+  function test_payFee_revertsWith_InvalidShares() public {
+    vm.expectRevert(IHub.InvalidShares.selector);
     vm.prank(address(spoke1));
     hub1.payFee(daiAssetId, 0);
   }
