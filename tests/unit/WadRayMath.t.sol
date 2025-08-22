@@ -196,6 +196,22 @@ contract WadRayMathDifferentialTests is Test {
     }
   }
 
+  function test_bpsToWad_fuzz(uint256 a) public {
+    uint256 b;
+    bool safetyCheck;
+    unchecked {
+      b = a * w.WAD();
+      safetyCheck = b / w.WAD() == a;
+    }
+    if (!safetyCheck) {
+      vm.expectRevert();
+      w.bpsToWad(a);
+    } else {
+      assertEq(w.bpsToWad(a), (a * w.WAD()) / 100_00);
+      assertEq(w.bpsToWad(a), b / 100_00);
+    }
+  }
+
   function test_bpsToRay_fuzz(uint256 a) public {
     uint256 b;
     bool safetyCheck;
