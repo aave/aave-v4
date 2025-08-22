@@ -8,19 +8,19 @@ fs_permissions = [{ access = "write", path = "./reports" }]
 solc_version = "0.8.28"
 evm_version = "cancun"
 optimizer = true
-optimizer_runs = 444444
+optimizer_runs = 200
 via_ir = false
 bytecode_hash = "none"
 gas_snapshot_check = false
 gas_limit = 1099511627776
 
 additional_compiler_profiles = [
-  { name = "hub", optimizer = true, via_ir = false, optimizer_runs = 4444 },
+  { name = "hub", optimizer = true, via_ir = false, optimizer_runs = 444 },
   { name = "spoke", optimizer = true, via_ir = true, optimizer_runs = 4444 }
 ]
 
 compilation_restrictions = [
-  { paths = "src/contracts/Hub.sol", optimizer = true, via_ir = false, optimizer_runs = 4444 },
+  { paths = "src/contracts/Hub.sol", optimizer = true, via_ir = false, optimizer_runs = 444 },
   { paths = "src/contracts/Spoke.sol", optimizer = true, via_ir = true, optimizer_runs = 4444 }
 ]
 
