@@ -577,7 +577,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     });
   }
 
-  function test_userAccountData_factor_does_not_include_zero_cf_collateral() public {
+  function test_userAccountData_does_not_include_zero_cf_collateral() public {
     uint256 coll1ReserveId = _daiReserveId(spoke1);
     uint256 coll1Amount = 1000e18;
     uint256 coll2ReserveId = _wethReserveId(spoke1);
