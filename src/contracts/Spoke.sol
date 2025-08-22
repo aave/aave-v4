@@ -68,9 +68,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // /////
 
   function updateOracle(address newOracle) external restricted {
-    require(newOracle != address(0), InvalidZeroAddress());
+    require(newOracle != address(0), InvalidAddress());
     oracle = IAaveOracle(newOracle);
-    require(oracle.DECIMALS() == 8, InvalidOracle());
+    require(oracle.DECIMALS() == 8, InvalidParameter(DataTypes.SpokeParams.InvalidOracle));
     emit OracleUpdate(newOracle);
   }
 
@@ -94,14 +94,17 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
-    require(hub != address(0), InvalidHubAddress());
-    require(!_reserveExists[hub][assetId], ReserveExists());
+    require(hub != address(0), InvalidAddress());
+    require(!_reserveExists[hub][assetId], InvalidParameter(DataTypes.SpokeParams.ReserveExists));
 
     _validateReserveConfig(config);
     uint256 reserveId = _reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
-    require(assetId < IHub(hub).getAssetCount(), AssetNotListed());
+    require(
+      assetId < IHub(hub).getAssetCount(),
+      InvalidParameter(DataTypes.SpokeParams.AssetNotListed)
+    );
     DataTypes.Asset memory asset = IHub(hub).getAsset(assetId);
 
     _updateReservePriceSource(reserveId, priceSource);
@@ -632,7 +635,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
-    require(address(oracle) != address(0), InvalidZeroAddress());
+    require(address(oracle) != address(0), InvalidAddress());
     oracle.setReserveSource(reserveId, priceSource);
     emit ReservePriceSourceUpdate(reserveId, priceSource);
   }
@@ -644,13 +647,16 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
     require(
       healthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      HealthFactorBelowThreshold()
+      InvalidHealthFactor(true)
     );
     return userRiskPremium;
   }
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal pure {
-    require(config.collateralRisk <= Constants.MAX_COLLATERAL_RISK, InvalidCollateralRisk()); // max 1000.00%
+    require(
+      config.collateralRisk <= Constants.MAX_COLLATERAL_RISK,
+      InvalidParameter(DataTypes.SpokeParams.CollateralRisk)
+    ); // max 1000.00%
   }
 
   function _validateDynamicReserveConfig(
@@ -658,40 +664,36 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal pure {
     require(
       config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidParameter(DataTypes.Params.CollateralFactor)
+      InvalidParameter(DataTypes.SpokeParams.CollateralFactor)
     ); // max 100.00%
     require(
       config.liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidParameter(DataTypes.Params.LiquidationBonus)
+      InvalidParameter(DataTypes.SpokeParams.LiquidationBonus)
     ); // min 100.00%
     require(
       config.liquidationBonus.percentMulUp(config.collateralFactor) <=
         PercentageMath.PERCENTAGE_FACTOR,
-      InvalidParameter(DataTypes.Params.IncompatibleCollateralFactorAndLiquidationBonus)
+      InvalidParameter(DataTypes.SpokeParams.IncompatibleCollateralFactorAndLiquidationBonus)
     ); // Enforces that at moment loan is taken, there should be enough collateral to cover liquidation
     require(
       config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidParameter(DataTypes.Params.LiquidationFee)
+      InvalidParameter(DataTypes.SpokeParams.LiquidationFee)
     );
   }
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal pure {
     require(
-      config.closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidParameter(DataTypes.Params.CloseFactor)
+      config.closeFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      InvalidParameter(DataTypes.SpokeParams.CloseFactor)
     );
     require(
       config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidParameter(DataTypes.Params.LiquidationBonusFactor)
+      InvalidParameter(DataTypes.SpokeParams.LiquidationBonusFactor)
     );
     require(
       config.healthFactorForMaxBonus < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidHealthFactorForMaxBonus()
+      InvalidParameter(DataTypes.SpokeParams.HealthFactorForMaxBonus)
     );
-  }
-
-  function _validateCloseFactor(uint256 closeFactor) internal pure {
-    require(closeFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
   }
 
   /**

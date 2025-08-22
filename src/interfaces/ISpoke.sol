@@ -102,6 +102,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event ReservePriceSourceUpdate(uint256 indexed reserveId, address indexed priceSource);
   event LiquidationConfigUpdate(DataTypes.LiquidationConfig config);
 
+  error InvalidAddress();
   error ReserveNotListed();
   error ReserveExists();
   error AssetNotListed();
@@ -113,11 +114,10 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();
-  error UsersAndDebtLengthMismatch();
   error Unauthorized();
   error ConfigKeyUninitialized();
   error InactivePositionManager();
-  error InvalidParameter(DataTypes.Params param);
+  error InvalidParameter(DataTypes.SpokeParams param);
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 

@@ -241,7 +241,7 @@ library DataTypes {
     uint256 restoredShares;
   }
 
-  enum Params {
+  enum SpokeParams {
     CollateralFactor,
     LiquidationBonus,
     IncompatibleCollateralFactorAndLiquidationBonus,
@@ -249,6 +249,17 @@ library DataTypes {
     HealthFactorForMaxBonus,
     LiquidationBonusFactor,
     LiquidationFee,
-    CollateralRisk
+    CollateralRisk,
+    ReserveExists,
+    AssetNotListed,
+    InvalidOracle
+  }
+
+  enum HubParams {
+    LiquidityFee,
+    AssetDecimals,
+    AssetNotListed,
+    SpokeAlreadyListed,
+    SpokeNotListed
   }
 }

@@ -421,7 +421,7 @@ library LiquidationLogic {
     require(!collateralReserve.paused && !debtReserve.paused, ISpoke.ReservePaused());
     require(
       healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      ISpoke.HealthFactorNotBelowThreshold()
+      ISpoke.InvalidHealthFactor(false)
     );
     bool isCollateralEnabled = positionStatus.isUsingAsCollateral(collateralReserveId) &&
       collateralFactor != 0;

@@ -70,32 +70,26 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 amount
   );
 
-  error InvalidSharesAmount();
-  error InvalidAddAmount();
+  error InvalidAddress();
   error InvalidFromAddress();
   error InvalidToAddress();
   error AssetNotListed();
   error AddCapExceeded(uint256 addCap);
-  error InvalidRemoveAmount();
-  error InvalidRestoreAmount();
   error AddedAmountExceeded(uint256 addedAmount);
   error AddedSharesExceeded(uint256 addedShares);
   error InsufficientLiquidity(uint256 liquidity);
-  error InvalidDrawAmount();
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);
   error SpokeNotListed();
   error SpokeAlreadyListed();
-  error InvalidAssetDecimals();
-  error InvalidLiquidityFee();
   error InvalidPremiumChange();
-  error InvalidDeficitAmount();
   error SurplusDeficitReported(uint256 amount);
   error SpokeNotActive();
-  error InvalidFeeShares();
   error InvalidReinvestmentController();
-  error InvalidSweepAmount();
   error OnlyReinvestmentController();
+  error InvalidParameter(DataTypes.HubParams param);
+  error InvalidAmount();
+  error InvalidShares();
 
   /**
    * @notice Adds a new asset to the hub.
