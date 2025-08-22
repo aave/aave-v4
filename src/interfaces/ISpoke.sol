@@ -127,6 +127,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error Unauthorized();
   error ConfigKeyUninitialized();
   error InactivePositionManager();
+  error InvalidSignature();
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
@@ -212,6 +213,23 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function setUserPositionManager(address positionManager, bool approve) external;
 
   /**
+   * @notice Allows caller to approve or revoke approval for positionManager using a signature.
+   * @param positionManager The address of the position manager.
+   * @param user The address of the user on whose behalf position manager can act.
+   * @param approve True if user wants to approve position manager, false otherwise.
+   * @param deadline The deadline for the signature.
+   */
+  function setUserPositionManagerWithSig(
+    address positionManager,
+    address user,
+    bool approve,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external;
+
+  /**
    * @notice Allows position manager (as caller) to renounce their approval given by the user.
    * @param user The address of the user.
    */
@@ -226,6 +244,29 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @notice Returns true if positionManager is currently active, false otherwise.
    */
   function isPositionManagerActive(address positionManager) external view returns (bool);
+
+  /**
+   * @notice Allows caller to revoke their nonce used in `setUserPositionManagerWithSig`.
+   */
+  function useNonce() external;
+
+  /**
+   * @notice Allows consuming a permit signature for the given reserve's underlying asset.
+   * @dev Spender is the corresponding hub of the given reserve.
+   * @param reserveId The identifier of the reserve.
+   * @param onBehalfOf The address of the user on whose behalf the permit is being used.
+   * @param value The amount of the underlying asset to permit.
+   * @param deadline The deadline for the permit.
+   */
+  function permitReserve(
+    uint256 reserveId,
+    address onBehalfOf,
+    uint256 value,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external;
 
   function getHealthFactor(address user) external view returns (uint256);
 
@@ -295,4 +336,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
 
   function oracle() external view returns (IAaveOracle);
+
+  function nonces(address user) external view returns (uint256);
+
+  function DOMAIN_SEPARATOR() external view returns (bytes32);
 }
