@@ -15,11 +15,11 @@ gas_snapshot_check = false
 gas_limit = 1099511627776
 
 additional_compiler_profiles = [
-  { name = "spoke", optimizer = true, via_ir = true, optimizer_runs = 1 }
+  { name = "spoke", optimizer = true, via_ir = true, optimizer_runs = 4444 }
 ]
 
 compilation_restrictions = [
-  { paths = "src/contracts/Spoke.sol", optimizer = true, via_ir = true, optimizer_runs = 1 }
+  { paths = "src/contracts/Spoke.sol", optimizer = true, via_ir = true, optimizer_runs = 4444 }
 ]
 
 [lint]
