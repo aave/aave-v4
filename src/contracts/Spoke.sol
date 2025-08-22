@@ -68,10 +68,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // Governance
   // /////
 
+  /// @inheritdoc ISpoke
   function updateOracle(address newOracle) external restricted {
-    require(newOracle != address(0), InvalidOracle());
     oracle = IAaveOracle(newOracle);
-    require(oracle.DECIMALS() == 8, InvalidOracle());
+    require(
+      newOracle != address(0) && oracle.DECIMALS() == Constants.ORACLE_DECIMALS,
+      InvalidOracle()
+    );
     emit OracleUpdate(newOracle);
   }
 
@@ -95,15 +98,16 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
-    require(hub != address(0), InvalidHubAddress());
+    require(hub != address(0), InvalidAddress());
     require(!_reserveExists[hub][assetId], ReserveExists());
 
     _validateReserveConfig(config);
+    _validateDynamicReserveConfig(dynamicConfig);
     uint256 reserveId = _reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
-    require(assetId < IHub(hub).getAssetCount(), AssetNotListed());
     DataTypes.Asset memory asset = IHub(hub).getAsset(assetId);
+    require(asset.underlying != address(0), AssetNotListed());
 
     _updateReservePriceSource(reserveId, priceSource);
 
@@ -221,7 +225,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
-    // calc needs new user position, just updating drawn debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
 
@@ -249,7 +252,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    // calc needs new user position, just updating drawn debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
 
@@ -417,13 +419,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return drawnDebt + premiumDebt;
   }
 
-  /// @dev We do not differentiate between duplicate reserves (assetId) on the same hub
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     return reserve.hub.getSpokeAddedAmount(reserve.assetId, address(this));
   }
 
-  /// @dev We do not differentiate between duplicate reserves (assetId) on the same hub
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     return reserve.hub.getSpokeAddedShares(reserve.assetId, address(this));
@@ -582,15 +582,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   /**
    * @dev Calculates the user's premium debt offset in assets amount from a given share amount.
-   * @dev Rounds down to the nearest assets amount.
-   * @dev Uses the opposite rounding direction of the debt shares-to-assets conversion to prevent underflow
-   * in premium debt.
-   * @param hub The liquidity hub of the reserve.
-   * @param assetId The identifier of the asset.
-   * @param shares The amount of shares to convert to assets amount.
-   * @return The amount of assets converted corresponding to user's premium offset.
+   * @dev Rounds down to the nearest assets amount. Uses the opposite rounding direction of the
+   * debt shares-to-assets conversion to prevent underflow in premium debt.
    */
-  function _previewOffset(
+  function _previewPremiumOffset(
     IHub hub,
     uint256 assetId,
     uint256 shares
@@ -634,7 +629,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal pure {
-    _validateCloseFactor(config.closeFactor);
+    require(
+      config.closeFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      InvalidCloseFactor()
+    );
     require(
       config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
       InvalidLiquidationBonusFactor()
@@ -643,10 +641,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       config.healthFactorForMaxBonus < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       InvalidHealthFactorForMaxBonus()
     );
-  }
-
-  function _validateCloseFactor(uint256 closeFactor) internal pure {
-    require(closeFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
   }
 
   function _validateLiquidationCall(
@@ -931,7 +925,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
           .drawnShares
           .percentMulUp(newUserRiskPremium)
           .toUint128();
-        userPosition.premiumOffset = _previewOffset(
+        userPosition.premiumOffset = _previewPremiumOffset(
           vars.hub,
           vars.assetId,
           userPosition.premiumShares

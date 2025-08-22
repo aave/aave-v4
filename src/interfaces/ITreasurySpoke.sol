@@ -10,6 +10,7 @@ import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
  */
 interface ITreasurySpoke is ISpokeBase {
   error UnsupportedAction();
+  error InvalidAddress();
 
   /**
    * @notice Supplies a specified amount of the underlying asset to a given reserve.

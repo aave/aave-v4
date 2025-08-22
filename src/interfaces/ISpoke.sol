@@ -131,6 +131,10 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
+  /**
+   * @notice Allows governance to update the spoke oracle.
+   * @dev Does not validate all existing reserves are supported on `newOracle`.
+   */
   function updateOracle(address newOracle) external;
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;
