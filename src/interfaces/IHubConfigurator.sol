@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -95,6 +96,18 @@ interface IHubConfigurator {
    * @param irStrategy The new interest rate strategy.
    */
   function updateInterestRateStrategy(address hub, uint256 assetId, address irStrategy) external;
+
+  /**
+   * @notice Updates the reinvestment controller of an asset.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param reinvestmentController The new reinvestment controller.
+   */
+  function updateReinvestmentController(
+    address hub,
+    uint256 assetId,
+    address reinvestmentController
+  ) external;
 
   /**
    * @notice Updates the config of an asset.
@@ -217,4 +230,26 @@ interface IHubConfigurator {
     address spoke,
     DataTypes.SpokeConfig calldata config
   ) external;
+
+  /**
+   * @notice Pauses all assets of a spoke
+   * @param hub The address of the Hub contract.
+   * @param spoke The address of the spoke.
+   */
+  function pauseSpoke(address hub, address spoke) external;
+
+  /**
+   * @notice Freezes all assets of a spoke
+   * @param hub The address of the Hub contract.
+   * @param spoke The address of the spoke.
+   */
+  function freezeSpoke(address hub, address spoke) external;
+
+  /**
+   * @notice Updates the interest rate data for an asset.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
+   */
+  function updateInterestRateData(address hub, uint256 assetId, bytes calldata data) external;
 }

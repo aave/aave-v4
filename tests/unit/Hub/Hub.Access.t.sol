@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -11,7 +12,8 @@ contract HubAccessTest is HubBase {
     DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
-      irStrategy: address(irStrategy)
+      irStrategy: address(irStrategy),
+      reinvestmentController: address(0)
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
@@ -240,7 +242,8 @@ contract HubAccessTest is HubBase {
     DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
-      irStrategy: address(irStrategy)
+      irStrategy: address(irStrategy),
+      reinvestmentController: address(0)
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,

@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -100,7 +101,9 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
-    uint256 premium // unused
+    uint256 premium, // unused
+    uint256 deficit, // unused
+    uint256 swept
   ) external view virtual override returns (uint256) {
     InterestRateData memory rateData = _interestRateData[assetId];
     require(rateData.optimalUsageRatio != 0, InterestRateDataNotSet(assetId));
@@ -110,7 +113,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
       return currentVariableBorrowRateRay;
     }
 
-    uint256 usageRatioRay = drawn.rayDivUp(liquidity + drawn);
+    uint256 usageRatioRay = drawn.rayDivUp(liquidity + drawn + swept);
     uint256 optimalUsageRatioRay = rateData.optimalUsageRatio.bpsToRay();
 
     if (usageRatioRay <= optimalUsageRatioRay) {

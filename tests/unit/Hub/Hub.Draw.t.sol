@@ -1,10 +1,12 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubDrawTest is HubBase {
   using SharesMath for uint256;
+  using SafeCast for uint256;
 
   function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 amount) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
@@ -25,22 +27,26 @@ contract HubDrawTest is HubBase {
         IBasicInterestRateStrategy.calculateInterestRate,
         (
           assetId,
-          assetBefore.liquidity - amount,
+          assetBefore.liquidity - assetBefore.swept - amount,
           hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-          premium
+          premium,
+          assetBefore.deficit,
+          assetBefore.swept
         )
       )
     );
 
     vm.expectEmit(address(hub1));
-    emit IHub.AssetUpdated(
+    emit IHub.AssetUpdate(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
-        liquidity: assetBefore.liquidity - amount,
+        liquidity: assetBefore.liquidity - assetBefore.swept - amount,
         drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-        premium: premium
+        premium: premium,
+        deficit: assetBefore.deficit,
+        swept: assetBefore.swept
       }),
       vm.getBlockTimestamp()
     );
@@ -105,22 +111,26 @@ contract HubDrawTest is HubBase {
         IBasicInterestRateStrategy.calculateInterestRate,
         (
           assetId,
-          assetBefore.liquidity - amount,
+          assetBefore.liquidity - assetBefore.swept - amount,
           hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-          premium
+          premium,
+          assetBefore.deficit,
+          assetBefore.swept
         )
       )
     );
 
     vm.expectEmit(address(hub1));
-    emit IHub.AssetUpdated(
+    emit IHub.AssetUpdate(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
-        liquidity: assetBefore.liquidity - amount,
+        liquidity: assetBefore.liquidity - assetBefore.swept - amount,
         drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-        premium: premium
+        premium: premium,
+        deficit: assetBefore.deficit,
+        swept: assetBefore.swept
       }),
       vm.getBlockTimestamp()
     );
@@ -153,28 +163,31 @@ contract HubDrawTest is HubBase {
     hub1.draw(daiAssetId, 100e18, alice);
   }
 
-  function test_draw_revertsWith_NotLiquidity() public {
+  function test_draw_revertsWith_InsufficientLiquidity() public {
     uint256 drawAmount = 1;
 
     assertTrue(hub1.getLiquidity(daiAssetId) == 0);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.NotLiquidity.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub1.draw(daiAssetId, drawAmount, address(spoke1));
   }
 
-  function test_draw_fuzz_revertsWith_NotLiquidity(uint256 assetId, uint256 drawAmount) public {
+  function test_draw_fuzz_revertsWith_InsufficientLiquidity(
+    uint256 assetId,
+    uint256 drawAmount
+  ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
     assertTrue(hub1.getLiquidity(assetId) == 0);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.NotLiquidity.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke2));
     hub1.draw(assetId, drawAmount, address(spoke2));
   }
 
-  function test_draw_revertsWith_NotLiquidity_due_to_remove() public {
+  function test_draw_revertsWith_InsufficientLiquidity_due_to_remove() public {
     uint256 daiAmount = 100e18;
 
     // spoke2, bob add dai
@@ -198,12 +211,14 @@ contract HubDrawTest is HubBase {
 
     uint256 drawAmount = 1;
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.NotLiquidity.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  function test_draw_fuzz_revertsWith_NotLiquidity_due_to_remove(uint256 daiAmount) public {
+  function test_draw_fuzz_revertsWith_InsufficientLiquidity_due_to_remove(
+    uint256 daiAmount
+  ) public {
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
 
     // spoke2, bob add dai
@@ -227,12 +242,12 @@ contract HubDrawTest is HubBase {
 
     uint256 drawAmount = 1;
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.NotLiquidity.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  function test_draw_revertsWith_NotLiquidity_due_to_draw() public {
+  function test_draw_revertsWith_InsufficientLiquidity_due_to_draw() public {
     uint256 daiAmount = 100e18;
 
     // spoke2, bob add dai
@@ -256,12 +271,12 @@ contract HubDrawTest is HubBase {
 
     uint256 drawAmount = 1;
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.NotLiquidity.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  function test_draw_fuzz_revertsWith_NotLiquidity_due_to_draw(uint256 daiAmount) public {
+  function test_draw_fuzz_revertsWith_InsufficientLiquidity_due_to_draw(uint256 daiAmount) public {
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
 
     // spoke2, bob add dai
@@ -285,7 +300,7 @@ contract HubDrawTest is HubBase {
 
     uint256 drawAmount = 1;
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.NotLiquidity.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
@@ -303,7 +318,7 @@ contract HubDrawTest is HubBase {
     uint256 rate,
     uint256 skipTime
   ) public {
-    drawCap = uint56(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals() - 1;
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -324,7 +339,7 @@ contract HubDrawTest is HubBase {
     });
 
     (uint256 drawn, ) = hub1.getAssetOwed(daiAssetId);
-    uint256 singleShareInAssets = minimumAssetsPerDrawnShare(daiAssetId);
+    uint256 singleShareInAssets = minimumAssetsPerDrawnShare(hub1, daiAssetId);
     // Need the drawn to be greater than the drawCap from interest, past the share we restore
     vm.assume(drawn > drawCap + singleShareInAssets);
 
@@ -370,7 +385,7 @@ contract HubDrawTest is HubBase {
     vm.startPrank(address(spoke1));
     hub1.restore({
       assetId: daiAssetId,
-      drawnAmount: minimumAssetsPerDrawnShare(daiAssetId),
+      drawnAmount: minimumAssetsPerDrawnShare(hub1, daiAssetId),
       premiumAmount: 0,
       premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
       from: alice
@@ -389,7 +404,7 @@ contract HubDrawTest is HubBase {
   }
 
   function test_draw_fuzz_revertsWith_DrawCapExceeded(uint56 drawCap) public {
-    drawCap = uint56(bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()));
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
     uint256 drawAmount = daiAmount + 1;
 

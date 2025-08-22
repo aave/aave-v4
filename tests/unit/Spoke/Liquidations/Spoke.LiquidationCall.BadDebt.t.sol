@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
@@ -6,6 +7,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 /// tests where liquidation results in bad debt (debt > 0, collateral = 0)
 contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
+  using SafeCast for uint256;
 
   /// coll: weth / debt: dai
   function test_liquidationCall_badDebt_scenario1() public {
@@ -256,9 +258,9 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) public {
@@ -285,9 +287,9 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) public {
@@ -309,24 +311,25 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
   /// liquidating all collateral is insufficient to cover debt
   function _execLiqCallCloseFactorBadDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
-    uint256 liqBonus,
+    uint32 liqBonus,
     uint256 supplyAmount,
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    uint256 liquidationFee,
+    uint16 liquidationFee,
     uint256 skipTime,
     uint256 desiredHf
   ) internal returns (LiquidationTestLocalParams memory) {
     LiquidationTestLocalParams memory state;
-    state.collateralReserves = new DataTypes.Reserve[](1);
-    state.debtReserves = new DataTypes.Reserve[](1);
+    state.collateralReserves = new Reserve[](1);
+    state.debtReserves = new Reserve[](1);
     state.user = alice;
     state.spoke = spoke1;
 
-    state.collateralReserves[state.collateralReserveIndex] = state.spoke.getReserve(
+    state.collateralReserves[state.collateralReserveIndex] = _getReserve(
+      state.spoke,
       collateralReserveId
     );
-    state.debtReserves[state.debtReserveIndex] = state.spoke.getReserve(debtReserveId);
+    state.debtReserves[state.debtReserveIndex] = _getReserve(state.spoke, debtReserveId);
     state.collateralReserve = state.collateralReserves[state.collateralReserveIndex];
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
     state.collDynConfig = _getUserDynConfig(state.spoke, state.user, collateralReserveId);
@@ -337,9 +340,9 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       liqBonus,
       MIN_LIQUIDATION_BONUS,
       PercentageMath.PERCENTAGE_FACTOR.percentDivDown(state.collDynConfig.collateralFactor)
-    );
+    ).toUint32();
 
-    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
+    liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     supplyAmount = bound(
       supplyAmount,
       _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e25),
@@ -401,13 +404,14 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       hfAfterBorrow
     );
 
-    state = _getAccountingInfoBeforeLiquidation(state);
+    state = _getAccountingInfoBeforeLiquidation(collateralReserveId, debtReserveId, state);
     (
       state.collToLiq,
       state.debtToLiq,
       state.liquidationFeeAmount,
-
-    ) = _calculateAvailableCollateralToLiquidate(state, UINT256_MAX);
+      ,
+      state.hasDustFromDebt
+    ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
     uint256 debtAssetId = state.debtReserve.assetId;
     (uint256 drawnDebtRestored, uint256 premDebtRestored) = _calculateExactRestoreAmount(
@@ -438,8 +442,19 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       0,
       int256(premDebtRestored) - int256(accruedPremium)
     );
+
+    vm.expectEmit(address(state.spoke));
+    emit ISpokeBase.LiquidationCall(
+      collateralReserveId,
+      debtReserveId,
+      state.user,
+      state.debtToLiq,
+      state.collToLiq,
+      LIQUIDATOR
+    );
+    
     vm.expectEmit(address(hub1));
-    emit IHub.DeficitReported(
+    emit IHub.ReportDeficit(
       debtAssetId,
       address(state.spoke),
       state.expectedDeficitShares,
@@ -447,15 +462,6 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       state.expectedDeficitAmount
     );
 
-    vm.expectEmit(address(state.spoke));
-    emit ISpokeBase.LiquidationCall(
-      state.collateralReserve.underlying,
-      state.debtReserve.underlying,
-      state.user,
-      state.debtToLiq,
-      state.collToLiq,
-      LIQUIDATOR
-    );
     vm.prank(LIQUIDATOR);
     state.spoke.liquidationCall(collateralReserveId, debtReserveId, state.user, UINT256_MAX);
 

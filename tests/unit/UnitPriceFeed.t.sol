@@ -1,10 +1,13 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
 import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
 import 'tests/Base.t.sol';
 
 contract UnitPriceFeedTest is Base {
+  using SafeCast for uint256;
+
   UnitPriceFeed public unitPriceFeed;
 
   uint8 private constant _decimals = 8;
@@ -49,7 +52,7 @@ contract UnitPriceFeedTest is Base {
   }
 
   function test_fuzz_latestRoundData_DifferentDecimals(uint8 decimals) public {
-    decimals = uint8(bound(decimals, 0, 18));
+    decimals = bound(decimals, 0, 18).toUint8();
     unitPriceFeed = new UnitPriceFeed(decimals, _description);
     (, int256 answer, , , ) = unitPriceFeed.latestRoundData();
     assertEq(answer, int256(10 ** decimals));

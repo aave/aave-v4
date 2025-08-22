@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -54,6 +55,10 @@ contract WadRayMathWrapper {
 
   function fromWadDown(uint256 a) public pure returns (uint256) {
     return WadRayMath.fromWadDown(a);
+  }
+
+  function bpsToWad(uint256 a) public pure returns (uint256) {
+    return WadRayMath.bpsToWad(a);
   }
 
   function bpsToRay(uint256 a) public pure returns (uint256) {

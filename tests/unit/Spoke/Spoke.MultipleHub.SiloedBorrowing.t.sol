@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Spoke.MultipleHub.Base.t.sol';
@@ -61,7 +62,11 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     newHub.addSpoke(
       siloedVars.assetBId,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: siloedVars.assetBDrawCap})
+      DataTypes.SpokeConfig({
+        active: true,
+        addCap: Constants.MAX_CAP,
+        drawCap: siloedVars.assetBDrawCap
+      })
     );
 
     // Add asset A to the canonical hub
@@ -138,13 +143,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
   function test_siloed_borrowing() public {
     // Bob can supply Asset A to the new spoke, canonical hub, up to 500k and set it as collateral
     uint256 assetAAddCapAmount = siloedVars.assetAAddCap * 10 ** assetA.decimals();
-    Utils.supplyCollateral(
-      newSpoke,
-      siloedVars.reserveAIdNewSpoke,
-      bob,
-      assetAAddCapAmount,
-      bob
-    );
+    Utils.supplyCollateral(newSpoke, siloedVars.reserveAIdNewSpoke, bob, assetAAddCapAmount, bob);
     assertEq(
       newSpoke.getUserSuppliedAmount(siloedVars.reserveAIdNewSpoke, bob),
       assetAAddCapAmount,
@@ -180,7 +179,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     assertEq(newSpoke.getUserTotalDebt(siloedVars.reserveBId, bob), assetBDrawCapAmount);
     assertEq(newHub.getAssetTotalOwed(siloedVars.assetBId), assetBDrawCapAmount);
     assertEq(
-      newSpoke.getReserve(siloedVars.reserveBId).underlying,
+      address(getAssetUnderlyingByReserveId(newSpoke, siloedVars.reserveBId)),
       address(assetB),
       'Bob borrowed asset B from new spoke'
     );

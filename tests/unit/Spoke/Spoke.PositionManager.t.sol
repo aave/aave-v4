@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -16,7 +17,7 @@ contract SpokePositionManagerTest is SpokeBase {
       vm.expectRevert(ISpoke.InactivePositionManager.selector);
     } else {
       vm.expectEmit(address(spoke1));
-      emit ISpoke.UserPositionManagerSet(user, positionManager, approve);
+      emit ISpoke.SetUserPositionManager(user, positionManager, approve);
     }
 
     vm.prank(user);
@@ -39,7 +40,7 @@ contract SpokePositionManagerTest is SpokeBase {
     assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserPositionManagerSet(alice, POSITION_MANAGER, false);
+    emit ISpoke.SetUserPositionManager(alice, POSITION_MANAGER, false);
     vm.prank(alice);
     spoke1.setUserPositionManager(POSITION_MANAGER, false);
   }
@@ -51,7 +52,7 @@ contract SpokePositionManagerTest is SpokeBase {
     address positionManager = vm.randomAddress();
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserPositionManagerSet(user, positionManager, false);
+    emit ISpoke.SetUserPositionManager(user, positionManager, false);
     vm.prank(positionManager);
     spoke1.renouncePositionManagerRole(user);
   }
@@ -158,10 +159,17 @@ contract SpokePositionManagerTest is SpokeBase {
     DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
     uint256 repayAmount = amount / 3;
 
+    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      reserveId,
+      repayAmount
+    );
+
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), repayAmount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(reserveId, POSITION_MANAGER, alice, repayAmount);
+    emit ISpokeBase.Repay(reserveId, POSITION_MANAGER, alice, repayAmount, expectedPremiumDelta);
     Utils.repay(spoke1, reserveId, POSITION_MANAGER, repayAmount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
@@ -258,7 +266,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserDynamicConfig(alice);
 
@@ -278,12 +286,12 @@ contract SpokePositionManagerTest is SpokeBase {
     assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.PositionManagerUpdated(POSITION_MANAGER, true);
+    emit ISpoke.UpdatePositionManager(POSITION_MANAGER, true);
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(POSITION_MANAGER, true);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserPositionManagerSet(who, POSITION_MANAGER, true);
+    emit ISpoke.SetUserPositionManager(who, POSITION_MANAGER, true);
     vm.prank(who);
     spoke1.setUserPositionManager(POSITION_MANAGER, true);
 
@@ -293,7 +301,7 @@ contract SpokePositionManagerTest is SpokeBase {
 
   function _disablePositionManager() internal {
     vm.expectEmit(address(spoke1));
-    emit ISpoke.PositionManagerUpdated(POSITION_MANAGER, false);
+    emit ISpoke.UpdatePositionManager(POSITION_MANAGER, false);
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(POSITION_MANAGER, false);
 

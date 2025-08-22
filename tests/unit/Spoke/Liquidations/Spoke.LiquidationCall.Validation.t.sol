@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
@@ -32,7 +33,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
       : (reserveId2, reserveId1);
 
     updateReservePausedFlag(spoke1, collateralReserveId, true);
-    assertTrue(spoke1.getReserve(collateralReserveId).config.paused);
+    assertTrue(spoke1.getReserve(collateralReserveId).paused);
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
@@ -66,7 +67,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
       : (reserveId2, reserveId1);
 
     updateReservePausedFlag(spoke1, debtReserveId, true);
-    assertTrue(spoke1.getReserve(debtReserveId).config.paused);
+    assertTrue(spoke1.getReserve(debtReserveId).paused);
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);

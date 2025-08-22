@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -18,7 +19,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 amount = 100e18;
 
     updateReservePausedFlag(spoke1, daiReserveId, true);
-    assertTrue(spoke1.getReserve(daiReserveId).config.paused);
+    assertTrue(spoke1.getReserve(daiReserveId).paused);
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(bob);
@@ -30,7 +31,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 amount = 100e18;
 
     updateReserveFrozenFlag(spoke1, daiReserveId, true);
-    assertTrue(spoke1.getReserve(daiReserveId).config.frozen);
+    assertTrue(spoke1.getReserve(daiReserveId).frozen);
 
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
     vm.prank(bob);

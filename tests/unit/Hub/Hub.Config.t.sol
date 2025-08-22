@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -58,9 +59,9 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
     vm.expectEmit(address(hub1));
-    emit IHub.SpokeAdded(assetId, newSpoke);
+    emit IHub.AddSpoke(assetId, newSpoke);
     vm.expectEmit(address(hub1));
-    emit IHub.SpokeConfigUpdated(assetId, newSpoke, spokeConfig);
+    emit IHub.SpokeConfigUpdate(assetId, newSpoke, spokeConfig);
     Utils.addSpoke(hub1, ADMIN, assetId, newSpoke, spokeConfig);
 
     assertEq(hub1.getSpokeConfig(assetId, newSpoke), spokeConfig);
@@ -85,7 +86,7 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
 
     vm.expectEmit(address(hub1));
-    emit IHub.SpokeConfigUpdated(assetId, address(spoke1), spokeConfig);
+    emit IHub.SpokeConfigUpdate(assetId, address(spoke1), spokeConfig);
 
     Utils.updateSpokeConfig(hub1, ADMIN, assetId, address(spoke1), spokeConfig);
     assertEq(hub1.getSpokeConfig(assetId, address(spoke1)), spokeConfig);
@@ -101,7 +102,7 @@ contract HubConfigTest is HubBase {
     assumeNotZeroAddress(feeReceiver);
     assumeNotZeroAddress(interestRateStrategy);
 
-    decimals = uint8(bound(decimals, Constants.MAX_ALLOWED_ASSET_DECIMALS + 1, type(uint8).max));
+    decimals = bound(decimals, Constants.MAX_ALLOWED_ASSET_DECIMALS + 1, type(uint8).max).toUint8();
 
     vm.expectRevert(IHub.InvalidAssetDecimals.selector);
     Utils.addAsset(
@@ -140,7 +141,7 @@ contract HubConfigTest is HubBase {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(interestRateStrategy);
 
-    decimals = uint8(bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS));
+    decimals = bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS).toUint8();
 
     vm.expectRevert(IHubBase.InvalidZeroAddress.selector);
     Utils.addAsset({
@@ -162,7 +163,7 @@ contract HubConfigTest is HubBase {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
 
-    decimals = uint8(bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS));
+    decimals = bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS).toUint8();
 
     vm.expectRevert(IHubBase.InvalidZeroAddress.selector);
     Utils.addAsset({
@@ -185,7 +186,7 @@ contract HubConfigTest is HubBase {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
     assumeNotZeroAddress(interestRateStrategy);
-    decimals = uint8(bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS));
+    decimals = bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS).toUint8();
 
     vm.expectRevert();
     Utils.addAsset(
@@ -200,10 +201,10 @@ contract HubConfigTest is HubBase {
   }
 
   function test_addAsset_revertsWith_DrawnRateDowncastOverflow() public {
-    uint256 drawnRateRay = uint256(type(uint128).max) + 1;
+    uint256 drawnRateRay = uint256(type(uint96).max) + 1;
     _mockInterestRateRay(drawnRateRay);
     vm.expectRevert(
-      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 128, drawnRateRay)
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 96, drawnRateRay)
     );
     Utils.addAsset(
       hub1,
@@ -237,7 +238,7 @@ contract HubConfigTest is HubBase {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
 
-    decimals = uint8(bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS));
+    decimals = bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS).toUint8();
 
     uint256 expectedAssetId = hub1.getAssetCount();
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
@@ -245,7 +246,8 @@ contract HubConfigTest is HubBase {
     DataTypes.AssetConfig memory expectedConfig = DataTypes.AssetConfig({
       feeReceiver: feeReceiver,
       liquidityFee: 0,
-      irStrategy: interestRateStrategy
+      irStrategy: interestRateStrategy,
+      reinvestmentController: address(0)
     });
 
     (, uint32 baseVariableBorrowRate, , ) = abi.decode(
@@ -254,11 +256,11 @@ contract HubConfigTest is HubBase {
     );
 
     vm.expectEmit(address(hub1));
-    emit IHub.AssetAdded(expectedAssetId, underlying, decimals);
+    emit IHub.AddAsset(expectedAssetId, underlying, decimals);
     vm.expectEmit(address(hub1));
-    emit IHub.AssetConfigUpdated(expectedAssetId, expectedConfig);
+    emit IHub.AssetConfigUpdate(expectedAssetId, expectedConfig);
     vm.expectEmit(address(hub1));
-    emit IHub.AssetUpdated(
+    emit IHub.AssetUpdate(
       expectedAssetId,
       WadRayMath.RAY,
       baseVariableBorrowRate.bpsToRay(),
@@ -279,6 +281,7 @@ contract HubConfigTest is HubBase {
     assertEq(hub1.getAssetCount(), assetId + 1, 'asset count');
     assertEq(hub1.getAsset(assetId).decimals, decimals, 'asset decimals');
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
+    assertEq(hub1.getAsset(assetId).reinvestmentController, address(0)); // should init to addr(0)
   }
 
   function test_updateAssetConfig_fuzz_revertsWith_InvalidZeroAddress_irStrategy(
@@ -321,6 +324,33 @@ contract HubConfigTest is HubBase {
     hub1.updateAssetConfig(assetId, newConfig);
   }
 
+  // @dev can only reset reinvestment strategy if swept is zero
+  function test_updateAssetConfig_fuzz_revertsWith_InvalidReinvestmentController() public {
+    uint256 assetId = _randomAssetId(hub1);
+    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
+
+    config.reinvestmentController = address(0);
+    assertEq(hub1.getSwept(assetId), 0);
+
+    vm.prank(HUB_ADMIN);
+    hub1.updateAssetConfig(assetId, config);
+    assertEq(hub1.getAsset(assetId).reinvestmentController, address(0));
+
+    address reinvestmentController = makeAddr('reinvestmentController');
+    updateAssetReinvestmentController(hub1, assetId, reinvestmentController);
+    _addLiquidity(assetId, 1000e18);
+    vm.prank(reinvestmentController);
+    hub1.sweep(assetId, 100e18);
+
+    assertEq(hub1.getSwept(assetId), 100e18);
+    assertEq(config.reinvestmentController, address(0));
+    assertNotEq(hub1.getAsset(assetId).reinvestmentController, address(0));
+
+    vm.expectRevert(IHub.InvalidReinvestmentController.selector);
+    vm.prank(HUB_ADMIN);
+    hub1.updateAssetConfig(assetId, config);
+  }
+
   function test_updateAssetConfig_fuzz_revertsWith_InterestRateStrategyReverts(
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
@@ -345,19 +375,21 @@ contract HubConfigTest is HubBase {
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
 
     vm.expectEmit(address(hub1));
-    emit IHub.AssetUpdated(
+    emit IHub.AssetUpdate(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         liquidity: liquidity,
         drawn: drawn,
-        premium: premium
+        premium: premium,
+        deficit: 0,
+        swept: 0
       }),
       vm.getBlockTimestamp()
     );
     vm.expectEmit(address(hub1));
-    emit IHub.AssetConfigUpdated(assetId, newConfig);
+    emit IHub.AssetConfigUpdate(assetId, newConfig);
 
     Utils.updateAssetConfig(hub1, ADMIN, assetId, newConfig);
 

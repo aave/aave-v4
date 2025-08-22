@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -47,9 +48,9 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
   function test_liquidate_does_not_trigger_dynamicConfigUpdate() public {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
-    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
-    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500e18);
-    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
+    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1_000_000e6, alice);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500_000e18);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500_000e18, alice);
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
 
@@ -62,7 +63,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     assertLe(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);
-    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100e18);
+    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100_000e18);
 
     _assertDynamicConfigRefreshEventsNotEmitted();
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -99,7 +100,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -125,7 +126,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
     Utils.withdraw(spoke1, _usdxReserveId(spoke1), alice, 500e6, alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -152,7 +153,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     // when enabling, only the relevant asset is refreshed
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedSingle(alice, _wethReserveId(spoke1));
+    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _wethReserveId(spoke1));
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, alice);
 
@@ -164,7 +165,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     // when disabling all configs are refreshed
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
@@ -186,7 +187,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     // manually trigger update
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
     vm.prank(alice);
     spoke1.updateUserDynamicConfig(alice);
 
@@ -247,7 +248,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     uint256 snapshotId = vm.snapshotState();
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserDynamicConfigRefreshedAll(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
     vm.prank(caller);
     spoke1.updateUserDynamicConfig(alice);
 

@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {Base} from 'tests/Base.t.sol';
@@ -94,8 +95,13 @@ contract SpokeOperations_Gas_Tests is Base {
   }
 
   function test_borrow() public {
-    vm.prank(bob);
+    vm.startPrank(bob);
     spoke1.supply(_daiReserveId(spoke1), 1000e18, bob);
+    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, bob);
+    spoke1.borrow(_daiReserveId(spoke1), 500e18, bob);
+    vm.stopPrank();
+
+    skip(100);
 
     vm.startPrank(alice);
     spoke1.supply(_usdxReserveId(spoke1), 1000e6, alice);
@@ -133,19 +139,19 @@ contract SpokeOperations_Gas_Tests is Base {
 
   function test_liquidation() public {
     vm.prank(bob);
-    spoke1.supply(_daiReserveId(spoke1), 1000e18, bob);
+    spoke1.supply(_daiReserveId(spoke1), 1_000_000e18, bob);
 
     vm.startPrank(alice);
-    spoke1.supply(_usdxReserveId(spoke1), 1000e6, alice);
+    spoke1.supply(_usdxReserveId(spoke1), 1_000_000e6, alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
     vm.stopPrank();
 
     _borrowToBeBelowHf(spoke1, alice, _daiReserveId(spoke1), 0.9e18);
 
-    skip(365 days);
+    skip(100);
 
     vm.startPrank(bob);
-    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100e18);
+    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100_000e18);
     vm.snapshotGasLastCall('Spoke.Operations', 'liquidationCall: partial');
 
     spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, type(uint256).max);
