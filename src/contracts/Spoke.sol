@@ -610,41 +610,52 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // @dev refresh user position dynamic config only on borrow, withdraw, disableUsingAsCollateral
     _refreshDynamicConfig(user); // opt: merge with _calculateUserAccountData
     (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
-    require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorBelowThreshold());
+    require(healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidHealthFactor(true));
     return userRiskPremium;
   }
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal pure {
-    require(config.collateralRisk <= MAX_COLLATERAL_RISK, InvalidCollateralRisk()); // max 1000.00%
+    require(
+      config.collateralRisk <= MAX_COLLATERAL_RISK,
+      InvalidParameter(DataTypes.Params.CollateralRisk)
+    ); // max 1000.00%
   }
 
   function _validateDynamicReserveConfig(
     DataTypes.DynamicReserveConfig calldata config
   ) internal pure {
-    require(config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR, InvalidCollateralFactor()); // max 100.00%
-    require(config.liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationBonus()); // min 100.00%
+    require(
+      config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR,
+      InvalidParameter(DataTypes.Params.CollateralFactor)
+    ); // max 100.00%
+    require(
+      config.liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR,
+      InvalidParameter(DataTypes.Params.LiquidationBonus)
+    ); // min 100.00%
     require(
       config.liquidationBonus.percentMulUp(config.collateralFactor) <=
         PercentageMath.PERCENTAGE_FACTOR,
-      IncompatibleCollateralFactorAndLiquidationBonus()
+      InvalidParameter(DataTypes.Params.IncompatibleCollateralFactorAndLiquidationBonus)
     ); // Enforces that at moment loan is taken, there should be enough collateral to cover liquidation
-    require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
+    require(
+      config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR,
+      InvalidParameter(DataTypes.Params.LiquidationFee)
+    );
   }
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal pure {
-    _validateCloseFactor(config.closeFactor);
+    require(
+      config.closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      InvalidParameter(DataTypes.Params.CloseFactor)
+    );
     require(
       config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidLiquidationBonusFactor()
+      InvalidParameter(DataTypes.Params.LiquidationBonusFactor)
     );
     require(
       config.healthFactorForMaxBonus < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidHealthFactorForMaxBonus()
+      InvalidParameter(DataTypes.Params.HealthFactorForMaxBonus)
     );
-  }
-
-  function _validateCloseFactor(uint256 closeFactor) internal pure {
-    require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
   }
 
   function _validateLiquidationCall(
@@ -662,7 +673,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       ReserveNotListed()
     );
     require(!collateralReserve.config.paused && !debtReserve.config.paused, ReservePaused());
-    require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, HealthFactorNotBelowThreshold());
+    require(healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidHealthFactor(true));
     bool isCollateralEnabled = _positionStatus[user].isUsingAsCollateral(
       collateralReserve.reserveId
     ) && collateralFactor != 0;

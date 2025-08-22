@@ -103,27 +103,19 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   error ReserveNotListed();
   error AssetNotListed();
-  error InvalidCollateralRisk();
   error InsufficientSupply(uint256 supply);
   error ReserveNotBorrowable(uint256 reserveId);
   error ReservePaused();
   error ReserveFrozen();
-  error InvalidCollateralFactor();
-  error InvalidLiquidationBonus();
-  error IncompatibleCollateralFactorAndLiquidationBonus();
-  error HealthFactorBelowThreshold();
-  error InvalidCloseFactor();
-  error InvalidHealthFactorForMaxBonus();
-  error InvalidLiquidationBonusFactor();
-  error HealthFactorNotBelowThreshold();
+  error InvalidHealthFactor(bool isBelowThreshold);
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
   error InvalidDebtToCover();
-  error InvalidLiquidationFee();
   error UsersAndDebtLengthMismatch();
   error Unauthorized();
   error ConfigKeyUninitialized();
   error InactivePositionManager();
+  error InvalidParameter(DataTypes.Params param);
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 

@@ -215,4 +215,15 @@ library DataTypes {
     uint256 newUserRiskPremium;
     uint256 restoredShares;
   }
+
+  enum Params {
+    CollateralFactor,
+    LiquidationBonus,
+    IncompatibleCollateralFactorAndLiquidationBonus,
+    CloseFactor,
+    HealthFactorForMaxBonus,
+    LiquidationBonusFactor,
+    LiquidationFee,
+    CollateralRisk
+  }
 }
