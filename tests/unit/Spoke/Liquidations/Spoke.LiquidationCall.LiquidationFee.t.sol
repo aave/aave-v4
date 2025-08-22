@@ -7,6 +7,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
+  using SafeCast for uint256;
 
   /// fuzz tests with varying liquidationFee
   /// single debt reserve, single collateral reserve
@@ -147,8 +148,8 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
     });
   }
 
-  /// with min liquidation bonus > 0, the protocol fee should always be > 0
-  function test_liquidationCall_fuzz_liquidationFee_liqBonus_min(uint16 liquidationFee) public {
+  /// confirm fee is 0 when liquidationFee is set to 0, regardless of liquidation bonus
+  function test_liquidationCall_fuzz_liquidationFee_liqBonus_zero() public {
     LiquidationTestLocalParams memory state = test_liquidationCall_fuzz_liquidationFee({
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
@@ -157,10 +158,10 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
-      liqBonus: MIN_LIQUIDATION_BONUS, // 0% LB
+      liqBonus: vm.randomUint(MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS).toUint32(),
       supplyAmount: 10_000e18,
       desiredHf: 0.95e18,
-      liquidationFee: liquidationFee,
+      liquidationFee: 0,
       skipTime: 365 days
     });
 
@@ -168,6 +169,6 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
       state.collateralReserve.assetId,
       state.feeReceiverAmount.balanceChange
     );
-    assertGt(liquidationFee, 0, 'liquidationFee always > 0');
+    assertEq(liquidationFee, 0, 'liquidationFee should be 0');
   }
 }
