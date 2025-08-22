@@ -4,10 +4,11 @@ pragma solidity ^0.8.0;
 
 import {Multicall} from 'src/misc/Multicall.sol';
 
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {ECDSA} from 'src/dependencies/openzeppelin/ECDSA.sol';
+import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
+import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -24,8 +25,7 @@ import {IHub} from 'src/interfaces/IHub.sol';
 import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
-contract Spoke is ISpoke, Multicall, AccessManaged {
-  using SafeERC20 for IERC20;
+contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
   using PercentageMath for *;
@@ -43,6 +43,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   mapping(address user => DataTypes.PositionStatus positionStatus) internal _positionStatus;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
   mapping(address positionManager => DataTypes.PositionManagerConfig) internal _positionManager;
+  mapping(address user => uint256) internal _nonces;
   mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   DataTypes.LiquidationConfig internal _liquidationConfig;
@@ -101,12 +102,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId = _reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
-    require(assetId < IHub(hub).getAssetCount(), AssetNotListed());
     DataTypes.Asset memory asset = IHub(hub).getAsset(assetId);
+    require(asset.underlying != address(0), AssetNotListed());
 
     _updateReservePriceSource(reserveId, priceSource);
 
     _reserves[reserveId] = DataTypes.Reserve({
+      underlying: asset.underlying,
       hub: IHub(hub),
       assetId: assetId.toUint16(),
       decimals: asset.decimals,
@@ -355,14 +357,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-
     // process only if collateral status changes
-    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
-      return;
-    }
+    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) return;
 
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    _validateSetUsingAsCollateral(reserve, reserveId, usingAsCollateral);
+    _validateSetUsingAsCollateral(reserve, usingAsCollateral);
 
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
@@ -397,17 +396,71 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   /// @inheritdoc ISpoke
   function setUserPositionManager(address positionManager, bool approve) external {
-    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
-    // @dev only allow approval when position manager is active for improved UX
-    require(!approve || config.active, InactivePositionManager());
-    config.approval[msg.sender] = approve;
-    emit SetUserPositionManager(msg.sender, positionManager, approve);
+    _setUserPositionManager({positionManager: positionManager, user: msg.sender, approve: approve});
+  }
+
+  /// @inheritdoc ISpoke
+  function setUserPositionManagerWithSig(
+    address positionManager,
+    address user,
+    bool approve,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external {
+    require(block.timestamp <= deadline, InvalidSignature());
+    bytes32 hash = _hashTypedData(
+      keccak256(
+        abi.encode(
+          Constants.SET_USER_POSITION_MANAGER_TYPEHASH,
+          positionManager,
+          user,
+          approve,
+          _useNonce(user),
+          deadline
+        )
+      )
+    );
+    require(ECDSA.recover(hash, v, r, s) == user, InvalidSignature());
+    _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
+  }
+
+  /// @inheritdoc ISpoke
+  function useNonce() external {
+    _useNonce(msg.sender);
   }
 
   /// @inheritdoc ISpoke
   function renouncePositionManagerRole(address onBehalfOf) external {
     _positionManager[msg.sender].approval[onBehalfOf] = false;
     emit SetUserPositionManager(onBehalfOf, msg.sender, false);
+  }
+
+  /// @inheritdoc ISpoke
+  function permitReserve(
+    uint256 reserveId,
+    address onBehalfOf,
+    uint256 value,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external {
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    address underlying = reserve.underlying;
+    require(underlying != address(0), ReserveNotListed());
+    try
+      IERC20Permit(underlying).permit({
+        owner: onBehalfOf,
+        spender: address(reserve.hub),
+        value: value,
+        deadline: deadline,
+        v: v,
+        r: r,
+        s: s
+      })
+    {} catch {}
   }
 
   /// @inheritdoc ISpoke
@@ -579,6 +632,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return _userPositions[user][reserveId];
   }
 
+  function nonces(address user) external view returns (uint256) {
+    return _nonces[user];
+  }
+
+  function DOMAIN_SEPARATOR() external view returns (bytes32) {
+    return _domainSeparator();
+  }
+
   // internal
   function _validateSupply(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
@@ -686,12 +747,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @dev Validates the reserve can be set as collateral.
    * @dev Collateral can be disabled if the reserve is frozen.
    * @param reserve The reserve to be set as collateral.
-   * @param reserveId The identifier of the reserve.
    * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
    */
   function _validateSetUsingAsCollateral(
     DataTypes.Reserve storage reserve,
-    uint256 reserveId,
     bool usingAsCollateral
   ) internal view {
     require(!reserve.paused, ReservePaused());
@@ -1034,6 +1093,16 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 
+  function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
+    return ('Spoke', '1');
+  }
+
+  function _useNonce(address user) internal returns (uint256) {
+    unchecked {
+      return _nonces[user]++;
+    }
+  }
+
   function _castToView(
     function(address, bool) internal returns (uint256, uint256, uint256, uint256, uint256) fnIn
   )
@@ -1049,5 +1118,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     assembly ('memory-safe') {
       fnOut := fnIn
     }
+  }
+
+  function _setUserPositionManager(address positionManager, address user, bool approve) internal {
+    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
+    // @dev only allow approval when position manager is active for improved UX
+    require(!approve || config.active, InactivePositionManager());
+    config.approval[user] = approve;
+    emit SetUserPositionManager(user, positionManager, approve);
   }
 }

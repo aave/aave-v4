@@ -30,6 +30,7 @@ import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Utils} from 'tests/Utils.sol';
+import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 
 // mocks
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
@@ -41,6 +42,7 @@ import {PositionStatusWrapper} from 'tests/mocks/PositionStatusWrapper.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {IERC5267} from 'src/dependencies/openzeppelin/IERC5267.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
@@ -2329,5 +2331,33 @@ abstract contract Base is Test {
 
   function makeSpoke() internal returns (address) {
     return makeEntity('spoke', vm.randomBytes8());
+  }
+
+  function _getTypedDataHash(
+    TestnetERC20 token,
+    EIP712Types.Permit memory permit
+  ) internal view returns (bytes32) {
+    return
+      keccak256(
+        abi.encodePacked(
+          '\x19\x01',
+          token.DOMAIN_SEPARATOR(),
+          vm.eip712HashStruct('Permit', abi.encode(permit))
+        )
+      );
+  }
+
+  function _getTypedDataHash(
+    ISpoke spoke,
+    EIP712Types.SetUserPositionManager memory setUserPositionManager
+  ) internal view returns (bytes32) {
+    return
+      keccak256(
+        abi.encodePacked(
+          '\x19\x01',
+          spoke.DOMAIN_SEPARATOR(),
+          vm.eip712HashStruct('SetUserPositionManager', abi.encode(setUserPositionManager))
+        )
+      );
   }
 }
