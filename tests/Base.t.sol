@@ -1065,6 +1065,23 @@ abstract contract Base is Test {
     return configKey;
   }
 
+  function updateCollateralFactor(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint16 configKey,
+    uint256 newCollateralFactor
+  ) internal pausePrank {
+    DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(
+      reserveId,
+      configKey
+    );
+    config.collateralFactor = newCollateralFactor.toUint16();
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateDynamicReserveConfig(reserveId, configKey, config);
+
+    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+  }
+
   function updateReserveBorrowableFlag(
     ISpoke spoke,
     uint256 reserveId,
@@ -1880,6 +1897,13 @@ abstract contract Base is Test {
 
   function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
     return spoke.getDynamicReserveConfig(reserveId).collateralFactor;
+  }
+
+  function _getCollateralFactor(
+    ISpoke spoke,
+    function(ISpoke) internal view returns (uint256) reserveId
+  ) internal view returns (uint16) {
+    return spoke.getDynamicReserveConfig(reserveId(spoke)).collateralFactor;
   }
 
   function _hasRole(
