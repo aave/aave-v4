@@ -140,7 +140,7 @@ library LiquidationLogic {
       vars.debtAmountNeeded = ((params.debtAssetUnit * vars.borrowerCollateralBalanceInBaseCurrency)
         .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).fromWadDown();
       vars.collateralToLiquidateInBaseCurrency = vars.borrowerCollateralBalanceInBaseCurrency;
-      vars.debtToLiquidateInBaseCurrency = vars.debtAmountNeeded.mulDivDown(
+      vars.debtToLiquidateInBaseCurrency = vars.debtAmountNeeded.mulDivUp(
         params.debtAssetPrice.toWad(),
         params.debtAssetUnit
       );

@@ -838,9 +838,10 @@ contract SpokeLiquidationBase is SpokeBase {
       vars.debtAmountNeeded = ((params.debtAssetUnit * vars.borrowerCollateralBalanceInBaseCurrency)
         .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).fromWadDown();
       vars.collateralToLiquidateInBaseCurrency = vars.borrowerCollateralBalanceInBaseCurrency;
-      vars.debtToLiquidateInBaseCurrency =
-        (vars.debtAmountNeeded * params.debtAssetPrice).toWad() /
-        params.debtAssetUnit;
+      vars.debtToLiquidateInBaseCurrency = vars.debtAmountNeeded.mulDivUp(
+        params.debtAssetPrice.toWad(),
+        params.debtAssetUnit
+      );
     } else {
       vars.collateralAmount = vars.maxCollateralToLiquidate.mulDivUp(
         params.collateralAssetUnit,
