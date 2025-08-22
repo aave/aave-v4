@@ -381,6 +381,16 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       state.hasDustFromDebt
     ) = _calculateCollateralAndDebtToLiquidate(state, UINT256_MAX);
 
+    vm.expectEmit(address(state.spoke));
+    emit ISpokeBase.LiquidationCall(
+      collateralReserveId,
+      debtReserveIds[state.debtReserveIndex],
+      state.user,
+      state.debtToLiq,
+      state.collToLiq,
+      LIQUIDATOR
+    );
+
     ReportDeficitEvent[] memory expectedLogs = new ReportDeficitEvent[](debtReserveIds.length);
 
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
@@ -457,16 +467,6 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     }
     vm.expectEmit(address(state.spoke));
     emit ISpoke.UserRiskPremiumUpdate(state.user, 0);
-
-    vm.expectEmit(address(state.spoke));
-    emit ISpokeBase.LiquidationCall(
-      collateralReserveId,
-      debtReserveIds[state.debtReserveIndex],
-      state.user,
-      state.debtToLiq,
-      state.collToLiq,
-      LIQUIDATOR
-    );
 
     vm.recordLogs();
 
