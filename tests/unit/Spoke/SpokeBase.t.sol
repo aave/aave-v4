@@ -784,8 +784,10 @@ contract SpokeBase is Base {
       if (spoke.isUsingAsCollateral(reserveId, user)) {
         ++suppliedReservesCount;
       }
-      uint256 userDebt = spoke.getUserTotalDebt(reserveId, user);
-      totalDebt += _getValueInBaseCurrency(spoke, reserveId, userDebt);
+      (uint256 baseDebt, uint256 premiumDebt) = spoke.getUserDebt(reserveId, user);
+      totalDebt +=
+        _getDebtValueInBaseCurrency(spoke, reserveId, baseDebt) +
+        _getDebtValueInBaseCurrency(spoke, reserveId, premiumDebt);
     }
 
     if (totalDebt == 0) {

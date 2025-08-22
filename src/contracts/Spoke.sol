@@ -868,7 +868,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetUnit
   ) internal view returns (uint256) {
     (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(hub, assetId, userPosition);
-    return ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
+    return
+      (drawnDebt * assetPrice).wadDivUp(assetUnit) + (premiumDebt * assetPrice).wadDivUp(assetUnit);
   }
 
   function _getUserBalanceInBaseCurrency(

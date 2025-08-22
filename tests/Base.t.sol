@@ -1300,8 +1300,23 @@ abstract contract Base is Test {
     IPriceOracle oracle = spoke.oracle();
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
-      (amount * oracle.getReservePrice(reserveId).toWad()) /
-      (10 ** spoke.getReserve(reserveId).hub.getAsset(assetId).decimals);
+      (amount * oracle.getReservePrice(reserveId)).wadDivDown(
+        10 ** spoke.getReserve(reserveId).hub.getAsset(assetId).decimals
+      );
+  }
+
+  /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
+  function _getDebtValueInBaseCurrency(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount
+  ) internal view returns (uint256) {
+    IPriceOracle oracle = spoke.oracle();
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    return
+      (amount * oracle.getReservePrice(reserveId)).wadDivUp(
+        10 ** spoke.getReserve(reserveId).hub.getAsset(assetId).decimals
+      );
   }
 
   /// @notice Convert 1 asset amount to equivalent amount in another asset.
