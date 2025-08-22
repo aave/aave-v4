@@ -781,21 +781,23 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
             ? (userPosition.configKey = reserve.dynamicConfigKey)
             : userPosition.configKey
         ];
+        uint256 collateralFactor = dynConfig.collateralFactor;
+        if (collateralFactor != 0) {
+          vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
+            userPosition,
+            hub,
+            vars.assetId,
+            vars.assetPrice,
+            vars.assetUnit
+          );
 
-        vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
-          userPosition,
-          hub,
-          vars.assetId,
-          vars.assetPrice,
-          vars.assetUnit
-        );
+          vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
+          list.add(vars.i, reserve.collateralRisk, vars.userCollateralInBaseCurrency);
+          vars.avgCollateralFactor += vars.userCollateralInBaseCurrency * collateralFactor;
 
-        vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
-        list.add(vars.i, reserve.collateralRisk, vars.userCollateralInBaseCurrency);
-        vars.avgCollateralFactor += vars.userCollateralInBaseCurrency * dynConfig.collateralFactor;
-
-        unchecked {
-          ++vars.i;
+          unchecked {
+            ++vars.i;
+          }
         }
       }
 
@@ -833,7 +835,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
     while (vars.i < list.length() && vars.debtCounterInBaseCurrency > 0) {
-      if (vars.debtCounterInBaseCurrency == 0) break;
       (vars.collateralRisk, vars.userCollateralInBaseCurrency) = list.get(vars.i);
       if (vars.userCollateralInBaseCurrency > vars.debtCounterInBaseCurrency) {
         vars.userCollateralInBaseCurrency = vars.debtCounterInBaseCurrency;
