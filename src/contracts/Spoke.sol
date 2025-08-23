@@ -94,15 +94,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
-    require(hub != address(0), InvalidAddress());
+    require(hub != address(0), InvalidParameter(DataTypes.SpokeParams.Hub));
     require(!_reserveExists[hub][assetId], InvalidParameter(DataTypes.SpokeParams.Reserve));
 
     _validateReserveConfig(config);
     uint256 reserveId = _reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
-    require(assetId < IHub(hub).getAssetCount(), InvalidParameter(DataTypes.SpokeParams.AssetId));
     DataTypes.Asset memory asset = IHub(hub).getAsset(assetId);
+    require(asset.underlying != address(0), InvalidAddress());
 
     _updateReservePriceSource(reserveId, priceSource);
 
@@ -506,7 +506,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId,
     address user,
     uint256 healthFactor
-  ) public view returns (uint256) {
+  ) external view returns (uint256) {
     // if healthFactorForMaxBonus is 0, always returns liquidationBonus
     return
       _liquidationConfig.calculateVariableLiquidationBonus(
@@ -670,7 +670,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(
       config.liquidationBonus.percentMulUp(config.collateralFactor) <=
         PercentageMath.PERCENTAGE_FACTOR,
-      InvalidParameter(DataTypes.SpokeParams.IncompatibleCollateralFactorAndLiquidationBonus)
+      InvalidParameter(DataTypes.SpokeParams.CollateralFactorAndLiquidationBonus)
     ); // Enforces that at moment loan is taken, there should be enough collateral to cover liquidation
     require(
       config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR,

@@ -245,17 +245,18 @@ library DataTypes {
   }
 
   enum SpokeParams {
-    CollateralFactor,
-    LiquidationBonus,
-    IncompatibleCollateralFactorAndLiquidationBonus,
-    CloseFactor,
-    HealthFactorForMaxBonus,
-    LiquidationBonusFactor,
-    LiquidationFee,
-    CollateralRisk,
-    Reserve,
-    AssetId,
-    OracleDecimals
+    CollateralFactor, // 0
+    LiquidationBonus, // 1
+    CollateralFactorAndLiquidationBonus, // 2
+    CloseFactor, // 3
+    HealthFactorForMaxBonus, // 4
+    LiquidationBonusFactor, // 5
+    LiquidationFee, // 6
+    CollateralRisk, // 7
+    Reserve, // 8
+    AssetId, // 9
+    OracleDecimals, // 10
+    Hub // 11
   }
 
   enum HubParams {

@@ -33,15 +33,21 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateOracle(vm.randomAddress());
   }
 
-  function test_updateOracle_revertsWith_InvalidOracle_AddressZero() public {
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
+  function test_updateOracle_revertsWith_InvalidAddress() public {
+    vm.expectRevert(ISpokeBase.InvalidAddress.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.updateOracle(address(0));
   }
 
-  function test_updateOracle_revertsWith_InvalidOracle_DecimalsMismatch() public {
+  function test_updateOracle_revertsWith_InvalidParameter_DecimalsMismatch() public {
     address newOracle = address(new AaveOracle(SPOKE_ADMIN, 18, 'New Aave Oracle'));
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ISpoke.InvalidParameter.selector,
+        DataTypes.SpokeParams.OracleDecimals
+      ),
+      address(spoke1)
+    );
     vm.prank(SPOKE_ADMIN);
     spoke1.updateOracle(newOracle);
   }
@@ -121,14 +127,20 @@ contract SpokeConfigTest is SpokeBase {
     assertEq(spoke1.getReserveConfig(daiReserveId), newReserveConfig);
   }
 
-  function test_updateReserveConfig_revertsWith_InvalidCollateralRisk() public {
+  function test_updateReserveConfig_revertsWith_InvalidParameter_CollateralRisk() public {
     uint256 reserveId = _randomReserveId(spoke1);
     DataTypes.ReserveConfig memory config = spoke1.getReserveConfig(reserveId);
     config.collateralRisk = vm
       .randomUint(PercentageMath.PERCENTAGE_FACTOR * 10 + 1, type(uint24).max)
       .toUint24();
 
-    vm.expectRevert(ISpoke.InvalidCollateralRisk.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ISpoke.InvalidParameter.selector,
+        DataTypes.SpokeParams.CollateralRisk
+      ),
+      address(spoke1)
+    );
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(reserveId, config);
   }
@@ -182,7 +194,7 @@ contract SpokeConfigTest is SpokeBase {
     assertEq(spoke1.getDynamicReserveConfig(reserveId), newDynReserveConfig);
   }
 
-  function test_addReserve_fuzz_revertsWith_InvalidAssetId() public {
+  function test_addReserve_fuzz_revertsWith_InvalidAddress() public {
     uint256 assetId = vm.randomUint(hub1.getAssetCount(), type(uint256).max); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
@@ -198,12 +210,12 @@ contract SpokeConfigTest is SpokeBase {
     });
 
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
-    vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
+    vm.expectRevert(ISpokeBase.InvalidAddress.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
-  function test_addReserve_fuzz_reverts_invalid_assetId(uint256 assetId) public {
+  function test_addReserve_fuzz_revertsWith_InvalidAddress(uint256 assetId) public {
     assetId = bound(assetId, hub1.getAssetCount(), UINT256_MAX); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
@@ -220,7 +232,7 @@ contract SpokeConfigTest is SpokeBase {
 
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
 
-    vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
+    vm.expectRevert(ISpokeBase.InvalidAddress.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
@@ -251,23 +263,26 @@ contract SpokeConfigTest is SpokeBase {
     });
   }
 
-  function test_addReserve_revertsWith_InvalidAddress_hub() public {
+  function test_addReserve_revertsWith_InvalidParameter_Hub() public {
     uint256 reserveId = spoke1.getReserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       paused: vm.randomBool(),
       frozen: vm.randomBool(),
       borrowable: vm.randomBool(),
-      collateralRisk: vm.randomUint(0, 100_00)
+      collateralRisk: vm.randomUint(0, 100_00).toUint24()
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: uint16(vm.randomUint(0, 100_00)),
-      liquidationBonus: uint16(vm.randomUint(MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS)),
+      liquidationBonus: uint32(vm.randomUint(MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS)),
       liquidationFee: uint16(vm.randomUint(0, 100_00))
     });
 
     address reserveSource = _deployMockPriceFeed(spoke1, 2000e8);
 
-    vm.expectRevert(ISpokeBase.InvalidAddress.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(ISpoke.InvalidParameter.selector, DataTypes.SpokeParams.Hub),
+      address(spoke1)
+    );
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve({
       hub: address(0),
@@ -302,7 +317,10 @@ contract SpokeConfigTest is SpokeBase {
       newDynReserveConfig
     );
 
-    vm.expectRevert(ISpoke.ReserveExists.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(ISpoke.InvalidParameter.selector, DataTypes.SpokeParams.Reserve),
+      address(spoke1)
+    );
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
@@ -379,17 +397,21 @@ contract SpokeConfigTest is SpokeBase {
     );
   }
 
-  function test_updateLiquidationConfig_revertsWith_InvalidHealthFactorForMaxBonus() public {
+  function test_updateLiquidationConfig_revertsWith_InvalidParameter_HealthFactorForMaxBonus()
+    public
+  {
     DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
       closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       healthFactorForMaxBonus: HEALTH_FACTOR_LIQUIDATION_THRESHOLD.toUint64(),
       liquidationBonusFactor: 10_00
     });
 
-    test_updateLiquidationConfig_fuzz_revertsWith_InvalidHealthFactorForMaxBonus(liquidationConfig);
+    test_updateLiquidationConfig_fuzz_revertsWith_InvalidParameter_HealthFactorForMaxBonus(
+      liquidationConfig
+    );
   }
 
-  function test_updateLiquidationConfig_fuzz_revertsWith_InvalidHealthFactorForMaxBonus(
+  function test_updateLiquidationConfig_fuzz_revertsWith_InvalidParameter_HealthFactorForMaxBonus(
     DataTypes.LiquidationConfig memory liquidationConfig
   ) public {
     liquidationConfig.healthFactorForMaxBonus = bound(
@@ -408,12 +430,20 @@ contract SpokeConfigTest is SpokeBase {
       type(uint128).max
     ).toUint128(); // valid values
 
-    vm.expectRevert(ISpoke.InvalidHealthFactorForMaxBonus.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ISpoke.InvalidParameter.selector,
+        DataTypes.SpokeParams.HealthFactorForMaxBonus
+      ),
+      address(spoke1)
+    );
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
   }
 
-  function test_updateLiquidationConfig_revertsWith_InvalidLiquidationBonusFactor() public {
+  function test_updateLiquidationConfig_revertsWith_InvalidParameter_LiquidationBonusFactor()
+    public
+  {
     DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
       closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       healthFactorForMaxBonus: 0.9e18,
@@ -444,7 +474,13 @@ contract SpokeConfigTest is SpokeBase {
       type(uint128).max
     ).toUint128(); // valid values
 
-    vm.expectRevert(ISpoke.InvalidLiquidationBonusFactor.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ISpoke.InvalidParameter.selector,
+        DataTypes.SpokeParams.LiquidationBonusFactor
+      ),
+      address(spoke1)
+    );
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
   }
