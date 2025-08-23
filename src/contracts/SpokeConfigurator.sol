@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/interfaces/ISpokeConfigurator.sol';
@@ -14,7 +14,7 @@ import {ISpokeConfigurator} from 'src/interfaces/ISpokeConfigurator.sol';
  * @notice SpokeConfigurator contract for the Aave protocol
  * @dev Must be granted permission by the Spoke
  */
-contract SpokeConfigurator is Ownable, ISpokeConfigurator {
+contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   using SafeCast for uint256;
 
   /**
