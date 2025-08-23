@@ -1067,6 +1067,23 @@ abstract contract Base is Test {
     return configKey;
   }
 
+  function updateCollateralFactorAtKey(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint16 configKey,
+    uint256 newCollateralFactor
+  ) internal pausePrank {
+    DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(
+      reserveId,
+      configKey
+    );
+    config.collateralFactor = newCollateralFactor.toUint16();
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateDynamicReserveConfig(reserveId, configKey, config);
+
+    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+  }
+
   function updateReserveBorrowableFlag(
     ISpoke spoke,
     uint256 reserveId,
@@ -1302,8 +1319,23 @@ abstract contract Base is Test {
     IPriceOracle oracle = spoke.oracle();
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
-      (amount * oracle.getReservePrice(reserveId).toWad()) /
-      (10 ** spoke.getReserve(reserveId).hub.getAsset(assetId).decimals);
+      (amount * oracle.getReservePrice(reserveId)).wadDivDown(
+        10 ** spoke.getReserve(reserveId).hub.getAsset(assetId).decimals
+      );
+  }
+
+  /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
+  function _getDebtValueInBaseCurrency(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount
+  ) internal view returns (uint256) {
+    IPriceOracle oracle = spoke.oracle();
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    return
+      (amount * oracle.getReservePrice(reserveId)).wadDivUp(
+        10 ** spoke.getReserve(reserveId).hub.getAsset(assetId).decimals
+      );
   }
 
   /// @notice Convert 1 asset amount to equivalent amount in another asset.
@@ -1867,6 +1899,13 @@ abstract contract Base is Test {
 
   function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
     return spoke.getDynamicReserveConfig(reserveId).collateralFactor;
+  }
+
+  function _getCollateralFactor(
+    ISpoke spoke,
+    function(ISpoke) internal view returns (uint256) reserveId
+  ) internal view returns (uint16) {
+    return spoke.getDynamicReserveConfig(reserveId(spoke)).collateralFactor;
   }
 
   function _hasRole(

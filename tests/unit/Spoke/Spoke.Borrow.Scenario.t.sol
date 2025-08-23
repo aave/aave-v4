@@ -576,4 +576,36 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       label: 'bob dai data after'
     });
   }
+
+  function test_userAccountData_does_not_include_zero_cf_collateral() public {
+    uint256 coll1ReserveId = _daiReserveId(spoke1);
+    uint256 coll1Amount = 1000e18;
+    uint256 coll2ReserveId = _wethReserveId(spoke1);
+    uint256 coll2Amount = 1e18;
+    uint256 debtReserveId = _usdxReserveId(spoke1);
+    uint256 debtBorrowAmount = 500e6;
+
+    assertNotEq(_getCollateralFactor(spoke1, coll1ReserveId), 0);
+    assertNotEq(_getCollateralFactor(spoke1, coll2ReserveId), 0);
+
+    uint256 coll1InBaseCurrency = _getValueInBaseCurrency(spoke1, coll1ReserveId, coll1Amount);
+    uint256 coll2InBaseCurrency = _getValueInBaseCurrency(spoke1, coll2ReserveId, coll2Amount);
+
+    Utils.supplyCollateral(spoke1, coll1ReserveId, alice, coll1Amount, alice);
+    Utils.supplyCollateral(spoke1, coll2ReserveId, alice, coll2Amount, alice);
+    _openSupplyPosition(spoke1, debtReserveId, debtBorrowAmount);
+    Utils.borrow(spoke1, debtReserveId, alice, debtBorrowAmount, alice);
+
+    (uint256 userRiskPremium, , , uint256 totalCollateralInBaseCurrency, ) = spoke1
+      .getUserAccountData(alice);
+    assertEq(_calculateExpectedUserRP(alice, spoke1), userRiskPremium);
+    assertEq(coll1InBaseCurrency + coll2InBaseCurrency, totalCollateralInBaseCurrency);
+
+    uint16 configKey = spoke1.getUserPosition(coll1ReserveId, alice).configKey;
+    updateCollateralFactorAtKey(spoke1, coll1ReserveId, configKey, 0);
+
+    (userRiskPremium, , , totalCollateralInBaseCurrency, ) = spoke1.getUserAccountData(alice);
+    assertEq(_calculateExpectedUserRP(alice, spoke1), userRiskPremium);
+    assertEq(coll2InBaseCurrency, totalCollateralInBaseCurrency); // coll1 is not included
+  }
 }
