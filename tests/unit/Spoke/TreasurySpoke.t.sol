@@ -13,7 +13,7 @@ contract TreasurySpokeTest is SpokeBase {
   }
 
   function test_deploy_revertsWith_InvalidAddress_hub() public {
-    vm.expectRevert(abi.encodeWithSelector(ISpokeBase.InvalidAddress.selector));
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.InvalidAddress.selector));
     new TreasurySpoke(vm.randomAddress(), address(0));
   }
 

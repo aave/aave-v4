@@ -4,10 +4,11 @@ pragma solidity ^0.8.0;
 
 import {Multicall} from 'src/misc/Multicall.sol';
 
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {ECDSA} from 'src/dependencies/openzeppelin/ECDSA.sol';
+import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
+import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -24,8 +25,7 @@ import {IHub} from 'src/interfaces/IHub.sol';
 import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
-contract Spoke is ISpoke, Multicall, AccessManaged {
-  using SafeERC20 for IERC20;
+contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
   using PercentageMath for *;
@@ -43,6 +43,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   mapping(address user => DataTypes.PositionStatus positionStatus) internal _positionStatus;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
   mapping(address positionManager => DataTypes.PositionManagerConfig) internal _positionManager;
+  mapping(address user => uint256) internal _nonces;
   mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   DataTypes.LiquidationConfig internal _liquidationConfig;
@@ -59,6 +60,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @param authority_ The address of the authority contract which manages permissions.
    */
   constructor(address authority_) AccessManaged(authority_) {
+    require(authority_ != address(0), InvalidAddress());
     _liquidationConfig.closeFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     emit LiquidationConfigUpdate(_liquidationConfig);
   }
@@ -67,10 +69,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   // Governance
   // /////
 
+  /// @inheritdoc ISpoke
   function updateOracle(address newOracle) external restricted {
-    require(newOracle != address(0), InvalidAddress());
     oracle = IAaveOracle(newOracle);
-    require(oracle.DECIMALS() == 8, InvalidParameter(DataTypes.SpokeParams.OracleDecimals));
+    require(
+      newOracle != address(0) && oracle.DECIMALS() == Constants.ORACLE_DECIMALS,
+      InvalidParameter(DataTypes.SpokeParams.Oracle)
+    );
     emit OracleUpdate(newOracle);
   }
 
@@ -98,6 +103,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(!_reserveExists[hub][assetId], InvalidParameter(DataTypes.SpokeParams.Reserve));
 
     _validateReserveConfig(config);
+    _validateDynamicReserveConfig(dynamicConfig);
     uint256 reserveId = _reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
@@ -107,6 +113,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     _updateReservePriceSource(reserveId, priceSource);
 
     _reserves[reserveId] = DataTypes.Reserve({
+      underlying: asset.underlying,
       hub: IHub(hub),
       assetId: assetId.toUint16(),
       decimals: asset.decimals,
@@ -220,7 +227,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
-    // calc needs new user position, just updating drawn debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
 
@@ -248,7 +254,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    // calc needs new user position, just updating drawn debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
 
@@ -355,14 +360,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-
     // process only if collateral status changes
-    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
-      return;
-    }
+    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) return;
 
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    _validateSetUsingAsCollateral(reserve, reserveId, usingAsCollateral);
+    _validateSetUsingAsCollateral(reserve, usingAsCollateral);
 
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
@@ -397,17 +399,71 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   /// @inheritdoc ISpoke
   function setUserPositionManager(address positionManager, bool approve) external {
-    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
-    // @dev only allow approval when position manager is active for improved UX
-    require(!approve || config.active, InactivePositionManager());
-    config.approval[msg.sender] = approve;
-    emit SetUserPositionManager(msg.sender, positionManager, approve);
+    _setUserPositionManager({positionManager: positionManager, user: msg.sender, approve: approve});
+  }
+
+  /// @inheritdoc ISpoke
+  function setUserPositionManagerWithSig(
+    address positionManager,
+    address user,
+    bool approve,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external {
+    require(block.timestamp <= deadline, InvalidSignature());
+    bytes32 hash = _hashTypedData(
+      keccak256(
+        abi.encode(
+          Constants.SET_USER_POSITION_MANAGER_TYPEHASH,
+          positionManager,
+          user,
+          approve,
+          _useNonce(user),
+          deadline
+        )
+      )
+    );
+    require(ECDSA.recover(hash, v, r, s) == user, InvalidSignature());
+    _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
+  }
+
+  /// @inheritdoc ISpoke
+  function useNonce() external {
+    _useNonce(msg.sender);
   }
 
   /// @inheritdoc ISpoke
   function renouncePositionManagerRole(address onBehalfOf) external {
     _positionManager[msg.sender].approval[onBehalfOf] = false;
     emit SetUserPositionManager(onBehalfOf, msg.sender, false);
+  }
+
+  /// @inheritdoc ISpoke
+  function permitReserve(
+    uint256 reserveId,
+    address onBehalfOf,
+    uint256 value,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external {
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    address underlying = reserve.underlying;
+    require(underlying != address(0), ReserveNotListed());
+    try
+      IERC20Permit(underlying).permit({
+        owner: onBehalfOf,
+        spender: address(reserve.hub),
+        value: value,
+        deadline: deadline,
+        v: v,
+        r: r,
+        s: s
+      })
+    {} catch {}
   }
 
   /// @inheritdoc ISpoke
@@ -450,13 +506,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return drawnDebt + premiumDebt;
   }
 
-  /// @dev We do not differentiate between duplicate reserves (assetId) on the same hub
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     return reserve.hub.getSpokeAddedAmount(reserve.assetId, address(this));
   }
 
-  /// @dev We do not differentiate between duplicate reserves (assetId) on the same hub
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     return reserve.hub.getSpokeAddedShares(reserve.assetId, address(this));
@@ -579,6 +633,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return _userPositions[user][reserveId];
   }
 
+  function nonces(address user) external view returns (uint256) {
+    return _nonces[user];
+  }
+
+  function DOMAIN_SEPARATOR() external view returns (bytes32) {
+    return _domainSeparator();
+  }
+
   // internal
   function _validateSupply(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
@@ -615,15 +677,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   /**
    * @dev Calculates the user's premium debt offset in assets amount from a given share amount.
-   * @dev Rounds down to the nearest assets amount.
-   * @dev Uses the opposite rounding direction of the debt shares-to-assets conversion to prevent underflow
-   * in premium debt.
-   * @param hub The liquidity hub of the reserve.
-   * @param assetId The identifier of the asset.
-   * @param shares The amount of shares to convert to assets amount.
-   * @return The amount of assets converted corresponding to user's premium offset.
+   * @dev Rounds down to the nearest assets amount. Uses the opposite rounding direction of the
+   * debt shares-to-assets conversion to prevent underflow in premium debt.
    */
-  function _previewOffset(
+  function _previewPremiumOffset(
     IHub hub,
     uint256 assetId,
     uint256 shares
@@ -697,12 +754,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @dev Validates the reserve can be set as collateral.
    * @dev Collateral can be disabled if the reserve is frozen.
    * @param reserve The reserve to be set as collateral.
-   * @param reserveId The identifier of the reserve.
    * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
    */
   function _validateSetUsingAsCollateral(
     DataTypes.Reserve storage reserve,
-    uint256 reserveId,
     bool usingAsCollateral
   ) internal view {
     require(!reserve.paused, ReservePaused());
@@ -799,21 +854,23 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
             ? (userPosition.configKey = reserve.dynamicConfigKey)
             : userPosition.configKey
         ];
+        uint256 collateralFactor = dynConfig.collateralFactor;
+        if (collateralFactor != 0) {
+          vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
+            userPosition,
+            hub,
+            vars.assetId,
+            vars.assetPrice,
+            vars.assetUnit
+          );
 
-        vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
-          userPosition,
-          hub,
-          vars.assetId,
-          vars.assetPrice,
-          vars.assetUnit
-        );
+          vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
+          list.add(vars.i, reserve.collateralRisk, vars.userCollateralInBaseCurrency);
+          vars.avgCollateralFactor += vars.userCollateralInBaseCurrency * collateralFactor;
 
-        vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
-        list.add(vars.i, reserve.collateralRisk, vars.userCollateralInBaseCurrency);
-        vars.avgCollateralFactor += vars.userCollateralInBaseCurrency * dynConfig.collateralFactor;
-
-        unchecked {
-          ++vars.i;
+          unchecked {
+            ++vars.i;
+          }
         }
       }
 
@@ -851,7 +908,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
     while (vars.i < list.length() && vars.debtCounterInBaseCurrency > 0) {
-      if (vars.debtCounterInBaseCurrency == 0) break;
       (vars.collateralRisk, vars.userCollateralInBaseCurrency) = list.get(vars.i);
       if (vars.userCollateralInBaseCurrency > vars.debtCounterInBaseCurrency) {
         vars.userCollateralInBaseCurrency = vars.debtCounterInBaseCurrency;
@@ -885,7 +941,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetUnit
   ) internal view returns (uint256) {
     (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(hub, assetId, userPosition);
-    return ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
+    return
+      (drawnDebt * assetPrice).wadDivUp(assetUnit) + (premiumDebt * assetPrice).wadDivUp(assetUnit);
   }
 
   function _getUserBalanceInBaseCurrency(
@@ -948,7 +1005,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         .drawnShares
         .percentMulUp(newUserRiskPremium)
         .toUint128());
-      uint256 newPremiumOffset = (userPosition.premiumOffset = _previewOffset(
+      uint256 newPremiumOffset = (userPosition.premiumOffset = _previewPremiumOffset(
         vars.hub,
         vars.assetId,
         userPosition.premiumShares
@@ -1045,6 +1102,16 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 
+  function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
+    return ('Spoke', '1');
+  }
+
+  function _useNonce(address user) internal returns (uint256) {
+    unchecked {
+      return _nonces[user]++;
+    }
+  }
+
   function _castToView(
     function(address, bool) internal returns (uint256, uint256, uint256, uint256, uint256) fnIn
   )
@@ -1060,5 +1127,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     assembly ('memory-safe') {
       fnOut := fnIn
     }
+  }
+
+  function _setUserPositionManager(address positionManager, address user, bool approve) internal {
+    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
+    // @dev only allow approval when position manager is active for improved UX
+    require(!approve || config.active, InactivePositionManager());
+    config.approval[user] = approve;
+    emit SetUserPositionManager(user, positionManager, approve);
   }
 }

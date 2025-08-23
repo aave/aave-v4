@@ -11,11 +11,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  */
 interface ISpokeBase {
   /**
-   * @notice Error thrown for invalid zero address.
-   */
-  error InvalidAddress();
-
-  /**
    * @notice Emitted on the supply action.
    * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
    * @param caller The transaction initiator, and supplier of the underlying asset.

@@ -86,6 +86,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidParameter(DataTypes.HubParams param);
   error InvalidAmount();
   error InvalidShares();
+  error InvalidAddress();
 
   /**
    * @notice Adds a new asset to the hub.

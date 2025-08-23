@@ -24,6 +24,11 @@ contract SpokeConfigTest is SpokeBase {
     new Spoke(address(accessManager));
   }
 
+  function test_spoke_deploy_revertsWith_InvalidAddress() public {
+    vm.expectRevert(ISpoke.InvalidAddress.selector);
+    new Spoke(address(0));
+  }
+
   function test_updateOracle_revertsWith_AccessManagedUnauthorized(address caller) public {
     vm.assume(caller != SPOKE_ADMIN && caller != ADMIN);
     vm.expectRevert(
@@ -34,7 +39,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateOracle_revertsWith_InvalidAddress() public {
-    vm.expectRevert(ISpokeBase.InvalidAddress.selector, address(spoke1));
+    vm.expectRevert(ISpoke.InvalidAddress.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.updateOracle(address(0));
   }
@@ -210,7 +215,7 @@ contract SpokeConfigTest is SpokeBase {
     });
 
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
-    vm.expectRevert(ISpokeBase.InvalidAddress.selector, address(spoke1));
+    vm.expectRevert(ISpoke.InvalidAddress.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
@@ -232,7 +237,7 @@ contract SpokeConfigTest is SpokeBase {
 
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
 
-    vm.expectRevert(ISpokeBase.InvalidAddress.selector, address(spoke1));
+    vm.expectRevert(ISpoke.InvalidAddress.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
@@ -252,7 +257,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationFee: 10_00
     });
 
-    vm.expectRevert(ISpokeBase.InvalidAddress.selector);
+    vm.expectRevert(ISpoke.InvalidAddress.selector);
     vm.prank(ADMIN);
     newSpoke.addReserve({
       hub: address(hub1),

@@ -65,6 +65,8 @@ library DataTypes {
 
   // Spoke types
   struct Reserve {
+    address underlying;
+    //
     IHub hub;
     uint16 assetId;
     uint8 decimals;
@@ -255,14 +257,14 @@ library DataTypes {
     CollateralRisk, // 7
     Reserve, // 8
     AssetId, // 9
-    OracleDecimals, // 10
+    Oracle, // 10
     Hub // 11
   }
 
   enum HubParams {
-    LiquidityFee,
-    AssetDecimals,
-    AssetId,
-    Spoke
+    LiquidityFee, // 0
+    AssetDecimals, // 1
+    AssetId, // 2
+    Spoke // 3
   }
 }

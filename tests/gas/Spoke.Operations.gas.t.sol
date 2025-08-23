@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Base} from 'tests/Base.t.sol';
+import 'tests/Base.t.sol';
 
 /// forge-config: default.isolate = true
 contract SpokeOperations_Gas_Tests is Base {
@@ -20,11 +20,6 @@ contract SpokeOperations_Gas_Tests is Base {
 
   function test_supply() public {
     vm.startPrank(alice);
-    vm.startSnapshotGas('Spoke.Operations', 'supply + enable collateral');
-    spoke1.supply(_daiReserveId(spoke1), 100e18, alice);
-    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, alice);
-    vm.stopSnapshotGas();
-
     spoke1.supply(_usdxReserveId(spoke1), 1000e6, alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'supply: 0 borrows, collateral disabled');
     skip(100);
@@ -44,7 +39,6 @@ contract SpokeOperations_Gas_Tests is Base {
 
     spoke1.supply(_wbtcReserveId(spoke1), 1e18, alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'supply: 1 borrow');
-
     vm.stopPrank();
   }
 
@@ -192,6 +186,106 @@ contract SpokeOperations_Gas_Tests is Base {
 
     spoke1.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'updateUserDynamicConfig: 2 collaterals');
+    vm.stopPrank();
+  }
+
+  function test_multicall_ops() public {
+    vm.startPrank(alice);
+    spoke1.supply(_daiReserveId(spoke1), 1000e18, alice);
+    spoke1.supply(_usdxReserveId(spoke1), 1000e6, alice);
+    spoke1.supply(_wbtcReserveId(spoke1), 1e18, alice);
+    vm.stopPrank();
+    skip(100);
+    vm.startPrank(bob);
+
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeCall(ISpokeBase.supply, (_daiReserveId(spoke1), 1000e18, bob));
+    calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke1), true, bob));
+
+    spoke1.multicall(calls);
+    vm.snapshotGasLastCall('Spoke.Operations', 'supply + enable collateral (multicall)');
+
+    // supplyWithPermit (dai)
+    IHub hub = spoke1.getReserve(_daiReserveId(spoke1)).hub;
+    tokenList.dai.approve(address(hub), 0);
+    (, uint256 bobPk) = makeAddrAndKey('bob');
+    EIP712Types.Permit memory permit = EIP712Types.Permit({
+      owner: bob,
+      spender: address(hub),
+      value: 1000e6,
+      nonce: tokenList.dai.nonces(bob),
+      deadline: vm.getBlockTimestamp()
+    });
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(bobPk, _getTypedDataHash(tokenList.dai, permit));
+    calls[0] = abi.encodeCall(
+      ISpoke.permitReserve,
+      (_daiReserveId(spoke1), permit.owner, permit.value, permit.deadline, v, r, s)
+    );
+    calls[1] = abi.encodeCall(
+      ISpokeBase.supply,
+      (_daiReserveId(spoke1), permit.value, permit.owner)
+    );
+    spoke1.multicall(calls);
+    vm.snapshotGasLastCall('Spoke.Operations', 'permitReserve + supply (multicall)');
+
+    spoke1.borrow(_usdxReserveId(spoke1), 500e6, bob);
+    skip(100);
+
+    // repayWithPermit (usdx)
+    hub = spoke1.getReserve(_usdxReserveId(spoke1)).hub;
+    tokenList.usdx.approve(address(hub), 0);
+    permit = EIP712Types.Permit({
+      owner: bob,
+      spender: address(hub),
+      value: 500e6,
+      nonce: tokenList.usdx.nonces(bob),
+      deadline: vm.getBlockTimestamp()
+    });
+    (v, r, s) = vm.sign(bobPk, _getTypedDataHash(tokenList.usdx, permit));
+    calls[0] = abi.encodeCall(
+      ISpoke.permitReserve,
+      (_usdxReserveId(spoke1), permit.owner, permit.value, permit.deadline, v, r, s)
+    );
+    calls[1] = abi.encodeCall(
+      ISpokeBase.repay,
+      (_usdxReserveId(spoke1), permit.value, permit.owner)
+    );
+    spoke1.multicall(calls);
+    vm.snapshotGasLastCall('Spoke.Operations', 'permitReserve + repay (multicall)');
+
+    skip(100);
+
+    // supplyWithPermitAndEnableCollateral (wbtc)
+    calls = new bytes[](3);
+    hub = spoke1.getReserve(_wbtcReserveId(spoke1)).hub;
+    tokenList.wbtc.approve(address(hub), 0);
+    (, bobPk) = makeAddrAndKey('bob');
+    permit = EIP712Types.Permit({
+      owner: bob,
+      spender: address(hub),
+      value: 1000e6,
+      nonce: tokenList.wbtc.nonces(bob),
+      deadline: vm.getBlockTimestamp()
+    });
+    (v, r, s) = vm.sign(bobPk, _getTypedDataHash(tokenList.wbtc, permit));
+    calls[0] = abi.encodeCall(
+      ISpoke.permitReserve,
+      (_wbtcReserveId(spoke1), permit.owner, permit.value, permit.deadline, v, r, s)
+    );
+    calls[1] = abi.encodeCall(
+      ISpokeBase.supply,
+      (_wbtcReserveId(spoke1), permit.value, permit.owner)
+    );
+    calls[2] = abi.encodeCall(
+      ISpoke.setUsingAsCollateral,
+      (_wbtcReserveId(spoke1), true, permit.owner)
+    );
+    spoke1.multicall(calls);
+    vm.snapshotGasLastCall(
+      'Spoke.Operations',
+      'permitReserve + supply + enable collateral (multicall)'
+    );
+
     vm.stopPrank();
   }
 }

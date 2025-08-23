@@ -134,7 +134,7 @@ contract HubConfigTest is HubBase {
     address feeReceiver,
     address interestRateStrategy
   ) public {
-    vm.expectRevert(IHubBase.InvalidAddress.selector);
+    vm.expectRevert(IHub.InvalidAddress.selector);
     Utils.addAsset({
       hub: hub1,
       hubAdmin: ADMIN,
@@ -156,7 +156,7 @@ contract HubConfigTest is HubBase {
 
     decimals = bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS).toUint8();
 
-    vm.expectRevert(IHubBase.InvalidAddress.selector);
+    vm.expectRevert(IHub.InvalidAddress.selector);
     Utils.addAsset({
       hub: hub1,
       hubAdmin: ADMIN,
@@ -178,7 +178,7 @@ contract HubConfigTest is HubBase {
 
     decimals = bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS).toUint8();
 
-    vm.expectRevert(IHubBase.InvalidAddress.selector);
+    vm.expectRevert(IHub.InvalidAddress.selector);
     Utils.addAsset({
       hub: hub1,
       hubAdmin: ADMIN,
@@ -305,7 +305,7 @@ contract HubConfigTest is HubBase {
     _assumeValidAssetConfig(assetId, newConfig);
     newConfig.irStrategy = address(0);
 
-    vm.expectRevert(IHubBase.InvalidAddress.selector);
+    vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig);
   }
@@ -334,7 +334,7 @@ contract HubConfigTest is HubBase {
     _assumeValidAssetConfig(assetId, newConfig);
     newConfig.liquidityFee = vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     newConfig.feeReceiver = address(0);
-    vm.expectRevert(IHubBase.InvalidAddress.selector);
+    vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig);
   }
