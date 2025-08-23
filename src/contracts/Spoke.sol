@@ -80,7 +80,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
-    require(reserveId < _reserveCount, ReserveNotListed());
+    require(reserveId < _reserveCount, InvalidParameter(DataTypes.SpokeParams.ReserveId));
     _updateReservePriceSource(reserveId, priceSource);
   }
 
@@ -99,7 +99,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.ReserveConfig calldata config,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
-    require(hub != address(0), InvalidParameter(DataTypes.SpokeParams.Hub));
+    require(hub != address(0), InvalidAddress());
     require(!_reserveExists[hub][assetId], InvalidParameter(DataTypes.SpokeParams.Reserve));
 
     _validateReserveConfig(config);
@@ -137,7 +137,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 reserveId,
     DataTypes.ReserveConfig calldata config
   ) external restricted {
-    require(reserveId < _reserveCount, ReserveNotListed());
+    require(reserveId < _reserveCount, InvalidParameter(DataTypes.SpokeParams.ReserveId));
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     _validateReserveConfig(config);
     reserve.paused = config.paused;
@@ -152,7 +152,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint16) {
-    require(reserveId < _reserveCount, ReserveNotListed());
+    require(reserveId < _reserveCount, InvalidParameter(DataTypes.SpokeParams.ReserveId));
     uint16 configKey;
     // @dev overflow is desired, we implicitly invalidate & override stale config
     unchecked {
@@ -170,7 +170,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint16 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
-    require(reserveId < _reserveCount, ReserveNotListed());
+    require(reserveId < _reserveCount, InvalidParameter(DataTypes.SpokeParams.ReserveId));
     // @dev sufficient check since min liquidationBonus is 100_00
     require(_dynamicConfig[reserveId][configKey].liquidationBonus != 0, ConfigKeyUninitialized());
     _validateDynamicReserveConfig(dynamicConfig);

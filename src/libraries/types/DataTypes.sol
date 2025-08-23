@@ -258,7 +258,7 @@ library DataTypes {
     Reserve, // 8
     AssetId, // 9
     Oracle, // 10
-    Hub // 11
+    ReserveId // 11
   }
 
   enum HubParams {

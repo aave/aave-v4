@@ -90,11 +90,14 @@ contract SpokeDynamicConfigTest is SpokeBase {
     spoke1.addDynamicReserveConfig(reserveId, config);
   }
 
-  function test_addDynamicReserveConfig_revertsWith_ReserveNotListed() public {
-    uint256 invalidReserveId = vm.randomUint(spoke1.getReserveCount(), type(uint256).max);
+  function test_addDynamicReserveConfig_revertsWith_InvalidParameter_ReserveId() public {
+    uint256 invalidReserveId = vm.randomUint(spoke1.getReserveCount(), UINT256_MAX);
     DataTypes.DynamicReserveConfig memory dynConf;
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotListed.selector, invalidReserveId));
+    vm.expectRevert(
+      abi.encodeWithSelector(ISpoke.InvalidParameter.selector, DataTypes.SpokeParams.ReserveId),
+      address(spoke1)
+    );
     vm.prank(SPOKE_ADMIN);
     spoke1.addDynamicReserveConfig(invalidReserveId, dynConf);
   }
@@ -204,11 +207,14 @@ contract SpokeDynamicConfigTest is SpokeBase {
     spoke1.updateDynamicReserveConfig(reserveId, configKey, config);
   }
 
-  function test_updateDynamicReserveConfig_revertsWith_ReserveNotListed() public {
-    uint256 invalidReserveId = vm.randomUint(spoke1.getReserveCount(), type(uint256).max);
+  function test_updateDynamicReserveConfig_revertsWith_InvalidParameter_ReserveId() public {
+    uint256 invalidReserveId = vm.randomUint(spoke1.getReserveCount(), UINT256_MAX);
     DataTypes.DynamicReserveConfig memory dynConf;
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotListed.selector, invalidReserveId));
+    vm.expectRevert(
+      abi.encodeWithSelector(ISpoke.InvalidParameter.selector, DataTypes.SpokeParams.ReserveId),
+      address(spoke1)
+    );
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(invalidReserveId, _randomConfigKey(), dynConf);
   }

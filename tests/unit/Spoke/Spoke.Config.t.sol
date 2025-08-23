@@ -77,9 +77,12 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReservePriceSource(0, address(0));
   }
 
-  function test_updateReservePriceSource_revertsWith_ReserveNotListed() public {
+  function test_updateReservePriceSource_revertsWith_InvalidParameter_ReserveId() public {
     uint256 reserveId = vm.randomUint(spoke1.getReserveCount(), type(uint256).max);
-    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(ISpoke.InvalidParameter.selector, DataTypes.SpokeParams.ReserveId),
+      address(spoke1)
+    );
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReservePriceSource(reserveId, vm.randomAddress());
   }
@@ -150,11 +153,14 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateReserveConfig(reserveId, config);
   }
 
-  function test_updateReserveConfig_revertsWith_ReserveNotListed() public {
+  function test_updateReserveConfig_revertsWith_InvalidParameter_ReserveId() public {
     uint256 reserveId = vm.randomUint(spoke1.getReserveCount() + 1, type(uint256).max);
     DataTypes.ReserveConfig memory config;
 
-    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(ISpoke.InvalidParameter.selector, DataTypes.SpokeParams.ReserveId),
+      address(spoke1)
+    );
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(reserveId, config);
   }
@@ -268,7 +274,7 @@ contract SpokeConfigTest is SpokeBase {
     });
   }
 
-  function test_addReserve_revertsWith_InvalidParameter_Hub() public {
+  function test_addReserve_revertsWith_InvalidAddress() public {
     uint256 reserveId = spoke1.getReserveCount();
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       paused: vm.randomBool(),
@@ -284,10 +290,7 @@ contract SpokeConfigTest is SpokeBase {
 
     address reserveSource = _deployMockPriceFeed(spoke1, 2000e8);
 
-    vm.expectRevert(
-      abi.encodeWithSelector(ISpoke.InvalidParameter.selector, DataTypes.SpokeParams.Hub),
-      address(spoke1)
-    );
+    vm.expectRevert(ISpoke.InvalidAddress.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve({
       hub: address(0),
