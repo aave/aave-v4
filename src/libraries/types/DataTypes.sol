@@ -245,26 +245,4 @@ library DataTypes {
     uint256 newUserRiskPremium;
     uint256 restoredShares;
   }
-
-  enum SpokeParams {
-    CollateralFactor, // 0
-    LiquidationBonus, // 1
-    CollateralFactorAndLiquidationBonus, // 2
-    CloseFactor, // 3
-    HealthFactorForMaxBonus, // 4
-    LiquidationBonusFactor, // 5
-    LiquidationFee, // 6
-    CollateralRisk, // 7
-    Reserve, // 8
-    AssetId, // 9
-    Oracle, // 10
-    ReserveId // 11
-  }
-
-  enum HubParams {
-    LiquidityFee, // 0
-    AssetDecimals, // 1
-    AssetId, // 2
-    Spoke // 3
-  }
 }

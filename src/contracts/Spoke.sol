@@ -49,11 +49,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   DataTypes.LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool exists)) internal _reserveExists;
 
-  modifier onlyPositionManager(address onBehalfOf) {
-    require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
-    _;
-  }
-
   /**
    * @dev Constructor.
    * @dev The authority should implement the AccessManaged interface to control access.
@@ -74,22 +69,27 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     oracle = IAaveOracle(newOracle);
     require(
       newOracle != address(0) && oracle.DECIMALS() == Constants.ORACLE_DECIMALS,
-      InvalidParameter(DataTypes.SpokeParams.Oracle)
+      InvalidOracle()
     );
     emit OracleUpdate(newOracle);
   }
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
-    require(reserveId < _reserveCount, InvalidParameter(DataTypes.SpokeParams.ReserveId));
+    require(reserveId < _reserveCount, ReserveNotListed());
     _updateReservePriceSource(reserveId, priceSource);
   }
 
   function updateLiquidationConfig(
-    DataTypes.LiquidationConfig calldata liquidationConfig
+    DataTypes.LiquidationConfig calldata config
   ) external restricted {
-    _validateLiquidationConfig(liquidationConfig);
-    _liquidationConfig = liquidationConfig;
-    emit LiquidationConfigUpdate(liquidationConfig);
+    require(
+      config.closeFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
+        config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR &&
+        config.healthFactorForMaxBonus < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      InvalidLiquidationConfig()
+    );
+    _liquidationConfig = config;
+    emit LiquidationConfigUpdate(config);
   }
 
   function addReserve(
@@ -100,7 +100,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
     require(hub != address(0), InvalidAddress());
-    require(!_reserveExists[hub][assetId], InvalidParameter(DataTypes.SpokeParams.Reserve));
+    require(!_reserveExists[hub][assetId], ReserveNotListed());
 
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
@@ -137,7 +137,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 reserveId,
     DataTypes.ReserveConfig calldata config
   ) external restricted {
-    require(reserveId < _reserveCount, InvalidParameter(DataTypes.SpokeParams.ReserveId));
+    require(reserveId < _reserveCount, ReserveNotListed());
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     _validateReserveConfig(config);
     reserve.paused = config.paused;
@@ -152,7 +152,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 reserveId,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint16) {
-    require(reserveId < _reserveCount, InvalidParameter(DataTypes.SpokeParams.ReserveId));
+    require(reserveId < _reserveCount, ReserveNotListed());
     uint16 configKey;
     // @dev overflow is desired, we implicitly invalidate & override stale config
     unchecked {
@@ -170,7 +170,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint16 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
-    require(reserveId < _reserveCount, InvalidParameter(DataTypes.SpokeParams.ReserveId));
+    require(reserveId < _reserveCount, ReserveNotListed());
     // @dev sufficient check since min liquidationBonus is 100_00
     require(_dynamicConfig[reserveId][configKey].liquidationBonus != 0, ConfigKeyUninitialized());
     _validateDynamicReserveConfig(dynamicConfig);
@@ -189,11 +189,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   // /////
 
   /// @inheritdoc ISpokeBase
-  function supply(
-    uint256 reserveId,
-    uint256 amount,
-    address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
+  function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external {
+    _onlyPositionManager(onBehalfOf);
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
 
@@ -207,11 +204,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   /// @inheritdoc ISpokeBase
-  function withdraw(
-    uint256 reserveId,
-    uint256 amount,
-    address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
+  function withdraw(uint256 reserveId, uint256 amount, address onBehalfOf) external {
+    _onlyPositionManager(onBehalfOf);
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     uint256 assetId = reserve.assetId;
@@ -234,11 +228,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   /// @inheritdoc ISpokeBase
-  function borrow(
-    uint256 reserveId,
-    uint256 amount,
-    address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
+  function borrow(uint256 reserveId, uint256 amount, address onBehalfOf) external {
+    _onlyPositionManager(onBehalfOf);
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -261,11 +252,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   /// @inheritdoc ISpokeBase
-  function repay(
-    uint256 reserveId,
-    uint256 amount,
-    address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
+  function repay(uint256 reserveId, uint256 amount, address onBehalfOf) external {
+    _onlyPositionManager(onBehalfOf);
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     _validateRepay(reserve);
@@ -358,7 +346,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 reserveId,
     bool usingAsCollateral,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
+  ) external {
+    _onlyPositionManager(onBehalfOf);
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     // process only if collateral status changes
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) return;
@@ -707,47 +696,21 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal pure {
-    require(
-      config.collateralRisk <= Constants.MAX_COLLATERAL_RISK,
-      InvalidParameter(DataTypes.SpokeParams.CollateralRisk)
-    ); // max 1000.00%
+    require(config.collateralRisk <= Constants.MAX_COLLATERAL_RISK, InvalidCollateralRisk());
   }
 
   function _validateDynamicReserveConfig(
     DataTypes.DynamicReserveConfig calldata config
   ) internal pure {
+    // Enforce that at moment loan is taken, there should be enough collateral to cover liquidation
     require(
-      config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidParameter(DataTypes.SpokeParams.CollateralFactor)
-    ); // max 100.00%
-    require(
-      config.liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidParameter(DataTypes.SpokeParams.LiquidationBonus)
-    ); // min 100.00%
-    require(
-      config.liquidationBonus.percentMulUp(config.collateralFactor) <=
+      config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR &&
+        config.liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
+        config.liquidationBonus.percentMulUp(config.collateralFactor) <=
         PercentageMath.PERCENTAGE_FACTOR,
-      InvalidParameter(DataTypes.SpokeParams.CollateralFactorAndLiquidationBonus)
-    ); // Enforces that at moment loan is taken, there should be enough collateral to cover liquidation
-    require(
-      config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidParameter(DataTypes.SpokeParams.LiquidationFee)
+      InvalidCollateralFactorAndLiquidationBonus()
     );
-  }
-
-  function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal pure {
-    require(
-      config.closeFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidParameter(DataTypes.SpokeParams.CloseFactor)
-    );
-    require(
-      config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidParameter(DataTypes.SpokeParams.LiquidationBonusFactor)
-    );
-    require(
-      config.healthFactorForMaxBonus < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidParameter(DataTypes.SpokeParams.HealthFactorForMaxBonus)
-    );
+    require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
   }
 
   /**
@@ -1135,5 +1098,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     require(!approve || config.active, InactivePositionManager());
     config.approval[user] = approve;
     emit SetUserPositionManager(user, positionManager, approve);
+  }
+
+  function _onlyPositionManager(address onBehalfOf) internal view {
+    require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
   }
 }

@@ -56,10 +56,7 @@ contract Hub is IHub, AccessManaged {
       underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
       InvalidAddress()
     );
-    require(
-      decimals <= Constants.MAX_ALLOWED_ASSET_DECIMALS,
-      InvalidParameter(DataTypes.HubParams.AssetDecimals)
-    );
+    require(decimals <= Constants.MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
 
     uint256 assetId = _assetCount++;
     IAssetInterestRateStrategy(irStrategy).setInterestRateData(assetId, data);
@@ -114,14 +111,11 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     DataTypes.AssetConfig calldata config
   ) external restricted {
-    require(assetId < _assetCount, InvalidParameter(DataTypes.HubParams.AssetId));
+    require(assetId < _assetCount, AssetNotListed());
     DataTypes.Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
 
-    require(
-      config.liquidityFee <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidParameter(DataTypes.HubParams.LiquidityFee)
-    );
+    require(config.liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
     require(config.feeReceiver != address(0) && config.irStrategy != address(0), InvalidAddress());
     require(
       config.reinvestmentController != address(0) || asset.swept == 0,
@@ -145,9 +139,9 @@ contract Hub is IHub, AccessManaged {
   ) external restricted {
     require(
       assetId < _assetCount && !_assetToSpokes[assetId].contains(spoke),
-      InvalidParameter(DataTypes.HubParams.AssetId)
+      SpokeAlreadyListed()
     );
-    require(spoke != address(0), InvalidParameter(DataTypes.HubParams.Spoke));
+    require(spoke != address(0), InvalidAddress());
 
     _assetToSpokes[assetId].add(spoke);
     emit AddSpoke(assetId, spoke);
@@ -160,7 +154,7 @@ contract Hub is IHub, AccessManaged {
     address spoke,
     DataTypes.SpokeConfig calldata config
   ) external restricted {
-    require(_assetToSpokes[assetId].contains(spoke), InvalidParameter(DataTypes.HubParams.AssetId));
+    require(_assetToSpokes[assetId].contains(spoke), SpokeNotListed());
     _updateSpokeConfig(assetId, spoke, config);
   }
 

@@ -110,13 +110,16 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error HealthFactorBelowThreshold();
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
-  error InvalidDebtToCover();
   error Unauthorized();
   error ConfigKeyUninitialized();
   error InactivePositionManager();
-  error InvalidParameter(DataTypes.SpokeParams param);
   error InvalidSignature();
   error InvalidAddress();
+  error InvalidOracle();
+  error InvalidCollateralRisk();
+  error InvalidLiquidationConfig();
+  error InvalidLiquidationFee();
+  error InvalidCollateralFactorAndLiquidationBonus();
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 

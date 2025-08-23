@@ -83,10 +83,14 @@ interface IHub is IHubBase, IAccessManaged {
   error SpokeNotActive();
   error InvalidReinvestmentController();
   error OnlyReinvestmentController();
-  error InvalidParameter(DataTypes.HubParams param);
+  error SpokeAlreadyListed();
+  error SpokeNotListed();
   error InvalidAmount();
   error InvalidShares();
   error InvalidAddress();
+  error InvalidLiquidityFee();
+  error AssetNotListed();
+  error InvalidAssetDecimals();
 
   /**
    * @notice Adds a new asset to the hub.

@@ -31,6 +31,7 @@ library LiquidationLogic {
 
   error HealthFactorNotBelowThreshold();
   error MustNotLeaveDust();
+  error InvalidDebtToCover();
 
   function calculateVariableLiquidationBonus(
     DataTypes.LiquidationConfig storage config,
@@ -414,7 +415,7 @@ library LiquidationLogic {
     uint256 healthFactor,
     uint256 collateralFactor
   ) internal view {
-    require(debtToCover > 0, ISpoke.InvalidDebtToCover());
+    require(debtToCover > 0, InvalidDebtToCover());
     require(
       address(collateralReserve.hub) != address(0) && address(debtReserve.hub) != address(0),
       ISpoke.ReserveNotListed()
