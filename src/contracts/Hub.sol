@@ -159,6 +159,7 @@ contract Hub is IHub, AccessManaged {
     DataTypes.Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     IAssetInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, data);
+    asset.updateDrawnRate(assetId);
   }
 
   /// @inheritdoc IHubBase
@@ -335,8 +336,8 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue(assetId, receiver);
     _validatePayFee(sender, shares);
-
     _transferShares(sender, receiver, shares);
+    asset.updateDrawnRate(assetId);
 
     emit TransferShares(assetId, shares, msg.sender, feeReceiver);
   }
@@ -349,8 +350,8 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     _validateTransferShares(asset, sender, receiver, assetId, shares);
-
     _transferShares(sender, receiver, shares);
+    asset.updateDrawnRate(assetId);
 
     emit TransferShares(assetId, shares, msg.sender, toSpoke);
   }

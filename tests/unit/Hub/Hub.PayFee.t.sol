@@ -102,6 +102,7 @@ contract HubPayFeeTest is HubBase {
     vm.prank(address(spoke1));
     hub1.payFee(daiAssetId, feeShares);
 
+    assertBorrowRateSynced(hub1, daiAssetId, 'payFee');
     uint256 spokeSharesAfter = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 feeReceiverSharesAfter = hub1.getSpokeAddedShares(
       daiAssetId,
