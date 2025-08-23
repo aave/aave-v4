@@ -170,7 +170,7 @@ contract Hub is IHub, AccessManaged {
     _validateAdd(asset, spoke, assetId, amount, from);
 
     uint128 shares = previewAddByAssets(assetId, amount).toUint128();
-    require(shares != 0, InvalidSharesAmount());
+    require(shares > 0, InvalidSharesAmount());
     asset.addedShares += shares;
     spoke.addedShares += shares;
     asset.liquidity += amount.toUint128();
@@ -706,7 +706,7 @@ contract Hub is IHub, AccessManaged {
     uint256 premiumAmount
   ) internal view {
     require(spoke.active, SpokeNotActive());
-    require(drawnAmount + premiumAmount != 0, InvalidDeficitAmount());
+    require(drawnAmount + premiumAmount > 0, InvalidDeficitAmount());
     (uint256 drawn, uint256 premium) = _getSpokeOwed(spoke, assetId);
     require(drawnAmount <= drawn, SurplusDeficitReported(drawn));
     require(premiumAmount <= premium, SurplusDeficitReported(premium));

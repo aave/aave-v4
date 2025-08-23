@@ -146,7 +146,9 @@ library AssetLogic {
   function getDrawnIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
     uint256 previousIndex = asset.drawnIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (lastUpdateTimestamp == block.timestamp || asset.drawnShares == 0) {
+    if (
+      lastUpdateTimestamp == block.timestamp || (asset.drawnShares == 0 && asset.premiumShares == 0)
+    ) {
       return previousIndex;
     }
     return
