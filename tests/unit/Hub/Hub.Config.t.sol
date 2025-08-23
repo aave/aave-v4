@@ -34,13 +34,16 @@ contract HubConfigTest is HubBase {
     Utils.addSpoke(hub1, ADMIN, assetId, address(spoke1), spokeConfig);
   }
 
-  function test_addSpoke_fuzz_revertsWith_InvalidAddress_spoke(
+  function test_addSpoke_fuzz_revertsWith_InvalidParameter_Spoke(
     uint256 assetId,
     DataTypes.SpokeConfig calldata spokeConfig
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
-    vm.expectRevert(abi.encodeWithSelector(IHubBase.InvalidAddress.selector));
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InvalidParameter.selector, DataTypes.HubParams.Spoke),
+      address(hub1)
+    );
     Utils.addSpoke({
       hub: hub1,
       hubAdmin: ADMIN,
@@ -50,10 +53,11 @@ contract HubConfigTest is HubBase {
     });
   }
 
-  function test_addSpoke_revertsWith_SpokeAlreadyListed() public {
+  function test_addSpoke_revertsWith_InvalidParameter_AssetId() public {
     DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
     vm.expectRevert(
-      abi.encodeWithSelector(IHub.InvalidParameter.selector, DataTypes.HubParams.Spoke)
+      abi.encodeWithSelector(IHub.InvalidParameter.selector, DataTypes.HubParams.AssetId),
+      address(hub1)
     );
     Utils.addSpoke(hub1, ADMIN, daiAssetId, address(spoke1), spokeConfig);
   }
@@ -71,7 +75,7 @@ contract HubConfigTest is HubBase {
     assertEq(hub1.getSpokeConfig(assetId, newSpoke), spokeConfig);
   }
 
-  function test_updateSpokeConfig_fuzz_revertsWith_InvalidParameter_Spoke(
+  function test_updateSpokeConfig_fuzz_revertsWith_InvalidParameter_AssetId(
     uint256 assetId,
     address spoke,
     DataTypes.SpokeConfig calldata spokeConfig
@@ -80,7 +84,8 @@ contract HubConfigTest is HubBase {
       assetId = bound(assetId, hub1.getAssetCount(), type(uint256).max);
     }
     vm.expectRevert(
-      abi.encodeWithSelector(IHub.InvalidParameter.selector, DataTypes.HubParams.Spoke)
+      abi.encodeWithSelector(IHub.InvalidParameter.selector, DataTypes.HubParams.AssetId),
+      address(hub1)
     );
     Utils.updateSpokeConfig(hub1, ADMIN, assetId, spoke, spokeConfig);
   }
