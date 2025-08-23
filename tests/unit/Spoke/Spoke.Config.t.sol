@@ -38,19 +38,19 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.updateOracle(vm.randomAddress());
   }
 
-  function test_updateOracle_revertsWith_InvalidAddress() public {
-    vm.expectRevert(ISpoke.InvalidAddress.selector, address(spoke1));
+  function test_updateOracle_revertsWith_InvalidParameter_Oracle_ZeroAddress() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(ISpoke.InvalidParameter.selector, DataTypes.SpokeParams.Oracle),
+      address(spoke1)
+    );
     vm.prank(SPOKE_ADMIN);
     spoke1.updateOracle(address(0));
   }
 
-  function test_updateOracle_revertsWith_InvalidParameter_DecimalsMismatch() public {
+  function test_updateOracle_revertsWith_InvalidParameter_Oracle_DecimalsMismatch() public {
     address newOracle = address(new AaveOracle(SPOKE_ADMIN, 18, 'New Aave Oracle'));
     vm.expectRevert(
-      abi.encodeWithSelector(
-        ISpoke.InvalidParameter.selector,
-        DataTypes.SpokeParams.OracleDecimals
-      ),
+      abi.encodeWithSelector(ISpoke.InvalidParameter.selector, DataTypes.SpokeParams.Oracle),
       address(spoke1)
     );
     vm.prank(SPOKE_ADMIN);
