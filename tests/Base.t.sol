@@ -1377,10 +1377,8 @@ abstract contract Base is Test {
   }
 
   // returns the asset added amount without liquidityFee
-  function getAssetAddedAssets(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return
-      hub.getTotalAddedAssets(assetId) -
-      hub.getSpokeAddedAssets(assetId, getFeeReceiver(hub, assetId));
+  function getAssetAddedAmount(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return hub.convertToAddedAssets(assetId, hub.getAsset(assetId).addedShares);
   }
 
   // returns the asset added shares without liquidityFee
@@ -1416,7 +1414,7 @@ abstract contract Base is Test {
       string(abi.encodePacked('spoke supplied shares ', label))
     );
     assertEq(
-      hub1.getSpokeAddedAssets(assetId, address(spoke)),
+      hub1.getSpokeAddedAmount(assetId, address(spoke)),
       expectedSuppliedAmount,
       string(abi.encodePacked('spoke supplied amount ', label))
     );
@@ -1614,7 +1612,7 @@ abstract contract Base is Test {
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     assertApproxEqAbs(
-      hub1.getSpokeAddedAssets(assetId, address(spoke)),
+      hub1.getSpokeAddedAmount(assetId, address(spoke)),
       expectedSuppliedAmount,
       3,
       string.concat('spoke supplied amount ', label)
@@ -1629,7 +1627,7 @@ abstract contract Base is Test {
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     assertApproxEqAbs(
-      hub1.getAssetAddedAmount(assetId),
+      getAssetAddedAmount(hub1, assetId),
       expectedSuppliedAmount,
       3,
       string.concat('asset supplied amount ', label)
@@ -1878,7 +1876,7 @@ abstract contract Base is Test {
 
   /// @dev Helper function to withdraw fees from the treasury spoke
   function withdrawLiquidityFees(uint256 assetId, uint256 amount) internal {
-    uint256 fees = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
+    uint256 fees = hub1.getSpokeAddedAmount(assetId, address(treasurySpoke));
     if (amount > fees) {
       amount = fees;
     }
@@ -2279,7 +2277,7 @@ abstract contract Base is Test {
         assetId: assetId,
         liquidity: assetData.liquidity,
         addedShares: assetData.addedShares,
-        addedAmount: targetHub.getAssetAddedAmount(assetId),
+        addedAmount: getAssetAddedAmount(targetHub, assetId),
         drawnShares: assetData.drawnShares,
         drawn: drawn,
         premiumShares: assetData.premiumShares,
@@ -2311,7 +2309,7 @@ abstract contract Base is Test {
         reserveId: reserveId,
         assetId: assetId,
         addedShares: spokeData.addedShares,
-        addedAmount: hub1.getSpokeAddedAssets(assetId, address(spoke)),
+        addedAmount: hub1.getSpokeAddedAmount(assetId, address(spoke)),
         drawnShares: spokeData.drawnShares,
         drawn: drawn,
         premiumShares: spokeData.premiumShares,

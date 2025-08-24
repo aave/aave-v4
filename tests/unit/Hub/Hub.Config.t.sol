@@ -452,7 +452,7 @@ contract HubConfigTest is HubBase {
   function test_updateAssetConfig_fuzz_UseExistingSpokeAsFeeReceiver(uint256 assetId) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
-    address oldFeeReceiver = _getFeeReceiver(assetId);
+    address oldFeeReceiver = getFeeReceiver(hub1, assetId);
     address newFeeReceiver = address(spoke1);
 
     uint256 amount = 1000e18;
