@@ -208,7 +208,7 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
-  function test_addReserve_revertsWith_InvalidOracle() public {
+  function test_addReserve_revertsWith_InvalidAddress_oracle() public {
     Spoke newSpoke = new Spoke(address(accessManager));
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
@@ -223,7 +223,7 @@ contract SpokeConfigTest is SpokeBase {
       liquidationFee: 10_00
     });
 
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
+    vm.expectRevert(ISpoke.InvalidAddress.selector, address(newSpoke));
     vm.prank(ADMIN);
     newSpoke.addReserve(
       address(hub1),
