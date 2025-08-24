@@ -37,13 +37,13 @@ contract HubConfigTest is HubBase {
     Utils.addSpoke(hub1, ADMIN, assetId, address(spoke1), spokeConfig);
   }
 
-  function test_addSpoke_fuzz_revertsWith_InvalidAddress(
+  function test_addSpoke_fuzz_revertsWith_InvalidAddress_spoke(
     uint256 assetId,
     DataTypes.SpokeConfig calldata spokeConfig
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.InvalidAddress.selector), address(hub1));
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     Utils.addSpoke(hub1, ADMIN, assetId, address(0), spokeConfig);
   }
 
@@ -120,7 +120,7 @@ contract HubConfigTest is HubBase {
     address feeReceiver,
     address interestRateStrategy
   ) public {
-    vm.expectRevert(abi.encodeWithSelector(IHub.InvalidAddress.selector, address(hub1)));
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     Utils.addAsset(
       hub1,
       ADMIN,
@@ -142,7 +142,7 @@ contract HubConfigTest is HubBase {
 
     decimals = bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS).toUint8();
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.InvalidAddress.selector, address(hub1)));
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     Utils.addAsset(
       hub1,
       ADMIN,
@@ -164,7 +164,7 @@ contract HubConfigTest is HubBase {
 
     decimals = bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS).toUint8();
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.InvalidAddress.selector, address(hub1)));
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     Utils.addAsset(hub1, ADMIN, underlying, decimals, feeReceiver, address(0), encodedIrData);
   }
 
