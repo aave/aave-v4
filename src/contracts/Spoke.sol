@@ -508,7 +508,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    return reserve.hub.getSpokeAddedAmount(reserve.assetId, address(this));
+    return reserve.hub.getSpokeAddedAssets(reserve.assetId, address(this));
   }
 
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {

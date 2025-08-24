@@ -343,10 +343,6 @@ interface IHub is IHubBase, IAccessManaged {
 
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
 
-  function getAssetAddedAmount(uint256 assetId) external view returns (uint256);
-
-  function getAssetAddedShares(uint256 assetId) external view returns (uint256);
-
   function getAssetTotalOwed(uint256 assetId) external view returns (uint256);
 
   function getTotalAddedAssets(uint256 assetId) external view returns (uint256);
@@ -382,7 +378,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256);
 
-  function getSpokeAddedAmount(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256);
 
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256);
 

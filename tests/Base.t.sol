@@ -1376,6 +1376,20 @@ abstract contract Base is Test {
     return (drawnRestored, premium);
   }
 
+  // returns the asset added amount without liquidityFee
+  function getAssetAddedAssets(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return
+      hub.getTotalAddedAssets(assetId) -
+      hub.getSpokeAddedAssets(assetId, getFeeReceiver(hub, assetId));
+  }
+
+  // returns the asset added shares without liquidityFee
+  function getAssetAddedShares(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return
+      hub.getTotalAddedShares(assetId) -
+      hub.getSpokeAddedShares(assetId, getFeeReceiver(hub, assetId));
+  }
+
   /// @dev Helper function to check consistent supplied amounts within accounting
   function _checkSuppliedAmounts(
     uint256 assetId,
@@ -1387,12 +1401,12 @@ abstract contract Base is Test {
   ) internal view {
     uint256 expectedSuppliedShares = hub1.convertToAddedShares(assetId, expectedSuppliedAmount);
     assertEq(
-      hub1.getAssetAddedShares(assetId),
+      getAssetAddedShares(hub1, assetId),
       expectedSuppliedShares,
       string(abi.encodePacked('asset supplied shares ', label))
     );
     assertEq(
-      hub1.getAssetAddedAmount(assetId),
+      getAssetAddedAmount(hub1, assetId),
       expectedSuppliedAmount,
       string(abi.encodePacked('asset supplied amount ', label))
     );
@@ -1402,7 +1416,7 @@ abstract contract Base is Test {
       string(abi.encodePacked('spoke supplied shares ', label))
     );
     assertEq(
-      hub1.getSpokeAddedAmount(assetId, address(spoke)),
+      hub1.getSpokeAddedAssets(assetId, address(spoke)),
       expectedSuppliedAmount,
       string(abi.encodePacked('spoke supplied amount ', label))
     );
@@ -1600,7 +1614,7 @@ abstract contract Base is Test {
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     assertApproxEqAbs(
-      hub1.getSpokeAddedAmount(assetId, address(spoke)),
+      hub1.getSpokeAddedAssets(assetId, address(spoke)),
       expectedSuppliedAmount,
       3,
       string.concat('spoke supplied amount ', label)
@@ -1864,7 +1878,7 @@ abstract contract Base is Test {
 
   /// @dev Helper function to withdraw fees from the treasury spoke
   function withdrawLiquidityFees(uint256 assetId, uint256 amount) internal {
-    uint256 fees = hub1.getSpokeAddedAmount(assetId, address(treasurySpoke));
+    uint256 fees = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
     if (amount > fees) {
       amount = fees;
     }
@@ -1889,8 +1903,8 @@ abstract contract Base is Test {
     return hub1.getAssetConfig(assetId).liquidityFee;
   }
 
-  function _getFeeReceiver(uint256 assetId) internal view returns (address) {
-    return hub1.getAssetConfig(assetId).feeReceiver;
+  function getFeeReceiver(IHub hub, uint256 assetId) internal view returns (address) {
+    return hub.getAssetConfig(assetId).feeReceiver;
   }
 
   function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint24) {
@@ -2297,7 +2311,7 @@ abstract contract Base is Test {
         reserveId: reserveId,
         assetId: assetId,
         addedShares: spokeData.addedShares,
-        addedAmount: hub1.getSpokeAddedAmount(assetId, address(spoke)),
+        addedAmount: hub1.getSpokeAddedAssets(assetId, address(spoke)),
         drawnShares: spokeData.drawnShares,
         drawn: drawn,
         premiumShares: spokeData.premiumShares,
