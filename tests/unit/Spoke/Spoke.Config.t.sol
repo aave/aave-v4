@@ -187,7 +187,7 @@ contract SpokeConfigTest is SpokeBase {
     assertEq(spoke1.getDynamicReserveConfig(reserveId), newDynReserveConfig);
   }
 
-  function test_addReserve_fuzz_revertsWith_InvalidAddress_underlying() public {
+  function test_addReserve_fuzz_revertsWith_AssetNotListed() public {
     uint256 assetId = vm.randomUint(hub1.getAssetCount(), type(uint256).max); // invalid assetId
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
@@ -203,7 +203,7 @@ contract SpokeConfigTest is SpokeBase {
     });
 
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
-    vm.expectRevert(ISpoke.InvalidAddress.selector, address(spoke1));
+    vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }

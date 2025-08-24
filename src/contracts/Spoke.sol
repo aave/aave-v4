@@ -49,6 +49,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   DataTypes.LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool exists)) internal _reserveExists;
 
+  modifier onlyPositionManager(address onBehalfOf) {
+    require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
+    _;
+  }
+
   /**
    * @dev Constructor.
    * @dev The authority should implement the AccessManaged interface to control access.
@@ -108,7 +113,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint16 dynamicConfigKey; // 0 as first key to use
 
     DataTypes.Asset memory asset = IHub(hub).getAsset(assetId);
-    require(asset.underlying != address(0), InvalidAddress());
+    require(asset.underlying != address(0), AssetNotListed());
 
     _updateReservePriceSource(reserveId, priceSource);
 
@@ -189,8 +194,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   // /////
 
   /// @inheritdoc ISpokeBase
-  function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external {
-    _onlyPositionManager(onBehalfOf);
+  function supply(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
 
@@ -204,8 +212,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   /// @inheritdoc ISpokeBase
-  function withdraw(uint256 reserveId, uint256 amount, address onBehalfOf) external {
-    _onlyPositionManager(onBehalfOf);
+  function withdraw(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     uint256 assetId = reserve.assetId;
@@ -228,8 +239,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   /// @inheritdoc ISpokeBase
-  function borrow(uint256 reserveId, uint256 amount, address onBehalfOf) external {
-    _onlyPositionManager(onBehalfOf);
+  function borrow(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -252,8 +266,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   /// @inheritdoc ISpokeBase
-  function repay(uint256 reserveId, uint256 amount, address onBehalfOf) external {
-    _onlyPositionManager(onBehalfOf);
+  function repay(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) {
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     _validateRepay(reserve);
@@ -346,8 +363,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 reserveId,
     bool usingAsCollateral,
     address onBehalfOf
-  ) external {
-    _onlyPositionManager(onBehalfOf);
+  ) external onlyPositionManager(onBehalfOf) {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     // process only if collateral status changes
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) return;
@@ -1098,9 +1114,5 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     require(!approve || config.active, InactivePositionManager());
     config.approval[user] = approve;
     emit SetUserPositionManager(user, positionManager, approve);
-  }
-
-  function _onlyPositionManager(address onBehalfOf) internal view {
-    require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
   }
 }
