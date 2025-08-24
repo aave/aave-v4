@@ -100,7 +100,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
     require(hub != address(0), InvalidAddress());
-    require(!_reserveExists[hub][assetId], ReserveNotListed());
+    require(!_reserveExists[hub][assetId], ReserveExists());
 
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);

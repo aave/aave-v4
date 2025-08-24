@@ -102,6 +102,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event ReservePriceSourceUpdate(uint256 indexed reserveId, address indexed priceSource);
   event LiquidationConfigUpdate(DataTypes.LiquidationConfig config);
 
+  error ReserveExists();
   error ReserveNotListed();
   error InsufficientSupply(uint256 supply);
   error ReserveNotBorrowable();
