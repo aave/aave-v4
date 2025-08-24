@@ -64,7 +64,7 @@ contract HubConfiguratorTest is HubBase {
     });
   }
 
-  function test_addAsset_fuzz_revertsWith_InvalidParameter_AssetDecimals(
+  function test_addAsset_fuzz_revertsWith_InvalidAssetDecimals(
     bool fetchErc20Decimals,
     address underlying,
     uint8 decimals,
@@ -77,9 +77,7 @@ contract HubConfiguratorTest is HubBase {
 
     decimals = bound(decimals, Constants.MAX_ALLOWED_ASSET_DECIMALS + 1, type(uint8).max).toUint8();
 
-    vm.expectRevert(
-      abi.encodeWithSelector(IHub.InvalidParameter.selector, DataTypes.HubParams.AssetDecimals)
-    );
+    vm.expectRevert(IHub.InvalidAssetDecimals.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     _addAsset(
       fetchErc20Decimals,
@@ -91,12 +89,12 @@ contract HubConfiguratorTest is HubBase {
     );
   }
 
-  function test_addAsset_revertsWith_InvalidAddress() public {
+  function test_addAsset_revertsWith_InvalidUnderlying() public {
     uint8 decimals = uint8(vm.randomUint(0, Constants.MAX_ALLOWED_ASSET_DECIMALS));
     address feeReceiver = makeAddr('newFeeReceiver');
     address interestRateStrategy = makeAddr('newIrStrategy');
 
-    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
+    vm.expectRevert(IHub.InvalidUnderlying.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     _addAsset(true, address(0), decimals, feeReceiver, interestRateStrategy, encodedIrData);
   }
@@ -106,7 +104,7 @@ contract HubConfiguratorTest is HubBase {
     uint8 decimals = uint8(vm.randomUint(0, Constants.MAX_ALLOWED_ASSET_DECIMALS));
     address feeReceiver = makeAddr('newFeeReceiver');
 
-    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
+    vm.expectRevert(IHub.InvalidIrStrategy.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     _addAsset(true, underlying, decimals, feeReceiver, address(0), encodedIrData);
   }
@@ -197,16 +195,13 @@ contract HubConfiguratorTest is HubBase {
     hubConfigurator.updateLiquidityFee(address(hub1), vm.randomUint(), vm.randomUint());
   }
 
-  function test_updateLiquidityFee_revertsWith_InvalidParameter_LiquidityFee() public {
+  function test_updateLiquidityFee_revertsWith_InvalidLiquidityFee() public {
     assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
     uint16 liquidityFee = uint16(
       vm.randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
     );
 
-    vm.expectRevert(
-      abi.encodeWithSelector(IHub.InvalidParameter.selector, DataTypes.HubParams.LiquidityFee),
-      address(hub1)
-    );
+    vm.expectRevert(IHub.InvalidLiquidityFee.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateLiquidityFee(address(hub1), assetId, liquidityFee);
   }
@@ -235,13 +230,10 @@ contract HubConfiguratorTest is HubBase {
     hubConfigurator.updateFeeReceiver(address(hub1), vm.randomUint(), vm.randomAddress());
   }
 
-  function test_updateFeeReceiver_revertsWith_InvalidParameter_Spoke() public {
+  function test_updateFeeReceiver_revertsWith_InvalidSpoke() public {
     assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
 
-    vm.expectRevert(
-      abi.encodeWithSelector(IHub.InvalidParameter.selector, DataTypes.HubParams.Spoke),
-      address(hub1)
-    );
+    vm.expectRevert(IHub.InvalidSpoke.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeReceiver(address(hub1), assetId, address(0));
   }
@@ -481,29 +473,23 @@ contract HubConfiguratorTest is HubBase {
     });
   }
 
-  function test_updateFeeConfig_revertsWith_InvalidParameter_Spoke() public {
+  function test_updateFeeConfig_revertsWith_InvalidSpoke() public {
     uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
     uint256 liquidityFee = vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR);
 
-    vm.expectRevert(
-      abi.encodeWithSelector(IHub.InvalidParameter.selector, DataTypes.HubParams.Spoke),
-      address(hub1)
-    );
+    vm.expectRevert(IHub.InvalidSpoke.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeConfig(address(hub1), assetId, liquidityFee, address(0));
   }
 
-  function test_updateFeeConfig_revertsWith_InvalidParameter_LiquidityFee() public {
+  function test_updateFeeConfig_revertsWith_InvalidLiquidityFee() public {
     uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
     uint16 liquidityFee = uint16(
       vm.randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
     );
     address feeReceiver = hub1.getAssetConfig(assetId).feeReceiver;
 
-    vm.expectRevert(
-      abi.encodeWithSelector(IHub.InvalidParameter.selector, DataTypes.HubParams.LiquidityFee),
-      address(hub1)
-    );
+    vm.expectRevert(IHub.InvalidLiquidityFee.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeConfig(address(hub1), assetId, liquidityFee, feeReceiver);
   }
@@ -643,10 +629,10 @@ contract HubConfiguratorTest is HubBase {
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
   }
 
-  function test_updateInterestRateStrategy_revertsWith_InvalidAddress() public {
+  function test_updateInterestRateStrategy_revertsWith_InvalidIrStrategy() public {
     assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
 
-    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
+    vm.expectRevert(IHub.InvalidIrStrategy.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateInterestRateStrategy(address(hub1), assetId, address(0));
   }
