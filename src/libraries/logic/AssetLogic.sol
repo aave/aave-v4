@@ -125,17 +125,17 @@ library AssetLogic {
     DataTypes.SpokeData storage feeReceiver
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
-    uint128 feeShares = asset.getFeeShares(drawnIndex.uncheckedSub(asset.drawnIndex)).toUint128();
+    uint256 indexDelta = drawnIndex.uncheckedSub(asset.drawnIndex);
 
-    // Accrue interest and fees
     asset.drawnIndex = drawnIndex.toUint128();
+    asset.lastUpdateTimestamp = block.timestamp.toUint40();
+
+    uint128 feeShares = asset.getFeeShares(indexDelta).toUint128();
     if (feeShares > 0) {
       feeReceiver.addedShares += feeShares;
       asset.addedShares += feeShares;
       emit IHub.AccrueFees(assetId, feeShares);
     }
-
-    asset.lastUpdateTimestamp = block.timestamp.toUint40();
   }
 
   /**
@@ -146,7 +146,9 @@ library AssetLogic {
   function getDrawnIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
     uint256 previousIndex = asset.drawnIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (lastUpdateTimestamp == block.timestamp || asset.drawnShares == 0) {
+    if (
+      lastUpdateTimestamp == block.timestamp || (asset.drawnShares == 0 && asset.premiumShares == 0)
+    ) {
       return previousIndex;
     }
     return

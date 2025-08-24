@@ -70,8 +70,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 amount
   );
 
-  error InvalidFromAddress();
-  error InvalidToAddress();
+  error AssetNotListed();
   error AddCapExceeded(uint256 addCap);
   error AddedAmountExceeded(uint256 addedAmount);
   error AddedSharesExceeded(uint256 addedShares);
@@ -89,7 +88,6 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidShares();
   error InvalidAddress();
   error InvalidLiquidityFee();
-  error AssetNotListed();
   error InvalidAssetDecimals();
 
   /**

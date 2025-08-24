@@ -480,8 +480,8 @@ contract HubAddTest is HubBase {
     hub1.add(daiAssetId, addAmount, alice);
   }
 
-  function test_add_revertsWith_InvalidFromAddress() public {
-    vm.expectRevert(IHub.InvalidFromAddress.selector);
+  function test_add_revertsWith_InvalidAddress() public {
+    vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, 100e18, address(hub1));
   }
