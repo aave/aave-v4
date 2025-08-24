@@ -251,12 +251,7 @@ contract HubConfigTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.AssetConfigUpdate(expectedAssetId, expectedConfig);
     vm.expectEmit(address(hub1));
-    emit IHub.AssetUpdate(
-      expectedAssetId,
-      WadRayMath.RAY,
-      baseVariableBorrowRate.bpsToRay(),
-      vm.getBlockTimestamp()
-    );
+    emit IHub.AssetUpdate(expectedAssetId, WadRayMath.RAY, baseVariableBorrowRate.bpsToRay());
 
     uint256 assetId = Utils.addAsset(
       hub1,
@@ -377,8 +372,7 @@ contract HubConfigTest is HubBase {
         premium: premium,
         deficit: 0,
         swept: 0
-      }),
-      vm.getBlockTimestamp()
+      })
     );
     vm.expectEmit(address(hub1));
     emit IHub.AssetConfigUpdate(assetId, newConfig);

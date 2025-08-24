@@ -21,12 +21,7 @@ interface IHub is IHubBase, IAccessManaged {
     address indexed spoke,
     DataTypes.SpokeConfig config
   );
-  event AssetUpdate(
-    uint256 indexed assetId,
-    uint256 drawnIndex,
-    uint256 drawnRate,
-    uint256 latestUpdateTimestamp
-  );
+  event AssetUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 drawnRate);
   event RefreshPremium(
     uint256 indexed assetId,
     address indexed spoke,

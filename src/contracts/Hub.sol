@@ -100,7 +100,7 @@ contract Hub is IHub, AccessManaged {
         reinvestmentController: address(0)
       })
     );
-    emit AssetUpdate(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
+    emit AssetUpdate(assetId, drawnIndex, drawnRate);
 
     return assetId;
   }
