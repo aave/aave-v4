@@ -32,7 +32,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using LiquidationLogic for DataTypes.LiquidationConfig;
   using PositionStatus for *;
-  using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
   using MathUtils for *;
 
   IAaveOracle public oracle;
@@ -321,39 +320,57 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     address user,
     uint256 debtToCover
   ) external {
-    DataTypes.LiquidationCallParams memory params;
-    params.user = user;
-    params.oracle = address(oracle);
-    params.collateralReserveId = collateralReserveId;
-    params.debtReserveId = debtReserveId;
-    params.debtToCover = debtToCover;
-    params.liquidator = msg.sender;
+    (uint256 healthFactor, , , , ) = _calculateUserAccountData(user);
+    (uint256 drawnDebt, uint256 premiumDebt, uint256 accruedPremium) = _getUserDebt(
+      _reserves[debtReserveId].hub,
+      _reserves[debtReserveId].assetId,
+      _userPositions[user][debtReserveId]
+    );
 
-    (
-      ,
-      ,
-      params.healthFactor,
-      params.totalCollateralInBaseCurrency,
-      params.totalDebtInBaseCurrency
-    ) = _calculateUserAccountData(user);
+    DataTypes.LiquidateUserParams memory params = DataTypes.LiquidateUserParams({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      oracle: address(oracle),
+      user: user,
+      debtToCover: debtToCover,
+      healthFactor: healthFactor,
+      drawnDebt: drawnDebt,
+      premiumDebt: premiumDebt,
+      accruedPremium: accruedPremium,
+      liquidator: msg.sender
+    });
 
-    uint16 collateralConfigKey = _userPositions[user][collateralReserveId].configKey;
-    bool hasDeficit = LiquidationLogic.executeLiquidationCall(
+    DataTypes.DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[
+      collateralReserveId
+    ][_userPositions[user][collateralReserveId].configKey];
+
+    LiquidationLogic._liquidateUser(
       _reserves[collateralReserveId],
       _reserves[debtReserveId],
       _userPositions[user][collateralReserveId],
       _userPositions[user][debtReserveId],
-      _dynamicConfig[collateralReserveId][collateralConfigKey],
       _positionStatus[user],
       _liquidationConfig,
+      collateralDynConfig,
       params
     );
 
-    if (hasDeficit) {
+    uint256 newUserRiskPremium;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+    (
+      newUserRiskPremium,
+      ,
+      healthFactor,
+      totalCollateralInBaseCurrency,
+      totalDebtInBaseCurrency
+    ) = _calculateUserAccountData(user);
+    require(healthFactor <= _liquidationConfig.closeFactor, HealthFactorNotBelowCloseFactor());
+
+    if (totalCollateralInBaseCurrency == 0 && totalDebtInBaseCurrency > 0) {
       _reportDeficits(user);
     } else {
       // new risk premium only needs to be propagated if no deficit exists
-      (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(user);
       _notifyRiskPremiumUpdate(user, newUserRiskPremium);
     }
   }

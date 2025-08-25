@@ -442,4 +442,130 @@ library LiquidationLogic {
       .add(premiumDelta.realizedDelta)
       .toUint128();
   }
+
+  function _liquidateCollateral(
+    DataTypes.Reserve storage collateralReserve,
+    DataTypes.Reserve storage debtReserve,
+    DataTypes.UserPosition storage collateralPosition,
+    DataTypes.DynamicReserveConfig storage collateralDynConfig,
+    DataTypes.LiquidationConfig storage liquidationConfig,
+    DataTypes.LiquidateUserParams memory params
+  ) internal returns (uint256) {
+    uint256 liquidationBonus = liquidationConfig.calculateVariableLiquidationBonus(
+      params.healthFactor,
+      collateralDynConfig.liquidationBonus,
+      Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    );
+
+    uint256 debtToCollateral = params.debtToCover.mulDivUp(
+      IAaveOracle(params.oracle).getReservePrice(params.debtReserveId) *
+        (10 ** collateralReserve.decimals),
+      (10 ** debtReserve.decimals) *
+        IAaveOracle(params.oracle).getReservePrice(params.collateralReserveId)
+    );
+    uint256 collateralToLiquidate = debtToCollateral.percentMulUp(liquidationBonus);
+    uint256 collateralToLiquidator = collateralToLiquidate -
+      (collateralToLiquidate - debtToCollateral).percentMulUp(collateralDynConfig.liquidationFee);
+
+    IHub collateralReserveHub = collateralReserve.hub;
+    uint256 collateralAssetId = collateralReserve.assetId;
+
+    // expected total withdrawn shares includes liquidation fee
+    uint256 withdrawnShares = collateralReserveHub.previewRemoveByAssets(
+      collateralAssetId,
+      collateralToLiquidate
+    );
+
+    // perform collateral accounting first so that restore donations can not affect collateral shares calcs
+    // in case the same reserve is being repaid and liquidated
+    collateralPosition.suppliedShares -= withdrawnShares.toUint128();
+
+    // remove collateral, send liquidated collateral directly to liquidator
+    uint256 liquidatedSuppliedShares = collateralReserveHub.remove(
+      collateralAssetId,
+      collateralToLiquidator,
+      params.liquidator
+    );
+
+    if (withdrawnShares > liquidatedSuppliedShares) {
+      collateralReserveHub.payFee(collateralAssetId, withdrawnShares - liquidatedSuppliedShares);
+    }
+
+    return collateralToLiquidate;
+  }
+
+  function _liquidateDebt(
+    DataTypes.Reserve storage debtReserve,
+    DataTypes.UserPosition storage debtPosition,
+    DataTypes.PositionStatus storage positionStatus,
+    DataTypes.LiquidateUserParams memory params
+  ) internal {
+    (uint256 drawnDebtToLiquidate, uint256 premiumDebtToLiquidate) = _calculateRestoreAmount(
+      params.drawnDebt,
+      params.premiumDebt,
+      params.debtToCover
+    );
+
+    DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
+      sharesDelta: -debtPosition.premiumShares.toInt256(),
+      offsetDelta: -debtPosition.premiumOffset.toInt256(),
+      realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
+    });
+    uint256 restoredShares = debtReserve.hub.restore(
+      debtReserve.assetId,
+      drawnDebtToLiquidate,
+      premiumDebtToLiquidate,
+      premiumDelta,
+      params.liquidator
+    );
+    // debt accounting
+    _settlePremiumDebt(debtPosition, premiumDelta);
+    debtPosition.drawnShares -= restoredShares.toUint128();
+
+    if (debtPosition.drawnShares == 0) {
+      positionStatus.setBorrowing(params.debtReserveId, false);
+    }
+  }
+
+  function _liquidateUser(
+    DataTypes.Reserve storage collateralReserve,
+    DataTypes.Reserve storage debtReserve,
+    DataTypes.UserPosition storage collateralPosition,
+    DataTypes.UserPosition storage debtPosition,
+    DataTypes.PositionStatus storage positionStatus,
+    DataTypes.LiquidationConfig storage liquidationConfig,
+    DataTypes.DynamicReserveConfig storage collateralDynConfig,
+    DataTypes.LiquidateUserParams memory params
+  ) external {
+    _validateLiquidationCall(
+      collateralReserve,
+      debtReserve,
+      positionStatus,
+      params.collateralReserveId,
+      params.debtToCover,
+      params.drawnDebt + params.premiumDebt,
+      params.healthFactor,
+      collateralDynConfig.collateralFactor
+    );
+
+    uint256 collateralToLiquidate = _liquidateCollateral(
+      collateralReserve,
+      debtReserve,
+      collateralPosition,
+      collateralDynConfig,
+      liquidationConfig,
+      params
+    );
+
+    _liquidateDebt(debtReserve, debtPosition, positionStatus, params);
+
+    emit ISpokeBase.LiquidationCall(
+      params.collateralReserveId,
+      params.debtReserveId,
+      params.user,
+      params.debtToCover,
+      collateralToLiquidate,
+      params.liquidator
+    );
+  }
 }

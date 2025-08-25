@@ -245,4 +245,17 @@ library DataTypes {
     uint256 newUserRiskPremium;
     uint256 restoredShares;
   }
+
+  struct LiquidateUserParams {
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
+    address oracle;
+    address user;
+    uint256 debtToCover;
+    uint256 healthFactor;
+    uint256 drawnDebt;
+    uint256 premiumDebt;
+    uint256 accruedPremium;
+    address liquidator;
+  }
 }
