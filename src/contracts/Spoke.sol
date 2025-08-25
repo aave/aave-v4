@@ -813,9 +813,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     );
     vars.reserveId = reserveCount;
     while (true) {
-      (vars.reserveId, vars.borrowing, vars.collateral) = positionStatus.next(
-        vars.reserveId
-      );
+      (vars.reserveId, vars.borrowing, vars.collateral) = positionStatus.next(vars.reserveId);
       if (vars.reserveId == PositionStatus.NOT_FOUND) break;
 
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
@@ -961,8 +959,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     vars.reserveId = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     while (
-      (vars.reserveId = positionStatus.nextBorrowing(vars.reserveId)) !=
-      PositionStatus.NOT_FOUND
+      (vars.reserveId = positionStatus.nextBorrowing(vars.reserveId)) != PositionStatus.NOT_FOUND
     ) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
       DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
@@ -1012,10 +1009,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     uint256 reserveId = _reserveCount;
 
-    while (
-      (reserveId = positionStatus.nextBorrowing(reserveId)) !=
-      PositionStatus.NOT_FOUND
-    ) {
+    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatus.NOT_FOUND) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       DataTypes.Reserve storage reserve = _reserves[reserveId];
       // validation should already have occurred during liquidation
@@ -1050,10 +1044,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   function _refreshDynamicConfig(address user) internal {
     uint256 reserveId = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-    while (
-      (reserveId = positionStatus.nextCollateral(reserveId)) !=
-      PositionStatus.NOT_FOUND
-    ) {
+    while ((reserveId = positionStatus.nextCollateral(reserveId)) != PositionStatus.NOT_FOUND) {
       _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
     }
     emit RefreshAllUserDynamicConfig(user);

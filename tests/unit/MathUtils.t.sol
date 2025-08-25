@@ -101,18 +101,15 @@ contract MathUtilsTest is Test {
     assertEq(MathUtils.mulDivDown(12, 6, 4), 18); // 72 / 4 = 18, no floor
   }
 
-
   function test_mulDivDown_ZeroAOrB() external pure {
     assertEq(MathUtils.mulDivDown(0, 10, 5), 0);
     assertEq(MathUtils.mulDivDown(10, 0, 5), 0);
   }
 
-
   function test_mulDivDown_RevertOnDivByZero() external {
     vm.expectRevert();
     MathUtils.mulDivDown(10, 10, 0);
   }
-
 
   function test_mulDivDown_RevertOnOverflow() external {
     uint256 max = type(uint256).max;

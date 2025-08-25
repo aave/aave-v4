@@ -80,21 +80,15 @@ contract PositionStatusWrapper {
     return PositionStatus.isolateCollateralUntil(word, reserveCount);
   }
 
-  function next(
-    uint256 startReserveId
-  ) external view returns (uint256, bool, bool) {
+  function next(uint256 startReserveId) external view returns (uint256, bool, bool) {
     return _p.next(startReserveId);
   }
 
-  function nextBorrowing(
-    uint256 startReserveId
-  ) external view returns (uint256) {
+  function nextBorrowing(uint256 startReserveId) external view returns (uint256) {
     return _p.nextBorrowing(startReserveId);
   }
 
-  function nextCollateral(
-    uint256 startReserveId
-  ) external view returns (uint256) {
+  function nextCollateral(uint256 startReserveId) external view returns (uint256) {
     return _p.nextCollateral(startReserveId);
   }
 
