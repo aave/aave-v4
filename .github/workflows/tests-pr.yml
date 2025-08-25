@@ -22,6 +22,7 @@ jobs:
         with:
           FOUNDRY_VERSION: stable
 
+      - uses: bgd-labs/github-workflows/.github/actions/setup-node@main
       - name: Lint
         id: lint
         run: npm run lint
