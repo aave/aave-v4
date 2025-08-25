@@ -130,22 +130,22 @@ library PositionStatus {
 
   /**
    * @dev Returns the next reserveId that is borrowing or using as collateral.
-   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `startReserveId`, searches from last to first.
+   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `lastSeenReserveId`, searches from last to first.
    * @dev Disregards potential dirty bits set after `reserveCount` in it's bucket.
    * @param self The configuration object.
-   * @param startReserveId The reserveId to start searching from.
+   * @param lastSeenReserveId The reserveId to start searching from.
    * @return reserveId The next reserveId that is borrowing or using as collateral.
    * @return borrowing True if the next reserveId is borrowing, false otherwise.
    * @return collateral True if the next reserveId is using as collateral, false otherwise.
    */
   function next(
     DataTypes.PositionStatus storage self,
-    uint256 startReserveId
+    uint256 lastSeenReserveId
   ) internal view returns (uint256, bool, bool) {
     unchecked {
-      uint256 bucket = startReserveId.bucketId();
+      uint256 bucket = lastSeenReserveId.bucketId();
       uint256 map = self.map[bucket];
-      uint256 setBitId = map.isolateUntil(startReserveId).fls();
+      uint256 setBitId = map.isolateUntil(lastSeenReserveId).fls();
       while (setBitId == 256 && bucket != 0) {
         map = self.map[--bucket];
         setBitId = map.fls();
@@ -161,19 +161,19 @@ library PositionStatus {
 
   /**
    * @dev Returns the next reserveId that is borrowing.
-   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `startReserveId`, searches from last to first.
+   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `lastSeenReserveId`, searches from last to first.
    * @dev Disregard potential dirty bits set after `reserveCount` in it's bucket.
    * @param self The configuration object.
-   * @param startReserveId The reserveId to start searching from.
+   * @param lastSeenReserveId The reserveId to start searching from.
    * @return reserveId The next reserveId that is borrowing.
    */
   function nextBorrowing(
     DataTypes.PositionStatus storage self,
-    uint256 startReserveId
+    uint256 lastSeenReserveId
   ) internal view returns (uint256 reserveId) {
     unchecked {
-      uint256 bucket = startReserveId.bucketId();
-      uint256 setBitId = self.map[bucket].isolateBorrowingUntil(startReserveId).fls();
+      uint256 bucket = lastSeenReserveId.bucketId();
+      uint256 setBitId = self.map[bucket].isolateBorrowingUntil(lastSeenReserveId).fls();
       while (setBitId == 256 && bucket != 0) {
         setBitId = self.map[--bucket].isolateBorrowing().fls();
       }
@@ -183,19 +183,19 @@ library PositionStatus {
 
   /**
    * @dev Returns the next reserveId that is using as collateral.
-   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `startReserveId`, searches from last to first.
+   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `lastSeenReserveId`, searches from last to first.
    * @dev Disregard potential dirty bits set after `reserveCount` in it's bucket.
    * @param self The configuration object.
-   * @param startReserveId The reserveId to start searching from.
+   * @param lastSeenReserveId The reserveId to start searching from.
    * @return reserveId The next reserveId that is using as collateral.
    */
   function nextCollateral(
     DataTypes.PositionStatus storage self,
-    uint256 startReserveId
+    uint256 lastSeenReserveId
   ) internal view returns (uint256 reserveId) {
     unchecked {
-      uint256 bucket = startReserveId.bucketId();
-      uint256 setBitId = self.map[bucket].isolateCollateralUntil(startReserveId).fls();
+      uint256 bucket = lastSeenReserveId.bucketId();
+      uint256 setBitId = self.map[bucket].isolateCollateralUntil(lastSeenReserveId).fls();
       while (setBitId == 256 && bucket != 0) {
         setBitId = self.map[--bucket].isolateCollateral().fls();
       }
@@ -244,19 +244,6 @@ library PositionStatus {
   }
 
   /**
-   * @dev Isolates the borrowing bits from word, disregarding bits before `reserveId`.
-   */
-  function isolateBorrowingFrom(
-    uint256 word,
-    uint256 reserveId
-  ) internal pure returns (uint256 ret) {
-    // ret = word & (BORROWING_MASK << ((reserveId % 128) << 1));
-    assembly ('memory-safe') {
-      ret := and(word, shl(shl(1, mod(reserveId, 128)), BORROWING_MASK))
-    }
-  }
-
-  /**
    * @dev Isolates the borrowing bits from word, disregarding bits after `reserveCount`.
    */
   function isolateBorrowingUntil(
@@ -266,16 +253,6 @@ library PositionStatus {
     // ret = word & (BORROWING_MASK >> (256 - ((reserveCount % 128) << 1)));
     assembly ('memory-safe') {
       ret := and(word, shr(sub(256, shl(1, mod(reserveCount, 128))), BORROWING_MASK))
-    }
-  }
-
-  /**
-   * @dev Isolates the bits from word, disregarding bits before `reserveId`.
-   */
-  function isolateFrom(uint256 word, uint256 reserveId) internal pure returns (uint256 ret) {
-    // ret = word & (type(uint256).max << ((reserveId % 128) << 1));
-    assembly ('memory-safe') {
-      ret := and(word, shl(shl(1, mod(reserveId, 128)), not(0)))
     }
   }
 
@@ -295,19 +272,6 @@ library PositionStatus {
   function isolateCollateral(uint256 word) internal pure returns (uint256 ret) {
     assembly ('memory-safe') {
       ret := and(word, COLLATERAL_MASK)
-    }
-  }
-
-  /**
-   * @dev Isolates the bits from word, disregarding bits before `reserveId`.
-   */
-  function isolateCollateralFrom(
-    uint256 word,
-    uint256 reserveId
-  ) internal pure returns (uint256 ret) {
-    // ret = word & (COLLATERAL_MASK << ((reserveId % 128) << 1));
-    assembly ('memory-safe') {
-      ret := and(word, shl(shl(1, mod(reserveId, 128)), COLLATERAL_MASK))
     }
   }
 

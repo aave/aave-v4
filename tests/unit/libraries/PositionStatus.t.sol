@@ -396,14 +396,14 @@ contract PositionStatusTest is Base {
     }
   }
 
-  function test_isolateBorrowingFrom(uint256 word, uint256 reserveId) public view {
-    uint256 result = p.isolateBorrowingFrom(word, reserveId);
-    uint256 startBitId = (reserveId % 128) * 2;
+  function test_isolateBorrowingUntil(uint256 word, uint256 reserveCount) public view {
+    uint256 result = p.isolateBorrowingUntil(word, reserveCount);
+    uint256 endBitId = (reserveCount % 128) * 2;
 
     for (uint256 bitId; bitId < 256; ++bitId) {
       uint256 resultBit = (result >> bitId) & 1;
-      if (bitId < startBitId) {
-        // bit value before startBitId should be 0 (disregarded)
+      if (bitId >= endBitId) {
+        // bit value after endBitId should be 0 (disregarded)
         assertEq(resultBit, 0);
       } else {
         // retain borrow info on even bits, ignore collateral info on odd bits
@@ -413,14 +413,14 @@ contract PositionStatusTest is Base {
     }
   }
 
-  function test_isolateFrom(uint256 word, uint256 reserveId) public view {
-    uint256 result = p.isolateFrom(word, reserveId);
-    uint256 startBitId = (reserveId % 128) * 2;
+  function test_isolateUntil(uint256 word, uint256 reserveCount) public view {
+    uint256 result = p.isolateUntil(word, reserveCount);
+    uint256 endBitId = (reserveCount % 128) * 2;
 
     for (uint256 bitId; bitId < 256; ++bitId) {
       uint256 resultBit = (result >> bitId) & 1;
-      if (bitId < startBitId) {
-        // bit value before startBitId should be 0 (disregarded)
+      if (bitId >= endBitId) {
+        // bit value after endBitId should be 0 (disregarded)
         assertEq(resultBit, 0);
       } else {
         // bit value after startBitId should be retained
@@ -440,30 +440,13 @@ contract PositionStatusTest is Base {
     }
   }
 
-  function test_isolateCollateralFrom(uint256 word, uint256 reserveId) public view {
-    uint256 result = p.isolateCollateralFrom(word, reserveId);
-    uint256 startBitId = (reserveId % 128) * 2;
-
-    for (uint256 bitId; bitId < 256; ++bitId) {
-      uint256 resultBit = (result >> bitId) & 1;
-      if (bitId < startBitId) {
-        // bit value before startBitId should be 0 (disregarded)
-        assertEq(resultBit, 0);
-      } else {
-        // retain collateral info on odd bits, ignore borrow info on even bits
-        uint256 expectedBit = bitId % 2 == 0 ? 0 : (word >> bitId) & 1;
-        assertEq(resultBit, expectedBit);
-      }
-    }
-  }
-
   function test_isolateCollateralUntil(uint256 word, uint256 reserveCount) public view {
     uint256 result = p.isolateCollateralUntil(word, reserveCount);
     uint256 endBitId = (reserveCount % 128) * 2;
 
     for (uint256 bitId; bitId < 256; ++bitId) {
       uint256 resultBit = (result >> bitId) & 1;
-      if (bitId > endBitId) {
+      if (bitId >= endBitId) {
         // bit value after endBitId should be 0 (disregarded)
         assertEq(resultBit, 0);
       } else {
@@ -486,13 +469,13 @@ contract PositionStatusTest is Base {
     }
   }
 
-  function test_ffs() public {
-    assertEq(LibBit.ffs(0xff << 3), 3);
-    for (uint256 i; i < 256; ++i) {
-      assertEq(LibBit.ffs(1 << i), i);
-      assertEq(LibBit.ffs(type(uint256).max << i), i);
-      assertEq(LibBit.ffs((vm.randomUint() | 1) << i), i);
+  function test_fls() public {
+    assertEq(LibBit.fls(0xff << 3), 10);
+    for (uint256 i = 1; i < 255; i++) {
+      assertEq(LibBit.fls((1 << i) - 1), i - 1);
+      assertEq(LibBit.fls((1 << i)), i);
+      assertEq(LibBit.fls((1 << i) + 1), i);
     }
-    assertEq(LibBit.ffs(0), 256);
+    assertEq(LibBit.fls(0), 256);
   }
 }
