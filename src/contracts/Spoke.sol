@@ -811,10 +811,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
       positionStatus.collateralCount(reserveCount)
     );
+    vars.reserveId = reserveCount;
     while (true) {
       (vars.reserveId, vars.borrowing, vars.collateral) = positionStatus.next(
-        vars.reserveId,
-        reserveCount
+        vars.reserveId
       );
       if (vars.reserveId == PositionStatus.NOT_FOUND) break;
 
@@ -861,10 +861,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
           vars.assetPrice,
           vars.assetUnit
         );
-      }
-
-      unchecked {
-        ++vars.reserveId;
       }
     }
 
@@ -962,10 +958,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 newUserRiskPremium
   ) internal returns (bool) {
     DataTypes.NotifyRiskPremiumUpdateVars memory vars;
-    uint256 reserveCount = _reserveCount;
+    vars.reserveId = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     while (
-      (vars.reserveId = positionStatus.nextBorrowing(vars.reserveId, reserveCount)) !=
+      (vars.reserveId = positionStatus.nextBorrowing(vars.reserveId)) !=
       PositionStatus.NOT_FOUND
     ) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
@@ -1001,9 +997,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
       vars.hub.refreshPremium(vars.assetId, vars.premiumDelta);
       emit RefreshPremiumDebt(vars.reserveId, user, vars.premiumDelta);
-      unchecked {
-        ++vars.reserveId;
-      }
     }
     emit UserRiskPremiumUpdate(user, newUserRiskPremium);
 
@@ -1017,11 +1010,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    */
   function _reportDeficits(address user) internal {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-    uint256 reserveCount = _reserveCount;
-    uint256 reserveId;
+    uint256 reserveId = _reserveCount;
 
     while (
-      (reserveId = positionStatus.nextBorrowing(reserveId, reserveCount)) !=
+      (reserveId = positionStatus.nextBorrowing(reserveId)) !=
       PositionStatus.NOT_FOUND
     ) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
@@ -1051,27 +1043,18 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       // newUserRiskPremium is 0 due to no collateral remaining
       // non-zero deficit means user ends up with zero total debt
       positionStatus.setBorrowing(reserveId, false);
-
-      unchecked {
-        ++reserveId;
-      }
     }
     emit UserRiskPremiumUpdate(user, 0);
   }
 
   function _refreshDynamicConfig(address user) internal {
-    uint256 reserveCount = _reserveCount;
-    uint256 reserveId;
+    uint256 reserveId = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     while (
-      (reserveId = positionStatus.nextCollateral(reserveId, reserveCount)) !=
+      (reserveId = positionStatus.nextCollateral(reserveId)) !=
       PositionStatus.NOT_FOUND
     ) {
       _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
-
-      unchecked {
-        ++reserveId;
-      }
     }
     emit RefreshAllUserDynamicConfig(user);
   }

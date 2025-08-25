@@ -130,28 +130,25 @@ library PositionStatus {
 
   /**
    * @dev Returns the next reserveId that is borrowing or using as collateral.
-   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `startReserveId`.
-   * @dev Does not disregard potential dirty bits set after `reserveCount` in it's bucket.
+   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `startReserveId`, searches from last to first.
+   * @dev Disregards potential dirty bits set after `reserveCount` in it's bucket.
    * @param self The configuration object.
    * @param startReserveId The reserveId to start searching from.
-   * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
    * @return reserveId The next reserveId that is borrowing or using as collateral.
    * @return borrowing True if the next reserveId is borrowing, false otherwise.
    * @return collateral True if the next reserveId is using as collateral, false otherwise.
    */
   function next(
     DataTypes.PositionStatus storage self,
-    uint256 startReserveId,
-    uint256 reserveCount
+    uint256 startReserveId
   ) internal view returns (uint256, bool, bool) {
     unchecked {
-      uint256 endBucket = reserveCount.bucketId();
       uint256 bucket = startReserveId.bucketId();
       uint256 map = self.map[bucket];
-      uint256 setBitId = map.isolateFrom(startReserveId).ffs();
-      while (setBitId == 256 && bucket != endBucket) {
-        map = self.map[++bucket];
-        setBitId = map.ffs();
+      uint256 setBitId = map.isolateUntil(startReserveId).fls();
+      while (setBitId == 256 && bucket != 0) {
+        map = self.map[--bucket];
+        setBitId = map.fls();
       }
       if (setBitId == 256) {
         return (NOT_FOUND, false, false);
@@ -164,24 +161,21 @@ library PositionStatus {
 
   /**
    * @dev Returns the next reserveId that is borrowing.
-   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `startReserveId`.
-   * @dev Does not disregard potential dirty bits set after `reserveCount` in it's bucket.
+   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `startReserveId`, searches from last to first.
+   * @dev Disregard potential dirty bits set after `reserveCount` in it's bucket.
    * @param self The configuration object.
    * @param startReserveId The reserveId to start searching from.
-   * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
    * @return reserveId The next reserveId that is borrowing.
    */
   function nextBorrowing(
     DataTypes.PositionStatus storage self,
-    uint256 startReserveId,
-    uint256 reserveCount
+    uint256 startReserveId
   ) internal view returns (uint256 reserveId) {
     unchecked {
-      uint256 endBucket = reserveCount.bucketId();
       uint256 bucket = startReserveId.bucketId();
-      uint256 setBitId = self.map[bucket].isolateBorrowingFrom(startReserveId).ffs();
-      while (setBitId == 256 && bucket != endBucket) {
-        setBitId = self.map[++bucket].isolateBorrowing().ffs();
+      uint256 setBitId = self.map[bucket].isolateBorrowingUntil(startReserveId).fls();
+      while (setBitId == 256 && bucket != 0) {
+        setBitId = self.map[--bucket].isolateBorrowing().fls();
       }
       return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(bucket);
     }
@@ -189,24 +183,21 @@ library PositionStatus {
 
   /**
    * @dev Returns the next reserveId that is using as collateral.
-   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `startReserveId`.
-   * @dev Does not disregard potential dirty bits set after `reserveCount` in it's bucket.
+   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `startReserveId`, searches from last to first.
+   * @dev Disregard potential dirty bits set after `reserveCount` in it's bucket.
    * @param self The configuration object.
    * @param startReserveId The reserveId to start searching from.
-   * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
    * @return reserveId The next reserveId that is using as collateral.
    */
   function nextCollateral(
     DataTypes.PositionStatus storage self,
-    uint256 startReserveId,
-    uint256 reserveCount
+    uint256 startReserveId
   ) internal view returns (uint256 reserveId) {
     unchecked {
-      uint256 endBucket = reserveCount.bucketId();
       uint256 bucket = startReserveId.bucketId();
-      uint256 setBitId = self.map[bucket].isolateCollateralFrom(startReserveId).ffs();
-      while (setBitId == 256 && bucket != endBucket) {
-        setBitId = self.map[++bucket].isolateCollateral().ffs();
+      uint256 setBitId = self.map[bucket].isolateCollateralUntil(startReserveId).fls();
+      while (setBitId == 256 && bucket != 0) {
+        setBitId = self.map[--bucket].isolateCollateral().fls();
       }
       return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(bucket);
     }
@@ -266,12 +257,35 @@ library PositionStatus {
   }
 
   /**
+   * @dev Isolates the borrowing bits from word, disregarding bits after `reserveCount`.
+   */
+  function isolateBorrowingUntil(
+    uint256 word,
+    uint256 reserveCount
+  ) internal pure returns (uint256 ret) {
+    // ret = word & (BORROWING_MASK >> (256 - ((reserveCount % 128) << 1)));
+    assembly ('memory-safe') {
+      ret := and(word, shr(sub(256, shl(1, mod(reserveCount, 128))), BORROWING_MASK))
+    }
+  }
+
+  /**
    * @dev Isolates the bits from word, disregarding bits before `reserveId`.
    */
   function isolateFrom(uint256 word, uint256 reserveId) internal pure returns (uint256 ret) {
     // ret = word & (type(uint256).max << ((reserveId % 128) << 1));
     assembly ('memory-safe') {
       ret := and(word, shl(shl(1, mod(reserveId, 128)), not(0)))
+    }
+  }
+
+  /**
+   * @dev Isolates the bits from word, disregarding bits after `reserveCount`.
+   */
+  function isolateUntil(uint256 word, uint256 reserveCount) internal pure returns (uint256 ret) {
+    // ret = word & (type(uint256).max >> (256 - ((reserveCount % 128) << 1)));
+    assembly ('memory-safe') {
+      ret := and(word, shr(sub(256, shl(1, mod(reserveCount, 128))), not(0)))
     }
   }
 

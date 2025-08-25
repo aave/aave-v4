@@ -81,24 +81,21 @@ contract PositionStatusWrapper {
   }
 
   function next(
-    uint256 startReserveId,
-    uint256 reserveCount
+    uint256 startReserveId
   ) external view returns (uint256, bool, bool) {
-    return _p.next(startReserveId, reserveCount);
+    return _p.next(startReserveId);
   }
 
   function nextBorrowing(
-    uint256 startReserveId,
-    uint256 reserveCount
+    uint256 startReserveId
   ) external view returns (uint256) {
-    return _p.nextBorrowing(startReserveId, reserveCount);
+    return _p.nextBorrowing(startReserveId);
   }
 
   function nextCollateral(
-    uint256 startReserveId,
-    uint256 reserveCount
+    uint256 startReserveId
   ) external view returns (uint256) {
-    return _p.nextCollateral(startReserveId, reserveCount);
+    return _p.nextCollateral(startReserveId);
   }
 
   function slot() external pure returns (bytes32 s) {

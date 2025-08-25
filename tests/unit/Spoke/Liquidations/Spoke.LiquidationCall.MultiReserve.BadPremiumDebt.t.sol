@@ -394,8 +394,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     ReportDeficitEvent[] memory expectedLogs = new ReportDeficitEvent[](debtReserveIds.length);
 
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
-      uint256 reserveId = debtReserveIds[i];
-      uint256 assetId = state.debtReserves[i].assetId;
+      uint256 reserveId = debtReserveIds[debtReserveIds.length - (i + 1)];
+      uint256 assetId = state.debtReserves[debtReserveIds.length - (i + 1)].assetId;
 
       uint256 expectedDeficitShares;
       uint256 expectedDeficitAmount;
