@@ -59,6 +59,8 @@ library KeyValueListInMemory {
   }
 
   function unpack(uint256 data) internal pure returns (uint256, uint256) {
+    // @dev no need to unpack data that was never packed
+    if(data == 0) return(0,0);
     return (unpackKey(data), unpackValue(data));
   }
 }
