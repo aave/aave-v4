@@ -246,6 +246,14 @@ library DataTypes {
     uint256 restoredShares;
   }
 
+  struct CalculateVariableLiquidationBonusParams {
+    uint256 healthFactorForMaxBonus;
+    uint256 liquidationBonusFactor;
+    uint256 healthFactor;
+    uint256 liquidationBonus;
+    uint256 healthFactorLiquidationThreshold;
+  }
+
   struct LiquidateUserParams {
     uint256 collateralReserveId;
     uint256 debtReserveId;
@@ -256,6 +264,8 @@ library DataTypes {
     uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 accruedPremium;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
     address liquidator;
   }
 }

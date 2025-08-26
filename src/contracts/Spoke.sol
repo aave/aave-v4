@@ -30,7 +30,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using WadRayMath for uint256;
   using PercentageMath for *;
   using KeyValueListInMemory for KeyValueListInMemory.List;
-  using LiquidationLogic for DataTypes.LiquidationConfig;
   using PositionStatus for *;
   using MathUtils for *;
 
@@ -320,25 +319,32 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     address user,
     uint256 debtToCover
   ) external {
-    (uint256 healthFactor, , , , ) = _calculateUserAccountData(user);
-    (uint256 drawnDebt, uint256 premiumDebt, uint256 accruedPremium) = _getUserDebt(
-      _reserves[debtReserveId].hub,
-      _reserves[debtReserveId].assetId,
-      _userPositions[user][debtReserveId]
-    );
-
     DataTypes.LiquidateUserParams memory params = DataTypes.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       oracle: address(oracle),
       user: user,
       debtToCover: debtToCover,
-      healthFactor: healthFactor,
-      drawnDebt: drawnDebt,
-      premiumDebt: premiumDebt,
-      accruedPremium: accruedPremium,
+      healthFactor: 0, // populated below
+      drawnDebt: 0, // populated below
+      premiumDebt: 0, // populated below
+      accruedPremium: 0, // populated below
+      totalCollateralInBaseCurrency: 0, // populated below
+      totalDebtInBaseCurrency: 0, // populated below
       liquidator: msg.sender
     });
+    (
+      params.healthFactor,
+      ,
+      ,
+      params.totalCollateralInBaseCurrency,
+      params.totalDebtInBaseCurrency
+    ) = _calculateUserAccountData(user);
+    (params.drawnDebt, params.premiumDebt, params.accruedPremium) = _getUserDebt(
+      _reserves[debtReserveId].hub,
+      _reserves[debtReserveId].assetId,
+      _userPositions[user][debtReserveId]
+    );
 
     DataTypes.DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[
       collateralReserveId
@@ -356,18 +362,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     );
 
     uint256 newUserRiskPremium;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
     (
       newUserRiskPremium,
       ,
-      healthFactor,
-      totalCollateralInBaseCurrency,
-      totalDebtInBaseCurrency
+      ,
+      params.totalCollateralInBaseCurrency,
+      params.totalDebtInBaseCurrency
     ) = _calculateUserAccountData(user);
-    require(healthFactor <= _liquidationConfig.closeFactor, HealthFactorNotBelowCloseFactor());
 
-    if (totalCollateralInBaseCurrency == 0 && totalDebtInBaseCurrency > 0) {
+    if (params.totalCollateralInBaseCurrency == 0 && params.totalDebtInBaseCurrency > 0) {
       _reportDeficits(user);
     } else {
       // new risk premium only needs to be propagated if no deficit exists
@@ -585,10 +588,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   ) external view returns (uint256) {
     // if healthFactorForMaxBonus is 0, always returns liquidationBonus
     return
-      _liquidationConfig.calculateVariableLiquidationBonus(
-        healthFactor,
-        _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey].liquidationBonus,
-        Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+      LiquidationLogic.calculateVariableLiquidationBonus(
+        DataTypes.CalculateVariableLiquidationBonusParams({
+          healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
+          liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
+          healthFactor: healthFactor,
+          liquidationBonus: _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey]
+            .liquidationBonus,
+          healthFactorLiquidationThreshold: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+        })
       );
   }
 
