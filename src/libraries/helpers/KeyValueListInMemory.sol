@@ -11,12 +11,11 @@ library KeyValueListInMemory {
   uint256 internal constant _MAX_KEY_BITS = 32;
   uint256 internal constant _MAX_VALUE_BITS = 224;
 
-  uint256 internal constant _KEY_MASK = (1 << _MAX_KEY_BITS) - 1;
-  uint256 internal constant _VALUE_MASK = (1 << _MAX_VALUE_BITS) - 1;
+  uint256 internal constant _MAX_KEY = type(uint32).max;
+  uint256 internal constant _MAX_VALUE = type(uint224).max;
 
   // since KEY_BITS < VALUE_BITS & we want to pack KEY in the msb
   uint256 internal constant _KEY_SHIFT = 256 - _MAX_KEY_BITS;
-  uint256 internal constant _VALUE_SHIFT = _MAX_VALUE_BITS;
 
   struct List {
     uint256[] _inner;
@@ -32,8 +31,8 @@ library KeyValueListInMemory {
   }
 
   function add(List memory self, uint256 idx, uint256 key, uint256 value) internal pure {
-    require(key <= _KEY_MASK, MaxKeySizeExceeded(key));
-    require(value <= _VALUE_MASK, MaxValueSizeExceeded(value));
+    require(key <= _MAX_KEY, MaxKeySizeExceeded(key));
+    require(value <= _MAX_VALUE, MaxValueSizeExceeded(value));
     self._inner[idx] = pack(key, value);
   }
 
@@ -48,7 +47,7 @@ library KeyValueListInMemory {
 
   // @dev key, value < ceiling checks are expected to be done before packing
   function pack(uint256 key, uint256 value) internal pure returns (uint256) {
-    return (key << _KEY_SHIFT) | value;
+    return (key << _KEY_SHIFT) | ((~value) & _MAX_VALUE);
   }
 
   function unpackKey(uint256 data) internal pure returns (uint256) {
@@ -56,7 +55,7 @@ library KeyValueListInMemory {
   }
 
   function unpackValue(uint256 data) internal pure returns (uint256) {
-    return data & ((1 << _KEY_SHIFT) - 1);
+    return (~data) & ((1 << _KEY_SHIFT) - 1);
   }
 
   function unpack(uint256 data) internal pure returns (uint256, uint256) {
