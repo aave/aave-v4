@@ -10,15 +10,14 @@ methods {
 
     function AssetLogic.getFeeShares(
         DataTypes.Asset storage asset,
-        uint256 nextDrawnIndex,
-        uint256 currentDrawnIndex
-    ) internal returns (uint256) => SummaryLibrary.getFeeShares(asset, nextDrawnIndex, currentDrawnIndex);
+        uint256 indexDelta
+    ) internal returns (uint256) => SummaryLibrary.getFeeShares(asset, indexDelta);
 
     function AssetLogic.getDrawnIndex(DataTypes.Asset storage asset) internal returns (uint256) => SummaryLibrary.getDrawnIndex(asset);
 
     // todo prove getFeeShares function
-    //function SummaryLibrary.calcFees(uint256 indexDelta, uint256 totalDrawnShares, uint256 //li/quidityFee) internal  returns (uint256) => NONDET; 
-    // calcFeesApproximation(indexDelta, totalDrawnShares, liquidityFee); 
+    function SummaryLibrary.calcFees(uint256 indexDelta, uint256 totalDrawnShares, uint256 liquidityFee) internal  returns (uint256) => 
+    calcFeesApproximation(indexDelta, totalDrawnShares, liquidityFee); 
 }
 
 ghost calcFeesApproximation(uint256 /*indexdelta*/, uint256 /* totalSrawnShares*/, uint256 /* liquidityFee*/) returns uint256 {

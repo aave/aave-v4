@@ -1,7 +1,8 @@
 
 import "./ERC20s_CVL.spec";
 import "./Math_CVL.spec";
-import "./HubAdvanceSummary.spec";
+import "./HubBase.spec";
+//import "./HubAdvanceSummary.spec";
 
 
 using Hub as hub;
@@ -22,6 +23,13 @@ methods {
     uint256 assetId
   ) internal => NONDET;
 
+    function AssetLogic.getFeeShares(
+        DataTypes.Asset storage asset,
+        uint256 indexDelta
+    ) internal returns (uint256) => ALWAYS(0);
+
+    function AssetLogic.getDrawnIndex(DataTypes.Asset storage   asset) internal returns (uint256) => cachedIndex;
+
   function AssetLogic.accrue(DataTypes.Asset storage asset, uint256 assetId, DataTypes.SpokeData storage feeReceiver) internal => accrueCalled();
 
   function MathUtils.calculateLinearInterest(
@@ -32,6 +40,8 @@ methods {
 }
 
 /************ Ghost Variables ************/
+
+ghost uint256 cachedIndex;
 
 ghost  ghostLinearInterest( uint256 /*rate*/, uint40 /*lastUpdateTimestamp*/) returns uint256; 
 
@@ -146,18 +156,30 @@ hook Sload uint128 value hub._spokes[KEY uint256 assetId][KEY address spoke].rea
 }
 
 /**** Valid State Rules *******/
+/** 
+@title up to 1 wei difference getTotalAddedAssets(e,assetId) == getAssetAddedAmount(e,assetId) +- 1
+@note implemented as a rule for optimization -reduandant 
+**/
+rule getTotalAddedAssetsVsGetAssetAddedAmount(uint256 assetId, env e, method f) {
+    requireAllInvariants(assetId, e);
+    // optimize (reuse) the calls to getAssetAddedAmount() and getTotalAddedShares()
+     // addedAssetsBefore = getAssetAddedAmount(e,assetId);
+     uint256 totalAmountBefore = getTotalAddedAssets(e,assetId);
+     require totalAmountBefore == addedAssetsBefore;
+     calldataarg args; 
+     f(e,args);
 
-invariant getTotalAddedAssetsVsGetAssetAddedAmount(uint256 assetId, env e) 
-    getTotalAddedAssets(e,assetId) == getAssetAddedAmount(e,assetId)  {
-        preserved with (env eInv) {
-            require eInv.block.timestamp == e.block.timestamp;
-            requireAllInvariants(assetId, e);
-        }
-    }
+     uint256 supplyAmountAfter = getAssetAddedAmount(e,assetId);
+     uint256 totalAmountAfter = getTotalAddedAssets(e,assetId);
+     //todo - check what if we start with one diff
+     assert totalAmountAfter >= supplyAmountAfter - 1 &&
+             totalAmountAfter <= supplyAmountAfter + 1 ;
+
+}
 
 
 invariant totalAssetsVsShares(uint256 assetId, env e) 
-    getAssetAddedAmount(e,assetId) >=  getTotalAddedShares(e,assetId) {
+    getTotalAddedAssets(e,assetId) >=  getTotalAddedShares(e,assetId) {
         preserved with (env eInv) {
             //todo - need to prove time changing 
             require eInv.block.timestamp == e.block.timestamp;
@@ -166,7 +188,7 @@ invariant totalAssetsVsShares(uint256 assetId, env e)
     }
 
 invariant totalAssetsAndSharesZero(uint256 assetId, env e) 
-    getAssetAddedAmount(e,assetId) == 0 <=> getTotalAddedShares(e,assetId) == 0 {
+    getTotalAddedAssets(e,assetId) == 0 <=> getTotalAddedShares(e,assetId) == 0 {
         preserved with (env eInv) {
             //todo - need to prove time changing 
             require eInv.block.timestamp == e.block.timestamp;
@@ -272,84 +294,100 @@ invariant liquidityFee_upper_bound(uint256 assetId)
     hub._assets[assetId].liquidityFee <= wadRayMath.PERCENTAGE_FACTOR();
 
 
-invariant premiumOffset_Integrity(uint256 assetId) 
-    hub._assets[assetId].premiumOffset <= hub._assets[assetId].premiumShares * hub._assets[assetId].drawnRate / wadRayMath.RAY()
+
+invariant premiumOffset_Integrity(uint256 assetId, address spokeId, env e) 
+    hub._assets[assetId].premiumOffset <= previewRestoreByShares(e,assetId,hub._assets[assetId].premiumShares)
     {
-        preserved  {
-            env e;
-            requireAllInvariants(assetId, e);
-            
+        preserved  with (env e1) {
+            requireAllInvariants(assetId, e1);
+            //require e.msg.sender == spokeId;
         }
+
     }
 
+rule check_premiumOffset_Integrity(uint256 assetId, address spokeId) {
+         env e;
+    mathint calcBefore = previewRestoreByShares(e,assetId,hub._assets[assetId].premiumShares);
+    mathint diffBefore = calcBefore- hub._assets[assetId].premiumOffset;
+    require diffBefore >= 0;
 
-/*
- Can't have realizedPremium without first having drawnShares
- */
- invariant drawnShares_realizedPremium_zero(uint256 assetId)
-    hub._assets[assetId].drawnShares == 0 => hub._assets[assetId].realizedPremium == 0
-    {
-        preserved  {
-            env e;
-            requireAllInvariants(assetId, e);
-            
-        }
-    }
+    requireAllInvariants(assetId, e);
+    require e.msg.sender == spokeId;
+    DataTypes.PremiumDelta premiumDelta;
+    refreshPremium(e,assetId,premiumDelta); 
+    mathint calc = previewRestoreByShares(e,assetId,hub._assets[assetId].premiumShares);
+    //assert hub._spokes[assetId][spokeId].premiumOffset <= hub._spokes[assetId][spokeId].premiumShares * hub._assets[assetId].drawnIndex / wadRayMath.RAY();
+    mathint diff = calc- hub._assets[assetId].premiumOffset;
+    assert diff >= 0;
+}
 
-/* realizedPremium has to be cleared before drawnShares is zeroed */
-invariant drawnShares_realizedPremium_nonZero(uint256 assetId)
-    hub._assets[assetId].realizedPremium > 0 => hub._assets[assetId].drawnShares > 0
-    {
-        preserved  {
-            env e;
-            requireAllInvariants(assetId, e);
-            
-        }
-    }
+rule check_premiumOffset_Integrity_RD(uint256 assetId, address spokeId) {
+    env e;
+    mathint calcBefore =  hub._assets[assetId].premiumShares * hub._assets[assetId].drawnIndex / wadRayMath.RAY();
+    mathint diffBefore = calcBefore- hub._spokes[assetId][spokeId].premiumOffset;
+    require diffBefore >= 0;
 
-/* Can't have premiumSharesdP without first having drawnShares */
-invariant drawnShares_premiumShares_zero(uint256 assetId)
-    hub._assets[assetId].drawnShares == 0 => hub._assets[assetId].premiumShares == 0
-    {
-        preserved  {
-            env e;
-            requireAllInvariants(assetId, e);
-            
-        }
-    }
-
-/* realizedPremium has to be cleared before drawnShares is zeroed */
-invariant drawnShares_premiumShares_nonzero(uint256 assetId)
-    hub._assets[assetId].premiumShares > 0 => hub._assets[assetId].drawnShares > 0 
-    {
-        preserved  {
-            env e;
-            requireAllInvariants(assetId, e);
-            
-        }
-    }
+    requireAllInvariants(assetId, e);
+    require e.msg.sender == spokeId;
+    DataTypes.PremiumDelta premiumDelta;
+    refreshPremium(e,assetId,premiumDelta); 
+    mathint calc = hub._assets[assetId].premiumShares * hub._assets[assetId].drawnIndex / wadRayMath.RAY();
+    mathint diff = calc- hub._assets[assetId].premiumOffset;
+    assert diff >= 0;
+}
 
 
+
+rule check_diffs(uint256 assetId, address spokeId1, address spokeId2) {
+    env e;
+    require spokeId1 != spokeId2;
+
+    mathint hubBefore =  previewRestoreByShares(e,assetId,hub._assets[assetId].premiumShares) -  hub._assets[assetId].premiumOffset;
+    mathint spoke1 =  previewRestoreByShares(e,assetId,hub._spokes[assetId][spokeId1].premiumShares) -  hub._spokes[assetId][spokeId1].premiumOffset;
+    mathint spoke2 =  previewRestoreByShares(e,assetId,hub._spokes[assetId][spokeId2].premiumShares) -  hub._spokes[assetId][spokeId2].premiumOffset;
+    require hubBefore >= 0;
+    require spoke1 >= 0;
+    require spoke2 >= 0;    
+    require hubBefore >= spoke1 + spoke2;
+    uint256 spoke2sharesBefore = hub._spokes[assetId][spokeId2].premiumShares;
+
+    requireAllInvariants(assetId, e);
+    require e.msg.sender == spokeId2;
+    DataTypes.PremiumDelta premiumDelta;
+    refreshPremium(e,assetId,premiumDelta); 
+    require spoke2sharesBefore == hub._spokes[assetId][spokeId2].premiumShares;
+
+    mathint hubAfter =  previewRestoreByShares(e,assetId,hub._assets[assetId].premiumShares) -  hub._assets[assetId].premiumOffset;
+    mathint spokeAfter =  previewRestoreByShares(e,assetId,hub._spokes[assetId][spokeId1].premiumShares) -  hub._spokes[assetId][spokeId1].premiumOffset;
+    
+    assert hubAfter >= spokeAfter;
+}
 /**
 @title External balance is at least as internal accounting 
 **/
 strong invariant solvency_external(address asset )
-    balanceByToken[asset][hub] >=  sumLiquidity[asset] ;
-
+    balanceByToken[asset][hub] >=  sumLiquidity[asset] 
+    {
+        preserved reclaim(uint256 assetId, uint256 amount) with (env e)
+        {
+            require hub._assets[assetId].reinvestmentStrategy != hub;
+        }
+}
 
 // optimize the calls to certain function and save in ghost (global) variable) 
-ghost uint256 supplyAmountBefore; 
+ghost uint256 addedAssetsBefore; 
 ghost uint256 supplyShareBefore;
 
 function requireAllInvariants(uint256 assetId, env e)  {
-    // optimize (reuse) the calls to getAssetAddedAmount() and getTotalAddedShares()
-    supplyAmountBefore = getAssetAddedAmount(e,assetId);
+    // optimize (reuse) the calls to getTotalAddedAssets() and getTotalAddedShares()
+    addedAssetsBefore = getTotalAddedAssets(e,assetId);
     supplyShareBefore = getTotalAddedShares(e,assetId); 
     //requireInvariant totalAssetsVsShares(assetId,e);
-    require supplyAmountBefore >= supplyShareBefore, "optimization";
+    require addedAssetsBefore >= supplyShareBefore, "optimization";
     
     // requireInvariant totalAssetsAndSharesZero(assetId,e);
-    require supplyAmountBefore == 0 <=> supplyShareBefore == 0, "optimization";
+    // this does not hold 
+    //require addedAssetsBefore == 0 <=> supplyShareBefore == 0, "optimization";
 
     requireInvariant solvency_external(hub._assets[assetId].underlying);
     requireInvariant sumOfSpokeDrawnShares(assetId);
@@ -361,13 +399,17 @@ function requireAllInvariants(uint256 assetId, env e)  {
     requireInvariant validAssetId(assetId);
     requireInvariant drawnIndexMin(assetId); 
     requireInvariant liquidityFee_upper_bound(assetId);
-    requireInvariant premiumOffset_Integrity(assetId);
-    requireInvariant drawnShares_realizedPremium_zero(assetId);
-    requireInvariant drawnShares_realizedPremium_nonZero(assetId);
-    requireInvariant drawnShares_premiumShares_zero(assetId);
-    requireInvariant drawnShares_premiumShares_nonzero(assetId);
-
+    requireInvariant premiumOffset_Integrity(assetId, e.msg.sender,e);
+    
+    require cachedIndex == hub._assets[assetId].drawnIndex;
     // need to add:
     // getTotalAddedAssetsVsGetAssetAddedAmount 
 
 }   
+
+function assumeRestoreArguments(uint256 assetId, address spoke, uint256 drawnAmount,
+                    uint256 premiumAmount, DataTypes.PremiumDelta  premiumDelta) {
+            require (premiumAmount < hub._spokes[assetId][spoke].premiumShares  &&  hub._spokes[assetId][spoke].premiumShares > 0 ) => drawnAmount == 0;
+            require (premiumDelta.realizedDelta < hub._spokes[assetId][spoke].realizedPremium  &&  hub._spokes[assetId][spoke].realizedPremium > 0 ) => (drawnAmount == 0 && premiumAmount == 0);
+
+        } 

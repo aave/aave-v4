@@ -113,7 +113,92 @@ rule removeAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address
     satisfy afterOneStep > afterTwoSteps;
 }
 
+/**
+@title Prove that the additivity of draw() 
 
+**/
+rule drawAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
+    env e;
+    address spoke = e.msg.sender;
+    requireAllInvariants(assetId,e);
+    storage init = lastStorage;
+
+    draw(e, assetId, amountX, from);
+    draw(e, assetId, amountY, from);
+    uint256 afterTwoSteps = getSpokeTotalOwed(e, assetId, spoke);
+    //expecting the code to enforce that amountX+amountY can not overflow
+    draw(e, assetId, assert_uint256(amountX + amountY), from)at init;
+    uint256 afterOneStep = getSpokeTotalOwed(e, assetId, spoke);
+
+    //rounding should be in favor of the house
+    assert afterOneStep <= afterTwoSteps;
+    satisfy afterOneStep < afterTwoSteps;
+}
+
+rule restoreAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
+    env e;
+    address spoke = e.msg.sender;
+    requireAllInvariants(assetId,e);
+    storage init = lastStorage;
+
+    DataTypes.PremiumDelta premiumDeltaX;
+    DataTypes.PremiumDelta premiumDeltaY;       
+    DataTypes.PremiumDelta premiumDeltaXY;
+    uint256 premiumAmountX ;
+    uint256 premiumAmountY ;
+    require premiumDeltaXY.sharesDelta == premiumDeltaX.sharesDelta + premiumDeltaY.sharesDelta;
+    require premiumDeltaXY.offsetDelta == premiumDeltaX.offsetDelta + premiumDeltaY.offsetDelta;
+    require premiumDeltaXY.realizedDelta == premiumDeltaX.realizedDelta + premiumDeltaY.realizedDelta;
+    
+    restore(e, assetId, amountX, premiumAmountX, premiumDeltaX, from);
+    restore(e, assetId, amountY, premiumAmountY, premiumDeltaY, from);
+    uint256 afterTwoSteps = getSpokeTotalOwed(e, assetId, spoke);
+    //expecting the code to enforce that amountX+amountY can not overflow
+    restore(e, assetId, assert_uint256(amountX + amountY), assert_uint256(premiumAmountX + premiumAmountY),premiumDeltaXY, from)at init;
+    uint256 afterOneStep = getSpokeTotalOwed(e, assetId, spoke);
+    assert afterOneStep <= afterTwoSteps;
+    satisfy afterOneStep < afterTwoSteps;
+}
+
+rule reportDeficitAdditivity(uint256 assetId, uint256 amountX, uint256 amountY) {
+    env e;
+    address spoke = e.msg.sender;
+    requireAllInvariants(assetId,e);
+    storage init = lastStorage;
+    DataTypes.PremiumDelta premiumDeltaX;
+    DataTypes.PremiumDelta premiumDeltaY;       
+    DataTypes.PremiumDelta premiumDeltaXY;
+    uint256 premiumAmountX ;
+    uint256 premiumAmountY ;
+
+    require premiumDeltaXY.sharesDelta == premiumDeltaX.sharesDelta + premiumDeltaY.sharesDelta;
+    require premiumDeltaXY.offsetDelta == premiumDeltaX.offsetDelta + premiumDeltaY.offsetDelta;
+    require premiumDeltaXY.realizedDelta == premiumDeltaX.realizedDelta + premiumDeltaY.realizedDelta;
+
+    reportDeficit(e, assetId, amountX, premiumAmountX, premiumDeltaX);
+    reportDeficit(e, assetId, amountY, premiumAmountY, premiumDeltaY);
+    uint256 afterTwoSteps = getSpokeTotalOwed(e, assetId, spoke);
+    //expecting the code to enforce that amountX+amountY can not overflow
+    reportDeficit(e, assetId, assert_uint256(amountX + amountY),  assert_uint256(premiumAmountX + premiumAmountY), premiumDeltaXY) at init;
+    uint256 afterOneStep = getSpokeTotalOwed(e, assetId, spoke);
+    assert afterOneStep <= afterTwoSteps;
+    satisfy afterOneStep < afterTwoSteps;
+}
+
+rule eliminateDeficitAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
+    env e;
+    address spoke = e.msg.sender;
+    requireAllInvariants(assetId,e);
+    storage init = lastStorage;
+    eliminateDeficit(e, assetId, amountX);
+    eliminateDeficit(e, assetId, amountY);
+    uint256 afterTwoSteps = getSpokeAddedShares(e, assetId, spoke);
+    //expecting the code to enforce that amountX+amountY can not overflow
+    eliminateDeficit(e, assetId, assert_uint256(amountX + amountY))at init;
+    uint256 afterOneStep = getSpokeAddedShares(e, assetId, spoke);
+    assert afterOneStep >= afterTwoSteps;
+    satisfy afterOneStep > afterTwoSteps;
+}
 
 // optimize the calls to certain function and save in ghost (global) variable) 
 ghost uint256 supplyAmountBefore; 

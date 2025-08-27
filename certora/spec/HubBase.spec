@@ -8,11 +8,15 @@ using WadRayMathWrapper as wadRayMath;
 
 Base definitions used in all of LiquidityHuv spec files
 
+Here we have only safe assumptions, safe summarization that are either proved in math.spec or a nondet summary
+
 ***/
 
 methods {
  
     function Math.mulDiv(uint256 x, uint256 y, uint256 denominator) internal  returns (uint256) => mulDivDownCVL(x,y,denominator);
+    function Math.mulDiv(uint256 x, uint256 y, uint256 denominator, Math.Rounding rounding
+  ) internal returns (uint256) => mulDivCheckRounding(x,y,denominator,rounding);
 
     function WadRayMathWrapper.RAY() external returns (uint256) envfree;
     function WadRayMathWrapper.PERCENTAGE_FACTOR() external returns (uint256) envfree;
@@ -29,20 +33,21 @@ methods {
     function WadRayMathWrapper.rayDivUp(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivUpCVL(a,wadRayMath.RAY(),b);
 
-/*
-    function _.calculateInterestRate( uint256 assetId, uint256 availableLiquidity, uint256 baseDebt, uint256 premiumDebt) external => NONDET; 
-*/
     function _.setInterestRateData(uint256 assetId, bytes data) external => NONDET; 
 
     function _._checkCanCall(address caller, bytes calldata data) internal => NONDET; 
-
-    // todo - prove 
-    function PercentageMath.percentMulDown(uint256 value, uint256 percentage) internal  returns (uint256) => 
-    //mulDivDownCVL(value,percentage,wadRayMathExtended.PERCENTAGE_FACTOR());
-    identity(value);
-
 }
 
-function identity(uint256 x) returns uint256 {
-    return x;
+function mulDivCheckRounding(uint256 x, uint256 y, uint256 z, Math.Rounding rounding) returns (uint256){
+    if (rounding == Math.Rounding.Floor) {
+        return mulDivDownCVL(x,y,z);
+    }
+    else if (rounding == Math.Rounding.Ceil) {
+        return mulDivUpCVL(x,y,z);
+    }
+    else {
+        assert false; 
+    }
+    return 0;
 }
+ 

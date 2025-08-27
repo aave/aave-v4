@@ -11,15 +11,14 @@ library SummaryLibrary {
 
 function getFeeShares(
       DataTypes.Asset storage asset,
-    uint256 nextDrawnIndex,
-    uint256 currentDrawnIndex 
+    uint256 indexDelta
     ) external view returns (uint256) {
       uint256 liquidityFee = asset.liquidityFee;
-      if (nextDrawnIndex == currentDrawnIndex|| liquidityFee == 0) {
+      if (indexDelta == 0|| liquidityFee == 0) {
         return 0;
       }
       uint256 totalDrawnShares = asset.drawnShares + asset.premiumShares;
-      uint256 feesAmount = calcFees(nextDrawnIndex - currentDrawnIndex,totalDrawnShares, liquidityFee);
+      uint256 feesAmount = calcFees(indexDelta,totalDrawnShares, liquidityFee);
       return feesAmount.toSharesDown(asset.totalAddedAssets() -  feesAmount, asset.addedShares);
   }
 
