@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -90,7 +91,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param positionManager The address of the position manager.
    * @param active True if position manager has become active, false otherwise.
    */
-  event PositionManagerUpdate(address indexed positionManager, bool active);
+  event UpdatePositionManager(address indexed positionManager, bool active);
 
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
@@ -101,34 +102,33 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event ReservePriceSourceUpdate(uint256 indexed reserveId, address indexed priceSource);
   event LiquidationConfigUpdate(DataTypes.LiquidationConfig config);
 
-  error ReserveNotListed();
-  error ReserveExists();
   error AssetNotListed();
-  error InvalidCollateralRisk();
+  error ReserveExists();
+  error ReserveNotListed();
   error InsufficientSupply(uint256 supply);
   error ReserveNotBorrowable();
   error ReservePaused();
   error ReserveFrozen();
-  error InvalidCollateralFactor();
-  error InvalidLiquidationBonus();
-  error IncompatibleCollateralFactorAndLiquidationBonus();
   error HealthFactorBelowThreshold();
-  error InvalidCloseFactor();
-  error InvalidHealthFactorForMaxBonus();
-  error InvalidLiquidationBonusFactor();
-  error HealthFactorNotBelowThreshold();
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
-  error InvalidDebtToCover();
-  error InvalidLiquidationFee();
-  error InvalidOracle();
-  error UsersAndDebtLengthMismatch();
   error Unauthorized();
   error ConfigKeyUninitialized();
   error InactivePositionManager();
+  error InvalidSignature();
+  error InvalidAddress();
+  error InvalidOracle();
+  error InvalidCollateralRisk();
+  error InvalidLiquidationConfig();
+  error InvalidLiquidationFee();
+  error InvalidCollateralFactorAndLiquidationBonus();
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
+  /**
+   * @notice Allows governance to update the spoke oracle.
+   * @dev Does not validate all existing reserves are supported on `newOracle`.
+   */
   function updateOracle(address newOracle) external;
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;
@@ -211,6 +211,23 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function setUserPositionManager(address positionManager, bool approve) external;
 
   /**
+   * @notice Allows caller to approve or revoke approval for positionManager using a signature.
+   * @param positionManager The address of the position manager.
+   * @param user The address of the user on whose behalf position manager can act.
+   * @param approve True if user wants to approve position manager, false otherwise.
+   * @param deadline The deadline for the signature.
+   */
+  function setUserPositionManagerWithSig(
+    address positionManager,
+    address user,
+    bool approve,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external;
+
+  /**
    * @notice Allows position manager (as caller) to renounce their approval given by the user.
    * @param user The address of the user.
    */
@@ -225,6 +242,29 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @notice Returns true if positionManager is currently active, false otherwise.
    */
   function isPositionManagerActive(address positionManager) external view returns (bool);
+
+  /**
+   * @notice Allows caller to revoke their nonce used in `setUserPositionManagerWithSig`.
+   */
+  function useNonce() external;
+
+  /**
+   * @notice Allows consuming a permit signature for the given reserve's underlying asset.
+   * @dev Spender is the corresponding hub of the given reserve.
+   * @param reserveId The identifier of the reserve.
+   * @param onBehalfOf The address of the user on whose behalf the permit is being used.
+   * @param value The amount of the underlying asset to permit.
+   * @param deadline The deadline for the permit.
+   */
+  function permitReserve(
+    uint256 reserveId,
+    address onBehalfOf,
+    uint256 value,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external;
 
   function getHealthFactor(address user) external view returns (uint256);
 
@@ -294,4 +334,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
 
   function oracle() external view returns (IAaveOracle);
+
+  function nonces(address user) external view returns (uint256);
+
+  function DOMAIN_SEPARATOR() external view returns (bytes32);
 }

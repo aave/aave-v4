@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
@@ -441,14 +442,6 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       0,
       int256(premDebtRestored) - int256(accruedPremium)
     );
-    vm.expectEmit(address(hub1));
-    emit IHub.ReportDeficit(
-      debtAssetId,
-      address(state.spoke),
-      state.expectedDeficitShares,
-      expectedDeficitPremiumDelta,
-      state.expectedDeficitAmount
-    );
 
     vm.expectEmit(address(state.spoke));
     emit ISpokeBase.LiquidationCall(
@@ -459,6 +452,16 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       state.collToLiq,
       LIQUIDATOR
     );
+    
+    vm.expectEmit(address(hub1));
+    emit IHub.ReportDeficit(
+      debtAssetId,
+      address(state.spoke),
+      state.expectedDeficitShares,
+      expectedDeficitPremiumDelta,
+      state.expectedDeficitAmount
+    );
+
     vm.prank(LIQUIDATOR);
     state.spoke.liquidationCall(collateralReserveId, debtReserveId, state.user, UINT256_MAX);
 

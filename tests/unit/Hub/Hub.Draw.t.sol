@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -304,10 +305,10 @@ contract HubDrawTest is HubBase {
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  function test_draw_revertsWith_InvalidDrawAmount() public {
+  function test_draw_revertsWith_InvalidAmount() public {
     uint256 drawAmount = 0;
 
-    vm.expectRevert(IHub.InvalidDrawAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
@@ -414,8 +415,8 @@ contract HubDrawTest is HubBase {
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  function test_draw_fuzz_revertsWith_InvalidToAddress(uint256 daiAmount) public {
-    vm.expectRevert(IHub.InvalidToAddress.selector);
+  function test_draw_fuzz_revertsWith_InvalidAddress(uint256 daiAmount) public {
+    vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: daiAmount, to: address(hub1)});
   }

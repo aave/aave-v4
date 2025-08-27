@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
@@ -93,7 +94,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
       ? (reserveId1, reserveId2)
       : (reserveId2, reserveId1);
 
-    vm.expectRevert(ISpoke.InvalidDebtToCover.selector);
+    vm.expectRevert(LiquidationLogic.InvalidDebtToCover.selector, address(spoke1));
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
   }
 
@@ -124,7 +125,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
       ? (reserveId1, reserveId2)
       : (reserveId2, reserveId1);
 
-    vm.expectRevert(ISpoke.HealthFactorNotBelowThreshold.selector);
+    vm.expectRevert(LiquidationLogic.HealthFactorNotBelowThreshold.selector);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
   }
 

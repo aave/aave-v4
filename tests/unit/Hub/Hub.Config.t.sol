@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -22,6 +23,11 @@ contract HubConfigTest is HubBase {
     );
   }
 
+  function test_hub_deploy_revertsWith_InvalidAddress() public {
+    vm.expectRevert(IHub.InvalidAddress.selector);
+    new Hub(address(0));
+  }
+
   function test_addSpoke_fuzz_revertsWith_AssetNotListed(
     uint256 assetId,
     DataTypes.SpokeConfig calldata spokeConfig
@@ -31,13 +37,13 @@ contract HubConfigTest is HubBase {
     Utils.addSpoke(hub1, ADMIN, assetId, address(spoke1), spokeConfig);
   }
 
-  function test_addSpoke_fuzz_revertsWith_InvalidSpoke(
+  function test_addSpoke_fuzz_revertsWith_InvalidAddress_spoke(
     uint256 assetId,
     DataTypes.SpokeConfig calldata spokeConfig
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.InvalidSpoke.selector));
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     Utils.addSpoke(hub1, ADMIN, assetId, address(0), spokeConfig);
   }
 
@@ -109,12 +115,12 @@ contract HubConfigTest is HubBase {
     );
   }
 
-  function test_addAsset_fuzz_revertsWith_InvalidUnderlying(
+  function test_addAsset_fuzz_revertsWith_InvalidAddress_underlying(
     uint8 decimals,
     address feeReceiver,
     address interestRateStrategy
   ) public {
-    vm.expectRevert(IHub.InvalidUnderlying.selector);
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     Utils.addAsset(
       hub1,
       ADMIN,
@@ -126,7 +132,7 @@ contract HubConfigTest is HubBase {
     );
   }
 
-  function test_addAsset_fuzz_revertsWith_InvalidFeeReceiver(
+  function test_addAsset_fuzz_revertsWith_InvalidAddress_feeReceiver(
     address underlying,
     uint8 decimals,
     address interestRateStrategy
@@ -136,19 +142,19 @@ contract HubConfigTest is HubBase {
 
     decimals = bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS).toUint8();
 
-    vm.expectRevert(IHub.InvalidFeeReceiver.selector);
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     Utils.addAsset(
       hub1,
       ADMIN,
       underlying,
       decimals,
-      address(0),
+      address(0), // feeReceiver
       interestRateStrategy,
       encodedIrData
     );
   }
 
-  function test_addAsset_fuzz_revertsWith_InvalidIrStrategy(
+  function test_addAsset_fuzz_revertsWith_InvalidAddress_irStrategy(
     address underlying,
     uint8 decimals,
     address feeReceiver
@@ -158,7 +164,7 @@ contract HubConfigTest is HubBase {
 
     decimals = bound(decimals, 0, Constants.MAX_ALLOWED_ASSET_DECIMALS).toUint8();
 
-    vm.expectRevert(IHub.InvalidIrStrategy.selector);
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     Utils.addAsset(hub1, ADMIN, underlying, decimals, feeReceiver, address(0), encodedIrData);
   }
 
@@ -232,7 +238,7 @@ contract HubConfigTest is HubBase {
       feeReceiver: feeReceiver,
       liquidityFee: 0,
       irStrategy: interestRateStrategy,
-      reinvestmentStrategy: address(0)
+      reinvestmentController: address(0)
     });
 
     (, uint32 baseVariableBorrowRate, , ) = abi.decode(
@@ -262,26 +268,13 @@ contract HubConfigTest is HubBase {
       encodedIrData
     );
 
+    assertBorrowRateSynced(hub1, assetId, 'addAsset');
     assertEq(assetId, expectedAssetId, 'asset id');
     assertEq(hub1.getAssetCount(), assetId + 1, 'asset count');
     assertEq(hub1.getAsset(assetId).decimals, decimals, 'asset decimals');
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
-    assertEq(hub1.getAsset(assetId).reinvestmentStrategy, address(0)); // should init to addr(0)
+    assertEq(hub1.getAsset(assetId).reinvestmentController, address(0)); // should init to addr(0)
   }
-
-  function test_updateAssetConfig_fuzz_revertsWith_InvalidIrStrategy(
-    uint256 assetId,
-    DataTypes.AssetConfig memory newConfig
-  ) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
-    _assumeValidAssetConfig(assetId, newConfig);
-    newConfig.irStrategy = address(0);
-
-    vm.expectRevert(IHub.InvalidIrStrategy.selector);
-    vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, newConfig);
-  }
-
   function test_updateAssetConfig_fuzz_revertsWith_InvalidLiquidityFee(
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
@@ -296,42 +289,29 @@ contract HubConfigTest is HubBase {
     hub1.updateAssetConfig(assetId, newConfig);
   }
 
-  function test_updateAssetConfig_fuzz_revertsWith_InvalidFeeReceiver(
-    uint256 assetId,
-    DataTypes.AssetConfig memory newConfig
-  ) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
-    _assumeValidAssetConfig(assetId, newConfig);
-    newConfig.liquidityFee = vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR).toUint16();
-    newConfig.feeReceiver = address(0);
-    vm.expectRevert(IHub.InvalidFeeReceiver.selector);
-    vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, newConfig);
-  }
-
   // @dev can only reset reinvestment strategy if swept is zero
-  function test_updateAssetConfig_fuzz_revertsWith_InvalidReinvestmentStrategy() public {
+  function test_updateAssetConfig_fuzz_revertsWith_InvalidReinvestmentController() public {
     uint256 assetId = _randomAssetId(hub1);
     DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
 
-    config.reinvestmentStrategy = address(0);
+    config.reinvestmentController = address(0);
     assertEq(hub1.getSwept(assetId), 0);
 
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, config);
-    assertEq(hub1.getAsset(assetId).reinvestmentStrategy, address(0));
+    assertEq(hub1.getAsset(assetId).reinvestmentController, address(0));
 
-    address reinvestmentStrategy = makeAddr('reinvestmentStrategy');
-    updateAssetReinvestmentStrategy(hub1, assetId, reinvestmentStrategy);
+    address reinvestmentController = makeAddr('reinvestmentController');
+    updateAssetReinvestmentController(hub1, assetId, reinvestmentController);
     _addLiquidity(assetId, 1000e18);
-    vm.prank(reinvestmentStrategy);
+    vm.prank(reinvestmentController);
     hub1.sweep(assetId, 100e18);
 
     assertEq(hub1.getSwept(assetId), 100e18);
-    assertEq(config.reinvestmentStrategy, address(0));
-    assertNotEq(hub1.getAsset(assetId).reinvestmentStrategy, address(0));
+    assertEq(config.reinvestmentController, address(0));
+    assertNotEq(hub1.getAsset(assetId).reinvestmentController, address(0));
 
-    vm.expectRevert(IHub.InvalidReinvestmentStrategy.selector);
+    vm.expectRevert(IHub.InvalidReinvestmentController.selector);
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, config);
   }
@@ -379,6 +359,7 @@ contract HubConfigTest is HubBase {
     Utils.updateAssetConfig(hub1, ADMIN, assetId, newConfig);
 
     assertEq(hub1.getAssetConfig(assetId), newConfig);
+    assertBorrowRateSynced(hub1, assetId, 'updateAssetConfig');
   }
 
   function test_updateAssetConfig_fuzz_Scenario(uint256 assetId) public {

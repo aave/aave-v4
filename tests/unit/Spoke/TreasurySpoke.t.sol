@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -9,6 +10,11 @@ contract TreasurySpokeTest is SpokeBase {
   function setUp() public virtual override {
     super.setUp();
     _testToken = new MockERC20();
+  }
+
+  function test_deploy_revertsWith_InvalidAddress_hub() public {
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.InvalidAddress.selector));
+    new TreasurySpoke(vm.randomAddress(), address(0));
   }
 
   function test_initial_state() public view {
@@ -209,6 +215,26 @@ contract TreasurySpokeTest is SpokeBase {
         'treasury spoke remaining supplied amount'
       );
     }
+  }
+
+  function test_borrow_revertsWith_UnsupportedAction() public {
+    vm.expectRevert(ITreasurySpoke.UnsupportedAction.selector);
+    treasurySpoke.borrow(vm.randomUint(), vm.randomUint(), vm.randomAddress());
+  }
+
+  function test_repay_revertsWith_UnsupportedAction() public {
+    vm.expectRevert(ITreasurySpoke.UnsupportedAction.selector);
+    treasurySpoke.repay(vm.randomUint(), vm.randomUint(), vm.randomAddress());
+  }
+
+  function test_liquidationCall_revertsWith_UnsupportedAction() public {
+    vm.expectRevert(ITreasurySpoke.UnsupportedAction.selector);
+    treasurySpoke.liquidationCall(
+      vm.randomUint(),
+      vm.randomUint(),
+      vm.randomAddress(),
+      vm.randomUint()
+    );
   }
 
   function _treasurySpoke() internal view returns (ISpoke) {

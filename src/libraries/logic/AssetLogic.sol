@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -66,7 +67,8 @@ library AssetLogic {
   }
 
   function totalAddedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.addedShares + asset.getFeeShares(asset.getDrawnIndex() - asset.drawnIndex);
+    return
+      asset.addedShares + asset.getFeeShares(asset.getDrawnIndex().uncheckedSub(asset.drawnIndex));
   }
 
   function toAddedAssetsUp(
@@ -123,17 +125,17 @@ library AssetLogic {
     DataTypes.SpokeData storage feeReceiver
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
-    uint128 feeShares = asset.getFeeShares(drawnIndex - asset.drawnIndex).toUint128();
+    uint256 indexDelta = drawnIndex.uncheckedSub(asset.drawnIndex);
 
-    // Accrue interest and fees
     asset.drawnIndex = drawnIndex.toUint128();
+    asset.lastUpdateTimestamp = block.timestamp.toUint40();
+
+    uint128 feeShares = asset.getFeeShares(indexDelta).toUint128();
     if (feeShares > 0) {
       feeReceiver.addedShares += feeShares;
       asset.addedShares += feeShares;
       emit IHub.AccrueFees(assetId, feeShares);
     }
-
-    asset.lastUpdateTimestamp = block.timestamp.toUint40();
   }
 
   /**
@@ -144,7 +146,9 @@ library AssetLogic {
   function getDrawnIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
     uint256 previousIndex = asset.drawnIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (lastUpdateTimestamp == block.timestamp || asset.drawnShares == 0) {
+    if (
+      lastUpdateTimestamp == block.timestamp || (asset.drawnShares == 0 && asset.premiumShares == 0)
+    ) {
       return previousIndex;
     }
     return
@@ -183,6 +187,6 @@ library AssetLogic {
    * @return The amount of shares corresponding to the fees
    */
   function unrealizedFeeShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.getFeeShares(asset.getDrawnIndex() - asset.drawnIndex);
+    return asset.getFeeShares(asset.getDrawnIndex().uncheckedSub(asset.drawnIndex));
   }
 }

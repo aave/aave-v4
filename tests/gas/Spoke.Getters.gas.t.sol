@@ -1,7 +1,8 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Base} from 'tests/Base.t.sol';
+import 'tests/Base.t.sol';
 
 /// forge-config: default.isolate = true
 contract SpokeGetters_Gas_Tests is Base {

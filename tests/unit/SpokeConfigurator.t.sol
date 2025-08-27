@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -693,7 +694,7 @@ contract SpokeConfiguratorTest is SpokeBase {
         abi.encodeCall(ISpoke.updatePositionManager, (newPositionManager, active))
       );
       vm.expectEmit(address(spoke));
-      emit ISpoke.PositionManagerUpdate(newPositionManager, active);
+      emit ISpoke.UpdatePositionManager(newPositionManager, active);
       vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updatePositionManager(spokeAddr, newPositionManager, active);
       assertEq(spoke.isPositionManagerActive(newPositionManager), active);

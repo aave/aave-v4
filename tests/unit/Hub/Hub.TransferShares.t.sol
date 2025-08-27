@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -24,6 +25,7 @@ contract HubTransferSharesTest is HubBase {
     vm.prank(address(spoke1));
     hub1.transferShares(daiAssetId, moveAmount, address(spoke2));
 
+    assertBorrowRateSynced(hub1, daiAssetId, 'transferShares');
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(spoke1)), suppliedShares - moveAmount);
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(spoke2)), moveAmount);
     assertEq(hub1.getAssetAddedShares(daiAssetId), assetSuppliedShares);
@@ -31,7 +33,7 @@ contract HubTransferSharesTest is HubBase {
 
   /// @dev Test transferring more shares than a spoke has supplied
   function test_transferShares_fuzz_revertsWith_AddedSharesExceeded(uint256 supplyAmount) public {
-    uint256 supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT - 1);
+    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT - 1);
 
     // supply from spoke1
     Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
@@ -45,9 +47,9 @@ contract HubTransferSharesTest is HubBase {
     hub1.transferShares(daiAssetId, suppliedShares + 1, address(spoke2));
   }
 
-  function test_transferShares_zeroShares_revertsWith_InvalidSharesAmount() public {
+  function test_transferShares_zeroShares_revertsWith_InvalidShares() public {
     vm.prank(address(spoke1));
-    vm.expectRevert(IHub.InvalidSharesAmount.selector);
+    vm.expectRevert(IHub.InvalidShares.selector);
     hub1.transferShares(daiAssetId, 0, address(spoke2));
   }
 

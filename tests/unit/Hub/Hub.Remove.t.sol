@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -422,8 +423,8 @@ contract HubRemoveTest is HubBase {
     hub1.remove(daiAssetId, amount, address(spoke1));
   }
 
-  function test_remove_revertsWith_InvalidRemoveAmount() public {
-    vm.expectRevert(IHub.InvalidRemoveAmount.selector);
+  function test_remove_revertsWith_InvalidAmount() public {
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, 0, alice);
   }
@@ -435,8 +436,8 @@ contract HubRemoveTest is HubBase {
     hub1.remove(daiAssetId, 100e18, alice);
   }
 
-  function test_remove_revertsWith_InvalidToAddress() public {
-    vm.expectRevert(IHub.InvalidToAddress.selector);
+  function test_remove_revertsWith_InvalidAddress() public {
+    vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, 100e18, address(hub1));
   }

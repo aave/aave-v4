@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -1003,7 +1004,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
 
     if (action1.repayAmount == 0) {
-      vm.expectRevert(IHub.InvalidRestoreAmount.selector);
+      vm.expectRevert(IHub.InvalidAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
       emit ISpokeBase.Repay(
@@ -1110,7 +1111,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
 
     if (action2.repayAmount == 0) {
-      vm.expectRevert(IHub.InvalidRestoreAmount.selector);
+      vm.expectRevert(IHub.InvalidAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
       emit ISpokeBase.Repay(

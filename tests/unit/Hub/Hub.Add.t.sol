@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -41,7 +42,7 @@ contract HubAddTest is HubBase {
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
+        reinvestmentController: address(0)
       })
     );
     hub1.addSpoke(zeroDecimalAssetId, address(spoke1), spokeConfig);
@@ -283,16 +284,17 @@ contract HubAddTest is HubBase {
     underlying.approve(address(hub1), amount);
     deal(address(underlying), user, amount);
 
-    uint256 shares = hub1.convertToAddedShares(assetId, amount);
+    uint256 shares = hub1.previewAddByAssets(assetId, amount);
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(user, address(hub1), amount);
     vm.expectEmit(address(hub1));
     emit IHubBase.Add(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
-    hub1.add(assetId, amount, user);
+    uint256 addedShares = hub1.add(assetId, amount, user);
 
     // hub
+    assertEq(addedShares, shares);
     assertEq(hub1.getAssetAddedAmount(assetId), amount, 'hub asset addedAmount after');
     assertEq(hub1.getAssetAddedShares(assetId), shares, 'hub asset addedShares after');
     assertEq(
@@ -410,16 +412,16 @@ contract HubAddTest is HubBase {
     assertEq(underlying2.balanceOf(address(hub1)), amount2, 'hub asset2 balance after');
   }
 
-  function test_add_revertsWith_InvalidAddAmount() public {
+  function test_add_revertsWith_InvalidAmount() public {
     uint256 assetId = 0;
     uint256 amount = 0;
 
-    vm.expectRevert(IHub.InvalidAddAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.add(assetId, amount, alice);
   }
 
-  function test_add_revertsWith_InvalidSharesAmount() public {
+  function test_add_revertsWith_InvalidShares() public {
     // inflate exchange rate
     uint256 daiAmount = 1e9 * 1e18;
     uint256 drawAmount = daiAmount;
@@ -441,12 +443,12 @@ contract HubAddTest is HubBase {
     uint256 amount = 1;
     assertTrue(hub1.convertToAddedShares(daiAssetId, amount) == 0);
 
-    vm.expectRevert(IHub.InvalidSharesAmount.selector);
+    vm.expectRevert(IHub.InvalidShares.selector);
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount, alice);
   }
 
-  function test_add_fuzz_revertsWith_InvalidSharesAmount_due_to_index(
+  function test_add_fuzz_revertsWith_InvalidShares_due_to_index(
     uint256 daiAmount,
     uint256 addAmount,
     uint256 skipTime
@@ -473,13 +475,13 @@ contract HubAddTest is HubBase {
     // add < 1 share with an amount > 0
     addAmount = bound(addAmount, 1, minAllowedAddedAmount - 1);
 
-    vm.expectRevert(IHub.InvalidSharesAmount.selector);
+    vm.expectRevert(IHub.InvalidShares.selector);
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, addAmount, alice);
   }
 
-  function test_add_revertsWith_InvalidFromAddress() public {
-    vm.expectRevert(IHub.InvalidFromAddress.selector);
+  function test_add_revertsWith_InvalidAddress() public {
+    vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, 100e18, address(hub1));
   }

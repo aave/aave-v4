@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
@@ -49,7 +50,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
     params.debtAssetPrice = 0;
     DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
 
-    vm.expectRevert(stdError.divisionError);
+    vm.expectRevert(); // MathUtils reverts with no data if division by zero
     this.calculateDebtToRestoreCloseFactor(args);
   }
 

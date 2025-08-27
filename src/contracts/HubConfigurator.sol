@@ -1,8 +1,9 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
-import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {Constants} from 'src/libraries/helpers/Constants.sol';
@@ -15,7 +16,7 @@ import {IHubConfigurator} from 'src/interfaces/IHubConfigurator.sol';
  * @notice HubConfigurator contract for the Aave protocol
  * @dev Must be granted permission by the Hub
  */
-contract HubConfigurator is Ownable, IHubConfigurator {
+contract HubConfigurator is Ownable2Step, IHubConfigurator {
   using SafeCast for uint256;
 
   /**
@@ -126,14 +127,14 @@ contract HubConfigurator is Ownable, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateReinvestmentStrategy(
+  function updateReinvestmentController(
     address hub,
     uint256 assetId,
-    address reinvestmentStrategy
+    address reinvestmentController
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    config.reinvestmentStrategy = reinvestmentStrategy;
+    config.reinvestmentController = reinvestmentController;
     targetHub.updateAssetConfig(assetId, config);
   }
 

@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -37,8 +38,8 @@ contract HubReportDeficitTest is HubBase {
     hub1.reportDeficit(usdxAssetId, 0, 0, DataTypes.PremiumDelta(0, 0, 0));
   }
 
-  function test_reportDeficit_revertsWith_InvalidDeficitAmount() public {
-    vm.expectRevert(IHub.InvalidDeficitAmount.selector);
+  function test_reportDeficit_revertsWith_InvalidAmount() public {
+    vm.expectRevert(IHub.InvalidAmount.selector);
 
     vm.prank(address(spoke1));
     hub1.reportDeficit(usdxAssetId, 0, 0, DataTypes.PremiumDelta(0, 0, 0));

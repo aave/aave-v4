@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -9,11 +10,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @notice Minimal interface for Spoke
  */
 interface ISpokeBase {
-  /**
-   * @notice Error thrown when the hub address is invalid.
-   */
-  error InvalidHubAddress();
-
   /**
    * @notice Emitted on the supply action.
    * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.

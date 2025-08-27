@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -7,12 +8,11 @@ contract HubAccessTest is HubBase {
   /// @dev Test showing that restricted functions on hub can only be called by hub admin.
   function test_hub_admin_access() public {
     TestnetERC20 tokenA = new TestnetERC20('A', 'A', 18);
-    TestnetERC20 tokenB = new TestnetERC20('B', 'B', 18);
     DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
       irStrategy: address(irStrategy),
-      reinvestmentStrategy: address(0)
+      reinvestmentController: address(0)
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
@@ -98,6 +98,8 @@ contract HubAccessTest is HubBase {
     // Hub Admin can call function on hub to set interest rates
     vm.prank(HUB_ADMIN);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
+
+    assertBorrowRateSynced(hub1, daiAssetId, 'setInterestRateData');
   }
 
   /// @dev Test showcasing ability to change role responsibility for a function selector.
@@ -242,7 +244,7 @@ contract HubAccessTest is HubBase {
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
       irStrategy: address(irStrategy),
-      reinvestmentStrategy: address(0)
+      reinvestmentController: address(0)
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,

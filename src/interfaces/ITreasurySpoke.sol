@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {IHub} from 'src/interfaces/IHub.sol';
@@ -8,6 +9,9 @@ import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
  * @title ITreasurySpoke
  */
 interface ITreasurySpoke is ISpokeBase {
+  error UnsupportedAction();
+  error InvalidAddress();
+
   /**
    * @notice Supplies a specified amount of the underlying asset to a given reserve.
    * @dev The Hub pulls the underlying asset from the caller, so prior approval is required.

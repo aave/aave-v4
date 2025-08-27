@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -69,36 +70,25 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 amount
   );
 
-  error InvalidSharesAmount();
-  error InvalidAddAmount();
-  error InvalidFromAddress();
-  error InvalidToAddress();
   error AssetNotListed();
   error AddCapExceeded(uint256 addCap);
-  error InvalidRemoveAmount();
-  error InvalidRestoreAmount();
   error AddedAmountExceeded(uint256 addedAmount);
   error AddedSharesExceeded(uint256 addedShares);
   error InsufficientLiquidity(uint256 liquidity);
-  error InvalidDrawAmount();
   error DrawCapExceeded(uint256 drawCap);
   error SurplusAmountRestored(uint256 maxAllowedRestore);
-  error InvalidSpoke();
-  error SpokeNotListed();
-  error SpokeAlreadyListed();
-  error InvalidIrStrategy();
-  error InvalidAssetDecimals();
-  error InvalidLiquidityFee();
-  error InvalidUnderlying();
   error InvalidPremiumChange();
-  error InvalidDeficitAmount();
-  error InvalidFeeReceiver();
   error SurplusDeficitReported(uint256 amount);
   error SpokeNotActive();
-  error InvalidFeeShares();
-  error InvalidReinvestmentStrategy();
-  error InvalidSweepAmount();
-  error OnlyReinvestmentStrategy();
+  error InvalidReinvestmentController();
+  error OnlyReinvestmentController();
+  error SpokeAlreadyListed();
+  error SpokeNotListed();
+  error InvalidAmount();
+  error InvalidShares();
+  error InvalidAddress();
+  error InvalidLiquidityFee();
+  error InvalidAssetDecimals();
 
   /**
    * @notice Adds a new asset to the hub.
@@ -205,16 +195,16 @@ interface IHub is IHubBase, IAccessManaged {
   function eliminateDeficit(uint256 assetId, uint256 amount) external returns (uint256);
 
   /**
-   * @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment strategy.
-   * @dev The strategy handles the actual reinvestment of funds, redistribution of interest, and investment caps.
+   * @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment controller.
+   * @dev The controller handles the actual reinvestment of funds, redistribution of interest, and investment caps.
    * @param assetId The identifier of the asset.
    * @param amount The amount to sweep.
    */
   function sweep(uint256 assetId, uint256 amount) external;
 
   /**
-   * @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment strategy.
-   * @dev The strategy can only reclaim up to swept amount. All accrued interest is distributed offchain.
+   * @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment controller.
+   * @dev The controller can only reclaim up to swept amount. All accrued interest is distributed offchain.
    * @param assetId The identifier of the asset.
    * @param amount The amount to reclaim.
    */
