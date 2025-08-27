@@ -5,117 +5,135 @@ pragma solidity ^0.8.0;
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTest {
-  using WadRayMath for uint256;
-  using PercentageMath for uint256;
+  using MathUtils for uint256;
 
-  /// fuzz test showing that the function does not revert when bounded properly
-  function test_calculateDebtToRestoreCloseFactor_fuzz_non_negative(
-    TestDebtToRestoreCloseFactorParams memory params
-  ) public {
-    params = _bound(params);
-    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
+  uint256[] assetUnitList;
 
-    // cannot revert if all params are constrained
-    LiquidationLogic.calculateDebtToRestoreCloseFactor(args);
+  function setUp() public override {
+    super.setUp();
+    assetUnitList.push(1);
+    assetUnitList.push(1e6);
+    assetUnitList.push(1e18);
   }
 
-  /// if debtAssetUnit == 0, then result is 0 (should not happen in practice as unit is 10**decimals)
-  function test_calculateDebtToRestoreCloseFactor_fuzz_debtAssetUnit_zero(
-    TestDebtToRestoreCloseFactorParams memory params
+  /// function does not revert when input is bounded properly
+  function test_calculateDebtToRestoreCloseFactor_fuzz_NoRevert(
+    LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory params
   ) public {
-    params = _bound(params);
-    // so that default uint max is not returned
-    vm.assume(
-      (params.liquidationBonus.toWad()).percentMulDown(params.collateralFactor).fromBpsDown() - 1 <
-        params.closeFactor
-    );
-    params.debtAssetUnit = 0;
-    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
-
-    assertEq(LiquidationLogic.calculateDebtToRestoreCloseFactor(args), 0, 'closeFactorDebt is 0');
+    liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(_bound(params));
   }
 
-  /// if totalDebtInBaseCurrency == 0, then result is 0
-  /// debtAssetPrice = 0 should not happen in practice
-  function test_calculateDebtToRestoreCloseFactor_fuzz_debtAssetPrice_zero(
-    TestDebtToRestoreCloseFactorParams memory params
+  /// if debtAssetPrice == 0, then function reverts (should not happen in practice)
+  function test_calculateDebtToRestoreCloseFactor_fuzz_revertsWith_DivisionByZero_ZeroAssetPrice(
+    LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory params
   ) public {
-    params = _bound(params);
-    // so that default uint max is not returned
-    // ie params.closeFactor > effectiveLiquidationPenalty
-    vm.assume(
-      (params.liquidationBonus.toWad()).percentMulDown(params.collateralFactor).fromBpsDown() - 1 <
-        params.closeFactor
-    );
+    params = _boundNoEarlyReturn(params);
     params.debtAssetPrice = 0;
-    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
-
     vm.expectRevert(); // MathUtils reverts with no data if division by zero
-    this.calculateDebtToRestoreCloseFactor(args);
+    liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(params);
   }
 
-  /// if close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD, then result is 0
-  function test_calculateDebtToRestoreCloseFactor_closeFactor_eq_healthFactor(
-    TestDebtToRestoreCloseFactorParams memory params
+  /// if closeFactor <= liquidationPenalty, then function returns max uint
+  function test_calculateDebtToRestoreCloseFactor_MaxUint(
+    LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory params
   ) public {
     params = _bound(params);
-    params.healthFactor = params.closeFactor;
-    uint256 effectiveLiquidationPenalty = (params.liquidationBonus.toWad())
-      .percentMulDown(params.collateralFactor)
-      .fromBpsDown();
-    // params.closeFactor >= effectiveLiquidationPenalty so that default uint max is not returned
-    vm.assume(effectiveLiquidationPenalty <= params.closeFactor);
-    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
-
-    assertEq(LiquidationLogic.calculateDebtToRestoreCloseFactor(args), 0, 'closeFactorDebt is 0');
-  }
-
-  /// when close factor is less than health factor, should revert
-  /// should not happen in practice
-  function test_calculateDebtToRestoreCloseFactor_closeFactor_lt_healthFactor(
-    TestDebtToRestoreCloseFactorParams memory params
-  ) public {
-    params = _bound(params);
-    params.healthFactor = params.closeFactor + 1;
-    // so that default uint max is not returned
-    vm.assume(
-      (params.liquidationBonus.toWad()).percentMulDown(params.collateralFactor).fromBpsDown() - 1 <
-        params.closeFactor
-    );
-    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
-
-    vm.expectRevert(stdError.arithmeticError);
-    this.calculateDebtToRestoreCloseFactor(args);
-  }
-
-  /// if denom is ever negative (params.closeFactor < effectiveLiquidationPenalty), default to uint max
-  function test_calculateDebtToRestoreCloseFactor_fuzz_closeFactor_lte_effectiveLiquidationPenalty_zero(
-    TestDebtToRestoreCloseFactorParams memory params
-  ) public {
-    params = _bound(params);
-    //
-    vm.assume(
-      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor) >=
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    );
     params.closeFactor = bound(
       params.closeFactor,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      _calculateCloseFactorThreshold(params.liquidationBonus, params.collateralFactor)
+      0,
+      _calculateLiquidationPenalty(params.variableLiquidationBonus, params.collateralFactor)
     );
-    DataTypes.LiquidationCallLocalVars memory args = _setStructFields(params);
-
-    assertEq(
-      LiquidationLogic.calculateDebtToRestoreCloseFactor(args),
-      UINT256_MAX,
-      'closeFactorDebt is max uint'
+    assertEq(liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(params), type(uint256).max);
+    params.closeFactor = _calculateLiquidationPenalty(
+      params.variableLiquidationBonus,
+      params.collateralFactor
     );
+    assertEq(liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(params), type(uint256).max);
   }
 
-  // internal helper to trigger revert checks
-  function calculateDebtToRestoreCloseFactor(
-    DataTypes.LiquidationCallLocalVars memory params
-  ) public pure {
-    LiquidationLogic.calculateDebtToRestoreCloseFactor(params);
+  /// if health factor == close factor, then result is 0
+  function test_calculateDebtToRestoreCloseFactor_HealthFactorEqualsCloseFactor(
+    LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory params
+  ) public {
+    params = _boundNoEarlyReturn(params);
+    params.healthFactor = params.closeFactor;
+    assertEq(liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(params), 0);
+  }
+
+  /// if close factor is less than health factor, then function reverts (should not happen in practice)
+  function test_calculateDebtToRestoreCloseFactor_revertsWith_ArithmeticError_CloseFactorLessThanHealthFactor(
+    LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory params
+  ) public {
+    params = _boundNoEarlyReturn(params);
+    params.healthFactor = params.closeFactor + 1;
+    vm.expectRevert(stdError.arithmeticError);
+    liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(params);
+  }
+
+  function test_calculateDebtToRestoreCloseFactor_UnitPrice() public {
+    for (uint256 i = 0; i < assetUnitList.length; i++) {
+      uint256 assetUnit = assetUnitList[i];
+      uint256 debtToRestoreCloseFactor = liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(
+        LiquidationLogic.CalculateDebtToRestoreCloseFactorParams({
+          totalDebtInBaseCurrency: 10_000e26,
+          healthFactor: 0.8e18,
+          closeFactor: 1e18,
+          variableLiquidationBonus: 150_00,
+          collateralFactor: 50_00,
+          debtAssetUnit: assetUnit,
+          debtAssetPrice: 1e8
+        })
+      );
+
+      // liquidationPenalty = 1.5 * 0.5 = 0.75
+      // debtToRestoreCloseFactor = $10000 * 0.2 / 0.25 / $1 = 8000
+      assertEq(debtToRestoreCloseFactor, 8000 * assetUnit);
+    }
+  }
+
+  function test_calculateDebtToRestoreCloseFactor_NoPrecisionLoss() public {
+    for (uint256 i = 0; i < assetUnitList.length; i++) {
+      uint256 assetUnit = assetUnitList[i];
+      uint256 debtToRestoreCloseFactor = liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(
+        LiquidationLogic.CalculateDebtToRestoreCloseFactorParams({
+          totalDebtInBaseCurrency: 10_000e26,
+          healthFactor: 0.8e18,
+          closeFactor: 1e18,
+          variableLiquidationBonus: 150_00,
+          collateralFactor: 50_00,
+          debtAssetUnit: assetUnit,
+          debtAssetPrice: 2000e8
+        })
+      );
+
+      // liquidationPenalty = 1.5 * 0.5 = 0.75
+      // debtToRestoreCloseFactor = $10000 * 0.2 / 0.25 / $2000 = 4
+      assertEq(debtToRestoreCloseFactor, 4 * assetUnit);
+    }
+  }
+
+  function test_calculateDebtToRestoreCloseFactor_PrecisionLoss() public {
+    LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory params = LiquidationLogic
+      .CalculateDebtToRestoreCloseFactorParams({
+        totalDebtInBaseCurrency: 10_000e26,
+        healthFactor: 0.8e18,
+        closeFactor: 1e18,
+        variableLiquidationBonus: 150_00,
+        collateralFactor: 50_00,
+        debtAssetUnit: 1,
+        debtAssetPrice: 333e8
+      });
+    uint256 debtToRestoreCloseFactor = liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(
+      params
+    );
+    assertEq(debtToRestoreCloseFactor, 25);
+
+    params.debtAssetUnit = 1e6;
+    debtToRestoreCloseFactor = liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(params);
+    assertEq(debtToRestoreCloseFactor, 24.024025e6);
+
+    params.debtAssetUnit = 1e18;
+    debtToRestoreCloseFactor = liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(params);
+    assertEq(debtToRestoreCloseFactor, 24.024024024024024025e18);
   }
 }

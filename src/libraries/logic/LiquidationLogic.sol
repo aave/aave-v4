@@ -18,8 +18,6 @@ library LiquidationLogic {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using MathUtils for *;
-  using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
-  using LiquidationLogic for DataTypes.LiquidationConfig;
   using SafeCast for *;
   using PositionStatus for DataTypes.PositionStatus;
 
@@ -137,7 +135,7 @@ library LiquidationLogic {
     uint256 drawnDebt,
     uint256 premiumDebt,
     uint256 amount
-  ) private pure returns (uint256, uint256) {
+  ) internal pure returns (uint256, uint256) {
     if (amount >= drawnDebt + premiumDebt) {
       return (drawnDebt, premiumDebt);
     }
@@ -147,7 +145,7 @@ library LiquidationLogic {
     return (amount - premiumDebt, premiumDebt);
   }
 
-  function _validateLiquidationCall(ValidateLiquidationCallParams memory params) private pure {
+  function _validateLiquidationCall(ValidateLiquidationCallParams memory params) internal pure {
     require(params.debtToCover > 0, InvalidDebtToCover());
     require(
       params.collateralReserveHub != address(0) && params.debtReserveHub != address(0),
@@ -167,7 +165,7 @@ library LiquidationLogic {
 
   function _calculateDebtToRestoreCloseFactor(
     CalculateDebtToRestoreCloseFactorParams memory params
-  ) private pure returns (uint256) {
+  ) internal pure returns (uint256) {
     uint256 liquidationPenalty = params.variableLiquidationBonus.bpsToWad().percentMulUp(
       params.collateralFactor
     );
@@ -184,7 +182,7 @@ library LiquidationLogic {
 
   function _calculateMaxDebtToLiquidate(
     CalculateMaxDebtToLiquidateParams memory params
-  ) private pure returns (uint256) {
+  ) internal pure returns (uint256) {
     uint256 maxDebtToLiquidate = params.totalReserveDebt;
     if (params.debtToCover < maxDebtToLiquidate) {
       maxDebtToLiquidate = params.debtToCover;
@@ -205,8 +203,7 @@ library LiquidationLogic {
       maxDebtToLiquidate = debtToRestoreCloseFactor;
     }
 
-    uint256 remainingDebt = params.totalReserveDebt - maxDebtToLiquidate;
-    uint256 remainingDebtInBaseCurrency = remainingDebt.mulDivDown(
+    uint256 remainingDebtInBaseCurrency = (params.totalReserveDebt - maxDebtToLiquidate).mulDivDown(
       params.debtAssetPrice.toWad(),
       params.debtAssetUnit
     );
@@ -221,7 +218,7 @@ library LiquidationLogic {
 
   function _calculateLiquidationAmounts(
     CalculateLiquidationAmountsParams memory params
-  ) private pure returns (uint256, uint256, uint256) {
+  ) internal pure returns (uint256, uint256, uint256) {
     uint256 variableLiquidationBonus = calculateVariableLiquidationBonus(
       DataTypes.CalculateVariableLiquidationBonusParams({
         healthFactorForMaxBonus: params.healthFactorForMaxBonus,
@@ -269,7 +266,7 @@ library LiquidationLogic {
   function _settlePremiumDebt(
     DataTypes.UserPosition storage debtPosition,
     DataTypes.PremiumDelta memory premiumDelta
-  ) private {
+  ) internal {
     debtPosition.premiumShares = 0;
     debtPosition.premiumOffset = 0;
     debtPosition.realizedPremium = debtPosition
@@ -285,7 +282,7 @@ library LiquidationLogic {
     uint256 collateralToLiquidate,
     uint256 collateralToLiquidator,
     address liquidator
-  ) private returns (bool) {
+  ) internal returns (bool) {
     bool isPositionEmpty;
 
     IHub hub = reserve.hub;
@@ -327,7 +324,7 @@ library LiquidationLogic {
     uint256 premiumDebt,
     uint256 accruedPremium,
     address liquidator
-  ) private returns (bool) {
+  ) internal returns (bool) {
     {
       (uint256 drawnDebtToLiquidate, uint256 premiumDebtToLiquidate) = _calculateRestoreAmount(
         drawnDebt,
@@ -366,7 +363,7 @@ library LiquidationLogic {
     return false;
   }
 
-  function _assessDeficit(AssessDeficitParams memory params) private pure returns (bool) {
+  function _assessDeficit(AssessDeficitParams memory params) internal pure returns (bool) {
     if (!params.isCollateralPositionEmpty) {
       return false;
     }
