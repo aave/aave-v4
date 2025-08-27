@@ -171,7 +171,7 @@ library LiquidationLogic {
     uint256 liquidationPenalty = params.variableLiquidationBonus.bpsToWad().percentMulUp(
       params.collateralFactor
     );
-    if (params.closeFactor < liquidationPenalty) {
+    if (params.closeFactor <= liquidationPenalty) {
       return type(uint256).max;
     }
 
@@ -205,7 +205,7 @@ library LiquidationLogic {
       maxDebtToLiquidate = debtToRestoreCloseFactor;
     }
 
-    uint256 remainingDebt = params.totalReserveDebt - debtToRestoreCloseFactor;
+    uint256 remainingDebt = params.totalReserveDebt - maxDebtToLiquidate;
     uint256 remainingDebtInBaseCurrency = remainingDebt.mulDivDown(
       params.debtAssetPrice.toWad(),
       params.debtAssetUnit
