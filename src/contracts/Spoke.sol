@@ -350,7 +350,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       collateralReserveId
     ][_userPositions[user][collateralReserveId].configKey];
 
-    LiquidationLogic._liquidateUser(
+    bool hasDeficit = LiquidationLogic._liquidateUser(
       _reserves[collateralReserveId],
       _reserves[debtReserveId],
       _userPositions[user][collateralReserveId],
@@ -361,19 +361,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       params
     );
 
-    uint256 newUserRiskPremium;
-    (
-      newUserRiskPremium,
-      ,
-      ,
-      params.totalCollateralInBaseCurrency,
-      params.totalDebtInBaseCurrency
-    ) = _calculateUserAccountData(user);
-
-    if (params.totalCollateralInBaseCurrency == 0 && params.totalDebtInBaseCurrency > 0) {
+    if (hasDeficit) {
       _reportDeficits(user);
     } else {
       // new risk premium only needs to be propagated if no deficit exists
+      (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(user);
       _notifyRiskPremiumUpdate(user, newUserRiskPremium);
     }
   }
