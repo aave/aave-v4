@@ -59,7 +59,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
         LiquidationLogic.CalculateDebtToRestoreCloseFactorParams({
           totalDebtInBaseCurrency: 10_000e26,
           healthFactor: 0.8e18,
-          closeFactor: 1e18,
+          closeFactor: 1.25e18,
           variableLiquidationBonus: 150_00,
           collateralFactor: 50_00,
           debtAssetUnit: assetUnit,
@@ -68,8 +68,8 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
       );
 
       // liquidationPenalty = 1.5 * 0.5 = 0.75
-      // debtToRestoreCloseFactor = $10000 * 0.2 / 0.25 / $1 = 8000
-      assertEq(debtToRestoreCloseFactor, 8000 * assetUnit);
+      // debtToRestoreCloseFactor = $10000 * (1.25 - 0.8) / (1.25 - 0.75) / $1 = 9000
+      assertEq(debtToRestoreCloseFactor, 9000 * assetUnit);
     }
   }
 
@@ -89,7 +89,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
       );
 
       // liquidationPenalty = 1.5 * 0.5 = 0.75
-      // debtToRestoreCloseFactor = $10000 * 0.2 / 0.25 / $2000 = 4
+      // debtToRestoreCloseFactor = $10000 * (1 - 0.8) / (1 - 0.75) / $2000 = 4
       assertEq(debtToRestoreCloseFactor, 4 * assetUnit);
     }
   }

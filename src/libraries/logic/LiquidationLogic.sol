@@ -62,7 +62,6 @@ library LiquidationLogic {
     uint256 totalReserveCollateral;
     uint256 debtToCover;
     uint256 totalDebtInBaseCurrency;
-    uint256 totalCollateralInBaseCurrency;
     uint256 healthFactor;
     uint256 closeFactor;
     uint256 liquidationBonus;
@@ -360,7 +359,7 @@ library LiquidationLogic {
       return false;
     }
 
-    uint256 reserveCollateralInBaseCurrency = params.totalReserveCollateral.mulDivUp(
+    uint256 reserveCollateralInBaseCurrency = params.totalReserveCollateral.mulDivDown(
       params.collateralAssetPrice.toWad(),
       params.collateralAssetUnit
     );
@@ -430,7 +429,6 @@ library LiquidationLogic {
           totalReserveCollateral: vars.totalReserveCollateral,
           debtToCover: params.debtToCover,
           totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
-          totalCollateralInBaseCurrency: params.totalCollateralInBaseCurrency,
           healthFactor: params.healthFactor,
           closeFactor: liquidationConfig.closeFactor,
           liquidationBonus: collateralDynConfig.liquidationBonus,

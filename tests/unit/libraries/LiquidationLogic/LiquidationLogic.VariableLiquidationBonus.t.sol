@@ -17,7 +17,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
         liquidationBonusFactor: 50_00
       });
 
-    uint256 variableLiquidationBonus = LiquidationLogic.calculateVariableLiquidationBonus(params);
+    uint256 variableLiquidationBonus = liquidationLogicWrapper.calculateVariableLiquidationBonus(params);
     assertEq(variableLiquidationBonus, 100_00 + 5_00);
   }
 
@@ -30,7 +30,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
         liquidationBonusFactor: 50_00
       });
 
-    uint256 variableLiquidationBonus = LiquidationLogic.calculateVariableLiquidationBonus(params);
+    uint256 variableLiquidationBonus = liquidationLogicWrapper.calculateVariableLiquidationBonus(params);
     assertEq(variableLiquidationBonus, 100_00 + 6_00);
   }
 
@@ -39,10 +39,10 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
   ) public {
     params = _bound(params);
     params.healthFactor = bound(params.healthFactor, 0, params.healthFactorForMaxBonus);
-    uint256 variableLiquidationBonus = LiquidationLogic.calculateVariableLiquidationBonus(params);
+    uint256 variableLiquidationBonus = liquidationLogicWrapper.calculateVariableLiquidationBonus(params);
     assertEq(variableLiquidationBonus, params.liquidationBonus);
     params.healthFactor = params.healthFactorForMaxBonus;
-    variableLiquidationBonus = LiquidationLogic.calculateVariableLiquidationBonus(params);
+    variableLiquidationBonus = liquidationLogicWrapper.calculateVariableLiquidationBonus(params);
     assertEq(variableLiquidationBonus, params.liquidationBonus);
   }
 
@@ -51,7 +51,7 @@ contract LiquidationLogicVariableLiquidationBonusTest is LiquidationLogicBaseTes
   ) public {
     params = _bound(params);
     params.liquidationBonusFactor = PercentageMath.PERCENTAGE_FACTOR;
-    uint256 variableLiquidationBonus = LiquidationLogic.calculateVariableLiquidationBonus(params);
+    uint256 variableLiquidationBonus = liquidationLogicWrapper.calculateVariableLiquidationBonus(params);
     assertEq(variableLiquidationBonus, params.liquidationBonus);
   }
 }

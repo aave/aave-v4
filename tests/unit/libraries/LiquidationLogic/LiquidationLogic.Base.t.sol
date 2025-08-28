@@ -13,29 +13,9 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
   LiquidationLogicWrapper public liquidationLogicWrapper;
 
-  uint256 internal daiUnits;
-  uint256 internal usdxUnits;
-  uint256 internal wethUnits;
-  uint256 internal wbtcUnits;
-
   function setUp() public virtual override {
     super.setUp();
-    _setTokenDecimals();
     liquidationLogicWrapper = new LiquidationLogicWrapper();
-  }
-
-  function _setTokenDecimals() internal {
-    daiUnits = 10 ** tokenList.dai.decimals();
-    usdxUnits = 10 ** tokenList.usdx.decimals();
-    wethUnits = 10 ** tokenList.weth.decimals();
-    wbtcUnits = 10 ** tokenList.wbtc.decimals();
-  }
-
-  function _calculateLiquidationPenalty(
-    uint256 liquidationBonus,
-    uint256 collateralFactor
-  ) internal pure returns (uint256) {
-    return liquidationBonus.bpsToWad().percentMulUp(collateralFactor);
   }
 
   // generic bounds for liquidation logic params
@@ -108,7 +88,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
       _bound(_getDebtToRestoreCloseFactorParams(params));
 
     uint256 debtToCover = bound(params.debtToCover, 0, MAX_SUPPLY_AMOUNT);
-    uint256 totalReserveDebt = bound(params.totalReserveDebt, 0, MAX_SUPPLY_AMOUNT);
+    uint256 totalReserveDebt = bound(params.totalReserveDebt, 0, _convertBaseCurrencyToAmount(debtToRestoreCloseFactorParams.totalDebtInBaseCurrency, debtToRestoreCloseFactorParams.debtAssetPrice, debtToRestoreCloseFactorParams.debtAssetUnit));
 
     return LiquidationLogic.CalculateMaxDebtToLiquidateParams({
       totalReserveDebt: totalReserveDebt,
@@ -135,35 +115,63 @@ contract LiquidationLogicBaseTest is SpokeBase {
     }
   }
 
-  function calcNaiveDebtToLiquidate(
-    uint256 debtToCover,
-    DataTypes.LiquidationCallLocalVars memory params
-  ) internal returns (uint256) {
-    // without accounting for dust, naively return min of debtToCover, totalBorrowerReserveDebt, and debtToRestoreCloseFactor
-    return
-      _min(params.totalBorrowerReserveDebt, _min(params.debtToRestoreCloseFactor, debtToCover));
+  function _getCalculateVariableLiquidationBonusParams(
+    LiquidationLogic.CalculateLiquidationAmountsParams memory params
+  ) internal returns (DataTypes.CalculateVariableLiquidationBonusParams memory) {
+    return DataTypes.CalculateVariableLiquidationBonusParams({
+      healthFactorForMaxBonus: params.healthFactorForMaxBonus,
+      liquidationBonusFactor: params.liquidationBonusFactor,
+      healthFactor: params.healthFactor,
+      liquidationBonus: params.liquidationBonus
+    });
   }
 
-  /// @dev Check if the remaining debt in base currency is less than the minimum leftover base and greater than 0
-  /// @return isDustAmountExpected True if the remaining debt in base currency is less than the minimum leftover base and greater than 0 (non zero dust remains)
-  /// @return remainingDebtInBaseCurrency The remaining debt in base currency after naive debt to liquidate is applied
-  /// @return naiveDebtToLiquidate The naive debt to liquidate, without adjustment for dust
-  function isDustAmountExpected(
-    uint256 debtToCover,
-    DataTypes.LiquidationCallLocalVars memory params
-  ) internal returns (bool, uint256, uint256) {
-    uint256 naiveDebtToLiquidate = calcNaiveDebtToLiquidate(debtToCover, params);
-    uint256 remainingDebtInBaseCurrency = _convertAmountToBaseCurrency(
-      params.totalBorrowerReserveDebt - naiveDebtToLiquidate,
-      params.debtAssetPrice,
-      params.debtAssetUnit
+  function _getCalculateMaxDebtToLiquidateParams(
+    LiquidationLogic.CalculateLiquidationAmountsParams memory params
+  ) internal returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
+    uint256 variableLiquidationBonus = LiquidationLogic.calculateVariableLiquidationBonus(
+      _getCalculateVariableLiquidationBonusParams(params)
     );
+    return LiquidationLogic.CalculateMaxDebtToLiquidateParams({
+      totalReserveDebt: params.totalReserveDebt,
+      debtToCover: params.debtToCover,
+      totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
+      healthFactor: params.healthFactor,
+      closeFactor: params.closeFactor,
+      variableLiquidationBonus: variableLiquidationBonus,
+      collateralFactor: params.collateralFactor,
+      debtAssetPrice: params.debtAssetPrice,
+      debtAssetUnit: params.debtAssetUnit
+    });
+  }
 
-    return (
-      remainingDebtInBaseCurrency < LiquidationLogic.MIN_LEFTOVER_BASE &&
-        remainingDebtInBaseCurrency > 0,
-      remainingDebtInBaseCurrency,
-      naiveDebtToLiquidate
-    );
+  function _bound(
+    LiquidationLogic.CalculateLiquidationAmountsParams memory params
+  ) internal virtual returns (LiquidationLogic.CalculateLiquidationAmountsParams memory) {
+    DataTypes.CalculateVariableLiquidationBonusParams memory variableLiquidationBonusParams = _getCalculateVariableLiquidationBonusParams(params);
+    variableLiquidationBonusParams = _bound(variableLiquidationBonusParams);
+    params.healthFactorForMaxBonus = variableLiquidationBonusParams.healthFactorForMaxBonus;
+    params.liquidationBonusFactor = variableLiquidationBonusParams.liquidationBonusFactor;
+    params.healthFactor = bound(params.healthFactor, 0, variableLiquidationBonusParams.healthFactorForMaxBonus);
+    params.liquidationBonus = variableLiquidationBonusParams.liquidationBonus;
+
+    LiquidationLogic.CalculateMaxDebtToLiquidateParams memory maxDebtToLiquidateParams = _getCalculateMaxDebtToLiquidateParams(params);
+    maxDebtToLiquidateParams = _boundNoDustRevert(maxDebtToLiquidateParams);
+
+    params.totalReserveDebt = maxDebtToLiquidateParams.totalReserveDebt;
+    params.debtToCover = maxDebtToLiquidateParams.debtToCover;
+    params.totalDebtInBaseCurrency = maxDebtToLiquidateParams.totalDebtInBaseCurrency;
+    params.healthFactor = maxDebtToLiquidateParams.healthFactor;
+    params.closeFactor = maxDebtToLiquidateParams.closeFactor;
+    params.collateralFactor = maxDebtToLiquidateParams.collateralFactor;
+    params.debtAssetPrice = maxDebtToLiquidateParams.debtAssetPrice;
+    params.debtAssetUnit = maxDebtToLiquidateParams.debtAssetUnit;
+
+    params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
+    params.collateralAssetUnit = bound(params.collateralAssetUnit, 0, MAX_TOKEN_DECIMALS_SUPPORTED);
+    params.liquidationFee = bound(params.liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
+    params.totalReserveCollateral = bound(params.totalReserveCollateral, 0, MAX_SUPPLY_AMOUNT);
+
+    return params;
   }
 }

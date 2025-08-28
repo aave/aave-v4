@@ -37,7 +37,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
   }
 
-  /// function rerturns total reserve debt is dust is left, but debt to cover is >= total reserve debt (min is debtToRestoreCloseFactor)
+  /// function returns total reserve debt if dust is left, as long as debt to cover is >= total reserve debt (min is debtToRestoreCloseFactor)
   function test_calculateMaxDebtToLiquidate_fuzz_AmountAdjustedDueToDust(
     LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
   ) public {
