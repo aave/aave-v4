@@ -42,8 +42,7 @@ contract SpokeGettersTest is SpokeBase {
           healthFactorForMaxBonus: 0,
           liquidationBonusFactor: 0,
           healthFactor: healthFactor,
-          liquidationBonus: spoke1.getDynamicReserveConfig(reserveId).liquidationBonus,
-          healthFactorLiquidationThreshold: HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+          liquidationBonus: spoke1.getDynamicReserveConfig(reserveId).liquidationBonus
         })
       ),
       'calc should match'
@@ -90,8 +89,7 @@ contract SpokeGettersTest is SpokeBase {
           healthFactorForMaxBonus: healthFactorForMaxBonus,
           liquidationBonusFactor: liquidationBonusFactor,
           healthFactor: healthFactor,
-          liquidationBonus: spoke1.getDynamicReserveConfig(reserveId).liquidationBonus,
-          healthFactorLiquidationThreshold: HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+          liquidationBonus: spoke1.getDynamicReserveConfig(reserveId).liquidationBonus
         })
       ),
       'calc should match'

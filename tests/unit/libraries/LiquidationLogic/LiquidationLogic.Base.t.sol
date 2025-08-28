@@ -40,6 +40,16 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
   // generic bounds for liquidation logic params
   function _bound(
+    DataTypes.CalculateVariableLiquidationBonusParams memory params
+  ) internal virtual returns (DataTypes.CalculateVariableLiquidationBonusParams memory) {
+    params.healthFactorForMaxBonus = bound(params.healthFactorForMaxBonus, 0, Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
+    params.liquidationBonusFactor = bound(params.liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
+    params.healthFactor = bound(params.healthFactor, 0, Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
+    params.liquidationBonus = bound(params.liquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
+    return params;
+  }
+
+  function _bound(
     LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory params
   ) internal virtual returns (LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory) {
     uint256 totalDebtInBaseCurrency = bound(
@@ -93,7 +103,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
   function _bound(
     LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
-  ) internal returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
+  ) internal virtual returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
     LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory debtToRestoreCloseFactorParams = 
       _bound(_getDebtToRestoreCloseFactorParams(params));
 
@@ -113,9 +123,9 @@ contract LiquidationLogicBaseTest is SpokeBase {
     });
   }
 
-  function _boundNoRevert(
+  function _boundNoDustRevert(
     LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
-  ) internal returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
+  ) internal virtual returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
     params = _bound(params);
     try liquidationLogicWrapper.calculateMaxDebtToLiquidate(params) returns (uint256) {
       return params;

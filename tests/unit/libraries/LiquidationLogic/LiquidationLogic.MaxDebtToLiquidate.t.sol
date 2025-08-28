@@ -12,7 +12,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
   function test_calculateMaxDebtToLiquidate_fuzz(
     LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
   ) public {
-    params = _boundNoRevert(params);
+    params = _boundNoDustRevert(params);
     uint256 maxDebtToLiquidate = liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
     uint256 debtToRestoreCloseFactor = liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(
       _getDebtToRestoreCloseFactorParams(params)

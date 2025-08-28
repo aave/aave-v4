@@ -58,7 +58,6 @@ library LiquidationLogic {
   struct CalculateLiquidationAmountsParams {
     uint256 healthFactorForMaxBonus;
     uint256 liquidationBonusFactor;
-    uint256 healthFactorLiquidationThreshold;
     uint256 totalReserveDebt;
     uint256 totalReserveCollateral;
     uint256 debtToCover;
@@ -111,26 +110,19 @@ library LiquidationLogic {
   function calculateVariableLiquidationBonus(
     DataTypes.CalculateVariableLiquidationBonusParams memory params
   ) internal pure returns (uint256) {
-    if (
-      params.healthFactorForMaxBonus == 0 ||
-      params.healthFactor <= params.healthFactorForMaxBonus ||
-      params.liquidationBonusFactor == 0
-    ) {
+    if (params.healthFactor <= params.healthFactorForMaxBonus) {
       return params.liquidationBonus;
     }
+
     uint256 minLiquidationBonus = (params.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
       .percentMulDown(params.liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
-    // if HF >= healthFactorLiquidationThreshold, liquidation bonus is min
-    if (params.healthFactor >= params.healthFactorLiquidationThreshold) {
-      return minLiquidationBonus;
-    }
 
     // otherwise linearly interpolate between min and max
     return
       minLiquidationBonus +
       (params.liquidationBonus - minLiquidationBonus).mulDivDown(
-        params.healthFactorLiquidationThreshold - params.healthFactor,
-        params.healthFactorLiquidationThreshold - params.healthFactorForMaxBonus
+        Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - params.healthFactor,
+        Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - params.healthFactorForMaxBonus
       );
   }
 
@@ -225,8 +217,7 @@ library LiquidationLogic {
         healthFactorForMaxBonus: params.healthFactorForMaxBonus,
         liquidationBonusFactor: params.liquidationBonusFactor,
         healthFactor: params.healthFactor,
-        liquidationBonus: params.liquidationBonus,
-        healthFactorLiquidationThreshold: params.healthFactorLiquidationThreshold
+        liquidationBonus: params.liquidationBonus
       })
     );
 
@@ -435,7 +426,6 @@ library LiquidationLogic {
         CalculateLiquidationAmountsParams({
           healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
           liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
-          healthFactorLiquidationThreshold: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
           totalReserveDebt: params.drawnDebt + params.premiumDebt,
           totalReserveCollateral: vars.totalReserveCollateral,
           debtToCover: params.debtToCover,

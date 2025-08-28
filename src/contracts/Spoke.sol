@@ -578,7 +578,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     address user,
     uint256 healthFactor
   ) external view returns (uint256) {
-    // if healthFactorForMaxBonus is 0, always returns liquidationBonus
     return
       LiquidationLogic.calculateVariableLiquidationBonus(
         DataTypes.CalculateVariableLiquidationBonusParams({
@@ -586,8 +585,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
           liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
           healthFactor: healthFactor,
           liquidationBonus: _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey]
-            .liquidationBonus,
-          healthFactorLiquidationThreshold: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+            .liquidationBonus
         })
       );
   }

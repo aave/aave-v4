@@ -251,7 +251,6 @@ library DataTypes {
     uint256 liquidationBonusFactor;
     uint256 healthFactor;
     uint256 liquidationBonus;
-    uint256 healthFactorLiquidationThreshold;
   }
 
   struct LiquidateUserParams {
