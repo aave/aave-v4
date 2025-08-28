@@ -27,35 +27,17 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_fuzz_revertsWith_DivisionByZero_ZeroAssetPrice(
     LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory params
   ) public {
-    params = _boundNoEarlyReturn(params);
+    params = _bound(params);
     params.debtAssetPrice = 0;
     vm.expectRevert(); // MathUtils reverts with no data if division by zero
     liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(params);
-  }
-
-  /// if closeFactor <= liquidationPenalty, then function returns max uint
-  function test_calculateDebtToRestoreCloseFactor_MaxUint(
-    LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory params
-  ) public {
-    params = _bound(params);
-    params.closeFactor = bound(
-      params.closeFactor,
-      0,
-      _calculateLiquidationPenalty(params.variableLiquidationBonus, params.collateralFactor)
-    );
-    assertEq(liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(params), type(uint256).max);
-    params.closeFactor = _calculateLiquidationPenalty(
-      params.variableLiquidationBonus,
-      params.collateralFactor
-    );
-    assertEq(liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(params), type(uint256).max);
   }
 
   /// if health factor == close factor, then result is 0
   function test_calculateDebtToRestoreCloseFactor_HealthFactorEqualsCloseFactor(
     LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory params
   ) public {
-    params = _boundNoEarlyReturn(params);
+    params = _bound(params);
     params.healthFactor = params.closeFactor;
     assertEq(liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(params), 0);
   }
@@ -64,7 +46,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToRestoreCloseFactor_revertsWith_ArithmeticError_CloseFactorLessThanHealthFactor(
     LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory params
   ) public {
-    params = _boundNoEarlyReturn(params);
+    params = _bound(params);
     params.healthFactor = params.closeFactor + 1;
     vm.expectRevert(stdError.arithmeticError);
     liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(params);

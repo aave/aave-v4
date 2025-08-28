@@ -1,0 +1,106 @@
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
+pragma solidity ^0.8.0;
+
+import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
+
+contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
+  using MathUtils for uint256;
+  using WadRayMath for uint256;
+
+  /// function always returns min between reserve debt, debt to cover and debt to restore close factor (when not reverting)
+  function test_calculateMaxDebtToLiquidate_fuzz(
+    LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
+  ) public {
+    params = _boundNoRevert(params);
+    uint256 maxDebtToLiquidate = liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
+    uint256 debtToRestoreCloseFactor = liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(
+      _getDebtToRestoreCloseFactorParams(params)
+    );
+    assertGe(
+      maxDebtToLiquidate,
+      params.totalReserveDebt.min(params.debtToCover).min(debtToRestoreCloseFactor)
+    );
+  }
+
+  /// function never reverts if 1 wei of debt is worth more than MIN_LEFTOVER_BASE
+  function test_calculateMaxDebtToLiquidate_fuzz_ImpossibleToLeaveDust(
+    LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
+  ) public {
+    params = _bound(params);
+    params.debtAssetUnit = 10 ** bound(params.debtAssetUnit, 1, 5);
+    params.debtAssetPrice = bound(
+      params.debtAssetPrice,
+      LiquidationLogic.MIN_LEFTOVER_BASE.fromWadDown() * params.debtAssetUnit,
+      MAX_ASSET_PRICE
+    );
+    liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
+  }
+
+  /// function rerturns total reserve debt is dust is left, but debt to cover is >= total reserve debt (min is debtToRestoreCloseFactor)
+  function test_calculateMaxDebtToLiquidate_fuzz_AmountAdjustedDueToDust(
+    LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
+  ) public {
+    params = _bound(params);
+    params.debtAssetPrice = bound(
+      params.debtAssetPrice,
+      1,
+      LiquidationLogic.MIN_LEFTOVER_BASE.fromWadDown() * params.debtAssetUnit - 1
+    );
+    uint256 debtToRestoreCloseFactor = liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(
+      _getDebtToRestoreCloseFactorParams(params)
+    );
+    params.totalReserveDebt = bound(
+      params.totalReserveDebt,
+      debtToRestoreCloseFactor + 1,
+      debtToRestoreCloseFactor +
+        _convertBaseCurrencyToAmount(
+          LiquidationLogic.MIN_LEFTOVER_BASE - 1,
+          params.debtAssetPrice,
+          params.debtAssetUnit
+        )
+    );
+    params.debtToCover = bound(
+      params.debtToCover,
+      params.totalReserveDebt,
+      _max(params.totalReserveDebt, MAX_SUPPLY_AMOUNT)
+    );
+    uint256 maxDebtToLiquidate = liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
+    assertEq(maxDebtToLiquidate, params.totalReserveDebt);
+  }
+
+  /// function reverts with MustNotLeaveDust if remaining debt is less than MIN_LEFTOVER_BASE and debtToCover is not enough to cover all debt
+  function test_calculateMaxDebtToLiquidate_fuzz_revertsWith_MustNotLeaveDust(
+    LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
+  ) public {
+    params = _bound(params);
+    params.debtAssetPrice = bound(
+      params.debtAssetPrice,
+      1,
+      LiquidationLogic.MIN_LEFTOVER_BASE.fromWadDown() * params.debtAssetUnit - 1
+    );
+    uint256 debtToRestoreCloseFactor = liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(
+      _getDebtToRestoreCloseFactorParams(params)
+    );
+    uint256 debtToLiquidate = params.debtToCover.min(debtToRestoreCloseFactor);
+    params.totalReserveDebt = bound(
+      params.totalReserveDebt,
+      debtToLiquidate + 1,
+      debtToLiquidate +
+        _convertBaseCurrencyToAmount(
+          LiquidationLogic.MIN_LEFTOVER_BASE - 1,
+          params.debtAssetPrice,
+          params.debtAssetUnit
+        )
+    );
+    if (debtToRestoreCloseFactor < params.debtToCover) {
+      params.debtToCover = bound(
+        params.debtToCover,
+        debtToRestoreCloseFactor,
+        params.totalReserveDebt - 1
+      );
+    }
+    vm.expectRevert(LiquidationLogic.MustNotLeaveDust.selector);
+    liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
+  }
+}

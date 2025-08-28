@@ -169,9 +169,6 @@ library LiquidationLogic {
     uint256 liquidationPenalty = params.variableLiquidationBonus.bpsToWad().percentMulUp(
       params.collateralFactor
     );
-    if (params.closeFactor <= liquidationPenalty) {
-      return type(uint256).max;
-    }
 
     return
       params.totalDebtInBaseCurrency.mulDivUp(

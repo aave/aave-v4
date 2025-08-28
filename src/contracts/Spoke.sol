@@ -739,7 +739,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     require(
       config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR &&
         config.liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
-        config.liquidationBonus.percentMulUp(config.collateralFactor) <=
+        config.liquidationBonus.percentMulUp(config.collateralFactor) <
         PercentageMath.PERCENTAGE_FACTOR,
       InvalidCollateralFactorAndLiquidationBonus()
     );
