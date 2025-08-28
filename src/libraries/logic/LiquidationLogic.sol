@@ -82,6 +82,8 @@ library LiquidationLogic {
     bool isDebtPositionEmpty;
     uint256 totalReserveDebt;
     uint256 totalDebtInBaseCurrency;
+    uint256 collateralAssetPrice;
+    uint256 collateralAssetUnit;
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
   }
@@ -90,6 +92,8 @@ library LiquidationLogic {
     uint256 totalReserveCollateral;
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
+    uint256 collateralAssetPrice;
+    uint256 collateralAssetUnit;
     bool isCollateralPositionEmpty;
     bool isDebtPositionEmpty;
   }
@@ -365,6 +369,15 @@ library LiquidationLogic {
       return false;
     }
 
+    uint256 reserveCollateralInBaseCurrency = params.totalReserveCollateral.mulDivUp(
+      params.collateralAssetPrice.toWad(),
+      params.collateralAssetUnit
+    );
+
+    if (reserveCollateralInBaseCurrency < params.totalCollateralInBaseCurrency) {
+      return false;
+    }
+
     if (!params.isDebtPositionEmpty) {
       return true;
     }
@@ -409,6 +422,10 @@ library LiquidationLogic {
 
     vars.debtAssetPrice = IAaveOracle(params.oracle).getReservePrice(params.debtReserveId);
     vars.debtAssetUnit = 10 ** debtReserve.decimals;
+    vars.collateralAssetPrice = IAaveOracle(params.oracle).getReservePrice(
+      params.collateralReserveId
+    );
+    vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
 
     (
       uint256 collateralToLiquidate,
@@ -430,10 +447,8 @@ library LiquidationLogic {
           collateralFactor: collateralDynConfig.collateralFactor,
           debtAssetPrice: vars.debtAssetPrice,
           debtAssetUnit: vars.debtAssetUnit,
-          collateralAssetPrice: IAaveOracle(params.oracle).getReservePrice(
-            params.collateralReserveId
-          ),
-          collateralAssetUnit: 10 ** collateralReserve.decimals,
+          collateralAssetPrice: vars.collateralAssetPrice,
+          collateralAssetUnit: vars.collateralAssetUnit,
           liquidationFee: collateralDynConfig.liquidationFee
         })
       );
@@ -477,6 +492,8 @@ library LiquidationLogic {
           isDebtPositionEmpty: vars.isDebtPositionEmpty,
           totalReserveDebt: params.drawnDebt + params.premiumDebt,
           totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
+          collateralAssetPrice: vars.collateralAssetPrice,
+          collateralAssetUnit: vars.collateralAssetUnit,
           debtAssetPrice: vars.debtAssetPrice,
           debtAssetUnit: vars.debtAssetUnit
         })
