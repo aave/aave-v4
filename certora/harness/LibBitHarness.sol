@@ -9,6 +9,10 @@ contract LibBitHarness  {
         return LibBit.popCount(x);
       }
 
+      function ffs(uint256 x) external pure returns (uint256 r) {
+        return LibBit.ffs(x);
+      }
+
       function isBitTrue(uint256 x, uint16 pos) public pure returns (bool) {
          return ((x >> pos) & 1) == 1;
       }

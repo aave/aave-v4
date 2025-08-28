@@ -23,14 +23,22 @@ methods {
 
     function WadRayMathWrapper.rayMulDown(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivDownCVL(a,b,wadRayMath.RAY());
+    function WadRayMath.rayMulDown(uint256 a, uint256 b) internal returns (uint256) => 
+        mulDivDownCVL(a,b,wadRayMath.RAY());
     
     function WadRayMathWrapper.rayMulUp(uint256 a, uint256 b) internal returns (uint256) => 
+        mulDivUpCVL(a,b,wadRayMath.RAY());    
+    function WadRayMath.rayMulUp(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivUpCVL(a,b,wadRayMath.RAY());
     
     function WadRayMathWrapper.rayDivDown(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivDownCVL(a,wadRayMath.RAY(),b);
+    function WadRayMath.rayDivDown(uint256 a, uint256 b) internal returns (uint256) => 
+        mulDivDownCVL(a,wadRayMath.RAY(),b);
     
     function WadRayMathWrapper.rayDivUp(uint256 a, uint256 b) internal returns (uint256) => 
+        mulDivUpCVL(a,wadRayMath.RAY(),b);
+    function WadRayMath.rayDivUp(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivUpCVL(a,wadRayMath.RAY(),b);
 
     function _.setInterestRateData(uint256 assetId, bytes data) external => NONDET; 

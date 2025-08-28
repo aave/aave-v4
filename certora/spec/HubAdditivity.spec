@@ -3,7 +3,12 @@ import "./ERC20s_CVL.spec";
 import "./Math_CVL.spec";
 import "./HubAdvanceSummary.spec";
 import "./SharesMath.spec";
+/**
+Verify  the additivity of the operation: add, remove, draw, restore, reportDeficit, eliminateDeficit.
+For each operation, we verify that splitting an operation to two operation is less beneficial to the user than doing it in one step.
 
+This spec uses summarization to the shareMath library. The summarization follow the proof in ShareMath.spec.
+**/
 methods {
     function SharesMath.toSharesDown(uint256 assets, uint256 totalAssets, uint256 totalShares) internal returns (uint256) =>
             symbolic_toSharesDown(assets, totalAssets, totalShares) ;
@@ -65,12 +70,6 @@ use rule toAssetsUp_additivity;
 use rule toAssetsUp_monotonicity;
 
 
-
-
-/** 
-@title Additivity of add()
-Adding in one step is more beneficial to the user than in one step  
-**/
 rule addAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
     env e;
     address spoke = e.msg.sender;
@@ -90,10 +89,7 @@ rule addAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address fr
     satisfy afterOneStep > afterTwoSteps;
 }
 
-/** 
-@title Additivity of removing()
-Removing in one step is more beneficial to the user than in one step  
-**/
+
 rule removeAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
     env e;
     address spoke = e.msg.sender;
@@ -113,10 +109,7 @@ rule removeAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address
     satisfy afterOneStep > afterTwoSteps;
 }
 
-/**
-@title Prove that the additivity of draw() 
 
-**/
 rule drawAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
     env e;
     address spoke = e.msg.sender;

@@ -3,8 +3,6 @@
 @title Prove unit test properties of AssetLogic.accrue() function
 This is proven on HubHarness which expose accure() as an external function 
 
-To run this spec file:
- certoraRun certora/conf/HubAccrueIntegrity.conf 
 **/
 
 import "./HubBase.spec";
@@ -43,6 +41,9 @@ rule baseDebtIndexMin_accrue(){
 
 }
 
+/**
+@title lastUpdateTimestamp is not in the future
+**/
 rule lastUpdateTimestamp_notInFuture(){
     env e;
     uint256 assetId;
@@ -54,7 +55,6 @@ rule lastUpdateTimestamp_notInFuture(){
 /**
 @title BaseDebtIndex is increasing on block change when baseRate is at least SECONDS_PER_YEAR and index is set
 Fails on cases in which baseBorrowRate <= SECONDS_PER_YEAR
-
 **/
 rule baseDebtIndex_increasing(uint256 assetId) {
     //Proved in invariant baseDebtIndexMin and baseDebtIndexMin_accrue
@@ -69,8 +69,9 @@ rule baseDebtIndex_increasing(uint256 assetId) {
     accrueInterest(e,assetId);
     
     assert hub._assets[assetId].drawnIndex >= before;
+    // if the debt is all realized premium, then the drawnIndex should not increase
     assert (hub._assets[assetId].drawnRate >= mathWrapper.SECONDS_PER_YEAR() 
-            && baseDebt > 0 ) =>
+            && baseDebt > hub._spokes[assetId][e.msg.sender].realizedPremium) =>
              hub._assets[assetId].drawnIndex > before;
     satisfy hub._assets[assetId].drawnRate == mathWrapper.SECONDS_PER_YEAR();
 }

@@ -1,14 +1,16 @@
 
 import "./ERC20s_CVL.spec";
 import "./Math_CVL.spec";
-import "./Hub_validState.spec";
+import "./HubValidState.spec";
 
 
 /***
 
 Verify Hub 
 
-State changes rules in which the validate functions are ignored 
+State changes rules in which the validate functions are ignored.
+Assuming accrue has been called before any other function.
+
 
 ***/
 methods {
@@ -21,7 +23,6 @@ methods {
     ) internal => NONDET;
 
     function _validateRemove(
-        DataTypes.Asset storage asset,
         DataTypes.SpokeData storage spoke,
         uint256 assetId,
         uint256 amount,
@@ -37,7 +38,6 @@ methods {
     ) internal => NONDET;
 
     function _validateRestore(
-        DataTypes.Asset storage asset,
         DataTypes.SpokeData storage spoke,
         uint256 assetId,
         uint256 drawnAmount,
@@ -46,7 +46,6 @@ methods {
     ) internal => NONDET;
 
     function _validateReportDeficit(
-        DataTypes.Asset storage asset,
         DataTypes.SpokeData storage spoke,
         uint256 assetId,
         uint256 drawnAmount,
@@ -54,7 +53,6 @@ methods {
     ) internal => NONDET;
 
     function _validateEliminateDeficit(
-        DataTypes.Asset storage asset,
         DataTypes.SpokeData storage spoke,
         uint256 amount
     ) internal => NONDET;
@@ -85,7 +83,7 @@ methods {
     ) internal => NONDET;
 }
 
-// when not accruing interest, every function should increase supply exchange rate (except liquidate which is wip)
+// when not accruing interest, every function should increase supply exchange rate 
 rule supplyExchangeRateIsMonotonic(env e, method f, calldataarg args)
 filtered {
     f -> !f.isView
@@ -99,7 +97,6 @@ filtered {
     mathint assetsBefore = addedAssetsBefore;
     mathint sharesBefore = supplyShareBefore;
 
-    // todo filter out when no time pass
     require hub._assets[assetId].lastUpdateTimestamp == e.block.timestamp; 
 
 
@@ -184,69 +181,3 @@ rule lastUpdateTimestamp_notInFuture(uint256 assetId, method f) filtered { f-> !
 
 }
 
-
-
-// one can remove his shares
-rule frontRunOnRemove(uint256 assetId, method f) {
-    env e;
-    env eBefore; calldataarg args;
-    require eBefore.msg.sender != e.msg.sender;
-    require eBefore.block.timestamp <=  e.block.timestamp;
-
-    requireAllInvariants(assetId,eBefore);
-
-    storage init_state = lastStorage;
-    // once should still be able to remove his shares
-    uint256 amount; 
-    address from;
-    remove(e,assetId, amount, from);
-    f(eBefore,args);
-    f(eBefore,args) at init_state;
-    remove@withrevert(e,assetId, amount, from);
-    assert !lastReverted;
-    // it is possible for everyone to remove and than zero shares left
-    satisfy !lastReverted && addedAssetsBefore!=0 && getAssetAddedAmount(e,assetId) == 0;
-}
-
-/// one can repay his debt
-rule frontRunOnRestore(uint256 assetId, method f) {
-    env e;
-    env eBefore; calldataarg args;
-    require eBefore.msg.sender != e.msg.sender;
-    require eBefore.block.timestamp <=  e.block.timestamp;
-
-    uint256 totalOwedBefore = getAssetTotalOwed(eBefore, assetId);
-    requireAllInvariants(assetId,e);
-
-    storage init_state = lastStorage;
-    // one should still be able to pay his debt
-    uint256 drawnAmount;
-    uint256 premiumAmount;
-    DataTypes.PremiumDelta premiumDelta;
-    address from;
-    restore(e,assetId,drawnAmount,premiumAmount,premiumDelta,from);
-    f(eBefore,args);
-    
-    f(eBefore,args) at init_state;
-    restore@withrevert(e,assetId,drawnAmount,premiumAmount,premiumDelta,from);
-    assert !lastReverted;
-    // it is possible for everyone to remove and than zero shares left
-    satisfy !lastReverted && totalOwedBefore!=0 && getAssetTotalOwed(e,assetId) == 0;
-}
-
-rule frontRunOnRefreshPremium(uint256 assetId) {
-    env e;
-    env eBefore; calldataarg args; 
-
-    require eBefore.msg.sender != e.msg.sender;
-    require eBefore.block.timestamp <=  e.block.timestamp;
-
-    requireAllInvariants(assetId,eBefore);
-    calldataarg argsRefresh;
-    storage init_state = lastStorage;
-    refreshPremium(e,argsRefresh);
-    refreshPremium(eBefore,args);
-    refreshPremium(eBefore,args) at init_state;
-    refreshPremium@withrevert(e,argsRefresh);
-    assert !lastReverted;
-}

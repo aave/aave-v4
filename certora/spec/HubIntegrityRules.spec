@@ -4,9 +4,12 @@ import "./Math_CVL.spec";
 import "./HubValidState.spec";
 
 /**
-Accrue is assumed to be called already 
+Hub verification integrity rules that verify that change is consistent.
+Accrue is assumed to be called already. 
 **/
 
+/** @title Add operation increases external balances and increases internal accounting 
+while decreasing from balance */
 rule nothingForZero_add(uint256 assetId, uint256 amount, address from) {
 
     env e;
@@ -24,6 +27,7 @@ rule nothingForZero_add(uint256 assetId, uint256 amount, address from) {
 }
 
 
+/** @title Remove operation decreases external balances and decreases internal accounting while increasing to balance*/
 rule nothingForZero_remove(uint256 assetId, uint256 amount, address to) {
 
     env e;
@@ -40,6 +44,7 @@ rule nothingForZero_remove(uint256 assetId, uint256 amount, address to) {
     assert balanceByToken[asset][hub] + balanceByToken[asset][to] == externalBalanceBefore + toBalanceBefore; 
 }
 
+/** @title Draw operation increases debt shares and transfers assets to recipient */
 rule nothingForZero_draw(uint256 assetId, uint256 amount, address to) {
     env e;
     address asset = hub._assets[assetId].underlying;
@@ -57,6 +62,7 @@ rule nothingForZero_draw(uint256 assetId, uint256 amount, address to) {
             hub._assets[assetId].liquidity < liquidityBefore;
 }
 
+/** @title Restore operation decreases debt shares and transfers assets from payer */
 rule nothingForZero_restore(uint256 assetId, uint256 drawnAmount, uint256 premiumAmount, DataTypes.PremiumDelta premiumDelta, address from) {
     env e;
     address asset = hub._assets[assetId].underlying;
@@ -75,6 +81,7 @@ rule nothingForZero_restore(uint256 assetId, uint256 drawnAmount, uint256 premiu
             hub._assets[assetId].liquidity > liquidityBefore;
 }
 
+/** @title Report deficit operation decreases debt shares and increases deficit without external transfers */
 rule nothingForZero_reportDeficit(uint256 assetId, uint256 drawnAmount, uint256 premiumAmount, DataTypes.PremiumDelta premiumDelta) {       
     env e;
     address asset = hub._assets[assetId].underlying;
@@ -90,6 +97,7 @@ rule nothingForZero_reportDeficit(uint256 assetId, uint256 drawnAmount, uint256 
             hub._assets[assetId].deficit > deficitBefore;
 }
 
+/** @title Eliminate deficit operation decreases added shares and reduces deficit without external transfers */
 rule nothingForZero_eliminateDeficit(uint256 assetId, uint256 amount) {
 
     env e;

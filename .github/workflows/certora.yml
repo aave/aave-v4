@@ -3,10 +3,14 @@ name: Certora Prover Workflow
 
 env:
   CONFIGS: |
-    certora/conf/LiquidityHubAccrueIntegrity.conf
+    certora/conf/LibBit.conf
     certora/conf/Math.conf
     certora/conf/SharesMath.conf
-    certora/conf/LiquidityHubAdditivity.conf
+    certora/conf/Hub.conf
+    certora/conf/HubAdditivity.conf
+    certora/conf/HubAccrueIntegrity.conf
+    certora/conf/HubIntegrityRules.conf
+    certora/conf/HubValidState.conf
 on:
   push:
     branches:

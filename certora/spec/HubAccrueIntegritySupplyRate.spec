@@ -28,8 +28,6 @@ function identity(uint256 x) returns uint256 {
     return x;
 }
 
-
-}
 // symbolic representation of drawnIndex that is a function of the block timestamp.
 ghost symbolicDrawnIndex(uint256) returns uint256;
 

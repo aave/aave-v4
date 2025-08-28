@@ -16,34 +16,44 @@ Verify Hub - valid state properties
 methods {
 
 
-    // assume that borrow rate was already updated.
-    //rules concerning updateBorrowRate are in ...
+// assume that drawn rate was already updated.
+//rules concerning updateDrawnRate are in HubAccrueIntegrity.spec
   function AssetLogic.updateDrawnRate(
     DataTypes.Asset storage asset,
     uint256 assetId
   ) internal => NONDET;
 
+//rules concerning getFeeShares are in HubAccrueIntegrity.spec
     function AssetLogic.getFeeShares(
         DataTypes.Asset storage asset,
         uint256 indexDelta
     ) internal returns (uint256) => ALWAYS(0);
 
-    function AssetLogic.getDrawnIndex(DataTypes.Asset storage   asset) internal returns (uint256) => cachedIndex;
+//assume a given single drawnIndex
+//rules concerning getDrawnIndex are in HubAccrueIntegrity.spec
+  function AssetLogic.getDrawnIndex(DataTypes.Asset storage   asset) internal returns (uint256) => cachedIndex;
 
+//rules concerning accrue are in HubAccrueIntegrity.spec
   function AssetLogic.accrue(DataTypes.Asset storage asset, uint256 assetId, DataTypes.SpokeData storage feeReceiver) internal => accrueCalled();
 
+//rules concerning calculateLinearInterest are in HubAccrueIntegrity.spec
+/*
   function MathUtils.calculateLinearInterest(
     uint256 rate,
     uint40 lastUpdateTimestamp
   ) internal returns (uint256) => ghostLinearInterest(rate, lastUpdateTimestamp);
-
+*/
 }
 
 /************ Ghost Variables ************/
 
+
+
+
+
 ghost uint256 cachedIndex;
 
-ghost  ghostLinearInterest( uint256 /*rate*/, uint40 /*lastUpdateTimestamp*/) returns uint256; 
+//ghost  ghostLinearInterest( uint256 /*rate*/, uint40 /*lastUpdateTimestamp*/) returns uint256; 
 
 // track all assetsIds of the same asset 
 /// sumLiquidity[asset] is the sum of _assets[KEY uint256 assetId].liquidity  for all assetIds of asset 
@@ -156,39 +166,9 @@ hook Sload uint128 value hub._spokes[KEY uint256 assetId][KEY address spoke].rea
 }
 
 /**** Valid State Rules *******/
-/** 
-@title up to 1 wei difference getTotalAddedAssets(e,assetId) == getAssetAddedAmount(e,assetId) +- 1
-@note implemented as a rule for optimization -reduandant 
-**/
-rule getTotalAddedAssetsVsGetAssetAddedAmount(uint256 assetId, env e, method f) {
-    requireAllInvariants(assetId, e);
-    // optimize (reuse) the calls to getAssetAddedAmount() and getTotalAddedShares()
-     // addedAssetsBefore = getAssetAddedAmount(e,assetId);
-     uint256 totalAmountBefore = getTotalAddedAssets(e,assetId);
-     require totalAmountBefore == addedAssetsBefore;
-     calldataarg args; 
-     f(e,args);
-
-     uint256 supplyAmountAfter = getAssetAddedAmount(e,assetId);
-     uint256 totalAmountAfter = getTotalAddedAssets(e,assetId);
-     //todo - check what if we start with one diff
-     assert totalAmountAfter >= supplyAmountAfter - 1 &&
-             totalAmountAfter <= supplyAmountAfter + 1 ;
-
-}
-
 
 invariant totalAssetsVsShares(uint256 assetId, env e) 
     getTotalAddedAssets(e,assetId) >=  getTotalAddedShares(e,assetId) {
-        preserved with (env eInv) {
-            //todo - need to prove time changing 
-            require eInv.block.timestamp == e.block.timestamp;
-            requireAllInvariants(assetId, e);
-        }
-    }
-
-invariant totalAssetsAndSharesZero(uint256 assetId, env e) 
-    getTotalAddedAssets(e,assetId) == 0 <=> getTotalAddedShares(e,assetId) == 0 {
         preserved with (env eInv) {
             //todo - need to prove time changing 
             require eInv.block.timestamp == e.block.timestamp;
@@ -200,9 +180,10 @@ invariant totalAssetsAndSharesZero(uint256 assetId, env e)
 definition emptyAsset(uint256 assetId) returns bool =
     hub._assets[assetId].addedShares == 0 &&
         hub._assets[assetId].liquidity == 0 &&
-        hub._assets[assetId].drawnShares == 0 &&
+        hub._assets[assetId].addedShares == 0 &&
+        hub._assets[assetId].deficit == 0 &&
+        hub._assets[assetId].swept == 0 &&
         hub._assets[assetId].premiumShares == 0 &&
-        hub._assets[assetId].drawnShares == 0 &&
         hub._assets[assetId].premiumOffset == 0 &&
         hub._assets[assetId].realizedPremium == 0 &&
         hub._assets[assetId].drawnShares == 0 &&
@@ -370,7 +351,7 @@ strong invariant solvency_external(address asset )
     {
         preserved reclaim(uint256 assetId, uint256 amount) with (env e)
         {
-            require hub._assets[assetId].reinvestmentStrategy != hub;
+            require hub._assets[assetId].reinvestmentController != hub;
         }
 }
 
@@ -402,8 +383,6 @@ function requireAllInvariants(uint256 assetId, env e)  {
     requireInvariant premiumOffset_Integrity(assetId, e.msg.sender,e);
     
     require cachedIndex == hub._assets[assetId].drawnIndex;
-    // need to add:
-    // getTotalAddedAssetsVsGetAssetAddedAmount 
 
 }   
 
