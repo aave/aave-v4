@@ -517,17 +517,8 @@ contract Hub is IHub, AccessManaged {
     return drawn + premium;
   }
 
-  function getAssetAddedAmount(uint256 assetId) external view returns (uint256) {
-    DataTypes.Asset storage asset = _assets[assetId];
-    return previewRemoveByShares(assetId, asset.addedShares);
-  }
-
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].drawnRate;
-  }
-
-  function getAssetAddedShares(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].addedShares;
   }
 
   function getTotalAddedAssets(uint256 assetId) external view override returns (uint256) {

@@ -1376,16 +1376,12 @@ abstract contract Base is Test {
     return (drawnRestored, premium);
   }
 
-  // returns the asset added amount without liquidityFee
-  function getAssetAddedAmount(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.convertToAddedAssets(assetId, hub.getAsset(assetId).addedShares);
-  }
-
-  // returns the asset added shares without liquidityFee
-  function getAssetAddedShares(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return
-      hub.getTotalAddedShares(assetId) -
-      hub.getSpokeAddedShares(assetId, getFeeReceiver(hub, assetId));
+  // get the asset added amount converted from addedShares
+  function getAssetAddedAmount(
+    IHub hub,
+    uint256 assetId
+  ) internal view returns (uint256 assetAddedAmount) {
+    assetAddedAmount = hub.convertToAddedAssets(assetId, hub.getAsset(assetId).addedShares);
   }
 
   /// @dev Helper function to check consistent supplied amounts within accounting
@@ -1399,7 +1395,7 @@ abstract contract Base is Test {
   ) internal view {
     uint256 expectedSuppliedShares = hub1.convertToAddedShares(assetId, expectedSuppliedAmount);
     assertEq(
-      getAssetAddedShares(hub1, assetId),
+      hub1.getTotalAddedShares(assetId),
       expectedSuppliedShares,
       string(abi.encodePacked('asset supplied shares ', label))
     );
