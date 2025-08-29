@@ -99,7 +99,9 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     state.wbtcPosition = spoke1.getUserPosition(state.wbtcReserveId, alice);
     state.wethPosition = spoke1.getUserPosition(state.wethReserveId, alice);
-    (state.userRp, , state.healthFactor, , ) = spoke1.getUserAccountData(alice);
+    DataTypes.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
+    state.userRp = userAccountData.userRiskPremium;
+    state.healthFactor = userAccountData.healthFactor;
 
     assertEq(
       state.wbtcPosition.drawnShares.percentMulUp(state.userRp),
@@ -208,7 +210,9 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     state.wbtcPosition = spoke1.getUserPosition(state.wbtcReserveId, alice);
     state.wethPosition = spoke1.getUserPosition(state.wethReserveId, alice);
-    (state.userRp, , state.healthFactor, , ) = spoke1.getUserAccountData(alice);
+    DataTypes.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
+    state.userRp = userAccountData.userRiskPremium;
+    state.healthFactor = userAccountData.healthFactor;
 
     assertEq(
       state.wbtcPosition.drawnShares.percentMulUp(state.userRp),
@@ -299,7 +303,9 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     state.wbtcPosition = spoke1.getUserPosition(state.wbtcReserveId, alice);
     state.wethPosition = spoke1.getUserPosition(state.wethReserveId, alice);
-    (state.userRp, , state.healthFactor, , ) = spoke1.getUserAccountData(alice);
+    DataTypes.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
+    state.userRp = userAccountData.userRiskPremium;
+    state.healthFactor = userAccountData.healthFactor;
 
     assertEq(
       state.wbtcPosition.drawnShares.percentMulUp(state.userRp),
@@ -392,7 +398,9 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     state.wbtcPosition = spoke1.getUserPosition(state.wbtcReserveId, alice);
     state.wethPosition = spoke1.getUserPosition(state.wethReserveId, alice);
-    (state.userRp, , state.healthFactor, , ) = spoke1.getUserAccountData(alice);
+    DataTypes.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
+    state.userRp = userAccountData.userRiskPremium;
+    state.healthFactor = userAccountData.healthFactor;
 
     assertEq(
       state.wbtcPosition.drawnShares.percentMulUp(state.userRp),
@@ -605,22 +613,21 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'liquidator pays all weth debt'
     );
 
-    (uint256 userRP, uint256 avgCollFactor, uint256 healthFactor, , ) = spoke1.getUserAccountData(
-      alice
-    );
+    DataTypes.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
+
 
     assertEq(
-      userRP,
+      userAccountData.userRiskPremium,
       spoke1.getReserve(state.daiReserveId).collateralRisk,
       'userRP matches collateral risk of dai coll'
     );
     assertEq(
-      avgCollFactor.fromWadDown(),
+      userAccountData.avgCollateralFactor.fromWadDown(),
       _getUserDynConfig(spoke1, alice, state.daiReserveId).collateralFactor,
       'avg coll factor matches dai coll factor'
     );
     // hf < 1 after
-    assertLt(healthFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertLt(userAccountData.healthFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
   }
 
   /// liquidation call with multiple collaterals, full collateral liquidation

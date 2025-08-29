@@ -587,12 +587,12 @@ contract SpokeBase is Base {
     uint256 debtAmount,
     uint256 suppliedAmount
   ) internal view returns (DataTypes.UserPosition memory userPos) {
-    (uint256 riskPremium, , , , ) = spoke.getUserAccountData(user);
+    DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
     userPos.drawnShares = hub1.convertToDrawnShares(assetId, debtAmount).toUint128();
     userPos.premiumShares = hub1
       .convertToDrawnShares(assetId, debtAmount)
-      .percentMulUp(riskPremium)
+      .percentMulUp(userAccountData.userRiskPremium)
       .toUint128();
     userPos.premiumOffset = hub1.convertToDrawnAssets(assetId, userPos.premiumShares).toUint128();
     userPos.realizedPremium = expectedRealizedPremium.toUint128();
@@ -716,8 +716,8 @@ contract SpokeBase is Base {
   function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
     DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
     uint256 riskPremiumStored = pos.premiumShares.percentDivDown(pos.drawnShares);
-    (uint256 riskPremiumCurrent, , , , ) = spoke.getUserAccountData(user);
-    assertEq(riskPremiumCurrent, riskPremiumStored, 'user risk premium mismatch');
+    DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    assertEq(userAccountData.userRiskPremium, riskPremiumStored, 'user risk premium mismatch');
   }
 
   function _getUserRpStored(

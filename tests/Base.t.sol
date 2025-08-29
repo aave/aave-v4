@@ -1712,19 +1712,13 @@ abstract contract Base is Test {
     address user,
     uint256 desiredHf
   ) internal view returns (uint256 requiredDebtInBaseCurrency) {
-    (
-      ,
-      uint256 currentAvgCollateralFactor,
-      ,
-      uint256 totalCollateralBase,
-      uint256 totalDebtBase
-    ) = spoke.getUserAccountData(user);
+    DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
     requiredDebtInBaseCurrency =
-      totalCollateralBase.percentMulDown(currentAvgCollateralFactor.fromWadDown() + 1).wadDivUp(
-        desiredHf
-      ) -
-      totalDebtBase;
+      userAccountData.totalCollateralInBaseCurrency.percentMulDown(
+        userAccountData.avgCollateralFactor.fromWadDown() + 1
+      ).wadDivUp(desiredHf) -
+      userAccountData.totalDebtInBaseCurrency;
     // add 1 to num to round debt up (ie making sure resultant debt creates HF that is less than desired)
   }
 
@@ -2016,19 +2010,13 @@ abstract contract Base is Test {
     address user,
     uint256 desiredHf
   ) internal view returns (uint256) {
-    (
-      ,
-      uint256 currentAvgCollateralFactor,
-      ,
-      uint256 totalCollateralBase,
-      uint256 totalDebtBase
-    ) = spoke.getUserAccountData(user);
+    DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
     return
-      totalCollateralBase
-        .percentMulDown(currentAvgCollateralFactor.fromWadDown())
+      userAccountData.totalCollateralInBaseCurrency
+        .percentMulDown(userAccountData.avgCollateralFactor.fromWadDown())
         .percentMulDown(99_00)
-        .wadDivDown(desiredHf) - totalDebtBase;
+        .wadDivDown(desiredHf) - userAccountData.totalDebtInBaseCurrency;
     // buffer to force debt lower (ie making sure resultant debt creates HF that is gt desired)
   }
 

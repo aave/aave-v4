@@ -117,41 +117,23 @@ library DataTypes {
     uint24 collateralRisk; // BPS
   }
 
-  struct NotifyRiskPremiumUpdateVars {
-    bool premiumIncrease;
-    uint256 reserveId;
-    uint256 assetId;
-    IHub hub;
-    DataTypes.PremiumDelta premiumDelta;
-  }
-
   struct PremiumDelta {
     int256 sharesDelta;
     int256 offsetDelta;
     int256 realizedDelta;
   }
 
-  struct CalculateUserAccountDataVars {
-    uint256 i;
-    uint256 reserveId;
-    bool borrowing;
-    bool collateral;
-    IAaveOracle oracle;
-    uint256 assetId;
-    uint256 assetPrice;
-    uint256 assetUnit;
-    uint256 reservePrice;
-    uint256 collateralRisk;
-    uint256 userCollateralInBaseCurrency;
+  struct UserAccountData {
+    uint256 userRiskPremium;
+    uint256 avgCollateralFactor;
+    uint256 healthFactor;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
-    uint256 debtCounterInBaseCurrency;
-    uint256 collateralCounterInBaseCurrency;
-    uint256 avgCollateralFactor;
-    uint256 userRiskPremium;
-    uint256 healthFactor;
+    uint256 suppliedAssetsCount;
+    uint256 borrowedAssetsCount;
   }
 
+  // todo: remove
   struct LiquidationCallLocalVars {
     uint256 collateralReserveId;
     uint256 debtReserveId;
@@ -177,6 +159,7 @@ library DataTypes {
     bool hasDeficit;
   }
 
+  // todo: remove
   struct CalculateAvailableCollateralToLiquidate {
     uint256 borrowerCollateralBalanceInBaseCurrency;
     uint256 baseCollateral;
@@ -187,27 +170,6 @@ library DataTypes {
     uint256 debtToLiquidateInBaseCurrency;
     bool hasDeficit;
   }
-
-  struct ExecuteLiquidationLocalVars {
-    uint256 debtAssetId;
-    uint256 collateralAssetId;
-    uint256 drawnDebt;
-    uint256 premiumDebt;
-    uint256 accruedPremium;
-    uint256 collateralToLiquidate;
-    uint256 liquidationFeeAmount;
-    uint256 drawnDebtToLiquidate;
-    uint256 premiumDebtToLiquidate;
-    uint256 restoredShares;
-    uint256 withdrawnShares;
-    uint256 newUserRiskPremium;
-    uint256 liquidatedSuppliedShares;
-    DataTypes.PremiumDelta premiumDelta;
-    bool hasDeficit;
-    IHub collateralReserveHub;
-    IHub debtReserveHub;
-  }
-
   struct LiquidationCallParams {
     address user;
     address oracle;
@@ -232,20 +194,6 @@ library DataTypes {
     uint256 totalDebtInBaseCurrency;
   }
 
-  struct ExecuteRepayLocalVars {
-    IHub hub;
-    uint256 assetId;
-    uint256 drawnDebt;
-    uint256 premiumDebt;
-    uint256 accruedPremium;
-    uint256 drawnDebtRestored;
-    uint256 premiumDebtRestored;
-    uint256 userPremiumShares;
-    uint256 userPremiumOffset;
-    uint256 newUserRiskPremium;
-    uint256 restoredShares;
-  }
-
   struct CalculateVariableLiquidationBonusParams {
     uint256 healthFactorForMaxBonus;
     uint256 liquidationBonusFactor;
@@ -263,8 +211,9 @@ library DataTypes {
     uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 accruedPremium;
-    uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
     address liquidator;
+    uint256 suppliedAssetsCount;
+    uint256 borrowedAssetsCount;
   }
 }

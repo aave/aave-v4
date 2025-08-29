@@ -293,16 +293,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getUserAccountData(
     address user
-  )
-    external
-    view
-    returns (
-      uint256 userRiskPremium,
-      uint256 avgCollateralFactor,
-      uint256 healthFactor,
-      uint256 totalCollateralInBaseCurrency,
-      uint256 totalDebtInBaseCurrency
-    );
+  ) external view returns (DataTypes.UserAccountData memory);
 
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256);
 

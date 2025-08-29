@@ -775,13 +775,11 @@ contract SpokeLiquidationBase is SpokeBase {
     params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
     params.liquidationBonus = state.liquidationBonus;
     params.liquidationFee = state.liquidationFee;
-    (
-      ,
-      ,
-      params.healthFactor,
-      params.totalCollateralInBaseCurrency,
-      params.totalDebtInBaseCurrency
-    ) = state.spoke.getUserAccountData(state.user);
+    DataTypes.UserAccountData memory userAccountData = state.spoke.getUserAccountData(state.user);
+    params.healthFactor = userAccountData.healthFactor;
+    params.totalCollateralInBaseCurrency = userAccountData.totalCollateralInBaseCurrency;
+    params.totalDebtInBaseCurrency = userAccountData.totalDebtInBaseCurrency;
+
 
     (params.actualDebtToLiquidate, hasDustFromDebt) = calculateActualDebtToLiquidate(
       state,
@@ -933,7 +931,9 @@ contract SpokeLiquidationBase is SpokeBase {
     params.debtAssetUnit = 10 ** state.debtReserve.decimals;
     params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
 
-    (, , params.healthFactor, , params.totalDebtInBaseCurrency) = spoke.getUserAccountData(alice);
+    DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(alice);
+    params.healthFactor = userAccountData.healthFactor;
+    params.totalDebtInBaseCurrency = userAccountData.totalDebtInBaseCurrency;
     // duplicated logic from LiquidationLogic.calculateDebtToRestoreCloseFactor
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.toWad())
       .percentMulDown(params.collateralFactor)
@@ -962,7 +962,9 @@ contract SpokeLiquidationBase is SpokeBase {
     params.debtAssetUnit = 10 ** spoke.getReserve(reserveId).decimals;
     params.debtAssetPrice = oracle.getReservePrice(reserveId);
 
-    (, , params.healthFactor, , params.totalDebtInBaseCurrency) = spoke.getUserAccountData(user);
+    DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    params.healthFactor = userAccountData.healthFactor;
+    params.totalDebtInBaseCurrency = userAccountData.totalDebtInBaseCurrency;
 
     // duplicated logic from LiquidationLogic.calculateDebtToRestoreCloseFactor
     uint256 effectiveLiquidationPenalty = (liquidationBonus.toWad())
@@ -985,8 +987,8 @@ contract SpokeLiquidationBase is SpokeBase {
     address user,
     uint256 liquidationBonus
   ) internal view returns (uint256) {
-    (, uint256 avgCollateralFactor, , , ) = spoke.getUserAccountData(user);
-    return _calcLowestHfForBadDebt(avgCollateralFactor.fromWadDown(), liquidationBonus);
+    DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    return _calcLowestHfForBadDebt(userAccountData.avgCollateralFactor.fromWadDown(), liquidationBonus);
   }
 
   /// given collateral factor and liquidation bonus, calculate the lowest health factor possible
@@ -1092,13 +1094,10 @@ contract SpokeLiquidationBase is SpokeBase {
       state.reserveDrawnDebt.balanceBefore +
       state.reservePremiumDebt.balanceBefore;
 
-    (
-      ,
-      ,
-      state.initialHf,
-      state.totalCollateralInBaseCurrency.balanceBefore,
-      state.totalDebtInBaseCurrency.balanceBefore
-    ) = state.spoke.getUserAccountData(state.user);
+    DataTypes.UserAccountData memory userAccountData = state.spoke.getUserAccountData(state.user);
+    state.initialHf = userAccountData.healthFactor;
+    state.totalCollateralInBaseCurrency.balanceBefore = userAccountData.totalCollateralInBaseCurrency;
+    state.totalDebtInBaseCurrency.balanceBefore = userAccountData.totalDebtInBaseCurrency;
 
     // multi reserve accounting
     state.userTotalReserveDebts = new Balance[](state.debtReserves.length);
@@ -1298,13 +1297,11 @@ contract SpokeLiquidationBase is SpokeBase {
     );
 
     state.outstandingDebt = state.userTotalReserveDebt.balanceBefore - state.debtToLiq;
-    (
-      state.userRp,
-      ,
-      state.finalHf,
-      state.totalCollateralInBaseCurrency.balanceAfter,
-      state.totalDebtInBaseCurrency.balanceAfter
-    ) = state.spoke.getUserAccountData(state.user);
+    DataTypes.UserAccountData memory userAccountData = state.spoke.getUserAccountData(state.user);
+    state.userRp = userAccountData.userRiskPremium;
+    state.finalHf = userAccountData.healthFactor;
+    state.totalCollateralInBaseCurrency.balanceAfter = userAccountData.totalCollateralInBaseCurrency;
+    state.totalDebtInBaseCurrency.balanceAfter = userAccountData.totalDebtInBaseCurrency;
 
     state.hasDeficit =
       state.userSuppliedAmount.balanceAfter == 0 &&
