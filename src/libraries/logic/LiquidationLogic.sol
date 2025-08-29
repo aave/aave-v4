@@ -254,6 +254,14 @@ library LiquidationLogic {
     return (collateralToLiquidate, collateralToLiquidator, debtToLiquidate);
   }
 
+  function _assessDeficit(AssessDeficitParams memory params) internal pure returns (bool) {
+    if (!params.isCollateralPositionEmpty || params.suppliedAssetsCount > 1) {
+      return false;
+    }
+
+    return !params.isDebtPositionEmpty || params.borrowedAssetsCount > 1;
+  }
+
   function _settlePremiumDebt(
     DataTypes.UserPosition storage debtPosition,
     DataTypes.PremiumDelta memory premiumDelta
@@ -350,14 +358,6 @@ library LiquidationLogic {
     }
 
     return false;
-  }
-
-  function _assessDeficit(AssessDeficitParams memory params) internal pure returns (bool) {
-    if (!params.isCollateralPositionEmpty || params.suppliedAssetsCount > 1) {
-      return false;
-    }
-
-    return !params.isDebtPositionEmpty || params.borrowedAssetsCount > 1;
   }
 
   function _liquidateUser(

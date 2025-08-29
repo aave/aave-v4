@@ -35,4 +35,10 @@ contract LiquidationLogicWrapper {
   ) public pure returns (uint256, uint256, uint256) {
     return LiquidationLogic._calculateLiquidationAmounts(params);
   }
+
+  function assessDeficit(
+    LiquidationLogic.AssessDeficitParams memory params
+  ) public pure returns (bool) {
+    return LiquidationLogic._assessDeficit(params);
+  }
 }
