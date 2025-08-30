@@ -16,6 +16,11 @@ interface IHubConfigurator {
   error MismatchedConfigs();
 
   /**
+   * @notice Thrown when the address is zero.
+   */
+  error InvalidAddress();
+
+  /**
    * @notice Adds a new asset to the hub.
    * @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
    * @dev The fee receiver is automatically added as a spoke with maximum caps.

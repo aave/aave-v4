@@ -157,9 +157,13 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   /// @inheritdoc IHubConfigurator
   function freezeAsset(address hub, uint256 assetId) external override onlyOwner {
     IHub targetHub = IHub(hub);
+    address feeReceiver = targetHub.getAssetConfig(assetId).feeReceiver;
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
       address spokeAddress = targetHub.getSpokeAddress(assetId, i);
+      if (spokeAddress == feeReceiver) {
+        continue;
+      }
       _updateSpokeCaps(targetHub, assetId, spokeAddress, 0, 0);
     }
   }
@@ -167,9 +171,13 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   /// @inheritdoc IHubConfigurator
   function pauseAsset(address hub, uint256 assetId) external override onlyOwner {
     IHub targetHub = IHub(hub);
+    address feeReceiver = targetHub.getAssetConfig(assetId).feeReceiver;
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
       address spokeAddress = targetHub.getSpokeAddress(assetId, i);
+      if (spokeAddress == feeReceiver) {
+        continue;
+      }
       DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spokeAddress);
       config.active = false;
       targetHub.updateSpokeConfig(assetId, spokeAddress, config);
@@ -313,6 +321,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     if (oldFeeReceiver == newFeeReceiver) {
       return;
     }
+    require(newFeeReceiver != address(0), IHubConfigurator.InvalidAddress());
 
     _updateSpokeCaps(hub, assetId, oldFeeReceiver, 0, 0);
 
