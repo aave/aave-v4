@@ -65,7 +65,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     skip(elapsed);
 
     // Ensure interest has accrued
-    vm.assume(getAssetAddedAmount(hub1, daiAssetId) > supplyAmount);
+    vm.assume(hub1.getTotalAddedAssets(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -80,7 +80,17 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     });
 
     uint256 treasuryFees = hub1.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
-    uint256 interestAccrued = getAssetAddedAmount(hub1, daiAssetId) - treasuryFees - supplyAmount;
+    uint256 interestAccrued = getConvertedAssetAddedAmount(hub1, daiAssetId) -
+      treasuryFees -
+      supplyAmount;
+
+    console.log('treasuryFees %e', treasuryFees);
+    console.log('interestAccrued %e', interestAccrued);
+    console.log('supplyAmount %e', supplyAmount);
+    console.log(
+      'spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob) %e',
+      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob)
+    );
 
     uint256 totalSupplied = interestAccrued + supplyAmount;
     assertApproxEqAbs(
@@ -98,7 +108,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     treasuryFees = hub1.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
     interestAccrued =
-      getAssetAddedAmount(hub1, daiAssetId) -
+      getConvertedAssetAddedAmount(hub1, daiAssetId) -
       treasuryFees -
       (supplyAmount - partialWithdrawAmount);
 

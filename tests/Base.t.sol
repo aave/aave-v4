@@ -1376,12 +1376,13 @@ abstract contract Base is Test {
     return (drawnRestored, premium);
   }
 
-  // get the asset added amount converted from addedShares
-  function getAssetAddedAmount(
+  // get the asset added amount converted from total added shares
+  // effective addedAssetAmount which accounts for liquidity fee impact on exchange rate
+  function getConvertedAssetAddedAmount(
     IHub hub,
     uint256 assetId
   ) internal view returns (uint256 assetAddedAmount) {
-    assetAddedAmount = hub.convertToAddedAssets(assetId, hub.getAsset(assetId).addedShares);
+    assetAddedAmount = hub.convertToAddedAssets(assetId, hub.getTotalAddedShares(assetId));
   }
 
   /// @dev Helper function to check consistent supplied amounts within accounting
@@ -1400,7 +1401,7 @@ abstract contract Base is Test {
       string(abi.encodePacked('asset supplied shares ', label))
     );
     assertEq(
-      getAssetAddedAmount(hub1, assetId),
+      getConvertedAssetAddedAmount(hub1, assetId),
       expectedSuppliedAmount,
       string(abi.encodePacked('asset supplied amount ', label))
     );
@@ -1623,7 +1624,7 @@ abstract contract Base is Test {
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     assertApproxEqAbs(
-      getAssetAddedAmount(hub1, assetId),
+      getConvertedAssetAddedAmount(hub1, assetId),
       expectedSuppliedAmount,
       3,
       string.concat('asset supplied amount ', label)
@@ -2263,17 +2264,17 @@ abstract contract Base is Test {
 
   // @dev Helper function to get asset position, valid if no time has passed since last action
   function getAssetPosition(
-    IHub targetHub,
+    IHub hub,
     uint256 assetId
   ) internal view returns (AssetPosition memory) {
-    DataTypes.Asset memory assetData = targetHub.getAsset(assetId);
-    (uint256 drawn, uint256 premium) = targetHub.getAssetOwed(assetId);
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
     return
       AssetPosition({
         assetId: assetId,
         liquidity: assetData.liquidity,
         addedShares: assetData.addedShares,
-        addedAmount: getAssetAddedAmount(targetHub, assetId),
+        addedAmount: getConvertedAssetAddedAmount(hub, assetId),
         drawnShares: assetData.drawnShares,
         drawn: drawn,
         premiumShares: assetData.premiumShares,

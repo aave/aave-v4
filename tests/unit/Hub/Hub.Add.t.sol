@@ -295,7 +295,7 @@ contract HubAddTest is HubBase {
 
     // hub
     assertEq(addedShares, shares);
-    assertEq(getAssetAddedAmount(hub1, assetId), amount, 'hub asset addedAmount after');
+    assertEq(hub1.getTotalAddedAssets(assetId), amount, 'hub asset addedAmount after');
     assertEq(hub1.getTotalAddedShares(assetId), shares, 'hub asset addedShares after');
     assertEq(
       hub1.getSpokeAddedAmount(assetId, address(spoke1)),
@@ -361,7 +361,7 @@ contract HubAddTest is HubBase {
       hub1.convertToAddedShares(assetId, amount),
       'asset addedShares after'
     );
-    assertEq(getAssetAddedAmount(hub1, assetId), amount, 'asset addedAmount after');
+    assertEq(hub1.getTotalAddedAssets(assetId), amount, 'asset addedAmount after');
     assertEq(hub1.getLiquidity(assetId), amount, 'asset liquidity after');
     assertEq(
       hub1.getAsset(assetId).lastUpdateTimestamp,
@@ -509,7 +509,7 @@ contract HubAddTest is HubBase {
     assertLt(shares, addAmount); // index increased, exch rate > 1
 
     uint256 spokeAddedSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke2));
-    uint256 addedAssetsBefore = getAssetAddedAmount(hub1, daiAssetId);
+    uint256 addedAssetsBefore = hub1.getSpokeAddedAmount(daiAssetId, address(spoke2));
     uint256 addedSharesBefore = hub1.getTotalAddedShares(daiAssetId);
 
     (uint256 drawnBefore, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
@@ -545,7 +545,7 @@ contract HubAddTest is HubBase {
     );
     // Hub and Spoke accounting do not match because of liquidity fees
     assertGe(
-      getAssetAddedAmount(hub1, daiAssetId),
+      hub1.getTotalAddedAssets(daiAssetId),
       addedAssetsBefore + addAmount,
       'hub addedAssets after'
     );
@@ -602,7 +602,7 @@ contract HubAddTest is HubBase {
     );
     // Hub and Spoke accounting do not match because of liquidity fees
     assertGe(
-      getAssetAddedAmount(hub1, daiAssetId),
+      hub1.getTotalAddedAssets(daiAssetId),
       addedAssetsBefore + spokeAddedAmount,
       'hub addedAssets after'
     );
@@ -657,7 +657,7 @@ contract HubAddTest is HubBase {
 
     // hub
     assertGe(
-      getAssetAddedAmount(hub1, daiAssetId),
+      hub1.getTotalAddedAssets(daiAssetId),
       addedAssetsBefore1 + addedAssetsBefore2 + spokeAddedAmount,
       'hub addedAssets after'
     );
@@ -772,11 +772,7 @@ contract HubAddTest is HubBase {
       params.bobBalance -= addAmount;
 
       // hub
-      assertGe(
-        getAssetAddedAmount(hub1, assetId),
-        params.assetAddedAmount,
-        'hub addedAmount after'
-      );
+      assertGe(hub1.getTotalAddedAssets(assetId), params.assetAddedAmount, 'hub addedAmount after');
       assertGe(hub1.getTotalAddedShares(assetId), params.assetAddedShares, 'hub addedShares after');
       assertEq(hub1.getLiquidity(assetId), params.availableLiq, 'asset liquidity after');
       assertEq(
