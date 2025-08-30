@@ -47,9 +47,9 @@ contract HubTransferSharesTest is HubBase {
     hub1.transferShares(daiAssetId, suppliedShares + 1, address(spoke2));
   }
 
-  function test_transferShares_zeroShares_revertsWith_InvalidSharesAmount() public {
+  function test_transferShares_zeroShares_revertsWith_InvalidShares() public {
     vm.prank(address(spoke1));
-    vm.expectRevert(IHub.InvalidSharesAmount.selector);
+    vm.expectRevert(IHub.InvalidShares.selector);
     hub1.transferShares(daiAssetId, 0, address(spoke2));
   }
 

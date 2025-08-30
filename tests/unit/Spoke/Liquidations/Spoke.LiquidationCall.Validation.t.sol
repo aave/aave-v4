@@ -94,7 +94,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
       ? (reserveId1, reserveId2)
       : (reserveId2, reserveId1);
 
-    vm.expectRevert(ISpoke.InvalidDebtToCover.selector);
+    vm.expectRevert(LiquidationLogic.InvalidDebtToCover.selector, address(spoke1));
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
   }
 
@@ -125,7 +125,7 @@ contract LiquidationCallValidationTest is SpokeLiquidationBase {
       ? (reserveId1, reserveId2)
       : (reserveId2, reserveId1);
 
-    vm.expectRevert(ISpoke.HealthFactorNotBelowThreshold.selector);
+    vm.expectRevert(LiquidationLogic.HealthFactorNotBelowThreshold.selector);
     spoke1.liquidationCall(collateralReserveId, debtReserveId, alice, debtToCover);
   }
 

@@ -85,11 +85,16 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   function updateLiquidationConfig(
-    DataTypes.LiquidationConfig calldata liquidationConfig
+    DataTypes.LiquidationConfig calldata config
   ) external restricted {
-    _validateLiquidationConfig(liquidationConfig);
-    _liquidationConfig = liquidationConfig;
-    emit LiquidationConfigUpdate(liquidationConfig);
+    require(
+      config.closeFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
+        config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR &&
+        config.healthFactorForMaxBonus < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      InvalidLiquidationConfig()
+    );
+    _liquidationConfig = config;
+    emit LiquidationConfigUpdate(config);
   }
 
   function addReserve(
@@ -560,7 +565,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 reserveId,
     address user,
     uint256 healthFactor
-  ) public view returns (uint256) {
+  ) external view returns (uint256) {
     // if healthFactorForMaxBonus is 0, always returns liquidationBonus
     return
       _liquidationConfig.calculateVariableLiquidationBonus(
@@ -689,7 +694,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
-    require(address(oracle) != address(0), InvalidOracle());
+    require(address(oracle) != address(0), InvalidAddress());
     oracle.setReserveSource(reserveId, priceSource);
     emit ReservePriceSourceUpdate(reserveId, priceSource);
   }
@@ -707,35 +712,21 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   function _validateReserveConfig(DataTypes.ReserveConfig calldata config) internal pure {
-    require(config.collateralRisk <= Constants.MAX_COLLATERAL_RISK, InvalidCollateralRisk()); // max 1000.00%
+    require(config.collateralRisk <= Constants.MAX_COLLATERAL_RISK, InvalidCollateralRisk());
   }
 
   function _validateDynamicReserveConfig(
     DataTypes.DynamicReserveConfig calldata config
   ) internal pure {
-    require(config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR, InvalidCollateralFactor()); // max 100.00%
-    require(config.liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationBonus()); // min 100.00%
+    // Enforce that at moment loan is taken, there should be enough collateral to cover liquidation
     require(
-      config.liquidationBonus.percentMulUp(config.collateralFactor) <=
+      config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR &&
+        config.liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
+        config.liquidationBonus.percentMulUp(config.collateralFactor) <=
         PercentageMath.PERCENTAGE_FACTOR,
-      IncompatibleCollateralFactorAndLiquidationBonus()
-    ); // Enforces that at moment loan is taken, there should be enough collateral to cover liquidation
+      InvalidCollateralFactorAndLiquidationBonus()
+    );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
-  }
-
-  function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal pure {
-    require(
-      config.closeFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidCloseFactor()
-    );
-    require(
-      config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidLiquidationBonusFactor()
-    );
-    require(
-      config.healthFactorForMaxBonus < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidHealthFactorForMaxBonus()
-    );
   }
 
   /**
@@ -748,6 +739,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.Reserve storage reserve,
     bool usingAsCollateral
   ) internal view {
+    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     // deactivation should be allowed
     require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());

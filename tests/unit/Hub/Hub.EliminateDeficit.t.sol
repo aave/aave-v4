@@ -5,23 +5,23 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubEliminateDeficitTest is HubBase {
-  function test_eliminateDeficit_revertsWith_InvalidDeficitAmount_zero() public {
+  function test_eliminateDeficit_revertsWith_InvalidAmount_zero() public {
     uint256 assetId = _randomAssetId(hub1);
-    vm.expectRevert(IHub.InvalidDeficitAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.eliminateDeficit(assetId, 0);
 
     _createDeficit(assetId, spoke1, 1000e6);
     assertEq(hub1.getDeficit(assetId), 1000e6);
-    vm.expectRevert(IHub.InvalidDeficitAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.eliminateDeficit(assetId, 0);
   }
 
-  function test_eliminateDeficit_revertsWith_InvalidDeficitAmount_excess() public {
+  function test_eliminateDeficit_revertsWith_InvalidAmount_excess() public {
     uint256 assetId = _randomAssetId(hub1);
     _createDeficit(assetId, spoke1, 1000e6);
-    vm.expectRevert(IHub.InvalidDeficitAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.eliminateDeficit(assetId, vm.randomUint(1000e6 + 1, UINT256_MAX));
   }

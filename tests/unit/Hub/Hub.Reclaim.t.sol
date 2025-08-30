@@ -21,27 +21,27 @@ contract HubReclaimTest is HubBase {
     hub1.reclaim(daiAssetId, vm.randomUint());
   }
 
-  function test_reclaim_revertsWith_InvalidSweepAmount_zero() public {
+  function test_reclaim_revertsWith_InvalidAmount_zero() public {
     address reinvestmentController = makeAddr('reinvestmentController');
     updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     vm.prank(reinvestmentController);
-    vm.expectRevert(IHub.InvalidSweepAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     hub1.reclaim(daiAssetId, 0);
   }
 
-  function test_reclaim_revertsWith_InvalidSweepAmount_exceedsSwept() public {
+  function test_reclaim_revertsWith_InvalidAmount_exceedsSwept() public {
     address reinvestmentController = makeAddr('reinvestmentController');
     updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     assertEq(hub1.getSwept(daiAssetId), 0);
 
     vm.prank(reinvestmentController);
-    vm.expectRevert(IHub.InvalidSweepAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     hub1.reclaim(daiAssetId, 1);
   }
 
-  function test_reclaim_revertsWith_InvalidSweepAmount_exceedsSwept_afterSweep() public {
+  function test_reclaim_revertsWith_InvalidAmount_exceedsSwept_afterSweep() public {
     uint256 supplyAmount = 1000e18;
     uint256 sweepAmount = 500e18;
 
@@ -56,7 +56,7 @@ contract HubReclaimTest is HubBase {
     assertEq(hub1.getSwept(daiAssetId), sweepAmount);
 
     vm.prank(reinvestmentController);
-    vm.expectRevert(IHub.InvalidSweepAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     hub1.reclaim(daiAssetId, sweepAmount + 1);
   }
 

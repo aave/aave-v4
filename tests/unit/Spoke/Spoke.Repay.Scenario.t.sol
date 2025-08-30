@@ -1004,7 +1004,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
 
     if (action1.repayAmount == 0) {
-      vm.expectRevert(IHub.InvalidRestoreAmount.selector);
+      vm.expectRevert(IHub.InvalidAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
       emit ISpokeBase.Repay(
@@ -1111,7 +1111,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
 
     if (action2.repayAmount == 0) {
-      vm.expectRevert(IHub.InvalidRestoreAmount.selector);
+      vm.expectRevert(IHub.InvalidAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
       emit ISpokeBase.Repay(

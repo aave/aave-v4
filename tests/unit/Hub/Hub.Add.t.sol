@@ -412,16 +412,16 @@ contract HubAddTest is HubBase {
     assertEq(underlying2.balanceOf(address(hub1)), amount2, 'hub asset2 balance after');
   }
 
-  function test_add_revertsWith_InvalidAddAmount() public {
+  function test_add_revertsWith_InvalidAmount() public {
     uint256 assetId = 0;
     uint256 amount = 0;
 
-    vm.expectRevert(IHub.InvalidAddAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.add(assetId, amount, alice);
   }
 
-  function test_add_revertsWith_InvalidSharesAmount() public {
+  function test_add_revertsWith_InvalidShares() public {
     // inflate exchange rate
     uint256 daiAmount = 1e9 * 1e18;
     uint256 drawAmount = daiAmount;
@@ -443,12 +443,12 @@ contract HubAddTest is HubBase {
     uint256 amount = 1;
     assertTrue(hub1.convertToAddedShares(daiAssetId, amount) == 0);
 
-    vm.expectRevert(IHub.InvalidSharesAmount.selector);
+    vm.expectRevert(IHub.InvalidShares.selector);
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount, alice);
   }
 
-  function test_add_fuzz_revertsWith_InvalidSharesAmount_due_to_index(
+  function test_add_fuzz_revertsWith_InvalidShares_due_to_index(
     uint256 daiAmount,
     uint256 addAmount,
     uint256 skipTime
@@ -475,7 +475,7 @@ contract HubAddTest is HubBase {
     // add < 1 share with an amount > 0
     addAmount = bound(addAmount, 1, minAllowedAddedAmount - 1);
 
-    vm.expectRevert(IHub.InvalidSharesAmount.selector);
+    vm.expectRevert(IHub.InvalidShares.selector);
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, addAmount, alice);
   }

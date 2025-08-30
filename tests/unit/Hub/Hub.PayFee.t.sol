@@ -5,20 +5,20 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubPayFeeTest is HubBase {
-  function test_payFee_revertsWith_InvalidFeeShares() public {
-    vm.expectRevert(IHub.InvalidFeeShares.selector);
+  function test_payFee_revertsWith_InvalidShares() public {
+    vm.expectRevert(IHub.InvalidShares.selector, address(hub1));
     vm.prank(address(spoke1));
     hub1.payFee(daiAssetId, 0);
   }
 
   function test_payFee_revertsWith_SpokeNotActive() public {
     updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
-    vm.expectRevert(IHub.SpokeNotActive.selector);
+    vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
     vm.prank(address(spoke1));
     hub1.payFee(daiAssetId, 1);
   }
 
-  function test_payFee_revertsWith_AddedAmountExceeded() public {
+  function test_payFee_revertsWith_AddedSharesExceeded() public {
     uint256 addAmount = 100e18;
     Utils.add({
       hub: hub1,
@@ -31,12 +31,15 @@ contract HubPayFeeTest is HubBase {
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 feeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddedSharesExceeded.selector, feeShares));
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.AddedSharesExceeded.selector, feeShares),
+      address(hub1)
+    );
     vm.prank(address(spoke1));
     hub1.payFee(daiAssetId, feeShares + 1);
   }
 
-  function test_payFee_revertsWith_AddedAmountExceeded_with_interest() public {
+  function test_payFee_revertsWith_AddedSharesExceeded_with_interest() public {
     uint256 addAmount = 100e18;
     Utils.add({
       hub: hub1,
@@ -55,7 +58,10 @@ contract HubPayFeeTest is HubBase {
     // supply ex rate increases due to interest
     assertGt(feeAmount, feeShares);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddedSharesExceeded.selector, feeShares));
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.AddedSharesExceeded.selector, feeShares),
+      address(hub1)
+    );
     vm.prank(address(spoke1));
     hub1.payFee(daiAssetId, feeShares + 1);
   }
