@@ -127,14 +127,16 @@ interface IHubConfigurator {
   ) external;
 
   /**
-   * @notice Freezes an asset.
+   * @notice Freezes an asset by setting supply/draw caps across its spokes to 0.
+   * @dev Does not freeze the fee receiver spoke.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
    */
   function freezeAsset(address hub, uint256 assetId) external;
 
   /**
-   * @notice Pauses an asset.
+   * @notice Pauses an asset by setting the active flag across its spokes to false.
+   * @dev Does not pause the fee receiver spoke.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
    */

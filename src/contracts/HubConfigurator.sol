@@ -164,7 +164,13 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
       if (spokeAddress == feeReceiver) {
         continue;
       }
-      _updateSpokeCaps(targetHub, assetId, spokeAddress, 0, 0);
+      _updateSpokeCaps({
+        hub: targetHub,
+        assetId: assetId,
+        spoke: spokeAddress,
+        addCap: 0,
+        drawCap: 0
+      });
     }
   }
 
