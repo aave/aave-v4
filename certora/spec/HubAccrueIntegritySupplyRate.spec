@@ -60,7 +60,7 @@ rule supplyExchangeRateIsMonotonic_accrue_no_realizedPremium(){
     mathint sharesBefore = getTotalAddedShares(e1, assetId); 
     //requireInvariant totalAssetsVsShares(assetId,e);
     require assetsBefore >= sharesBefore;
-    // todo - check this is always true 
+    // simplification: fee is always 100%
     require hub._assets[assetId].liquidityFee == 10000;
     uint256 baseDebt = getAssetTotalOwed(e1, assetId);
     require hub._assets[assetId].drawnRate >= mathWrapper.SECONDS_PER_YEAR() &&
@@ -70,9 +70,7 @@ rule supplyExchangeRateIsMonotonic_accrue_no_realizedPremium(){
     require hub._assets[assetId].drawnIndex == symbolicDrawnIndex(e2.block.timestamp);
     mathint assetsAfter = getTotalAddedAssets(e2, assetId);
     mathint sharesAfter = getTotalAddedShares(e2, assetId);
-
-//    assert assetsAfter * sharesBefore >= assetsBefore * sharesAfter; 
-
+    require assetsAfter >= sharesAfter;
     satisfy (assetsAfter + oneM) * (sharesBefore + oneM) > (assetsBefore + oneM) * (sharesAfter + oneM); 
     assert (assetsAfter + oneM) * (sharesBefore + oneM) >= (assetsBefore + oneM) * (sharesAfter + oneM); 
 }
