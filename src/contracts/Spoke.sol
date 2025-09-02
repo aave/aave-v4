@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {ECDSA} from 'src/dependencies/openzeppelin/ECDSA.sol';
+import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
@@ -430,7 +430,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         )
       )
     );
-    require(ECDSA.recover(hash, v, r, s) == user, InvalidSignature());
+    require(
+      SignatureChecker.isValidSignatureNow(user, hash, abi.encodePacked(r, s, v)),
+      InvalidSignature()
+    );
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
 
