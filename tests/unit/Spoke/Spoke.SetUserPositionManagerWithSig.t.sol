@@ -196,6 +196,43 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     assertEq(spoke1.isPositionManager(user, params.positionManager), params.approve);
   }
 
+  function test_setUserPositionManagerWithSig_ERC1271() public {
+    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
+    MockERC1271Wallet smartWallet = new MockERC1271Wallet(user);
+    vm.label(user, 'user');
+    vm.label(address(smartWallet), 'smartWallet');
+    address positionManager = vm.randomAddress();
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updatePositionManager(positionManager, true);
+
+    EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
+      positionManager: positionManager,
+      user: address(smartWallet),
+      approve: vm.randomBool(),
+      nonce: spoke1.nonces(address(smartWallet)),
+      deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
+    });
+    bytes32 digest = _getTypedDataHash(spoke1, params);
+
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.SetUserPositionManager(params.user, params.positionManager, params.approve);
+
+    vm.prank(vm.randomAddress());
+    spoke1.setUserPositionManagerWithSig(
+      params.positionManager,
+      params.user,
+      params.approve,
+      params.deadline,
+      v,
+      r,
+      s
+    );
+
+    assertEq(spoke1.isPositionManager(address(smartWallet), params.positionManager), params.approve);
+  }
+
   function test_useNonce_monotonic(bytes32) public {
     vm.setArbitraryStorage(address(spoke1));
     address user = vm.randomAddress();
