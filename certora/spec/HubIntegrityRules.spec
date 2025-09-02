@@ -113,3 +113,21 @@ rule nothingForZero_eliminateDeficit(uint256 assetId, uint256 amount) {
             balanceByToken[asset][hub] == externalBalanceBefore &&
             hub._assets[assetId].deficit < deficitBefore;
 }
+
+rule validSpokeAndCapChecks(uint256 assetId, method f) {
+    env e;
+    calldataarg args;
+    address spoke = e.msg.sender;
+    uint256 drawnShares = hub._spokes[assetId][spoke].drawnShares;
+    uint256 addedShares = hub._spokes[assetId][spoke].addedShares;
+    require hub._assets[assetId].decimals == 1, "to avoid exponential";
+    mathint drawCap = hub._spokes[assetId][spoke].drawCap * 10 ;
+    mathint addCap = hub._spokes[assetId][spoke].addCap * 10 ;
+    
+    bool active = hub._spokes[assetId][spoke].active;
+    f(e,args);
+    assert drawnShares < hub._spokes[assetId][spoke].drawnShares => 
+    (active && previewDrawByShares(e, assetId, hub._spokes[assetId][spoke].drawnShares) <= drawCap);
+    assert addedShares < hub._spokes[assetId][spoke].addedShares => 
+    (active && previewAddByShares(e, assetId, hub._spokes[assetId][spoke].addedShares) <= addCap);
+}
