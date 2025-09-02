@@ -248,7 +248,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
-    _borrowToBeBelowHf(spoke1, alice, state.wethReserveId, 1.001e18);
+    _borrowToBeAtHf(spoke1, alice, state.wethReserveId, 1.001e18);
 
     // position must initially be healthy
     assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -343,7 +343,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
-    _borrowToBeBelowHf(spoke1, alice, state.wethReserveId, 1.001e18);
+    _borrowToBeAtHf(spoke1, alice, state.wethReserveId, 1.001e18);
 
     // position must initially be healthy
     assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -430,7 +430,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
-    _borrowToBeBelowHf(spoke1, alice, state.wethReserveId, 1.001e18); // user position is initially healthy
+    _borrowToBeAtHf(spoke1, alice, state.wethReserveId, 1.001e18); // user position is initially healthy
 
     // position must initially be healthy
     assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);

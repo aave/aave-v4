@@ -44,7 +44,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
       MAX_LIQUIDATION_BONUS
     );
 
-    uint256 collateralFactor = bound(params.collateralFactor, 1, PercentageMath.PERCENTAGE_FACTOR.percentDivDown(liquidationBonus));
+    uint256 collateralFactor = bound(params.collateralFactor, 1, (PercentageMath.PERCENTAGE_FACTOR - 1).percentDivDown(liquidationBonus));
 
     uint256 closeFactor = bound(
       params.closeFactor,

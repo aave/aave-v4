@@ -58,6 +58,7 @@ abstract contract Base is Test {
   using SharesMath for uint256;
   using PercentageMath for uint256;
   using SafeCast for *;
+  using MathUtils for uint256;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED = 18;
@@ -1690,24 +1691,24 @@ abstract contract Base is Test {
    * @notice Returns the required debt amount to ensure user position is below a certain health factor.
    * @param desiredHf The desired health factor to be below.
    */
-  function _getRequiredDebtAmountForLtHf(
+  function _getRequiredDebtAmountForHf(
     ISpoke spoke,
     address user,
     uint256 reserveId,
     uint256 desiredHf
   ) internal view returns (uint256 requiredDebtAmount) {
-    uint256 requiredDebtAmountInBase = _getRequiredDebtInBaseCurrencyForLtHf(
+    uint256 requiredDebtAmountInBaseCurrency = _getRequiredDebtInBaseCurrencyForHf(
       spoke,
       user,
       desiredHf
     );
-    return _convertBaseCurrencyToAmount(spoke, reserveId, requiredDebtAmountInBase) + 1;
+    return _convertBaseCurrencyToAmount(spoke, reserveId, requiredDebtAmountInBaseCurrency);
   }
 
   /**
    * @notice Returns the required debt in base currency to ensure user position is below a certain health factor.
    */
-  function _getRequiredDebtInBaseCurrencyForLtHf(
+  function _getRequiredDebtInBaseCurrencyForHf(
     ISpoke spoke,
     address user,
     uint256 desiredHf
@@ -1715,27 +1716,26 @@ abstract contract Base is Test {
     DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
     requiredDebtInBaseCurrency =
-      userAccountData.totalCollateralInBaseCurrency.percentMulDown(
-        userAccountData.avgCollateralFactor.fromWadDown() + 1
+      userAccountData.totalCollateralInBaseCurrency.wadMulUp(
+        userAccountData.avgCollateralFactor
       ).wadDivUp(desiredHf) -
       userAccountData.totalDebtInBaseCurrency;
-    // add 1 to num to round debt up (ie making sure resultant debt creates HF that is less than desired)
   }
 
-  /// @dev Borrow to be below a certain health factor, without needing to check HF
-  function _borrowToBeBelowHf(
+  /// @dev Borrow to be at a certain health factor
+  function _borrowToBeAtHf(
     ISpoke spoke,
     address user,
     uint256 reserveId,
     uint256 desiredHf
   ) internal returns (uint256, uint256) {
-    uint256 requiredDebtAmount = _getRequiredDebtAmountForLtHf(spoke, user, reserveId, desiredHf);
+    uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
     require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
 
     _borrowWithoutHfCheck(spoke, user, reserveId, requiredDebtAmount);
 
     uint256 finalHf = spoke.getHealthFactor(user);
-    assertLt(finalHf, desiredHf, 'should borrow enough for HF to be below desiredHf');
+    assertApproxEqRel(finalHf, desiredHf, _approxRelFromBps(1), 'should borrow enough for HF to be ~ desiredHf');
 
     return (finalHf, requiredDebtAmount);
   }

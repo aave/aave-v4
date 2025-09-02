@@ -348,7 +348,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     requiredDebts = new uint256[](reserveIds.length);
 
     // extra debt to ensure HF below desired
-    uint256 requiredDebtInBase = _getRequiredDebtInBaseCurrencyForLtHf(spoke, user, desiredHf);
+    uint256 requiredDebtInBase = _getRequiredDebtInBaseCurrencyForHf(spoke, user, desiredHf);
 
     uint256 remaining = requiredDebtInBase;
     // make sure that each reserve has at least dustInBase in debt

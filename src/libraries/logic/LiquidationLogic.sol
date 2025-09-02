@@ -14,6 +14,8 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
+// TODO: rename asset price to reserve price
+
 library LiquidationLogic {
   using PercentageMath for uint256;
   using WadRayMath for uint256;

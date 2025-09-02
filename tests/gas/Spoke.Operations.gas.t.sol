@@ -140,7 +140,7 @@ contract SpokeOperations_Gas_Tests is Base {
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
     vm.stopPrank();
 
-    _borrowToBeBelowHf(spoke1, alice, _daiReserveId(spoke1), 0.9e18);
+    _borrowToBeAtHf(spoke1, alice, _daiReserveId(spoke1), 0.9e18);
 
     skip(100);
 

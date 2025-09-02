@@ -105,7 +105,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
       minLeftoverAmount[_daiReserveId(spoke1)] / 2
     );
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
-    (, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
+    (, uint256 requiredDebtAmount) = _borrowToBeAtHf(
       spoke1,
       alice,
       _usdxReserveId(spoke1),
@@ -157,7 +157,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     );
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
-    (, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
+    (, uint256 requiredDebtAmount) = _borrowToBeAtHf(
       spoke1,
       alice,
       _usdxReserveId(spoke1),
@@ -198,7 +198,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     );
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
-    (, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
+    (, uint256 requiredDebtAmount) = _borrowToBeAtHf(
       spoke1,
       alice,
       _usdxReserveId(spoke1),
@@ -329,7 +329,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
       minLeftoverAmount[_daiReserveId(spoke1)] * 1e6 // $1M
     );
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
-    (, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
+    (, uint256 requiredDebtAmount) = _borrowToBeAtHf(
       spoke1,
       alice,
       _usdxReserveId(spoke1),

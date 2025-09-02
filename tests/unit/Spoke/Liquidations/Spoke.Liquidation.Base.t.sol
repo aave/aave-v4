@@ -158,7 +158,7 @@ contract SpokeLiquidationBase is SpokeBase {
     ).toUint128();
     liqConfig.healthFactorForMaxBonus = bound(
       liqConfig.healthFactorForMaxBonus,
-      0.01e18,
+      0,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
     ).toUint64();
     liqConfig.liquidationBonusFactor = bound(liqConfig.liquidationBonusFactor, 0, 100_00)
@@ -261,11 +261,11 @@ contract SpokeLiquidationBase is SpokeBase {
     skip(skipTime);
 
     vm.assume(
-      _getRequiredDebtAmountForLtHf(spoke1, state.user, debtReserveId, desiredHf) <=
+      _getRequiredDebtAmountForHf(spoke1, state.user, debtReserveId, desiredHf) <=
         MAX_SUPPLY_AMOUNT
     );
     // borrow some amount of debt reserve to end up below hf threshold
-    (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeBelowHf(
+    (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeAtHf(
       state.spoke,
       state.user,
       debtReserveId,
