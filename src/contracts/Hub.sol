@@ -90,6 +90,12 @@ contract Hub is IHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
+    _addSpoke(assetId, feeReceiver);
+    _updateSpokeConfig(
+      assetId,
+      feeReceiver,
+      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
+    );
 
     emit AddAsset(assetId, underlying, decimals);
     emit AssetConfigUpdate(
@@ -139,9 +145,7 @@ contract Hub is IHub, AccessManaged {
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     require(spoke != address(0), InvalidAddress());
-    require(_assetToSpokes[assetId].add(spoke), SpokeAlreadyListed());
-    emit AddSpoke(assetId, spoke);
-
+    _addSpoke(assetId, spoke);
     _updateSpokeConfig(assetId, spoke, config);
   }
 
@@ -580,7 +584,7 @@ contract Hub is IHub, AccessManaged {
   function _updateSpokeConfig(
     uint256 assetId,
     address spoke,
-    DataTypes.SpokeConfig calldata config
+    DataTypes.SpokeConfig memory config
   ) internal {
     _spokes[assetId][spoke].active = config.active;
     _spokes[assetId][spoke].addCap = config.addCap;
@@ -765,5 +769,10 @@ contract Hub is IHub, AccessManaged {
     // sufficient check to disallow when controller unset
     require(caller == asset.reinvestmentController, OnlyReinvestmentController());
     require(amount > 0 && amount <= asset.swept, InvalidAmount());
+  }
+
+  function _addSpoke(uint256 assetId, address spoke) internal {
+    require(_assetToSpokes[assetId].add(spoke), SpokeAlreadyListed());
+    emit AddSpoke(assetId, spoke);
   }
 }

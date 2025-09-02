@@ -33,20 +33,12 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address irStrategy,
     bytes calldata data
   ) external override onlyOwner returns (uint256) {
-    IHub targetHub = IHub(hub);
-
-    uint256 assetId = targetHub.addAsset(
+    uint256 assetId = IHub(hub).addAsset(
       underlying,
       IERC20Metadata(underlying).decimals(),
       feeReceiver,
       irStrategy,
       data
-    );
-
-    targetHub.addSpoke(
-      assetId,
-      feeReceiver,
-      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
     );
 
     return assetId;
@@ -61,15 +53,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address irStrategy,
     bytes calldata data
   ) external override onlyOwner returns (uint256) {
-    IHub targetHub = IHub(hub);
-
-    uint256 assetId = targetHub.addAsset(underlying, decimals, feeReceiver, irStrategy, data);
-
-    targetHub.addSpoke(
-      assetId,
-      feeReceiver,
-      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
-    );
+    uint256 assetId = IHub(hub).addAsset(underlying, decimals, feeReceiver, irStrategy, data);
 
     return assetId;
   }
@@ -157,13 +141,9 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   /// @inheritdoc IHubConfigurator
   function freezeAsset(address hub, uint256 assetId) external override onlyOwner {
     IHub targetHub = IHub(hub);
-    address feeReceiver = targetHub.getAssetConfig(assetId).feeReceiver;
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
       address spokeAddress = targetHub.getSpokeAddress(assetId, i);
-      if (spokeAddress == feeReceiver) {
-        continue;
-      }
       _updateSpokeCaps({
         hub: targetHub,
         assetId: assetId,
@@ -177,13 +157,9 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   /// @inheritdoc IHubConfigurator
   function pauseAsset(address hub, uint256 assetId) external override onlyOwner {
     IHub targetHub = IHub(hub);
-    address feeReceiver = targetHub.getAssetConfig(assetId).feeReceiver;
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
       address spokeAddress = targetHub.getSpokeAddress(assetId, i);
-      if (spokeAddress == feeReceiver) {
-        continue;
-      }
       DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spokeAddress);
       config.active = false;
       targetHub.updateSpokeConfig(assetId, spokeAddress, config);

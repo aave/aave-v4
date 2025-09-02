@@ -246,6 +246,16 @@ contract HubConfigTest is HubBase {
       (uint32, uint32, uint32, uint32)
     );
 
+    DataTypes.SpokeConfig memory expectedSpokeConfig = DataTypes.SpokeConfig({
+      addCap: Constants.MAX_CAP,
+      drawCap: Constants.MAX_CAP,
+      active: true
+    });
+
+    vm.expectEmit(address(hub1));
+    emit IHub.AddSpoke(expectedAssetId, feeReceiver);
+    vm.expectEmit(address(hub1));
+    emit IHub.SpokeConfigUpdate(expectedAssetId, feeReceiver, expectedSpokeConfig);
     vm.expectEmit(address(hub1));
     emit IHub.AddAsset(expectedAssetId, underlying, decimals);
     vm.expectEmit(address(hub1));
@@ -274,6 +284,7 @@ contract HubConfigTest is HubBase {
     assertEq(hub1.getAsset(assetId).decimals, decimals, 'asset decimals');
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
     assertEq(hub1.getAsset(assetId).reinvestmentController, address(0)); // should init to addr(0)
+    assertEq(hub1.getSpokeConfig(assetId, feeReceiver), expectedSpokeConfig);
   }
   function test_updateAssetConfig_fuzz_revertsWith_InvalidLiquidityFee(
     uint256 assetId,

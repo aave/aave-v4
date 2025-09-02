@@ -166,11 +166,6 @@ contract HubConfiguratorTest is HubBase {
       )
     );
 
-    vm.expectCall(
-      address(hub1),
-      abi.encodeCall(IHub.addSpoke, (expectedAssetId, feeReceiver, expectedSpokeConfig))
-    );
-
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     assetId = _addAsset(
       fetchErc20Decimals,
