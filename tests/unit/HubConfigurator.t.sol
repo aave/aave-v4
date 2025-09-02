@@ -228,7 +228,7 @@ contract HubConfiguratorTest is HubBase {
   function test_updateFeeReceiver_revertsWith_InvalidAddress_spoke() public {
     assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
 
-    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hubConfigurator));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeReceiver(address(hub1), assetId, address(0));
   }
@@ -472,7 +472,7 @@ contract HubConfiguratorTest is HubBase {
     uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
     uint256 liquidityFee = vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR);
 
-    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hubConfigurator));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeConfig(address(hub1), assetId, liquidityFee, address(0));
   }
@@ -484,7 +484,7 @@ contract HubConfiguratorTest is HubBase {
     );
     address feeReceiver = hub1.getAssetConfig(assetId).feeReceiver;
 
-    vm.expectRevert(IHub.InvalidLiquidityFee.selector);
+    vm.expectRevert(IHub.InvalidLiquidityFee.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeConfig(address(hub1), assetId, liquidityFee, feeReceiver);
   }
