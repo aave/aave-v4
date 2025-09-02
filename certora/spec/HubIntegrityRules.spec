@@ -3,6 +3,8 @@ import "./ERC20s_CVL.spec";
 import "./Math_CVL.spec";
 import "./HubValidState.spec";
 
+
+
 /**
 Hub verification integrity rules that verify that change is consistent.
 Accrue is assumed to be called already. 
@@ -121,13 +123,18 @@ rule validSpokeAndCapChecks(uint256 assetId, method f) {
     uint256 drawnShares = hub._spokes[assetId][spoke].drawnShares;
     uint256 addedShares = hub._spokes[assetId][spoke].addedShares;
     require hub._assets[assetId].decimals == 1, "to avoid exponential";
-    mathint drawCap = hub._spokes[assetId][spoke].drawCap * 10 ;
-    mathint addCap = hub._spokes[assetId][spoke].addCap * 10 ;
+
+    mathint MAX_CAP = 2 ^ 56 -1; 
+    mathint drawCap = hub._spokes[assetId][spoke].drawCap  == MAX_CAP ? 
+    max_uint256 : hub._spokes[assetId][spoke].drawCap * 10 ;
+    mathint addCap = hub._spokes[assetId][spoke].addCap == MAX_CAP ? 
+    max_uint256 : hub._spokes[assetId][spoke].addCap * 10 ;
     
     bool active = hub._spokes[assetId][spoke].active;
     f(e,args);
     assert drawnShares < hub._spokes[assetId][spoke].drawnShares => 
     (active && previewDrawByShares(e, assetId, hub._spokes[assetId][spoke].drawnShares) <= drawCap);
     assert addedShares < hub._spokes[assetId][spoke].addedShares => 
-    (active && previewAddByShares(e, assetId, hub._spokes[assetId][spoke].addedShares) <= addCap);
+    (active && 
+    previewAddByShares(e, assetId, hub._spokes[assetId][spoke].addedShares) <= addCap);
 }

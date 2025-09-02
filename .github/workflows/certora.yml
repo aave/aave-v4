@@ -9,7 +9,7 @@ env:
     certora/conf/Hub.conf
     certora/conf/HubAdditivity.conf
     certora/conf/HubAccrueIntegrity.conf
-    certora/conf/HubIntegrityRules.conf
+    certora/conf/HubIntegrity.conf
     certora/conf/HubValidState.conf
 on:
   push:
