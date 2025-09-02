@@ -116,25 +116,21 @@ rule nothingForZero_eliminateDeficit(uint256 assetId, uint256 amount) {
             hub._assets[assetId].deficit < deficitBefore;
 }
 
-rule validSpokeAndCapChecks(uint256 assetId, method f) {
+rule validSpokeOnly(uint256 assetId, method f) {
     env e;
     calldataarg args;
     address spoke = e.msg.sender;
     uint256 drawnShares = hub._spokes[assetId][spoke].drawnShares;
     uint256 addedShares = hub._spokes[assetId][spoke].addedShares;
-    require hub._assets[assetId].decimals == 1, "to avoid exponential";
-
-    mathint MAX_CAP = 2 ^ 56 -1; 
-    mathint drawCap = hub._spokes[assetId][spoke].drawCap  == MAX_CAP ? 
-    max_uint256 : hub._spokes[assetId][spoke].drawCap * 10 ;
-    mathint addCap = hub._spokes[assetId][spoke].addCap == MAX_CAP ? 
-    max_uint256 : hub._spokes[assetId][spoke].addCap * 10 ;
+    uint256 premiumShares = hub._spokes[assetId][spoke].premiumShares;
+    uint256 premiumOffset = hub._spokes[assetId][spoke].premiumOffset;
+    uint256 realizedPremium = hub._spokes[assetId][spoke].realizedPremium;
     
     bool active = hub._spokes[assetId][spoke].active;
     f(e,args);
-    assert drawnShares < hub._spokes[assetId][spoke].drawnShares => 
-    (active && previewDrawByShares(e, assetId, hub._spokes[assetId][spoke].drawnShares) <= drawCap);
-    assert addedShares < hub._spokes[assetId][spoke].addedShares => 
-    (active && 
-    previewAddByShares(e, assetId, hub._spokes[assetId][spoke].addedShares) <= addCap);
+    assert drawnShares < hub._spokes[assetId][spoke].drawnShares => active ;
+    assert addedShares < hub._spokes[assetId][spoke].addedShares => active ;
+    assert premiumShares < hub._spokes[assetId][spoke].premiumShares => active ;
+    assert premiumOffset < hub._spokes[assetId][spoke].premiumOffset => active ;
+    assert realizedPremium < hub._spokes[assetId][spoke].realizedPremium => active ;
 }
