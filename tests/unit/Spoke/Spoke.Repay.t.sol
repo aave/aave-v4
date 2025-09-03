@@ -870,7 +870,7 @@ contract SpokeRepayTest is SpokeBase {
       );
 
       if (daiRepayAmount == 0) {
-        vm.expectRevert(IHub.InvalidRestoreAmount.selector);
+        vm.expectRevert(IHub.InvalidAmount.selector);
       } else {
         vm.expectEmit(address(spoke1));
         emit ISpokeBase.Repay(
@@ -978,7 +978,7 @@ contract SpokeRepayTest is SpokeBase {
       daiRepayAmount = 0;
       premiumRestored = 0;
       deal(address(tokenList.dai), bob, daiRepayAmount);
-      vm.expectRevert(IHub.InvalidRestoreAmount.selector);
+      vm.expectRevert(IHub.InvalidAmount.selector);
     } else {
       // interest is at least 1
       daiRepayAmount = bound(daiRepayAmount, 1, bobDaiPremium);
@@ -1118,7 +1118,7 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     if (daiRepayAmount == 0) {
-      vm.expectRevert(IHub.InvalidRestoreAmount.selector);
+      vm.expectRevert(IHub.InvalidAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
       emit ISpokeBase.Repay(
@@ -1242,7 +1242,7 @@ contract SpokeRepayTest is SpokeBase {
       );
 
       if (daiRepayAmount == 0) {
-        vm.expectRevert(IHub.InvalidRestoreAmount.selector);
+        vm.expectRevert(IHub.InvalidAmount.selector);
       } else {
         vm.expectEmit(address(spoke1));
         emit ISpokeBase.Repay(

@@ -102,35 +102,33 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event ReservePriceSourceUpdate(uint256 indexed reserveId, address indexed priceSource);
   event LiquidationConfigUpdate(DataTypes.LiquidationConfig config);
 
-  error ReserveNotListed();
-  error ReserveExists();
   error AssetNotListed();
-  error InvalidCollateralRisk();
+  error ReserveExists();
+  error ReserveNotListed();
   error InsufficientSupply(uint256 supply);
   error ReserveNotBorrowable();
   error ReservePaused();
   error ReserveFrozen();
-  error InvalidCollateralFactor();
-  error InvalidLiquidationBonus();
-  error IncompatibleCollateralFactorAndLiquidationBonus();
   error HealthFactorBelowThreshold();
-  error InvalidCloseFactor();
-  error InvalidHealthFactorForMaxBonus();
-  error InvalidLiquidationBonusFactor();
-  error HealthFactorNotBelowThreshold();
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();
-  error InvalidDebtToCover();
-  error InvalidLiquidationFee();
-  error InvalidOracle();
-  error UsersAndDebtLengthMismatch();
   error Unauthorized();
   error ConfigKeyUninitialized();
   error InactivePositionManager();
   error InvalidSignature();
+  error InvalidAddress();
+  error InvalidOracle();
+  error InvalidCollateralRisk();
+  error InvalidLiquidationConfig();
+  error InvalidLiquidationFee();
+  error InvalidCollateralFactorAndLiquidationBonus();
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
+  /**
+   * @notice Allows governance to update the spoke oracle.
+   * @dev Does not validate all existing reserves are supported on `newOracle`.
+   */
   function updateOracle(address newOracle) external;
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;

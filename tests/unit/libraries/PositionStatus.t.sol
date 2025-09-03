@@ -298,6 +298,79 @@ contract PositionStatusTest is Base {
     assertEq(p.isUsingAsCollateral(reserveId), reserveId != PositionStatus.NOT_FOUND);
   }
 
+  function test_next_continuous() public {
+    uint256 reserveCount = 10000;
+    for (uint256 i; i < reserveCount; ++i) {
+      p.setBorrowing(i, vm.randomBool());
+      p.setUsingAsCollateral(i, vm.randomBool());
+    }
+    uint256 lastSeenReserveId;
+    uint256 nextReserveId;
+    bool borrowing;
+    bool collateral;
+    while (true) {
+      (nextReserveId, borrowing, collateral) = p.next(lastSeenReserveId, reserveCount);
+      if (nextReserveId == PositionStatus.NOT_FOUND) break;
+
+      assertEq(p.isBorrowing(nextReserveId), borrowing);
+      assertEq(p.isUsingAsCollateral(nextReserveId), collateral);
+      for (uint256 i = lastSeenReserveId; i < nextReserveId; ++i) {
+        assertFalse(p.isBorrowing(i));
+        assertFalse(p.isUsingAsCollateral(i));
+      }
+      lastSeenReserveId = nextReserveId + 1;
+    }
+    for (uint256 i = lastSeenReserveId; i < reserveCount; ++i) {
+      assertFalse(p.isBorrowing(i));
+      assertFalse(p.isUsingAsCollateral(i));
+    }
+  }
+
+  function test_nextBorrowing_continuous() public {
+    uint256 reserveCount = 10000;
+    for (uint256 i; i < reserveCount; ++i) {
+      p.setBorrowing(i, vm.randomBool());
+      p.setUsingAsCollateral(i, vm.randomBool());
+    }
+    uint256 lastSeenReserveId;
+    uint256 nextReserveId;
+    while (
+      (nextReserveId = p.nextBorrowing(lastSeenReserveId, reserveCount)) != PositionStatus.NOT_FOUND
+    ) {
+      assertTrue(p.isBorrowing(nextReserveId));
+      for (uint256 i = lastSeenReserveId; i < nextReserveId; ++i) {
+        assertFalse(p.isBorrowing(i));
+      }
+      lastSeenReserveId = nextReserveId + 1;
+    }
+    for (uint256 i = lastSeenReserveId; i < reserveCount; ++i) {
+      assertFalse(p.isBorrowing(i));
+    }
+  }
+
+  function test_nextCollateral_continuous() public {
+    uint256 reserveCount = 10000;
+    for (uint256 i; i < reserveCount; ++i) {
+      p.setBorrowing(i, vm.randomBool());
+      p.setUsingAsCollateral(i, vm.randomBool());
+    }
+    uint256 lastSeenReserveId;
+    uint256 nextReserveId;
+    while (
+      (nextReserveId = p.nextCollateral(lastSeenReserveId, reserveCount)) !=
+      PositionStatus.NOT_FOUND
+    ) {
+      assertTrue(p.isUsingAsCollateral(nextReserveId));
+      for (uint256 i = lastSeenReserveId; i < nextReserveId; ++i) {
+        assertFalse(p.isUsingAsCollateral(i));
+      }
+      lastSeenReserveId = nextReserveId + 1;
+    }
+    for (uint256 i = lastSeenReserveId; i < reserveCount; ++i) {
+      assertFalse(p.isUsingAsCollateral(i));
+    }
+  }
+
   // non state reading helpers tests below
   function test_bucketId() public {
     uint256 reserveId = vm.randomUint();

@@ -27,7 +27,7 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
    * @param hub_ The address of the Hub
    */
   constructor(address owner_, address hub_) Ownable(owner_) {
-    require(hub_ != address(0), InvalidHubAddress());
+    require(hub_ != address(0), InvalidAddress());
 
     HUB = IHub(hub_);
   }

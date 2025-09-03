@@ -22,12 +22,12 @@ contract HubSweepTest is HubBase {
     hub1.sweep(daiAssetId, vm.randomUint());
   }
 
-  function test_sweep_revertsWith_InvalidSweepAmount() public {
+  function test_sweep_revertsWith_InvalidAmount() public {
     assertEq(hub1.getAsset(daiAssetId).swept, 0);
     updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     vm.prank(reinvestmentController);
-    vm.expectRevert(IHub.InvalidSweepAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     hub1.sweep(daiAssetId, 0);
   }
 
