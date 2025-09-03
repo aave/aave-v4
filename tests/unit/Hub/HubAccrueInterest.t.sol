@@ -241,14 +241,6 @@ contract HubAccrueInterestTest is Base {
 
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex, 'drawnIndex');
-    console.log(
-      'feeAmt',
-      hub1.getSpokeAddedShares(daiAssetId, getFeeReceiver(hub1, daiAssetId)),
-      hub1.convertToAddedAssets(
-        daiAssetId,
-        hub1.getSpokeAddedShares(daiAssetId, getFeeReceiver(hub1, daiAssetId))
-      )
-    );
     assertEq(hub1.getTotalAddedAssets(daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
     assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt, 'drawn');
   }

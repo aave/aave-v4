@@ -83,15 +83,6 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     uint256 interestAccrued = getConvertedAssetAddedAmount(hub1, daiAssetId) -
       treasuryFees -
       supplyAmount;
-
-    console.log('treasuryFees %e', treasuryFees);
-    console.log('interestAccrued %e', interestAccrued);
-    console.log('supplyAmount %e', supplyAmount);
-    console.log(
-      'spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob) %e',
-      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob)
-    );
-
     uint256 totalSupplied = interestAccrued + supplyAmount;
     assertApproxEqAbs(
       totalSupplied,
