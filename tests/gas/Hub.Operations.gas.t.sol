@@ -99,7 +99,6 @@ contract HubOperations_Gas_Tests is Base {
     skip(100);
 
     address feeReceiver = _getFeeReceiver(daiAssetId);
-    uint256 amount = hub1.getSpokeAddedAmount(daiAssetId, feeReceiver);
 
     vm.startPrank(feeReceiver);
     hub1.remove(daiAssetId, hub1.getSpokeAddedAmount(daiAssetId, feeReceiver) / 2, alice);
