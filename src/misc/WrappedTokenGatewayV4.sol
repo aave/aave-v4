@@ -53,7 +53,7 @@ contract WrappedTokenGatewayV4 is
     if (msg.value != amount) revert NativeAmountMismatch();
 
     _wrapNative(amount);
-    IERC20(address(WRAPPED_ASSET)).safeIncreaseAllowance(address(SPOKE), amount);
+    IERC20(address(WRAPPED_ASSET)).safeIncreaseAllowance(_getReserveHub(reserveId), amount);
     SPOKE.supply(reserveId, amount, onBehalfOf);
   }
 
@@ -102,7 +102,7 @@ contract WrappedTokenGatewayV4 is
     }
 
     _wrapNative(amount);
-    IERC20(address(WRAPPED_ASSET)).safeIncreaseAllowance(address(SPOKE), amount);
+    IERC20(address(WRAPPED_ASSET)).safeIncreaseAllowance(_getReserveHub(reserveId), amount);
     SPOKE.repay(reserveId, amount, onBehalfOf);
 
     if (leftovers > 0) {
@@ -122,6 +122,10 @@ contract WrappedTokenGatewayV4 is
 
   function _getReserveAsset(uint256 reserveId) internal view returns (address) {
     return SPOKE.getReserve(reserveId).underlying;
+  }
+
+  function _getReserveHub(uint256 reserveId) internal view returns (address) {
+    return address(SPOKE.getReserve(reserveId).hub);
   }
 
   function _wrapNative(uint256 amount) internal {
