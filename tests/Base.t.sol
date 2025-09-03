@@ -38,6 +38,7 @@ import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusWrapper} from 'tests/mocks/PositionStatusWrapper.sol';
+import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 
 // dependencies
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -1716,28 +1717,11 @@ abstract contract Base is Test {
     DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
     requiredDebtInBaseCurrency =
-      userAccountData.totalCollateralInBaseCurrency.wadMulUp(
-        userAccountData.avgCollateralFactor
-      ).wadDivUp(desiredHf) -
+      userAccountData
+        .totalCollateralInBaseCurrency
+        .wadMulUp(userAccountData.avgCollateralFactor)
+        .wadDivUp(desiredHf) -
       userAccountData.totalDebtInBaseCurrency;
-  }
-
-  /// @dev Borrow to be at a certain health factor
-  function _borrowToBeAtHf(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId,
-    uint256 desiredHf
-  ) internal returns (uint256, uint256) {
-    uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
-    require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
-
-    _borrowWithoutHfCheck(spoke, user, reserveId, requiredDebtAmount);
-
-    uint256 finalHf = spoke.getHealthFactor(user);
-    assertApproxEqRel(finalHf, desiredHf, _approxRelFromBps(1), 'should borrow enough for HF to be ~ desiredHf');
-
-    return (finalHf, requiredDebtAmount);
   }
 
   function _approxRelFromBps(uint256 bps) internal pure returns (uint256) {
@@ -1781,29 +1765,6 @@ abstract contract Base is Test {
       normalizedDebtAmount.wadDivUp(
         normalizedCollPrice.toWad().percentMulDown(colDynConf.collateralFactor)
       );
-  }
-
-  /// @dev Helper function to borrow without health factor check
-  function _borrowWithoutHfCheck(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId,
-    uint256 debtAmount
-  ) internal {
-    uint256 initialPrice = spoke.oracle().getReservePrice(reserveId);
-    // set price to 0 to circumvent borrow validation
-    vm.mockCall(
-      address(spoke.oracle()),
-      abi.encodeWithSelector(IPriceOracle.getReservePrice.selector, reserveId),
-      abi.encode(0)
-    );
-    vm.prank(user);
-    spoke.borrow(reserveId, debtAmount, user);
-    vm.mockCall(
-      address(spoke.oracle()),
-      abi.encodeWithSelector(IPriceOracle.getReservePrice.selector, reserveId),
-      abi.encode(initialPrice)
-    );
   }
 
   /// @dev Calculate expected debt index based on input params
@@ -2013,7 +1974,8 @@ abstract contract Base is Test {
     DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
     return
-      userAccountData.totalCollateralInBaseCurrency
+      userAccountData
+        .totalCollateralInBaseCurrency
         .percentMulDown(userAccountData.avgCollateralFactor.fromWadDown())
         .percentMulDown(99_00)
         .wadDivDown(desiredHf) - userAccountData.totalDebtInBaseCurrency;

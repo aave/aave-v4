@@ -446,7 +446,7 @@ library LiquidationLogic {
       params.collateralReserveId,
       params.debtReserveId,
       params.user,
-      params.debtToCover,
+      debtToLiquidate,
       collateralToLiquidate,
       params.liquidator
     );

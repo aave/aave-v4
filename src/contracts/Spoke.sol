@@ -819,6 +819,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       DataTypes.Reserve storage reserve = _reserves[reserveId];
 
+      uint256 assetPrice = aaveOracle.getReservePrice(reserveId);
+      uint256 assetUnit = 10 ** reserve.decimals;
+
       if (collateral) {
         if (refreshConfig) {
           userPosition.configKey = reserve.dynamicConfigKey;
@@ -826,14 +829,17 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         uint256 collateralFactor = _dynamicConfig[reserveId][userPosition.configKey]
           .collateralFactor;
         if (collateralFactor != 0) {
-          uint256 suppliedShares = userPosition.suppliedShares;
           uint256 suppliedBalance;
-          if (suppliedShares > 0) {
-            suppliedBalance = reserve.hub.previewRemoveByShares(reserve.assetId, suppliedShares);
+          {
+            uint256 suppliedShares = userPosition.suppliedShares;
+            if (suppliedShares > 0) {
+              suppliedBalance = reserve.hub.previewRemoveByShares(reserve.assetId, suppliedShares);
+            }
           }
           if (suppliedBalance > 0) {
-            uint256 userCollateralInBaseCurrency = (suppliedBalance *
-              aaveOracle.getReservePrice(reserveId)).wadDivDown(10 ** reserve.decimals);
+            uint256 userCollateralInBaseCurrency = (suppliedBalance * assetPrice).wadDivDown(
+              assetUnit
+            );
             if (userCollateralInBaseCurrency > 0) {
               userAccountData.totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
               list.add(
@@ -854,9 +860,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       }
 
       if (borrowing) {
-        uint256 assetPrice = aaveOracle.getReservePrice(reserveId);
-        uint256 assetUnit = 10 ** reserve.decimals;
-
         (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
           reserve.hub,
           reserve.assetId,

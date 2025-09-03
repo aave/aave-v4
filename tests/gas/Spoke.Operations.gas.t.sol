@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 /// forge-config: default.isolate = true
-contract SpokeOperations_Gas_Tests is Base {
+contract SpokeOperations_Gas_Tests is SpokeBase {
   function setUp() public override {
     deployFixtures();
     initEnvironment();
