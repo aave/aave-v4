@@ -694,6 +694,7 @@ contract Hub is IHub, AccessManaged {
     uint256 amount,
     address to
   ) internal view {
+    require(msg.sender == asset.feeReceiver, OnlyFeeReceiver()); // TODO: pass msg.sender as an arg
     require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     uint256 withdrawable = previewRemoveByShares(assetId, feeReceiver.addedShares);
