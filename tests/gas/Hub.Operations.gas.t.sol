@@ -83,4 +83,34 @@ contract HubOperations_Gas_Tests is Base {
     // hub1.accrueInterest(daiAssetId);
     // vm.snapshotGasLastCall('Hub.Operations', 'accrueInterest');
   }
+
+  function test_removeFeeShares() public {
+    vm.prank(address(spoke2));
+    hub1.add(daiAssetId, 1000e18, alice);
+
+    vm.startPrank(address(spoke1));
+    hub1.add(usdxAssetId, 1000e6, alice);
+
+    skip(100);
+
+    hub1.draw(daiAssetId, 500e18, alice);
+    vm.stopPrank();
+
+    skip(100);
+
+    address feeReceiver = _getFeeReceiver(daiAssetId);
+    uint256 amount = hub1.getSpokeAddedAmount(daiAssetId, feeReceiver);
+
+    vm.startPrank(feeReceiver);
+    hub1.remove(daiAssetId, hub1.getSpokeAddedAmount(daiAssetId, feeReceiver) / 2, alice);
+    vm.stopPrank();
+
+    vm.snapshotGasLastCall('Hub.Operations', 'removeFeeShares: partial');
+
+    vm.startPrank(feeReceiver);
+    hub1.remove(daiAssetId, hub1.getSpokeAddedAmount(daiAssetId, feeReceiver), alice);
+    vm.stopPrank();
+
+    vm.snapshotGasLastCall('Hub.Operations', 'removeFeeShares: full');
+  }
 }

@@ -3,6 +3,8 @@
   "draw": "112318",
   "remove: full": "80336",
   "remove: partial": "86836",
+  "removeFeeShares: full": "90724",
+  "removeFeeShares: partial": "103862",
   "restore: full": "111589",
   "restore: partial": "117441"
 }
