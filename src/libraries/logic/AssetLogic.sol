@@ -122,7 +122,7 @@ library AssetLogic {
   function accrue(
     DataTypes.Asset storage asset,
     uint256 assetId,
-    DataTypes.SpokeData storage feeReceiver
+    DataTypes.FeeReceiver storage feeReceiver
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
     uint256 indexDelta = drawnIndex.uncheckedSub(asset.drawnIndex);

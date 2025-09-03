@@ -21,6 +21,10 @@ library DataTypes {
     bool active;
   }
 
+  struct FeeReceiver {
+    uint128 addedShares;
+  }
+
   struct Asset {
     //
     uint128 liquidity;
