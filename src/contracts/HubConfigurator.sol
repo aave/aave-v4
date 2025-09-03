@@ -303,8 +303,6 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     if (oldFeeReceiver == newFeeReceiver) {
       return;
     }
-    require(newFeeReceiver != address(0), IHubConfigurator.InvalidAddress());
-
     _updateSpokeCaps(hub, assetId, oldFeeReceiver, 0, 0);
 
     if (!hub.isSpokeListed(assetId, newFeeReceiver)) {

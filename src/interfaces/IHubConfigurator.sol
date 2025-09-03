@@ -16,11 +16,6 @@ interface IHubConfigurator {
   error MismatchedConfigs();
 
   /**
-   * @notice Thrown when the address is zero.
-   */
-  error InvalidAddress();
-
-  /**
    * @notice Adds a new asset to the hub.
    * @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
    * @dev The fee receiver is automatically added as a spoke with maximum caps.
@@ -127,16 +122,14 @@ interface IHubConfigurator {
   ) external;
 
   /**
-   * @notice Freezes an asset by setting supply/draw caps across its spokes to 0.
-   * @dev Does not freeze the fee receiver spoke.
+   * @notice Freezes an asset.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
    */
   function freezeAsset(address hub, uint256 assetId) external;
 
   /**
-   * @notice Pauses an asset by setting the active flag across its spokes to false.
-   * @dev Does not pause the fee receiver spoke.
+   * @notice Pauses an asset.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
    */
