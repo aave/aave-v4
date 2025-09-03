@@ -109,6 +109,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error ReserveNotBorrowable();
   error ReservePaused();
   error ReserveFrozen();
+  error ReserveBalanceNull();
   error HealthFactorBelowThreshold();
   error CollateralCannotBeLiquidated();
   error SpecifiedCurrencyNotBorrowedByUser();

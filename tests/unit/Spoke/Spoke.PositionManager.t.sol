@@ -192,6 +192,9 @@ contract SpokePositionManagerTest is SpokeBase {
 
   function test_onlyPositionManager_on_usingAsCollateral() public {
     uint256 reserveId = _usdxReserveId(spoke1);
+    uint256 amount = 100e6;
+    Utils.supply(spoke1, reserveId, alice, amount, alice);
+
     assertFalse(spoke1.isUsingAsCollateral(reserveId, alice));
 
     bool usingAsCollateral = true;

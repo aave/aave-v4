@@ -374,6 +374,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
+      if (_userPositions[onBehalfOf][reserveId].suppliedShares == 0) revert ReserveBalanceNull();
       _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
       // If unsetting, check HF and update user rp

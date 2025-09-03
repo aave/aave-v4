@@ -16,6 +16,15 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_setUsingAsCollateral_revertsWith_ReserveFrozen() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 daiAmount = 100e18;
+
+    // Alice supply dai into spoke1
+    deal(address(tokenList.dai), alice, daiAmount);
+    Utils.supply(spoke1, daiReserveId, alice, daiAmount, alice);
+
+    // Bob supply dai into spoke1
+    deal(address(tokenList.dai), bob, daiAmount);
+    Utils.supply(spoke1, daiReserveId, bob, daiAmount, bob);
 
     vm.prank(alice);
     spoke1.setUsingAsCollateral(daiReserveId, true, alice);
@@ -51,9 +60,22 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.setUsingAsCollateral(daiReserveId, true, alice);
   }
 
+  function test_setUsingAsCollateral_revertsWith_ReserveBalanceNull() public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+
+    vm.expectRevert(ISpoke.ReserveBalanceNull.selector);
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(daiReserveId, true, alice);
+  }
+
   /// no action taken when collateral status is unchanged
   function test_setUsingAsCollateral_collateralStatusUnchanged() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 daiAmount = 100e18;
+
+    // Bob supply dai into spoke1
+    deal(address(tokenList.dai), bob, daiAmount);
+    Utils.supply(spoke1, daiReserveId, bob, daiAmount, bob);
 
     // slight update in collateral factor so user is subject to dynamic risk config refresh
     updateCollateralFactor(spoke1, daiReserveId, _getCollateralFactor(spoke1, daiReserveId) + 1_00);
