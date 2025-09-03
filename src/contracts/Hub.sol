@@ -213,7 +213,7 @@ contract Hub is IHub, AccessManaged {
 
   function removeFeeShares(uint256 assetId, uint256 amount, address to) external returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.FeeReceiver storage feeReceiver = _feeReceivers[assetId][asset.feeReceiver];
+    DataTypes.FeeReceiver storage feeReceiver = _feeReceivers[assetId][msg.sender];
 
     asset.accrue(assetId, _feeReceivers[assetId][asset.feeReceiver]);
     _validateRemoveFeeShares(feeReceiver, assetId, amount, to);
@@ -229,7 +229,7 @@ contract Hub is IHub, AccessManaged {
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
-    emit Remove(assetId, msg.sender, shares, amount);
+    emit RemoveFeeShares(assetId, msg.sender, shares, amount);
 
     return shares;
   }
@@ -694,7 +694,6 @@ contract Hub is IHub, AccessManaged {
     uint256 amount,
     address to
   ) internal view {
-    require(msg.sender == asset.feeReceiver, OnlyFeeReceiver()); // TODO: pass msg.sender as an arg
     require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     uint256 withdrawable = previewRemoveByShares(assetId, feeReceiver.addedShares);

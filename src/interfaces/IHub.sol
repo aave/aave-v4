@@ -41,6 +41,12 @@ interface IHub is IHubBase, IAccessManaged {
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
+  event RemoveFeeShares(
+    uint256 indexed assetId,
+    address indexed feeReceiver,
+    uint256 shares,
+    uint256 amount
+  );
 
   /**
    * @notice Emitted when an amount of liquidity is swept/reinvested.
