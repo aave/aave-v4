@@ -676,8 +676,8 @@ contract Hub is IHub, AccessManaged {
     require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
-    uint256 withdrawable = previewRemoveByShares(assetId, spoke.addedShares);
-    require(amount <= withdrawable, AddedAmountExceeded(withdrawable));
+    uint256 removable = previewRemoveByShares(assetId, spoke.addedShares);
+    require(amount <= removable, AddedAmountExceeded(removable));
   }
 
   function _validateDraw(
