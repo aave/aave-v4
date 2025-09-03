@@ -24,7 +24,7 @@ contract HubConfigTest is HubBase {
   }
 
   function test_hub_deploy_revertsWith_InvalidAddress() public {
-    vm.expectRevert(IHub.InvalidAddress.selector);
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     new Hub(address(0));
   }
 
@@ -33,7 +33,7 @@ contract HubConfigTest is HubBase {
     DataTypes.SpokeConfig calldata spokeConfig
   ) public {
     assetId = bound(assetId, hub1.getAssetCount(), type(uint256).max);
-    vm.expectRevert(IHub.AssetNotListed.selector);
+    vm.expectRevert(IHub.AssetNotListed.selector, address(hub1));
     Utils.addSpoke(hub1, ADMIN, assetId, address(spoke1), spokeConfig);
   }
 
@@ -49,7 +49,7 @@ contract HubConfigTest is HubBase {
 
   function test_addSpoke_revertsWith_SpokeAlreadyListed() public {
     DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
-    vm.expectRevert(IHub.SpokeAlreadyListed.selector);
+    vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
     Utils.addSpoke(hub1, ADMIN, daiAssetId, address(spoke1), spokeConfig);
   }
 
@@ -74,7 +74,7 @@ contract HubConfigTest is HubBase {
     if (!hub1.isSpokeListed(assetId, spoke)) {
       assetId = bound(assetId, hub1.getAssetCount(), type(uint256).max);
     }
-    vm.expectRevert(IHub.SpokeNotListed.selector);
+    vm.expectRevert(IHub.SpokeNotListed.selector, address(hub1));
     Utils.updateSpokeConfig(hub1, ADMIN, assetId, spoke, spokeConfig);
   }
 
@@ -103,7 +103,7 @@ contract HubConfigTest is HubBase {
 
     decimals = bound(decimals, Constants.MAX_ALLOWED_ASSET_DECIMALS + 1, type(uint8).max).toUint8();
 
-    vm.expectRevert(IHub.InvalidAssetDecimals.selector);
+    vm.expectRevert(IHub.InvalidAssetDecimals.selector, address(hub1));
     Utils.addAsset(
       hub1,
       ADMIN,
@@ -195,7 +195,8 @@ contract HubConfigTest is HubBase {
     uint256 drawnRateRay = uint256(type(uint96).max) + 1;
     _mockInterestRateRay(drawnRateRay);
     vm.expectRevert(
-      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 96, drawnRateRay)
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 96, drawnRateRay),
+      address(hub1)
     );
     Utils.addAsset(
       hub1,
@@ -212,7 +213,8 @@ contract HubConfigTest is HubBase {
     uint256 blockTimestamp = uint256(type(uint40).max) + 1;
     vm.warp(blockTimestamp);
     vm.expectRevert(
-      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 40, blockTimestamp)
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 40, blockTimestamp),
+      address(hub1)
     );
     Utils.addAsset(
       hub1,
@@ -295,7 +297,7 @@ contract HubConfigTest is HubBase {
     newConfig.liquidityFee = vm
       .randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
       .toUint16();
-    vm.expectRevert(IHub.InvalidLiquidityFee.selector);
+    vm.expectRevert(IHub.InvalidLiquidityFee.selector, address(hub1));
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig);
   }
@@ -322,7 +324,7 @@ contract HubConfigTest is HubBase {
     assertEq(config.reinvestmentController, address(0));
     assertNotEq(hub1.getAsset(assetId).reinvestmentController, address(0));
 
-    vm.expectRevert(IHub.InvalidReinvestmentController.selector);
+    vm.expectRevert(IHub.InvalidReinvestmentController.selector, address(hub1));
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, config);
   }
@@ -334,7 +336,7 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
     assumeUnusedAddress(newConfig.irStrategy);
-    vm.expectRevert();
+    vm.expectRevert(address(hub1));
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig);
   }
@@ -363,6 +365,16 @@ contract HubConfigTest is HubBase {
         swept: 0
       }),
       vm.getBlockTimestamp()
+    );
+    if (!hub1.isSpokeListed(assetId, newConfig.feeReceiver)) {
+      vm.expectEmit(address(hub1));
+      emit IHub.AddSpoke(assetId, newConfig.feeReceiver);
+    }
+    vm.expectEmit(address(hub1));
+    emit IHub.SpokeConfigUpdate(
+      assetId,
+      newConfig.feeReceiver,
+      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
     );
     vm.expectEmit(address(hub1));
     emit IHub.AssetConfigUpdate(assetId, newConfig);

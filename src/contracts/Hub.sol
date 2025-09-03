@@ -135,6 +135,15 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
+    if (!_assetToSpokes[assetId].contains(config.feeReceiver)) {
+      _addSpoke(assetId, config.feeReceiver);
+    }
+    _updateSpokeConfig(
+      assetId,
+      config.feeReceiver,
+      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
+    );
+
     emit AssetConfigUpdate(assetId, config);
   }
 
