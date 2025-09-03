@@ -360,16 +360,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       _reportDeficits(user);
     } else {
       // new risk premium only needs to be propagated if no deficit exists
-      userAccountData = this.getUserAccountData(user);
-
-      if (debtToCover == type(uint256).max) {
-        require(
-          userAccountData.healthFactor >= _liquidationConfig.closeFactor,
-          string.concat(unicode'⚠️', ' SPOKE: health factor is not >= close factor')
-        );
-      }
-
-      _notifyRiskPremiumUpdate(user, userAccountData.userRiskPremium);
+      _notifyRiskPremiumUpdate(user, _calculateUserAccountData(user).userRiskPremium);
     }
   }
 

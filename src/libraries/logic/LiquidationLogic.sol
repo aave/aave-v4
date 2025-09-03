@@ -281,35 +281,24 @@ library LiquidationLogic {
     DataTypes.UserPosition storage position,
     LiquidateCollateralParams memory params
   ) internal returns (bool) {
-    bool isPositionEmpty;
-
     IHub hub = reserve.hub;
     uint256 assetId = reserve.assetId;
 
     uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
 
-    uint256 sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
-
-    if (params.collateralToLiquidate < params.reserveCollateral) {
-      if (sharesToLiquidate > 0) {
-        sharesToLiquidate -= 1;
-      }
-      if (sharesToLiquidator > 0) {
-        sharesToLiquidator -= 1;
-      }
-    } else {
-      isPositionEmpty = true;
-    }
-
     position.suppliedShares -= sharesToLiquidate.toUint128();
 
-    hub.remove(assetId, hub.previewRemoveByShares(assetId, sharesToLiquidator), params.liquidator);
+    uint256 sharesToLiquidator = hub.remove(
+      assetId,
+      params.collateralToLiquidator,
+      params.liquidator
+    );
 
     if (sharesToLiquidate > sharesToLiquidator) {
       hub.payFee(assetId, sharesToLiquidate - sharesToLiquidator);
     }
 
-    return isPositionEmpty;
+    return position.suppliedShares == 0;
   }
 
   function _liquidateDebt(
@@ -331,19 +320,8 @@ library LiquidationLogic {
         realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
       });
 
-      IHub hub = reserve.hub;
-      uint256 assetId = reserve.assetId;
-
-      uint256 drawnSharesToLiquidate = hub.previewRestoreByAssets(assetId, drawnDebtToLiquidate) +
-        1;
-      drawnDebtToLiquidate = hub.previewRestoreByShares(assetId, drawnSharesToLiquidate);
-      if (drawnDebtToLiquidate > params.drawnDebt) {
-        drawnSharesToLiquidate -= 1;
-        drawnDebtToLiquidate = params.drawnDebt;
-      }
-
-      hub.restore(
-        assetId,
+      uint256 drawnSharesLiquidated = reserve.hub.restore(
+        reserve.assetId,
         drawnDebtToLiquidate,
         premiumDebtToLiquidate,
         premiumDelta,
@@ -351,7 +329,7 @@ library LiquidationLogic {
       );
       // debt accounting
       _settlePremiumDebt(position, premiumDelta);
-      position.drawnShares -= drawnSharesToLiquidate.toUint128();
+      position.drawnShares -= drawnSharesLiquidated.toUint128();
     }
 
     if (position.drawnShares == 0) {

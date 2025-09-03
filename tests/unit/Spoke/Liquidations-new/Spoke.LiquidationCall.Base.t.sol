@@ -351,7 +351,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     );
 
     if (
-      hasDeficit ||
       userAccountDataAfter.totalDebtInBaseCurrency == 0 ||
       (params.isSolvent && !isLiquidationBonusAffectingUserHf)
     ) {
