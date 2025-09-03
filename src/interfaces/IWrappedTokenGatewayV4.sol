@@ -11,12 +11,11 @@ interface IWrappedTokenGatewayV4 {
     error FallbackForbidden();
     error ReceiveNotAllowed();
 
-  function supplyNative(address spoke, uint256 reserveId, uint256 amount, address onBehalfOf) external payable;
-  function withdrawNative(address spoke, uint256 reserveId, uint256 amount, address onBehalfOf) external;
-  function borrowNative(address spoke, uint256 reserveId, uint256 amount, address onBehalfOf) external;
-  function repayNative(address spoke, uint256 reserveId, uint256 amount, address onBehalfOf) external payable;
+  function supplyNative(uint256 reserveId, uint256 amount, address onBehalfOf) external payable;
+  function withdrawNative(uint256 reserveId, uint256 amount, address onBehalfOf) external;
+  function borrowNative(uint256 reserveId, uint256 amount, address onBehalfOf) external;
+  function repayNative(uint256 reserveId, uint256 amount, address onBehalfOf) external payable;
   function setUserPositionManagerWithSig(
-    address spoke,
     address user,
     bool approve,
     uint256 deadline,
