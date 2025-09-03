@@ -587,6 +587,20 @@ contract Hub is IHub, AccessManaged {
     return _spokes[assetId][spoke].addedShares;
   }
 
+  function getFeeAmount(uint256 assetId, address feeReceiver) external view returns (uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    return
+      previewRemoveByShares(
+        assetId,
+        _feeReceivers[assetId][feeReceiver].addedShares + asset.unrealizedFeeShares()
+      );
+  }
+
+  function getFeeShares(uint256 assetId, address feeReceiver) external view returns (uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    return _feeReceivers[assetId][feeReceiver].addedShares + asset.unrealizedFeeShares();
+  }
+
   function getLiquidity(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].liquidity;
   }
