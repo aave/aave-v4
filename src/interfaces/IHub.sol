@@ -116,8 +116,10 @@ interface IHub is IHubBase, IAccessManaged {
   ) external returns (uint256);
 
   function removeFeeShares(uint256 assetId, uint256 amount, address to) external returns (uint256);
-  function getFeeAmount(uint256 assetId, address feeReceiver) external view returns (uint256);
-  function getFeeShares(uint256 assetId, address feeReceiver) external view returns (uint256);
+  function getFeeAmount(uint256 assetId) external view returns (uint256);
+  function getFeeShares(uint256 assetId) external view returns (uint256);
+
+  function feeReceiver() external view returns (address);
 
   /**
    * @notice Updates the configuration of an asset.

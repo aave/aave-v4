@@ -117,12 +117,11 @@ library AssetLogic {
   /**
    * @dev Accrues interest and fees for the specified asset.
    * @param asset The data struct of the asset with accruing interest
-   * @param feeReceiver The data struct of the fee receiver spoke associated with the asset
    */
   function accrue(
     DataTypes.Asset storage asset,
     uint256 assetId,
-    DataTypes.FeeReceiver storage feeReceiver
+    DataTypes.FeeReceiver storage feeShares
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
     uint256 indexDelta = drawnIndex.uncheckedSub(asset.drawnIndex);
@@ -130,11 +129,11 @@ library AssetLogic {
     asset.drawnIndex = drawnIndex.toUint128();
     asset.lastUpdateTimestamp = block.timestamp.toUint40();
 
-    uint128 feeShares = asset.getFeeShares(indexDelta).toUint128();
-    if (feeShares > 0) {
-      feeReceiver.addedShares += feeShares;
-      asset.addedShares += feeShares;
-      emit IHub.AccrueFees(assetId, feeShares);
+    uint128 shares = asset.getFeeShares(indexDelta).toUint128();
+    if (shares > 0) {
+      feeShares.addedShares += shares;
+      asset.addedShares += shares;
+      emit IHub.AccrueFees(assetId, shares);
     }
   }
 

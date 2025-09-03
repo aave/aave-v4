@@ -1,10 +1,10 @@
 {
-  "add": "119630",
-  "draw": "112355",
-  "remove: full": "80439",
-  "remove: partial": "86939",
-  "removeFeeShares: full": "85771",
-  "removeFeeShares: partial": "120804",
-  "restore: full": "111665",
-  "restore: partial": "134617"
+  "add": "117443",
+  "draw": "110168",
+  "remove: full": "78252",
+  "remove: partial": "84752",
+  "removeFeeShares: full": "85662",
+  "removeFeeShares: partial": "120695",
+  "restore: full": "109478",
+  "restore: partial": "132430"
 }

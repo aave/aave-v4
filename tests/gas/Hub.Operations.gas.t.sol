@@ -98,16 +98,16 @@ contract HubOperations_Gas_Tests is Base {
 
     skip(100);
 
-    address feeReceiver = _getFeeReceiver(daiAssetId);
+    address feeReceiver = hub1.feeReceiver();
 
     vm.startPrank(feeReceiver);
-    hub1.removeFeeShares(daiAssetId, hub1.getFeeAmount(daiAssetId, feeReceiver) / 2, alice);
+    hub1.removeFeeShares(daiAssetId, hub1.getFeeAmount(daiAssetId) / 2, alice);
     vm.stopPrank();
 
     vm.snapshotGasLastCall('Hub.Operations', 'removeFeeShares: partial');
 
     vm.startPrank(feeReceiver);
-    hub1.removeFeeShares(daiAssetId, hub1.getFeeAmount(daiAssetId, feeReceiver), alice);
+    hub1.removeFeeShares(daiAssetId, hub1.getFeeAmount(daiAssetId), alice);
     vm.stopPrank();
 
     vm.snapshotGasLastCall('Hub.Operations', 'removeFeeShares: full');
