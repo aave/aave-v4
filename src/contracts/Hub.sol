@@ -379,7 +379,11 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue(assetId, _feeReceivers[assetId][asset.feeReceiver]);
     _validateTransferShares(asset, sender, receiver, assetId, shares);
-    _transferShares(sender, receiver, shares);
+    uint256 addedShares = sender.addedShares;
+    require(shares <= addedShares, AddedSharesExceeded(addedShares));
+
+    sender.addedShares = addedShares.uncheckedSub(shares).toUint128();
+    receiver.addedShares += shares.toUint128();
     asset.updateDrawnRate(assetId);
 
     emit TransferShares(assetId, shares, msg.sender, toSpoke);
@@ -639,18 +643,6 @@ contract Hub is IHub, AccessManaged {
 
     // can increase due to precision loss on premium (drawn unchanged)
     require(asset.premium() + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
-  }
-
-  function _transferShares(
-    DataTypes.SpokeData storage sender,
-    DataTypes.SpokeData storage receiver,
-    uint256 shares
-  ) internal {
-    uint256 addedShares = sender.addedShares;
-    require(shares <= addedShares, AddedSharesExceeded(addedShares));
-
-    sender.addedShares = addedShares.uncheckedSub(shares).toUint128();
-    receiver.addedShares += shares.toUint128();
   }
 
   function _getSpokeOwed(
