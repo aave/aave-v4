@@ -2,11 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-
-import {ReentrancyGuard} from 'src/dependencies/solady/ReentrancyGuard.sol';
+import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
@@ -18,15 +17,15 @@ import {Multicall} from 'src/misc/Multicall.sol';
 contract WrappedTokenGatewayV4 is
   IWrappedTokenGatewayV4,
   Multicall,
-  ReentrancyGuard,
-  AccessManaged
+  ReentrancyGuardTransient,
+  Ownable2Step
 {
   using SafeERC20 for IERC20;
 
   WETH9 public immutable WRAPPED_ASSET;
   ISpoke public immutable SPOKE;
 
-  constructor(address nativeAsset_, address spoke_, address authority_) AccessManaged(authority_) {
+  constructor(address nativeAsset_, address spoke_, address admin_) Ownable(admin_) {
     WRAPPED_ASSET = WETH9(payable(nativeAsset_));
     SPOKE = ISpoke(spoke_);
   }
@@ -39,7 +38,6 @@ contract WrappedTokenGatewayV4 is
     bytes32 r,
     bytes32 s
   ) external {
-    require(user != address(0), AddressZero());
     SPOKE.setUserPositionManagerWithSig(address(this), user, approve, deadline, v, r, s);
   }
 
@@ -48,9 +46,8 @@ contract WrappedTokenGatewayV4 is
     uint256 amount,
     address onBehalfOf
   ) external payable nonReentrant {
-    _verifyParameters(reserveId, amount, onBehalfOf);
-
-    if (msg.value != amount) revert NativeAmountMismatch();
+    _verifyParameters(reserveId, amount, onBehalfOf, msg.sender);
+    require(msg.value == amount, NativeAmountMismatch());
 
     _wrapNative(amount);
     IERC20(address(WRAPPED_ASSET)).safeIncreaseAllowance(_getReserveHub(reserveId), amount);
@@ -62,7 +59,7 @@ contract WrappedTokenGatewayV4 is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant {
-    _verifyParameters(reserveId, amount, onBehalfOf);
+    _verifyParameters(reserveId, amount, onBehalfOf, msg.sender);
 
     uint256 userSuppliedAmount = SPOKE.getUserSuppliedAmount(reserveId, onBehalfOf);
     if (amount == type(uint256).max) {
@@ -79,7 +76,7 @@ contract WrappedTokenGatewayV4 is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant {
-    _verifyParameters(reserveId, amount, onBehalfOf);
+    _verifyParameters(reserveId, amount, onBehalfOf, msg.sender);
 
     SPOKE.borrow(reserveId, amount, onBehalfOf);
     _unwrapNative(amount);
@@ -91,8 +88,8 @@ contract WrappedTokenGatewayV4 is
     uint256 amount,
     address onBehalfOf
   ) external payable nonReentrant {
-    _verifyParameters(reserveId, amount, onBehalfOf);
-    if (msg.value != amount) revert NativeAmountMismatch();
+    _verifyParameters(reserveId, amount, onBehalfOf, msg.sender);
+    require(msg.value == amount, NativeAmountMismatch());
 
     uint256 userDebtAmount = SPOKE.getUserTotalDebt(reserveId, onBehalfOf);
     uint256 leftovers;
@@ -113,10 +110,12 @@ contract WrappedTokenGatewayV4 is
   function _verifyParameters(
     uint256 reserveId,
     uint256 amount,
-    address onBehalfOf
+    address onBehalfOf,
+    address caller
   ) internal {
     require(amount > 0, AmountNull());
     require(onBehalfOf != address(0), AddressZero());
+    require(caller == onBehalfOf, InvalidCaller());
     require(_getReserveAsset(reserveId) == address(WRAPPED_ASSET), InvalidReserveId());
   }
 
@@ -141,11 +140,11 @@ contract WrappedTokenGatewayV4 is
     require(success, NativeTransferFailed());
   }
 
-  function recoverToken(address token, address to) external restricted {
+  function recoverToken(address token, address to) external onlyOwner {
     IERC20(token).safeTransfer(to, IERC20(token).balanceOf(address(this)));
   }
 
-  function recoverNative(address to, uint256 amount) external restricted {
+  function recoverNative(address to, uint256 amount) external onlyOwner {
     _transferNative(to, amount);
   }
 
