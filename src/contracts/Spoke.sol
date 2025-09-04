@@ -369,9 +369,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) return;
 
     DataTypes.Reserve storage reserve = _reserves[reserveId];
+    uint256 userSuppliedShares = _userPositions[onBehalfOf][reserveId].suppliedShares;
     _validateSetUsingAsCollateral(
       reserve,
-      _userPositions[onBehalfOf][reserveId].suppliedShares,
+      userSuppliedShares,
       usingAsCollateral
     );
 

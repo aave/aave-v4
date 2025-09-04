@@ -71,11 +71,9 @@ contract SpokeConfigTest is SpokeBase {
   /// no action taken when collateral status is unchanged
   function test_setUsingAsCollateral_collateralStatusUnchanged() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
-    uint256 daiAmount = 100e18;
 
     // Bob supply dai into spoke1
-    deal(address(tokenList.dai), bob, daiAmount);
-    Utils.supply(spoke1, daiReserveId, bob, daiAmount, bob);
+    Utils.supply(spoke1, daiReserveId, bob, 100e18, bob);
 
     // slight update in collateral factor so user is subject to dynamic risk config refresh
     updateCollateralFactor(spoke1, daiReserveId, _getCollateralFactor(spoke1, daiReserveId) + 1_00);
@@ -124,7 +122,6 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_setUsingAsCollateral() public {
-    bool newCollateralFlag = true;
     bool usingAsCollateral = true;
     uint256 daiAmount = 100e18;
 
@@ -138,6 +135,35 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.UsingAsCollateral(daiReserveId, bob, bob, usingAsCollateral);
     spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral, bob);
+
+    assertEq(
+      spoke1.isUsingAsCollateral(daiReserveId, bob),
+      usingAsCollateral,
+      'wrong usingAsCollateral'
+    );
+  }
+
+  function test_setUsingAsCollateral_disableAfterTotalWithdraw() public {
+    bool usingAsCollateral = false;
+    uint256 daiAmount = 100e18;
+
+    uint256 daiReserveId = _daiReserveId(spoke1);
+
+    // Bob supply dai into spoke1
+    deal(address(tokenList.dai), bob, daiAmount);
+    Utils.supply(spoke1, daiReserveId, bob, daiAmount, bob);
+
+    vm.prank(bob);
+    spoke1.setUsingAsCollateral(daiReserveId, true, bob);
+
+    Utils.withdraw(spoke1, daiReserveId, bob, type(uint256).max, bob);
+
+    vm.prank(bob);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UsingAsCollateral(daiReserveId, bob, bob, usingAsCollateral);
+    spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral, bob);
+
+    assertEq(spoke1.getUserSuppliedAmount(daiReserveId, bob), 0, 'whole balance should be withdrawn');
 
     assertEq(
       spoke1.isUsingAsCollateral(daiReserveId, bob),
