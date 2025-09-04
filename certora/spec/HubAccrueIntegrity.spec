@@ -71,7 +71,7 @@ rule baseDebtIndex_increasing(uint256 assetId) {
     assert hub._assets[assetId].drawnIndex >= before;
     // if the debt is all realized premium, then the drawnIndex should not increase
     assert (hub._assets[assetId].drawnRate >= mathWrapper.SECONDS_PER_YEAR() 
-            && baseDebt > hub._spokes[assetId][e.msg.sender].realizedPremium) =>
+            && baseDebt > hub._assets[assetId].realizedPremium) =>
              hub._assets[assetId].drawnIndex > before;
     satisfy hub._assets[assetId].drawnRate == mathWrapper.SECONDS_PER_YEAR();
 }
