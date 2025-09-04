@@ -53,11 +53,12 @@ contract WrappedTokenGatewayV4 is
     uint256 amount,
     address onBehalfOf
   ) external payable nonReentrant {
-    _validateParams(reserveId, amount, onBehalfOf, msg.sender);
+    (address reserveAsset, address hub) = _getReserveData(reserveId);
+    _validateParams(reserveAsset, amount, onBehalfOf, msg.sender);
     require(msg.value == amount, NativeAmountMismatch());
 
     WETH.deposit{value: amount}();
-    WETH.safeIncreaseAllowance(_getReserveHub(reserveId), amount);
+    WETH.safeIncreaseAllowance(hub, amount);
     SPOKE.supply(reserveId, amount, onBehalfOf);
   }
 
@@ -66,7 +67,8 @@ contract WrappedTokenGatewayV4 is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant {
-    _validateParams(reserveId, amount, onBehalfOf, msg.sender);
+    (address reserveAsset, ) = _getReserveData(reserveId);
+    _validateParams(reserveAsset, amount, onBehalfOf, msg.sender);
 
     uint256 userSuppliedAmount = SPOKE.getUserSuppliedAmount(reserveId, onBehalfOf);
     if (amount == type(uint256).max) {
@@ -83,7 +85,8 @@ contract WrappedTokenGatewayV4 is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant {
-    _validateParams(reserveId, amount, onBehalfOf, msg.sender);
+    (address reserveAsset, ) = _getReserveData(reserveId);
+    _validateParams(reserveAsset, amount, onBehalfOf, msg.sender);
 
     SPOKE.borrow(reserveId, amount, onBehalfOf);
     WETH.withdraw(amount);
@@ -95,7 +98,8 @@ contract WrappedTokenGatewayV4 is
     uint256 amount,
     address onBehalfOf
   ) external payable nonReentrant {
-    _validateParams(reserveId, amount, onBehalfOf, msg.sender);
+    (address reserveAsset, address hub) = _getReserveData(reserveId);
+    _validateParams(reserveAsset, amount, onBehalfOf, msg.sender);
     require(msg.value == amount, NativeAmountMismatch());
 
     uint256 userDebtAmount = SPOKE.getUserTotalDebt(reserveId, onBehalfOf);
@@ -106,7 +110,7 @@ contract WrappedTokenGatewayV4 is
     }
 
     WETH.deposit{value: amount}();
-    WETH.safeIncreaseAllowance(_getReserveHub(reserveId), amount);
+    WETH.safeIncreaseAllowance(hub, amount);
     SPOKE.repay(reserveId, amount, onBehalfOf);
 
     if (leftovers > 0) {
@@ -115,7 +119,7 @@ contract WrappedTokenGatewayV4 is
   }
 
   function _validateParams(
-    uint256 reserveId,
+    address reserveAsset,
     uint256 amount,
     address onBehalfOf,
     address caller
@@ -123,15 +127,12 @@ contract WrappedTokenGatewayV4 is
     require(amount > 0, AmountNull());
     require(onBehalfOf != address(0), AddressZero());
     require(caller == onBehalfOf, InvalidCaller());
-    require(_getReserveAsset(reserveId) == address(WETH), InvalidReserveId());
+    require(reserveAsset == address(WETH), InvalidReserveId());
   }
 
-  function _getReserveAsset(uint256 reserveId) internal view returns (address) {
-    return SPOKE.getReserve(reserveId).underlying;
-  }
-
-  function _getReserveHub(uint256 reserveId) internal view returns (address) {
-    return address(SPOKE.getReserve(reserveId).hub);
+  function _getReserveData(uint256 reserveId) internal view returns (address, address) {
+    DataTypes.Reserve memory reserveData = SPOKE.getReserve(reserveId);
+    return (reserveData.underlying, address(reserveData.hub));
   }
 
   function recoverToken(address token, address to) external onlyOwner {
