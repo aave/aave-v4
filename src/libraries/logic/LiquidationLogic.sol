@@ -127,21 +127,6 @@ library LiquidationLogic {
       );
   }
 
-  // @dev allows donation on drawn debt
-  function _calculateRestoreAmount(
-    uint256 drawnDebt,
-    uint256 premiumDebt,
-    uint256 amount
-  ) internal pure returns (uint256, uint256) {
-    if (amount >= drawnDebt + premiumDebt) {
-      return (drawnDebt, premiumDebt);
-    }
-    if (amount <= premiumDebt) {
-      return (0, amount);
-    }
-    return (amount - premiumDebt, premiumDebt);
-  }
-
   function _validateLiquidationCall(ValidateLiquidationCallParams memory params) internal pure {
     require(params.debtToCover > 0, InvalidDebtToCover());
     require(
@@ -308,11 +293,8 @@ library LiquidationLogic {
     LiquidateDebtParams memory params
   ) internal returns (bool) {
     {
-      (uint256 drawnDebtToLiquidate, uint256 premiumDebtToLiquidate) = _calculateRestoreAmount(
-        params.drawnDebt,
-        params.premiumDebt,
-        params.debtToLiquidate
-      );
+      uint256 premiumDebtToLiquidate = params.premiumDebt.min(params.debtToLiquidate);
+      uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
 
       DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
         sharesDelta: -position.premiumShares.toInt256(),

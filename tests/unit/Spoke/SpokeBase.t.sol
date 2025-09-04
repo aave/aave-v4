@@ -732,7 +732,7 @@ contract SpokeBase is Base {
     assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
     assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffset, b.premiumOffset, 'premiumOffset');
-    assertEq(a.realizedPremium, b.drawnShares, 'realizedPremium');
+    assertEq(a.realizedPremium, b.realizedPremium, 'realizedPremium');
     assertEq(a.configKey, b.configKey, 'configKey');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
