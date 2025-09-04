@@ -36,7 +36,10 @@ contract MathWrapper  {
         return WadRayMath.rayDivUp(a, b);
     }
 
-    function percentMulDown(uint256 value,uint256 percentage) public pure returns (uint256) {
-        return PercentageMath.percentMulDown(value, percentage);
+    function percentMulDown(uint256 percentage, uint256 value) public pure returns (uint256) {
+        return PercentageMath.percentMulDown(percentage, value);
+    }
+    function PERCENTAGE_FACTOR() public pure returns (uint256) {
+        return PercentageMath.PERCENTAGE_FACTOR;
     }
 }

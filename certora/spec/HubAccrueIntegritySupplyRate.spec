@@ -1,10 +1,13 @@
 
 /**
-@title Prove unit test properties of AssetLogic.accrue() function
-This is proven on LiquidityHubHarness which expose accure() as an external function 
+@title Prove that accrue can not decrease the share rate
 
-To run this spec file:
- certoraRun certora/conf/LiquidityHubAccrueIntegrity.conf 
+assets / shares is increasing
+
+This is proven by showing that:
+(assets after accrue) / (shares before accrue + fee share) is increasing compared to (assets before accrue) / (shares before accrue)
+
+Next we prove thet accrue mints shares as result of fee shares 
 **/
 
 import "./HubBase.spec";
@@ -13,17 +16,15 @@ using HubHarness as hub;
 using MathWrapper as mathWrapper; 
 
 methods {
-    // envfree functions
-    function mathWrapper.SECONDS_PER_YEAR() external returns (uint256) envfree;
-
+    
     function AssetLogic.getDrawnIndex(DataTypes.Asset storage asset) internal returns (uint256)  with (env e) => symbolicDrawnIndex(e.block.timestamp);
 
+// todo - fix when the code is fix to have the correct order of arguments
     function PercentageMath.percentMulDown(uint256 percentage, uint256 value) internal  returns (uint256) => 
-    //mulDivDownCVL(value,percentage,wadRayMathExtended.PERCENTAGE_FACTOR());
     identity(value);
 
 }
-
+// fee is always 100%
 function identity(uint256 x) returns uint256 {
     return x;
 }
@@ -31,47 +32,46 @@ function identity(uint256 x) returns uint256 {
 // symbolic representation of drawnIndex that is a function of the block timestamp.
 ghost symbolicDrawnIndex(uint256) returns uint256;
 
-/**
-@title supplyExchangeRate is increasing on accrue. 
+/*
+@title Prove that accrue can not decrease the share rate
 
-**/ 
-
-rule supplyExchangeRateIsMonotonic_accrue_no_realizedPremium(){
-    uint256 assetId;
+Given e1, a timestamp last accrue, we prove that the share rate is the same or increasing at e2
+We prove this for the maximum value of unrealizedFeeShares, as proved in HubAccrueIntegrityUnrealizedFee.spec
+Therefore, it holds for any smaller value of unrealizedFeeShares, as shares_e2 will be smaller
+**/
+rule unrealizedFeeSharesSupplyRate(uint256 assetId){
+    env e1; env e2; 
     uint256 oneM = 1000000;
-    env e1; env e2;
-    require e1.block.timestamp < e2.block.timestamp ;
+    require e1.block.timestamp < e2.block.timestamp;
 
 
-    // lastUpdateTimestamp can not be in the future, prove... 
+    // e1 is the last accrued timestamp
     require hub._assets[assetId].lastUpdateTimestamp!=0 && hub._assets[assetId].lastUpdateTimestamp == e1.block.timestamp; 
     
-    //requireInvariant baseDebtIndexMin(assetId); 
+    
+    //correlate the drawn index with the symbolic one, assume increasing and min value as proved in
+    // HubAccrueIntegrityDrawnIndex.spec
     require hub._assets[assetId].drawnIndex == symbolicDrawnIndex(e1.block.timestamp);
+    //based on rule drawnIndex_increasing(assetId);
     require  symbolicDrawnIndex(e1.block.timestamp) <= symbolicDrawnIndex(e2.block.timestamp);
+    //based on requireInvariant baseDebtIndexMin(assetId); 
     require  symbolicDrawnIndex(e1.block.timestamp) >= wadRayMath.RAY();
+    assert unrealizedFeeShares(e1,assetId) == 0 ;
 
-     require hub._assets[assetId].realizedPremium == 0 ;
-    require hub._assets[assetId].swept == 0 ;
-    require hub._assets[assetId].liquidity == 0 ;
-    require hub._assets[assetId].deficit == 0 ; 
-
-    mathint assetsBefore = getTotalAddedAssets(e1, assetId);
-    mathint sharesBefore = getTotalAddedShares(e1, assetId); 
+    mathint assets_e1 = getTotalAddedAssets(e1, assetId);
+    mathint shares_e1 = hub._assets[assetId].addedShares;
     //requireInvariant totalAssetsVsShares(assetId,e);
-    require assetsBefore >= sharesBefore;
-    // simplification: fee is always 100%
-    require hub._assets[assetId].liquidityFee == 10000;
-    uint256 baseDebt = getAssetTotalOwed(e1, assetId);
-    require hub._assets[assetId].drawnRate >= mathWrapper.SECONDS_PER_YEAR() &&
-                sharesBefore > 0 &&
-                baseDebt > wadRayMath.RAY();
-    accrueInterest(e2,assetId);
-    require hub._assets[assetId].drawnIndex == symbolicDrawnIndex(e2.block.timestamp);
-    mathint assetsAfter = getTotalAddedAssets(e2, assetId);
-    mathint sharesAfter = getTotalAddedShares(e2, assetId);
-    require assetsAfter >= sharesAfter;
-    satisfy (assetsAfter + oneM) * (sharesBefore + oneM) > (assetsBefore + oneM) * (sharesAfter + oneM); 
-    assert (assetsAfter + oneM) * (sharesBefore + oneM) >= (assetsBefore + oneM) * (sharesAfter + oneM); 
-}
+    require assets_e1 >= shares_e1 ;
+    
+    // get the fee shares and asset at e2
+    uint256 feeShares = unrealizedFeeShares(e2,assetId);
+    mathint assets_e2 = getTotalAddedAssets(e2, assetId);
+    mathint shares_e2 = hub._assets[assetId].addedShares + feeShares;
 
+    mathint changeInAsset  = assets_e2 - assets_e1;
+    assert previewAddByAssets(e1,assetId, assert_uint256(changeInAsset)) >= feeShares;
+
+    assert (assets_e2 + oneM) * (shares_e1 + oneM) >= (assets_e1 + oneM) * (shares_e2 + oneM); 
+    satisfy (assets_e2 + oneM) * (shares_e1 + oneM) > (assets_e1 + oneM) * (shares_e2 + oneM); 
+
+}

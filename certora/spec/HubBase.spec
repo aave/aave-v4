@@ -6,7 +6,7 @@ using WadRayMathWrapper as wadRayMath;
 
 /***
 
-Base definitions used in all of LiquidityHuv spec files
+Base definitions used in all of Hub spec files
 
 Here we have only safe assumptions, safe summarization that are either proved in math.spec or a nondet summary
 
@@ -22,14 +22,14 @@ methods {
     function WadRayMathWrapper.PERCENTAGE_FACTOR() external returns (uint256) envfree;
 
     function WadRayMathWrapper.rayMulDown(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivDownCVL(a,b,wadRayMath.RAY());
+        mulDivRayDownCVL(a,b);
     function WadRayMath.rayMulDown(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivDownCVL(a,b,wadRayMath.RAY());
+        mulDivRayDownCVL(a,b);
     
     function WadRayMathWrapper.rayMulUp(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivUpCVL(a,b,wadRayMath.RAY());    
+        mulDivRayUpCVL(a,b);    
     function WadRayMath.rayMulUp(uint256 a, uint256 b) internal returns (uint256) => 
-        mulDivUpCVL(a,b,wadRayMath.RAY());
+        mulDivRayUpCVL(a,b);
     
     function WadRayMathWrapper.rayDivDown(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivDownCVL(a,wadRayMath.RAY(),b);

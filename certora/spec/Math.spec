@@ -16,13 +16,14 @@ To run this spec file:
     methods {
         // envfree functions
         function RAY() external returns (uint256) envfree;
+        function PERCENTAGE_FACTOR() external returns (uint256) envfree;
         function rayMulDown(uint256 a, uint256 b) external returns (uint256) envfree;
         function rayMulUp(uint256 a, uint256 b) external returns (uint256) envfree;
         function rayDivDown(uint256 a, uint256 b) external returns (uint256) envfree;
         function rayDivUp(uint256 a, uint256 b) external returns (uint256) envfree;
+        function percentMulDown(uint256 percentage, uint256 value) external  returns (uint256) envfree;
+
     }
-
-
 /** @title Prove:
     function WadRayMathExtended.rayMulDown(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivDownCVL(a,b,wadRayMath.RAY());
@@ -67,7 +68,7 @@ To run this spec file:
     function WadRayMathExtended.rayDivUp(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivUpCVL(a,wadRayMath.RAY(),b);
 */
-        rule WadRayMathExtended_rayDivUp(uint256 a, uint256 b)  {
+    rule WadRayMathExtended_rayDivUp(uint256 a, uint256 b)  {
         uint256 cvlResult = mulDivUpCVL@withrevert(a, RAY(), b);
         bool cvlReverted = lastReverted;
         uint256 solResult = rayDivUp@withrevert(a, b);
@@ -75,3 +76,25 @@ To run this spec file:
         assert cvlReverted == solReverted;
         assert !cvlReverted => cvlResult == solResult;
     }
+
+    rule percentMulDown_integrity(uint256 percentage, uint256 value)  {    
+        uint256 solResult = percentMulDown@withrevert(value, percentage);
+        bool solReverted = lastReverted;
+        uint256 cvlResult = mulDivDownCVL@withrevert(value, percentage, PERCENTAGE_FACTOR());
+        bool cvlReverted = lastReverted;
+        assert cvlReverted == solReverted;
+        assert !cvlReverted => cvlResult == solResult;
+    }
+
+
+    rule percentMulDown_associativity(uint256 percentage, uint256 value)  {    
+        uint256 result1 = percentMulDown@withrevert(percentage, value);
+        bool result1Reverted = lastReverted;
+        uint256 result2 = percentMulDown@withrevert(value, percentage);
+        bool result2Reverted = lastReverted;
+        assert result1Reverted == result2Reverted;
+        assert !result1Reverted => result1 == result2;
+        satisfy value == 0 && !result1Reverted; 
+        satisfy percentage == 0 && !result1Reverted; 
+    }
+    

@@ -16,7 +16,6 @@ contract HubHarness is Hub {
   ) external  {
     
     DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue( assetId, _spokes[assetId][asset.feeReceiver]);
   
