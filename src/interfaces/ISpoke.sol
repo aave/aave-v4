@@ -222,9 +222,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     address user,
     bool approve,
     uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
+    bytes memory signature
   ) external;
 
   /**

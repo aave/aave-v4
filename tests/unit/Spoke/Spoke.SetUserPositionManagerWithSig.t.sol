@@ -78,6 +78,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     bytes32 digest = _getTypedDataHash(spoke1, params);
 
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, digest);
+    bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
@@ -86,9 +87,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       params.user,
       params.approve,
       params.deadline,
-      v,
-      r,
-      s
+      signature
     );
   }
 
@@ -109,6 +108,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     });
     bytes32 digest = _getTypedDataHash(spoke1, params);
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(randomUserPk, digest);
+    bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
@@ -117,9 +117,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       params.user,
       params.approve,
       params.deadline,
-      v,
-      r,
-      s
+      signature
     );
   }
 
@@ -147,6 +145,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     params.nonce = vm.randomUint(0, spoke1.nonces(alice) - 1);
     bytes32 digest = _getTypedDataHash(spoke1, params);
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, digest);
+    bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
@@ -155,9 +154,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       params.user,
       params.approve,
       params.deadline,
-      v,
-      r,
-      s
+      signature
     );
   }
 
@@ -178,6 +175,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     bytes32 digest = _getTypedDataHash(spoke1, params);
 
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
+    bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.SetUserPositionManager(params.user, params.positionManager, params.approve);
@@ -188,9 +186,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       params.user,
       params.approve,
       params.deadline,
-      v,
-      r,
-      s
+      signature
     );
 
     assertEq(spoke1.isPositionManager(user, params.positionManager), params.approve);
@@ -215,6 +211,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     bytes32 digest = _getTypedDataHash(spoke1, params);
 
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
+    bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.SetUserPositionManager(params.user, params.positionManager, params.approve);
@@ -225,9 +222,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       params.user,
       params.approve,
       params.deadline,
-      v,
-      r,
-      s
+      signature
     );
 
     assertEq(spoke1.isPositionManager(address(smartWallet), params.positionManager), params.approve);

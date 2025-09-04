@@ -413,9 +413,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     address user,
     bool approve,
     uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
+    bytes memory signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
@@ -431,7 +429,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       )
     );
     require(
-      SignatureChecker.isValidSignatureNow(user, hash, abi.encodePacked(r, s, v)),
+      SignatureChecker.isValidSignatureNow(user, hash, signature),
       InvalidSignature()
     );
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
