@@ -33,15 +33,14 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address irStrategy,
     bytes calldata data
   ) external override onlyOwner returns (uint256) {
-    uint256 assetId = IHub(hub).addAsset(
-      underlying,
-      IERC20Metadata(underlying).decimals(),
-      feeReceiver,
-      irStrategy,
-      data
-    );
-
-    return assetId;
+    return
+      IHub(hub).addAsset(
+        underlying,
+        IERC20Metadata(underlying).decimals(),
+        feeReceiver,
+        irStrategy,
+        data
+      );
   }
 
   /// @inheritdoc IHubConfigurator
