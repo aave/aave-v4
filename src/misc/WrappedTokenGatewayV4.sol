@@ -6,7 +6,6 @@ import {Multicall} from 'src/misc/Multicall.sol';
 
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
-import {INativeWrapper} from 'src/dependencies/weth/INativeWrapper.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
@@ -14,6 +13,7 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 import {IWrappedTokenGatewayV4} from 'src/interfaces/IWrappedTokenGatewayV4.sol';
+import {INativeWrapper} from 'src/interfaces/INativeWrapper.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
 contract WrappedTokenGatewayV4 is
