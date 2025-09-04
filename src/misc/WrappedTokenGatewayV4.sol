@@ -6,10 +6,10 @@ import {Multicall} from 'src/misc/Multicall.sol';
 
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
+import {INativeWrapper} from 'src/dependencies/weth/INativeWrapper.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {IWETH} from 'src/dependencies/weth/IWETH.sol';
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
@@ -24,11 +24,11 @@ contract WrappedTokenGatewayV4 is
 {
   using SafeERC20 for *;
 
-  IWETH public immutable WETH;
+  INativeWrapper public immutable NATIVE_WRAPPER;
   ISpoke public immutable SPOKE;
 
-  constructor(address weth_, address spoke_, address admin_) Ownable(admin_) {
-    WETH = IWETH(payable(weth_));
+  constructor(address nativeWrapper_, address spoke_, address admin_) Ownable(admin_) {
+    NATIVE_WRAPPER = INativeWrapper(payable(nativeWrapper_));
     SPOKE = ISpoke(spoke_);
   }
 
@@ -52,8 +52,8 @@ contract WrappedTokenGatewayV4 is
     _validateParams(reserveAsset, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
-    WETH.deposit{value: amount}();
-    WETH.safeIncreaseAllowance(hub, amount);
+    NATIVE_WRAPPER.deposit{value: amount}();
+    NATIVE_WRAPPER.safeIncreaseAllowance(hub, amount);
     SPOKE.supply(reserveId, amount, msg.sender);
   }
 
@@ -72,7 +72,7 @@ contract WrappedTokenGatewayV4 is
     }
 
     SPOKE.withdraw(reserveId, amount, msg.sender);
-    WETH.withdraw(amount);
+    NATIVE_WRAPPER.withdraw(amount);
     Address.sendValue(payable(receiver), amount);
   }
 
@@ -82,7 +82,7 @@ contract WrappedTokenGatewayV4 is
     require(receiver != address(0), InvalidAddress());
 
     SPOKE.borrow(reserveId, amount, msg.sender);
-    WETH.withdraw(amount);
+    NATIVE_WRAPPER.withdraw(amount);
     Address.sendValue(payable(receiver), amount);
   }
 
@@ -98,8 +98,8 @@ contract WrappedTokenGatewayV4 is
       amount = userDebtAmount;
     }
 
-    WETH.deposit{value: amount}();
-    WETH.safeIncreaseAllowance(hub, amount);
+    NATIVE_WRAPPER.deposit{value: amount}();
+    NATIVE_WRAPPER.safeIncreaseAllowance(hub, amount);
     SPOKE.repay(reserveId, amount, msg.sender);
 
     if (leftovers > 0) {
@@ -109,7 +109,7 @@ contract WrappedTokenGatewayV4 is
 
   function _validateParams(address reserveAsset, uint256 amount) internal {
     require(amount > 0, InvalidAmount());
-    require(reserveAsset == address(WETH), InvalidReserveId());
+    require(reserveAsset == address(NATIVE_WRAPPER), InvalidReserveId());
   }
 
   function _getReserveData(uint256 reserveId) internal view returns (address, address) {
@@ -126,10 +126,10 @@ contract WrappedTokenGatewayV4 is
   }
 
   /**
-   * @dev Only WETH contract is allowed to do native transfer here. Prevent other addresses to send native assets to this contract.
+   * @dev Only NATIVE_WRAPPER contract is allowed to do native transfer here. Prevent other addresses to send native assets to this contract.
    */
   receive() external payable {
-    require(msg.sender == address(WETH), ReceiveNotAllowed());
+    require(msg.sender == address(NATIVE_WRAPPER), ReceiveNotAllowed());
   }
 
   /**

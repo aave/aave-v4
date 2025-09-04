@@ -40,7 +40,7 @@ contract WrappedTokenGatewayV4Test is Base {
       address(ADMIN)
     );
 
-    assertEq(address(gateway.WETH()), address(tokenList.weth));
+    assertEq(address(gateway.NATIVE_WRAPPER()), address(tokenList.weth));
     assertEq(address(gateway.SPOKE()), address(spoke));
   }
 

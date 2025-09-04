@@ -452,7 +452,7 @@ contract LiquidationCallCloseFactorBadDebtTest is SpokeLiquidationBase {
       state.collToLiq,
       LIQUIDATOR
     );
-    
+
     vm.expectEmit(address(hub1));
     emit IHub.ReportDeficit(
       debtAssetId,

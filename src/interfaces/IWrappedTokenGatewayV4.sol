@@ -12,9 +12,13 @@ interface IWrappedTokenGatewayV4 {
   error ReceiveNotAllowed();
 
   function supplyNative(uint256 reserveId, uint256 amount) external payable;
+
   function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external;
+
   function borrowNative(uint256 reserveId, uint256 amount, address receiver) external;
+
   function repayNative(uint256 reserveId, uint256 amount) external payable;
+
   function setUserPositionManagerWithSig(
     address user,
     bool approve,
