@@ -4,12 +4,11 @@ pragma solidity ^0.8.0;
 
 import {Multicall} from 'src/misc/Multicall.sol';
 
+import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
-import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
-
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IWETH} from 'src/dependencies/weth/IWETH.sol';
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -44,65 +43,55 @@ contract WrappedTokenGatewayV4 is
     SPOKE.setUserPositionManagerWithSig(address(this), user, approve, deadline, v, r, s);
   }
 
-  function renouncePositionManagerRole() external {
-    SPOKE.renouncePositionManagerRole(msg.sender);
+  function renouncePositionManagerRole(address user) external {
+    SPOKE.renouncePositionManagerRole(user);
   }
 
-  function supplyNative(
-    uint256 reserveId,
-    uint256 amount,
-    address onBehalfOf
-  ) external payable nonReentrant {
+  function supplyNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
     (address reserveAsset, address hub) = _getReserveData(reserveId);
-    _validateParams(reserveAsset, amount, onBehalfOf, msg.sender);
+    _validateParams(reserveAsset, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
     WETH.deposit{value: amount}();
     WETH.safeIncreaseAllowance(hub, amount);
-    SPOKE.supply(reserveId, amount, onBehalfOf);
+    SPOKE.supply(reserveId, amount, msg.sender);
   }
 
   function withdrawNative(
     uint256 reserveId,
     uint256 amount,
-    address onBehalfOf
+    address receiver
   ) external nonReentrant {
     (address reserveAsset, ) = _getReserveData(reserveId);
-    _validateParams(reserveAsset, amount, onBehalfOf, msg.sender);
+    _validateParams(reserveAsset, amount);
+    require(receiver != address(0), InvalidAddress());
 
-    uint256 userSuppliedAmount = SPOKE.getUserSuppliedAmount(reserveId, onBehalfOf);
+    uint256 userSuppliedAmount = SPOKE.getUserSuppliedAmount(reserveId, msg.sender);
     if (amount == type(uint256).max) {
       amount = userSuppliedAmount;
     }
 
-    SPOKE.withdraw(reserveId, amount, onBehalfOf);
+    SPOKE.withdraw(reserveId, amount, msg.sender);
     WETH.withdraw(amount);
-    Address.sendValue(payable(onBehalfOf), amount);
+    Address.sendValue(payable(receiver), amount);
   }
 
-  function borrowNative(
-    uint256 reserveId,
-    uint256 amount,
-    address onBehalfOf
-  ) external nonReentrant {
+  function borrowNative(uint256 reserveId, uint256 amount, address receiver) external nonReentrant {
     (address reserveAsset, ) = _getReserveData(reserveId);
-    _validateParams(reserveAsset, amount, onBehalfOf, msg.sender);
+    _validateParams(reserveAsset, amount);
+    require(receiver != address(0), InvalidAddress());
 
-    SPOKE.borrow(reserveId, amount, onBehalfOf);
+    SPOKE.borrow(reserveId, amount, msg.sender);
     WETH.withdraw(amount);
-    Address.sendValue(payable(onBehalfOf), amount);
+    Address.sendValue(payable(receiver), amount);
   }
 
-  function repayNative(
-    uint256 reserveId,
-    uint256 amount,
-    address onBehalfOf
-  ) external payable nonReentrant {
+  function repayNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
     (address reserveAsset, address hub) = _getReserveData(reserveId);
-    _validateParams(reserveAsset, amount, onBehalfOf, msg.sender);
+    _validateParams(reserveAsset, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
-    uint256 userDebtAmount = SPOKE.getUserTotalDebt(reserveId, onBehalfOf);
+    uint256 userDebtAmount = SPOKE.getUserTotalDebt(reserveId, msg.sender);
     uint256 leftovers;
     if (amount > userDebtAmount) {
       leftovers = amount - userDebtAmount;
@@ -111,22 +100,15 @@ contract WrappedTokenGatewayV4 is
 
     WETH.deposit{value: amount}();
     WETH.safeIncreaseAllowance(hub, amount);
-    SPOKE.repay(reserveId, amount, onBehalfOf);
+    SPOKE.repay(reserveId, amount, msg.sender);
 
     if (leftovers > 0) {
       Address.sendValue(payable(msg.sender), leftovers);
     }
   }
 
-  function _validateParams(
-    address reserveAsset,
-    uint256 amount,
-    address onBehalfOf,
-    address caller
-  ) internal {
-    require(amount > 0, AmountNull());
-    require(onBehalfOf != address(0), AddressZero());
-    require(caller == onBehalfOf, InvalidCaller());
+  function _validateParams(address reserveAsset, uint256 amount) internal {
+    require(amount > 0, InvalidAmount());
     require(reserveAsset == address(WETH), InvalidReserveId());
   }
 

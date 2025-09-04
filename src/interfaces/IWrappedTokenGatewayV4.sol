@@ -3,19 +3,18 @@
 pragma solidity ^0.8.0;
 
 interface IWrappedTokenGatewayV4 {
-  error AmountNull();
-  error AddressZero();
+  error InvalidAddress();
+  error InvalidAmount();
   error InvalidReserveId();
-  error InvalidCaller();
   error NativeAmountMismatch();
   error NativeTransferFailed();
   error FallbackForbidden();
   error ReceiveNotAllowed();
 
-  function supplyNative(uint256 reserveId, uint256 amount, address onBehalfOf) external payable;
-  function withdrawNative(uint256 reserveId, uint256 amount, address onBehalfOf) external;
-  function borrowNative(uint256 reserveId, uint256 amount, address onBehalfOf) external;
-  function repayNative(uint256 reserveId, uint256 amount, address onBehalfOf) external payable;
+  function supplyNative(uint256 reserveId, uint256 amount) external payable;
+  function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external;
+  function borrowNative(uint256 reserveId, uint256 amount, address receiver) external;
+  function repayNative(uint256 reserveId, uint256 amount) external payable;
   function setUserPositionManagerWithSig(
     address user,
     bool approve,

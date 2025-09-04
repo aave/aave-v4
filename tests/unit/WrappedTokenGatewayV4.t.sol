@@ -81,7 +81,7 @@ contract WrappedTokenGatewayV4Test is Base {
     assertTrue(spoke.isPositionManager(user, address(wrappedTokenGateway)));
 
     vm.prank(user);
-    wrappedTokenGateway.renouncePositionManagerRole();
+    wrappedTokenGateway.renouncePositionManagerRole(user);
 
     assertFalse(spoke.isPositionManager(user, address(wrappedTokenGateway)));
   }
@@ -109,7 +109,7 @@ contract WrappedTokenGatewayV4Test is Base {
     vm.expectEmit(address(spoke));
     emit ISpokeBase.Supply(wethReserveId, address(wrappedTokenGateway), bob, amount);
     vm.prank(bob);
-    wrappedTokenGateway.supplyNative{value: amount}(wethReserveId, amount, bob);
+    wrappedTokenGateway.supplyNative{value: amount}(wethReserveId, amount);
 
     DataTypes.UserPosition memory finalUserData = _getUserData(bob);
     DataTypes.UserPosition memory finalGatewayData = _getUserData(address(wrappedTokenGateway));
@@ -134,7 +134,7 @@ contract WrappedTokenGatewayV4Test is Base {
     assertEq(
       finalUserData.suppliedShares,
       hub1.convertToAddedShares(wethAssetId, amount),
-      'bob suppliedShares after-supply'
+      'user suppliedShares after-supply'
     );
     assertEq(
       amount,
@@ -181,7 +181,7 @@ contract WrappedTokenGatewayV4Test is Base {
     vm.expectEmit(address(spoke));
     emit ISpokeBase.Supply(wethReserveId, address(wrappedTokenGateway), bob, amount);
     vm.prank(bob);
-    wrappedTokenGateway.supplyNative{value: amount}(wethReserveId, amount, bob);
+    wrappedTokenGateway.supplyNative{value: amount}(wethReserveId, amount);
 
     DataTypes.UserPosition memory finalUserData = _getUserData(bob);
     DataTypes.UserPosition memory finalGatewayData = _getUserData(address(wrappedTokenGateway));
@@ -206,7 +206,7 @@ contract WrappedTokenGatewayV4Test is Base {
     assertEq(
       finalUserData.suppliedShares,
       hub1.convertToAddedShares(wethAssetId, amount),
-      'bob suppliedShares after-supply'
+      'user suppliedShares after-supply'
     );
     assertEq(
       amount,
@@ -230,7 +230,7 @@ contract WrappedTokenGatewayV4Test is Base {
     );
   }
 
-  function test_supplyNative_revertsWith_AmountNull() public {
+  function test_supplyNative_revertsWith_InvalidAmount() public {
     uint256 amount = 100e18;
     deal(bob, mintAmount_WETH);
 
@@ -238,32 +238,8 @@ contract WrappedTokenGatewayV4Test is Base {
     spoke.setUserPositionManager(address(wrappedTokenGateway), true);
 
     vm.prank(bob);
-    vm.expectRevert(IWrappedTokenGatewayV4.AmountNull.selector);
-    wrappedTokenGateway.supplyNative{value: 0}(wethReserveId, 0, bob);
-  }
-
-  function test_supplyNative_revertsWith_AddressZero() public {
-    uint256 amount = 100e18;
-    deal(bob, mintAmount_WETH);
-
-    vm.prank(bob);
-    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
-
-    vm.prank(bob);
-    vm.expectRevert(IWrappedTokenGatewayV4.AddressZero.selector);
-    wrappedTokenGateway.supplyNative{value: amount}(wethReserveId, amount, address(0));
-  }
-
-  function test_supplyNative_revertsWith_InvalidCaller() public {
-    uint256 amount = 100e18;
-    deal(alice, mintAmount_WETH);
-
-    vm.prank(bob);
-    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
-
-    vm.prank(alice);
-    vm.expectRevert(IWrappedTokenGatewayV4.InvalidCaller.selector);
-    wrappedTokenGateway.supplyNative{value: amount}(wethReserveId, amount, bob);
+    vm.expectRevert(IWrappedTokenGatewayV4.InvalidAmount.selector);
+    wrappedTokenGateway.supplyNative{value: 0}(wethReserveId, 0);
   }
 
   function test_supplyNative_revertsWith_InvalidReserveId() public {
@@ -275,7 +251,7 @@ contract WrappedTokenGatewayV4Test is Base {
 
     vm.prank(bob);
     vm.expectRevert(IWrappedTokenGatewayV4.InvalidReserveId.selector);
-    wrappedTokenGateway.supplyNative{value: amount}(wethReserveId + 1, amount, bob);
+    wrappedTokenGateway.supplyNative{value: amount}(wethReserveId + 1, amount);
   }
 
   function test_supplyNative_revertsWith_NativeAmountMismatch() public {
@@ -287,11 +263,11 @@ contract WrappedTokenGatewayV4Test is Base {
 
     vm.prank(bob);
     vm.expectRevert(IWrappedTokenGatewayV4.NativeAmountMismatch.selector);
-    wrappedTokenGateway.supplyNative{value: 0}(wethReserveId, amount, bob);
+    wrappedTokenGateway.supplyNative{value: 0}(wethReserveId, amount);
 
     vm.prank(bob);
     vm.expectRevert(IWrappedTokenGatewayV4.NativeAmountMismatch.selector);
-    wrappedTokenGateway.supplyNative{value: amount / 2}(wethReserveId, amount, bob);
+    wrappedTokenGateway.supplyNative{value: amount / 2}(wethReserveId, amount);
   }
 
   struct WithdrawLocalVars {
@@ -377,7 +353,7 @@ contract WrappedTokenGatewayV4Test is Base {
     assertEq(
       finalUserData.suppliedShares,
       prevUserData.suppliedShares - hub1.convertToAddedShares(wethAssetId, amount),
-      'bob suppliedShares after-withdraw'
+      'user suppliedShares after-withdraw'
     );
     assertEq(
       vars.prevUserSuppliedAmount - amount,
@@ -475,7 +451,7 @@ contract WrappedTokenGatewayV4Test is Base {
     assertEq(
       finalUserData.suppliedShares,
       prevUserData.suppliedShares - hub1.convertToAddedShares(wethAssetId, amount),
-      'bob suppliedShares after-withdraw'
+      'user suppliedShares after-withdraw'
     );
     assertEq(
       vars.prevUserSuppliedAmount - amount,
@@ -573,7 +549,7 @@ contract WrappedTokenGatewayV4Test is Base {
     assertEq(
       finalUserData.suppliedShares,
       prevUserData.suppliedShares - hub1.convertToAddedShares(wethAssetId, supplyAmount),
-      'bob suppliedShares after-withdraw'
+      'user suppliedShares after-withdraw'
     );
     assertEq(
       vars.prevUserSuppliedAmount - supplyAmount,
@@ -702,7 +678,7 @@ contract WrappedTokenGatewayV4Test is Base {
     assertEq(
       finalUserData.suppliedShares,
       prevUserData.suppliedShares - vars.expectedSupplyShares,
-      'bob suppliedShares after-withdraw'
+      'user suppliedShares after-withdraw'
     );
     assertEq(
       vars.prevUserSuppliedAmount - expectedWithdrawAmount,
@@ -726,7 +702,233 @@ contract WrappedTokenGatewayV4Test is Base {
     );
   }
 
-  function test_withdrawNative_revertsWith_AmountNull() public {
+  function test_withdrawNative_otherReceiver() public {
+    uint256 amount = 100e18;
+    WithdrawLocalVars memory vars;
+
+    // Bob supplies WETH
+    Utils.supply({
+      spoke: spoke,
+      reserveId: _wethReserveId(spoke),
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
+    vars.expectedSupplyShares = hub1.convertToAddedShares(wethAssetId, amount);
+
+    vm.prank(bob);
+    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
+
+    DataTypes.UserPosition memory prevUserData = _getUserData(bob);
+    DataTypes.UserPosition memory prevReceiverData = _getUserData(alice);
+    DataTypes.UserPosition memory prevGatewayData = _getUserData(address(wrappedTokenGateway));
+    SpokePosition memory prevReserveData = getSpokePosition(spoke, wethReserveId);
+
+    vars.prevUserSuppliedAmount = spoke.getUserSuppliedAmount(wethReserveId, bob);
+    uint256 prevReceiverSuppliedAmount = spoke.getUserSuppliedAmount(wethReserveId, alice);
+
+    vars.prevHubBalance = tokenList.weth.balanceOf(address(hub1));
+    vars.prevSpokeBalance = tokenList.weth.balanceOf(address(spoke));
+
+    vars.prevHubAddedAmount = hub1.getAssetAddedAmount(wethAssetId);
+    vars.prevSpokeSupplied = hub1.getSpokeAddedAmount(wethAssetId, address(spoke));
+
+    // user
+    assertEq(prevUserData.suppliedShares, vars.expectedSupplyShares);
+    // wrappedTokenGateway
+    assertEq(prevGatewayData.suppliedShares, 0);
+
+    vm.expectEmit(address(spoke));
+    emit ISpokeBase.Withdraw(wethReserveId, address(wrappedTokenGateway), bob, amount);
+    vm.prank(bob);
+    wrappedTokenGateway.withdrawNative(wethReserveId, amount, alice);
+
+    DataTypes.UserPosition memory finalUserData = _getUserData(bob);
+    DataTypes.UserPosition memory finalReceiverData = _getUserData(alice);
+    DataTypes.UserPosition memory finalGatewayData = _getUserData(address(wrappedTokenGateway));
+    SpokePosition memory finalReserveData = getSpokePosition(spoke, wethReserveId);
+
+    // weth balance
+    assertEq(
+      tokenList.weth.balanceOf(address(hub1)),
+      vars.prevHubBalance - amount,
+      'hub token balance after-withdraw'
+    );
+    assertEq(
+      tokenList.weth.balanceOf(address(spoke)),
+      vars.prevSpokeBalance,
+      'spoke token balance after-withdraw'
+    );
+    // reserve
+    assertEq(
+      finalReserveData.addedShares,
+      prevReserveData.addedShares - hub1.convertToAddedShares(wethAssetId, amount),
+      'reserve suppliedShares after-withdraw'
+    );
+    assertEq(
+      vars.prevSpokeSupplied - amount,
+      hub1.getSpokeAddedAmount(wethAssetId, address(spoke)),
+      'spoke supplied amount after-withdraw'
+    );
+    assertEq(
+      vars.prevHubAddedAmount - amount,
+      hub1.getAssetAddedAmount(wethAssetId),
+      'asset supplied amount after-withdraw'
+    );
+    // user
+    assertEq(
+      finalUserData.suppliedShares,
+      prevUserData.suppliedShares - hub1.convertToAddedShares(wethAssetId, amount),
+      'user suppliedShares after-withdraw'
+    );
+    assertEq(
+      vars.prevUserSuppliedAmount - amount,
+      spoke.getUserSuppliedAmount(wethReserveId, bob),
+      'user supplied amount after-withdraw'
+    );
+    // receiver
+    assertEq(
+      finalReceiverData.suppliedShares,
+      prevReceiverData.suppliedShares,
+      'receiver suppliedShares after-withdraw'
+    );
+    assertEq(
+      prevReceiverSuppliedAmount,
+      spoke.getUserSuppliedAmount(wethReserveId, alice),
+      'receiver supplied amount after-withdraw'
+    );
+
+    // wrappedTokenGateway
+    assertEq(
+      finalGatewayData.suppliedShares,
+      0,
+      'wrappedTokenGateway supplied amount after-withdraw'
+    );
+
+    // native balances
+    assertEq(bob.balance, 0, 'user native balance after-withdraw');
+    assertEq(alice.balance, amount, 'receiver native balance after-withdraw');
+    assertEq(
+      address(wrappedTokenGateway).balance,
+      0,
+      'wrappedTokenGateway native balance after-withdraw'
+    );
+  }
+
+  function test_withdrawNative_fuzz_otherReceiver(uint256 amount) public {
+    amount = bound(amount, 1, mintAmount_WETH);
+    WithdrawLocalVars memory vars;
+
+    // Bob supplies WETH
+    Utils.supply({
+      spoke: spoke,
+      reserveId: _wethReserveId(spoke),
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
+    vars.expectedSupplyShares = hub1.convertToAddedShares(wethAssetId, amount);
+
+    vm.prank(bob);
+    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
+
+    DataTypes.UserPosition memory prevUserData = _getUserData(bob);
+    DataTypes.UserPosition memory prevReceiverData = _getUserData(alice);
+    DataTypes.UserPosition memory prevGatewayData = _getUserData(address(wrappedTokenGateway));
+    SpokePosition memory prevReserveData = getSpokePosition(spoke, wethReserveId);
+
+    vars.prevUserSuppliedAmount = spoke.getUserSuppliedAmount(wethReserveId, bob);
+    uint256 prevReceiverSuppliedAmount = spoke.getUserSuppliedAmount(wethReserveId, alice);
+
+    vars.prevHubBalance = tokenList.weth.balanceOf(address(hub1));
+    vars.prevSpokeBalance = tokenList.weth.balanceOf(address(spoke));
+
+    vars.prevHubAddedAmount = hub1.getAssetAddedAmount(wethAssetId);
+    vars.prevSpokeSupplied = hub1.getSpokeAddedAmount(wethAssetId, address(spoke));
+
+    // user
+    assertEq(prevUserData.suppliedShares, vars.expectedSupplyShares);
+    // wrappedTokenGateway
+    assertEq(prevGatewayData.suppliedShares, 0);
+
+    vm.expectEmit(address(spoke));
+    emit ISpokeBase.Withdraw(wethReserveId, address(wrappedTokenGateway), bob, amount);
+    vm.prank(bob);
+    wrappedTokenGateway.withdrawNative(wethReserveId, amount, alice);
+
+    DataTypes.UserPosition memory finalUserData = _getUserData(bob);
+    DataTypes.UserPosition memory finalReceiverData = _getUserData(alice);
+    DataTypes.UserPosition memory finalGatewayData = _getUserData(address(wrappedTokenGateway));
+    SpokePosition memory finalReserveData = getSpokePosition(spoke, wethReserveId);
+
+    // weth balance
+    assertEq(
+      tokenList.weth.balanceOf(address(hub1)),
+      vars.prevHubBalance - amount,
+      'hub token balance after-withdraw'
+    );
+    assertEq(
+      tokenList.weth.balanceOf(address(spoke)),
+      vars.prevSpokeBalance,
+      'spoke token balance after-withdraw'
+    );
+    // reserve
+    assertEq(
+      finalReserveData.addedShares,
+      prevReserveData.addedShares - hub1.convertToAddedShares(wethAssetId, amount),
+      'reserve suppliedShares after-withdraw'
+    );
+    assertEq(
+      vars.prevSpokeSupplied - amount,
+      hub1.getSpokeAddedAmount(wethAssetId, address(spoke)),
+      'spoke supplied amount after-withdraw'
+    );
+    assertEq(
+      vars.prevHubAddedAmount - amount,
+      hub1.getAssetAddedAmount(wethAssetId),
+      'asset supplied amount after-withdraw'
+    );
+    // user
+    assertEq(
+      finalUserData.suppliedShares,
+      prevUserData.suppliedShares - hub1.convertToAddedShares(wethAssetId, amount),
+      'user suppliedShares after-withdraw'
+    );
+    assertEq(
+      vars.prevUserSuppliedAmount - amount,
+      spoke.getUserSuppliedAmount(wethReserveId, bob),
+      'user supplied amount after-withdraw'
+    );
+    // receiver
+    assertEq(
+      finalReceiverData.suppliedShares,
+      prevReceiverData.suppliedShares,
+      'receiver suppliedShares after-withdraw'
+    );
+    assertEq(
+      prevReceiverSuppliedAmount,
+      spoke.getUserSuppliedAmount(wethReserveId, alice),
+      'receiver supplied amount after-withdraw'
+    );
+
+    // wrappedTokenGateway
+    assertEq(
+      finalGatewayData.suppliedShares,
+      0,
+      'wrappedTokenGateway supplied amount after-withdraw'
+    );
+
+    // native balances
+    assertEq(bob.balance, 0, 'user native balance after-withdraw');
+    assertEq(alice.balance, amount, 'receiver native balance after-withdraw');
+    assertEq(
+      address(wrappedTokenGateway).balance,
+      0,
+      'wrappedTokenGateway native balance after-withdraw'
+    );
+  }
+
+  function test_withdrawNative_revertsWith_InvalidAmount() public {
     uint256 amount = 100e18;
 
     // Bob supplies WETH
@@ -742,48 +944,8 @@ contract WrappedTokenGatewayV4Test is Base {
     spoke.setUserPositionManager(address(wrappedTokenGateway), true);
 
     vm.prank(bob);
-    vm.expectRevert(IWrappedTokenGatewayV4.AmountNull.selector);
+    vm.expectRevert(IWrappedTokenGatewayV4.InvalidAmount.selector);
     wrappedTokenGateway.withdrawNative(wethReserveId, 0, bob);
-  }
-
-  function test_withdrawNative_revertsWith_AddressZero() public {
-    uint256 amount = 100e18;
-
-    // Bob supplies WETH
-    Utils.supply({
-      spoke: spoke,
-      reserveId: _wethReserveId(spoke),
-      caller: bob,
-      amount: amount,
-      onBehalfOf: bob
-    });
-
-    vm.prank(bob);
-    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
-
-    vm.prank(bob);
-    vm.expectRevert(IWrappedTokenGatewayV4.AddressZero.selector);
-    wrappedTokenGateway.withdrawNative(wethReserveId, amount, address(0));
-  }
-
-  function test_withdrawNative_revertsWith_InvalidCaller() public {
-    uint256 amount = 100e18;
-
-    // Bob supplies WETH
-    Utils.supply({
-      spoke: spoke,
-      reserveId: _wethReserveId(spoke),
-      caller: bob,
-      amount: amount,
-      onBehalfOf: bob
-    });
-
-    vm.prank(bob);
-    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
-
-    vm.prank(alice);
-    vm.expectRevert(IWrappedTokenGatewayV4.InvalidCaller.selector);
-    wrappedTokenGateway.withdrawNative(wethReserveId, amount, bob);
   }
 
   function test_withdrawNative_revertsWith_InvalidReserveId() public {
@@ -804,6 +966,26 @@ contract WrappedTokenGatewayV4Test is Base {
     vm.prank(bob);
     vm.expectRevert(IWrappedTokenGatewayV4.InvalidReserveId.selector);
     wrappedTokenGateway.withdrawNative(wethReserveId + 1, amount, bob);
+  }
+
+  function test_withdrawNative_revertsWith_InvalidAddress() public {
+    uint256 amount = 100e18;
+
+    // Bob supplies WETH
+    Utils.supply({
+      spoke: spoke,
+      reserveId: _wethReserveId(spoke),
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
+
+    vm.prank(bob);
+    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
+
+    vm.prank(bob);
+    vm.expectRevert(IWrappedTokenGatewayV4.InvalidAddress.selector);
+    wrappedTokenGateway.withdrawNative(wethReserveId, amount, address(0));
   }
 
   function test_borrowNative() public {
@@ -904,7 +1086,117 @@ contract WrappedTokenGatewayV4Test is Base {
     );
   }
 
-  function test_borrowNative_revertsWith_AmountNull() public {
+  function test_borrowNative_otherReceiver() public {
+    uint256 aliceSupplyAmount = 10e18;
+    uint256 bobSupplyAmount = 50000e18;
+    uint256 borrowAmount = 5e18;
+
+    vm.prank(bob);
+    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
+
+    // Bob supply dai collateral
+    Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, bobSupplyAmount, bob);
+
+    // Alice supply weth
+    Utils.supply(spoke, wethReserveId, alice, aliceSupplyAmount, alice);
+
+    uint256 prevUserBalance = bob.balance;
+    uint256 prevReceiverBalance = alice.balance;
+    uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
+    uint256 prevSpokeBalance = tokenList.weth.balanceOf(address(spoke));
+
+    vm.expectEmit(address(spoke));
+    emit ISpokeBase.Borrow(
+      wethReserveId,
+      address(wrappedTokenGateway),
+      bob,
+      hub1.convertToDrawnShares(wethAssetId, borrowAmount)
+    );
+    vm.prank(bob);
+    wrappedTokenGateway.borrowNative(wethReserveId, borrowAmount, alice);
+
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke.getUserDebt(wethReserveId, bob);
+
+    assertEq(userDrawnDebt + userPremiumDebt, borrowAmount, 'user total debt after-borrow');
+    assertEq(
+      tokenList.weth.balanceOf(address(spoke)),
+      prevSpokeBalance,
+      'spoke token balance after-borrow'
+    );
+    assertEq(
+      tokenList.weth.balanceOf(address(hub1)),
+      prevHubBalance - borrowAmount,
+      'hub token balance after-borrow'
+    );
+    assertEq(bob.balance, prevUserBalance, 'user native balance after-borrow');
+    assertEq(
+      alice.balance,
+      prevReceiverBalance + borrowAmount,
+      'receiver native balance after-borrow'
+    );
+    assertEq(
+      address(wrappedTokenGateway).balance,
+      0,
+      'wrappedTokenGateway native balance after-borrow'
+    );
+  }
+
+  function test_borrowNative_otherReceiver(uint256 borrowAmount) public {
+    uint256 aliceSupplyAmount = 10e18;
+    uint256 bobSupplyAmount = 100000e18;
+    borrowAmount = bound(borrowAmount, 1, aliceSupplyAmount);
+
+    vm.prank(bob);
+    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
+
+    // Bob supply dai collateral
+    Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, bobSupplyAmount, bob);
+
+    // Alice supply weth
+    Utils.supply(spoke, wethReserveId, alice, aliceSupplyAmount, alice);
+
+    uint256 prevUserBalance = bob.balance;
+    uint256 prevReceiverBalance = alice.balance;
+    uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
+    uint256 prevSpokeBalance = tokenList.weth.balanceOf(address(spoke));
+
+    vm.expectEmit(address(spoke));
+    emit ISpokeBase.Borrow(
+      wethReserveId,
+      address(wrappedTokenGateway),
+      bob,
+      hub1.convertToDrawnShares(wethAssetId, borrowAmount)
+    );
+    vm.prank(bob);
+    wrappedTokenGateway.borrowNative(wethReserveId, borrowAmount, alice);
+
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke.getUserDebt(wethReserveId, bob);
+
+    assertEq(userDrawnDebt + userPremiumDebt, borrowAmount, 'user total debt after-borrow');
+    assertEq(
+      tokenList.weth.balanceOf(address(spoke)),
+      prevSpokeBalance,
+      'spoke token balance after-borrow'
+    );
+    assertEq(
+      tokenList.weth.balanceOf(address(hub1)),
+      prevHubBalance - borrowAmount,
+      'hub token balance after-borrow'
+    );
+    assertEq(bob.balance, prevUserBalance, 'user native balance after-borrow');
+    assertEq(
+      alice.balance,
+      prevReceiverBalance + borrowAmount,
+      'receiver native balance after-borrow'
+    );
+    assertEq(
+      address(wrappedTokenGateway).balance,
+      0,
+      'wrappedTokenGateway native balance after-borrow'
+    );
+  }
+
+  function test_borrowNative_revertsWith_InvalidAmount() public {
     uint256 aliceSupplyAmount = 10e18;
     uint256 bobSupplyAmount = 50000e18;
     uint256 borrowAmount = 5e18;
@@ -922,52 +1214,8 @@ contract WrappedTokenGatewayV4Test is Base {
     spoke.setUserPositionManager(address(wrappedTokenGateway), true);
 
     vm.prank(bob);
-    vm.expectRevert(IWrappedTokenGatewayV4.AmountNull.selector);
+    vm.expectRevert(IWrappedTokenGatewayV4.InvalidAmount.selector);
     wrappedTokenGateway.borrowNative(wethReserveId, 0, bob);
-  }
-
-  function test_borrowNative_revertsWith_AddressZero() public {
-    uint256 aliceSupplyAmount = 10e18;
-    uint256 bobSupplyAmount = 50000e18;
-    uint256 borrowAmount = 5e18;
-
-    vm.prank(bob);
-    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
-
-    // Bob supply dai collateral
-    Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, bobSupplyAmount, bob);
-
-    // Alice supply weth
-    Utils.supply(spoke, wethReserveId, alice, aliceSupplyAmount, alice);
-
-    vm.prank(bob);
-    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
-
-    vm.prank(bob);
-    vm.expectRevert(IWrappedTokenGatewayV4.AddressZero.selector);
-    wrappedTokenGateway.borrowNative(wethReserveId, borrowAmount, address(0));
-  }
-
-  function test_borrowNative_revertsWith_InvalidCaller() public {
-    uint256 aliceSupplyAmount = 10e18;
-    uint256 bobSupplyAmount = 50000e18;
-    uint256 borrowAmount = 5e18;
-
-    vm.prank(bob);
-    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
-
-    // Bob supply dai collateral
-    Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, bobSupplyAmount, bob);
-
-    // Alice supply weth
-    Utils.supply(spoke, wethReserveId, alice, aliceSupplyAmount, alice);
-
-    vm.prank(bob);
-    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
-
-    vm.prank(alice);
-    vm.expectRevert(IWrappedTokenGatewayV4.InvalidCaller.selector);
-    wrappedTokenGateway.borrowNative(wethReserveId, borrowAmount, bob);
   }
 
   function test_borrowNative_revertsWith_InvalidReserveId() public {
@@ -990,6 +1238,28 @@ contract WrappedTokenGatewayV4Test is Base {
     vm.prank(bob);
     vm.expectRevert(IWrappedTokenGatewayV4.InvalidReserveId.selector);
     wrappedTokenGateway.borrowNative(wethReserveId + 1, borrowAmount, bob);
+  }
+
+  function test_borrowNative_revertsWith_InvalidAddress() public {
+    uint256 aliceSupplyAmount = 10e18;
+    uint256 bobSupplyAmount = 50000e18;
+    uint256 borrowAmount = 5e18;
+
+    vm.prank(bob);
+    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
+
+    // Bob supply dai collateral
+    Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, bobSupplyAmount, bob);
+
+    // Alice supply weth
+    Utils.supply(spoke, wethReserveId, alice, aliceSupplyAmount, alice);
+
+    vm.prank(bob);
+    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
+
+    vm.prank(bob);
+    vm.expectRevert(IWrappedTokenGatewayV4.InvalidAddress.selector);
+    wrappedTokenGateway.borrowNative(wethReserveId, borrowAmount, address(0));
   }
 
   function test_repayNative() public {
@@ -1016,7 +1286,7 @@ contract WrappedTokenGatewayV4Test is Base {
     /*vm.expectEmit(address(spoke));
     emit ISpokeBase.Repay(wethReserveId, address(wrappedTokenGateway), bob, hub1.convertToDrawnShares(wethAssetId, repayAmount));*/
     vm.prank(bob);
-    wrappedTokenGateway.repayNative{value: repayAmount}(wethReserveId, repayAmount, bob);
+    wrappedTokenGateway.repayNative{value: repayAmount}(wethReserveId, repayAmount);
 
     (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke.getUserDebt(wethReserveId, bob);
 
@@ -1067,7 +1337,7 @@ contract WrappedTokenGatewayV4Test is Base {
     /*vm.expectEmit(address(spoke));
     emit ISpokeBase.Repay(wethReserveId, address(wrappedTokenGateway), bob, hub1.convertToDrawnShares(wethAssetId, repayAmount));*/
     vm.prank(bob);
-    wrappedTokenGateway.repayNative{value: repayAmount}(wethReserveId, repayAmount, bob);
+    wrappedTokenGateway.repayNative{value: repayAmount}(wethReserveId, repayAmount);
 
     (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke.getUserDebt(wethReserveId, bob);
 
@@ -1114,7 +1384,7 @@ contract WrappedTokenGatewayV4Test is Base {
     /*vm.expectEmit(address(spoke));
     emit ISpokeBase.Repay(wethReserveId, address(wrappedTokenGateway), bob, hub1.convertToDrawnShares(wethAssetId, repayAmount));*/
     vm.prank(bob);
-    wrappedTokenGateway.repayNative{value: repayAmount}(wethReserveId, repayAmount, bob);
+    wrappedTokenGateway.repayNative{value: repayAmount}(wethReserveId, repayAmount);
 
     (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke.getUserDebt(wethReserveId, bob);
 
@@ -1141,7 +1411,7 @@ contract WrappedTokenGatewayV4Test is Base {
     );
   }
 
-  function test_repayNative_revertsWith_AmountNull() public {
+  function test_repayNative_revertsWith_InvalidAmount() public {
     uint256 aliceSupplyAmount = 10e18;
     uint256 bobSupplyAmount = 100000e18;
     uint256 borrowAmount = 10e18;
@@ -1159,52 +1429,8 @@ contract WrappedTokenGatewayV4Test is Base {
     Utils.borrow(spoke, wethReserveId, bob, borrowAmount, bob);
 
     vm.prank(bob);
-    vm.expectRevert(IWrappedTokenGatewayV4.AmountNull.selector);
-    wrappedTokenGateway.repayNative{value: 0}(wethReserveId, 0, bob);
-  }
-
-  function test_repayNative_revertsWith_AddressZero() public {
-    uint256 aliceSupplyAmount = 10e18;
-    uint256 bobSupplyAmount = 100000e18;
-    uint256 borrowAmount = 10e18;
-    uint256 repayAmount = 5e18;
-    deal(bob, repayAmount);
-
-    vm.prank(bob);
-    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
-
-    // Bob supply dai collateral
-    Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, bobSupplyAmount, bob);
-    // Alice supply weth
-    Utils.supply(spoke, wethReserveId, alice, aliceSupplyAmount, alice);
-    //Bob borrows weth
-    Utils.borrow(spoke, wethReserveId, bob, borrowAmount, bob);
-
-    vm.prank(bob);
-    vm.expectRevert(IWrappedTokenGatewayV4.AddressZero.selector);
-    wrappedTokenGateway.repayNative{value: repayAmount}(wethReserveId, repayAmount, address(0));
-  }
-
-  function test_repayNative_revertsWith_InvalidCaller() public {
-    uint256 aliceSupplyAmount = 10e18;
-    uint256 bobSupplyAmount = 100000e18;
-    uint256 borrowAmount = 10e18;
-    uint256 repayAmount = 5e18;
-    deal(alice, repayAmount);
-
-    vm.prank(bob);
-    spoke.setUserPositionManager(address(wrappedTokenGateway), true);
-
-    // Bob supply dai collateral
-    Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, bobSupplyAmount, bob);
-    // Alice supply weth
-    Utils.supply(spoke, wethReserveId, alice, aliceSupplyAmount, alice);
-    //Bob borrows weth
-    Utils.borrow(spoke, wethReserveId, bob, borrowAmount, bob);
-
-    vm.prank(alice);
-    vm.expectRevert(IWrappedTokenGatewayV4.InvalidCaller.selector);
-    wrappedTokenGateway.repayNative{value: repayAmount}(wethReserveId, repayAmount, bob);
+    vm.expectRevert(IWrappedTokenGatewayV4.InvalidAmount.selector);
+    wrappedTokenGateway.repayNative{value: 0}(wethReserveId, 0);
   }
 
   function test_repayNative_revertsWith_InvalidReserveId() public {
@@ -1226,7 +1452,7 @@ contract WrappedTokenGatewayV4Test is Base {
 
     vm.prank(bob);
     vm.expectRevert(IWrappedTokenGatewayV4.InvalidReserveId.selector);
-    wrappedTokenGateway.repayNative{value: repayAmount}(wethReserveId + 1, repayAmount, bob);
+    wrappedTokenGateway.repayNative{value: repayAmount}(wethReserveId + 1, repayAmount);
   }
 
   function test_repayNative_revertsWith_NativeAmountMismatch() public {
@@ -1248,11 +1474,11 @@ contract WrappedTokenGatewayV4Test is Base {
 
     vm.prank(bob);
     vm.expectRevert(IWrappedTokenGatewayV4.NativeAmountMismatch.selector);
-    wrappedTokenGateway.repayNative{value: 0}(wethReserveId, repayAmount, bob);
+    wrappedTokenGateway.repayNative{value: 0}(wethReserveId, repayAmount);
 
     vm.prank(bob);
     vm.expectRevert(IWrappedTokenGatewayV4.NativeAmountMismatch.selector);
-    wrappedTokenGateway.repayNative{value: repayAmount / 2}(wethReserveId, repayAmount, bob);
+    wrappedTokenGateway.repayNative{value: repayAmount / 2}(wethReserveId, repayAmount);
   }
 
   function test_recoverToken() public {
