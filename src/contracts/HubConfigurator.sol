@@ -284,8 +284,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   /**
    * @dev Updates the spoke configs for the old and new fee receivers.
    *  - updates the caps for the old fee receiver to 0.
-   *  - if new fee receiver is not already a spoke, it adds it with max caps and active flag set to true.
-   *  - if new fee receiver is already a spoke, it updates the caps to max, without changing the active flag.
+   *  - new fee receiver must not be already listed as a spoke on the asset, otherwise it reverts on Hub.
    * @dev If the old and new fee receivers are the same, it does nothing.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
@@ -302,16 +301,6 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
       return;
     }
     _updateSpokeCaps(hub, assetId, oldFeeReceiver, 0, 0);
-
-    if (!hub.isSpokeListed(assetId, newFeeReceiver)) {
-      hub.addSpoke(
-        assetId,
-        newFeeReceiver,
-        DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
-      );
-    } else {
-      _updateSpokeCaps(hub, assetId, newFeeReceiver, Constants.MAX_CAP, Constants.MAX_CAP);
-    }
   }
 
   /**

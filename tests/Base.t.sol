@@ -1884,8 +1884,8 @@ abstract contract Base is Test {
     return hub1.getAssetConfig(assetId).liquidityFee;
   }
 
-  function _getFeeReceiver(uint256 assetId) internal view returns (address) {
-    return hub1.getAssetConfig(assetId).feeReceiver;
+  function getFeeReceiver(IHub hub, uint256 assetId) internal view returns (address) {
+    return hub.getAssetConfig(assetId).feeReceiver;
   }
 
   function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint24) {

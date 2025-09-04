@@ -366,16 +366,17 @@ contract HubConfigTest is HubBase {
       }),
       vm.getBlockTimestamp()
     );
-    if (!hub1.isSpokeListed(assetId, newConfig.feeReceiver)) {
+    // new spoke is added only if it is different from the old one
+    if (newConfig.feeReceiver != getFeeReceiver(hub1, assetId)) {
       vm.expectEmit(address(hub1));
       emit IHub.AddSpoke(assetId, newConfig.feeReceiver);
+      vm.expectEmit(address(hub1));
+      emit IHub.SpokeConfigUpdate(
+        assetId,
+        newConfig.feeReceiver,
+        DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
+      );
     }
-    vm.expectEmit(address(hub1));
-    emit IHub.SpokeConfigUpdate(
-      assetId,
-      newConfig.feeReceiver,
-      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
-    );
     vm.expectEmit(address(hub1));
     emit IHub.AssetConfigUpdate(assetId, newConfig);
 
@@ -428,7 +429,9 @@ contract HubConfigTest is HubBase {
   }
 
   /// Updates the fee receiver by reusing a previously assigned spoke, with no impact on accrued fees
-  function test_updateAssetConfig_fuzz_ReuseFeeReceiver(uint256 assetId) public {
+  function test_updateAssetConfig_fuzz_ReuseFeeReceiver_revertsWith_SpokeAlreadyListed(
+    uint256 assetId
+  ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     test_updateAssetConfig_fuzz_NewFeeReceiver(assetId);
 
@@ -444,7 +447,9 @@ contract HubConfigTest is HubBase {
     assertTrue(newFees > 0);
 
     config.feeReceiver = address(treasurySpoke);
-    test_updateAssetConfig_fuzz(assetId, config);
+
+    vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
+    Utils.updateAssetConfig(hub1, ADMIN, assetId, config);
 
     assertEq(hub1.getSpokeAddedShares(assetId, config.feeReceiver), oldFees);
     assertEq(hub1.getSpokeAddedShares(assetId, newFeeReceiver), newFees);
@@ -454,8 +459,11 @@ contract HubConfigTest is HubBase {
   function test_updateAssetConfig_fuzz_UseExistingSpokeAsFeeReceiver(uint256 assetId) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
-    address oldFeeReceiver = _getFeeReceiver(assetId);
+    address oldFeeReceiver = getFeeReceiver(hub1, assetId);
     address newFeeReceiver = address(spoke1);
+
+    // if spoke exists but is not listed on the asset, it can be added as a feeReceiver
+    vm.assume(hub1.isSpokeListed(assetId, newFeeReceiver) == false);
 
     uint256 amount = 1000e18;
     _addLiquidity(assetId, amount);
@@ -477,6 +485,25 @@ contract HubConfigTest is HubBase {
 
     // old fee receiver keeps the accrued fees
     assertEq(hub1.getSpokeAddedShares(assetId, oldFeeReceiver), oldReceiverFees);
+  }
+
+  /// Updates the fee receiver to an existing spoke of the hub1 which is already listed on the asset
+  function test_updateAssetConfig_UseExistingSpokeAndListedAsFeeReceiver_revertsWith_SpokeAlreadyListed()
+    public
+  {
+    uint256 assetId = 3;
+
+    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
+
+    address oldFeeReceiver = config.feeReceiver;
+    config.feeReceiver = address(spoke1);
+
+    // spoke1 is already listed on this asset, therefore is not allowed
+    assertTrue(hub1.isSpokeListed(assetId, address(spoke1)));
+
+    vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
+    vm.prank(HUB_ADMIN);
+    hub1.updateAssetConfig(assetId, config);
   }
 
   /// Triggers accrual when liquidity fee update, based on old liquidity fee

@@ -255,40 +255,6 @@ contract HubConfiguratorTest is HubBase {
         )
       );
 
-      if (!hub1.isSpokeListed(assetId, feeReceiver)) {
-        vm.expectCall(
-          address(hub1),
-          abi.encodeCall(
-            IHub.addSpoke,
-            (
-              assetId,
-              feeReceiver,
-              DataTypes.SpokeConfig({
-                addCap: Constants.MAX_CAP,
-                drawCap: Constants.MAX_CAP,
-                active: true
-              })
-            )
-          )
-        );
-      } else {
-        vm.expectCall(
-          address(hub1),
-          abi.encodeCall(
-            IHub.updateSpokeConfig,
-            (
-              assetId,
-              feeReceiver,
-              DataTypes.SpokeConfig({
-                addCap: Constants.MAX_CAP,
-                drawCap: Constants.MAX_CAP,
-                active: hub1.getSpokeConfig(assetId, feeReceiver).active
-              })
-            )
-          )
-        );
-      }
-
       // same struct, renaming to expectedConfig
       DataTypes.AssetConfig memory expectedConfig = oldConfig;
       expectedConfig.feeReceiver = feeReceiver;
@@ -452,8 +418,6 @@ contract HubConfiguratorTest is HubBase {
     test_updateFeeReceiver_fuzz(address(treasurySpoke));
     // set new fee receiver
     test_updateFeeReceiver_fuzz(makeAddr('newFeeReceiver'));
-    // set initial fee receiver
-    test_updateFeeReceiver_fuzz(address(treasurySpoke));
   }
 
   function test_updateFeeConfig_fuzz_revertsWith_OwnableUnauthorizedAccount(address caller) public {
@@ -516,40 +480,6 @@ contract HubConfiguratorTest is HubBase {
           )
         )
       );
-
-      if (!hub1.isSpokeListed(assetId, feeReceiver)) {
-        vm.expectCall(
-          address(hub1),
-          abi.encodeCall(
-            IHub.addSpoke,
-            (
-              assetId,
-              feeReceiver,
-              DataTypes.SpokeConfig({
-                addCap: Constants.MAX_CAP,
-                drawCap: Constants.MAX_CAP,
-                active: true
-              })
-            )
-          )
-        );
-      } else {
-        vm.expectCall(
-          address(hub1),
-          abi.encodeCall(
-            IHub.updateSpokeConfig,
-            (
-              assetId,
-              feeReceiver,
-              DataTypes.SpokeConfig({
-                addCap: Constants.MAX_CAP,
-                drawCap: Constants.MAX_CAP,
-                active: hub1.getSpokeConfig(assetId, feeReceiver).active
-              })
-            )
-          )
-        );
-      }
     }
 
     // same struct, renaming to expectedConfig
@@ -572,8 +502,6 @@ contract HubConfiguratorTest is HubBase {
     test_updateFeeConfig_fuzz(0, 4_00, makeAddr('newFeeReceiver'));
     // set non-zero fee receiver
     test_updateFeeConfig_fuzz(0, 0, makeAddr('newFeeReceiver2'));
-    // set initial fee receiver and zero fee
-    test_updateFeeConfig_fuzz(0, 0, address(treasurySpoke));
   }
 
   function test_updateInterestRateStrategy_fuzz_revertsWith_OwnableUnauthorizedAccount(
@@ -678,21 +606,6 @@ contract HubConfiguratorTest is HubBase {
           assetId,
           oldConfig.feeReceiver,
           DataTypes.SpokeConfig({addCap: 0, drawCap: 0, active: true})
-        )
-      )
-    );
-    vm.expectCall(
-      address(hub1),
-      abi.encodeCall(
-        IHub.addSpoke,
-        (
-          assetId,
-          newAssetConfig.feeReceiver,
-          DataTypes.SpokeConfig({
-            addCap: Constants.MAX_CAP,
-            drawCap: Constants.MAX_CAP,
-            active: true
-          })
         )
       )
     );
