@@ -2,17 +2,20 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {Multicall} from 'src/misc/Multicall.sol';
+
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 
-import {WETH9} from 'src/dependencies/weth/WETH9.sol';
+import {IWETH} from 'src/dependencies/weth/IWETH.sol';
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+
 import {IWrappedTokenGatewayV4} from 'src/interfaces/IWrappedTokenGatewayV4.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
-import {Multicall} from 'src/misc/Multicall.sol';
 
 contract WrappedTokenGatewayV4 is
   IWrappedTokenGatewayV4,
@@ -20,13 +23,13 @@ contract WrappedTokenGatewayV4 is
   ReentrancyGuardTransient,
   Ownable2Step
 {
-  using SafeERC20 for IERC20;
+  using SafeERC20 for *;
 
-  WETH9 public immutable WRAPPED_ASSET;
+  IWETH public immutable WETH;
   ISpoke public immutable SPOKE;
 
-  constructor(address nativeAsset_, address spoke_, address admin_) Ownable(admin_) {
-    WRAPPED_ASSET = WETH9(payable(nativeAsset_));
+  constructor(address weth_, address spoke_, address admin_) Ownable(admin_) {
+    WETH = IWETH(payable(weth_));
     SPOKE = ISpoke(spoke_);
   }
 
@@ -41,16 +44,20 @@ contract WrappedTokenGatewayV4 is
     SPOKE.setUserPositionManagerWithSig(address(this), user, approve, deadline, v, r, s);
   }
 
+  function renouncePositionManagerRole() external {
+    SPOKE.renouncePositionManagerRole(msg.sender);
+  }
+
   function supplyNative(
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
   ) external payable nonReentrant {
-    _verifyParameters(reserveId, amount, onBehalfOf, msg.sender);
+    _validateParams(reserveId, amount, onBehalfOf, msg.sender);
     require(msg.value == amount, NativeAmountMismatch());
 
-    _wrapNative(amount);
-    IERC20(address(WRAPPED_ASSET)).safeIncreaseAllowance(_getReserveHub(reserveId), amount);
+    WETH.deposit{value: amount}();
+    WETH.safeIncreaseAllowance(_getReserveHub(reserveId), amount);
     SPOKE.supply(reserveId, amount, onBehalfOf);
   }
 
@@ -59,7 +66,7 @@ contract WrappedTokenGatewayV4 is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant {
-    _verifyParameters(reserveId, amount, onBehalfOf, msg.sender);
+    _validateParams(reserveId, amount, onBehalfOf, msg.sender);
 
     uint256 userSuppliedAmount = SPOKE.getUserSuppliedAmount(reserveId, onBehalfOf);
     if (amount == type(uint256).max) {
@@ -67,8 +74,8 @@ contract WrappedTokenGatewayV4 is
     }
 
     SPOKE.withdraw(reserveId, amount, onBehalfOf);
-    _unwrapNative(amount);
-    _transferNative(onBehalfOf, amount);
+    WETH.withdraw(amount);
+    Address.sendValue(payable(onBehalfOf), amount);
   }
 
   function borrowNative(
@@ -76,11 +83,11 @@ contract WrappedTokenGatewayV4 is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant {
-    _verifyParameters(reserveId, amount, onBehalfOf, msg.sender);
+    _validateParams(reserveId, amount, onBehalfOf, msg.sender);
 
     SPOKE.borrow(reserveId, amount, onBehalfOf);
-    _unwrapNative(amount);
-    _transferNative(onBehalfOf, amount);
+    WETH.withdraw(amount);
+    Address.sendValue(payable(onBehalfOf), amount);
   }
 
   function repayNative(
@@ -88,7 +95,7 @@ contract WrappedTokenGatewayV4 is
     uint256 amount,
     address onBehalfOf
   ) external payable nonReentrant {
-    _verifyParameters(reserveId, amount, onBehalfOf, msg.sender);
+    _validateParams(reserveId, amount, onBehalfOf, msg.sender);
     require(msg.value == amount, NativeAmountMismatch());
 
     uint256 userDebtAmount = SPOKE.getUserTotalDebt(reserveId, onBehalfOf);
@@ -98,16 +105,16 @@ contract WrappedTokenGatewayV4 is
       amount = userDebtAmount;
     }
 
-    _wrapNative(amount);
-    IERC20(address(WRAPPED_ASSET)).safeIncreaseAllowance(_getReserveHub(reserveId), amount);
+    WETH.deposit{value: amount}();
+    WETH.safeIncreaseAllowance(_getReserveHub(reserveId), amount);
     SPOKE.repay(reserveId, amount, onBehalfOf);
 
     if (leftovers > 0) {
-      _transferNative(msg.sender, leftovers);
+      Address.sendValue(payable(msg.sender), leftovers);
     }
   }
 
-  function _verifyParameters(
+  function _validateParams(
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
@@ -116,7 +123,7 @@ contract WrappedTokenGatewayV4 is
     require(amount > 0, AmountNull());
     require(onBehalfOf != address(0), AddressZero());
     require(caller == onBehalfOf, InvalidCaller());
-    require(_getReserveAsset(reserveId) == address(WRAPPED_ASSET), InvalidReserveId());
+    require(_getReserveAsset(reserveId) == address(WETH), InvalidReserveId());
   }
 
   function _getReserveAsset(uint256 reserveId) internal view returns (address) {
@@ -127,32 +134,19 @@ contract WrappedTokenGatewayV4 is
     return address(SPOKE.getReserve(reserveId).hub);
   }
 
-  function _wrapNative(uint256 amount) internal {
-    WRAPPED_ASSET.deposit{value: amount}();
-  }
-
-  function _unwrapNative(uint256 amount) internal {
-    WRAPPED_ASSET.withdraw(amount);
-  }
-
-  function _transferNative(address to, uint256 amount) internal {
-    (bool success, ) = to.call{value: amount}(new bytes(0));
-    require(success, NativeTransferFailed());
-  }
-
   function recoverToken(address token, address to) external onlyOwner {
     IERC20(token).safeTransfer(to, IERC20(token).balanceOf(address(this)));
   }
 
   function recoverNative(address to, uint256 amount) external onlyOwner {
-    _transferNative(to, amount);
+    Address.sendValue(payable(to), amount);
   }
 
   /**
-   * @dev Only WRAPPED_ASSET contract is allowed to do native transfer here. Prevent other addresses to send native assets to this contract.
+   * @dev Only WETH contract is allowed to do native transfer here. Prevent other addresses to send native assets to this contract.
    */
   receive() external payable {
-    require(msg.sender == address(WRAPPED_ASSET), ReceiveNotAllowed());
+    require(msg.sender == address(WETH), ReceiveNotAllowed());
   }
 
   /**
