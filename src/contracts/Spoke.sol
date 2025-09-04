@@ -369,12 +369,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) return;
 
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    _validateSetUsingAsCollateral(reserve, usingAsCollateral);
+    _validateSetUsingAsCollateral(
+      reserve,
+      _userPositions[onBehalfOf][reserveId].suppliedShares,
+      usingAsCollateral
+    );
 
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
-      if (_userPositions[onBehalfOf][reserveId].suppliedShares == 0) revert ReserveBalanceNull();
       _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
       // If unsetting, check HF and update user rp
@@ -734,16 +737,19 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    * @dev Validates the reserve can be set as collateral.
    * @dev Collateral can be disabled if the reserve is frozen.
    * @param reserve The reserve to be set as collateral.
+   * @param userSuppliedShares The amount of shares supplied by the user.
    * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
    */
   function _validateSetUsingAsCollateral(
     DataTypes.Reserve storage reserve,
+    uint256 userSuppliedShares,
     bool usingAsCollateral
   ) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     // deactivation should be allowed
     require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
+    require(!usingAsCollateral || userSuppliedShares > 0, ReserveBalanceNull());
   }
 
   // @dev allows donation on drawn debt
