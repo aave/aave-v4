@@ -2,8 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Multicall} from 'src/misc/Multicall.sol';
-
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -20,12 +18,7 @@ import {ISpoke} from 'src/interfaces/ISpoke.sol';
  * @notice Contract allowing users to approve it as a Position Manager to wrap and unwrap the native asset
  * before interacting with the Spoke.
  */
-contract WrappedTokenGatewayV4 is
-  IWrappedTokenGatewayV4,
-  Multicall,
-  ReentrancyGuardTransient,
-  Ownable2Step
-{
+contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransient, Ownable2Step {
   using SafeERC20 for *;
 
   /// @notice Native Wrapper contract
@@ -46,12 +39,12 @@ contract WrappedTokenGatewayV4 is
     uint8 v,
     bytes32 r,
     bytes32 s
-  ) external {
+  ) external payable {
     SPOKE.setUserPositionManagerWithSig(address(this), user, approve, deadline, v, r, s);
   }
 
   /// @inheritdoc IWrappedTokenGatewayV4
-  function renouncePositionManagerRole(address user) external {
+  function renouncePositionManagerRole(address user) external payable {
     SPOKE.renouncePositionManagerRole(user);
   }
 
@@ -71,7 +64,7 @@ contract WrappedTokenGatewayV4 is
     uint256 reserveId,
     uint256 amount,
     address receiver
-  ) external nonReentrant {
+  ) external payable nonReentrant {
     (address reserveAsset, ) = _getReserveData(reserveId);
     _validateParams(reserveAsset, amount);
     require(receiver != address(0), InvalidAddress());
@@ -87,7 +80,11 @@ contract WrappedTokenGatewayV4 is
   }
 
   /// @inheritdoc IWrappedTokenGatewayV4
-  function borrowNative(uint256 reserveId, uint256 amount, address receiver) external nonReentrant {
+  function borrowNative(
+    uint256 reserveId,
+    uint256 amount,
+    address receiver
+  ) external payable nonReentrant {
     (address reserveAsset, ) = _getReserveData(reserveId);
     _validateParams(reserveAsset, amount);
     require(receiver != address(0), InvalidAddress());
@@ -118,10 +115,32 @@ contract WrappedTokenGatewayV4 is
       Address.sendValue(payable(msg.sender), leftovers);
     }
   }
+
+  /**
+   * @notice Call multiple functions in the current contract and return the data from all of them if they all succeed.
+   * @dev We need to copy here instead of inheriting to make the function payable
+   * @param data The encoded function data for each of the calls to make to this contract.
+   * @return results The results from each of the calls passed in via data.
+   */
+  function multicall(bytes[] calldata data) external payable returns (bytes[] memory) {
+    bytes[] memory results = new bytes[](data.length);
+    for (uint256 i; i < data.length; ++i) {
+      (bool ok, bytes memory res) = address(this).delegatecall(data[i]);
+
+      assembly ('memory-safe') {
+        if iszero(ok) {
+          revert(add(res, 32), mload(res)) // bubble up first revert
+        }
+      }
+
+      results[i] = res;
+    }
+    return results;
+  }
+
   /**
    * @dev Validates the common parameters for all functions.
    **/
-
   function _validateParams(address reserveAsset, uint256 amount) internal {
     require(amount > 0, InvalidAmount());
     require(reserveAsset == address(NATIVE_WRAPPER), InvalidReserveId());

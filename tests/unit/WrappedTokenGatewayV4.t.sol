@@ -499,9 +499,11 @@ contract WrappedTokenGatewayV4Test is Base {
       _wethReserveId(spoke1),
       repayAmount
     );
+
+    vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(
       _wethReserveId(spoke1),
-      bob,
+      address(wrappedTokenGateway),
       bob,
       hub1.convertToDrawnShares(wethAssetId, baseRestored),
       expectedPremiumDelta
@@ -547,9 +549,11 @@ contract WrappedTokenGatewayV4Test is Base {
       _wethReserveId(spoke1),
       repayAmount
     );
+
+    vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(
       _wethReserveId(spoke1),
-      bob,
+      address(wrappedTokenGateway),
       bob,
       hub1.convertToDrawnShares(wethAssetId, baseRestored),
       expectedPremiumDelta
@@ -629,5 +633,196 @@ contract WrappedTokenGatewayV4Test is Base {
 
     vm.expectRevert(IWrappedTokenGatewayV4.ReceiveNotAllowed.selector);
     address(wrappedTokenGateway).call{value: 1 ether}(new bytes(0));
+  }
+
+  function _encodeMulticallBatch(
+    address user,
+    uint256 userPk,
+    bytes memory action
+  ) internal returns (bytes[] memory) {
+    bytes[] memory calls = new bytes[](3);
+
+    EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
+      positionManager: address(wrappedTokenGateway),
+      user: user,
+      approve: true,
+      nonce: spoke1.nonces(user),
+      deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
+    });
+    bytes32 digest = _getTypedDataHash(spoke1, params);
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
+
+    calls[0] = abi.encodeCall(
+      IWrappedTokenGatewayV4.setUserPositionManagerWithSig,
+      (user, params.approve, params.deadline, v, r, s)
+    );
+    calls[1] = action;
+    calls[2] = abi.encodeCall(IWrappedTokenGatewayV4.renouncePositionManagerRole, (user));
+    return calls;
+  }
+
+  function test_multicall_supplyNative_fuzz(uint256 amount) public {
+    amount = bound(amount, 1, mintAmount_WETH);
+    (, uint256 bobPk) = makeAddrAndKey('bob');
+    deal(bob, mintAmount_WETH);
+
+    uint256 prevUserBalance = bob.balance;
+    uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
+    uint256 prevUserSuppliedAmount = spoke1.getUserSuppliedAmount(wethReserveId, bob);
+
+    assertFalse(spoke1.isPositionManager(bob, address(wrappedTokenGateway)));
+    assertEq(tokenList.weth.balanceOf(address(hub1)), 0);
+    assertEq(prevUserSuppliedAmount, 0);
+
+    bytes memory action = abi.encodeCall(
+      IWrappedTokenGatewayV4.supplyNative,
+      (wethReserveId, amount)
+    );
+    bytes[] memory calls = _encodeMulticallBatch(bob, bobPk, action);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpokeBase.Supply(wethReserveId, address(wrappedTokenGateway), bob, amount);
+    vm.prank(bob);
+    wrappedTokenGateway.multicall{value: amount}(calls);
+
+    assertEq(bob.balance, prevUserBalance - amount);
+    assertEq(spoke1.getUserSuppliedAmount(wethReserveId, bob), prevUserSuppliedAmount + amount);
+    assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + amount);
+    assertEq(address(wrappedTokenGateway).balance, 0);
+
+    assertFalse(spoke1.isPositionManager(bob, address(wrappedTokenGateway)));
+  }
+
+  function test_multicall_withdrawNative_fuzz(uint256 amount) public {
+    amount = bound(amount, 1, mintAmount_WETH);
+    (, uint256 bobPk) = makeAddrAndKey('bob');
+
+    Utils.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: mintAmount_WETH,
+      onBehalfOf: bob
+    });
+    uint256 expectedSupplyShares = hub1.convertToAddedShares(wethAssetId, mintAmount_WETH);
+
+    uint256 prevUserBalance = bob.balance;
+    uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
+    uint256 prevUserSuppliedAmount = spoke1.getUserSuppliedAmount(wethReserveId, bob);
+
+    assertEq(spoke1.getUserSuppliedShares(wethReserveId, bob), expectedSupplyShares);
+
+    bytes memory action = abi.encodeCall(
+      IWrappedTokenGatewayV4.withdrawNative,
+      (wethReserveId, amount, bob)
+    );
+    bytes[] memory calls = _encodeMulticallBatch(bob, bobPk, action);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpokeBase.Withdraw(wethReserveId, address(wrappedTokenGateway), bob, amount);
+    vm.prank(bob);
+    wrappedTokenGateway.multicall(calls);
+
+    assertEq(bob.balance, prevUserBalance + amount);
+    assertEq(spoke1.getUserSuppliedAmount(wethReserveId, bob), prevUserSuppliedAmount - amount);
+    assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - amount);
+    assertEq(address(wrappedTokenGateway).balance, 0);
+
+    assertFalse(spoke1.isPositionManager(bob, address(wrappedTokenGateway)));
+  }
+
+  function test_multicall_borrowNative_fuzz(uint256 borrowAmount) public {
+    (, uint256 bobPk) = makeAddrAndKey('bob');
+    uint256 aliceSupplyAmount = 10e18;
+    uint256 bobSupplyAmount = 100000e18;
+    borrowAmount = bound(borrowAmount, 1, aliceSupplyAmount);
+
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
+    Utils.supply(spoke1, wethReserveId, alice, aliceSupplyAmount, alice);
+
+    uint256 prevUserBalance = bob.balance;
+    uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
+
+    bytes memory action = abi.encodeCall(
+      IWrappedTokenGatewayV4.borrowNative,
+      (wethReserveId, borrowAmount, bob)
+    );
+    bytes[] memory calls = _encodeMulticallBatch(bob, bobPk, action);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpokeBase.Borrow(
+      wethReserveId,
+      address(wrappedTokenGateway),
+      bob,
+      hub1.convertToDrawnShares(wethAssetId, borrowAmount)
+    );
+    vm.prank(bob);
+    wrappedTokenGateway.multicall(calls);
+
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(wethReserveId, bob);
+
+    assertEq(userDrawnDebt + userPremiumDebt, borrowAmount);
+    assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - borrowAmount);
+    assertEq(bob.balance, prevUserBalance + borrowAmount);
+    assertEq(address(wrappedTokenGateway).balance, 0);
+
+    assertFalse(spoke1.isPositionManager(bob, address(wrappedTokenGateway)));
+  }
+
+  function test_multicall_repayNative_fuzz(uint256 repayAmount) public {
+    (, uint256 bobPk) = makeAddrAndKey('bob');
+
+    uint256 aliceSupplyAmount = 10e18;
+    uint256 bobSupplyAmount = 100000e18;
+    uint256 borrowAmount = 10e18;
+    repayAmount = bound(repayAmount, 1, borrowAmount);
+    deal(bob, repayAmount);
+
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
+    Utils.supply(spoke1, wethReserveId, alice, aliceSupplyAmount, alice);
+    Utils.borrow(spoke1, wethReserveId, bob, borrowAmount, bob);
+
+    uint256 prevUserBalance = bob.balance;
+    uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
+
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(wethReserveId, bob);
+    (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
+      userDrawnDebt,
+      userPremiumDebt,
+      repayAmount,
+      wethAssetId
+    );
+    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      bob,
+      _wethReserveId(spoke1),
+      repayAmount
+    );
+
+    bytes memory action = abi.encodeCall(
+      IWrappedTokenGatewayV4.repayNative,
+      (wethReserveId, repayAmount)
+    );
+    bytes[] memory calls = _encodeMulticallBatch(bob, bobPk, action);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpokeBase.Repay(
+      _wethReserveId(spoke1),
+      address(wrappedTokenGateway),
+      bob,
+      hub1.convertToDrawnShares(wethAssetId, baseRestored),
+      expectedPremiumDelta
+    );
+    vm.prank(bob);
+    wrappedTokenGateway.multicall{value: repayAmount}(calls);
+
+    (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(wethReserveId, bob);
+
+    assertEq(userDrawnDebt + userPremiumDebt, borrowAmount - repayAmount);
+    assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + repayAmount);
+    assertEq(bob.balance, prevUserBalance - repayAmount);
+    assertEq(address(wrappedTokenGateway).balance, 0);
+
+    assertFalse(spoke1.isPositionManager(bob, address(wrappedTokenGateway)));
   }
 }

@@ -24,7 +24,7 @@ interface IWrappedTokenGatewayV4 {
    * @param amount Amount to withdraw and unwrap.
    * @param receiver Address that will receive the unwrapped native asset.
    **/
-  function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external;
+  function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external payable;
 
   /**
    * @notice Borrows the wrapped asset from the Spoke and unwraps it back to the native asset.
@@ -32,7 +32,7 @@ interface IWrappedTokenGatewayV4 {
    * @param amount Amount to borrow and unwrap.
    * @param receiver Address that will receive the unwrapped native asset.
    **/
-  function borrowNative(uint256 reserveId, uint256 amount, address receiver) external;
+  function borrowNative(uint256 reserveId, uint256 amount, address receiver) external payable;
 
   /**
    * @notice Wraps the native asset and repay debt on the Spoke.
@@ -54,11 +54,11 @@ interface IWrappedTokenGatewayV4 {
     uint8 v,
     bytes32 r,
     bytes32 s
-  ) external;
+  ) external payable;
 
   /**
    * @notice Renounces the positionManager approval given by an user.
    * @param user The address of the user.
    */
-  function renouncePositionManagerRole(address user) external;
+  function renouncePositionManagerRole(address user) external payable;
 }
