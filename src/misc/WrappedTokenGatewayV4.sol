@@ -12,13 +12,19 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 import {IWrappedTokenGatewayV4} from 'src/interfaces/IWrappedTokenGatewayV4.sol';
 import {INativeWrapper} from 'src/interfaces/INativeWrapper.sol';
+import {Multicall} from 'src/misc/Multicall.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
 /**
  * @notice Contract allowing users to approve it as a Position Manager to wrap and unwrap the native asset
  * before interacting with the Spoke.
  */
-contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransient, Ownable2Step {
+contract WrappedTokenGatewayV4 is
+  IWrappedTokenGatewayV4,
+  Multicall,
+  ReentrancyGuardTransient,
+  Ownable2Step
+{
   using SafeERC20 for *;
 
   /// @notice Native Wrapper contract
@@ -114,28 +120,6 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
     if (leftovers > 0) {
       Address.sendValue(payable(msg.sender), leftovers);
     }
-  }
-
-  /**
-   * @notice Call multiple functions in the current contract and return the data from all of them if they all succeed.
-   * @dev We need to copy here instead of inheriting to make the function payable
-   * @param data The encoded function data for each of the calls to make to this contract.
-   * @return results The results from each of the calls passed in via data.
-   */
-  function multicall(bytes[] calldata data) external payable returns (bytes[] memory) {
-    bytes[] memory results = new bytes[](data.length);
-    for (uint256 i; i < data.length; ++i) {
-      (bool ok, bytes memory res) = address(this).delegatecall(data[i]);
-
-      assembly ('memory-safe') {
-        if iszero(ok) {
-          revert(add(res, 32), mload(res)) // bubble up first revert
-        }
-      }
-
-      results[i] = res;
-    }
-    return results;
   }
 
   /**

@@ -1378,6 +1378,35 @@ abstract contract Base is Test {
     return (drawnRestored, premium);
   }
 
+  function _getExpectedPremiumDelta(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 repayAmount
+  ) internal virtual returns (DataTypes.PremiumDelta memory) {
+    DataTypes.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
+    Debts memory userDebt = getUserDebt(spoke, user, reserveId);
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+
+    DataTypes.PremiumDelta memory expectedPremiumDelta = DataTypes.PremiumDelta({
+      sharesDelta: -int256(uint256(userPosition.premiumShares)),
+      offsetDelta: -int256(uint256(userPosition.premiumOffset)),
+      realizedDelta: 0
+    });
+
+    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPosition.premiumShares) -
+      userPosition.premiumOffset;
+    (, uint256 premiumDebtRestored) = _calculateExactRestoreAmount(
+      userDebt.drawnDebt,
+      userDebt.premiumDebt,
+      repayAmount,
+      assetId
+    );
+    expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumDebtRestored);
+
+    return expectedPremiumDelta;
+  }
+
   /// @dev Helper function to check consistent supplied amounts within accounting
   function _checkSuppliedAmounts(
     uint256 assetId,

@@ -435,36 +435,6 @@ contract WrappedTokenGatewayV4Test is Base {
     wrappedTokenGateway.borrowNative(wethReserveId, borrowAmount, address(0));
   }
 
-  // Taken from SpokeBase.t.sol
-  function _getExpectedPremiumDelta(
-    ISpoke spoke1,
-    address user,
-    uint256 reserveId,
-    uint256 repayAmount
-  ) internal returns (DataTypes.PremiumDelta memory) {
-    DataTypes.UserPosition memory userPosition = spoke1.getUserPosition(reserveId, user);
-    Debts memory userDebt = getUserDebt(spoke1, user, reserveId);
-    uint256 assetId = spoke1.getReserve(reserveId).assetId;
-
-    DataTypes.PremiumDelta memory expectedPremiumDelta = DataTypes.PremiumDelta({
-      sharesDelta: -int256(uint256(userPosition.premiumShares)),
-      offsetDelta: -int256(uint256(userPosition.premiumOffset)),
-      realizedDelta: 0
-    });
-
-    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPosition.premiumShares) -
-      userPosition.premiumOffset;
-    (, uint256 premiumDebtRestored) = _calculateExactRestoreAmount(
-      userDebt.drawnDebt,
-      userDebt.premiumDebt,
-      repayAmount,
-      assetId
-    );
-    expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumDebtRestored);
-
-    return expectedPremiumDelta;
-  }
-
   function test_repayNative() public {
     test_repayNative_fuzz(5e18);
   }
