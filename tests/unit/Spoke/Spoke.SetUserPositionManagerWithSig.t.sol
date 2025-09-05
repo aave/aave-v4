@@ -402,43 +402,6 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     return n - s;
   }
 
-  function test_setUserPositionManagerWithSig_revertsWith_InvalidSignature_dueTo_SignatureMalleabilityProtection()
-    public
-  {
-    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    vm.label(user, 'user');
-    address positionManager = vm.randomAddress();
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(positionManager, true);
-
-    EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
-      positionManager: positionManager,
-      user: user,
-      approve: vm.randomBool(),
-      nonce: spoke1.nonces(user),
-      deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
-    });
-    bytes32 digest = _getTypedDataHash(spoke1, params);
-
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
-    
-    uint8 manipulatedV = v % 2 == 0 ? v - 1 : v + 1;
-    uint256 manipulatedS = _modNegS(uint256(s));
-    bytes memory manipulatedSignature = abi.encodePacked(r, bytes32(manipulatedS), manipulatedV);
-
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
-    vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.deadline,
-      manipulatedSignature
-    );
-
-    assertEq(spoke1.isPositionManager(user, params.positionManager), params.approve);
-  }
-
   function test_useNonce_monotonic(bytes32) public {
     vm.setArbitraryStorage(address(spoke1));
     address user = vm.randomAddress();

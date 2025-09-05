@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
+import {SignatureCheckerLib} from 'src/dependencies/solady/SignatureCheckerLib.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
@@ -413,7 +413,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     address user,
     bool approve,
     uint256 deadline,
-    bytes memory signature
+    bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
@@ -429,7 +429,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       )
     );
     require(
-      SignatureChecker.isValidSignatureNow(user, hash, signature),
+      SignatureCheckerLib.isValidSignatureNowCalldata(user, hash, signature),
       InvalidSignature()
     );
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
