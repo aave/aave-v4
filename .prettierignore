@@ -2,3 +2,5 @@ out
 lib
 cache
 node_modules
+snapshots
+src/dependencies

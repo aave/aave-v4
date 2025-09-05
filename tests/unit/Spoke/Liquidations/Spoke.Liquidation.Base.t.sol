@@ -261,8 +261,7 @@ contract SpokeLiquidationBase is SpokeBase {
     skip(skipTime);
 
     vm.assume(
-      _getRequiredDebtAmountForHf(spoke1, state.user, debtReserveId, desiredHf) <=
-        MAX_SUPPLY_AMOUNT
+      _getRequiredDebtAmountForHf(spoke1, state.user, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
     );
     // borrow some amount of debt reserve to end up below hf threshold
     (uint256 hfAfterBorrow, uint256 requiredDebtAmount) = _borrowToBeAtHf(
@@ -780,7 +779,6 @@ contract SpokeLiquidationBase is SpokeBase {
     params.totalCollateralInBaseCurrency = userAccountData.totalCollateralInBaseCurrency;
     params.totalDebtInBaseCurrency = userAccountData.totalDebtInBaseCurrency;
 
-
     (params.actualDebtToLiquidate, hasDustFromDebt) = calculateActualDebtToLiquidate(
       state,
       debtToCover
@@ -988,7 +986,8 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 liquidationBonus
   ) internal view returns (uint256) {
     DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
-    return _calcLowestHfForBadDebt(userAccountData.avgCollateralFactor.fromWadDown(), liquidationBonus);
+    return
+      _calcLowestHfForBadDebt(userAccountData.avgCollateralFactor.fromWadDown(), liquidationBonus);
   }
 
   /// given collateral factor and liquidation bonus, calculate the lowest health factor possible
@@ -1096,7 +1095,8 @@ contract SpokeLiquidationBase is SpokeBase {
 
     DataTypes.UserAccountData memory userAccountData = state.spoke.getUserAccountData(state.user);
     state.initialHf = userAccountData.healthFactor;
-    state.totalCollateralInBaseCurrency.balanceBefore = userAccountData.totalCollateralInBaseCurrency;
+    state.totalCollateralInBaseCurrency.balanceBefore = userAccountData
+      .totalCollateralInBaseCurrency;
     state.totalDebtInBaseCurrency.balanceBefore = userAccountData.totalDebtInBaseCurrency;
 
     // multi reserve accounting
@@ -1300,7 +1300,8 @@ contract SpokeLiquidationBase is SpokeBase {
     DataTypes.UserAccountData memory userAccountData = state.spoke.getUserAccountData(state.user);
     state.userRp = userAccountData.userRiskPremium;
     state.finalHf = userAccountData.healthFactor;
-    state.totalCollateralInBaseCurrency.balanceAfter = userAccountData.totalCollateralInBaseCurrency;
+    state.totalCollateralInBaseCurrency.balanceAfter = userAccountData
+      .totalCollateralInBaseCurrency;
     state.totalDebtInBaseCurrency.balanceAfter = userAccountData.totalDebtInBaseCurrency;
 
     state.hasDeficit =

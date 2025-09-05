@@ -615,7 +615,6 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     DataTypes.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
 
-
     assertEq(
       userAccountData.userRiskPremium,
       spoke1.getReserve(state.daiReserveId).collateralRisk,

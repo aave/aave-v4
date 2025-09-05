@@ -445,7 +445,12 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.UpdateDynamicReserveConfig(reserveId, configKey, expectedDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateMaxLiquidationBonus(spokeAddr, reserveId, configKey, newLiquidationBonus);
+    spokeConfigurator.updateMaxLiquidationBonus(
+      spokeAddr,
+      reserveId,
+      configKey,
+      newLiquidationBonus
+    );
 
     assertEq(spoke.getDynamicReserveConfig(reserveId, configKey), expectedDynamicReserveConfig);
   }

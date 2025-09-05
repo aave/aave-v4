@@ -468,8 +468,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     skip(skipTime);
 
     vm.assume(
-      _getRequiredDebtAmountForHf(spoke1, state.user, debtReserveId, desiredHf) <=
-        MAX_SUPPLY_AMOUNT
+      _getRequiredDebtAmountForHf(spoke1, state.user, debtReserveId, desiredHf) <= MAX_SUPPLY_AMOUNT
     );
     // borrow some amount of debt reserve to end up below hf threshold
     (uint256 hfAfterBorrow, ) = _borrowToBeAtHf(state.spoke, alice, debtReserveId, desiredHf);
