@@ -29,7 +29,7 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(
       _config,
       DataTypes.LiquidationConfig({
-        closeFactor: WadRayMath.WAD.toUint128(),
+        targetHealthFactor: WadRayMath.WAD.toUint128(),
         healthFactorForMaxBonus: 0,
         liquidationBonusFactor: 0
       })
@@ -72,7 +72,7 @@ contract SpokeGettersTest is SpokeBase {
     ).toUint64();
 
     DataTypes.LiquidationConfig memory config = DataTypes.LiquidationConfig({
-      closeFactor: WadRayMath.WAD.toUint128(),
+      targetHealthFactor: WadRayMath.WAD.toUint128(),
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor
     });

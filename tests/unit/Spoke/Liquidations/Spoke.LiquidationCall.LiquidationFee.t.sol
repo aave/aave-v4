@@ -45,7 +45,7 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
       collateralReserveId: _wethReserveId(spoke1),
       debtReserveId: _daiReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
@@ -63,7 +63,7 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
       collateralReserveId: _wethReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
@@ -81,7 +81,7 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
       collateralReserveId: _usdxReserveId(spoke1),
       debtReserveId: _wethReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
@@ -99,7 +99,7 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
       collateralReserveId: _usdxReserveId(spoke1),
       debtReserveId: _daiReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
@@ -117,7 +117,7 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _wethReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
@@ -135,7 +135,7 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
@@ -153,7 +153,7 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),

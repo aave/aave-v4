@@ -114,7 +114,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'debt reserve accounting refresh'
     );
 
-    assertLe(state.healthFactor, _getCloseFactor(spoke1), 'hf <= close factor');
+    assertLe(state.healthFactor, _getTargetHealthFactor(spoke1), 'hf <= close factor');
   }
 
   /// liquidation with realized premium accounting
@@ -225,7 +225,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'debt reserve accounting refresh'
     );
 
-    assertLe(state.healthFactor, _getCloseFactor(spoke1), 'hf <= close factor');
+    assertLe(state.healthFactor, _getTargetHealthFactor(spoke1), 'hf <= close factor');
   }
 
   /// liquidation call with HF < 1 due to accrued interest
@@ -318,7 +318,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'debt reserve accounting is refresh'
     );
 
-    assertLe(state.healthFactor, _getCloseFactor(spoke1), 'hf <= close factor');
+    assertLe(state.healthFactor, _getTargetHealthFactor(spoke1), 'hf <= close factor');
   }
 
   /// liquidation call with HF < 1 due to accrued interest
@@ -413,7 +413,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       'debt reserve accounting is refresh'
     );
 
-    assertLe(state.healthFactor, _getCloseFactor(spoke1), 'hf <= close factor');
+    assertLe(state.healthFactor, _getTargetHealthFactor(spoke1), 'hf <= close factor');
   }
 
   /// can not liquidate total debt
@@ -480,7 +480,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       state.userTotalReserveDebt.balanceBefore,
       'liquidator can only liquidate enough debt to cover position'
     );
-    assertLe(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'hf <= close factor');
+    assertLe(spoke1.getHealthFactor(alice), _getTargetHealthFactor(spoke1), 'hf <= close factor');
   }
 
   /// scenario with multiple collaterals and a single debt asset
@@ -654,18 +654,18 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       0,
       'alice dai coll liquidated'
     );
-    assertLe(spoke1.getHealthFactor(alice), _getCloseFactor(spoke1), 'hf <= close factor');
+    assertLe(spoke1.getHealthFactor(alice), _getTargetHealthFactor(spoke1), 'hf <= close factor');
   }
 
   /// liquidation to close factor
-  function test_liquidationCall_restore_closeFactor() public {
+  function test_liquidationCall_restore_targetHealthFactor() public {
     // collateral: weth/usdx
     uint256 wethAmount = 10 * 10 ** decimals.weth; // $20k wbtc
     uint256 usdxAmount = 10_000 * 10 ** decimals.usdx; // $10k usdx
     // debt: dai
     uint256 borrowAmount = 15_000 * 10 ** decimals.dai; // $15k dai
 
-    uint256 closeFactor = getCloseFactor(spoke1);
+    uint256 targetHealthFactor = getTargetHealthFactor(spoke1);
 
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, wethAmount, alice);
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, usdxAmount, alice);
@@ -678,15 +678,17 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
 
     assertApproxEqRel(
       spoke1.getHealthFactor(alice),
-      closeFactor,
+      targetHealthFactor,
       _approxRelFromBps(1),
       'hf ~= close factor'
     );
-    assertLe(spoke1.getHealthFactor(alice), closeFactor, 'hf <= close factor');
+    assertLe(spoke1.getHealthFactor(alice), targetHealthFactor, 'hf <= close factor');
   }
 
   /// liquidation to close factor with protocol fee > 0 and liquidation bonus > 0
-  function test_liquidationCall_restore_closeFactor_withLiquidationFee_withLiqBonus() public {
+  function test_liquidationCall_restore_targetHealthFactor_withLiquidationFee_withLiqBonus()
+    public
+  {
     uint256 wethReserveId = _wethReserveId(spoke1);
     uint256 usdxReserveId = _usdxReserveId(spoke1);
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -696,9 +698,9 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     uint256 usdxAmount = 10_000 * 10 ** decimals.usdx; // $10k usdx
     // debt: dai
     uint256 borrowAmount = 15_000 * 10 ** decimals.dai; // $15k dai
-    uint128 closeFactor = 1.07e18;
+    uint128 targetHealthFactor = 1.07e18;
 
-    updateCloseFactor(spoke1, closeFactor);
+    updateTargetHealthFactor(spoke1, targetHealthFactor);
     updateLiquidationFee(spoke1, usdxReserveId, 5_00);
     updateMaxLiquidationBonus(spoke1, usdxReserveId, 101_00);
 
@@ -712,10 +714,10 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     spoke1.liquidationCall(usdxReserveId, daiReserveId, alice, borrowAmount);
 
     uint256 healthFactor = spoke1.getHealthFactor(alice);
-    assertLe(healthFactor, closeFactor, 'hf <= close factor');
+    assertLe(healthFactor, targetHealthFactor, 'hf <= close factor');
     assertApproxEqRel(
       healthFactor,
-      closeFactor,
+      targetHealthFactor,
       _approxRelFromBps(1),
       '.01% diff, hf vs close factor'
     );

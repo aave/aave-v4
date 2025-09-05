@@ -38,7 +38,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
   function test_calculateLiquidationAmounts_EnoughCollateral() public {
     // variable liquidation bonus is max: 120%
     // liquidation penalty: 1.2 * 0.5 = 0.6
-    // debtToRestoreCloseFactor = $10000 * (1 - 0.8) / (1 - 0.6) / $2000 = 2.5
+    // debtToRestoreTargetHealthFactor = $10000 * (1 - 0.8) / (1 - 0.6) / $2000 = 2.5
     // max debt to liquidate = min(2.5, 5, 3) = 2.5
     // collateral to liquidate = 2.5 * 120% * $2000 / $1 = 6000
     // bonus collateral = 6000 - 6000 / 120% = 1000
@@ -57,7 +57,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           debtToCover: 3e18,
           totalDebtInBaseCurrency: 10_000e26,
           healthFactor: 0.8e18,
-          closeFactor: 1e18,
+          targetHealthFactor: 1e18,
           maxLiquidationBonus: 120_00,
           collateralFactor: 50_00,
           debtAssetPrice: 2000e8,
@@ -108,7 +108,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
   function test_calculateLiquidationAmounts_InsufficientCollateral() public {
     // variable liquidation bonus is max: 120%
     // liquidation penalty: 1.2 * 0.5 = 0.6
-    // debtToRestoreCloseFactor = $10000 * (1 - 0.8) / (1 - 0.6) / $2000 = 2.5
+    // debtToRestoreTargetHealthFactor = $10000 * (1 - 0.8) / (1 - 0.6) / $2000 = 2.5
     // max debt to liquidate = min(2.5, 5, 3) = 2.5
     // collateral to liquidate = 2.5 * 120% * $2000 / $1 = 6000
     // total reserve collateral = 3000
@@ -129,7 +129,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           debtToCover: 3e18,
           totalDebtInBaseCurrency: 10_000e26,
           healthFactor: 0.8e18,
-          closeFactor: 1e18,
+          targetHealthFactor: 1e18,
           maxLiquidationBonus: 120_00,
           collateralFactor: 50_00,
           debtAssetPrice: 2000e8,

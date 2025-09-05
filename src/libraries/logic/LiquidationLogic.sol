@@ -33,10 +33,10 @@ library LiquidationLogic {
     uint256 reserveDebt;
   }
 
-  struct CalculateDebtToRestoreCloseFactorParams {
+  struct CalculateDebtToRestoreTargetHealthFactorParams {
     uint256 totalDebtInBaseCurrency;
     uint256 healthFactor;
-    uint256 closeFactor;
+    uint256 targetHealthFactor;
     uint256 liquidationBonus;
     uint256 collateralFactor;
     uint256 debtAssetPrice;
@@ -48,7 +48,7 @@ library LiquidationLogic {
     uint256 debtToCover;
     uint256 totalDebtInBaseCurrency;
     uint256 healthFactor;
-    uint256 closeFactor;
+    uint256 targetHealthFactor;
     uint256 liquidationBonus;
     uint256 collateralFactor;
     uint256 debtAssetPrice;
@@ -63,7 +63,7 @@ library LiquidationLogic {
     uint256 debtToCover;
     uint256 totalDebtInBaseCurrency;
     uint256 healthFactor;
-    uint256 closeFactor;
+    uint256 targetHealthFactor;
     uint256 maxLiquidationBonus;
     uint256 collateralFactor;
     uint256 debtAssetPrice;
@@ -143,8 +143,8 @@ library LiquidationLogic {
     require(params.reserveDebt > 0, ISpoke.SpecifiedCurrencyNotBorrowedByUser());
   }
 
-  function _calculateDebtToRestoreCloseFactor(
-    CalculateDebtToRestoreCloseFactorParams memory params
+  function _calculateDebtToRestoreTargetHealthFactor(
+    CalculateDebtToRestoreTargetHealthFactorParams memory params
   ) internal pure returns (uint256) {
     uint256 liquidationPenalty = params.liquidationBonus.bpsToWad().percentMulUp(
       params.collateralFactor
@@ -152,8 +152,8 @@ library LiquidationLogic {
 
     return
       params.totalDebtInBaseCurrency.mulDivUp(
-        params.debtAssetUnit * (params.closeFactor - params.healthFactor),
-        (params.closeFactor - liquidationPenalty) * params.debtAssetPrice.toWad()
+        params.debtAssetUnit * (params.targetHealthFactor - params.healthFactor),
+        (params.targetHealthFactor - liquidationPenalty) * params.debtAssetPrice.toWad()
       );
   }
 
@@ -165,19 +165,19 @@ library LiquidationLogic {
       maxDebtToLiquidate = params.debtToCover;
     }
 
-    uint256 debtToRestoreCloseFactor = _calculateDebtToRestoreCloseFactor(
-      CalculateDebtToRestoreCloseFactorParams({
+    uint256 debtToRestoreTargetHealthFactor = _calculateDebtToRestoreTargetHealthFactor(
+      CalculateDebtToRestoreTargetHealthFactorParams({
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
         healthFactor: params.healthFactor,
-        closeFactor: params.closeFactor,
+        targetHealthFactor: params.targetHealthFactor,
         liquidationBonus: params.liquidationBonus,
         collateralFactor: params.collateralFactor,
         debtAssetPrice: params.debtAssetPrice,
         debtAssetUnit: params.debtAssetUnit
       })
     );
-    if (debtToRestoreCloseFactor < maxDebtToLiquidate) {
-      maxDebtToLiquidate = debtToRestoreCloseFactor;
+    if (debtToRestoreTargetHealthFactor < maxDebtToLiquidate) {
+      maxDebtToLiquidate = debtToRestoreTargetHealthFactor;
     }
 
     uint256 remainingDebtInBaseCurrency = (params.reserveDebt - maxDebtToLiquidate).mulDivDown(
@@ -211,7 +211,7 @@ library LiquidationLogic {
         debtToCover: params.debtToCover,
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
         healthFactor: params.healthFactor,
-        closeFactor: params.closeFactor,
+        targetHealthFactor: params.targetHealthFactor,
         liquidationBonus: liquidationBonus,
         collateralFactor: params.collateralFactor,
         debtAssetPrice: params.debtAssetPrice,
@@ -357,7 +357,7 @@ library LiquidationLogic {
         debtToCover: params.debtToCover,
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
         healthFactor: params.healthFactor,
-        closeFactor: liquidationConfig.closeFactor,
+        targetHealthFactor: liquidationConfig.targetHealthFactor,
         maxLiquidationBonus: collateralDynConfig.maxLiquidationBonus,
         collateralFactor: collateralDynConfig.collateralFactor,
         debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),

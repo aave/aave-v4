@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
-contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
+contract LiquidationCallTargetHealthFactorMultiReserveTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using SafeCast for uint256;
@@ -14,7 +14,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   /// weth/usdx collateral
   /// dai/usdx debt
   /// liquidate weth, repay usdx
-  function test_liquidationCall_closeFactor_multi_reserve_scenario1() public {
+  function test_liquidationCall_targetHealthFactor_multi_reserve_scenario1() public {
     uint256[] memory collateralReserveIds = new uint256[](2);
     uint256[] memory debtReserveIds = new uint256[](2);
 
@@ -24,9 +24,9 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     debtReserveIds[0] = _daiReserveId(spoke1);
     debtReserveIds[1] = _usdxReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTestMulti({
+    LiquidationTestLocalParams memory state = _execLiqCallTargetHealthFactorTestMulti({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -42,7 +42,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     });
 
     if (!state.hasDustFromAvailableCollateral) {
-      _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario1');
+      _checkLiquidation(state, 'test_liquidationCall_targetHealthFactor_multi_reserve_scenario1');
       assertFalse(state.hasDeficit, 'should not have deficit');
     }
   }
@@ -50,7 +50,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   /// wbtc/weth collateral
   /// usdx/usdy debt
   /// liquidate weth, repay usdx
-  function test_liquidationCall_closeFactor_multi_reserve_scenario2() public {
+  function test_liquidationCall_targetHealthFactor_multi_reserve_scenario2() public {
     uint256[] memory collateralReserveIds = new uint256[](2);
     uint256[] memory debtReserveIds = new uint256[](2);
 
@@ -60,9 +60,9 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     debtReserveIds[0] = _usdyReserveId(spoke1);
     debtReserveIds[1] = _usdxReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTestMulti({
+    LiquidationTestLocalParams memory state = _execLiqCallTargetHealthFactorTestMulti({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.1e18,
+        targetHealthFactor: 1.1e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -79,7 +79,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     // if dust remains after accounting for available collateral, tx will have reverted
     if (!state.hasDustFromAvailableCollateral) {
-      _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario2');
+      _checkLiquidation(state, 'test_liquidationCall_targetHealthFactor_multi_reserve_scenario2');
       assertFalse(state.hasDeficit, 'should not have deficit');
     }
   }
@@ -87,7 +87,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   /// dai/usdy collateral
   /// usdx/wbtc debt
   /// liquidate dai, repay wbtc
-  function test_liquidationCall_closeFactor_multi_reserve_scenario3() public {
+  function test_liquidationCall_targetHealthFactor_multi_reserve_scenario3() public {
     uint256[] memory collateralReserveIds = new uint256[](2);
     uint256[] memory debtReserveIds = new uint256[](2);
 
@@ -97,9 +97,9 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     debtReserveIds[0] = _usdxReserveId(spoke1);
     debtReserveIds[1] = _wbtcReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTestMulti({
+    LiquidationTestLocalParams memory state = _execLiqCallTargetHealthFactorTestMulti({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.1e18,
+        targetHealthFactor: 1.1e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -116,12 +116,12 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
 
     // if dust remains after accounting for available collateral, tx will have reverted
     if (!state.hasDustFromAvailableCollateral) {
-      _checkLiquidation(state, 'test_liquidationCall_closeFactor_multi_reserve_scenario3');
+      _checkLiquidation(state, 'test_liquidationCall_targetHealthFactor_multi_reserve_scenario3');
       assertFalse(state.hasDeficit, 'should not have deficit');
     }
   }
 
-  function test_liquidationCall_closeFactor_fuzz_multi_reserve(
+  function test_liquidationCall_targetHealthFactor_fuzz_multi_reserve(
     DataTypes.LiquidationConfig memory liqConfig,
     uint256 collateralReserveId1,
     uint256 collateralReserveId2,
@@ -155,7 +155,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     debtReserveIds[0] = debtReserveId1;
     debtReserveIds[1] = debtReserveId2;
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTestMulti({
+    LiquidationTestLocalParams memory state = _execLiqCallTargetHealthFactorTestMulti({
       liqConfig: liqConfig,
       liqBonus: 105_00,
       supplyAmountInBase: supplyAmountInBase,
@@ -169,13 +169,13 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     });
 
     if (!state.hasDustFromAvailableCollateral) {
-      _checkLiquidation(state, 'test_liquidationCall_closeFactor_fuzz_multi_reserve');
+      _checkLiquidation(state, 'test_liquidationCall_targetHealthFactor_fuzz_multi_reserve');
       assertFalse(state.hasDeficit, 'should not have deficit');
     }
   }
 
   /// fuzz test with multiple collateral/debt reserves
-  function _execLiqCallCloseFactorTestMulti(
+  function _execLiqCallTargetHealthFactorTestMulti(
     DataTypes.LiquidationConfig memory liqConfig,
     uint32 liqBonus,
     uint256 supplyAmountInBase,
@@ -202,7 +202,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     for (uint256 i = 0; i < debtReserveIds.length; i++) {
       state.debtReserves[i] = _getReserve(spoke1, debtReserveIds[i]);
     }
-    liqConfig = _boundCloseFactor(liqConfig);
+    liqConfig = _boundTargetHealthFactor(liqConfig);
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,

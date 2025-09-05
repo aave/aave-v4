@@ -34,7 +34,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   }
 
   struct LiquidationMetadata {
-    uint256 debtToRestoreCloseFactor;
+    uint256 debtToRestoreTargetHealthFactor;
     uint256 collateralToLiquidate;
     uint256 collateralToLiquidator;
     uint256 debtToLiquidate;
@@ -47,8 +47,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   function _bound(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
-    liqConfig.closeFactor = bound(
-      liqConfig.closeFactor,
+    liqConfig.targetHealthFactor = bound(
+      liqConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       MAX_CLOSE_FACTOR
     ).toUint128();
@@ -161,7 +161,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         debtToCover: debtToCover,
         totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
         healthFactor: userAccountData.healthFactor,
-        closeFactor: spoke.getLiquidationConfig().closeFactor,
+        targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor,
         liquidationBonus: spoke.getLiquidationBonus(
           collateralReserveId,
           user,
@@ -178,18 +178,22 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       });
   }
 
-  function _getCalculateDebtToRestoreCloseFactorParams(
+  function _getCalculateDebtToRestoreTargetHealthFactorParams(
     ISpoke spoke,
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user
-  ) internal virtual returns (LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory) {
+  )
+    internal
+    virtual
+    returns (LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams memory)
+  {
     DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
     return
-      LiquidationLogic.CalculateDebtToRestoreCloseFactorParams({
+      LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams({
         totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
         healthFactor: userAccountData.healthFactor,
-        closeFactor: spoke.getLiquidationConfig().closeFactor,
+        targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor,
         liquidationBonus: spoke.getLiquidationBonus(
           collateralReserveId,
           user,
@@ -223,7 +227,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         debtToCover: debtToCover,
         totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
         healthFactor: userAccountData.healthFactor,
-        closeFactor: spoke.getLiquidationConfig().closeFactor,
+        targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor,
         maxLiquidationBonus: spoke
           .getDynamicReserveConfig(
             collateralReserveId,
@@ -360,14 +364,15 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     CheckedLiquidationCallParams memory params,
     DataTypes.UserAccountData memory userAccountDataBefore
   ) internal virtual returns (LiquidationMetadata memory) {
-    uint256 debtToRestoreCloseFactor = liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(
-      _getCalculateDebtToRestoreCloseFactorParams(
-        params.spoke,
-        params.collateralReserveId,
-        params.debtReserveId,
-        params.user
-      )
-    );
+    uint256 debtToRestoreTargetHealthFactor = liquidationLogicWrapper
+      .calculateDebtToRestoreTargetHealthFactor(
+        _getCalculateDebtToRestoreTargetHealthFactorParams(
+          params.spoke,
+          params.collateralReserveId,
+          params.debtReserveId,
+          params.user
+        )
+      );
     (
       uint256 collateralToLiquidate,
       uint256 collateralToLiquidator,
@@ -399,7 +404,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     return
       LiquidationMetadata({
-        debtToRestoreCloseFactor: debtToRestoreCloseFactor,
+        debtToRestoreTargetHealthFactor: debtToRestoreTargetHealthFactor,
         collateralToLiquidate: collateralToLiquidate,
         collateralToLiquidator: collateralToLiquidator,
         debtToLiquidate: debtToLiquidate,
@@ -439,18 +444,26 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         'health factor should be max if all debt is liquidated'
       );
     } else if (
-      liquidationMetadata.debtToLiquidate == liquidationMetadata.debtToRestoreCloseFactor
+      liquidationMetadata.debtToLiquidate == liquidationMetadata.debtToRestoreTargetHealthFactor
     ) {
       assertApproxEqRel(
         accountsInfoAfter.userAccountData.healthFactor,
-        _getCloseFactor(params.spoke),
+        _getTargetHealthFactor(params.spoke),
         _approxRelFromBps(1)
       );
-    } else if (liquidationMetadata.debtToLiquidate > liquidationMetadata.debtToRestoreCloseFactor) {
+    } else if (
+      liquidationMetadata.debtToLiquidate > liquidationMetadata.debtToRestoreTargetHealthFactor
+    ) {
       // dust adjusted
-      assertGe(accountsInfoAfter.userAccountData.healthFactor, _getCloseFactor(params.spoke));
+      assertGe(
+        accountsInfoAfter.userAccountData.healthFactor,
+        _getTargetHealthFactor(params.spoke)
+      );
     } else {
-      assertLe(accountsInfoAfter.userAccountData.healthFactor, _getCloseFactor(params.spoke));
+      assertLe(
+        accountsInfoAfter.userAccountData.healthFactor,
+        _getTargetHealthFactor(params.spoke)
+      );
     }
   }
 
