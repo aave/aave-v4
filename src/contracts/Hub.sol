@@ -90,6 +90,7 @@ contract Hub is IHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
+    /// @dev enforces that the fee receiver is added as a spoke with maximum caps
     _addSpoke(assetId, feeReceiver);
     _updateSpokeConfig(
       assetId,
@@ -132,9 +133,8 @@ contract Hub is IHub, AccessManaged {
     asset.irStrategy = config.irStrategy;
     asset.reinvestmentController = config.reinvestmentController;
 
-    asset.updateDrawnRate(assetId);
-
     if (asset.feeReceiver != config.feeReceiver) {
+      /// @dev enforces that a new fee receiver is added as a spoke with maximum caps
       asset.feeReceiver = config.feeReceiver;
       _addSpoke(assetId, config.feeReceiver);
       _updateSpokeConfig(
@@ -143,6 +143,8 @@ contract Hub is IHub, AccessManaged {
         DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
       );
     }
+
+    asset.updateDrawnRate(assetId);
 
     emit AssetConfigUpdate(assetId, config);
   }

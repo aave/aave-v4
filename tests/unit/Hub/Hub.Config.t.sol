@@ -352,6 +352,17 @@ contract HubConfigTest is HubBase {
     uint256 liquidity = hub1.getLiquidity(assetId);
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
 
+    // new spoke is added only if it is different from the old one
+    if (newConfig.feeReceiver != getFeeReceiver(hub1, assetId)) {
+      vm.expectEmit(address(hub1));
+      emit IHub.AddSpoke(assetId, newConfig.feeReceiver);
+      vm.expectEmit(address(hub1));
+      emit IHub.SpokeConfigUpdate(
+        assetId,
+        newConfig.feeReceiver,
+        DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
+      );
+    }
     vm.expectEmit(address(hub1));
     emit IHub.AssetUpdate(
       assetId,
@@ -366,17 +377,6 @@ contract HubConfigTest is HubBase {
       }),
       vm.getBlockTimestamp()
     );
-    // new spoke is added only if it is different from the old one
-    if (newConfig.feeReceiver != getFeeReceiver(hub1, assetId)) {
-      vm.expectEmit(address(hub1));
-      emit IHub.AddSpoke(assetId, newConfig.feeReceiver);
-      vm.expectEmit(address(hub1));
-      emit IHub.SpokeConfigUpdate(
-        assetId,
-        newConfig.feeReceiver,
-        DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
-      );
-    }
     vm.expectEmit(address(hub1));
     emit IHub.AssetConfigUpdate(assetId, newConfig);
 

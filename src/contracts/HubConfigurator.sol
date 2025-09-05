@@ -120,22 +120,6 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateAssetConfig(
-    address hub,
-    uint256 assetId,
-    DataTypes.AssetConfig calldata config
-  ) external override onlyOwner {
-    IHub targetHub = IHub(hub);
-    _updateFeeReceiverSpokeConfig(
-      targetHub,
-      assetId,
-      targetHub.getAssetConfig(assetId).feeReceiver,
-      config.feeReceiver
-    );
-    targetHub.updateAssetConfig(assetId, config);
-  }
-
-  /// @inheritdoc IHubConfigurator
   function freezeAsset(address hub, uint256 assetId) external override onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
@@ -234,17 +218,6 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 drawCap
   ) external override onlyOwner {
     _updateSpokeCaps(IHub(hub), assetId, spoke, addCap, drawCap);
-  }
-
-  /// @inheritdoc IHubConfigurator
-  function updateSpokeConfig(
-    address hub,
-    uint256 assetId,
-    address spoke,
-    DataTypes.SpokeConfig calldata config
-  ) external override onlyOwner {
-    IHub targetHub = IHub(hub);
-    targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
   /// @inheritdoc IHubConfigurator
