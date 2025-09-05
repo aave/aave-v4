@@ -296,6 +296,9 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(positionManager, true);
 
+    vm.prank(user);
+    spoke1.useNonce();
+
     EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
       positionManager: positionManager,
       user: user,
