@@ -79,7 +79,7 @@ library DataTypes {
 
   struct DynamicReserveConfig {
     uint16 collateralFactor;
-    uint32 liquidationBonus; // BPS, 100_00 represent a 0% bonus
+    uint32 maxLiquidationBonus; // BPS, 100_00 represent a 0% bonus
     uint16 liquidationFee; // BPS
   }
 
@@ -194,11 +194,11 @@ library DataTypes {
     uint256 totalDebtInBaseCurrency;
   }
 
-  struct CalculateVariableLiquidationBonusParams {
+  struct CalculateLiquidationBonusParams {
     uint256 healthFactorForMaxBonus;
     uint256 liquidationBonusFactor;
     uint256 healthFactor;
-    uint256 liquidationBonus;
+    uint256 maxLiquidationBonus;
   }
 
   struct LiquidateUserParams {

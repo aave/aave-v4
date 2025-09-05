@@ -174,8 +174,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
-    // @dev sufficient check since min liquidationBonus is 100_00
-    require(_dynamicConfig[reserveId][configKey].liquidationBonus != 0, ConfigKeyUninitialized());
+    // @dev sufficient check since maxLiquidationBonus is always >= 100_00
+    require(
+      _dynamicConfig[reserveId][configKey].maxLiquidationBonus != 0,
+      ConfigKeyUninitialized()
+    );
     _validateDynamicReserveConfig(dynamicConfig);
     _dynamicConfig[reserveId][configKey] = dynamicConfig;
     emit UpdateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
@@ -345,7 +348,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       collateralReserveId
     ][_userPositions[user][collateralReserveId].configKey];
 
-    bool hasDeficit = LiquidationLogic._liquidateUser(
+    bool hasDeficit = LiquidationLogic.liquidateUser(
       _reserves[collateralReserveId],
       _reserves[debtReserveId],
       _userPositions[user][collateralReserveId],
@@ -567,19 +570,19 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     return userAccountData.healthFactor;
   }
 
-  function getVariableLiquidationBonus(
+  function getLiquidationBonus(
     uint256 reserveId,
     address user,
     uint256 healthFactor
   ) external view returns (uint256) {
     return
-      LiquidationLogic.calculateVariableLiquidationBonus(
-        DataTypes.CalculateVariableLiquidationBonusParams({
+      LiquidationLogic.calculateLiquidationBonus(
+        DataTypes.CalculateLiquidationBonusParams({
           healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
           liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
           healthFactor: healthFactor,
-          liquidationBonus: _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey]
-            .liquidationBonus
+          maxLiquidationBonus: _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey]
+            .maxLiquidationBonus
         })
       );
   }
@@ -712,10 +715,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     // Enforce that at moment loan is taken, there should be enough collateral to cover liquidation
     require(
       config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR &&
-        config.liquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
-        config.liquidationBonus.percentMulUp(config.collateralFactor) <
+        config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
+        config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
         PercentageMath.PERCENTAGE_FACTOR,
-      InvalidCollateralFactorAndLiquidationBonus()
+      InvalidCollateralFactorAndMaxLiquidationBonus()
     );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
   }

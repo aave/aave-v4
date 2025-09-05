@@ -17,48 +17,12 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       uint256 expectedDebtToLiquidate
     ) = _calculateRawLiquidationAmounts(params);
 
-    params.totalReserveCollateral = bound(
-      params.totalReserveCollateral,
+    params.reserveCollateral = bound(
+      params.reserveCollateral,
       expectedCollateralToLiquidate,
       MAX_SUPPLY_AMOUNT
     );
     (, uint256 expectedCollateralToLiquidator, ) = _calculateLiquidationAmounts(params);
-
-    (
-      uint256 collateralToLiquidate,
-      uint256 collateralToLiquidator,
-      uint256 debtToLiquidate
-    ) = liquidationLogicWrapper.calculateLiquidationAmounts(params);
-
-    assertEq(collateralToLiquidate, expectedCollateralToLiquidate, 'collateralToLiquidate');
-    assertEq(collateralToLiquidator, expectedCollateralToLiquidator, 'collateralToLiquidator');
-    assertEq(debtToLiquidate, expectedDebtToLiquidate, 'debtToLiquidate');
-  }
-
-  function test_calculateLiquidationAmounts_fuzz_InsufficientCollateral(
-    LiquidationLogic.CalculateLiquidationAmountsParams memory params
-  ) public {
-    params = _bound(params);
-    (
-      uint256 rawCollateralToLiquidate,
-      uint256 rawDebtToLiquidate
-    ) = _calculateRawLiquidationAmounts(params);
-    vm.assume(rawCollateralToLiquidate > 0);
-    params.totalReserveCollateral = bound(
-      params.totalReserveCollateral,
-      0,
-      rawCollateralToLiquidate - 1
-    );
-
-    (
-      uint256 expectedCollateralToLiquidate,
-      uint256 expectedCollateralToLiquidator,
-      uint256 expectedDebtToLiquidate
-    ) = _calculateLiquidationAmounts(params);
-    assertTrue(
-      expectedCollateralToLiquidate != rawCollateralToLiquidate,
-      'adjusted collateralToLiquidate'
-    );
 
     (
       uint256 collateralToLiquidate,
@@ -88,13 +52,13 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
         LiquidationLogic.CalculateLiquidationAmountsParams({
           healthFactorForMaxBonus: 0.8e18,
           liquidationBonusFactor: 50_00,
-          totalReserveCollateral: 11_000e6,
-          totalReserveDebt: 5e18,
+          reserveCollateral: 11_000e6,
+          reserveDebt: 5e18,
           debtToCover: 3e18,
           totalDebtInBaseCurrency: 10_000e26,
           healthFactor: 0.8e18,
           closeFactor: 1e18,
-          liquidationBonus: 120_00,
+          maxLiquidationBonus: 120_00,
           collateralFactor: 50_00,
           debtAssetPrice: 2000e8,
           debtAssetUnit: 1e18,
@@ -107,6 +71,38 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     assertEq(collateralToLiquidate, 6000e6, 'collateralToLiquidate');
     assertEq(collateralToLiquidator, 5900e6, 'collateralToLiquidator');
     assertEq(debtToLiquidate, 2.5e18, 'debtToLiquidate');
+  }
+
+  function test_calculateLiquidationAmounts_fuzz_InsufficientCollateral(
+    LiquidationLogic.CalculateLiquidationAmountsParams memory params
+  ) public {
+    params = _bound(params);
+    (
+      uint256 rawCollateralToLiquidate,
+      uint256 rawDebtToLiquidate
+    ) = _calculateRawLiquidationAmounts(params);
+    vm.assume(rawCollateralToLiquidate > 0);
+    params.reserveCollateral = bound(params.reserveCollateral, 0, rawCollateralToLiquidate - 1);
+
+    (
+      uint256 expectedCollateralToLiquidate,
+      uint256 expectedCollateralToLiquidator,
+      uint256 expectedDebtToLiquidate
+    ) = _calculateLiquidationAmounts(params);
+    assertTrue(
+      expectedCollateralToLiquidate != rawCollateralToLiquidate,
+      'adjusted collateralToLiquidate'
+    );
+
+    (
+      uint256 collateralToLiquidate,
+      uint256 collateralToLiquidator,
+      uint256 debtToLiquidate
+    ) = liquidationLogicWrapper.calculateLiquidationAmounts(params);
+
+    assertEq(collateralToLiquidate, expectedCollateralToLiquidate, 'collateralToLiquidate');
+    assertEq(collateralToLiquidator, expectedCollateralToLiquidator, 'collateralToLiquidator');
+    assertEq(debtToLiquidate, expectedDebtToLiquidate, 'debtToLiquidate');
   }
 
   function test_calculateLiquidationAmounts_InsufficientCollateral() public {
@@ -128,13 +124,13 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
         LiquidationLogic.CalculateLiquidationAmountsParams({
           healthFactorForMaxBonus: 0.8e18,
           liquidationBonusFactor: 50_00,
-          totalReserveCollateral: 3000e6,
-          totalReserveDebt: 5e18,
+          reserveCollateral: 3000e6,
+          reserveDebt: 5e18,
           debtToCover: 3e18,
           totalDebtInBaseCurrency: 10_000e26,
           healthFactor: 0.8e18,
           closeFactor: 1e18,
-          liquidationBonus: 120_00,
+          maxLiquidationBonus: 120_00,
           collateralFactor: 50_00,
           debtAssetPrice: 2000e8,
           debtAssetUnit: 1e18,
@@ -159,10 +155,10 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       params.debtAssetPrice * params.collateralAssetUnit,
       params.debtAssetUnit * params.collateralAssetPrice
     );
-    uint256 variableLiquidationBonus = liquidationLogicWrapper.calculateVariableLiquidationBonus(
-      _getCalculateVariableLiquidationBonusParams(params)
+    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus(
+      _getCalculateLiquidationBonusParams(params)
     );
-    uint256 collateralToLiquidate = debtToCollateral.percentMulDown(variableLiquidationBonus);
+    uint256 collateralToLiquidate = debtToCollateral.percentMulDown(liquidationBonus);
 
     return (collateralToLiquidate, debtToLiquidate);
   }
@@ -179,15 +175,15 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
         params.debtAssetUnit * params.collateralAssetPrice
       );
 
-    if (collateralToLiquidate > params.totalReserveCollateral) {
-      uint256 variableLiquidationBonus = liquidationLogicWrapper.calculateVariableLiquidationBonus(
-        _getCalculateVariableLiquidationBonusParams(params)
+    if (collateralToLiquidate > params.reserveCollateral) {
+      uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus(
+        _getCalculateLiquidationBonusParams(params)
       );
 
-      collateralToLiquidate = params.totalReserveCollateral;
+      collateralToLiquidate = params.reserveCollateral;
       bonusCollateral =
         collateralToLiquidate -
-        collateralToLiquidate.percentDivUp(variableLiquidationBonus);
+        collateralToLiquidate.percentDivUp(liquidationBonus);
       debtToLiquidate = (collateralToLiquidate - bonusCollateral).mulDivUp(
         params.collateralAssetPrice * params.debtAssetUnit,
         params.debtAssetPrice * params.collateralAssetUnit
@@ -195,7 +191,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     }
 
     uint256 collateralToLiquidator = collateralToLiquidate -
-      bonusCollateral.percentMulUp(params.liquidationFee);
+      bonusCollateral.percentMulDown(params.liquidationFee);
 
     return (collateralToLiquidate, collateralToLiquidator, debtToLiquidate);
   }

@@ -157,7 +157,7 @@ contract SpokeConfigTest is SpokeBase {
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 110_00,
+      maxLiquidationBonus: 110_00,
       liquidationFee: 10_00
     });
 
@@ -198,7 +198,7 @@ contract SpokeConfigTest is SpokeBase {
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 110_00,
+      maxLiquidationBonus: 110_00,
       liquidationFee: 0
     });
 
@@ -219,7 +219,7 @@ contract SpokeConfigTest is SpokeBase {
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 110_00,
+      maxLiquidationBonus: 110_00,
       liquidationFee: 10_00
     });
 
@@ -243,7 +243,7 @@ contract SpokeConfigTest is SpokeBase {
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 110_00,
+      maxLiquidationBonus: 110_00,
       liquidationFee: 10_00
     });
 

@@ -522,7 +522,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     spokeInfo[spoke1].wbtc.reserveConfig = DataTypes.ReserveConfig({
@@ -533,7 +533,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     spokeInfo[spoke1].dai.reserveConfig = DataTypes.ReserveConfig({
@@ -544,7 +544,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     spokeInfo[spoke1].usdx.reserveConfig = DataTypes.ReserveConfig({
@@ -555,7 +555,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     spokeInfo[spoke1].usdy.reserveConfig = DataTypes.ReserveConfig({
@@ -566,7 +566,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].usdy.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
 
@@ -621,7 +621,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     spokeInfo[spoke2].weth.reserveConfig = DataTypes.ReserveConfig({
@@ -632,7 +632,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 76_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     spokeInfo[spoke2].dai.reserveConfig = DataTypes.ReserveConfig({
@@ -643,7 +643,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     spokeInfo[spoke2].usdx.reserveConfig = DataTypes.ReserveConfig({
@@ -654,7 +654,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     spokeInfo[spoke2].usdy.reserveConfig = DataTypes.ReserveConfig({
@@ -665,7 +665,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].usdy.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 72_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     spokeInfo[spoke2].dai2.reserveConfig = DataTypes.ReserveConfig({
@@ -676,7 +676,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].dai2.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 70_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
 
@@ -739,7 +739,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].dai.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     spokeInfo[spoke3].usdx.reserveConfig = DataTypes.ReserveConfig({
@@ -750,7 +750,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].usdx.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 75_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     spokeInfo[spoke3].weth.reserveConfig = DataTypes.ReserveConfig({
@@ -761,7 +761,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].weth.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 79_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     spokeInfo[spoke3].wbtc.reserveConfig = DataTypes.ReserveConfig({
@@ -772,7 +772,7 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 77_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
 
@@ -1010,13 +1010,13 @@ abstract contract Base is Test {
     assertEq(spoke.getLiquidationConfig(), config);
   }
 
-  function updateLiquidationBonus(
+  function updateMaxLiquidationBonus(
     ISpoke spoke,
     uint256 reserveId,
-    uint32 newLiquidationBonus
+    uint32 newMaxLiquidationBonus
   ) internal pausePrank returns (uint16) {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
-    config.liquidationBonus = newLiquidationBonus;
+    config.maxLiquidationBonus = newMaxLiquidationBonus;
 
     vm.prank(SPOKE_ADMIN);
     uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
@@ -1918,7 +1918,7 @@ abstract contract Base is Test {
     DataTypes.DynamicReserveConfig memory b
   ) internal pure {
     assertEq(a.collateralFactor, b.collateralFactor, 'collateralFactor');
-    assertEq(a.liquidationBonus, b.liquidationBonus, 'liquidationBonus');
+    assertEq(a.maxLiquidationBonus, b.maxLiquidationBonus, 'maxLiquidationBonus');
     assertEq(a.liquidationFee, b.liquidationFee, 'liquidationFee');
     assertEq(abi.encode(a), abi.encode(b));
   }
@@ -1953,13 +1953,13 @@ abstract contract Base is Test {
   }
 
   /// @dev Get the liquidation bonus for a given reserve at a user HF
-  function _getVariableLiquidationBonus(
+  function _getLiquidationBonus(
     ISpoke spoke,
     uint256 reserveId,
     address user,
     uint256 healthFactor
   ) internal view returns (uint256) {
-    return spoke.getVariableLiquidationBonus(reserveId, user, healthFactor);
+    return spoke.getLiquidationBonus(reserveId, user, healthFactor);
   }
 
   /**

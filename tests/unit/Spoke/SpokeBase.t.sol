@@ -979,7 +979,7 @@ contract SpokeBase is Base {
     uint256 reserveId
   ) internal returns (uint16) {
     uint16 configKey = _nextDynamicConfigKey(spoke, reserveId);
-    if (spoke.getDynamicReserveConfig(reserveId, configKey).liquidationBonus != 0) {
+    if (spoke.getDynamicReserveConfig(reserveId, configKey).maxLiquidationBonus != 0) {
       revert('no uninitialized config keys');
     }
     return vm.randomUint(configKey, type(uint16).max).toUint16();
@@ -987,7 +987,7 @@ contract SpokeBase is Base {
 
   function _randomInitializedConfigKey(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
     uint16 configKey = _nextDynamicConfigKey(spoke, reserveId);
-    if (spoke.getDynamicReserveConfig(reserveId, configKey).liquidationBonus != 0) {
+    if (spoke.getDynamicReserveConfig(reserveId, configKey).maxLiquidationBonus != 0) {
       // all config keys are initialized
       return vm.randomUint(0, type(uint16).max).toUint16();
     }

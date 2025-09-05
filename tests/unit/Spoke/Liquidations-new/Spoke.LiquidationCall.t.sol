@@ -476,7 +476,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_SmallPosition is
         i,
         spoke.getUserPosition(i, liquidator).configKey
       );
-      dynConfig.liquidationBonus = 105_00;
+      dynConfig.maxLiquidationBonus = 105_00;
       vm.prank(SPOKE_ADMIN);
       spoke.addDynamicReserveConfig(i, dynConfig);
     }
@@ -504,7 +504,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_LargePosition is
         i,
         spoke.getUserPosition(i, liquidator).configKey
       );
-      dynConfig.liquidationBonus = 105_00;
+      dynConfig.maxLiquidationBonus = 105_00;
       vm.prank(SPOKE_ADMIN);
       spoke.addDynamicReserveConfig(i, dynConfig);
     }
@@ -535,7 +535,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_SmallPosition is
         i,
         spoke.getUserPosition(i, liquidator).configKey
       );
-      dynConfig.liquidationBonus = (PercentageMath.PERCENTAGE_FACTOR - 1)
+      dynConfig.maxLiquidationBonus = (PercentageMath.PERCENTAGE_FACTOR - 1)
         .percentDivDown(dynConfig.collateralFactor)
         .toUint32();
       vm.prank(SPOKE_ADMIN);
@@ -568,7 +568,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_LargePosition is
         i,
         spoke.getUserPosition(i, liquidator).configKey
       );
-      dynConfig.liquidationBonus = (PercentageMath.PERCENTAGE_FACTOR - 1)
+      dynConfig.maxLiquidationBonus = (PercentageMath.PERCENTAGE_FACTOR - 1)
         .percentDivDown(dynConfig.collateralFactor)
         .toUint32();
       vm.prank(SPOKE_ADMIN);

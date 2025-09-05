@@ -19,7 +19,7 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
       healthFactor: 0.8e18,
       isUsingAsCollateral: true,
       collateralFactor: 75_00,
-      totalDebt: 100e18
+      reserveDebt: 100e18
     });
   }
 
@@ -59,20 +59,24 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
-  function test_validateLiquidationCall_revertsWith_CollateralCannotBeLiquidated_NotUsingAsCollateral() public {
+  function test_validateLiquidationCall_revertsWith_CollateralCannotBeLiquidated_NotUsingAsCollateral()
+    public
+  {
     params.isUsingAsCollateral = false;
     vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
-  function test_validateLiquidationCall_revertsWith_CollateralCannotBeLiquidated_ZeroCollateralFactor() public {
+  function test_validateLiquidationCall_revertsWith_CollateralCannotBeLiquidated_ZeroCollateralFactor()
+    public
+  {
     params.collateralFactor = 0;
     vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
   function test_validateLiquidationCall_revertsWith_SpecifiedCurrencyNotBorrowedByUser() public {
-    params.totalDebt = 0;
+    params.reserveDebt = 0;
     vm.expectRevert(ISpoke.SpecifiedCurrencyNotBorrowedByUser.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }

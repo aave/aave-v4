@@ -241,7 +241,7 @@ contract SpokeLiquidationBase is SpokeBase {
     state.liquidationFee = liquidationFee;
 
     updateLiquidationConfig(state.spoke, liqConfig);
-    updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
+    updateMaxLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
     updateLiquidationFee(state.spoke, collateralReserveId, state.liquidationFee);
 
     Utils.supplyCollateral({
@@ -271,7 +271,7 @@ contract SpokeLiquidationBase is SpokeBase {
       debtReserveId,
       desiredHf
     );
-    state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
+    state.liquidationBonus = state.spoke.getLiquidationBonus(
       collateralReserveId,
       state.user,
       hfAfterBorrow

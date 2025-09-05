@@ -438,7 +438,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     state.liquidationFee = liquidationFee;
 
     updateLiquidationConfig(state.spoke, liqConfig);
-    updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
+    updateMaxLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
     updateLiquidationFee(state.spoke, collateralReserveId, state.liquidationFee);
 
     Utils.supplyCollateral({
@@ -473,7 +473,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     );
     // borrow some amount of debt reserve to end up below hf threshold
     (uint256 hfAfterBorrow, ) = _borrowToBeAtHf(state.spoke, alice, debtReserveId, desiredHf);
-    state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
+    state.liquidationBonus = state.spoke.getLiquidationBonus(
       collateralReserveId,
       state.user,
       hfAfterBorrow

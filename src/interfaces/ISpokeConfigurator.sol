@@ -144,13 +144,13 @@ interface ISpokeConfigurator {
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
    * @param configKey The key of the dynamic config to update.
-   * @param liquidationBonus The new liquidation bonus.
+   * @param maxLiquidationBonus The new liquidation bonus.
    */
-  function updateLiquidationBonus(
+  function updateMaxLiquidationBonus(
     address spoke,
     uint256 reserveId,
     uint16 configKey,
-    uint256 liquidationBonus
+    uint256 maxLiquidationBonus
   ) external;
 
   /**

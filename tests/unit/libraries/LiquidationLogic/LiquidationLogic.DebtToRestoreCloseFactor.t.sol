@@ -60,7 +60,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
           totalDebtInBaseCurrency: 10_000e26,
           healthFactor: 0.8e18,
           closeFactor: 1.25e18,
-          variableLiquidationBonus: 150_00,
+          liquidationBonus: 150_00,
           collateralFactor: 50_00,
           debtAssetUnit: assetUnit,
           debtAssetPrice: 1e8
@@ -81,7 +81,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
           totalDebtInBaseCurrency: 10_000e26,
           healthFactor: 0.8e18,
           closeFactor: 1e18,
-          variableLiquidationBonus: 150_00,
+          liquidationBonus: 150_00,
           collateralFactor: 50_00,
           debtAssetUnit: assetUnit,
           debtAssetPrice: 2000e8
@@ -100,7 +100,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTes
         totalDebtInBaseCurrency: 10_000e26,
         healthFactor: 0.8e18,
         closeFactor: 1e18,
-        variableLiquidationBonus: 150_00,
+        liquidationBonus: 150_00,
         collateralFactor: 50_00,
         debtAssetUnit: 1,
         debtAssetPrice: 333e8

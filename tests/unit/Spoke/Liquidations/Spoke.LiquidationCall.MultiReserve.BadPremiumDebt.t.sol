@@ -312,7 +312,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     // set spoke liq config
     updateLiquidationConfig(state.spoke, liqConfig);
-    updateLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
+    updateMaxLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
     updateLiquidationFee(state.spoke, collateralReserveId, state.liquidationFee);
 
     Utils.supplyCollateral({
@@ -350,7 +350,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
       state
     );
 
-    state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
+    state.liquidationBonus = state.spoke.getLiquidationBonus(
       collateralReserveId,
       state.user,
       state.initialHf

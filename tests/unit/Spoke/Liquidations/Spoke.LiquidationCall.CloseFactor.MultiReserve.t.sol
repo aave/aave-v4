@@ -226,7 +226,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
     state.user = alice;
 
     updateLiquidationConfig(state.spoke, liqConfig);
-    updateLiquidationBonus(state.spoke, collateralReserveIds[collateralReserveIndex], liqBonus);
+    updateMaxLiquidationBonus(state.spoke, collateralReserveIds[collateralReserveIndex], liqBonus);
     updateLiquidationFee(
       state.spoke,
       collateralReserveIds[collateralReserveIndex],
@@ -274,7 +274,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
       state.desiredHf
     );
 
-    state.liquidationBonus = state.spoke.getVariableLiquidationBonus(
+    state.liquidationBonus = state.spoke.getLiquidationBonus(
       state.collateralReserves[collateralReserveIndex].reserveId,
       state.user,
       hfAfterBorrow

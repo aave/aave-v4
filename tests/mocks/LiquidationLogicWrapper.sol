@@ -80,10 +80,10 @@ contract LiquidationLogicWrapper {
     return positionStatus.isBorrowing(reserveId);
   }
 
-  function calculateVariableLiquidationBonus(
-    DataTypes.CalculateVariableLiquidationBonusParams memory params
+  function calculateLiquidationBonus(
+    DataTypes.CalculateLiquidationBonusParams memory params
   ) public pure returns (uint256) {
-    return LiquidationLogic.calculateVariableLiquidationBonus(params);
+    return LiquidationLogic.calculateLiquidationBonus(params);
   }
 
   function validateLiquidationCall(

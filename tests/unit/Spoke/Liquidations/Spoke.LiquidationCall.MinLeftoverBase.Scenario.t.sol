@@ -20,7 +20,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     // static collateral factor to simplify liquidation threshold calculations
     uint256 reserveCount = spoke1.getReserveCount();
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
-      updateLiquidationBonus(spoke1, reserveId, liquidationBonus);
+      updateMaxLiquidationBonus(spoke1, reserveId, liquidationBonus);
       updateLiquidationFee(spoke1, reserveId, liquidationFee);
       minLeftoverAmount[reserveId] = _convertBaseCurrencyToAmount(
         spoke1,

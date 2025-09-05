@@ -46,15 +46,15 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   function _bound(
     DataTypes.DynamicReserveConfig memory dynConfig
   ) internal pure virtual returns (DataTypes.DynamicReserveConfig memory) {
-    dynConfig.liquidationBonus = bound(
-      dynConfig.liquidationBonus,
+    dynConfig.maxLiquidationBonus = bound(
+      dynConfig.maxLiquidationBonus,
       MIN_LIQUIDATION_BONUS,
       MAX_LIQUIDATION_BONUS
     ).toUint32();
     dynConfig.collateralFactor = bound(
       dynConfig.collateralFactor,
       1,
-      (PercentageMath.PERCENTAGE_FACTOR - 1).percentDivDown(dynConfig.liquidationBonus)
+      (PercentageMath.PERCENTAGE_FACTOR - 1).percentDivDown(dynConfig.maxLiquidationBonus)
     ).toUint16();
     return dynConfig;
   }
@@ -96,7 +96,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         debtToCover
       );
     try liquidationLogicWrapper.calculateMaxDebtToLiquidate(params) returns (uint256) {} catch {
-      debtToCover = bound(debtToCover, params.totalReserveDebt, MAX_SUPPLY_AMOUNT);
+      debtToCover = bound(debtToCover, params.reserveDebt, MAX_SUPPLY_AMOUNT);
     }
 
     deal(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));
@@ -132,12 +132,12 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
     return
       LiquidationLogic.CalculateMaxDebtToLiquidateParams({
-        totalReserveDebt: spoke.getUserTotalDebt(debtReserveId, user),
+        reserveDebt: spoke.getUserTotalDebt(debtReserveId, user),
         debtToCover: debtToCover,
         totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
         healthFactor: userAccountData.healthFactor,
         closeFactor: spoke.getLiquidationConfig().closeFactor,
-        variableLiquidationBonus: spoke.getVariableLiquidationBonus(
+        liquidationBonus: spoke.getLiquidationBonus(
           collateralReserveId,
           user,
           userAccountData.healthFactor
@@ -165,7 +165,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
         healthFactor: userAccountData.healthFactor,
         closeFactor: spoke.getLiquidationConfig().closeFactor,
-        variableLiquidationBonus: spoke.getVariableLiquidationBonus(
+        liquidationBonus: spoke.getLiquidationBonus(
           collateralReserveId,
           user,
           userAccountData.healthFactor
@@ -193,18 +193,18 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       LiquidationLogic.CalculateLiquidationAmountsParams({
         healthFactorForMaxBonus: spoke.getLiquidationConfig().healthFactorForMaxBonus,
         liquidationBonusFactor: spoke.getLiquidationConfig().liquidationBonusFactor,
-        totalReserveDebt: spoke.getUserTotalDebt(debtReserveId, user),
-        totalReserveCollateral: spoke.getUserSuppliedAmount(collateralReserveId, user),
+        reserveDebt: spoke.getUserTotalDebt(debtReserveId, user),
+        reserveCollateral: spoke.getUserSuppliedAmount(collateralReserveId, user),
         debtToCover: debtToCover,
         totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
         healthFactor: userAccountData.healthFactor,
         closeFactor: spoke.getLiquidationConfig().closeFactor,
-        liquidationBonus: spoke
+        maxLiquidationBonus: spoke
           .getDynamicReserveConfig(
             collateralReserveId,
             spoke.getUserPosition(collateralReserveId, user).configKey
           )
-          .liquidationBonus,
+          .maxLiquidationBonus,
         collateralFactor: spoke
           .getDynamicReserveConfig(
             collateralReserveId,
@@ -306,13 +306,13 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         )
       );
 
-    uint256 variableLiquidationBonus = params.spoke.getVariableLiquidationBonus(
+    uint256 liquidationBonus = params.spoke.getLiquidationBonus(
       params.collateralReserveId,
       params.user,
       userAccountDataBefore.healthFactor
     );
 
-    bool isLiquidationBonusAffectingUserHf = variableLiquidationBonus *
+    bool isLiquidationBonusAffectingUserHf = liquidationBonus *
       userAccountDataBefore.totalDebtInBaseCurrency >
       userAccountDataBefore.totalCollateralInBaseCurrency * PercentageMath.PERCENTAGE_FACTOR;
 

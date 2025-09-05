@@ -14,8 +14,6 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
-// TODO: rename asset price to reserve price
-
 library LiquidationLogic {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
@@ -32,26 +30,26 @@ library LiquidationLogic {
     uint256 healthFactor;
     bool isUsingAsCollateral;
     uint256 collateralFactor;
-    uint256 totalDebt;
+    uint256 reserveDebt;
   }
 
   struct CalculateDebtToRestoreCloseFactorParams {
     uint256 totalDebtInBaseCurrency;
     uint256 healthFactor;
     uint256 closeFactor;
-    uint256 variableLiquidationBonus;
+    uint256 liquidationBonus;
     uint256 collateralFactor;
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
   }
 
   struct CalculateMaxDebtToLiquidateParams {
-    uint256 totalReserveDebt;
+    uint256 reserveDebt;
     uint256 debtToCover;
     uint256 totalDebtInBaseCurrency;
     uint256 healthFactor;
     uint256 closeFactor;
-    uint256 variableLiquidationBonus;
+    uint256 liquidationBonus;
     uint256 collateralFactor;
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
@@ -60,13 +58,13 @@ library LiquidationLogic {
   struct CalculateLiquidationAmountsParams {
     uint256 healthFactorForMaxBonus;
     uint256 liquidationBonusFactor;
-    uint256 totalReserveDebt;
-    uint256 totalReserveCollateral;
+    uint256 reserveDebt;
+    uint256 reserveCollateral;
     uint256 debtToCover;
     uint256 totalDebtInBaseCurrency;
     uint256 healthFactor;
     uint256 closeFactor;
-    uint256 liquidationBonus;
+    uint256 maxLiquidationBonus;
     uint256 collateralFactor;
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
@@ -108,20 +106,20 @@ library LiquidationLogic {
   error MustNotLeaveDust();
   error InvalidDebtToCover();
 
-  function calculateVariableLiquidationBonus(
-    DataTypes.CalculateVariableLiquidationBonusParams memory params
+  function calculateLiquidationBonus(
+    DataTypes.CalculateLiquidationBonusParams memory params
   ) internal pure returns (uint256) {
     if (params.healthFactor <= params.healthFactorForMaxBonus) {
-      return params.liquidationBonus;
+      return params.maxLiquidationBonus;
     }
 
-    uint256 minLiquidationBonus = (params.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
+    uint256 minLiquidationBonus = (params.maxLiquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
       .percentMulDown(params.liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
 
     // otherwise linearly interpolate between min and max
     return
       minLiquidationBonus +
-      (params.liquidationBonus - minLiquidationBonus).mulDivDown(
+      (params.maxLiquidationBonus - minLiquidationBonus).mulDivDown(
         Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - params.healthFactor,
         Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - params.healthFactorForMaxBonus
       );
@@ -142,13 +140,13 @@ library LiquidationLogic {
       params.isUsingAsCollateral && params.collateralFactor != 0,
       ISpoke.CollateralCannotBeLiquidated()
     );
-    require(params.totalDebt > 0, ISpoke.SpecifiedCurrencyNotBorrowedByUser());
+    require(params.reserveDebt > 0, ISpoke.SpecifiedCurrencyNotBorrowedByUser());
   }
 
   function _calculateDebtToRestoreCloseFactor(
     CalculateDebtToRestoreCloseFactorParams memory params
   ) internal pure returns (uint256) {
-    uint256 liquidationPenalty = params.variableLiquidationBonus.bpsToWad().percentMulUp(
+    uint256 liquidationPenalty = params.liquidationBonus.bpsToWad().percentMulUp(
       params.collateralFactor
     );
 
@@ -162,7 +160,7 @@ library LiquidationLogic {
   function _calculateMaxDebtToLiquidate(
     CalculateMaxDebtToLiquidateParams memory params
   ) internal pure returns (uint256) {
-    uint256 maxDebtToLiquidate = params.totalReserveDebt;
+    uint256 maxDebtToLiquidate = params.reserveDebt;
     if (params.debtToCover < maxDebtToLiquidate) {
       maxDebtToLiquidate = params.debtToCover;
     }
@@ -172,7 +170,7 @@ library LiquidationLogic {
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
         healthFactor: params.healthFactor,
         closeFactor: params.closeFactor,
-        variableLiquidationBonus: params.variableLiquidationBonus,
+        liquidationBonus: params.liquidationBonus,
         collateralFactor: params.collateralFactor,
         debtAssetPrice: params.debtAssetPrice,
         debtAssetUnit: params.debtAssetUnit
@@ -182,14 +180,14 @@ library LiquidationLogic {
       maxDebtToLiquidate = debtToRestoreCloseFactor;
     }
 
-    uint256 remainingDebtInBaseCurrency = (params.totalReserveDebt - maxDebtToLiquidate).mulDivDown(
+    uint256 remainingDebtInBaseCurrency = (params.reserveDebt - maxDebtToLiquidate).mulDivDown(
       params.debtAssetPrice.toWad(),
       params.debtAssetUnit
     );
 
     if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE) {
-      require(params.debtToCover >= params.totalReserveDebt, MustNotLeaveDust());
-      maxDebtToLiquidate = params.totalReserveDebt;
+      require(params.debtToCover >= params.reserveDebt, MustNotLeaveDust());
+      maxDebtToLiquidate = params.reserveDebt;
     }
 
     return maxDebtToLiquidate;
@@ -198,23 +196,23 @@ library LiquidationLogic {
   function _calculateLiquidationAmounts(
     CalculateLiquidationAmountsParams memory params
   ) internal pure returns (uint256, uint256, uint256) {
-    uint256 variableLiquidationBonus = calculateVariableLiquidationBonus(
-      DataTypes.CalculateVariableLiquidationBonusParams({
+    uint256 liquidationBonus = calculateLiquidationBonus(
+      DataTypes.CalculateLiquidationBonusParams({
         healthFactorForMaxBonus: params.healthFactorForMaxBonus,
         liquidationBonusFactor: params.liquidationBonusFactor,
         healthFactor: params.healthFactor,
-        liquidationBonus: params.liquidationBonus
+        maxLiquidationBonus: params.maxLiquidationBonus
       })
     );
 
     uint256 debtToLiquidate = _calculateMaxDebtToLiquidate(
       CalculateMaxDebtToLiquidateParams({
-        totalReserveDebt: params.totalReserveDebt,
+        reserveDebt: params.reserveDebt,
         debtToCover: params.debtToCover,
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
         healthFactor: params.healthFactor,
         closeFactor: params.closeFactor,
-        variableLiquidationBonus: variableLiquidationBonus,
+        liquidationBonus: liquidationBonus,
         collateralFactor: params.collateralFactor,
         debtAssetPrice: params.debtAssetPrice,
         debtAssetUnit: params.debtAssetUnit
@@ -225,10 +223,10 @@ library LiquidationLogic {
       params.debtAssetPrice * params.collateralAssetUnit,
       params.debtAssetUnit * params.collateralAssetPrice
     );
-    uint256 collateralToLiquidate = debtToCollateral.percentMulDown(variableLiquidationBonus);
-    if (collateralToLiquidate > params.totalReserveCollateral) {
-      collateralToLiquidate = params.totalReserveCollateral;
-      debtToCollateral = collateralToLiquidate.percentDivUp(variableLiquidationBonus);
+    uint256 collateralToLiquidate = debtToCollateral.percentMulDown(liquidationBonus);
+    if (collateralToLiquidate > params.reserveCollateral) {
+      collateralToLiquidate = params.reserveCollateral;
+      debtToCollateral = collateralToLiquidate.percentDivUp(liquidationBonus);
       debtToLiquidate = debtToCollateral.mulDivUp(
         params.collateralAssetPrice * params.debtAssetUnit,
         params.debtAssetPrice * params.collateralAssetUnit
@@ -236,7 +234,7 @@ library LiquidationLogic {
     }
 
     uint256 collateralToLiquidator = collateralToLiquidate -
-      (collateralToLiquidate - debtToCollateral).percentMulUp(params.liquidationFee);
+      (collateralToLiquidate - debtToCollateral).percentMulDown(params.liquidationFee);
 
     return (collateralToLiquidate, collateralToLiquidator, debtToLiquidate);
   }
@@ -322,7 +320,7 @@ library LiquidationLogic {
     return false;
   }
 
-  function _liquidateUser(
+  function liquidateUser(
     DataTypes.Reserve storage collateralReserve,
     DataTypes.Reserve storage debtReserve,
     DataTypes.UserPosition storage collateralPosition,
@@ -343,7 +341,7 @@ library LiquidationLogic {
         healthFactor: params.healthFactor,
         isUsingAsCollateral: positionStatus.isUsingAsCollateral(params.collateralReserveId),
         collateralFactor: collateralDynConfig.collateralFactor,
-        totalDebt: params.drawnDebt + params.premiumDebt
+        reserveDebt: params.drawnDebt + params.premiumDebt
       })
     );
 
@@ -351,8 +349,8 @@ library LiquidationLogic {
       memory calculateLiquidationAmountsParams = CalculateLiquidationAmountsParams({
         healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
-        totalReserveDebt: params.drawnDebt + params.premiumDebt,
-        totalReserveCollateral: collateralHub.previewRemoveByShares(
+        reserveDebt: params.drawnDebt + params.premiumDebt,
+        reserveCollateral: collateralHub.previewRemoveByShares(
           collateralReserve.assetId,
           collateralPosition.suppliedShares
         ),
@@ -360,7 +358,7 @@ library LiquidationLogic {
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
         healthFactor: params.healthFactor,
         closeFactor: liquidationConfig.closeFactor,
-        liquidationBonus: collateralDynConfig.liquidationBonus,
+        maxLiquidationBonus: collateralDynConfig.maxLiquidationBonus,
         collateralFactor: collateralDynConfig.collateralFactor,
         debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
         debtAssetUnit: 10 ** debtReserve.decimals,
@@ -381,7 +379,7 @@ library LiquidationLogic {
       collateralReserve,
       collateralPosition,
       LiquidateCollateralParams({
-        reserveCollateral: calculateLiquidationAmountsParams.totalReserveCollateral,
+        reserveCollateral: calculateLiquidationAmountsParams.reserveCollateral,
         collateralToLiquidate: collateralToLiquidate,
         collateralToLiquidator: collateralToLiquidator,
         liquidator: params.liquidator
