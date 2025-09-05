@@ -739,6 +739,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.Reserve storage reserve,
     bool usingAsCollateral
   ) internal view {
+    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     // deactivation should be allowed
     require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
