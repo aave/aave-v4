@@ -397,11 +397,6 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     );
   }
 
-  function _modNegS(uint256 s) internal pure returns (uint256) {
-    uint256 n = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141;
-    return n - s;
-  }
-
   function test_useNonce_monotonic(bytes32) public {
     vm.setArbitraryStorage(address(spoke1));
     address user = vm.randomAddress();
