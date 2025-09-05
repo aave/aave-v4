@@ -99,7 +99,7 @@ contract HubPayFeeTest is HubBase {
 
     uint256 feeReceiverSharesBefore = hub1.getSpokeAddedShares(
       daiAssetId,
-      getFeeReceiver(hub1, daiAssetId)
+      _getFeeReceiver(hub1, daiAssetId)
     );
 
     vm.expectEmit(address(hub1));
@@ -107,7 +107,7 @@ contract HubPayFeeTest is HubBase {
       daiAssetId,
       feeShares,
       address(spoke1),
-      getFeeReceiver(hub1, daiAssetId)
+      _getFeeReceiver(hub1, daiAssetId)
     );
 
     vm.prank(address(spoke1));
@@ -117,7 +117,7 @@ contract HubPayFeeTest is HubBase {
     uint256 spokeSharesAfter = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 feeReceiverSharesAfter = hub1.getSpokeAddedShares(
       daiAssetId,
-      getFeeReceiver(hub1, daiAssetId)
+      _getFeeReceiver(hub1, daiAssetId)
     );
 
     assertEq(spokeSharesAfter, spokeSharesBefore - feeShares, 'spoke supplied shares after');
