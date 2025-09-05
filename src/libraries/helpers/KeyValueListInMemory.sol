@@ -2,7 +2,13 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {LibSort} from 'src/dependencies/solady/LibSort.sol';
+/** 
+ * @notice Library to pack key-value pairs in a list to sort it
+ * @dev The key are packed as `_MAX_KEY - key`, so we can sort the list in descending order,
+ * with the value in ascending order in case of collision, and
+ * when unpacking have the smallest we get the smallest keys at first.
+ */
+import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
 
 library KeyValueListInMemory {
   error MaxKeySizeExceeded(uint256);
@@ -42,25 +48,29 @@ library KeyValueListInMemory {
 
   function sortByKey(List memory self) internal pure {
     // @dev since `key` is in the MSB, we can sort by the key by sorting the array
-    LibSort.insertionSort(self._inner);
+    Arrays.sort(self._inner, gtComparator);
   }
 
   // @dev key, value < ceiling checks are expected to be done before packing
   function pack(uint256 key, uint256 value) internal pure returns (uint256) {
-    return (key << _KEY_SHIFT) | ((~value) & _MAX_VALUE);
+    return ((_MAX_KEY - key) << _KEY_SHIFT) | value;
   }
 
   function unpackKey(uint256 data) internal pure returns (uint256) {
-    return data >> _KEY_SHIFT;
+    return _MAX_KEY - (data >> _KEY_SHIFT);
   }
 
   function unpackValue(uint256 data) internal pure returns (uint256) {
-    return (~data) & ((1 << _KEY_SHIFT) - 1);
+    return data & ((1 << _KEY_SHIFT) - 1);
   }
 
   function unpack(uint256 data) internal pure returns (uint256, uint256) {
     // @dev no need to unpack data that was never packed
     if(data == 0) return(0,0);
     return (unpackKey(data), unpackValue(data));
+  }
+
+  function gtComparator(uint256 a, uint256 b) internal pure returns (bool) {
+    return a > b;
   }
 }

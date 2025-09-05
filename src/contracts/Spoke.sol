@@ -888,12 +888,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
     while (vars.i < list.length() && vars.debtCounterInBaseCurrency > 0) {
       (vars.collateralRisk, vars.userCollateralInBaseCurrency) = list.get(vars.i);
-      if(vars.collateralRisk == 0 && vars.userCollateralInBaseCurrency == 0) {
-        unchecked {
-          ++vars.i;
-        }
-        continue;
-      }
       if (vars.userCollateralInBaseCurrency > vars.debtCounterInBaseCurrency) {
         vars.userCollateralInBaseCurrency = vars.debtCounterInBaseCurrency;
       }
