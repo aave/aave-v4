@@ -1661,7 +1661,7 @@ abstract contract Base is Test {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return (amount * assetPrice).toWad() / assetUnit;
+    return (amount * assetPrice).wadDivUp(assetUnit);
   }
 
   function _convertBaseCurrencyToAmount(
@@ -1669,13 +1669,13 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 baseCurrencyAmount
   ) internal view returns (uint256) {
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
     IPriceOracle oracle = spoke.oracle();
     return
       _convertBaseCurrencyToAmount(
         baseCurrencyAmount,
         oracle.getReservePrice(reserveId),
-        10 ** hub1.getAsset(assetId).decimals
+        10 ** reserve.hub.getAsset(reserve.assetId).decimals
       );
   }
 
@@ -1689,8 +1689,8 @@ abstract contract Base is Test {
   }
 
   /**
-   * @notice Returns the required debt amount to ensure user position is below a certain health factor.
-   * @param desiredHf The desired health factor to be below.
+   * @notice Returns the required debt amount to ensure user position is ~ a certain health factor.
+   * @param desiredHf The desired health factor to be at.
    */
   function _getRequiredDebtAmountForHf(
     ISpoke spoke,

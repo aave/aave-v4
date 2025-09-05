@@ -34,7 +34,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 debtToCover,
     address liquidator,
     bool isSolvent
-  ) internal {
+  ) internal virtual {
     DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
     uint256 targetHealthFactor;
@@ -75,7 +75,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 debtReserveId,
     address user,
     uint256 debtToCover
-  ) public {
+  ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
       collateralReserveId,
@@ -107,7 +107,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 debtReserveId,
     address user,
     uint256 debtToCover
-  ) public {
+  ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
       collateralReserveId,
@@ -146,7 +146,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     address user,
     uint256 debtToCover,
     uint256[] memory additionalCollateralReserveIds
-  ) public {
+  ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
       collateralReserveId,
@@ -185,7 +185,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     address user,
     uint256 debtToCover,
     uint256[] memory additionalCollateralReserveIds
-  ) public {
+  ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
       collateralReserveId,
@@ -224,7 +224,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     address user,
     uint256 debtToCover,
     uint256[] memory additionalDebtReserveIds
-  ) public {
+  ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
       collateralReserveId,
@@ -263,7 +263,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     address user,
     uint256 debtToCover,
     uint256[] memory additionalDebtReserveIds
-  ) public {
+  ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
       collateralReserveId,
@@ -303,7 +303,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 debtToCover,
     uint256[] memory additionalCollateralReserveIds,
     uint256[] memory additionalDebtReserveIds
-  ) public {
+  ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
       collateralReserveId,
@@ -357,7 +357,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 debtToCover,
     uint256[] memory additionalCollateralReserveIds,
     uint256[] memory additionalDebtReserveIds
-  ) public {
+  ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
       collateralReserveId,
@@ -502,5 +502,168 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_LargePosition is
       vm.prank(SPOKE_ADMIN);
       spoke.addDynamicReserveConfig(i, dynConfig);
     }
+  }
+}
+
+contract SpokeLiquidationCallTest_VariableCloseFactor is SpokeLiquidationCallHelperTest {
+  using PercentageMath for uint256;
+  using SafeCast for uint256;
+
+  function setUp() public virtual override {
+    super.setUp();
+    BASE_AMOUNT_IN_BASE_CURRENCY = 10000e26;
+    updateCloseFactor(spoke, MIN_CLOSE_FACTOR);
+  }
+
+  function test_liquidationCall_fuzz_OneCollateral_OneDebt_UserSolvent(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover,
+    uint128 closeFactor
+  ) public virtual {
+    closeFactor = uint128(bound(closeFactor, MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR));
+    updateCloseFactor(spoke, closeFactor);
+    test_liquidationCall_fuzz_OneCollateral_OneDebt_UserSolvent(
+      collateralReserveId,
+      debtReserveId,
+      user,
+      debtToCover
+    );
+  }
+
+  function test_liquidationCall_fuzz_OneCollateral_OneDebt_UserInsolvent(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover,
+    uint128 closeFactor
+  ) public virtual {
+    closeFactor = uint128(bound(closeFactor, MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR));
+    updateCloseFactor(spoke, closeFactor);
+    test_liquidationCall_fuzz_OneCollateral_OneDebt_UserInsolvent(
+      collateralReserveId,
+      debtReserveId,
+      user,
+      debtToCover
+    );
+  }
+
+  function test_liquidationCall_fuzz_ManyCollaterals_OneDebt_UserSolvent(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover,
+    uint256[] memory additionalCollateralReserveIds,
+    uint128 closeFactor
+  ) public virtual {
+    closeFactor = uint128(bound(closeFactor, MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR));
+    updateCloseFactor(spoke, closeFactor);
+    test_liquidationCall_fuzz_ManyCollaterals_OneDebt_UserSolvent(
+      collateralReserveId,
+      debtReserveId,
+      user,
+      debtToCover,
+      additionalCollateralReserveIds
+    );
+  }
+
+  function test_liquidationCall_fuzz_ManyCollaterals_OneDebt_UserInsolvent(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover,
+    uint256[] memory additionalCollateralReserveIds,
+    uint128 closeFactor
+  ) public virtual {
+    closeFactor = uint128(bound(closeFactor, MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR));
+    updateCloseFactor(spoke, closeFactor);
+    test_liquidationCall_fuzz_ManyCollaterals_OneDebt_UserInsolvent(
+      collateralReserveId,
+      debtReserveId,
+      user,
+      debtToCover,
+      additionalCollateralReserveIds
+    );
+  }
+
+  function test_liquidationCall_fuzz_OneCollateral_ManyDebts_UserSolvent(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover,
+    uint256[] memory additionalDebtReserveIds,
+    uint128 closeFactor
+  ) public virtual {
+    closeFactor = uint128(bound(closeFactor, MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR));
+    updateCloseFactor(spoke, closeFactor);
+    test_liquidationCall_fuzz_OneCollateral_ManyDebts_UserInsolvent(
+      collateralReserveId,
+      debtReserveId,
+      user,
+      debtToCover,
+      additionalDebtReserveIds
+    );
+  }
+
+  function test_liquidationCall_fuzz_OneCollateral_ManyDebts_UserInsolvent(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover,
+    uint256[] memory additionalDebtReserveIds,
+    uint128 closeFactor
+  ) public virtual {
+    closeFactor = uint128(bound(closeFactor, MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR));
+    updateCloseFactor(spoke, closeFactor);
+    test_liquidationCall_fuzz_OneCollateral_ManyDebts_UserInsolvent(
+      collateralReserveId,
+      debtReserveId,
+      user,
+      debtToCover,
+      additionalDebtReserveIds
+    );
+  }
+
+  function test_liquidationCall_fuzz_ManyCollaterals_ManyDebts_UserSolvent(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover,
+    uint256[] memory additionalCollateralReserveIds,
+    uint256[] memory additionalDebtReserveIds,
+    uint128 closeFactor
+  ) public virtual {
+    closeFactor = uint128(bound(closeFactor, MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR));
+    updateCloseFactor(spoke, closeFactor);
+    test_liquidationCall_fuzz_ManyCollaterals_ManyDebts_UserSolvent(
+      collateralReserveId,
+      debtReserveId,
+      user,
+      debtToCover,
+      additionalCollateralReserveIds,
+      additionalDebtReserveIds
+    );
+  }
+
+  function test_liquidationCall_fuzz_ManyCollaterals_ManyDebts_UserInsolvent(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover,
+    uint256[] memory additionalCollateralReserveIds,
+    uint256[] memory additionalDebtReserveIds,
+    uint128 closeFactor
+  ) public virtual {
+    closeFactor = uint128(bound(closeFactor, MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR));
+    updateCloseFactor(spoke, closeFactor);
+    test_liquidationCall_fuzz_ManyCollaterals_ManyDebts_UserInsolvent(
+      collateralReserveId,
+      debtReserveId,
+      user,
+      debtToCover,
+      additionalCollateralReserveIds,
+      additionalDebtReserveIds
+    );
   }
 }
