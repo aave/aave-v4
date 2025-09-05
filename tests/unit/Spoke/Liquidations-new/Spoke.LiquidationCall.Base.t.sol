@@ -18,6 +18,31 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     bool isSolvent;
   }
 
+  struct BalanceInfo {
+    uint256 collateralErc20Balance;
+    uint256 collateralSupplied;
+    uint256 debtErc20Balance;
+    uint256 debtBorrowed;
+  }
+
+  struct AccountsInfo {
+    DataTypes.UserAccountData userAccountData;
+    BalanceInfo userBalanceInfo;
+    BalanceInfo collateralHubBalanceInfo;
+    BalanceInfo debtHubBalanceInfo;
+    BalanceInfo liquidatorBalanceInfo;
+  }
+
+  struct LiquidationMetadata {
+    uint256 debtToRestoreCloseFactor;
+    uint256 collateralToLiquidate;
+    uint256 collateralToLiquidator;
+    uint256 debtToLiquidate;
+    uint256 liquidationBonus;
+    bool isLiquidationBonusAffectingUserHf;
+    bool hasDeficit;
+  }
+
   /// @notice Bound liquidation config to full range of possible values
   function _bound(
     DataTypes.LiquidationConfig memory liqConfig
@@ -244,49 +269,97 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   }
 
   function _expectEventsAndCalls(
-    ISpoke spoke,
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user,
-    address liquidator,
-    uint256 collateralToLiquidate,
-    uint256 debtToLiquidate,
-    bool hasDeficit
+    CheckedLiquidationCallParams memory params,
+    AccountsInfo memory accountsInfoBefore,
+    LiquidationMetadata memory liquidationMetadata
   ) internal virtual {
-    vm.expectEmit(address(spoke));
+    vm.expectEmit(address(params.spoke));
     emit ISpokeBase.LiquidationCall(
-      collateralReserveId,
-      debtReserveId,
-      user,
-      debtToLiquidate,
-      collateralToLiquidate,
-      liquidator
+      params.collateralReserveId,
+      params.debtReserveId,
+      params.user,
+      liquidationMetadata.debtToLiquidate,
+      liquidationMetadata.collateralToLiquidate,
+      params.liquidator
     );
 
-    for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); reserveId++) {
-      if (spoke.isBorrowing(reserveId, user)) {
+    for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
+      if (params.spoke.isBorrowing(reserveId, params.user)) {
         vm.expectCall(
-          address(spoke.getReserve(reserveId).hub),
-          abi.encodeWithSelector(IHub.reportDeficit.selector, spoke.getReserve(reserveId).assetId),
-          hasDeficit ? 1 : 0
+          address(params.spoke.getReserve(reserveId).hub),
+          abi.encodeWithSelector(
+            IHub.reportDeficit.selector,
+            params.spoke.getReserve(reserveId).assetId
+          ),
+          liquidationMetadata.hasDeficit ? 1 : 0
         );
       }
     }
 
-    if (!hasDeficit) {
-      vm.expectEmit(false, false, false, false, address(spoke));
+    if (!liquidationMetadata.hasDeficit) {
+      vm.expectEmit(false, false, false, false, address(params.spoke));
       // topics > 0 and data are not checked
       emit ISpoke.UserRiskPremiumUpdate(address(0), 0);
     } else {
-      vm.expectEmit(address(spoke));
-      emit ISpoke.UserRiskPremiumUpdate(user, 0);
+      vm.expectEmit(address(params.spoke));
+      emit ISpoke.UserRiskPremiumUpdate(params.user, 0);
     }
   }
 
-  function _checkedLiquidationCall(CheckedLiquidationCallParams memory params) internal virtual {
-    DataTypes.UserAccountData memory userAccountDataBefore = params.spoke.getUserAccountData(
-      params.user
-    );
+  function _getBalanceInfo(
+    ISpoke spoke,
+    address addr,
+    uint256 collateralReserveId,
+    uint256 debtReserveId
+  ) internal virtual returns (BalanceInfo memory) {
+    return
+      BalanceInfo({
+        collateralErc20Balance: getAssetUnderlyingByReserveId(spoke, collateralReserveId).balanceOf(
+          addr
+        ),
+        collateralSupplied: spoke.getUserSuppliedAmount(collateralReserveId, addr),
+        debtErc20Balance: getAssetUnderlyingByReserveId(spoke, debtReserveId).balanceOf(addr),
+        debtBorrowed: spoke.getUserTotalDebt(debtReserveId, addr)
+      });
+  }
+
+  function _getAccountsInfo(
+    CheckedLiquidationCallParams memory params
+  ) internal virtual returns (AccountsInfo memory) {
+    return
+      AccountsInfo({
+        userAccountData: params.spoke.getUserAccountData(params.user),
+        userBalanceInfo: _getBalanceInfo(
+          params.spoke,
+          params.user,
+          params.collateralReserveId,
+          params.debtReserveId
+        ),
+        collateralHubBalanceInfo: _getBalanceInfo(
+          params.spoke,
+          address(params.spoke.getReserve(params.collateralReserveId).hub),
+          params.collateralReserveId,
+          params.debtReserveId
+        ),
+        debtHubBalanceInfo: _getBalanceInfo(
+          params.spoke,
+          address(params.spoke.getReserve(params.debtReserveId).hub),
+          params.collateralReserveId,
+          params.debtReserveId
+        ),
+        liquidatorBalanceInfo: _getBalanceInfo(
+          params.spoke,
+          params.liquidator,
+          params.collateralReserveId,
+          params.debtReserveId
+        )
+      });
+  }
+
+  function _getLiquidationMetadata(
+    CheckedLiquidationCallParams memory params,
+    DataTypes.UserAccountData memory userAccountDataBefore
+  ) internal virtual returns (LiquidationMetadata memory) {
     uint256 debtToRestoreCloseFactor = liquidationLogicWrapper.calculateDebtToRestoreCloseFactor(
       _getCalculateDebtToRestoreCloseFactorParams(
         params.spoke,
@@ -295,8 +368,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         params.user
       )
     );
-    (uint256 collateralToLiquidate, , uint256 debtToLiquidate) = liquidationLogicWrapper
-      .calculateLiquidationAmounts(
+    (
+      uint256 collateralToLiquidate,
+      uint256 collateralToLiquidator,
+      uint256 debtToLiquidate
+    ) = liquidationLogicWrapper.calculateLiquidationAmounts(
         _getCalculateLiquidationAmountsParams(
           params.spoke,
           params.collateralReserveId,
@@ -321,23 +397,78 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       (collateralToLiquidate ==
         params.spoke.getUserSuppliedAmount(params.collateralReserveId, params.user));
 
+    return
+      LiquidationMetadata({
+        debtToRestoreCloseFactor: debtToRestoreCloseFactor,
+        collateralToLiquidate: collateralToLiquidate,
+        collateralToLiquidator: collateralToLiquidator,
+        debtToLiquidate: debtToLiquidate,
+        liquidationBonus: liquidationBonus,
+        isLiquidationBonusAffectingUserHf: isLiquidationBonusAffectingUserHf,
+        hasDeficit: hasDeficit
+      });
+  }
+
+  function _checkHealthFactor(
+    CheckedLiquidationCallParams memory params,
+    AccountsInfo memory accountsInfoBefore,
+    AccountsInfo memory accountsInfoAfter,
+    LiquidationMetadata memory liquidationMetadata
+  ) internal virtual {
+    if (
+      accountsInfoAfter.userAccountData.totalDebtInBaseCurrency == 0 ||
+      (params.isSolvent && !liquidationMetadata.isLiquidationBonusAffectingUserHf)
+    ) {
+      assertGe(
+        accountsInfoAfter.userAccountData.healthFactor,
+        accountsInfoBefore.userAccountData.healthFactor,
+        'health factor should increase after liquidation'
+      );
+    } else {
+      assertLe(
+        accountsInfoAfter.userAccountData.healthFactor,
+        accountsInfoBefore.userAccountData.healthFactor,
+        'health factor should decrease after liquidation'
+      );
+    }
+
+    if (accountsInfoAfter.userAccountData.totalDebtInBaseCurrency == 0) {
+      assertEq(
+        accountsInfoAfter.userAccountData.healthFactor,
+        type(uint256).max,
+        'health factor should be max if all debt is liquidated'
+      );
+    } else if (
+      liquidationMetadata.debtToLiquidate == liquidationMetadata.debtToRestoreCloseFactor
+    ) {
+      assertApproxEqRel(
+        accountsInfoAfter.userAccountData.healthFactor,
+        _getCloseFactor(params.spoke),
+        _approxRelFromBps(1)
+      );
+    } else if (liquidationMetadata.debtToLiquidate > liquidationMetadata.debtToRestoreCloseFactor) {
+      // dust adjusted
+      assertGe(accountsInfoAfter.userAccountData.healthFactor, _getCloseFactor(params.spoke));
+    } else {
+      assertLe(accountsInfoAfter.userAccountData.healthFactor, _getCloseFactor(params.spoke));
+    }
+  }
+
+  function _checkedLiquidationCall(CheckedLiquidationCallParams memory params) internal virtual {
+    AccountsInfo memory accountsInfoBefore = _getAccountsInfo(params);
+    LiquidationMetadata memory liquidationMetadata = _getLiquidationMetadata(
+      params,
+      accountsInfoBefore.userAccountData
+    );
+
     // make sure there is enough liquidity to liquidate
     _openSupplyPosition(
       params.spoke,
       params.collateralReserveId,
-      params.spoke.getUserSuppliedAmount(params.collateralReserveId, params.user)
+      accountsInfoBefore.userBalanceInfo.collateralSupplied
     );
 
-    _expectEventsAndCalls(
-      params.spoke,
-      params.collateralReserveId,
-      params.debtReserveId,
-      params.user,
-      params.liquidator,
-      collateralToLiquidate,
-      debtToLiquidate,
-      hasDeficit
-    );
+    _expectEventsAndCalls(params, accountsInfoBefore, liquidationMetadata);
     vm.prank(params.liquidator);
     params.spoke.liquidationCall(
       params.collateralReserveId,
@@ -346,45 +477,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.debtToCover
     );
 
-    DataTypes.UserAccountData memory userAccountDataAfter = params.spoke.getUserAccountData(
-      params.user
-    );
+    AccountsInfo memory accountsInfoAfter = _getAccountsInfo(params);
 
-    if (
-      userAccountDataAfter.totalDebtInBaseCurrency == 0 ||
-      (params.isSolvent && !isLiquidationBonusAffectingUserHf)
-    ) {
-      assertGe(
-        userAccountDataAfter.healthFactor,
-        userAccountDataBefore.healthFactor,
-        'health factor should increase after liquidation'
-      );
-    } else {
-      assertLe(
-        userAccountDataAfter.healthFactor,
-        userAccountDataBefore.healthFactor,
-        'health factor should decrease after liquidation'
-      );
-    }
-
-    if (userAccountDataAfter.totalDebtInBaseCurrency == 0) {
-      assertEq(
-        userAccountDataAfter.healthFactor,
-        type(uint256).max,
-        'health factor should be max if all debt is liquidated'
-      );
-    } else if (debtToLiquidate == debtToRestoreCloseFactor) {
-      assertApproxEqRel(
-        userAccountDataAfter.healthFactor,
-        _getCloseFactor(params.spoke),
-        _approxRelFromBps(1)
-      );
-    } else if (debtToLiquidate > debtToRestoreCloseFactor) {
-      // dust adjusted
-      assertGe(userAccountDataAfter.healthFactor, _getCloseFactor(params.spoke));
-    } else {
-      assertLe(userAccountDataAfter.healthFactor, _getCloseFactor(params.spoke));
-    }
+    _checkHealthFactor(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
   }
 
   function _increaseCollateralSupplies(
