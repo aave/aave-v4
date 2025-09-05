@@ -11,14 +11,42 @@ interface IWrappedTokenGatewayV4 {
   error FallbackForbidden();
   error ReceiveNotAllowed();
 
+  /**
+   * @notice Wraps the native asset and supply in the Spoke.
+   * @param reserveId Reserve Id for the wrapped asset.
+   * @param amount Amount to wrap and supply.
+   **/
   function supplyNative(uint256 reserveId, uint256 amount) external payable;
 
+  /**
+   * @notice Withdraws the wrapped asset from the Spoke and unwraps it back to the native asset.
+   * @param reserveId Reserve Id for the wrapped asset.
+   * @param amount Amount to withdraw and unwrap.
+   * @param receiver Address that will receive the unwrapped native asset.
+   **/
   function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external;
 
+  /**
+   * @notice Borrows the wrapped asset from the Spoke and unwraps it back to the native asset.
+   * @param reserveId Reserve Id for the wrapped asset.
+   * @param amount Amount to borrow and unwrap.
+   * @param receiver Address that will receive the unwrapped native asset.
+   **/
   function borrowNative(uint256 reserveId, uint256 amount, address receiver) external;
 
+  /**
+   * @notice Wraps the native asset and repay debt on the Spoke.
+   * @param reserveId Reserve Id for the wrapped asset.
+   * @param amount Amount to wrap and repay.
+   **/
   function repayNative(uint256 reserveId, uint256 amount) external payable;
 
+  /**
+   * @notice Allows this contract to approve or revoke approval as a positionManager using a signature.
+   * @param user The address of the user on whose behalf position manager can act.
+   * @param approve True if user wants to approve position manager, false otherwise.
+   * @param deadline The deadline for the signature.
+   */
   function setUserPositionManagerWithSig(
     address user,
     bool approve,
@@ -27,4 +55,10 @@ interface IWrappedTokenGatewayV4 {
     bytes32 r,
     bytes32 s
   ) external;
+
+  /**
+   * @notice Renounces the positionManager approval given by an user.
+   * @param user The address of the user.
+   */
+  function renouncePositionManagerRole(address user) external;
 }

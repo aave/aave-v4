@@ -16,6 +16,10 @@ import {IWrappedTokenGatewayV4} from 'src/interfaces/IWrappedTokenGatewayV4.sol'
 import {INativeWrapper} from 'src/interfaces/INativeWrapper.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
+/**
+ * @notice Contract allowing users to approve it as a Position Manager to wrap and unwrap the native asset
+ * before interacting with the Spoke.
+ */
 contract WrappedTokenGatewayV4 is
   IWrappedTokenGatewayV4,
   Multicall,
@@ -24,7 +28,9 @@ contract WrappedTokenGatewayV4 is
 {
   using SafeERC20 for *;
 
+  /// @notice Native Wrapper contract
   INativeWrapper public immutable NATIVE_WRAPPER;
+  /// @notice Spoke contract
   ISpoke public immutable SPOKE;
 
   constructor(address nativeWrapper_, address spoke_, address admin_) Ownable(admin_) {
@@ -32,6 +38,7 @@ contract WrappedTokenGatewayV4 is
     SPOKE = ISpoke(spoke_);
   }
 
+  /// @inheritdoc IWrappedTokenGatewayV4
   function setUserPositionManagerWithSig(
     address user,
     bool approve,
@@ -43,10 +50,12 @@ contract WrappedTokenGatewayV4 is
     SPOKE.setUserPositionManagerWithSig(address(this), user, approve, deadline, v, r, s);
   }
 
+  /// @inheritdoc IWrappedTokenGatewayV4
   function renouncePositionManagerRole(address user) external {
     SPOKE.renouncePositionManagerRole(user);
   }
 
+  /// @inheritdoc IWrappedTokenGatewayV4
   function supplyNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
     (address reserveAsset, address hub) = _getReserveData(reserveId);
     _validateParams(reserveAsset, amount);
@@ -57,6 +66,7 @@ contract WrappedTokenGatewayV4 is
     SPOKE.supply(reserveId, amount, msg.sender);
   }
 
+  /// @inheritdoc IWrappedTokenGatewayV4
   function withdrawNative(
     uint256 reserveId,
     uint256 amount,
@@ -76,6 +86,7 @@ contract WrappedTokenGatewayV4 is
     Address.sendValue(payable(receiver), amount);
   }
 
+  /// @inheritdoc IWrappedTokenGatewayV4
   function borrowNative(uint256 reserveId, uint256 amount, address receiver) external nonReentrant {
     (address reserveAsset, ) = _getReserveData(reserveId);
     _validateParams(reserveAsset, amount);
@@ -86,6 +97,7 @@ contract WrappedTokenGatewayV4 is
     Address.sendValue(payable(receiver), amount);
   }
 
+  /// @inheritdoc IWrappedTokenGatewayV4
   function repayNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
     (address reserveAsset, address hub) = _getReserveData(reserveId);
     _validateParams(reserveAsset, amount);
@@ -106,21 +118,37 @@ contract WrappedTokenGatewayV4 is
       Address.sendValue(payable(msg.sender), leftovers);
     }
   }
+  /**
+   * @dev Validates the common parameters for all functions.
+   **/
 
   function _validateParams(address reserveAsset, uint256 amount) internal {
     require(amount > 0, InvalidAmount());
     require(reserveAsset == address(NATIVE_WRAPPER), InvalidReserveId());
   }
 
+  /**
+   * @dev Fetches the wanted data for the Reserve from the Spoke.
+   **/
   function _getReserveData(uint256 reserveId) internal view returns (address, address) {
     DataTypes.Reserve memory reserveData = SPOKE.getReserve(reserveId);
     return (reserveData.underlying, address(reserveData.hub));
   }
 
+  /**
+   * @notice Recovers ERC20 tokens sent to this contract.
+   * @param token Address of the ERC20 token to recover.
+   * @param to Address to send the recovered tokens to.
+   **/
   function recoverToken(address token, address to) external onlyOwner {
     IERC20(token).safeTransfer(to, IERC20(token).balanceOf(address(this)));
   }
 
+  /**
+   * @notice Recovers native asset left in this contract.
+   * @param to Address to send the recovered native asset to.
+   * @param amount Amount of native asset to recover.
+   **/
   function recoverNative(address to, uint256 amount) external onlyOwner {
     Address.sendValue(payable(to), amount);
   }
