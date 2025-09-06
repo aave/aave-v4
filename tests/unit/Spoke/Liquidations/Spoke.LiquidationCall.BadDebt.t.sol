@@ -360,9 +360,9 @@ contract LiquidationCallTargetHealthFactorBadDebtTest is SpokeLiquidationBase {
     state.liquidationFee = liquidationFee;
 
     // set spoke liq config
-    updateLiquidationConfig(state.spoke, liqConfig);
-    updateMaxLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
-    updateLiquidationFee(state.spoke, collateralReserveId, state.liquidationFee);
+    _updateLiquidationConfig(state.spoke, liqConfig);
+    _updateMaxLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
+    _updateLiquidationFee(state.spoke, collateralReserveId, state.liquidationFee);
 
     Utils.supplyCollateral({
       spoke: state.spoke,

@@ -177,13 +177,13 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   function test_updateUserDynamicConfig() public {
     vm.startPrank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
-    updateLiquidationFee(spoke1, _usdxReserveId(spoke1), 10_00);
+    _updateLiquidationFee(spoke1, _usdxReserveId(spoke1), 10_00);
 
     spoke1.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'updateUserDynamicConfig: 1 collateral');
 
     spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, alice);
-    updateLiquidationFee(spoke1, _daiReserveId(spoke1), 15_00);
+    _updateLiquidationFee(spoke1, _daiReserveId(spoke1), 15_00);
 
     spoke1.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'updateUserDynamicConfig: 2 collaterals');

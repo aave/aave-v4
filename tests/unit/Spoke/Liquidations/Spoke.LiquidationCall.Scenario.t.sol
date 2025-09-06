@@ -25,8 +25,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.debtAmount.weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     // simplify accounting checks with no fee or bonus
-    updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
-    updateMaxLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
+    _updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
+    _updateMaxLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
@@ -136,8 +136,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.debtAmount.weth = 20 * 10 ** decimals.weth; // 20 eth, $40k
 
     // simplify accounting checks with no fee or bonus
-    updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
-    updateMaxLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
+    _updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
+    _updateMaxLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
@@ -243,8 +243,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.liqBonus = _getUserDynConfig(spoke1, alice, state.wbtcReserveId).maxLiquidationBonus;
 
     // simplify accounting checks with no fee or bonus
-    updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
-    updateMaxLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
+    _updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
+    _updateMaxLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
@@ -338,8 +338,8 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     state.liqBonus = _getUserDynConfig(spoke1, alice, state.wbtcReserveId).maxLiquidationBonus;
 
     // simplify accounting checks with no fee or bonus
-    updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
-    updateMaxLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
+    _updateLiquidationFee(spoke1, state.wbtcReserveId, 0);
+    _updateMaxLiquidationBonus(spoke1, state.wbtcReserveId, 100_00);
 
     Utils.supplyCollateral(spoke1, state.wbtcReserveId, alice, state.collAmount.wbtc, alice);
     Utils.supplyCollateral(spoke1, state.daiReserveId, alice, state.collAmount.dai, alice);
@@ -700,9 +700,9 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
     uint256 borrowAmount = 15_000 * 10 ** decimals.dai; // $15k dai
     uint128 targetHealthFactor = 1.07e18;
 
-    updateTargetHealthFactor(spoke1, targetHealthFactor);
-    updateLiquidationFee(spoke1, usdxReserveId, 5_00);
-    updateMaxLiquidationBonus(spoke1, usdxReserveId, 101_00);
+    _updateTargetHealthFactor(spoke1, targetHealthFactor);
+    _updateLiquidationFee(spoke1, usdxReserveId, 5_00);
+    _updateMaxLiquidationBonus(spoke1, usdxReserveId, 101_00);
 
     Utils.supplyCollateral(spoke1, wethReserveId, alice, wethAmount, alice);
     Utils.supplyCollateral(spoke1, usdxReserveId, alice, usdxAmount, alice);

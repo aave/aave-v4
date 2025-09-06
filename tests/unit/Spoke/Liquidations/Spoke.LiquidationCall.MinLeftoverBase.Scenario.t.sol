@@ -20,8 +20,8 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     // static collateral factor to simplify liquidation threshold calculations
     uint256 reserveCount = spoke1.getReserveCount();
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
-      updateMaxLiquidationBonus(spoke1, reserveId, liquidationBonus);
-      updateLiquidationFee(spoke1, reserveId, liquidationFee);
+      _updateMaxLiquidationBonus(spoke1, reserveId, liquidationBonus);
+      _updateLiquidationFee(spoke1, reserveId, liquidationFee);
       minLeftoverAmount[reserveId] = _convertBaseCurrencyToAmount(
         spoke1,
         reserveId,
@@ -29,7 +29,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
       );
       updateCollateralFactor(spoke1, reserveId, collateralFactor);
     }
-    updateTargetHealthFactor(spoke1, 1.05e18);
+    _updateTargetHealthFactor(spoke1, 1.05e18);
   }
 
   /// borrowerReserveDebt is less than minLeftoverBase, results in deficit

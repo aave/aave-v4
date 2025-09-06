@@ -8,6 +8,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   using SafeCast for *;
   using PercentageMath for uint256;
 
+  uint256 internal constant MAX_AMOUNT_IN_BASE_CURRENCY = 1_000_000_000e26; // 1 billion USD
+  uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26; // 10 USD
+
   struct CheckedLiquidationCallParams {
     ISpoke spoke;
     uint256 collateralReserveId;

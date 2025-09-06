@@ -240,9 +240,9 @@ contract SpokeLiquidationBase is SpokeBase {
 
     state.liquidationFee = liquidationFee;
 
-    updateLiquidationConfig(state.spoke, liqConfig);
-    updateMaxLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
-    updateLiquidationFee(state.spoke, collateralReserveId, state.liquidationFee);
+    _updateLiquidationConfig(state.spoke, liqConfig);
+    _updateMaxLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
+    _updateLiquidationFee(state.spoke, collateralReserveId, state.liquidationFee);
 
     Utils.supplyCollateral({
       spoke: state.spoke,
