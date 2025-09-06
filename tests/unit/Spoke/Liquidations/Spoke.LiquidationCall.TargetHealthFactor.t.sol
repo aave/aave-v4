@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
-contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
+contract LiquidationCallTargetHealthFactorTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using SafeCast for uint256;
@@ -14,7 +14,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   /// user health factor position is higher than threshold, so that close factor can be achieved post-liquidation
   /// close factor varies across range of values
   /// non-variable liquidation bonus
-  function test_liquidationCall_fuzz_closeFactor_defaultCloseFactor(
+  function test_liquidationCall_fuzz_targetHealthFactor_defaultTargetHealthFactor(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
@@ -24,8 +24,8 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     uint256 skipTime,
     uint256 desiredHf
   ) public {
-    liqConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-    test_liquidationCall_fuzz_closeFactor(
+    liqConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    test_liquidationCall_fuzz_targetHealthFactor(
       collateralReserveId,
       debtReserveId,
       liqConfig,
@@ -38,7 +38,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// variable close factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-  function test_liquidationCall_fuzz_closeFactor(
+  function test_liquidationCall_fuzz_targetHealthFactor(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
@@ -51,7 +51,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
     debtReserveId = bound(debtReserveId, 0, spoke1.getReserveCount() - 1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTest(
+    LiquidationTestLocalParams memory state = _execLiqCallTargetHealthFactorTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -62,15 +62,15 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
       desiredHf
     );
 
-    _checkLiquidation(state, 'test_liquidationCall_fuzz_closeFactor');
+    _checkLiquidation(state, 'test_liquidationCall_fuzz_targetHealthFactor');
     assertFalse(state.hasDeficit, 'should not have deficit');
   }
 
   /// coll: weth / debt: dai
-  function test_liquidationCall_closeFactor_scenario1() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_scenario1() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 2e18,
+        targetHealthFactor: 2e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -85,10 +85,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: weth / debt: dai with default value of close factor
-  function test_liquidationCall_closeFactor_defaultValue_scenario1() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_defaultValue_scenario1() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -103,10 +103,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: weth / debt: usdx
-  function test_liquidationCall_closeFactor_scenario2() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_scenario2() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -121,10 +121,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: weth / debt: usdx with default value of close factor
-  function test_liquidationCall_closeFactor_defaultValue_scenario2() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_defaultValue_scenario2() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -139,10 +139,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: weth
-  function test_liquidationCall_closeFactor_scenario3() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_scenario3() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -157,10 +157,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: weth with default value of close factor
-  function test_liquidationCall_closeFactor_defaultValue_scenario3() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_defaultValue_scenario3() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -175,10 +175,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: dai
-  function test_liquidationCall_closeFactor_scenario4() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_scenario4() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -193,10 +193,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: dai with default value of close factor
-  function test_liquidationCall_closeFactor_defaultValue_scenario4() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_defaultValue_scenario4() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -211,10 +211,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: dai / debt: weth
-  function test_liquidationCall_closeFactor_scenario5() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_scenario5() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -229,10 +229,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: dai / debt: weth with default value of close factor
-  function test_liquidationCall_closeFactor_defaultValue_scenario5() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_defaultValue_scenario5() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -247,10 +247,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: dai / debt: usdx
-  function test_liquidationCall_closeFactor_scenario6() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_scenario6() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -265,10 +265,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: dai / debt: usdx with default value of close factor
-  function test_liquidationCall_closeFactor_defaultValue_scenario6() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_defaultValue_scenario6() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -283,10 +283,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: weth / debt: weth, both 18 decimals
-  function test_liquidationCall_closeFactor_scenario7() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_scenario7() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -301,10 +301,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: dai / debt: weth, both 18 decimals, with default value of close factor
-  function test_liquidationCall_closeFactor_defaultValue_scenario7() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_defaultValue_scenario7() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -319,10 +319,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: usdx, both 6 decimals
-  function test_liquidationCall_closeFactor_scenario8() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_scenario8() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -337,10 +337,10 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// coll: usdx / debt: usdx, both 18 decimals, with default value of close factor
-  function test_liquidationCall_closeFactor_defaultValue_scenario8() public {
-    test_liquidationCall_fuzz_closeFactor({
+  function test_liquidationCall_targetHealthFactor_defaultValue_scenario8() public {
+    test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -356,7 +356,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
 
   /// fuzz tests for supply ex rate increase
   /// can only increase by 1 wei due to rounding in withdraw
-  function test_liquidationCall_fuzz_closeFactor_supply_ex_rate_incr(
+  function test_liquidationCall_fuzz_targetHealthFactor_supply_ex_rate_incr(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     DataTypes.LiquidationConfig memory liqConfig,
@@ -368,7 +368,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
     debtReserveId = bound(debtReserveId, 0, spoke1.getReserveCount() - 1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorTest({
+    LiquidationTestLocalParams memory state = _execLiqCallTargetHealthFactorTest({
       liqConfig: liqConfig,
       liqBonus: liqBonus,
       supplyAmount: supplyAmount,
@@ -385,7 +385,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
   }
 
   /// fuzz tests where liquidation results in health factor = close factor
-  function _execLiqCallCloseFactorTest(
+  function _execLiqCallTargetHealthFactorTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint32 liqBonus,
     uint256 supplyAmount,
@@ -410,7 +410,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     state.collateralReserve = state.collateralReserves[state.collateralReserveIndex];
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
 
-    liqConfig = _boundCloseFactor(liqConfig);
+    liqConfig = _boundTargetHealthFactor(liqConfig);
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,

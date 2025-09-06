@@ -84,7 +84,7 @@ library DataTypes {
   }
 
   struct LiquidationConfig {
-    uint128 closeFactor; // WAD, HF value to restore to during a liquidation
+    uint128 targetHealthFactor; // WAD, HF value to restore to during a liquidation
     uint64 healthFactorForMaxBonus; // WAD, health factor under which liquidation bonus is max
     uint16 liquidationBonusFactor; // BPS, as a percentage of effective lb
   }
@@ -146,12 +146,12 @@ library DataTypes {
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
     uint256 totalBorrowerReserveDebt;
-    uint256 debtToRestoreCloseFactor;
+    uint256 debtToRestoreTargetHealthFactor;
     uint256 healthFactor;
     uint256 liquidationBonus;
     uint256 drawnDebtToLiquidate;
     uint256 premiumDebtToLiquidate;
-    uint256 closeFactor;
+    uint256 targetHealthFactor;
     uint256 collateralFactor;
     uint256 collateralAssetPrice;
     uint256 collateralAssetUnit;

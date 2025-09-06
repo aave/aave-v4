@@ -46,7 +46,7 @@ contract LiquidationCallLiquidationBonusTest is SpokeLiquidationBase {
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
@@ -66,7 +66,7 @@ contract LiquidationCallLiquidationBonusTest is SpokeLiquidationBase {
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
@@ -86,7 +86,7 @@ contract LiquidationCallLiquidationBonusTest is SpokeLiquidationBase {
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
@@ -106,7 +106,7 @@ contract LiquidationCallLiquidationBonusTest is SpokeLiquidationBase {
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
@@ -126,7 +126,7 @@ contract LiquidationCallLiquidationBonusTest is SpokeLiquidationBase {
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),
@@ -146,7 +146,7 @@ contract LiquidationCallLiquidationBonusTest is SpokeLiquidationBase {
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1e18,
+        targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 70_00
       }),

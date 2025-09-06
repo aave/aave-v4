@@ -23,7 +23,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     collateralReserveId = bound(collateralReserveId, 0, spoke1.getReserveCount() - 1);
     debtReserveId = bound(debtReserveId, 0, spoke1.getReserveCount() - 1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorBadPremiumDebtTest(
+    LiquidationTestLocalParams memory state = _execLiqCallTargetHealthFactorBadPremiumDebtTest(
       liqConfig,
       liqBonus,
       supplyAmount,
@@ -45,7 +45,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     test_liquidationCall_fuzz_badPremiumDebt({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -66,7 +66,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     test_liquidationCall_fuzz_badPremiumDebt({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -87,7 +87,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     test_liquidationCall_fuzz_badPremiumDebt({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -108,7 +108,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     test_liquidationCall_fuzz_badPremiumDebt({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -129,7 +129,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     test_liquidationCall_fuzz_badPremiumDebt({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -150,7 +150,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
 
     test_liquidationCall_fuzz_badPremiumDebt({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -169,7 +169,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
   /// user health factor position is lower than threshold -> liquidating all collateral is insufficient to cover debt
   /// close factor varies across range of values
   /// non-variable liquidation bonus
-  function _execLiqCallCloseFactorBadPremiumDebtTest(
+  function _execLiqCallTargetHealthFactorBadPremiumDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint32 liqBonus,
     uint256 supplyAmount,
@@ -194,7 +194,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     state.collateralReserve = state.collateralReserves[state.collateralReserveIndex];
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
 
-    liqConfig = _boundCloseFactor(liqConfig);
+    liqConfig = _boundTargetHealthFactor(liqConfig);
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,

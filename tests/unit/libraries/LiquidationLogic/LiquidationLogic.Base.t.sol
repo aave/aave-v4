@@ -46,8 +46,12 @@ contract LiquidationLogicBaseTest is SpokeBase {
   }
 
   function _bound(
-    LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory params
-  ) internal virtual returns (LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory) {
+    LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams memory params
+  )
+    internal
+    virtual
+    returns (LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams memory)
+  {
     uint256 totalDebtInBaseCurrency = bound(
       params.totalDebtInBaseCurrency,
       1,
@@ -66,21 +70,21 @@ contract LiquidationLogicBaseTest is SpokeBase {
       (PercentageMath.PERCENTAGE_FACTOR - 1).percentDivDown(liquidationBonus)
     );
 
-    uint256 closeFactor = bound(
-      params.closeFactor,
+    uint256 targetHealthFactor = bound(
+      params.targetHealthFactor,
       Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       MAX_CLOSE_FACTOR
     );
 
-    uint256 healthFactor = bound(params.healthFactor, 0, closeFactor);
+    uint256 healthFactor = bound(params.healthFactor, 0, targetHealthFactor);
     uint256 debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_ASSET_PRICE);
     uint256 debtAssetUnit = 10 ** bound(params.debtAssetUnit, 0, MAX_TOKEN_DECIMALS_SUPPORTED);
 
     return
-      LiquidationLogic.CalculateDebtToRestoreCloseFactorParams({
+      LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams({
         totalDebtInBaseCurrency: totalDebtInBaseCurrency,
         healthFactor: healthFactor,
-        closeFactor: closeFactor,
+        targetHealthFactor: targetHealthFactor,
         liquidationBonus: liquidationBonus,
         collateralFactor: collateralFactor,
         debtAssetPrice: debtAssetPrice,
@@ -88,14 +92,14 @@ contract LiquidationLogicBaseTest is SpokeBase {
       });
   }
 
-  function _getDebtToRestoreCloseFactorParams(
+  function _getDebtToRestoreTargetHealthFactorParams(
     LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
-  ) internal returns (LiquidationLogic.CalculateDebtToRestoreCloseFactorParams memory) {
+  ) internal returns (LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams memory) {
     return
-      LiquidationLogic.CalculateDebtToRestoreCloseFactorParams({
+      LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams({
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
         healthFactor: params.healthFactor,
-        closeFactor: params.closeFactor,
+        targetHealthFactor: params.targetHealthFactor,
         liquidationBonus: params.liquidationBonus,
         collateralFactor: params.collateralFactor,
         debtAssetPrice: params.debtAssetPrice,
@@ -106,17 +110,19 @@ contract LiquidationLogicBaseTest is SpokeBase {
   function _bound(
     LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
   ) internal virtual returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
-    LiquidationLogic.CalculateDebtToRestoreCloseFactorParams
-      memory debtToRestoreCloseFactorParams = _bound(_getDebtToRestoreCloseFactorParams(params));
+    LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams
+      memory debtToRestoreTargetHealthFactorParams = _bound(
+        _getDebtToRestoreTargetHealthFactorParams(params)
+      );
 
     uint256 debtToCover = bound(params.debtToCover, 0, MAX_SUPPLY_AMOUNT);
     uint256 reserveDebt = bound(
       params.reserveDebt,
       0,
       _convertBaseCurrencyToAmount(
-        debtToRestoreCloseFactorParams.totalDebtInBaseCurrency,
-        debtToRestoreCloseFactorParams.debtAssetPrice,
-        debtToRestoreCloseFactorParams.debtAssetUnit
+        debtToRestoreTargetHealthFactorParams.totalDebtInBaseCurrency,
+        debtToRestoreTargetHealthFactorParams.debtAssetPrice,
+        debtToRestoreTargetHealthFactorParams.debtAssetUnit
       )
     );
 
@@ -124,13 +130,13 @@ contract LiquidationLogicBaseTest is SpokeBase {
       LiquidationLogic.CalculateMaxDebtToLiquidateParams({
         reserveDebt: reserveDebt,
         debtToCover: debtToCover,
-        totalDebtInBaseCurrency: debtToRestoreCloseFactorParams.totalDebtInBaseCurrency,
-        healthFactor: debtToRestoreCloseFactorParams.healthFactor,
-        closeFactor: debtToRestoreCloseFactorParams.closeFactor,
-        liquidationBonus: debtToRestoreCloseFactorParams.liquidationBonus,
-        collateralFactor: debtToRestoreCloseFactorParams.collateralFactor,
-        debtAssetPrice: debtToRestoreCloseFactorParams.debtAssetPrice,
-        debtAssetUnit: debtToRestoreCloseFactorParams.debtAssetUnit
+        totalDebtInBaseCurrency: debtToRestoreTargetHealthFactorParams.totalDebtInBaseCurrency,
+        healthFactor: debtToRestoreTargetHealthFactorParams.healthFactor,
+        targetHealthFactor: debtToRestoreTargetHealthFactorParams.targetHealthFactor,
+        liquidationBonus: debtToRestoreTargetHealthFactorParams.liquidationBonus,
+        collateralFactor: debtToRestoreTargetHealthFactorParams.collateralFactor,
+        debtAssetPrice: debtToRestoreTargetHealthFactorParams.debtAssetPrice,
+        debtAssetUnit: debtToRestoreTargetHealthFactorParams.debtAssetUnit
       });
   }
 
@@ -170,7 +176,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
         debtToCover: params.debtToCover,
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
         healthFactor: params.healthFactor,
-        closeFactor: params.closeFactor,
+        targetHealthFactor: params.targetHealthFactor,
         liquidationBonus: liquidationBonus,
         collateralFactor: params.collateralFactor,
         debtAssetPrice: params.debtAssetPrice,
@@ -201,7 +207,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.debtToCover = maxDebtToLiquidateParams.debtToCover;
     params.totalDebtInBaseCurrency = maxDebtToLiquidateParams.totalDebtInBaseCurrency;
     params.healthFactor = maxDebtToLiquidateParams.healthFactor;
-    params.closeFactor = maxDebtToLiquidateParams.closeFactor;
+    params.targetHealthFactor = maxDebtToLiquidateParams.targetHealthFactor;
     params.collateralFactor = maxDebtToLiquidateParams.collateralFactor;
     params.debtAssetPrice = maxDebtToLiquidateParams.debtAssetPrice;
     params.debtAssetUnit = maxDebtToLiquidateParams.debtAssetUnit;

@@ -1122,18 +1122,21 @@ abstract contract Base is Test {
     assertEq(hub1.getAssetConfig(assetId), config);
   }
 
-  function updateCloseFactor(ISpoke spoke, uint128 newCloseFactor) internal pausePrank {
+  function updateTargetHealthFactor(
+    ISpoke spoke,
+    uint128 newTargetHealthFactor
+  ) internal pausePrank {
     DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
-    liqConfig.closeFactor = newCloseFactor;
+    liqConfig.targetHealthFactor = newTargetHealthFactor;
     vm.prank(SPOKE_ADMIN);
     spoke.updateLiquidationConfig(liqConfig);
 
     assertEq(spoke.getLiquidationConfig(), liqConfig);
   }
 
-  function getCloseFactor(ISpoke spoke) internal view returns (uint256) {
+  function getTargetHealthFactor(ISpoke spoke) internal view returns (uint256) {
     DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
-    return liqConfig.closeFactor;
+    return liqConfig.targetHealthFactor;
   }
 
   /// @dev pseudo random randomizer
@@ -1736,8 +1739,8 @@ abstract contract Base is Test {
     return a > b ? a : b;
   }
 
-  function _getCloseFactor(ISpoke spoke) internal view returns (uint128) {
-    return spoke.getLiquidationConfig().closeFactor;
+  function _getTargetHealthFactor(ISpoke spoke) internal view returns (uint128) {
+    return spoke.getLiquidationConfig().targetHealthFactor;
   }
 
   function _calcMinimumCollAmount(
@@ -1896,7 +1899,7 @@ abstract contract Base is Test {
     DataTypes.LiquidationConfig memory a,
     DataTypes.LiquidationConfig memory b
   ) internal pure {
-    assertEq(a.closeFactor, b.closeFactor, 'closeFactor');
+    assertEq(a.targetHealthFactor, b.targetHealthFactor, 'targetHealthFactor');
     assertEq(a.liquidationBonusFactor, b.liquidationBonusFactor, 'liquidationBonusFactor');
     assertEq(a.healthFactorForMaxBonus, b.healthFactorForMaxBonus, 'healthFactorForMaxBonus');
     assertEq(abi.encode(a), abi.encode(b));

@@ -29,9 +29,9 @@ interface ISpokeConfigurator {
   /**
    * @notice Updates the liquidation close factor of a spoke.
    * @param spoke The address of the spoke.
-   * @param closeFactor The new liquidation close factor.
+   * @param targetHealthFactor The new liquidation close factor.
    */
-  function updateLiquidationCloseFactor(address spoke, uint256 closeFactor) external;
+  function updateLiquidationTargetHealthFactor(address spoke, uint256 targetHealthFactor) external;
 
   /**
    * @notice Updates the health factor for max liquidation bonus of a spoke.

@@ -27,7 +27,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -48,7 +48,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -81,17 +81,18 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     debtReserveIds[1] = _daiReserveId(spoke1);
     debtReserveIds[2] = _usdxReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiReserveBadPremiumDebtTest(
-      liqConfig,
-      liqBonus,
-      supplyAmount,
-      collateralReserveId,
-      debtReserveIds,
-      debtReserveIndex,
-      liquidationFee,
-      skipTime,
-      skipTimeToAccruePremium
-    );
+    LiquidationTestLocalParams
+      memory state = _execLiqCallTargetHealthFactorMultiReserveBadPremiumDebtTest(
+        liqConfig,
+        liqBonus,
+        supplyAmount,
+        collateralReserveId,
+        debtReserveIds,
+        debtReserveIndex,
+        liquidationFee,
+        skipTime,
+        skipTimeToAccruePremium
+      );
     _checkLiquidation(
       state,
       'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario1_only_premium'
@@ -106,7 +107,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -130,7 +131,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -163,17 +164,18 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     debtReserveIds[1] = _wbtcReserveId(spoke1);
     debtReserveIds[2] = _usdyReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiReserveBadPremiumDebtTest(
-      liqConfig,
-      liqBonus,
-      supplyAmount,
-      collateralReserveId,
-      debtReserveIds,
-      debtReserveIndex,
-      liquidationFee,
-      skipTime,
-      skipTimeToAccruePremium
-    );
+    LiquidationTestLocalParams
+      memory state = _execLiqCallTargetHealthFactorMultiReserveBadPremiumDebtTest(
+        liqConfig,
+        liqBonus,
+        supplyAmount,
+        collateralReserveId,
+        debtReserveIds,
+        debtReserveIndex,
+        liquidationFee,
+        skipTime,
+        skipTimeToAccruePremium
+      );
 
     string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario2';
     _checkLiquidation(state, label);
@@ -190,7 +192,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario3({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -211,7 +213,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
     test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario3({
       liqConfig: DataTypes.LiquidationConfig({
-        closeFactor: 1.5e18,
+        targetHealthFactor: 1.5e18,
         liquidationBonusFactor: 0,
         healthFactorForMaxBonus: 0
       }),
@@ -244,17 +246,18 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     debtReserveIds[1] = _usdxReserveId(spoke1);
     debtReserveIds[2] = _usdyReserveId(spoke1);
 
-    LiquidationTestLocalParams memory state = _execLiqCallCloseFactorMultiReserveBadPremiumDebtTest(
-      liqConfig,
-      liqBonus,
-      supplyAmount,
-      collateralReserveId,
-      debtReserveIds,
-      debtReserveIndex,
-      liquidationFee,
-      skipTime,
-      skipTimeToAccruePremium
-    );
+    LiquidationTestLocalParams
+      memory state = _execLiqCallTargetHealthFactorMultiReserveBadPremiumDebtTest(
+        liqConfig,
+        liqBonus,
+        supplyAmount,
+        collateralReserveId,
+        debtReserveIds,
+        debtReserveIndex,
+        liquidationFee,
+        skipTime,
+        skipTimeToAccruePremium
+      );
 
     string memory label = 'test_liquidationCall_fuzz_multi_reserve_badPremiumDebt_scenario3';
     _checkLiquidation(state, label);
@@ -265,7 +268,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
   /// liquidating all collateral is insufficient to cover debt, bad debt remains
   /// close factor varies across range of values
   /// non-variable liquidation bonus
-  function _execLiqCallCloseFactorMultiReserveBadPremiumDebtTest(
+  function _execLiqCallTargetHealthFactorMultiReserveBadPremiumDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint32 liqBonus,
     uint256 supplyAmount,
@@ -295,7 +298,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     state.collateralReserve = state.collateralReserves[state.collateralReserveIndex];
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
 
-    liqConfig = _boundCloseFactor(liqConfig);
+    liqConfig = _boundTargetHealthFactor(liqConfig);
     liqBonus = bound(
       liqBonus,
       MIN_LIQUIDATION_BONUS,

@@ -59,7 +59,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    */
   constructor(address authority_) AccessManaged(authority_) {
     require(authority_ != address(0), InvalidAddress());
-    _liquidationConfig.closeFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    _liquidationConfig.targetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     emit LiquidationConfigUpdate(_liquidationConfig);
   }
 
@@ -86,7 +86,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.LiquidationConfig calldata config
   ) external restricted {
     require(
-      config.closeFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
+      config.targetHealthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
         config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR &&
         config.healthFactorForMaxBonus < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       InvalidLiquidationConfig()

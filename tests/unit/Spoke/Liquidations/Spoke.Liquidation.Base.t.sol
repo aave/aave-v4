@@ -87,7 +87,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 hfBadDebtThreshold;
     uint256 debtReserveId;
     uint256 collateralReserveId;
-    uint256 closeFactor;
+    uint256 targetHealthFactor;
     uint256 collateralAssetId;
     uint256 debtAssetId;
     uint256 expectedDeficitAmount;
@@ -119,7 +119,7 @@ contract SpokeLiquidationBase is SpokeBase {
     Balance liquidatorDebt;
     Balance liquidatorCollateral;
     Balance user;
-    uint256 closeFactor;
+    uint256 targetHealthFactor;
     uint256 liqBonus;
     uint256 initialDebt;
     uint256 finalDebt;
@@ -151,8 +151,8 @@ contract SpokeLiquidationBase is SpokeBase {
   function _bound(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
-    liqConfig.closeFactor = bound(
-      liqConfig.closeFactor,
+    liqConfig.targetHealthFactor = bound(
+      liqConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       MAX_CLOSE_FACTOR
     ).toUint128();
@@ -169,11 +169,11 @@ contract SpokeLiquidationBase is SpokeBase {
 
   /// @notice Bound liqConfig close factor.
   /// Set non-variable liquidation bonus to simplify calcs for desiredHf.
-  function _boundCloseFactor(
+  function _boundTargetHealthFactor(
     DataTypes.LiquidationConfig memory liqConfig
   ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
-    liqConfig.closeFactor = bound(
-      liqConfig.closeFactor,
+    liqConfig.targetHealthFactor = bound(
+      liqConfig.targetHealthFactor,
       MIN_CLOSE_FACTOR,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 10
     ).toUint128();
@@ -515,9 +515,13 @@ contract SpokeLiquidationBase is SpokeBase {
   ) internal view virtual {
     if (state.hasDustFromDebt) {
       if (!state.isMultiDebtReserve) {
-        /// HF > CloseFactor holds for single debt reserve, bc more debt was liquidated than expected
+        /// HF > TargetHealthFactor holds for single debt reserve, bc more debt was liquidated than expected
         /// for multi reserve, liquidating the whole debt may or may not bring HF below CF
-        assertGt(state.finalHf, state.closeFactor, string.concat('HF should exceed closeFactor'));
+        assertGt(
+          state.finalHf,
+          state.targetHealthFactor,
+          string.concat('HF should exceed targetHealthFactor')
+        );
       }
     } else {
       // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
@@ -538,22 +542,22 @@ contract SpokeLiquidationBase is SpokeBase {
         // ensure HF is lte close factor
         assertLe(
           state.finalHf,
-          state.closeFactor,
+          state.targetHealthFactor,
           string.concat('Health factor <= close factor ', label)
         );
         uint256 bpsError = 20;
         // should also be close to the desired CF
         assertApproxEqRel(
           state.finalHf,
-          state.closeFactor,
+          state.targetHealthFactor,
           _approxRelFromBps(bpsError),
-          string.concat('HF matches closeFactor within ', vm.toString(bpsError), ' bps')
+          string.concat('HF matches targetHealthFactor within ', vm.toString(bpsError), ' bps')
         );
       } else {
         // HF should always be lte close factor
         assertLe(
           state.finalHf,
-          state.closeFactor,
+          state.targetHealthFactor,
           string.concat('Health factor <= close factor ', label)
         );
       }
@@ -876,10 +880,13 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 debtToCover
   ) internal view returns (uint256 actualDebtToLiquidate, bool hasDustFromDebt) {
     uint256 totalBorrowerReserveDebt = state.userTotalReserveDebt.balanceBefore;
-    uint256 debtToRestoreCloseFactor = _calcDebtToRestoreCloseFactor(state.spoke, state);
+    uint256 debtToRestoreTargetHealthFactor = _calcDebtToRestoreTargetHealthFactor(
+      state.spoke,
+      state
+    );
 
     uint256 maxLiquidatableDebt = _min(debtToCover, totalBorrowerReserveDebt);
-    actualDebtToLiquidate = _min(maxLiquidatableDebt, debtToRestoreCloseFactor);
+    actualDebtToLiquidate = _min(maxLiquidatableDebt, debtToRestoreTargetHealthFactor);
     uint256 remainingDebtInBaseCurrency = _convertAmountToBaseCurrency(
       state.spoke,
       state.debtReserveId,
@@ -914,17 +921,17 @@ contract SpokeLiquidationBase is SpokeBase {
   }
 
   /// @notice Calculate amount of debt to liquidate to restore HF to close factor.
-  /// @return debtToRestoreCloseFactor Amount of debt to liquidate to restore HF to close factor.
-  function _calcDebtToRestoreCloseFactor(
+  /// @return debtToRestoreTargetHealthFactor Amount of debt to liquidate to restore HF to close factor.
+  function _calcDebtToRestoreTargetHealthFactor(
     ISpoke spoke,
     LiquidationTestLocalParams memory state
-  ) internal view returns (uint256 debtToRestoreCloseFactor) {
+  ) internal view returns (uint256 debtToRestoreTargetHealthFactor) {
     IPriceOracle oracle = spoke.oracle();
     DataTypes.LiquidationCallLocalVars memory params;
 
     params.liquidationBonus = state.liquidationBonus;
     params.collateralFactor = state.collDynConfig.collateralFactor;
-    params.closeFactor = _getCloseFactor(spoke);
+    params.targetHealthFactor = _getTargetHealthFactor(spoke);
 
     params.debtAssetUnit = 10 ** state.debtReserve.decimals;
     params.debtAssetPrice = oracle.getReservePrice(state.debtReserve.reserveId);
@@ -932,27 +939,28 @@ contract SpokeLiquidationBase is SpokeBase {
     DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(alice);
     params.healthFactor = userAccountData.healthFactor;
     params.totalDebtInBaseCurrency = userAccountData.totalDebtInBaseCurrency;
-    // duplicated logic from LiquidationLogic.calculateDebtToRestoreCloseFactor
+    // duplicated logic from LiquidationLogic.calculateDebtToRestoreTargetHealthFactor
     uint256 effectiveLiquidationPenalty = (params.liquidationBonus.toWad())
       .percentMulDown(params.collateralFactor)
       .fromBpsDown();
-    if (params.closeFactor < effectiveLiquidationPenalty) {
+    if (params.targetHealthFactor < effectiveLiquidationPenalty) {
       return UINT256_MAX;
     }
 
     return
       params.totalDebtInBaseCurrency.mulDivDown(
-        params.debtAssetUnit * (params.closeFactor - params.healthFactor),
-        (params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice.toWad()
+        params.debtAssetUnit * (params.targetHealthFactor - params.healthFactor),
+        (params.targetHealthFactor - effectiveLiquidationPenalty + 1) *
+          params.debtAssetPrice.toWad()
       );
   }
 
-  function calcDebtToRestoreCloseFactor(
+  function calcDebtToRestoreTargetHealthFactor(
     ISpoke spoke,
     uint256 reserveId,
     address user,
     uint256 liquidationBonus,
-    uint256 closeFactor
+    uint256 targetHealthFactor
   ) internal view returns (uint256) {
     IPriceOracle oracle = spoke.oracle();
     DataTypes.LiquidationCallLocalVars memory params;
@@ -964,17 +972,18 @@ contract SpokeLiquidationBase is SpokeBase {
     params.healthFactor = userAccountData.healthFactor;
     params.totalDebtInBaseCurrency = userAccountData.totalDebtInBaseCurrency;
 
-    // duplicated logic from LiquidationLogic.calculateDebtToRestoreCloseFactor
+    // duplicated logic from LiquidationLogic.calculateDebtToRestoreTargetHealthFactor
     uint256 effectiveLiquidationPenalty = (liquidationBonus.toWad())
       .percentMulDown(_getCollateralFactor(spoke, reserveId))
       .fromBpsDown();
-    if (closeFactor < effectiveLiquidationPenalty) {
+    if (targetHealthFactor < effectiveLiquidationPenalty) {
       return UINT256_MAX;
     }
     return
       (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
-        (closeFactor - params.healthFactor)) /
-        ((closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice)).fromWadDown();
+        (targetHealthFactor - params.healthFactor)) /
+        ((targetHealthFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice))
+        .fromWadDown();
   }
 
   /// @notice Calc user's lowest possible health factor whereby a liqudation can still restore HF to close factor.
@@ -1027,7 +1036,7 @@ contract SpokeLiquidationBase is SpokeBase {
     state.collateralReserveId = collateralReserveId;
     state.collateralAssetId = state.collateralReserve.assetId;
     state.debtAssetId = state.debtReserve.assetId;
-    state.closeFactor = _getCloseFactor(state.spoke);
+    state.targetHealthFactor = _getTargetHealthFactor(state.spoke);
     state.collateralHub = state.collateralReserve.hub;
     state.debtHub = state.debtReserve.hub;
 

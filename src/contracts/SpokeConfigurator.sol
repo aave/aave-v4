@@ -38,10 +38,13 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateLiquidationCloseFactor(address spoke, uint256 closeFactor) external onlyOwner {
+  function updateLiquidationTargetHealthFactor(
+    address spoke,
+    uint256 targetHealthFactor
+  ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     DataTypes.LiquidationConfig memory liquidationConfig = targetSpoke.getLiquidationConfig();
-    liquidationConfig.closeFactor = closeFactor.toUint128();
+    liquidationConfig.targetHealthFactor = targetHealthFactor.toUint128();
     targetSpoke.updateLiquidationConfig(liquidationConfig);
   }
 

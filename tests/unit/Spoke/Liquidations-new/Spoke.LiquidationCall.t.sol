@@ -17,7 +17,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     vm.prank(SPOKE_ADMIN);
     spoke.updateLiquidationConfig(
       DataTypes.LiquidationConfig({
-        closeFactor: 1.05e18,
+        targetHealthFactor: 1.05e18,
         healthFactorForMaxBonus: 0.7e18,
         liquidationBonusFactor: 20_00
       })
@@ -588,7 +588,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_LargePosition is
   ) internal virtual override {}
 }
 
-contract SpokeLiquidationCallTest_VariableCloseFactor is SpokeLiquidationCallHelperTest {
+contract SpokeLiquidationCallTest_VariableTargetHealthFactor is SpokeLiquidationCallHelperTest {
   using PercentageMath for uint256;
   using SafeCast for uint256;
 
@@ -603,8 +603,8 @@ contract SpokeLiquidationCallTest_VariableCloseFactor is SpokeLiquidationCallHel
     bytes memory additionalInputs
   ) internal virtual override {
     vm.assume(additionalInputs.length >= 32);
-    uint256 closeFactor = abi.decode(additionalInputs, (uint256));
-    closeFactor = bound(closeFactor, MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR);
-    updateCloseFactor(spoke, closeFactor.toUint128());
+    uint256 targetHealthFactor = abi.decode(additionalInputs, (uint256));
+    targetHealthFactor = bound(targetHealthFactor, MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR);
+    updateTargetHealthFactor(spoke, targetHealthFactor.toUint128());
   }
 }
