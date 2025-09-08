@@ -243,6 +243,38 @@ contract HubRefreshPremiumTest is HubBase {
     }
   }
 
+  function test_refreshPremium_spokeCannotRealizeExcess() public {
+    uint256 assetId = daiAssetId;
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
+    Utils.supplyCollateral(spoke2, _daiReserveId(spoke2), alice, 10000e18, alice);
+    Utils.borrow(spoke2, _daiReserveId(spoke2), alice, 5000e18, alice);
+
+    skip(322 days);
+
+    uint256 spoke1AccruedPremium = _getSpokeAccruedPremium(assetId, address(spoke1));
+    uint256 spoke2AccruedPremium = _getSpokeAccruedPremium(assetId, address(spoke2));
+    assertGt(spoke1AccruedPremium, 0);
+    assertGt(spoke2AccruedPremium, 0);
+
+    vm.expectRevert(stdError.arithmeticError);
+    // realize premium by manipulating offset
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(
+      assetId,
+      DataTypes.PremiumDelta({
+        sharesDelta: 0,
+        offsetDelta: (spoke1AccruedPremium + spoke2AccruedPremium).toInt256(),
+        realizedDelta: (spoke1AccruedPremium + spoke2AccruedPremium).toInt256()
+      })
+    );
+  }
+
+  function _getSpokeAccruedPremium(uint256 assetId, address spoke) internal view returns (uint256) {
+    DataTypes.SpokeData memory spokeData = hub1.getSpoke(assetId, spoke);
+    return hub1.previewRestoreByShares(assetId, spokeData.premiumShares) - spokeData.premiumOffset;
+  }
+
   function _loadAssetPremiumData(uint256 assetId) internal view returns (PremiumDataLocal memory) {
     DataTypes.Asset memory asset = hub1.getAsset(assetId);
     return PremiumDataLocal(asset.premiumShares, asset.premiumOffset, asset.realizedPremium);

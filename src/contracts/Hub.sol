@@ -250,7 +250,7 @@ contract Hub is IHub, AccessManaged {
     uint128 drawnShares = previewRestoreByAssets(assetId, drawnAmount).toUint128();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
-    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
+    _applyPremiumDelta(assetId, asset, spoke, premiumDelta, premiumAmount);
     uint256 totalAmount = drawnAmount + premiumAmount;
     asset.liquidity += totalAmount.toUint128();
 
@@ -280,7 +280,7 @@ contract Hub is IHub, AccessManaged {
     uint128 drawnShares = previewRestoreByAssets(assetId, drawnAmount).toUint128();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
-    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
+    _applyPremiumDelta(assetId, asset, spoke, premiumDelta, premiumAmount);
     uint256 totalDeficitAmount = drawnAmount + premiumAmount;
     asset.deficit += totalDeficitAmount.toUint128();
 
@@ -322,7 +322,7 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
 
     // no premium change allowed
-    _applyPremiumDelta(asset, spoke, premiumDelta, 0);
+    _applyPremiumDelta(assetId, asset, spoke, premiumDelta, 0);
 
     emit RefreshPremium(assetId, msg.sender, premiumDelta);
   }
@@ -509,11 +509,14 @@ contract Hub is IHub, AccessManaged {
   }
 
   function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256) {
-    return _getSpokeOwed(_spokes[assetId][spoke], assetId);
+    DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
+    return (_getSpokeOwedBase(spokeData, assetId), _getSpokeOwedPremium(spokeData, assetId));
   }
 
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256) {
-    (uint256 drawn, uint256 premium) = _getSpokeOwed(_spokes[assetId][spoke], assetId);
+    DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
+    uint256 drawn = _getSpokeOwedBase(spokeData, assetId);
+    uint256 premium = _getSpokeOwedPremium(spokeData, assetId);
     return drawn + premium;
   }
 
@@ -593,12 +596,14 @@ contract Hub is IHub, AccessManaged {
    * cannot decrease by more than `premiumAmount`.
    */
   function _applyPremiumDelta(
+    uint256 assetId,
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
     DataTypes.PremiumDelta calldata premium,
     uint256 premiumAmount
   ) internal {
-    uint256 premiumBefore = asset.premium();
+    uint256 assetPremiumBefore = asset.premium();
+    uint256 spokePremiumBefore = _getSpokeOwedPremium(spoke, assetId);
 
     asset.premiumShares = asset.premiumShares.add(premium.sharesDelta).toUint128();
     asset.premiumOffset = asset.premiumOffset.add(premium.offsetDelta).toUint128();
@@ -609,7 +614,9 @@ contract Hub is IHub, AccessManaged {
     spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta).toUint128();
 
     // can increase due to precision loss on premium (drawn unchanged)
-    require(asset.premium() + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
+    require(asset.premium() + premiumAmount - assetPremiumBefore <= 2, InvalidPremiumChange());
+    uint256 spokePremiumAfter = _getSpokeOwedPremium(spoke, assetId);
+    require(spokePremiumAfter + premiumAmount - spokePremiumBefore <= 2, InvalidPremiumChange());
   }
 
   function _transferShares(
@@ -624,16 +631,20 @@ contract Hub is IHub, AccessManaged {
     receiver.addedShares += shares.toUint128();
   }
 
-  function _getSpokeOwed(
+  function _getSpokeOwedBase(
     DataTypes.SpokeData storage spoke,
     uint256 assetId
-  ) internal view returns (uint256, uint256) {
+  ) internal view returns (uint256) {
+    return previewRestoreByShares(assetId, spoke.drawnShares);
+  }
+
+  function _getSpokeOwedPremium(
+    DataTypes.SpokeData storage spoke,
+    uint256 assetId
+  ) internal view returns (uint256) {
     uint256 accruedPremium = previewRestoreByShares(assetId, spoke.premiumShares) -
       spoke.premiumOffset;
-    return (
-      previewRestoreByShares(assetId, spoke.drawnShares),
-      spoke.realizedPremium + accruedPremium
-    );
+    return spoke.realizedPremium + accruedPremium;
   }
 
   function _validateAdd(
@@ -678,7 +689,8 @@ contract Hub is IHub, AccessManaged {
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
     uint256 drawCap = spoke.drawCap;
-    (uint256 drawn, uint256 premium) = _getSpokeOwed(spoke, assetId);
+    uint256 drawn = _getSpokeOwedBase(spoke, assetId);
+    uint256 premium = _getSpokeOwedPremium(spoke, assetId);
     require(
       drawCap == Constants.MAX_CAP || drawCap * 10 ** asset.decimals >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
@@ -695,7 +707,8 @@ contract Hub is IHub, AccessManaged {
     require(from != address(this), InvalidAddress());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
-    (uint256 drawn, uint256 premium) = _getSpokeOwed(spoke, assetId);
+    uint256 drawn = _getSpokeOwedBase(spoke, assetId);
+    uint256 premium = _getSpokeOwedPremium(spoke, assetId);
     require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
     require(premiumAmount <= premium, SurplusAmountRestored(premium));
   }
@@ -708,7 +721,8 @@ contract Hub is IHub, AccessManaged {
   ) internal view {
     require(spoke.active, SpokeNotActive());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
-    (uint256 drawn, uint256 premium) = _getSpokeOwed(spoke, assetId);
+    uint256 drawn = _getSpokeOwedBase(spoke, assetId);
+    uint256 premium = _getSpokeOwedPremium(spoke, assetId);
     require(drawnAmount <= drawn, SurplusDeficitReported(drawn));
     require(premiumAmount <= premium, SurplusDeficitReported(premium));
   }
