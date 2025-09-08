@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {IHub} from 'src/interfaces/IHub.sol';
+import {IHubBase} from 'src/interfaces/IHubBase.sol';
 import {ISpoke, ISpokeBase} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 import {Constants} from 'src/libraries/helpers/Constants.sol';
@@ -377,7 +377,7 @@ library LiquidationLogic {
   }
 
   function _getUserDebt(
-    IHub hub,
+    IHubBase hub,
     uint256 assetId,
     DataTypes.UserPosition storage userPosition
   ) internal view returns (uint256, uint256, uint256) {

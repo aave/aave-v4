@@ -263,7 +263,7 @@ contract Hub is IHub, AccessManaged {
     return drawnShares;
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function reportDeficit(
     uint256 assetId,
     uint256 drawnAmount,
@@ -313,7 +313,7 @@ contract Hub is IHub, AccessManaged {
     return shares;
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function refreshPremium(uint256 assetId, DataTypes.PremiumDelta calldata premiumDelta) external {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -327,7 +327,7 @@ contract Hub is IHub, AccessManaged {
     emit RefreshPremium(assetId, msg.sender, premiumDelta);
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function payFee(uint256 assetId, uint256 shares) external {
     DataTypes.SpokeData storage sender = _spokes[assetId][msg.sender];
     address feeReceiver = _assets[assetId].feeReceiver;
@@ -393,7 +393,7 @@ contract Hub is IHub, AccessManaged {
     return _assetCount;
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory) {
     return _assets[assetId];
   }
@@ -434,42 +434,42 @@ contract Hub is IHub, AccessManaged {
       });
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function previewAddByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
     return _assets[assetId].toAddedSharesDown(assets);
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function previewAddByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
     return _assets[assetId].toAddedAssetsUp(shares);
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function previewRemoveByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
     return _assets[assetId].toAddedSharesUp(assets);
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function previewRemoveByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
     return _assets[assetId].toAddedAssetsDown(shares);
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function previewDrawByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
     return _assets[assetId].toDrawnSharesUp(assets);
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function previewDrawByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toDrawnAssetsDown(shares);
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function previewRestoreByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function previewRestoreByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
     return _assets[assetId].toDrawnAssetsUp(shares);
   }

@@ -312,7 +312,7 @@ contract SpokeLiquidationBase is SpokeBase {
       // during a restore action that includes donation
       vm.expectCall(
         address(state.collateralHub),
-        abi.encodeWithSelector(IHub.payFee.selector),
+        abi.encodeWithSelector(IHubBase.payFee.selector),
         state.liquidationFeeShares > 0 ? 1 : 0
       );
     }

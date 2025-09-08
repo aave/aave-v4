@@ -2313,7 +2313,7 @@ abstract contract Base is Test {
     return
       Reserve({
         reserveId: reserveId,
-        hub: reserve.hub,
+        hub: _hub(spoke, reserveId),
         assetId: reserve.assetId,
         decimals: reserve.decimals,
         dynamicConfigKey: reserve.dynamicConfigKey,
@@ -2322,6 +2322,10 @@ abstract contract Base is Test {
         borrowable: reserve.borrowable,
         collateralRisk: reserve.collateralRisk
       });
+  }
+
+  function _hub(ISpoke spoke, uint256 reserveId) internal view returns (IHub) {
+    return IHub(address(spoke.getReserve(reserveId).hub));
   }
 
   function assertEq(SpokePosition memory a, AssetPosition memory b) internal pure {

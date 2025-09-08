@@ -144,39 +144,6 @@ interface IHub is IHubBase, IAccessManaged {
   function setInterestRateData(uint256 assetId, bytes calldata data) external;
 
   /**
-   * @notice Refreshes premium accounting.
-   * @dev Only callable by active spokes, reverts with `SpokeNotActive` otherwise.
-   * @dev Overall premium should not decrease, reverts with `InvalidPremiumChange` otherwise.
-   * @param assetId The identifier of the asset.
-   * @param premiumDelta The change in premium.
-   */
-  function refreshPremium(uint256 assetId, DataTypes.PremiumDelta calldata premiumDelta) external;
-
-  /**
-   * @notice Pay existing liquidity to feeReceiver.
-   * @dev Only callable by active spokes.
-   * @param assetId The identifier of the asset.
-   * @param shares The amount of shares to pay to feeReceiver.
-   */
-  function payFee(uint256 assetId, uint256 shares) external;
-
-  /**
-   * @notice Reports deficit.
-   * @dev Only callable by active spokes.
-   * @param assetId The identifier of the asset.
-   * @param drawnAmount The drawn amount to report as deficit.
-   * @param premiumAmount The premium amount to report as deficit.
-   * @param premiumDelta The premium delta to apply which signal premium deficit.
-   * @return The amount of drawn shares reported as deficit.
-   */
-  function reportDeficit(
-    uint256 assetId,
-    uint256 drawnAmount,
-    uint256 premiumAmount,
-    DataTypes.PremiumDelta calldata premiumDelta
-  ) external returns (uint256);
-
-  /**
    * @notice Allows a spoke to transfer its supplied shares of an asset to another spoke.
    * @dev Only callable by spokes.
    * @param assetId The identifier of the asset.
@@ -209,78 +176,6 @@ interface IHub is IHubBase, IAccessManaged {
    * @param amount The amount to reclaim.
    */
   function reclaim(uint256 assetId, uint256 amount) external;
-
-  /**
-   * @notice Converts the specified amount of assets to shares amount added upon an Add action.
-   * @dev Rounds down to the nearest shares amount.
-   * @param assetId The identifier of the asset.
-   * @param assets The amount of assets to convert to shares amount.
-   * @return The amount of shares converted from assets amount.
-   */
-  function previewAddByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
-
-  /**
-   * @notice Converts the specified shares amount to assets amount added upon an Add action.
-   * @dev Rounds up to the nearest assets amount.
-   * @param assetId The identifier of the asset.
-   * @param shares The amount of shares to convert to assets amount.
-   * @return The amount of assets converted from shares amount.
-   */
-  function previewAddByShares(uint256 assetId, uint256 shares) external view returns (uint256);
-
-  /**
-   * @notice Converts the specified amount of assets to shares amount removed upon a Remove action.
-   * @dev Rounds up to the nearest shares amount.
-   * @param assetId The identifier of the asset.
-   * @param assets The amount of assets to convert to shares amount.
-   * @return The amount of shares converted from assets amount.
-   */
-  function previewRemoveByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
-
-  /**
-   * @notice Converts the specified amount of shares to assets amount removed upon a Remove action.
-   * @dev Rounds down to the nearest assets amount.
-   * @param assetId The identifier of the asset.
-   * @param shares The amount of shares to convert to assets amount.
-   * @return The amount of assets converted from shares amount.
-   */
-  function previewRemoveByShares(uint256 assetId, uint256 shares) external view returns (uint256);
-
-  /**
-   * @notice Converts the specified amount of assets to shares amount drawn upon a Draw action.
-   * @dev Rounds up to the nearest shares amount.
-   * @param assetId The identifier of the asset.
-   * @param assets The amount of assets to convert to shares amount.
-   * @return The amount of shares converted from assets amount.
-   */
-  function previewDrawByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
-
-  /**
-   * @notice Converts the specified amount of shares to assets amount drawn upon a Draw action.
-   * @dev Rounds down to the nearest assets amount.
-   * @param assetId The identifier of the asset.
-   * @param shares The amount of shares to convert to assets amount.
-   * @return The amount of assets converted from shares amount.
-   */
-  function previewDrawByShares(uint256 assetId, uint256 shares) external view returns (uint256);
-
-  /**
-   * @notice Converts the specified amount of assets to shares amount restored upon a Restore action.
-   * @dev Rounds down to the nearest shares amount.
-   * @param assetId The identifier of the asset.
-   * @param assets The amount of assets to convert to shares amount.
-   * @return The amount of shares converted from assets amount.
-   */
-  function previewRestoreByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
-
-  /**
-   * @notice Converts the specified amount of shares to assets amount restored upon a Restore action.
-   * @dev Rounds up to the nearest assets amount.
-   * @param assetId The identifier of the asset.
-   * @param shares The amount of drawn shares to convert to assets amount.
-   * @return The amount of assets converted from shares amount.
-   */
-  function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
    * @notice Converts the specified amount of supplied shares to assets amount.
@@ -332,8 +227,6 @@ interface IHub is IHubBase, IAccessManaged {
    */
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
 
-  function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
-
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
 
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
@@ -374,12 +267,6 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 assetId,
     address spoke
   ) external view returns (DataTypes.SpokeConfig memory);
-
-  function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256);
-
-  function getSpokeAddedAmount(uint256 assetId, address spoke) external view returns (uint256);
-
-  function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256);
 
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256);
 

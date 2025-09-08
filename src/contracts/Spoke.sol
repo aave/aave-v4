@@ -21,7 +21,7 @@ import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 // interfaces
-import {IHub} from 'src/interfaces/IHub.sol';
+import {IHubBase} from 'src/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
@@ -112,14 +112,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 reserveId = _reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
-    DataTypes.Asset memory asset = IHub(hub).getAsset(assetId);
+    DataTypes.Asset memory asset = IHubBase(hub).getAsset(assetId);
     require(asset.underlying != address(0), AssetNotListed());
 
     _updateReservePriceSource(reserveId, priceSource);
 
     _reserves[reserveId] = DataTypes.Reserve({
       underlying: asset.underlying,
-      hub: IHub(hub),
+      hub: IHubBase(hub),
       assetId: assetId.toUint16(),
       decimals: asset.decimals,
       dynamicConfigKey: dynamicConfigKey,
@@ -220,7 +220,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     uint256 assetId = reserve.assetId;
-    IHub hub = reserve.hub;
+    IHubBase hub = reserve.hub;
 
     // If uint256.max is passed, withdraw all user's supplied assets
     if (amount == type(uint256).max) {
@@ -248,7 +248,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     uint256 assetId = reserve.assetId;
-    IHub hub = reserve.hub;
+    IHubBase hub = reserve.hub;
 
     _validateBorrow(reserve);
 
@@ -686,7 +686,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    * debt shares-to-assets conversion to prevent underflow in premium debt.
    */
   function _previewPremiumOffset(
-    IHub hub,
+    IHubBase hub,
     uint256 assetId,
     uint256 shares
   ) internal view returns (uint256) {
@@ -822,7 +822,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
       DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
       vars.assetId = reserve.assetId;
-      IHub hub = reserve.hub;
+      IHubBase hub = reserve.hub;
       vars.assetPrice = vars.oracle.getReservePrice(vars.reserveId);
       unchecked {
         vars.assetUnit = 10 ** reserve.decimals;
@@ -915,7 +915,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   function _getUserDebtInBaseCurrency(
     DataTypes.UserPosition storage userPosition,
-    IHub hub,
+    IHubBase hub,
     uint256 assetId,
     uint256 assetPrice,
     uint256 assetUnit
@@ -927,7 +927,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   function _getUserBalanceInBaseCurrency(
     DataTypes.UserPosition storage userPosition,
-    IHub hub,
+    IHubBase hub,
     uint256 assetId,
     uint256 assetPrice,
     uint256 assetUnit
@@ -939,7 +939,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   function _getUserDebt(
-    IHub hub,
+    IHubBase hub,
     uint256 assetId,
     DataTypes.UserPosition storage userPosition
   ) internal view returns (uint256, uint256, uint256) {
@@ -1028,7 +1028,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       DataTypes.Reserve storage reserve = _reserves[reserveId];
       // validation should already have occurred during liquidation
-      IHub hub = reserve.hub;
+      IHubBase hub = reserve.hub;
       uint256 assetId = reserve.assetId;
       (
         uint256 drawnDebtRestored,

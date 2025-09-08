@@ -14,7 +14,7 @@ library Utils {
 
   // hub
   function add(
-    IHub hub,
+    IHubBase hub,
     uint256 assetId,
     address caller,
     uint256 amount,
@@ -48,7 +48,7 @@ library Utils {
   }
 
   function restoreDrawn(
-    IHub hub,
+    IHubBase hub,
     uint256 assetId,
     address caller,
     uint256 drawnAmount,
@@ -172,7 +172,7 @@ library Utils {
   }
 
   function approve(ISpoke spoke, uint256 reserveId, address owner, uint256 amount) internal {
-    IHub hub = spoke.getReserve(reserveId).hub;
+    IHubBase hub = spoke.getReserve(reserveId).hub;
     _approve(
       IERC20(hub.getAsset(spoke.getReserve(reserveId).assetId).underlying),
       owner,
@@ -181,7 +181,7 @@ library Utils {
     );
   }
 
-  function approve(IHub hub, uint256 assetId, address owner, uint256 amount) internal {
+  function approve(IHubBase hub, uint256 assetId, address owner, uint256 amount) internal {
     _approve(IERC20(hub.getAsset(assetId).underlying), owner, address(hub), amount);
   }
 

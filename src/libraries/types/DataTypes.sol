@@ -3,7 +3,7 @@
 pragma solidity ^0.8.10;
 
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
-import {IHub} from 'src/interfaces/IHub.sol';
+import {IHubBase} from 'src/interfaces/IHubBase.sol';
 
 library DataTypes {
   // Hub types
@@ -67,7 +67,7 @@ library DataTypes {
   struct Reserve {
     address underlying;
     //
-    IHub hub;
+    IHubBase hub;
     uint16 assetId;
     uint8 decimals;
     uint16 dynamicConfigKey; // key of the last reserve config
@@ -121,7 +121,7 @@ library DataTypes {
     bool premiumIncrease;
     uint256 reserveId;
     uint256 assetId;
-    IHub hub;
+    IHubBase hub;
     DataTypes.PremiumDelta premiumDelta;
   }
 
@@ -204,8 +204,8 @@ library DataTypes {
     uint256 liquidatedSuppliedShares;
     DataTypes.PremiumDelta premiumDelta;
     bool hasDeficit;
-    IHub collateralReserveHub;
-    IHub debtReserveHub;
+    IHubBase collateralReserveHub;
+    IHubBase debtReserveHub;
   }
 
   struct LiquidationCallParams {
@@ -233,7 +233,7 @@ library DataTypes {
   }
 
   struct ExecuteRepayLocalVars {
-    IHub hub;
+    IHubBase hub;
     uint256 assetId;
     uint256 drawnDebt;
     uint256 premiumDebt;

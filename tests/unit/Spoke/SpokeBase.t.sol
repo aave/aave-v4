@@ -144,7 +144,7 @@ contract SpokeBase is Base {
   /// @dev Opens a supply position for a random user
   function _openSupplyPosition(ISpoke spoke, uint256 reserveId, uint256 amount) public {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 initialLiq = spoke.getReserve(reserveId).hub.getLiquidity(assetId);
+    uint256 initialLiq = _hub(spoke, reserveId).getLiquidity(assetId);
 
     address tempUser = makeUser();
     deal(spoke, reserveId, tempUser, amount);
