@@ -14,10 +14,10 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     // set collateral factor of coll as 100%
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 100_00);
     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 100_00);
-    _updateTargetHealthFactor(spoke1, 10e18); // close factor that is too high to reach, thus all coll is liquidatable
+    _updateTargetHealthFactor(spoke1, 10e18); // target health factor that is too high to reach, thus all coll is liquidatable
 
     // 2 collaterals, so that even though one is fully liquidated, it does not become bad debt
-    // second amount of coll/debt is small enough that full liquidation doesn't reach close factor
+    // second amount of coll/debt is small enough that full liquidation doesn't reach target health factor
     // collateral: weth/usdx
     uint256 supplyAmount = 5 * 10 ** decimals.weth; // $10k weth
     uint256 supplyAmount2 = 1_000 * 10 ** decimals.usdx; // $1k usdx
@@ -61,7 +61,7 @@ contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
     // set collateral factor of coll as 100%
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 100_00);
     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 100_00);
-    _updateTargetHealthFactor(spoke1, 10e18); // close factor that is too high to reach, thus all coll is liquidatable
+    _updateTargetHealthFactor(spoke1, 10e18); // target health factor that is too high to reach, thus all coll is liquidatable
 
     // 2 collaterals, so that even though one is fully liquidated, it does not become bad debt
     // second amount of coll/debt is 1/10 of first

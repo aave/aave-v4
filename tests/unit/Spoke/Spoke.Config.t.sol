@@ -295,7 +295,7 @@ contract SpokeConfigTest is SpokeBase {
     assertEq(
       spoke1.getLiquidationConfig().targetHealthFactor,
       newTargetHealthFactor,
-      'wrong close factor'
+      'wrong target health factor'
     );
   }
 

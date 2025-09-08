@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
-contract LiquidationLogicDebtToRestoreTargetHealthFactorTest is LiquidationLogicBaseTest {
+contract LiquidationLogicDebtToRestoreHealthFactorTest is LiquidationLogicBaseTest {
   using MathUtils for uint256;
 
   uint256[] assetUnitList;
@@ -17,47 +17,47 @@ contract LiquidationLogicDebtToRestoreTargetHealthFactorTest is LiquidationLogic
   }
 
   /// function does not revert when input is bounded properly
-  function test_calculateDebtToRestoreTargetHealthFactor_fuzz_NoRevert(
-    LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams memory params
+  function test_calculateDebtToRestoreHealthFactor_fuzz_NoRevert(
+    LiquidationLogic.CalculateDebtToRestoreHealthFactorParams memory params
   ) public {
-    liquidationLogicWrapper.calculateDebtToRestoreTargetHealthFactor(_bound(params));
+    liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(_bound(params));
   }
 
   /// if debtAssetPrice == 0, then function reverts (should not happen in practice)
-  function test_calculateDebtToRestoreTargetHealthFactor_fuzz_revertsWith_DivisionByZero_ZeroAssetPrice(
-    LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams memory params
+  function test_calculateDebtToRestoreHealthFactor_fuzz_revertsWith_DivisionByZero_ZeroAssetPrice(
+    LiquidationLogic.CalculateDebtToRestoreHealthFactorParams memory params
   ) public {
     params = _bound(params);
     params.debtAssetPrice = 0;
     vm.expectRevert(); // MathUtils reverts with no data if division by zero
-    liquidationLogicWrapper.calculateDebtToRestoreTargetHealthFactor(params);
+    liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(params);
   }
 
-  /// if health factor == close factor, then result is 0
-  function test_calculateDebtToRestoreTargetHealthFactor_HealthFactorEqualsTargetHealthFactor(
-    LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams memory params
+  /// if health factor == target health factor, then result is 0
+  function test_calculateDebtToRestoreHealthFactor_HealthFactorEqualsTargetHealthFactor(
+    LiquidationLogic.CalculateDebtToRestoreHealthFactorParams memory params
   ) public {
     params = _bound(params);
     params.healthFactor = params.targetHealthFactor;
-    assertEq(liquidationLogicWrapper.calculateDebtToRestoreTargetHealthFactor(params), 0);
+    assertEq(liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(params), 0);
   }
 
-  /// if close factor is less than health factor, then function reverts (should not happen in practice)
-  function test_calculateDebtToRestoreTargetHealthFactor_revertsWith_ArithmeticError_TargetHealthFactorLessThanHealthFactor(
-    LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams memory params
+  /// if target health factor is less than health factor, then function reverts (should not happen in practice)
+  function test_calculateDebtToRestoreHealthFactor_revertsWith_ArithmeticError_TargetHealthFactorLessThanHealthFactor(
+    LiquidationLogic.CalculateDebtToRestoreHealthFactorParams memory params
   ) public {
     params = _bound(params);
     params.healthFactor = params.targetHealthFactor + 1;
     vm.expectRevert(stdError.arithmeticError);
-    liquidationLogicWrapper.calculateDebtToRestoreTargetHealthFactor(params);
+    liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(params);
   }
 
-  function test_calculateDebtToRestoreTargetHealthFactor_UnitPrice() public {
+  function test_calculateDebtToRestoreHealthFactor_UnitPrice() public {
     for (uint256 i = 0; i < assetUnitList.length; i++) {
       uint256 assetUnit = assetUnitList[i];
-      uint256 debtToRestoreTargetHealthFactor = liquidationLogicWrapper
-        .calculateDebtToRestoreTargetHealthFactor(
-          LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams({
+      uint256 debtToRestoreHealthFactor = liquidationLogicWrapper
+        .calculateDebtToRestoreHealthFactor(
+          LiquidationLogic.CalculateDebtToRestoreHealthFactorParams({
             totalDebtInBaseCurrency: 10_000e26,
             healthFactor: 0.8e18,
             targetHealthFactor: 1.25e18,
@@ -69,17 +69,17 @@ contract LiquidationLogicDebtToRestoreTargetHealthFactorTest is LiquidationLogic
         );
 
       // liquidationPenalty = 1.5 * 0.5 = 0.75
-      // debtToRestoreTargetHealthFactor = $10000 * (1.25 - 0.8) / (1.25 - 0.75) / $1 = 9000
-      assertEq(debtToRestoreTargetHealthFactor, 9000 * assetUnit);
+      // debtToRestoreHealthFactor = $10000 * (1.25 - 0.8) / (1.25 - 0.75) / $1 = 9000
+      assertEq(debtToRestoreHealthFactor, 9000 * assetUnit);
     }
   }
 
-  function test_calculateDebtToRestoreTargetHealthFactor_NoPrecisionLoss() public {
+  function test_calculateDebtToRestoreHealthFactor_NoPrecisionLoss() public {
     for (uint256 i = 0; i < assetUnitList.length; i++) {
       uint256 assetUnit = assetUnitList[i];
-      uint256 debtToRestoreTargetHealthFactor = liquidationLogicWrapper
-        .calculateDebtToRestoreTargetHealthFactor(
-          LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams({
+      uint256 debtToRestoreHealthFactor = liquidationLogicWrapper
+        .calculateDebtToRestoreHealthFactor(
+          LiquidationLogic.CalculateDebtToRestoreHealthFactorParams({
             totalDebtInBaseCurrency: 10_000e26,
             healthFactor: 0.8e18,
             targetHealthFactor: 1e18,
@@ -91,14 +91,14 @@ contract LiquidationLogicDebtToRestoreTargetHealthFactorTest is LiquidationLogic
         );
 
       // liquidationPenalty = 1.5 * 0.5 = 0.75
-      // debtToRestoreTargetHealthFactor = $10000 * (1 - 0.8) / (1 - 0.75) / $2000 = 4
-      assertEq(debtToRestoreTargetHealthFactor, 4 * assetUnit);
+      // debtToRestoreHealthFactor = $10000 * (1 - 0.8) / (1 - 0.75) / $2000 = 4
+      assertEq(debtToRestoreHealthFactor, 4 * assetUnit);
     }
   }
 
-  function test_calculateDebtToRestoreTargetHealthFactor_PrecisionLoss() public {
-    LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams memory params = LiquidationLogic
-      .CalculateDebtToRestoreTargetHealthFactorParams({
+  function test_calculateDebtToRestoreHealthFactor_PrecisionLoss() public {
+    LiquidationLogic.CalculateDebtToRestoreHealthFactorParams memory params = LiquidationLogic
+      .CalculateDebtToRestoreHealthFactorParams({
         totalDebtInBaseCurrency: 10_000e26,
         healthFactor: 0.8e18,
         targetHealthFactor: 1e18,
@@ -107,18 +107,18 @@ contract LiquidationLogicDebtToRestoreTargetHealthFactorTest is LiquidationLogic
         debtAssetUnit: 1,
         debtAssetPrice: 333e8
       });
-    uint256 debtToRestoreTargetHealthFactor = liquidationLogicWrapper
-      .calculateDebtToRestoreTargetHealthFactor(params);
-    assertEq(debtToRestoreTargetHealthFactor, 25);
+    uint256 debtToRestoreHealthFactor = liquidationLogicWrapper
+      .calculateDebtToRestoreHealthFactor(params);
+    assertEq(debtToRestoreHealthFactor, 25);
 
     params.debtAssetUnit = 1e6;
-    debtToRestoreTargetHealthFactor = liquidationLogicWrapper
-      .calculateDebtToRestoreTargetHealthFactor(params);
-    assertEq(debtToRestoreTargetHealthFactor, 24.024025e6);
+    debtToRestoreHealthFactor = liquidationLogicWrapper
+      .calculateDebtToRestoreHealthFactor(params);
+    assertEq(debtToRestoreHealthFactor, 24.024025e6);
 
     params.debtAssetUnit = 1e18;
-    debtToRestoreTargetHealthFactor = liquidationLogicWrapper
-      .calculateDebtToRestoreTargetHealthFactor(params);
-    assertEq(debtToRestoreTargetHealthFactor, 24.024024024024024025e18);
+    debtToRestoreHealthFactor = liquidationLogicWrapper
+      .calculateDebtToRestoreHealthFactor(params);
+    assertEq(debtToRestoreHealthFactor, 24.024024024024024025e18);
   }
 }

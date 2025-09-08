@@ -46,11 +46,11 @@ contract LiquidationLogicBaseTest is SpokeBase {
   }
 
   function _bound(
-    LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams memory params
+    LiquidationLogic.CalculateDebtToRestoreHealthFactorParams memory params
   )
     internal
     virtual
-    returns (LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams memory)
+    returns (LiquidationLogic.CalculateDebtToRestoreHealthFactorParams memory)
   {
     uint256 totalDebtInBaseCurrency = bound(
       params.totalDebtInBaseCurrency,
@@ -81,7 +81,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     uint256 debtAssetUnit = 10 ** bound(params.debtAssetUnit, 0, MAX_TOKEN_DECIMALS_SUPPORTED);
 
     return
-      LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams({
+      LiquidationLogic.CalculateDebtToRestoreHealthFactorParams({
         totalDebtInBaseCurrency: totalDebtInBaseCurrency,
         healthFactor: healthFactor,
         targetHealthFactor: targetHealthFactor,
@@ -92,11 +92,11 @@ contract LiquidationLogicBaseTest is SpokeBase {
       });
   }
 
-  function _getDebtToRestoreTargetHealthFactorParams(
+  function _getDebtToRestoreHealthFactorParams(
     LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
-  ) internal returns (LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams memory) {
+  ) internal returns (LiquidationLogic.CalculateDebtToRestoreHealthFactorParams memory) {
     return
-      LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams({
+      LiquidationLogic.CalculateDebtToRestoreHealthFactorParams({
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
         healthFactor: params.healthFactor,
         targetHealthFactor: params.targetHealthFactor,
@@ -110,9 +110,9 @@ contract LiquidationLogicBaseTest is SpokeBase {
   function _bound(
     LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
   ) internal virtual returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
-    LiquidationLogic.CalculateDebtToRestoreTargetHealthFactorParams
-      memory debtToRestoreTargetHealthFactorParams = _bound(
-        _getDebtToRestoreTargetHealthFactorParams(params)
+    LiquidationLogic.CalculateDebtToRestoreHealthFactorParams
+      memory debtToRestoreHealthFactorParams = _bound(
+        _getDebtToRestoreHealthFactorParams(params)
       );
 
     uint256 debtToCover = bound(params.debtToCover, 0, MAX_SUPPLY_AMOUNT);
@@ -120,9 +120,9 @@ contract LiquidationLogicBaseTest is SpokeBase {
       params.reserveDebt,
       0,
       _convertBaseCurrencyToAmount(
-        debtToRestoreTargetHealthFactorParams.totalDebtInBaseCurrency,
-        debtToRestoreTargetHealthFactorParams.debtAssetPrice,
-        debtToRestoreTargetHealthFactorParams.debtAssetUnit
+        debtToRestoreHealthFactorParams.totalDebtInBaseCurrency,
+        debtToRestoreHealthFactorParams.debtAssetPrice,
+        debtToRestoreHealthFactorParams.debtAssetUnit
       )
     );
 
@@ -130,13 +130,13 @@ contract LiquidationLogicBaseTest is SpokeBase {
       LiquidationLogic.CalculateMaxDebtToLiquidateParams({
         reserveDebt: reserveDebt,
         debtToCover: debtToCover,
-        totalDebtInBaseCurrency: debtToRestoreTargetHealthFactorParams.totalDebtInBaseCurrency,
-        healthFactor: debtToRestoreTargetHealthFactorParams.healthFactor,
-        targetHealthFactor: debtToRestoreTargetHealthFactorParams.targetHealthFactor,
-        liquidationBonus: debtToRestoreTargetHealthFactorParams.liquidationBonus,
-        collateralFactor: debtToRestoreTargetHealthFactorParams.collateralFactor,
-        debtAssetPrice: debtToRestoreTargetHealthFactorParams.debtAssetPrice,
-        debtAssetUnit: debtToRestoreTargetHealthFactorParams.debtAssetUnit
+        totalDebtInBaseCurrency: debtToRestoreHealthFactorParams.totalDebtInBaseCurrency,
+        healthFactor: debtToRestoreHealthFactorParams.healthFactor,
+        targetHealthFactor: debtToRestoreHealthFactorParams.targetHealthFactor,
+        liquidationBonus: debtToRestoreHealthFactorParams.liquidationBonus,
+        collateralFactor: debtToRestoreHealthFactorParams.collateralFactor,
+        debtAssetPrice: debtToRestoreHealthFactorParams.debtAssetPrice,
+        debtAssetUnit: debtToRestoreHealthFactorParams.debtAssetUnit
       });
   }
 

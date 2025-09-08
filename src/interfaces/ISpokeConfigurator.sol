@@ -27,9 +27,9 @@ interface ISpokeConfigurator {
   function updateReservePriceSource(address spoke, uint256 reserveId, address priceSource) external;
 
   /**
-   * @notice Updates the liquidation close factor of a spoke.
+   * @notice Updates the liquidation target health factor of a spoke.
    * @param spoke The address of the spoke.
-   * @param targetHealthFactor The new liquidation close factor.
+   * @param targetHealthFactor The new liquidation target health factor.
    */
   function updateLiquidationTargetHealthFactor(address spoke, uint256 targetHealthFactor) external;
 

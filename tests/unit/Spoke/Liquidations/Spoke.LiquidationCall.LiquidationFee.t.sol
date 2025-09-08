@@ -11,7 +11,7 @@ contract LiquidationCallLiquidationFeeTest is SpokeLiquidationBase {
   /// fuzz tests with varying liquidationFee
   /// single debt reserve, single collateral reserve
   /// user health factor position varies across possible desiredHf values
-  /// close factor = 1e18
+  /// target health factor = 1e18
   function test_liquidationCall_fuzz_liquidationFee(
     uint256 collateralReserveId,
     uint256 debtReserveId,

@@ -167,7 +167,7 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
   /// fuzz tests to make sure bad debt remains after liquidation
   /// single debt reserve, single collateral reserve
   /// user health factor position is lower than threshold -> liquidating all collateral is insufficient to cover debt
-  /// close factor varies across range of values
+  /// target health factor varies across range of values
   /// non-variable liquidation bonus
   function _execLiqCallTargetHealthFactorBadPremiumDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,
