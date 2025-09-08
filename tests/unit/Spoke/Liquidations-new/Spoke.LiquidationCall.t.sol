@@ -29,9 +29,8 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
   function _processAdditionalInputs(
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    address user,
-    bytes memory additionalInputs
-  ) internal virtual;
+    address user
+  ) internal virtual {}
 
   function test_liquidationCall(
     ISpoke spoke,
@@ -92,7 +91,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user, additionalInputs);
+    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -116,8 +115,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
-    uint256 debtToCover,
-    bytes memory additionalInputs
+    uint256 debtToCover
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -127,7 +125,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user, additionalInputs);
+    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -158,8 +156,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 debtReserveId,
     address user,
     uint256 debtToCover,
-    uint256[] memory additionalCollateralReserveIds,
-    bytes memory additionalInputs
+    uint256[] memory additionalCollateralReserveIds
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -169,7 +166,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user, additionalInputs);
+    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -200,8 +197,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 debtReserveId,
     address user,
     uint256 debtToCover,
-    uint256[] memory additionalCollateralReserveIds,
-    bytes memory additionalInputs
+    uint256[] memory additionalCollateralReserveIds
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -211,7 +207,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user, additionalInputs);
+    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -242,8 +238,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 debtReserveId,
     address user,
     uint256 debtToCover,
-    uint256[] memory additionalDebtReserveIds,
-    bytes memory additionalInputs
+    uint256[] memory additionalDebtReserveIds
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -253,7 +248,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user, additionalInputs);
+    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -284,8 +279,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 debtReserveId,
     address user,
     uint256 debtToCover,
-    uint256[] memory additionalDebtReserveIds,
-    bytes memory additionalInputs
+    uint256[] memory additionalDebtReserveIds
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -295,7 +289,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user, additionalInputs);
+    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -327,8 +321,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     address user,
     uint256 debtToCover,
     uint256[] memory additionalCollateralReserveIds,
-    uint256[] memory additionalDebtReserveIds,
-    bytes memory additionalInputs
+    uint256[] memory additionalDebtReserveIds
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -338,7 +331,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user, additionalInputs);
+    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -384,8 +377,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     address user,
     uint256 debtToCover,
     uint256[] memory additionalCollateralReserveIds,
-    uint256[] memory additionalDebtReserveIds,
-    bytes memory additionalInputs
+    uint256[] memory additionalDebtReserveIds
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -395,7 +387,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user, additionalInputs);
+    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -442,13 +434,6 @@ contract SpokeLiquidationCallTest_NoLiquidationBonus_SmallPosition is
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
     return 100e26;
   }
-
-  function _processAdditionalInputs(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user,
-    bytes memory additionalInputs
-  ) internal virtual override {}
 }
 
 contract SpokeLiquidationCallTest_NoLiquidationBonus_LargePosition is
@@ -457,13 +442,6 @@ contract SpokeLiquidationCallTest_NoLiquidationBonus_LargePosition is
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
     return 10000e26;
   }
-
-  function _processAdditionalInputs(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user,
-    bytes memory additionalInputs
-  ) internal virtual override {}
 }
 
 contract SpokeLiquidationCallTest_SmallLiquidationBonus_SmallPosition is
@@ -485,13 +463,6 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_SmallPosition is
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
     return 100e26;
   }
-
-  function _processAdditionalInputs(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user,
-    bytes memory additionalInputs
-  ) internal virtual override {}
 }
 
 contract SpokeLiquidationCallTest_SmallLiquidationBonus_LargePosition is
@@ -513,13 +484,6 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_LargePosition is
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
     return 10000e26;
   }
-
-  function _processAdditionalInputs(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user,
-    bytes memory additionalInputs
-  ) internal virtual override {}
 }
 
 contract SpokeLiquidationCallTest_LargeLiquidationBonus_SmallPosition is
@@ -546,13 +510,6 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_SmallPosition is
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
     return 100e26;
   }
-
-  function _processAdditionalInputs(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user,
-    bytes memory additionalInputs
-  ) internal virtual override {}
 }
 
 contract SpokeLiquidationCallTest_LargeLiquidationBonus_LargePosition is
@@ -579,13 +536,6 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_LargePosition is
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
     return 10000e26;
   }
-
-  function _processAdditionalInputs(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user,
-    bytes memory additionalInputs
-  ) internal virtual override {}
 }
 
 contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
@@ -603,20 +553,15 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
   function _processAdditionalInputs(
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    address user,
-    bytes memory additionalInputs
+    address user
   ) internal virtual override {
-    vm.assume(additionalInputs.length >= 96);
-    (uint256 targetHealthFactor, uint256 liquidationFee, uint256 baseAmountInBaseCurrency_) = abi
-      .decode(additionalInputs, (uint256, uint256, uint256));
-    targetHealthFactor = bound(targetHealthFactor, MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR);
-    liquidationFee = bound(liquidationFee, MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE);
-
+    uint256 targetHealthFactor = vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR);
     _updateTargetHealthFactor(spoke, targetHealthFactor.toUint128());
+
+    uint256 liquidationFee = vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE);
     _updateLiquidationFee(spoke, collateralReserveId, liquidationFee.toUint16());
 
-    baseAmountInBaseCurrency = bound(
-      baseAmountInBaseCurrency_,
+    baseAmountInBaseCurrency = vm.randomUint(
       MIN_AMOUNT_IN_BASE_CURRENCY,
       MAX_AMOUNT_IN_BASE_CURRENCY
     );
