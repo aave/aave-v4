@@ -227,6 +227,13 @@ interface IHub is IHubBase, IAccessManaged {
    */
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
 
+  /**
+   * @notice Returns a struct containing information about the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The asset info struct.
+   */
+  function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
+
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
 
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
@@ -251,13 +258,6 @@ interface IHub is IHubBase, IAccessManaged {
   function getSwept(uint256 assetId) external view returns (uint256);
 
   function getDeficit(uint256 assetId) external view returns (uint256);
-
-  /**
-   * @notice Returns a struct containing information about the specified asset.
-   * @param assetId The identifier of the asset.
-   * @return The asset info struct.
-   */
-  function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
 
   function getSpokeCount(uint256 assetId) external view returns (uint256);
 
