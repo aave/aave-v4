@@ -1321,7 +1321,7 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     IPriceOracle oracle = spoke.oracle();
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    (, uint8 decimals) = spoke.getReserve(reserveId).hub.getAssetUnderlyingAndDecimals(assetId);
+    (, uint8 decimals) = _hub(spoke, reserveId).getAssetUnderlyingAndDecimals(assetId);
     return (amount * oracle.getReservePrice(reserveId)).wadDivDown(10 ** decimals);
   }
 
@@ -1333,7 +1333,7 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     IPriceOracle oracle = spoke.oracle();
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    (, uint8 decimals) = spoke.getReserve(reserveId).hub.getAssetUnderlyingAndDecimals(assetId);
+    (, uint8 decimals) = _hub(spoke, reserveId).getAssetUnderlyingAndDecimals(assetId);
     return (amount * oracle.getReservePrice(reserveId)).wadDivUp(10 ** decimals);
   }
 

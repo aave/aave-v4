@@ -400,7 +400,8 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHubBase
   function getAssetUnderlyingAndDecimals(uint256 assetId) external view returns (address, uint8) {
-    return (_assets[assetId].underlying, _assets[assetId].decimals);
+    DataTypes.Asset storage asset = _assets[assetId];
+    return (asset.underlying, asset.decimals);
   }
 
   /// @inheritdoc IHub
