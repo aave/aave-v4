@@ -393,9 +393,14 @@ contract Hub is IHub, AccessManaged {
     return _assetCount;
   }
 
-  /// @inheritdoc IHubBase
+  /// @inheritdoc IHub
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory) {
     return _assets[assetId];
+  }
+
+  /// @inheritdoc IHubBase
+  function getAssetUnderlyingAndDecimals(uint256 assetId) external view returns (address, uint8) {
+    return (_assets[assetId].underlying, _assets[assetId].decimals);
   }
 
   /// @inheritdoc IHub

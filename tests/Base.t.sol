@@ -1237,7 +1237,8 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (uint256, IERC20) {
     DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    return (reserve.assetId, IERC20(reserve.hub.getAsset(reserve.assetId).underlying));
+    (address underlying, ) = reserve.hub.getAssetUnderlyingAndDecimals(reserve.assetId);
+    return (reserve.assetId, IERC20(underlying));
   }
 
   function getAssetUnderlyingByReserveId(
@@ -1245,7 +1246,8 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (IERC20) {
     DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    return IERC20(reserve.hub.getAsset(reserve.assetId).underlying);
+    (address underlying, ) = reserve.hub.getAssetUnderlyingAndDecimals(reserve.assetId);
+    return IERC20(underlying);
   }
 
   function getWithdrawalLimit(
@@ -1319,10 +1321,8 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     IPriceOracle oracle = spoke.oracle();
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    return
-      (amount * oracle.getReservePrice(reserveId)).wadDivDown(
-        10 ** spoke.getReserve(reserveId).hub.getAsset(assetId).decimals
-      );
+    (, uint8 decimals) = spoke.getReserve(reserveId).hub.getAssetUnderlyingAndDecimals(assetId);
+    return (amount * oracle.getReservePrice(reserveId)).wadDivDown(10 ** decimals);
   }
 
   /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
@@ -1333,10 +1333,8 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     IPriceOracle oracle = spoke.oracle();
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    return
-      (amount * oracle.getReservePrice(reserveId)).wadDivUp(
-        10 ** spoke.getReserve(reserveId).hub.getAsset(assetId).decimals
-      );
+    (, uint8 decimals) = spoke.getReserve(reserveId).hub.getAssetUnderlyingAndDecimals(assetId);
+    return (amount * oracle.getReservePrice(reserveId)).wadDivUp(10 ** decimals);
   }
 
   /// @notice Convert 1 asset amount to equivalent amount in another asset.

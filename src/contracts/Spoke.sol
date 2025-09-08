@@ -112,16 +112,16 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 reserveId = _reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
-    DataTypes.Asset memory asset = IHubBase(hub).getAsset(assetId);
-    require(asset.underlying != address(0), AssetNotListed());
+    (address underlying, uint8 decimals) = IHubBase(hub).getAssetUnderlyingAndDecimals(assetId);
+    require(underlying != address(0), AssetNotListed());
 
     _updateReservePriceSource(reserveId, priceSource);
 
     _reserves[reserveId] = DataTypes.Reserve({
-      underlying: asset.underlying,
+      underlying: underlying,
       hub: IHubBase(hub),
       assetId: assetId.toUint16(),
-      decimals: asset.decimals,
+      decimals: decimals,
       dynamicConfigKey: dynamicConfigKey,
       paused: config.paused,
       frozen: config.frozen,

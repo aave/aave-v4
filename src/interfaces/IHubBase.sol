@@ -110,11 +110,12 @@ interface IHubBase {
   function payFee(uint256 assetId, uint256 shares) external;
 
   /**
-   * @notice Returns a struct containing information about the specified asset.
+   * @notice Returns the underlying address and decimals of the specified asset.
    * @param assetId The identifier of the asset.
-   * @return The asset info struct.
+   * @return The underlying address of the asset.
+   * @return The decimals of the asset.
    */
-  function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
+  function getAssetUnderlyingAndDecimals(uint256 assetId) external view returns (address, uint8);
 
   /**
    * @notice Converts the specified amount of assets to shares amount added upon an Add action.

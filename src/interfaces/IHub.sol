@@ -252,6 +252,13 @@ interface IHub is IHubBase, IAccessManaged {
 
   function getDeficit(uint256 assetId) external view returns (uint256);
 
+  /**
+   * @notice Returns a struct containing information about the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The asset info struct.
+   */
+  function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
+
   function getSpokeCount(uint256 assetId) external view returns (uint256);
 
   function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address);
