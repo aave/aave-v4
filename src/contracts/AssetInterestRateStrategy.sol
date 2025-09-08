@@ -36,7 +36,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     HUB = hub_;
   }
 
-  /// @inheritdoc IAssetInterestRateStrategy
+  /// @inheritdoc IBasicInterestRateStrategy
   function setInterestRateData(uint256 assetId, bytes calldata data) external {
     require(HUB == msg.sender, OnlyHub());
     InterestRateData memory rateData = abi.decode(data, (InterestRateData));

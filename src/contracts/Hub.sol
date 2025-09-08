@@ -17,7 +17,7 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {Constants} from 'src/libraries/helpers/Constants.sol';
 
 import {IHubBase, IHub} from 'src/interfaces/IHub.sol';
-import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
+import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
 
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
@@ -59,8 +59,8 @@ contract Hub is IHub, AccessManaged {
     require(decimals <= Constants.MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
 
     uint256 assetId = _assetCount++;
-    IAssetInterestRateStrategy(irStrategy).setInterestRateData(assetId, data);
-    uint256 drawnRate = IAssetInterestRateStrategy(irStrategy).calculateInterestRate({
+    IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, data);
+    uint256 drawnRate = IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
       assetId: assetId,
       liquidity: 0,
       drawn: 0,
@@ -158,7 +158,7 @@ contract Hub is IHub, AccessManaged {
   function setInterestRateData(uint256 assetId, bytes calldata data) external restricted {
     DataTypes.Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
-    IAssetInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, data);
+    IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, data);
     asset.updateDrawnRate(assetId);
   }
 

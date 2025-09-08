@@ -9,6 +9,13 @@ pragma solidity ^0.8.10;
  */
 interface IBasicInterestRateStrategy {
   /**
+   * @notice Sets interest rate data for an Aave rate strategy.
+   * @param assetId The id of the asset to update.
+   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
+   */
+  function setInterestRateData(uint256 assetId, bytes calldata data) external;
+
+  /**
    * @notice Calculates the interest rate depending on the asset's state and configurations.
    * @param assetId The id of the asset.
    * @param liquidity The current available liquidity of the asset.
