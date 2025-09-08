@@ -79,6 +79,8 @@ abstract contract Base is Test {
   uint32 internal constant MIN_LIQUIDATION_BONUS = uint32(PercentageMath.PERCENTAGE_FACTOR); // 100% == 0% bonus
   uint32 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
   uint16 internal constant MAX_LIQUIDATION_BONUS_FACTOR = uint16(PercentageMath.PERCENTAGE_FACTOR); // 100%
+  uint16 internal constant MAX_LIQUIDATION_FEE = 100_00;
+  uint16 internal constant MIN_LIQUIDATION_FEE = 0;
   uint128 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
   uint128 internal constant MIN_CLOSE_FACTOR = 1e18;
   uint128 internal constant MAX_CLOSE_FACTOR = 2e18;
@@ -1000,7 +1002,7 @@ abstract contract Base is Test {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateLiquidationConfig(
+  function _updateLiquidationConfig(
     ISpoke spoke,
     DataTypes.LiquidationConfig memory config
   ) internal pausePrank {
@@ -1010,7 +1012,7 @@ abstract contract Base is Test {
     assertEq(spoke.getLiquidationConfig(), config);
   }
 
-  function updateMaxLiquidationBonus(
+  function _updateMaxLiquidationBonus(
     ISpoke spoke,
     uint256 reserveId,
     uint32 newMaxLiquidationBonus
@@ -1025,7 +1027,7 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function updateLiquidationFee(
+  function _updateLiquidationFee(
     ISpoke spoke,
     uint256 reserveId,
     uint16 newLiquidationFee
@@ -1122,7 +1124,7 @@ abstract contract Base is Test {
     assertEq(hub1.getAssetConfig(assetId), config);
   }
 
-  function updateTargetHealthFactor(
+  function _updateTargetHealthFactor(
     ISpoke spoke,
     uint128 newTargetHealthFactor
   ) internal pausePrank {

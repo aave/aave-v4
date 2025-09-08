@@ -225,9 +225,9 @@ contract LiquidationCallTargetHealthFactorMultiReserveTest is SpokeLiquidationBa
     state.spoke = spoke1;
     state.user = alice;
 
-    updateLiquidationConfig(state.spoke, liqConfig);
-    updateMaxLiquidationBonus(state.spoke, collateralReserveIds[collateralReserveIndex], liqBonus);
-    updateLiquidationFee(
+    _updateLiquidationConfig(state.spoke, liqConfig);
+    _updateMaxLiquidationBonus(state.spoke, collateralReserveIds[collateralReserveIndex], liqBonus);
+    _updateLiquidationFee(
       state.spoke,
       collateralReserveIds[collateralReserveIndex],
       state.liquidationFee

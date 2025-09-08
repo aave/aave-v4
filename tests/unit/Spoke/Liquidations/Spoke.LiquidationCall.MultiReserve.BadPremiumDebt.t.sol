@@ -314,9 +314,9 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     skipTimeForPremiumAccrual = bound(skipTimeForPremiumAccrual, 365 days, MAX_SKIP_TIME); // enough time to accrue debt so that HF is liquidatable
 
     // set spoke liq config
-    updateLiquidationConfig(state.spoke, liqConfig);
-    updateMaxLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
-    updateLiquidationFee(state.spoke, collateralReserveId, state.liquidationFee);
+    _updateLiquidationConfig(state.spoke, liqConfig);
+    _updateMaxLiquidationBonus(state.spoke, collateralReserveId, liqBonus);
+    _updateLiquidationFee(state.spoke, collateralReserveId, state.liquidationFee);
 
     Utils.supplyCollateral({
       spoke: state.spoke,

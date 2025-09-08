@@ -588,12 +588,16 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_LargePosition is
   ) internal virtual override {}
 }
 
-contract SpokeLiquidationCallTest_VariableTargetHealthFactor is SpokeLiquidationCallHelperTest {
+contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
+  SpokeLiquidationCallHelperTest
+{
   using PercentageMath for uint256;
   using SafeCast for uint256;
 
+  uint256 internal baseAmountInBaseCurrency;
+
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
-    return 10000e26;
+    return baseAmountInBaseCurrency;
   }
 
   function _processAdditionalInputs(
@@ -602,9 +606,19 @@ contract SpokeLiquidationCallTest_VariableTargetHealthFactor is SpokeLiquidation
     address user,
     bytes memory additionalInputs
   ) internal virtual override {
-    vm.assume(additionalInputs.length >= 32);
-    uint256 targetHealthFactor = abi.decode(additionalInputs, (uint256));
+    vm.assume(additionalInputs.length >= 96);
+    (uint256 targetHealthFactor, uint256 liquidationFee, uint256 baseAmountInBaseCurrency_) = abi
+      .decode(additionalInputs, (uint256, uint256, uint256));
     targetHealthFactor = bound(targetHealthFactor, MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR);
-    updateTargetHealthFactor(spoke, targetHealthFactor.toUint128());
+    liquidationFee = bound(liquidationFee, MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE);
+
+    _updateTargetHealthFactor(spoke, targetHealthFactor.toUint128());
+    _updateLiquidationFee(spoke, collateralReserveId, liquidationFee.toUint16());
+
+    baseAmountInBaseCurrency = bound(
+      baseAmountInBaseCurrency_,
+      MIN_AMOUNT_IN_BASE_CURRENCY,
+      MAX_AMOUNT_IN_BASE_CURRENCY
+    );
   }
 }
