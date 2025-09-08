@@ -28,31 +28,6 @@ interface IHubBase {
   );
 
   /**
-   * @notice Refreshes premium accounting.
-   * @dev Only callable by active spokes, reverts with `SpokeNotActive` otherwise.
-   * @dev Overall premium should not decrease, reverts with `InvalidPremiumChange` otherwise.
-   * @param assetId The identifier of the asset.
-   * @param premiumDelta The change in premium.
-   */
-  function refreshPremium(uint256 assetId, DataTypes.PremiumDelta calldata premiumDelta) external;
-
-  /**
-   * @notice Reports deficit.
-   * @dev Only callable by active spokes.
-   * @param assetId The identifier of the asset.
-   * @param drawnAmount The drawn amount to report as deficit.
-   * @param premiumAmount The premium amount to report as deficit.
-   * @param premiumDelta The premium delta to apply which signal premium deficit.
-   * @return The amount of drawn shares reported as deficit.
-   */
-  function reportDeficit(
-    uint256 assetId,
-    uint256 drawnAmount,
-    uint256 premiumAmount,
-    DataTypes.PremiumDelta calldata premiumDelta
-  ) external returns (uint256);
-
-  /**
    * @notice Add asset on behalf of user.
    * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
@@ -100,6 +75,31 @@ interface IHubBase {
     DataTypes.PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256);
+
+  /**
+   * @notice Reports deficit.
+   * @dev Only callable by active spokes.
+   * @param assetId The identifier of the asset.
+   * @param drawnAmount The drawn amount to report as deficit.
+   * @param premiumAmount The premium amount to report as deficit.
+   * @param premiumDelta The premium delta to apply which signal premium deficit.
+   * @return The amount of drawn shares reported as deficit.
+   */
+  function reportDeficit(
+    uint256 assetId,
+    uint256 drawnAmount,
+    uint256 premiumAmount,
+    DataTypes.PremiumDelta calldata premiumDelta
+  ) external returns (uint256);
+
+  /**
+   * @notice Refreshes premium accounting.
+   * @dev Only callable by active spokes, reverts with `SpokeNotActive` otherwise.
+   * @dev Overall premium should not decrease, reverts with `InvalidPremiumChange` otherwise.
+   * @param assetId The identifier of the asset.
+   * @param premiumDelta The change in premium.
+   */
+  function refreshPremium(uint256 assetId, DataTypes.PremiumDelta calldata premiumDelta) external;
 
   /**
    * @notice Pay existing liquidity to feeReceiver.
@@ -189,6 +189,15 @@ interface IHubBase {
   function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
+   * @notice Returns the total amount of the specified assets owed to the hub by the specified spoke.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @return The amount of owed drawn assets.
+   * @return The amount of owed premium assets.
+   */
+  function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256);
+
+  /**
    * @notice Returns the total amount of the specified assets added to the hub by the specified spoke.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
@@ -203,13 +212,4 @@ interface IHubBase {
    * @return The amount of added shares.
    */
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256);
-
-  /**
-   * @notice Returns the total amount of the specified assets owed to the hub by the specified spoke.
-   * @param assetId The identifier of the asset.
-   * @param spoke The address of the spoke.
-   * @return The amount of owed drawn assets.
-   * @return The amount of owed premium assets.
-   */
-  function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256);
 }
