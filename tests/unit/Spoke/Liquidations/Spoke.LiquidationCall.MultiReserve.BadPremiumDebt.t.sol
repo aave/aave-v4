@@ -266,7 +266,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
 
   /// execute fuzz tests with bad debt across multiple debt reserves, single collateral reserve
   /// liquidating all collateral is insufficient to cover debt, bad debt remains
-  /// close factor varies across range of values
+  /// target health factor varies across range of values
   /// non-variable liquidation bonus
   function _execLiqCallTargetHealthFactorMultiReserveBadPremiumDebtTest(
     DataTypes.LiquidationConfig memory liqConfig,

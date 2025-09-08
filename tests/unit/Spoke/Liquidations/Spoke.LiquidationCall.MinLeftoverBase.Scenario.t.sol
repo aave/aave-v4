@@ -112,7 +112,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
       0.95e18
     );
 
-    uint256 debtToRestoreTargetHealthFactor = calcDebtToRestoreTargetHealthFactor(
+    uint256 debtToRestoreHealthFactor = calcDebtToRestoreHealthFactor(
       spoke1,
       _usdxReserveId(spoke1),
       alice,
@@ -123,7 +123,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     debtToCover = bound(
       debtToCover,
       1,
-      _min(debtToRestoreTargetHealthFactor, requiredDebtAmount) - 1
+      _min(debtToRestoreHealthFactor, requiredDebtAmount) - 1
     );
 
     // liquidation call with invalid debt to cover
@@ -138,19 +138,19 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
   }
 
   /// borrowerReserveDebt is less than minLeftoverBase, results in dust debt that causes revert
-  /// debtToRestoreTargetHealthFactor is smallest value within actualDebtToLiquidate
-  function test_liquidationCall_borrowerReserveDebtBelowThreshold_revertsWith_MustNotLeaveDust_debtToRestoreTargetHealthFactor()
+  /// debtToRestoreHealthFactor is smallest value within actualDebtToLiquidate
+  function test_liquidationCall_borrowerReserveDebtBelowThreshold_revertsWith_MustNotLeaveDust_debtToRestoreHealthFactor()
     public
   {
-    test_liquidationCall_fuzz_borrowerReserveDebtBelowThreshold_revertsWith_MustNotLeaveDust_debtToRestoreTargetHealthFactor({
+    test_liquidationCall_fuzz_borrowerReserveDebtBelowThreshold_revertsWith_MustNotLeaveDust_debtToRestoreHealthFactor({
       daiAmount: 500e18,
       debtToCover: 100e6
     });
   }
 
   /// fuzz - borrowerReserveDebt is less than minLeftoverBase, results in dust debt that causes revert
-  /// debtToRestoreTargetHealthFactor is smallest value within actualDebtToLiquidate
-  function test_liquidationCall_fuzz_borrowerReserveDebtBelowThreshold_revertsWith_MustNotLeaveDust_debtToRestoreTargetHealthFactor(
+  /// debtToRestoreHealthFactor is smallest value within actualDebtToLiquidate
+  function test_liquidationCall_fuzz_borrowerReserveDebtBelowThreshold_revertsWith_MustNotLeaveDust_debtToRestoreHealthFactor(
     uint256 daiAmount,
     uint256 debtToCover
   ) public {
@@ -168,15 +168,15 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
       0.95e18
     );
 
-    uint256 debtToRestoreTargetHealthFactor = calcDebtToRestoreTargetHealthFactor(
+    uint256 debtToRestoreHealthFactor = calcDebtToRestoreHealthFactor(
       spoke1,
       _usdxReserveId(spoke1),
       alice,
       liquidationBonus,
       targetHealthFactor
     );
-    // ensure debtToCover is greater than debtToRestoreTargetHealthFactor to trigger revert
-    debtToCover = bound(debtToCover, debtToRestoreTargetHealthFactor + 1, requiredDebtAmount - 1);
+    // ensure debtToCover is greater than debtToRestoreHealthFactor to trigger revert
+    debtToCover = bound(debtToCover, debtToRestoreHealthFactor + 1, requiredDebtAmount - 1);
 
     vm.expectRevert(abi.encodeWithSelector(LiquidationLogic.MustNotLeaveDust.selector));
     // liquidation call with invalid debt to cover
@@ -209,7 +209,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
       0.95e18
     );
 
-    uint256 debtToRestoreTargetHealthFactor = calcDebtToRestoreTargetHealthFactor(
+    uint256 debtToRestoreHealthFactor = calcDebtToRestoreHealthFactor(
       spoke1,
       _usdxReserveId(spoke1),
       alice,
@@ -337,10 +337,10 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
       spoke1,
       alice,
       _usdxReserveId(spoke1),
-      0.75e18 // low HF to ensure that debtToRestoreTargetHealthFactor is greater than requiredDebtAmount
+      0.75e18 // low HF to ensure that debtToRestoreHealthFactor is greater than requiredDebtAmount
     );
 
-    uint256 debtToRestoreTargetHealthFactor = calcDebtToRestoreTargetHealthFactor(
+    uint256 debtToRestoreHealthFactor = calcDebtToRestoreHealthFactor(
       spoke1,
       _usdxReserveId(spoke1),
       alice,
@@ -349,13 +349,13 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     );
 
     // bound debtToCover to be an amount that results in dust debt
-    // between debtToRestoreTargetHealthFactor and requiredDebtAmount
+    // between debtToRestoreHealthFactor and requiredDebtAmount
     debtToCover = bound(
       debtToCover,
-      _min(debtToRestoreTargetHealthFactor, requiredDebtAmount) -
+      _min(debtToRestoreHealthFactor, requiredDebtAmount) -
         minLeftoverAmount[_usdxReserveId(spoke1)] +
         1,
-      _min(debtToRestoreTargetHealthFactor, requiredDebtAmount) - 1
+      _min(debtToRestoreHealthFactor, requiredDebtAmount) - 1
     );
 
     // liquidation call with invalid debt to cover

@@ -9,10 +9,10 @@ contract LiquidationCallTargetHealthFactorTest is SpokeLiquidationBase {
   using WadRayMath for uint256;
   using SafeCast for uint256;
 
-  /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+  /// fuzz tests with target health factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
   /// single debt reserve, single collateral reserve
-  /// user health factor position is higher than threshold, so that close factor can be achieved post-liquidation
-  /// close factor varies across range of values
+  /// user health factor position is higher than threshold, so that target health factor can be achieved post-liquidation
+  /// target health factor varies across range of values
   /// non-variable liquidation bonus
   function test_liquidationCall_fuzz_targetHealthFactor_defaultTargetHealthFactor(
     uint256 collateralReserveId,
@@ -37,7 +37,7 @@ contract LiquidationCallTargetHealthFactorTest is SpokeLiquidationBase {
     );
   }
 
-  /// variable close factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+  /// variable target health factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
   function test_liquidationCall_fuzz_targetHealthFactor(
     uint256 collateralReserveId,
     uint256 debtReserveId,
@@ -84,7 +84,7 @@ contract LiquidationCallTargetHealthFactorTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: weth / debt: dai with default value of close factor
+  /// coll: weth / debt: dai with default value of target health factor
   function test_liquidationCall_targetHealthFactor_defaultValue_scenario1() public {
     test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
@@ -120,7 +120,7 @@ contract LiquidationCallTargetHealthFactorTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: weth / debt: usdx with default value of close factor
+  /// coll: weth / debt: usdx with default value of target health factor
   function test_liquidationCall_targetHealthFactor_defaultValue_scenario2() public {
     test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
@@ -156,7 +156,7 @@ contract LiquidationCallTargetHealthFactorTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: usdx / debt: weth with default value of close factor
+  /// coll: usdx / debt: weth with default value of target health factor
   function test_liquidationCall_targetHealthFactor_defaultValue_scenario3() public {
     test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
@@ -192,7 +192,7 @@ contract LiquidationCallTargetHealthFactorTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: usdx / debt: dai with default value of close factor
+  /// coll: usdx / debt: dai with default value of target health factor
   function test_liquidationCall_targetHealthFactor_defaultValue_scenario4() public {
     test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
@@ -228,7 +228,7 @@ contract LiquidationCallTargetHealthFactorTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: dai / debt: weth with default value of close factor
+  /// coll: dai / debt: weth with default value of target health factor
   function test_liquidationCall_targetHealthFactor_defaultValue_scenario5() public {
     test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
@@ -264,7 +264,7 @@ contract LiquidationCallTargetHealthFactorTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: dai / debt: usdx with default value of close factor
+  /// coll: dai / debt: usdx with default value of target health factor
   function test_liquidationCall_targetHealthFactor_defaultValue_scenario6() public {
     test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
@@ -300,7 +300,7 @@ contract LiquidationCallTargetHealthFactorTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: dai / debt: weth, both 18 decimals, with default value of close factor
+  /// coll: dai / debt: weth, both 18 decimals, with default value of target health factor
   function test_liquidationCall_targetHealthFactor_defaultValue_scenario7() public {
     test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
@@ -336,7 +336,7 @@ contract LiquidationCallTargetHealthFactorTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: usdx / debt: usdx, both 18 decimals, with default value of close factor
+  /// coll: usdx / debt: usdx, both 18 decimals, with default value of target health factor
   function test_liquidationCall_targetHealthFactor_defaultValue_scenario8() public {
     test_liquidationCall_fuzz_targetHealthFactor({
       liqConfig: DataTypes.LiquidationConfig({
@@ -384,7 +384,7 @@ contract LiquidationCallTargetHealthFactorTest is SpokeLiquidationBase {
     assertApproxEqAbs(state.rate.rateAfter, state.rate.rateBefore, 1, 'supply rate precision');
   }
 
-  /// fuzz tests where liquidation results in health factor = close factor
+  /// fuzz tests where liquidation results in health factor = target health factor
   function _execLiqCallTargetHealthFactorTest(
     DataTypes.LiquidationConfig memory liqConfig,
     uint32 liqBonus,

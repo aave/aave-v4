@@ -29,7 +29,7 @@ contract LiquidationCallTargetHealthFactorBadDebtTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: weth / debt: dai with default value of close factor
+  /// coll: weth / debt: dai with default value of target health factor
   function test_liquidationCall_badDebt_defaultValue_scenario1() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
@@ -70,7 +70,7 @@ contract LiquidationCallTargetHealthFactorBadDebtTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: weth / debt: usdx with default value of close factor
+  /// coll: weth / debt: usdx with default value of target health factor
   function test_liquidationCall_badDebt_defaultValue_scenario2() public {
     uint256 collateralReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
@@ -112,7 +112,7 @@ contract LiquidationCallTargetHealthFactorBadDebtTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: usdx / debt: weth with default value of close factor
+  /// coll: usdx / debt: weth with default value of target health factor
   function test_liquidationCall_badDebt_defaultValue_scenario3() public {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _wethReserveId(spoke1);
@@ -153,7 +153,7 @@ contract LiquidationCallTargetHealthFactorBadDebtTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: usdx / debt: dai with default value of close factor
+  /// coll: usdx / debt: dai with default value of target health factor
   function test_liquidationCall_badDebt_defaultValue_scenario4() public {
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
@@ -193,7 +193,7 @@ contract LiquidationCallTargetHealthFactorBadDebtTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: dai / debt: weth with default value of close factor
+  /// coll: dai / debt: weth with default value of target health factor
   function test_liquidationCall_badDebt_defaultValue_scenario5() public {
     uint256 collateralReserveId = _daiReserveId(spoke1);
     uint256 debtReserveId = _wethReserveId(spoke1);
@@ -233,7 +233,7 @@ contract LiquidationCallTargetHealthFactorBadDebtTest is SpokeLiquidationBase {
     });
   }
 
-  /// coll: dai / debt: usdx with default value of close factor
+  /// coll: dai / debt: usdx with default value of target health factor
   function test_liquidationCall_badDebt_defaultValue_scenario6() public {
     uint256 collateralReserveId = _daiReserveId(spoke1);
     uint256 debtReserveId = _usdxReserveId(spoke1);
@@ -253,7 +253,7 @@ contract LiquidationCallTargetHealthFactorBadDebtTest is SpokeLiquidationBase {
     });
   }
 
-  /// variable close factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+  /// variable target health factor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD
   function test_liquidationCall_fuzz_badDebt(
     uint256 collateralReserveId,
     uint256 debtReserveId,
@@ -282,7 +282,7 @@ contract LiquidationCallTargetHealthFactorBadDebtTest is SpokeLiquidationBase {
     _checkLiquidation(state, label);
   }
 
-  /// fuzz tests with close factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+  /// fuzz tests with target health factor == HEALTH_FACTOR_LIQUIDATION_THRESHOLD
   function test_liquidationCall_fuzz_badDebt_defaultTargetHealthFactor(
     uint256 collateralReserveId,
     uint256 debtReserveId,
@@ -334,7 +334,7 @@ contract LiquidationCallTargetHealthFactorBadDebtTest is SpokeLiquidationBase {
     state.debtReserve = state.debtReserves[state.debtReserveIndex];
     state.collDynConfig = _getUserDynConfig(state.spoke, state.user, collateralReserveId);
 
-    // bound close factor, with a static liq bonus
+    // bound target health factor, with a static liq bonus
     liqConfig = _boundTargetHealthFactor(liqConfig);
     liqBonus = bound(
       liqBonus,

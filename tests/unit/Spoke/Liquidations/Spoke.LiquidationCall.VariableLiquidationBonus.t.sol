@@ -9,7 +9,7 @@ contract LiquidationCallLiquidationBonusTest is SpokeLiquidationBase {
   /// single debt reserve, single collateral reserve
   /// user health factor position varies across possible desiredHf values
   /// liquidation bonus varies
-  /// close factor = 1e18
+  /// target health factor = 1e18
   function test_liquidationCall_fuzz_variable_liqBonus(
     uint256 collateralReserveId,
     uint256 debtReserveId,
