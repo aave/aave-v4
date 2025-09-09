@@ -199,6 +199,27 @@ interface IHubBase {
   function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256);
 
   /**
+   * @notice Returns the amount of drawn shares of the specified asset by the specified spoke.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @return The amount of drawn shares.
+   */
+  function getSpokeDrawnShares(uint256 assetId, address spoke) external view returns (uint256);
+
+  /**
+   * @notice Returns the information regarding premium shares of the specified asset for the specified spoke.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @return The amount of premium shares.
+   * @return The premium offset.
+   * @return The realized premium.
+   */
+  function getSpokePremiumShares(
+    uint256 assetId,
+    address spoke
+  ) external view returns (uint256, uint256, uint256);
+
+  /**
    * @notice Returns the total amount of the specified assets added to the hub by the specified spoke.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.

@@ -270,8 +270,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
 
-  function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
-
   function getReserveConfig(
     uint256 reserveId
   ) external view returns (DataTypes.ReserveConfig memory);
@@ -289,7 +287,15 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
 
+  function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
+
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256);
+
+  function getReserveDrawnShares(uint256 reserveId) external view returns (uint256);
+
+  function getReservePremiumShares(
+    uint256 reserveId
+  ) external view returns (uint256, uint256, uint256);
 
   function getUserAccountData(
     address user

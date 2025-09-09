@@ -244,6 +244,22 @@ interface IHub is IHubBase, IAccessManaged {
 
   function getAssetTotalOwed(uint256 assetId) external view returns (uint256);
 
+  /**
+   * @notice Returns the amount of drawn shares of the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The amount of drawn shares.
+   */
+  function getAssetDrawnShares(uint256 assetId) external view returns (uint256);
+
+  /**
+   * @notice Returns the information regarding premium shares of the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The premium shares of the asset
+   * @return The premium offset of the asset
+   * @return The realized premium of the asset
+   */
+  function getAssetPremiumShares(uint256 assetId) external view returns (uint256, uint256, uint256);
+
   function getTotalAddedAssets(uint256 assetId) external view returns (uint256);
 
   function getTotalAddedShares(uint256 assetId) external view returns (uint256);

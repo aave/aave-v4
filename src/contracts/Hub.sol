@@ -511,6 +511,20 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].totalOwed();
   }
 
+  /// @inheritdoc IHub
+  function getAssetDrawnShares(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].drawnShares;
+  }
+
+  /// @inheritdoc IHub
+  function getAssetPremiumShares(
+    uint256 assetId
+  ) external view returns (uint256, uint256, uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    return (asset.premiumShares, asset.premiumOffset, asset.realizedPremium);
+  }
+
+  /// @inheritdoc IHubBase
   function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256) {
     return _getSpokeOwed(_spokes[assetId][spoke], assetId);
   }
@@ -518,6 +532,20 @@ contract Hub is IHub, AccessManaged {
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256) {
     (uint256 drawn, uint256 premium) = _getSpokeOwed(_spokes[assetId][spoke], assetId);
     return drawn + premium;
+  }
+
+  /// @inheritdoc IHubBase
+  function getSpokeDrawnShares(uint256 assetId, address spoke) external view returns (uint256) {
+    return _spokes[assetId][spoke].drawnShares;
+  }
+
+  /// @inheritdoc IHubBase
+  function getSpokePremiumShares(
+    uint256 assetId,
+    address spoke
+  ) external view returns (uint256, uint256, uint256) {
+    DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
+    return (spokeData.premiumShares, spokeData.premiumOffset, spokeData.realizedPremium);
   }
 
   function getAssetAddedAmount(uint256 assetId) external view returns (uint256) {
