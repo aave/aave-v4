@@ -341,6 +341,18 @@ contract HubConfigTest is HubBase {
     hub1.updateAssetConfig(assetId, newConfig);
   }
 
+  // function test_debug() public {
+  //   test_updateAssetConfig_fuzz(
+  //     5,
+  //     DataTypes.AssetConfig({
+  //       feeReceiver: 0x0bEe7563F91265b39626b09accCb543Ce995CAd9,
+  //       liquidityFee: 19069,
+  //       irStrategy: 0x0000000000000000000000000000000000002C98,
+  //       reinvestmentController: 0x1298F1F4b724aE718E87814773F495d762A6f5E9
+  //     })
+  //   );
+  // }
+
   function test_updateAssetConfig_fuzz(
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
@@ -352,8 +364,17 @@ contract HubConfigTest is HubBase {
     uint256 liquidity = hub1.getLiquidity(assetId);
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
 
-    // new spoke is added only if it is different from the old one
-    if (newConfig.feeReceiver != _getFeeReceiver(hub1, assetId)) {
+    console.log(
+      'newConfig.feeReceiver',
+      newConfig.feeReceiver,
+      hub1.isSpokeListed(assetId, newConfig.feeReceiver)
+    );
+
+    // new spoke is added only if it is different from the old one and not yet listed
+    if (
+      newConfig.feeReceiver != _getFeeReceiver(hub1, assetId) &&
+      !hub1.isSpokeListed(assetId, newConfig.feeReceiver)
+    ) {
       vm.expectEmit(address(hub1));
       emit IHub.AddSpoke(assetId, newConfig.feeReceiver);
       vm.expectEmit(address(hub1));
@@ -362,6 +383,8 @@ contract HubConfigTest is HubBase {
         newConfig.feeReceiver,
         DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
       );
+    } else {
+      newConfig.feeReceiver = _getFeeReceiver(hub1, assetId);
     }
     vm.expectEmit(address(hub1));
     emit IHub.AssetUpdate(

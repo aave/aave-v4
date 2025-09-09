@@ -235,10 +235,11 @@ contract HubConfiguratorTest is HubBase {
 
   function test_updateFeeReceiver_fuzz(address feeReceiver) public {
     assumeNotZeroAddress(feeReceiver);
-
     DataTypes.AssetConfig memory oldConfig = hub1.getAssetConfig(assetId);
+    DataTypes.AssetConfig memory expectedConfig = oldConfig;
 
-    if (feeReceiver != oldConfig.feeReceiver) {
+    // if new feeReceiver is different than old one, and is not listed, update the spoke config of old feeReceiver
+    if (feeReceiver != oldConfig.feeReceiver && !hub1.isSpokeListed(assetId, feeReceiver)) {
       vm.expectCall(
         address(hub1),
         abi.encodeCall(
@@ -255,20 +256,32 @@ contract HubConfiguratorTest is HubBase {
         )
       );
 
-      // same struct, renaming to expectedConfig
-      DataTypes.AssetConfig memory expectedConfig = oldConfig;
       expectedConfig.feeReceiver = feeReceiver;
 
       vm.expectCall(
         address(hub1),
         abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig))
       );
-
-      vm.prank(HUB_CONFIGURATOR_ADMIN);
-      hubConfigurator.updateFeeReceiver(address(hub1), assetId, feeReceiver);
-
-      assertEq(hub1.getAssetConfig(assetId), expectedConfig);
     }
+    // if new feeReceiver is different than old one, and is already listed, revert
+    if (feeReceiver != oldConfig.feeReceiver && hub1.isSpokeListed(assetId, feeReceiver)) {
+      vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
+    }
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateFeeReceiver(address(hub1), assetId, feeReceiver);
+
+    assertEq(hub1.getAssetConfig(assetId), expectedConfig);
+  }
+
+  function test_updateFeeReceiver_revertsWith_SpokeAlreadyListed() public {
+    assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+    assertTrue(hub1.isSpokeListed(assetId, address(spoke1)));
+
+    // set feeReceiver as an existing spoke
+    address feeReceiver = address(spoke1);
+    vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateFeeReceiver(address(hub1), assetId, feeReceiver);
   }
 
   /// @dev Test update fee receiver and fees can still be withdrawn from old fee receiver
