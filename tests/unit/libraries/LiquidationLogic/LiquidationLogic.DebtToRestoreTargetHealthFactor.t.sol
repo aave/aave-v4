@@ -107,18 +107,17 @@ contract LiquidationLogicDebtToRestoreHealthFactorTest is LiquidationLogicBaseTe
         debtAssetUnit: 1,
         debtAssetPrice: 333e8
       });
-    uint256 debtToRestoreHealthFactor = liquidationLogicWrapper
-      .calculateDebtToRestoreHealthFactor(params);
+    uint256 debtToRestoreHealthFactor = liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(
+      params
+    );
     assertEq(debtToRestoreHealthFactor, 25);
 
     params.debtAssetUnit = 1e6;
-    debtToRestoreHealthFactor = liquidationLogicWrapper
-      .calculateDebtToRestoreHealthFactor(params);
+    debtToRestoreHealthFactor = liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(params);
     assertEq(debtToRestoreHealthFactor, 24.024025e6);
 
     params.debtAssetUnit = 1e18;
-    debtToRestoreHealthFactor = liquidationLogicWrapper
-      .calculateDebtToRestoreHealthFactor(params);
+    debtToRestoreHealthFactor = liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(params);
     assertEq(debtToRestoreHealthFactor, 24.024024024024024025e18);
   }
 }

@@ -480,7 +480,11 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       state.userTotalReserveDebt.balanceBefore,
       'liquidator can only liquidate enough debt to cover position'
     );
-    assertLe(spoke1.getHealthFactor(alice), _getTargetHealthFactor(spoke1), 'hf <= target health factor');
+    assertLe(
+      spoke1.getHealthFactor(alice),
+      _getTargetHealthFactor(spoke1),
+      'hf <= target health factor'
+    );
   }
 
   /// scenario with multiple collaterals and a single debt asset
@@ -654,7 +658,11 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       0,
       'alice dai coll liquidated'
     );
-    assertLe(spoke1.getHealthFactor(alice), _getTargetHealthFactor(spoke1), 'hf <= target health factor');
+    assertLe(
+      spoke1.getHealthFactor(alice),
+      _getTargetHealthFactor(spoke1),
+      'hf <= target health factor'
+    );
   }
 
   /// liquidation to target health factor

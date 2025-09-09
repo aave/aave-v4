@@ -20,8 +20,15 @@ contract LiquidationLogicWrapper {
 
   DataTypes.PositionStatus internal positionStatus;
 
+  DataTypes.LiquidationConfig internal liquidationConfig;
+  DataTypes.DynamicReserveConfig internal dynamicCollateralConfig;
+
   function setCollateralReserveHub(IHub hub) public {
     collateralReserve.hub = hub;
+  }
+
+  function setCollateralReserveDecimals(uint256 decimals) public {
+    collateralReserve.decimals = decimals.toUint8();
   }
 
   function setCollateralReserveAssetId(uint256 assetId) public {
@@ -44,6 +51,10 @@ contract LiquidationLogicWrapper {
     debtReserve.hub = hub;
   }
 
+  function setDebtReserveDecimals(uint256 decimals) public {
+    debtReserve.decimals = decimals.toUint8();
+  }
+
   function setDebtReserveAssetId(uint256 assetId) public {
     debtReserve.assetId = assetId.toUint16();
   }
@@ -64,6 +75,10 @@ contract LiquidationLogicWrapper {
     debtPosition.realizedPremium = realizedPremium.toUint128();
   }
 
+  function setCollateralStatus(uint256 reserveId, bool status) public {
+    positionStatus.setUsingAsCollateral(reserveId, status);
+  }
+
   function setBorrowingStatus(uint256 reserveId, bool status) public {
     positionStatus.setBorrowing(reserveId, status);
   }
@@ -76,8 +91,22 @@ contract LiquidationLogicWrapper {
     return debtPosition;
   }
 
+  function getCollateralStatus(uint256 reserveId) public view returns (bool) {
+    return positionStatus.isUsingAsCollateral(reserveId);
+  }
+
   function getBorrowingStatus(uint256 reserveId) public view returns (bool) {
     return positionStatus.isBorrowing(reserveId);
+  }
+
+  function setLiquidationConfig(DataTypes.LiquidationConfig memory newLiquidationConfig) public {
+    liquidationConfig = newLiquidationConfig;
+  }
+
+  function setDynamicCollateralConfig(
+    DataTypes.DynamicReserveConfig memory newDynamicCollateralConfig
+  ) public {
+    dynamicCollateralConfig = newDynamicCollateralConfig;
   }
 
   function calculateLiquidationBonus(
@@ -124,5 +153,19 @@ contract LiquidationLogicWrapper {
 
   function liquidateDebt(LiquidationLogic.LiquidateDebtParams memory params) public returns (bool) {
     return LiquidationLogic._liquidateDebt(debtReserve, debtPosition, positionStatus, params);
+  }
+
+  function liquidateUser(DataTypes.LiquidateUserParams memory params) public returns (bool) {
+    return
+      LiquidationLogic.liquidateUser(
+        collateralReserve,
+        debtReserve,
+        collateralPosition,
+        debtPosition,
+        positionStatus,
+        liquidationConfig,
+        dynamicCollateralConfig,
+        params
+      );
   }
 }

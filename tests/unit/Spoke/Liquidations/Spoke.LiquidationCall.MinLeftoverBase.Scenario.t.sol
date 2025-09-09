@@ -120,11 +120,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
       targetHealthFactor
     );
     // because debtToCover is too small, it will result in dust debt, causing revert
-    debtToCover = bound(
-      debtToCover,
-      1,
-      _min(debtToRestoreHealthFactor, requiredDebtAmount) - 1
-    );
+    debtToCover = bound(debtToCover, 1, _min(debtToRestoreHealthFactor, requiredDebtAmount) - 1);
 
     // liquidation call with invalid debt to cover
     vm.prank(LIQUIDATOR);

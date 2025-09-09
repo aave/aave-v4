@@ -47,11 +47,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
   function _bound(
     LiquidationLogic.CalculateDebtToRestoreHealthFactorParams memory params
-  )
-    internal
-    virtual
-    returns (LiquidationLogic.CalculateDebtToRestoreHealthFactorParams memory)
-  {
+  ) internal virtual returns (LiquidationLogic.CalculateDebtToRestoreHealthFactorParams memory) {
     uint256 totalDebtInBaseCurrency = bound(
       params.totalDebtInBaseCurrency,
       1,
@@ -111,9 +107,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
   ) internal virtual returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
     LiquidationLogic.CalculateDebtToRestoreHealthFactorParams
-      memory debtToRestoreHealthFactorParams = _bound(
-        _getDebtToRestoreHealthFactorParams(params)
-      );
+      memory debtToRestoreHealthFactorParams = _bound(_getDebtToRestoreHealthFactorParams(params));
 
     uint256 debtToCover = bound(params.debtToCover, 0, MAX_SUPPLY_AMOUNT);
     uint256 reserveDebt = bound(

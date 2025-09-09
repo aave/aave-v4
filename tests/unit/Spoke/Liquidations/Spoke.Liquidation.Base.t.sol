@@ -880,10 +880,7 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 debtToCover
   ) internal view returns (uint256 actualDebtToLiquidate, bool hasDustFromDebt) {
     uint256 totalBorrowerReserveDebt = state.userTotalReserveDebt.balanceBefore;
-    uint256 debtToRestoreHealthFactor = _calcDebtToRestoreHealthFactor(
-      state.spoke,
-      state
-    );
+    uint256 debtToRestoreHealthFactor = _calcDebtToRestoreHealthFactor(state.spoke, state);
 
     uint256 maxLiquidatableDebt = _min(debtToCover, totalBorrowerReserveDebt);
     actualDebtToLiquidate = _min(maxLiquidatableDebt, debtToRestoreHealthFactor);

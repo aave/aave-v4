@@ -14,8 +14,9 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
   ) public {
     params = _boundNoDustRevert(params);
     uint256 maxDebtToLiquidate = liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
-    uint256 debtToRestoreHealthFactor = liquidationLogicWrapper
-      .calculateDebtToRestoreHealthFactor(_getDebtToRestoreHealthFactorParams(params));
+    uint256 debtToRestoreHealthFactor = liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(
+      _getDebtToRestoreHealthFactorParams(params)
+    );
     assertGe(
       maxDebtToLiquidate,
       params.reserveDebt.min(params.debtToCover).min(debtToRestoreHealthFactor)
@@ -46,8 +47,9 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
       1,
       LiquidationLogic.MIN_LEFTOVER_BASE.fromWadDown() * params.debtAssetUnit - 1
     );
-    uint256 debtToRestoreHealthFactor = liquidationLogicWrapper
-      .calculateDebtToRestoreHealthFactor(_getDebtToRestoreHealthFactorParams(params));
+    uint256 debtToRestoreHealthFactor = liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(
+      _getDebtToRestoreHealthFactorParams(params)
+    );
     params.reserveDebt = bound(
       params.reserveDebt,
       debtToRestoreHealthFactor + 1,
@@ -77,8 +79,9 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
       1,
       LiquidationLogic.MIN_LEFTOVER_BASE.fromWadDown() * params.debtAssetUnit - 1
     );
-    uint256 debtToRestoreHealthFactor = liquidationLogicWrapper
-      .calculateDebtToRestoreHealthFactor(_getDebtToRestoreHealthFactorParams(params));
+    uint256 debtToRestoreHealthFactor = liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(
+      _getDebtToRestoreHealthFactorParams(params)
+    );
     uint256 debtToLiquidate = params.debtToCover.min(debtToRestoreHealthFactor);
     params.reserveDebt = bound(
       params.reserveDebt,

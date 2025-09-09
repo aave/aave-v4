@@ -824,6 +824,7 @@ abstract contract Base is Test {
   function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager2 = new AccessManager(ADMIN);
     IHub hub2 = new Hub(address(accessManager2));
+    vm.label(address(hub2), 'Hub2');
     AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
 
     // Configure IR Strategy for hub 2
