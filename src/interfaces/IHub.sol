@@ -254,9 +254,9 @@ interface IHub is IHubBase, IAccessManaged {
   /**
    * @notice Returns the information regarding premium shares of the specified asset.
    * @param assetId The identifier of the asset.
-   * @return The premium shares of the asset
-   * @return The premium offset of the asset
-   * @return The realized premium of the asset
+   * @return The premium shares of the asset.
+   * @return The premium offset of the asset.
+   * @return The realized premium of the asset.
    */
   function getAssetPremiumShares(uint256 assetId) external view returns (uint256, uint256, uint256);
 

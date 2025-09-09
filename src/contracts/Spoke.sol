@@ -551,11 +551,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     return drawnDebt + premiumDebt;
   }
 
+  /// @inheritdoc ISpoke
   function getReserveDrawnShares(uint256 reserveId) external view returns (uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     return reserve.hub.getSpokeDrawnShares(reserve.assetId, address(this));
   }
 
+  /// @inheritdoc ISpoke
   function getReservePremiumShares(
     uint256 reserveId
   ) external view returns (uint256 premiumShares, uint256 premiumOffset, uint256 accruedPremium) {

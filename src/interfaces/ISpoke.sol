@@ -291,8 +291,20 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256);
 
+  /**
+   * @notice Returns the amount of drawn shares for a given reserve.
+   * @param reserveId The identifier of the reserve.
+   * @return The amount of drawn shares.
+   */
   function getReserveDrawnShares(uint256 reserveId) external view returns (uint256);
 
+  /**
+   * @notice Returns the information regarding premium shares for a given reserve.
+   * @param reserveId The identifier of the reserve.
+   * @return The amount of premium shares of the reserve.
+   * @return The premium offset of the reserve.
+   * @return The realized premium of the reserve.
+   */
   function getReservePremiumShares(
     uint256 reserveId
   ) external view returns (uint256, uint256, uint256);
