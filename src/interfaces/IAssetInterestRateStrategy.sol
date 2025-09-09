@@ -66,12 +66,6 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   error InvalidOptimalUsageRatio();
 
   /**
-   * @notice Thrown when the interest rate data is not set for the asset.
-   * @param assetId The id of the asset with no interest rate data set.
-   */
-  error InterestRateDataNotSet(uint256 assetId);
-
-  /**
    * @notice Returns the maximum value achievable for variable borrow rate.
    * @return The maximum rate, in bps.
    */
