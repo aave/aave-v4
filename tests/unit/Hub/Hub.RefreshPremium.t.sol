@@ -43,6 +43,7 @@ contract HubRefreshPremiumTest is HubBase {
       _applyPremiumDelta(premiumDataBefore, premiumDelta)
     );
     assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
+    assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
   }
 
   /// @dev offsetDelta can't be more than sharesDelta or else underflow
@@ -81,6 +82,7 @@ contract HubRefreshPremiumTest is HubBase {
     if (!reverting) {
       assertEq(_loadAssetPremiumData(assetId), _applyPremiumDelta(premiumDataBefore, premiumDelta));
       assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
+      assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
     }
   }
 
@@ -112,6 +114,7 @@ contract HubRefreshPremiumTest is HubBase {
 
     assertEq(_loadAssetPremiumData(assetId), _applyPremiumDelta(premiumDataBefore, premiumDelta));
     assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
+    assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
   }
 
   function test_refreshPremium_negativeDeltas_withAccrual(
@@ -171,6 +174,7 @@ contract HubRefreshPremiumTest is HubBase {
     if (!reverting) {
       assertEq(_loadAssetPremiumData(assetId), _applyPremiumDelta(premiumDataBefore, premiumDelta));
       assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
+      assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
     }
   }
 
@@ -240,6 +244,7 @@ contract HubRefreshPremiumTest is HubBase {
     if (!reverting) {
       assertEq(_loadAssetPremiumData(assetId), _applyPremiumDelta(premiumDataBefore, premiumDelta));
       assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
+      assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
     }
   }
 
