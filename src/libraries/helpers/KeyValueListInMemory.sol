@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-/** 
+/**
  * @notice Library to pack key-value pairs in a list.
  * @dev `sortByKey` helper sorts by asending order of the `key` & in case of collission by descending order of the `value`.
  * This is acheived by sorting the packed `key-value` pair in descending order, but storing the invert of the `key` (ie `_MAX_KEY - key`).
@@ -47,10 +47,10 @@ library KeyValueListInMemory {
     return unpack(self._inner[idx]);
   }
 
-  /** 
-  * @dev since `key` is in the MSB, we can sort by the key by sorting the array in descending order 
-  * (so the keys are in ascending order when unpacking), and using value in case of collision.
-  */ 
+  /**
+   * @dev since `key` is in the MSB, we can sort by the key by sorting the array in descending order
+   * (so the keys are in ascending order when unpacking), and using value in case of collision.
+   */
   function sortByKey(List memory self) internal pure {
     Arrays.sort(self._inner, gtComparator);
   }
@@ -70,7 +70,7 @@ library KeyValueListInMemory {
 
   function unpack(uint256 data) internal pure returns (uint256, uint256) {
     // @dev no need to unpack data that was never packed
-    if(data == 0) return(0,0);
+    if (data == 0) return (0, 0);
     return (unpackKey(data), unpackValue(data));
   }
 
