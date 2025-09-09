@@ -368,8 +368,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     // process only if collateral status changes
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) return;
 
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    _validateSetUsingAsCollateral(reserve, usingAsCollateral);
+    _validateSetUsingAsCollateral(_reserves[reserveId], usingAsCollateral);
 
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
@@ -522,9 +521,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   function getUserSuppliedAmount(uint256 reserveId, address user) public view returns (uint256) {
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
     return
-      _reserves[reserveId].hub.previewRemoveByShares(
-        _reserves[reserveId].assetId,
+      reserve.hub.previewRemoveByShares(
+        reserve.assetId,
         _userPositions[user][reserveId].suppliedShares
       );
   }
@@ -608,12 +608,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   function getReserveConfig(
     uint256 reserveId
   ) external view returns (DataTypes.ReserveConfig memory) {
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
     return
       DataTypes.ReserveConfig({
-        paused: _reserves[reserveId].paused,
-        frozen: _reserves[reserveId].frozen,
-        borrowable: _reserves[reserveId].borrowable,
-        collateralRisk: _reserves[reserveId].collateralRisk
+        paused: reserve.paused,
+        frozen: reserve.frozen,
+        borrowable: reserve.borrowable,
+        collateralRisk: reserve.collateralRisk
       });
   }
 
