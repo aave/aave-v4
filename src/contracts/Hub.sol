@@ -432,12 +432,9 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     address spoke
   ) external view returns (DataTypes.SpokeConfig memory) {
+    DataTypes.SpokeData storage spoke = _spokes[assetId][spoke];
     return
-      DataTypes.SpokeConfig({
-        active: _spokes[assetId][spoke].active,
-        addCap: _spokes[assetId][spoke].addCap,
-        drawCap: _spokes[assetId][spoke].drawCap
-      });
+      DataTypes.SpokeConfig({active: spoke.active, addCap: spoke.addCap, drawCap: spoke.drawCap});
   }
 
   /// @inheritdoc IHubBase
@@ -574,12 +571,13 @@ contract Hub is IHub, AccessManaged {
   }
 
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
+    DataTypes.Asset storage asset = _assets[assetId];
     return
       DataTypes.AssetConfig({
-        feeReceiver: _assets[assetId].feeReceiver,
-        liquidityFee: _assets[assetId].liquidityFee,
-        irStrategy: _assets[assetId].irStrategy,
-        reinvestmentController: _assets[assetId].reinvestmentController
+        feeReceiver: asset.feeReceiver,
+        liquidityFee: asset.liquidityFee,
+        irStrategy: asset.irStrategy,
+        reinvestmentController: asset.reinvestmentController
       });
   }
 
@@ -588,9 +586,10 @@ contract Hub is IHub, AccessManaged {
     address spoke,
     DataTypes.SpokeConfig calldata config
   ) internal {
-    _spokes[assetId][spoke].active = config.active;
-    _spokes[assetId][spoke].addCap = config.addCap;
-    _spokes[assetId][spoke].drawCap = config.drawCap;
+    DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
+    spokeData.active = config.active;
+    spokeData.addCap = config.addCap;
+    spokeData.drawCap = config.drawCap;
     emit SpokeConfigUpdate(assetId, spoke, config);
   }
 
