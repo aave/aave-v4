@@ -353,7 +353,7 @@ contract HubConfigTest is HubBase {
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
 
     // new spoke is added only if it is different from the old one
-    if (newConfig.feeReceiver != getFeeReceiver(hub1, assetId)) {
+    if (newConfig.feeReceiver != _getFeeReceiver(hub1, assetId)) {
       vm.expectEmit(address(hub1));
       emit IHub.AddSpoke(assetId, newConfig.feeReceiver);
       vm.expectEmit(address(hub1));
@@ -459,7 +459,7 @@ contract HubConfigTest is HubBase {
   function test_updateAssetConfig_fuzz_UseExistingSpokeAsFeeReceiver(uint256 assetId) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
-    address oldFeeReceiver = getFeeReceiver(hub1, assetId);
+    address oldFeeReceiver = _getFeeReceiver(hub1, assetId);
     address newFeeReceiver = address(spoke1);
 
     // if spoke exists but is not listed on the asset, it can be added as a feeReceiver

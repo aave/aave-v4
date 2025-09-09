@@ -93,7 +93,7 @@ interface IHub is IHubBase, IAccessManaged {
   /**
    * @notice Adds a new asset to the hub.
    * @dev The same underlying asset address can be added as an asset multiple times.
-   * @dev The fee receiver must be configured as a Spoke separately.
+   * @dev Adds the fee receiver as a new spoke with maximum caps.
    * @param underlying The address of the underlying asset.
    * @param decimals The number of decimals of the asset.
    * @param feeReceiver The address of the fee receiver spoke.
@@ -111,6 +111,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   /**
    * @notice Updates the configuration of an asset.
+   * @dev If the fee receiver is updated, it must be a new spoke that has not yet been added on the asset.
    * @param assetId The identifier of the asset.
    * @param config The new configuration for the asset.
    */

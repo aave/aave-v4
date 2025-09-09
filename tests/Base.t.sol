@@ -1884,7 +1884,7 @@ abstract contract Base is Test {
     return hub1.getAssetConfig(assetId).liquidityFee;
   }
 
-  function getFeeReceiver(IHub hub, uint256 assetId) internal view returns (address) {
+  function _getFeeReceiver(IHub hub, uint256 assetId) internal view returns (address) {
     return hub.getAssetConfig(assetId).feeReceiver;
   }
 
