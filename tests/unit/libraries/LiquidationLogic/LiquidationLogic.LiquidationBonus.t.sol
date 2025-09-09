@@ -9,49 +9,74 @@ contract LiquidationLogicLiquidationBonusTest is LiquidationLogicBaseTest {
   using SafeCast for uint256;
 
   function test_calculateLiquidationBonus_MinBonusDueToRounding() public {
-    DataTypes.CalculateLiquidationBonusParams memory params = DataTypes
-      .CalculateLiquidationBonusParams({
-        healthFactorForMaxBonus: 0.8e18,
-        healthFactor: 1e18 - 1,
-        maxLiquidationBonus: 110_00,
-        liquidationBonusFactor: 50_00
-      });
-
-    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus(params);
+    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+      healthFactorForMaxBonus: 0.8e18,
+      liquidationBonusFactor: 50_00,
+      healthFactor: 1e18 - 1,
+      maxLiquidationBonus: 110_00
+    });
     assertEq(liquidationBonus, 100_00 + 5_00);
   }
 
   function test_calculateLiquidationBonus_PartialBonus() public {
-    DataTypes.CalculateLiquidationBonusParams memory params = DataTypes
-      .CalculateLiquidationBonusParams({
-        healthFactorForMaxBonus: 0.8e18,
-        healthFactor: 0.96e18,
-        maxLiquidationBonus: 110_00,
-        liquidationBonusFactor: 50_00
-      });
-
-    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus(params);
+    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+      healthFactorForMaxBonus: 0.8e18,
+      liquidationBonusFactor: 50_00,
+      healthFactor: 0.96e18,
+      maxLiquidationBonus: 110_00
+    });
     assertEq(liquidationBonus, 100_00 + 6_00);
   }
 
   function test_calculateLiquidationBonus_fuzz_MaxBonus(
-    DataTypes.CalculateLiquidationBonusParams memory params
+    uint256 healthFactorForMaxBonus,
+    uint256 liquidationBonusFactor,
+    uint256 healthFactor,
+    uint256 maxLiquidationBonus
   ) public {
-    params = _bound(params);
-    params.healthFactor = bound(params.healthFactor, 0, params.healthFactorForMaxBonus);
-    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus(params);
-    assertEq(liquidationBonus, params.maxLiquidationBonus);
-    params.healthFactor = params.healthFactorForMaxBonus;
-    liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus(params);
-    assertEq(liquidationBonus, params.maxLiquidationBonus);
+    (healthFactorForMaxBonus, liquidationBonusFactor, healthFactor, maxLiquidationBonus) = _bound(
+      healthFactorForMaxBonus,
+      liquidationBonusFactor,
+      healthFactor,
+      maxLiquidationBonus
+    );
+    healthFactor = bound(healthFactor, 0, healthFactorForMaxBonus);
+    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+      healthFactorForMaxBonus: healthFactorForMaxBonus,
+      liquidationBonusFactor: liquidationBonusFactor,
+      healthFactor: healthFactor,
+      maxLiquidationBonus: maxLiquidationBonus
+    });
+    assertEq(liquidationBonus, maxLiquidationBonus);
+    healthFactor = healthFactorForMaxBonus;
+    liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+      healthFactorForMaxBonus: healthFactorForMaxBonus,
+      liquidationBonusFactor: liquidationBonusFactor,
+      healthFactor: healthFactor,
+      maxLiquidationBonus: maxLiquidationBonus
+    });
+    assertEq(liquidationBonus, maxLiquidationBonus);
   }
 
   function test_calculateLiquidationBonus_fuzz_ConstantBonus(
-    DataTypes.CalculateLiquidationBonusParams memory params
+    uint256 healthFactorForMaxBonus,
+    uint256 liquidationBonusFactor,
+    uint256 healthFactor,
+    uint256 maxLiquidationBonus
   ) public {
-    params = _bound(params);
-    params.liquidationBonusFactor = PercentageMath.PERCENTAGE_FACTOR;
-    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus(params);
-    assertEq(liquidationBonus, params.maxLiquidationBonus);
+    (healthFactorForMaxBonus, liquidationBonusFactor, healthFactor, maxLiquidationBonus) = _bound(
+      healthFactorForMaxBonus,
+      liquidationBonusFactor,
+      healthFactor,
+      maxLiquidationBonus
+    );
+    liquidationBonusFactor = PercentageMath.PERCENTAGE_FACTOR;
+    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+      healthFactorForMaxBonus: healthFactorForMaxBonus,
+      liquidationBonusFactor: liquidationBonusFactor,
+      healthFactor: healthFactor,
+      maxLiquidationBonus: maxLiquidationBonus
+    });
+    assertEq(liquidationBonus, maxLiquidationBonus);
   }
 }

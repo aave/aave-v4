@@ -110,9 +110,18 @@ contract LiquidationLogicWrapper {
   }
 
   function calculateLiquidationBonus(
-    DataTypes.CalculateLiquidationBonusParams memory params
+    uint256 healthFactorForMaxBonus,
+    uint256 liquidationBonusFactor,
+    uint256 healthFactor,
+    uint256 maxLiquidationBonus
   ) public pure returns (uint256) {
-    return LiquidationLogic.calculateLiquidationBonus(params);
+    return
+      LiquidationLogic.calculateLiquidationBonus(
+        healthFactorForMaxBonus,
+        liquidationBonusFactor,
+        healthFactor,
+        maxLiquidationBonus
+      );
   }
 
   function validateLiquidationCall(

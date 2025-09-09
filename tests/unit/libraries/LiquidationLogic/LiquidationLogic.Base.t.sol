@@ -20,29 +20,20 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
   // generic bounds for liquidation logic params
   function _bound(
-    DataTypes.CalculateLiquidationBonusParams memory params
-  ) internal virtual returns (DataTypes.CalculateLiquidationBonusParams memory) {
-    params.healthFactorForMaxBonus = bound(
-      params.healthFactorForMaxBonus,
+    uint256 healthFactorForMaxBonus,
+    uint256 liquidationBonusFactor,
+    uint256 healthFactor,
+    uint256 maxLiquidationBonus
+  ) internal virtual returns (uint256, uint256, uint256, uint256) {
+    healthFactorForMaxBonus = bound(
+      healthFactorForMaxBonus,
       0,
       Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
     );
-    params.liquidationBonusFactor = bound(
-      params.liquidationBonusFactor,
-      0,
-      PercentageMath.PERCENTAGE_FACTOR
-    );
-    params.healthFactor = bound(
-      params.healthFactor,
-      0,
-      Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
-    );
-    params.maxLiquidationBonus = bound(
-      params.maxLiquidationBonus,
-      MIN_LIQUIDATION_BONUS,
-      MAX_LIQUIDATION_BONUS
-    );
-    return params;
+    liquidationBonusFactor = bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
+    healthFactor = bound(healthFactor, 0, Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
+    maxLiquidationBonus = bound(maxLiquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
+    return (healthFactorForMaxBonus, liquidationBonusFactor, healthFactor, maxLiquidationBonus);
   }
 
   function _bound(
@@ -146,24 +137,15 @@ contract LiquidationLogicBaseTest is SpokeBase {
     }
   }
 
-  function _getCalculateLiquidationBonusParams(
-    LiquidationLogic.CalculateLiquidationAmountsParams memory params
-  ) internal returns (DataTypes.CalculateLiquidationBonusParams memory) {
-    return
-      DataTypes.CalculateLiquidationBonusParams({
-        healthFactorForMaxBonus: params.healthFactorForMaxBonus,
-        liquidationBonusFactor: params.liquidationBonusFactor,
-        healthFactor: params.healthFactor,
-        maxLiquidationBonus: params.maxLiquidationBonus
-      });
-  }
-
   function _getCalculateMaxDebtToLiquidateParams(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) internal returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
-    uint256 liquidationBonus = LiquidationLogic.calculateLiquidationBonus(
-      _getCalculateLiquidationBonusParams(params)
-    );
+    uint256 liquidationBonus = LiquidationLogic.calculateLiquidationBonus({
+      healthFactorForMaxBonus: params.healthFactorForMaxBonus,
+      liquidationBonusFactor: params.liquidationBonusFactor,
+      healthFactor: params.healthFactor,
+      maxLiquidationBonus: params.maxLiquidationBonus
+    });
     return
       LiquidationLogic.CalculateMaxDebtToLiquidateParams({
         reserveDebt: params.reserveDebt,
@@ -181,17 +163,17 @@ contract LiquidationLogicBaseTest is SpokeBase {
   function _bound(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) internal virtual returns (LiquidationLogic.CalculateLiquidationAmountsParams memory) {
-    DataTypes.CalculateLiquidationBonusParams
-      memory liquidationBonusParams = _getCalculateLiquidationBonusParams(params);
-    liquidationBonusParams = _bound(liquidationBonusParams);
-    params.healthFactorForMaxBonus = liquidationBonusParams.healthFactorForMaxBonus;
-    params.liquidationBonusFactor = liquidationBonusParams.liquidationBonusFactor;
-    params.healthFactor = bound(
+    (
+      params.healthFactorForMaxBonus,
+      params.liquidationBonusFactor,
       params.healthFactor,
-      0,
-      liquidationBonusParams.healthFactorForMaxBonus
+      params.maxLiquidationBonus
+    ) = _bound(
+      params.healthFactorForMaxBonus,
+      params.liquidationBonusFactor,
+      params.healthFactor,
+      params.maxLiquidationBonus
     );
-    params.maxLiquidationBonus = liquidationBonusParams.maxLiquidationBonus;
 
     LiquidationLogic.CalculateMaxDebtToLiquidateParams
       memory maxDebtToLiquidateParams = _getCalculateMaxDebtToLiquidateParams(params);

@@ -25,7 +25,7 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
 
   function test_validateLiquidationCall_revertsWith_InvalidDebtToCover() public {
     params.debtToCover = 0;
-    vm.expectRevert(LiquidationLogic.InvalidDebtToCover.selector);
+    vm.expectRevert(ISpoke.InvalidDebtToCover.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
@@ -55,7 +55,7 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
 
   function test_validateLiquidationCall_revertsWith_HealthFactorNotBelowThreshold() public {
     params.healthFactor = 1.1e18;
-    vm.expectRevert(LiquidationLogic.HealthFactorNotBelowThreshold.selector);
+    vm.expectRevert(ISpoke.HealthFactorNotBelowThreshold.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 

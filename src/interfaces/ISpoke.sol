@@ -122,6 +122,9 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error InvalidLiquidationConfig();
   error InvalidLiquidationFee();
   error InvalidCollateralFactorAndMaxLiquidationBonus();
+  error HealthFactorNotBelowThreshold();
+  error MustNotLeaveDust();
+  error InvalidDebtToCover();
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 

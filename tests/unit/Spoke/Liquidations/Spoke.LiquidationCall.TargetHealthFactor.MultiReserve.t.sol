@@ -308,7 +308,7 @@ contract LiquidationCallTargetHealthFactorMultiReserveTest is SpokeLiquidationBa
       state.collToLiq + state.liquidationFeeAmount != state.userSuppliedAmount.balanceBefore);
     // if debt dust remains after accounting for available collateral, revert
     if (state.hasDustFromAvailableCollateral) {
-      vm.expectRevert(LiquidationLogic.MustNotLeaveDust.selector);
+      vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     } else {
       vm.expectEmit(address(state.spoke));
       emit ISpokeBase.LiquidationCall(

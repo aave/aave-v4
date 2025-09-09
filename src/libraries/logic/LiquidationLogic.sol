@@ -102,31 +102,31 @@ library LiquidationLogic {
    */
   uint256 constant MIN_LEFTOVER_BASE = 1000e26;
 
-  error HealthFactorNotBelowThreshold();
-  error MustNotLeaveDust();
-  error InvalidDebtToCover();
-
   function calculateLiquidationBonus(
-    DataTypes.CalculateLiquidationBonusParams memory params
+    uint256 healthFactorForMaxBonus,
+    uint256 liquidationBonusFactor,
+    uint256 healthFactor,
+    uint256 maxLiquidationBonus
   ) internal pure returns (uint256) {
-    if (params.healthFactor <= params.healthFactorForMaxBonus) {
-      return params.maxLiquidationBonus;
+    if (healthFactor <= healthFactorForMaxBonus) {
+      return maxLiquidationBonus;
     }
 
-    uint256 minLiquidationBonus = (params.maxLiquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
-      .percentMulDown(params.liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
+    uint256 minLiquidationBonus = (maxLiquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
+      .percentMulDown(liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
 
-    // otherwise linearly interpolate between min and max
+    // linear interpolation between min and max
+    // denominator cannot be zero as healthFactorForMaxBonus is always < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     return
       minLiquidationBonus +
-      (params.maxLiquidationBonus - minLiquidationBonus).mulDivDown(
-        Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - params.healthFactor,
-        Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - params.healthFactorForMaxBonus
+      (maxLiquidationBonus - minLiquidationBonus).mulDivDown(
+        Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactor,
+        Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactorForMaxBonus
       );
   }
 
   function _validateLiquidationCall(ValidateLiquidationCallParams memory params) internal pure {
-    require(params.debtToCover > 0, InvalidDebtToCover());
+    require(params.debtToCover > 0, ISpoke.InvalidDebtToCover());
     require(
       params.collateralReserveHub != address(0) && params.debtReserveHub != address(0),
       ISpoke.ReserveNotListed()
@@ -134,7 +134,7 @@ library LiquidationLogic {
     require(!params.collateralReservePaused && !params.debtReservePaused, ISpoke.ReservePaused());
     require(
       params.healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      HealthFactorNotBelowThreshold()
+      ISpoke.HealthFactorNotBelowThreshold()
     );
     require(
       params.isUsingAsCollateral && params.collateralFactor != 0,
@@ -150,6 +150,8 @@ library LiquidationLogic {
       params.collateralFactor
     );
 
+    // denominator cannot be zero as liquidationBonus * collateralFactor is always < PercentageMath.PERCENTAGE_FACTOR
+    // and targetHealthFactor is always >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     return
       params.totalDebtInBaseCurrency.mulDivUp(
         params.debtAssetUnit * (params.targetHealthFactor - params.healthFactor),
@@ -180,13 +182,15 @@ library LiquidationLogic {
       maxDebtToLiquidate = debtToRestoreHealthFactor;
     }
 
+    // rounding down remaining debt only to assess if liquidation leaves dust
     uint256 remainingDebtInBaseCurrency = (params.reserveDebt - maxDebtToLiquidate).mulDivDown(
       params.debtAssetPrice.toWad(),
       params.debtAssetUnit
     );
 
     if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE) {
-      require(params.debtToCover >= params.reserveDebt, MustNotLeaveDust());
+      // target health factor is ignored to prevent leaving dust, only if the liquidator intends to fully cover the debt
+      require(params.debtToCover >= params.reserveDebt, ISpoke.MustNotLeaveDust());
       maxDebtToLiquidate = params.reserveDebt;
     }
 
@@ -196,14 +200,12 @@ library LiquidationLogic {
   function _calculateLiquidationAmounts(
     CalculateLiquidationAmountsParams memory params
   ) internal pure returns (uint256, uint256, uint256) {
-    uint256 liquidationBonus = calculateLiquidationBonus(
-      DataTypes.CalculateLiquidationBonusParams({
-        healthFactorForMaxBonus: params.healthFactorForMaxBonus,
-        liquidationBonusFactor: params.liquidationBonusFactor,
-        healthFactor: params.healthFactor,
-        maxLiquidationBonus: params.maxLiquidationBonus
-      })
-    );
+    uint256 liquidationBonus = calculateLiquidationBonus({
+      healthFactorForMaxBonus: params.healthFactorForMaxBonus,
+      liquidationBonusFactor: params.liquidationBonusFactor,
+      healthFactor: params.healthFactor,
+      maxLiquidationBonus: params.maxLiquidationBonus
+    });
 
     uint256 debtToLiquidate = _calculateMaxDebtToLiquidate(
       CalculateMaxDebtToLiquidateParams({
@@ -361,11 +363,11 @@ library LiquidationLogic {
         maxLiquidationBonus: collateralDynConfig.maxLiquidationBonus,
         collateralFactor: collateralDynConfig.collateralFactor,
         debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
-        debtAssetUnit: 10 ** debtReserve.decimals,
+        debtAssetUnit: uint256(10).uncheckedExp(debtReserve.decimals),
         collateralAssetPrice: IAaveOracle(params.oracle).getReservePrice(
           params.collateralReserveId
         ),
-        collateralAssetUnit: 10 ** collateralReserve.decimals,
+        collateralAssetUnit: uint256(10).uncheckedExp(collateralReserve.decimals),
         liquidationFee: collateralDynConfig.liquidationFee
       });
 

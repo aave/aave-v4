@@ -37,14 +37,12 @@ contract SpokeGettersTest is SpokeBase {
 
     assertEq(
       liqBonus,
-      LiquidationLogic.calculateLiquidationBonus(
-        DataTypes.CalculateLiquidationBonusParams({
-          healthFactorForMaxBonus: 0,
-          liquidationBonusFactor: 0,
-          healthFactor: healthFactor,
-          maxLiquidationBonus: spoke1.getDynamicReserveConfig(reserveId).maxLiquidationBonus
-        })
-      ),
+      LiquidationLogic.calculateLiquidationBonus({
+        healthFactorForMaxBonus: 0,
+        liquidationBonusFactor: 0,
+        healthFactor: healthFactor,
+        maxLiquidationBonus: spoke1.getDynamicReserveConfig(reserveId).maxLiquidationBonus
+      }),
       'calc should match'
     );
   }
@@ -84,14 +82,12 @@ contract SpokeGettersTest is SpokeBase {
 
     assertEq(
       liqBonus,
-      LiquidationLogic.calculateLiquidationBonus(
-        DataTypes.CalculateLiquidationBonusParams({
-          healthFactorForMaxBonus: healthFactorForMaxBonus,
-          liquidationBonusFactor: liquidationBonusFactor,
-          healthFactor: healthFactor,
-          maxLiquidationBonus: spoke1.getDynamicReserveConfig(reserveId).maxLiquidationBonus
-        })
-      ),
+      LiquidationLogic.calculateLiquidationBonus({
+        healthFactorForMaxBonus: healthFactorForMaxBonus,
+        liquidationBonusFactor: liquidationBonusFactor,
+        healthFactor: healthFactor,
+        maxLiquidationBonus: spoke1.getDynamicReserveConfig(reserveId).maxLiquidationBonus
+      }),
       'calc should match'
     );
   }

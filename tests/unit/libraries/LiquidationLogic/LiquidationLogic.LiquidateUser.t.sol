@@ -201,14 +201,14 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
 
   function test_liquidateUser_revertsWith_InvalidDebtToCover() public {
     params.debtToCover = 0;
-    vm.expectRevert(LiquidationLogic.InvalidDebtToCover.selector);
+    vm.expectRevert(ISpoke.InvalidDebtToCover.selector);
     liquidationLogicWrapper.liquidateUser(params);
   }
 
   function test_liquidateUser_revertsWith_MustNotLeaveDust() public {
     params.totalDebtInBaseCurrency *= 2;
     params.debtToCover = 4.9e18;
-    vm.expectRevert(LiquidationLogic.MustNotLeaveDust.selector);
+    vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.liquidateUser(params);
   }
 

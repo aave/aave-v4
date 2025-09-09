@@ -155,9 +155,12 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       params.debtAssetPrice * params.collateralAssetUnit,
       params.debtAssetUnit * params.collateralAssetPrice
     );
-    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus(
-      _getCalculateLiquidationBonusParams(params)
-    );
+    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+      healthFactorForMaxBonus: params.healthFactorForMaxBonus,
+      liquidationBonusFactor: params.liquidationBonusFactor,
+      healthFactor: params.healthFactor,
+      maxLiquidationBonus: params.maxLiquidationBonus
+    });
     uint256 collateralToLiquidate = debtToCollateral.percentMulDown(liquidationBonus);
 
     return (collateralToLiquidate, debtToLiquidate);
@@ -176,9 +179,12 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       );
 
     if (collateralToLiquidate > params.reserveCollateral) {
-      uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus(
-        _getCalculateLiquidationBonusParams(params)
-      );
+      uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+        healthFactorForMaxBonus: params.healthFactorForMaxBonus,
+        liquidationBonusFactor: params.liquidationBonusFactor,
+        healthFactor: params.healthFactor,
+        maxLiquidationBonus: params.maxLiquidationBonus
+      });
 
       collateralToLiquidate = params.reserveCollateral;
       bonusCollateral =

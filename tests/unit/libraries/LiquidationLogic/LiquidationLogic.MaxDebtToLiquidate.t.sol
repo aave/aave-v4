@@ -100,7 +100,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
         params.reserveDebt - 1
       );
     }
-    vm.expectRevert(LiquidationLogic.MustNotLeaveDust.selector);
+    vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
   }
 }

@@ -124,7 +124,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
 
     // liquidation call with invalid debt to cover
     vm.prank(LIQUIDATOR);
-    vm.expectRevert(abi.encodeWithSelector(LiquidationLogic.MustNotLeaveDust.selector));
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.MustNotLeaveDust.selector));
     spoke1.liquidationCall({
       collateralReserveId: _daiReserveId(spoke1),
       debtReserveId: _usdxReserveId(spoke1),
@@ -174,7 +174,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     // ensure debtToCover is greater than debtToRestoreHealthFactor to trigger revert
     debtToCover = bound(debtToCover, debtToRestoreHealthFactor + 1, requiredDebtAmount - 1);
 
-    vm.expectRevert(abi.encodeWithSelector(LiquidationLogic.MustNotLeaveDust.selector));
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.MustNotLeaveDust.selector));
     // liquidation call with invalid debt to cover
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
@@ -307,7 +307,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     _borrowWithoutHfCheck(spoke1, alice, _usdxReserveId(spoke1), usdxAmount);
 
     // liquidation call with invalid debt to cover
-    vm.expectRevert(abi.encodeWithSelector(LiquidationLogic.MustNotLeaveDust.selector));
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.MustNotLeaveDust.selector));
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
       collateralReserveId: _daiReserveId(spoke1),
@@ -355,7 +355,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     );
 
     // liquidation call with invalid debt to cover
-    vm.expectRevert(abi.encodeWithSelector(LiquidationLogic.MustNotLeaveDust.selector));
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.MustNotLeaveDust.selector));
     vm.prank(LIQUIDATOR);
     spoke1.liquidationCall({
       collateralReserveId: _daiReserveId(spoke1),

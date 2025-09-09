@@ -576,15 +576,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 healthFactor
   ) external view returns (uint256) {
     return
-      LiquidationLogic.calculateLiquidationBonus(
-        DataTypes.CalculateLiquidationBonusParams({
-          healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
-          liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
-          healthFactor: healthFactor,
-          maxLiquidationBonus: _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey]
-            .maxLiquidationBonus
-        })
-      );
+      LiquidationLogic.calculateLiquidationBonus({
+        healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
+        liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
+        healthFactor: healthFactor,
+        maxLiquidationBonus: _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey]
+          .maxLiquidationBonus
+      });
   }
 
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory) {
@@ -804,9 +802,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     );
 
     uint256 reserveId;
+    bool borrowing;
+    bool collateral;
     while (true) {
-      bool borrowing;
-      bool collateral;
       (reserveId, borrowing, collateral) = positionStatus.next(reserveId, reserveCount);
       if (reserveId == PositionStatus.NOT_FOUND) break;
 
@@ -814,41 +812,31 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       DataTypes.Reserve storage reserve = _reserves[reserveId];
 
       uint256 assetPrice = aaveOracle.getReservePrice(reserveId);
-      uint256 assetUnit = 10 ** reserve.decimals;
+      uint256 assetUnit = uint256(10).uncheckedExp(reserve.decimals);
 
       if (collateral) {
-        if (refreshConfig) {
-          userPosition.configKey = reserve.dynamicConfigKey;
-        }
-        uint256 collateralFactor = _dynamicConfig[reserveId][userPosition.configKey]
-          .collateralFactor;
+        uint256 collateralFactor = _dynamicConfig[reserveId][
+          refreshConfig
+            ? (userPosition.configKey = reserve.dynamicConfigKey)
+            : userPosition.configKey
+        ].collateralFactor;
         if (collateralFactor != 0) {
-          uint256 suppliedBalance;
-          {
-            uint256 suppliedShares = userPosition.suppliedShares;
-            if (suppliedShares > 0) {
-              suppliedBalance = reserve.hub.previewRemoveByShares(reserve.assetId, suppliedShares);
-            }
-          }
-          if (suppliedBalance > 0) {
-            uint256 userCollateralInBaseCurrency = (suppliedBalance * assetPrice).wadDivDown(
-              assetUnit
-            );
-            if (userCollateralInBaseCurrency > 0) {
-              userAccountData.totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
-              list.add(
-                userAccountData.suppliedAssetsCount,
-                reserve.collateralRisk,
-                userCollateralInBaseCurrency
-              );
-              userAccountData.avgCollateralFactor +=
-                userCollateralInBaseCurrency *
-                collateralFactor;
-            }
+          uint256 userCollateralInBaseCurrency = (reserve.hub.previewRemoveByShares(
+            reserve.assetId,
+            userPosition.suppliedShares
+          ) * assetPrice).wadDivDown(assetUnit);
 
-            unchecked {
-              ++userAccountData.suppliedAssetsCount;
-            }
+          if (userCollateralInBaseCurrency > 0) {
+            userAccountData.totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
+            list.add(
+              userAccountData.suppliedAssetsCount,
+              reserve.collateralRisk,
+              userCollateralInBaseCurrency
+            );
+            userAccountData.avgCollateralFactor += userCollateralInBaseCurrency * collateralFactor;
+            userAccountData.suppliedAssetsCount = userAccountData.suppliedAssetsCount.uncheckedAdd(
+              1
+            );
           }
         }
       }
@@ -862,14 +850,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         userAccountData.totalDebtInBaseCurrency +=
           (drawnDebt * assetPrice).wadDivUp(assetUnit) +
           (premiumDebt * assetPrice).wadDivUp(assetUnit);
-        unchecked {
-          ++userAccountData.borrowedAssetsCount;
-        }
+        userAccountData.borrowedAssetsCount = userAccountData.borrowedAssetsCount.uncheckedAdd(1);
       }
 
-      unchecked {
-        ++reserveId;
-      }
+      reserveId = reserveId.uncheckedAdd(1);
     }
 
     // at this point avgCollateralFactor is a weighted sum of collateral scaled by collateralFactor
@@ -880,7 +864,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       : userAccountData
         .avgCollateralFactor
         .wadDivDown(userAccountData.totalDebtInBaseCurrency)
-        .fromBpsDown(); // HF of 1 -> 1e18
+        .fromBpsDown();
 
     // divide by total collateral to get avg collateral factor in wad
     userAccountData.avgCollateralFactor = userAccountData.totalCollateralInBaseCurrency == 0
@@ -905,9 +889,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       userAccountData.userRiskPremium += userCollateralInBaseCurrency * collateralRisk;
       collateralCounterInBaseCurrency += userCollateralInBaseCurrency;
       debtCounterInBaseCurrency -= userCollateralInBaseCurrency;
-      unchecked {
-        ++i;
-      }
+      i = i.uncheckedAdd(1);
     }
 
     if (collateralCounterInBaseCurrency > 0) {
@@ -982,9 +964,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
       hub.refreshPremium(assetId, premiumDelta);
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
-      unchecked {
-        ++reserveId;
-      }
+      reserveId = reserveId.uncheckedAdd(1);
     }
     emit UserRiskPremiumUpdate(user, newUserRiskPremium);
 
@@ -1033,9 +1013,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       // non-zero deficit means user ends up with zero total debt
       positionStatus.setBorrowing(reserveId, false);
 
-      unchecked {
-        ++reserveId;
-      }
+      reserveId = reserveId.uncheckedAdd(1);
     }
     emit UserRiskPremiumUpdate(user, 0);
   }
@@ -1050,9 +1028,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     ) {
       _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
 
-      unchecked {
-        ++reserveId;
-      }
+      reserveId = reserveId.uncheckedAdd(1);
     }
     emit RefreshAllUserDynamicConfig(user);
   }

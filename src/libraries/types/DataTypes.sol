@@ -193,14 +193,6 @@ library DataTypes {
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
   }
-
-  struct CalculateLiquidationBonusParams {
-    uint256 healthFactorForMaxBonus;
-    uint256 liquidationBonusFactor;
-    uint256 healthFactor;
-    uint256 maxLiquidationBonus;
-  }
-
   struct LiquidateUserParams {
     uint256 collateralReserveId;
     uint256 debtReserveId;
