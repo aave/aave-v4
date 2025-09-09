@@ -2,7 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
-import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 import {IHub} from 'src/interfaces/IHub.sol';
 
 library DataTypes {
@@ -133,66 +132,6 @@ library DataTypes {
     uint256 borrowedAssetsCount;
   }
 
-  // todo: remove
-  struct LiquidationCallLocalVars {
-    uint256 collateralReserveId;
-    uint256 debtReserveId;
-    uint256 actualCollateralToLiquidate;
-    uint256 actualDebtToLiquidate;
-    uint256 liquidationFeeAmount;
-    uint256 borrowerCollateralBalance;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-    uint256 debtAssetPrice;
-    uint256 debtAssetUnit;
-    uint256 totalBorrowerReserveDebt;
-    uint256 debtToRestoreHealthFactor;
-    uint256 healthFactor;
-    uint256 liquidationBonus;
-    uint256 drawnDebtToLiquidate;
-    uint256 premiumDebtToLiquidate;
-    uint256 targetHealthFactor;
-    uint256 collateralFactor;
-    uint256 collateralAssetPrice;
-    uint256 collateralAssetUnit;
-    uint256 liquidationFee;
-    bool hasDeficit;
-  }
-
-  // todo: remove
-  struct CalculateAvailableCollateralToLiquidate {
-    uint256 borrowerCollateralBalanceInBaseCurrency;
-    uint256 baseCollateral;
-    uint256 maxCollateralToLiquidate;
-    uint256 collateralAmount;
-    uint256 debtAmountNeeded;
-    uint256 collateralToLiquidateInBaseCurrency;
-    uint256 debtToLiquidateInBaseCurrency;
-    bool hasDeficit;
-  }
-  struct LiquidationCallParams {
-    address user;
-    address oracle;
-    uint256 collateralReserveId;
-    uint256 debtReserveId;
-    uint256 healthFactor;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-    uint256 debtToCover;
-    address liquidator;
-  }
-
-  struct CalculateLiquidationParametersParams {
-    address oracle;
-    uint256 collateralReserveId;
-    uint256 debtReserveId;
-    uint256 debtToCover;
-    uint256 drawnReserveDebt;
-    uint256 premiumReserveDebt;
-    uint256 healthFactor;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-  }
   struct LiquidateUserParams {
     uint256 collateralReserveId;
     uint256 debtReserveId;

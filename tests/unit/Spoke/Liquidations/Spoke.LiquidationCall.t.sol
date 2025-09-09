@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/Liquidations-new/Spoke.LiquidationCall.Base.t.sol';
+import 'tests/unit/Spoke/Liquidations/Spoke.LiquidationCall.Base.t.sol';
 
 abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest {
   using WadRayMath for uint256;
