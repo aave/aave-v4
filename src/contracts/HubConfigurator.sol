@@ -75,7 +75,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    _updateFeeReceiverSpokeConfig(targetHub, assetId, config.feeReceiver, feeReceiver);
+    _updateFeeReceiverCaps(targetHub, assetId, config.feeReceiver, feeReceiver);
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config);
   }
@@ -89,7 +89,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    _updateFeeReceiverSpokeConfig(targetHub, assetId, config.feeReceiver, feeReceiver);
+    _updateFeeReceiverCaps(targetHub, assetId, config.feeReceiver, feeReceiver);
     config.liquidityFee = liquidityFee.toUint16();
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config);
@@ -254,16 +254,14 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /**
-   * @dev Updates the spoke configs for the old and new fee receivers.
-   *  - updates the caps for the old fee receiver to 0.
-   *  - new fee receiver must not be already listed as a spoke on the asset, otherwise it reverts on Hub.
+   * @dev Updates the caps for the old fee receiver to 0.
    * @dev If the old and new fee receivers are the same, it does nothing.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
    * @param oldFeeReceiver The old fee receiver.
    * @param newFeeReceiver The new fee receiver.
    */
-  function _updateFeeReceiverSpokeConfig(
+  function _updateFeeReceiverCaps(
     IHub hub,
     uint256 assetId,
     address oldFeeReceiver,
