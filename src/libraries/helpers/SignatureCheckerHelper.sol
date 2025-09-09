@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 
 /**
- * @notice Simple wrapper contract for OpenZeppelin's SignatureChecker to make `isValidSignatureNow` an external function.
+ * @notice Simple wrapper library for OpenZeppelin's SignatureChecker to expose `isValidSignatureNow` externally.
  */
 library SignatureCheckerHelper {
   /**
