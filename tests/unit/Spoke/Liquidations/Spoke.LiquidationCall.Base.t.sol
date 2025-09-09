@@ -129,7 +129,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         debtToCover
       );
     try liquidationLogicWrapper.calculateMaxDebtToLiquidate(params) returns (uint256) {} catch {
-      debtToCover = bound(debtToCover, params.reserveDebt, MAX_SUPPLY_AMOUNT);
+      debtToCover = bound(debtToCover, params.reserveDebtBalance, MAX_SUPPLY_AMOUNT);
     }
 
     deal(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));
@@ -165,7 +165,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
     return
       LiquidationLogic.CalculateMaxDebtToLiquidateParams({
-        reserveDebt: spoke.getUserTotalDebt(debtReserveId, user),
+        reserveDebtBalance: spoke.getUserTotalDebt(debtReserveId, user),
         debtToCover: debtToCover,
         totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
         healthFactor: userAccountData.healthFactor,
@@ -226,8 +226,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       LiquidationLogic.CalculateLiquidationAmountsParams({
         healthFactorForMaxBonus: spoke.getLiquidationConfig().healthFactorForMaxBonus,
         liquidationBonusFactor: spoke.getLiquidationConfig().liquidationBonusFactor,
-        reserveDebt: spoke.getUserTotalDebt(debtReserveId, user),
-        reserveCollateral: spoke.getUserSuppliedAmount(collateralReserveId, user),
+        reserveDebtBalance: spoke.getUserTotalDebt(debtReserveId, user),
+        reserveCollateralBalance: spoke.getUserSuppliedAmount(collateralReserveId, user),
         debtToCover: debtToCover,
         totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
         healthFactor: userAccountData.healthFactor,

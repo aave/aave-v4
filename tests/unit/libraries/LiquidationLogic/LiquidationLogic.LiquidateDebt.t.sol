@@ -131,7 +131,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       LiquidationLogic.LiquidateDebtParams({
         reserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
-        drawnDebt: drawnDebt,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
         liquidator: liquidator
@@ -165,7 +164,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       LiquidationLogic.LiquidateDebtParams({
         reserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
-        drawnDebt: drawnDebt,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
         liquidator: liquidator
@@ -188,7 +186,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       LiquidationLogic.LiquidateDebtParams({
         reserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
-        drawnDebt: drawnDebt,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
         liquidator: liquidator
@@ -211,7 +208,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       LiquidationLogic.LiquidateDebtParams({
         reserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
-        drawnDebt: drawnDebt,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
         liquidator: liquidator

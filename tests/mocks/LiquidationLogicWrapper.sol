@@ -148,10 +148,19 @@ contract LiquidationLogicWrapper {
     return LiquidationLogic._calculateLiquidationAmounts(params);
   }
 
-  function assessDeficit(
-    LiquidationLogic.AssessDeficitParams memory params
+  function evaluateDeficit(
+    bool isCollateralPositionEmpty,
+    bool isDebtPositionEmpty,
+    uint256 suppliedAssetsCount,
+    uint256 borrowedAssetsCount
   ) public pure returns (bool) {
-    return LiquidationLogic._assessDeficit(params);
+    return
+      LiquidationLogic._evaluateDeficit(
+        isCollateralPositionEmpty,
+        isDebtPositionEmpty,
+        suppliedAssetsCount,
+        borrowedAssetsCount
+      );
   }
 
   function liquidateCollateral(

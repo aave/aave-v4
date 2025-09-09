@@ -101,8 +101,8 @@ contract LiquidationLogicBaseTest is SpokeBase {
       memory debtToRestoreHealthFactorParams = _bound(_getDebtToRestoreHealthFactorParams(params));
 
     uint256 debtToCover = bound(params.debtToCover, 0, MAX_SUPPLY_AMOUNT);
-    uint256 reserveDebt = bound(
-      params.reserveDebt,
+    uint256 reserveDebtBalance = bound(
+      params.reserveDebtBalance,
       0,
       _convertBaseCurrencyToAmount(
         debtToRestoreHealthFactorParams.totalDebtInBaseCurrency,
@@ -113,7 +113,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
     return
       LiquidationLogic.CalculateMaxDebtToLiquidateParams({
-        reserveDebt: reserveDebt,
+        reserveDebtBalance: reserveDebtBalance,
         debtToCover: debtToCover,
         totalDebtInBaseCurrency: debtToRestoreHealthFactorParams.totalDebtInBaseCurrency,
         healthFactor: debtToRestoreHealthFactorParams.healthFactor,
@@ -132,7 +132,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     try liquidationLogicWrapper.calculateMaxDebtToLiquidate(params) returns (uint256) {
       return params;
     } catch {
-      params.debtToCover = bound(params.debtToCover, params.reserveDebt, MAX_SUPPLY_AMOUNT);
+      params.debtToCover = bound(params.debtToCover, params.reserveDebtBalance, MAX_SUPPLY_AMOUNT);
       return params;
     }
   }
@@ -148,7 +148,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     });
     return
       LiquidationLogic.CalculateMaxDebtToLiquidateParams({
-        reserveDebt: params.reserveDebt,
+        reserveDebtBalance: params.reserveDebtBalance,
         debtToCover: params.debtToCover,
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
         healthFactor: params.healthFactor,
@@ -179,7 +179,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
       memory maxDebtToLiquidateParams = _getCalculateMaxDebtToLiquidateParams(params);
     maxDebtToLiquidateParams = _boundNoDustRevert(maxDebtToLiquidateParams);
 
-    params.reserveDebt = maxDebtToLiquidateParams.reserveDebt;
+    params.reserveDebtBalance = maxDebtToLiquidateParams.reserveDebtBalance;
     params.debtToCover = maxDebtToLiquidateParams.debtToCover;
     params.totalDebtInBaseCurrency = maxDebtToLiquidateParams.totalDebtInBaseCurrency;
     params.healthFactor = maxDebtToLiquidateParams.healthFactor;
@@ -191,7 +191,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
     params.collateralAssetUnit = bound(params.collateralAssetUnit, 0, MAX_TOKEN_DECIMALS_SUPPORTED);
     params.liquidationFee = bound(params.liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
-    params.reserveCollateral = bound(params.reserveCollateral, 0, MAX_SUPPLY_AMOUNT);
+    params.reserveCollateralBalance = bound(params.reserveCollateralBalance, 0, MAX_SUPPLY_AMOUNT);
 
     return params;
   }

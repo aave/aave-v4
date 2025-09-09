@@ -302,7 +302,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       msg.sender
     );
 
-    _settlePremiumDebt(userPosition, premiumDelta);
+    _settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
     userPosition.drawnShares -= restoredShares.toUint128();
     if (userPosition.drawnShares == 0) {
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
@@ -348,7 +348,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       collateralReserveId
     ][_userPositions[user][collateralReserveId].configKey];
 
-    bool hasDeficit = LiquidationLogic.liquidateUser(
+    bool isUserInDeficit = LiquidationLogic.liquidateUser(
       _reserves[collateralReserveId],
       _reserves[debtReserveId],
       _userPositions[user][collateralReserveId],
@@ -359,8 +359,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       params
     );
 
-    if (hasDeficit) {
-      _reportDeficits(user);
+    if (isUserInDeficit) {
+      _reportDeficit(user);
     } else {
       // new risk premium only needs to be propagated if no deficit exists
       _notifyRiskPremiumUpdate(user, _calculateUserAccountData(user).userRiskPremium);
@@ -754,14 +754,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   function _settlePremiumDebt(
     DataTypes.UserPosition storage userPosition,
-    DataTypes.PremiumDelta memory premiumDelta
+    int256 realizedDelta
   ) internal {
     userPosition.premiumShares = 0;
     userPosition.premiumOffset = 0;
-    userPosition.realizedPremium = userPosition
-      .realizedPremium
-      .add(premiumDelta.realizedDelta)
-      .toUint128();
+    userPosition.realizedPremium = userPosition.realizedPremium.add(realizedDelta).toUint128();
   }
 
   function _isPositionManager(address user, address manager) private view returns (bool) {
@@ -833,7 +830,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
               reserve.collateralRisk,
               userCollateralInBaseCurrency
             );
-            userAccountData.avgCollateralFactor += userCollateralInBaseCurrency * collateralFactor;
+            userAccountData.avgCollateralFactor += collateralFactor * userCollateralInBaseCurrency;
             userAccountData.suppliedAssetsCount = userAccountData.suppliedAssetsCount.uncheckedAdd(
               1
             );
@@ -976,7 +973,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    * @dev Includes the debt reserve being repaid during liquidation.
    * @param user The address of the user whose deficits are being reported.
    */
-  function _reportDeficits(address user) internal {
+  function _reportDeficit(address user) internal {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     uint256 reserveCount = _reserveCount;
     uint256 reserveId;
@@ -1007,7 +1004,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         premiumDebtRestored,
         premiumDelta
       );
-      _settlePremiumDebt(userPosition, premiumDelta);
+      _settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
       userPosition.drawnShares -= deficitShares.toUint128();
       // newUserRiskPremium is 0 due to no collateral remaining
       // non-zero deficit means user ends up with zero total debt

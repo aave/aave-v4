@@ -11,7 +11,6 @@ import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 library LiquidationLogic {
@@ -32,7 +31,7 @@ library LiquidationLogic {
     uint256 healthFactor;
     bool isUsingAsCollateral;
     uint256 collateralFactor;
-    uint256 reserveDebt;
+    uint256 reserveDebtBalance;
   }
 
   struct CalculateDebtToRestoreHealthFactorParams {
@@ -46,7 +45,7 @@ library LiquidationLogic {
   }
 
   struct CalculateMaxDebtToLiquidateParams {
-    uint256 reserveDebt;
+    uint256 reserveDebtBalance;
     uint256 debtToCover;
     uint256 totalDebtInBaseCurrency;
     uint256 healthFactor;
@@ -60,8 +59,8 @@ library LiquidationLogic {
   struct CalculateLiquidationAmountsParams {
     uint256 healthFactorForMaxBonus;
     uint256 liquidationBonusFactor;
-    uint256 reserveDebt;
-    uint256 reserveCollateral;
+    uint256 reserveDebtBalance;
+    uint256 reserveCollateralBalance;
     uint256 debtToCover;
     uint256 totalDebtInBaseCurrency;
     uint256 healthFactor;
@@ -75,24 +74,15 @@ library LiquidationLogic {
     uint256 liquidationFee;
   }
 
-  struct AssessDeficitParams {
-    bool isCollateralPositionEmpty;
-    bool isDebtPositionEmpty;
-    uint256 suppliedAssetsCount;
-    uint256 borrowedAssetsCount;
-  }
-
   struct LiquidateDebtParams {
     uint256 reserveId;
     uint256 debtToLiquidate;
-    uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 accruedPremium;
     address liquidator;
   }
 
   struct LiquidateCollateralParams {
-    uint256 reserveCollateral;
     uint256 collateralToLiquidate;
     uint256 collateralToLiquidator;
     address liquidator;
@@ -143,7 +133,7 @@ library LiquidationLogic {
       params.isUsingAsCollateral && params.collateralFactor != 0,
       ISpoke.CollateralCannotBeLiquidated()
     );
-    require(params.reserveDebt > 0, ISpoke.SpecifiedCurrencyNotBorrowedByUser());
+    require(params.reserveDebtBalance > 0, ISpoke.SpecifiedCurrencyNotBorrowedByUser());
   }
 
   function _calculateDebtToRestoreHealthFactor(
@@ -165,7 +155,7 @@ library LiquidationLogic {
   function _calculateMaxDebtToLiquidate(
     CalculateMaxDebtToLiquidateParams memory params
   ) internal pure returns (uint256) {
-    uint256 maxDebtToLiquidate = params.reserveDebt;
+    uint256 maxDebtToLiquidate = params.reserveDebtBalance;
     if (params.debtToCover < maxDebtToLiquidate) {
       maxDebtToLiquidate = params.debtToCover;
     }
@@ -185,16 +175,13 @@ library LiquidationLogic {
       maxDebtToLiquidate = debtToRestoreHealthFactor;
     }
 
-    // rounding down remaining debt only to assess if liquidation leaves dust
-    uint256 remainingDebtInBaseCurrency = (params.reserveDebt - maxDebtToLiquidate).mulDivDown(
-      params.debtAssetPrice.toWad(),
-      params.debtAssetUnit
-    );
+    uint256 remainingDebtInBaseCurrency = (params.reserveDebtBalance - maxDebtToLiquidate)
+      .mulDivDown(params.debtAssetPrice.toWad(), params.debtAssetUnit);
 
     if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE) {
       // target health factor is ignored to prevent leaving dust, only if the liquidator intends to fully cover the debt
-      require(params.debtToCover >= params.reserveDebt, ISpoke.MustNotLeaveDust());
-      maxDebtToLiquidate = params.reserveDebt;
+      require(params.debtToCover >= params.reserveDebtBalance, ISpoke.MustNotLeaveDust());
+      maxDebtToLiquidate = params.reserveDebtBalance;
     }
 
     return maxDebtToLiquidate;
@@ -212,7 +199,7 @@ library LiquidationLogic {
 
     uint256 debtToLiquidate = _calculateMaxDebtToLiquidate(
       CalculateMaxDebtToLiquidateParams({
-        reserveDebt: params.reserveDebt,
+        reserveDebtBalance: params.reserveDebtBalance,
         debtToCover: params.debtToCover,
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
         healthFactor: params.healthFactor,
@@ -229,8 +216,8 @@ library LiquidationLogic {
       params.debtAssetUnit * params.collateralAssetPrice
     );
     uint256 collateralToLiquidate = debtToCollateral.percentMulDown(liquidationBonus);
-    if (collateralToLiquidate > params.reserveCollateral) {
-      collateralToLiquidate = params.reserveCollateral;
+    if (collateralToLiquidate > params.reserveCollateralBalance) {
+      collateralToLiquidate = params.reserveCollateralBalance;
       debtToCollateral = collateralToLiquidate.percentDivUp(liquidationBonus);
       debtToLiquidate = debtToCollateral.mulDivUp(
         params.collateralAssetPrice * params.debtAssetUnit,
@@ -244,24 +231,26 @@ library LiquidationLogic {
     return (collateralToLiquidate, collateralToLiquidator, debtToLiquidate);
   }
 
-  function _assessDeficit(AssessDeficitParams memory params) internal pure returns (bool) {
-    if (!params.isCollateralPositionEmpty || params.suppliedAssetsCount > 1) {
+  function _evaluateDeficit(
+    bool isCollateralPositionEmpty,
+    bool isDebtPositionEmpty,
+    uint256 suppliedAssetsCount,
+    uint256 borrowedAssetsCount
+  ) internal pure returns (bool) {
+    if (!isCollateralPositionEmpty || suppliedAssetsCount > 1) {
       return false;
     }
 
-    return !params.isDebtPositionEmpty || params.borrowedAssetsCount > 1;
+    return !isDebtPositionEmpty || borrowedAssetsCount > 1;
   }
 
   function _settlePremiumDebt(
     DataTypes.UserPosition storage debtPosition,
-    DataTypes.PremiumDelta memory premiumDelta
+    int256 realizedDelta
   ) internal {
     debtPosition.premiumShares = 0;
     debtPosition.premiumOffset = 0;
-    debtPosition.realizedPremium = debtPosition
-      .realizedPremium
-      .add(premiumDelta.realizedDelta)
-      .toUint128();
+    debtPosition.realizedPremium = debtPosition.realizedPremium.add(realizedDelta).toUint128();
   }
 
   function _liquidateCollateral(
@@ -313,7 +302,7 @@ library LiquidationLogic {
         params.liquidator
       );
       // debt accounting
-      _settlePremiumDebt(position, premiumDelta);
+      _settlePremiumDebt(position, premiumDelta.realizedDelta);
       position.drawnShares -= drawnSharesLiquidated.toUint128();
     }
 
@@ -348,7 +337,7 @@ library LiquidationLogic {
         healthFactor: params.healthFactor,
         isUsingAsCollateral: positionStatus.isUsingAsCollateral(params.collateralReserveId),
         collateralFactor: collateralDynConfig.collateralFactor,
-        reserveDebt: params.drawnDebt + params.premiumDebt
+        reserveDebtBalance: params.drawnDebt + params.premiumDebt
       })
     );
 
@@ -356,8 +345,8 @@ library LiquidationLogic {
       memory calculateLiquidationAmountsParams = CalculateLiquidationAmountsParams({
         healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
-        reserveDebt: params.drawnDebt + params.premiumDebt,
-        reserveCollateral: collateralHub.previewRemoveByShares(
+        reserveDebtBalance: params.drawnDebt + params.premiumDebt,
+        reserveCollateralBalance: collateralHub.previewRemoveByShares(
           collateralReserve.assetId,
           collateralPosition.suppliedShares
         ),
@@ -386,7 +375,6 @@ library LiquidationLogic {
       collateralReserve,
       collateralPosition,
       LiquidateCollateralParams({
-        reserveCollateral: calculateLiquidationAmountsParams.reserveCollateral,
         collateralToLiquidate: collateralToLiquidate,
         collateralToLiquidator: collateralToLiquidator,
         liquidator: params.liquidator
@@ -400,7 +388,6 @@ library LiquidationLogic {
       LiquidateDebtParams({
         reserveId: params.debtReserveId,
         debtToLiquidate: debtToLiquidate,
-        drawnDebt: params.drawnDebt,
         premiumDebt: params.premiumDebt,
         accruedPremium: params.accruedPremium,
         liquidator: params.liquidator
@@ -417,13 +404,11 @@ library LiquidationLogic {
     );
 
     return
-      _assessDeficit(
-        AssessDeficitParams({
-          isCollateralPositionEmpty: isCollateralPositionEmpty,
-          isDebtPositionEmpty: isDebtPositionEmpty,
-          suppliedAssetsCount: params.suppliedAssetsCount,
-          borrowedAssetsCount: params.borrowedAssetsCount
-        })
-      );
+      _evaluateDeficit({
+        isCollateralPositionEmpty: isCollateralPositionEmpty,
+        isDebtPositionEmpty: isDebtPositionEmpty,
+        suppliedAssetsCount: params.suppliedAssetsCount,
+        borrowedAssetsCount: params.borrowedAssetsCount
+      });
   }
 }

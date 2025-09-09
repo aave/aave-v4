@@ -19,7 +19,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
     );
     assertGe(
       maxDebtToLiquidate,
-      params.reserveDebt.min(params.debtToCover).min(debtToRestoreHealthFactor)
+      params.reserveDebtBalance.min(params.debtToCover).min(debtToRestoreHealthFactor)
     );
   }
 
@@ -50,8 +50,8 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
     uint256 debtToRestoreHealthFactor = liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(
       _getDebtToRestoreHealthFactorParams(params)
     );
-    params.reserveDebt = bound(
-      params.reserveDebt,
+    params.reserveDebtBalance = bound(
+      params.reserveDebtBalance,
       debtToRestoreHealthFactor + 1,
       debtToRestoreHealthFactor +
         _convertBaseCurrencyToAmount(
@@ -62,11 +62,11 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
     );
     params.debtToCover = bound(
       params.debtToCover,
-      params.reserveDebt,
-      _max(params.reserveDebt, MAX_SUPPLY_AMOUNT)
+      params.reserveDebtBalance,
+      _max(params.reserveDebtBalance, MAX_SUPPLY_AMOUNT)
     );
     uint256 maxDebtToLiquidate = liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
-    assertEq(maxDebtToLiquidate, params.reserveDebt);
+    assertEq(maxDebtToLiquidate, params.reserveDebtBalance);
   }
 
   /// function reverts with MustNotLeaveDust if remaining debt is less than MIN_LEFTOVER_BASE and debtToCover is not enough to cover all debt
@@ -83,8 +83,8 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
       _getDebtToRestoreHealthFactorParams(params)
     );
     uint256 debtToLiquidate = params.debtToCover.min(debtToRestoreHealthFactor);
-    params.reserveDebt = bound(
-      params.reserveDebt,
+    params.reserveDebtBalance = bound(
+      params.reserveDebtBalance,
       debtToLiquidate + 1,
       debtToLiquidate +
         _convertBaseCurrencyToAmount(
@@ -97,7 +97,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
       params.debtToCover = bound(
         params.debtToCover,
         debtToRestoreHealthFactor,
-        params.reserveDebt - 1
+        params.reserveDebtBalance - 1
       );
     }
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
