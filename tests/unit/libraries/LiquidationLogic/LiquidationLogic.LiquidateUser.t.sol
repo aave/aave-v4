@@ -18,7 +18,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
 
   // variable liquidation bonus is max: 120%
   // liquidation penalty: 1.2 * 0.5 = 0.6
-  // debtToRestoreHealthFactor = $10000 * (1 - 0.8) / (1 - 0.6) / $2000 = 2.5
+  // debtToTarget = $10000 * (1 - 0.8) / (1 - 0.6) / $2000 = 2.5
   // max debt to liquidate = min(2.5, 5, 3) = 2.5
   // collateral to liquidate = 2.5 * 120% * $2000 / $1 = 6000
   // bonus collateral = 6000 - 6000 / 120% = 1000

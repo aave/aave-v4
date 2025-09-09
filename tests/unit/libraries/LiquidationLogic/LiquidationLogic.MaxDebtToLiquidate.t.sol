@@ -14,12 +14,12 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
   ) public {
     params = _boundNoDustRevert(params);
     uint256 maxDebtToLiquidate = liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
-    uint256 debtToRestoreHealthFactor = liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(
-      _getDebtToRestoreHealthFactorParams(params)
+    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+      _getDebtToTargetHealthFactorParams(params)
     );
     assertGe(
       maxDebtToLiquidate,
-      params.reserveDebtBalance.min(params.debtToCover).min(debtToRestoreHealthFactor)
+      params.reserveDebtBalance.min(params.debtToCover).min(debtToTarget)
     );
   }
 
@@ -37,7 +37,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
   }
 
-  /// function returns total reserve debt if dust is left, as long as debt to cover is >= total reserve debt (min is debtToRestoreHealthFactor)
+  /// function returns total reserve debt if dust is left, as long as debt to cover is >= total reserve debt (min is debtToTarget)
   function test_calculateMaxDebtToLiquidate_fuzz_AmountAdjustedDueToDust(
     LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
   ) public {
@@ -47,13 +47,13 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
       1,
       LiquidationLogic.MIN_LEFTOVER_BASE.fromWadDown() * params.debtAssetUnit - 1
     );
-    uint256 debtToRestoreHealthFactor = liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(
-      _getDebtToRestoreHealthFactorParams(params)
+    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+      _getDebtToTargetHealthFactorParams(params)
     );
     params.reserveDebtBalance = bound(
       params.reserveDebtBalance,
-      debtToRestoreHealthFactor + 1,
-      debtToRestoreHealthFactor +
+      debtToTarget + 1,
+      debtToTarget +
         _convertBaseCurrencyToAmount(
           LiquidationLogic.MIN_LEFTOVER_BASE - 1,
           params.debtAssetPrice,
@@ -79,10 +79,10 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
       1,
       LiquidationLogic.MIN_LEFTOVER_BASE.fromWadDown() * params.debtAssetUnit - 1
     );
-    uint256 debtToRestoreHealthFactor = liquidationLogicWrapper.calculateDebtToRestoreHealthFactor(
-      _getDebtToRestoreHealthFactorParams(params)
+    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+      _getDebtToTargetHealthFactorParams(params)
     );
-    uint256 debtToLiquidate = params.debtToCover.min(debtToRestoreHealthFactor);
+    uint256 debtToLiquidate = params.debtToCover.min(debtToTarget);
     params.reserveDebtBalance = bound(
       params.reserveDebtBalance,
       debtToLiquidate + 1,
@@ -93,12 +93,8 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
           params.debtAssetUnit
         )
     );
-    if (debtToRestoreHealthFactor < params.debtToCover) {
-      params.debtToCover = bound(
-        params.debtToCover,
-        debtToRestoreHealthFactor,
-        params.reserveDebtBalance - 1
-      );
+    if (debtToTarget < params.debtToCover) {
+      params.debtToCover = bound(params.debtToCover, debtToTarget, params.reserveDebtBalance - 1);
     }
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
