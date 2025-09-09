@@ -1379,7 +1379,7 @@ abstract contract Base is Test {
 
   // get the asset added amount converted from total added shares
   // effective addedAssetAmount which accounts for liquidity fee impact on exchange rate
-  function getConvertedAssetAddedAmount(
+  function getTotalAddedSharesIntoAssets(
     IHub hub,
     uint256 assetId
   ) internal view returns (uint256 assetAddedAmount) {
@@ -1402,7 +1402,7 @@ abstract contract Base is Test {
       string(abi.encodePacked('asset supplied shares ', label))
     );
     assertEq(
-      getConvertedAssetAddedAmount(hub1, assetId),
+      getTotalAddedSharesIntoAssets(hub1, assetId),
       expectedSuppliedAmount,
       string(abi.encodePacked('asset supplied amount ', label))
     );
@@ -1625,7 +1625,7 @@ abstract contract Base is Test {
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     assertApproxEqAbs(
-      getConvertedAssetAddedAmount(hub1, assetId),
+      getTotalAddedSharesIntoAssets(hub1, assetId),
       expectedSuppliedAmount,
       3,
       string.concat('asset supplied amount ', label)
@@ -2275,7 +2275,7 @@ abstract contract Base is Test {
         assetId: assetId,
         liquidity: assetData.liquidity,
         addedShares: assetData.addedShares,
-        addedAmount: getConvertedAssetAddedAmount(hub, assetId),
+        addedAmount: getTotalAddedSharesIntoAssets(hub, assetId),
         drawnShares: assetData.drawnShares,
         drawn: drawn,
         premiumShares: assetData.premiumShares,

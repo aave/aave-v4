@@ -113,7 +113,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex1, 'drawnIndex');
     assertEq(
-      getConvertedAssetAddedAmount(hub1, daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
+      getTotalAddedSharesIntoAssets(hub1, daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
       addAmount + addAmount2 + interest,
       'addAmount'
     );
@@ -142,7 +142,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex2, 'drawnIndex2');
     assertEq(
-      getConvertedAssetAddedAmount(hub1, daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
+      getTotalAddedSharesIntoAssets(hub1, daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
       addAmount + addAmount2 + interest,
       'addAmount'
     );
@@ -159,7 +159,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex2, 'drawnIndex2');
     assertEq(
-      getConvertedAssetAddedAmount(hub1, daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
+      getTotalAddedSharesIntoAssets(hub1, daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
       addAmount + addAmount2 * 2 + interest,
       'addAmount'
     );
@@ -199,7 +199,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex, 'drawnIndex');
     assertEq(
-      getConvertedAssetAddedAmount(hub1, daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
+      getTotalAddedSharesIntoAssets(hub1, daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
       addAmount + addAmount2 + interest,
       'addAmount'
     );
@@ -290,7 +290,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(assetData.t1.lastUpdateTimestamp - timestamps.t0, elapsed, 'elapsed');
     assertEq(assetData.t1.drawnIndex, cumulated.t1, 'drawnIndex');
     assertEq(
-      getConvertedAssetAddedAmount(hub1, daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
+      getTotalAddedSharesIntoAssets(hub1, daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
       spoke1Amounts.add0 + addAmount2 + interest1,
       'addAmount'
     );
@@ -323,7 +323,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(assetData.t2.lastUpdateTimestamp - timestamps.t1, elapsed, 'elapsed');
     assertEq(assetData.t2.drawnIndex, cumulated.t2, 'drawnIndex t2');
     assertEq(
-      getConvertedAssetAddedAmount(hub1, daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
+      getTotalAddedSharesIntoAssets(hub1, daiAssetId) + _calculateBurntInterest(hub1, daiAssetId),
       spoke1Amounts.add0 + addAmount2 * 3 + interest1 + interest2,
       'addAmount t2'
     );
