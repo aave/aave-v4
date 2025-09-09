@@ -3,10 +3,10 @@
 pragma solidity ^0.8.0;
 
 /** 
- * @notice Library to pack key-value pairs in a list to sort it
- * @dev The key are packed as `_MAX_KEY - key`, so we can sort the list in descending order,
- * with the value in ascending order in case of collision, and
- * when unpacking have the smallest we get the smallest keys at first.
+ * @notice Library to pack key-value pairs in a list.
+ * @dev `sortByKey` helper sorts by asending order of the `key` & in case of collission by descending order of the `value`.
+ * This is acheived by sorting the packed `key-value` pair in descending order, but storing the invert of the `key` (ie `_MAX_KEY - key`).
+ * WARNING: Uninitialized keys are returned as (key: `MAX_KEY`, value: 0).
  */
 import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
 
@@ -42,16 +42,20 @@ library KeyValueListInMemory {
     self._inner[idx] = pack(key, value);
   }
 
-  function get(List memory self, uint256 idx) internal pure returns (uint256, uint256) {
+  /// @dev Uninitialized keys are returned as (key: `MAX_KEY`, value: 0)
+  function tryGet(List memory self, uint256 idx) internal pure returns (uint256, uint256) {
     return unpack(self._inner[idx]);
   }
 
+  /** 
+  * @dev since `key` is in the MSB, we can sort by the key by sorting the array in descending order 
+  * (so the keys are in ascending order when unpacking), and using value in case of collision.
+  */ 
   function sortByKey(List memory self) internal pure {
-    // @dev since `key` is in the MSB, we can sort by the key by sorting the array
     Arrays.sort(self._inner, gtComparator);
   }
 
-  // @dev key, value < ceiling checks are expected to be done before packing
+  /// @dev key, value < ceiling checks are expected to be done before packing
   function pack(uint256 key, uint256 value) internal pure returns (uint256) {
     return ((_MAX_KEY - key) << _KEY_SHIFT) | value;
   }
@@ -65,8 +69,6 @@ library KeyValueListInMemory {
   }
 
   function unpack(uint256 data) internal pure returns (uint256, uint256) {
-    // @dev no need to unpack data that was never packed
-    if(data == 0) return(0,0);
     return (unpackKey(data), unpackValue(data));
   }
 

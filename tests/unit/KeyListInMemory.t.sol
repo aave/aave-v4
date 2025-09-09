@@ -28,32 +28,32 @@ contract KeyValueListInMemoryTest is Test {
     _assertSortedOrder(list);
   }
 
-  function test_fuzz_get(uint256[] memory seed) public pure {
+  function test_fuzz_tryGet(uint256[] memory seed) public pure {
     vm.assume(seed.length > 0);
     KeyValueListInMemory.List memory list = KeyValueListInMemory.init(seed.length);
     for (uint256 i; i < seed.length; ++i) {
       list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
     for (uint256 i; i < seed.length; ++i) {
-      (uint256 key, uint256 value) = list.get(i);
+      (uint256 key, uint256 value) = list.tryGet(i);
       assertEq(key, _truncateKey(seed[i]));
       assertEq(value, _truncateValue(seed[i]));
     }
   }
 
-  function test_fuzz_get_unsetData(uint256[] memory seed) public pure {
+  function test_fuzz_tryGet_unsetData(uint256[] memory seed) public pure {
     vm.assume(seed.length > 0);
     KeyValueListInMemory.List memory list = KeyValueListInMemory.init(seed.length);
     for (uint256 i; i < seed.length / 2; ++i) {
       list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
     for (uint256 i; i < seed.length; ++i) {
-      (uint256 key, uint256 value) = list.get(i);
+      (uint256 key, uint256 value) = list.tryGet(i);
       if(i < seed.length / 2) {
         assertEq(key, _truncateKey(seed[i]));
         assertEq(value, _truncateValue(seed[i]));
       } else {
-        assertEq(key, 0);
+        assertEq(key, KeyValueListInMemory._MAX_KEY);
         assertEq(value, 0);
       }
     }
@@ -61,9 +61,9 @@ contract KeyValueListInMemoryTest is Test {
 
   function _assertSortedOrder(KeyValueListInMemory.List memory list) internal pure {
     // validate sorted order
-    (uint256 prevKey, ) = list.get(0);
+    (uint256 prevKey, ) = list.tryGet(0);
     for (uint256 i = 1; i < list.length(); ++i) {
-      (uint256 key, ) = list.get(i);
+      (uint256 key, ) = list.tryGet(i);
       assertLe(prevKey, key);
       prevKey = key;
     }
