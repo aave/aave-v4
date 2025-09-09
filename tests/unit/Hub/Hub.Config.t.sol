@@ -341,18 +341,6 @@ contract HubConfigTest is HubBase {
     hub1.updateAssetConfig(assetId, newConfig);
   }
 
-  // function test_debug() public {
-  //   test_updateAssetConfig_fuzz(
-  //     5,
-  //     DataTypes.AssetConfig({
-  //       feeReceiver: 0x0bEe7563F91265b39626b09accCb543Ce995CAd9,
-  //       liquidityFee: 19069,
-  //       irStrategy: 0x0000000000000000000000000000000000002C98,
-  //       reinvestmentController: 0x1298F1F4b724aE718E87814773F495d762A6f5E9
-  //     })
-  //   );
-  // }
-
   function test_updateAssetConfig_fuzz(
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
