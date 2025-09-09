@@ -811,7 +811,7 @@ contract SpokeBase is Base {
     idx = 0;
     uint256 utilizedSupply = 0;
     while (totalDebt > 0 && idx < reserveCollateralRisk.length()) {
-      (uint256 collateralRisk, uint256 reserveId) = reserveCollateralRisk.tryGet(idx);
+      (uint256 collateralRisk, uint256 reserveId) = reserveCollateralRisk.get(idx);
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
       uint256 suppliedAssets = hub1.convertToAddedAssets(assetId, userPosition.suppliedShares);

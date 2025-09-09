@@ -35,7 +35,7 @@ contract KeyValueListInMemoryTest is Test {
       list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
     for (uint256 i; i < seed.length; ++i) {
-      (uint256 key, uint256 value) = list.tryGet(i);
+      (uint256 key, uint256 value) = list.get(i);
       assertEq(key, _truncateKey(seed[i]));
       assertEq(value, _truncateValue(seed[i]));
     }
@@ -48,12 +48,12 @@ contract KeyValueListInMemoryTest is Test {
       list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
     for (uint256 i; i < seed.length; ++i) {
-      (uint256 key, uint256 value) = list.tryGet(i);
+      (uint256 key, uint256 value) = list.get(i);
       if(i < seed.length / 2) {
         assertEq(key, _truncateKey(seed[i]));
         assertEq(value, _truncateValue(seed[i]));
       } else {
-        assertEq(key, KeyValueListInMemory._MAX_KEY);
+        assertEq(key, 0);
         assertEq(value, 0);
       }
     }
@@ -61,9 +61,9 @@ contract KeyValueListInMemoryTest is Test {
 
   function _assertSortedOrder(KeyValueListInMemory.List memory list) internal pure {
     // validate sorted order
-    (uint256 prevKey, ) = list.tryGet(0);
+    (uint256 prevKey, ) = list.get(0);
     for (uint256 i = 1; i < list.length(); ++i) {
-      (uint256 key, ) = list.tryGet(i);
+      (uint256 key, ) = list.get(i);
       assertLe(prevKey, key);
       prevKey = key;
     }

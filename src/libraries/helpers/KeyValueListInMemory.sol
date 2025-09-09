@@ -43,7 +43,7 @@ library KeyValueListInMemory {
   }
 
   /// @dev Uninitialized keys are returned as (key: `MAX_KEY`, value: 0)
-  function tryGet(List memory self, uint256 idx) internal pure returns (uint256, uint256) {
+  function get(List memory self, uint256 idx) internal pure returns (uint256, uint256) {
     return unpack(self._inner[idx]);
   }
 
@@ -69,6 +69,8 @@ library KeyValueListInMemory {
   }
 
   function unpack(uint256 data) internal pure returns (uint256, uint256) {
+    // @dev no need to unpack data that was never packed
+    if(data == 0) return(0,0);
     return (unpackKey(data), unpackValue(data));
   }
 
