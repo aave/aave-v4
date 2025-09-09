@@ -22,6 +22,8 @@ library LiquidationLogic {
   using PositionStatus for DataTypes.PositionStatus;
 
   struct ValidateLiquidationCallParams {
+    address user;
+    address liquidator;
     uint256 debtToCover;
     address collateralReserveHub;
     address debtReserveHub;
@@ -126,6 +128,7 @@ library LiquidationLogic {
   }
 
   function _validateLiquidationCall(ValidateLiquidationCallParams memory params) internal pure {
+    require(params.user != params.liquidator, ISpoke.SelfLiquidation());
     require(params.debtToCover > 0, ISpoke.InvalidDebtToCover());
     require(
       params.collateralReserveHub != address(0) && params.debtReserveHub != address(0),
@@ -335,6 +338,8 @@ library LiquidationLogic {
     IHub collateralHub = collateralReserve.hub;
     _validateLiquidationCall(
       ValidateLiquidationCallParams({
+        user: params.user,
+        liquidator: params.liquidator,
         debtToCover: params.debtToCover,
         collateralReserveHub: address(collateralHub),
         debtReserveHub: address(debtReserve.hub),

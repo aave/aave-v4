@@ -11,6 +11,8 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
     super.setUp();
 
     params = LiquidationLogic.ValidateLiquidationCallParams({
+      user: alice,
+      liquidator: bob,
       debtToCover: 5e18,
       collateralReserveHub: address(hub1),
       debtReserveHub: address(hub1),
@@ -21,6 +23,12 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
       collateralFactor: 75_00,
       reserveDebt: 100e18
     });
+  }
+
+  function test_validateLiquidationCall_revertsWith_SelfLiquidation() public {
+    params.liquidator = alice;
+    vm.expectRevert(ISpoke.SelfLiquidation.selector);
+    liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
   function test_validateLiquidationCall_revertsWith_InvalidDebtToCover() public {
