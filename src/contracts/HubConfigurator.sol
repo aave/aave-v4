@@ -75,7 +75,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    _updateFeeReceiverCaps(targetHub, assetId, config.feeReceiver, feeReceiver);
+    _updateOldFeeReceiverCaps(targetHub, assetId, config.feeReceiver, feeReceiver);
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config);
   }
@@ -89,7 +89,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    _updateFeeReceiverCaps(targetHub, assetId, config.feeReceiver, feeReceiver);
+    _updateOldFeeReceiverCaps(targetHub, assetId, config.feeReceiver, feeReceiver);
     config.liquidityFee = liquidityFee.toUint16();
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config);
@@ -261,7 +261,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
    * @param oldFeeReceiver The old fee receiver.
    * @param newFeeReceiver The new fee receiver.
    */
-  function _updateFeeReceiverCaps(
+  function _updateOldFeeReceiverCaps(
     IHub hub,
     uint256 assetId,
     address oldFeeReceiver,
