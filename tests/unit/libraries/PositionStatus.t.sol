@@ -128,16 +128,16 @@ contract PositionStatusTest is Base {
 
   function test_isUsingAsCollateralOrBorrowing_slot1() public {
     p.setUsingAsCollateral(128, true);
-    assertEq(p.isUsingAsCollateral(128), true);
+    assertEq(p.isUsingAsCollateralOrBorrowing(128), true);
 
     p.setUsingAsCollateral(128, false);
-    assertEq(p.isUsingAsCollateral(128), false);
+    assertEq(p.isUsingAsCollateralOrBorrowing(128), false);
 
     p.setUsingAsCollateral(255, true);
-    assertEq(p.isUsingAsCollateral(255), true);
+    assertEq(p.isUsingAsCollateralOrBorrowing(255), true);
 
     p.setUsingAsCollateral(255, false);
-    assertEq(p.isUsingAsCollateral(255), false);
+    assertEq(p.isUsingAsCollateralOrBorrowing(255), false);
   }
 
   function test_collateralCount() public {
