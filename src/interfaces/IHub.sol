@@ -37,7 +37,8 @@ interface IHub is IHubBase, IAccessManaged {
     address indexed spoke,
     uint256 drawnShares,
     DataTypes.PremiumDelta premiumDelta,
-    uint256 drawnAmount
+    uint256 drawnAmount,
+    uint256 premiumAmount
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);

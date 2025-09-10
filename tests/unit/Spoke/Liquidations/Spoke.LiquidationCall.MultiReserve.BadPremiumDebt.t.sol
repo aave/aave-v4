@@ -446,24 +446,24 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
         deficitAmount: expectedDeficitAmount
       });
 
-      // @dev We omit checking data (deficitShares, premiumDelta, deficitAmount) here since premiumDelta.realizedDelta
-      // can be off by 2 wei due to exchange rate changing because of 2 wei instant premium debt during restore before deficit
-      // in the case when liquidated asset is also reported in deficit.
-      // It will be checked within 2 wei, rest exact, in the post action checks since we'll record the actual logs. (_checkReportDeficitEvents)
-      vm.expectEmit({
-        checkTopic1: true,
-        checkTopic2: true,
-        checkTopic3: true,
-        checkData: false,
-        emitter: address(hub1)
-      });
-      emit IHub.ReportDeficit(
-        assetId,
-        address(state.spoke),
-        expectedDeficitShares,
-        expectedDeficitPremiumDelta,
-        expectedDeficitAmount
-      );
+      // // @dev We omit checking data (deficitShares, premiumDelta, deficitAmount) here since premiumDelta.realizedDelta
+      // // can be off by 2 wei due to exchange rate changing because of 2 wei instant premium debt during restore before deficit
+      // // in the case when liquidated asset is also reported in deficit.
+      // // It will be checked within 2 wei, rest exact, in the post action checks since we'll record the actual logs. (_checkReportDeficitEvents)
+      // vm.expectEmit({
+      //   checkTopic1: true,
+      //   checkTopic2: true,
+      //   checkTopic3: true,
+      //   checkData: false,
+      //   emitter: address(hub1)
+      // });
+      // emit IHub.ReportDeficit(
+      //   assetId,
+      //   address(state.spoke),
+      //   expectedDeficitShares,
+      //   expectedDeficitPremiumDelta,
+      //   expectedDeficitAmount
+      // );
     }
     vm.expectEmit(address(state.spoke));
     emit ISpoke.UserRiskPremiumUpdate(state.user, 0);
