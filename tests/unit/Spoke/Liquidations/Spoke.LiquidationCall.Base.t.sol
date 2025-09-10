@@ -1032,39 +1032,4 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _checkRiskPremium(params, accountsInfoAfter, liquidationMetadata, logs);
     _checkAvgCollateralFactor(accountsInfoAfter, liquidationMetadata);
   }
-
-  function _increaseCollateralSupplies(
-    ISpoke spoke,
-    uint256[] memory reserveIds,
-    uint256 amountInBaseCurrency,
-    address user
-  ) internal {
-    for (uint256 i = 0; i < reserveIds.length; i++) {
-      _increaseCollateralSupply(
-        spoke,
-        reserveIds[i],
-        _convertBaseCurrencyToAmount(spoke, reserveIds[i], amountInBaseCurrency),
-        user
-      );
-    }
-  }
-
-  function _increaseDebts(
-    ISpoke spoke,
-    uint256[] memory reserveIds,
-    uint256 amountInBaseCurrency,
-    address user
-  ) internal {
-    for (uint256 i = 0; i < reserveIds.length; i++) {
-      uint256 amount = _convertBaseCurrencyToAmount(spoke, reserveIds[i], amountInBaseCurrency);
-      _openSupplyPosition(spoke, reserveIds[i], amount);
-      Utils.borrow({
-        spoke: spoke,
-        reserveId: reserveIds[i],
-        caller: user,
-        amount: amount,
-        onBehalfOf: user
-      });
-    }
-  }
 }

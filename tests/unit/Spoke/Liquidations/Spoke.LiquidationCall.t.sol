@@ -26,11 +26,39 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
   function _baseAmountInBaseCurrency() internal virtual returns (uint256);
 
-  function _processAdditionalInputs(
+  function _processAdditionalConfigs(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user
   ) internal virtual {}
+
+  function _processAdditionalCollateralReserves(
+    address user,
+    uint256 amountInBaseCurrency
+  ) internal {
+    uint256 count = vm.randomUint(1, 10);
+    for (uint256 i = 0; i < count; i++) {
+      uint256 reserveId = vm.randomUint(0, spoke.getReserveCount() - 1);
+      uint256 amount = _convertBaseCurrencyToAmount(spoke, reserveId, amountInBaseCurrency);
+      _increaseCollateralSupply(spoke, reserveId, amount, user);
+    }
+  }
+
+  function _processAdditionalDebtReserves(address user, uint256 amountInBaseCurrency) internal {
+    uint256 count = vm.randomUint(1, 10);
+    for (uint256 i = 0; i < count; i++) {
+      uint256 reserveId = vm.randomUint(0, spoke.getReserveCount() - 1);
+      uint256 amount = _convertBaseCurrencyToAmount(spoke, reserveId, amountInBaseCurrency);
+      _openSupplyPosition(spoke, reserveId, amount);
+      Utils.borrow({
+        spoke: spoke,
+        reserveId: reserveId,
+        caller: user,
+        amount: amount,
+        onBehalfOf: user
+      });
+    }
+  }
 
   function test_liquidationCall(
     ISpoke spoke,
@@ -81,8 +109,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
-    uint256 debtToCover,
-    bytes memory additionalInputs
+    uint256 debtToCover
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -92,7 +119,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
+    _processAdditionalConfigs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -126,7 +153,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
+    _processAdditionalConfigs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -167,7 +194,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
+    _processAdditionalConfigs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -175,12 +202,8 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
       user
     );
-    vm.assume(additionalCollateralReserveIds.length > 0);
-    additionalCollateralReserveIds = abi.decode(
-      _bound(spoke, additionalCollateralReserveIds, collateralReserveId, 10),
-      (uint256[])
-    );
-    _increaseCollateralSupplies(spoke, additionalCollateralReserveIds, 1e26, user);
+
+    _processAdditionalCollateralReserves(user, 1e26);
 
     test_liquidationCall(
       spoke,
@@ -208,7 +231,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
+    _processAdditionalConfigs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -216,12 +239,8 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
       user
     );
-    vm.assume(additionalCollateralReserveIds.length > 0);
-    additionalCollateralReserveIds = abi.decode(
-      _bound(spoke, additionalCollateralReserveIds, collateralReserveId, 10),
-      (uint256[])
-    );
-    _increaseCollateralSupplies(spoke, additionalCollateralReserveIds, 1e26, user);
+
+    _processAdditionalCollateralReserves(user, 1e26);
 
     test_liquidationCall(
       spoke,
@@ -249,7 +268,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
+    _processAdditionalConfigs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -257,12 +276,8 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
       user
     );
-    vm.assume(additionalDebtReserveIds.length > 0);
-    additionalDebtReserveIds = abi.decode(
-      _bound(spoke, additionalDebtReserveIds, debtReserveId, 10),
-      (uint256[])
-    );
-    _increaseDebts(spoke, additionalDebtReserveIds, 1e26, user);
+
+    _processAdditionalDebtReserves(user, 1e26);
 
     test_liquidationCall(
       spoke,
@@ -290,7 +305,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
+    _processAdditionalConfigs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -298,12 +313,8 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
       user
     );
-    vm.assume(additionalDebtReserveIds.length > 0);
-    additionalDebtReserveIds = abi.decode(
-      _bound(spoke, additionalDebtReserveIds, debtReserveId, 10),
-      (uint256[])
-    );
-    _increaseDebts(spoke, additionalDebtReserveIds, 1e26, user);
+
+    _processAdditionalDebtReserves(user, 1e26);
 
     test_liquidationCall(
       spoke,
@@ -332,7 +343,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
+    _processAdditionalConfigs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -341,25 +352,8 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       user
     );
 
-    vm.assume(additionalCollateralReserveIds.length > 0);
-    additionalCollateralReserveIds = abi.decode(
-      _bound(spoke, additionalCollateralReserveIds, collateralReserveId, 10),
-      (uint256[])
-    );
-    _increaseCollateralSupplies(spoke, additionalCollateralReserveIds, 1e26, user);
-
-    _increaseCollateralSupply(
-      spoke,
-      collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
-      user
-    );
-    vm.assume(additionalDebtReserveIds.length > 0);
-    additionalDebtReserveIds = abi.decode(
-      _bound(spoke, additionalDebtReserveIds, debtReserveId, 10),
-      (uint256[])
-    );
-    _increaseDebts(spoke, additionalDebtReserveIds, 1e26, user);
+    _processAdditionalCollateralReserves(user, 1e26);
+    _processAdditionalDebtReserves(user, 1e26);
 
     test_liquidationCall(
       spoke,
@@ -388,7 +382,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       liquidator
     );
 
-    _processAdditionalInputs(collateralReserveId, debtReserveId, user);
+    _processAdditionalConfigs(collateralReserveId, debtReserveId, user);
 
     _increaseCollateralSupply(
       spoke,
@@ -397,25 +391,8 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       user
     );
 
-    vm.assume(additionalCollateralReserveIds.length > 0);
-    additionalCollateralReserveIds = abi.decode(
-      _bound(spoke, additionalCollateralReserveIds, collateralReserveId, 10),
-      (uint256[])
-    );
-    _increaseCollateralSupplies(spoke, additionalCollateralReserveIds, 1e26, user);
-
-    _increaseCollateralSupply(
-      spoke,
-      collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
-      user
-    );
-    vm.assume(additionalDebtReserveIds.length > 0);
-    additionalDebtReserveIds = abi.decode(
-      _bound(spoke, additionalDebtReserveIds, debtReserveId, 10),
-      (uint256[])
-    );
-    _increaseDebts(spoke, additionalDebtReserveIds, 1e26, user);
+    _processAdditionalCollateralReserves(user, 1e26);
+    _processAdditionalDebtReserves(user, 1e26);
 
     test_liquidationCall(
       spoke,
@@ -551,7 +528,7 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
     return baseAmountInBaseCurrency;
   }
 
-  function _processAdditionalInputs(
+  function _processAdditionalConfigs(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user
