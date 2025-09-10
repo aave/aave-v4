@@ -57,6 +57,10 @@ contract TypedSignatureGatewayBaseTest is Base {
     return vm.randomUint(0, spoke.getReserveCount() - 1);
   }
 
+  function _randomInvalidReserveId(ISpoke spoke) internal returns (uint256) {
+    return vm.randomUint(spoke.getReserveCount(), UINT256_MAX);
+  }
+
   function _supplyData(
     ISpoke spoke,
     address who,
