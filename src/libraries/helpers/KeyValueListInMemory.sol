@@ -12,7 +12,7 @@ pragma solidity ^0.8.0;
 import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
 
 library KeyValueListInMemory {
-  error MaxDataSizeExceeded(uint256 key, uint256 value);
+  error MaxDataSizeExceeded();
 
   uint256 internal constant _MAX_KEY_BITS = 32;
   uint256 internal constant _MAX_VALUE_BITS = 224;
@@ -37,7 +37,7 @@ library KeyValueListInMemory {
   }
 
   function add(List memory self, uint256 idx, uint256 key, uint256 value) internal pure {
-    require(key <= _MAX_KEY && value <= _MAX_VALUE, MaxDataSizeExceeded(key, value));
+    require(key <= _MAX_KEY && value <= _MAX_VALUE, MaxDataSizeExceeded());
     self._inner[idx] = pack(key, value);
   }
 
