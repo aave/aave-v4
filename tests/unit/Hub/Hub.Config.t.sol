@@ -352,12 +352,6 @@ contract HubConfigTest is HubBase {
     uint256 liquidity = hub1.getLiquidity(assetId);
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
 
-    console.log(
-      'newConfig.feeReceiver',
-      newConfig.feeReceiver,
-      hub1.isSpokeListed(assetId, newConfig.feeReceiver)
-    );
-
     // new spoke is added only if it is different from the old one and not yet listed
     if (
       newConfig.feeReceiver != _getFeeReceiver(hub1, assetId) &&

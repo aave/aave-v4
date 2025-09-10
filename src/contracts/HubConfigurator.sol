@@ -75,7 +75,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    _updateOldFeeReceiverCaps(targetHub, assetId, config.feeReceiver, feeReceiver);
+    _updateSpokeCaps(targetHub, assetId, config.feeReceiver, 0, 0);
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config);
   }
@@ -89,7 +89,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    _updateOldFeeReceiverCaps(targetHub, assetId, config.feeReceiver, feeReceiver);
+    _updateSpokeCaps(targetHub, assetId, config.feeReceiver, 0, 0);
     config.liquidityFee = liquidityFee.toUint16();
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config);
@@ -125,13 +125,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
       address spokeAddress = targetHub.getSpokeAddress(assetId, i);
-      _updateSpokeCaps({
-        hub: targetHub,
-        assetId: assetId,
-        spoke: spokeAddress,
-        addCap: 0,
-        drawCap: 0
-      });
+      _updateSpokeCaps(targetHub, assetId, spokeAddress, 0, 0);
     }
   }
 
@@ -251,26 +245,6 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     bytes calldata data
   ) external override onlyOwner {
     IHub(hub).setInterestRateData(assetId, data);
-  }
-
-  /**
-   * @dev Updates the caps for the old fee receiver to 0.
-   * @dev If the old and new fee receivers are the same, it does nothing.
-   * @param hub The address of the Hub contract.
-   * @param assetId The identifier of the asset.
-   * @param oldFeeReceiver The old fee receiver.
-   * @param newFeeReceiver The new fee receiver.
-   */
-  function _updateOldFeeReceiverCaps(
-    IHub hub,
-    uint256 assetId,
-    address oldFeeReceiver,
-    address newFeeReceiver
-  ) internal {
-    if (oldFeeReceiver == newFeeReceiver) {
-      return;
-    }
-    _updateSpokeCaps(hub, assetId, oldFeeReceiver, 0, 0);
   }
 
   /**
