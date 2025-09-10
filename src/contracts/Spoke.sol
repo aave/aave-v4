@@ -776,9 +776,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   function _calculateAndRefreshUserAccountData(
     address user
-  ) internal returns (DataTypes.UserAccountData memory) {
+  ) internal returns (DataTypes.UserAccountData memory userAccountData) {
+    userAccountData = _calculateAndPotentiallyRefreshUserAccountData(user, true);
     emit RefreshAllUserDynamicConfig(user);
-    return _calculateAndPotentiallyRefreshUserAccountData(user, true);
   }
 
   /**
@@ -817,7 +817,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
             ? (userPosition.configKey = reserve.dynamicConfigKey)
             : userPosition.configKey
         ].collateralFactor;
-        if (collateralFactor != 0) {
+        if (collateralFactor > 0) {
           uint256 userCollateralInBaseCurrency = (reserve.hub.previewRemoveByShares(
             reserve.assetId,
             userPosition.suppliedShares

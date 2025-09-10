@@ -31,7 +31,7 @@ library LiquidationLogic {
     uint256 healthFactor;
     bool isUsingAsCollateral;
     uint256 collateralFactor;
-    uint256 reserveDebtBalance;
+    uint256 debtReserveBalance;
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
@@ -45,7 +45,7 @@ library LiquidationLogic {
   }
 
   struct CalculateMaxDebtToLiquidateParams {
-    uint256 reserveDebtBalance;
+    uint256 debtReserveBalance;
     uint256 debtToCover;
     uint256 totalDebtInBaseCurrency;
     uint256 healthFactor;
@@ -59,8 +59,8 @@ library LiquidationLogic {
   struct CalculateLiquidationAmountsParams {
     uint256 healthFactorForMaxBonus;
     uint256 liquidationBonusFactor;
-    uint256 reserveDebtBalance;
-    uint256 reserveCollateralBalance;
+    uint256 debtReserveBalance;
+    uint256 collateralReserveBalance;
     uint256 debtToCover;
     uint256 totalDebtInBaseCurrency;
     uint256 healthFactor;
@@ -133,7 +133,7 @@ library LiquidationLogic {
       params.isUsingAsCollateral && params.collateralFactor != 0,
       ISpoke.CollateralCannotBeLiquidated()
     );
-    require(params.reserveDebtBalance > 0, ISpoke.SpecifiedCurrencyNotBorrowedByUser());
+    require(params.debtReserveBalance > 0, ISpoke.SpecifiedCurrencyNotBorrowedByUser());
   }
 
   function _calculateDebtToTargetHealthFactor(
@@ -155,7 +155,7 @@ library LiquidationLogic {
   function _calculateMaxDebtToLiquidate(
     CalculateMaxDebtToLiquidateParams memory params
   ) internal pure returns (uint256) {
-    uint256 maxDebtToLiquidate = params.reserveDebtBalance;
+    uint256 maxDebtToLiquidate = params.debtReserveBalance;
     if (params.debtToCover < maxDebtToLiquidate) {
       maxDebtToLiquidate = params.debtToCover;
     }
@@ -175,13 +175,13 @@ library LiquidationLogic {
       maxDebtToLiquidate = debtToTarget;
     }
 
-    uint256 remainingDebtInBaseCurrency = (params.reserveDebtBalance - maxDebtToLiquidate)
+    uint256 remainingDebtInBaseCurrency = (params.debtReserveBalance - maxDebtToLiquidate)
       .mulDivDown(params.debtAssetPrice.toWad(), params.debtAssetUnit);
 
     if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE) {
       // target health factor is ignored to prevent leaving dust, only if the liquidator intends to fully cover the debt
-      require(params.debtToCover >= params.reserveDebtBalance, ISpoke.MustNotLeaveDust());
-      maxDebtToLiquidate = params.reserveDebtBalance;
+      require(params.debtToCover >= params.debtReserveBalance, ISpoke.MustNotLeaveDust());
+      maxDebtToLiquidate = params.debtReserveBalance;
     }
 
     return maxDebtToLiquidate;
@@ -199,7 +199,7 @@ library LiquidationLogic {
 
     uint256 debtToLiquidate = _calculateMaxDebtToLiquidate(
       CalculateMaxDebtToLiquidateParams({
-        reserveDebtBalance: params.reserveDebtBalance,
+        debtReserveBalance: params.debtReserveBalance,
         debtToCover: params.debtToCover,
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
         healthFactor: params.healthFactor,
@@ -216,8 +216,8 @@ library LiquidationLogic {
       params.debtAssetUnit * params.collateralAssetPrice
     );
     uint256 collateralToLiquidate = debtToCollateral.percentMulDown(liquidationBonus);
-    if (collateralToLiquidate > params.reserveCollateralBalance) {
-      collateralToLiquidate = params.reserveCollateralBalance;
+    if (collateralToLiquidate > params.collateralReserveBalance) {
+      collateralToLiquidate = params.collateralReserveBalance;
       debtToCollateral = collateralToLiquidate.percentDivUp(liquidationBonus);
       debtToLiquidate = debtToCollateral.mulDivUp(
         params.collateralAssetPrice * params.debtAssetUnit,
@@ -337,7 +337,7 @@ library LiquidationLogic {
         healthFactor: params.healthFactor,
         isUsingAsCollateral: positionStatus.isUsingAsCollateral(params.collateralReserveId),
         collateralFactor: collateralDynConfig.collateralFactor,
-        reserveDebtBalance: params.drawnDebt + params.premiumDebt
+        debtReserveBalance: params.drawnDebt + params.premiumDebt
       })
     );
 
@@ -345,8 +345,8 @@ library LiquidationLogic {
       memory calculateLiquidationAmountsParams = CalculateLiquidationAmountsParams({
         healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
-        reserveDebtBalance: params.drawnDebt + params.premiumDebt,
-        reserveCollateralBalance: collateralHub.previewRemoveByShares(
+        debtReserveBalance: params.drawnDebt + params.premiumDebt,
+        collateralReserveBalance: collateralHub.previewRemoveByShares(
           collateralReserve.assetId,
           collateralPosition.suppliedShares
         ),

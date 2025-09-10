@@ -19,7 +19,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
     );
     assertGe(
       maxDebtToLiquidate,
-      params.reserveDebtBalance.min(params.debtToCover).min(debtToTarget)
+      params.debtReserveBalance.min(params.debtToCover).min(debtToTarget)
     );
   }
 
@@ -50,8 +50,8 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
     uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
     );
-    params.reserveDebtBalance = bound(
-      params.reserveDebtBalance,
+    params.debtReserveBalance = bound(
+      params.debtReserveBalance,
       debtToTarget + 1,
       debtToTarget +
         _convertBaseCurrencyToAmount(
@@ -62,11 +62,11 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
     );
     params.debtToCover = bound(
       params.debtToCover,
-      params.reserveDebtBalance,
-      _max(params.reserveDebtBalance, MAX_SUPPLY_AMOUNT)
+      params.debtReserveBalance,
+      _max(params.debtReserveBalance, MAX_SUPPLY_AMOUNT)
     );
     uint256 maxDebtToLiquidate = liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
-    assertEq(maxDebtToLiquidate, params.reserveDebtBalance);
+    assertEq(maxDebtToLiquidate, params.debtReserveBalance);
   }
 
   /// function reverts with MustNotLeaveDust if remaining debt is less than MIN_LEFTOVER_BASE and debtToCover is not enough to cover all debt
@@ -83,8 +83,8 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
       _getDebtToTargetHealthFactorParams(params)
     );
     uint256 debtToLiquidate = params.debtToCover.min(debtToTarget);
-    params.reserveDebtBalance = bound(
-      params.reserveDebtBalance,
+    params.debtReserveBalance = bound(
+      params.debtReserveBalance,
       debtToLiquidate + 1,
       debtToLiquidate +
         _convertBaseCurrencyToAmount(
@@ -94,7 +94,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
         )
     );
     if (debtToTarget < params.debtToCover) {
-      params.debtToCover = bound(params.debtToCover, debtToTarget, params.reserveDebtBalance - 1);
+      params.debtToCover = bound(params.debtToCover, debtToTarget, params.debtReserveBalance - 1);
     }
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);

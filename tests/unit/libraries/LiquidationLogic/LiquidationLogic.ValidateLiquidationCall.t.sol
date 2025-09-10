@@ -21,7 +21,7 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
       healthFactor: 0.8e18,
       isUsingAsCollateral: true,
       collateralFactor: 75_00,
-      reserveDebtBalance: 100e18
+      debtReserveBalance: 100e18
     });
   }
 
@@ -84,7 +84,7 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
   }
 
   function test_validateLiquidationCall_revertsWith_SpecifiedCurrencyNotBorrowedByUser() public {
-    params.reserveDebtBalance = 0;
+    params.debtReserveBalance = 0;
     vm.expectRevert(ISpoke.SpecifiedCurrencyNotBorrowedByUser.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
