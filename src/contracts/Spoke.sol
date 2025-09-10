@@ -385,13 +385,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   /// @inheritdoc ISpoke
   function updateUserRiskPremium(address onBehalfOf) external {
-    (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
-    bool premiumIncrease = _notifyRiskPremiumUpdate(onBehalfOf, userRiskPremium);
-
-    // check permissions if premium increases and not called by user
-    if (premiumIncrease && !_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
+    if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
+    (uint256 userRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
+    _notifyRiskPremiumUpdate(onBehalfOf, userRiskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -956,12 +954,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    * @dev Trigger risk premium update on all drawn reserves of `user`.
    * @param user The address of the user whose risk premium is being updated.
    * @param newUserRiskPremium The new risk premium of the user.
-   * @return premiumIncrease True if the risk premium increased, false otherwise.
    */
-  function _notifyRiskPremiumUpdate(
-    address user,
-    uint256 newUserRiskPremium
-  ) internal returns (bool) {
+  function _notifyRiskPremiumUpdate(address user, uint256 newUserRiskPremium) internal {
     DataTypes.NotifyRiskPremiumUpdateVars memory vars;
     uint256 reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
@@ -998,8 +992,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         realizedDelta: accruedUserPremium.toInt256()
       });
 
-      if (!vars.premiumIncrease) vars.premiumIncrease = vars.premiumDelta.sharesDelta > 0;
-
       vars.hub.refreshPremium(vars.assetId, vars.premiumDelta);
       emit RefreshPremiumDebt(vars.reserveId, user, vars.premiumDelta);
       unchecked {
@@ -1007,8 +999,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       }
     }
     emit UserRiskPremiumUpdate(user, newUserRiskPremium);
-
-    return vars.premiumIncrease;
   }
 
   /**
