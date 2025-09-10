@@ -148,16 +148,7 @@ contract HubTransferSharesTest is HubBase {
     uint256 totalAddedAssets = hub1.getTotalAddedAssets(zeroDecimalAssetId);
     uint256 totalAddedShares = hub1.getAssetAddedShares(zeroDecimalAssetId);
 
-    /*assertEq(
-      uint256(10).toAssetsDown(totalAddedAssets, totalAddedShares).toSharesDown(
-        totalAddedAssets,
-        totalAddedShares
-      ),
-      0,
-      'share price is a whole number'
-    );*/
-
-    uint256 addedAmount = uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares) + 1;
+    uint256 addedAmount = uint256(1e4).toAssetsDown(totalAddedAssets, totalAddedShares) + 1;
     uint256 addedShares = hub1.convertToAddedShares(zeroDecimalAssetId, addedAmount);
 
     Utils.add({
@@ -179,11 +170,12 @@ contract HubTransferSharesTest is HubBase {
     uint56 newAddCap = (2 * addedAmount - 1).toUint56();
     _updateAddCap(zeroDecimalAssetId, address(spoke1), newAddCap);
 
-    /*vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke2));
-    hub1.transferShares(zeroDecimalAssetId, addedShares, address(spoke1));*/
+    hub1.transferShares(zeroDecimalAssetId, addedShares, address(spoke1));
 
-    uint256 previewAmount = hub1.previewAddByShares(zeroDecimalAssetId, addedShares * 2);
-    assertEq(previewAmount, 0);
+    // Assert than with rounding down we would have match the cap
+    uint256 previewRemoveAmount = hub1.previewRemoveByShares(zeroDecimalAssetId, addedShares * 2);
+    assertEq(previewRemoveAmount, newAddCap);
   }
 }
