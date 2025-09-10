@@ -100,4 +100,14 @@ contract TypedSignatureGatewayConstantsTest is TypedSignatureGatewayBaseTest {
       )
     );
   }
+
+  function test_setUsingAsCollateral_typeHash() public view {
+    assertEq(gateway.SET_USING_AS_COLLATERAL_TYPEHASH(), vm.eip712HashType('SetUsingAsCollateral'));
+    assertEq(
+      gateway.SET_USING_AS_COLLATERAL_TYPEHASH(),
+      keccak256(
+        'SetUsingAsCollateral(address spoke,uint256 reserveId,bool useAsCollateral,address onBehalfOf,uint256 nonce,uint256 deadline)'
+      )
+    );
+  }
 }

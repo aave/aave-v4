@@ -16,47 +16,49 @@ contract TypedSignatureGateway_Unauthorized_PositionManagerNotActive_Test is
   }
 
   function test_supplyWithSig_revertsWith_Unauthorized() public {
-    uint256 deadline = _warpUntilRandomDeadline();
-
-    EIP712Types.Supply memory p = _supplyData(spoke1, alice, deadline);
+    EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpUntilRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
     vm.prank(vm.randomAddress());
-    gateway.supplyWithSig(p.reserveId, p.amount, alice, deadline, signature);
+    gateway.supplyWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
   }
 
   function test_withdrawWithSig_revertsWith_Unauthorized() public {
-    uint256 deadline = _warpUntilRandomDeadline();
-
-    EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, deadline);
+    EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpUntilRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
     vm.prank(vm.randomAddress());
-    gateway.withdrawWithSig(p.reserveId, p.amount, alice, deadline, signature);
+    gateway.withdrawWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
   }
 
   function test_borrowWithSig_revertsWith_Unauthorized() public {
-    uint256 deadline = _warpUntilRandomDeadline();
-
-    EIP712Types.Borrow memory p = _borrowData(spoke1, alice, deadline);
+    EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpUntilRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
     vm.prank(vm.randomAddress());
-    gateway.borrowWithSig(p.reserveId, p.amount, alice, deadline, signature);
+    gateway.borrowWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
   }
 
   function test_repayWithSig_revertsWith_Unauthorized() public {
-    uint256 deadline = _warpUntilRandomDeadline();
-
-    EIP712Types.Repay memory p = _repayData(spoke1, alice, deadline);
+    EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpUntilRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
     vm.prank(vm.randomAddress());
-    gateway.repayWithSig(p.reserveId, p.amount, alice, deadline, signature);
+    gateway.repayWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
+  }
+
+  function test_setUsingAsCollateralWithSig_revertsWith_Unauthorized() public {
+    uint256 deadline = _warpUntilRandomDeadline();
+    EIP712Types.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    vm.prank(vm.randomAddress());
+    gateway.setUsingAsCollateralWithSig(p.reserveId, p.useAsCollateral, alice, deadline, signature);
   }
 }
 

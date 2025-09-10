@@ -54,4 +54,13 @@ library EIP712Types {
     uint256 nonce;
     uint256 deadline;
   }
+
+  struct SetUsingAsCollateral {
+    address spoke;
+    uint256 reserveId;
+    bool useAsCollateral;
+    address onBehalfOf;
+    uint256 nonce;
+    uint256 deadline;
+  }
 }

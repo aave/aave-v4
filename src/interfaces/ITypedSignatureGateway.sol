@@ -81,6 +81,22 @@ interface ITypedSignatureGateway is IMulticall {
   ) external;
 
   /**
+   * @notice Facilitates setUsingAsCollateral action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @param reserveId The identifier of the reserve.
+   * @param useAsCollateral True if enabling reserve as collateral.
+   * @param onBehalfOf The address of the user to set the use as collateral status on behalf of.
+   * @param deadline The deadline for the signature.
+   * @param signature The signed bytes for the action.
+   */
+  function setUsingAsCollateralWithSig(
+    uint256 reserveId,
+    bool useAsCollateral,
+    address onBehalfOf,
+    uint256 deadline,
+    bytes calldata signature
+  ) external;
+
+  /**
    * @notice Facilitates setting this gateway as user position manager on connected SPOKE()
    * with a typed signature from `user`.
    * @param user The address of the user to set as position manager.
@@ -158,4 +174,9 @@ interface ITypedSignatureGateway is IMulticall {
    * @notice Returns the type hash for the Repay action.
    */
   function REPAY_TYPEHASH() external view returns (bytes32);
+
+  /**
+   * @notice Returns the type hash for the SetUsingAsCollateral action.
+   */
+  function SET_USING_AS_COLLATERAL_TYPEHASH() external view returns (bytes32);
 }

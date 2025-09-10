@@ -50,6 +50,8 @@ library JsonBindings {
   string constant schema_Borrow = "Borrow(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)";
   // prettier-ignore
   string constant schema_Repay = "Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_SetUsingAsCollateral = "SetUsingAsCollateral(address spoke,uint256 reserveId,bool useAsCollateral,address onBehalfOf,uint256 nonce,uint256 deadline)";
 
   function serialize(
     EIP712Types.SetUserPositionManager memory value
@@ -248,5 +250,52 @@ library JsonBindings {
     string memory path
   ) public pure returns (EIP712Types.Repay[] memory) {
     return abi.decode(vm.parseJsonTypeArray(json, path, schema_Repay), (EIP712Types.Repay[]));
+  }
+
+  function serialize(
+    EIP712Types.SetUsingAsCollateral memory value
+  ) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_SetUsingAsCollateral, abi.encode(value));
+  }
+
+  function serialize(
+    EIP712Types.SetUsingAsCollateral memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return
+      vm.serializeJsonType(objectKey, valueKey, schema_SetUsingAsCollateral, abi.encode(value));
+  }
+
+  function deserializeSetUsingAsCollateral(
+    string memory json
+  ) public pure returns (EIP712Types.SetUsingAsCollateral memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, schema_SetUsingAsCollateral),
+        (EIP712Types.SetUsingAsCollateral)
+      );
+  }
+
+  function deserializeSetUsingAsCollateral(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.SetUsingAsCollateral memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, path, schema_SetUsingAsCollateral),
+        (EIP712Types.SetUsingAsCollateral)
+      );
+  }
+
+  function deserializeSetUsingAsCollateralArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.SetUsingAsCollateral[] memory) {
+    return
+      abi.decode(
+        vm.parseJsonTypeArray(json, path, schema_SetUsingAsCollateral),
+        (EIP712Types.SetUsingAsCollateral[])
+      );
   }
 }

@@ -64,7 +64,7 @@ contract TypedSignatureGatewayBaseTest is Base {
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         onBehalfOf: who,
-        nonce: gateway.nonces(alice),
+        nonce: gateway.nonces(who),
         deadline: deadline
       });
   }
@@ -80,7 +80,7 @@ contract TypedSignatureGatewayBaseTest is Base {
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         onBehalfOf: who,
-        nonce: gateway.nonces(alice),
+        nonce: gateway.nonces(who),
         deadline: deadline
       });
   }
@@ -96,7 +96,7 @@ contract TypedSignatureGatewayBaseTest is Base {
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         onBehalfOf: who,
-        nonce: gateway.nonces(alice),
+        nonce: gateway.nonces(who),
         deadline: deadline
       });
   }
@@ -112,7 +112,23 @@ contract TypedSignatureGatewayBaseTest is Base {
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         onBehalfOf: who,
-        nonce: gateway.nonces(alice),
+        nonce: gateway.nonces(who),
+        deadline: deadline
+      });
+  }
+
+  function _setAsCollateralData(
+    ISpoke spoke,
+    address who,
+    uint256 deadline
+  ) internal returns (EIP712Types.SetUsingAsCollateral memory) {
+    return
+      EIP712Types.SetUsingAsCollateral({
+        spoke: address(spoke),
+        reserveId: _randomReserveId(spoke),
+        useAsCollateral: vm.randomBool(),
+        onBehalfOf: who,
+        nonce: gateway.nonces(who),
         deadline: deadline
       });
   }
@@ -143,6 +159,14 @@ contract TypedSignatureGatewayBaseTest is Base {
     EIP712Types.Repay memory _params
   ) internal view returns (bytes32) {
     return _typedDataHash(_gateway, vm.eip712HashStruct('Repay', abi.encode(_params)));
+  }
+
+  function _getTypedDataHash(
+    ITypedSignatureGateway _gateway,
+    EIP712Types.SetUsingAsCollateral memory _params
+  ) internal view returns (bytes32) {
+    return
+      _typedDataHash(_gateway, vm.eip712HashStruct('SetUsingAsCollateral', abi.encode(_params)));
   }
 
   function _typedDataHash(

@@ -31,6 +31,9 @@ contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatu
   // @inheritdoc ITypedSignatureGateway
   bytes32 public constant REPAY_TYPEHASH =
     0xd23fe99a7aac398d03952a098faa8889259d062784bd80ea0f159e4af604c045; // keccak256('Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)');
+  // @inheritdoc ITypedSignatureGateway
+  bytes32 public constant SET_USING_AS_COLLATERAL_TYPEHASH =
+    0xd4350e1f25ecd62a35b50e8cd1e00bc34331ae8c728ee4dbb69ecf1023daecf7; // keccak256('SetUsingAsCollateral(address spoke,uint256 reserveId,bool useAsCollateral,address onBehalfOf,uint256 nonce,uint256 deadline)');
 
   mapping(address user => uint256 nonce) internal _nonces;
 
@@ -159,6 +162,33 @@ contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatu
     asset.forceApprove(hub, amount);
 
     SPOKE.repay(reserveId, amount, onBehalfOf);
+  }
+
+  // @inheritdoc ITypedSignatureGateway
+  function setUsingAsCollateralWithSig(
+    uint256 reserveId,
+    bool useAsCollateral,
+    address onBehalfOf,
+    uint256 deadline,
+    bytes calldata signature
+  ) external {
+    require(block.timestamp <= deadline, InvalidSignature());
+    bytes32 hash = _hashTypedData(
+      keccak256(
+        abi.encode(
+          SET_USING_AS_COLLATERAL_TYPEHASH,
+          address(SPOKE),
+          reserveId,
+          useAsCollateral,
+          onBehalfOf,
+          _useNonce(onBehalfOf),
+          deadline
+        )
+      )
+    );
+    require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
+
+    SPOKE.setUsingAsCollateral(reserveId, useAsCollateral, onBehalfOf);
   }
 
   // @inheritdoc ITypedSignatureGateway
