@@ -305,7 +305,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @return The premium offset of the reserve.
    * @return The realized premium of the reserve.
    */
-  function getReservePremiumShares(
+  function getReservePremiumData(
     uint256 reserveId
   ) external view returns (uint256, uint256, uint256);
 

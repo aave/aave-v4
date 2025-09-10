@@ -214,7 +214,7 @@ interface IHubBase {
    * @return The premium offset.
    * @return The realized premium.
    */
-  function getSpokePremiumShares(
+  function getSpokePremiumData(
     uint256 assetId,
     address spoke
   ) external view returns (uint256, uint256, uint256);

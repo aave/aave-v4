@@ -540,7 +540,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function getSpokePremiumShares(
+  function getSpokePremiumData(
     uint256 assetId,
     address spoke
   ) external view returns (uint256, uint256, uint256) {
