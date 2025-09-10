@@ -2,17 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
-import {TypedSignatureGateway, ITypedSignatureGateway} from 'src/misc/TypedSignatureGateway.sol';
+import 'tests/unit/misc/TypedSignatureGateway/TypedSignatureGateway.Base.t.sol';
 
-contract TypedSignatureGatewayTest is Base {
-  ITypedSignatureGateway public gateway;
-
-  function setUp() public override {
-    super.setUp();
-    gateway = ITypedSignatureGateway(new TypedSignatureGateway(address(spoke1)));
-  }
-
+contract TypedSignatureGatewayConstantsTest is TypedSignatureGatewayBaseTest {
   function test_constructor() public {
     vm.expectRevert();
     new TypedSignatureGateway(address(0));
@@ -101,50 +93,5 @@ contract TypedSignatureGatewayTest is Base {
         'Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)'
       )
     );
-  }
-
-  function test_supplyWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
-    (, uint256 alicePk) = makeAddrAndKey('alice');
-    uint256 deadline = vm.randomUint(0, MAX_SKIP_TIME - 1);
-    vm.warp(deadline + 1);
-
-    EIP712Types.Supply memory params = EIP712Types.Supply({
-      spoke: address(spoke1),
-      reserveId: _randomReserveId(spoke1),
-      amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
-      onBehalfOf: alice,
-      nonce: spoke1.nonces(alice),
-      deadline: deadline
-    });
-    bytes32 digest = _getTypedDataHash(gateway, params);
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, digest);
-
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
-    vm.prank(vm.randomAddress());
-    gateway.supplyWithSig(
-      params.reserveId,
-      params.amount,
-      params.onBehalfOf,
-      params.deadline,
-      abi.encodePacked(v, r, s)
-    );
-  }
-
-  function _randomReserveId(ISpoke spoke) internal returns (uint256) {
-    return vm.randomUint(0, spoke.getReserveCount() - 1);
-  }
-
-  function _getTypedDataHash(
-    ITypedSignatureGateway _gateway,
-    EIP712Types.Supply memory _params
-  ) internal returns (bytes32) {
-    return
-      keccak256(
-        abi.encodePacked(
-          '\x19\x01',
-          _gateway.DOMAIN_SEPARATOR(),
-          vm.eip712HashStruct('Supply', abi.encode(_params))
-        )
-      );
   }
 }

@@ -153,11 +153,9 @@ contract TypedSignatureGateway is EIP712, Multicall, ITypedSignatureGateway {
     address user,
     bool approve,
     uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
+    bytes calldata signature
   ) external {
-    SPOKE.setUserPositionManagerWithSig(address(this), user, approve, deadline, v, r, s);
+    SPOKE.setUserPositionManagerWithSig(address(this), user, approve, deadline, signature);
   }
 
   // @inheritdoc ITypedSignatureGateway

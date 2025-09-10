@@ -2,3 +2,4 @@ out
 lib
 cache
 node_modules
+tests/mocks/JsonBindings.sol
