@@ -202,7 +202,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UsingAsCollateral(reserveId, POSITION_MANAGER, alice, usingAsCollateral);
+    emit ISpoke.SetUsingAsCollateral(reserveId, POSITION_MANAGER, alice, usingAsCollateral);
     Utils.setUsingAsCollateral(spoke1, reserveId, POSITION_MANAGER, usingAsCollateral, alice);
 
     assertEq(spoke1.isUsingAsCollateral(reserveId, alice), usingAsCollateral);

@@ -92,7 +92,7 @@ contract Hub is IHub, AccessManaged {
     });
 
     emit AddAsset(assetId, underlying, decimals);
-    emit AssetConfigUpdate(
+    emit UpdateAssetConfig(
       assetId,
       DataTypes.AssetConfig({
         feeReceiver: feeReceiver,
@@ -101,7 +101,7 @@ contract Hub is IHub, AccessManaged {
         reinvestmentController: address(0)
       })
     );
-    emit AssetUpdate(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
+    emit UpdateAsset(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
 
     return assetId;
   }
@@ -129,7 +129,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    emit AssetConfigUpdate(assetId, config);
+    emit UpdateAssetConfig(assetId, config);
   }
 
   function addSpoke(
@@ -584,7 +584,7 @@ contract Hub is IHub, AccessManaged {
     _spokes[assetId][spoke].active = config.active;
     _spokes[assetId][spoke].addCap = config.addCap;
     _spokes[assetId][spoke].drawCap = config.drawCap;
-    emit SpokeConfigUpdate(assetId, spoke, config);
+    emit UpdateSpokeConfig(assetId, spoke, config);
   }
 
   /**

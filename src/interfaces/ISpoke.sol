@@ -15,7 +15,7 @@ import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
  */
 interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event AddReserve(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
-  event ReserveConfigUpdate(uint256 indexed reserveId, DataTypes.ReserveConfig config);
+  event UpdateReserveConfig(uint256 indexed reserveId, DataTypes.ReserveConfig config);
 
   /**
    * @notice Emitted when a dynamic reserve config is added.
@@ -64,7 +64,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param user The owner of the position being modified.
    * @param usingAsCollateral Boolean whether the reserve is enabled or disabled as collateral.
    */
-  event UsingAsCollateral(
+  event SetUsingAsCollateral(
     uint256 indexed reserveId,
     address indexed caller,
     address indexed user,

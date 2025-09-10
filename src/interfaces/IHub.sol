@@ -15,13 +15,13 @@ import {IHubBase} from 'src/interfaces/IHubBase.sol';
 interface IHub is IHubBase, IAccessManaged {
   event AddSpoke(uint256 indexed assetId, address indexed spoke);
   event AddAsset(uint256 indexed assetId, address indexed underlying, uint8 decimals);
-  event AssetConfigUpdate(uint256 indexed assetId, DataTypes.AssetConfig config);
-  event SpokeConfigUpdate(
+  event UpdateAssetConfig(uint256 indexed assetId, DataTypes.AssetConfig config);
+  event UpdateSpokeConfig(
     uint256 indexed assetId,
     address indexed spoke,
     DataTypes.SpokeConfig config
   );
-  event AssetUpdate(
+  event UpdateAsset(
     uint256 indexed assetId,
     uint256 drawnIndex,
     uint256 drawnRate,

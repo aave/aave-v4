@@ -25,7 +25,7 @@ contract SpokeMulticall is SpokeBase {
       hub1.convertToAddedShares(daiAssetId, supplyAmount)
     );
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UsingAsCollateral(daiReserveId, bob, bob, true);
+    emit ISpoke.SetUsingAsCollateral(daiReserveId, bob, bob, true);
 
     // Execute the multicall
     vm.prank(bob);
@@ -67,7 +67,7 @@ contract SpokeMulticall is SpokeBase {
       hub1.convertToAddedShares(daiAssetId, MAX_SUPPLY_AMOUNT)
     );
     vm.expectEmit(address(spoke2));
-    emit ISpoke.UsingAsCollateral(_daiReserveId(spoke2), bob, bob, true);
+    emit ISpoke.SetUsingAsCollateral(_daiReserveId(spoke2), bob, bob, true);
     vm.expectEmit(address(spoke2));
     emit ISpoke.UserRiskPremiumUpdate(bob, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
 
@@ -198,9 +198,9 @@ contract SpokeMulticall is SpokeBase {
     calls[1] = abi.encodeCall(ISpoke.updateReserveConfig, (usdxReserveId, newUsdxConfig));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdate(daiReserveId, newDaiConfig);
+    emit ISpoke.UpdateReserveConfig(daiReserveId, newDaiConfig);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdate(usdxReserveId, newUsdxConfig);
+    emit ISpoke.UpdateReserveConfig(usdxReserveId, newUsdxConfig);
 
     // Execute the multicall
     vm.prank(SPOKE_ADMIN);

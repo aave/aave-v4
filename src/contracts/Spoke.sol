@@ -132,7 +132,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     _reserveExists[hub][assetId] = true;
 
     emit AddReserve(reserveId, assetId, hub);
-    emit ReserveConfigUpdate(reserveId, config);
+    emit UpdateReserveConfig(reserveId, config);
     emit AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
 
     return reserveId;
@@ -149,7 +149,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     reserve.frozen = config.frozen;
     reserve.borrowable = config.borrowable;
     reserve.collateralRisk = config.collateralRisk;
-    emit ReserveConfigUpdate(reserveId, config);
+    emit UpdateReserveConfig(reserveId, config);
   }
 
   /// @inheritdoc ISpoke
@@ -380,7 +380,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
       _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
     }
-    emit UsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
+    emit SetUsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
   }
 
   /// @inheritdoc ISpoke
