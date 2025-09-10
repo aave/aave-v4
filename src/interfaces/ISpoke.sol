@@ -204,27 +204,26 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function updateUserDynamicConfig(address onBehalfOf) external;
 
   /**
-   * @notice Allows caller to approve or revoke approval for positionManager.
+   * @notice Enables a user to grant or revoke approval for a position manager
    * @param positionManager The address of the position manager.
-   * @param approve True if user wants to approve position manager, false otherwise.
+   * @param approve True to approve the position manager, false to revoke approval.
    */
   function setUserPositionManager(address positionManager, bool approve) external;
 
   /**
-   * @notice Allows caller to approve or revoke approval for positionManager using a signature.
+   * @notice Enables a user to grant or revoke approval for a position manager using an EIP712-compliant signature.
    * @param positionManager The address of the position manager.
    * @param user The address of the user on whose behalf position manager can act.
-   * @param approve True if user wants to approve position manager, false otherwise.
+   * @param approve True to approve the position manager, false to revoke approval.
    * @param deadline The deadline for the signature.
+   * @param signature The EIP712-compliant signature bytes.
    */
   function setUserPositionManagerWithSig(
     address positionManager,
     address user,
     bool approve,
     uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
+    bytes memory signature
   ) external;
 
   /**

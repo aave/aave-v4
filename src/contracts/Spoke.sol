@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {ECDSA} from 'src/dependencies/openzeppelin/ECDSA.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
@@ -19,6 +18,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {SignatureCheckerHelper} from 'src/libraries/helpers/SignatureCheckerHelper.sol';
 
 // interfaces
 import {IHub} from 'src/interfaces/IHub.sol';
@@ -413,9 +413,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     address user,
     bool approve,
     uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
+    bytes memory signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
@@ -430,7 +428,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         )
       )
     );
-    require(ECDSA.recover(hash, v, r, s) == user, InvalidSignature());
+    require(SignatureCheckerHelper.isValidSignatureNow(user, hash, signature), InvalidSignature());
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
 
