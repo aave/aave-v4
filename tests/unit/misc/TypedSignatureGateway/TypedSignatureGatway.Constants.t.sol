@@ -16,6 +16,8 @@ contract TypedSignatureGatewayConstantsTest is TypedSignatureGatewayBaseTest {
     address spoke = vm.randomAddress();
     assertEq(address((new TypedSignatureGateway(spoke, vm.randomAddress())).SPOKE()), spoke);
     assertEq(address(gateway.SPOKE()), address(spoke1));
+    assertEq(Ownable2Step(address(gateway)).owner(), ADMIN);
+    assertEq(Ownable2Step(address(gateway)).pendingOwner(), address(0));
   }
 
   function test_eip712Domain() public {
