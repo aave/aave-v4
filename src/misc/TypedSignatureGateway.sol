@@ -3,12 +3,19 @@
 pragma solidity ^0.8.0;
 
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {Multicall} from 'src/misc/Multicall.sol';
+import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ITypedSignatureGateway} from 'src/interfaces/ITypedSignatureGateway.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
-contract TypedSignatureGateway is EIP712, Multicall, ITypedSignatureGateway {
+contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatureGateway {
+  using SafeERC20 for IERC20;
+
   // @inheritdoc ITypedSignatureGateway
   ISpoke public immutable SPOKE;
 
@@ -27,8 +34,8 @@ contract TypedSignatureGateway is EIP712, Multicall, ITypedSignatureGateway {
 
   mapping(address user => uint256 nonce) internal _nonces;
 
-  constructor(address spoke_) {
-    assert(spoke_ != address(0));
+  constructor(address spoke_, address initialOwner) Ownable(initialOwner) {
+    assert(spoke_ != address(0) && initialOwner != address(0));
     SPOKE = ISpoke(spoke_);
   }
 
@@ -54,10 +61,12 @@ contract TypedSignatureGateway is EIP712, Multicall, ITypedSignatureGateway {
         )
       )
     );
-    require(
-      SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature),
-      InvalidSignature()
-    );
+    require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
+
+    (IERC20 asset, address hub) = _getReserveData(reserveId);
+    asset.safeTransferFrom(onBehalfOf, address(this), amount);
+    asset.forceApprove(hub, amount);
+
     SPOKE.supply(reserveId, amount, onBehalfOf);
   }
 
@@ -83,11 +92,12 @@ contract TypedSignatureGateway is EIP712, Multicall, ITypedSignatureGateway {
         )
       )
     );
-    require(
-      SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature),
-      InvalidSignature()
-    );
+    require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
+
     SPOKE.withdraw(reserveId, amount, onBehalfOf);
+
+    (IERC20 asset, ) = _getReserveData(reserveId);
+    asset.safeTransfer(onBehalfOf, amount);
   }
 
   // @inheritdoc ITypedSignatureGateway
@@ -112,11 +122,12 @@ contract TypedSignatureGateway is EIP712, Multicall, ITypedSignatureGateway {
         )
       )
     );
-    require(
-      SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature),
-      InvalidSignature()
-    );
+    require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
+
     SPOKE.borrow(reserveId, amount, onBehalfOf);
+
+    (IERC20 asset, ) = _getReserveData(reserveId);
+    asset.safeTransfer(onBehalfOf, amount);
   }
 
   // @inheritdoc ITypedSignatureGateway
@@ -141,10 +152,12 @@ contract TypedSignatureGateway is EIP712, Multicall, ITypedSignatureGateway {
         )
       )
     );
-    require(
-      SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature),
-      InvalidSignature()
-    );
+    require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
+
+    (IERC20 asset, address hub) = _getReserveData(reserveId);
+    asset.safeTransferFrom(onBehalfOf, address(this), amount);
+    asset.forceApprove(hub, amount);
+
     SPOKE.repay(reserveId, amount, onBehalfOf);
   }
 
@@ -168,7 +181,16 @@ contract TypedSignatureGateway is EIP712, Multicall, ITypedSignatureGateway {
     bytes32 r,
     bytes32 s
   ) external {
-    SPOKE.permitReserve(reserveId, onBehalfOf, value, deadline, v, r, s);
+    (IERC20 asset, ) = _getReserveData(reserveId);
+    IERC20Permit(address(asset)).permit({
+      owner: onBehalfOf,
+      spender: address(this),
+      value: value,
+      deadline: deadline,
+      v: v,
+      r: r,
+      s: s
+    });
   }
 
   // @inheritdoc ITypedSignatureGateway
@@ -199,5 +221,11 @@ contract TypedSignatureGateway is EIP712, Multicall, ITypedSignatureGateway {
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
     return ('TypedSignatureGateway', '1');
+  }
+
+  function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
+    DataTypes.Reserve memory reserveData = SPOKE.getReserve(reserveId);
+    require(reserveData.underlying != address(0), InvalidReserveId());
+    return (IERC20(reserveData.underlying), address(reserveData.hub));
   }
 }

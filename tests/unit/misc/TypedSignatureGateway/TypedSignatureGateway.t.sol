@@ -7,10 +7,13 @@ import 'tests/unit/misc/TypedSignatureGateway/TypedSignatureGateway.Base.t.sol';
 contract TypedSignatureGatewayTest is TypedSignatureGatewayBaseTest {
   function setUp() public virtual override {
     super.setUp();
+    _approveAllUnderlying(spoke1, alice);
+
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(gateway), true);
     vm.prank(alice);
     spoke1.setUserPositionManager(address(gateway), true);
+
     assertTrue(spoke1.isPositionManagerActive(address(gateway)));
     assertTrue(spoke1.isPositionManager(alice, address(gateway)));
   }
@@ -24,7 +27,6 @@ contract TypedSignatureGatewayTest is TypedSignatureGatewayBaseTest {
   }
 
   function test_supplyWithSig() public {
-    vm.skip(true);
     uint256 deadline = _warpUntilRandomDeadline();
 
     EIP712Types.Supply memory p = _supplyData(spoke1, alice, deadline);

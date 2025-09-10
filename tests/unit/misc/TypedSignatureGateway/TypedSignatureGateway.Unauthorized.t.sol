@@ -9,6 +9,8 @@ contract TypedSignatureGateway_Unauthorized_PositionManagerNotActive_Test is
 {
   function setUp() public virtual override {
     super.setUp();
+    _approveAllUnderlying(spoke1, alice);
+
     assertFalse(spoke1.isPositionManagerActive(address(gateway)));
     assertFalse(spoke1.isPositionManager(alice, address(gateway)));
   }

@@ -7,16 +7,21 @@ import 'tests/unit/misc/TypedSignatureGateway/TypedSignatureGateway.Base.t.sol';
 contract TypedSignatureGatewayConstantsTest is TypedSignatureGatewayBaseTest {
   function test_constructor() public {
     vm.expectRevert();
-    new TypedSignatureGateway(address(0));
+    new TypedSignatureGateway(address(0), vm.randomAddress());
+    vm.expectRevert();
+    new TypedSignatureGateway(vm.randomAddress(), address(0));
+    vm.expectRevert();
+    new TypedSignatureGateway(address(0), address(0));
 
     address spoke = vm.randomAddress();
-    assertEq(address((new TypedSignatureGateway(spoke)).SPOKE()), spoke);
+    assertEq(address((new TypedSignatureGateway(spoke, vm.randomAddress())).SPOKE()), spoke);
     assertEq(address(gateway.SPOKE()), address(spoke1));
   }
 
   function test_eip712Domain() public {
     TypedSignatureGateway instance = new TypedSignatureGateway{salt: bytes32(vm.randomUint())}(
-      address(spoke1)
+      vm.randomAddress(),
+      vm.randomAddress()
     );
     (
       bytes1 fields,
@@ -39,7 +44,8 @@ contract TypedSignatureGatewayConstantsTest is TypedSignatureGatewayBaseTest {
 
   function test_DOMAIN_SEPARATOR() public {
     TypedSignatureGateway instance = new TypedSignatureGateway{salt: bytes32(vm.randomUint())}(
-      address(spoke1)
+      vm.randomAddress(),
+      vm.randomAddress()
     );
     bytes32 expectedDomainSeparator = keccak256(
       abi.encode(

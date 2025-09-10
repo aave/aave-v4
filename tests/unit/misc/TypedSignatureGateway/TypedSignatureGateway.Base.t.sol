@@ -12,7 +12,7 @@ contract TypedSignatureGatewayBaseTest is Base {
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
-    gateway = ITypedSignatureGateway(new TypedSignatureGateway(address(spoke1)));
+    gateway = ITypedSignatureGateway(new TypedSignatureGateway(address(spoke1), ADMIN));
     (alice, alicePk) = makeAddrAndKey('alice');
   }
 
@@ -158,5 +158,17 @@ contract TypedSignatureGatewayBaseTest is Base {
 
   function _assetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
     return spoke.getReserve(reserveId).assetId;
+  }
+
+  function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (IERC20) {
+    return IERC20(spoke.getReserve(reserveId).underlying);
+  }
+
+  function _approveAllUnderlying(ISpoke spoke, address who) internal {
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+      IERC20 underlying = _underlying(spoke, reserveId);
+      vm.prank(who);
+      underlying.approve(address(gateway), UINT256_MAX);
+    }
   }
 }

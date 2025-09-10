@@ -12,6 +12,11 @@ interface ITypedSignatureGateway is IMulticall {
   error InvalidSignature();
 
   /**
+   * @notice Thrown when reserveId does not correspond to a registered reserve.
+   */
+  error InvalidReserveId();
+
+  /**
    * @notice Facilitates supply action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to supply.
@@ -76,7 +81,8 @@ interface ITypedSignatureGateway is IMulticall {
   ) external;
 
   /**
-   * @notice Facilitates setting this gateway as user position manager on connected SPOKE() with a typed signature from `user`.
+   * @notice Facilitates setting this gateway as user position manager on connected SPOKE()
+   * with a typed signature from `user`.
    * @param user The address of the user to set as position manager.
    * @param approve The approval status.
    * @param deadline The deadline for the signature.
@@ -90,11 +96,11 @@ interface ITypedSignatureGateway is IMulticall {
   ) external;
 
   /**
-   * @notice Forwards permitReserve action on connected SPOKE().
-   * @dev Convenience function which is expected to be used with multicall.
+   * @notice Allows consuming a permit signature for the given reserve's underlying asset on connected SPOKE().
+   * @dev Spender is this gateway contract.
    * @param reserveId The identifier of the reserve.
-   * @param onBehalfOf The address of the user to permit the reserve on behalf of.
-   * @param value The value of the permit.
+   * @param onBehalfOf The address of the user on whose behalf the permit is being used.
+   * @param value The amount of the underlying asset to permit.
    * @param deadline The deadline for the permit.
    */
   function permitReserve(
