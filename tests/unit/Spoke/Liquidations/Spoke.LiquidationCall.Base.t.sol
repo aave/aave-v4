@@ -147,7 +147,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256[] memory reserveIds,
     uint256 reserveIdToExclude,
     uint256 maxLength
-  ) internal returns (bytes memory) {
+  ) internal view returns (bytes memory) {
     uint256[] memory boundedReserveIds = new uint256[](_min(reserveIds.length, maxLength));
 
     for (uint256 i = 0; i < boundedReserveIds.length; i++) {
@@ -264,12 +264,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   function _makeUserLiquidatable(
     ISpoke spoke,
     address user,
-    uint256 collateralReserveId,
     uint256 debtReserveId,
     uint256 newHealthFactor
   ) internal virtual {
-    DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
-
     // add liquidity
     _openSupplyPosition(
       spoke,
@@ -353,7 +350,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _expectEventsAndCalls(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoBefore,
     LiquidationMetadata memory liquidationMetadata
   ) internal virtual {
     vm.expectEmit(address(params.spoke));
@@ -634,7 +630,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     AccountsInfo memory accountsInfoBefore,
     AccountsInfo memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata
-  ) internal {
+  ) internal view {
     // User
     assertEq(
       accountsInfoAfter.userBalanceInfo.collateralErc20Balance,
@@ -751,11 +747,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   }
 
   function _checkSpokeBalances(
-    CheckedLiquidationCallParams memory params,
     AccountsInfo memory accountsInfoBefore,
     AccountsInfo memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata
-  ) internal {
+  ) internal pure {
     // User
     assertApproxEqRel(
       accountsInfoAfter.userBalanceInfo.suppliedInSpoke,
@@ -844,11 +839,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   }
 
   function _checkHubBalances(
-    CheckedLiquidationCallParams memory params,
     AccountsInfo memory accountsInfoBefore,
     AccountsInfo memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata
-  ) internal {
+  ) internal pure {
     // User
     assertEq(
       accountsInfoAfter.userBalanceInfo.addedInHub,
@@ -942,7 +936,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     AccountsInfo memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata,
     Vm.Log[] memory logs
-  ) internal {
+  ) internal view {
     bool riskPremiumEventEmitted;
     for (uint256 i = 0; i < logs.length; i++) {
       if (logs[i].topics[0] == ISpoke.UserRiskPremiumUpdate.selector) {
@@ -991,7 +985,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   function _checkAvgCollateralFactor(
     AccountsInfo memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata
-  ) internal {
+  ) internal pure {
     assertApproxEqRel(
       accountsInfoAfter.userAccountData.avgCollateralFactor,
       liquidationMetadata.expectedUserAvgCollateralFactor,
@@ -1010,7 +1004,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       accountsInfoBefore.userAccountData
     );
 
-    _expectEventsAndCalls(params, accountsInfoBefore, liquidationMetadata);
+    _expectEventsAndCalls(params, liquidationMetadata);
     vm.recordLogs();
     vm.prank(params.liquidator);
     params.spoke.liquidationCall(
@@ -1027,8 +1021,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _checkPositionStatus(params, accountsInfoBefore, liquidationMetadata);
     _checkHealthFactor(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkErc20Balances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
-    _checkSpokeBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
-    _checkHubBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
+    _checkSpokeBalances(accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
+    _checkHubBalances(accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkRiskPremium(params, accountsInfoAfter, liquidationMetadata, logs);
     _checkAvgCollateralFactor(accountsInfoAfter, liquidationMetadata);
   }

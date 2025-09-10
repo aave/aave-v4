@@ -80,7 +80,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
   function _getDebtToTargetHealthFactorParams(
     LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
-  ) internal returns (LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory) {
+  ) internal pure returns (LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory) {
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
@@ -139,7 +139,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
   function _getCalculateMaxDebtToLiquidateParams(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
-  ) internal returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
+  ) internal pure returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
     uint256 liquidationBonus = LiquidationLogic.calculateLiquidationBonus({
       healthFactorForMaxBonus: params.healthFactorForMaxBonus,
       liquidationBonusFactor: params.liquidationBonusFactor,

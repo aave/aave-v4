@@ -863,7 +863,7 @@ contract SpokeBase is Base {
     address user,
     uint256 reserveId,
     uint256 repayAmount
-  ) internal returns (DataTypes.PremiumDelta memory) {
+  ) internal view returns (DataTypes.PremiumDelta memory) {
     DataTypes.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
     Debts memory userDebt = getUserDebt(spoke, user, reserveId);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
