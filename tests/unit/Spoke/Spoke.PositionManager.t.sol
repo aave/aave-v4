@@ -68,7 +68,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
     _resetTokenAllowance(alice);
 
-    DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
+    ISpoke.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
 
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), amount);
@@ -96,7 +96,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
     _resetTokenAllowance(alice);
 
-    DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
+    ISpoke.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
     amount /= 2;
 
     vm.expectEmit(address(tokenList.usdx));
@@ -125,7 +125,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
     _resetTokenAllowance(alice);
 
-    DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
+    ISpoke.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
 
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
@@ -156,10 +156,10 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
     _resetTokenAllowance(alice);
 
-    DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
+    ISpoke.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
     uint256 repayAmount = amount / 3;
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       alice,
       reserveId,

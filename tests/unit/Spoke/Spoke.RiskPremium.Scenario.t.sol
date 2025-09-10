@@ -120,10 +120,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Weth is enough to cover debt, both stored & calculated risk premiums match
     assertEq(spoke1.getUserRiskPremium(alice), wethCollateralRisk, 'user rp: weth covers debt');
     // Check stored risk premium via back-calculating premium drawn shares
-    DataTypes.UserPosition memory alicePosition = spoke1.getUserPosition(
-      _daiReserveId(spoke1),
-      alice
-    );
+    ISpoke.UserPosition memory alicePosition = spoke1.getUserPosition(_daiReserveId(spoke1), alice);
     vars.expectedpremiumShares = alicePosition.drawnShares.percentMulUp(wethCollateralRisk);
     assertEq(
       alicePosition.premiumShares,
@@ -719,7 +716,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     skip(timeSkip[0]);
 
     // Check that risk premiums remain consistent after time skip by checking premium drawn shares
-    DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
+    ISpoke.UserPosition memory bobPosition = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
     uint256 expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobExpectedRiskPremium);
     assertEq(
       expectedpremiumShares,
@@ -737,10 +734,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
     bobUsdxInfo.premiumShares = expectedpremiumShares;
 
-    DataTypes.UserPosition memory alicePosition = spoke1.getUserPosition(
-      _daiReserveId(spoke1),
-      alice
-    );
+    ISpoke.UserPosition memory alicePosition = spoke1.getUserPosition(_daiReserveId(spoke1), alice);
     expectedpremiumShares = alicePosition.drawnShares.percentMulUp(aliceExpectedRiskPremium);
     assertEq(
       expectedpremiumShares,
@@ -1169,7 +1163,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Verify spoke debts on hub for dai
-    DataTypes.SpokeData memory spoke = hub1.getSpoke(daiAssetId, address(spoke1));
+    IHub.SpokeData memory spoke = hub1.getSpoke(daiAssetId, address(spoke1));
     assertApproxEqAbs(
       spoke.drawnShares,
       hub1.convertToDrawnShares(daiAssetId, bobDaiInfo.drawnDebt + aliceDaiInfo.drawnDebt),
@@ -1197,7 +1191,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Verify asset debts on hub
-    DataTypes.Asset memory asset = hub1.getAsset(daiAssetId);
+    IHub.Asset memory asset = hub1.getAsset(daiAssetId);
     assertApproxEqAbs(
       asset.drawnShares,
       hub1.convertToDrawnShares(daiAssetId, bobDaiInfo.drawnDebt + aliceDaiInfo.drawnDebt),

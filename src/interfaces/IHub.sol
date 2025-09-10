@@ -2,8 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IHubBase} from 'src/interfaces/IHubBase.sol';
 
@@ -13,14 +11,66 @@ import {IHubBase} from 'src/interfaces/IHubBase.sol';
  * @notice Full interface for Hub
  */
 interface IHub is IHubBase, IAccessManaged {
+  struct Asset {
+    //
+    uint128 liquidity;
+    uint128 addedShares;
+    //
+    uint128 deficit;
+    uint128 swept;
+    //
+    uint128 premiumShares;
+    uint128 premiumOffset;
+    //
+    uint128 drawnIndex;
+    uint128 drawnShares;
+    //
+    uint128 realizedPremium;
+    uint16 liquidityFee;
+    uint40 lastUpdateTimestamp;
+    uint8 decimals;
+    //
+    address underlying;
+    //
+    uint96 drawnRate;
+    address irStrategy;
+    //
+    address reinvestmentController;
+    //
+    address feeReceiver;
+  }
+
+  struct AssetConfig {
+    address feeReceiver;
+    uint16 liquidityFee;
+    address irStrategy;
+    address reinvestmentController;
+  }
+
+  struct SpokeData {
+    //
+    uint128 premiumShares;
+    uint128 premiumOffset;
+    //
+    uint128 realizedPremium;
+    uint128 drawnShares;
+    //
+    uint128 addedShares;
+    uint56 addCap;
+    uint56 drawCap;
+    bool active;
+  }
+
+  struct SpokeConfig {
+    bool active;
+    uint56 addCap;
+    uint56 drawCap;
+  }
+
   event AddSpoke(uint256 indexed assetId, address indexed spoke);
   event AddAsset(uint256 indexed assetId, address indexed underlying, uint8 decimals);
-  event AssetConfigUpdate(uint256 indexed assetId, DataTypes.AssetConfig config);
-  event SpokeConfigUpdate(
-    uint256 indexed assetId,
-    address indexed spoke,
-    DataTypes.SpokeConfig config
-  );
+  event AssetConfigUpdate(uint256 indexed assetId, IHub.AssetConfig config);
+  event SpokeConfigUpdate(uint256 indexed assetId, address indexed spoke, IHub.SpokeConfig config);
   event AssetUpdate(
     uint256 indexed assetId,
     uint256 drawnIndex,
@@ -30,13 +80,13 @@ interface IHub is IHubBase, IAccessManaged {
   event RefreshPremium(
     uint256 indexed assetId,
     address indexed spoke,
-    DataTypes.PremiumDelta premiumDelta
+    IHubBase.PremiumDelta premiumDelta
   );
   event ReportDeficit(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 drawnShares,
-    DataTypes.PremiumDelta premiumDelta,
+    IHubBase.PremiumDelta premiumDelta,
     uint256 drawnAmount
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
@@ -114,7 +164,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @param assetId The identifier of the asset.
    * @param config The new configuration for the asset.
    */
-  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external;
+  function updateAssetConfig(uint256 assetId, IHub.AssetConfig calldata config) external;
 
   /**
    * @notice Registers a new spoke for a specific asset in the hub.
@@ -122,7 +172,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @param spoke The address of the spoke to add.
    * @param params The configuration parameters for the spoke.
    */
-  function addSpoke(uint256 assetId, address spoke, DataTypes.SpokeConfig calldata params) external;
+  function addSpoke(uint256 assetId, address spoke, IHub.SpokeConfig calldata params) external;
 
   /**
    * @notice Updates the configuration of a spoke for a specific asset.
@@ -133,7 +183,7 @@ interface IHub is IHubBase, IAccessManaged {
   function updateSpokeConfig(
     uint256 assetId,
     address spoke,
-    DataTypes.SpokeConfig calldata config
+    IHub.SpokeConfig calldata config
   ) external;
 
   /**
@@ -150,7 +200,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @param assetId The identifier of the asset.
    * @param premiumDelta The change in premium.
    */
-  function refreshPremium(uint256 assetId, DataTypes.PremiumDelta calldata premiumDelta) external;
+  function refreshPremium(uint256 assetId, IHubBase.PremiumDelta calldata premiumDelta) external;
 
   /**
    * @notice Pay existing liquidity to feeReceiver.
@@ -173,7 +223,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 assetId,
     uint256 drawnAmount,
     uint256 premiumAmount,
-    DataTypes.PremiumDelta calldata premiumDelta
+    IHubBase.PremiumDelta calldata premiumDelta
   ) external returns (uint256);
 
   /**
@@ -332,9 +382,9 @@ interface IHub is IHubBase, IAccessManaged {
    */
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
 
-  function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
+  function getAsset(uint256 assetId) external view returns (IHub.Asset memory);
 
-  function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
+  function getAssetConfig(uint256 assetId) external view returns (IHub.AssetConfig memory);
 
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
 
@@ -365,15 +415,12 @@ interface IHub is IHubBase, IAccessManaged {
 
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
 
-  function getSpoke(
-    uint256 assetId,
-    address spoke
-  ) external view returns (DataTypes.SpokeData memory);
+  function getSpoke(uint256 assetId, address spoke) external view returns (IHub.SpokeData memory);
 
   function getSpokeConfig(
     uint256 assetId,
     address spoke
-  ) external view returns (DataTypes.SpokeConfig memory);
+  ) external view returns (IHub.SpokeConfig memory);
 
   function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256);
 

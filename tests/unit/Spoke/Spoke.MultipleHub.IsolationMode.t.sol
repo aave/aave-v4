@@ -49,7 +49,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(newHub),
       isolationVars.assetAId,
       _deployMockPriceFeed(newSpoke, 2000e8),
-      DataTypes.ReserveConfig({
+      ISpoke.ReserveConfig({
         paused: false,
         frozen: false,
         borrowable: false,
@@ -61,12 +61,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(newHub),
       isolationVars.assetBId,
       _deployMockPriceFeed(newSpoke, 50_000e8),
-      DataTypes.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        collateralRisk: 15_00
-      }),
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
       dynReserveConfig
     );
 
@@ -74,12 +69,12 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     newHub.addSpoke(
       isolationVars.assetAId,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
+      IHub.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
     );
     newHub.addSpoke(
       isolationVars.assetBId,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
+      IHub.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
     );
     vm.stopPrank();
 
@@ -99,12 +94,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(hub1),
       isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
-      DataTypes.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        collateralRisk: 15_00
-      }),
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
       dynReserveConfig
     );
 
@@ -112,7 +102,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     hub1.addSpoke(
       isolationVars.assetBIdMainHub,
       address(spoke1),
-      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
+      IHub.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
     );
     vm.stopPrank();
 
@@ -170,12 +160,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(hub1),
       isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
-      DataTypes.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        collateralRisk: 15_00
-      }),
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
       dynReserveConfig
     );
 
@@ -184,7 +169,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     hub1.addSpoke(
       isolationVars.assetBIdMainHub,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, addCap: 0, drawCap: 100_000})
+      IHub.SpokeConfig({active: true, addCap: 0, drawCap: 100_000})
     );
     vm.stopPrank();
 
@@ -252,7 +237,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     hub1.updateSpokeConfig(
       isolationVars.assetBIdMainHub,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, addCap: 0, drawCap: 0})
+      IHub.SpokeConfig({active: true, addCap: 0, drawCap: 0})
     );
 
     // Now Bob or any other users cannot draw any asset B from the new spoke main hub due to new draw cap of 0

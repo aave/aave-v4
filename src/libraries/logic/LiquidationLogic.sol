@@ -3,12 +3,11 @@
 pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {IHub} from 'src/interfaces/IHub.sol';
+import {IHub, IHubBase} from 'src/interfaces/IHub.sol';
 import {ISpoke, ISpokeBase} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 import {Constants} from 'src/libraries/helpers/Constants.sol';
-import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -18,7 +17,7 @@ library LiquidationLogic {
   using WadRayMath for uint256;
   using MathUtils for *;
   using SafeCast for *;
-  using PositionStatus for DataTypes.PositionStatus;
+  using PositionStatusMap for ISpoke.PositionStatus;
 
   struct ValidateLiquidationCallParams {
     address user;
@@ -86,6 +85,22 @@ library LiquidationLogic {
     uint256 collateralToLiquidate;
     uint256 collateralToLiquidator;
     address liquidator;
+  }
+
+  struct LiquidateUserParams {
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
+    address oracle;
+    address user;
+    uint256 debtToCover;
+    uint256 healthFactor;
+    uint256 drawnDebt;
+    uint256 premiumDebt;
+    uint256 accruedPremium;
+    uint256 totalDebtInBaseCurrency;
+    address liquidator;
+    uint256 suppliedAssetsCount;
+    uint256 borrowedAssetsCount;
   }
 
   /**
@@ -245,7 +260,7 @@ library LiquidationLogic {
   }
 
   function _settlePremiumDebt(
-    DataTypes.UserPosition storage debtPosition,
+    ISpoke.UserPosition storage debtPosition,
     int256 realizedDelta
   ) internal {
     debtPosition.premiumShares = 0;
@@ -254,8 +269,8 @@ library LiquidationLogic {
   }
 
   function _liquidateCollateral(
-    DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage position,
+    ISpoke.Reserve storage reserve,
+    ISpoke.UserPosition storage position,
     LiquidateCollateralParams memory params
   ) internal returns (bool) {
     IHub hub = reserve.hub;
@@ -279,16 +294,16 @@ library LiquidationLogic {
   }
 
   function _liquidateDebt(
-    DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage position,
-    DataTypes.PositionStatus storage positionStatus,
+    ISpoke.Reserve storage reserve,
+    ISpoke.UserPosition storage position,
+    ISpoke.PositionStatus storage positionStatus,
     LiquidateDebtParams memory params
   ) internal returns (bool) {
     {
       uint256 premiumDebtToLiquidate = params.premiumDebt.min(params.debtToLiquidate);
       uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
 
-      DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
+      IHub.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: -position.premiumShares.toInt256(),
         offsetDelta: -position.premiumOffset.toInt256(),
         realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
@@ -315,14 +330,14 @@ library LiquidationLogic {
   }
 
   function liquidateUser(
-    DataTypes.Reserve storage collateralReserve,
-    DataTypes.Reserve storage debtReserve,
-    DataTypes.UserPosition storage collateralPosition,
-    DataTypes.UserPosition storage debtPosition,
-    DataTypes.PositionStatus storage positionStatus,
-    DataTypes.LiquidationConfig storage liquidationConfig,
-    DataTypes.DynamicReserveConfig storage collateralDynConfig,
-    DataTypes.LiquidateUserParams memory params
+    ISpoke.Reserve storage collateralReserve,
+    ISpoke.Reserve storage debtReserve,
+    ISpoke.UserPosition storage collateralPosition,
+    ISpoke.UserPosition storage debtPosition,
+    ISpoke.PositionStatus storage positionStatus,
+    ISpoke.LiquidationConfig storage liquidationConfig,
+    ISpoke.DynamicReserveConfig storage collateralDynConfig,
+    LiquidateUserParams memory params
   ) external returns (bool) {
     IHub collateralHub = collateralReserve.hub;
     _validateLiquidationCall(

@@ -30,7 +30,7 @@ contract HubConfigTest is HubBase {
 
   function test_addSpoke_fuzz_revertsWith_AssetNotListed(
     uint256 assetId,
-    DataTypes.SpokeConfig calldata spokeConfig
+    IHub.SpokeConfig calldata spokeConfig
   ) public {
     assetId = bound(assetId, hub1.getAssetCount(), type(uint256).max);
     vm.expectRevert(IHub.AssetNotListed.selector);
@@ -39,7 +39,7 @@ contract HubConfigTest is HubBase {
 
   function test_addSpoke_fuzz_revertsWith_InvalidAddress_spoke(
     uint256 assetId,
-    DataTypes.SpokeConfig calldata spokeConfig
+    IHub.SpokeConfig calldata spokeConfig
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
@@ -48,12 +48,12 @@ contract HubConfigTest is HubBase {
   }
 
   function test_addSpoke_revertsWith_SpokeAlreadyListed() public {
-    DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
     vm.expectRevert(IHub.SpokeAlreadyListed.selector);
     Utils.addSpoke(hub1, ADMIN, daiAssetId, address(spoke1), spokeConfig);
   }
 
-  function test_addSpoke_fuzz(uint256 assetId, DataTypes.SpokeConfig calldata spokeConfig) public {
+  function test_addSpoke_fuzz(uint256 assetId, IHub.SpokeConfig calldata spokeConfig) public {
     address newSpoke = makeAddr('newSpoke');
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
@@ -69,7 +69,7 @@ contract HubConfigTest is HubBase {
   function test_updateSpokeConfig_fuzz_revertsWith_SpokeNotListed(
     uint256 assetId,
     address spoke,
-    DataTypes.SpokeConfig calldata spokeConfig
+    IHub.SpokeConfig calldata spokeConfig
   ) public {
     if (!hub1.isSpokeListed(assetId, spoke)) {
       assetId = bound(assetId, hub1.getAssetCount(), type(uint256).max);
@@ -80,7 +80,7 @@ contract HubConfigTest is HubBase {
 
   function test_updateSpokeConfig_fuzz(
     uint256 assetId,
-    DataTypes.SpokeConfig calldata spokeConfig
+    IHub.SpokeConfig calldata spokeConfig
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
 
@@ -234,7 +234,7 @@ contract HubConfigTest is HubBase {
     uint256 expectedAssetId = hub1.getAssetCount();
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
 
-    DataTypes.AssetConfig memory expectedConfig = DataTypes.AssetConfig({
+    IHub.AssetConfig memory expectedConfig = IHub.AssetConfig({
       feeReceiver: feeReceiver,
       liquidityFee: 0,
       irStrategy: interestRateStrategy,
@@ -278,7 +278,7 @@ contract HubConfigTest is HubBase {
 
   function test_updateAssetConfig_fuzz_revertsWith_InvalidLiquidityFee(
     uint256 assetId,
-    DataTypes.AssetConfig memory newConfig
+    IHub.AssetConfig memory newConfig
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
@@ -293,7 +293,7 @@ contract HubConfigTest is HubBase {
   // @dev can only reset reinvestment strategy if swept is zero
   function test_updateAssetConfig_fuzz_revertsWith_InvalidReinvestmentController() public {
     uint256 assetId = _randomAssetId(hub1);
-    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
 
     config.reinvestmentController = address(0);
     assertEq(hub1.getSwept(assetId), 0);
@@ -319,7 +319,7 @@ contract HubConfigTest is HubBase {
 
   function test_updateAssetConfig_fuzz_revertsWith_InterestRateStrategyReverts(
     uint256 assetId,
-    DataTypes.AssetConfig memory newConfig
+    IHub.AssetConfig memory newConfig
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
@@ -329,10 +329,7 @@ contract HubConfigTest is HubBase {
     hub1.updateAssetConfig(assetId, newConfig);
   }
 
-  function test_updateAssetConfig_fuzz(
-    uint256 assetId,
-    DataTypes.AssetConfig memory newConfig
-  ) public {
+  function test_updateAssetConfig_fuzz(uint256 assetId, IHub.AssetConfig memory newConfig) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
     _mockInterestRateBps(newConfig.irStrategy, 5_00);
@@ -366,7 +363,7 @@ contract HubConfigTest is HubBase {
   function test_updateAssetConfig_fuzz_Scenario(uint256 assetId) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
-    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     // set same config
     test_updateAssetConfig_fuzz(assetId, config);
     // set new fee receiver
@@ -392,7 +389,7 @@ contract HubConfigTest is HubBase {
     _addLiquidity(assetId, amount);
     _drawLiquidity(assetId, amount, true);
 
-    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     address oldFeeReceiver = config.feeReceiver;
     config.feeReceiver = makeAddr('newFeeReceiver');
 
@@ -415,7 +412,7 @@ contract HubConfigTest is HubBase {
 
     skip(365 days);
 
-    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     address newFeeReceiver = config.feeReceiver;
 
     uint256 newFees = hub1.getSpokeAddedShares(assetId, newFeeReceiver);
@@ -466,7 +463,7 @@ contract HubConfigTest is HubBase {
     _addLiquidity(assetId, amount);
     _drawLiquidity(assetId, amount, true);
 
-    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     uint256 feeShares = hub1.getSpokeAddedShares(assetId, config.feeReceiver);
     assertTrue(feeShares > 0, 'no fees');
 
@@ -484,7 +481,7 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     liquidityFee = bound(liquidityFee, 1, PercentageMath.PERCENTAGE_FACTOR).toUint16();
 
-    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     config.liquidityFee = 0;
     test_updateAssetConfig_fuzz(assetId, config);
 
@@ -518,7 +515,7 @@ contract HubConfigTest is HubBase {
 
     AssetInterestRateStrategy newIrStrategy = new AssetInterestRateStrategy(address(hub1));
     _mockInterestRateRay(address(newIrStrategy), hub1.getAssetDrawnRate(assetId) * 10);
-    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     config.irStrategy = address(newIrStrategy);
     Utils.updateAssetConfig(hub1, ADMIN, assetId, config);
 
@@ -528,7 +525,7 @@ contract HubConfigTest is HubBase {
 
   function _assumeValidAssetConfig(
     uint256 assetId,
-    DataTypes.AssetConfig memory newConfig
+    IHub.AssetConfig memory newConfig
   ) internal pure {
     newConfig.liquidityFee = bound(newConfig.liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();

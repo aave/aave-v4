@@ -16,7 +16,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateLiquidationConfig(
-      DataTypes.LiquidationConfig({
+      ISpoke.LiquidationConfig({
         targetHealthFactor: 1.05e18,
         healthFactorForMaxBonus: 0.7e18,
         liquidationBonusFactor: 20_00
@@ -41,7 +41,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     address liquidator,
     bool isSolvent
   ) internal virtual {
-    DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
     uint256 targetHealthFactor;
     if (isSolvent) {
@@ -450,7 +450,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_SmallPosition is
   function setUp() public virtual override {
     super.setUp();
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
-      DataTypes.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
+      ISpoke.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
         i,
         spoke.getUserPosition(i, liquidator).configKey
       );
@@ -471,7 +471,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_LargePosition is
   function setUp() public virtual override {
     super.setUp();
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
-      DataTypes.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
+      ISpoke.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
         i,
         spoke.getUserPosition(i, liquidator).configKey
       );
@@ -495,7 +495,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_SmallPosition is
   function setUp() public virtual override {
     super.setUp();
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
-      DataTypes.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
+      ISpoke.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
         i,
         spoke.getUserPosition(i, liquidator).configKey
       );
@@ -521,7 +521,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_LargePosition is
   function setUp() public virtual override {
     super.setUp();
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
-      DataTypes.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
+      ISpoke.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
         i,
         spoke.getUserPosition(i, liquidator).configKey
       );

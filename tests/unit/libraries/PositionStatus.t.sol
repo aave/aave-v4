@@ -248,7 +248,7 @@ contract PositionStatusTest is Base {
     vm.setArbitraryStorage(address(p));
 
     uint256 startReserveId = vm.randomUint(0, reserveCount - 1);
-    uint256 expectedReserveId = PositionStatus.NOT_FOUND;
+    uint256 expectedReserveId = PositionStatusMap.NOT_FOUND;
     uint256 endReserveId = ((reserveCount / 128) + 1) * 128; // last bucket
     for (uint256 i = startReserveId; i < endReserveId; ++i) {
       if (p.isUsingAsCollateral(i) || p.isBorrowing(i)) {
@@ -258,8 +258,11 @@ contract PositionStatusTest is Base {
     }
     (uint256 reserveId, bool borrowing, bool collateral) = p.next(startReserveId, reserveCount);
     assertEq(reserveId, expectedReserveId);
-    assertEq(borrowing, reserveId != PositionStatus.NOT_FOUND && p.isBorrowing(reserveId));
-    assertEq(collateral, reserveId != PositionStatus.NOT_FOUND && p.isUsingAsCollateral(reserveId));
+    assertEq(borrowing, reserveId != PositionStatusMap.NOT_FOUND && p.isBorrowing(reserveId));
+    assertEq(
+      collateral,
+      reserveId != PositionStatusMap.NOT_FOUND && p.isUsingAsCollateral(reserveId)
+    );
   }
 
   function test_nextBorrowing(uint256 reserveCount) public {
@@ -267,7 +270,7 @@ contract PositionStatusTest is Base {
     vm.setArbitraryStorage(address(p));
 
     uint256 startReserveId = vm.randomUint(0, reserveCount - 1);
-    uint256 expectedReserveId = PositionStatus.NOT_FOUND;
+    uint256 expectedReserveId = PositionStatusMap.NOT_FOUND;
     uint256 endReserveId = ((reserveCount / 128) + 1) * 128; // last bucket
     for (uint256 i = startReserveId; i < endReserveId; ++i) {
       if (p.isBorrowing(i)) {
@@ -277,7 +280,7 @@ contract PositionStatusTest is Base {
     }
     uint256 reserveId = p.nextBorrowing(startReserveId, reserveCount);
     assertEq(reserveId, expectedReserveId);
-    assertEq(p.isBorrowing(reserveId), reserveId != PositionStatus.NOT_FOUND);
+    assertEq(p.isBorrowing(reserveId), reserveId != PositionStatusMap.NOT_FOUND);
   }
 
   function test_nextCollateral(uint256 reserveCount) public {
@@ -285,7 +288,7 @@ contract PositionStatusTest is Base {
     vm.setArbitraryStorage(address(p));
 
     uint256 startReserveId = vm.randomUint(0, reserveCount - 1);
-    uint256 expectedReserveId = PositionStatus.NOT_FOUND;
+    uint256 expectedReserveId = PositionStatusMap.NOT_FOUND;
     uint256 endReserveId = ((reserveCount / 128) + 1) * 128; // last bucket
     for (uint256 i = startReserveId; i < endReserveId; ++i) {
       if (p.isUsingAsCollateral(i)) {
@@ -295,7 +298,7 @@ contract PositionStatusTest is Base {
     }
     uint256 reserveId = p.nextCollateral(startReserveId, reserveCount);
     assertEq(reserveId, expectedReserveId);
-    assertEq(p.isUsingAsCollateral(reserveId), reserveId != PositionStatus.NOT_FOUND);
+    assertEq(p.isUsingAsCollateral(reserveId), reserveId != PositionStatusMap.NOT_FOUND);
   }
 
   function test_next_continuous() public {
@@ -310,7 +313,7 @@ contract PositionStatusTest is Base {
     bool collateral;
     while (true) {
       (nextReserveId, borrowing, collateral) = p.next(lastSeenReserveId, reserveCount);
-      if (nextReserveId == PositionStatus.NOT_FOUND) break;
+      if (nextReserveId == PositionStatusMap.NOT_FOUND) break;
 
       assertEq(p.isBorrowing(nextReserveId), borrowing);
       assertEq(p.isUsingAsCollateral(nextReserveId), collateral);
@@ -335,7 +338,8 @@ contract PositionStatusTest is Base {
     uint256 lastSeenReserveId;
     uint256 nextReserveId;
     while (
-      (nextReserveId = p.nextBorrowing(lastSeenReserveId, reserveCount)) != PositionStatus.NOT_FOUND
+      (nextReserveId = p.nextBorrowing(lastSeenReserveId, reserveCount)) !=
+      PositionStatusMap.NOT_FOUND
     ) {
       assertTrue(p.isBorrowing(nextReserveId));
       for (uint256 i = lastSeenReserveId; i < nextReserveId; ++i) {
@@ -358,7 +362,7 @@ contract PositionStatusTest is Base {
     uint256 nextReserveId;
     while (
       (nextReserveId = p.nextCollateral(lastSeenReserveId, reserveCount)) !=
-      PositionStatus.NOT_FOUND
+      PositionStatusMap.NOT_FOUND
     ) {
       assertTrue(p.isUsingAsCollateral(nextReserveId));
       for (uint256 i = lastSeenReserveId; i < nextReserveId; ++i) {

@@ -14,8 +14,8 @@ contract SpokeMultipleHubBase is SpokeBase {
   TestnetERC20 internal assetA;
   TestnetERC20 internal assetB;
 
-  DataTypes.DynamicReserveConfig internal dynReserveConfig =
-    DataTypes.DynamicReserveConfig({
+  ISpoke.DynamicReserveConfig internal dynReserveConfig =
+    ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00, // 80.00%
       maxLiquidationBonus: 100_00, // 100.00%
       liquidationFee: 0 // 0.00%

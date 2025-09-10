@@ -4,24 +4,24 @@ pragma solidity ^0.8.10;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IHub} from 'src/interfaces/IHub.sol';
-import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {ISpoke} from 'src/interfaces/ISpoke.sol';
+import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 
 contract LiquidationLogicWrapper {
   using SafeCast for uint256;
-  using PositionStatus for DataTypes.PositionStatus;
+  using PositionStatusMap for ISpoke.PositionStatus;
 
-  DataTypes.Reserve internal collateralReserve;
-  DataTypes.UserPosition internal collateralPosition;
+  ISpoke.Reserve internal collateralReserve;
+  ISpoke.UserPosition internal collateralPosition;
 
-  DataTypes.Reserve internal debtReserve;
-  DataTypes.UserPosition internal debtPosition;
+  ISpoke.Reserve internal debtReserve;
+  ISpoke.UserPosition internal debtPosition;
 
-  DataTypes.PositionStatus internal positionStatus;
+  ISpoke.PositionStatus internal positionStatus;
 
-  DataTypes.LiquidationConfig internal liquidationConfig;
-  DataTypes.DynamicReserveConfig internal dynamicCollateralConfig;
+  ISpoke.LiquidationConfig internal liquidationConfig;
+  ISpoke.DynamicReserveConfig internal dynamicCollateralConfig;
 
   function setCollateralReserveHub(IHub hub) public {
     collateralReserve.hub = hub;
@@ -39,11 +39,11 @@ contract LiquidationLogicWrapper {
     collateralPosition.suppliedShares = suppliedShares.toUint128();
   }
 
-  function getCollateralReserve() public view returns (DataTypes.Reserve memory) {
+  function getCollateralReserve() public view returns (ISpoke.Reserve memory) {
     return collateralReserve;
   }
 
-  function getCollateralPosition() public view returns (DataTypes.UserPosition memory) {
+  function getCollateralPosition() public view returns (ISpoke.UserPosition memory) {
     return collateralPosition;
   }
 
@@ -83,11 +83,11 @@ contract LiquidationLogicWrapper {
     positionStatus.setBorrowing(reserveId, status);
   }
 
-  function getDebtReserve() public view returns (DataTypes.Reserve memory) {
+  function getDebtReserve() public view returns (ISpoke.Reserve memory) {
     return debtReserve;
   }
 
-  function getDebtPosition() public view returns (DataTypes.UserPosition memory) {
+  function getDebtPosition() public view returns (ISpoke.UserPosition memory) {
     return debtPosition;
   }
 
@@ -99,12 +99,12 @@ contract LiquidationLogicWrapper {
     return positionStatus.isBorrowing(reserveId);
   }
 
-  function setLiquidationConfig(DataTypes.LiquidationConfig memory newLiquidationConfig) public {
+  function setLiquidationConfig(ISpoke.LiquidationConfig memory newLiquidationConfig) public {
     liquidationConfig = newLiquidationConfig;
   }
 
   function setDynamicCollateralConfig(
-    DataTypes.DynamicReserveConfig memory newDynamicCollateralConfig
+    ISpoke.DynamicReserveConfig memory newDynamicCollateralConfig
   ) public {
     dynamicCollateralConfig = newDynamicCollateralConfig;
   }
@@ -173,7 +173,7 @@ contract LiquidationLogicWrapper {
     return LiquidationLogic._liquidateDebt(debtReserve, debtPosition, positionStatus, params);
   }
 
-  function liquidateUser(DataTypes.LiquidateUserParams memory params) public returns (bool) {
+  function liquidateUser(LiquidationLogic.LiquidateUserParams memory params) public returns (bool) {
     return
       LiquidationLogic.liquidateUser(
         collateralReserve,

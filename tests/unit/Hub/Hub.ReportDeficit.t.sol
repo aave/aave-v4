@@ -35,14 +35,14 @@ contract HubReportDeficitTest is HubBase {
     vm.expectRevert(IHub.SpokeNotActive.selector);
 
     vm.prank(caller);
-    hub1.reportDeficit(usdxAssetId, 0, 0, DataTypes.PremiumDelta(0, 0, 0));
+    hub1.reportDeficit(usdxAssetId, 0, 0, IHubBase.PremiumDelta(0, 0, 0));
   }
 
   function test_reportDeficit_revertsWith_InvalidAmount() public {
     vm.expectRevert(IHub.InvalidAmount.selector);
 
     vm.prank(address(spoke1));
-    hub1.reportDeficit(usdxAssetId, 0, 0, DataTypes.PremiumDelta(0, 0, 0));
+    hub1.reportDeficit(usdxAssetId, 0, 0, IHubBase.PremiumDelta(0, 0, 0));
   }
 
   function test_reportDeficit_fuzz_revertsWith_SurplusDeficitReported(
@@ -77,7 +77,7 @@ contract HubReportDeficitTest is HubBase {
       usdxAssetId,
       baseAmount,
       premiumAmount,
-      DataTypes.PremiumDelta(0, 0, -int256(premiumAmount))
+      IHubBase.PremiumDelta(0, 0, -int256(premiumAmount))
     );
   }
 
@@ -122,7 +122,7 @@ contract HubReportDeficitTest is HubBase {
     uint256 drawnSharesBefore = hub1.getAsset(usdxAssetId).drawnShares;
     uint256 totalDeficit = baseAmount + premiumAmount;
 
-    DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: 0,
       offsetDelta: 0,
       realizedDelta: -int256(premiumAmount)

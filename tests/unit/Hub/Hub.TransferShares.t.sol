@@ -58,7 +58,7 @@ contract HubTransferSharesTest is HubBase {
     Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
     // deactivate spoke1
-    DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
     spokeConfig.active = false;
     vm.prank(HUB_ADMIN);
     hub1.updateSpokeConfig(daiAssetId, address(spoke1), spokeConfig);

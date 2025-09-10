@@ -94,7 +94,7 @@ contract HubEliminateDeficitTest is HubBase {
     _addLiquidity(assetId, amount);
     _drawLiquidityFromSpoke(address(spoke), assetId, amount, 322 days, true);
     vm.prank(address(spoke));
-    hub1.reportDeficit(assetId, amount, 0, DataTypes.PremiumDelta(0, 0, 0));
+    hub1.reportDeficit(assetId, amount, 0, IHubBase.PremiumDelta(0, 0, 0));
 
     assertEq(hub1.getDeficit(assetId), amount);
   }

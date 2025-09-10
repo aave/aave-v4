@@ -3,15 +3,15 @@
 pragma solidity ^0.8.0;
 
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
 /**
  * @title PositionStatus
  * @author Aave Labs
  * @notice Implements the bitmap logic to handle the user configuration.
  */
-library PositionStatus {
-  using PositionStatus for *;
+library PositionStatusMap {
+  using PositionStatusMap for *;
   using LibBit for uint256;
 
   uint256 internal constant NOT_FOUND = type(uint256).max;
@@ -28,7 +28,7 @@ library PositionStatus {
    * @param borrowing True if the user is borrowing the reserve, false otherwise.
    */
   function setBorrowing(
-    DataTypes.PositionStatus storage self,
+    ISpoke.PositionStatus storage self,
     uint256 reserveId,
     bool borrowing
   ) internal {
@@ -49,7 +49,7 @@ library PositionStatus {
    * @param usingAsCollateral True if the user is using the reserve as collateral, false otherwise.
    */
   function setUsingAsCollateral(
-    DataTypes.PositionStatus storage self,
+    ISpoke.PositionStatus storage self,
     uint256 reserveId,
     bool usingAsCollateral
   ) internal {
@@ -70,7 +70,7 @@ library PositionStatus {
    * @return True if the user is using a reserve for borrowing or as collateral, false otherwise.
    */
   function isUsingAsCollateralOrBorrowing(
-    DataTypes.PositionStatus storage self,
+    ISpoke.PositionStatus storage self,
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
@@ -85,7 +85,7 @@ library PositionStatus {
    * @return True if the user is using a reserve for borrowing, false otherwise.
    */
   function isBorrowing(
-    DataTypes.PositionStatus storage self,
+    ISpoke.PositionStatus storage self,
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
@@ -100,7 +100,7 @@ library PositionStatus {
    * @return True if the user is using a reserve as collateral, false otherwise.
    */
   function isUsingAsCollateral(
-    DataTypes.PositionStatus storage self,
+    ISpoke.PositionStatus storage self,
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
@@ -115,7 +115,7 @@ library PositionStatus {
    * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
    */
   function collateralCount(
-    DataTypes.PositionStatus storage self,
+    ISpoke.PositionStatus storage self,
     uint256 reserveCount
   ) internal view returns (uint256) {
     unchecked {
@@ -140,7 +140,7 @@ library PositionStatus {
    * @return collateral True if the next reserveId is using as collateral, false otherwise.
    */
   function next(
-    DataTypes.PositionStatus storage self,
+    ISpoke.PositionStatus storage self,
     uint256 startReserveId,
     uint256 reserveCount
   ) internal view returns (uint256, bool, bool) {
@@ -172,7 +172,7 @@ library PositionStatus {
    * @return reserveId The next reserveId that is borrowing.
    */
   function nextBorrowing(
-    DataTypes.PositionStatus storage self,
+    ISpoke.PositionStatus storage self,
     uint256 startReserveId,
     uint256 reserveCount
   ) internal view returns (uint256 reserveId) {
@@ -197,7 +197,7 @@ library PositionStatus {
    * @return reserveId The next reserveId that is using as collateral.
    */
   function nextCollateral(
-    DataTypes.PositionStatus storage self,
+    ISpoke.PositionStatus storage self,
     uint256 startReserveId,
     uint256 reserveCount
   ) internal view returns (uint256 reserveId) {
@@ -218,7 +218,7 @@ library PositionStatus {
    * @return The word containing the state of the reserve.
    */
   function getBucketWord(
-    DataTypes.PositionStatus storage self,
+    ISpoke.PositionStatus storage self,
     uint256 reserveId
   ) internal view returns (uint256) {
     return self.map[reserveId.bucketId()];
