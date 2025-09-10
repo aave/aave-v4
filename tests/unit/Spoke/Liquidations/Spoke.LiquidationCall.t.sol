@@ -60,7 +60,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     }
   }
 
-  function test_liquidationCall(
+  function _testLiquidationCall(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
@@ -126,7 +126,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       user
     );
 
-    test_liquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
   }
 
   function test_liquidationCall_fuzz_OneCollateral_OneDebt_UserInsolvent(
@@ -158,7 +158,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       }
     }
 
-    test_liquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
   }
 
   function test_liquidationCall_fuzz_ManyCollaterals_OneDebt_UserSolvent(
@@ -186,7 +186,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _processAdditionalCollateralReserves(user, 1e26);
 
-    test_liquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
   }
 
   function test_liquidationCall_fuzz_ManyCollaterals_OneDebt_UserInsolvent(
@@ -214,7 +214,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _processAdditionalCollateralReserves(user, 1e26);
 
-    test_liquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
   }
 
   function test_liquidationCall_fuzz_OneCollateral_ManyDebts_UserSolvent(
@@ -242,7 +242,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _processAdditionalDebtReserves(user, 1e26);
 
-    test_liquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
   }
 
   function test_liquidationCall_fuzz_OneCollateral_ManyDebts_UserInsolvent(
@@ -270,7 +270,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _processAdditionalDebtReserves(user, 1e26);
 
-    test_liquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
   }
 
   function test_liquidationCall_fuzz_ManyCollaterals_ManyDebts_UserSolvent(
@@ -299,7 +299,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _processAdditionalCollateralReserves(user, 1e26);
     _processAdditionalDebtReserves(user, 1e26);
 
-    test_liquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
   }
 
   function test_liquidationCall_fuzz_ManyCollaterals_ManyDebts_UserInsolvent(
@@ -328,7 +328,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _processAdditionalCollateralReserves(user, 1e26);
     _processAdditionalDebtReserves(user, 1e26);
 
-    test_liquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
   }
 }
 
