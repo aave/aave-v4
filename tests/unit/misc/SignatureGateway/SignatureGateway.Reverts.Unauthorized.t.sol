@@ -2,11 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/misc/TypedSignatureGateway/TypedSignatureGateway.Base.t.sol';
+import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
-contract TypedSignatureGateway_Unauthorized_PositionManagerNotActive_Test is
-  TypedSignatureGatewayBaseTest
-{
+contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is SignatureGatewayBaseTest {
   function setUp() public virtual override {
     super.setUp();
     _approveAllUnderlying(spoke1, alice, address(gateway));
@@ -62,8 +60,8 @@ contract TypedSignatureGateway_Unauthorized_PositionManagerNotActive_Test is
   }
 }
 
-contract TypedSignatureGateway_Unauthorized_PositionManagerActive_Test is
-  TypedSignatureGateway_Unauthorized_PositionManagerNotActive_Test
+contract SignatureGateway_Unauthorized_PositionManagerActive_Test is
+  SignatureGateway_Unauthorized_PositionManagerNotActive_Test
 {
   function setUp() public override {
     super.setUp();

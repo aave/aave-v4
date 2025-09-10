@@ -3,18 +3,18 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {TypedSignatureGateway, ITypedSignatureGateway} from 'src/misc/TypedSignatureGateway.sol';
+import {SignatureGateway, ISignatureGateway} from 'src/misc/SignatureGateway.sol';
 
-contract TypedSignatureGatewayBaseTest is Base {
+contract SignatureGatewayBaseTest is Base {
   using stdStorage for StdStorage;
 
-  ITypedSignatureGateway public gateway;
+  ISignatureGateway public gateway;
   uint256 public alicePk;
 
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
-    gateway = ITypedSignatureGateway(new TypedSignatureGateway(address(spoke1), ADMIN));
+    gateway = ISignatureGateway(new SignatureGateway(address(spoke1), ADMIN));
     (alice, alicePk) = makeAddrAndKey('alice');
   }
 
@@ -42,7 +42,7 @@ contract TypedSignatureGatewayBaseTest is Base {
     uint256 newNonce = vm.randomUint(1, UINT256_MAX - 1);
     stdstore
       .target(address(gateway))
-      .sig(ITypedSignatureGateway.nonces.selector)
+      .sig(ISignatureGateway.nonces.selector)
       .with_key(user)
       .checked_write(newNonce);
     assertEq(gateway.nonces(user), newNonce);
@@ -142,35 +142,35 @@ contract TypedSignatureGatewayBaseTest is Base {
   }
 
   function _getTypedDataHash(
-    ITypedSignatureGateway _gateway,
+    ISignatureGateway _gateway,
     EIP712Types.Supply memory _params
   ) internal view returns (bytes32) {
     return _typedDataHash(_gateway, vm.eip712HashStruct('Supply', abi.encode(_params)));
   }
 
   function _getTypedDataHash(
-    ITypedSignatureGateway _gateway,
+    ISignatureGateway _gateway,
     EIP712Types.Withdraw memory _params
   ) internal view returns (bytes32) {
     return _typedDataHash(_gateway, vm.eip712HashStruct('Withdraw', abi.encode(_params)));
   }
 
   function _getTypedDataHash(
-    ITypedSignatureGateway _gateway,
+    ISignatureGateway _gateway,
     EIP712Types.Borrow memory _params
   ) internal view returns (bytes32) {
     return _typedDataHash(_gateway, vm.eip712HashStruct('Borrow', abi.encode(_params)));
   }
 
   function _getTypedDataHash(
-    ITypedSignatureGateway _gateway,
+    ISignatureGateway _gateway,
     EIP712Types.Repay memory _params
   ) internal view returns (bytes32) {
     return _typedDataHash(_gateway, vm.eip712HashStruct('Repay', abi.encode(_params)));
   }
 
   function _getTypedDataHash(
-    ITypedSignatureGateway _gateway,
+    ISignatureGateway _gateway,
     EIP712Types.SetUsingAsCollateral memory _params
   ) internal view returns (bytes32) {
     return
@@ -178,7 +178,7 @@ contract TypedSignatureGatewayBaseTest is Base {
   }
 
   function _typedDataHash(
-    ITypedSignatureGateway _gateway,
+    ISignatureGateway _gateway,
     bytes32 typeHash
   ) internal view returns (bytes32) {
     return keccak256(abi.encodePacked('\x19\x01', _gateway.DOMAIN_SEPARATOR(), typeHash));
@@ -186,7 +186,7 @@ contract TypedSignatureGatewayBaseTest is Base {
 
   function _assertGatewayHasNoBalanceOrAllowance(
     ISpoke spoke,
-    ITypedSignatureGateway _gateway,
+    ISignatureGateway _gateway,
     address who
   ) internal view {
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {

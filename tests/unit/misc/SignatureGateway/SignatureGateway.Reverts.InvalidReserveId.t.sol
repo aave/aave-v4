@@ -2,15 +2,15 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/misc/TypedSignatureGateway/TypedSignatureGateway.Base.t.sol';
+import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
-contract TypedSignatureGateway_InvalidReserveId_Test is TypedSignatureGatewayBaseTest {
+contract SignatureGateway_InvalidReserveId_Test is SignatureGatewayBaseTest {
   function test_supplyWithSig_revertsWith_InvalidReserveId() public {
     EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpUntilRandomDeadline());
     p.reserveId = _randomInvalidReserveId(spoke1);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ITypedSignatureGateway.InvalidReserveId.selector);
+    vm.expectRevert(ISignatureGateway.InvalidReserveId.selector);
     vm.prank(vm.randomAddress());
     gateway.supplyWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
   }
@@ -20,7 +20,7 @@ contract TypedSignatureGateway_InvalidReserveId_Test is TypedSignatureGatewayBas
     p.reserveId = _randomInvalidReserveId(spoke1);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ITypedSignatureGateway.InvalidReserveId.selector);
+    vm.expectRevert(ISignatureGateway.InvalidReserveId.selector);
     vm.prank(vm.randomAddress());
     gateway.repayWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
   }
@@ -29,7 +29,7 @@ contract TypedSignatureGateway_InvalidReserveId_Test is TypedSignatureGatewayBas
 
   function test_permitReserve_revertsWith_InvalidReserveId() public {
     uint256 reserveId = _randomInvalidReserveId(spoke1);
-    vm.expectRevert(ITypedSignatureGateway.InvalidReserveId.selector);
+    vm.expectRevert(ISignatureGateway.InvalidReserveId.selector);
     vm.prank(vm.randomAddress());
     gateway.permitReserve(
       reserveId,

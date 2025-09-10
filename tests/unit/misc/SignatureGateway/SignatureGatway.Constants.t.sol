@@ -2,26 +2,26 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/misc/TypedSignatureGateway/TypedSignatureGateway.Base.t.sol';
+import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
-contract TypedSignatureGatewayConstantsTest is TypedSignatureGatewayBaseTest {
+contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
   function test_constructor() public {
     vm.expectRevert();
-    new TypedSignatureGateway(address(0), vm.randomAddress());
+    new SignatureGateway(address(0), vm.randomAddress());
     vm.expectRevert();
-    new TypedSignatureGateway(vm.randomAddress(), address(0));
+    new SignatureGateway(vm.randomAddress(), address(0));
     vm.expectRevert();
-    new TypedSignatureGateway(address(0), address(0));
+    new SignatureGateway(address(0), address(0));
 
     address spoke = vm.randomAddress();
-    assertEq(address((new TypedSignatureGateway(spoke, vm.randomAddress())).SPOKE()), spoke);
+    assertEq(address((new SignatureGateway(spoke, vm.randomAddress())).SPOKE()), spoke);
     assertEq(address(gateway.SPOKE()), address(spoke1));
     assertEq(Ownable2Step(address(gateway)).owner(), ADMIN);
     assertEq(Ownable2Step(address(gateway)).pendingOwner(), address(0));
   }
 
   function test_eip712Domain() public {
-    TypedSignatureGateway instance = new TypedSignatureGateway{salt: bytes32(vm.randomUint())}(
+    SignatureGateway instance = new SignatureGateway{salt: bytes32(vm.randomUint())}(
       vm.randomAddress(),
       vm.randomAddress()
     );
@@ -36,7 +36,7 @@ contract TypedSignatureGatewayConstantsTest is TypedSignatureGatewayBaseTest {
     ) = IERC5267(address(instance)).eip712Domain();
 
     assertEq(fields, bytes1(0x0f));
-    assertEq(name, 'TypedSignatureGateway');
+    assertEq(name, 'SignatureGateway');
     assertEq(version, '1');
     assertEq(chainId, block.chainid);
     assertEq(verifyingContract, address(instance));
@@ -45,7 +45,7 @@ contract TypedSignatureGatewayConstantsTest is TypedSignatureGatewayBaseTest {
   }
 
   function test_DOMAIN_SEPARATOR() public {
-    TypedSignatureGateway instance = new TypedSignatureGateway{salt: bytes32(vm.randomUint())}(
+    SignatureGateway instance = new SignatureGateway{salt: bytes32(vm.randomUint())}(
       vm.randomAddress(),
       vm.randomAddress()
     );
@@ -54,7 +54,7 @@ contract TypedSignatureGatewayConstantsTest is TypedSignatureGatewayBaseTest {
         keccak256(
           'EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'
         ),
-        keccak256('TypedSignatureGateway'),
+        keccak256('SignatureGateway'),
         keccak256('1'),
         block.chainid,
         address(instance)

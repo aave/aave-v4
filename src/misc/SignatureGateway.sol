@@ -10,28 +10,28 @@ import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {ITypedSignatureGateway} from 'src/interfaces/ITypedSignatureGateway.sol';
+import {ISignatureGateway} from 'src/interfaces/ISignatureGateway.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
-contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatureGateway {
+contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway {
   using SafeERC20 for IERC20;
 
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   ISpoke public immutable SPOKE;
 
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   bytes32 public constant SUPPLY_TYPEHASH =
     0xe85497eb293c001e8483fe105efadd1d50aa0dadfc0570b27058031dfceab2e6; // keccak256('Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)');
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   bytes32 public constant WITHDRAW_TYPEHASH =
     0x0bc73eb58cf4068a29b9593ef18c0d26b3b4453bd2155424a90cb26a22f41d7f; // keccak256('Withdraw(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)');
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   bytes32 public constant BORROW_TYPEHASH =
     0xe248895a233688ba2a70b6f560472dbc27e35ece0d86914f7d43bf2f7df8025b; // keccak256('Borrow(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)');
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   bytes32 public constant REPAY_TYPEHASH =
     0xd23fe99a7aac398d03952a098faa8889259d062784bd80ea0f159e4af604c045; // keccak256('Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)');
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   bytes32 public constant SET_USING_AS_COLLATERAL_TYPEHASH =
     0xd4350e1f25ecd62a35b50e8cd1e00bc34331ae8c728ee4dbb69ecf1023daecf7; // keccak256('SetUsingAsCollateral(address spoke,uint256 reserveId,bool useAsCollateral,address onBehalfOf,uint256 nonce,uint256 deadline)');
 
@@ -42,7 +42,7 @@ contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatu
     SPOKE = ISpoke(spoke_);
   }
 
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   function supplyWithSig(
     uint256 reserveId,
     uint256 amount,
@@ -73,7 +73,7 @@ contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatu
     SPOKE.supply(reserveId, amount, onBehalfOf);
   }
 
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   function withdrawWithSig(
     uint256 reserveId,
     uint256 amount,
@@ -103,7 +103,7 @@ contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatu
     asset.safeTransfer(onBehalfOf, amount);
   }
 
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   function borrowWithSig(
     uint256 reserveId,
     uint256 amount,
@@ -133,7 +133,7 @@ contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatu
     asset.safeTransfer(onBehalfOf, amount);
   }
 
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   function repayWithSig(
     uint256 reserveId,
     uint256 amount,
@@ -164,7 +164,7 @@ contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatu
     SPOKE.repay(reserveId, amount, onBehalfOf);
   }
 
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   function setUsingAsCollateralWithSig(
     uint256 reserveId,
     bool useAsCollateral,
@@ -191,7 +191,7 @@ contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatu
     SPOKE.setUsingAsCollateral(reserveId, useAsCollateral, onBehalfOf);
   }
 
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   function setSelfAsUserPositionManagerWithSig(
     address user,
     bool approve,
@@ -201,7 +201,7 @@ contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatu
     SPOKE.setUserPositionManagerWithSig(address(this), user, approve, deadline, signature);
   }
 
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   function permitReserve(
     uint256 reserveId,
     address onBehalfOf,
@@ -225,22 +225,22 @@ contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatu
     {} catch {}
   }
 
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   function renounceSelfAsUserPositionManager(address user) external onlyOwner {
     SPOKE.renouncePositionManagerRole(user);
   }
 
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparator();
   }
 
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   function useNonce() external {
     _useNonce(msg.sender);
   }
 
-  // @inheritdoc ITypedSignatureGateway
+  // @inheritdoc ISignatureGateway
   function nonces(address user) external view returns (uint256) {
     return _nonces[user];
   }
@@ -252,7 +252,7 @@ contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatu
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
-    return ('TypedSignatureGateway', '1');
+    return ('SignatureGateway', '1');
   }
 
   function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {

@@ -2,12 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/misc/TypedSignatureGateway/TypedSignatureGateway.Base.t.sol';
+import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
-contract TypedSignatureGatewayPermitReserveTest is TypedSignatureGatewayBaseTest {
+contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
   function test_permitReserve_revertsWith_InvalidReserveId() public {
     uint256 unlistedReserveId = vm.randomUint(spoke1.getReserveCount() + 1, UINT256_MAX);
-    vm.expectRevert(ITypedSignatureGateway.InvalidReserveId.selector);
+    vm.expectRevert(ISignatureGateway.InvalidReserveId.selector);
     vm.prank(vm.randomAddress());
     gateway.permitReserve(
       unlistedReserveId,

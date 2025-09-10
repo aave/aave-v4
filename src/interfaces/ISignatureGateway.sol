@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
-interface ITypedSignatureGateway is IMulticall {
+interface ISignatureGateway is IMulticall {
   /**
    * @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
    */
