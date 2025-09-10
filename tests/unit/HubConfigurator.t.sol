@@ -236,36 +236,35 @@ contract HubConfiguratorTest is HubBase {
   function test_updateFeeReceiver_fuzz(address feeReceiver) public {
     assumeNotZeroAddress(feeReceiver);
     DataTypes.AssetConfig memory oldConfig = hub1.getAssetConfig(assetId);
-    DataTypes.AssetConfig memory expectedConfig = oldConfig;
+    DataTypes.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
 
     // if new feeReceiver is different than old one, and is not listed, update the spoke config of old feeReceiver
-    if (feeReceiver != oldConfig.feeReceiver && !hub1.isSpokeListed(assetId, feeReceiver)) {
-      vm.expectCall(
-        address(hub1),
-        abi.encodeCall(
-          IHub.updateSpokeConfig,
-          (
-            assetId,
-            oldConfig.feeReceiver,
-            DataTypes.SpokeConfig({
-              addCap: 0,
-              drawCap: 0,
-              active: hub1.getSpokeConfig(assetId, oldConfig.feeReceiver).active
-            })
+    if (feeReceiver != oldConfig.feeReceiver) {
+      if (!hub1.isSpokeListed(assetId, feeReceiver)) {
+        vm.expectCall(
+          address(hub1),
+          abi.encodeCall(
+            IHub.updateSpokeConfig,
+            (
+              assetId,
+              oldConfig.feeReceiver,
+              DataTypes.SpokeConfig({
+                addCap: 0,
+                drawCap: 0,
+                active: hub1.getSpokeConfig(assetId, oldConfig.feeReceiver).active
+              })
+            )
           )
-        )
-      );
-
-      expectedConfig.feeReceiver = feeReceiver;
-
-      vm.expectCall(
-        address(hub1),
-        abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig))
-      );
-    }
-    // if new feeReceiver is different than old one, and is already listed, revert
-    if (feeReceiver != oldConfig.feeReceiver && hub1.isSpokeListed(assetId, feeReceiver)) {
-      vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
+        );
+        expectedConfig.feeReceiver = feeReceiver;
+        vm.expectCall(
+          address(hub1),
+          abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig))
+        );
+      } else {
+        // if new fee receiver is different from old one, and is already listed, revert
+        vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
+      }
     }
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeReceiver(address(hub1), assetId, feeReceiver);
@@ -476,35 +475,39 @@ contract HubConfiguratorTest is HubBase {
     assumeNotZeroAddress(feeReceiver);
 
     DataTypes.AssetConfig memory oldConfig = hub1.getAssetConfig(assetId);
-
-    if (oldConfig.feeReceiver != feeReceiver) {
-      vm.expectCall(
-        address(hub1),
-        abi.encodeCall(
-          IHub.updateSpokeConfig,
-          (
-            assetId,
-            oldConfig.feeReceiver,
-            DataTypes.SpokeConfig({
-              addCap: 0,
-              drawCap: 0,
-              active: hub1.getSpokeConfig(assetId, oldConfig.feeReceiver).active
-            })
-          )
-        )
-      );
-    }
-
-    // same struct, renaming to expectedConfig
-    DataTypes.AssetConfig memory expectedConfig = oldConfig;
-    expectedConfig.feeReceiver = feeReceiver;
+    DataTypes.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
     expectedConfig.liquidityFee = liquidityFee;
-
-    vm.expectCall(address(hub1), abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig)));
-
+    // if new fee receiver is different from old one, and is not listed, update the spoke config of old fee receiver
+    if (oldConfig.feeReceiver != feeReceiver) {
+      if (!hub1.isSpokeListed(assetId, feeReceiver)) {
+        vm.expectCall(
+          address(hub1),
+          abi.encodeCall(
+            IHub.updateSpokeConfig,
+            (
+              assetId,
+              oldConfig.feeReceiver,
+              DataTypes.SpokeConfig({
+                addCap: 0,
+                drawCap: 0,
+                active: hub1.getSpokeConfig(assetId, oldConfig.feeReceiver).active
+              })
+            )
+          )
+        );
+        expectedConfig.feeReceiver = feeReceiver;
+        vm.expectCall(
+          address(hub1),
+          abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig))
+        );
+      } else {
+        expectedConfig.liquidityFee = oldConfig.liquidityFee;
+        // if new fee receiver is different from old one, and is already listed, revert
+        vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
+      }
+    }
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeConfig(address(hub1), assetId, liquidityFee, feeReceiver);
-
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
   }
 
