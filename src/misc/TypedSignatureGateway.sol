@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {SignatureCheckerLib} from 'src/dependencies/solady/SignatureCheckerLib.sol';
+import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {Multicall} from 'src/misc/Multicall.sol';
 import {ITypedSignatureGateway} from 'src/interfaces/ITypedSignatureGateway.sol';
@@ -55,7 +55,7 @@ contract TypedSignatureGateway is EIP712, Multicall, ITypedSignatureGateway {
       )
     );
     require(
-      SignatureCheckerLib.isValidSignatureNowCalldata(onBehalfOf, hash, signature),
+      SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature),
       InvalidSignature()
     );
     SPOKE.supply(reserveId, amount, onBehalfOf);
@@ -84,7 +84,7 @@ contract TypedSignatureGateway is EIP712, Multicall, ITypedSignatureGateway {
       )
     );
     require(
-      SignatureCheckerLib.isValidSignatureNowCalldata(onBehalfOf, hash, signature),
+      SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature),
       InvalidSignature()
     );
     SPOKE.withdraw(reserveId, amount, onBehalfOf);
@@ -113,7 +113,7 @@ contract TypedSignatureGateway is EIP712, Multicall, ITypedSignatureGateway {
       )
     );
     require(
-      SignatureCheckerLib.isValidSignatureNowCalldata(onBehalfOf, hash, signature),
+      SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature),
       InvalidSignature()
     );
     SPOKE.borrow(reserveId, amount, onBehalfOf);
@@ -142,7 +142,7 @@ contract TypedSignatureGateway is EIP712, Multicall, ITypedSignatureGateway {
       )
     );
     require(
-      SignatureCheckerLib.isValidSignatureNowCalldata(onBehalfOf, hash, signature),
+      SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature),
       InvalidSignature()
     );
     SPOKE.repay(reserveId, amount, onBehalfOf);
