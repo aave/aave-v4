@@ -154,7 +154,7 @@ contract HubConfiguratorTest is HubBase {
     });
     DataTypes.SpokeConfig memory expectedSpokeConfig = DataTypes.SpokeConfig({
       addCap: Constants.MAX_CAP,
-      drawCap: Constants.MAX_CAP,
+      drawCap: 0,
       active: true
     });
 

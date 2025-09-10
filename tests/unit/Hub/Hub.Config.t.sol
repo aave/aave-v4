@@ -250,7 +250,7 @@ contract HubConfigTest is HubBase {
 
     DataTypes.SpokeConfig memory expectedSpokeConfig = DataTypes.SpokeConfig({
       addCap: Constants.MAX_CAP,
-      drawCap: Constants.MAX_CAP,
+      drawCap: 0,
       active: true
     });
 
@@ -369,7 +369,7 @@ contract HubConfigTest is HubBase {
       emit IHub.SpokeConfigUpdate(
         assetId,
         newConfig.feeReceiver,
-        DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
+        DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: 0, active: true})
       );
     } else {
       newConfig.feeReceiver = _getFeeReceiver(hub1, assetId);

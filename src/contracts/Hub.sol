@@ -94,7 +94,7 @@ contract Hub is IHub, AccessManaged {
     _updateSpokeConfig(
       assetId,
       feeReceiver,
-      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
+      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: 0, active: true})
     );
 
     emit AddAsset(assetId, underlying, decimals);
@@ -138,7 +138,7 @@ contract Hub is IHub, AccessManaged {
       _updateSpokeConfig(
         assetId,
         config.feeReceiver,
-        DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
+        DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: 0, active: true})
       );
     }
 
