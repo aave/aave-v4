@@ -12,14 +12,13 @@ pragma solidity ^0.8.0;
 import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
 
 library KeyValueListInMemory {
-  error MaxKeySizeExceeded(uint256);
-  error MaxValueSizeExceeded(uint256);
+  error MaxDataSizeExceeded(uint256 key, uint256 value);
 
   uint256 internal constant _MAX_KEY_BITS = 32;
   uint256 internal constant _MAX_VALUE_BITS = 224;
 
-  uint256 internal constant _MAX_KEY = type(uint32).max;
-  uint256 internal constant _MAX_VALUE = type(uint224).max;
+  uint256 internal constant _MAX_KEY = (1 << _MAX_KEY_BITS) - 1;
+  uint256 internal constant _MAX_VALUE = (1 << _MAX_VALUE_BITS) - 1;
 
   // since KEY_BITS < VALUE_BITS & we want to pack KEY in the msb
   uint256 internal constant _KEY_SHIFT = 256 - _MAX_KEY_BITS;
@@ -38,8 +37,7 @@ library KeyValueListInMemory {
   }
 
   function add(List memory self, uint256 idx, uint256 key, uint256 value) internal pure {
-    require(key <= _MAX_KEY, MaxKeySizeExceeded(key));
-    require(value <= _MAX_VALUE, MaxValueSizeExceeded(value));
+    require(key <= _MAX_KEY && value <= _MAX_VALUE, MaxDataSizeExceeded(key, value));
     self._inner[idx] = pack(key, value);
   }
 
@@ -50,8 +48,9 @@ library KeyValueListInMemory {
 
   /**
    * @dev since `key` is in the MSB, we can sort by the key by sorting the array in descending order
-   * (so the keys are in ascending order when unpacking), and using value in case of collision, and all
-   * uninitialized keys are placed at the end of the list after sorting.
+   * (so the keys are in ascending order when unpacking, due to inversion when packing),
+   * and using value in descending order in case of collision,
+   * and all uninitialized keys are placed at the end of the list after sorting.
    */
   function sortByKey(List memory self) internal pure {
     Arrays.sort(self._inner, gtComparator);
