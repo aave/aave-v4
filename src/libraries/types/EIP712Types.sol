@@ -18,4 +18,40 @@ library EIP712Types {
     uint256 nonce;
     uint256 deadline;
   }
+
+  struct Supply {
+    address spoke;
+    uint256 reserveId;
+    uint256 amount;
+    address onBehalfOf;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct Withdraw {
+    address spoke;
+    uint256 reserveId;
+    uint256 amount;
+    address onBehalfOf;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct Borrow {
+    address spoke;
+    uint256 reserveId;
+    uint256 amount;
+    address onBehalfOf;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct Repay {
+    address spoke;
+    uint256 reserveId;
+    uint256 amount;
+    address onBehalfOf;
+    uint256 nonce;
+    uint256 deadline;
+  }
 }
