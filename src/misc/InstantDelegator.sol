@@ -8,29 +8,35 @@ import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
 contract InstantDelegator is EIP712, Multicall {
+  ISpoke public immutable SPOKE;
+
   error InvalidSignature();
 
   bytes32 public constant SUPPLY_TYPEHASH =
     keccak256(
-      'Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)'
+      'Supply(uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)'
     );
   bytes32 public constant WITHDRAW_TYPEHASH =
     keccak256(
-      'Withdraw(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)'
+      'Withdraw(uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)'
     );
   bytes32 public constant BORROW_TYPEHASH =
     keccak256(
-      'Borrow(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)'
+      'Borrow(uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)'
     );
   bytes32 public constant REPAY_TYPEHASH =
     keccak256(
-      'Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)'
+      'Repay(uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)'
     );
 
   mapping(address user => uint256 nonce) internal _nonces;
 
+  constructor(address spoke_) {
+    assert(spoke_ != address(0));
+    SPOKE = ISpoke(spoke_);
+  }
+
   function supplyWithSig(
-    address spoke,
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
@@ -42,7 +48,7 @@ contract InstantDelegator is EIP712, Multicall {
       keccak256(
         abi.encode(
           SUPPLY_TYPEHASH,
-          spoke,
+          address(SPOKE),
           reserveId,
           amount,
           onBehalfOf,
@@ -55,11 +61,10 @@ contract InstantDelegator is EIP712, Multicall {
       SignatureCheckerLib.isValidSignatureNowCalldata(onBehalfOf, hash, signature),
       InvalidSignature()
     );
-    ISpoke(spoke).supply(reserveId, amount, onBehalfOf);
+    SPOKE.supply(reserveId, amount, onBehalfOf);
   }
 
   function withdrawWithSig(
-    address spoke,
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
@@ -71,7 +76,7 @@ contract InstantDelegator is EIP712, Multicall {
       keccak256(
         abi.encode(
           WITHDRAW_TYPEHASH,
-          spoke,
+          address(SPOKE),
           reserveId,
           amount,
           onBehalfOf,
@@ -84,11 +89,10 @@ contract InstantDelegator is EIP712, Multicall {
       SignatureCheckerLib.isValidSignatureNowCalldata(onBehalfOf, hash, signature),
       InvalidSignature()
     );
-    ISpoke(spoke).withdraw(reserveId, amount, onBehalfOf);
+    SPOKE.withdraw(reserveId, amount, onBehalfOf);
   }
 
   function borrowWithSig(
-    address spoke,
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
@@ -100,7 +104,7 @@ contract InstantDelegator is EIP712, Multicall {
       keccak256(
         abi.encode(
           BORROW_TYPEHASH,
-          spoke,
+          address(SPOKE),
           reserveId,
           amount,
           onBehalfOf,
@@ -113,11 +117,10 @@ contract InstantDelegator is EIP712, Multicall {
       SignatureCheckerLib.isValidSignatureNowCalldata(onBehalfOf, hash, signature),
       InvalidSignature()
     );
-    ISpoke(spoke).borrow(reserveId, amount, onBehalfOf);
+    SPOKE.borrow(reserveId, amount, onBehalfOf);
   }
 
   function repayWithSig(
-    address spoke,
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
@@ -129,7 +132,7 @@ contract InstantDelegator is EIP712, Multicall {
       keccak256(
         abi.encode(
           REPAY_TYPEHASH,
-          spoke,
+          address(SPOKE),
           reserveId,
           amount,
           onBehalfOf,
@@ -142,7 +145,33 @@ contract InstantDelegator is EIP712, Multicall {
       SignatureCheckerLib.isValidSignatureNowCalldata(onBehalfOf, hash, signature),
       InvalidSignature()
     );
-    ISpoke(spoke).repay(reserveId, amount, onBehalfOf);
+    SPOKE.repay(reserveId, amount, onBehalfOf);
+  }
+
+  function setSelfAsUserPositionManager(bool approve) external {
+    (bool ok, ) = address(SPOKE).delegatecall(
+      abi.encodeCall(ISpoke.setUserPositionManager, (address(this), approve))
+    );
+    assert(ok);
+  }
+
+  function setSelfAsUserPositionManagerWithSig(
+    address user,
+    bool approve,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external {
+    SPOKE.setUserPositionManagerWithSig(address(this), user, approve, deadline, v, r, s);
+  }
+
+  function renounceSelfAsUserPositionManager(address user) external {
+    SPOKE.renouncePositionManagerRole(user);
+  }
+
+  function DOMAIN_SEPARATOR() external view returns (bytes32) {
+    return _domainSeparator();
   }
 
   function useNonce() external {
