@@ -5,6 +5,51 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubTransferSharesTest is HubBase {
+  using SharesMath for uint256;
+  using SafeCast for uint256;
+
+  uint256 zeroDecimalAssetId;
+
+  function setUp() public override {
+    super.setUp();
+
+    /// @dev add a zero decimal asset to test add cap rounding
+    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+      active: true,
+      addCap: Constants.MAX_CAP,
+      drawCap: Constants.MAX_CAP
+    });
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
+    );
+    vm.startPrank(ADMIN);
+    zeroDecimalAssetId = hub1.addAsset(
+      address(tokenList.dai),
+      0,
+      address(treasurySpoke),
+      address(irStrategy),
+      encodedIrData
+    );
+    hub1.addSpoke(zeroDecimalAssetId, address(treasurySpoke), spokeConfig);
+    hub1.updateAssetConfig(
+      zeroDecimalAssetId,
+      DataTypes.AssetConfig({
+        liquidityFee: 5_00,
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy),
+        reinvestmentController: address(0)
+      })
+    );
+    hub1.addSpoke(zeroDecimalAssetId, address(spoke1), spokeConfig);
+    hub1.addSpoke(zeroDecimalAssetId, address(spoke2), spokeConfig);
+    vm.stopPrank();
+  }
+
   function test_transferShares() public {
     test_transferShares_fuzz(1000e18, 1000e18);
   }
@@ -93,5 +138,52 @@ contract HubTransferSharesTest is HubBase {
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
     hub1.transferShares(daiAssetId, suppliedShares, address(spoke2));
+  }
+
+  /// transferShares reverts if the cap is exceeded, with proper rounding (up) applied to shares into assets conversion
+  function test_transferShares_revertsWith_AddCapExceeded_due_to_rounding() public {
+    _addLiquidity(zeroDecimalAssetId, 100e18);
+    _drawLiquidity(zeroDecimalAssetId, 45e18, true);
+
+    uint256 totalAddedAssets = hub1.getTotalAddedAssets(zeroDecimalAssetId);
+    uint256 totalAddedShares = hub1.getAssetAddedShares(zeroDecimalAssetId);
+
+    /*assertEq(
+      uint256(10).toAssetsDown(totalAddedAssets, totalAddedShares).toSharesDown(
+        totalAddedAssets,
+        totalAddedShares
+      ),
+      0,
+      'share price is a whole number'
+    );*/
+
+    uint256 addedAmount = uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares) + 1;
+    uint256 addedShares = hub1.convertToAddedShares(zeroDecimalAssetId, addedAmount);
+
+    Utils.add({
+      hub: hub1,
+      assetId: zeroDecimalAssetId,
+      caller: address(spoke1),
+      amount: addedAmount,
+      user: alice
+    });
+
+    Utils.add({
+      hub: hub1,
+      assetId: zeroDecimalAssetId,
+      caller: address(spoke2),
+      amount: addedAmount,
+      user: alice
+    });
+
+    uint56 newAddCap = (2 * addedAmount - 1).toUint56();
+    _updateAddCap(zeroDecimalAssetId, address(spoke1), newAddCap);
+
+    /*vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
+    vm.prank(address(spoke2));
+    hub1.transferShares(zeroDecimalAssetId, addedShares, address(spoke1));*/
+
+    uint256 previewAmount = hub1.previewAddByShares(zeroDecimalAssetId, addedShares * 2);
+    assertEq(previewAmount, 0);
   }
 }
