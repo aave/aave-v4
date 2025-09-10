@@ -46,11 +46,12 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 newHealthFactor; // new health factor of user, just before liquidation
     if (isSolvent) {
       // health factor of user should be at least its average collateral factor
-      newHealthFactor =
-        (userAccountData.avgCollateralFactor + PercentageMath.PERCENTAGE_FACTOR.bpsToWad()) /
-        2;
+      newHealthFactor = vm.randomUint(
+        userAccountData.avgCollateralFactor + 0.01e18,
+        PercentageMath.PERCENTAGE_FACTOR.bpsToWad()
+      );
     } else {
-      newHealthFactor = (userAccountData.avgCollateralFactor * 2) / 3;
+      newHealthFactor = vm.randomUint(0.01e18, userAccountData.avgCollateralFactor);
     }
     _makeUserLiquidatable(spoke, user, collateralReserveId, debtReserveId, newHealthFactor);
 

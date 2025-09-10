@@ -6,7 +6,9 @@ import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   using SafeCast for *;
-  using PercentageMath for uint256;
+  using PercentageMath for *;
+  using WadRayMath for *;
+  using KeyValueListInMemory for KeyValueListInMemory.List;
 
   uint256 internal constant MAX_AMOUNT_IN_BASE_CURRENCY = 1_000_000_000e26; // 1 billion USD
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26; // 1 USD
@@ -47,6 +49,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 collateralToLiquidator;
     uint256 debtToLiquidate;
     uint256 liquidationBonus;
+    uint256 expectedUserRiskPremium;
+    uint256 expectedUserAvgCollateralFactor;
     bool isLiquidationBonusAffectingUserHf;
     bool hasDeficit;
   }
@@ -276,6 +280,77 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _borrowToBeAtHf(spoke, user, debtReserveId, newHealthFactor);
   }
 
+  function _calculateExpectedUserRiskPremiumAndAvgCollateralFactor(
+    CheckedLiquidationCallParams memory params,
+    DataTypes.UserAccountData memory userAccountDataBefore,
+    uint256 collateralToLiquidate,
+    uint256 debtToLiquidate
+  ) internal virtual returns (uint256, uint256) {
+    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
+      userAccountDataBefore.suppliedCollateralsCount
+    );
+
+    uint256 totalCollateralInBaseCurrency = 0;
+    uint256 newAvgCollateralFactor = 0;
+
+    uint256 index = 0;
+    for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
+      if (!params.spoke.isUsingAsCollateral(reserveId, params.user)) {
+        continue;
+      }
+
+      uint256 collateralFactor = _getCollateralFactor(params.spoke, reserveId, params.user);
+      if (collateralFactor == 0) {
+        continue;
+      }
+
+      uint256 userSuppliedAmount = params.spoke.getUserSuppliedAmount(reserveId, params.user);
+      if (params.collateralReserveId == reserveId) {
+        userSuppliedAmount -= collateralToLiquidate;
+      }
+      if (userSuppliedAmount == 0) {
+        continue;
+      }
+
+      // from now, userSuppliedAmount is in base currency (to avoid stack too deep)
+      userSuppliedAmount = _convertAmountToBaseCurrency(
+        params.spoke,
+        reserveId,
+        userSuppliedAmount
+      );
+      list.add(index++, _getCollateralRisk(params.spoke, reserveId), userSuppliedAmount);
+      totalCollateralInBaseCurrency += userSuppliedAmount;
+      newAvgCollateralFactor += collateralFactor * userSuppliedAmount;
+    }
+
+    if (totalCollateralInBaseCurrency != 0) {
+      newAvgCollateralFactor = newAvgCollateralFactor
+        .wadDivDown(totalCollateralInBaseCurrency)
+        .fromBpsDown();
+    }
+    list.sortByKey();
+
+    uint256 debtToLiquidateInBaseCurrency = _convertAmountToBaseCurrency(
+      params.spoke,
+      params.debtReserveId,
+      debtToLiquidate
+    );
+    uint256 totalDebtToCover = userAccountDataBefore.totalDebtInBaseCurrency -
+      debtToLiquidateInBaseCurrency;
+    uint256 remainingDebtToCover = totalDebtToCover;
+
+    uint256 newRiskPremium = 0;
+    for (uint256 i = 0; i < list.length() && remainingDebtToCover > 0; i++) {
+      (uint256 collateralRisk, uint256 collateralInBaseCurrency) = list.get(i);
+      newRiskPremium += collateralRisk * _min(collateralInBaseCurrency, remainingDebtToCover);
+      remainingDebtToCover -= _min(collateralInBaseCurrency, remainingDebtToCover);
+    }
+
+    newRiskPremium /= _max(1, _min(totalDebtToCover, totalCollateralInBaseCurrency));
+
+    return (newRiskPremium, newAvgCollateralFactor);
+  }
+
   function _expectEventsAndCalls(
     CheckedLiquidationCallParams memory params,
     AccountsInfo memory accountsInfoBefore,
@@ -306,7 +381,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     if (!liquidationMetadata.hasDeficit) {
       vm.expectEmit(false, false, false, false, address(params.spoke));
-      // topics > 0 and data are not checked
+      // topics > 0 and data are not checked here
+      // they are checked after the liquidation call since risk premium calculation is an approximation
       emit ISpoke.UserRiskPremiumUpdate(address(0), 0);
     } else {
       vm.expectEmit(address(params.spoke));
@@ -432,9 +508,38 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       userAccountDataBefore.healthFactor
     );
 
-    bool isLiquidationBonusAffectingUserHf = liquidationBonus *
-      userAccountDataBefore.totalDebtInBaseCurrency >
-      userAccountDataBefore.totalCollateralInBaseCurrency * PercentageMath.PERCENTAGE_FACTOR;
+    (
+      uint256 expectedUserRiskPremium,
+      uint256 expectedUserAvgCollateralFactor
+    ) = _calculateExpectedUserRiskPremiumAndAvgCollateralFactor(
+        params,
+        userAccountDataBefore,
+        collateralToLiquidate,
+        debtToLiquidate
+      );
+
+    uint256 debtToLiquidateInBaseCurrency = _convertAmountToBaseCurrency(
+      params.spoke,
+      params.debtReserveId,
+      debtToLiquidate
+    );
+
+    // health factor is decreasing due to liquidation bonus if:
+    //   (totalCollateralInBaseCurrency - debtToLiquidateInBaseCurrency * LB) * newCF / (totalDebtInBaseCurrency - debtToLiquidateInBaseCurrency) < totalCollateralInBaseCurrency * oldCF / totalDebtInBaseCurrency
+    //   this is equivalent to: LB * totalDebtInBaseCurrency * debtToLiquidateInBaseCurrency * newCF > totalCollateralInBaseCurrency * (totalDebtInBaseCurrency * (newCF - oldCF) + debtToLiquidateInBaseCurrency * oldCF)
+    bool isLiquidationBonusAffectingUserHf = (liquidationBonus *
+      userAccountDataBefore.totalDebtInBaseCurrency.wadMulUp(debtToLiquidateInBaseCurrency) *
+      expectedUserAvgCollateralFactor).toInt256() >
+      PercentageMath.PERCENTAGE_FACTOR.toInt256() *
+        (userAccountDataBefore
+          .totalCollateralInBaseCurrency
+          .wadMulDown(userAccountDataBefore.totalDebtInBaseCurrency)
+          .toInt256() *
+          (expectedUserAvgCollateralFactor.toInt256() -
+            userAccountDataBefore.avgCollateralFactor.toInt256()) +
+          (userAccountDataBefore.totalCollateralInBaseCurrency.wadMulDown(
+            debtToLiquidateInBaseCurrency
+          ) * userAccountDataBefore.avgCollateralFactor).toInt256());
 
     bool hasDeficit = (userAccountDataBefore.suppliedCollateralsCount == 1) &&
       (!params.isSolvent || isLiquidationBonusAffectingUserHf) &&
@@ -448,6 +553,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         collateralToLiquidator: collateralToLiquidator,
         debtToLiquidate: debtToLiquidate,
         liquidationBonus: liquidationBonus,
+        expectedUserRiskPremium: expectedUserRiskPremium,
+        expectedUserAvgCollateralFactor: expectedUserAvgCollateralFactor,
         isLiquidationBonusAffectingUserHf: isLiquidationBonusAffectingUserHf,
         hasDeficit: hasDeficit
       });
@@ -746,46 +853,46 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     assertEq(
       accountsInfoAfter.userBalanceInfo.addedInHub,
       accountsInfoBefore.userBalanceInfo.addedInHub,
-      'user: collateral added'
+      'user: added'
     );
     assertEq(
       accountsInfoAfter.userBalanceInfo.drawnFromHub,
       accountsInfoBefore.userBalanceInfo.drawnFromHub,
-      'user: debt drawn'
+      'user: drawn'
     );
 
     // Hubs
     assertEq(
       accountsInfoAfter.collateralHubBalanceInfo.addedInHub,
       accountsInfoBefore.collateralHubBalanceInfo.addedInHub,
-      'collateral hub: collateral added'
+      'collateral hub: added'
     );
     assertEq(
       accountsInfoAfter.collateralHubBalanceInfo.drawnFromHub,
       accountsInfoBefore.collateralHubBalanceInfo.drawnFromHub,
-      'collateral hub: debt drawn'
+      'collateral hub: drawn'
     );
     assertEq(
       accountsInfoAfter.debtHubBalanceInfo.addedInHub,
       accountsInfoBefore.debtHubBalanceInfo.addedInHub,
-      'debt hub: collateral added'
+      'debt hub: added'
     );
     assertEq(
       accountsInfoAfter.debtHubBalanceInfo.drawnFromHub,
       accountsInfoBefore.debtHubBalanceInfo.drawnFromHub,
-      'debt hub: debt drawn'
+      'debt hub: drawn'
     );
 
     // Liquidator
     assertEq(
       accountsInfoAfter.liquidatorBalanceInfo.addedInHub,
       accountsInfoBefore.liquidatorBalanceInfo.addedInHub,
-      'liquidator: collateral added'
+      'liquidator: added'
     );
     assertEq(
       accountsInfoAfter.liquidatorBalanceInfo.drawnFromHub,
       accountsInfoBefore.liquidatorBalanceInfo.drawnFromHub,
-      'liquidator: debt drawn'
+      'liquidator: drawn'
     );
 
     // Fee Receivers
@@ -795,22 +902,22 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         liquidationMetadata.collateralToLiquidate -
         liquidationMetadata.collateralToLiquidator,
       _approxRelFromBps(1),
-      'collateral fee receiver: collateral added'
+      'collateral fee receiver: added'
     );
     assertEq(
       accountsInfoAfter.collateralFeeReceiverBalanceInfo.drawnFromHub,
       accountsInfoBefore.collateralFeeReceiverBalanceInfo.drawnFromHub,
-      'collateral fee receiver: debt drawn'
+      'collateral fee receiver: drawn'
     );
     assertEq(
       accountsInfoAfter.debtFeeReceiverBalanceInfo.addedInHub,
       accountsInfoBefore.debtFeeReceiverBalanceInfo.addedInHub,
-      'debt fee receiver: collateral added'
+      'debt fee receiver: added'
     );
     assertEq(
       accountsInfoAfter.debtFeeReceiverBalanceInfo.drawnFromHub,
       accountsInfoBefore.debtFeeReceiverBalanceInfo.drawnFromHub,
-      'debt fee receiver: debt drawn'
+      'debt fee receiver: drawn'
     );
 
     // Spoke
@@ -818,7 +925,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       accountsInfoAfter.spokeBalanceInfo.addedInHub,
       accountsInfoBefore.spokeBalanceInfo.addedInHub - liquidationMetadata.collateralToLiquidate,
       _approxRelFromBps(1),
-      'spoke: collateral added'
+      'spoke: added'
     );
     assertApproxEqRel(
       accountsInfoAfter.spokeBalanceInfo.drawnFromHub,
@@ -826,7 +933,70 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         ? 0
         : accountsInfoBefore.spokeBalanceInfo.drawnFromHub - liquidationMetadata.debtToLiquidate,
       _approxRelFromBps(1),
-      'spoke: debt drawn'
+      'spoke: drawn'
+    );
+  }
+
+  function _checkRiskPremium(
+    CheckedLiquidationCallParams memory params,
+    AccountsInfo memory accountsInfoAfter,
+    LiquidationMetadata memory liquidationMetadata,
+    Vm.Log[] memory logs
+  ) internal {
+    bool riskPremiumEventEmitted;
+    for (uint256 i = 0; i < logs.length; i++) {
+      if (logs[i].topics[0] == ISpoke.UserRiskPremiumUpdate.selector) {
+        riskPremiumEventEmitted = true;
+        assertEq(address(uint160(uint256(logs[i].topics[1]))), address(params.user));
+        uint256 actualUserRiskPremium = abi.decode(logs[i].data, (uint256));
+        assertApproxEqRel(
+          actualUserRiskPremium,
+          liquidationMetadata.expectedUserRiskPremium,
+          0.1e18,
+          'user risk premium: event'
+        );
+      }
+    }
+    assertTrue(riskPremiumEventEmitted, 'user risk premium: event emitted');
+
+    assertApproxEqRel(
+      accountsInfoAfter.userAccountData.userRiskPremium,
+      liquidationMetadata.expectedUserRiskPremium,
+      0.1e18,
+      'user risk premium: user account data'
+    );
+
+    for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
+      if (params.spoke.isBorrowing(reserveId, params.user)) {
+        DataTypes.UserPosition memory userPosition = params.spoke.getUserPosition(
+          reserveId,
+          params.user
+        );
+        uint256 storedUserRiskPremium = userPosition.premiumShares.percentDivDown(
+          userPosition.drawnShares
+        );
+        assertApproxEqRel(
+          storedUserRiskPremium,
+          accountsInfoAfter.userAccountData.userRiskPremium,
+          0.1e18,
+          string.concat(
+            'user risk premium: stored risk premium in reserve ',
+            vm.toString(reserveId)
+          )
+        );
+      }
+    }
+  }
+
+  function _checkAvgCollateralFactor(
+    AccountsInfo memory accountsInfoAfter,
+    LiquidationMetadata memory liquidationMetadata
+  ) internal {
+    assertApproxEqRel(
+      accountsInfoAfter.userAccountData.avgCollateralFactor,
+      liquidationMetadata.expectedUserAvgCollateralFactor,
+      0.1e18,
+      'user avg collateral factor: user account data'
     );
   }
 
@@ -841,6 +1011,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     );
 
     _expectEventsAndCalls(params, accountsInfoBefore, liquidationMetadata);
+    vm.recordLogs();
     vm.prank(params.liquidator);
     params.spoke.liquidationCall(
       params.collateralReserveId,
@@ -849,6 +1020,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.debtToCover
     );
 
+    Vm.Log[] memory logs = vm.getRecordedLogs();
+
     AccountsInfo memory accountsInfoAfter = _getAccountsInfo(params);
 
     _checkPositionStatus(params, accountsInfoBefore, liquidationMetadata);
@@ -856,6 +1029,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _checkErc20Balances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkSpokeBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkHubBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
+    _checkRiskPremium(params, accountsInfoAfter, liquidationMetadata, logs);
+    _checkAvgCollateralFactor(accountsInfoAfter, liquidationMetadata);
   }
 
   function _increaseCollateralSupplies(

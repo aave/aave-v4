@@ -1865,6 +1865,15 @@ abstract contract Base is Test {
 
   function _getCollateralFactor(
     ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (uint16) {
+    uint16 dynamicConfigKey = spoke.getUserPosition(reserveId, user).configKey;
+    return spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).collateralFactor;
+  }
+
+  function _getCollateralFactor(
+    ISpoke spoke,
     function(ISpoke) internal view returns (uint256) reserveId
   ) internal view returns (uint16) {
     return spoke.getDynamicReserveConfig(reserveId(spoke)).collateralFactor;
