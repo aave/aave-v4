@@ -6,6 +6,8 @@ import 'tests/Base.t.sol';
 import {TypedSignatureGateway, ITypedSignatureGateway} from 'src/misc/TypedSignatureGateway.sol';
 
 contract TypedSignatureGatewayBaseTest is Base {
+  using stdStorage for StdStorage;
+
   ITypedSignatureGateway public gateway;
   uint256 public alicePk;
 
@@ -36,12 +38,14 @@ contract TypedSignatureGatewayBaseTest is Base {
     return deadline;
   }
 
-  function _consumeRandomNonces(address user) internal {
-    uint256 count = vm.randomUint(1, 100);
-    while (--count > 0) {
-      vm.prank(user);
-      gateway.useNonce();
-    }
+  function _burnRandomNonces(address user) internal {
+    uint256 newNonce = vm.randomUint(1, UINT256_MAX - 1);
+    stdstore
+      .target(address(gateway))
+      .sig(ITypedSignatureGateway.nonces.selector)
+      .with_key(user)
+      .checked_write(newNonce);
+    assertEq(gateway.nonces(user), newNonce);
   }
 
   function _sign(uint256 pk, bytes32 digest) internal pure returns (bytes memory) {
@@ -176,23 +180,15 @@ contract TypedSignatureGatewayBaseTest is Base {
     return keccak256(abi.encodePacked('\x19\x01', _gateway.DOMAIN_SEPARATOR(), typeHash));
   }
 
-  function _hub(ISpoke spoke, uint256 reserveId) internal view returns (IHub) {
-    return IHub(spoke.getReserve(reserveId).hub);
-  }
-
-  function _assetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
-    return spoke.getReserve(reserveId).assetId;
-  }
-
-  function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (IERC20) {
-    return IERC20(spoke.getReserve(reserveId).underlying);
-  }
-
-  function _approveAllUnderlying(ISpoke spoke, address who) internal {
+  function _assertGatewayHasNoBalanceOrAllowance(
+    ISpoke spoke,
+    ITypedSignatureGateway _gateway,
+    address who
+  ) internal view {
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
       IERC20 underlying = _underlying(spoke, reserveId);
-      vm.prank(who);
-      underlying.approve(address(gateway), UINT256_MAX);
+      assertEq(underlying.balanceOf(address(_gateway)), 0);
+      assertEq(underlying.allowance({owner: who, spender: address(_gateway)}), 0);
     }
   }
 }

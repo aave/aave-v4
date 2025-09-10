@@ -135,7 +135,7 @@ contract TypedSignatureGatewayInvalidSignatureTest is TypedSignatureGatewayBaseT
 
   function test_supplyWithSig_revertsWith_InvalidSignature_dueTo_InvalidNonce() public {
     EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpAfterRandomDeadline());
-    _consumeRandomNonces(alice);
+    _burnRandomNonces(alice);
     p.nonce = vm.randomUint(0, gateway.nonces(alice) - 1);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
@@ -147,7 +147,7 @@ contract TypedSignatureGatewayInvalidSignatureTest is TypedSignatureGatewayBaseT
 
   function test_withdrawWithSig_revertsWith_InvalidSignature_dueTo_InvalidNonce() public {
     EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpAfterRandomDeadline());
-    _consumeRandomNonces(alice);
+    _burnRandomNonces(alice);
     p.nonce = vm.randomUint(0, gateway.nonces(alice) - 1);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
@@ -159,7 +159,7 @@ contract TypedSignatureGatewayInvalidSignatureTest is TypedSignatureGatewayBaseT
 
   function test_borrowWithSig_revertsWith_InvalidSignature_dueTo_InvalidNonce() public {
     EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpAfterRandomDeadline());
-    _consumeRandomNonces(alice);
+    _burnRandomNonces(alice);
     p.nonce = vm.randomUint(0, gateway.nonces(alice) - 1);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
@@ -171,7 +171,7 @@ contract TypedSignatureGatewayInvalidSignatureTest is TypedSignatureGatewayBaseT
 
   function test_repayWithSig_revertsWith_InvalidSignature_dueTo_InvalidNonce() public {
     EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpAfterRandomDeadline());
-    _consumeRandomNonces(alice);
+    _burnRandomNonces(alice);
     p.nonce = vm.randomUint(0, gateway.nonces(alice) - 1);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
@@ -186,7 +186,7 @@ contract TypedSignatureGatewayInvalidSignatureTest is TypedSignatureGatewayBaseT
   {
     uint256 deadline = _warpAfterRandomDeadline();
     EIP712Types.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
-    _consumeRandomNonces(alice);
+    _burnRandomNonces(alice);
     p.nonce = vm.randomUint(0, gateway.nonces(alice) - 1);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));

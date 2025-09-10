@@ -212,19 +212,21 @@ contract TypedSignatureGateway is EIP712, Multicall, Ownable2Step, ITypedSignatu
     bytes32 s
   ) external {
     (IERC20 asset, ) = _getReserveData(reserveId);
-    IERC20Permit(address(asset)).permit({
-      owner: onBehalfOf,
-      spender: address(this),
-      value: value,
-      deadline: deadline,
-      v: v,
-      r: r,
-      s: s
-    });
+    try
+      IERC20Permit(address(asset)).permit({
+        owner: onBehalfOf,
+        spender: address(this),
+        value: value,
+        deadline: deadline,
+        v: v,
+        r: r,
+        s: s
+      })
+    {} catch {}
   }
 
   // @inheritdoc ITypedSignatureGateway
-  function renounceSelfAsUserPositionManager(address user) external {
+  function renounceSelfAsUserPositionManager(address user) external onlyOwner {
     SPOKE.renouncePositionManagerRole(user);
   }
 

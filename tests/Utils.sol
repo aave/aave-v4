@@ -181,6 +181,22 @@ library Utils {
     );
   }
 
+  function approve(
+    ISpoke spoke,
+    uint256 reserveId,
+    address owner,
+    address spender,
+    uint256 amount
+  ) internal {
+    IHub hub = spoke.getReserve(reserveId).hub;
+    _approve(
+      IERC20(hub.getAsset(spoke.getReserve(reserveId).assetId).underlying),
+      owner,
+      spender,
+      amount
+    );
+  }
+
   function approve(IHub hub, uint256 assetId, address owner, uint256 amount) internal {
     _approve(IERC20(hub.getAsset(assetId).underlying), owner, address(hub), amount);
   }

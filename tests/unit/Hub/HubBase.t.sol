@@ -205,9 +205,8 @@ contract HubBase is Base {
     address user,
     uint256 reserveId,
     uint256 premiumRestored
-  ) internal returns (DataTypes.PremiumDelta memory) {
+  ) internal view override returns (DataTypes.PremiumDelta memory) {
     DataTypes.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
-    Debts memory userDebt = getUserDebt(spoke, user, reserveId);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
 
     DataTypes.PremiumDelta memory expectedPremiumDelta = DataTypes.PremiumDelta({
