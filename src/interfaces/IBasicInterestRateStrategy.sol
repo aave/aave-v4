@@ -15,9 +15,9 @@ interface IBasicInterestRateStrategy {
   error InterestRateDataNotSet(uint256 assetId);
 
   /**
-   * @notice Sets interest rate data for an Aave rate strategy.
-   * @param assetId The id of the asset to update.
-   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
+   * @notice Sets the interest rate parameters for a specified asset.
+   * @param assetId The id of the asset.
+   * @param data The encoded parameters used to configure the interest rate of the asset.
    */
   function setInterestRateData(uint256 assetId, bytes calldata data) external;
 

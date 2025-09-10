@@ -37,6 +37,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   }
 
   /// @inheritdoc IBasicInterestRateStrategy
+  /// @dev data contains bps values encoded in bytes
   function setInterestRateData(uint256 assetId, bytes calldata data) external {
     require(HUB == msg.sender, OnlyHub());
     InterestRateData memory rateData = abi.decode(data, (InterestRateData));
