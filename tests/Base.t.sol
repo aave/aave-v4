@@ -35,7 +35,7 @@ import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
-import {PositionStatusWrapper} from 'tests/mocks/PositionStatusWrapper.sol';
+import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 
 // dependencies

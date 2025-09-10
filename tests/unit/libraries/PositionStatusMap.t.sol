@@ -4,11 +4,11 @@ pragma solidity ^0.8.10;
 
 import 'tests/Base.t.sol';
 
-contract PositionStatusTest is Base {
-  PositionStatusWrapper internal p;
+contract PositionStatusMapTest is Base {
+  PositionStatusMapWrapper internal p;
 
   function setUp() public override {
-    p = new PositionStatusWrapper();
+    p = new PositionStatusMapWrapper();
   }
 
   function test_constants() public view {

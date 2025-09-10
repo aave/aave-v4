@@ -5,7 +5,7 @@ pragma solidity ^0.8.10;
 import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
-contract PositionStatusWrapper {
+contract PositionStatusMapWrapper {
   using PositionStatusMap for ISpoke.PositionStatus;
 
   ISpoke.PositionStatus internal _p;
