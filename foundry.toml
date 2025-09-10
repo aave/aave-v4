@@ -12,7 +12,6 @@ optimizer_runs = 200
 bytecode_hash = "none"
 gas_snapshot_check = false
 gas_limit = 1099511627776
-dynamic_test_linking = true
 
 [bind_json]
 out = "tests/mocks/JsonBindings.sol"

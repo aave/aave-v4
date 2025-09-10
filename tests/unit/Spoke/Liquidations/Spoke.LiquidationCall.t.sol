@@ -60,13 +60,11 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     }
   }
 
-  function test_liquidationCall(
-    ISpoke spoke,
+  function _testLiquidationCall(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
     uint256 debtToCover,
-    address liquidator,
     bool isSolvent
   ) internal virtual {
     DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
@@ -81,7 +79,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     } else {
       newHealthFactor = vm.randomUint(0.01e18, userAccountData.avgCollateralFactor);
     }
-    _makeUserLiquidatable(spoke, user, collateralReserveId, debtReserveId, newHealthFactor);
+    _makeUserLiquidatable(spoke, user, debtReserveId, newHealthFactor);
 
     debtToCover = _boundDebtToCoverNoDustRevert(
       spoke,
@@ -128,15 +126,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       user
     );
 
-    test_liquidationCall(
-      spoke,
-      collateralReserveId,
-      debtReserveId,
-      user,
-      debtToCover,
-      liquidator,
-      true
-    );
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
   }
 
   function test_liquidationCall_fuzz_OneCollateral_OneDebt_UserInsolvent(
@@ -168,23 +158,14 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       }
     }
 
-    test_liquidationCall(
-      spoke,
-      collateralReserveId,
-      debtReserveId,
-      user,
-      debtToCover,
-      liquidator,
-      false
-    );
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
   }
 
   function test_liquidationCall_fuzz_ManyCollaterals_OneDebt_UserSolvent(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
-    uint256 debtToCover,
-    uint256[] memory additionalCollateralReserveIds
+    uint256 debtToCover
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -205,23 +186,14 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _processAdditionalCollateralReserves(user, 1e26);
 
-    test_liquidationCall(
-      spoke,
-      collateralReserveId,
-      debtReserveId,
-      user,
-      debtToCover,
-      liquidator,
-      true
-    );
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
   }
 
   function test_liquidationCall_fuzz_ManyCollaterals_OneDebt_UserInsolvent(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
-    uint256 debtToCover,
-    uint256[] memory additionalCollateralReserveIds
+    uint256 debtToCover
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -242,23 +214,14 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _processAdditionalCollateralReserves(user, 1e26);
 
-    test_liquidationCall(
-      spoke,
-      collateralReserveId,
-      debtReserveId,
-      user,
-      debtToCover,
-      liquidator,
-      false
-    );
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
   }
 
   function test_liquidationCall_fuzz_OneCollateral_ManyDebts_UserSolvent(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
-    uint256 debtToCover,
-    uint256[] memory additionalDebtReserveIds
+    uint256 debtToCover
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -279,23 +242,14 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _processAdditionalDebtReserves(user, 1e26);
 
-    test_liquidationCall(
-      spoke,
-      collateralReserveId,
-      debtReserveId,
-      user,
-      debtToCover,
-      liquidator,
-      true
-    );
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
   }
 
   function test_liquidationCall_fuzz_OneCollateral_ManyDebts_UserInsolvent(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
-    uint256 debtToCover,
-    uint256[] memory additionalDebtReserveIds
+    uint256 debtToCover
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -316,24 +270,14 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _processAdditionalDebtReserves(user, 1e26);
 
-    test_liquidationCall(
-      spoke,
-      collateralReserveId,
-      debtReserveId,
-      user,
-      debtToCover,
-      liquidator,
-      false
-    );
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
   }
 
   function test_liquidationCall_fuzz_ManyCollaterals_ManyDebts_UserSolvent(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
-    uint256 debtToCover,
-    uint256[] memory additionalCollateralReserveIds,
-    uint256[] memory additionalDebtReserveIds
+    uint256 debtToCover
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -355,24 +299,14 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _processAdditionalCollateralReserves(user, 1e26);
     _processAdditionalDebtReserves(user, 1e26);
 
-    test_liquidationCall(
-      spoke,
-      collateralReserveId,
-      debtReserveId,
-      user,
-      debtToCover,
-      liquidator,
-      true
-    );
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
   }
 
   function test_liquidationCall_fuzz_ManyCollaterals_ManyDebts_UserInsolvent(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
-    uint256 debtToCover,
-    uint256[] memory additionalCollateralReserveIds,
-    uint256[] memory additionalDebtReserveIds
+    uint256 debtToCover
   ) public virtual {
     (collateralReserveId, debtReserveId, user) = _boundAssume(
       spoke,
@@ -394,15 +328,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _processAdditionalCollateralReserves(user, 1e26);
     _processAdditionalDebtReserves(user, 1e26);
 
-    test_liquidationCall(
-      spoke,
-      collateralReserveId,
-      debtReserveId,
-      user,
-      debtToCover,
-      liquidator,
-      false
-    );
+    _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
   }
 }
 
@@ -530,8 +456,8 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
 
   function _processAdditionalConfigs(
     uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user
+    uint256,
+    address
   ) internal virtual override {
     uint256 targetHealthFactor = vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR);
     _updateTargetHealthFactor(spoke, targetHealthFactor.toUint128());
