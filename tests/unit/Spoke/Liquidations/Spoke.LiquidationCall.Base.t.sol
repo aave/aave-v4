@@ -9,7 +9,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   using PercentageMath for uint256;
 
   uint256 internal constant MAX_AMOUNT_IN_BASE_CURRENCY = 1_000_000_000e26; // 1 billion USD
-  uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26; // 10 USD
+  uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26; // 1 USD
 
   struct CheckedLiquidationCallParams {
     ISpoke spoke;
@@ -262,7 +262,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     address user,
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    uint256 targetHealthFactor
+    uint256 newHealthFactor
   ) internal virtual {
     DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
@@ -270,10 +270,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _openSupplyPosition(
       spoke,
       debtReserveId,
-      _getRequiredDebtAmountForHf(spoke, user, debtReserveId, targetHealthFactor)
+      _getRequiredDebtAmountForHf(spoke, user, debtReserveId, newHealthFactor)
     );
     // borrow to be at target health factor
-    _borrowToBeAtHf(spoke, user, debtReserveId, targetHealthFactor);
+    _borrowToBeAtHf(spoke, user, debtReserveId, newHealthFactor);
   }
 
   function _expectEventsAndCalls(
@@ -436,7 +436,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       userAccountDataBefore.totalDebtInBaseCurrency >
       userAccountDataBefore.totalCollateralInBaseCurrency * PercentageMath.PERCENTAGE_FACTOR;
 
-    bool hasDeficit = (userAccountDataBefore.suppliedAssetsCount == 1) &&
+    bool hasDeficit = (userAccountDataBefore.suppliedCollateralsCount == 1) &&
       (!params.isSolvent || isLiquidationBonusAffectingUserHf) &&
       (collateralToLiquidate ==
         params.spoke.getUserSuppliedAmount(params.collateralReserveId, params.user));

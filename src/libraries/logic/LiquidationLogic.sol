@@ -234,14 +234,14 @@ library LiquidationLogic {
   function _evaluateDeficit(
     bool isCollateralPositionEmpty,
     bool isDebtPositionEmpty,
-    uint256 suppliedAssetsCount,
-    uint256 borrowedAssetsCount
+    uint256 suppliedCollateralsCount,
+    uint256 borrowedReservesCount
   ) internal pure returns (bool) {
-    if (!isCollateralPositionEmpty || suppliedAssetsCount > 1) {
+    if (!isCollateralPositionEmpty || suppliedCollateralsCount > 1) {
       return false;
     }
 
-    return !isDebtPositionEmpty || borrowedAssetsCount > 1;
+    return !isDebtPositionEmpty || borrowedReservesCount > 1;
   }
 
   function _settlePremiumDebt(
@@ -407,8 +407,8 @@ library LiquidationLogic {
       _evaluateDeficit({
         isCollateralPositionEmpty: isCollateralPositionEmpty,
         isDebtPositionEmpty: isDebtPositionEmpty,
-        suppliedAssetsCount: params.suppliedAssetsCount,
-        borrowedAssetsCount: params.borrowedAssetsCount
+        suppliedCollateralsCount: params.suppliedCollateralsCount,
+        borrowedReservesCount: params.borrowedReservesCount
       });
   }
 }

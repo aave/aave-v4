@@ -43,16 +43,16 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
   ) internal virtual {
     DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
-    uint256 targetHealthFactor;
+    uint256 newHealthFactor; // new health factor of user, just before liquidation
     if (isSolvent) {
       // health factor of user should be at least its average collateral factor
-      targetHealthFactor =
+      newHealthFactor =
         (userAccountData.avgCollateralFactor + PercentageMath.PERCENTAGE_FACTOR.bpsToWad()) /
         2;
     } else {
-      targetHealthFactor = (userAccountData.avgCollateralFactor * 2) / 3;
+      newHealthFactor = (userAccountData.avgCollateralFactor * 2) / 3;
     }
-    _makeUserLiquidatable(spoke, user, collateralReserveId, debtReserveId, targetHealthFactor);
+    _makeUserLiquidatable(spoke, user, collateralReserveId, debtReserveId, newHealthFactor);
 
     debtToCover = _boundDebtToCoverNoDustRevert(
       spoke,

@@ -128,8 +128,8 @@ library DataTypes {
     uint256 healthFactor;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
-    uint256 suppliedAssetsCount;
-    uint256 borrowedAssetsCount;
+    uint256 suppliedCollateralsCount; // number of reserves with collateral factor > 0, enabled as collateral and strictly positive supplied amount
+    uint256 borrowedReservesCount; // number of reserves with strictly positive debt
   }
 
   struct LiquidateUserParams {
@@ -144,7 +144,7 @@ library DataTypes {
     uint256 accruedPremium;
     uint256 totalDebtInBaseCurrency;
     address liquidator;
-    uint256 suppliedAssetsCount;
-    uint256 borrowedAssetsCount;
+    uint256 suppliedCollateralsCount;
+    uint256 borrowedReservesCount;
   }
 }

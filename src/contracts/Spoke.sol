@@ -333,8 +333,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       premiumDebt: 0, // populated below
       accruedPremium: 0, // populated below
       totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
-      suppliedAssetsCount: userAccountData.suppliedAssetsCount,
-      borrowedAssetsCount: userAccountData.borrowedAssetsCount,
+      suppliedCollateralsCount: userAccountData.suppliedCollateralsCount,
+      borrowedReservesCount: userAccountData.borrowedReservesCount,
       liquidator: msg.sender
     });
 
@@ -826,14 +826,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
           if (userCollateralInBaseCurrency > 0) {
             userAccountData.totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
             list.add(
-              userAccountData.suppliedAssetsCount,
+              userAccountData.suppliedCollateralsCount,
               reserve.collateralRisk,
               userCollateralInBaseCurrency
             );
             userAccountData.avgCollateralFactor += collateralFactor * userCollateralInBaseCurrency;
-            userAccountData.suppliedAssetsCount = userAccountData.suppliedAssetsCount.uncheckedAdd(
-              1
-            );
+            userAccountData.suppliedCollateralsCount = userAccountData
+              .suppliedCollateralsCount
+              .uncheckedAdd(1);
           }
         }
       }
@@ -847,7 +847,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         userAccountData.totalDebtInBaseCurrency +=
           (drawnDebt * assetPrice).wadDivUp(assetUnit) +
           (premiumDebt * assetPrice).wadDivUp(assetUnit);
-        userAccountData.borrowedAssetsCount = userAccountData.borrowedAssetsCount.uncheckedAdd(1);
+        userAccountData.borrowedReservesCount = userAccountData.borrowedReservesCount.uncheckedAdd(
+          1
+        );
       }
 
       reserveId = reserveId.uncheckedAdd(1);

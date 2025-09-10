@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {LiquidationLogicWrapper} from 'tests/mocks/LiquidationLogicWrapper.sol';
-import 'tests/Base.t.sol';
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract LiquidationLogicBaseTest is SpokeBase {

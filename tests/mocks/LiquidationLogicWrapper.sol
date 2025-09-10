@@ -151,15 +151,15 @@ contract LiquidationLogicWrapper {
   function evaluateDeficit(
     bool isCollateralPositionEmpty,
     bool isDebtPositionEmpty,
-    uint256 suppliedAssetsCount,
-    uint256 borrowedAssetsCount
+    uint256 suppliedCollateralsCount,
+    uint256 borrowedReservesCount
   ) public pure returns (bool) {
     return
       LiquidationLogic._evaluateDeficit(
         isCollateralPositionEmpty,
         isDebtPositionEmpty,
-        suppliedAssetsCount,
-        borrowedAssetsCount
+        suppliedCollateralsCount,
+        borrowedReservesCount
       );
   }
 
