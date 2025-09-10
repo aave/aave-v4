@@ -6,7 +6,8 @@ pragma solidity ^0.8.0;
  * @notice Library to pack key-value pairs in a list.
  * @dev `sortByKey` helper sorts by asending order of the `key` & in case of collission by descending order of the `value`.
  * This is acheived by sorting the packed `key-value` pair in descending order, but storing the invert of the `key` (ie `_MAX_KEY - key`).
- * WARNING: Uninitialized keys are returned as (key: `MAX_KEY`, value: 0).
+ * Uninitialized keys are returned as (key: 0, value: 0).
+ * All uninitialized keys are placed at the end of the list after sorting.
  */
 import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
 
@@ -42,14 +43,15 @@ library KeyValueListInMemory {
     self._inner[idx] = pack(key, value);
   }
 
-  /// @dev Uninitialized keys are returned as (key: `MAX_KEY`, value: 0)
+  /// @dev Uninitialized keys are returned as (key: 0, value: 0)
   function get(List memory self, uint256 idx) internal pure returns (uint256, uint256) {
     return unpack(self._inner[idx]);
   }
 
   /**
    * @dev since `key` is in the MSB, we can sort by the key by sorting the array in descending order
-   * (so the keys are in ascending order when unpacking), and using value in case of collision.
+   * (so the keys are in ascending order when unpacking), and using value in case of collision, and all
+   * uninitialized keys are placed at the end of the list after sorting.
    */
   function sortByKey(List memory self) internal pure {
     Arrays.sort(self._inner, gtComparator);
