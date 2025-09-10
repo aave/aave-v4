@@ -6,7 +6,6 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IHub, IHubBase} from 'src/interfaces/IHub.sol';
 import {ISpoke, ISpokeBase} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
-import {Constants} from 'src/libraries/helpers/Constants.sol';
 import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -103,10 +102,10 @@ library LiquidationLogic {
     uint256 borrowedAssetsCount;
   }
 
-  /**
-   * @dev This constant represents the minimum amount of assets in base currency that need to be leftover after a liquidation, if not clearing collateral on a position completely.
-   * @notice The default value assumes that the basePrice is usd denominated by 26 decimals.
-   */
+  /// @dev see ISpoke
+  uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
+
+  /// @dev see ISpoke
   uint256 constant MIN_LEFTOVER_BASE = 1000e26;
 
   function calculateLiquidationBonus(
@@ -123,12 +122,12 @@ library LiquidationLogic {
       .percentMulDown(liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
 
     // linear interpolation between min and max
-    // denominator cannot be zero as healthFactorForMaxBonus is always < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    // denominator cannot be zero as healthFactorForMaxBonus is always < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     return
       minLiquidationBonus +
       (maxLiquidationBonus - minLiquidationBonus).mulDivDown(
-        Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactor,
-        Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactorForMaxBonus
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactor,
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactorForMaxBonus
       );
   }
 
@@ -141,7 +140,7 @@ library LiquidationLogic {
     );
     require(!params.collateralReservePaused && !params.debtReservePaused, ISpoke.ReservePaused());
     require(
-      params.healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       ISpoke.HealthFactorNotBelowThreshold()
     );
     require(
@@ -159,7 +158,7 @@ library LiquidationLogic {
     );
 
     // denominator cannot be zero as liquidationBonus * collateralFactor is always < PercentageMath.PERCENTAGE_FACTOR
-    // and targetHealthFactor is always >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    // and targetHealthFactor is always >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     return
       params.totalDebtInBaseCurrency.mulDivUp(
         params.debtAssetUnit * (params.targetHealthFactor - params.healthFactor),

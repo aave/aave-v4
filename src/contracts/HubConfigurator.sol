@@ -5,7 +5,6 @@ pragma solidity ^0.8.10;
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {Constants} from 'src/libraries/helpers/Constants.sol';
 import {IHub} from 'src/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/interfaces/IHubConfigurator.sol';
 
@@ -45,7 +44,11 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     targetHub.addSpoke(
       assetId,
       feeReceiver,
-      IHub.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
+      IHub.SpokeConfig({
+        addCap: IHub(targetHub).MAX_CAP(),
+        drawCap: IHub(targetHub).MAX_CAP(),
+        active: true
+      })
     );
 
     return assetId;
@@ -67,7 +70,11 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     targetHub.addSpoke(
       assetId,
       feeReceiver,
-      IHub.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
+      IHub.SpokeConfig({
+        addCap: IHub(targetHub).MAX_CAP(),
+        drawCap: IHub(targetHub).MAX_CAP(),
+        active: true
+      })
     );
 
     return assetId;
@@ -319,10 +326,10 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
       hub.addSpoke(
         assetId,
         newFeeReceiver,
-        IHub.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
+        IHub.SpokeConfig({addCap: IHub(hub).MAX_CAP(), drawCap: IHub(hub).MAX_CAP(), active: true})
       );
     } else {
-      _updateSpokeCaps(hub, assetId, newFeeReceiver, Constants.MAX_CAP, Constants.MAX_CAP);
+      _updateSpokeCaps(hub, assetId, newFeeReceiver, IHub(hub).MAX_CAP(), IHub(hub).MAX_CAP());
     }
   }
 

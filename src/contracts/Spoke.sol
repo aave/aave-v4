@@ -14,7 +14,6 @@ import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
-import {Constants} from 'src/libraries/helpers/Constants.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -31,6 +30,24 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using PositionStatusMap for *;
   using MathUtils for *;
+
+  /// @inheritdoc ISpoke
+  uint8 public constant ORACLE_DECIMALS = 8;
+
+  /// @inheritdoc ISpoke
+  uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
+    LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+
+  /// @inheritdoc ISpoke
+  uint256 public constant MIN_LEFTOVER_BASE = LiquidationLogic.MIN_LEFTOVER_BASE;
+
+  /// @inheritdoc ISpoke
+  uint24 public constant MAX_COLLATERAL_RISK = 1000_00; // 1000.00%
+
+  /// @inheritdoc ISpoke
+  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
+    0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
+  // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
 
   IAaveOracle public oracle;
 
@@ -58,7 +75,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    */
   constructor(address authority_) AccessManaged(authority_) {
     require(authority_ != address(0), InvalidAddress());
-    _liquidationConfig.targetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     emit LiquidationConfigUpdate(_liquidationConfig);
   }
 
@@ -69,10 +86,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   /// @inheritdoc ISpoke
   function updateOracle(address newOracle) external restricted {
     oracle = IAaveOracle(newOracle);
-    require(
-      newOracle != address(0) && oracle.DECIMALS() == Constants.ORACLE_DECIMALS,
-      InvalidOracle()
-    );
+    require(newOracle != address(0) && oracle.DECIMALS() == ORACLE_DECIMALS, InvalidOracle());
     emit OracleUpdate(newOracle);
   }
 
@@ -83,9 +97,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
     require(
-      config.targetHealthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
+      config.targetHealthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
         config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR &&
-        config.healthFactorForMaxBonus < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+        config.healthFactorForMaxBonus < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       InvalidLiquidationConfig()
     );
     _liquidationConfig = config;
@@ -427,7 +441,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     bytes32 hash = _hashTypedData(
       keccak256(
         abi.encode(
-          Constants.SET_USER_POSITION_MANAGER_TYPEHASH,
+          SET_USER_POSITION_MANAGER_TYPEHASH,
           positionManager,
           user,
           approve,
@@ -690,14 +704,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     // @dev refresh user position dynamic config only on borrow, withdraw, disableUsingAsCollateral
     UserAccountData memory userAccountData = _calculateAndRefreshUserAccountData(user);
     require(
-      userAccountData.healthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      userAccountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
     );
     return userAccountData.userRiskPremium;
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {
-    require(config.collateralRisk <= Constants.MAX_COLLATERAL_RISK, InvalidCollateralRisk());
+    require(config.collateralRisk <= MAX_COLLATERAL_RISK, InvalidCollateralRisk());
   }
 
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
