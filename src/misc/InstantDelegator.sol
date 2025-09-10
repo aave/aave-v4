@@ -148,13 +148,6 @@ contract InstantDelegator is EIP712, Multicall {
     SPOKE.repay(reserveId, amount, onBehalfOf);
   }
 
-  function setSelfAsUserPositionManager(bool approve) external {
-    (bool ok, ) = address(SPOKE).delegatecall(
-      abi.encodeCall(ISpoke.setUserPositionManager, (address(this), approve))
-    );
-    assert(ok);
-  }
-
   function setSelfAsUserPositionManagerWithSig(
     address user,
     bool approve,
