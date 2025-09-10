@@ -27,11 +27,11 @@ interface ISpokeConfigurator {
   function updateReservePriceSource(address spoke, uint256 reserveId, address priceSource) external;
 
   /**
-   * @notice Updates the liquidation close factor of a spoke.
+   * @notice Updates the liquidation target health factor of a spoke.
    * @param spoke The address of the spoke.
-   * @param closeFactor The new liquidation close factor.
+   * @param targetHealthFactor The new liquidation target health factor.
    */
-  function updateLiquidationCloseFactor(address spoke, uint256 closeFactor) external;
+  function updateLiquidationTargetHealthFactor(address spoke, uint256 targetHealthFactor) external;
 
   /**
    * @notice Updates the health factor for max liquidation bonus of a spoke.
@@ -144,13 +144,13 @@ interface ISpokeConfigurator {
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
    * @param configKey The key of the dynamic config to update.
-   * @param liquidationBonus The new liquidation bonus.
+   * @param maxLiquidationBonus The new liquidation bonus.
    */
-  function updateLiquidationBonus(
+  function updateMaxLiquidationBonus(
     address spoke,
     uint256 reserveId,
     uint16 configKey,
-    uint256 liquidationBonus
+    uint256 maxLiquidationBonus
   ) external;
 
   /**

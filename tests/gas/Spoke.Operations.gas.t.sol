@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 /// forge-config: default.isolate = true
-contract SpokeOperations_Gas_Tests is Base {
+contract SpokeOperations_Gas_Tests is SpokeBase {
   function setUp() public override {
     deployFixtures();
     initEnvironment();
@@ -140,7 +140,7 @@ contract SpokeOperations_Gas_Tests is Base {
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
     vm.stopPrank();
 
-    _borrowToBeBelowHf(spoke1, alice, _daiReserveId(spoke1), 0.9e18);
+    _borrowToBeAtHf(spoke1, alice, _daiReserveId(spoke1), 0.9e18);
 
     skip(100);
 
@@ -150,6 +150,7 @@ contract SpokeOperations_Gas_Tests is Base {
 
     spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, type(uint256).max);
     vm.snapshotGasLastCall('Spoke.Operations', 'liquidationCall: full');
+
     vm.stopPrank();
   }
 
@@ -176,13 +177,13 @@ contract SpokeOperations_Gas_Tests is Base {
   function test_updateUserDynamicConfig() public {
     vm.startPrank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
-    updateLiquidationFee(spoke1, _usdxReserveId(spoke1), 10_00);
+    _updateLiquidationFee(spoke1, _usdxReserveId(spoke1), 10_00);
 
     spoke1.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'updateUserDynamicConfig: 1 collateral');
 
     spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, alice);
-    updateLiquidationFee(spoke1, _daiReserveId(spoke1), 15_00);
+    _updateLiquidationFee(spoke1, _daiReserveId(spoke1), 15_00);
 
     spoke1.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'updateUserDynamicConfig: 2 collaterals');
