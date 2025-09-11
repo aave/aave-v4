@@ -510,13 +510,13 @@ contract Hub is IHub, AccessManaged {
 
   function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256) {
     DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
-    return (_getSpokeOwedBase(spokeData, assetId), _getSpokeOwedPremium(spokeData, assetId));
+    return (_getSpokeBaseOwed(spokeData, assetId), _getSpokePremiumOwed(spokeData, assetId));
   }
 
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256) {
     DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
-    uint256 drawn = _getSpokeOwedBase(spokeData, assetId);
-    uint256 premium = _getSpokeOwedPremium(spokeData, assetId);
+    uint256 drawn = _getSpokeBaseOwed(spokeData, assetId);
+    uint256 premium = _getSpokePremiumOwed(spokeData, assetId);
     return drawn + premium;
   }
 
@@ -603,7 +603,7 @@ contract Hub is IHub, AccessManaged {
     uint256 premiumAmount
   ) internal {
     uint256 assetPremiumBefore = asset.premium();
-    uint256 spokePremiumBefore = _getSpokeOwedPremium(spoke, assetId);
+    uint256 spokePremiumBefore = _getSpokePremiumOwed(spoke, assetId);
 
     asset.premiumShares = asset.premiumShares.add(premium.sharesDelta).toUint128();
     asset.premiumOffset = asset.premiumOffset.add(premium.offsetDelta).toUint128();
@@ -615,8 +615,11 @@ contract Hub is IHub, AccessManaged {
 
     // can increase due to precision loss on premium (drawn unchanged)
     require(asset.premium() + premiumAmount - assetPremiumBefore <= 2, InvalidPremiumChange());
-    uint256 spokePremiumAfter = _getSpokeOwedPremium(spoke, assetId);
-    require(spokePremiumAfter + premiumAmount - spokePremiumBefore <= 2, InvalidPremiumChange());
+    uint256 spokePremiumAfter = _getSpokePremiumOwed(spoke, assetId);
+    require(
+      _getSpokePremiumOwed(spoke, assetId) + premiumAmount - spokePremiumBefore <= 2,
+      InvalidPremiumChange()
+    );
   }
 
   function _transferShares(
@@ -631,14 +634,14 @@ contract Hub is IHub, AccessManaged {
     receiver.addedShares += shares.toUint128();
   }
 
-  function _getSpokeOwedBase(
+  function _getSpokeBaseOwed(
     DataTypes.SpokeData storage spoke,
     uint256 assetId
   ) internal view returns (uint256) {
     return previewRestoreByShares(assetId, spoke.drawnShares);
   }
 
-  function _getSpokeOwedPremium(
+  function _getSpokePremiumOwed(
     DataTypes.SpokeData storage spoke,
     uint256 assetId
   ) internal view returns (uint256) {
@@ -689,8 +692,8 @@ contract Hub is IHub, AccessManaged {
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
     uint256 drawCap = spoke.drawCap;
-    uint256 drawn = _getSpokeOwedBase(spoke, assetId);
-    uint256 premium = _getSpokeOwedPremium(spoke, assetId);
+    uint256 drawn = _getSpokeBaseOwed(spoke, assetId);
+    uint256 premium = _getSpokePremiumOwed(spoke, assetId);
     require(
       drawCap == Constants.MAX_CAP || drawCap * 10 ** asset.decimals >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
@@ -707,8 +710,8 @@ contract Hub is IHub, AccessManaged {
     require(from != address(this), InvalidAddress());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
-    uint256 drawn = _getSpokeOwedBase(spoke, assetId);
-    uint256 premium = _getSpokeOwedPremium(spoke, assetId);
+    uint256 drawn = _getSpokeBaseOwed(spoke, assetId);
+    uint256 premium = _getSpokePremiumOwed(spoke, assetId);
     require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
     require(premiumAmount <= premium, SurplusAmountRestored(premium));
   }
@@ -721,8 +724,8 @@ contract Hub is IHub, AccessManaged {
   ) internal view {
     require(spoke.active, SpokeNotActive());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
-    uint256 drawn = _getSpokeOwedBase(spoke, assetId);
-    uint256 premium = _getSpokeOwedPremium(spoke, assetId);
+    uint256 drawn = _getSpokeBaseOwed(spoke, assetId);
+    uint256 premium = _getSpokePremiumOwed(spoke, assetId);
     require(drawnAmount <= drawn, SurplusDeficitReported(drawn));
     require(premiumAmount <= premium, SurplusDeficitReported(premium));
   }
