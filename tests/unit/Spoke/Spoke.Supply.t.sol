@@ -214,7 +214,7 @@ contract SpokeSupplyTest is SpokeBase {
 
   function test_supply_index_increase_no_premium() public {
     // set weth collateral risk to 0 for no premium contribution
-    updateCollateralRisk({spoke: spoke1, reserveId: _wethReserveId(spoke1), newCollateralRisk: 0});
+    _updateCollateralRisk({spoke: spoke1, reserveId: _wethReserveId(spoke1), newCollateralRisk: 0});
 
     // increase index on reserveId (uses weth as collateral)
     _increaseReserveIndex(spoke1, _daiReserveId(spoke1));
@@ -304,7 +304,7 @@ contract SpokeSupplyTest is SpokeBase {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     // set weth collateral risk to 0 for no premium contribution
-    updateCollateralRisk({spoke: spoke1, reserveId: _wethReserveId(spoke1), newCollateralRisk: 0});
+    _updateCollateralRisk({spoke: spoke1, reserveId: _wethReserveId(spoke1), newCollateralRisk: 0});
 
     // increase index on reserveId
     _executeSpokeSupplyAndBorrow({

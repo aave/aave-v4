@@ -49,14 +49,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     for (uint256 i = 0; i < count; i++) {
       uint256 reserveId = vm.randomUint(0, spoke.getReserveCount() - 1);
       uint256 amount = _convertBaseCurrencyToAmount(spoke, reserveId, amountInBaseCurrency);
-      _openSupplyPosition(spoke, reserveId, amount);
-      Utils.borrow({
-        spoke: spoke,
-        reserveId: reserveId,
-        caller: user,
-        amount: amount,
-        onBehalfOf: user
-      });
+      _increaseReserveDebt(spoke, reserveId, amount, user);
     }
   }
 
