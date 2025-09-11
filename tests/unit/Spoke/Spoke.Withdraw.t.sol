@@ -868,9 +868,8 @@ contract SpokeWithdrawTest is SpokeBase {
     assertGe(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
   }
 
-  /* TODO: Fix the below, turn them into passing functions that withdraw everything
-  // Withdraw reverts when there is not enough avaulable liquidity
-  function test_withdraw_revertsWith_InsufficientSupply_with_supply() public {
+  /// @dev Withdraw more than available liquidity withdraws everything
+  function test_withdraw_max_greater_than_available_liquidity() public {
     uint256 amount = 100e18;
     uint256 reserveId = _daiReserveId(spoke1);
 
@@ -883,25 +882,28 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    uint256 withdrawalLimit = getTotalWithdrawable(spoke1, reserveId, alice);
-    assertGt(withdrawalLimit, 0);
+    uint256 withdrawable = getTotalWithdrawable(spoke1, reserveId, alice);
+    assertGt(withdrawable, 0);
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, withdrawalLimit));
-    vm.prank(alice);
-    spoke1.withdraw(reserveId, withdrawalLimit + 1, alice);
+    uint256 addExRateBefore = getAddExRate(daiAssetId);
 
     // skip time but no index increase with no borrow
     skip(365 days);
-    // withdrawal limit remains constant
-    assertEq(withdrawalLimit, getTotalWithdrawable(spoke1, reserveId, alice));
+    // withdrawable remains constant
+    assertEq(withdrawable, getTotalWithdrawable(spoke1, reserveId, alice));
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, withdrawalLimit));
     vm.prank(alice);
-    spoke1.withdraw(reserveId, withdrawalLimit + 1, alice);
+    spoke1.withdraw(reserveId, withdrawable + 1, alice);
+
+    assertEq(getTotalWithdrawable(spoke1, reserveId, alice), 0);
+    _checkSuppliedAmounts(daiAssetId, reserveId, spoke1, alice, 0, 'after withdraw');
+
+    // Check supply rate monotonically increasing after withdraw
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after withdraw');
   }
 
-  // Withdrawal limit increases due to debt interest, but still cannot withdraw more than available liquidity
-  function test_withdraw_revertsWith_InsufficientSupply_with_debt() public {
+  /// @dev Withdrawable increases due to debt interest, withdraw exceeding liquidity is max withdraw
+  function test_withdraw_max_withdrawbale_grows_with_debt() public {
     uint256 supplyAmount = 100e18;
     uint256 borrowAmount = 50e18;
     uint256 reserveId = _daiReserveId(spoke1);
@@ -924,21 +926,26 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, supplyAmount));
-    vm.prank(alice);
-    spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, onBehalfOf: alice});
-
     // accrue interest
     skip(365 days);
 
-    uint256 newWithdrawalLimit = getTotalWithdrawable(spoke1, reserveId, alice);
-    // newWithdrawalLimit with accrued interest should be greater than supplyAmount
-    assertGt(newWithdrawalLimit, supplyAmount);
+    uint256 newWithdrawableAmount = getTotalWithdrawable(spoke1, reserveId, alice);
+    // newWithdrawableAmount with accrued interest should be greater than supplyAmount
+    assertGt(newWithdrawableAmount, supplyAmount);
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, newWithdrawalLimit));
+    uint256 addExRateBefore = getAddExRate(daiAssetId);
+
     vm.prank(alice);
-    spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, onBehalfOf: alice});
+    spoke1.withdraw({reserveId: reserveId, amount: newWithdrawableAmount + 1, onBehalfOf: alice});
+
+    assertEq(getTotalWithdrawable(spoke1, reserveId, alice), 0);
+    _checkSuppliedAmounts(daiAssetId, reserveId, spoke1, alice, 0, 'after withdraw');
+
+    // Check supply rate monotonically increasing after withdraw
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after withdraw');
   }
+
+  /*
 
   // Cannot withdraw more than available liquidity, before and after time skip, fuzzed
   function test_withdraw_fuzz_revertsWith_InsufficientSupply_with_debt(
