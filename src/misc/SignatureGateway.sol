@@ -37,8 +37,8 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
 
   mapping(address user => uint256 nonce) internal _nonces;
 
-  constructor(address spoke_, address initialOwner) Ownable(initialOwner) {
-    assert(spoke_ != address(0) && initialOwner != address(0));
+  constructor(address spoke_, address initialOwner_) Ownable(initialOwner_) {
+    assert(spoke_ != address(0) && initialOwner_ != address(0));
     SPOKE = ISpoke(spoke_);
   }
 
