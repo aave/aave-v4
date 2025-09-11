@@ -4,13 +4,14 @@ pragma solidity ^0.8.0;
 
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
-import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {Multicall} from 'src/misc/Multicall.sol';
+import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {ISignatureGateway} from 'src/interfaces/ISignatureGateway.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
 contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway {
@@ -98,10 +99,12 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
     (IERC20 asset, ) = _getReserveData(reserveId);
+    uint256 userBalance = SPOKE.getUserSuppliedAmount(reserveId, onBehalfOf);
+    uint256 amountToWithdraw = amount == type(uint256).max ? userBalance : amount;
 
-    SPOKE.withdraw(reserveId, amount, onBehalfOf);
+    SPOKE.withdraw(reserveId, amountToWithdraw, onBehalfOf);
 
-    asset.safeTransfer(onBehalfOf, amount);
+    asset.safeTransfer(onBehalfOf, amountToWithdraw);
   }
 
   // @inheritdoc ISignatureGateway
@@ -160,10 +163,12 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
     (IERC20 asset, address hub) = _getReserveData(reserveId);
-    asset.safeTransferFrom(onBehalfOf, address(this), amount);
-    asset.forceApprove(hub, amount);
+    uint256 repayAmount = MathUtils.min(SPOKE.getUserTotalDebt(reserveId, onBehalfOf), amount);
 
-    SPOKE.repay(reserveId, amount, onBehalfOf);
+    asset.safeTransferFrom(onBehalfOf, address(this), repayAmount);
+    asset.forceApprove(hub, repayAmount);
+
+    SPOKE.repay(reserveId, repayAmount, onBehalfOf);
   }
 
   // @inheritdoc ISignatureGateway
