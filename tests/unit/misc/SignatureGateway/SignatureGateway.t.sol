@@ -160,6 +160,39 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     assertEq(gateway.nonces(alice), p.nonce + 1);
   }
 
+  function test_updateUserRiskPremiumWithSig() public {
+    uint256 deadline = _warpBeforeRandomDeadline();
+    EIP712Types.UpdateUserRiskPremium memory p = _updateRiskPremiumData(spoke1, alice, deadline);
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UserRiskPremiumUpdate(alice, 0);
+
+    vm.prank(vm.randomAddress());
+    gateway.updateUserRiskPremiumWithSig(alice, p.deadline, signature);
+
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    assertEq(gateway.nonces(alice), p.nonce + 1);
+  }
+
+  function test_updateUserDynamicConfigWithSig() public {
+    EIP712Types.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline()
+    );
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+
+    vm.prank(vm.randomAddress());
+    gateway.updateUserDynamicConfigWithSig(alice, p.deadline, signature);
+
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    assertEq(gateway.nonces(alice), p.nonce + 1);
+  }
+
   function test_setSelfAsUserPositionManagerWithSig() public {
     EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
       positionManager: address(gateway),
@@ -176,6 +209,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig(alice, p.approve, p.deadline, signature);
 
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     assertEq(spoke1.nonces(alice), p.nonce + 1);
   }
 }

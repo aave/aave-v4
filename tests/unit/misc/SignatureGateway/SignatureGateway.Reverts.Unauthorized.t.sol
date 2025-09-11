@@ -58,6 +58,36 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
     vm.prank(vm.randomAddress());
     gateway.setUsingAsCollateralWithSig(p.reserveId, p.useAsCollateral, alice, deadline, signature);
   }
+
+  function test_updateUserRiskPremiumWithSig_revertsWith_Unauthorized() public {
+    EIP712Types.UpdateUserRiskPremium memory p = _updateRiskPremiumData(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline()
+    );
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(gateway))
+    );
+    vm.prank(vm.randomAddress());
+    gateway.updateUserRiskPremiumWithSig(alice, p.deadline, signature);
+  }
+
+  function test_updateUserDynamicConfigWithSig_revertsWith_Unauthorized() public {
+    EIP712Types.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline()
+    );
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(gateway))
+    );
+    vm.prank(vm.randomAddress());
+    gateway.updateUserDynamicConfigWithSig(alice, p.deadline, signature);
+  }
 }
 
 contract SignatureGateway_Unauthorized_PositionManagerActive_Test is

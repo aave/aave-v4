@@ -112,4 +112,28 @@ contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
       )
     );
   }
+
+  function test_updateUserRiskPremium_typeHash() public view {
+    assertEq(
+      gateway.UPDATE_USER_RISK_PREMIUM_TYPEHASH(),
+      vm.eip712HashType('UpdateUserRiskPremium')
+    );
+    assertEq(
+      gateway.UPDATE_USER_RISK_PREMIUM_TYPEHASH(),
+      keccak256('UpdateUserRiskPremium(address spoke,address user,uint256 nonce,uint256 deadline)')
+    );
+  }
+
+  function test_updateUserDynamicConfig_typeHash() public view {
+    assertEq(
+      gateway.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH(),
+      vm.eip712HashType('UpdateUserDynamicConfig')
+    );
+    assertEq(
+      gateway.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH(),
+      keccak256(
+        'UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)'
+      )
+    );
+  }
 }
