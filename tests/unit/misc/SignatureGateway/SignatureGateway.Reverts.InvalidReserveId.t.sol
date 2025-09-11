@@ -15,6 +15,26 @@ contract SignatureGateway_InvalidReserveId_Test is SignatureGatewayBaseTest {
     gateway.supplyWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
   }
 
+  function test_withdrawWithSig_revertsWith_InvalidReserveId() public {
+    EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpUntilRandomDeadline());
+    p.reserveId = _randomInvalidReserveId(spoke1);
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+
+    vm.expectRevert(ISignatureGateway.InvalidReserveId.selector);
+    vm.prank(vm.randomAddress());
+    gateway.withdrawWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
+  }
+
+  function test_borrowWithSig_revertsWith_InvalidReserveId() public {
+    EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpUntilRandomDeadline());
+    p.reserveId = _randomInvalidReserveId(spoke1);
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+
+    vm.expectRevert(ISignatureGateway.InvalidReserveId.selector);
+    vm.prank(vm.randomAddress());
+    gateway.borrowWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
+  }
+
   function test_repayWithSig_revertsWith_InvalidReserveId() public {
     EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpUntilRandomDeadline());
     p.reserveId = _randomInvalidReserveId(spoke1);
@@ -24,8 +44,6 @@ contract SignatureGateway_InvalidReserveId_Test is SignatureGatewayBaseTest {
     vm.prank(vm.randomAddress());
     gateway.repayWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
   }
-
-  // withdraw, borrow revert earlier at Spoke
 
   function test_permitReserve_revertsWith_InvalidReserveId() public {
     uint256 reserveId = _randomInvalidReserveId(spoke1);

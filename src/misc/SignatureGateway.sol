@@ -97,9 +97,10 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
+    (IERC20 asset, ) = _getReserveData(reserveId);
+
     SPOKE.withdraw(reserveId, amount, onBehalfOf);
 
-    (IERC20 asset, ) = _getReserveData(reserveId);
     asset.safeTransfer(onBehalfOf, amount);
   }
 
@@ -127,9 +128,10 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
+    (IERC20 asset, ) = _getReserveData(reserveId);
+
     SPOKE.borrow(reserveId, amount, onBehalfOf);
 
-    (IERC20 asset, ) = _getReserveData(reserveId);
     asset.safeTransfer(onBehalfOf, amount);
   }
 
@@ -231,13 +233,13 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
   }
 
   // @inheritdoc ISignatureGateway
-  function DOMAIN_SEPARATOR() external view returns (bytes32) {
-    return _domainSeparator();
+  function useNonce() external {
+    _useNonce(msg.sender);
   }
 
   // @inheritdoc ISignatureGateway
-  function useNonce() external {
-    _useNonce(msg.sender);
+  function DOMAIN_SEPARATOR() external view returns (bytes32) {
+    return _domainSeparator();
   }
 
   // @inheritdoc ISignatureGateway
