@@ -16,7 +16,7 @@ abstract contract Rescuable is IRescuable {
 
   /// @notice modifier that checks that caller is allowed address
   modifier onlyRescueGuardian() {
-    if (msg.sender != whoCanRescue()) {
+    if (msg.sender != rescueGuardian()) {
       revert OnlyRescueGuardian();
     }
     _;
@@ -35,5 +35,5 @@ abstract contract Rescuable is IRescuable {
   /**
    * @notice Returns the address that is allowed to rescue funds.
    **/
-  function whoCanRescue() public view virtual returns (address);
+  function rescueGuardian() public view virtual returns (address);
 }

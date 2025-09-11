@@ -12,7 +12,7 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
-import {IWrappedTokenGatewayV4} from 'src/interfaces/IWrappedTokenGatewayV4.sol';
+import {INativeTokenGateway} from 'src/interfaces/INativeTokenGateway.sol';
 import {INativeWrapper} from 'src/interfaces/INativeWrapper.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
@@ -20,8 +20,8 @@ import {ISpoke} from 'src/interfaces/ISpoke.sol';
  * @notice Contract allowing users to approve it as a Position Manager to wrap and unwrap the native asset
  * before interacting with the Spoke.
  */
-contract WrappedTokenGatewayV4 is
-  IWrappedTokenGatewayV4,
+contract NativeTokenGateway is
+  INativeTokenGateway,
   ReentrancyGuardTransient,
   Rescuable,
   Ownable2Step
@@ -39,7 +39,7 @@ contract WrappedTokenGatewayV4 is
     SPOKE = ISpoke(spoke_);
   }
 
-  /// @inheritdoc IWrappedTokenGatewayV4
+  /// @inheritdoc INativeTokenGateway
   function setUserPositionManagerWithSig(
     address user,
     bool approve,
@@ -51,28 +51,28 @@ contract WrappedTokenGatewayV4 is
     SPOKE.setUserPositionManagerWithSig(address(this), user, approve, deadline, v, r, s);
   }
 
-  /// @inheritdoc IWrappedTokenGatewayV4
+  /// @inheritdoc INativeTokenGateway
   function renouncePositionManagerRole() external payable {
     SPOKE.renouncePositionManagerRole(msg.sender);
   }
 
-  /// @inheritdoc IWrappedTokenGatewayV4
+  /// @inheritdoc INativeTokenGateway
   function renouncePositionManagerRoleForUser(address user) external onlyOwner {
     SPOKE.renouncePositionManagerRole(user);
   }
 
-  /// @inheritdoc IWrappedTokenGatewayV4
+  /// @inheritdoc INativeTokenGateway
   function supplyNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
     (address underlying, address hub) = _getReserveData(reserveId);
     _validateParams(underlying, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
     NATIVE_WRAPPER.deposit{value: amount}();
-    NATIVE_WRAPPER.safeIncreaseAllowance(hub, amount);
+    NATIVE_WRAPPER.forceApprove(hub, amount);
     SPOKE.supply(reserveId, amount, msg.sender);
   }
 
-  /// @inheritdoc IWrappedTokenGatewayV4
+  /// @inheritdoc INativeTokenGateway
   function withdrawNative(
     uint256 reserveId,
     uint256 amount,
@@ -92,7 +92,7 @@ contract WrappedTokenGatewayV4 is
     Address.sendValue(payable(receiver), amount);
   }
 
-  /// @inheritdoc IWrappedTokenGatewayV4
+  /// @inheritdoc INativeTokenGateway
   function borrowNative(
     uint256 reserveId,
     uint256 amount,
@@ -107,7 +107,7 @@ contract WrappedTokenGatewayV4 is
     Address.sendValue(payable(receiver), amount);
   }
 
-  /// @inheritdoc IWrappedTokenGatewayV4
+  /// @inheritdoc INativeTokenGateway
   function repayNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
     (address underlying, address hub) = _getReserveData(reserveId);
     _validateParams(underlying, amount);
@@ -121,7 +121,7 @@ contract WrappedTokenGatewayV4 is
     }
 
     NATIVE_WRAPPER.deposit{value: amount}();
-    NATIVE_WRAPPER.safeIncreaseAllowance(hub, amount);
+    NATIVE_WRAPPER.forceApprove(hub, amount);
     SPOKE.repay(reserveId, amount, msg.sender);
 
     if (leftovers > 0) {
@@ -129,7 +129,7 @@ contract WrappedTokenGatewayV4 is
     }
   }
 
-  /// @inheritdoc IWrappedTokenGatewayV4
+  /// @inheritdoc INativeTokenGateway
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external payable {
     (address underlying, ) = _getReserveData(reserveId);
     require(underlying == address(NATIVE_WRAPPER), InvalidReserveId());
@@ -159,7 +159,7 @@ contract WrappedTokenGatewayV4 is
   }
 
   /// @inheritdoc Rescuable
-  function whoCanRescue() public view override returns (address) {
+  function rescueGuardian() public view override returns (address) {
     return owner();
   }
 

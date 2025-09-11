@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-interface IWrappedTokenGatewayV4 {
+interface INativeTokenGateway {
   error InvalidAddress();
   error InvalidAmount();
   error InvalidReserveId();

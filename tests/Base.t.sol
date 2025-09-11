@@ -32,7 +32,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Utils} from 'tests/Utils.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
-import {WrappedTokenGatewayV4, IWrappedTokenGatewayV4} from 'src/misc/WrappedTokenGatewayV4.sol';
+import {NativeTokenGateway, INativeTokenGateway} from 'src/misc/NativeTokenGateway.sol';
 import {Rescuable, IRescuable} from 'src/misc/Rescuable.sol';
 
 // mocks
