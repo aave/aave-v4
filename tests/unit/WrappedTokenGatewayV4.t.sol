@@ -111,6 +111,18 @@ contract WrappedTokenGatewayV4Test is Base {
     wrappedTokenGateway.renouncePositionManagerRoleForUser(user);
   }
 
+  function test_setUsingAsCollateral() public {
+    vm.prank(bob);
+    spoke1.setUserPositionManager(address(wrappedTokenGateway), true);
+
+    assertFalse(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
+
+    vm.prank(bob);
+    wrappedTokenGateway.setUsingAsCollateral(_wethReserveId(spoke1), true);
+
+    assertTrue(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
+  }
+
   function test_supplyNative() public {
     test_supplyNative_fuzz(100e18);
   }
@@ -731,6 +743,7 @@ contract WrappedTokenGatewayV4Test is Base {
     uint256 prevUserSuppliedAmount = spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob);
 
     assertFalse(spoke1.isPositionManager(bob, address(wrappedTokenGateway)));
+    assertFalse(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
     assertEq(tokenList.weth.balanceOf(address(hub1)), 0);
     assertEq(prevUserSuppliedAmount, 0);
 
@@ -738,7 +751,15 @@ contract WrappedTokenGatewayV4Test is Base {
       IWrappedTokenGatewayV4.supplyNative,
       (_wethReserveId(spoke1), amount)
     );
-    bytes[] memory calls = _encodeMulticallBatch(bob, bobPk, action);
+    bytes[] memory draftCalls = _encodeMulticallBatch(bob, bobPk, action);
+    bytes[] memory calls = new bytes[](draftCalls.length + 1);
+    calls[0] = draftCalls[0];
+    calls[1] = draftCalls[1];
+    calls[2] = abi.encodeCall(
+      IWrappedTokenGatewayV4.setUsingAsCollateral,
+      (_wethReserveId(spoke1), true)
+    );
+    calls[3] = draftCalls[2];
 
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_wethReserveId(spoke1), address(wrappedTokenGateway), bob, amount);
@@ -753,6 +774,8 @@ contract WrappedTokenGatewayV4Test is Base {
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + amount);
     assertEq(address(wrappedTokenGateway).balance, 0);
     assertEq(tokenList.weth.balanceOf(address(wrappedTokenGateway)), 0);
+
+    assertTrue(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
 
     assertFalse(spoke1.isPositionManager(bob, address(wrappedTokenGateway)));
   }

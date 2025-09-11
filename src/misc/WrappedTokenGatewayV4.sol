@@ -122,6 +122,14 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
     }
   }
 
+  /// @inheritdoc IWrappedTokenGatewayV4
+  function setUsingAsCollateral(
+    uint256 reserveId,
+    bool usingAsCollateral
+  ) external payable {
+    SPOKE.setUsingAsCollateral(reserveId, usingAsCollateral, msg.sender);
+  }
+
   /**
    * @notice Call multiple functions in the current contract and return the data from all of them if they all succeed.
    * @dev Function was inlined here so it can be payable.

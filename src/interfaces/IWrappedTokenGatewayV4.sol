@@ -42,6 +42,13 @@ interface IWrappedTokenGatewayV4 {
   function repayNative(uint256 reserveId, uint256 amount) external payable;
 
   /**
+   * @notice Calls `setUsingAsCollateral` on the spoke on behalf of the user.
+   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param usingAsCollateral True if the user wants to use the supply as collateral, false otherwise.
+   */
+  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external payable;
+
+  /**
    * @notice Allows this contract to approve or revoke approval as a positionManager using a signature.
    * @param user The address of the user on whose behalf position manager can act.
    * @param approve True if user wants to approve position manager, false otherwise.
