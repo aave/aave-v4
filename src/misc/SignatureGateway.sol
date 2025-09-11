@@ -105,11 +105,10 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
     (IERC20 underlying, ) = _getReserveData(reserveId);
-    uint256 userBalance = SPOKE.getUserSuppliedAmount(reserveId, onBehalfOf);
-    uint256 withdrawAmount = MathUtils.min(userBalance, amount);
+    amount = MathUtils.min(SPOKE.getUserSuppliedAmount(reserveId, onBehalfOf), amount);
 
-    SPOKE.withdraw(reserveId, withdrawAmount, onBehalfOf);
-    underlying.safeTransfer(onBehalfOf, withdrawAmount);
+    SPOKE.withdraw(reserveId, amount, onBehalfOf);
+    underlying.safeTransfer(onBehalfOf, amount);
   }
 
   // @inheritdoc ISignatureGateway
@@ -167,12 +166,12 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
     (IERC20 underlying, address hub) = _getReserveData(reserveId);
-    uint256 repayAmount = MathUtils.min(SPOKE.getUserTotalDebt(reserveId, onBehalfOf), amount);
+    amount = MathUtils.min(SPOKE.getUserTotalDebt(reserveId, onBehalfOf), amount);
 
-    underlying.safeTransferFrom(onBehalfOf, address(this), repayAmount);
-    underlying.forceApprove(hub, repayAmount);
+    underlying.safeTransferFrom(onBehalfOf, address(this), amount);
+    underlying.forceApprove(hub, amount);
 
-    SPOKE.repay(reserveId, repayAmount, onBehalfOf);
+    SPOKE.repay(reserveId, amount, onBehalfOf);
   }
 
   // @inheritdoc ISignatureGateway
