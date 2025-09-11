@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHub} from 'src/interfaces/IHub.sol';
 import {ITreasurySpoke, ISpokeBase} from 'src/interfaces/ITreasurySpoke.sol';
 
@@ -40,11 +41,7 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
   /// @inheritdoc ITreasurySpoke
   function withdraw(uint256 reserveId, uint256 amount, address) external onlyOwner {
     // If amount to withdraw is greater than total supplied, withdraw all supplied assets
-    uint256 totalSupplied = HUB.getSpokeAddedAmount(reserveId, address(this));
-    if (amount > totalSupplied) {
-      amount = totalSupplied;
-    }
-
+    amount = MathUtils.min(amount, HUB.getSpokeAddedAmount(reserveId, address(this)));
     HUB.remove(reserveId, amount, msg.sender);
   }
 
