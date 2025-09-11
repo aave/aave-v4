@@ -604,7 +604,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     );
 
     uint16 configKey = spoke1.getUserPosition(coll1ReserveId, alice).configKey;
-    updateCollateralFactorAtKey(spoke1, coll1ReserveId, configKey, 0);
+    _updateCollateralFactorAtKey(spoke1, coll1ReserveId, configKey, 0);
 
     userAccountData = spoke1.getUserAccountData(alice);
     assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.userRiskPremium);
