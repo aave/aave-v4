@@ -49,4 +49,103 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     vm.prank(alice);
     spoke1.withdraw(reserveId, amount, alice);
   }
+
+  // Withdrawal limit increases due to debt interest, but still cannot withdraw more than available liquidity
+  function test_withdraw_revertsWith_InsufficientSupply_with_debt() public {
+    uint256 supplyAmount = 100e18;
+    uint256 borrowAmount = 50e18;
+    uint256 reserveId = _daiReserveId(spoke1);
+
+    // Alice supplies dai
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+
+    // Alice borrows dai
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+    );
+    vm.prank(alice);
+    spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, onBehalfOf: alice});
+
+    // accrue interest
+    skip(365 days);
+
+    uint256 newWithdrawalLimit = getTotalWithdrawable(spoke1, reserveId, alice);
+    // newWithdrawalLimit with accrued interest should be greater than supplyAmount
+    assertGt(newWithdrawalLimit, supplyAmount);
+
+    // Interest added on both sides, so can ignore
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+    );
+    vm.prank(alice);
+    spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, onBehalfOf: alice});
+  }
+
+  // Cannot withdraw more than available liquidity, before and after time skip, fuzzed
+  function test_withdraw_fuzz_revertsWith_InsufficientSupply_with_debt(
+    uint256 reserveId,
+    uint256 supplyAmount,
+    uint256 borrowAmount,
+    uint256 rate,
+    uint256 skipTime
+  ) public {
+    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
+    borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within Collateral Factor
+    rate = bound(rate, 1, MAX_BORROW_RATE);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    _mockInterestRateBps(rate);
+
+    // Alice supply
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+    // Alice borrows dai
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+    );
+    vm.prank(alice);
+    spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, onBehalfOf: alice});
+
+    // debt accrues
+    skip(skipTime);
+
+    uint256 newWithdrawalLimit = getTotalWithdrawable(spoke1, reserveId, alice);
+    // newWithdrawalLimit with accrued interest should be greater than supplyAmount
+    vm.assume(newWithdrawalLimit > supplyAmount);
+
+    // Interest added on both sides, so can ignore
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+    );
+    vm.prank(alice);
+    spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, onBehalfOf: alice});
+  }
 }
