@@ -222,12 +222,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     uint256 assetId = reserve.assetId;
     IHub hub = reserve.hub;
+    _validateWithdraw(reserve);
 
-    // If uint256.max is passed, withdraw all user's supplied assets
-    if (amount == type(uint256).max) {
-      amount = hub.previewRemoveByShares(assetId, userPosition.suppliedShares);
+    // If amount to withdraw is greater than user's total supplied, withdraw all user's supplied assets
+    uint256 userTotalSupplied = hub.previewRemoveByShares(assetId, userPosition.suppliedShares);
+    if (amount > userTotalSupplied) {
+      amount = userTotalSupplied;
     }
-    _validateWithdraw(reserve, userPosition, amount);
 
     uint256 withdrawnShares = hub.remove(assetId, amount, msg.sender);
 
@@ -642,18 +643,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     require(!reserve.frozen, ReserveFrozen());
   }
 
-  function _validateWithdraw(
-    DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage userPosition,
-    uint256 amount
-  ) internal view {
+  function _validateWithdraw(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
-    uint256 suppliedAmount = reserve.hub.previewRemoveByShares(
-      reserve.assetId,
-      userPosition.suppliedShares
-    );
-    require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 
   function _validateBorrow(DataTypes.Reserve storage reserve) internal view {

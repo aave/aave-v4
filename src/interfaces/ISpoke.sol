@@ -105,7 +105,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error AssetNotListed();
   error ReserveExists();
   error ReserveNotListed();
-  error InsufficientSupply(uint256 supply);
   error ReserveNotBorrowable();
   error ReservePaused();
   error ReserveFrozen();

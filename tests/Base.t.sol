@@ -1251,7 +1251,7 @@ abstract contract Base is Test {
     return IERC20(reserve.hub.getAsset(reserve.assetId).underlying);
   }
 
-  function getWithdrawalLimit(
+  function getTotalWithdrawable(
     ISpoke spoke,
     uint256 reserveId,
     address user
