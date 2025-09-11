@@ -224,7 +224,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     IHub hub = reserve.hub;
     _validateWithdraw(reserve);
 
-    // If amount to withdraw is greater than user's total supplied, withdraw all user's supplied assets
+    // If withdraw amount exceeds user's total supplied, withdraw all user's supplied assets
     uint256 userTotalSupplied = hub.previewRemoveByShares(assetId, userPosition.suppliedShares);
     if (amount > userTotalSupplied) {
       amount = userTotalSupplied;
