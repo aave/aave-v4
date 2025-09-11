@@ -446,8 +446,7 @@ contract Hub is IHub, AccessManaged {
     address spoke
   ) external view returns (DataTypes.SpokeConfig memory) {
     DataTypes.SpokeData storage spoke = _spokes[assetId][spoke];
-    return
-      DataTypes.SpokeConfig({active: spoke.active, addCap: spoke.addCap, drawCap: spoke.drawCap});
+    return DataTypes.SpokeConfig(spoke.active, spoke.addCap, spoke.drawCap);
   }
 
   /// @inheritdoc IHubBase

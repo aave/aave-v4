@@ -12,10 +12,10 @@ import {IBasicInterestRateStrategy} from './IBasicInterestRateStrategy.sol';
 interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /**
    * @notice Emitted when new interest rate data is set for an asset.
-   * @param assetId identifier of the asset that has new interest rate data set.
+   * @param assetId Identifier of the asset that has new interest rate data set.
    * @param optimalUsageRatio The optimal borrow usage ratio, in bps.
    * @param baseVariableBorrowRate The base variable borrow rate, in bps.
-   * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal  borrow usage ratio, in bps.
+   * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal borrow usage ratio, in bps.
    * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal borrow usage ratio, in bps.
    */
   event RateDataUpdate(
@@ -90,9 +90,9 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   function HUB() external view returns (address);
 
   /**
-   * @notice Returns the full InterestRateData object for the given asset.
+   * @notice Returns the full InterestRateData struct for the given asset.
    * @param assetId The identifier of the asset to get the data for.
-   * @return The InterestRateData object for the given asset, all in bps.
+   * @return The InterestRateData struct for the given asset, all in bps.
    */
   function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory);
 
@@ -127,9 +127,9 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   function getVariableRateSlope2(uint256 assetId) external view returns (uint256);
 
   /**
-   * @notice Returns the maximum variable borrow rate
-   * @param assetId The identifier of the asset to get the maximum variable borrow rate for
-   * @return The maximum variable borrow rate, in bps
+   * @notice Returns the maximum variable borrow rate.
+   * @param assetId The identifier of the asset to get the maximum variable borrow rate for.
+   * @return The maximum variable borrow rate, in bps.
    */
   function getMaxVariableBorrowRate(uint256 assetId) external view returns (uint256);
 }
