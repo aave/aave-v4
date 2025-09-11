@@ -39,6 +39,6 @@ abstract contract Rescuable is IRescuable {
    * @dev Throws if the sender is not the rescue guardian.
    */
   function _checkRescueGuardian() internal view virtual {
-    if (rescueGuardian() != msg.sender) revert OnlyRescueGuardian();
+    require(rescueGuardian() == msg.sender, OnlyRescueGuardian());
   }
 }
