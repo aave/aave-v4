@@ -3,6 +3,8 @@
 pragma solidity ^0.8.0;
 
 interface IRescuable {
+  error OnlyRescueGuardian();
+
   /**
    * @notice Recovers ERC20 tokens sent to this contract.
    * @param token Address of the ERC20 token to rescue.

@@ -33,13 +33,14 @@ import {Roles} from 'src/libraries/types/Roles.sol';
 import {Utils} from 'tests/Utils.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 import {WrappedTokenGatewayV4, IWrappedTokenGatewayV4} from 'src/misc/WrappedTokenGatewayV4.sol';
-import {Rescuable} from 'src/misc/Rescuable.sol';
+import {Rescuable, IRescuable} from 'src/misc/Rescuable.sol';
 
 // mocks
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusWrapper} from 'tests/mocks/PositionStatusWrapper.sol';
+import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
 
 // dependencies
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';

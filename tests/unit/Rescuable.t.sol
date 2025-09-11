@@ -5,13 +5,13 @@ pragma solidity ^0.8.10;
 import 'tests/Base.t.sol';
 
 contract RescuableTest is Base {
-  Rescuable public rescuable;
+  RescuableWrapper public rescuable;
 
   function setUp() public virtual override {
     super.setUp();
     initEnvironment();
 
-    rescuable = new Rescuable(ADMIN);
+    rescuable = new RescuableWrapper(ADMIN);
   }
 
   function test_rescueToken_fuzz(uint256 lostAmount) public {
@@ -28,12 +28,12 @@ contract RescuableTest is Base {
     assertEq(tokenList.dai.balanceOf(address(rescuable)), 0);
   }
 
-  function test_rescueToken_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_rescueToken_revertsWith_OnlyRescueGuardian() public {
     uint256 lostAmount = 10e18;
 
     deal(address(tokenList.dai), address(rescuable), lostAmount);
 
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, bob));
+    vm.expectRevert(IRescuable.OnlyRescueGuardian.selector);
     vm.prank(bob);
     rescuable.rescueToken(address(tokenList.dai), address(this));
   }
@@ -53,12 +53,12 @@ contract RescuableTest is Base {
     assertEq(tokenList.weth.balanceOf(address(rescuable)), 0);
   }
 
-  function test_rescueNative_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_rescueNative_revertsWith_OnlyRescueGuardian() public {
     uint256 lostAmount = 10e18;
 
     deal(address(rescuable), lostAmount);
 
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, bob));
+    vm.expectRevert(IRescuable.OnlyRescueGuardian.selector);
     vm.prank(bob);
     rescuable.rescueNative(bob, lostAmount);
   }

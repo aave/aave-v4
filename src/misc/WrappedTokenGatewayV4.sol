@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import {Rescuable} from 'src/misc/Rescuable.sol';
 
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
@@ -19,7 +20,12 @@ import {ISpoke} from 'src/interfaces/ISpoke.sol';
  * @notice Contract allowing users to approve it as a Position Manager to wrap and unwrap the native asset
  * before interacting with the Spoke.
  */
-contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransient, Rescuable {
+contract WrappedTokenGatewayV4 is
+  IWrappedTokenGatewayV4,
+  ReentrancyGuardTransient,
+  Rescuable,
+  Ownable2Step
+{
   using SafeERC20 for *;
 
   /// @notice Native Wrapper contract
@@ -27,7 +33,7 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
   /// @notice Spoke contract
   ISpoke public immutable SPOKE;
 
-  constructor(address nativeWrapper_, address spoke_, address admin_) Rescuable(admin_) {
+  constructor(address nativeWrapper_, address spoke_, address admin_) Ownable(admin_) {
     require(nativeWrapper_ != address(0) && spoke_ != address(0), InvalidAddress());
     NATIVE_WRAPPER = INativeWrapper(payable(nativeWrapper_));
     SPOKE = ISpoke(spoke_);
@@ -150,6 +156,11 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
       results[i] = res;
     }
     return results;
+  }
+
+  /// @inheritdoc Rescuable
+  function whoCanRescue() public view override returns (address) {
+    return owner();
   }
 
   /**

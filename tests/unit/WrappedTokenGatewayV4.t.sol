@@ -36,6 +36,8 @@ contract WrappedTokenGatewayV4Test is Base {
 
     assertEq(gateway.owner(), address(ADMIN));
     assertEq(gateway.pendingOwner(), address(0));
+
+    assertEq(gateway.whoCanRescue(), address(ADMIN));
   }
 
   function test_constructor_revertsWith_InvalidAddress() public {
