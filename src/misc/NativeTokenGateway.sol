@@ -11,6 +11,7 @@ import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 import {INativeTokenGateway} from 'src/interfaces/INativeTokenGateway.sol';
 import {INativeWrapper} from 'src/interfaces/INativeWrapper.sol';
@@ -82,10 +83,7 @@ contract NativeTokenGateway is
     _validateParams(underlying, amount);
     require(receiver != address(0), InvalidAddress());
 
-    uint256 userSuppliedAmount = SPOKE.getUserSuppliedAmount(reserveId, msg.sender);
-    if (amount == type(uint256).max) {
-      amount = userSuppliedAmount;
-    }
+    amount = MathUtils.min(SPOKE.getUserSuppliedAmount(reserveId, msg.sender), amount);
 
     SPOKE.withdraw(reserveId, amount, msg.sender);
     NATIVE_WRAPPER.withdraw(amount);
