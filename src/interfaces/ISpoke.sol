@@ -193,15 +193,14 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   ) external;
 
   /**
-   * @notice Allows updating the risk premium on user position.
-   * @dev If the risk premium has increased, the caller must be `user`, an authorized position manager
-   * of `user`, or admin.
-   * @param user The address of the user.
+   * @notice Allows updating the risk premium on onBehalfOf position.
+   * @dev Caller must be `onBehalfOf`, an authorized position manager for `onBehalfOf`, or admin.
+   * @param onBehalfOf The owner of the position being modified.
    */
-  function updateUserRiskPremium(address user) external;
+  function updateUserRiskPremium(address onBehalfOf) external;
 
   /**
-   * @notice Allows updating the dynamic configuration for all collateral reserves of a user position.
+   * @notice Allows updating the dynamic configuration for all collateral reserves on onBehalfOf position.
    * @dev Caller must be `onBehalfOf`, an authorized position manager for `onBehalfOf`, or admin.
    * @param onBehalfOf The owner of the position being modified.
    */
