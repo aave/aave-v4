@@ -97,8 +97,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(_getCollateralRisk(spoke1, reservesIds.dai), 20_00, 'dai collateral risk');
 
     // Set collateral factor to 99.99% for Alice collateral
-    updateCollateralFactor(spoke1, reservesIds.weth, 99_99);
-    updateCollateralFactor(spoke1, reservesIds.usdx, 99_99);
+    _updateCollateralFactor(spoke1, reservesIds.weth, 99_99);
+    _updateCollateralFactor(spoke1, reservesIds.usdx, 99_99);
 
     // supply twice the amount that alice borrows, usage ratio ~45%, borrow rate ~7.5%
     Utils.supply(spoke1, reservesIds.dai, bob, vars.daiBorrowAmount.percentDivDown(45_00), bob);
@@ -224,8 +224,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   /// After 1 year, Alice does a repay, and we ensure the same values are updated accordingly.
   function test_getUserRiskPremium_applyInterest_two_users_two_reserves_borrowed() public {
     // Set dai collateral risk to 10% and usdx to 20%
-    updateCollateralRisk(spoke1, _daiReserveId(spoke1), 10_00);
-    updateCollateralRisk(spoke1, _usdxReserveId(spoke1), 20_00);
+    _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 10_00);
+    _updateCollateralRisk(spoke1, _usdxReserveId(spoke1), 20_00);
 
     UserInfoLocal memory bobDaiInfo;
     UserInfoLocal memory aliceDaiInfo;
@@ -590,8 +590,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     timeSkip[2] = bound(timeSkip[2], 0, MAX_SKIP_TIME).toUint40();
 
     // Set collateral risks
-    updateCollateralRisk(spoke1, _daiReserveId(spoke1), daiCollateralRisk);
-    updateCollateralRisk(spoke1, _usdxReserveId(spoke1), usdxCollateralRisk);
+    _updateCollateralRisk(spoke1, _daiReserveId(spoke1), daiCollateralRisk);
+    _updateCollateralRisk(spoke1, _usdxReserveId(spoke1), usdxCollateralRisk);
     assertEq(
       _getCollateralRisk(spoke1, _daiReserveId(spoke1)),
       daiCollateralRisk,

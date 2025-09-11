@@ -208,7 +208,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 usdxReserveId = _usdxReserveId(spoke1);
 
     // Set collateral risk of usdx on spoke1 to 10%
-    updateCollateralRisk(spoke1, usdxReserveId, 10_00);
+    _updateCollateralRisk(spoke1, usdxReserveId, 10_00);
     assertEq(10_00, _getCollateralRisk(spoke1, usdxReserveId), 'usdx collateral risk');
 
     // Bob supply usdx

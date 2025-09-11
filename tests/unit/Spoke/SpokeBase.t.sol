@@ -143,22 +143,7 @@ contract SpokeBase is Base {
 
   /// @dev Opens a supply position for a random user
   function _openSupplyPosition(ISpoke spoke, uint256 reserveId, uint256 amount) public {
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 initialLiq = _hub(spoke, reserveId).getLiquidity(assetId);
-
-    address tempUser = makeUser();
-    deal(spoke, reserveId, tempUser, amount);
-    Utils.approve(spoke, reserveId, tempUser, UINT256_MAX);
-
-    Utils.supply({
-      spoke: spoke,
-      reserveId: reserveId,
-      caller: tempUser,
-      amount: amount,
-      onBehalfOf: tempUser
-    });
-
-    assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
+    _increaseCollateralSupply(spoke, reserveId, amount, makeUser());
   }
 
   /// @dev Increases the collateral supply for a user
@@ -183,6 +168,16 @@ contract SpokeBase is Base {
     });
 
     assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
+  }
+
+  function _increaseReserveDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount,
+    address user
+  ) internal {
+    _openSupplyPosition(spoke, reserveId, amount);
+    Utils.borrow(spoke, reserveId, user, amount, user);
   }
 
   /// @dev Opens a debt position for a random user, using same asset as collateral and borrow
@@ -217,7 +212,7 @@ contract SpokeBase is Base {
     uint24 cachedCollateralRisk;
     if (withPremium) {
       cachedCollateralRisk = _getCollateralRisk(spoke, reserveId);
-      updateCollateralRisk(spoke, reserveId, 50_00);
+      _updateCollateralRisk(spoke, reserveId, 50_00);
     }
 
     Utils.borrow({
@@ -235,7 +230,7 @@ contract SpokeBase is Base {
     if (withPremium) {
       assertGt(premiumDebt, 0);
       // restore cached collateral risk
-      updateCollateralRisk(spoke, reserveId, cachedCollateralRisk);
+      _updateCollateralRisk(spoke, reserveId, cachedCollateralRisk);
     }
 
     return tempUser;

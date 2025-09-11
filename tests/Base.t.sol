@@ -1055,7 +1055,7 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function updateCollateralFactor(
+  function _updateCollateralFactor(
     ISpoke spoke,
     function(ISpoke) pure returns (uint256) reserveIdFn,
     uint256 newCollateralFactor
@@ -1071,7 +1071,7 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function updateCollateralFactor(
+  function _updateCollateralFactor(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newCollateralFactor
@@ -1085,7 +1085,7 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function updateCollateralFactorAtKey(
+  function _updateCollateralFactorAtKey(
     ISpoke spoke,
     uint256 reserveId,
     uint16 configKey,
@@ -1112,7 +1112,7 @@ abstract contract Base is Test {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateCollateralRisk(
+  function _updateCollateralRisk(
     ISpoke spoke,
     uint256 reserveId,
     uint24 newCollateralRisk
