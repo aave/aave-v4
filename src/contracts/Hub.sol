@@ -629,10 +629,7 @@ contract Hub is IHub, AccessManaged {
     // can increase due to precision loss on premium (drawn unchanged)
     require(asset.premium() + premiumAmount - assetPremiumBefore <= 2, InvalidPremiumChange());
     uint256 spokePremiumAfter = _getSpokePremiumOwed(spoke, assetId);
-    require(
-      _getSpokePremiumOwed(spoke, assetId) + premiumAmount - spokePremiumBefore <= 2,
-      InvalidPremiumChange()
-    );
+    require(spokePremiumAfter + premiumAmount - spokePremiumBefore <= 2, InvalidPremiumChange());
   }
 
   function _transferShares(
