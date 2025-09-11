@@ -699,35 +699,6 @@ contract WrappedTokenGatewayV4Test is Base {
     wrappedTokenGateway.repayNative{value: repayAmount / 2}(_wethReserveId(spoke1), repayAmount);
   }
 
-  function test_recoverToken() public {
-    uint256 lostAmount = 10e18;
-
-    deal(address(tokenList.dai), address(wrappedTokenGateway), lostAmount);
-
-    uint256 prevBalanceThis = tokenList.dai.balanceOf(address(this));
-
-    vm.prank(address(ADMIN));
-    wrappedTokenGateway.recoverToken(address(tokenList.dai), address(this));
-
-    assertEq(tokenList.dai.balanceOf(address(this)), prevBalanceThis + lostAmount);
-    assertEq(tokenList.dai.balanceOf(address(wrappedTokenGateway)), 0);
-  }
-
-  function test_recoverNative() public {
-    uint256 lostAmount = 10e18;
-
-    deal(address(wrappedTokenGateway), lostAmount);
-
-    uint256 prevBalanceReceiver = address(alice).balance;
-
-    vm.prank(address(ADMIN));
-    wrappedTokenGateway.recoverNative(alice, lostAmount);
-
-    assertEq(address(alice).balance, prevBalanceReceiver + lostAmount);
-    assertEq(address(wrappedTokenGateway).balance, 0);
-    assertEq(tokenList.weth.balanceOf(address(wrappedTokenGateway)), 0);
-  }
-
   function test_receive_revertsWith_ReceiveNotAllowed() public {
     deal(address(this), 1 ether);
 

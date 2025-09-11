@@ -33,6 +33,7 @@ import {Roles} from 'src/libraries/types/Roles.sol';
 import {Utils} from 'tests/Utils.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 import {WrappedTokenGatewayV4, IWrappedTokenGatewayV4} from 'src/misc/WrappedTokenGatewayV4.sol';
+import {Rescuable} from 'src/misc/Rescuable.sol';
 
 // mocks
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
