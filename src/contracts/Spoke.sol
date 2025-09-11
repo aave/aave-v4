@@ -19,7 +19,6 @@ import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
-// interfaces
 import {IHubBase} from 'src/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
