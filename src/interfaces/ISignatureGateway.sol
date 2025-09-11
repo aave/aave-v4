@@ -18,9 +18,10 @@ interface ISignatureGateway is IMulticall {
 
   /**
    * @notice Facilitates supply action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to supply.
-   * @param onBehalfOf The address of the user to supply the asset on behalf of.
+   * @param onBehalfOf The address of the user to supply assets on behalf of.
    * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the action.
    */
@@ -34,6 +35,7 @@ interface ISignatureGateway is IMulticall {
 
   /**
    * @notice Facilitates withdraw action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @dev Withdrawn assets are pushed to `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to withdraw.
    * @param onBehalfOf The address of the user to withdraw the asset on behalf of.
@@ -50,6 +52,7 @@ interface ISignatureGateway is IMulticall {
 
   /**
    * @notice Facilitates borrow action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @dev Borrowed assets are pushed to `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to borrow.
    * @param onBehalfOf The address of the user to borrow the asset on behalf of.
@@ -66,6 +69,7 @@ interface ISignatureGateway is IMulticall {
 
   /**
    * @notice Facilitates repay action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @dev Repay assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to repay.
    * @param onBehalfOf The address of the user to repay the asset on behalf of.
@@ -112,7 +116,7 @@ interface ISignatureGateway is IMulticall {
   ) external;
 
   /**
-   * @notice Allows consuming a permit signature for the given reserve's underlying asset on connected SPOKE().
+   * @notice Allows consuming a permit for the given reserve's underlying asset on connected SPOKE().
    * @dev Spender is this gateway contract.
    * @param reserveId The identifier of the reserve.
    * @param onBehalfOf The address of the user on whose behalf the permit is being used.
@@ -130,18 +134,17 @@ interface ISignatureGateway is IMulticall {
   ) external;
 
   /**
-   * @notice Permissionless operation facilitates renounce self as user position manager on connected SPOKE() for specified `user`.
-   * @param user The address of the user to renounce self as position manager.
+   * @notice Permissioned operation to renounce self as user position manager on connected SPOKE() for specified `user`.
    */
   function renounceSelfAsUserPositionManager(address user) external;
 
   /**
-   * @notice Increments the nonce for the caller. Used to invalidate a nonce.
+   * @notice Increments the nonce for the caller, consuming current nonce.
    */
   function useNonce() external;
 
   /**
-   * @notice Returns the nonce for the given `user`.
+   * @notice Returns the current nonce for the given `user`.
    */
   function nonces(address user) external view returns (uint256);
 
