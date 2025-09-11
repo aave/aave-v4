@@ -20,7 +20,7 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    approve(hub, assetId, caller, amount);
+    approve(hub, assetId, user, amount);
     vm.prank(caller);
     return hub.add(assetId, amount, user);
   }
@@ -186,12 +186,9 @@ library Utils {
   }
 
   function _approve(IERC20 underlying, address owner, address spender, uint256 amount) private {
-    uint256 allowance = underlying.allowance(owner, spender);
-    if (allowance < amount) {
-      vm.startPrank(owner);
-      underlying.approve(spender, 0);
-      underlying.approve(spender, amount);
-      vm.stopPrank();
-    }
+    vm.startPrank(owner);
+    underlying.approve(spender, 0);
+    underlying.approve(spender, amount);
+    vm.stopPrank();
   }
 }

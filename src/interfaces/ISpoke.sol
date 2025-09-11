@@ -121,7 +121,11 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error InvalidCollateralRisk();
   error InvalidLiquidationConfig();
   error InvalidLiquidationFee();
-  error InvalidCollateralFactorAndLiquidationBonus();
+  error InvalidCollateralFactorAndMaxLiquidationBonus();
+  error SelfLiquidation();
+  error HealthFactorNotBelowThreshold();
+  error MustNotLeaveDust();
+  error InvalidDebtToCover();
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
@@ -189,15 +193,14 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   ) external;
 
   /**
-   * @notice Allows updating the risk premium on user position.
-   * @dev If the risk premium has increased, the caller must be `user`, an authorized position manager
-   * of `user`, or admin.
-   * @param user The address of the user.
+   * @notice Allows updating the risk premium on onBehalfOf position.
+   * @dev Caller must be `onBehalfOf`, an authorized position manager for `onBehalfOf`, or admin.
+   * @param onBehalfOf The owner of the position being modified.
    */
-  function updateUserRiskPremium(address user) external;
+  function updateUserRiskPremium(address onBehalfOf) external;
 
   /**
-   * @notice Allows updating the dynamic configuration for all collateral reserves of a user position.
+   * @notice Allows updating the dynamic configuration for all collateral reserves on onBehalfOf position.
    * @dev Caller must be `onBehalfOf`, an authorized position manager for `onBehalfOf`, or admin.
    * @param onBehalfOf The owner of the position being modified.
    */
@@ -292,16 +295,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getUserAccountData(
     address user
-  )
-    external
-    view
-    returns (
-      uint256 userRiskPremium,
-      uint256 avgCollateralFactor,
-      uint256 healthFactor,
-      uint256 totalCollateralInBaseCurrency,
-      uint256 totalDebtInBaseCurrency
-    );
+  ) external view returns (DataTypes.UserAccountData memory);
 
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256);
 
@@ -324,7 +318,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getReserveCount() external view returns (uint256);
 
-  function getVariableLiquidationBonus(
+  function getLiquidationBonus(
     uint256 reserveId,
     address user,
     uint256 healthFactor

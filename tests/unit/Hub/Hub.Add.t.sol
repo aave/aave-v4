@@ -35,7 +35,6 @@ contract HubAddTest is HubBase {
       address(irStrategy),
       encodedIrData
     );
-    hub1.addSpoke(zeroDecimalAssetId, address(treasurySpoke), spokeConfig);
     hub1.updateAssetConfig(
       zeroDecimalAssetId,
       DataTypes.AssetConfig({

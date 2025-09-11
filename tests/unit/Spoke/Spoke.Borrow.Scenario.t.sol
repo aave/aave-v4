@@ -596,16 +596,18 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     _openSupplyPosition(spoke1, debtReserveId, debtBorrowAmount);
     Utils.borrow(spoke1, debtReserveId, alice, debtBorrowAmount, alice);
 
-    (uint256 userRiskPremium, , , uint256 totalCollateralInBaseCurrency, ) = spoke1
-      .getUserAccountData(alice);
-    assertEq(_calculateExpectedUserRP(alice, spoke1), userRiskPremium);
-    assertEq(coll1InBaseCurrency + coll2InBaseCurrency, totalCollateralInBaseCurrency);
+    DataTypes.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
+    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.userRiskPremium);
+    assertEq(
+      coll1InBaseCurrency + coll2InBaseCurrency,
+      userAccountData.totalCollateralInBaseCurrency
+    );
 
     uint16 configKey = spoke1.getUserPosition(coll1ReserveId, alice).configKey;
     updateCollateralFactorAtKey(spoke1, coll1ReserveId, configKey, 0);
 
-    (userRiskPremium, , , totalCollateralInBaseCurrency, ) = spoke1.getUserAccountData(alice);
-    assertEq(_calculateExpectedUserRP(alice, spoke1), userRiskPremium);
-    assertEq(coll2InBaseCurrency, totalCollateralInBaseCurrency); // coll1 is not included
+    userAccountData = spoke1.getUserAccountData(alice);
+    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.userRiskPremium);
+    assertEq(coll2InBaseCurrency, userAccountData.totalCollateralInBaseCurrency); // coll1 is not included
   }
 }

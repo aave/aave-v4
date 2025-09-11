@@ -81,7 +81,7 @@ contract HubHandler is Test {
       DataTypes.ReserveConfig({frozen: false, paused: false, collateralRisk: 0, borrowable: false}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 0,
-        liquidationBonus: 100_00,
+        maxLiquidationBonus: 100_00,
         liquidationFee: 0
       })
     );
