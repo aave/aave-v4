@@ -57,6 +57,18 @@ library MathUtils {
   }
 
   /**
+   * @notice Adds two unsigned integers which does not revert on overflow.
+   * @param a The first unsigned integer.
+   * @param b The second unsigned integer.
+   * @return The result of the addition.
+   */
+  function uncheckedAdd(uint256 a, uint256 b) internal pure returns (uint256) {
+    unchecked {
+      return a + b;
+    }
+  }
+
+  /**
    * @notice Subtracts an unsigned integer from an unsigned integer.
    * @param a The unsigned integer.
    * @param b The unsigned integer.
@@ -75,6 +87,18 @@ library MathUtils {
   function uncheckedSub(uint256 a, uint256 b) internal pure returns (uint256) {
     unchecked {
       return a - b;
+    }
+  }
+
+  /**
+   * @notice Raises an unsigned integer to the power of an unsigned integer which does not revert on overflow.
+   * @param a The base.
+   * @param b The exponent.
+   * @return The result of the exponentiation.
+   */
+  function uncheckedExp(uint256 a, uint256 b) internal pure returns (uint256) {
+    unchecked {
+      return a ** b;
     }
   }
 

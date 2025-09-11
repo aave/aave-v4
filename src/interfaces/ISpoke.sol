@@ -121,7 +121,11 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error InvalidCollateralRisk();
   error InvalidLiquidationConfig();
   error InvalidLiquidationFee();
-  error InvalidCollateralFactorAndLiquidationBonus();
+  error InvalidCollateralFactorAndMaxLiquidationBonus();
+  error SelfLiquidation();
+  error HealthFactorNotBelowThreshold();
+  error MustNotLeaveDust();
+  error InvalidDebtToCover();
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
@@ -292,16 +296,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getUserAccountData(
     address user
-  )
-    external
-    view
-    returns (
-      uint256 userRiskPremium,
-      uint256 avgCollateralFactor,
-      uint256 healthFactor,
-      uint256 totalCollateralInBaseCurrency,
-      uint256 totalDebtInBaseCurrency
-    );
+  ) external view returns (DataTypes.UserAccountData memory);
 
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256);
 
@@ -324,7 +319,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getReserveCount() external view returns (uint256);
 
-  function getVariableLiquidationBonus(
+  function getLiquidationBonus(
     uint256 reserveId,
     address user,
     uint256 healthFactor
