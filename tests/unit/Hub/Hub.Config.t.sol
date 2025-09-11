@@ -257,7 +257,7 @@ contract HubConfigTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.AddSpoke(expectedAssetId, feeReceiver);
     vm.expectEmit(address(hub1));
-    emit IHub.SpokeConfigUpdate(expectedAssetId, feeReceiver, expectedSpokeConfig);
+    emit IHub.UpdateSpokeConfig(expectedAssetId, feeReceiver, expectedSpokeConfig);
     vm.expectEmit(address(hub1));
     emit IHub.AddAsset(expectedAssetId, underlying, decimals);
     vm.expectEmit(address(hub1));
@@ -361,7 +361,7 @@ contract HubConfigTest is HubBase {
       vm.expectEmit(address(hub1));
       emit IHub.AddSpoke(assetId, newConfig.feeReceiver);
       vm.expectEmit(address(hub1));
-      emit IHub.SpokeConfigUpdate(
+      emit IHub.UpdateSpokeConfig(
         assetId,
         newConfig.feeReceiver,
         DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: 0, active: true})
