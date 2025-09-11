@@ -57,10 +57,15 @@ interface IWrappedTokenGatewayV4 {
   ) external payable;
 
   /**
+   * @notice Renounces the positionManager approval given by the caller.
+   */
+  function renouncePositionManagerRole() external payable;
+
+  /**
    * @notice Renounces the positionManager approval given by an user.
    * @param user The address of the user.
    */
-  function renouncePositionManagerRole(address user) external payable;
+  function renouncePositionManagerRoleForUser(address user) external;
 
   /**
    * @notice Recovers ERC20 tokens sent to this contract.

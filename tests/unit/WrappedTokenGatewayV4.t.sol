@@ -22,7 +22,6 @@ contract WrappedTokenGatewayV4Test is Base {
 
     deal(address(tokenList.weth), MAX_SUPPLY_AMOUNT);
     deal(bob, mintAmount_WETH);
-
   }
 
   function test_constructor() public {
@@ -41,18 +40,10 @@ contract WrappedTokenGatewayV4Test is Base {
 
   function test_constructor_revertsWith_InvalidAddress() public {
     vm.expectRevert(IWrappedTokenGatewayV4.InvalidAddress.selector);
-    new WrappedTokenGatewayV4(
-      address(0),
-      address(spoke1),
-      address(ADMIN)
-    );
+    new WrappedTokenGatewayV4(address(0), address(spoke1), address(ADMIN));
 
     vm.expectRevert(IWrappedTokenGatewayV4.InvalidAddress.selector);
-    new WrappedTokenGatewayV4(
-      address(tokenList.weth),
-      address(0),
-      address(ADMIN)
-    );
+    new WrappedTokenGatewayV4(address(tokenList.weth), address(0), address(ADMIN));
   }
 
   function test_setUserPositionManagerWithSig() public {
@@ -90,9 +81,34 @@ contract WrappedTokenGatewayV4Test is Base {
     assertTrue(spoke1.isPositionManager(user, address(wrappedTokenGateway)));
 
     vm.prank(user);
-    wrappedTokenGateway.renouncePositionManagerRole(user);
+    wrappedTokenGateway.renouncePositionManagerRole();
 
     assertFalse(spoke1.isPositionManager(user, address(wrappedTokenGateway)));
+  }
+
+  function test_renouncePositionManagerRoleForUser() public {
+    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
+
+    vm.prank(user);
+    spoke1.setUserPositionManager(address(wrappedTokenGateway), true);
+
+    assertTrue(spoke1.isPositionManager(user, address(wrappedTokenGateway)));
+
+    vm.prank(ADMIN);
+    wrappedTokenGateway.renouncePositionManagerRoleForUser(user);
+
+    assertFalse(spoke1.isPositionManager(user, address(wrappedTokenGateway)));
+  }
+
+  function test_renouncePositionManagerRoleForUser_revertsWith_OwnableUnauthorizedAccount() public {
+    (address user, ) = makeAddrAndKey(string(vm.randomBytes(32)));
+
+    vm.prank(user);
+    spoke1.setUserPositionManager(address(wrappedTokenGateway), true);
+
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
+    vm.prank(user);
+    wrappedTokenGateway.renouncePositionManagerRoleForUser(user);
   }
 
   function test_supplyNative() public {
@@ -117,7 +133,10 @@ contract WrappedTokenGatewayV4Test is Base {
     wrappedTokenGateway.supplyNative{value: amount}(_wethReserveId(spoke1), amount);
 
     assertEq(bob.balance, prevUserBalance - amount);
-    assertEq(spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob), prevUserSuppliedAmount + amount);
+    assertEq(
+      spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob),
+      prevUserSuppliedAmount + amount
+    );
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + amount);
     assertEq(address(wrappedTokenGateway).balance, 0);
     assertEq(tokenList.weth.balanceOf(address(wrappedTokenGateway)), 0);
@@ -179,7 +198,10 @@ contract WrappedTokenGatewayV4Test is Base {
     wrappedTokenGateway.withdrawNative(_wethReserveId(spoke1), amount, bob);
 
     assertEq(bob.balance, prevUserBalance + amount);
-    assertEq(spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob), prevUserSuppliedAmount - amount);
+    assertEq(
+      spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob),
+      prevUserSuppliedAmount - amount
+    );
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - amount);
     assertEq(address(wrappedTokenGateway).balance, 0);
     assertEq(tokenList.weth.balanceOf(address(wrappedTokenGateway)), 0);
@@ -206,7 +228,12 @@ contract WrappedTokenGatewayV4Test is Base {
     assertEq(spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob), expectedSupplyShares);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(_wethReserveId(spoke1), address(wrappedTokenGateway), bob, supplyAmount);
+    emit ISpokeBase.Withdraw(
+      _wethReserveId(spoke1),
+      address(wrappedTokenGateway),
+      bob,
+      supplyAmount
+    );
     vm.prank(bob);
     wrappedTokenGateway.withdrawNative(_wethReserveId(spoke1), UINT256_MAX, bob);
 
@@ -315,7 +342,10 @@ contract WrappedTokenGatewayV4Test is Base {
 
     assertEq(bob.balance, prevUserBalance);
     assertEq(alice.balance, prevReceiverBalance + amount);
-    assertEq(spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob), prevUserSuppliedAmount - amount);
+    assertEq(
+      spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob),
+      prevUserSuppliedAmount - amount
+    );
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - amount);
     assertEq(address(wrappedTokenGateway).balance, 0);
     assertEq(tokenList.weth.balanceOf(address(wrappedTokenGateway)), 0);
@@ -373,7 +403,10 @@ contract WrappedTokenGatewayV4Test is Base {
     vm.prank(bob);
     wrappedTokenGateway.borrowNative(_wethReserveId(spoke1), borrowAmount, bob);
 
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(_wethReserveId(spoke1), bob);
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
+      _wethReserveId(spoke1),
+      bob
+    );
 
     assertEq(userDrawnDebt + userPremiumDebt, borrowAmount);
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - borrowAmount);
@@ -411,7 +444,10 @@ contract WrappedTokenGatewayV4Test is Base {
     vm.prank(bob);
     wrappedTokenGateway.borrowNative(_wethReserveId(spoke1), borrowAmount, alice);
 
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(_wethReserveId(spoke1), bob);
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
+      _wethReserveId(spoke1),
+      bob
+    );
 
     assertEq(userDrawnDebt + userPremiumDebt, borrowAmount);
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - borrowAmount);
@@ -465,7 +501,10 @@ contract WrappedTokenGatewayV4Test is Base {
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
 
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(_wethReserveId(spoke1), bob);
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
+      _wethReserveId(spoke1),
+      bob
+    );
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
       userDrawnDebt,
       userPremiumDebt,
@@ -517,7 +556,10 @@ contract WrappedTokenGatewayV4Test is Base {
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
 
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(_wethReserveId(spoke1), bob);
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
+      _wethReserveId(spoke1),
+      bob
+    );
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
       userDrawnDebt,
       userPremiumDebt,
@@ -543,9 +585,16 @@ contract WrappedTokenGatewayV4Test is Base {
     vm.prank(bob);
     wrappedTokenGateway.repayNative{value: repayAmount}(_wethReserveId(spoke1), repayAmount);
 
-    (uint256 newUserDrawnDebt, uint256 newUserPremiumDebt)  = spoke1.getUserDebt(_wethReserveId(spoke1), bob);
+    (uint256 newUserDrawnDebt, uint256 newUserPremiumDebt) = spoke1.getUserDebt(
+      _wethReserveId(spoke1),
+      bob
+    );
 
-    assertApproxEqAbs(newUserDrawnDebt + newUserPremiumDebt, userDrawnDebt + userPremiumDebt - totalRepaid, 2);
+    assertApproxEqAbs(
+      newUserDrawnDebt + newUserPremiumDebt,
+      userDrawnDebt + userPremiumDebt - totalRepaid,
+      2
+    );
     assertApproxEqAbs(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + totalRepaid, 2);
     assertApproxEqAbs(bob.balance, prevUserBalance - totalRepaid, 1);
     assertEq(address(wrappedTokenGateway).balance, 0);
@@ -571,7 +620,10 @@ contract WrappedTokenGatewayV4Test is Base {
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
 
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(_wethReserveId(spoke1), bob);
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
+      _wethReserveId(spoke1),
+      bob
+    );
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
       userDrawnDebt,
       userPremiumDebt,
@@ -694,7 +746,10 @@ contract WrappedTokenGatewayV4Test is Base {
     wrappedTokenGateway.multicall{value: amount}(calls);
 
     assertEq(bob.balance, prevUserBalance - amount);
-    assertEq(spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob), prevUserSuppliedAmount + amount);
+    assertEq(
+      spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob),
+      prevUserSuppliedAmount + amount
+    );
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + amount);
     assertEq(address(wrappedTokenGateway).balance, 0);
     assertEq(tokenList.weth.balanceOf(address(wrappedTokenGateway)), 0);
@@ -733,7 +788,10 @@ contract WrappedTokenGatewayV4Test is Base {
     wrappedTokenGateway.multicall(calls);
 
     assertEq(bob.balance, prevUserBalance + amount);
-    assertEq(spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob), prevUserSuppliedAmount - amount);
+    assertEq(
+      spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob),
+      prevUserSuppliedAmount - amount
+    );
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - amount);
     assertEq(address(wrappedTokenGateway).balance, 0);
     assertEq(tokenList.weth.balanceOf(address(wrappedTokenGateway)), 0);
@@ -769,7 +827,10 @@ contract WrappedTokenGatewayV4Test is Base {
     vm.prank(bob);
     wrappedTokenGateway.multicall(calls);
 
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(_wethReserveId(spoke1), bob);
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
+      _wethReserveId(spoke1),
+      bob
+    );
 
     assertEq(userDrawnDebt + userPremiumDebt, borrowAmount);
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - borrowAmount);
@@ -795,7 +856,10 @@ contract WrappedTokenGatewayV4Test is Base {
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
 
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(_wethReserveId(spoke1), bob);
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
+      _wethReserveId(spoke1),
+      bob
+    );
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
       userDrawnDebt,
       userPremiumDebt,
@@ -878,7 +942,7 @@ contract WrappedTokenGatewayV4Test is Base {
       (user, params.approve, params.deadline, v, r, s)
     );
     calls[1] = action;
-    calls[2] = abi.encodeCall(IWrappedTokenGatewayV4.renouncePositionManagerRole, (user));
+    calls[2] = abi.encodeCall(IWrappedTokenGatewayV4.renouncePositionManagerRole, ());
     return calls;
   }
 }

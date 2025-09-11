@@ -45,7 +45,12 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
   }
 
   /// @inheritdoc IWrappedTokenGatewayV4
-  function renouncePositionManagerRole(address user) external payable {
+  function renouncePositionManagerRole() external payable {
+    SPOKE.renouncePositionManagerRole(msg.sender);
+  }
+
+  /// @inheritdoc IWrappedTokenGatewayV4
+  function renouncePositionManagerRoleForUser(address user) external onlyOwner {
     SPOKE.renouncePositionManagerRole(user);
   }
 
