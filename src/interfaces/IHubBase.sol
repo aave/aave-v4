@@ -75,4 +75,45 @@ interface IHubBase {
     DataTypes.PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256);
+
+  /**
+   * @notice Returns the maximum amount of assets that can be added by a spoke.
+   * @dev Motivated by ERC4626 `maxDeposit` function (https://eips.ethereum.org/EIPS/eip-4626).
+   * @dev Returns `type(uint256).max` if the spoke has no cap.
+   * @dev Returns 0 if the spoke is not active.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @return The maximum amount of assets that can be added.
+   */
+  function maxAdd(uint256 assetId, address spoke) external view returns (uint256);
+
+  /**
+   * @notice Returns the maximum amount of assets that can be removed by a spoke.
+   * @dev Motivated by ERC4626 `maxWithdraw` function (https://eips.ethereum.org/EIPS/eip-4626).
+   * @dev Returns 0 if the spoke is not active.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @return The maximum amount of assets that can be removed.
+   */
+  function maxRemove(uint256 assetId, address spoke) external view returns (uint256);
+
+  /**
+   * @notice Returns the maximum amount of assets that can be drawn by a spoke.
+   * @dev Motivated by ERC4626 max functions (https://eips.ethereum.org/EIPS/eip-4626).
+   * @dev Returns 0 if the spoke is not active.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @return The maximum amount of assets that can be drawn.
+   */
+  function maxDraw(uint256 assetId, address spoke) external view returns (uint256);
+
+  /**
+   * @notice Returns the maximum amount of assets that can be restored by a spoke.
+   * @dev Motivated by ERC4626 max functions (https://eips.ethereum.org/EIPS/eip-4626).
+   * @dev Returns 0 if the spoke is not active.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @return The maximum amount of assets that can be restored.
+   */
+  function maxRestore(uint256 assetId, address spoke) external view returns (uint256);
 }

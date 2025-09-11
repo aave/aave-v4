@@ -507,6 +507,52 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
+  /// @inheritdoc IHubBase
+  function maxAdd(uint256 assetId, address spoke) external view returns (uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
+
+    if (!spokeData.active) return 0;
+    uint256 addedAssets = previewAddByShares(assetId, spokeData.addedShares);
+    uint256 addCap = spokeData.addCap;
+    if (addCap == Constants.MAX_CAP) return type(uint256).max;
+    uint256 assetsCap = addCap * 10 ** asset.decimals;
+    if (assetsCap <= addedAssets) return 0;
+
+    return assetsCap - addedAssets;
+  }
+
+  /// @inheritdoc IHubBase
+  function maxRemove(uint256 assetId, address spoke) external view returns (uint256) {
+    DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
+    if (!spokeData.active) return 0;
+    return previewRemoveByShares(assetId, spokeData.addedShares);
+  }
+
+  /// @inheritdoc IHubBase
+  function maxDraw(uint256 assetId, address spoke) external view returns (uint256) {
+    DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
+
+    if (!spokeData.active) return 0;
+    uint256 owed = _getSpokeTotalOwed(spokeData, assetId);
+    uint256 drawCap = spokeData.drawCap;
+    if (drawCap == Constants.MAX_CAP) return asset.liquidity;
+    uint256 assetsCap = drawCap * 10 ** asset.decimals;
+    if (assetsCap <= owed) return 0;
+
+    uint256 liquidity = asset.liquidity;
+    uint256 maxDrawable = assetsCap - owed;
+    return liquidity <= maxDrawable ? liquidity : maxDrawable;
+  }
+
+  /// @inheritdoc IHubBase
+  function maxRestore(uint256 assetId, address spoke) external view returns (uint256) {
+    DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
+    if (!spokeData.active) return 0;
+    return _getSpokeTotalOwed(spokeData, assetId);
+  }
+
   /// @inheritdoc IHub
   function getAssetDrawnIndex(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].getDrawnIndex();
@@ -526,8 +572,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256) {
-    (uint256 drawn, uint256 premium) = _getSpokeOwed(_spokes[assetId][spoke], assetId);
-    return drawn + premium;
+    return _getSpokeTotalOwed(_spokes[assetId][spoke], assetId);
   }
 
   function getAssetAddedAmount(uint256 assetId) external view returns (uint256) {
@@ -649,6 +694,14 @@ contract Hub is IHub, AccessManaged {
     );
   }
 
+  function _getSpokeTotalOwed(
+    DataTypes.SpokeData storage spoke,
+    uint256 assetId
+  ) internal view returns (uint256) {
+    (uint256 drawn, uint256 premium) = _getSpokeOwed(spoke, assetId);
+    return drawn + premium;
+  }
+
   function _validateAdd(
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke,
@@ -691,9 +744,9 @@ contract Hub is IHub, AccessManaged {
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
     uint256 drawCap = spoke.drawCap;
-    (uint256 drawn, uint256 premium) = _getSpokeOwed(spoke, assetId);
+    uint256 totalOwed = _getSpokeTotalOwed(spoke, assetId);
     require(
-      drawCap == Constants.MAX_CAP || drawCap * 10 ** asset.decimals >= drawn + premium + amount,
+      drawCap == Constants.MAX_CAP || drawCap * 10 ** asset.decimals >= totalOwed + amount,
       DrawCapExceeded(drawCap)
     );
   }
