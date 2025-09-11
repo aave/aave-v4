@@ -144,7 +144,7 @@ contract HubRemoveTest is HubBase {
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
 
-    address feeReceiver = _getFeeReceiver(assetId);
+    address feeReceiver = _getFeeReceiver(hub1, assetId);
 
     // asset
     // only remaining added amount are fees

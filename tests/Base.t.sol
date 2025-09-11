@@ -38,6 +38,7 @@ import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusWrapper} from 'tests/mocks/PositionStatusWrapper.sol';
+import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 
 // dependencies
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -405,7 +406,6 @@ abstract contract Base is Test {
       address(irStrategy),
       encodedIrData
     );
-    hub1.addSpoke(wethAssetId, address(treasurySpoke), spokeConfig);
     hub1.updateAssetConfig(
       wethAssetId,
       DataTypes.AssetConfig({
@@ -423,7 +423,6 @@ abstract contract Base is Test {
       address(irStrategy),
       encodedIrData
     );
-    hub1.addSpoke(usdxAssetId, address(treasurySpoke), spokeConfig);
     hub1.updateAssetConfig(
       usdxAssetId,
       DataTypes.AssetConfig({
@@ -441,7 +440,6 @@ abstract contract Base is Test {
       address(irStrategy),
       encodedIrData
     );
-    hub1.addSpoke(daiAssetId, address(treasurySpoke), spokeConfig);
     hub1.updateAssetConfig(
       daiAssetId,
       DataTypes.AssetConfig({
@@ -459,7 +457,6 @@ abstract contract Base is Test {
       address(irStrategy),
       encodedIrData
     );
-    hub1.addSpoke(wbtcAssetId, address(treasurySpoke), spokeConfig);
     hub1.updateAssetConfig(
       wbtcAssetId,
       DataTypes.AssetConfig({
@@ -477,7 +474,6 @@ abstract contract Base is Test {
       address(irStrategy),
       encodedIrData
     );
-    hub1.addSpoke(usdyAssetId, address(treasurySpoke), spokeConfig);
     hub1.updateAssetConfig(
       usdyAssetId,
       DataTypes.AssetConfig({
@@ -495,7 +491,6 @@ abstract contract Base is Test {
       address(irStrategy),
       encodedIrData
     );
-    hub1.addSpoke(hub1.getAssetCount() - 1, address(treasurySpoke), spokeConfig);
     hub1.updateAssetConfig(
       hub1.getAssetCount() - 1,
       DataTypes.AssetConfig({
@@ -1890,8 +1885,8 @@ abstract contract Base is Test {
     return hub1.getAssetConfig(assetId).liquidityFee;
   }
 
-  function _getFeeReceiver(uint256 assetId) internal view returns (address) {
-    return hub1.getAssetConfig(assetId).feeReceiver;
+  function _getFeeReceiver(IHub hub, uint256 assetId) internal view returns (address) {
+    return hub.getAssetConfig(assetId).feeReceiver;
   }
 
   function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint24) {

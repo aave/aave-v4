@@ -507,41 +507,6 @@ contract SpokeConfiguratorTest is SpokeBase {
     assertEq(spoke.getDynamicReserveConfig(reserveId, configKey), expectedDynamicReserveConfig);
   }
 
-  function test_updateReserveConfig_revertsWith_OwnableUnauthorizedAccount() public {
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
-    vm.prank(alice);
-    spokeConfigurator.updateReserveConfig(
-      spokeAddr,
-      reserveId,
-      DataTypes.ReserveConfig({
-        frozen: false,
-        paused: false,
-        borrowable: true,
-        collateralRisk: 15_00
-      })
-    );
-  }
-
-  function test_updateReserveConfig() public {
-    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      frozen: false,
-      paused: false,
-      borrowable: true,
-      collateralRisk: 15_00
-    });
-
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, newReserveConfig))
-    );
-    vm.expectEmit(address(spoke));
-    emit ISpoke.ReserveConfigUpdate(reserveId, newReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateReserveConfig(spokeAddr, reserveId, newReserveConfig);
-
-    assertEq(spoke.getReserveConfig(reserveId), newReserveConfig);
-  }
-
   function test_addDynamicReserveConfig_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);

@@ -176,18 +176,6 @@ interface ISpokeConfigurator {
   ) external;
 
   /**
-   * @notice Updates the config of a reserve.
-   * @param spoke The address of the spoke.
-   * @param reserveId The identifier of the reserve.
-   * @param config The new reserve config.
-   */
-  function updateReserveConfig(
-    address spoke,
-    uint256 reserveId,
-    DataTypes.ReserveConfig calldata config
-  ) external;
-
-  /**
    * @notice Adds a dynamic config to a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.

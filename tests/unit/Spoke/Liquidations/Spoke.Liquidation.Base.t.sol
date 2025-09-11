@@ -1115,11 +1115,11 @@ contract SpokeLiquidationBase is SpokeBase {
     }
     state.feeReceiverAmount.balanceBefore = state.collateralHub.getSpokeAddedAmount(
       state.collateralReserve.assetId,
-      _getFeeReceiver(state.collateralReserve.assetId)
+      _getFeeReceiver(state.collateralHub, state.collateralReserve.assetId)
     );
     state.feeReceiverShares.balanceBefore = state.collateralHub.getSpokeAddedShares(
       state.collateralReserve.assetId,
-      _getFeeReceiver(state.collateralReserve.assetId)
+      _getFeeReceiver(state.collateralHub, state.collateralReserve.assetId)
     );
 
     return state;
@@ -1132,11 +1132,11 @@ contract SpokeLiquidationBase is SpokeBase {
   ) internal view returns (LiquidationTestLocalParams memory) {
     state.feeReceiverAmount.balanceAfter = state.collateralHub.getSpokeAddedAmount(
       state.collateralReserve.assetId,
-      _getFeeReceiver(state.collateralReserve.assetId)
+      _getFeeReceiver(state.collateralHub, state.collateralReserve.assetId)
     );
     state.feeReceiverShares.balanceAfter = state.collateralHub.getSpokeAddedShares(
       state.collateralReserve.assetId,
-      _getFeeReceiver(state.collateralReserve.assetId)
+      _getFeeReceiver(state.collateralHub, state.collateralReserve.assetId)
     );
     state.liquidatorCollateral.balanceAfter = getAssetUnderlyingByReserveId(
       state.spoke,

@@ -24,7 +24,7 @@ contract HubConfigTest is HubBase {
   }
 
   function test_hub_deploy_revertsWith_InvalidAddress() public {
-    vm.expectRevert(IHub.InvalidAddress.selector);
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     new Hub(address(0));
   }
 
@@ -33,7 +33,7 @@ contract HubConfigTest is HubBase {
     DataTypes.SpokeConfig calldata spokeConfig
   ) public {
     assetId = bound(assetId, hub1.getAssetCount(), type(uint256).max);
-    vm.expectRevert(IHub.AssetNotListed.selector);
+    vm.expectRevert(IHub.AssetNotListed.selector, address(hub1));
     Utils.addSpoke(hub1, ADMIN, assetId, address(spoke1), spokeConfig);
   }
 
@@ -49,7 +49,7 @@ contract HubConfigTest is HubBase {
 
   function test_addSpoke_revertsWith_SpokeAlreadyListed() public {
     DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
-    vm.expectRevert(IHub.SpokeAlreadyListed.selector);
+    vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
     Utils.addSpoke(hub1, ADMIN, daiAssetId, address(spoke1), spokeConfig);
   }
 
@@ -74,7 +74,7 @@ contract HubConfigTest is HubBase {
     if (!hub1.isSpokeListed(assetId, spoke)) {
       assetId = bound(assetId, hub1.getAssetCount(), type(uint256).max);
     }
-    vm.expectRevert(IHub.SpokeNotListed.selector);
+    vm.expectRevert(IHub.SpokeNotListed.selector, address(hub1));
     Utils.updateSpokeConfig(hub1, ADMIN, assetId, spoke, spokeConfig);
   }
 
@@ -103,7 +103,7 @@ contract HubConfigTest is HubBase {
 
     decimals = bound(decimals, Constants.MAX_ALLOWED_ASSET_DECIMALS + 1, type(uint8).max).toUint8();
 
-    vm.expectRevert(IHub.InvalidAssetDecimals.selector);
+    vm.expectRevert(IHub.InvalidAssetDecimals.selector, address(hub1));
     Utils.addAsset(
       hub1,
       ADMIN,
@@ -195,7 +195,8 @@ contract HubConfigTest is HubBase {
     uint256 drawnRateRay = uint256(type(uint96).max) + 1;
     _mockInterestRateRay(drawnRateRay);
     vm.expectRevert(
-      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 96, drawnRateRay)
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 96, drawnRateRay),
+      address(hub1)
     );
     Utils.addAsset(
       hub1,
@@ -212,7 +213,8 @@ contract HubConfigTest is HubBase {
     uint256 blockTimestamp = uint256(type(uint40).max) + 1;
     vm.warp(blockTimestamp);
     vm.expectRevert(
-      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 40, blockTimestamp)
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 40, blockTimestamp),
+      address(hub1)
     );
     Utils.addAsset(
       hub1,
@@ -246,6 +248,16 @@ contract HubConfigTest is HubBase {
       (uint32, uint32, uint32, uint32)
     );
 
+    DataTypes.SpokeConfig memory expectedSpokeConfig = DataTypes.SpokeConfig({
+      addCap: Constants.MAX_CAP,
+      drawCap: 0,
+      active: true
+    });
+
+    vm.expectEmit(address(hub1));
+    emit IHub.AddSpoke(expectedAssetId, feeReceiver);
+    vm.expectEmit(address(hub1));
+    emit IHub.SpokeConfigUpdate(expectedAssetId, feeReceiver, expectedSpokeConfig);
     vm.expectEmit(address(hub1));
     emit IHub.AddAsset(expectedAssetId, underlying, decimals);
     vm.expectEmit(address(hub1));
@@ -274,6 +286,7 @@ contract HubConfigTest is HubBase {
     assertEq(hub1.getAsset(assetId).decimals, decimals, 'asset decimals');
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
     assertEq(hub1.getAsset(assetId).reinvestmentController, address(0)); // should init to addr(0)
+    assertEq(hub1.getSpokeConfig(assetId, feeReceiver), expectedSpokeConfig);
   }
   function test_updateAssetConfig_fuzz_revertsWith_InvalidLiquidityFee(
     uint256 assetId,
@@ -284,7 +297,7 @@ contract HubConfigTest is HubBase {
     newConfig.liquidityFee = vm
       .randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
       .toUint16();
-    vm.expectRevert(IHub.InvalidLiquidityFee.selector);
+    vm.expectRevert(IHub.InvalidLiquidityFee.selector, address(hub1));
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig);
   }
@@ -311,7 +324,7 @@ contract HubConfigTest is HubBase {
     assertEq(config.reinvestmentController, address(0));
     assertNotEq(hub1.getAsset(assetId).reinvestmentController, address(0));
 
-    vm.expectRevert(IHub.InvalidReinvestmentController.selector);
+    vm.expectRevert(IHub.InvalidReinvestmentController.selector, address(hub1));
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, config);
   }
@@ -323,7 +336,7 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
     assumeUnusedAddress(newConfig.irStrategy);
-    vm.expectRevert();
+    vm.expectRevert(address(hub1));
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig);
   }
@@ -339,6 +352,22 @@ contract HubConfigTest is HubBase {
     uint256 liquidity = hub1.getLiquidity(assetId);
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
 
+    // new spoke is added only if it is different from the old one and not yet listed
+    if (
+      newConfig.feeReceiver != _getFeeReceiver(hub1, assetId) &&
+      !hub1.isSpokeListed(assetId, newConfig.feeReceiver)
+    ) {
+      vm.expectEmit(address(hub1));
+      emit IHub.AddSpoke(assetId, newConfig.feeReceiver);
+      vm.expectEmit(address(hub1));
+      emit IHub.SpokeConfigUpdate(
+        assetId,
+        newConfig.feeReceiver,
+        DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: 0, active: true})
+      );
+    } else {
+      newConfig.feeReceiver = _getFeeReceiver(hub1, assetId);
+    }
     vm.expectEmit(address(hub1));
     emit IHub.AssetUpdate(
       assetId,
@@ -405,7 +434,9 @@ contract HubConfigTest is HubBase {
   }
 
   /// Updates the fee receiver by reusing a previously assigned spoke, with no impact on accrued fees
-  function test_updateAssetConfig_fuzz_ReuseFeeReceiver(uint256 assetId) public {
+  function test_updateAssetConfig_fuzz_ReuseFeeReceiver_revertsWith_SpokeAlreadyListed(
+    uint256 assetId
+  ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     test_updateAssetConfig_fuzz_NewFeeReceiver(assetId);
 
@@ -421,39 +452,46 @@ contract HubConfigTest is HubBase {
     assertTrue(newFees > 0);
 
     config.feeReceiver = address(treasurySpoke);
-    test_updateAssetConfig_fuzz(assetId, config);
+
+    vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
+    Utils.updateAssetConfig(hub1, ADMIN, assetId, config);
 
     assertEq(hub1.getSpokeAddedShares(assetId, config.feeReceiver), oldFees);
     assertEq(hub1.getSpokeAddedShares(assetId, newFeeReceiver), newFees);
   }
 
   /// Updates the fee receiver to an existing spoke of the hub1, so ends up with existing supplied shares plus accrued fees
-  function test_updateAssetConfig_fuzz_UseExistingSpokeAsFeeReceiver(uint256 assetId) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
-
-    address oldFeeReceiver = _getFeeReceiver(assetId);
+  function test_updateAssetConfig_fuzz_UseExistingSpokeAsFeeReceiver_revertsWith_SpokeAlreadyListed(
+    uint256 assetId
+  ) public {
+    assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
     address newFeeReceiver = address(spoke1);
 
-    uint256 amount = 1000e18;
-    _addLiquidity(assetId, amount);
-    _drawLiquidity(assetId, amount, true);
+    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    config.feeReceiver = newFeeReceiver;
 
-    uint256 oldReceiverFees = hub1.getSpokeAddedShares(assetId, oldFeeReceiver);
-    assertTrue(oldReceiverFees > 0);
+    vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
+    vm.prank(HUB_ADMIN);
+    hub1.updateAssetConfig(assetId, config);
+  }
 
-    // spoke1 adds some assets
-    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke2), amount: amount, user: bob});
-    uint256 newReceiverFees = hub1.getSpokeAddedShares(assetId, newFeeReceiver);
+  /// Updates the fee receiver to an existing spoke of the hub1 which is already listed on the asset
+  function test_updateAssetConfig_UseExistingSpokeAndListedAsFeeReceiver_revertsWith_SpokeAlreadyListed()
+    public
+  {
+    uint256 assetId = 3;
 
-    updateAssetFeeReceiver(hub1, assetId, newFeeReceiver);
+    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
 
-    skip(365 days);
+    address oldFeeReceiver = config.feeReceiver;
+    config.feeReceiver = address(spoke1);
 
-    // new fee receiver keeps the existing supplied shares and earns more via fees accrual
-    assertTrue(hub1.getSpokeAddedShares(assetId, newFeeReceiver) > newReceiverFees);
+    // spoke1 is already listed on this asset, therefore is not allowed
+    assertTrue(hub1.isSpokeListed(assetId, address(spoke1)));
 
-    // old fee receiver keeps the accrued fees
-    assertEq(hub1.getSpokeAddedShares(assetId, oldFeeReceiver), oldReceiverFees);
+    vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
+    vm.prank(HUB_ADMIN);
+    hub1.updateAssetConfig(assetId, config);
   }
 
   /// Triggers accrual when liquidity fee update, based on old liquidity fee

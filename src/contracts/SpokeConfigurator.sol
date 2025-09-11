@@ -205,15 +205,6 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateReserveConfig(
-    address spoke,
-    uint256 reserveId,
-    DataTypes.ReserveConfig calldata config
-  ) external onlyOwner {
-    ISpoke(spoke).updateReserveConfig(reserveId, config);
-  }
-
-  /// @inheritdoc ISpokeConfigurator
   function addDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
