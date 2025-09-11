@@ -106,11 +106,10 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
 
     (IERC20 underlying, ) = _getReserveData(reserveId);
     uint256 userBalance = SPOKE.getUserSuppliedAmount(reserveId, onBehalfOf);
-    uint256 amountToWithdraw = amount == type(uint256).max ? userBalance : amount;
+    uint256 withdrawAmount = MathUtils.min(userBalance, amount);
 
-    SPOKE.withdraw(reserveId, amountToWithdraw, onBehalfOf);
-
-    underlying.safeTransfer(onBehalfOf, amountToWithdraw);
+    SPOKE.withdraw(reserveId, withdrawAmount, onBehalfOf);
+    underlying.safeTransfer(onBehalfOf, withdrawAmount);
   }
 
   // @inheritdoc ISignatureGateway
@@ -140,7 +139,6 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
     (IERC20 underlying, ) = _getReserveData(reserveId);
 
     SPOKE.borrow(reserveId, amount, onBehalfOf);
-
     underlying.safeTransfer(onBehalfOf, amount);
   }
 
