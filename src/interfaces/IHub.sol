@@ -262,19 +262,22 @@ interface IHub is IHubBase, IAccessManaged {
    */
   function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256);
 
-  function getTotalAddedAssets(uint256 assetId) external view returns (uint256);
-
-  function getTotalAddedShares(uint256 assetId) external view returns (uint256);
-
+  /**
+   * @notice Returns the amount of available liquidity of the specified asset.
+   * @param assetId The identifier of the asset.
+   */
   function getLiquidity(uint256 assetId) external view returns (uint256);
 
   /**
-   * @notice Return the amount swept (reinvested) for a certain assetId.
+   * @notice Returns the amount swept (reinvested) liquidity of the specified asset.
    * @param assetId The identifier of the asset.
-   * @return The swept amount for the asset.
    */
   function getSwept(uint256 assetId) external view returns (uint256);
 
+  /**
+   * @notice Returns the amount of deficit of the specified asset.
+   * @param assetId The identifier of the asset.
+   */
   function getDeficit(uint256 assetId) external view returns (uint256);
 
   function getSpokeCount(uint256 assetId) external view returns (uint256);
