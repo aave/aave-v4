@@ -394,13 +394,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   /// @inheritdoc ISpoke
   function updateUserRiskPremium(address onBehalfOf) external {
-    DataTypes.UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf);
-    bool premiumIncrease = _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.userRiskPremium);
-
-    // check permissions if premium increases and not called by user
-    if (premiumIncrease && !_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
+    if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
+    _notifyRiskPremiumUpdate(onBehalfOf, _calculateUserAccountData(onBehalfOf).userRiskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -916,17 +913,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    * @dev Trigger risk premium update on all drawn reserves of `user`.
    * @param user The address of the user whose risk premium is being updated.
    * @param newUserRiskPremium The new risk premium of the user.
-   * @return premiumIncrease True if the risk premium increased, false otherwise.
    */
-  function _notifyRiskPremiumUpdate(
-    address user,
-    uint256 newUserRiskPremium
-  ) internal returns (bool) {
+  function _notifyRiskPremiumUpdate(address user, uint256 newUserRiskPremium) internal {
     uint256 reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
 
     uint256 reserveId;
-    bool premiumIncrease;
     while (
       (reserveId = positionStatus.nextBorrowing(reserveId, reserveCount)) !=
       PositionStatus.NOT_FOUND
@@ -957,15 +949,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         realizedDelta: accruedUserPremium.toInt256()
       });
 
-      if (!premiumIncrease) premiumIncrease = premiumDelta.sharesDelta > 0;
-
       hub.refreshPremium(assetId, premiumDelta);
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
       reserveId = reserveId.uncheckedAdd(1);
     }
     emit UserRiskPremiumUpdate(user, newUserRiskPremium);
-
-    return premiumIncrease;
   }
 
   /**
