@@ -335,7 +335,7 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
 
     // no premium change allowed
-    _applyPremiumDelta(asset, spoke, premiumDelta, 0);
+    if (_isNonZeroPremiumDelta(premiumDelta)) _applyPremiumDelta(asset, spoke, premiumDelta, 0);
 
     emit RefreshPremium(assetId, msg.sender, premiumDelta);
   }
@@ -783,5 +783,9 @@ contract Hub is IHub, AccessManaged {
   function _addSpoke(uint256 assetId, address spoke) internal {
     require(_assetToSpokes[assetId].add(spoke), SpokeAlreadyListed());
     emit AddSpoke(assetId, spoke);
+  }
+
+  function _isNonZeroPremiumDelta(DataTypes.PremiumDelta calldata d) internal pure returns (bool) {
+    return (uint256(d.sharesDelta) | uint256(d.offsetDelta) | uint256(d.realizedDelta)) != 0;
   }
 }
