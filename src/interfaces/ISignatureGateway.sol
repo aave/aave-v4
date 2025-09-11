@@ -23,7 +23,7 @@ interface ISignatureGateway is IMulticall {
    * @param amount The amount of asset to supply.
    * @param onBehalfOf The address of the user to supply assets on behalf of.
    * @param deadline The deadline for the signature.
-   * @param signature The signed bytes for the action.
+   * @param signature The signed bytes for the intent.
    */
   function supplyWithSig(
     uint256 reserveId,
@@ -40,7 +40,7 @@ interface ISignatureGateway is IMulticall {
    * @param amount The amount of asset to withdraw.
    * @param onBehalfOf The address of the user to withdraw the asset on behalf of.
    * @param deadline The deadline for the signature.
-   * @param signature The signed bytes for the action.
+   * @param signature The signed bytes for the intent.
    */
   function withdrawWithSig(
     uint256 reserveId,
@@ -57,7 +57,7 @@ interface ISignatureGateway is IMulticall {
    * @param amount The amount of asset to borrow.
    * @param onBehalfOf The address of the user to borrow the asset on behalf of.
    * @param deadline The deadline for the signature.
-   * @param signature The signed bytes for the action.
+   * @param signature The signed bytes for the intent.
    */
   function borrowWithSig(
     uint256 reserveId,
@@ -74,7 +74,7 @@ interface ISignatureGateway is IMulticall {
    * @param amount The amount of asset to repay.
    * @param onBehalfOf The address of the user to repay the asset on behalf of.
    * @param deadline The deadline for the signature.
-   * @param signature The signed bytes for the action.
+   * @param signature The signed bytes for the intent.
    */
   function repayWithSig(
     uint256 reserveId,
@@ -90,12 +90,36 @@ interface ISignatureGateway is IMulticall {
    * @param useAsCollateral True if enabling reserve as collateral.
    * @param onBehalfOf The address of the user to set the use as collateral status on behalf of.
    * @param deadline The deadline for the signature.
-   * @param signature The signed bytes for the action.
+   * @param signature The signed bytes for the intent.
    */
   function setUsingAsCollateralWithSig(
     uint256 reserveId,
     bool useAsCollateral,
     address onBehalfOf,
+    uint256 deadline,
+    bytes calldata signature
+  ) external;
+
+  /**
+   * @notice Facilitates updateUserRiskPremium action on connected SPOKE() with a typed signature from `user`.
+   * @param user The address of the user to update the risk premium for.
+   * @param deadline The deadline for the signature.
+   * @param signature The signed bytes for the intent.
+   */
+  function updateUserRiskPremiumWithSig(
+    address user,
+    uint256 deadline,
+    bytes calldata signature
+  ) external;
+
+  /**
+   * @notice Facilitates updateUserDynamicConfig action on connected SPOKE() with a typed signature from `user`.
+   * @param user The address of the user to update the dynamic config for.
+   * @param deadline The deadline for the signature.
+   * @param signature The signed bytes for the intent.
+   */
+  function updateUserDynamicConfigWithSig(
+    address user,
     uint256 deadline,
     bytes calldata signature
   ) external;
@@ -159,27 +183,37 @@ interface ISignatureGateway is IMulticall {
   function DOMAIN_SEPARATOR() external view returns (bytes32);
 
   /**
-   * @notice Returns the type hash for the Supply action.
+   * @notice Returns the type hash for the Supply intent.
    */
   function SUPPLY_TYPEHASH() external view returns (bytes32);
 
   /**
-   * @notice Returns the type hash for the Withdraw action.
+   * @notice Returns the type hash for the Withdraw intent.
    */
   function WITHDRAW_TYPEHASH() external view returns (bytes32);
 
   /**
-   * @notice Returns the type hash for the Borrow action.
+   * @notice Returns the type hash for the Borrow intent.
    */
   function BORROW_TYPEHASH() external view returns (bytes32);
 
   /**
-   * @notice Returns the type hash for the Repay action.
+   * @notice Returns the type hash for the Repay intent.
    */
   function REPAY_TYPEHASH() external view returns (bytes32);
 
   /**
-   * @notice Returns the type hash for the SetUsingAsCollateral action.
+   * @notice Returns the type hash for the SetUsingAsCollateral intent.
    */
   function SET_USING_AS_COLLATERAL_TYPEHASH() external view returns (bytes32);
+
+  /**
+   * @notice Returns the type hash for the UpdateUserRiskPremium intent.
+   */
+  function UPDATE_USER_RISK_PREMIUM_TYPEHASH() external view returns (bytes32);
+
+  /**
+   * @notice Returns the type hash for the UpdateUserDynamicConfig intent.
+   */
+  function UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH() external view returns (bytes32);
 }

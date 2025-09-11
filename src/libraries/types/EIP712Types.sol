@@ -63,4 +63,18 @@ library EIP712Types {
     uint256 nonce;
     uint256 deadline;
   }
+
+  struct UpdateUserRiskPremium {
+    address spoke;
+    address user;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct UpdateUserDynamicConfig {
+    address spoke;
+    address user;
+    uint256 nonce;
+    uint256 deadline;
+  }
 }

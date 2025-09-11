@@ -141,6 +141,34 @@ contract SignatureGatewayBaseTest is Base {
       });
   }
 
+  function _updateRiskPremiumData(
+    ISpoke spoke,
+    address user,
+    uint256 deadline
+  ) internal returns (EIP712Types.UpdateUserRiskPremium memory) {
+    return
+      EIP712Types.UpdateUserRiskPremium({
+        spoke: address(spoke),
+        user: user,
+        nonce: gateway.nonces(user),
+        deadline: deadline
+      });
+  }
+
+  function _updateDynamicConfigData(
+    ISpoke spoke,
+    address user,
+    uint256 deadline
+  ) internal returns (EIP712Types.UpdateUserDynamicConfig memory) {
+    return
+      EIP712Types.UpdateUserDynamicConfig({
+        spoke: address(spoke),
+        user: user,
+        nonce: gateway.nonces(user),
+        deadline: deadline
+      });
+  }
+
   function _getTypedDataHash(
     ISignatureGateway _gateway,
     EIP712Types.Supply memory _params
@@ -175,6 +203,22 @@ contract SignatureGatewayBaseTest is Base {
   ) internal view returns (bytes32) {
     return
       _typedDataHash(_gateway, vm.eip712HashStruct('SetUsingAsCollateral', abi.encode(_params)));
+  }
+
+  function _getTypedDataHash(
+    ISignatureGateway _gateway,
+    EIP712Types.UpdateUserRiskPremium memory _params
+  ) internal view returns (bytes32) {
+    return
+      _typedDataHash(_gateway, vm.eip712HashStruct('UpdateUserRiskPremium', abi.encode(_params)));
+  }
+
+  function _getTypedDataHash(
+    ISignatureGateway _gateway,
+    EIP712Types.UpdateUserDynamicConfig memory _params
+  ) internal view returns (bytes32) {
+    return
+      _typedDataHash(_gateway, vm.eip712HashStruct('UpdateUserDynamicConfig', abi.encode(_params)));
   }
 
   function _typedDataHash(

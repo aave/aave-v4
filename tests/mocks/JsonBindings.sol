@@ -52,6 +52,10 @@ library JsonBindings {
   string constant schema_Repay = "Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)";
   // prettier-ignore
   string constant schema_SetUsingAsCollateral = "SetUsingAsCollateral(address spoke,uint256 reserveId,bool useAsCollateral,address onBehalfOf,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_UpdateUserRiskPremium = "UpdateUserRiskPremium(address spoke,address user,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_UpdateUserDynamicConfig = "UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)";
 
   function serialize(
     EIP712Types.SetUserPositionManager memory value
@@ -296,6 +300,100 @@ library JsonBindings {
       abi.decode(
         vm.parseJsonTypeArray(json, path, schema_SetUsingAsCollateral),
         (EIP712Types.SetUsingAsCollateral[])
+      );
+  }
+
+  function serialize(
+    EIP712Types.UpdateUserRiskPremium memory value
+  ) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_UpdateUserRiskPremium, abi.encode(value));
+  }
+
+  function serialize(
+    EIP712Types.UpdateUserRiskPremium memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return
+      vm.serializeJsonType(objectKey, valueKey, schema_UpdateUserRiskPremium, abi.encode(value));
+  }
+
+  function deserializeUpdateUserRiskPremium(
+    string memory json
+  ) public pure returns (EIP712Types.UpdateUserRiskPremium memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, schema_UpdateUserRiskPremium),
+        (EIP712Types.UpdateUserRiskPremium)
+      );
+  }
+
+  function deserializeUpdateUserRiskPremium(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.UpdateUserRiskPremium memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, path, schema_UpdateUserRiskPremium),
+        (EIP712Types.UpdateUserRiskPremium)
+      );
+  }
+
+  function deserializeUpdateUserRiskPremiumArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.UpdateUserRiskPremium[] memory) {
+    return
+      abi.decode(
+        vm.parseJsonTypeArray(json, path, schema_UpdateUserRiskPremium),
+        (EIP712Types.UpdateUserRiskPremium[])
+      );
+  }
+
+  function serialize(
+    EIP712Types.UpdateUserDynamicConfig memory value
+  ) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_UpdateUserDynamicConfig, abi.encode(value));
+  }
+
+  function serialize(
+    EIP712Types.UpdateUserDynamicConfig memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return
+      vm.serializeJsonType(objectKey, valueKey, schema_UpdateUserDynamicConfig, abi.encode(value));
+  }
+
+  function deserializeUpdateUserDynamicConfig(
+    string memory json
+  ) public pure returns (EIP712Types.UpdateUserDynamicConfig memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, schema_UpdateUserDynamicConfig),
+        (EIP712Types.UpdateUserDynamicConfig)
+      );
+  }
+
+  function deserializeUpdateUserDynamicConfig(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.UpdateUserDynamicConfig memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, path, schema_UpdateUserDynamicConfig),
+        (EIP712Types.UpdateUserDynamicConfig)
+      );
+  }
+
+  function deserializeUpdateUserDynamicConfigArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.UpdateUserDynamicConfig[] memory) {
+    return
+      abi.decode(
+        vm.parseJsonTypeArray(json, path, schema_UpdateUserDynamicConfig),
+        (EIP712Types.UpdateUserDynamicConfig[])
       );
   }
 }
