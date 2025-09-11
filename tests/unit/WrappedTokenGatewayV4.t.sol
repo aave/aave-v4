@@ -123,6 +123,15 @@ contract WrappedTokenGatewayV4Test is Base {
     assertTrue(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
   }
 
+  function test_setUsingAsCollateral_revertsWith_InvalidReserveId() public {
+    vm.prank(bob);
+    spoke1.setUserPositionManager(address(wrappedTokenGateway), true);
+
+    vm.expectRevert(IWrappedTokenGatewayV4.InvalidReserveId.selector);
+    vm.prank(bob);
+    wrappedTokenGateway.setUsingAsCollateral(_wethReserveId(spoke1) + 1, true);
+  }
+
   function test_supplyNative() public {
     test_supplyNative_fuzz(100e18);
   }

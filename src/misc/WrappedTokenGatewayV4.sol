@@ -57,8 +57,8 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
 
   /// @inheritdoc IWrappedTokenGatewayV4
   function supplyNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
-    (address reserveAsset, address hub) = _getReserveData(reserveId);
-    _validateParams(reserveAsset, amount);
+    (address underlying, address hub) = _getReserveData(reserveId);
+    _validateParams(underlying, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
     NATIVE_WRAPPER.deposit{value: amount}();
@@ -72,8 +72,8 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
     uint256 amount,
     address receiver
   ) external payable nonReentrant {
-    (address reserveAsset, ) = _getReserveData(reserveId);
-    _validateParams(reserveAsset, amount);
+    (address underlying, ) = _getReserveData(reserveId);
+    _validateParams(underlying, amount);
     require(receiver != address(0), InvalidAddress());
 
     uint256 userSuppliedAmount = SPOKE.getUserSuppliedAmount(reserveId, msg.sender);
@@ -92,8 +92,8 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
     uint256 amount,
     address receiver
   ) external payable nonReentrant {
-    (address reserveAsset, ) = _getReserveData(reserveId);
-    _validateParams(reserveAsset, amount);
+    (address underlying, ) = _getReserveData(reserveId);
+    _validateParams(underlying, amount);
     require(receiver != address(0), InvalidAddress());
 
     SPOKE.borrow(reserveId, amount, msg.sender);
@@ -103,8 +103,8 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
 
   /// @inheritdoc IWrappedTokenGatewayV4
   function repayNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
-    (address reserveAsset, address hub) = _getReserveData(reserveId);
-    _validateParams(reserveAsset, amount);
+    (address underlying, address hub) = _getReserveData(reserveId);
+    _validateParams(underlying, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
     uint256 userDebtAmount = SPOKE.getUserTotalDebt(reserveId, msg.sender);
@@ -125,6 +125,8 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
 
   /// @inheritdoc IWrappedTokenGatewayV4
   function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external payable {
+    (address underlying, ) = _getReserveData(reserveId);
+    require(underlying == address(NATIVE_WRAPPER), InvalidReserveId());
     SPOKE.setUsingAsCollateral(reserveId, usingAsCollateral, msg.sender);
   }
 
@@ -153,9 +155,9 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
   /**
    * @dev Validates the common parameters for all functions.
    **/
-  function _validateParams(address reserveAsset, uint256 amount) internal {
+  function _validateParams(address underlying, uint256 amount) internal {
+    require(underlying == address(NATIVE_WRAPPER), InvalidReserveId());
     require(amount > 0, InvalidAmount());
-    require(reserveAsset == address(NATIVE_WRAPPER), InvalidReserveId());
   }
 
   /**
