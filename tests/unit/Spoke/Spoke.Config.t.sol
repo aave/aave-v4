@@ -16,7 +16,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectEmit(predictedSpokeAddress);
     emit ISpoke.LiquidationConfigUpdate(
       DataTypes.LiquidationConfig({
-        closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+        targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
         healthFactorForMaxBonus: 0,
         liquidationBonusFactor: 0
       })
@@ -157,7 +157,7 @@ contract SpokeConfigTest is SpokeBase {
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 110_00,
+      maxLiquidationBonus: 110_00,
       liquidationFee: 10_00
     });
 
@@ -198,7 +198,7 @@ contract SpokeConfigTest is SpokeBase {
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 110_00,
+      maxLiquidationBonus: 110_00,
       liquidationFee: 0
     });
 
@@ -219,7 +219,7 @@ contract SpokeConfigTest is SpokeBase {
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 110_00,
+      maxLiquidationBonus: 110_00,
       liquidationFee: 10_00
     });
 
@@ -243,7 +243,7 @@ contract SpokeConfigTest is SpokeBase {
     });
     DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 110_00,
+      maxLiquidationBonus: 110_00,
       liquidationFee: 10_00
     });
 
@@ -269,30 +269,39 @@ contract SpokeConfigTest is SpokeBase {
     );
   }
 
-  function test_updateLiquidationConfig_closeFactor() public {
-    uint128 newCloseFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1;
+  function test_updateLiquidationConfig_targetHealthFactor() public {
+    uint128 newTargetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1;
 
-    test_updateLiquidationConfig_fuzz_closeFactor(newCloseFactor);
+    test_updateLiquidationConfig_fuzz_targetHealthFactor(newTargetHealthFactor);
   }
 
-  function test_updateLiquidationConfig_fuzz_closeFactor(uint128 newCloseFactor) public {
-    newCloseFactor = bound(newCloseFactor, HEALTH_FACTOR_LIQUIDATION_THRESHOLD, type(uint128).max)
-      .toUint128();
+  function test_updateLiquidationConfig_fuzz_targetHealthFactor(
+    uint128 newTargetHealthFactor
+  ) public {
+    newTargetHealthFactor = bound(
+      newTargetHealthFactor,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      type(uint128).max
+    ).toUint128();
 
     DataTypes.LiquidationConfig memory liquidationConfig;
-    liquidationConfig.closeFactor = newCloseFactor;
+    liquidationConfig.targetHealthFactor = newTargetHealthFactor;
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.LiquidationConfigUpdate(liquidationConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
 
-    assertEq(spoke1.getLiquidationConfig().closeFactor, newCloseFactor, 'wrong close factor');
+    assertEq(
+      spoke1.getLiquidationConfig().targetHealthFactor,
+      newTargetHealthFactor,
+      'wrong target health factor'
+    );
   }
 
   function test_updateLiquidationConfig_liqBonusConfig() public {
     DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
-      closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       healthFactorForMaxBonus: 0.9e18,
       liquidationBonusFactor: 10_00
     });
@@ -312,8 +321,8 @@ contract SpokeConfigTest is SpokeBase {
       0,
       MAX_LIQUIDATION_BONUS_FACTOR
     ).toUint16();
-    liquidationConfig.closeFactor = bound(
-      liquidationConfig.closeFactor,
+    liquidationConfig.targetHealthFactor = bound(
+      liquidationConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       type(uint128).max
     ).toUint128();
@@ -339,7 +348,7 @@ contract SpokeConfigTest is SpokeBase {
     public
   {
     DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
-      closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       healthFactorForMaxBonus: HEALTH_FACTOR_LIQUIDATION_THRESHOLD.toUint64(),
       liquidationBonusFactor: 10_00
     });
@@ -362,8 +371,8 @@ contract SpokeConfigTest is SpokeBase {
       0,
       MAX_LIQUIDATION_BONUS_FACTOR
     ).toUint16();
-    liquidationConfig.closeFactor = bound(
-      liquidationConfig.closeFactor,
+    liquidationConfig.targetHealthFactor = bound(
+      liquidationConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       type(uint128).max
     ).toUint128(); // valid values
@@ -377,7 +386,7 @@ contract SpokeConfigTest is SpokeBase {
     public
   {
     DataTypes.LiquidationConfig memory liquidationConfig = DataTypes.LiquidationConfig({
-      closeFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       healthFactorForMaxBonus: 0.9e18,
       liquidationBonusFactor: MAX_LIQUIDATION_BONUS_FACTOR + 1
     });
@@ -400,8 +409,8 @@ contract SpokeConfigTest is SpokeBase {
       MAX_LIQUIDATION_BONUS_FACTOR + 1,
       type(uint16).max
     ).toUint16();
-    liquidationConfig.closeFactor = bound(
-      liquidationConfig.closeFactor,
+    liquidationConfig.targetHealthFactor = bound(
+      liquidationConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       type(uint128).max
     ).toUint128(); // valid values

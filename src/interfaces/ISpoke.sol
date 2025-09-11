@@ -121,7 +121,11 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error InvalidCollateralRisk();
   error InvalidLiquidationConfig();
   error InvalidLiquidationFee();
-  error InvalidCollateralFactorAndLiquidationBonus();
+  error InvalidCollateralFactorAndMaxLiquidationBonus();
+  error SelfLiquidation();
+  error HealthFactorNotBelowThreshold();
+  error MustNotLeaveDust();
+  error InvalidDebtToCover();
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
@@ -204,27 +208,26 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function updateUserDynamicConfig(address onBehalfOf) external;
 
   /**
-   * @notice Allows caller to approve or revoke approval for positionManager.
+   * @notice Enables a user to grant or revoke approval for a position manager
    * @param positionManager The address of the position manager.
-   * @param approve True if user wants to approve position manager, false otherwise.
+   * @param approve True to approve the position manager, false to revoke approval.
    */
   function setUserPositionManager(address positionManager, bool approve) external;
 
   /**
-   * @notice Allows caller to approve or revoke approval for positionManager using a signature.
+   * @notice Enables a user to grant or revoke approval for a position manager using an EIP712-compliant signature.
    * @param positionManager The address of the position manager.
    * @param user The address of the user on whose behalf position manager can act.
-   * @param approve True if user wants to approve position manager, false otherwise.
+   * @param approve True to approve the position manager, false to revoke approval.
    * @param deadline The deadline for the signature.
+   * @param signature The EIP712-compliant signature bytes.
    */
   function setUserPositionManagerWithSig(
     address positionManager,
     address user,
     bool approve,
     uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
+    bytes memory signature
   ) external;
 
   /**
@@ -293,16 +296,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getUserAccountData(
     address user
-  )
-    external
-    view
-    returns (
-      uint256 userRiskPremium,
-      uint256 avgCollateralFactor,
-      uint256 healthFactor,
-      uint256 totalCollateralInBaseCurrency,
-      uint256 totalDebtInBaseCurrency
-    );
+  ) external view returns (DataTypes.UserAccountData memory);
 
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256);
 
@@ -325,7 +319,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getReserveCount() external view returns (uint256);
 
-  function getVariableLiquidationBonus(
+  function getLiquidationBonus(
     uint256 reserveId,
     address user,
     uint256 healthFactor
