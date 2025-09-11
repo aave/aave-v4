@@ -61,4 +61,18 @@ interface IWrappedTokenGatewayV4 {
    * @param user The address of the user.
    */
   function renouncePositionManagerRole(address user) external payable;
+
+  /**
+   * @notice Recovers ERC20 tokens sent to this contract.
+   * @param token Address of the ERC20 token to recover.
+   * @param to Address to send the recovered tokens to.
+   **/
+  function recoverToken(address token, address to) external;
+
+  /**
+   * @notice Recovers native asset left in this contract.
+   * @param to Address to send the recovered native asset to.
+   * @param amount Amount of native asset to recover.
+   **/
+  function recoverNative(address to, uint256 amount) external;
 }

@@ -27,6 +27,7 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
   ISpoke public immutable SPOKE;
 
   constructor(address nativeWrapper_, address spoke_, address admin_) Ownable(admin_) {
+    require(nativeWrapper_ != address(0) && spoke_ != address(0), InvalidAddress());
     NATIVE_WRAPPER = INativeWrapper(payable(nativeWrapper_));
     SPOKE = ISpoke(spoke_);
   }
@@ -138,6 +139,16 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
     return results;
   }
 
+  /// @inheritdoc IWrappedTokenGatewayV4
+  function recoverToken(address token, address to) external onlyOwner {
+    IERC20(token).safeTransfer(to, IERC20(token).balanceOf(address(this)));
+  }
+
+  /// @inheritdoc IWrappedTokenGatewayV4
+  function recoverNative(address to, uint256 amount) external onlyOwner {
+    Address.sendValue(payable(to), amount);
+  }
+
   /**
    * @dev Validates the common parameters for all functions.
    **/
@@ -155,32 +166,14 @@ contract WrappedTokenGatewayV4 is IWrappedTokenGatewayV4, ReentrancyGuardTransie
   }
 
   /**
-   * @notice Recovers ERC20 tokens sent to this contract.
-   * @param token Address of the ERC20 token to recover.
-   * @param to Address to send the recovered tokens to.
-   **/
-  function recoverToken(address token, address to) external onlyOwner {
-    IERC20(token).safeTransfer(to, IERC20(token).balanceOf(address(this)));
-  }
-
-  /**
-   * @notice Recovers native asset left in this contract.
-   * @param to Address to send the recovered native asset to.
-   * @param amount Amount of native asset to recover.
-   **/
-  function recoverNative(address to, uint256 amount) external onlyOwner {
-    Address.sendValue(payable(to), amount);
-  }
-
-  /**
-   * @dev Only NATIVE_WRAPPER contract is allowed to do native transfer here. Prevent other addresses to send native assets to this contract.
+   * @dev Only NATIVE_WRAPPER contract is allowed to do native transfer here. Prevent other addresses from sending native assets to this contract.
    */
   receive() external payable {
     require(msg.sender == address(NATIVE_WRAPPER), ReceiveNotAllowed());
   }
 
   /**
-   * @dev Revert fallback calls
+   * @dev Revert fallback calls.
    */
   fallback() external payable {
     revert FallbackForbidden();
