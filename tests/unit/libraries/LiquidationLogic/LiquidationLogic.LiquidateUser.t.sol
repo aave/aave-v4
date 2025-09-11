@@ -1,0 +1,222 @@
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
+pragma solidity ^0.8.0;
+
+import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
+
+contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
+  using SafeCast for *;
+
+  IHub hub2;
+
+  uint256 usdxReserveId;
+  uint256 wethReserveId;
+
+  DataTypes.LiquidationConfig liquidationConfig;
+  DataTypes.DynamicReserveConfig dynamicCollateralConfig;
+  DataTypes.LiquidateUserParams params;
+
+  // variable liquidation bonus is max: 120%
+  // liquidation penalty: 1.2 * 0.5 = 0.6
+  // debtToTarget = $10000 * (1 - 0.8) / (1 - 0.6) / $2000 = 2.5
+  // max debt to liquidate = min(2.5, 5, 3) = 2.5
+  // collateral to liquidate = 2.5 * 120% * $2000 / $1 = 6000
+  // bonus collateral = 6000 - 6000 / 120% = 1000
+  // collateral fee = 1000 * 10% = 100
+  // collateral to liquidator = 6000 - 100 = 5900
+  function setUp() public override {
+    super.setUp();
+    (hub2, ) = hub2Fixture();
+
+    // Mock params
+    usdxReserveId = _usdxReserveId(spoke1);
+    wethReserveId = _wethReserveId(spoke1);
+    params = DataTypes.LiquidateUserParams({
+      collateralReserveId: usdxReserveId,
+      debtReserveId: wethReserveId,
+      oracle: address(oracle1),
+      user: makeAddr('user'),
+      debtToCover: 3e18,
+      healthFactor: 0.8e18,
+      drawnDebt: 4.5e18,
+      premiumDebt: 0.5e18,
+      accruedPremium: 0.2e18,
+      totalDebtInBaseCurrency: 10_000e26,
+      liquidator: makeAddr('liquidator'),
+      suppliedCollateralsCount: 1,
+      borrowedReservesCount: 1
+    });
+
+    // Set liquidationLogicWrapper as a spoke
+    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+      active: true,
+      addCap: Constants.MAX_CAP,
+      drawCap: Constants.MAX_CAP
+    });
+    vm.startPrank(HUB_ADMIN);
+    hub1.addSpoke(usdxAssetId, address(liquidationLogicWrapper), spokeConfig);
+    hub2.addSpoke(wethAssetId, address(liquidationLogicWrapper), spokeConfig);
+    vm.stopPrank();
+
+    // Mock storage for collateral side
+    require(hub1.getAsset(usdxAssetId).underlying == address(tokenList.usdx));
+    liquidationLogicWrapper.setCollateralReserveHub(hub1);
+    liquidationLogicWrapper.setCollateralReserveAssetId(usdxAssetId);
+    liquidationLogicWrapper.setCollateralReserveDecimals(6);
+    liquidationLogicWrapper.setCollateralPositionSuppliedShares(10_200e6);
+    liquidationLogicWrapper.setCollateralStatus(usdxReserveId, true);
+
+    // Mock storage for debt side
+    require(hub2.getAsset(wethAssetId).underlying == address(tokenList.weth));
+    liquidationLogicWrapper.setDebtReserveHub(hub2);
+    liquidationLogicWrapper.setDebtReserveAssetId(wethAssetId);
+    liquidationLogicWrapper.setDebtReserveDecimals(18);
+    liquidationLogicWrapper.setBorrowingStatus(wethReserveId, true);
+
+    // Mock storage for liquidation config
+    liquidationConfig = DataTypes.LiquidationConfig({
+      healthFactorForMaxBonus: 0.8e18,
+      liquidationBonusFactor: 50_00,
+      targetHealthFactor: 1e18
+    });
+    updateStorage(liquidationConfig);
+
+    // Mock storage for dynamic collateral config
+    dynamicCollateralConfig = DataTypes.DynamicReserveConfig({
+      maxLiquidationBonus: 120_00,
+      collateralFactor: 50_00,
+      liquidationFee: 10_00
+    });
+    updateStorage(dynamicCollateralConfig);
+
+    // Collateral hub: Add liquidity
+    address tempUser = makeUser();
+    deal(address(tokenList.usdx), tempUser, MAX_SUPPLY_AMOUNT);
+    Utils.add(hub1, usdxAssetId, address(liquidationLogicWrapper), MAX_SUPPLY_AMOUNT, tempUser);
+
+    // Debt hub: Add liquidity, remove liquidity, refresh premium and skip time to accrue both drawn and premium debt
+    deal(address(tokenList.weth), tempUser, MAX_SUPPLY_AMOUNT);
+    Utils.add(hub2, wethAssetId, address(liquidationLogicWrapper), MAX_SUPPLY_AMOUNT, tempUser);
+    Utils.draw(hub2, wethAssetId, address(liquidationLogicWrapper), tempUser, MAX_SUPPLY_AMOUNT);
+    vm.startPrank(address(liquidationLogicWrapper));
+    hub2.refreshPremium(
+      wethAssetId,
+      DataTypes.PremiumDelta(
+        hub2.previewRestoreByAssets(wethAssetId, 1e6 * 1e18).toInt256(),
+        1e6 * 1e18,
+        0
+      )
+    );
+    vm.stopPrank();
+    skip(365 days);
+    (uint256 spokeDrawnOwed, uint256 spokePremiumOwed) = hub2.getSpokeOwed(
+      wethAssetId,
+      address(liquidationLogicWrapper)
+    );
+    assertGt(spokeDrawnOwed, 10000e18);
+    assertGt(spokePremiumOwed, 10000e18);
+
+    // Refresh premium to realise some premium debt
+    uint256 realizedPremium = hub2.previewRestoreByShares(wethAssetId, 1e3 * 1e18) - 1e3 * 1e18;
+    assertGt(realizedPremium, 10e18);
+    vm.prank(address(liquidationLogicWrapper));
+    hub2.refreshPremium(
+      wethAssetId,
+      DataTypes.PremiumDelta(-1e3 * 1e18, -1e3 * 1e18, realizedPremium.toInt256())
+    );
+    liquidationLogicWrapper.setDebtPositionRealizedPremium(realizedPremium);
+
+    // Mock user debt position
+    liquidationLogicWrapper.setDebtPositionDrawnShares(
+      hub2.previewRestoreByAssets(wethAssetId, params.drawnDebt)
+    );
+    liquidationLogicWrapper.setDebtPositionPremiumShares(
+      hub2.previewRestoreByAssets(wethAssetId, params.premiumDebt)
+    );
+    liquidationLogicWrapper.setDebtPositionPremiumOffset(
+      params.premiumDebt - params.accruedPremium
+    );
+
+    // Mint tokens to liquidator and approve hub
+    deal(address(tokenList.weth), params.liquidator, spokeDrawnOwed + spokePremiumOwed);
+    Utils.approve(hub2, wethAssetId, params.liquidator, spokeDrawnOwed + spokePremiumOwed);
+  }
+
+  function test_liquidateUser() public {
+    uint256 initialHub1UsdxBalance = tokenList.usdx.balanceOf(address(hub1));
+    uint256 initialHub2Balance = tokenList.weth.balanceOf(address(hub2));
+    uint256 initialLiquidatorWethBalance = tokenList.weth.balanceOf(address(params.liquidator));
+
+    DataTypes.UserPosition memory debtPosition = liquidationLogicWrapper.getDebtPosition();
+
+    uint256 feeShares = hub1.previewRemoveByAssets(usdxAssetId, 6000e6) -
+      hub1.previewRemoveByAssets(usdxAssetId, 5900e6);
+
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHub.previewRemoveByAssets, (usdxAssetId, 6000e6)),
+      1
+    );
+
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHubBase.remove, (usdxAssetId, 5900e6, params.liquidator)),
+      1
+    );
+
+    vm.expectCall(address(hub1), abi.encodeCall(IHub.payFee, (usdxAssetId, feeShares)), 1);
+
+    vm.expectCall(
+      address(hub2),
+      abi.encodeCall(
+        IHubBase.restore,
+        (
+          wethAssetId,
+          2e18,
+          0.5e18,
+          DataTypes.PremiumDelta(
+            -debtPosition.premiumShares.toInt256(),
+            -debtPosition.premiumOffset.toInt256(),
+            0.2e18 - 0.5e18
+          ),
+          params.liquidator
+        )
+      ),
+      1
+    );
+
+    bool hasDeficit = liquidationLogicWrapper.liquidateUser(params);
+    assertEq(hasDeficit, false);
+
+    assertEq(tokenList.usdx.balanceOf(address(hub1)), initialHub1UsdxBalance - 5900e6);
+    assertEq(tokenList.usdx.balanceOf(address(params.liquidator)), 5900e6);
+    assertApproxEqAbs(hub1.getSpokeAddedShares(usdxAssetId, address(treasurySpoke)), 100e6, 1);
+
+    assertEq(tokenList.weth.balanceOf(address(hub2)), initialHub2Balance + 2.5e18);
+    assertEq(
+      tokenList.weth.balanceOf(address(params.liquidator)),
+      initialLiquidatorWethBalance - 2.5e18
+    );
+  }
+
+  function test_liquidateUser_revertsWith_InvalidDebtToCover() public {
+    params.debtToCover = 0;
+    vm.expectRevert(ISpoke.InvalidDebtToCover.selector);
+    liquidationLogicWrapper.liquidateUser(params);
+  }
+
+  function test_liquidateUser_revertsWith_MustNotLeaveDust() public {
+    params.totalDebtInBaseCurrency *= 2;
+    params.debtToCover = 4.9e18;
+    vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
+    liquidationLogicWrapper.liquidateUser(params);
+  }
+
+  function updateStorage(DataTypes.LiquidationConfig memory liquidationConfig) internal {
+    liquidationLogicWrapper.setLiquidationConfig(liquidationConfig);
+  }
+
+  function updateStorage(DataTypes.DynamicReserveConfig memory dynamicCollateralConfig) internal {
+    liquidationLogicWrapper.setDynamicCollateralConfig(dynamicCollateralConfig);
+  }
+}

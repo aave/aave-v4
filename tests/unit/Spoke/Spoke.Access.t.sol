@@ -60,7 +60,7 @@ contract SpokeAccessTest is SpokeBase {
     );
     spoke1.updateLiquidationConfig(
       DataTypes.LiquidationConfig({
-        closeFactor: WadRayMath.WAD.toUint128(),
+        targetHealthFactor: WadRayMath.WAD.toUint128(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18
       })
@@ -70,7 +70,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(address(SPOKE_ADMIN));
     spoke1.updateLiquidationConfig(
       DataTypes.LiquidationConfig({
-        closeFactor: WadRayMath.WAD.toUint128(),
+        targetHealthFactor: WadRayMath.WAD.toUint128(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18
       })
@@ -88,7 +88,7 @@ contract SpokeAccessTest is SpokeBase {
       DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
-        liquidationBonus: 100_00,
+        maxLiquidationBonus: 100_00,
         liquidationFee: 0
       })
     );
@@ -102,7 +102,7 @@ contract SpokeAccessTest is SpokeBase {
       DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
-        liquidationBonus: 100_00,
+        maxLiquidationBonus: 100_00,
         liquidationFee: 0
       })
     );
@@ -131,7 +131,7 @@ contract SpokeAccessTest is SpokeBase {
       _daiReserveId(spoke1),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
-        liquidationBonus: 100_00,
+        maxLiquidationBonus: 100_00,
         liquidationFee: 0
       })
     );
@@ -142,7 +142,7 @@ contract SpokeAccessTest is SpokeBase {
       _daiReserveId(spoke1),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
-        liquidationBonus: 100_00,
+        maxLiquidationBonus: 100_00,
         liquidationFee: 0
       })
     );
@@ -182,7 +182,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(
       DataTypes.LiquidationConfig({
-        closeFactor: WadRayMath.WAD.toUint128(),
+        targetHealthFactor: WadRayMath.WAD.toUint128(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18
       })
@@ -201,7 +201,7 @@ contract SpokeAccessTest is SpokeBase {
       DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
-        liquidationBonus: 100_00,
+        maxLiquidationBonus: 100_00,
         liquidationFee: 0
       })
     );
@@ -220,7 +220,7 @@ contract SpokeAccessTest is SpokeBase {
       DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       DataTypes.DynamicReserveConfig({
         collateralFactor: 75_00,
-        liquidationBonus: 100_00,
+        maxLiquidationBonus: 100_00,
         liquidationFee: 0
       })
     );

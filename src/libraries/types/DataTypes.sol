@@ -2,7 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
-import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 import {IHub} from 'src/interfaces/IHub.sol';
 
 library DataTypes {
@@ -79,12 +78,12 @@ library DataTypes {
 
   struct DynamicReserveConfig {
     uint16 collateralFactor;
-    uint32 liquidationBonus; // BPS, 100_00 represent a 0% bonus
+    uint32 maxLiquidationBonus; // BPS, 100_00 represent a 0% bonus
     uint16 liquidationFee; // BPS
   }
 
   struct LiquidationConfig {
-    uint128 closeFactor; // WAD, HF value to restore to during a liquidation
+    uint128 targetHealthFactor; // WAD, HF value to restore to during a liquidation
     uint64 healthFactorForMaxBonus; // WAD, health factor under which liquidation bonus is max
     uint16 liquidationBonusFactor; // BPS, as a percentage of effective lb
   }
@@ -117,132 +116,35 @@ library DataTypes {
     uint24 collateralRisk; // BPS
   }
 
-  struct NotifyRiskPremiumUpdateVars {
-    bool premiumIncrease;
-    uint256 reserveId;
-    uint256 assetId;
-    IHub hub;
-    DataTypes.PremiumDelta premiumDelta;
-  }
-
   struct PremiumDelta {
     int256 sharesDelta;
     int256 offsetDelta;
     int256 realizedDelta;
   }
 
-  struct CalculateUserAccountDataVars {
-    uint256 i;
-    uint256 reserveId;
-    bool borrowing;
-    bool collateral;
-    IAaveOracle oracle;
-    uint256 assetId;
-    uint256 assetPrice;
-    uint256 assetUnit;
-    uint256 reservePrice;
-    uint256 collateralRisk;
-    uint256 userCollateralInBaseCurrency;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-    uint256 debtCounterInBaseCurrency;
-    uint256 collateralCounterInBaseCurrency;
-    uint256 avgCollateralFactor;
+  struct UserAccountData {
     uint256 userRiskPremium;
+    uint256 avgCollateralFactor;
     uint256 healthFactor;
-  }
-
-  struct LiquidationCallLocalVars {
-    uint256 collateralReserveId;
-    uint256 debtReserveId;
-    uint256 actualCollateralToLiquidate;
-    uint256 actualDebtToLiquidate;
-    uint256 liquidationFeeAmount;
-    uint256 borrowerCollateralBalance;
     uint256 totalCollateralInBaseCurrency;
     uint256 totalDebtInBaseCurrency;
-    uint256 debtAssetPrice;
-    uint256 debtAssetUnit;
-    uint256 totalBorrowerReserveDebt;
-    uint256 debtToRestoreCloseFactor;
-    uint256 healthFactor;
-    uint256 liquidationBonus;
-    uint256 drawnDebtToLiquidate;
-    uint256 premiumDebtToLiquidate;
-    uint256 closeFactor;
-    uint256 collateralFactor;
-    uint256 collateralAssetPrice;
-    uint256 collateralAssetUnit;
-    uint256 liquidationFee;
-    bool hasDeficit;
+    uint256 suppliedCollateralsCount; // number of reserves with collateral factor > 0, enabled as collateral and strictly positive supplied amount
+    uint256 borrowedReservesCount; // number of reserves with strictly positive debt
   }
 
-  struct CalculateAvailableCollateralToLiquidate {
-    uint256 borrowerCollateralBalanceInBaseCurrency;
-    uint256 baseCollateral;
-    uint256 maxCollateralToLiquidate;
-    uint256 collateralAmount;
-    uint256 debtAmountNeeded;
-    uint256 collateralToLiquidateInBaseCurrency;
-    uint256 debtToLiquidateInBaseCurrency;
-    bool hasDeficit;
-  }
-
-  struct ExecuteLiquidationLocalVars {
-    uint256 debtAssetId;
-    uint256 collateralAssetId;
-    uint256 drawnDebt;
-    uint256 premiumDebt;
-    uint256 accruedPremium;
-    uint256 collateralToLiquidate;
-    uint256 liquidationFeeAmount;
-    uint256 drawnDebtToLiquidate;
-    uint256 premiumDebtToLiquidate;
-    uint256 restoredShares;
-    uint256 withdrawnShares;
-    uint256 newUserRiskPremium;
-    uint256 liquidatedSuppliedShares;
-    DataTypes.PremiumDelta premiumDelta;
-    bool hasDeficit;
-    IHub collateralReserveHub;
-    IHub debtReserveHub;
-  }
-
-  struct LiquidationCallParams {
+  struct LiquidateUserParams {
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
+    address oracle;
     address user;
-    address oracle;
-    uint256 collateralReserveId;
-    uint256 debtReserveId;
-    uint256 healthFactor;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
     uint256 debtToCover;
-    address liquidator;
-  }
-
-  struct CalculateLiquidationParametersParams {
-    address oracle;
-    uint256 collateralReserveId;
-    uint256 debtReserveId;
-    uint256 debtToCover;
-    uint256 drawnReserveDebt;
-    uint256 premiumReserveDebt;
     uint256 healthFactor;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-  }
-
-  struct ExecuteRepayLocalVars {
-    IHub hub;
-    uint256 assetId;
     uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 accruedPremium;
-    uint256 drawnDebtRestored;
-    uint256 premiumDebtRestored;
-    uint256 userPremiumShares;
-    uint256 userPremiumOffset;
-    uint256 newUserRiskPremium;
-    uint256 restoredShares;
+    uint256 totalDebtInBaseCurrency;
+    address liquidator;
+    uint256 suppliedCollateralsCount;
+    uint256 borrowedReservesCount;
   }
 }

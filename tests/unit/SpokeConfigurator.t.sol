@@ -68,17 +68,19 @@ contract SpokeConfiguratorTest is SpokeBase {
     spokeConfigurator.updateReservePriceSource(spokeAddr, reserveId, newPriceSource);
   }
 
-  function test_updateLiquidationCloseFactor_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_updateLiquidationTargetHealthFactor_revertsWith_OwnableUnauthorizedAccount()
+    public
+  {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    spokeConfigurator.updateLiquidationCloseFactor(spokeAddr, 0);
+    spokeConfigurator.updateLiquidationTargetHealthFactor(spokeAddr, 0);
   }
 
-  function test_updateLiquidationCloseFactor() public {
-    uint128 newCloseFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2;
+  function test_updateLiquidationTargetHealthFactor() public {
+    uint128 newTargetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2;
 
     DataTypes.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
-    expectedLiquidationConfig.closeFactor = newCloseFactor;
+    expectedLiquidationConfig.targetHealthFactor = newTargetHealthFactor;
 
     vm.expectCall(
       spokeAddr,
@@ -87,7 +89,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.LiquidationConfigUpdate(expectedLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateLiquidationCloseFactor(spokeAddr, newCloseFactor);
+    spokeConfigurator.updateLiquidationTargetHealthFactor(spokeAddr, newTargetHealthFactor);
 
     assertEq(spoke.getLiquidationConfig(), expectedLiquidationConfig);
   }
@@ -146,7 +148,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     spokeConfigurator.updateLiquidationConfig(
       spokeAddr,
       DataTypes.LiquidationConfig({
-        closeFactor: 0,
+        targetHealthFactor: 0,
         healthFactorForMaxBonus: 0,
         liquidationBonusFactor: 0
       })
@@ -155,7 +157,7 @@ contract SpokeConfiguratorTest is SpokeBase {
 
   function test_updateLiquidationConfig() public {
     DataTypes.LiquidationConfig memory newLiquidationConfig = DataTypes.LiquidationConfig({
-      closeFactor: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2,
+      targetHealthFactor: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2,
       healthFactorForMaxBonus: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2,
       liquidationBonusFactor: PercentageMath.PERCENTAGE_FACTOR.toUint16() / 2
     });
@@ -188,7 +190,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       }),
       dynamicConfig: DataTypes.DynamicReserveConfig({
         collateralFactor: 80_00,
-        liquidationBonus: 100_00,
+        maxLiquidationBonus: 100_00,
         liquidationFee: 0
       })
     });
@@ -204,7 +206,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     });
     DataTypes.DynamicReserveConfig memory dynamicConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
 
@@ -404,7 +406,7 @@ contract SpokeConfiguratorTest is SpokeBase {
 
     DataTypes.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke
       .getDynamicReserveConfig(reserveId);
-    expectedDynamicReserveConfig.liquidationBonus = newLiquidationBonus;
+    expectedDynamicReserveConfig.maxLiquidationBonus = newLiquidationBonus;
 
     uint16 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
 
@@ -420,20 +422,20 @@ contract SpokeConfiguratorTest is SpokeBase {
     assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
   }
 
-  function test_updateLiquidationBonus_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_updateMaxLiquidationBonus_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    spokeConfigurator.updateLiquidationBonus(spokeAddr, reserveId, 0, 0);
+    spokeConfigurator.updateMaxLiquidationBonus(spokeAddr, reserveId, 0, 0);
   }
 
-  function test_updateLiquidationBonus() public {
+  function test_updateMaxLiquidationBonus() public {
     uint32 newLiquidationBonus = PercentageMath.PERCENTAGE_FACTOR.toUint32() + 123;
 
     uint16 configKey = 0;
 
     DataTypes.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke
       .getDynamicReserveConfig(reserveId, configKey);
-    expectedDynamicReserveConfig.liquidationBonus = newLiquidationBonus;
+    expectedDynamicReserveConfig.maxLiquidationBonus = newLiquidationBonus;
 
     vm.expectCall(
       spokeAddr,
@@ -445,7 +447,12 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.UpdateDynamicReserveConfig(reserveId, configKey, expectedDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateLiquidationBonus(spokeAddr, reserveId, configKey, newLiquidationBonus);
+    spokeConfigurator.updateMaxLiquidationBonus(
+      spokeAddr,
+      reserveId,
+      configKey,
+      newLiquidationBonus
+    );
 
     assertEq(spoke.getDynamicReserveConfig(reserveId, configKey), expectedDynamicReserveConfig);
   }
@@ -515,7 +522,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       reserveId,
       DataTypes.DynamicReserveConfig({
         collateralFactor: 20_00,
-        liquidationBonus: 130_00,
+        maxLiquidationBonus: 130_00,
         liquidationFee: 15_00
       })
     );
@@ -524,7 +531,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_addDynamicReserveConfig() public {
     DataTypes.DynamicReserveConfig memory newDynamicReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 20_00,
-      liquidationBonus: 130_00,
+      maxLiquidationBonus: 130_00,
       liquidationFee: 15_00
     });
 
@@ -556,7 +563,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       0,
       DataTypes.DynamicReserveConfig({
         collateralFactor: 10_00,
-        liquidationBonus: 150_00,
+        maxLiquidationBonus: 150_00,
         liquidationFee: 12_00
       })
     );
@@ -569,7 +576,7 @@ contract SpokeConfiguratorTest is SpokeBase {
 
     DataTypes.DynamicReserveConfig memory newDynamicReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 150_00,
+      maxLiquidationBonus: 150_00,
       liquidationFee: 12_00
     });
     uint16 configKeyToUpdate = vm.randomUint(0, count).toUint16();

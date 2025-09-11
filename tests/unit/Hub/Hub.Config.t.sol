@@ -288,6 +288,7 @@ contract HubConfigTest is HubBase {
     assertEq(hub1.getAsset(assetId).reinvestmentController, address(0)); // should init to addr(0)
     assertEq(hub1.getSpokeConfig(assetId, feeReceiver), expectedSpokeConfig);
   }
+
   function test_updateAssetConfig_fuzz_revertsWith_InvalidLiquidityFee(
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
