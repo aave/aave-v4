@@ -101,7 +101,7 @@ contract AaveOracleTest is Base {
     _mockSourceLatestRoundData(_source1, 1e8);
 
     vm.expectEmit();
-    emit IAaveOracle.ReserveSourceUpdated(reserveId1, _source1);
+    emit IAaveOracle.UpdateReserveSource(reserveId1, _source1);
     vm.expectCall(_source1, abi.encodeCall(AggregatorV3Interface.latestRoundData, ()));
 
     vm.prank(address(spoke1));
