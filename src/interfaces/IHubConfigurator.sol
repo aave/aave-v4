@@ -110,18 +110,6 @@ interface IHubConfigurator {
   ) external;
 
   /**
-   * @notice Updates the config of an asset.
-   * @param hub The address of the Hub contract.
-   * @param assetId The identifier of the asset.
-   * @param config The new asset config.
-   */
-  function updateAssetConfig(
-    address hub,
-    uint256 assetId,
-    DataTypes.AssetConfig calldata config
-  ) external;
-
-  /**
    * @notice Freezes an asset.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
@@ -215,20 +203,6 @@ interface IHubConfigurator {
     address spoke,
     uint256 addCap,
     uint256 drawCap
-  ) external;
-
-  /**
-   * @notice Updates the config of an asset's spoke.
-   * @param hub The address of the Hub contract.
-   * @param assetId The identifier of the asset.
-   * @param spoke The address of the spoke.
-   * @param config The new spoke config.
-   */
-  function updateSpokeConfig(
-    address hub,
-    uint256 assetId,
-    address spoke,
-    DataTypes.SpokeConfig calldata config
   ) external;
 
   /**

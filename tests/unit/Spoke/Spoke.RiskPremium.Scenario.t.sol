@@ -96,9 +96,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(_getCollateralRisk(spoke1, reservesIds.weth), 15_00, 'weth collateral risk');
     assertEq(_getCollateralRisk(spoke1, reservesIds.dai), 20_00, 'dai collateral risk');
 
-    // Set collateral factor to 100% for Alice collateral
-    updateCollateralFactor(spoke1, reservesIds.weth, 100_00);
-    updateCollateralFactor(spoke1, reservesIds.usdx, 100_00);
+    // Set collateral factor to 99.99% for Alice collateral
+    updateCollateralFactor(spoke1, reservesIds.weth, 99_99);
+    updateCollateralFactor(spoke1, reservesIds.usdx, 99_99);
 
     // supply twice the amount that alice borrows, usage ratio ~45%, borrow rate ~7.5%
     Utils.supply(spoke1, reservesIds.dai, bob, vars.daiBorrowAmount.percentDivDown(45_00), bob);
