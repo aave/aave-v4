@@ -16,12 +16,16 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     assertTrue(spoke1.isPositionManager(alice, address(gateway)));
   }
 
-  function test_useNonce_monotonic() public {
+  function test_useNonce_monotonic(bytes32) public {
     vm.setArbitraryStorage(address(gateway));
     address user = vm.randomAddress();
 
     uint256 currentNonce = gateway.nonces(user);
-    vm.assume(currentNonce != UINT256_MAX);
+
+    vm.prank(user);
+    gateway.useNonce();
+
+    assertEq(gateway.nonces(user), MathUtils.uncheckedAdd(currentNonce, 1));
   }
 
   function test_renouncePositionManagerRole_revertsWith_OnlyOwner() public {
@@ -56,8 +60,9 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     vm.prank(vm.randomAddress());
     gateway.supplyWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
 
-    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     assertEq(gateway.nonces(alice), p.nonce + 1);
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 
   function test_withdrawWithSig() public {
@@ -76,8 +81,9 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     vm.prank(vm.randomAddress());
     gateway.withdrawWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
 
-    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     assertEq(gateway.nonces(alice), p.nonce + 1);
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 
   function test_borrowWithSig() public {
@@ -98,8 +104,9 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     vm.prank(vm.randomAddress());
     gateway.borrowWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
 
-    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     assertEq(gateway.nonces(alice), p.nonce + 1);
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 
   function test_repayWithSig() public {
@@ -131,8 +138,9 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     vm.prank(vm.randomAddress());
     gateway.repayWithSig(p.reserveId, p.amount, alice, p.deadline, signature);
 
-    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     assertEq(gateway.nonces(alice), p.nonce + 1);
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 
   function test_setUsingAsCollateralWithSig() public {
@@ -156,8 +164,9 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       signature
     );
 
-    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     assertEq(gateway.nonces(alice), p.nonce + 1);
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 
   function test_updateUserRiskPremiumWithSig() public {
@@ -171,8 +180,9 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(alice, p.deadline, signature);
 
-    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     assertEq(gateway.nonces(alice), p.nonce + 1);
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 
   function test_updateUserDynamicConfigWithSig() public {
@@ -189,8 +199,9 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(alice, p.deadline, signature);
 
-    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     assertEq(gateway.nonces(alice), p.nonce + 1);
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 
   function test_setSelfAsUserPositionManagerWithSig() public {
@@ -209,7 +220,8 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig(alice, p.approve, p.deadline, signature);
 
-    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     assertEq(spoke1.nonces(alice), p.nonce + 1);
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 }

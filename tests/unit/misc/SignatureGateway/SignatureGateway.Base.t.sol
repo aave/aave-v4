@@ -239,4 +239,16 @@ contract SignatureGatewayBaseTest is Base {
       assertEq(underlying.allowance({owner: who, spender: address(_gateway)}), 0);
     }
   }
+
+  function _assertGatewayHasNoActivePosition(
+    ISpoke spoke,
+    ISignatureGateway _gateway
+  ) internal view {
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+      assertEq(spoke.getUserSuppliedShares(reserveId, address(_gateway)), 0);
+      assertEq(spoke.getUserTotalDebt(reserveId, address(_gateway)), 0); // rounds up so asset validation is enough
+      assertFalse(spoke.isUsingAsCollateral(reserveId, address(_gateway)));
+      assertFalse(spoke.isBorrowing(reserveId, address(_gateway)));
+    }
+  }
 }
