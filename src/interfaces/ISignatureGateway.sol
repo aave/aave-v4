@@ -35,6 +35,7 @@ interface ISignatureGateway is IMulticall {
 
   /**
    * @notice Facilitates withdraw action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @dev Providing an amount exceeding the user's current withdrawable balance indicates a request for a maximum withdrawal.
    * @dev Withdrawn assets are pushed to `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to withdraw.
