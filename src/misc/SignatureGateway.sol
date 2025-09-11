@@ -67,9 +67,9 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
-    (IERC20 asset, address hub) = _getReserveData(reserveId);
-    asset.safeTransferFrom(onBehalfOf, address(this), amount);
-    asset.forceApprove(hub, amount);
+    (IERC20 underlying, address hub) = _getReserveData(reserveId);
+    underlying.safeTransferFrom(onBehalfOf, address(this), amount);
+    underlying.forceApprove(hub, amount);
 
     SPOKE.supply(reserveId, amount, onBehalfOf);
   }
@@ -98,13 +98,13 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
-    (IERC20 asset, ) = _getReserveData(reserveId);
+    (IERC20 underlying, ) = _getReserveData(reserveId);
     uint256 userBalance = SPOKE.getUserSuppliedAmount(reserveId, onBehalfOf);
     uint256 amountToWithdraw = amount == type(uint256).max ? userBalance : amount;
 
     SPOKE.withdraw(reserveId, amountToWithdraw, onBehalfOf);
 
-    asset.safeTransfer(onBehalfOf, amountToWithdraw);
+    underlying.safeTransfer(onBehalfOf, amountToWithdraw);
   }
 
   // @inheritdoc ISignatureGateway
@@ -131,11 +131,11 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
-    (IERC20 asset, ) = _getReserveData(reserveId);
+    (IERC20 underlying, ) = _getReserveData(reserveId);
 
     SPOKE.borrow(reserveId, amount, onBehalfOf);
 
-    asset.safeTransfer(onBehalfOf, amount);
+    underlying.safeTransfer(onBehalfOf, amount);
   }
 
   // @inheritdoc ISignatureGateway
@@ -162,11 +162,11 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
-    (IERC20 asset, address hub) = _getReserveData(reserveId);
+    (IERC20 underlying, address hub) = _getReserveData(reserveId);
     uint256 repayAmount = MathUtils.min(SPOKE.getUserTotalDebt(reserveId, onBehalfOf), amount);
 
-    asset.safeTransferFrom(onBehalfOf, address(this), repayAmount);
-    asset.forceApprove(hub, repayAmount);
+    underlying.safeTransferFrom(onBehalfOf, address(this), repayAmount);
+    underlying.forceApprove(hub, repayAmount);
 
     SPOKE.repay(reserveId, repayAmount, onBehalfOf);
   }
@@ -218,9 +218,9 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
     bytes32 r,
     bytes32 s
   ) external {
-    (IERC20 asset, ) = _getReserveData(reserveId);
+    (IERC20 underlying, ) = _getReserveData(reserveId);
     try
-      IERC20Permit(address(asset)).permit({
+      IERC20Permit(address(underlying)).permit({
         owner: onBehalfOf,
         spender: address(this),
         value: value,
