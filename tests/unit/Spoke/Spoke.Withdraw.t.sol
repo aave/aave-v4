@@ -868,8 +868,8 @@ contract SpokeWithdrawTest is SpokeBase {
     assertGe(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
   }
 
-  /// @dev Withdraw more than available liquidity withdraws everything
-  function test_withdraw_max_greater_than_available_liquidity() public {
+  /// @dev Withdraw exceeding supplied amount withdraws everything
+  function test_withdraw_max_greater_than_supplied() public {
     uint256 amount = 100e18;
     uint256 reserveId = _daiReserveId(spoke1);
 
