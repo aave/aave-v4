@@ -32,7 +32,7 @@ contract SignatureGatewayBaseTest is Base {
    * @dev Warps to a random time before a randomly generated deadline.
    * @return The randomly generated deadline.
    */
-  function _warpUntilRandomDeadline() internal returns (uint256) {
+  function _warpBeforeRandomDeadline() internal returns (uint256) {
     uint256 deadline = vm.randomUint(1, MAX_SKIP_TIME);
     vm.warp(vm.randomUint(0, deadline - 1));
     return deadline;

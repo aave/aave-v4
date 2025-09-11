@@ -14,7 +14,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
   }
 
   function test_supplyWithSig_revertsWith_Unauthorized() public {
-    EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpUntilRandomDeadline());
+    EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -23,7 +23,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
   }
 
   function test_withdrawWithSig_revertsWith_Unauthorized() public {
-    EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpUntilRandomDeadline());
+    EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -32,7 +32,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
   }
 
   function test_borrowWithSig_revertsWith_Unauthorized() public {
-    EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpUntilRandomDeadline());
+    EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpBeforeRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -41,7 +41,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
   }
 
   function test_repayWithSig_revertsWith_Unauthorized() public {
-    EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpUntilRandomDeadline());
+    EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpBeforeRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -50,7 +50,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
   }
 
   function test_setUsingAsCollateralWithSig_revertsWith_Unauthorized() public {
-    uint256 deadline = _warpUntilRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline();
     EIP712Types.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 

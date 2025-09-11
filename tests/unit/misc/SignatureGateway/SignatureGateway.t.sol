@@ -41,7 +41,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_supplyWithSig() public {
-    EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpUntilRandomDeadline());
+    EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
     Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
 
@@ -61,7 +61,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_withdrawWithSig() public {
-    EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpUntilRandomDeadline());
+    EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     Utils.supply(spoke1, p.reserveId, alice, p.amount + 1, alice);
@@ -81,7 +81,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_borrowWithSig() public {
-    EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpUntilRandomDeadline());
+    EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpBeforeRandomDeadline());
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 1e18;
     Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 2, alice);
@@ -103,7 +103,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_repayWithSig() public {
-    EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpUntilRandomDeadline());
+    EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpBeforeRandomDeadline());
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 1e18;
     Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 2, alice);
@@ -136,7 +136,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_setUsingAsCollateralWithSig() public {
-    uint256 deadline = _warpUntilRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline();
     EIP712Types.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
     p.reserveId = _daiReserveId(spoke1);
     Utils.supplyCollateral(spoke1, p.reserveId, alice, 1e18, alice);
@@ -166,7 +166,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       user: alice,
       approve: true,
       nonce: spoke1.nonces(address(alice)), // note: this typed sig is forwarded to spoke
-      deadline: _warpUntilRandomDeadline()
+      deadline: _warpBeforeRandomDeadline()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 

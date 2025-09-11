@@ -68,7 +68,7 @@ contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
       owner: user,
       spender: address(gateway),
       value: 100e18,
-      deadline: _warpUntilRandomDeadline(),
+      deadline: _warpBeforeRandomDeadline(),
       nonce: token.nonces(user)
     });
 
