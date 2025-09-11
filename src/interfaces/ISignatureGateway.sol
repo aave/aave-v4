@@ -71,6 +71,7 @@ interface ISignatureGateway is IMulticall {
   /**
    * @notice Facilitates repay action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Repay assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
+   * @dev Providing an amount greater than the user's current debt indicates a request to repay the maximum possible amount.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to repay.
    * @param onBehalfOf The address of the user to repay the asset on behalf of.
