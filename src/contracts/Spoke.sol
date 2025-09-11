@@ -6,7 +6,7 @@ import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
-import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
+import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
@@ -23,13 +23,20 @@ import {IHub} from 'src/interfaces/IHub.sol';
 import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
-contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
+/**
+ * @dev Future upgrades can safely append new storage variables to the Spoke's storage layout
+ * as long as any new variables added to inherited contracts continue to not depend on the
+ * Spoke's storage layout namespace.
+ */
+contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
   using PercentageMath for *;
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using PositionStatus for *;
   using MathUtils for *;
+
+  uint64 public immutable SPOKE_REVISION;
 
   IAaveOracle public oracle;
 
@@ -50,15 +57,30 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     _;
   }
 
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor(uint64 spokeRevision_) {
+    SPOKE_REVISION = spokeRevision_;
+    _disableInitializers();
+  }
+
   /**
-   * @dev Constructor.
-   * @dev The authority should implement the AccessManaged interface to control access.
-   * @param authority_ The address of the authority contract which manages permissions.
+   * @dev Initializes the contract (to be called through delegatecall). When the spoke
+   * revision is 1, it sets the authority and the target health factor to the default value.
+   * Revisions greater than 1 only set the authority.
+   * @param _authority The address of the authority contract which manages permissions.
    */
-  constructor(address authority_) AccessManaged(authority_) {
-    require(authority_ != address(0), InvalidAddress());
-    _liquidationConfig.targetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-    emit LiquidationConfigUpdate(_liquidationConfig);
+  function initialize(address _authority) external reinitializer(SPOKE_REVISION) {
+    require(_authority != address(0), InvalidAddress());
+    __AccessManaged_init(_authority);
+    if (SPOKE_REVISION == 1) {
+      _liquidationConfig.targetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+      emit LiquidationConfigUpdate(_liquidationConfig);
+    } else {
+      require(
+        _liquidationConfig.targetHealthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+        InvalidLiquidationConfig()
+      );
+    }
   }
 
   // /////

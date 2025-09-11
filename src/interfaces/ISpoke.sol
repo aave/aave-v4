@@ -127,6 +127,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error MustNotLeaveDust();
   error InvalidDebtToCover();
 
+  function initialize(address _authority) external;
+
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
   /**

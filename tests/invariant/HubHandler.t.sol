@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
+import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
@@ -44,7 +45,16 @@ contract HubHandler is Test {
     accessManager = new AccessManager(hubAdmin);
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
-    spoke1 = new Spoke(address(accessManager));
+    address spokeImplAddress = address(new Spoke(1));
+    spoke1 = Spoke(
+      address(
+        new TransparentUpgradeableProxy(
+          spokeImplAddress,
+          hubAdmin,
+          abi.encodeCall(ISpoke.initialize, (address(accessManager)))
+        )
+      )
+    );
     oracle = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
     spoke1.updateOracle(address(oracle));
     treasurySpoke = new TreasurySpoke(hubAdmin, address(hub1));

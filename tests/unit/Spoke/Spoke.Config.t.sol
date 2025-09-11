@@ -8,27 +8,6 @@ contract SpokeConfigTest is SpokeBase {
   using SafeCast for *;
   using PercentageMath for uint256;
 
-  function test_spoke_deploy() public {
-    address predictedSpokeAddress = vm.computeCreateAddress(
-      address(this),
-      vm.getNonce(address(this))
-    );
-    vm.expectEmit(predictedSpokeAddress);
-    emit ISpoke.LiquidationConfigUpdate(
-      DataTypes.LiquidationConfig({
-        targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-        healthFactorForMaxBonus: 0,
-        liquidationBonusFactor: 0
-      })
-    );
-    new Spoke(address(accessManager));
-  }
-
-  function test_spoke_deploy_revertsWith_InvalidAddress() public {
-    vm.expectRevert(ISpoke.InvalidAddress.selector);
-    new Spoke(address(0));
-  }
-
   function test_updateOracle_revertsWith_AccessManagedUnauthorized(address caller) public {
     vm.assume(caller != SPOKE_ADMIN && caller != ADMIN);
     vm.expectRevert(
@@ -209,7 +188,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_InvalidAddress_oracle() public {
-    Spoke newSpoke = new Spoke(address(accessManager));
+    Spoke newSpoke = Spoke(address(_deploySpokeProxy(ADMIN, address(accessManager))));
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       paused: true,
