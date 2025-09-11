@@ -24,7 +24,7 @@ interface INativeTokenGateway {
    * @param amount Amount to withdraw and unwrap.
    * @param receiver Address that will receive the unwrapped native asset.
    **/
-  function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external payable;
+  function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external;
 
   /**
    * @notice Borrows the wrapped asset from the Spoke and unwraps it back to the native asset.
@@ -32,7 +32,7 @@ interface INativeTokenGateway {
    * @param amount Amount to borrow and unwrap.
    * @param receiver Address that will receive the unwrapped native asset.
    **/
-  function borrowNative(uint256 reserveId, uint256 amount, address receiver) external payable;
+  function borrowNative(uint256 reserveId, uint256 amount, address receiver) external;
 
   /**
    * @notice Wraps the native asset and repay debt on the Spoke.
@@ -42,35 +42,8 @@ interface INativeTokenGateway {
   function repayNative(uint256 reserveId, uint256 amount) external payable;
 
   /**
-   * @notice Calls `setUsingAsCollateral` on the spoke on behalf of the user.
-   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param usingAsCollateral True if the user wants to use the supply as collateral, false otherwise.
-   */
-  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external payable;
-
-  /**
-   * @notice Allows this contract to approve or revoke approval as a positionManager using a signature.
-   * @param user The address of the user on whose behalf position manager can act.
-   * @param approve True if user wants to approve position manager, false otherwise.
-   * @param deadline The deadline for the signature.
-   */
-  function setUserPositionManagerWithSig(
-    address user,
-    bool approve,
-    uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  ) external payable;
-
-  /**
-   * @notice Renounces the positionManager approval given by the caller.
-   */
-  function renouncePositionManagerRole() external payable;
-
-  /**
    * @notice Renounces the positionManager approval given by an user.
    * @param user The address of the user.
    */
-  function renouncePositionManagerRoleForUser(address user) external;
+  function renouncePositionManagerRole(address user) external;
 }

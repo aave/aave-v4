@@ -41,24 +41,7 @@ contract NativeTokenGateway is
   }
 
   /// @inheritdoc INativeTokenGateway
-  function setUserPositionManagerWithSig(
-    address user,
-    bool approve,
-    uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  ) external payable {
-    SPOKE.setUserPositionManagerWithSig(address(this), user, approve, deadline, v, r, s);
-  }
-
-  /// @inheritdoc INativeTokenGateway
-  function renouncePositionManagerRole() external payable {
-    SPOKE.renouncePositionManagerRole(msg.sender);
-  }
-
-  /// @inheritdoc INativeTokenGateway
-  function renouncePositionManagerRoleForUser(address user) external onlyOwner {
+  function renouncePositionManagerRole(address user) external onlyOwner {
     SPOKE.renouncePositionManagerRole(user);
   }
 
@@ -74,11 +57,7 @@ contract NativeTokenGateway is
   }
 
   /// @inheritdoc INativeTokenGateway
-  function withdrawNative(
-    uint256 reserveId,
-    uint256 amount,
-    address receiver
-  ) external payable nonReentrant {
+  function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external {
     (address underlying, ) = _getReserveData(reserveId);
     _validateParams(underlying, amount);
     require(receiver != address(0), InvalidAddress());
@@ -91,11 +70,7 @@ contract NativeTokenGateway is
   }
 
   /// @inheritdoc INativeTokenGateway
-  function borrowNative(
-    uint256 reserveId,
-    uint256 amount,
-    address receiver
-  ) external payable nonReentrant {
+  function borrowNative(uint256 reserveId, uint256 amount, address receiver) external {
     (address underlying, ) = _getReserveData(reserveId);
     _validateParams(underlying, amount);
     require(receiver != address(0), InvalidAddress());
@@ -127,35 +102,6 @@ contract NativeTokenGateway is
     }
   }
 
-  /// @inheritdoc INativeTokenGateway
-  function setUsingAsCollateral(uint256 reserveId, bool usingAsCollateral) external payable {
-    (address underlying, ) = _getReserveData(reserveId);
-    require(underlying == address(NATIVE_WRAPPER), InvalidReserveId());
-    SPOKE.setUsingAsCollateral(reserveId, usingAsCollateral, msg.sender);
-  }
-
-  /**
-   * @notice Call multiple functions in the current contract and return the data from all of them if they all succeed.
-   * @dev Function was inlined here so it can be payable.
-   * @param data The encoded function data for each of the calls to make to this contract.
-   * @return results The results from each of the calls passed in via data.
-   */
-  function multicall(bytes[] calldata data) external payable returns (bytes[] memory) {
-    bytes[] memory results = new bytes[](data.length);
-    for (uint256 i; i < data.length; ++i) {
-      (bool ok, bytes memory res) = address(this).delegatecall(data[i]);
-
-      assembly ('memory-safe') {
-        if iszero(ok) {
-          revert(add(res, 32), mload(res)) // bubble up first revert
-        }
-      }
-
-      results[i] = res;
-    }
-    return results;
-  }
-
   /// @inheritdoc Rescuable
   function rescueGuardian() public view override returns (address) {
     return owner();
@@ -164,7 +110,7 @@ contract NativeTokenGateway is
   /**
    * @dev Validates the common parameters for all functions.
    **/
-  function _validateParams(address underlying, uint256 amount) internal {
+  function _validateParams(address underlying, uint256 amount) internal view {
     require(underlying == address(NATIVE_WRAPPER), InvalidReserveId());
     require(amount > 0, InvalidAmount());
   }

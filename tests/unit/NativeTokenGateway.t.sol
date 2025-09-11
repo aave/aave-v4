@@ -48,32 +48,6 @@ contract NativeTokenGatewayTest is Base {
     new NativeTokenGateway(address(tokenList.weth), address(0), address(ADMIN));
   }
 
-  function test_setUserPositionManagerWithSig() public {
-    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-
-    EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
-      positionManager: address(nativeTokenGateway),
-      user: user,
-      approve: vm.randomBool(),
-      nonce: spoke1.nonces(user),
-      deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
-    });
-    bytes32 digest = _getTypedDataHash(spoke1, params);
-
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
-
-    nativeTokenGateway.setUserPositionManagerWithSig(
-      user,
-      params.approve,
-      params.deadline,
-      v,
-      r,
-      s
-    );
-
-    assertEq(spoke1.isPositionManager(user, address(nativeTokenGateway)), params.approve);
-  }
-
   function test_renouncePositionManagerRole() public {
     (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
 
@@ -82,27 +56,13 @@ contract NativeTokenGatewayTest is Base {
 
     assertTrue(spoke1.isPositionManager(user, address(nativeTokenGateway)));
 
-    vm.prank(user);
-    nativeTokenGateway.renouncePositionManagerRole();
-
-    assertFalse(spoke1.isPositionManager(user, address(nativeTokenGateway)));
-  }
-
-  function test_renouncePositionManagerRoleForUser() public {
-    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-
-    vm.prank(user);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
-
-    assertTrue(spoke1.isPositionManager(user, address(nativeTokenGateway)));
-
     vm.prank(ADMIN);
-    nativeTokenGateway.renouncePositionManagerRoleForUser(user);
+    nativeTokenGateway.renouncePositionManagerRole(user);
 
     assertFalse(spoke1.isPositionManager(user, address(nativeTokenGateway)));
   }
 
-  function test_renouncePositionManagerRoleForUser_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_renouncePositionManagerRole_revertsWith_OwnableUnauthorizedAccount() public {
     (address user, ) = makeAddrAndKey(string(vm.randomBytes(32)));
 
     vm.prank(user);
@@ -110,28 +70,7 @@ contract NativeTokenGatewayTest is Base {
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
     vm.prank(user);
-    nativeTokenGateway.renouncePositionManagerRoleForUser(user);
-  }
-
-  function test_setUsingAsCollateral() public {
-    vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
-
-    assertFalse(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
-
-    vm.prank(bob);
-    nativeTokenGateway.setUsingAsCollateral(_wethReserveId(spoke1), true);
-
-    assertTrue(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
-  }
-
-  function test_setUsingAsCollateral_revertsWith_InvalidReserveId() public {
-    vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
-
-    vm.expectRevert(INativeTokenGateway.InvalidReserveId.selector);
-    vm.prank(bob);
-    nativeTokenGateway.setUsingAsCollateral(_wethReserveId(spoke1) + 1, true);
+    nativeTokenGateway.renouncePositionManagerRole(user);
   }
 
   function test_supplyNative() public {
@@ -703,206 +642,6 @@ contract NativeTokenGatewayTest is Base {
     address(nativeTokenGateway).call{value: 1 ether}(new bytes(0));
   }
 
-  function test_multicall_supplyNative_fuzz(uint256 amount) public {
-    amount = bound(amount, 1, mintAmount_WETH);
-    (, uint256 bobPk) = makeAddrAndKey('bob');
-    uint256 prevUserBalance = bob.balance;
-    uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
-    uint256 prevUserSuppliedAmount = spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob);
-
-    assertFalse(spoke1.isPositionManager(bob, address(nativeTokenGateway)));
-    assertFalse(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
-    assertEq(tokenList.weth.balanceOf(address(hub1)), 0);
-    assertEq(prevUserSuppliedAmount, 0);
-
-    bytes memory action = abi.encodeCall(
-      INativeTokenGateway.supplyNative,
-      (_wethReserveId(spoke1), amount)
-    );
-    bytes[] memory draftCalls = _encodeMulticallBatch(bob, bobPk, action);
-    bytes[] memory calls = new bytes[](draftCalls.length + 1);
-    calls[0] = draftCalls[0];
-    calls[1] = draftCalls[1];
-    calls[2] = abi.encodeCall(
-      INativeTokenGateway.setUsingAsCollateral,
-      (_wethReserveId(spoke1), true)
-    );
-    calls[3] = draftCalls[2];
-
-    vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(_wethReserveId(spoke1), address(nativeTokenGateway), bob, amount);
-    vm.prank(bob);
-    nativeTokenGateway.multicall{value: amount}(calls);
-
-    assertEq(bob.balance, prevUserBalance - amount);
-    assertEq(
-      spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob),
-      prevUserSuppliedAmount + amount
-    );
-    assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + amount);
-    _checkFinalBalances();
-
-    assertTrue(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
-
-    assertFalse(spoke1.isPositionManager(bob, address(nativeTokenGateway)));
-  }
-
-  function test_multicall_withdrawNative_fuzz(uint256 amount) public {
-    amount = bound(amount, 1, mintAmount_WETH);
-    (, uint256 bobPk) = makeAddrAndKey('bob');
-
-    Utils.supply({
-      spoke: spoke1,
-      reserveId: _wethReserveId(spoke1),
-      caller: bob,
-      amount: mintAmount_WETH,
-      onBehalfOf: bob
-    });
-    uint256 expectedSupplyShares = hub1.convertToAddedShares(wethAssetId, mintAmount_WETH);
-
-    uint256 prevUserBalance = bob.balance;
-    uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
-    uint256 prevUserSuppliedAmount = spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob);
-
-    assertEq(spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob), expectedSupplyShares);
-
-    bytes memory action = abi.encodeCall(
-      INativeTokenGateway.withdrawNative,
-      (_wethReserveId(spoke1), amount, bob)
-    );
-    bytes[] memory calls = _encodeMulticallBatch(bob, bobPk, action);
-
-    vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(_wethReserveId(spoke1), address(nativeTokenGateway), bob, amount);
-    vm.prank(bob);
-    nativeTokenGateway.multicall(calls);
-
-    assertEq(bob.balance, prevUserBalance + amount);
-    assertEq(
-      spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob),
-      prevUserSuppliedAmount - amount
-    );
-    assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - amount);
-    _checkFinalBalances();
-
-    assertFalse(spoke1.isPositionManager(bob, address(nativeTokenGateway)));
-  }
-
-  function test_multicall_borrowNative_fuzz(uint256 borrowAmount) public {
-    (, uint256 bobPk) = makeAddrAndKey('bob');
-    uint256 aliceSupplyAmount = 10e18;
-    uint256 bobSupplyAmount = 100000e18;
-    borrowAmount = bound(borrowAmount, 1, aliceSupplyAmount);
-
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
-    Utils.supply(spoke1, _wethReserveId(spoke1), alice, aliceSupplyAmount, alice);
-
-    uint256 prevUserBalance = bob.balance;
-    uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
-
-    bytes memory action = abi.encodeCall(
-      INativeTokenGateway.borrowNative,
-      (_wethReserveId(spoke1), borrowAmount, bob)
-    );
-    bytes[] memory calls = _encodeMulticallBatch(bob, bobPk, action);
-
-    vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(
-      _wethReserveId(spoke1),
-      address(nativeTokenGateway),
-      bob,
-      hub1.convertToDrawnShares(wethAssetId, borrowAmount)
-    );
-    vm.prank(bob);
-    nativeTokenGateway.multicall(calls);
-
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
-      _wethReserveId(spoke1),
-      bob
-    );
-
-    assertEq(userDrawnDebt + userPremiumDebt, borrowAmount);
-    assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - borrowAmount);
-    assertEq(bob.balance, prevUserBalance + borrowAmount);
-    _checkFinalBalances();
-
-    assertFalse(spoke1.isPositionManager(bob, address(nativeTokenGateway)));
-  }
-
-  function test_multicall_repayNative_fuzz(uint256 repayAmount) public {
-    (, uint256 bobPk) = makeAddrAndKey('bob');
-
-    uint256 aliceSupplyAmount = 10e18;
-    uint256 bobSupplyAmount = 100000e18;
-    uint256 borrowAmount = 10e18;
-    repayAmount = bound(repayAmount, 1, borrowAmount);
-
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
-    Utils.supply(spoke1, _wethReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    Utils.borrow(spoke1, _wethReserveId(spoke1), bob, borrowAmount, bob);
-
-    uint256 prevUserBalance = bob.balance;
-    uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
-
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
-      _wethReserveId(spoke1),
-      bob
-    );
-    (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
-      userDrawnDebt,
-      userPremiumDebt,
-      repayAmount,
-      wethAssetId
-    );
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1),
-      repayAmount
-    );
-
-    bytes memory action = abi.encodeCall(
-      INativeTokenGateway.repayNative,
-      (_wethReserveId(spoke1), repayAmount)
-    );
-    bytes[] memory calls = _encodeMulticallBatch(bob, bobPk, action);
-
-    vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
-      _wethReserveId(spoke1),
-      address(nativeTokenGateway),
-      bob,
-      hub1.convertToDrawnShares(wethAssetId, baseRestored),
-      expectedPremiumDelta
-    );
-    vm.prank(bob);
-    nativeTokenGateway.multicall{value: repayAmount}(calls);
-
-    (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(_wethReserveId(spoke1), bob);
-
-    assertEq(userDrawnDebt + userPremiumDebt, borrowAmount - repayAmount);
-    assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + repayAmount);
-    assertEq(bob.balance, prevUserBalance - repayAmount);
-    _checkFinalBalances();
-
-    assertFalse(spoke1.isPositionManager(bob, address(nativeTokenGateway)));
-  }
-
-  function test_multicall_forwards_first_revert() public {
-    uint256 amount = 100e18;
-    (, uint256 bobPk) = makeAddrAndKey('bob');
-
-    bytes memory action = abi.encodeCall(
-      INativeTokenGateway.supplyNative,
-      (_wethReserveId(spoke1) + 1, amount)
-    );
-    bytes[] memory calls = _encodeMulticallBatch(bob, bobPk, action);
-
-    vm.expectRevert(INativeTokenGateway.InvalidReserveId.selector);
-    vm.prank(bob);
-    nativeTokenGateway.multicall{value: amount}(calls);
-  }
-
   function _getUserData(address user) internal view returns (DataTypes.UserPosition memory) {
     return getUserInfo(spoke1, user, _wethReserveId(spoke1));
   }
@@ -911,31 +650,5 @@ contract NativeTokenGatewayTest is Base {
     assertEq(address(nativeTokenGateway).balance, 0);
     assertEq(tokenList.weth.balanceOf(address(nativeTokenGateway)), 0);
     assertEq(tokenList.weth.allowance(address(nativeTokenGateway), address(hub1)), 0);
-  }
-
-  function _encodeMulticallBatch(
-    address user,
-    uint256 userPk,
-    bytes memory action
-  ) internal returns (bytes[] memory) {
-    bytes[] memory calls = new bytes[](3);
-
-    EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
-      positionManager: address(nativeTokenGateway),
-      user: user,
-      approve: true,
-      nonce: spoke1.nonces(user),
-      deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
-    });
-    bytes32 digest = _getTypedDataHash(spoke1, params);
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
-
-    calls[0] = abi.encodeCall(
-      INativeTokenGateway.setUserPositionManagerWithSig,
-      (user, params.approve, params.deadline, v, r, s)
-    );
-    calls[1] = action;
-    calls[2] = abi.encodeCall(INativeTokenGateway.renouncePositionManagerRole, ());
-    return calls;
   }
 }
