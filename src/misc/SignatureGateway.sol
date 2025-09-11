@@ -166,7 +166,7 @@ contract SignatureGateway is EIP712, Multicall, Ownable2Step, ISignatureGateway 
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
     (IERC20 underlying, address hub) = _getReserveData(reserveId);
-    amount = MathUtils.min(SPOKE.getUserTotalDebt(reserveId, onBehalfOf), amount);
+    amount = MathUtils.min(amounts, SPOKE.getUserTotalDebt(reserveId, onBehalfOf));
 
     underlying.safeTransferFrom(onBehalfOf, address(this), amount);
     underlying.forceApprove(hub, amount);
