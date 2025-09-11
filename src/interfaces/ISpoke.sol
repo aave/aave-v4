@@ -286,7 +286,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     uint16 configKey
   ) external view returns (DataTypes.DynamicReserveConfig memory);
 
-  function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
+  function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256);
 
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
 
@@ -325,7 +325,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getUserRiskPremium(address user) external view returns (uint256);
 
-  function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256);
+  function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256);
 
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
 

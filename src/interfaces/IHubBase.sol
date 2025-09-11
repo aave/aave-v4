@@ -225,7 +225,7 @@ interface IHubBase {
    * @param spoke The address of the spoke.
    * @return The amount of added assets.
    */
-  function getSpokeAddedAmount(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256);
 
   /**
    * @notice Returns the total amount of shares of the specified asset added to the hub by the specified spoke.

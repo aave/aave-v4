@@ -530,9 +530,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getAssetPremiumShares(
-    uint256 assetId
-  ) external view returns (uint256, uint256, uint256) {
+  function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     return (asset.premiumShares, asset.premiumOffset, asset.realizedPremium);
   }
@@ -582,7 +580,7 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].totalAddedShares();
   }
 
-  function getSpokeAddedAmount(uint256 assetId, address spoke) external view returns (uint256) {
+  function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     uint256 unrealizedFeeShares;
     if (spoke == asset.feeReceiver) unrealizedFeeShares = asset.unrealizedFeeShares();

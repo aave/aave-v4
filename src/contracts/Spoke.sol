@@ -517,9 +517,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     return drawnDebt + premiumDebt;
   }
 
-  function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256) {
+  function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    return reserve.hub.getSpokeAddedAmount(reserve.assetId, address(this));
+    return reserve.hub.getSpokeAddedAssets(reserve.assetId, address(this));
   }
 
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
@@ -527,7 +527,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     return reserve.hub.getSpokeAddedShares(reserve.assetId, address(this));
   }
 
-  function getUserSuppliedAmount(uint256 reserveId, address user) public view returns (uint256) {
+  function getUserSuppliedAssets(uint256 reserveId, address user) public view returns (uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     return
       reserve.hub.previewRemoveByShares(

@@ -1258,7 +1258,7 @@ abstract contract Base is Test {
     uint256 reserveId,
     address user
   ) internal view returns (uint256) {
-    return spoke.getUserSuppliedAmount(reserveId, user);
+    return spoke.getUserSuppliedAssets(reserveId, user);
   }
 
   /// @dev Helper function to calculate asset amount corresponding to single added share
@@ -1404,7 +1404,7 @@ abstract contract Base is Test {
       string(abi.encodePacked('spoke supplied shares ', label))
     );
     assertEq(
-      hub1.getSpokeAddedAmount(assetId, address(spoke)),
+      hub1.getSpokeAddedAssets(assetId, address(spoke)),
       expectedSuppliedAmount,
       string(abi.encodePacked('spoke supplied amount ', label))
     );
@@ -1414,7 +1414,7 @@ abstract contract Base is Test {
       string(abi.encodePacked('reserve supplied shares ', label))
     );
     assertEq(
-      spoke.getReserveSuppliedAmount(reserveId),
+      spoke.getReserveSuppliedAssets(reserveId),
       expectedSuppliedAmount,
       string(abi.encodePacked('reserve supplied amount ', label))
     );
@@ -1424,7 +1424,7 @@ abstract contract Base is Test {
       string(abi.encodePacked('user supplied shares ', label))
     );
     assertEq(
-      spoke.getUserSuppliedAmount(reserveId, user),
+      spoke.getUserSuppliedAssets(reserveId, user),
       expectedSuppliedAmount,
       string(abi.encodePacked('user supplied amount ', label))
     );
@@ -1573,7 +1573,7 @@ abstract contract Base is Test {
     string memory label
   ) internal view {
     assertApproxEqAbs(
-      spoke.getUserSuppliedAmount(reserveId, user),
+      spoke.getUserSuppliedAssets(reserveId, user),
       expectedSuppliedAmount,
       3,
       string.concat('user supplied amount ', label)
@@ -1587,7 +1587,7 @@ abstract contract Base is Test {
     string memory label
   ) internal view {
     assertApproxEqAbs(
-      spoke.getReserveSuppliedAmount(reserveId),
+      spoke.getReserveSuppliedAssets(reserveId),
       expectedSuppliedAmount,
       3,
       string.concat('reserve supplied amount ', label)
@@ -1602,7 +1602,7 @@ abstract contract Base is Test {
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     assertApproxEqAbs(
-      hub1.getSpokeAddedAmount(assetId, address(spoke)),
+      hub1.getSpokeAddedAssets(assetId, address(spoke)),
       expectedSuppliedAmount,
       3,
       string.concat('spoke supplied amount ', label)
@@ -1820,7 +1820,7 @@ abstract contract Base is Test {
 
   /// @dev Helper function to withdraw fees from the treasury spoke
   function withdrawLiquidityFees(uint256 assetId, uint256 amount) internal {
-    uint256 fees = hub1.getSpokeAddedAmount(assetId, address(treasurySpoke));
+    uint256 fees = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
     if (amount > fees) {
       amount = fees;
     }
@@ -2257,7 +2257,7 @@ abstract contract Base is Test {
         reserveId: reserveId,
         assetId: assetId,
         addedShares: spokeData.addedShares,
-        addedAmount: hub1.getSpokeAddedAmount(assetId, address(spoke)),
+        addedAmount: hub1.getSpokeAddedAssets(assetId, address(spoke)),
         drawnShares: spokeData.drawnShares,
         drawn: drawn,
         premiumShares: spokeData.premiumShares,

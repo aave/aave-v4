@@ -44,7 +44,7 @@ contract HubEliminateDeficitTest is HubBase {
 
     uint256 clearedDeficit = vm.randomUint(1, deficit);
     _supply(hub1, spoke1, assetId, clearedDeficit);
-    assertGe(hub1.getSpokeAddedAmount(assetId, address(spoke1)), clearedDeficit);
+    assertGe(hub1.getSpokeAddedAssets(assetId, address(spoke1)), clearedDeficit);
 
     uint256 expectedRemoveShares = hub1.previewRemoveByAssets(assetId, clearedDeficit);
     uint256 spokeAddedShares = hub1.getSpokeAddedShares(assetId, address(spoke1));
@@ -76,7 +76,7 @@ contract HubEliminateDeficitTest is HubBase {
 
     uint256 clearedDeficit = vm.randomUint(1, deficit - 1);
     _supply(hub1, spoke1, assetId, clearedDeficit);
-    assertGe(hub1.getSpokeAddedAmount(assetId, address(spoke1)), clearedDeficit);
+    assertGe(hub1.getSpokeAddedAssets(assetId, address(spoke1)), clearedDeficit);
 
     uint256 expectedRemoveShares = hub1.previewRemoveByAssets(assetId, clearedDeficit);
 

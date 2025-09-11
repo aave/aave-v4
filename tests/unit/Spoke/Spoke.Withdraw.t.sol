@@ -328,10 +328,10 @@ contract SpokeWithdrawTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    state.withdrawAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
+    state.withdrawAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
 
     assertGt(
-      spoke1.getUserSuppliedAmount(state.reserveId, bob),
+      spoke1.getUserSuppliedAssets(state.reserveId, bob),
       state.supplyAmount,
       'supplied amount with interest'
     );
@@ -476,11 +476,11 @@ contract SpokeWithdrawTest is SpokeBase {
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
-    state.withdrawAmount = hub1.getSpokeAddedAmount(state.reserveId, address(spoke1));
+    state.withdrawAmount = hub1.getSpokeAddedAssets(state.reserveId, address(spoke1));
 
     // bob's supplied amount has grown due to index increase
     assertGt(
-      spoke1.getUserSuppliedAmount(state.reserveId, bob),
+      spoke1.getUserSuppliedAssets(state.reserveId, bob),
       state.supplyAmount,
       'supplied amount with interest'
     );
@@ -583,10 +583,10 @@ contract SpokeWithdrawTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    state.withdrawAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1)); // withdraw all liquidity
+    state.withdrawAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)); // withdraw all liquidity
 
     assertGt(
-      spoke1.getUserSuppliedAmount(state.reserveId, bob),
+      spoke1.getUserSuppliedAssets(state.reserveId, bob),
       state.supplyAmount,
       'supplied amount with interest'
     );
@@ -724,12 +724,12 @@ contract SpokeWithdrawTest is SpokeBase {
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
-    state.withdrawAmount = hub1.getSpokeAddedAmount(state.reserveId, address(spoke1));
+    state.withdrawAmount = hub1.getSpokeAddedAssets(state.reserveId, address(spoke1));
 
     (, state.alicePremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
 
     assertGt(
-      spoke1.getUserSuppliedAmount(state.reserveId, bob),
+      spoke1.getUserSuppliedAssets(state.reserveId, bob),
       state.supplyAmount,
       'supplied amount with interest'
     );

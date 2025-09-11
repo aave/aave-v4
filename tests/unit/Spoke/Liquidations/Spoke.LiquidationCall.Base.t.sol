@@ -231,7 +231,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         healthFactorForMaxBonus: spoke.getLiquidationConfig().healthFactorForMaxBonus,
         liquidationBonusFactor: spoke.getLiquidationConfig().liquidationBonusFactor,
         debtReserveBalance: spoke.getUserTotalDebt(debtReserveId, user),
-        collateralReserveBalance: spoke.getUserSuppliedAmount(collateralReserveId, user),
+        collateralReserveBalance: spoke.getUserSuppliedAssets(collateralReserveId, user),
         debtToCover: debtToCover,
         totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
         healthFactor: userAccountData.healthFactor,
@@ -301,7 +301,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         continue;
       }
 
-      uint256 userSuppliedAmount = params.spoke.getUserSuppliedAmount(reserveId, params.user);
+      uint256 userSuppliedAmount = params.spoke.getUserSuppliedAssets(reserveId, params.user);
       if (params.collateralReserveId == reserveId) {
         userSuppliedAmount -= collateralToLiquidate;
       }
@@ -397,8 +397,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         collateralErc20Balance: getAssetUnderlyingByReserveId(spoke, collateralReserveId).balanceOf(
           addr
         ),
-        suppliedInSpoke: spoke.getUserSuppliedAmount(collateralReserveId, addr),
-        addedInHub: spoke.getReserve(collateralReserveId).hub.getSpokeAddedAmount(
+        suppliedInSpoke: spoke.getUserSuppliedAssets(collateralReserveId, addr),
+        addedInHub: spoke.getReserve(collateralReserveId).hub.getSpokeAddedAssets(
           spoke.getReserve(collateralReserveId).assetId,
           addr
         ),
@@ -534,7 +534,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     bool hasDeficit = (userAccountDataBefore.suppliedCollateralsCount == 1) &&
       (!params.isSolvent || isLiquidationBonusAffectingUserHf) &&
       (collateralToLiquidate ==
-        params.spoke.getUserSuppliedAmount(params.collateralReserveId, params.user));
+        params.spoke.getUserSuppliedAssets(params.collateralReserveId, params.user));
 
     return
       LiquidationMetadata({

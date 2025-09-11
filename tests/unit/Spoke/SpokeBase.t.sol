@@ -441,7 +441,7 @@ contract SpokeBase is Base {
     return
       TestData({
         data: getSpokePosition(spoke, reserveId),
-        addedAmount: spoke.getReserveSuppliedAmount(reserveId)
+        addedAmount: spoke.getReserveSuppliedAssets(reserveId)
       });
   }
 
@@ -452,7 +452,7 @@ contract SpokeBase is Base {
   ) internal view returns (TestUserData memory) {
     TestUserData memory userInfo;
     userInfo.data = getUserInfo(spoke, user, reserveId);
-    userInfo.suppliedAmount = spoke.getUserSuppliedAmount(reserveId, user);
+    userInfo.suppliedAmount = spoke.getUserSuppliedAssets(reserveId, user);
     return userInfo;
   }
 

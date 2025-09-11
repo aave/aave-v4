@@ -260,7 +260,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @return The premium offset of the asset.
    * @return The realized premium of the asset.
    */
-  function getAssetPremiumShares(uint256 assetId) external view returns (uint256, uint256, uint256);
+  function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256);
 
   function getTotalAddedAssets(uint256 assetId) external view returns (uint256);
 
