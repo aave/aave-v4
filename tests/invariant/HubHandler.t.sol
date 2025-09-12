@@ -46,7 +46,7 @@ contract HubHandler is Test {
     accessManager = new AccessManager(hubAdmin);
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
-    address spokeImplAddress = address(new SpokeInstance(1));
+    address spokeImplAddress = address(new SpokeInstance());
     spoke1 = Spoke(
       address(
         new TransparentUpgradeableProxy(

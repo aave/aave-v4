@@ -245,7 +245,7 @@ abstract contract Base is Test {
     address proxyAdminOwner,
     address accessManager
   ) internal returns (ISpoke) {
-    address spokeImplAddress = address(new SpokeInstance(1));
+    address spokeImplAddress = address(new SpokeInstance());
     TransparentUpgradeableProxy spokeProxy = new TransparentUpgradeableProxy(
       spokeImplAddress,
       proxyAdminOwner,
