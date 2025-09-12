@@ -353,7 +353,6 @@ contract Hub is IHub, AccessManaged {
     _transferShares(sender, receiver, shares);
     asset.updateDrawnRate(assetId);
 
-    emit PayFee(assetId, shares, msg.sender, feeReceiver);
     emit TransferShares(assetId, shares, msg.sender, feeReceiver);
   }
 

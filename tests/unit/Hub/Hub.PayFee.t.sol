@@ -95,15 +95,12 @@ contract HubPayFeeTest is HubBase {
     assertGe(hub1.convertToAddedAssets(daiAssetId, WadRayMath.RAY), WadRayMath.RAY);
 
     feeShares = bound(feeShares, 1, spokeSharesBefore);
-    uint256 feeAmount = hub1.convertToAddedAssets(daiAssetId, feeShares);
 
     uint256 feeReceiverSharesBefore = hub1.getSpokeAddedShares(
       daiAssetId,
       _getFeeReceiver(hub1, daiAssetId)
     );
 
-    vm.expectEmit(address(hub1));
-    emit IHub.PayFee(daiAssetId, feeShares, address(spoke1), _getFeeReceiver(hub1, daiAssetId));
     vm.expectEmit(address(hub1));
     emit IHub.TransferShares(
       daiAssetId,
