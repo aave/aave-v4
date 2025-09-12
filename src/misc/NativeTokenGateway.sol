@@ -29,10 +29,8 @@ contract NativeTokenGateway is
 {
   using SafeERC20 for *;
 
-  /// @inheritdoc INativeTokenGateway
-  address public immutable NATIVE_WRAPPER;
-  /// @inheritdoc INativeTokenGateway
-  address public immutable SPOKE;
+  INativeWrapper private immutable _NATIVE_WRAPPER;
+  ISpoke private immutable _SPOKE;
 
   constructor(
     address nativeWrapper_,
@@ -40,13 +38,23 @@ contract NativeTokenGateway is
     address initialOwner_
   ) Ownable(initialOwner_) {
     require(nativeWrapper_ != address(0) && spoke_ != address(0), InvalidAddress());
-    NATIVE_WRAPPER = nativeWrapper_;
-    SPOKE = spoke_;
+    _NATIVE_WRAPPER = INativeWrapper(payable(nativeWrapper_));
+    _SPOKE = ISpoke(spoke_);
+  }
+
+  /// @inheritdoc INativeTokenGateway
+  function NATIVE_WRAPPER() external view returns (address) {
+    return address(_NATIVE_WRAPPER);
+  }
+
+  /// @inheritdoc INativeTokenGateway
+  function SPOKE() external view returns (address) {
+    return address(_SPOKE);
   }
 
   /// @inheritdoc INativeTokenGateway
   function renouncePositionManagerRole(address user) external onlyOwner {
-    ISpoke(SPOKE).renouncePositionManagerRole(user);
+    _SPOKE.renouncePositionManagerRole(user);
   }
 
   /// @inheritdoc INativeTokenGateway
@@ -55,9 +63,9 @@ contract NativeTokenGateway is
     _validateParams(underlying, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
-    INativeWrapper(payable(NATIVE_WRAPPER)).deposit{value: amount}();
-    INativeWrapper(NATIVE_WRAPPER).forceApprove(hub, amount);
-    ISpoke(SPOKE).supply(reserveId, amount, msg.sender);
+    _NATIVE_WRAPPER.deposit{value: amount}();
+    _NATIVE_WRAPPER.forceApprove(hub, amount);
+    _SPOKE.supply(reserveId, amount, msg.sender);
   }
 
   /// @inheritdoc INativeTokenGateway
@@ -68,11 +76,11 @@ contract NativeTokenGateway is
 
     uint256 withdrawAmount = MathUtils.min(
       amount,
-      ISpoke(SPOKE).getUserSuppliedAmount(reserveId, msg.sender)
+      _SPOKE.getUserSuppliedAmount(reserveId, msg.sender)
     );
 
-    ISpoke(SPOKE).withdraw(reserveId, withdrawAmount, msg.sender);
-    INativeWrapper(payable(NATIVE_WRAPPER)).withdraw(withdrawAmount);
+    _SPOKE.withdraw(reserveId, withdrawAmount, msg.sender);
+    _NATIVE_WRAPPER.withdraw(withdrawAmount);
     Address.sendValue(payable(receiver), withdrawAmount);
   }
 
@@ -82,8 +90,8 @@ contract NativeTokenGateway is
     _validateParams(underlying, amount);
     require(receiver != address(0), InvalidAddress());
 
-    ISpoke(SPOKE).borrow(reserveId, amount, msg.sender);
-    INativeWrapper(NATIVE_WRAPPER).withdraw(amount);
+    _SPOKE.borrow(reserveId, amount, msg.sender);
+    _NATIVE_WRAPPER.withdraw(amount);
     Address.sendValue(payable(receiver), amount);
   }
 
@@ -93,7 +101,7 @@ contract NativeTokenGateway is
     _validateParams(underlying, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
-    uint256 userDebtAmount = ISpoke(SPOKE).getUserTotalDebt(reserveId, msg.sender);
+    uint256 userDebtAmount = _SPOKE.getUserTotalDebt(reserveId, msg.sender);
     uint256 repayAmount = amount;
     uint256 leftovers;
     if (amount > userDebtAmount) {
@@ -101,9 +109,9 @@ contract NativeTokenGateway is
       repayAmount = userDebtAmount;
     }
 
-    INativeWrapper(payable(NATIVE_WRAPPER)).deposit{value: repayAmount}();
-    INativeWrapper(NATIVE_WRAPPER).forceApprove(hub, repayAmount);
-    ISpoke(SPOKE).repay(reserveId, repayAmount, msg.sender);
+    _NATIVE_WRAPPER.deposit{value: repayAmount}();
+    _NATIVE_WRAPPER.forceApprove(hub, repayAmount);
+    _SPOKE.repay(reserveId, repayAmount, msg.sender);
 
     if (leftovers > 0) {
       Address.sendValue(payable(msg.sender), leftovers);
@@ -121,7 +129,7 @@ contract NativeTokenGateway is
    * @dev Validates the common parameters for all functions.
    **/
   function _validateParams(address underlying, uint256 amount) internal view {
-    require(underlying == address(NATIVE_WRAPPER), InvalidReserveId());
+    require(underlying == address(_NATIVE_WRAPPER), InvalidReserveId());
     require(amount > 0, InvalidAmount());
   }
 
@@ -129,7 +137,7 @@ contract NativeTokenGateway is
    * @dev Fetches the wanted data for the Reserve from the Spoke.
    **/
   function _getReserveData(uint256 reserveId) internal view returns (address, address) {
-    DataTypes.Reserve memory reserveData = ISpoke(SPOKE).getReserve(reserveId);
+    DataTypes.Reserve memory reserveData = _SPOKE.getReserve(reserveId);
     return (reserveData.underlying, address(reserveData.hub));
   }
 
@@ -137,7 +145,7 @@ contract NativeTokenGateway is
    * @dev Only NATIVE_WRAPPER contract is allowed to do native transfer here. Prevent other addresses from sending native assets to this contract.
    */
   receive() external payable {
-    require(msg.sender == address(NATIVE_WRAPPER), UnsupportedAction());
+    require(msg.sender == address(_NATIVE_WRAPPER), UnsupportedAction());
   }
 
   /**

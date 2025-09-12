@@ -26,8 +26,7 @@ import {ISpoke} from 'src/interfaces/ISpoke.sol';
 contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2Step, EIP712 {
   using SafeERC20 for IERC20;
 
-  /// @inheritdoc ISignatureGateway
-  address public immutable SPOKE;
+  ISpoke private immutable _SPOKE;
 
   /// @inheritdoc ISignatureGateway
   bytes32 public constant SUPPLY_TYPEHASH =
@@ -55,7 +54,12 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
 
   constructor(address spoke_, address initialOwner_) Ownable(initialOwner_) {
     require(spoke_ != address(0) && initialOwner_ != address(0), InvalidAddress());
-    SPOKE = spoke_;
+    _SPOKE = ISpoke(spoke_);
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function SPOKE() external view returns (address) {
+    return address(_SPOKE);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -71,7 +75,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
       keccak256(
         abi.encode(
           SUPPLY_TYPEHASH,
-          address(SPOKE),
+          address(_SPOKE),
           reserveId,
           amount,
           onBehalfOf,
@@ -86,7 +90,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     underlying.safeTransferFrom(onBehalfOf, address(this), amount);
     underlying.forceApprove(hub, amount);
 
-    ISpoke(SPOKE).supply(reserveId, amount, onBehalfOf);
+    _SPOKE.supply(reserveId, amount, onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -102,7 +106,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
       keccak256(
         abi.encode(
           WITHDRAW_TYPEHASH,
-          address(SPOKE),
+          address(_SPOKE),
           reserveId,
           amount,
           onBehalfOf,
@@ -116,10 +120,10 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     (IERC20 underlying, ) = _getReserveData(reserveId);
     uint256 withdrawAmount = MathUtils.min(
       amount,
-      ISpoke(SPOKE).getUserSuppliedAmount(reserveId, onBehalfOf)
+      _SPOKE.getUserSuppliedAmount(reserveId, onBehalfOf)
     );
 
-    ISpoke(SPOKE).withdraw(reserveId, withdrawAmount, onBehalfOf);
+    _SPOKE.withdraw(reserveId, withdrawAmount, onBehalfOf);
     underlying.safeTransfer(onBehalfOf, withdrawAmount);
   }
 
@@ -136,7 +140,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
       keccak256(
         abi.encode(
           BORROW_TYPEHASH,
-          address(SPOKE),
+          address(_SPOKE),
           reserveId,
           amount,
           onBehalfOf,
@@ -149,7 +153,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
 
     (IERC20 underlying, ) = _getReserveData(reserveId);
 
-    ISpoke(SPOKE).borrow(reserveId, amount, onBehalfOf);
+    _SPOKE.borrow(reserveId, amount, onBehalfOf);
     underlying.safeTransfer(onBehalfOf, amount);
   }
 
@@ -166,7 +170,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
       keccak256(
         abi.encode(
           REPAY_TYPEHASH,
-          address(SPOKE),
+          address(_SPOKE),
           reserveId,
           amount,
           onBehalfOf,
@@ -180,13 +184,13 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     (IERC20 underlying, address hub) = _getReserveData(reserveId);
     uint256 repayAmount = MathUtils.min(
       amount,
-      ISpoke(SPOKE).getUserTotalDebt(reserveId, onBehalfOf)
+      _SPOKE.getUserTotalDebt(reserveId, onBehalfOf)
     );
 
     underlying.safeTransferFrom(onBehalfOf, address(this), repayAmount);
     underlying.forceApprove(hub, repayAmount);
 
-    ISpoke(SPOKE).repay(reserveId, repayAmount, onBehalfOf);
+    _SPOKE.repay(reserveId, repayAmount, onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -202,7 +206,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
       keccak256(
         abi.encode(
           SET_USING_AS_COLLATERAL_TYPEHASH,
-          address(SPOKE),
+          address(_SPOKE),
           reserveId,
           useAsCollateral,
           onBehalfOf,
@@ -213,7 +217,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
-    ISpoke(SPOKE).setUsingAsCollateral(reserveId, useAsCollateral, onBehalfOf);
+    _SPOKE.setUsingAsCollateral(reserveId, useAsCollateral, onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -227,7 +231,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
       keccak256(
         abi.encode(
           UPDATE_USER_RISK_PREMIUM_TYPEHASH,
-          address(SPOKE),
+          address(_SPOKE),
           user,
           _useNonce(user),
           deadline
@@ -236,7 +240,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     );
     require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
 
-    ISpoke(SPOKE).updateUserRiskPremium(user);
+    _SPOKE.updateUserRiskPremium(user);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -250,7 +254,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
       keccak256(
         abi.encode(
           UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
-          address(SPOKE),
+          address(_SPOKE),
           user,
           _useNonce(user),
           deadline
@@ -259,7 +263,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     );
     require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
 
-    ISpoke(SPOKE).updateUserDynamicConfig(user);
+    _SPOKE.updateUserDynamicConfig(user);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -269,7 +273,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     uint256 deadline,
     bytes calldata signature
   ) external {
-    ISpoke(SPOKE).setUserPositionManagerWithSig(address(this), user, approve, deadline, signature);
+    _SPOKE.setUserPositionManagerWithSig(address(this), user, approve, deadline, signature);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -298,7 +302,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
 
   /// @inheritdoc ISignatureGateway
   function renounceSelfAsUserPositionManager(address user) external onlyOwner {
-    ISpoke(SPOKE).renouncePositionManagerRole(user);
+    _SPOKE.renouncePositionManagerRole(user);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -334,7 +338,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
   }
 
   function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
-    DataTypes.Reserve memory reserveData = ISpoke(SPOKE).getReserve(reserveId);
+    DataTypes.Reserve memory reserveData = _SPOKE.getReserve(reserveId);
     require(reserveData.underlying != address(0), InvalidReserveId());
     return (IERC20(reserveData.underlying), address(reserveData.hub));
   }
