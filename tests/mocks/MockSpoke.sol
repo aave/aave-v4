@@ -18,8 +18,6 @@ contract MockSpoke is Spoke {
     uint256 assetId = reserve.assetId;
     IHub hub = reserve.hub;
 
-    _validateBorrow(reserve);
-
     uint256 drawnShares = hub.draw(assetId, amount, msg.sender);
 
     userPosition.drawnShares += drawnShares.toUint128();
