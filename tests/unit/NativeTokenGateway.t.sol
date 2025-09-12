@@ -84,7 +84,7 @@ contract NativeTokenGatewayTest is Base {
 
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
-    uint256 prevUserSuppliedAmount = spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob);
+    uint256 prevUserSuppliedAmount = spoke1.getUserSuppliedAssets(_wethReserveId(spoke1), bob);
 
     assertEq(tokenList.weth.balanceOf(address(hub1)), 0);
     assertEq(prevUserSuppliedAmount, 0);
@@ -96,7 +96,7 @@ contract NativeTokenGatewayTest is Base {
 
     assertEq(bob.balance, prevUserBalance - amount);
     assertEq(
-      spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob),
+      spoke1.getUserSuppliedAssets(_wethReserveId(spoke1), bob),
       prevUserSuppliedAmount + amount
     );
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + amount);
@@ -148,7 +148,7 @@ contract NativeTokenGatewayTest is Base {
 
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
-    uint256 prevUserSuppliedAmount = spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob);
+    uint256 prevUserSuppliedAmount = spoke1.getUserSuppliedAssets(_wethReserveId(spoke1), bob);
 
     assertEq(spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob), expectedSupplyShares);
 
@@ -159,7 +159,7 @@ contract NativeTokenGatewayTest is Base {
 
     assertEq(bob.balance, prevUserBalance + amount);
     assertEq(
-      spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob),
+      spoke1.getUserSuppliedAssets(_wethReserveId(spoke1), bob),
       prevUserSuppliedAmount - amount
     );
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - amount);
@@ -197,7 +197,7 @@ contract NativeTokenGatewayTest is Base {
     nativeTokenGateway.withdrawNative(_wethReserveId(spoke1), UINT256_MAX, bob);
 
     assertEq(bob.balance, prevUserBalance + supplyAmount);
-    assertEq(spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob), 0);
+    assertEq(spoke1.getUserSuppliedAssets(_wethReserveId(spoke1), bob), 0);
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - supplyAmount);
     _checkFinalBalances();
   }
@@ -231,7 +231,7 @@ contract NativeTokenGatewayTest is Base {
     });
 
     skip(322 days);
-    vm.assume(hub1.getTotalAddedAssets(wethAssetId) > supplyAmount);
+    vm.assume(hub1.getAssetAddedAmount(wethAssetId) > supplyAmount);
     uint256 repayAmount = spoke1.getReserveTotalDebt(_wethReserveId(spoke1));
     deal(address(tokenList.weth), bob, repayAmount);
 
@@ -243,7 +243,7 @@ contract NativeTokenGatewayTest is Base {
       onBehalfOf: bob
     });
 
-    uint256 expectedWithdrawAmount = spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob);
+    uint256 expectedWithdrawAmount = spoke1.getUserSuppliedAssets(_wethReserveId(spoke1), bob);
 
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
@@ -261,7 +261,7 @@ contract NativeTokenGatewayTest is Base {
     nativeTokenGateway.withdrawNative(_wethReserveId(spoke1), UINT256_MAX, bob);
 
     assertEq(bob.balance, prevUserBalance + expectedWithdrawAmount);
-    assertEq(spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob), 0);
+    assertEq(spoke1.getUserSuppliedAssets(_wethReserveId(spoke1), bob), 0);
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - expectedWithdrawAmount);
     _checkFinalBalances();
   }
@@ -288,7 +288,7 @@ contract NativeTokenGatewayTest is Base {
     uint256 prevUserBalance = bob.balance;
     uint256 prevReceiverBalance = alice.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
-    uint256 prevUserSuppliedAmount = spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob);
+    uint256 prevUserSuppliedAmount = spoke1.getUserSuppliedAssets(_wethReserveId(spoke1), bob);
 
     assertEq(spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob), expectedSupplyShares);
 
@@ -300,7 +300,7 @@ contract NativeTokenGatewayTest is Base {
     assertEq(bob.balance, prevUserBalance);
     assertEq(alice.balance, prevReceiverBalance + amount);
     assertEq(
-      spoke1.getUserSuppliedAmount(_wethReserveId(spoke1), bob),
+      spoke1.getUserSuppliedAssets(_wethReserveId(spoke1), bob),
       prevUserSuppliedAmount - amount
     );
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - amount);

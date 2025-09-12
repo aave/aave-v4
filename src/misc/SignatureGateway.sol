@@ -115,7 +115,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     (IERC20 underlying, ) = _getReserveData(reserveId);
     uint256 withdrawAmount = MathUtils.min(
       amount,
-      _spoke.getUserSuppliedAmount(reserveId, onBehalfOf)
+      _spoke.getUserSuppliedAssets(reserveId, onBehalfOf)
     );
 
     _spoke.withdraw(reserveId, withdrawAmount, onBehalfOf);

@@ -66,7 +66,7 @@ contract NativeTokenGateway is
 
     uint256 withdrawAmount = MathUtils.min(
       amount,
-      _spoke.getUserSuppliedAmount(reserveId, msg.sender)
+      _spoke.getUserSuppliedAssets(reserveId, msg.sender)
     );
 
     _spoke.withdraw(reserveId, withdrawAmount, msg.sender);
