@@ -805,7 +805,9 @@ contract SpokeBase is Base {
 
     // Find all reserves user has supplied, adding up total debt
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
-      if (spoke.isUsingAsCollateral(reserveId, user)) {
+      if (
+        spoke.isUsingAsCollateral(reserveId, user) && _getCollateralFactor(spoke, reserveId) > 0
+      ) {
         ++suppliedReservesCount;
       }
       uint256 userDebt = spoke.getUserTotalDebt(reserveId, user);
@@ -822,7 +824,9 @@ contract SpokeBase is Base {
     );
     uint256 idx = 0;
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); reserveId++) {
-      if (spoke.isUsingAsCollateral(reserveId, user)) {
+      if (
+        spoke.isUsingAsCollateral(reserveId, user) && _getCollateralFactor(spoke, reserveId) > 0
+      ) {
         reserveCollateralRisk.add(idx, _getCollateralRisk(spoke, reserveId), reserveId);
         ++idx;
       }
@@ -854,7 +858,6 @@ contract SpokeBase is Base {
 
       ++idx;
     }
-
     return userRP / utilizedSupply;
   }
 

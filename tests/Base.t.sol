@@ -559,7 +559,7 @@ abstract contract Base is Test {
       paused: false,
       frozen: false,
       borrowable: true,
-      collateralRisk: 50_00
+      collateralRisk: 0
     });
     spokeInfo[spoke1].usdy.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,

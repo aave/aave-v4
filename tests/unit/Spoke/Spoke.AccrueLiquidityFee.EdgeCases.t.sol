@@ -31,6 +31,8 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
+    vm.assume(_getCollateralRisk(spoke1, reserveId) > 0);
+
     updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
 
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
@@ -125,6 +127,8 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
 
   function test_accrueLiquidityFee_maxLiquidityFee_multi_user() public {
     uint256 reserveId = _randomReserveId(spoke1);
+    // premium debt must exist for later premium repay
+    require(_getCollateralRisk(spoke1, reserveId) > 0);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
     updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
 
