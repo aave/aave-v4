@@ -145,7 +145,7 @@ contract HubTransferSharesTest is HubBase {
     _drawLiquidity(zeroDecimalAssetId, 45e18, true);
 
     uint256 totalAddedAssets = hub1.getTotalAddedAssets(zeroDecimalAssetId);
-    uint256 totalAddedShares = hub1.getAssetAddedShares(zeroDecimalAssetId);
+    uint256 totalAddedShares = hub1.getTotalAddedShares(zeroDecimalAssetId);
 
     uint256 addedAmount = uint256(1e4).toAssetsDown(totalAddedAssets, totalAddedShares) + 1;
     uint256 addedShares = hub1.convertToAddedShares(zeroDecimalAssetId, addedAmount);
