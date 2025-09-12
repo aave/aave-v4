@@ -20,7 +20,7 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    approve(hub, assetId, user, amount);
+    approve(IHub(address(hub)), assetId, user, amount);
     vm.prank(caller);
     return hub.add(assetId, amount, user);
   }
@@ -54,7 +54,7 @@ library Utils {
     uint256 drawnAmount,
     address restorer
   ) internal returns (uint256) {
-    approve(hub, assetId, restorer, drawnAmount);
+    approve(IHub(address(hub)), assetId, restorer, drawnAmount);
     vm.prank(caller);
     return hub.restore(assetId, drawnAmount, 0, DataTypes.PremiumDelta(0, 0, 0), restorer);
   }
@@ -177,9 +177,24 @@ library Utils {
     _approve(IERC20(underlying), owner, address(hub), amount);
   }
 
-  function approve(IHubBase hub, uint256 assetId, address owner, uint256 amount) internal {
-    (address underlying, ) = hub.getAssetUnderlyingAndDecimals(assetId);
-    _approve(IERC20(underlying), owner, address(hub), amount);
+  function approve(
+    ISpoke spoke,
+    uint256 reserveId,
+    address owner,
+    address spender,
+    uint256 amount
+  ) internal {
+    IHub hub = IHub(address(spoke.getReserve(reserveId).hub));
+    _approve(
+      IERC20(hub.getAsset(spoke.getReserve(reserveId).assetId).underlying),
+      owner,
+      spender,
+      amount
+    );
+  }
+
+  function approve(IHub hub, uint256 assetId, address owner, uint256 amount) internal {
+    _approve(IERC20(hub.getAsset(assetId).underlying), owner, address(hub), amount);
   }
 
   function _approve(IERC20 underlying, address owner, address spender, uint256 amount) private {
