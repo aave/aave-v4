@@ -1,7 +1,7 @@
 name: Snapshot to private repo (cross-org)
 on:
   push:
-    branches: [main]
+    branches: [testing-pipeline]
 
 permissions:
   contents: read
@@ -18,7 +18,7 @@ jobs:
       - name: Build snapshot tree
         run: |
           mkdir -p /tmp/snap
-          rsync -a \
+          rsync -aL \
             --exclude '.git' \
             --exclude '.github' \
             . /tmp/snap/
