@@ -76,7 +76,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param user The owner of the position being modified.
    * @param riskPremium The new risk premium (BPS) value of user.
    */
-  event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
+  event UpdateUserRiskPremium(address indexed user, uint256 riskPremium);
 
   /**
    * @notice Emitted on setUserPositionManager or renouncePositionManagerRole action.
@@ -98,8 +98,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     address indexed user,
     DataTypes.PremiumDelta premiumDelta
   );
-  event OracleUpdate(address indexed oracle);
-  event ReservePriceSourceUpdate(uint256 indexed reserveId, address indexed priceSource);
+  event UpdateOracle(address indexed oracle);
+  event UpdateReservePriceSource(uint256 indexed reserveId, address indexed priceSource);
   event UpdateLiquidationConfig(DataTypes.LiquidationConfig config);
 
   error AssetNotListed();

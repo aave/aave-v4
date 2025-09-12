@@ -55,7 +55,7 @@ contract SpokeConfigTest is SpokeBase {
     address newOracle = address(new AaveOracle(SPOKE_ADMIN, 8, 'New Aave Oracle'));
     vm.expectCall(newOracle, abi.encodeCall(IPriceOracle.DECIMALS, ()));
     vm.expectEmit(address(spoke1));
-    emit ISpoke.OracleUpdate(newOracle);
+    emit ISpoke.UpdateOracle(newOracle);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateOracle(newOracle);
   }
@@ -82,7 +82,7 @@ contract SpokeConfigTest is SpokeBase {
     uint256 reserveId = 0;
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReservePriceSourceUpdate(reserveId, reserveSource);
+    emit ISpoke.UpdateReservePriceSource(reserveId, reserveSource);
     vm.expectCall(
       address(oracle1),
       abi.encodeCall(IAaveOracle.setReserveSource, (reserveId, reserveSource))

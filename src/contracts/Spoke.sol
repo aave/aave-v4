@@ -72,7 +72,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       newOracle != address(0) && oracle.DECIMALS() == Constants.ORACLE_DECIMALS,
       InvalidOracle()
     );
-    emit OracleUpdate(newOracle);
+    emit UpdateOracle(newOracle);
   }
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
@@ -683,7 +683,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
     require(address(oracle) != address(0), InvalidAddress());
     oracle.setReserveSource(reserveId, priceSource);
-    emit ReservePriceSourceUpdate(reserveId, priceSource);
+    emit UpdateReservePriceSource(reserveId, priceSource);
   }
 
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
@@ -951,7 +951,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
       reserveId = reserveId.uncheckedAdd(1);
     }
-    emit UserRiskPremiumUpdate(user, newUserRiskPremium);
+    emit UpdateUserRiskPremium(user, newUserRiskPremium);
   }
 
   /**
@@ -998,7 +998,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
       reserveId = reserveId.uncheckedAdd(1);
     }
-    emit UserRiskPremiumUpdate(user, 0);
+    emit UpdateUserRiskPremium(user, 0);
   }
 
   function _refreshDynamicConfig(address user) internal {

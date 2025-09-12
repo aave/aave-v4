@@ -45,7 +45,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.mockCall(newOracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
     vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateOracle, (newOracle)));
     vm.expectEmit(address(spoke));
-    emit ISpoke.OracleUpdate(newOracle);
+    emit ISpoke.UpdateOracle(newOracle);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateOracle(spokeAddr, newOracle);
   }
@@ -63,7 +63,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateReservePriceSource, (reserveId, newPriceSource))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.ReservePriceSourceUpdate(reserveId, newPriceSource);
+    emit ISpoke.UpdateReservePriceSource(reserveId, newPriceSource);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateReservePriceSource(spokeAddr, reserveId, newPriceSource);
   }
