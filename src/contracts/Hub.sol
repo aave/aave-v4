@@ -544,6 +544,7 @@ contract Hub is IHub, AccessManaged {
     return (_getSpokeDrawn(spokeData, assetId), _getSpokePremium(spokeData, assetId));
   }
 
+  /// @inheritdoc IHubBase
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256) {
     DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
     return _getSpokeDrawn(spokeData, assetId) + _getSpokePremium(spokeData, assetId);
@@ -576,14 +577,17 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].addedShares;
   }
 
+  /// @inheritdoc IHubBase
   function getTotalAddedAssets(uint256 assetId) external view override returns (uint256) {
     return _assets[assetId].totalAddedAssets();
   }
 
+  /// @inheritdoc IHubBase
   function getTotalAddedShares(uint256 assetId) external view override returns (uint256) {
     return _assets[assetId].totalAddedShares();
   }
 
+  /// @inheritdoc IHubBase
   function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     uint256 unrealizedFeeShares;
@@ -592,6 +596,7 @@ contract Hub is IHub, AccessManaged {
       previewRemoveByShares(assetId, _spokes[assetId][spoke].addedShares + unrealizedFeeShares);
   }
 
+  /// @inheritdoc IHubBase
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     if (spoke == asset.feeReceiver) {

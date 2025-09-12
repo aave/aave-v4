@@ -221,13 +221,21 @@ interface IHubBase {
   function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256);
 
   /**
-   * @notice Returns the total amount of the specified assets owed to the hub by the specified spoke.
+   * @notice Returns the amount of the specified assets owed to the hub by the specified spoke.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @return The amount of owed drawn assets.
    * @return The amount of owed premium assets.
    */
   function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256);
+
+  /**
+   * @notice Returns the total amount of the specified asset owed to the hub by the specified spoke.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @return The total amount of the asset owed.
+   */
+  function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256);
 
   /**
    * @notice Returns the amount of drawn shares of the specified asset by the specified spoke.
