@@ -182,10 +182,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
     (IERC20 underlying, address hub) = _getReserveData(reserveId);
-    uint256 repayAmount = MathUtils.min(
-      amount,
-      _SPOKE.getUserTotalDebt(reserveId, onBehalfOf)
-    );
+    uint256 repayAmount = MathUtils.min(amount, _SPOKE.getUserTotalDebt(reserveId, onBehalfOf));
 
     underlying.safeTransferFrom(onBehalfOf, address(this), repayAmount);
     underlying.forceApprove(hub, repayAmount);
