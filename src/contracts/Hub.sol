@@ -98,7 +98,7 @@ contract Hub is IHub, AccessManaged {
     );
 
     emit AddAsset(assetId, underlying, decimals);
-    emit AssetConfigUpdate(
+    emit UpdateAssetConfig(
       assetId,
       DataTypes.AssetConfig({
         feeReceiver: feeReceiver,
@@ -107,7 +107,7 @@ contract Hub is IHub, AccessManaged {
         reinvestmentController: address(0)
       })
     );
-    emit AssetUpdate(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
+    emit UpdateAsset(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
 
     return assetId;
   }
@@ -144,7 +144,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    emit AssetConfigUpdate(assetId, config);
+    emit UpdateAssetConfig(assetId, config);
   }
 
   function addSpoke(
@@ -294,12 +294,11 @@ contract Hub is IHub, AccessManaged {
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(assetId, asset, spoke, premiumDelta, premiumAmount);
-    uint256 totalDeficitAmount = drawnAmount + premiumAmount;
-    asset.deficit += totalDeficitAmount.toUint128();
+    asset.deficit += (drawnAmount + premiumAmount).toUint128();
 
     asset.updateDrawnRate(assetId);
 
-    emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, totalDeficitAmount);
+    emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
     return drawnShares;
   }
@@ -629,7 +628,7 @@ contract Hub is IHub, AccessManaged {
     spokeData.active = config.active;
     spokeData.addCap = config.addCap;
     spokeData.drawCap = config.drawCap;
-    emit SpokeConfigUpdate(assetId, spoke, config);
+    emit UpdateSpokeConfig(assetId, spoke, config);
   }
 
   /**

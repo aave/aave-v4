@@ -26,13 +26,15 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     spoke1.withdraw(reserveId, amount, bob);
   }
 
-  function test_withdraw_revertsWith_InsufficientSupply_zero_supplied() public {
+  /// @dev Test passes 1 as amount with no supplied assets.
+  /// @dev The spoke contract changes the calling amount to the total user supplied, but since it's zero, it reverts.
+  function test_withdraw_revertsWith_InvalidAmount_zero_supplied() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 amount = 1;
 
     assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), 0);
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, 0));
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(alice);
     spoke1.withdraw(reserveId, amount, alice);
   }
@@ -43,40 +45,9 @@ contract SpokeWithdrawValidationTest is SpokeBase {
 
     assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), 0);
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, 0));
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(alice);
     spoke1.withdraw(reserveId, amount, alice);
-  }
-
-  // Withdraw reverts when there is not enough avaulable liquidity
-  function test_withdraw_revertsWith_InsufficientSupply_with_supply() public {
-    uint256 amount = 100e18;
-    uint256 reserveId = _daiReserveId(spoke1);
-
-    // User spoke supply
-    Utils.supply({
-      spoke: spoke1,
-      reserveId: reserveId,
-      caller: alice,
-      amount: amount,
-      onBehalfOf: alice
-    });
-
-    uint256 withdrawalLimit = getWithdrawalLimit(spoke1, reserveId, alice);
-    assertGt(withdrawalLimit, 0);
-
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, withdrawalLimit));
-    vm.prank(alice);
-    spoke1.withdraw(reserveId, withdrawalLimit + 1, alice);
-
-    // skip time but no index increase with no borrow
-    skip(365 days);
-    // withdrawal limit remains constant
-    assertEq(withdrawalLimit, getWithdrawalLimit(spoke1, reserveId, alice));
-
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, withdrawalLimit));
-    vm.prank(alice);
-    spoke1.withdraw(reserveId, withdrawalLimit + 1, alice);
   }
 
   // Withdrawal limit increases due to debt interest, but still cannot withdraw more than available liquidity
@@ -103,18 +74,23 @@ contract SpokeWithdrawValidationTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, supplyAmount));
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+    );
     vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, onBehalfOf: alice});
 
     // accrue interest
     skip(365 days);
 
-    uint256 newWithdrawalLimit = getWithdrawalLimit(spoke1, reserveId, alice);
+    uint256 newWithdrawalLimit = getTotalWithdrawable(spoke1, reserveId, alice);
     // newWithdrawalLimit with accrued interest should be greater than supplyAmount
     assertGt(newWithdrawalLimit, supplyAmount);
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, newWithdrawalLimit));
+    // Interest added on both sides, so can ignore
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+    );
     vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, onBehalfOf: alice});
   }
@@ -152,18 +128,23 @@ contract SpokeWithdrawValidationTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, supplyAmount));
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+    );
     vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, onBehalfOf: alice});
 
     // debt accrues
     skip(skipTime);
 
-    uint256 newWithdrawalLimit = getWithdrawalLimit(spoke1, reserveId, alice);
+    uint256 newWithdrawalLimit = getTotalWithdrawable(spoke1, reserveId, alice);
     // newWithdrawalLimit with accrued interest should be greater than supplyAmount
     vm.assume(newWithdrawalLimit > supplyAmount);
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, newWithdrawalLimit));
+    // Interest added on both sides, so can ignore
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+    );
     vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, onBehalfOf: alice});
   }

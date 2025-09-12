@@ -5,7 +5,8 @@ pragma solidity ^0.8.0;
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {IHub} from 'src/interfaces/IHub.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {IHubBase} from 'src/interfaces/IHubBase.sol';
 import {ITreasurySpoke, ISpokeBase} from 'src/interfaces/ITreasurySpoke.sol';
 
 /**
@@ -19,7 +20,7 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
   using SafeERC20 for IERC20;
 
   /// @inheritdoc ITreasurySpoke
-  IHub public immutable HUB;
+  IHubBase public immutable HUB;
 
   /**
    * @dev Constructor
@@ -29,7 +30,7 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
   constructor(address owner_, address hub_) Ownable(owner_) {
     require(hub_ != address(0), InvalidAddress());
 
-    HUB = IHub(hub_);
+    HUB = IHubBase(hub_);
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -39,11 +40,8 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
 
   /// @inheritdoc ITreasurySpoke
   function withdraw(uint256 reserveId, uint256 amount, address) external onlyOwner {
-    // If uint256.max is passed, withdraw all supplied assets
-    if (amount == type(uint256).max) {
-      amount = HUB.getSpokeAddedAssets(reserveId, address(this));
-    }
-
+    // If amount to withdraw is greater than total supplied, withdraw all supplied assets
+    amount = MathUtils.min(amount, HUB.getSpokeAddedAssets(reserveId, address(this)));
     HUB.remove(reserveId, amount, msg.sender);
   }
 
