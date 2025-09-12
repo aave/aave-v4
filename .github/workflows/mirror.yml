@@ -13,34 +13,10 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          submodules: recursive
+          submodules: false
 
-      - name: Build snapshot tree
-        run: |
-          mkdir -p /tmp/snap
-          rsync -a \
-            --exclude '.git' \
-            --exclude '.github' \
-            --exclude 'lib' \
-            . /tmp/snap/
-
-          cd /tmp/snap
-          git init
-          git add .
-          git -c user.name="Snapshot Bot" -c user.email="snapshot-bot@local" commit -m "Snapshot: ${GITHUB_SHA}"
-          git branch -M main
-
-          # Add submodule with actual content at the same commit as source
-          FORGE_STD_COMMIT=$(cd "${GITHUB_WORKSPACE}" && git submodule status lib/forge-std | awk '{print $1}' | sed 's/^[-+]//')
-          git submodule add https://github.com/foundry-rs/forge-std.git lib/forge-std
-          cd lib/forge-std
-          git checkout $FORGE_STD_COMMIT
-          cd ../..
-          git add .gitmodules lib/forge-std
-          git commit -m "Add submodule content at commit $FORGE_STD_COMMIT"
-
-      - name: Create GitHub App token for target repo
-        id: app-token
+      - name: Create GitHub App token (target org)
+        id: tgt
         uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -48,14 +24,56 @@ jobs:
           owner: adamavaralabs
           repositories: aave-v4
 
-      - name: Push to snapshot repo (replace everything)
+      - name: Build snapshot repo with gitlinks
+        shell: bash
+        run: |
+          set -euo pipefail
+          SNAP=/tmp/snap
+          mkdir -p "$SNAP"
+          cd "$SNAP"
+          git init
+
+          # Copy top-level tracked files, but NOT submodule contents
+          rsync -a --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '.gitmodules' \
+            "${GITHUB_WORKSPACE}/" "$SNAP/"
+
+          # If the source has a .gitmodules, copy it verbatim
+          if [[ -f "${GITHUB_WORKSPACE}/.gitmodules" ]]; then
+            cp "${GITHUB_WORKSPACE}/.gitmodules" "$SNAP/.gitmodules"
+          fi
+
+          # Recreate each submodule as a real submodule gitlink pointing to the pinned commit
+          if [[ -f "${GITHUB_WORKSPACE}/.gitmodules" ]]; then
+            # Parse submodules: name, path, url
+            git -C "${GITHUB_WORKSPACE}" config -f .gitmodules --get-regexp '^submodule\..*\.path' | while read -r key path; do
+              name="${key#submodule.}"; name="${name%.path}"
+              url="$(git -C "${GITHUB_WORKSPACE}" config -f .gitmodules "submodule.${name}.url")"
+
+              # Pinned commit of the submodule at HEAD (gitlink object)
+              sha="$(git -C "${GITHUB_WORKSPACE}" ls-tree HEAD -- "$path" | awk '{print $3}')"
+
+              # Add submodule pointing at the same URL and then checkout the exact sha
+              git submodule add -f "$url" "$path"
+              # Fetch minimal data and checkout pinned sha (keeps target lightweight)
+              git -C "$path" fetch --depth=1 origin "$sha" || git -C "$path" fetch origin "$sha"
+              git -C "$path" checkout --detach "$sha"
+
+            done
+          fi
+
+          git add .
+          git -c user.name="Snapshot Bot" -c user.email="snapshot-bot@local" commit -m "Snapshot (preserve submodules) ${GITHUB_SHA}"
+          git branch -M main
+
+      - name: Push to target
         run: |
           cd /tmp/snap
           git branch -M main
-          # Remove any existing remote and add fresh one
-          git remote remove origin 2>/dev/null || true
-          git remote add origin https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/adamavaralabs/aave-v4.git
-          git push origin main --force   # keep a single-commit repo
+          git remote add origin https://x-access-token:${{ steps.tgt.outputs.token }}@github.com/adamavaralabs/aave-v4.git
+          git push origin main --force
 
       - name: Clean up
         if: always()
