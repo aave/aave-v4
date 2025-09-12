@@ -23,7 +23,7 @@ library PositionStatus {
 
   /**
    * @dev Sets if the user is borrowing the reserve identified by reserveId.
-   * @param self The configuration object.
+   * @param self The configuration struct.
    * @param reserveId The index of the reserve in the bitmap.
    * @param borrowing True if the user is borrowing the reserve, false otherwise.
    */
@@ -44,7 +44,7 @@ library PositionStatus {
 
   /**
    * @dev Sets if the user is using as collateral the reserve identified by reserveId.
-   * @param self The configuration object.
+   * @param self The configuration struct.
    * @param reserveId The index of the reserve in the bitmap.
    * @param usingAsCollateral True if the user is using the reserve as collateral, false otherwise.
    */
@@ -65,7 +65,7 @@ library PositionStatus {
 
   /**
    * @dev Returns if a user is using the reserve for borrowing or as collateral.
-   * @param self The configuration object.
+   * @param self The configuration struct.
    * @param reserveId The index of the reserve in the bitmap.
    * @return True if the user is using a reserve for borrowing or as collateral, false otherwise.
    */
@@ -80,7 +80,7 @@ library PositionStatus {
 
   /**
    * @dev Returns if a user is using the reserve for borrowing.
-   * @param self The configuration object.
+   * @param self The configuration struct.
    * @param reserveId The index of the reserve in the bitmap.
    * @return True if the user is using a reserve for borrowing, false otherwise.
    */
@@ -95,7 +95,7 @@ library PositionStatus {
 
   /**
    * @dev Returns if a user is using the reserve as collateral.
-   * @param self The configuration object.
+   * @param self The configuration struct.
    * @param reserveId The index of the reserve in the bitmap.
    * @return True if the user is using a reserve as collateral, false otherwise.
    */
@@ -111,7 +111,7 @@ library PositionStatus {
   /**
    * @dev Counts the number of reserves enabled as collateral.
    * @dev Disregards potential dirty bits set after `reserveCount`.
-   * @param self The configuration object.
+   * @param self The configuration struct.
    * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
    */
   function collateralCount(
@@ -208,7 +208,7 @@ library PositionStatus {
 
   /**
    * @dev Returns the word containing the reserve state in the bitmap.
-   * @param self The configuration object.
+   * @param self The configuration struct.
    * @return The word containing the state of the reserve.
    */
   function getBucketWord(

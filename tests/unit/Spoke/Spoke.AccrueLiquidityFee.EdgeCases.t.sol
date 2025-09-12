@@ -45,19 +45,19 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     assertGt(premiumDebt, 0);
 
     assertApproxEqAbs(
-      spoke1.getUserSuppliedAmount(reserveId, alice),
+      spoke1.getUserSuppliedAssets(reserveId, alice),
       supplyAmount,
       3,
       'alice does not earn anything'
     );
     assertApproxEqAbs(
-      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
       spoke1.getUserTotalDebt(reserveId, alice) - borrowAmount,
       3,
       'fees == total user accrued'
     );
     assertApproxEqAbs(
-      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
       hub1.getSpokeTotalOwed(assetId, address(spoke1)) - borrowAmount,
       3,
       'fees == total spoke accrued'
@@ -94,19 +94,19 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     skip(skipTime);
 
     assertApproxEqAbs(
-      spoke1.getUserSuppliedAmount(reserveId, alice),
+      spoke1.getUserSuppliedAssets(reserveId, alice),
       supplyAmount,
       3,
       'alice does not earn anything'
     );
     assertApproxEqAbs(
-      spoke1.getUserSuppliedAmount(reserveId, bob),
+      spoke1.getUserSuppliedAssets(reserveId, bob),
       supplyAmount2,
       3,
       'bob does not earn anything'
     );
 
-    uint256 totalAccruedToTreasury = hub1.getSpokeAddedAmount(assetId, address(treasurySpoke));
+    uint256 totalAccruedToTreasury = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
     assertLe(
       totalAccruedToTreasury,
       spoke1.getUserTotalDebt(reserveId, alice) -
@@ -148,7 +148,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       feesAccrued += totalOwedAfter - totalOwedBefore;
       totalOwedBefore = totalOwedAfter;
 
-      uint256 actualFeesAccrued = hub1.getSpokeAddedAmount(assetId, address(treasurySpoke));
+      uint256 actualFeesAccrued = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
       assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18); // 0.00001%
       assertLe(actualFeesAccrued, feesAccrued, 'actual fees <= expected fees');
 
@@ -193,7 +193,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       feesAccrued += totalOwedAfter - totalOwedBefore;
       totalOwedBefore = totalOwedAfter;
 
-      uint256 actualFeesAccrued = hub1.getSpokeAddedAmount(assetId, address(treasurySpoke));
+      uint256 actualFeesAccrued = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
       assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18); // 0.00001%
       assertLe(actualFeesAccrued, feesAccrued, 'actual fees <= expected fees');
 

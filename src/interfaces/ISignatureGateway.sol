@@ -3,9 +3,13 @@
 pragma solidity ^0.8.0;
 
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
-import {ISpoke} from 'src/interfaces/ISpoke.sol';
+import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
-interface ISignatureGateway is IMulticall {
+interface ISignatureGateway is IMulticall, IRescuable {
+  /**
+   * @notice Thrown when the given address is invalid.
+   */
+  error InvalidAddress();
   /**
    * @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
    */
@@ -177,7 +181,7 @@ interface ISignatureGateway is IMulticall {
   /**
    * @notice Returns the address of the connected SPOKE().
    */
-  function SPOKE() external view returns (ISpoke);
+  function SPOKE() external view returns (address);
 
   /**
    * @notice Returns the EIP712 domain separator.

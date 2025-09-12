@@ -127,7 +127,8 @@ contract AssetInterestRateStrategyTest is Base {
     encodedRateData = abi.encode(rateData);
 
     vm.expectEmit(address(rateStrategy));
-    emit IAssetInterestRateStrategy.RateDataUpdate(
+    emit IAssetInterestRateStrategy.UpdateRateData(
+      address(hub1),
       mockAssetId,
       rateData.optimalUsageRatio,
       rateData.baseVariableBorrowRate,
@@ -150,7 +151,7 @@ contract AssetInterestRateStrategyTest is Base {
     uint256 mockAssetId2 = uint256(keccak256('mockAssetId2'));
     vm.expectRevert(
       abi.encodeWithSelector(
-        IAssetInterestRateStrategy.InterestRateDataNotSet.selector,
+        IBasicInterestRateStrategy.InterestRateDataNotSet.selector,
         mockAssetId2
       )
     );

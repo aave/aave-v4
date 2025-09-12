@@ -46,7 +46,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     vm.expectEmit(spokeProxyAddress);
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.expectEmit(spokeProxyAddress);
-    emit ISpoke.LiquidationConfigUpdate(expectedLiquidationConfig);
+    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
     vm.expectEmit(spokeProxyAddress);
     emit Initializable.Initialized(revision);
     vm.expectEmit(proxyAdminAddress);
@@ -100,7 +100,7 @@ contract SpokeUpgradeableTest is SpokeBase {
       _getInitializeCalldata(address(accessManager))
     );
 
-    _assertEventNotEmitted(ISpoke.LiquidationConfigUpdate.selector);
+    _assertEventNotEmitted(ISpoke.UpdateLiquidationConfig.selector);
 
     assertEq(_getTargetHealthFactor(ISpoke(address(spokeProxy))), targetHealthFactor);
   }

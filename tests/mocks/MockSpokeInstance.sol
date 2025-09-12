@@ -24,7 +24,7 @@ contract MockSpokeInstance is Spoke {
     __AccessManaged_init(_authority);
     if (_liquidationConfig.targetHealthFactor == 0) {
       _liquidationConfig.targetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-      emit LiquidationConfigUpdate(_liquidationConfig);
+      emit UpdateLiquidationConfig(_liquidationConfig);
     }
   }
 }

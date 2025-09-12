@@ -36,7 +36,7 @@ contract SpokeConfigTest is SpokeBase {
     address newOracle = address(new AaveOracle(SPOKE_ADMIN, 8, 'New Aave Oracle'));
     vm.expectCall(newOracle, abi.encodeCall(IPriceOracle.DECIMALS, ()));
     vm.expectEmit(address(spoke1));
-    emit ISpoke.OracleUpdate(newOracle);
+    emit ISpoke.UpdateOracle(newOracle);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateOracle(newOracle);
   }
@@ -65,7 +65,7 @@ contract SpokeConfigTest is SpokeBase {
     uint256 reserveId = 0;
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReservePriceSourceUpdate(reserveId, reserveSource);
+    emit ISpoke.UpdateReservePriceSource(reserveId, reserveSource);
     vm.expectCall(
       address(oracle1),
       abi.encodeCall(IAaveOracle.setReserveSource, (reserveId, reserveSource))
@@ -85,7 +85,7 @@ contract SpokeConfigTest is SpokeBase {
       collateralRisk: config.collateralRisk + 1
     });
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdate(daiReserveId, newReserveConfig);
+    emit ISpoke.UpdateReserveConfig(daiReserveId, newReserveConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
 
@@ -102,7 +102,7 @@ contract SpokeConfigTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdate(daiReserveId, newReserveConfig);
+    emit ISpoke.UpdateReserveConfig(daiReserveId, newReserveConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
 
@@ -149,7 +149,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.AddReserve(reserveId, dai2AssetId, address(hub1));
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdate(reserveId, newReserveConfig);
+    emit ISpoke.UpdateReserveConfig(reserveId, newReserveConfig);
     vm.expectEmit(address(spoke1));
     emit ISpoke.AddDynamicReserveConfig({
       reserveId: reserveId,
@@ -271,7 +271,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.targetHealthFactor = newTargetHealthFactor;
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.LiquidationConfigUpdate(liquidationConfig);
+    emit ISpoke.UpdateLiquidationConfig(liquidationConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
 
@@ -311,7 +311,7 @@ contract SpokeConfigTest is SpokeBase {
     ).toUint128();
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.LiquidationConfigUpdate(liquidationConfig);
+    emit ISpoke.UpdateLiquidationConfig(liquidationConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
 
