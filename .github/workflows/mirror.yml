@@ -1,7 +1,7 @@
 name: Snapshot to private repo (cross-org)
 on:
   push:
-    branches: [ main ]
+    branches: [ testing-pipeline ]
 
 permissions:
   contents: read
