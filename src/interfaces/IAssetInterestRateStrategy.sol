@@ -12,13 +12,15 @@ import {IBasicInterestRateStrategy} from './IBasicInterestRateStrategy.sol';
 interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /**
    * @notice Emitted when new interest rate data is set for an asset.
+   * @param hub The address of the associated hub.
    * @param assetId Identifier of the asset that has new interest rate data set.
    * @param optimalUsageRatio The optimal borrow usage ratio, in bps.
    * @param baseVariableBorrowRate The base variable borrow rate, in bps.
    * @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal borrow usage ratio, in bps.
    * @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal borrow usage ratio, in bps.
    */
-  event RateDataUpdate(
+  event UpdateRateData(
+    address indexed hub,
     uint256 indexed assetId,
     uint256 optimalUsageRatio,
     uint256 baseVariableBorrowRate,

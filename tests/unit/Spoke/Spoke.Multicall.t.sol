@@ -25,7 +25,7 @@ contract SpokeMulticall is SpokeBase {
       hub1.convertToAddedShares(daiAssetId, supplyAmount)
     );
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UsingAsCollateral(daiReserveId, bob, bob, true);
+    emit ISpoke.SetUsingAsCollateral(daiReserveId, bob, bob, true);
 
     // Execute the multicall
     vm.prank(bob);
@@ -67,9 +67,9 @@ contract SpokeMulticall is SpokeBase {
       hub1.convertToAddedShares(daiAssetId, MAX_SUPPLY_AMOUNT)
     );
     vm.expectEmit(address(spoke2));
-    emit ISpoke.UsingAsCollateral(_daiReserveId(spoke2), bob, bob, true);
+    emit ISpoke.SetUsingAsCollateral(_daiReserveId(spoke2), bob, bob, true);
     vm.expectEmit(address(spoke2));
-    emit ISpoke.UserRiskPremiumUpdate(bob, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
+    emit ISpoke.UpdateUserRiskPremium(bob, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
 
     // Then he supplies dai and sets as collateral, so user rp should decrease
     vm.prank(bob);
@@ -198,9 +198,9 @@ contract SpokeMulticall is SpokeBase {
     calls[1] = abi.encodeCall(ISpoke.updateReserveConfig, (usdxReserveId, newUsdxConfig));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdate(daiReserveId, newDaiConfig);
+    emit ISpoke.UpdateReserveConfig(daiReserveId, newDaiConfig);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdate(usdxReserveId, newUsdxConfig);
+    emit ISpoke.UpdateReserveConfig(usdxReserveId, newUsdxConfig);
 
     // Execute the multicall
     vm.prank(SPOKE_ADMIN);
@@ -233,11 +233,11 @@ contract SpokeMulticall is SpokeBase {
   function test_multicall_forwards_first_revert() public {
     bytes[] memory calls = new bytes[](3);
     calls[0] = abi.encodeCall(ISpokeBase.supply, (_daiReserveId(spoke1), 120e18, alice));
-    calls[1] = abi.encodeCall(ISpokeBase.withdraw, (_daiReserveId(spoke1), 121e18, alice));
+    calls[1] = abi.encodeCall(ISpokeBase.withdraw, (_daiReserveId(spoke1), 0, alice));
     calls[2] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke1), true, alice));
 
     vm.prank(alice);
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, 120e18));
+    vm.expectRevert(IHub.InvalidAmount.selector);
     spoke1.multicall(calls);
   }
 }

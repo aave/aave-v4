@@ -15,13 +15,13 @@ import {IHubBase} from 'src/interfaces/IHubBase.sol';
 interface IHub is IHubBase, IAccessManaged {
   event AddSpoke(uint256 indexed assetId, address indexed spoke);
   event AddAsset(uint256 indexed assetId, address indexed underlying, uint8 decimals);
-  event AssetConfigUpdate(uint256 indexed assetId, DataTypes.AssetConfig config);
-  event SpokeConfigUpdate(
+  event UpdateAssetConfig(uint256 indexed assetId, DataTypes.AssetConfig config);
+  event UpdateSpokeConfig(
     uint256 indexed assetId,
     address indexed spoke,
     DataTypes.SpokeConfig config
   );
-  event AssetUpdate(
+  event UpdateAsset(
     uint256 indexed assetId,
     uint256 drawnIndex,
     uint256 drawnRate,
@@ -37,7 +37,8 @@ interface IHub is IHubBase, IAccessManaged {
     address indexed spoke,
     uint256 drawnShares,
     DataTypes.PremiumDelta premiumDelta,
-    uint256 drawnAmount
+    uint256 drawnAmount,
+    uint256 premiumAmount
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
@@ -89,6 +90,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidAddress();
   error InvalidLiquidityFee();
   error InvalidAssetDecimals();
+  error InvalidInterestRateStrategyUpdate();
 
   /**
    * @notice Adds a new asset to the hub.
@@ -98,7 +100,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @param decimals The number of decimals of the asset.
    * @param feeReceiver The address of the fee receiver spoke.
    * @param irStrategy The address of the interest rate strategy contract.
-   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
+   * @param irData The interest rate data to apply to the given asset encoded in bytes.
    * @return The unique identifier of the added asset.
    */
   function addAsset(
@@ -106,16 +108,22 @@ interface IHub is IHubBase, IAccessManaged {
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
-    bytes calldata data
+    bytes calldata irData
   ) external returns (uint256);
 
   /**
    * @notice Updates the configuration of an asset.
    * @dev If the fee receiver is updated, it is added as a new spoke with maximum add cap and zero draw cap, and set old fee receiver caps to zero.
+   * @dev If the interest rate strategy is updated, it is configured with `irData`. Otherwise, `irData` must be empty.
    * @param assetId The identifier of the asset.
    * @param config The new configuration for the asset.
+   * @param irData The interest rate data to apply to the given asset, encoded in bytes.
    */
-  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external;
+  function updateAssetConfig(
+    uint256 assetId,
+    DataTypes.AssetConfig calldata config,
+    bytes calldata irData
+  ) external;
 
   /**
    * @notice Registers a new spoke for a specific asset in the hub.
@@ -141,9 +149,9 @@ interface IHub is IHubBase, IAccessManaged {
   /**
    * @notice Updates the interest rate strategy for a specified asset.
    * @param assetId The identifier of the asset.
-   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
+   * @param irData The interest rate data to apply to the given asset, encoded in bytes.
    */
-  function setInterestRateData(uint256 assetId, bytes calldata data) external;
+  function setInterestRateData(uint256 assetId, bytes calldata irData) external;
 
   /**
    * @notice Allows a spoke to transfer its supplied shares of an asset to another spoke.

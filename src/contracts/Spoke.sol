@@ -58,7 +58,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   constructor(address authority_) AccessManaged(authority_) {
     require(authority_ != address(0), InvalidAddress());
     _liquidationConfig.targetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-    emit LiquidationConfigUpdate(_liquidationConfig);
+    emit UpdateLiquidationConfig(_liquidationConfig);
   }
 
   // /////
@@ -72,7 +72,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       newOracle != address(0) && oracle.DECIMALS() == Constants.ORACLE_DECIMALS,
       InvalidOracle()
     );
-    emit OracleUpdate(newOracle);
+    emit UpdateOracle(newOracle);
   }
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
@@ -90,7 +90,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       InvalidLiquidationConfig()
     );
     _liquidationConfig = config;
-    emit LiquidationConfigUpdate(config);
+    emit UpdateLiquidationConfig(config);
   }
 
   function addReserve(
@@ -128,7 +128,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     _reserveExists[hub][assetId] = true;
 
     emit AddReserve(reserveId, assetId, hub);
-    emit ReserveConfigUpdate(reserveId, config);
+    emit UpdateReserveConfig(reserveId, config);
     emit AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
 
     return reserveId;
@@ -145,7 +145,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     reserve.frozen = config.frozen;
     reserve.borrowable = config.borrowable;
     reserve.collateralRisk = config.collateralRisk;
-    emit ReserveConfigUpdate(reserveId, config);
+    emit UpdateReserveConfig(reserveId, config);
   }
 
   /// @inheritdoc ISpoke
@@ -218,14 +218,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   ) external onlyPositionManager(onBehalfOf) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    _validateWithdraw(reserve);
     uint256 assetId = reserve.assetId;
     IHubBase hub = reserve.hub;
 
-    // If uint256.max is passed, withdraw all user's supplied assets
-    if (amount == type(uint256).max) {
-      amount = hub.previewRemoveByShares(assetId, userPosition.suppliedShares);
-    }
-    _validateWithdraw(reserve, userPosition, amount);
+    amount = MathUtils.min(amount, hub.previewRemoveByShares(assetId, userPosition.suppliedShares));
 
     uint256 withdrawnShares = hub.remove(assetId, amount, msg.sender);
 
@@ -386,7 +383,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
       _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
     }
-    emit UsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
+    emit SetUsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
   }
 
   /// @inheritdoc ISpoke
@@ -648,18 +645,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     require(!reserve.frozen, ReserveFrozen());
   }
 
-  function _validateWithdraw(
-    DataTypes.Reserve storage reserve,
-    DataTypes.UserPosition storage userPosition,
-    uint256 amount
-  ) internal view {
+  function _validateWithdraw(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
-    uint256 suppliedAmount = reserve.hub.previewRemoveByShares(
-      reserve.assetId,
-      userPosition.suppliedShares
-    );
-    require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
   }
 
   function _validateBorrow(DataTypes.Reserve storage reserve) internal view {
@@ -691,7 +679,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
     require(address(oracle) != address(0), InvalidAddress());
     oracle.setReserveSource(reserveId, priceSource);
-    emit ReservePriceSourceUpdate(reserveId, priceSource);
+    emit UpdateReservePriceSource(reserveId, priceSource);
   }
 
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
@@ -950,7 +938,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       hub.refreshPremium(assetId, premiumDelta);
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
     }
-    emit UserRiskPremiumUpdate(user, newUserRiskPremium);
+    emit UpdateUserRiskPremium(user, newUserRiskPremium);
   }
 
   /**
@@ -991,7 +979,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       // non-zero deficit means user ends up with zero total debt
       positionStatus.setBorrowing(reserveId, false);
     }
-    emit UserRiskPremiumUpdate(user, 0);
+    emit UpdateUserRiskPremium(user, 0);
   }
 
   function _refreshDynamicConfig(address user) internal {

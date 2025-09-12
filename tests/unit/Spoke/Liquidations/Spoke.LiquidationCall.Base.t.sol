@@ -379,10 +379,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       vm.expectEmit(false, false, false, false, address(params.spoke));
       // topics > 0 and data are not checked here
       // they are checked after the liquidation call since risk premium calculation is an approximation
-      emit ISpoke.UserRiskPremiumUpdate(address(0), 0);
+      emit ISpoke.UpdateUserRiskPremium(address(0), 0);
     } else {
       vm.expectEmit(address(params.spoke));
-      emit ISpoke.UserRiskPremiumUpdate(params.user, 0);
+      emit ISpoke.UpdateUserRiskPremium(params.user, 0);
     }
   }
 
@@ -933,7 +933,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   ) internal view {
     bool riskPremiumEventEmitted;
     for (uint256 i = 0; i < logs.length; i++) {
-      if (logs[i].topics[0] == ISpoke.UserRiskPremiumUpdate.selector) {
+      if (logs[i].topics[0] == ISpoke.UpdateUserRiskPremium.selector) {
         riskPremiumEventEmitted = true;
         assertEq(address(uint160(uint256(logs[i].topics[1]))), address(params.user));
         uint256 actualUserRiskPremium = abi.decode(logs[i].data, (uint256));

@@ -69,7 +69,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.recordLogs();
     Utils.setUsingAsCollateral(spoke1, daiReserveId, bob, false, bob);
-    _assertEventNotEmitted(ISpoke.UsingAsCollateral.selector);
+    _assertEventNotEmitted(ISpoke.SetUsingAsCollateral.selector);
 
     assertFalse(spoke1.isUsingAsCollateral(daiReserveId, bob));
     assertEq(_getUserRpStored(spoke1, daiReserveId, bob), bobRp);
@@ -91,7 +91,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.recordLogs();
     Utils.setUsingAsCollateral(spoke1, daiReserveId, bob, true, bob);
     _assertEventsNotEmitted(
-      ISpoke.UsingAsCollateral.selector,
+      ISpoke.SetUsingAsCollateral.selector,
       ISpoke.RefreshSingleUserDynamicConfig.selector,
       ISpoke.RefreshAllUserDynamicConfig.selector
     );
@@ -113,7 +113,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UsingAsCollateral(daiReserveId, bob, bob, usingAsCollateral);
+    emit ISpoke.SetUsingAsCollateral(daiReserveId, bob, bob, usingAsCollateral);
     spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral, bob);
 
     assertEq(

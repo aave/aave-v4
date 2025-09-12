@@ -208,7 +208,10 @@ contract HubConfiguratorTest is HubBase {
     DataTypes.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
     expectedConfig.liquidityFee = liquidityFee;
 
-    vm.expectCall(address(hub1), abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig)));
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig, new bytes(0)))
+    );
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateLiquidityFee(address(hub1), assetId, expectedConfig.liquidityFee);
@@ -244,7 +247,7 @@ contract HubConfiguratorTest is HubBase {
         expectedConfig.feeReceiver = feeReceiver;
         vm.expectCall(
           address(hub1),
-          abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig))
+          abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig, new bytes(0)))
         );
       } else {
         // if new fee receiver is different from old one, and is already listed, revert
@@ -468,7 +471,7 @@ contract HubConfiguratorTest is HubBase {
         expectedConfig.feeReceiver = feeReceiver;
         vm.expectCall(
           address(hub1),
-          abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig))
+          abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig, new bytes(0)))
         );
       } else {
         expectedConfig.liquidityFee = oldConfig.liquidityFee;
@@ -496,7 +499,12 @@ contract HubConfiguratorTest is HubBase {
     vm.assume(caller != HUB_CONFIGURATOR_ADMIN);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    hubConfigurator.updateInterestRateStrategy(address(hub1), vm.randomUint(), vm.randomAddress());
+    hubConfigurator.updateInterestRateStrategy(
+      address(hub1),
+      vm.randomUint(),
+      vm.randomAddress(),
+      encodedIrData
+    );
   }
 
   function test_updateInterestRateStrategy() public {
@@ -506,12 +514,53 @@ contract HubConfiguratorTest is HubBase {
     expectedConfig.irStrategy = interestRateStrategy;
     _mockInterestRateBps(interestRateStrategy, 5_00);
 
-    vm.expectCall(address(hub1), abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig)));
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig, encodedIrData))
+    );
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateInterestRateStrategy(address(hub1), assetId, interestRateStrategy);
+    hubConfigurator.updateInterestRateStrategy(
+      address(hub1),
+      assetId,
+      interestRateStrategy,
+      encodedIrData
+    );
 
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
+  }
+
+  function test_updateInterestRateStrategy_revertsWith_InvalidAddress_irStrategy() public {
+    assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateInterestRateStrategy(address(hub1), assetId, address(0), encodedIrData);
+  }
+
+  function test_updateInterestRateStrategy_revertsWith_InterestRateStrategyReverts() public {
+    assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+    address interestRateStrategy = makeAddr('newInterestRateStrategy');
+
+    vm.expectRevert();
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateInterestRateStrategy(
+      address(hub1),
+      assetId,
+      interestRateStrategy,
+      encodedIrData
+    );
+  }
+
+  function test_updateInterestRateStrategy_revertsWith_InvalidInterestRateStrategyUpdate() public {
+    vm.expectRevert(IHub.InvalidInterestRateStrategyUpdate.selector, address(hub1));
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateInterestRateStrategy(
+      address(hub1),
+      assetId,
+      address(irStrategy),
+      encodedIrData
+    );
   }
 
   function test_updateReinvestmentController_fuzz_revertsWith_OwnableUnauthorizedAccount(
@@ -531,28 +580,14 @@ contract HubConfiguratorTest is HubBase {
     address reinvestmentController = makeAddr('newReinvestmentController');
     DataTypes.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
     expectedConfig.reinvestmentController = reinvestmentController;
-    vm.expectCall(address(hub1), abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig)));
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig, new bytes(0)))
+    );
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateReinvestmentController(address(hub1), assetId, reinvestmentController);
 
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
-  }
-
-  function test_updateInterestRateStrategy_revertsWith_InvalidAddress_irStrategy() public {
-    assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
-
-    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
-    vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateInterestRateStrategy(address(hub1), assetId, address(0));
-  }
-
-  function test_updateInterestRateStrategy_revertsWith_InterestRateStrategyReverts() public {
-    assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
-    address interestRateStrategy = makeAddr('newInterestRateStrategy');
-
-    vm.expectRevert();
-    vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateInterestRateStrategy(address(hub1), assetId, interestRateStrategy);
   }
 
   function test_freezeAsset_revertsWith_OwnableUnauthorizedAccount() public {

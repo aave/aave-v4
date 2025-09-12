@@ -50,7 +50,7 @@ contract Hub is IHub, AccessManaged {
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
-    bytes calldata data
+    bytes calldata irData
   ) external restricted returns (uint256) {
     require(
       underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
@@ -59,7 +59,7 @@ contract Hub is IHub, AccessManaged {
     require(decimals <= Constants.MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
 
     uint256 assetId = _assetCount++;
-    IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, data);
+    IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
     uint256 drawnRate = IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
       assetId: assetId,
       liquidity: 0,
@@ -93,7 +93,7 @@ contract Hub is IHub, AccessManaged {
     _addFeeReceiver(assetId, feeReceiver);
 
     emit AddAsset(assetId, underlying, decimals);
-    emit AssetConfigUpdate(
+    emit UpdateAssetConfig(
       assetId,
       DataTypes.AssetConfig({
         feeReceiver: feeReceiver,
@@ -102,7 +102,7 @@ contract Hub is IHub, AccessManaged {
         reinvestmentController: address(0)
       })
     );
-    emit AssetUpdate(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
+    emit UpdateAsset(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
 
     return assetId;
   }
@@ -110,7 +110,8 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function updateAssetConfig(
     uint256 assetId,
-    DataTypes.AssetConfig calldata config
+    DataTypes.AssetConfig calldata config,
+    bytes calldata irData
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     DataTypes.Asset storage asset = _assets[assetId];
@@ -123,9 +124,12 @@ contract Hub is IHub, AccessManaged {
       InvalidReinvestmentController()
     );
 
-    asset.liquidityFee = config.liquidityFee;
-    asset.irStrategy = config.irStrategy;
-    asset.reinvestmentController = config.reinvestmentController;
+    if (config.irStrategy != asset.irStrategy) {
+      asset.irStrategy = config.irStrategy;
+      IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData);
+    } else {
+      require(irData.length == 0, InvalidInterestRateStrategyUpdate());
+    }
 
     if (asset.feeReceiver != config.feeReceiver) {
       _updateSpokeConfig(assetId, asset.feeReceiver, DataTypes.SpokeConfig(true, 0, 0));
@@ -133,9 +137,12 @@ contract Hub is IHub, AccessManaged {
       _addFeeReceiver(assetId, config.feeReceiver);
     }
 
+    asset.liquidityFee = config.liquidityFee;
+    asset.reinvestmentController = config.reinvestmentController;
+
     asset.updateDrawnRate(assetId);
 
-    emit AssetConfigUpdate(assetId, config);
+    emit UpdateAssetConfig(assetId, config);
   }
 
   function addSpoke(
@@ -159,10 +166,10 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function setInterestRateData(uint256 assetId, bytes calldata data) external restricted {
+  function setInterestRateData(uint256 assetId, bytes calldata irData) external restricted {
     DataTypes.Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
-    IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, data);
+    IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, irData);
     asset.updateDrawnRate(assetId);
   }
 
@@ -285,12 +292,11 @@ contract Hub is IHub, AccessManaged {
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(assetId, asset, spoke, premiumDelta, premiumAmount);
-    uint256 totalDeficitAmount = drawnAmount + premiumAmount;
-    asset.deficit += totalDeficitAmount.toUint128();
+    asset.deficit += (drawnAmount + premiumAmount).toUint128();
 
     asset.updateDrawnRate(assetId);
 
-    emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, totalDeficitAmount);
+    emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
     return drawnShares;
   }
@@ -620,7 +626,7 @@ contract Hub is IHub, AccessManaged {
     spokeData.active = config.active;
     spokeData.addCap = config.addCap;
     spokeData.drawCap = config.drawCap;
-    emit SpokeConfigUpdate(assetId, spoke, config);
+    emit UpdateSpokeConfig(assetId, spoke, config);
   }
 
   /**

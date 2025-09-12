@@ -168,6 +168,35 @@ contract SpokeWithdrawTest is SpokeBase {
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
   }
 
+  function test_withdraw_fuzz_all_greater_than_supplied(uint256 supplyAmount) public {
+    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    Utils.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
+
+    _checkSuppliedAmounts(
+      daiAssetId,
+      _daiReserveId(spoke1),
+      spoke1,
+      bob,
+      supplyAmount,
+      'after supply'
+    );
+
+    uint256 addExRate = getAddExRate(daiAssetId);
+
+    // Withdraw all supplied assets
+    vm.prank(bob);
+    spoke1.withdraw(_daiReserveId(spoke1), supplyAmount + 1, bob);
+
+    _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
+    _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+  }
+
   function test_withdraw_fuzz_all_with_interest(uint256 supplyAmount, uint256 borrowAmount) public {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
@@ -837,5 +866,39 @@ contract SpokeWithdrawTest is SpokeBase {
 
     assertGe(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
     assertGe(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+  }
+
+  /// @dev Withdraw exceeding supplied amount withdraws everything
+  function test_withdraw_max_greater_than_supplied() public {
+    uint256 amount = 100e18;
+    uint256 reserveId = _daiReserveId(spoke1);
+
+    // User spoke supply
+    Utils.supply({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: amount,
+      onBehalfOf: alice
+    });
+
+    uint256 withdrawable = getTotalWithdrawable(spoke1, reserveId, alice);
+    assertGt(withdrawable, 0);
+
+    uint256 addExRateBefore = getAddExRate(daiAssetId);
+
+    // skip time but no index increase with no borrow
+    skip(365 days);
+    // withdrawable remains constant
+    assertEq(withdrawable, getTotalWithdrawable(spoke1, reserveId, alice));
+
+    vm.prank(alice);
+    spoke1.withdraw(reserveId, withdrawable + 1, alice);
+
+    assertEq(getTotalWithdrawable(spoke1, reserveId, alice), 0);
+    _checkSuppliedAmounts(daiAssetId, reserveId, spoke1, alice, 0, 'after withdraw');
+
+    // Check supply rate monotonically increasing after withdraw
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after withdraw');
   }
 }
