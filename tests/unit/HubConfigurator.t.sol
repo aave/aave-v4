@@ -241,21 +241,6 @@ contract HubConfiguratorTest is HubBase {
     // if new feeReceiver is different than old one, and is not listed, update the spoke config of old feeReceiver
     if (feeReceiver != oldConfig.feeReceiver) {
       if (!hub1.isSpokeListed(assetId, feeReceiver)) {
-        vm.expectCall(
-          address(hub1),
-          abi.encodeCall(
-            IHub.updateSpokeConfig,
-            (
-              assetId,
-              oldConfig.feeReceiver,
-              DataTypes.SpokeConfig({
-                addCap: 0,
-                drawCap: 0,
-                active: hub1.getSpokeConfig(assetId, oldConfig.feeReceiver).active
-              })
-            )
-          )
-        );
         expectedConfig.feeReceiver = feeReceiver;
         vm.expectCall(
           address(hub1),
@@ -480,21 +465,6 @@ contract HubConfiguratorTest is HubBase {
     // if new fee receiver is different from old one, and is not listed, update the spoke config of old fee receiver
     if (oldConfig.feeReceiver != feeReceiver) {
       if (!hub1.isSpokeListed(assetId, feeReceiver)) {
-        vm.expectCall(
-          address(hub1),
-          abi.encodeCall(
-            IHub.updateSpokeConfig,
-            (
-              assetId,
-              oldConfig.feeReceiver,
-              DataTypes.SpokeConfig({
-                addCap: 0,
-                drawCap: 0,
-                active: hub1.getSpokeConfig(assetId, oldConfig.feeReceiver).active
-              })
-            )
-          )
-        );
         expectedConfig.feeReceiver = feeReceiver;
         vm.expectCall(
           address(hub1),

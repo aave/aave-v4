@@ -111,7 +111,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   /**
    * @notice Updates the configuration of an asset.
-   * @dev If the fee receiver is updated, it is added as a new spoke with maximum add cap and zero draw cap.
+   * @dev If the fee receiver is updated, it is added as a new spoke with maximum add cap and zero draw cap, and set old fee receiver caps to zero.
    * @param assetId The identifier of the asset.
    * @param config The new configuration for the asset.
    */
