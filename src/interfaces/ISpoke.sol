@@ -69,11 +69,11 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event RefreshSingleUserDynamicConfig(address indexed user, uint256 reserveId);
 
   /**
-   * @notice Emitted on setUsingAsCollateral action.
-   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator.
-   * @param user The owner of the position being modified.
-   * @param usingAsCollateral Boolean whether the reserve is enabled or disabled as collateral.
+   * @notice Emitted when a reserve is set as collateral.
+   * @param reserveId The identifier of the reserve.
+   * @param caller The initiator of the transaction .
+   * @param user The owner of the position being set as collateral.
+   * @param usingAsCollateral True if the reserve is enabled as collateral, false if disabled.
    */
   event UsingAsCollateral(
     uint256 indexed reserveId,
@@ -83,33 +83,50 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   );
 
   /**
-   * @notice Emitted on updateUserRiskPremium action.
+   * @notice Emitted when a user's risk premium is updated.
    * @param user The owner of the position being modified.
    * @param riskPremium The new risk premium (BPS) value of user.
    */
   event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
 
   /**
-   * @notice Emitted on setUserPositionManager or renouncePositionManagerRole action.
-   * @param user The address of the user on whose behalf position manager can act.
+   * @notice Emitted when a position manager is set or revoked for a user.
+   * @param user The address of the user on whose behalf the position manager can act.
    * @param positionManager The address of the position manager.
    * @param approve True if position manager approval was granted, false if it was revoked.
    */
   event SetUserPositionManager(address indexed user, address indexed positionManager, bool approve);
 
   /**
-   * @notice Emitted on updatePositionManager action.
+   * @notice Emitted when a position manager is updated.
    * @param positionManager The address of the position manager.
-   * @param active True if position manager has become active, false otherwise.
+   * @param active True if position manager is active, false otherwise.
    */
   event UpdatePositionManager(address indexed positionManager, bool active);
 
+  /**
+   * @notice Emitted when premium debt is refreshed.
+   * @param reserveId The identifier of the reserve.
+   * @param user The address of the user.
+   * @param premiumDelta The premium delta object.
+   */
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
     address indexed user,
     DataTypes.PremiumDelta premiumDelta
   );
+
+  /**
+   * @notice Emitted when the spoke's oracle is updated.
+   * @param oracle The address of the new oracle.
+   */
   event OracleUpdate(address indexed oracle);
+
+  /**
+   * @notice Emitted when the price source of a reserve is updated.
+   * @param reserveId The identifier of the reserve.
+   * @param priceSource The address of the new price source.
+   */
   event ReservePriceSourceUpdate(uint256 indexed reserveId, address indexed priceSource);
   event LiquidationConfigUpdate(DataTypes.LiquidationConfig config);
 
