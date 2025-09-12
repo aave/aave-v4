@@ -31,8 +31,8 @@ contract NativeTokenGatewayTest is Base {
       address(ADMIN)
     );
 
-    assertEq(address(gateway.NATIVE_WRAPPER()), address(tokenList.weth));
-    assertEq(address(gateway.SPOKE()), address(spoke1));
+    assertEq(gateway.NATIVE_WRAPPER(), address(tokenList.weth));
+    assertEq(gateway.SPOKE(), address(spoke1));
 
     assertEq(gateway.owner(), address(ADMIN));
     assertEq(gateway.pendingOwner(), address(0));
@@ -635,19 +635,19 @@ contract NativeTokenGatewayTest is Base {
     nativeTokenGateway.repayNative{value: repayAmount / 2}(_wethReserveId(spoke1), repayAmount);
   }
 
-  function test_receive_revertsWith_ReceiveNotAllowed() public {
+  function test_receive_revertsWith_UnsupportedAction() public {
     deal(address(this), 1 ether);
 
-    vm.expectRevert(INativeTokenGateway.ReceiveNotAllowed.selector);
+    vm.expectRevert(INativeTokenGateway.UnsupportedAction.selector);
     address(nativeTokenGateway).call{value: 1 ether}(new bytes(0));
   }
 
-  function test_fallback_revertsWith_FallbackForbidden() public {
+  function test_fallback_revertsWith_UnsupportedAction() public {
     deal(address(this), 1 ether);
 
     bytes memory invalidCall = abi.encode('invalidFunction()');
 
-    vm.expectRevert(INativeTokenGateway.FallbackForbidden.selector);
+    vm.expectRevert(INativeTokenGateway.UnsupportedAction.selector);
     address(nativeTokenGateway).call{value: 1 ether}(invalidCall);
   }
 
