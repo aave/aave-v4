@@ -118,8 +118,6 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    skip(vm.randomUint(0, MAX_SKIP_TIME));
-
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
       spoke1,
       p.reserveId,
