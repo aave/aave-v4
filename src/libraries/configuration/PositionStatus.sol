@@ -129,23 +129,24 @@ library PositionStatus {
   }
 
   /**
-   * @dev Returns the next reserveId that is borrowing or using as collateral.
-   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `lastSeenReserveId`, searches from last to first.
-   * @dev Disregards potential dirty bits set after `reserveCount` in it's bucket.
+   * @dev Finds the previous borrowing or collateralized reserve strictly before `fromReserveId`.
+   * @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
+   * @dev Returns `NOT_FOUND` if no borrowing or collateralized reserve exists before the bound.
+   * @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
    * @param self The configuration object.
-   * @param lastSeenReserveId The reserveId to start searching from.
+   * @param fromReserveId The reserveId to start searching from.
    * @return reserveId The next reserveId that is borrowing or using as collateral.
    * @return borrowing True if the next reserveId is borrowing, false otherwise.
    * @return collateral True if the next reserveId is using as collateral, false otherwise.
    */
   function next(
     DataTypes.PositionStatus storage self,
-    uint256 lastSeenReserveId
+    uint256 fromReserveId
   ) internal view returns (uint256, bool, bool) {
     unchecked {
-      uint256 bucket = lastSeenReserveId.bucketId();
+      uint256 bucket = fromReserveId.bucketId();
       uint256 map = self.map[bucket];
-      uint256 setBitId = map.isolateUntil(lastSeenReserveId).fls();
+      uint256 setBitId = map.isolateUntil(fromReserveId).fls();
       while (setBitId == 256 && bucket != 0) {
         map = self.map[--bucket];
         setBitId = map.fls();
@@ -160,20 +161,21 @@ library PositionStatus {
   }
 
   /**
-   * @dev Returns the next reserveId that is borrowing.
-   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `lastSeenReserveId`, searches from last to first.
-   * @dev Disregard potential dirty bits set after `reserveCount` in it's bucket.
-   * @param self The configuration object.
-   * @param lastSeenReserveId The reserveId to start searching from.
-   * @return reserveId The next reserveId that is borrowing.
+   * @dev Finds the previous borrowing reserve strictly before `fromReserveId`.
+   * @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
+   * @dev Returns `NOT_FOUND` if no borrowing reserve exists before the bound.
+   * @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
+   * @param self The position status storing reserves bitmap.
+   * @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
+   * @return reserveId The previous borrowing reserveId, or `NOT_FOUND` if none is found.
    */
   function nextBorrowing(
     DataTypes.PositionStatus storage self,
-    uint256 lastSeenReserveId
+    uint256 fromReserveId
   ) internal view returns (uint256 reserveId) {
     unchecked {
-      uint256 bucket = lastSeenReserveId.bucketId();
-      uint256 setBitId = self.map[bucket].isolateBorrowingUntil(lastSeenReserveId).fls();
+      uint256 bucket = fromReserveId.bucketId();
+      uint256 setBitId = self.map[bucket].isolateBorrowingUntil(fromReserveId).fls();
       while (setBitId == 256 && bucket != 0) {
         setBitId = self.map[--bucket].isolateBorrowing().fls();
       }
@@ -182,20 +184,21 @@ library PositionStatus {
   }
 
   /**
-   * @dev Returns the next reserveId that is using as collateral.
-   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `lastSeenReserveId`, searches from last to first.
-   * @dev Disregard potential dirty bits set after `reserveCount` in it's bucket.
-   * @param self The configuration object.
-   * @param lastSeenReserveId The reserveId to start searching from.
-   * @return reserveId The next reserveId that is using as collateral.
+   * @dev Finds the previous collateralized reserve strictly before `fromReserveId`.
+   * @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
+   * @dev Returns `NOT_FOUND` if no collateralized reserve exists before the bound.
+   * @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
+   * @param self The position status storing reserves bitmap.
+   * @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
+   * @return reserveId The previous collateralized reserveId, or `NOT_FOUND` if none is found.
    */
   function nextCollateral(
     DataTypes.PositionStatus storage self,
-    uint256 lastSeenReserveId
+    uint256 fromReserveId
   ) internal view returns (uint256 reserveId) {
     unchecked {
-      uint256 bucket = lastSeenReserveId.bucketId();
-      uint256 setBitId = self.map[bucket].isolateCollateralUntil(lastSeenReserveId).fls();
+      uint256 bucket = fromReserveId.bucketId();
+      uint256 setBitId = self.map[bucket].isolateCollateralUntil(fromReserveId).fls();
       while (setBitId == 256 && bucket != 0) {
         setBitId = self.map[--bucket].isolateCollateral().fls();
       }
@@ -244,7 +247,10 @@ library PositionStatus {
   }
 
   /**
-   * @dev Isolates the borrowing bits from word, disregarding bits after `reserveCount`.
+   * @dev Isolates borrowing bits up to the given `reserveCount`, clearing all later reserves.
+   * @param word The 256-bit value encoding reserves configuration.
+   * @param reserveCount The number of reserves (2 bits each) to include.
+   * @return ret The portion of word containing borrowing bits from the first reserve up to `reserveCount`.
    */
   function isolateBorrowingUntil(
     uint256 word,
@@ -257,7 +263,10 @@ library PositionStatus {
   }
 
   /**
-   * @dev Isolates the bits from word, disregarding bits after `reserveCount`.
+   * @dev Isolates bits up to the given `reserveCount`, clearing all later reserves.
+   * @param word The 256-bit value encoding reserves configuration.
+   * @param reserveCount The number of reserves (2 bits each) to include.
+   * @return ret The portion of word containing bits from the first reserve up to `reserveCount`.
    */
   function isolateUntil(uint256 word, uint256 reserveCount) internal pure returns (uint256 ret) {
     // ret = word & (type(uint256).max >> (256 - ((reserveCount % 128) << 1)));
@@ -276,7 +285,10 @@ library PositionStatus {
   }
 
   /**
-   * @dev Isolates the bits from word, disregarding bits after `reserveCount`.
+   * @dev Isolates collateral bits up to the given `reserveCount`, clearing all later reserves.
+   * @param word The 256-bit value encoding reserves configuration.
+   * @param reserveCount The number of reserves (2 bits each) to include.
+   * @return ret The portion of word containing collateral bits from the first reserve up to `reserveCount`.
    */
   function isolateCollateralUntil(
     uint256 word,
