@@ -5,6 +5,11 @@ pragma solidity ^0.8.0;
 import {Constants} from 'src/libraries/helpers/Constants.sol';
 import {Spoke} from 'src/contracts/Spoke.sol';
 
+/**
+ * @title SpokeInstance
+ * @author Aave
+ * @notice Implementation contract for the Spoke contract.
+ */
 contract SpokeInstance is Spoke {
   uint64 public constant SPOKE_REVISION = 1;
 

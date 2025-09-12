@@ -57,7 +57,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /**
    * @dev Initializes the contract (intended to be called via delegatecall).
-   * On the first initialization, it sets the target health factor to its default value.
    * It updates the authority on every initialization and, only on the first initialization,
    * sets the target health factor to its default value.
    * @param _authority The address of the authority contract which manages permissions.
