@@ -1,7 +1,7 @@
 name: Snapshot to private repo (cross-org)
 on:
   push:
-    branches: [main]
+    branches: [testing-pipeline]
 
 permissions:
   contents: read
@@ -17,16 +17,19 @@ jobs:
 
       - name: Build snapshot tree
         run: |
-          # Clean up any existing snapshot directory from previous runs
-          rm -rf /tmp/snap
           mkdir -p /tmp/snap
-          git archive --format=tar HEAD | tar -x -C /tmp/snap
+          rsync -a \
+            --exclude '.git' \
+            --exclude '.github' \
+            . /tmp/snap/
+          # remove submodule metadata so target is a plain tree
+          rm -f /tmp/snap/.gitmodules
+
           cd /tmp/snap
-          # Remove .github directory to avoid workflow permission issues
-          rm -rf .github
           git init
           git add .
           git -c user.name="Snapshot Bot" -c user.email="snapshot-bot@local" commit -m "Snapshot: ${GITHUB_SHA}"
+          git branch -M main
 
       - name: Create GitHub App token for target repo
         id: app-token
