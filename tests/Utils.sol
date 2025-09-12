@@ -20,7 +20,7 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    approve(hub, assetId, caller, amount);
+    approve(hub, assetId, user, amount);
     vm.prank(caller);
     return hub.add(assetId, amount, user);
   }
@@ -181,17 +181,30 @@ library Utils {
     );
   }
 
+  function approve(
+    ISpoke spoke,
+    uint256 reserveId,
+    address owner,
+    address spender,
+    uint256 amount
+  ) internal {
+    IHub hub = spoke.getReserve(reserveId).hub;
+    _approve(
+      IERC20(hub.getAsset(spoke.getReserve(reserveId).assetId).underlying),
+      owner,
+      spender,
+      amount
+    );
+  }
+
   function approve(IHub hub, uint256 assetId, address owner, uint256 amount) internal {
     _approve(IERC20(hub.getAsset(assetId).underlying), owner, address(hub), amount);
   }
 
   function _approve(IERC20 underlying, address owner, address spender, uint256 amount) private {
-    uint256 allowance = underlying.allowance(owner, spender);
-    if (allowance < amount) {
-      vm.startPrank(owner);
-      underlying.approve(spender, 0);
-      underlying.approve(spender, amount);
-      vm.stopPrank();
-    }
+    vm.startPrank(owner);
+    underlying.approve(spender, 0);
+    underlying.approve(spender, amount);
+    vm.stopPrank();
   }
 }
