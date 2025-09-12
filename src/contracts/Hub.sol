@@ -564,6 +564,7 @@ contract Hub is IHub, AccessManaged {
     return (spokeData.premiumShares, spokeData.premiumOffset, spokeData.realizedPremium);
   }
 
+  /// @inheritdoc IHubBase
   function getAssetAddedAmount(uint256 assetId) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     return previewRemoveByShares(assetId, asset.addedShares);
@@ -573,6 +574,7 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].drawnRate;
   }
 
+  /// @inheritdoc IHubBase
   function getAssetAddedShares(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].addedShares;
   }
