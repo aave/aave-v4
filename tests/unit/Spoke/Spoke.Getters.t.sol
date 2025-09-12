@@ -11,41 +11,49 @@ contract SpokeGettersTest is SpokeBase {
 
   DataTypes.LiquidationConfig internal _config;
 
-  function test_getVariableLiquidationBonus_notConfigured() public {
+  function test_getLiquidationBonus_notConfigured() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 healthFactor = WadRayMath.WAD;
-    test_getVariableLiquidationBonus_fuzz_notConfigured(reserveId, healthFactor);
+    test_getLiquidationBonus_fuzz_notConfigured(reserveId, healthFactor);
   }
 
-  function test_getVariableLiquidationBonus_fuzz_notConfigured(
+  function test_getLiquidationBonus_fuzz_notConfigured(
     uint256 reserveId,
     uint256 healthFactor
   ) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, bob, healthFactor);
+    uint256 liqBonus = spoke1.getLiquidationBonus(reserveId, bob, healthFactor);
 
     _config = spoke1.getLiquidationConfig();
+    assertEq(
+      _config,
+      DataTypes.LiquidationConfig({
+        targetHealthFactor: WadRayMath.WAD.toUint128(),
+        healthFactorForMaxBonus: 0,
+        liquidationBonusFactor: 0
+      })
+    );
 
     assertEq(
       liqBonus,
-      LiquidationLogic.calculateVariableLiquidationBonus(
-        _config,
-        healthFactor,
-        spoke1.getDynamicReserveConfig(reserveId).liquidationBonus,
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-      ),
+      LiquidationLogic.calculateLiquidationBonus({
+        healthFactorForMaxBonus: 0,
+        liquidationBonusFactor: 0,
+        healthFactor: healthFactor,
+        maxLiquidationBonus: spoke1.getDynamicReserveConfig(reserveId).maxLiquidationBonus
+      }),
       'calc should match'
     );
   }
 
-  function test_getVariableLiquidationBonus_configured() public {
+  function test_getLiquidationBonus_configured() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 healthFactor = WadRayMath.WAD;
-    test_getVariableLiquidationBonus_fuzz_configured(reserveId, healthFactor, 40_00, 0.9e18);
+    test_getLiquidationBonus_fuzz_configured(reserveId, healthFactor, 40_00, 0.9e18);
   }
 
-  function test_getVariableLiquidationBonus_fuzz_configured(
+  function test_getLiquidationBonus_fuzz_configured(
     uint256 reserveId,
     uint256 healthFactor,
     uint16 liquidationBonusFactor,
@@ -62,7 +70,7 @@ contract SpokeGettersTest is SpokeBase {
     ).toUint64();
 
     DataTypes.LiquidationConfig memory config = DataTypes.LiquidationConfig({
-      closeFactor: WadRayMath.WAD.toUint128(),
+      targetHealthFactor: WadRayMath.WAD.toUint128(),
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor
     });
@@ -70,16 +78,16 @@ contract SpokeGettersTest is SpokeBase {
     spoke1.updateLiquidationConfig(config);
     _config = spoke1.getLiquidationConfig();
 
-    uint256 liqBonus = spoke1.getVariableLiquidationBonus(reserveId, bob, healthFactor);
+    uint256 liqBonus = spoke1.getLiquidationBonus(reserveId, bob, healthFactor);
 
     assertEq(
       liqBonus,
-      LiquidationLogic.calculateVariableLiquidationBonus(
-        _config,
-        healthFactor,
-        spoke1.getDynamicReserveConfig(reserveId).liquidationBonus,
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-      ),
+      LiquidationLogic.calculateLiquidationBonus({
+        healthFactorForMaxBonus: healthFactorForMaxBonus,
+        liquidationBonusFactor: liquidationBonusFactor,
+        healthFactor: healthFactor,
+        maxLiquidationBonus: spoke1.getDynamicReserveConfig(reserveId).maxLiquidationBonus
+      }),
       'calc should match'
     );
   }

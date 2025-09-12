@@ -102,7 +102,6 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_setUsingAsCollateral() public {
-    bool newCollateralFlag = true;
     bool usingAsCollateral = true;
     uint256 daiAmount = 100e18;
 
