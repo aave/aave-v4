@@ -18,4 +18,9 @@ interface IRescuable {
    * @param amount Amount of native asset to rescue.
    **/
   function rescueNative(address to, uint256 amount) external;
+
+  /**
+   * @notice Returns the address that is allowed to rescue funds.
+   **/
+  function rescueGuardian() external view returns (address);
 }

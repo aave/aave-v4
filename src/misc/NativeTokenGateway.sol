@@ -29,12 +29,12 @@ contract NativeTokenGateway is
 {
   using SafeERC20 for *;
 
-  /// @notice Native Wrapper contract
+  /// @inheritdoc INativeTokenGateway
   INativeWrapper public immutable NATIVE_WRAPPER;
-  /// @notice Spoke contract
+  /// @inheritdoc INativeTokenGateway
   ISpoke public immutable SPOKE;
 
-  constructor(address nativeWrapper_, address spoke_, address admin_) Ownable(admin_) {
+  constructor(address nativeWrapper_, address spoke_, address initialOwner_) Ownable(initialOwner_) {
     require(nativeWrapper_ != address(0) && spoke_ != address(0), InvalidAddress());
     NATIVE_WRAPPER = INativeWrapper(payable(nativeWrapper_));
     SPOKE = ISpoke(spoke_);
@@ -62,11 +62,11 @@ contract NativeTokenGateway is
     _validateParams(underlying, amount);
     require(receiver != address(0), InvalidAddress());
 
-    amount = MathUtils.min(SPOKE.getUserSuppliedAmount(reserveId, msg.sender), amount);
+    uint256 withdrawAmount = MathUtils.min(amount, SPOKE.getUserSuppliedAmount(reserveId, msg.sender));
 
-    SPOKE.withdraw(reserveId, amount, msg.sender);
-    NATIVE_WRAPPER.withdraw(amount);
-    Address.sendValue(payable(receiver), amount);
+    SPOKE.withdraw(reserveId, withdrawAmount, msg.sender);
+    NATIVE_WRAPPER.withdraw(withdrawAmount);
+    Address.sendValue(payable(receiver), withdrawAmount);
   }
 
   /// @inheritdoc INativeTokenGateway
@@ -87,23 +87,26 @@ contract NativeTokenGateway is
     require(msg.value == amount, NativeAmountMismatch());
 
     uint256 userDebtAmount = SPOKE.getUserTotalDebt(reserveId, msg.sender);
+    uint256 repayAmount = amount;
     uint256 leftovers;
     if (amount > userDebtAmount) {
       leftovers = amount - userDebtAmount;
-      amount = userDebtAmount;
+      repayAmount = userDebtAmount;
     }
 
-    NATIVE_WRAPPER.deposit{value: amount}();
-    NATIVE_WRAPPER.forceApprove(hub, amount);
-    SPOKE.repay(reserveId, amount, msg.sender);
+    NATIVE_WRAPPER.deposit{value: repayAmount}();
+    NATIVE_WRAPPER.forceApprove(hub, repayAmount);
+    SPOKE.repay(reserveId, repayAmount, msg.sender);
 
     if (leftovers > 0) {
       Address.sendValue(payable(msg.sender), leftovers);
     }
   }
 
-  /// @inheritdoc Rescuable
-  function rescueGuardian() public view override returns (address) {
+  /**
+   * @dev Override from Rescuable : address that is allowed to rescue funds
+   **/
+  function _rescueGuardian() internal view override returns (address) {
     return owner();
   }
 

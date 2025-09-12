@@ -11,7 +11,7 @@ contract RescuableWrapper is Rescuable {
     admin = admin_;
   }
 
-  function rescueGuardian() public view virtual override returns (address) {
+  function _rescueGuardian() internal view override returns (address) {
     return admin;
   }
 }

@@ -2,7 +2,11 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-interface INativeTokenGateway {
+import {INativeWrapper} from 'src/interfaces/INativeWrapper.sol';
+import {IRescuable} from 'src/interfaces/IRescuable.sol';
+import {ISpoke} from 'src/interfaces/ISpoke.sol';
+
+interface INativeTokenGateway is IRescuable {
   error InvalidAddress();
   error InvalidAmount();
   error InvalidReserveId();
@@ -46,4 +50,9 @@ interface INativeTokenGateway {
    * @param user The address of the user.
    */
   function renouncePositionManagerRole(address user) external;
+
+  /// @notice Native Wrapper contract
+  function NATIVE_WRAPPER() external view returns (INativeWrapper);
+  /// @notice Spoke contract
+  function SPOKE() external view returns (ISpoke);
 }

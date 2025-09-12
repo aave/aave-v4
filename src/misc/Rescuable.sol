@@ -30,15 +30,18 @@ abstract contract Rescuable is IRescuable {
     Address.sendValue(payable(to), amount);
   }
 
-  /**
-   * @notice Returns the address that is allowed to rescue funds.
-   **/
-  function rescueGuardian() public view virtual returns (address);
+  /// @inheritdoc IRescuable
+  function rescueGuardian() external view returns (address) {
+    return _rescueGuardian();
+  }
+
+  /// @dev Returns the address that is allowed to rescue funds.
+  function _rescueGuardian() internal view virtual returns (address);
 
   /**
    * @dev Throws if the sender is not the rescue guardian.
    */
   function _checkRescueGuardian() internal view virtual {
-    require(rescueGuardian() == msg.sender, OnlyRescueGuardian());
+    require(_rescueGuardian() == msg.sender, OnlyRescueGuardian());
   }
 }
