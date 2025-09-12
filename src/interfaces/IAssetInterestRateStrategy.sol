@@ -12,7 +12,7 @@ import {IBasicInterestRateStrategy} from './IBasicInterestRateStrategy.sol';
 interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /**
    * @notice Emitted when new interest rate data is set for an asset.
-   * @param hub The address of the hub.
+   * @param hub The address of the associated hub.
    * @param assetId Identifier of the asset that has new interest rate data set.
    * @param optimalUsageRatio The optimal borrow usage ratio, in bps.
    * @param baseVariableBorrowRate The base variable borrow rate, in bps.
