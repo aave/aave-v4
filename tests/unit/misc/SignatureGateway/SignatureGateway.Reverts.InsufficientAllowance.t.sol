@@ -22,16 +22,21 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
 
     EIP712Types.Supply memory p = _supplyData(spoke1, alice, deadline);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+    address underlying = address(_underlying(spoke1, p.reserveId));
 
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        IERC20Errors.ERC20InsufficientAllowance.selector,
-        address(gateway),
-        0,
-        p.amount,
-        address(_underlying(spoke1, p.reserveId))
-      )
-    );
+    if (underlying == address(tokenList.weth)) {
+      vm.expectRevert();
+    } else {
+      vm.expectRevert(
+        abi.encodeWithSelector(
+          IERC20Errors.ERC20InsufficientAllowance.selector,
+          address(gateway),
+          0,
+          p.amount,
+          underlying
+        )
+      );
+    }
     vm.prank(vm.randomAddress());
     gateway.supplyWithSig(p.reserveId, p.amount, alice, deadline, signature);
   }

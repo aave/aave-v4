@@ -44,11 +44,11 @@ contract HubEliminateDeficitTest is HubBase {
 
     uint256 clearedDeficit = vm.randomUint(1, deficit);
     _supply(hub1, spoke1, assetId, clearedDeficit);
-    assertGe(hub1.getSpokeAddedAmount(assetId, address(spoke1)), clearedDeficit);
+    assertGe(hub1.getSpokeAddedAssets(assetId, address(spoke1)), clearedDeficit);
 
     uint256 expectedRemoveShares = hub1.previewRemoveByAssets(assetId, clearedDeficit);
     uint256 spokeAddedShares = hub1.getSpokeAddedShares(assetId, address(spoke1));
-    uint256 assetSuppliedShares = hub1.getTotalAddedShares(assetId);
+    uint256 assetSuppliedShares = hub1.getAssetAddedShares(assetId);
     uint256 addExRate = getAddExRate(assetId);
 
     vm.expectEmit(address(hub1));
@@ -58,7 +58,7 @@ contract HubEliminateDeficitTest is HubBase {
 
     assertEq(removedShares, expectedRemoveShares);
     assertEq(hub1.getDeficit(assetId), deficit - clearedDeficit);
-    assertEq(hub1.getTotalAddedShares(assetId), assetSuppliedShares - expectedRemoveShares);
+    assertEq(hub1.getAssetAddedShares(assetId), assetSuppliedShares - expectedRemoveShares);
     assertEq(
       hub1.getSpokeAddedShares(assetId, address(spoke1)),
       spokeAddedShares - expectedRemoveShares
@@ -76,7 +76,7 @@ contract HubEliminateDeficitTest is HubBase {
 
     uint256 clearedDeficit = vm.randomUint(1, deficit - 1);
     _supply(hub1, spoke1, assetId, clearedDeficit);
-    assertGe(hub1.getSpokeAddedAmount(assetId, address(spoke1)), clearedDeficit);
+    assertGe(hub1.getSpokeAddedAssets(assetId, address(spoke1)), clearedDeficit);
 
     uint256 expectedRemoveShares = hub1.previewRemoveByAssets(assetId, clearedDeficit);
 

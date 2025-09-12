@@ -65,7 +65,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     skip(elapsed);
 
     // Ensure interest has accrued
-    vm.assume(hub1.getTotalAddedAssets(daiAssetId) > supplyAmount);
+    vm.assume(hub1.getAssetAddedAmount(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -79,15 +79,15 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    uint256 treasuryFees = hub1.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
-    uint256 interestAccrued = hub1.getTotalAddedAssets(daiAssetId) -
+    uint256 treasuryFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
+    uint256 interestAccrued = hub1.getAssetAddedAmount(daiAssetId) -
       _calculateBurntInterest(hub1, daiAssetId) -
       treasuryFees -
       supplyAmount;
     uint256 totalSupplied = interestAccrued + supplyAmount;
     assertApproxEqAbs(
       totalSupplied,
-      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob),
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob),
       1,
       'total supplied'
     );
@@ -98,9 +98,9 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // Withdraw partial supplied assets
     Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, partialWithdrawAmount, bob);
 
-    treasuryFees = hub1.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
+    treasuryFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
     interestAccrued =
-      hub1.getTotalAddedAssets(daiAssetId) -
+      hub1.getAssetAddedAmount(daiAssetId) -
       _calculateBurntInterest(hub1, daiAssetId) -
       treasuryFees -
       (supplyAmount - partialWithdrawAmount);
@@ -108,7 +108,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     totalSupplied = interestAccrued + supplyAmount - partialWithdrawAmount;
     assertApproxEqAbs(
       totalSupplied,
-      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob),
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob),
       1,
       'expected supplied'
     );

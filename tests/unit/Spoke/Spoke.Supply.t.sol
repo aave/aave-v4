@@ -114,10 +114,10 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertEq(
       amount,
-      hub1.getSpokeAddedAmount(daiAssetId, address(spoke1)),
+      hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)),
       'spoke supplied amount after-supply'
     );
-    assertEq(amount, hub1.getTotalAddedAssets(daiAssetId), 'asset supplied amount after-supply');
+    assertEq(amount, hub1.getAssetAddedAmount(daiAssetId), 'asset supplied amount after-supply');
 
     // user
     assertEq(bobData[stage].data.drawnShares, 0, 'bob drawnShares after-supply');
@@ -131,7 +131,7 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertEq(
       amount,
-      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob),
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob),
       'user supplied amount after-supply'
     );
   }
@@ -190,10 +190,10 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertEq(
       amount,
-      hub1.getSpokeAddedAmount(daiAssetId, address(spoke1)),
+      hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)),
       'spoke supplied amount after-supply'
     );
-    assertEq(amount, hub1.getTotalAddedAssets(daiAssetId), 'asset supplied amount after-supply');
+    assertEq(amount, hub1.getAssetAddedAmount(daiAssetId), 'asset supplied amount after-supply');
 
     // user
     assertEq(bobData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
@@ -207,7 +207,7 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertEq(
       amount,
-      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob),
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob),
       'user supplied amount after-supply'
     );
   }
@@ -280,7 +280,7 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertApproxEqAbs(
       amount,
-      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), carol),
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), carol),
       1,
       'user supplied amount after-supply'
     );
