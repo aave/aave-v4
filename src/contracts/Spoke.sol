@@ -199,11 +199,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   ) external onlyPositionManager(onBehalfOf) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    IHubBase hub = _validateSupply(reserve);
 
-    _validateSupply(reserve);
-
-    uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount, msg.sender);
-
+    uint256 suppliedShares = hub.add(reserve.assetId, amount, msg.sender);
     userPosition.suppliedShares += suppliedShares.toUint128();
 
     emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares);
@@ -245,17 +243,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
+    IHubBase hub = _validateBorrow(reserve);
     uint256 assetId = reserve.assetId;
-    IHubBase hub = reserve.hub;
-
-    _validateBorrow(reserve);
 
     uint256 drawnShares = hub.draw(assetId, amount, msg.sender);
-
     userPosition.drawnShares += drawnShares.toUint128();
-    if (!positionStatus.isBorrowing(reserveId)) {
-      positionStatus.setBorrowing(reserveId, true);
-    }
+    if (!positionStatus.isBorrowing(reserveId)) positionStatus.setBorrowing(reserveId, true);
 
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
@@ -271,10 +264,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   ) external onlyPositionManager(onBehalfOf) {
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    _validateRepay(reserve);
-
-    IHubBase hub = reserve.hub;
+    IHubBase hub = _validateRepay(reserve);
     uint256 assetId = reserve.assetId;
+
     (uint256 drawnDebtRestored, uint256 premiumDebtRestored, uint256 accruedPremium) = _getUserDebt(
       hub,
       assetId,
@@ -645,37 +637,45 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   // internal
-  function _validateSupply(DataTypes.Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
+  function _validateSupply(DataTypes.Reserve storage reserve) internal view returns (IHubBase) {
+    IHubBase hub = reserve.hub;
+    require(address(hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     require(!reserve.frozen, ReserveFrozen());
+    return hub;
   }
 
   function _validateWithdraw(
     DataTypes.Reserve storage reserve,
     DataTypes.UserPosition storage userPosition,
     uint256 amount
-  ) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
+  ) internal view returns (IHubBase) {
+    IHubBase hub = reserve.hub;
+    require(address(hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     uint256 suppliedAmount = reserve.hub.previewRemoveByShares(
       reserve.assetId,
       userPosition.suppliedShares
     );
     require(amount <= suppliedAmount, InsufficientSupply(suppliedAmount));
+    return hub;
   }
 
-  function _validateBorrow(DataTypes.Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
+  function _validateBorrow(DataTypes.Reserve storage reserve) internal view returns (IHubBase) {
+    IHubBase hub = reserve.hub;
+    require(address(hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     require(!reserve.frozen, ReserveFrozen());
     require(reserve.borrowable, ReserveNotBorrowable());
-    // HF checked at the end of borrow action
+    // HF checked at the end of borrow
+    return hub;
   }
 
-  function _validateRepay(DataTypes.Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
+  function _validateRepay(DataTypes.Reserve storage reserve) internal view returns (IHubBase) {
+    IHubBase hub = reserve.hub;
+    require(address(hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
+    return hub;
   }
 
   /**
