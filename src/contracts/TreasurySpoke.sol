@@ -6,7 +6,7 @@ import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {IHub} from 'src/interfaces/IHub.sol';
+import {IHubBase} from 'src/interfaces/IHubBase.sol';
 import {ITreasurySpoke, ISpokeBase} from 'src/interfaces/ITreasurySpoke.sol';
 
 /**
@@ -20,7 +20,7 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
   using SafeERC20 for IERC20;
 
   /// @inheritdoc ITreasurySpoke
-  IHub public immutable HUB;
+  IHubBase public immutable HUB;
 
   /**
    * @dev Constructor
@@ -30,7 +30,7 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
   constructor(address owner_, address hub_) Ownable(owner_) {
     require(hub_ != address(0), InvalidAddress());
 
-    HUB = IHub(hub_);
+    HUB = IHubBase(hub_);
   }
 
   /// @inheritdoc ITreasurySpoke

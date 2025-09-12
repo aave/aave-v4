@@ -218,11 +218,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   ) external onlyPositionManager(onBehalfOf) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    _validateWithdraw(reserve);
     uint256 assetId = reserve.assetId;
     IHubBase hub = reserve.hub;
-    _validateWithdraw(reserve);
 
-    // If withdraw amount exceeds user's total supplied, withdraw all user's supplied assets
     amount = MathUtils.min(amount, hub.previewRemoveByShares(assetId, userPosition.suppliedShares));
 
     uint256 withdrawnShares = hub.remove(assetId, amount, msg.sender);
