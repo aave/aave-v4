@@ -255,7 +255,7 @@ contract HubRefreshPremiumTest is HubBase {
     }
   }
 
-  function test_refreshPremium_spokeCannotRealizeExcess() public {
+  function test_refreshPremium_spokePremiumUpdateIsContained() public {
     uint256 assetId = daiAssetId;
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
