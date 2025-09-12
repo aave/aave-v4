@@ -36,10 +36,14 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     HUB = hub_;
   }
 
-  /// @inheritdoc IBasicInterestRateStrategy
+  /**
+   * @notice Sets the interest rate parameters for a specified asset.
+   * @dev data contains bps values encoded in bytes.
+   * @param assetId The identifier of the asset.
+   * @param data The encoded parameters used to configure the interest rate of the asset.
+   */
   function setInterestRateData(uint256 assetId, bytes calldata data) external {
     require(HUB == msg.sender, OnlyHub());
-    // data contains bps values encoded in bytes
     InterestRateData memory rateData = abi.decode(data, (InterestRateData));
     require(
       MIN_OPTIMAL_RATIO <= rateData.optimalUsageRatio &&
