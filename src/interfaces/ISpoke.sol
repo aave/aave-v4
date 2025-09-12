@@ -14,14 +14,25 @@ import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
  * @notice Full interface for Spoke
  */
 interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
+  /**
+   * @notice Emitted when a reserve is added.
+   * @param reserveId The identifier of the reserve.
+   * @param assetId The identifier of the asset.
+   * @param hub The address of the hub where the asset is listed.
+   */
   event AddReserve(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
+
+  /**
+   * @notice Emitted when a reserve configuration is updated.
+   * @param reserveId The identifier of the reserve.
+   * @param config The reserve configuration object.
+   */
   event ReserveConfigUpdate(uint256 indexed reserveId, DataTypes.ReserveConfig config);
 
   /**
    * @notice Emitted when a dynamic reserve config is added.
-   * @dev The config key is the next available key for the reserve, which is now the latest config
-   * key of the reserve. It can be an existing key that was previously used and is now being
-   * overridden.
+   * @dev The config key is the next available key for the reserve, which becomes the latest config
+   * key of the reserve. It can be an existing key that becomes overridden.
    * @param reserveId The identifier of the reserve.
    * @param configKey The key of the added dynamic config.
    * @param config The dynamic reserve config.
