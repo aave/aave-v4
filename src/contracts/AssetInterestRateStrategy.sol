@@ -29,6 +29,9 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @dev Map of assetId and their interest rate data (assetId => interestRateData)
   mapping(uint256 assetId => InterestRateData data) internal _interestRateData;
 
+  /// @dev Map of assetId and a flag indicating whether interest rate data is set
+  mapping(uint256 assetId => bool) internal _interestRateDataSet;
+
   /**
    * @dev Constructor.
    */
@@ -53,6 +56,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     );
 
     _interestRateData[assetId] = rateData;
+    _interestRateDataSet[assetId] = true;
 
     emit RateDataUpdate(
       assetId,
@@ -66,6 +70,11 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @inheritdoc IAssetInterestRateStrategy
   function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory) {
     return _interestRateData[assetId];
+  }
+
+  /// @inheritdoc IAssetInterestRateStrategy
+  function isInterestRateDataSet(uint256 assetId) external view returns (bool) {
+    return _interestRateDataSet[assetId];
   }
 
   /// @inheritdoc IAssetInterestRateStrategy

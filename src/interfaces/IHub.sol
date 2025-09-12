@@ -89,6 +89,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidAddress();
   error InvalidLiquidityFee();
   error InvalidAssetDecimals();
+  error InterestRateDataNotSet();
 
   /**
    * @notice Adds a new asset to the hub.
@@ -111,6 +112,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   /**
    * @notice Updates the configuration of an asset.
+   * @dev The interest rate data of the specified asset must be set in the new interest rate strategy contract.
    * @dev If the fee receiver is updated, it is added as a new spoke with maximum add cap and zero draw cap.
    * @param assetId The identifier of the asset.
    * @param config The new configuration for the asset.

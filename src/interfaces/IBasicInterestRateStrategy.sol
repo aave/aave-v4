@@ -26,4 +26,11 @@ interface IBasicInterestRateStrategy {
     uint256 deficit,
     uint256 swept
   ) external view returns (uint256 interestRate);
+
+  /**
+   * @notice Returns whether the interest rate data has been set for a given asset.
+   * @param assetId The id of the asset.
+   * @return True if the interest rate data has been set, false otherwise.
+   */
+  function isInterestRateDataSet(uint256 assetId) external view returns (bool);
 }

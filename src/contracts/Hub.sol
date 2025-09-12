@@ -18,6 +18,7 @@ import {Constants} from 'src/libraries/helpers/Constants.sol';
 
 import {IHubBase, IHub} from 'src/interfaces/IHub.sol';
 import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
+import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
 
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
@@ -123,6 +124,10 @@ contract Hub is IHub, AccessManaged {
 
     require(config.liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
     require(config.feeReceiver != address(0) && config.irStrategy != address(0), InvalidAddress());
+    require(
+      IBasicInterestRateStrategy(config.irStrategy).isInterestRateDataSet(assetId),
+      InterestRateDataNotSet()
+    );
     require(
       config.reinvestmentController != address(0) || asset.swept == 0,
       InvalidReinvestmentController()
