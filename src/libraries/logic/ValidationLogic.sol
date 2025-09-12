@@ -95,4 +95,33 @@ library ValidationLogic {
       IHub.DrawCapExceeded(drawCap)
     );
   }
+
+  /**
+   * @notice Validates the parameters for a restore action on the hub.
+   * @param spoke The data of the spoke performing the restore.
+   * @param assetId The identifier of the asset.
+   * @param drawnAmount The amount of drawn assets being restored.
+   * @param premiumAmount The amount of premium assets being restored.
+   * @param from The address initiating the restore action.
+   * @param hubAddress The address of the hub contract where the asset is being restored.
+   */
+  function validateRestore(
+    DataTypes.SpokeData storage spoke,
+    uint256 assetId,
+    uint256 drawnAmount,
+    uint256 premiumAmount,
+    address from,
+    address hubAddress
+  ) internal view {
+    IHub hub = IHub(hubAddress);
+    require(from != hubAddress, IHub.InvalidAddress());
+    require(drawnAmount + premiumAmount > 0, IHub.InvalidAmount());
+    require(spoke.active, IHub.SpokeNotActive());
+    uint256 drawn = hub.previewRestoreByShares(assetId, spoke.drawnShares);
+    uint256 premium = hub.previewRestoreByShares(assetId, spoke.premiumShares) -
+      spoke.premiumOffset +
+      spoke.realizedPremium;
+    require(drawnAmount <= drawn, IHub.SurplusAmountRestored(drawn));
+    require(premiumAmount <= premium, IHub.SurplusAmountRestored(premium));
+  }
 }

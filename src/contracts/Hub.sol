@@ -259,7 +259,14 @@ contract Hub is IHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
-    _validateRestore(spoke, assetId, drawnAmount, premiumAmount, from);
+    ValidationLogic.validateRestore(
+      spoke,
+      assetId,
+      drawnAmount,
+      premiumAmount,
+      from,
+      address(this)
+    );
 
     uint128 drawnShares = previewRestoreByAssets(assetId, drawnAmount).toUint128();
     asset.drawnShares -= drawnShares;
@@ -686,22 +693,6 @@ contract Hub is IHub, AccessManaged {
     uint256 accruedPremium = previewRestoreByShares(assetId, spoke.premiumShares) -
       spoke.premiumOffset;
     return spoke.realizedPremium + accruedPremium;
-  }
-
-  function _validateRestore(
-    DataTypes.SpokeData storage spoke,
-    uint256 assetId,
-    uint256 drawnAmount,
-    uint256 premiumAmount,
-    address from
-  ) internal view {
-    require(from != address(this), InvalidAddress());
-    require(drawnAmount + premiumAmount > 0, InvalidAmount());
-    require(spoke.active, SpokeNotActive());
-    uint256 drawn = _getSpokeDrawn(spoke, assetId);
-    uint256 premium = _getSpokePremium(spoke, assetId);
-    require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
-    require(premiumAmount <= premium, SurplusAmountRestored(premium));
   }
 
   function _validateReportDeficit(
