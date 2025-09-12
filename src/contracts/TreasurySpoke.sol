@@ -76,4 +76,68 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
   function liquidationCall(uint256, uint256, address, uint256) external pure {
     revert UnsupportedAction();
   }
+
+  /// @inheritdoc ISpokeBase
+  function getUserDebt(uint256 reserveId, address user) external pure returns (uint256, uint256) {
+    revert UnsupportedAction();
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getUserTotalDebt(uint256 reserveId, address user) external pure returns (uint256) {
+    revert UnsupportedAction();
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getUserDrawnShares(uint256 reserveId, address user) external pure returns (uint256) {
+    revert UnsupportedAction();
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getUserPremiumData(
+    uint256 reserveId,
+    address user
+  ) external pure returns (uint256, uint256, uint256) {
+    revert UnsupportedAction();
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getReserveSuppliedAssets(uint256 reserveId) external pure returns (uint256) {
+    revert UnsupportedAction();
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getReserveSuppliedShares(uint256 reserveId) external pure returns (uint256) {
+    revert UnsupportedAction();
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getUserSuppliedAssets(uint256 reserveId, address user) external pure returns (uint256) {
+    revert UnsupportedAction();
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getUserSuppliedShares(uint256 reserveId, address user) external pure returns (uint256) {
+    revert UnsupportedAction();
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getReserveDebt(uint256) external pure returns (uint256, uint256) {
+    revert UnsupportedAction();
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getReserveTotalDebt(uint256 reserveId) external pure returns (uint256) {
+    revert UnsupportedAction();
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getReserveDrawnShares(uint256 reserveId) external pure returns (uint256) {
+    revert UnsupportedAction();
+  }
+
+  function getReservePremiumData(
+    uint256 reserveId
+  ) external pure returns (uint256, uint256, uint256) {
+    revert UnsupportedAction();
+  }
 }

@@ -217,7 +217,7 @@ contract SpokeMulticall is SpokeBase {
     calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke1), true, alice));
     calls[2] = abi.encodeCall(ISpokeBase.borrow, (_daiReserveId(spoke1), 80e18, alice));
     calls[3] = abi.encodeCall(ISpoke.getUserRiskPremium, (alice));
-    calls[4] = abi.encodeCall(ISpoke.getUserDebt, (_daiReserveId(spoke1), alice));
+    calls[4] = abi.encodeCall(ISpokeBase.getUserDebt, (_daiReserveId(spoke1), alice));
 
     vm.prank(alice);
     bytes[] memory ret = spoke1.multicall(calls);

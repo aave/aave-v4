@@ -285,37 +285,9 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     uint16 configKey
   ) external view returns (DataTypes.DynamicReserveConfig memory);
 
-  function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256);
-
-  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
-
-  function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
-
-  function getReserveTotalDebt(uint256 reserveId) external view returns (uint256);
-
-  /**
-   * @notice Returns the amount of drawn shares for a given reserve.
-   * @param reserveId The identifier of the reserve.
-   * @return The amount of drawn shares.
-   */
-  function getReserveDrawnShares(uint256 reserveId) external view returns (uint256);
-
-  /**
-   * @notice Returns the information regarding premium shares for a given reserve.
-   * @param reserveId The identifier of the reserve.
-   * @return The amount of premium shares of the reserve.
-   * @return The premium offset of the reserve.
-   * @return The realized premium of the reserve.
-   */
-  function getReservePremiumData(
-    uint256 reserveId
-  ) external view returns (uint256, uint256, uint256);
-
   function getUserAccountData(
     address user
   ) external view returns (DataTypes.UserAccountData memory);
-
-  function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256);
 
   function getUserPosition(
     uint256 reserveId,
@@ -323,12 +295,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   ) external view returns (DataTypes.UserPosition memory);
 
   function getUserRiskPremium(address user) external view returns (uint256);
-
-  function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256);
-
-  function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
-
-  function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
 
   function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
 
