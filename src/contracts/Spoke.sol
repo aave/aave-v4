@@ -9,7 +9,7 @@ import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 
-// libraries
+import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
@@ -18,9 +18,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {SignatureCheckerHelper} from 'src/libraries/helpers/SignatureCheckerHelper.sol';
 
-// interfaces
 import {IHub} from 'src/interfaces/IHub.sol';
 import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
@@ -394,13 +392,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   /// @inheritdoc ISpoke
   function updateUserRiskPremium(address onBehalfOf) external {
-    DataTypes.UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf);
-    bool premiumIncrease = _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.userRiskPremium);
-
-    // check permissions if premium increases and not called by user
-    if (premiumIncrease && !_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
+    if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
+    _notifyRiskPremiumUpdate(onBehalfOf, _calculateUserAccountData(onBehalfOf).userRiskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -437,7 +432,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         )
       )
     );
-    require(SignatureCheckerHelper.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
 
@@ -916,17 +911,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    * @dev Trigger risk premium update on all drawn reserves of `user`.
    * @param user The address of the user whose risk premium is being updated.
    * @param newUserRiskPremium The new risk premium of the user.
-   * @return premiumIncrease True if the risk premium increased, false otherwise.
    */
-  function _notifyRiskPremiumUpdate(
-    address user,
-    uint256 newUserRiskPremium
-  ) internal returns (bool) {
+  function _notifyRiskPremiumUpdate(address user, uint256 newUserRiskPremium) internal {
     uint256 reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
 
     uint256 reserveId;
-    bool premiumIncrease;
     while (
       (reserveId = positionStatus.nextBorrowing(reserveId, reserveCount)) !=
       PositionStatus.NOT_FOUND
@@ -957,15 +947,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         realizedDelta: accruedUserPremium.toInt256()
       });
 
-      if (!premiumIncrease) premiumIncrease = premiumDelta.sharesDelta > 0;
-
       hub.refreshPremium(assetId, premiumDelta);
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
       reserveId = reserveId.uncheckedAdd(1);
     }
     emit UserRiskPremiumUpdate(user, newUserRiskPremium);
-
-    return premiumIncrease;
   }
 
   /**
