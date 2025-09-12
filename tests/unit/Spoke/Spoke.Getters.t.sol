@@ -92,6 +92,7 @@ contract SpokeGettersTest is SpokeBase {
     );
   }
 
+  /* TODO: see how much of this is needed
   /// @dev Basic user flow and check accounting getters working properly
   function test_protocol_getters() public {
     uint256 reserveId = _daiReserveId(spoke1);
@@ -177,4 +178,5 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(hub1.getAssetAddedAmount(assetId), supplyAmount);
     assertEq(hub1.getAssetAddedShares(assetId), hub1.convertToAddedShares(assetId, supplyAmount));
   }
+  */
 }

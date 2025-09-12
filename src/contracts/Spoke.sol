@@ -514,20 +514,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     return drawnDebt + premiumDebt;
   }
 
-  /// @inheritdoc ISpokeBase
-  function getUserDrawnShares(uint256 reserveId, address user) external view returns (uint256) {
-    return _userPositions[user][reserveId].drawnShares;
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getUserPremiumData(
-    uint256 reserveId,
-    address user
-  ) external view returns (uint256, uint256, uint256) {
-    DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
-    return (userPosition.premiumShares, userPosition.premiumOffset, userPosition.realizedPremium);
-  }
-
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     return reserve.hub.getSpokeAddedAssets(reserve.assetId, address(this));
@@ -572,20 +558,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       address(this)
     );
     return drawnDebt + premiumDebt;
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getReserveDrawnShares(uint256 reserveId) external view returns (uint256) {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    return reserve.hub.getSpokeDrawnShares(reserve.assetId, address(this));
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getReservePremiumData(
-    uint256 reserveId
-  ) external view returns (uint256 premiumShares, uint256 premiumOffset, uint256 accruedPremium) {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    return reserve.hub.getSpokePremiumData(reserve.assetId, address(this));
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {

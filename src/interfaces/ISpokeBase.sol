@@ -162,27 +162,6 @@ interface ISpokeBase {
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
 
   /**
-   * @notice Returns the amount of drawn shares for a specific user for a given reserve.
-   * @param reserveId The identifier of the reserve.
-   * @param user The address of the user.
-   * @return The amount of drawn shares.
-   */
-  function getUserDrawnShares(uint256 reserveId, address user) external view returns (uint256);
-
-  /**
-   * @notice Returns the information regarding premium shares for a specific user for a given reserve.
-   * @param reserveId The identifier of the reserve.
-   * @param user The address of the user.
-   * @return The amount of premium shares of the user.
-   * @return The premium offset of the user.
-   * @return The realized premium of the user.
-   */
-  function getUserPremiumData(
-    uint256 reserveId,
-    address user
-  ) external view returns (uint256, uint256, uint256);
-
-  /**
    * @notice Returns the total amount of supplied assets of a given reserve.
    * @param reserveId The identifier of the reserve.
    * @return The amount of supplied assets.
@@ -228,22 +207,4 @@ interface ISpokeBase {
    * @return The total debt amount.
    */
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256);
-
-  /**
-   * @notice Returns the amount of drawn shares for a given reserve.
-   * @param reserveId The identifier of the reserve.
-   * @return The amount of drawn shares.
-   */
-  function getReserveDrawnShares(uint256 reserveId) external view returns (uint256);
-
-  /**
-   * @notice Returns the information regarding premium shares for a given reserve.
-   * @param reserveId The identifier of the reserve.
-   * @return The amount of premium shares of the reserve.
-   * @return The premium offset of the reserve.
-   * @return The realized premium of the reserve.
-   */
-  function getReservePremiumData(
-    uint256 reserveId
-  ) external view returns (uint256, uint256, uint256);
 }

@@ -88,19 +88,6 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
   }
 
   /// @inheritdoc ISpokeBase
-  function getUserDrawnShares(uint256 reserveId, address user) external pure returns (uint256) {
-    revert UnsupportedAction();
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getUserPremiumData(
-    uint256 reserveId,
-    address user
-  ) external pure returns (uint256, uint256, uint256) {
-    revert UnsupportedAction();
-  }
-
-  /// @inheritdoc ISpokeBase
   function getReserveSuppliedAssets(uint256 reserveId) external pure returns (uint256) {
     revert UnsupportedAction();
   }
@@ -127,11 +114,6 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
 
   /// @inheritdoc ISpokeBase
   function getReserveTotalDebt(uint256 reserveId) external pure returns (uint256) {
-    revert UnsupportedAction();
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getReserveDrawnShares(uint256 reserveId) external pure returns (uint256) {
     revert UnsupportedAction();
   }
 
