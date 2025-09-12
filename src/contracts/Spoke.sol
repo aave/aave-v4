@@ -31,7 +31,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using PositionStatus for *;
   using MathUtils for *;
 
-  IAaveOracle public _oracle;
+  IAaveOracle internal _oracle;
   uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
