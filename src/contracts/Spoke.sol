@@ -93,6 +93,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     emit LiquidationConfigUpdate(config);
   }
 
+  /// @inheritdoc ISpoke
   function addReserve(
     address hub,
     uint256 assetId,
@@ -102,6 +103,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   ) external restricted returns (uint256) {
     require(hub != address(0), InvalidAddress());
     require(!_reserveExists[hub][assetId], ReserveExists());
+    require(assetId < type(uint16).max, InvalidAssetId());
 
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
@@ -116,7 +118,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     _reserves[reserveId] = DataTypes.Reserve({
       underlying: asset.underlying,
       hub: IHub(hub),
-      assetId: assetId.toUint16(),
+      assetId: uint16(assetId),
       decimals: asset.decimals,
       dynamicConfigKey: dynamicConfigKey,
       paused: config.paused,

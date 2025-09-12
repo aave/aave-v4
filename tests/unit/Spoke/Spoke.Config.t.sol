@@ -269,6 +269,30 @@ contract SpokeConfigTest is SpokeBase {
     );
   }
 
+  function test_addReserve_revertsWith_InvalidAssetId() public {
+    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
+      paused: true,
+      frozen: true,
+      borrowable: true,
+      collateralRisk: 10_00
+    });
+    DataTypes.DynamicReserveConfig memory newDynReserveConfig = DataTypes.DynamicReserveConfig({
+      collateralFactor: 10_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 10_00
+    });
+
+    vm.expectRevert(ISpoke.InvalidAssetId.selector, address(spoke1));
+    vm.prank(ADMIN);
+    spoke1.addReserve(
+      address(hub1),
+      type(uint16).max,
+      address(0),
+      newReserveConfig,
+      newDynReserveConfig
+    );
+  }
+
   function test_updateLiquidationConfig_targetHealthFactor() public {
     uint128 newTargetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1;
 

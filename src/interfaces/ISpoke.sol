@@ -104,6 +104,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   error AssetNotListed();
   error ReserveExists();
+  error InvalidAssetId();
   error ReserveNotListed();
   error InsufficientSupply(uint256 supply);
   error ReserveNotBorrowable();
@@ -137,12 +138,20 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;
 
+  /**
+   * @notice Adds a new reserve to the spoke.
+   * @param hub The address of the Hub where the asset is listed.
+   * @param assetId The identifier of the asset in the Hub.
+   * @param priceSource The address of the price source for the asset.
+   * @param config The initial reserve configuration.
+   * @param dynamicConfig The initial dynamic reserve configuration.
+   */
   function addReserve(
     address hub,
     uint256 assetId,
     address priceSource,
     DataTypes.ReserveConfig calldata config,
-    DataTypes.DynamicReserveConfig calldata dynConfig
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external returns (uint256);
 
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;
