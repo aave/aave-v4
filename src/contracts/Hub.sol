@@ -50,7 +50,7 @@ contract Hub is IHub, AccessManaged {
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
-    bytes calldata data
+    bytes calldata interestRateData
   ) external restricted returns (uint256) {
     require(
       underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
@@ -59,7 +59,7 @@ contract Hub is IHub, AccessManaged {
     require(decimals <= Constants.MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
 
     uint256 assetId = _assetCount++;
-    IAssetInterestRateStrategy(irStrategy).setInterestRateData(assetId, data);
+    IAssetInterestRateStrategy(irStrategy).setInterestRateData(assetId, interestRateData);
     uint256 drawnRate = IAssetInterestRateStrategy(irStrategy).calculateInterestRate({
       assetId: assetId,
       liquidity: 0,
@@ -115,7 +115,8 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function updateAssetConfig(
     uint256 assetId,
-    DataTypes.AssetConfig calldata config
+    DataTypes.AssetConfig calldata config,
+    bytes calldata interestRateData
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     DataTypes.Asset storage asset = _assets[assetId];
@@ -127,6 +128,12 @@ contract Hub is IHub, AccessManaged {
       config.reinvestmentController != address(0) || asset.swept == 0,
       InvalidReinvestmentController()
     );
+
+    if (config.irStrategy != asset.irStrategy) {
+      IAssetInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, interestRateData);
+    } else {
+      require(interestRateData.length == 0, InvalidInterestRateStrategyUpdate());
+    }
 
     asset.liquidityFee = config.liquidityFee;
     asset.irStrategy = config.irStrategy;
@@ -168,10 +175,13 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function setInterestRateData(uint256 assetId, bytes calldata data) external restricted {
+  function setInterestRateData(
+    uint256 assetId,
+    bytes calldata interestRateData
+  ) external restricted {
     DataTypes.Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
-    IAssetInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, data);
+    IAssetInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, interestRateData);
     asset.updateDrawnRate(assetId);
   }
 

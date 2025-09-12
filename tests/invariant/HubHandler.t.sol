@@ -72,7 +72,8 @@ contract HubHandler is Test {
         liquidityFee: 0,
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
-      })
+      }),
+      abi.encode()
     );
     spoke1.addReserve(
       address(hub1),

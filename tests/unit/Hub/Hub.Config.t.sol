@@ -300,7 +300,7 @@ contract HubConfigTest is HubBase {
       .toUint16();
     vm.expectRevert(IHub.InvalidLiquidityFee.selector, address(hub1));
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, newConfig);
+    hub1.updateAssetConfig(assetId, newConfig, abi.encode());
   }
 
   // @dev can only reset reinvestment strategy if swept is zero
@@ -312,7 +312,7 @@ contract HubConfigTest is HubBase {
     assertEq(hub1.getSwept(assetId), 0);
 
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, config);
+    hub1.updateAssetConfig(assetId, config, abi.encode());
     assertEq(hub1.getAsset(assetId).reinvestmentController, address(0));
 
     address reinvestmentController = makeAddr('reinvestmentController');
@@ -327,19 +327,50 @@ contract HubConfigTest is HubBase {
 
     vm.expectRevert(IHub.InvalidReinvestmentController.selector, address(hub1));
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, config);
+    hub1.updateAssetConfig(assetId, config, abi.encode());
   }
 
-  function test_updateAssetConfig_fuzz_revertsWith_InterestRateStrategyReverts(
+  function test_updateAssetConfig_fuzz_revertsWith_calculateInterestRateReverts(
     uint256 assetId,
     DataTypes.AssetConfig memory newConfig
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
     assumeUnusedAddress(newConfig.irStrategy);
-    vm.expectRevert(address(hub1));
+
+    vm.mockCall(
+      newConfig.irStrategy,
+      abi.encodeCall(IAssetInterestRateStrategy.setInterestRateData, (assetId, encodedIrData)),
+      abi.encode()
+    );
+    vm.mockCallRevert(
+      newConfig.irStrategy,
+      IBasicInterestRateStrategy.calculateInterestRate.selector,
+      'custom revert'
+    );
+
+    vm.expectRevert(address(newConfig.irStrategy));
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, newConfig);
+    hub1.updateAssetConfig(assetId, newConfig, encodedIrData);
+  }
+
+  function test_updateAssetConfig_fuzz_revertsWith_setInterestRateDataReverts(
+    uint256 assetId,
+    DataTypes.AssetConfig memory newConfig
+  ) public {
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
+    _assumeValidAssetConfig(assetId, newConfig);
+    assumeUnusedAddress(newConfig.irStrategy);
+
+    vm.mockCallRevert(
+      newConfig.irStrategy,
+      abi.encodeCall(IAssetInterestRateStrategy.setInterestRateData, (assetId, encodedIrData)),
+      'custom revert'
+    );
+
+    vm.expectRevert(address(newConfig.irStrategy));
+    vm.prank(HUB_ADMIN);
+    hub1.updateAssetConfig(assetId, newConfig, encodedIrData);
   }
 
   function test_updateAssetConfig_fuzz(
@@ -349,6 +380,11 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
     _mockInterestRateBps(newConfig.irStrategy, 5_00);
+    vm.mockCall(
+      newConfig.irStrategy,
+      abi.encodeCall(IAssetInterestRateStrategy.setInterestRateData, (assetId, encodedIrData)),
+      abi.encode()
+    );
 
     uint256 liquidity = hub1.getLiquidity(assetId);
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
@@ -386,7 +422,22 @@ contract HubConfigTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.AssetConfigUpdate(assetId, newConfig);
 
-    Utils.updateAssetConfig(hub1, ADMIN, assetId, newConfig);
+    // if ir strategy is new, expect an emit of setInterestRateData
+    bool isNewIrStrategy = newConfig.irStrategy != hub1.getAsset(assetId).irStrategy;
+    if (isNewIrStrategy) {
+      vm.expectCall(
+        newConfig.irStrategy,
+        abi.encodeCall(IAssetInterestRateStrategy.setInterestRateData, (assetId, encodedIrData))
+      );
+    }
+
+    Utils.updateAssetConfig(
+      hub1,
+      ADMIN,
+      assetId,
+      newConfig,
+      isNewIrStrategy ? encodedIrData : abi.encode()
+    );
 
     assertEq(hub1.getAssetConfig(assetId), newConfig);
     assertBorrowRateSynced(hub1, assetId, 'updateAssetConfig');
@@ -455,7 +506,7 @@ contract HubConfigTest is HubBase {
     config.feeReceiver = address(treasurySpoke);
 
     vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
-    Utils.updateAssetConfig(hub1, ADMIN, assetId, config);
+    Utils.updateAssetConfig(hub1, ADMIN, assetId, config, abi.encode());
 
     assertEq(hub1.getSpokeAddedShares(assetId, config.feeReceiver), oldFees);
     assertEq(hub1.getSpokeAddedShares(assetId, newFeeReceiver), newFees);
@@ -473,7 +524,7 @@ contract HubConfigTest is HubBase {
 
     vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, config);
+    hub1.updateAssetConfig(assetId, config, abi.encode());
   }
 
   /// Updates the fee receiver to an existing spoke of the hub1 which is already listed on the asset
@@ -492,7 +543,16 @@ contract HubConfigTest is HubBase {
 
     vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, config);
+    hub1.updateAssetConfig(assetId, config, abi.encode());
+  }
+
+  function test_updateAssetConfig_fuzz_revertsWith_InvalidInterestRateStrategyUpdate(
+    uint256 assetId
+  ) public {
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
+    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    vm.expectRevert(IHub.InvalidInterestRateStrategyUpdate.selector, address(hub1));
+    Utils.updateAssetConfig(hub1, ADMIN, assetId, config, encodedIrData);
   }
 
   /// Triggers accrual when liquidity fee update, based on old liquidity fee
@@ -558,7 +618,13 @@ contract HubConfigTest is HubBase {
     _mockInterestRateRay(address(newIrStrategy), hub1.getAssetDrawnRate(assetId) * 10);
     DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
     config.irStrategy = address(newIrStrategy);
-    Utils.updateAssetConfig(hub1, ADMIN, assetId, config);
+
+    vm.expectCall(
+      address(newIrStrategy),
+      abi.encodeCall(IAssetInterestRateStrategy.setInterestRateData, (assetId, encodedIrData)),
+      1
+    );
+    Utils.updateAssetConfig(hub1, ADMIN, assetId, config, encodedIrData);
 
     skip(365 days);
     assertNotEq(hub1.getSpokeAddedShares(assetId, config.feeReceiver), futureFees);

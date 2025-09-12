@@ -31,7 +31,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address underlying,
     address feeReceiver,
     address irStrategy,
-    bytes calldata data
+    bytes calldata interestRateData
   ) external override onlyOwner returns (uint256) {
     return
       IHub(hub).addAsset(
@@ -39,7 +39,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
         IERC20Metadata(underlying).decimals(),
         feeReceiver,
         irStrategy,
-        data
+        interestRateData
       );
   }
 
@@ -50,9 +50,9 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
-    bytes calldata data
+    bytes calldata interestRateData
   ) external override onlyOwner returns (uint256) {
-    return IHub(hub).addAsset(underlying, decimals, feeReceiver, irStrategy, data);
+    return IHub(hub).addAsset(underlying, decimals, feeReceiver, irStrategy, interestRateData);
   }
 
   /// @inheritdoc IHubConfigurator
@@ -64,7 +64,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
-    targetHub.updateAssetConfig(assetId, config);
+    targetHub.updateAssetConfig(assetId, config, abi.encode());
   }
 
   /// @inheritdoc IHubConfigurator
@@ -77,7 +77,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     _updateSpokeCaps(targetHub, assetId, config.feeReceiver, 0, 0);
     config.feeReceiver = feeReceiver;
-    targetHub.updateAssetConfig(assetId, config);
+    targetHub.updateAssetConfig(assetId, config, abi.encode());
   }
 
   /// @inheritdoc IHubConfigurator
@@ -92,19 +92,20 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     _updateSpokeCaps(targetHub, assetId, config.feeReceiver, 0, 0);
     config.liquidityFee = liquidityFee.toUint16();
     config.feeReceiver = feeReceiver;
-    targetHub.updateAssetConfig(assetId, config);
+    targetHub.updateAssetConfig(assetId, config, abi.encode());
   }
 
   /// @inheritdoc IHubConfigurator
   function updateInterestRateStrategy(
     address hub,
     uint256 assetId,
-    address irStrategy
+    address irStrategy,
+    bytes calldata interestRateData
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.irStrategy = irStrategy;
-    targetHub.updateAssetConfig(assetId, config);
+    targetHub.updateAssetConfig(assetId, config, interestRateData);
   }
 
   /// @inheritdoc IHubConfigurator
@@ -116,7 +117,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.reinvestmentController = reinvestmentController;
-    targetHub.updateAssetConfig(assetId, config);
+    targetHub.updateAssetConfig(assetId, config, abi.encode());
   }
 
   /// @inheritdoc IHubConfigurator
@@ -242,9 +243,9 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   function updateInterestRateData(
     address hub,
     uint256 assetId,
-    bytes calldata data
+    bytes calldata interestRateData
   ) external override onlyOwner {
-    IHub(hub).setInterestRateData(assetId, data);
+    IHub(hub).setInterestRateData(assetId, interestRateData);
   }
 
   /**

@@ -89,6 +89,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidAddress();
   error InvalidLiquidityFee();
   error InvalidAssetDecimals();
+  error InvalidInterestRateStrategyUpdate();
 
   /**
    * @notice Adds a new asset to the hub.
@@ -98,7 +99,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @param decimals The number of decimals of the asset.
    * @param feeReceiver The address of the fee receiver spoke.
    * @param irStrategy The address of the interest rate strategy contract.
-   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
+   * @param interestRateData The interest rate data to apply to the given asset encoded in bytes.
    * @return The unique identifier of the added asset.
    */
   function addAsset(
@@ -106,7 +107,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
-    bytes calldata data
+    bytes calldata interestRateData
   ) external returns (uint256);
 
   /**
@@ -114,8 +115,13 @@ interface IHub is IHubBase, IAccessManaged {
    * @dev If the fee receiver is updated, it is added as a new spoke with maximum add cap and zero draw cap.
    * @param assetId The identifier of the asset.
    * @param config The new configuration for the asset.
+   * @param interestRateData The interest rate data to apply to the given asset, encoded in bytes.
    */
-  function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external;
+  function updateAssetConfig(
+    uint256 assetId,
+    DataTypes.AssetConfig calldata config,
+    bytes calldata interestRateData
+  ) external;
 
   /**
    * @notice Registers a new spoke for a specific asset in the hub.
@@ -141,9 +147,9 @@ interface IHub is IHubBase, IAccessManaged {
   /**
    * @notice Updates the interest rate strategy for a specified asset.
    * @param assetId The identifier of the asset.
-   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
+   * @param interestRateData The interest rate data to apply to the given asset, encoded in bytes.
    */
-  function setInterestRateData(uint256 assetId, bytes calldata data) external;
+  function setInterestRateData(uint256 assetId, bytes calldata interestRateData) external;
 
   /**
    * @notice Refreshes premium accounting.

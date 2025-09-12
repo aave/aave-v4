@@ -42,7 +42,8 @@ contract HubTransferSharesTest is HubBase {
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
-      })
+      }),
+      abi.encode()
     );
     hub1.addSpoke(zeroDecimalAssetId, address(spoke1), spokeConfig);
     hub1.addSpoke(zeroDecimalAssetId, address(spoke2), spokeConfig);

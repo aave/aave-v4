@@ -98,10 +98,11 @@ library Utils {
     IHub hub,
     address hubAdmin,
     uint256 assetId,
-    DataTypes.AssetConfig memory config
+    DataTypes.AssetConfig memory config,
+    bytes memory encodedIrData
   ) internal {
     vm.prank(hubAdmin);
-    hub.updateAssetConfig(assetId, config);
+    hub.updateAssetConfig(assetId, config, encodedIrData);
   }
 
   // spoke
