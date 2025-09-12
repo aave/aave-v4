@@ -77,6 +77,11 @@ contract MathUtilsTest is Test {
     MathUtils.add(UINT256_MAX, 1);
   }
 
+  function test_uncheckedAdd(uint256 a, uint256 b) public pure {
+    uint256 result = MathUtils.uncheckedAdd(a, b);
+    assertEq(result, b <= UINT256_MAX - a ? a + b : a - (UINT256_MAX - b) - 1);
+  }
+
   function test_signedSub(uint256 a, uint256 b) public pure {
     a = bound(a, 0, uint256(INT256_MAX));
     b = bound(b, 0, uint256(INT256_MAX));
@@ -93,6 +98,26 @@ contract MathUtilsTest is Test {
     assertEq(MathUtils.uncheckedSub(a, b), result);
   }
 
+  function test_uncheckedExp(uint256 a, uint256 b) public pure {
+    uint256 result = MathUtils.uncheckedExp(a, b);
+
+    uint256 expectedRes = 1;
+    uint256 aPow = a;
+    for (uint256 p = b; p != 0; p >>= 1) {
+      if ((p & 1) == 1) {
+        unchecked {
+          expectedRes = expectedRes * aPow;
+        }
+      }
+
+      unchecked {
+        aPow = aPow * aPow;
+      }
+    }
+
+    assertEq(result, expectedRes);
+  }
+
   function test_mulDivDown_WithRemainder() external pure {
     assertEq(MathUtils.mulDivDown(2, 13, 3), 8); // 26 / 3 = 8.666 -> floor -> 8
   }
@@ -101,18 +126,15 @@ contract MathUtilsTest is Test {
     assertEq(MathUtils.mulDivDown(12, 6, 4), 18); // 72 / 4 = 18, no floor
   }
 
-
   function test_mulDivDown_ZeroAOrB() external pure {
     assertEq(MathUtils.mulDivDown(0, 10, 5), 0);
     assertEq(MathUtils.mulDivDown(10, 0, 5), 0);
   }
 
-
   function test_mulDivDown_RevertOnDivByZero() external {
     vm.expectRevert();
     MathUtils.mulDivDown(10, 10, 0);
   }
-
 
   function test_mulDivDown_RevertOnOverflow() external {
     uint256 max = type(uint256).max;

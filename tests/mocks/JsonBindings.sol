@@ -42,6 +42,20 @@ library JsonBindings {
   string constant schema_SetUserPositionManager = "SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)";
   // prettier-ignore
   string constant schema_Permit = "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_Supply = "Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_Withdraw = "Withdraw(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_Borrow = "Borrow(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_Repay = "Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_SetUsingAsCollateral = "SetUsingAsCollateral(address spoke,uint256 reserveId,bool useAsCollateral,address onBehalfOf,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_UpdateUserRiskPremium = "UpdateUserRiskPremium(address spoke,address user,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_UpdateUserDynamicConfig = "UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)";
 
   function serialize(
     EIP712Types.SetUserPositionManager memory value
@@ -118,5 +132,268 @@ library JsonBindings {
     string memory path
   ) public pure returns (EIP712Types.Permit[] memory) {
     return abi.decode(vm.parseJsonTypeArray(json, path, schema_Permit), (EIP712Types.Permit[]));
+  }
+
+  function serialize(EIP712Types.Supply memory value) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_Supply, abi.encode(value));
+  }
+
+  function serialize(
+    EIP712Types.Supply memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return vm.serializeJsonType(objectKey, valueKey, schema_Supply, abi.encode(value));
+  }
+
+  function deserializeSupply(string memory json) public pure returns (EIP712Types.Supply memory) {
+    return abi.decode(vm.parseJsonType(json, schema_Supply), (EIP712Types.Supply));
+  }
+
+  function deserializeSupply(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.Supply memory) {
+    return abi.decode(vm.parseJsonType(json, path, schema_Supply), (EIP712Types.Supply));
+  }
+
+  function deserializeSupplyArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.Supply[] memory) {
+    return abi.decode(vm.parseJsonTypeArray(json, path, schema_Supply), (EIP712Types.Supply[]));
+  }
+
+  function serialize(EIP712Types.Withdraw memory value) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_Withdraw, abi.encode(value));
+  }
+
+  function serialize(
+    EIP712Types.Withdraw memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return vm.serializeJsonType(objectKey, valueKey, schema_Withdraw, abi.encode(value));
+  }
+
+  function deserializeWithdraw(
+    string memory json
+  ) public pure returns (EIP712Types.Withdraw memory) {
+    return abi.decode(vm.parseJsonType(json, schema_Withdraw), (EIP712Types.Withdraw));
+  }
+
+  function deserializeWithdraw(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.Withdraw memory) {
+    return abi.decode(vm.parseJsonType(json, path, schema_Withdraw), (EIP712Types.Withdraw));
+  }
+
+  function deserializeWithdrawArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.Withdraw[] memory) {
+    return abi.decode(vm.parseJsonTypeArray(json, path, schema_Withdraw), (EIP712Types.Withdraw[]));
+  }
+
+  function serialize(EIP712Types.Borrow memory value) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_Borrow, abi.encode(value));
+  }
+
+  function serialize(
+    EIP712Types.Borrow memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return vm.serializeJsonType(objectKey, valueKey, schema_Borrow, abi.encode(value));
+  }
+
+  function deserializeBorrow(string memory json) public pure returns (EIP712Types.Borrow memory) {
+    return abi.decode(vm.parseJsonType(json, schema_Borrow), (EIP712Types.Borrow));
+  }
+
+  function deserializeBorrow(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.Borrow memory) {
+    return abi.decode(vm.parseJsonType(json, path, schema_Borrow), (EIP712Types.Borrow));
+  }
+
+  function deserializeBorrowArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.Borrow[] memory) {
+    return abi.decode(vm.parseJsonTypeArray(json, path, schema_Borrow), (EIP712Types.Borrow[]));
+  }
+
+  function serialize(EIP712Types.Repay memory value) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_Repay, abi.encode(value));
+  }
+
+  function serialize(
+    EIP712Types.Repay memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return vm.serializeJsonType(objectKey, valueKey, schema_Repay, abi.encode(value));
+  }
+
+  function deserializeRepay(string memory json) public pure returns (EIP712Types.Repay memory) {
+    return abi.decode(vm.parseJsonType(json, schema_Repay), (EIP712Types.Repay));
+  }
+
+  function deserializeRepay(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.Repay memory) {
+    return abi.decode(vm.parseJsonType(json, path, schema_Repay), (EIP712Types.Repay));
+  }
+
+  function deserializeRepayArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.Repay[] memory) {
+    return abi.decode(vm.parseJsonTypeArray(json, path, schema_Repay), (EIP712Types.Repay[]));
+  }
+
+  function serialize(
+    EIP712Types.SetUsingAsCollateral memory value
+  ) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_SetUsingAsCollateral, abi.encode(value));
+  }
+
+  function serialize(
+    EIP712Types.SetUsingAsCollateral memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return
+      vm.serializeJsonType(objectKey, valueKey, schema_SetUsingAsCollateral, abi.encode(value));
+  }
+
+  function deserializeSetUsingAsCollateral(
+    string memory json
+  ) public pure returns (EIP712Types.SetUsingAsCollateral memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, schema_SetUsingAsCollateral),
+        (EIP712Types.SetUsingAsCollateral)
+      );
+  }
+
+  function deserializeSetUsingAsCollateral(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.SetUsingAsCollateral memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, path, schema_SetUsingAsCollateral),
+        (EIP712Types.SetUsingAsCollateral)
+      );
+  }
+
+  function deserializeSetUsingAsCollateralArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.SetUsingAsCollateral[] memory) {
+    return
+      abi.decode(
+        vm.parseJsonTypeArray(json, path, schema_SetUsingAsCollateral),
+        (EIP712Types.SetUsingAsCollateral[])
+      );
+  }
+
+  function serialize(
+    EIP712Types.UpdateUserRiskPremium memory value
+  ) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_UpdateUserRiskPremium, abi.encode(value));
+  }
+
+  function serialize(
+    EIP712Types.UpdateUserRiskPremium memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return
+      vm.serializeJsonType(objectKey, valueKey, schema_UpdateUserRiskPremium, abi.encode(value));
+  }
+
+  function deserializeUpdateUserRiskPremium(
+    string memory json
+  ) public pure returns (EIP712Types.UpdateUserRiskPremium memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, schema_UpdateUserRiskPremium),
+        (EIP712Types.UpdateUserRiskPremium)
+      );
+  }
+
+  function deserializeUpdateUserRiskPremium(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.UpdateUserRiskPremium memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, path, schema_UpdateUserRiskPremium),
+        (EIP712Types.UpdateUserRiskPremium)
+      );
+  }
+
+  function deserializeUpdateUserRiskPremiumArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.UpdateUserRiskPremium[] memory) {
+    return
+      abi.decode(
+        vm.parseJsonTypeArray(json, path, schema_UpdateUserRiskPremium),
+        (EIP712Types.UpdateUserRiskPremium[])
+      );
+  }
+
+  function serialize(
+    EIP712Types.UpdateUserDynamicConfig memory value
+  ) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_UpdateUserDynamicConfig, abi.encode(value));
+  }
+
+  function serialize(
+    EIP712Types.UpdateUserDynamicConfig memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return
+      vm.serializeJsonType(objectKey, valueKey, schema_UpdateUserDynamicConfig, abi.encode(value));
+  }
+
+  function deserializeUpdateUserDynamicConfig(
+    string memory json
+  ) public pure returns (EIP712Types.UpdateUserDynamicConfig memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, schema_UpdateUserDynamicConfig),
+        (EIP712Types.UpdateUserDynamicConfig)
+      );
+  }
+
+  function deserializeUpdateUserDynamicConfig(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.UpdateUserDynamicConfig memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, path, schema_UpdateUserDynamicConfig),
+        (EIP712Types.UpdateUserDynamicConfig)
+      );
+  }
+
+  function deserializeUpdateUserDynamicConfigArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.UpdateUserDynamicConfig[] memory) {
+    return
+      abi.decode(
+        vm.parseJsonTypeArray(json, path, schema_UpdateUserDynamicConfig),
+        (EIP712Types.UpdateUserDynamicConfig[])
+      );
   }
 }

@@ -36,7 +36,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     });
     DataTypes.DynamicReserveConfig memory dynDaiHub2Config = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     daiHub2ReserveId = spoke1.addReserve(
@@ -56,7 +56,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     });
     DataTypes.DynamicReserveConfig memory dynDaiHub3Config = DataTypes.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     daiHub3ReserveId = spoke1.addReserve(
