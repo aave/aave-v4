@@ -90,12 +90,7 @@ contract Hub is IHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
-    _addSpoke(assetId, feeReceiver);
-    _updateSpokeConfig(
-      assetId,
-      feeReceiver,
-      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: 0, active: true})
-    );
+    _addFeeReceiver(assetId, feeReceiver);
 
     emit AddAsset(assetId, underlying, decimals);
     emit UpdateAssetConfig(
@@ -137,13 +132,9 @@ contract Hub is IHub, AccessManaged {
     }
 
     if (asset.feeReceiver != config.feeReceiver) {
+      _updateSpokeConfig(assetId, asset.feeReceiver, DataTypes.SpokeConfig(true, 0, 0));
       asset.feeReceiver = config.feeReceiver;
-      _addSpoke(assetId, config.feeReceiver);
-      _updateSpokeConfig(
-        assetId,
-        config.feeReceiver,
-        DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: 0, active: true})
-      );
+      _addFeeReceiver(assetId, config.feeReceiver);
     }
 
     asset.liquidityFee = config.liquidityFee;
@@ -830,5 +821,14 @@ contract Hub is IHub, AccessManaged {
   function _addSpoke(uint256 assetId, address spoke) internal {
     require(_assetToSpokes[assetId].add(spoke), SpokeAlreadyListed());
     emit AddSpoke(assetId, spoke);
+  }
+
+  function _addFeeReceiver(uint256 assetId, address feeReceiver) internal {
+    _addSpoke(assetId, feeReceiver);
+    _updateSpokeConfig(
+      assetId,
+      feeReceiver,
+      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: 0, active: true})
+    );
   }
 }

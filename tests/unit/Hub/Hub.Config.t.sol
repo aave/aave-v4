@@ -483,6 +483,11 @@ contract HubConfigTest is HubBase {
 
     assertEq(hub1.getSpokeAddedShares(assetId, oldFeeReceiver), feesShares);
     assertEq(hub1.getSpokeAddedShares(assetId, config.feeReceiver), 0);
+
+    DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, oldFeeReceiver);
+    assertTrue(spokeConfig.active, 'old fee receiver remains active');
+    assertEq(spokeConfig.addCap, 0, 'old fee receiver add cap');
+    assertEq(spokeConfig.drawCap, 0, 'old fee receiver draw cap');
   }
 
   /// Updates the fee receiver by reusing a previously assigned spoke, with no impact on accrued fees

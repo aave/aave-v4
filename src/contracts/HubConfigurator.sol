@@ -75,7 +75,6 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    _updateSpokeCaps(targetHub, assetId, config.feeReceiver, 0, 0);
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config, new bytes(0));
   }
@@ -89,7 +88,6 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    _updateSpokeCaps(targetHub, assetId, config.feeReceiver, 0, 0);
     config.liquidityFee = liquidityFee.toUint16();
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config, new bytes(0));

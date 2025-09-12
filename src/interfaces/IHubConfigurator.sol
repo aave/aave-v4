@@ -66,7 +66,6 @@ interface IHubConfigurator {
   /**
    * @notice Updates the fee receiver of an asset.
    * @dev The fee receiver cannot be zero.
-   * @dev Before updating the fee receiver, it adjusts the spoke config of the old and new fee receivers.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
    * @param feeReceiver The new fee receiver.
@@ -75,7 +74,6 @@ interface IHubConfigurator {
 
   /**
    * @notice Updates the liquidity fee and fee receiver of an asset.
-   * @dev Before updating the fee receiver, it adjusts the spoke config of the old and new fee receivers.
    * @dev The fee receiver cannot be zero.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
