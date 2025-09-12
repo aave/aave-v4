@@ -10,6 +10,7 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
+import {ValidationLogic} from 'src/libraries/logic/ValidationLogic.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -181,7 +182,7 @@ contract Hub is IHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
-    _validateAdd(asset, spoke, assetId, amount, from);
+    ValidationLogic.validateAdd(asset, spoke, assetId, amount, from, address(this));
 
     uint128 shares = previewAddByAssets(assetId, amount).toUint128();
     require(shares > 0, InvalidShares());
@@ -204,7 +205,7 @@ contract Hub is IHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
-    _validateRemove(spoke, assetId, amount, to);
+    ValidationLogic.validateRemove(spoke, assetId, amount, to, address(this));
     uint256 liquidity = asset.liquidity;
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
@@ -228,7 +229,7 @@ contract Hub is IHub, AccessManaged {
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
-    _validateDraw(asset, spoke, assetId, amount, to);
+    ValidationLogic.validateDraw(asset, spoke, assetId, amount, to, address(this), msg.sender);
     uint256 liquidity = asset.liquidity;
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
@@ -685,56 +686,6 @@ contract Hub is IHub, AccessManaged {
     uint256 accruedPremium = previewRestoreByShares(assetId, spoke.premiumShares) -
       spoke.premiumOffset;
     return spoke.realizedPremium + accruedPremium;
-  }
-
-  function _validateAdd(
-    DataTypes.Asset storage asset,
-    DataTypes.SpokeData storage spoke,
-    uint256 assetId,
-    uint256 amount,
-    address from
-  ) internal view {
-    require(from != address(this), InvalidAddress());
-    require(amount > 0, InvalidAmount());
-    require(spoke.active, SpokeNotActive());
-    uint256 addCap = spoke.addCap;
-    require(
-      addCap == Constants.MAX_CAP ||
-        addCap * 10 ** asset.decimals >= previewAddByShares(assetId, spoke.addedShares) + amount,
-      AddCapExceeded(addCap)
-    );
-  }
-
-  function _validateRemove(
-    DataTypes.SpokeData storage spoke,
-    uint256 assetId,
-    uint256 amount,
-    address to
-  ) internal view {
-    require(to != address(this), InvalidAddress());
-    require(amount > 0, InvalidAmount());
-    require(spoke.active, SpokeNotActive());
-    uint256 removable = previewRemoveByShares(assetId, spoke.addedShares);
-    require(amount <= removable, AddedAmountExceeded(removable));
-  }
-
-  function _validateDraw(
-    DataTypes.Asset storage asset,
-    DataTypes.SpokeData storage spoke,
-    uint256 assetId,
-    uint256 amount,
-    address to
-  ) internal view {
-    require(to != address(this), InvalidAddress());
-    require(amount > 0, InvalidAmount());
-    require(spoke.active, SpokeNotActive());
-    uint256 drawCap = spoke.drawCap;
-    uint256 drawn = _getSpokeDrawn(spoke, assetId);
-    uint256 premium = _getSpokePremium(spoke, assetId);
-    require(
-      drawCap == Constants.MAX_CAP || drawCap * 10 ** asset.decimals >= drawn + premium + amount,
-      DrawCapExceeded(drawCap)
-    );
   }
 
   function _validateRestore(

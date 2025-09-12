@@ -40,7 +40,6 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
 
   /// @inheritdoc ITreasurySpoke
   function withdraw(uint256 reserveId, uint256 amount, address) external onlyOwner {
-    // If amount to withdraw is greater than total supplied, withdraw all supplied assets
     amount = MathUtils.min(amount, HUB.getSpokeAddedAssets(reserveId, address(this)));
     HUB.remove(reserveId, amount, msg.sender);
   }
