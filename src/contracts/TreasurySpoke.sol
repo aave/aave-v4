@@ -78,14 +78,10 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
   }
 
   /// @inheritdoc ISpokeBase
-  function getUserDebt(uint256 reserveId, address user) external pure returns (uint256, uint256) {
-    return (0, 0);
-  }
+  function getUserDebt(uint256, address) external pure returns (uint256, uint256) {}
 
   /// @inheritdoc ISpokeBase
-  function getUserTotalDebt(uint256 reserveId, address user) external pure returns (uint256) {
-    return 0;
-  }
+  function getUserTotalDebt(uint256, address) external pure returns (uint256) {}
 
   /// @inheritdoc ISpokeBase
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
@@ -98,22 +94,14 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
   }
 
   /// @inheritdoc ISpokeBase
-  function getUserSuppliedAssets(uint256 reserveId, address user) external pure returns (uint256) {
-    return 0;
-  }
+  function getUserSuppliedAssets(uint256, address) external pure returns (uint256) {}
 
   /// @inheritdoc ISpokeBase
-  function getUserSuppliedShares(uint256 reserveId, address user) external pure returns (uint256) {
-    return 0;
-  }
+  function getUserSuppliedShares(uint256, address) external pure returns (uint256) {}
 
   /// @inheritdoc ISpokeBase
-  function getReserveDebt(uint256) external pure returns (uint256, uint256) {
-    return (0, 0);
-  }
+  function getReserveDebt(uint256) external pure returns (uint256, uint256) {}
 
   /// @inheritdoc ISpokeBase
-  function getReserveTotalDebt(uint256 reserveId) external pure returns (uint256) {
-    return 0;
-  }
+  function getReserveTotalDebt(uint256) external pure returns (uint256) {}
 }
