@@ -311,14 +311,14 @@ contract PositionStatusTest is Base {
 
       assertEq(p.isBorrowing(nextReserveId), borrowing);
       assertEq(p.isUsingAsCollateral(nextReserveId), collateral);
-      if (lastSeenReserveId > 0) lastSeenReserveId--;
+      if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
       while (lastSeenReserveId > nextReserveId) {
         assertFalse(p.isBorrowing(lastSeenReserveId));
         assertFalse(p.isUsingAsCollateral(lastSeenReserveId));
         lastSeenReserveId--;
       }
     }
-    if (lastSeenReserveId > 0) lastSeenReserveId--;
+    if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
     while (lastSeenReserveId > 0) {
       assertFalse(p.isBorrowing(lastSeenReserveId));
       assertFalse(p.isUsingAsCollateral(lastSeenReserveId));
@@ -336,13 +336,13 @@ contract PositionStatusTest is Base {
     uint256 nextReserveId = reserveCount;
     while ((nextReserveId = p.nextBorrowing(lastSeenReserveId)) != PositionStatus.NOT_FOUND) {
       assertTrue(p.isBorrowing(nextReserveId));
-      if (lastSeenReserveId > 0) lastSeenReserveId--;
+      if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
       while (lastSeenReserveId > nextReserveId) {
         assertFalse(p.isBorrowing(lastSeenReserveId));
         lastSeenReserveId--;
       }
     }
-    if (lastSeenReserveId > 0) lastSeenReserveId--;
+    if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
     while (lastSeenReserveId > 0) {
       assertFalse(p.isBorrowing(lastSeenReserveId));
       lastSeenReserveId--;
@@ -359,13 +359,13 @@ contract PositionStatusTest is Base {
     uint256 nextReserveId = reserveCount;
     while ((nextReserveId = p.nextCollateral(lastSeenReserveId)) != PositionStatus.NOT_FOUND) {
       assertTrue(p.isUsingAsCollateral(nextReserveId));
-      if (lastSeenReserveId > 0) lastSeenReserveId--;
+      if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
       while (lastSeenReserveId > nextReserveId) {
         assertFalse(p.isUsingAsCollateral(lastSeenReserveId));
         lastSeenReserveId--;
       }
     }
-    if (lastSeenReserveId > 0) lastSeenReserveId--;
+    if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
     while (lastSeenReserveId > 0) {
       assertFalse(p.isUsingAsCollateral(lastSeenReserveId));
       lastSeenReserveId--;
