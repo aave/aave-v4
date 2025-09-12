@@ -73,7 +73,7 @@ contract HubHandler is Test {
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
-      abi.encode()
+      new bytes(0)
     );
     spoke1.addReserve(
       address(hub1),

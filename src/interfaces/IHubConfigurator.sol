@@ -23,7 +23,7 @@ interface IHubConfigurator {
    * @param underlying The address of the underlying asset.
    * @param feeReceiver The address of the fee receiver spoke.
    * @param irStrategy The address of the interest rate strategy contract.
-   * @param interestRateData The interest rate data to apply to the given asset, encoded in bytes.
+   * @param irData The interest rate data to apply to the given asset, encoded in bytes.
    * @return The unique identifier of the added asset.
    */
   function addAsset(
@@ -31,7 +31,7 @@ interface IHubConfigurator {
     address underlying,
     address feeReceiver,
     address irStrategy,
-    bytes calldata interestRateData
+    bytes calldata irData
   ) external returns (uint256);
 
   /**
@@ -43,7 +43,7 @@ interface IHubConfigurator {
    * @param decimals The number of decimals of the asset.
    * @param feeReceiver The address of the fee receiver spoke.
    * @param irStrategy The address of the interest rate strategy contract.
-   * @param interestRateData The interest rate data to apply to the given asset, encoded in bytes.
+   * @param irData The interest rate data to apply to the given asset, encoded in bytes.
    * @return The unique identifier of the added asset.
    */
   function addAsset(
@@ -52,7 +52,7 @@ interface IHubConfigurator {
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
-    bytes calldata interestRateData
+    bytes calldata irData
   ) external returns (uint256);
 
   /**
@@ -94,13 +94,13 @@ interface IHubConfigurator {
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
    * @param irStrategy The new interest rate strategy.
-   * @param interestRateData The interest rate data to apply to the given asset, encoded in bytes.
+   * @param irData The interest rate data to apply to the given asset, encoded in bytes.
    */
   function updateInterestRateStrategy(
     address hub,
     uint256 assetId,
     address irStrategy,
-    bytes calldata interestRateData
+    bytes calldata irData
   ) external;
 
   /**
@@ -229,11 +229,7 @@ interface IHubConfigurator {
    * @notice Updates the interest rate data for an asset.
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
-   * @param interestRateData The interest rate data to apply to the given asset, encoded in bytes.
+   * @param irData The interest rate data to apply to the given asset, encoded in bytes.
    */
-  function updateInterestRateData(
-    address hub,
-    uint256 assetId,
-    bytes calldata interestRateData
-  ) external;
+  function updateInterestRateData(address hub, uint256 assetId, bytes calldata irData) external;
 }

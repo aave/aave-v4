@@ -99,7 +99,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @param decimals The number of decimals of the asset.
    * @param feeReceiver The address of the fee receiver spoke.
    * @param irStrategy The address of the interest rate strategy contract.
-   * @param interestRateData The interest rate data to apply to the given asset encoded in bytes.
+   * @param irData The interest rate data to apply to the given asset encoded in bytes.
    * @return The unique identifier of the added asset.
    */
   function addAsset(
@@ -107,20 +107,21 @@ interface IHub is IHubBase, IAccessManaged {
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
-    bytes calldata interestRateData
+    bytes calldata irData
   ) external returns (uint256);
 
   /**
    * @notice Updates the configuration of an asset.
    * @dev If the fee receiver is updated, it is added as a new spoke with maximum add cap and zero draw cap.
+   * @dev If the interest rate strategy is updated, it is configured with `irData`. Otherwise, `irData` must be empty.
    * @param assetId The identifier of the asset.
    * @param config The new configuration for the asset.
-   * @param interestRateData The interest rate data to apply to the given asset, encoded in bytes.
+   * @param irData The interest rate data to apply to the given asset, encoded in bytes.
    */
   function updateAssetConfig(
     uint256 assetId,
     DataTypes.AssetConfig calldata config,
-    bytes calldata interestRateData
+    bytes calldata irData
   ) external;
 
   /**
@@ -147,9 +148,9 @@ interface IHub is IHubBase, IAccessManaged {
   /**
    * @notice Updates the interest rate strategy for a specified asset.
    * @param assetId The identifier of the asset.
-   * @param interestRateData The interest rate data to apply to the given asset, encoded in bytes.
+   * @param irData The interest rate data to apply to the given asset, encoded in bytes.
    */
-  function setInterestRateData(uint256 assetId, bytes calldata interestRateData) external;
+  function setInterestRateData(uint256 assetId, bytes calldata irData) external;
 
   /**
    * @notice Refreshes premium accounting.

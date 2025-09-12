@@ -210,7 +210,7 @@ contract HubConfiguratorTest is HubBase {
 
     vm.expectCall(
       address(hub1),
-      abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig, abi.encode()))
+      abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig, new bytes(0)))
     );
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -262,7 +262,7 @@ contract HubConfiguratorTest is HubBase {
         expectedConfig.feeReceiver = feeReceiver;
         vm.expectCall(
           address(hub1),
-          abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig, abi.encode()))
+          abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig, new bytes(0)))
         );
       } else {
         // if new fee receiver is different from old one, and is already listed, revert
@@ -501,7 +501,7 @@ contract HubConfiguratorTest is HubBase {
         expectedConfig.feeReceiver = feeReceiver;
         vm.expectCall(
           address(hub1),
-          abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig, abi.encode()))
+          abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig, new bytes(0)))
         );
       } else {
         expectedConfig.liquidityFee = oldConfig.liquidityFee;
@@ -612,7 +612,7 @@ contract HubConfiguratorTest is HubBase {
     expectedConfig.reinvestmentController = reinvestmentController;
     vm.expectCall(
       address(hub1),
-      abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig, abi.encode()))
+      abi.encodeCall(IHub.updateAssetConfig, (assetId, expectedConfig, new bytes(0)))
     );
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateReinvestmentController(address(hub1), assetId, reinvestmentController);
