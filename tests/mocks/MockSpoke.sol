@@ -21,9 +21,7 @@ contract MockSpoke is Spoke {
     uint256 drawnShares = hub.draw(assetId, amount, msg.sender);
 
     userPosition.drawnShares += drawnShares.toUint128();
-    if (!positionStatus.isBorrowing(reserveId)) {
-      positionStatus.setBorrowing(reserveId, true);
-    }
+    positionStatus.setBorrowing(reserveId, true);
 
     DataTypes.UserAccountData memory userAccountData = _calculateAndRefreshUserAccountData(
       onBehalfOf
