@@ -33,12 +33,16 @@ jobs:
           cd "$SNAP"
           git init
 
-          # Copy top-level tracked files, but NOT submodule contents
-          rsync -a --delete \
-            --exclude '.git' \
-            --exclude '.github' \
-            --exclude '.gitmodules' \
-            "${GITHUB_WORKSPACE}/" "$SNAP/"
+          # Build exclusions for all submodule paths
+          RSYNC_EXCLUDES="--exclude .git --exclude .github --exclude .gitmodules"
+          if [[ -f "${GITHUB_WORKSPACE}/.gitmodules" ]]; then
+            while read -r path; do
+              RSYNC_EXCLUDES="$RSYNC_EXCLUDES --exclude $path"
+            done < <(git -C "${GITHUB_WORKSPACE}" config -f .gitmodules --get-regexp '^submodule\..*\.path' | awk '{print $2}')
+          fi
+
+          # Copy top-level tracked files, but NOT submodule contents or directories
+          eval "rsync -a --delete $RSYNC_EXCLUDES \"${GITHUB_WORKSPACE}/\" \"$SNAP/\""
 
           # If the source has a .gitmodules, copy it verbatim
           if [[ -f "${GITHUB_WORKSPACE}/.gitmodules" ]]; then
