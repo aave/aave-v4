@@ -642,6 +642,15 @@ contract NativeTokenGatewayTest is Base {
     address(nativeTokenGateway).call{value: 1 ether}(new bytes(0));
   }
 
+  function test_fallback_revertsWith_FallbackForbidden() public {
+    deal(address(this), 1 ether);
+
+    bytes memory invalidCall = abi.encode('invalidFunction()');
+
+    vm.expectRevert(INativeTokenGateway.FallbackForbidden.selector);
+    address(nativeTokenGateway).call{value: 1 ether}(invalidCall);
+  }
+
   function _getUserData(address user) internal view returns (DataTypes.UserPosition memory) {
     return getUserInfo(spoke1, user, _wethReserveId(spoke1));
   }

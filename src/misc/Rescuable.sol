@@ -38,9 +38,7 @@ abstract contract Rescuable is IRescuable {
   /// @dev Returns the address that is allowed to rescue funds.
   function _rescueGuardian() internal view virtual returns (address);
 
-  /**
-   * @dev Throws if the sender is not the rescue guardian.
-   */
+  /// @dev Throws if the sender is not the rescue guardian.
   function _checkRescueGuardian() internal view virtual {
     require(_rescueGuardian() == msg.sender, OnlyRescueGuardian());
   }
