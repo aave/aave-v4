@@ -783,19 +783,17 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     address user,
     bool refreshConfig
   ) internal returns (DataTypes.UserAccountData memory userAccountData) {
-    IAaveOracle aaveOracle = oracle;
-    uint256 reserveCount = _reserveCount;
-
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
-      positionStatus.collateralCount(reserveCount)
-    );
 
-    uint256 reserveId;
+    IAaveOracle aaveOracle = oracle;
+    uint256 reserveId = _reserveCount;
+    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
+      positionStatus.collateralCount(reserveId)
+    );
     bool borrowing;
     bool collateral;
     while (true) {
-      (reserveId, borrowing, collateral) = positionStatus.next(reserveId, reserveCount);
+      (reserveId, borrowing, collateral) = positionStatus.next(reserveId);
       if (reserveId == PositionStatus.NOT_FOUND) break;
 
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
@@ -911,14 +909,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    * @param newUserRiskPremium The new risk premium of the user.
    */
   function _notifyRiskPremiumUpdate(address user, uint256 newUserRiskPremium) internal {
-    uint256 reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
 
-    uint256 reserveId;
-    while (
-      (reserveId = positionStatus.nextBorrowing(reserveId, reserveCount)) !=
-      PositionStatus.NOT_FOUND
-    ) {
+    uint256 reserveId = _reserveCount;
+    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatus.NOT_FOUND) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       uint256 assetId = _reserves[reserveId].assetId;
       IHub hub = _reserves[reserveId].hub;
