@@ -8,13 +8,9 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
-/**
- * @notice This contracts allows to rescue funds sent to the contract by mistake or stuck after transactions.
- */
 abstract contract Rescuable is IRescuable {
   using SafeERC20 for IERC20;
 
-  /// @notice modifier that checks that caller is allowed address
   modifier onlyRescueGuardian() {
     _checkRescueGuardian();
     _;
@@ -35,10 +31,8 @@ abstract contract Rescuable is IRescuable {
     return _rescueGuardian();
   }
 
-  /// @dev Returns the address that is allowed to rescue funds.
   function _rescueGuardian() internal view virtual returns (address);
 
-  /// @dev Throws if the sender is not the rescue guardian.
   function _checkRescueGuardian() internal view virtual {
     require(_rescueGuardian() == msg.sender, OnlyRescueGuardian());
   }
