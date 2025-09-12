@@ -154,7 +154,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
 
     vm.expectCall(
       address(hub1),
-      abi.encodeCall(IHub.previewRemoveByAssets, (usdxAssetId, 6000e6)),
+      abi.encodeCall(IHubBase.previewRemoveByAssets, (usdxAssetId, 6000e6)),
       1
     );
 
@@ -164,7 +164,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       1
     );
 
-    vm.expectCall(address(hub1), abi.encodeCall(IHub.payFee, (usdxAssetId, feeShares)), 1);
+    vm.expectCall(address(hub1), abi.encodeCall(IHubBase.payFee, (usdxAssetId, feeShares)), 1);
 
     vm.expectCall(
       address(hub2),

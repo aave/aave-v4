@@ -188,14 +188,14 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
 
     assertApproxEqAbs(
-      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
       hub1.getAssetTotalOwed(assetId) - amount,
       3,
       'treasury spoke supplied amount on hub'
     );
     assertApproxEqAbs(
       fees,
-      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
       3,
       'treasury spoke supplied amount on spoke'
     );
@@ -211,7 +211,7 @@ contract TreasurySpokeTest is SpokeBase {
       assertEq(balanceBefore + fees, asset.balanceOf(TREASURY_ADMIN), 'Treasury admin balance');
       assertEq(
         0,
-        hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+        hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
         'treasury spoke remaining supplied amount'
       );
     }

@@ -32,7 +32,7 @@ contract SpokeMulticall is SpokeBase {
     spoke1.multicall(calls);
 
     // Check the supply
-    uint256 bobSupplied = spoke1.getUserSuppliedAmount(daiReserveId, bob);
+    uint256 bobSupplied = spoke1.getUserSuppliedAssets(daiReserveId, bob);
     assertEq(bobSupplied, supplyAmount, 'Bob supplied dai amount');
 
     // Check the collateral

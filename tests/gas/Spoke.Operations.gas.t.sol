@@ -207,7 +207,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall('Spoke.Operations', 'supply + enable collateral (multicall)');
 
     // supplyWithPermit (dai)
-    IHub hub = spoke1.getReserve(_daiReserveId(spoke1)).hub;
+    IHub hub = _hub(spoke1, _daiReserveId(spoke1));
     tokenList.dai.approve(address(hub), 0);
     (, uint256 bobPk) = makeAddrAndKey('bob');
     EIP712Types.Permit memory permit = EIP712Types.Permit({
@@ -233,7 +233,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     skip(100);
 
     // repayWithPermit (usdx)
-    hub = spoke1.getReserve(_usdxReserveId(spoke1)).hub;
+    hub = _hub(spoke1, _usdxReserveId(spoke1));
     tokenList.usdx.approve(address(hub), 0);
     permit = EIP712Types.Permit({
       owner: bob,
@@ -258,7 +258,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
     // supplyWithPermitAndEnableCollateral (wbtc)
     calls = new bytes[](3);
-    hub = spoke1.getReserve(_wbtcReserveId(spoke1)).hub;
+    hub = _hub(spoke1, _wbtcReserveId(spoke1));
     tokenList.wbtc.approve(address(hub), 0);
     (, bobPk) = makeAddrAndKey('bob');
     permit = EIP712Types.Permit({

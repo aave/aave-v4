@@ -9,8 +9,21 @@ pragma solidity ^0.8.10;
  */
 interface IBasicInterestRateStrategy {
   /**
+   * @notice Thrown when the interest rate data is not set for the asset.
+   * @param assetId The identifier of the asset with no interest rate data set.
+   */
+  error InterestRateDataNotSet(uint256 assetId);
+
+  /**
+   * @notice Sets the interest rate parameters for a specified asset.
+   * @param assetId The identifier of the asset.
+   * @param data The encoded parameters used to configure the interest rate of the asset.
+   */
+  function setInterestRateData(uint256 assetId, bytes calldata data) external;
+
+  /**
    * @notice Calculates the interest rate depending on the asset's state and configurations.
-   * @param assetId The id of the asset.
+   * @param assetId The identifier of the asset.
    * @param liquidity The current available liquidity of the asset.
    * @param drawn The current drawn amount of the asset.
    * @param premium The current premium amount of the asset.
