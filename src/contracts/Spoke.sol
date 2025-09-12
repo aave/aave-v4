@@ -57,29 +57,23 @@ contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     _;
   }
 
-  /// @custom:oz-upgrades-unsafe-allow constructor
   constructor(uint64 spokeRevision_) {
     SPOKE_REVISION = spokeRevision_;
     _disableInitializers();
   }
 
   /**
-   * @dev Initializes the contract (to be called through delegatecall). When the spoke
-   * revision is 1, it sets the authority and the target health factor to the default value.
-   * Revisions greater than 1 only set the authority.
+   * @dev Initializes the contract (intended to be called via delegatecall).
+   * On the first initialization, it sets the target health factor to its default value.
+   * On every initialization, it updates the authority.
    * @param _authority The address of the authority contract which manages permissions.
    */
   function initialize(address _authority) external reinitializer(SPOKE_REVISION) {
     require(_authority != address(0), InvalidAddress());
     __AccessManaged_init(_authority);
-    if (SPOKE_REVISION == 1) {
+    if (_liquidationConfig.targetHealthFactor == 0) {
       _liquidationConfig.targetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
       emit LiquidationConfigUpdate(_liquidationConfig);
-    } else {
-      require(
-        _liquidationConfig.targetHealthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-        InvalidLiquidationConfig()
-      );
     }
   }
 
