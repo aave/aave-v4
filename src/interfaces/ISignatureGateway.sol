@@ -6,6 +6,7 @@ import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
 interface ISignatureGateway is IMulticall {
+  error InvalidAddress();
   /**
    * @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
    */
