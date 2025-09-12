@@ -397,7 +397,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     address user,
     bool approve,
     uint256 deadline,
-    bytes memory signature
+    bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
