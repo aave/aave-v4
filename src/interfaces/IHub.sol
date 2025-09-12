@@ -340,10 +340,6 @@ interface IHub is IHubBase, IAccessManaged {
 
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
 
-  function getAssetAddedAmount(uint256 assetId) external view returns (uint256);
-
-  function getAssetAddedShares(uint256 assetId) external view returns (uint256);
-
   function getAssetTotalOwed(uint256 assetId) external view returns (uint256);
 
   function getTotalAddedAssets(uint256 assetId) external view returns (uint256);
