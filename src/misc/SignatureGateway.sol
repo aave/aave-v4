@@ -19,14 +19,16 @@ import {ISignatureGateway} from 'src/interfaces/ISignatureGateway.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
 /**
- * @notice Gateway to allow simple EIP-712 type intents to execute actions on the Spoke on behalf of the user.
- * @dev All the batched calls in this contract can be frontrun and grief the caller, as they are agnostic, but we consider it
- * acceptable as this would mean the intent signed by the user would be executed.
+ * @title SignatureGateway
+ * @author Aave Labs
+ * @notice Gateway to consume simple EIP-712 typed intents for spoke actions on behalf of a user.
+ * @dev This contract needs to be an active & approved user position manager to execute spoke actions on user's behalf.
+ * @dev Intents bundled through multicall can be executed independently in order of signed nonce & deadline.
  */
 contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2Step, EIP712 {
   using SafeERC20 for IERC20;
 
-  ISpoke private immutable _spoke;
+  ISpoke internal immutable _spoke;
 
   /// @inheritdoc ISignatureGateway
   bytes32 public constant SUPPLY_TYPEHASH =
@@ -265,7 +267,9 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     uint256 deadline,
     bytes calldata signature
   ) external {
-    _spoke.setUserPositionManagerWithSig(address(this), user, approve, deadline, signature);
+    try
+      _spoke.setUserPositionManagerWithSig(address(this), user, approve, deadline, signature)
+    {} catch {}
   }
 
   /// @inheritdoc ISignatureGateway
@@ -327,9 +331,6 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     return ('SignatureGateway', '1');
   }
 
-  /**
-   * @dev Override from Rescuable : address that is allowed to rescue funds
-   **/
   function _rescueGuardian() internal view override returns (address) {
     return owner();
   }

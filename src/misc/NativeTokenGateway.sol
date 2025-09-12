@@ -8,7 +8,6 @@ import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/Reentrancy
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -18,8 +17,10 @@ import {INativeWrapper} from 'src/interfaces/INativeWrapper.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
 /**
- * @notice Contract allowing users to approve it as a Position Manager to wrap and unwrap the native asset
- * before interacting with the Spoke.
+ * @title NativeTokenGateway
+ * @author Aave Labs
+ * @notice Gateway to interact with the spoke using the native coin of a chain.
+ * @dev This contract needs to be an active & approved user position manager in order execute spoke actions on user's behalf.
  */
 contract NativeTokenGateway is
   INativeTokenGateway,
@@ -118,39 +119,24 @@ contract NativeTokenGateway is
     return address(_spoke);
   }
 
-  /**
-   * @dev Override from Rescuable : address that is allowed to rescue funds
-   **/
   function _rescueGuardian() internal view override returns (address) {
     return owner();
   }
 
-  /**
-   * @dev Validates the common parameters for all functions.
-   **/
   function _validateParams(address underlying, uint256 amount) internal view {
     require(underlying == address(_nativeWrapper), InvalidReserveId());
     require(amount > 0, InvalidAmount());
   }
 
-  /**
-   * @dev Fetches the wanted data for the Reserve from the Spoke.
-   **/
   function _getReserveData(uint256 reserveId) internal view returns (address, address) {
     DataTypes.Reserve memory reserveData = _spoke.getReserve(reserveId);
     return (reserveData.underlying, address(reserveData.hub));
   }
 
-  /**
-   * @dev Only NATIVE_WRAPPER contract is allowed to do native transfer here. Prevent other addresses from sending native assets to this contract.
-   */
   receive() external payable {
     require(msg.sender == address(_nativeWrapper), UnsupportedAction());
   }
 
-  /**
-   * @dev Revert fallback calls.
-   */
   fallback() external payable {
     revert UnsupportedAction();
   }
