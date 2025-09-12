@@ -3,14 +3,14 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
-import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
+import {KeyValueList} from 'src/libraries/helpers/KeyValueList.sol';
 
-contract KeyValueListInMemoryTest is Test {
-  using KeyValueListInMemory for KeyValueListInMemory.List;
+contract KeyValueListTest is Test {
+  using KeyValueList for KeyValueList.List;
 
   function test_fuzz_sortByKey(uint256[] memory seed) public pure {
     vm.assume(seed.length > 0);
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(seed.length);
+    KeyValueList.List memory list = KeyValueList.init(seed.length);
     for (uint256 i; i < seed.length; ++i) {
       list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
@@ -20,7 +20,7 @@ contract KeyValueListInMemoryTest is Test {
 
   function test_fuzz_sortByKey_length(uint256 length) public {
     length = bound(length, 1, 1e2);
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(length);
+    KeyValueList.List memory list = KeyValueList.init(length);
     for (uint256 i; i < length; ++i) {
       list.add(i, _truncateKey(vm.randomUint()), _truncateValue(vm.randomUint()));
     }
@@ -36,7 +36,7 @@ contract KeyValueListInMemoryTest is Test {
     }
 
     vm.assume(seed.length > 0);
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(seed.length);
+    KeyValueList.List memory list = KeyValueList.init(seed.length);
     for (uint256 i; i < seed.length; ++i) {
       list.add(
         i,
@@ -50,7 +50,7 @@ contract KeyValueListInMemoryTest is Test {
 
   function test_fuzz_get(uint256[] memory seed) public pure {
     vm.assume(seed.length > 0);
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(seed.length);
+    KeyValueList.List memory list = KeyValueList.init(seed.length);
     for (uint256 i; i < seed.length; ++i) {
       list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
@@ -64,7 +64,7 @@ contract KeyValueListInMemoryTest is Test {
   function test_fuzz_get_uninitialized(uint256[] memory seed) public {
     vm.assume(seed.length > 0);
     uint256 fillArrayTill = vm.randomUint(0, seed.length - 1);
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(seed.length);
+    KeyValueList.List memory list = KeyValueList.init(seed.length);
     for (uint256 i; i < fillArrayTill; ++i) {
       list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
@@ -83,7 +83,7 @@ contract KeyValueListInMemoryTest is Test {
   function test_fuzz_get_uninitialized_sorted(uint256[] memory seed) public {
     vm.assume(seed.length > 0 && seed.length < 1e2);
     uint256 fillArrayTill = vm.randomUint(0, seed.length - 1);
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(seed.length);
+    KeyValueList.List memory list = KeyValueList.init(seed.length);
     for (uint256 i; i < fillArrayTill; ++i) {
       list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
@@ -97,7 +97,7 @@ contract KeyValueListInMemoryTest is Test {
     }
   }
 
-  function _assertSortedOrder(KeyValueListInMemory.List memory list) internal pure {
+  function _assertSortedOrder(KeyValueList.List memory list) internal pure {
     // validate sorted order
     (uint256 prevKey, uint256 prevValue) = list.get(0);
     for (uint256 i = 1; i < list.length(); ++i) {
@@ -112,10 +112,10 @@ contract KeyValueListInMemoryTest is Test {
   }
 
   function _truncateKey(uint256 key) internal pure returns (uint256) {
-    return key % KeyValueListInMemory._MAX_KEY;
+    return key % KeyValueList._MAX_KEY;
   }
 
   function _truncateValue(uint256 value) internal pure returns (uint256) {
-    return value % KeyValueListInMemory._MAX_VALUE;
+    return value % KeyValueList._MAX_VALUE;
   }
 }

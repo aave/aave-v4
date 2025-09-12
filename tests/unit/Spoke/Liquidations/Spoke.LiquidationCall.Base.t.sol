@@ -8,7 +8,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   using SafeCast for *;
   using PercentageMath for *;
   using WadRayMath for *;
-  using KeyValueListInMemory for KeyValueListInMemory.List;
+  using KeyValueList for KeyValueList.List;
 
   uint256 internal constant MAX_AMOUNT_IN_BASE_CURRENCY = 1_000_000_000e26; // 1 billion USD
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26; // 1 USD
@@ -283,7 +283,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 collateralToLiquidate,
     uint256 debtToLiquidate
   ) internal virtual returns (uint256, uint256) {
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
+    KeyValueList.List memory list = KeyValueList.init(
       userAccountDataBefore.suppliedCollateralsCount
     );
 

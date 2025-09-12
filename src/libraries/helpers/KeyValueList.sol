@@ -2,6 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
+
 /**
  * @notice Library to pack key-value pairs in a list.
  * @dev `sortByKey` helper sorts by asending order of the `key` & in case of collission by descending order of the `value`.
@@ -9,9 +11,7 @@ pragma solidity ^0.8.0;
  * Uninitialized keys are returned as (key: 0, value: 0).
  * All uninitialized keys are placed at the end of the list after sorting.
  */
-import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
-
-library KeyValueListInMemory {
+library KeyValueList {
   error MaxDataSizeExceeded();
 
   uint256 internal constant _MAX_KEY_BITS = 32;
@@ -28,7 +28,6 @@ library KeyValueListInMemory {
   }
 
   function init(uint256 size) internal pure returns (List memory) {
-    // opt: cheaper to allocate memory w/o zeroing out: https://github.com/Vectorized/solady/blob/main/src/utils/DynamicArrayLib.sol#L34-L42
     return List(new uint256[](size));
   }
 
@@ -70,7 +69,6 @@ library KeyValueListInMemory {
   }
 
   function unpack(uint256 data) internal pure returns (uint256, uint256) {
-    // @dev no need to unpack data that was never packed
     if (data == 0) return (0, 0);
     return (unpackKey(data), unpackValue(data));
   }

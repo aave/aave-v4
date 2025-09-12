@@ -12,7 +12,7 @@ import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
+import {KeyValueList} from 'src/libraries/helpers/KeyValueList.sol';
 import {Constants} from 'src/libraries/helpers/Constants.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
@@ -27,7 +27,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
   using PercentageMath for *;
-  using KeyValueListInMemory for KeyValueListInMemory.List;
+  using KeyValueList for KeyValueList.List;
   using PositionStatus for *;
   using MathUtils for *;
 
@@ -886,9 +886,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 reserveCount = _reserveCount;
 
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
-      positionStatus.collateralCount(reserveCount)
-    );
+    KeyValueList.List memory list = KeyValueList.init(positionStatus.collateralCount(reserveCount));
 
     uint256 reserveId;
     bool borrowing;
