@@ -577,9 +577,10 @@ contract HubRestoreTest is HubBase {
 
     // hub
     assertApproxEqAbs(
-      hub1.getAssetAddedAmount(daiAssetId),
+      hub1.getTotalAddedAssets(daiAssetId),
       hub1.getSpokeAddedAmount(daiAssetId, address(spoke2)) +
-        hub1.getSpokeAddedAmount(daiAssetId, feeReceiver),
+        hub1.getSpokeAddedAmount(daiAssetId, feeReceiver) +
+        _calculateBurntInterest(hub1, daiAssetId),
       1,
       'hub dai total addedAmount'
     );

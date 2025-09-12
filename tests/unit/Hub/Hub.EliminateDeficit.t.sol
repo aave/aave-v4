@@ -48,7 +48,7 @@ contract HubEliminateDeficitTest is HubBase {
 
     uint256 expectedRemoveShares = hub1.previewRemoveByAssets(assetId, clearedDeficit);
     uint256 spokeAddedShares = hub1.getSpokeAddedShares(assetId, address(spoke1));
-    uint256 assetSuppliedShares = hub1.getAssetAddedShares(assetId);
+    uint256 assetSuppliedShares = hub1.getTotalAddedShares(assetId);
     uint256 addExRate = getAddExRate(assetId);
 
     vm.expectEmit(address(hub1));
@@ -58,7 +58,7 @@ contract HubEliminateDeficitTest is HubBase {
 
     assertEq(removedShares, expectedRemoveShares);
     assertEq(hub1.getDeficit(assetId), deficit - clearedDeficit);
-    assertEq(hub1.getAssetAddedShares(assetId), assetSuppliedShares - expectedRemoveShares);
+    assertEq(hub1.getTotalAddedShares(assetId), assetSuppliedShares - expectedRemoveShares);
     assertEq(
       hub1.getSpokeAddedShares(assetId, address(spoke1)),
       spokeAddedShares - expectedRemoveShares
