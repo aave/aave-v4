@@ -19,7 +19,7 @@ import {ISignatureGateway} from 'src/interfaces/ISignatureGateway.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
 /**
- * @notice Contract allowing users to approve it as a Position Manager to wrap and unwrap the native asset
+ * @notice Gateway to allow simple EIP-712 type intents to execute actions on the Spoke on behalf of the user.
  * @dev All the batched calls in this contract can be frontrun and grief the caller, as they are agnostic, but we consider it
  * acceptable as this would mean the intent signed by the user would be executed.
  */

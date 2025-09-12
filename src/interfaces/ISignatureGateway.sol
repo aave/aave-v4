@@ -6,6 +6,9 @@ import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
 interface ISignatureGateway is IMulticall, IRescuable {
+  /**
+   * @notice Thrown when the given address is invalid.
+   */
   error InvalidAddress();
   /**
    * @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
