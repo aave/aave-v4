@@ -65,7 +65,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     skip(elapsed);
 
     // Ensure interest has accrued
-    vm.assume(hub1.getAssetAddedAmount(daiAssetId) > supplyAmount);
+    vm.assume(hub1.getTotalAddedAssets(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -80,8 +80,10 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     });
 
     uint256 treasuryFees = hub1.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
-    uint256 interestAccrued = hub1.getAssetAddedAmount(daiAssetId) - treasuryFees - supplyAmount;
-
+    uint256 interestAccrued = hub1.getTotalAddedAssets(daiAssetId) -
+      _calculateBurntInterest(hub1, daiAssetId) -
+      treasuryFees -
+      supplyAmount;
     uint256 totalSupplied = interestAccrued + supplyAmount;
     assertApproxEqAbs(
       totalSupplied,
@@ -98,7 +100,8 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     treasuryFees = hub1.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
     interestAccrued =
-      hub1.getAssetAddedAmount(daiAssetId) -
+      hub1.getTotalAddedAssets(daiAssetId) -
+      _calculateBurntInterest(hub1, daiAssetId) -
       treasuryFees -
       (supplyAmount - partialWithdrawAmount);
 

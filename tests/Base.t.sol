@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {stdError} from 'forge-std/StdError.sol';
 import {stdMath} from 'forge-std/StdMath.sol';
+import {StdStorage, stdStorage} from 'forge-std/StdStorage.sol';
 import {Vm, VmSafe} from 'forge-std/Vm.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
@@ -50,7 +51,7 @@ import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
-import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';
@@ -1380,6 +1381,51 @@ abstract contract Base is Test {
     return (drawnRestored, premium);
   }
 
+  function _calculateExactRestoreAmount(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 repayAmount
+  ) internal view returns (uint256 baseRestored, uint256 premiumRestored) {
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke.getUserDebt(reserveId, user);
+    return
+      _calculateExactRestoreAmount(
+        userDrawnDebt,
+        userPremiumDebt,
+        repayAmount,
+        _assetId(spoke, reserveId)
+      );
+  }
+
+  function _getExpectedPremiumDelta(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 repayAmount
+  ) internal view virtual returns (DataTypes.PremiumDelta memory) {
+    DataTypes.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
+    Debts memory userDebt = getUserDebt(spoke, user, reserveId);
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+
+    DataTypes.PremiumDelta memory expectedPremiumDelta = DataTypes.PremiumDelta({
+      sharesDelta: -int256(uint256(userPosition.premiumShares)),
+      offsetDelta: -int256(uint256(userPosition.premiumOffset)),
+      realizedDelta: 0
+    });
+
+    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPosition.premiumShares) -
+      userPosition.premiumOffset;
+    (, uint256 premiumDebtRestored) = _calculateExactRestoreAmount(
+      userDebt.drawnDebt,
+      userDebt.premiumDebt,
+      repayAmount,
+      assetId
+    );
+    expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumDebtRestored);
+
+    return expectedPremiumDelta;
+  }
+
   /// @dev Helper function to check consistent supplied amounts within accounting
   function _checkSuppliedAmounts(
     uint256 assetId,
@@ -1391,12 +1437,12 @@ abstract contract Base is Test {
   ) internal view {
     uint256 expectedSuppliedShares = hub1.convertToAddedShares(assetId, expectedSuppliedAmount);
     assertEq(
-      hub1.getAssetAddedShares(assetId),
+      hub1.getTotalAddedShares(assetId),
       expectedSuppliedShares,
       string(abi.encodePacked('asset supplied shares ', label))
     );
     assertEq(
-      hub1.getAssetAddedAmount(assetId),
+      hub1.getTotalAddedAssets(assetId) - _calculateBurntInterest(hub1, assetId),
       expectedSuppliedAmount,
       string(abi.encodePacked('asset supplied amount ', label))
     );
@@ -1619,7 +1665,7 @@ abstract contract Base is Test {
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     assertApproxEqAbs(
-      hub1.getAssetAddedAmount(assetId),
+      hub1.getTotalAddedAssets(assetId) - _calculateBurntInterest(hub1, assetId),
       expectedSuppliedAmount,
       3,
       string.concat('asset supplied amount ', label)
@@ -1885,6 +1931,26 @@ abstract contract Base is Test {
 
   function _randomBps() internal returns (uint16) {
     return vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+  }
+
+  function _hub(ISpoke spoke, uint256 reserveId) internal view returns (IHub) {
+    return IHub(spoke.getReserve(reserveId).hub);
+  }
+
+  function _assetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+    return spoke.getReserve(reserveId).assetId;
+  }
+
+  function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (IERC20) {
+    return IERC20(spoke.getReserve(reserveId).underlying);
+  }
+
+  function _approveAllUnderlying(ISpoke spoke, address owner, address spender) internal {
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+      IERC20 underlying = _underlying(spoke, reserveId);
+      vm.prank(owner);
+      underlying.approve(spender, UINT256_MAX);
+    }
   }
 
   function assertEq(DataTypes.AssetConfig memory a, DataTypes.AssetConfig memory b) internal pure {
@@ -2216,17 +2282,17 @@ abstract contract Base is Test {
 
   // @dev Helper function to get asset position, valid if no time has passed since last action
   function getAssetPosition(
-    IHub targetHub,
+    IHub hub,
     uint256 assetId
   ) internal view returns (AssetPosition memory) {
-    DataTypes.Asset memory assetData = targetHub.getAsset(assetId);
-    (uint256 drawn, uint256 premium) = targetHub.getAssetOwed(assetId);
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
     return
       AssetPosition({
         assetId: assetId,
         liquidity: assetData.liquidity,
         addedShares: assetData.addedShares,
-        addedAmount: targetHub.getAssetAddedAmount(assetId),
+        addedAmount: hub.getTotalAddedAssets(assetId) - _calculateBurntInterest(hub, assetId),
         drawnShares: assetData.drawnShares,
         drawn: drawn,
         premiumShares: assetData.premiumShares,

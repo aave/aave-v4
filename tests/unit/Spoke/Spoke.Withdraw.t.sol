@@ -202,7 +202,7 @@ contract SpokeWithdrawTest is SpokeBase {
     skip(365 days);
 
     // Ensure interest has accrued
-    vm.assume(hub1.getAssetAddedAmount(daiAssetId) > supplyAmount);
+    vm.assume(hub1.getTotalAddedAssets(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -268,7 +268,7 @@ contract SpokeWithdrawTest is SpokeBase {
     skip(elapsed);
 
     // Ensure interest has accrued
-    vm.assume(hub1.getAssetAddedAmount(daiAssetId) > supplyAmount);
+    vm.assume(hub1.getTotalAddedAssets(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
