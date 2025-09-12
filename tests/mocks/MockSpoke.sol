@@ -2,13 +2,14 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Spoke, DataTypes, IHub, SafeCast, PositionStatus} from 'src/contracts/Spoke.sol';
+import {SpokeInstance} from 'src/instances/SpokeInstance.sol';
+import {DataTypes, IHub, SafeCast, PositionStatus} from 'src/contracts/Spoke.sol';
 
-contract MockSpoke is Spoke {
+contract MockSpoke is SpokeInstance {
   using SafeCast for *;
   using PositionStatus for *;
 
-  constructor() Spoke(1) {}
+  constructor() SpokeInstance(1) {}
 
   // same as spoke's borrow, but without health factor check and no position manager check for onBehalfOf
   function borrowWithoutHfCheck(uint256 reserveId, uint256 amount, address onBehalfOf) external {

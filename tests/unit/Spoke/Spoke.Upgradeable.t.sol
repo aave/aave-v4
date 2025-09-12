@@ -18,11 +18,11 @@ contract SpokeUpgradeableTest is SpokeBase {
     vm.expectEmit(spokeImplAddress);
     emit Initializable.Initialized(type(uint64).max);
 
-    Spoke spokeImpl = new Spoke(revision);
+    SpokeInstance spokeImpl = new SpokeInstance(revision);
 
     assertEq(address(spokeImpl), spokeImplAddress);
     assertEq(spokeImpl.SPOKE_REVISION(), revision);
-    assertEq(getProxyInitializedVersion(spokeImplAddress), type(uint64).max);
+    assertEq(_getProxyInitializedVersion(spokeImplAddress), type(uint64).max);
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
     spokeImpl.initialize(address(accessManager));
@@ -31,7 +31,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   function test_proxy_constructor_fuzz(uint64 revision) public {
     revision = uint64(bound(revision, 1, type(uint64).max));
 
-    Spoke spokeImpl = new Spoke(revision);
+    SpokeInstance spokeImpl = new SpokeInstance(revision);
     address spokeProxyAddress = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
     address proxyAdminAddress = vm.computeCreateAddress(spokeProxyAddress, 1);
 
@@ -58,28 +58,28 @@ contract SpokeUpgradeableTest is SpokeBase {
         new TransparentUpgradeableProxy(
           address(spokeImpl),
           proxyAdminOwner,
-          abi.encodeCall(ISpoke.initialize, address(accessManager))
+          abi.encodeCall(Spoke.initialize, address(accessManager))
         )
       )
     );
 
     assertEq(address(spokeProxy), spokeProxyAddress);
-    assertEq(getProxyAdminAddress(address(spokeProxy)), proxyAdminAddress);
-    assertEq(getImplementationAddress(address(spokeProxy)), address(spokeImpl));
+    assertEq(_getProxyAdminAddress(address(spokeProxy)), proxyAdminAddress);
+    assertEq(_getImplementationAddress(address(spokeProxy)), address(spokeImpl));
 
-    assertEq(getProxyInitializedVersion(address(spokeProxy)), revision);
+    assertEq(_getProxyInitializedVersion(address(spokeProxy)), revision);
     assertEq(spokeProxy.getLiquidationConfig(), expectedLiquidationConfig);
   }
 
   function test_proxy_reinitialization_fuzz(uint64 initialRevision) public {
     initialRevision = uint64(bound(initialRevision, 1, type(uint64).max - 1));
-    Spoke spokeImpl = new Spoke(initialRevision);
+    SpokeInstance spokeImpl = new SpokeInstance(initialRevision);
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(
           address(spokeImpl),
           proxyAdminOwner,
-          abi.encodeCall(ISpoke.initialize, address(accessManager))
+          abi.encodeCall(Spoke.initialize, address(accessManager))
         )
       )
     );
@@ -89,15 +89,15 @@ contract SpokeUpgradeableTest is SpokeBase {
     _updateTargetHealthFactor(ISpoke(address(spokeProxy)), targetHealthFactor);
 
     uint64 secondRevision = uint64(vm.randomUint(initialRevision + 1, type(uint64).max));
-    Spoke spokeImpl2 = new Spoke(secondRevision);
+    SpokeInstance spokeImpl2 = new SpokeInstance(secondRevision);
 
     vm.expectEmit(address(spokeProxy));
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.recordLogs();
-    vm.prank(getProxyAdminAddress(address(spokeProxy)));
+    vm.prank(_getProxyAdminAddress(address(spokeProxy)));
     spokeProxy.upgradeToAndCall(
       address(spokeImpl2),
-      abi.encodeCall(ISpoke.initialize, address(accessManager))
+      _getInitializeCalldata(address(accessManager))
     );
 
     _assertEventNotEmitted(ISpoke.LiquidationConfigUpdate.selector);
@@ -106,13 +106,13 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_constructor_revertsWith_InvalidInitialization_ZeroRevision() public {
-    Spoke spokeImpl = new Spoke(0);
+    SpokeInstance spokeImpl = new SpokeInstance(0);
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
     new TransparentUpgradeableProxy(
       address(spokeImpl),
       proxyAdminOwner,
-      abi.encodeCall(ISpoke.initialize, address(accessManager))
+      abi.encodeCall(Spoke.initialize, address(accessManager))
     );
   }
 
@@ -121,86 +121,87 @@ contract SpokeUpgradeableTest is SpokeBase {
   ) public {
     initialRevision = uint64(bound(initialRevision, 1, type(uint64).max));
 
-    Spoke spokeImpl = new Spoke(initialRevision);
+    SpokeInstance spokeImpl = new SpokeInstance(initialRevision);
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(
           address(spokeImpl),
           proxyAdminOwner,
-          abi.encodeCall(ISpoke.initialize, address(accessManager))
+          _getInitializeCalldata(address(accessManager))
         )
       )
     );
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    vm.prank(getProxyAdminAddress(address(spokeProxy)));
-    spokeProxy.upgradeToAndCall(
-      address(spokeImpl),
-      abi.encodeCall(ISpoke.initialize, address(accessManager))
-    );
+    vm.prank(_getProxyAdminAddress(address(spokeProxy)));
+    spokeProxy.upgradeToAndCall(address(spokeImpl), _getInitializeCalldata(address(accessManager)));
 
     uint64 secondRevision = uint64(vm.randomUint(0, initialRevision - 1));
-    Spoke spokeImpl2 = new Spoke(secondRevision);
+    SpokeInstance spokeImpl2 = new SpokeInstance(secondRevision);
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    vm.prank(getProxyAdminAddress(address(spokeProxy)));
+    vm.prank(_getProxyAdminAddress(address(spokeProxy)));
     spokeProxy.upgradeToAndCall(
       address(spokeImpl2),
-      abi.encodeCall(ISpoke.initialize, address(accessManager))
+      _getInitializeCalldata(address(accessManager))
     );
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
-    Spoke spokeImpl = new Spoke(1);
+    SpokeInstance spokeImpl = new SpokeInstance(1);
     vm.expectRevert(ISpoke.InvalidAddress.selector);
     new TransparentUpgradeableProxy(
       address(spokeImpl),
       proxyAdminOwner,
-      abi.encodeCall(ISpoke.initialize, address(0))
+      _getInitializeCalldata(address(0))
     );
   }
 
   function test_proxy_reinitialization_revertsWith_InvalidAddress() public {
-    Spoke spokeImpl = new Spoke(1);
+    SpokeInstance spokeImpl = new SpokeInstance(1);
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(
           address(spokeImpl),
           proxyAdminOwner,
-          abi.encodeCall(ISpoke.initialize, address(accessManager))
+          _getInitializeCalldata(address(accessManager))
         )
       )
     );
 
-    Spoke spokeImpl2 = new Spoke(2);
+    SpokeInstance spokeImpl2 = new SpokeInstance(2);
     vm.expectRevert(ISpoke.InvalidAddress.selector);
-    vm.prank(getProxyAdminAddress(address(spokeProxy)));
-    spokeProxy.upgradeToAndCall(address(spokeImpl2), abi.encodeCall(ISpoke.initialize, address(0)));
+    vm.prank(_getProxyAdminAddress(address(spokeProxy)));
+    spokeProxy.upgradeToAndCall(address(spokeImpl2), _getInitializeCalldata(address(0)));
   }
 
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
-    Spoke spokeImpl = new Spoke(1);
+    SpokeInstance spokeImpl = new SpokeInstance(1);
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(
           address(spokeImpl),
           proxyAdminOwner,
-          abi.encodeCall(ISpoke.initialize, address(accessManager))
+          _getInitializeCalldata(address(accessManager))
         )
       )
     );
 
-    Spoke spokeImpl2 = new Spoke(2);
+    SpokeInstance spokeImpl2 = new SpokeInstance(2);
     vm.expectRevert();
     vm.prank(makeUser());
     spokeProxy.upgradeToAndCall(
       address(spokeImpl2),
-      abi.encodeCall(ISpoke.initialize, address(accessManager))
+      _getInitializeCalldata(address(accessManager))
     );
   }
 
-  function getProxyInitializedVersion(address proxy) internal view returns (uint64) {
+  function _getProxyInitializedVersion(address proxy) internal view returns (uint64) {
     bytes32 slotData = vm.load(proxy, INITIALIZABLE_STORAGE);
     console.log(uint256(slotData));
     return uint64(uint256(slotData) & ((1 << 64) - 1));
+  }
+
+  function _getInitializeCalldata(address accessManager) internal view returns (bytes memory) {
+    return abi.encodeCall(Spoke.initialize, address(accessManager));
   }
 }

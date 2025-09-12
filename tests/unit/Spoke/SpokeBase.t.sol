@@ -1012,15 +1012,15 @@ contract SpokeBase is Base {
   ) internal {
     address mockSpoke = address(new MockSpoke());
 
-    address implementation = getImplementationAddress(address(spoke));
+    address implementation = _getImplementationAddress(address(spoke));
 
-    vm.prank(getProxyAdminAddress(address(spoke)));
+    vm.prank(_getProxyAdminAddress(address(spoke)));
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(address(mockSpoke), '');
 
     vm.prank(user);
     MockSpoke(address(spoke)).borrowWithoutHfCheck(reserveId, debtAmount, user);
 
-    vm.prank(getProxyAdminAddress(address(spoke)));
+    vm.prank(_getProxyAdminAddress(address(spoke)));
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
   }
 }

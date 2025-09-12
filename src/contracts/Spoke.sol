@@ -28,15 +28,13 @@ import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
  * as long as any new variables added to inherited contracts continue to not depend on the
  * Spoke's storage layout namespace.
  */
-contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
+abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
   using PercentageMath for *;
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using PositionStatus for *;
   using MathUtils for *;
-
-  uint64 public immutable SPOKE_REVISION;
 
   IAaveOracle public oracle;
 
@@ -57,25 +55,14 @@ contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     _;
   }
 
-  constructor(uint64 spokeRevision_) {
-    SPOKE_REVISION = spokeRevision_;
-    _disableInitializers();
-  }
-
   /**
    * @dev Initializes the contract (intended to be called via delegatecall).
    * On the first initialization, it sets the target health factor to its default value.
-   * On every initialization, it updates the authority.
+   * It updates the authority on every initialization and, only on the first initialization,
+   * sets the target health factor to its default value.
    * @param _authority The address of the authority contract which manages permissions.
    */
-  function initialize(address _authority) external reinitializer(SPOKE_REVISION) {
-    require(_authority != address(0), InvalidAddress());
-    __AccessManaged_init(_authority);
-    if (_liquidationConfig.targetHealthFactor == 0) {
-      _liquidationConfig.targetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-      emit LiquidationConfigUpdate(_liquidationConfig);
-    }
-  }
+  function initialize(address _authority) external virtual;
 
   // /////
   // Governance

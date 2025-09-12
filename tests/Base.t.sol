@@ -21,6 +21,7 @@ import {AaveOracle, IAaveOracle} from 'src/contracts/AaveOracle.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/contracts/HubConfigurator.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/contracts/SpokeConfigurator.sol';
+import {SpokeInstance} from 'src/instances/SpokeInstance.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
@@ -244,21 +245,21 @@ abstract contract Base is Test {
     address proxyAdminOwner,
     address accessManager
   ) internal returns (ISpoke) {
-    address spokeImplAddress = address(new Spoke(1));
+    address spokeImplAddress = address(new SpokeInstance(1));
     TransparentUpgradeableProxy spokeProxy = new TransparentUpgradeableProxy(
       spokeImplAddress,
       proxyAdminOwner,
-      abi.encodeCall(ISpoke.initialize, (address(accessManager)))
+      abi.encodeCall(Spoke.initialize, (address(accessManager)))
     );
     return ISpoke(address(spokeProxy));
   }
 
-  function getProxyAdminAddress(address proxy) internal view returns (address) {
+  function _getProxyAdminAddress(address proxy) internal view returns (address) {
     bytes32 slotData = vm.load(proxy, ERC1967_ADMIN_SLOT);
     return address(uint160(uint256(slotData)));
   }
 
-  function getImplementationAddress(address proxy) internal view returns (address) {
+  function _getImplementationAddress(address proxy) internal view returns (address) {
     bytes32 slotData = vm.load(proxy, IMPLEMENTATION_SLOT);
     return address(uint160(uint256(slotData)));
   }
@@ -1914,9 +1915,9 @@ abstract contract Base is Test {
         user != address(spoke1) &&
         user != address(spoke2) &&
         user != address(spoke3) &&
-        user != getProxyAdminAddress(address(spoke1)) &&
-        user != getProxyAdminAddress(address(spoke2)) &&
-        user != getProxyAdminAddress(address(spoke3))
+        user != _getProxyAdminAddress(address(spoke1)) &&
+        user != _getProxyAdminAddress(address(spoke2)) &&
+        user != _getProxyAdminAddress(address(spoke3))
     );
   }
 
