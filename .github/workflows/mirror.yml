@@ -22,8 +22,6 @@ jobs:
             --exclude '.git' \
             --exclude '.github' \
             . /tmp/snap/
-          # remove submodule metadata so target is a plain tree
-          rm -f /tmp/snap/.gitmodules
 
           cd /tmp/snap
           git init
