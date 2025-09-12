@@ -39,7 +39,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   mapping(address user => DataTypes.PositionStatus positionStatus) internal _positionStatus;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
   mapping(address positionManager => DataTypes.PositionManagerConfig) internal _positionManager;
-  mapping(address user => uint256) internal _nonces;
+  mapping(address user => uint256 nonce) internal _nonces;
   mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   DataTypes.LiquidationConfig internal _liquidationConfig;

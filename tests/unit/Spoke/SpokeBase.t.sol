@@ -858,35 +858,6 @@ contract SpokeBase is Base {
     return userRP / utilizedSupply;
   }
 
-  function _getExpectedPremiumDelta(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId,
-    uint256 repayAmount
-  ) internal view returns (DataTypes.PremiumDelta memory) {
-    DataTypes.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
-    Debts memory userDebt = getUserDebt(spoke, user, reserveId);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-
-    DataTypes.PremiumDelta memory expectedPremiumDelta = DataTypes.PremiumDelta({
-      sharesDelta: -int256(uint256(userPosition.premiumShares)),
-      offsetDelta: -int256(uint256(userPosition.premiumOffset)),
-      realizedDelta: 0
-    });
-
-    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPosition.premiumShares) -
-      userPosition.premiumOffset;
-    (, uint256 premiumDebtRestored) = _calculateExactRestoreAmount(
-      userDebt.drawnDebt,
-      userDebt.premiumDebt,
-      repayAmount,
-      assetId
-    );
-    expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumDebtRestored);
-
-    return expectedPremiumDelta;
-  }
-
   function _getSpokeDynConfigKeys(ISpoke spoke) internal view returns (DynamicConfig[] memory) {
     uint256 reserveCount = spoke.getReserveCount();
     DynamicConfig[] memory configs = new DynamicConfig[](reserveCount);

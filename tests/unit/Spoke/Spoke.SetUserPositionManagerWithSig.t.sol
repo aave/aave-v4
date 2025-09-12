@@ -402,11 +402,10 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     address user = vm.randomAddress();
 
     uint256 currentNonce = spoke1.nonces(user);
-    vm.assume(currentNonce != UINT256_MAX);
 
     vm.prank(user);
     spoke1.useNonce();
 
-    assertEq(spoke1.nonces(user), currentNonce + 1);
+    assertEq(spoke1.nonces(user), MathUtils.uncheckedAdd(currentNonce, 1));
   }
 }
