@@ -141,7 +141,7 @@ contract HubAddTest is HubBase {
     _addLiquidity(zeroDecimalAssetId, 100e18);
     _drawLiquidity(zeroDecimalAssetId, 45e18, true);
 
-    uint256 totalAddedAssets = hub1.getTotalAddedAssets(zeroDecimalAssetId);
+    uint256 totalAddedAssets = hub1.getAssetAddedAmount(zeroDecimalAssetId);
     uint256 totalAddedShares = hub1.getAssetAddedShares(zeroDecimalAssetId);
 
     // Depending on the borrow rate, this may not be true
@@ -219,7 +219,7 @@ contract HubAddTest is HubBase {
     _addLiquidity(zeroDecimalAssetId, 100e18);
     _drawLiquidity(zeroDecimalAssetId, 45e18, true);
 
-    uint256 totalAddedAssets = hub1.getTotalAddedAssets(zeroDecimalAssetId);
+    uint256 totalAddedAssets = hub1.getAssetAddedAmount(zeroDecimalAssetId);
     uint256 totalAddedShares = hub1.getAssetAddedShares(zeroDecimalAssetId);
 
     // Depending on the borrow rate, this may not be true
@@ -507,7 +507,8 @@ contract HubAddTest is HubBase {
     uint256 shares = hub1.convertToAddedShares(daiAssetId, addAmount);
     assertLt(shares, addAmount); // index increased, exch rate > 1
 
-    uint256 addedAssetsBefore = hub1.getAssetAddedAmount(daiAssetId);
+    uint256 spokeAddedSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke2));
+    uint256 addedAssetsBefore = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
     uint256 addedSharesBefore = hub1.getAssetAddedShares(daiAssetId);
 
     (uint256 drawnBefore, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
@@ -538,7 +539,7 @@ contract HubAddTest is HubBase {
     );
     assertEq(
       hub1.getSpokeAddedShares(daiAssetId, address(spoke2)),
-      addedSharesBefore + shares,
+      spokeAddedSharesBefore + shares,
       'spoke addedShares after'
     );
     // Hub and Spoke accounting do not match because of liquidity fees
@@ -576,8 +577,8 @@ contract HubAddTest is HubBase {
     // effective add amount (taking into account potential donation)
     uint256 spokeAddedAmount = calculateEffectiveAddedAssets(
       addAmount,
-      hub1.getTotalAddedAssets(daiAssetId),
-      hub1.getTotalAddedShares(daiAssetId)
+      hub1.getAssetAddedAmount(daiAssetId),
+      hub1.getAssetAddedShares(daiAssetId)
     );
 
     Utils.add({
@@ -635,8 +636,8 @@ contract HubAddTest is HubBase {
     // effective add amount (taking into account potential donation)
     uint256 spokeAddedAmount = calculateEffectiveAddedAssets(
       addAmount,
-      hub1.getTotalAddedAssets(daiAssetId),
-      hub1.getTotalAddedShares(daiAssetId)
+      hub1.getAssetAddedAmount(daiAssetId),
+      hub1.getAssetAddedShares(daiAssetId)
     );
 
     Utils.add({

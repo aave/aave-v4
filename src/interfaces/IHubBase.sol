@@ -273,20 +273,6 @@ interface IHubBase {
   function getAssetAddedShares(uint256 assetId) external view returns (uint256);
 
   /**
-   * @notice Returns the total amount of the specified asset added to the hub.
-   * @param assetId The identifier of the asset.
-   * @return The amount of the asset added.
-   */
-  function getTotalAddedAssets(uint256 assetId) external view returns (uint256);
-
-  /**
-   * @notice Returns the total amount of shares of the specified asset added to the hub.
-   * @param assetId The identifier of the asset.
-   * @return The amount of shares of the asset added.
-   */
-  function getTotalAddedShares(uint256 assetId) external view returns (uint256);
-
-  /**
    * @notice Returns the total amount of the specified assets added to the hub by the specified spoke.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.

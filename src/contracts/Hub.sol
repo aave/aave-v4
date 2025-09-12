@@ -564,28 +564,17 @@ contract Hub is IHub, AccessManaged {
     return (spokeData.premiumShares, spokeData.premiumOffset, spokeData.realizedPremium);
   }
 
-  /// @inheritdoc IHubBase
-  function getAssetAddedAmount(uint256 assetId) external view returns (uint256) {
-    DataTypes.Asset storage asset = _assets[assetId];
-    return previewRemoveByShares(assetId, asset.addedShares);
-  }
-
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].drawnRate;
   }
 
   /// @inheritdoc IHubBase
-  function getAssetAddedShares(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].addedShares;
-  }
-
-  /// @inheritdoc IHubBase
-  function getTotalAddedAssets(uint256 assetId) external view override returns (uint256) {
+  function getAssetAddedAmount(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].totalAddedAssets();
   }
 
   /// @inheritdoc IHubBase
-  function getTotalAddedShares(uint256 assetId) external view override returns (uint256) {
+  function getAssetAddedShares(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].totalAddedShares();
   }
 
@@ -807,8 +796,7 @@ contract Hub is IHub, AccessManaged {
     uint256 addCap = receiver.addCap;
     require(
       addCap == Constants.MAX_CAP ||
-        addCap * 10 ** asset.decimals >=
-        previewRemoveByShares(assetId, receiver.addedShares + shares),
+        addCap * 10 ** asset.decimals >= previewAddByShares(assetId, receiver.addedShares + shares),
       AddCapExceeded(addCap)
     );
   }

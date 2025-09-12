@@ -1440,7 +1440,7 @@ abstract contract Base is Test {
       string(abi.encodePacked('asset supplied shares ', label))
     );
     assertEq(
-      hub1.getAssetAddedAmount(assetId),
+      hub1.getAssetAddedAmount(assetId) - _calculateBurntInterest(hub1, assetId),
       expectedSuppliedAmount,
       string(abi.encodePacked('asset supplied amount ', label))
     );
@@ -1663,7 +1663,7 @@ abstract contract Base is Test {
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     assertApproxEqAbs(
-      hub1.getAssetAddedAmount(assetId),
+      hub1.getAssetAddedAmount(assetId) - _calculateBurntInterest(hub1, assetId),
       expectedSuppliedAmount,
       3,
       string.concat('asset supplied amount ', label)
@@ -1860,8 +1860,8 @@ abstract contract Base is Test {
   /// @dev Helper function to calculate burnt interest in assets terms (originated from virtual shares and assets)
   function _calculateBurntInterest(IHub hub, uint256 assetId) internal view returns (uint256) {
     return
-      hub.getTotalAddedAssets(assetId) -
-      hub.previewRemoveByShares(assetId, hub.getTotalAddedShares(assetId));
+      hub.getAssetAddedAmount(assetId) -
+      hub.previewRemoveByShares(assetId, hub.getAssetAddedShares(assetId));
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke
@@ -2281,17 +2281,17 @@ abstract contract Base is Test {
 
   // @dev Helper function to get asset position, valid if no time has passed since last action
   function getAssetPosition(
-    IHub targetHub,
+    IHub hub,
     uint256 assetId
   ) internal view returns (AssetPosition memory) {
-    DataTypes.Asset memory assetData = targetHub.getAsset(assetId);
-    (uint256 drawn, uint256 premium) = targetHub.getAssetOwed(assetId);
+    DataTypes.Asset memory assetData = hub.getAsset(assetId);
+    (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
     return
       AssetPosition({
         assetId: assetId,
         liquidity: assetData.liquidity,
         addedShares: assetData.addedShares,
-        addedAmount: targetHub.getAssetAddedAmount(assetId),
+        addedAmount: hub.getAssetAddedAmount(assetId) - _calculateBurntInterest(hub, assetId),
         drawnShares: assetData.drawnShares,
         drawn: drawn,
         premiumShares: assetData.premiumShares,

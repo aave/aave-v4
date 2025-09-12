@@ -80,8 +80,10 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     });
 
     uint256 treasuryFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
-    uint256 interestAccrued = hub1.getAssetAddedAmount(daiAssetId) - treasuryFees - supplyAmount;
-
+    uint256 interestAccrued = hub1.getAssetAddedAmount(daiAssetId) -
+      _calculateBurntInterest(hub1, daiAssetId) -
+      treasuryFees -
+      supplyAmount;
     uint256 totalSupplied = interestAccrued + supplyAmount;
     assertApproxEqAbs(
       totalSupplied,
@@ -99,6 +101,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     treasuryFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
     interestAccrued =
       hub1.getAssetAddedAmount(daiAssetId) -
+      _calculateBurntInterest(hub1, daiAssetId) -
       treasuryFees -
       (supplyAmount - partialWithdrawAmount);
 
