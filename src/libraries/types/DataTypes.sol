@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
-import {IHub} from 'src/interfaces/IHub.sol';
+import {IHubBase} from 'src/interfaces/IHubBase.sol';
 
 library DataTypes {
   // Hub types
@@ -66,7 +66,7 @@ library DataTypes {
   struct Reserve {
     address underlying;
     //
-    IHub hub;
+    IHubBase hub;
     uint16 assetId;
     uint8 decimals;
     uint16 dynamicConfigKey; // key of the last reserve config

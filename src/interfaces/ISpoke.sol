@@ -272,8 +272,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
 
-  function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
-
   function getReserveConfig(
     uint256 reserveId
   ) external view returns (DataTypes.ReserveConfig memory);
@@ -287,17 +285,9 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     uint16 configKey
   ) external view returns (DataTypes.DynamicReserveConfig memory);
 
-  function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
-
-  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
-
-  function getReserveTotalDebt(uint256 reserveId) external view returns (uint256);
-
   function getUserAccountData(
     address user
   ) external view returns (DataTypes.UserAccountData memory);
-
-  function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256);
 
   function getUserPosition(
     uint256 reserveId,
@@ -305,12 +295,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   ) external view returns (DataTypes.UserPosition memory);
 
   function getUserRiskPremium(address user) external view returns (uint256);
-
-  function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256);
-
-  function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
-
-  function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
 
   function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
 

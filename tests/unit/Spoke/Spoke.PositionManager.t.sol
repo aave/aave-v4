@@ -77,8 +77,8 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, POSITION_MANAGER), 0);
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), amount);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, POSITION_MANAGER), 0);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), amount);
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -106,8 +106,8 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.withdraw(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, POSITION_MANAGER), 0);
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), amount);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, POSITION_MANAGER), 0);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), amount);
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);

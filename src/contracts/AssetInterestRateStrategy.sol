@@ -9,7 +9,7 @@ import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/interf
  * @title AssetInterestRateStrategy contract
  * @author Aave Labs
  * @notice Asset interest rate strategy used by the Aave protocol
- * @dev Strategies are hub-specific, due to the usage of asset id as index of the _interestRateData.
+ * @dev Strategies are hub-specific, due to the usage of asset identifier as index of the _interestRateData.
  */
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;
@@ -36,7 +36,12 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     HUB = hub_;
   }
 
-  /// @inheritdoc IAssetInterestRateStrategy
+  /**
+   * @notice Sets the interest rate parameters for a specified asset.
+   * @dev data contains bps values encoded in bytes.
+   * @param assetId The identifier of the asset.
+   * @param data The encoded parameters used to configure the interest rate of the asset.
+   */
   function setInterestRateData(uint256 assetId, bytes calldata data) external {
     require(HUB == msg.sender, OnlyHub());
     InterestRateData memory rateData = abi.decode(data, (InterestRateData));
