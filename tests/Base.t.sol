@@ -1913,7 +1913,10 @@ abstract contract Base is Test {
         user != address(hub1) &&
         user != address(spoke1) &&
         user != address(spoke2) &&
-        user != address(spoke3)
+        user != address(spoke3) &&
+        user != getProxyAdminAddress(address(spoke1)) &&
+        user != getProxyAdminAddress(address(spoke2)) &&
+        user != getProxyAdminAddress(address(spoke3))
     );
   }
 
