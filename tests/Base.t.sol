@@ -254,13 +254,13 @@ abstract contract Base is Test {
   }
 
   function getProxyAdminAddress(address proxy) internal view returns (address) {
-    bytes32 adminSlot = vm.load(proxy, ERC1967_ADMIN_SLOT);
-    return address(uint160(uint256(adminSlot)));
+    bytes32 slotData = vm.load(proxy, ERC1967_ADMIN_SLOT);
+    return address(uint160(uint256(slotData)));
   }
 
   function getImplementationAddress(address proxy) internal view returns (address) {
-    bytes32 implementationSlot = vm.load(proxy, IMPLEMENTATION_SLOT);
-    return address(uint160(uint256(implementationSlot)));
+    bytes32 slotData = vm.load(proxy, IMPLEMENTATION_SLOT);
+    return address(uint160(uint256(slotData)));
   }
 
   function deployFixtures() internal virtual {
