@@ -3,9 +3,10 @@
 pragma solidity ^0.8.0;
 
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
+import {IRescuable} from 'src/interfaces/IRescuable.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
-interface ISignatureGateway is IMulticall {
+interface ISignatureGateway is IMulticall, IRescuable {
   error InvalidAddress();
   /**
    * @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.

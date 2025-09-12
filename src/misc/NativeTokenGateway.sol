@@ -34,7 +34,11 @@ contract NativeTokenGateway is
   /// @inheritdoc INativeTokenGateway
   ISpoke public immutable SPOKE;
 
-  constructor(address nativeWrapper_, address spoke_, address initialOwner_) Ownable(initialOwner_) {
+  constructor(
+    address nativeWrapper_,
+    address spoke_,
+    address initialOwner_
+  ) Ownable(initialOwner_) {
     require(nativeWrapper_ != address(0) && spoke_ != address(0), InvalidAddress());
     NATIVE_WRAPPER = INativeWrapper(payable(nativeWrapper_));
     SPOKE = ISpoke(spoke_);
@@ -62,7 +66,10 @@ contract NativeTokenGateway is
     _validateParams(underlying, amount);
     require(receiver != address(0), InvalidAddress());
 
-    uint256 withdrawAmount = MathUtils.min(amount, SPOKE.getUserSuppliedAmount(reserveId, msg.sender));
+    uint256 withdrawAmount = MathUtils.min(
+      amount,
+      SPOKE.getUserSuppliedAmount(reserveId, msg.sender)
+    );
 
     SPOKE.withdraw(reserveId, withdrawAmount, msg.sender);
     NATIVE_WRAPPER.withdraw(withdrawAmount);

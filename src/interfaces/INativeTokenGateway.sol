@@ -53,6 +53,7 @@ interface INativeTokenGateway is IRescuable {
 
   /// @notice Native Wrapper contract
   function NATIVE_WRAPPER() external view returns (INativeWrapper);
+
   /// @notice Spoke contract
   function SPOKE() external view returns (ISpoke);
 }
