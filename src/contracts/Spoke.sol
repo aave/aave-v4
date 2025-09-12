@@ -31,15 +31,16 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using PositionStatus for *;
   using MathUtils for *;
 
-  IAaveOracle internal _oracle;
+  IAaveOracle public immutable oracle;
+
   uint256 internal _reserveCount;
-  mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
+  mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition))
     internal _userPositions;
-  mapping(address user => DataTypes.PositionStatus positionStatus) internal _positionStatus;
-  mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
+  mapping(address user => DataTypes.PositionStatus) internal _positionStatus;
+  mapping(uint256 reserveId => DataTypes.Reserve) internal _reserves;
   mapping(address positionManager => DataTypes.PositionManagerConfig) internal _positionManager;
   mapping(address user => uint256 nonce) internal _nonces;
-  mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
+  mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   DataTypes.LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool exists)) internal _reserveExists;
@@ -53,9 +54,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    * @dev Constructor.
    * @dev The authority should implement the AccessManaged interface to control access.
    * @param authority_ The address of the authority contract which manages permissions.
+   * @param oracle_ The address of the AaveOracle contract.
    */
-  constructor(address authority_) AccessManaged(authority_) {
-    require(authority_ != address(0), InvalidAddress());
+  constructor(address authority_, address oracle_) AccessManaged(authority_) {
+    require(authority_ != address(0) && oracle_ != address(0), InvalidAddress());
+    oracle = IAaveOracle(oracle_);
     _liquidationConfig.targetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     emit LiquidationConfigUpdate(_liquidationConfig);
   }
@@ -63,16 +66,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   // /////
   // Governance
   // /////
-
-  /// @inheritdoc ISpoke
-  function updateOracle(address newOracle) external restricted {
-    _oracle = IAaveOracle(newOracle);
-    require(
-      newOracle != address(0) && _oracle.DECIMALS() == Constants.ORACLE_DECIMALS,
-      InvalidOracle()
-    );
-    emit OracleUpdate(newOracle);
-  }
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
@@ -314,7 +307,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.LiquidateUserParams memory params = DataTypes.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
-      oracle: address(_oracle),
+      oracle: address(oracle),
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
@@ -535,10 +528,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     return _reserveCount;
   }
 
-  function getOracle() external view returns (address) {
-    return address(_oracle);
-  }
-
   /// @inheritdoc ISpokeBase
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
@@ -692,8 +681,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
-    require(address(_oracle) != address(0), InvalidAddress());
-    _oracle.setReserveSource(reserveId, priceSource);
+    require(priceSource != address(0), InvalidAddress());
+    oracle.setReserveSource(reserveId, priceSource);
     emit ReservePriceSourceUpdate(reserveId, priceSource);
   }
 
@@ -796,7 +785,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   ) internal returns (DataTypes.UserAccountData memory userAccountData) {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
 
-    IAaveOracle oracle = _oracle;
     uint256 reserveId = _reserveCount;
     KeyValueList.List memory list = KeyValueList.init(positionStatus.collateralCount(reserveId));
     bool borrowing;

@@ -24,11 +24,6 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   constructor(address owner_) Ownable(owner_) {}
 
   /// @inheritdoc ISpokeConfigurator
-  function updateOracle(address spoke, address oracle) external onlyOwner {
-    ISpoke(spoke).updateOracle(oracle);
-  }
-
-  /// @inheritdoc ISpokeConfigurator
   function updateReservePriceSource(
     address spoke,
     uint256 reserveId,

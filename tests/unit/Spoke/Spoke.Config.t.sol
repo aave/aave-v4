@@ -21,43 +21,18 @@ contract SpokeConfigTest is SpokeBase {
         liquidationBonusFactor: 0
       })
     );
-    new Spoke(address(accessManager));
+    new Spoke(makeAddr('AccessManager'), makeAddr('AaveOracle'));
   }
 
   function test_spoke_deploy_revertsWith_InvalidAddress() public {
     vm.expectRevert(ISpoke.InvalidAddress.selector);
-    new Spoke(address(0));
-  }
+    new Spoke(address(0), vm.randomAddress());
 
-  function test_updateOracle_revertsWith_AccessManagedUnauthorized(address caller) public {
-    vm.assume(caller != SPOKE_ADMIN && caller != ADMIN);
-    vm.expectRevert(
-      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
-    );
-    vm.prank(caller);
-    spoke1.updateOracle(vm.randomAddress());
-  }
+    vm.expectRevert(ISpoke.InvalidAddress.selector);
+    new Spoke(vm.randomAddress(), address(0));
 
-  function test_updateOracle_revertsWith_InvalidOracle_AddressZero() public {
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateOracle(address(0));
-  }
-
-  function test_updateOracle_revertsWith_InvalidOracle_DecimalsMismatch() public {
-    address newOracle = address(new AaveOracle(SPOKE_ADMIN, 18, 'New Aave Oracle'));
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateOracle(newOracle);
-  }
-
-  function test_updateOracle() public {
-    address newOracle = address(new AaveOracle(SPOKE_ADMIN, 8, 'New Aave Oracle'));
-    vm.expectCall(newOracle, abi.encodeCall(IPriceOracle.DECIMALS, ()));
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.OracleUpdate(newOracle);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateOracle(newOracle);
+    vm.expectRevert(ISpoke.InvalidAddress.selector);
+    new Spoke(address(0), address(0));
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(
@@ -209,7 +184,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_InvalidAddress_oracle() public {
-    Spoke newSpoke = new Spoke(address(accessManager));
+    (ISpoke newSpoke, ) = _deploySpokeWithOracle(address(accessManager), 'New Spoke (USD)');
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       paused: true,

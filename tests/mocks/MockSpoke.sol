@@ -8,7 +8,7 @@ contract MockSpoke is Spoke {
   using SafeCast for *;
   using PositionStatus for *;
 
-  constructor(address authority_) Spoke(authority_) {}
+  constructor(address authority_, address oracle_) Spoke(authority_, oracle_) {}
 
   // same as spoke's borrow, but without health factor check and no position manager check for onBehalfOf
   function borrowWithoutHfCheck(uint256 reserveId, uint256 amount, address onBehalfOf) external {

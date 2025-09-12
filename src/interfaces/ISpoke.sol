@@ -6,6 +6,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
+import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
 /**
  * @title ISpoke
@@ -127,12 +128,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error InvalidDebtToCover();
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
-
-  /**
-   * @notice Allows governance to update the spoke oracle.
-   * @dev Does not validate all existing reserves are supported on `newOracle`.
-   */
-  function updateOracle(address newOracle) external;
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;
 
@@ -301,6 +296,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getReserveCount() external view returns (uint256);
 
+  function oracle() external view returns (IAaveOracle);
+
   function getLiquidationBonus(
     uint256 reserveId,
     address user,
@@ -308,8 +305,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   ) external view returns (uint256);
 
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
-
-  function getOracle() external view returns (address);
 
   function nonces(address user) external view returns (uint256);
 

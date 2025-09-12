@@ -12,7 +12,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
   }
 
   function test_eip712Domain() public {
-    Spoke spoke = new Spoke{salt: bytes32(vm.randomUint())}(address(accessManager));
+    Spoke spoke = new Spoke{salt: bytes32(vm.randomUint())}(vm.randomAddress(), vm.randomAddress());
     (
       bytes1 fields,
       string memory name,
@@ -33,7 +33,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
   }
 
   function test_DOMAIN_SEPARATOR() public {
-    Spoke spoke = new Spoke{salt: bytes32(vm.randomUint())}(address(accessManager));
+    Spoke spoke = new Spoke{salt: bytes32(vm.randomUint())}(vm.randomAddress(), vm.randomAddress());
     bytes32 expectedDomainSeparator = keccak256(
       abi.encode(
         keccak256(
