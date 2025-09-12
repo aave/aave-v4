@@ -29,8 +29,8 @@ contract NativeTokenGateway is
 {
   using SafeERC20 for *;
 
-  INativeWrapper private immutable _nativeWrapper;
-  ISpoke private immutable _spoke;
+  INativeWrapper internal immutable _nativeWrapper;
+  ISpoke internal immutable _spoke;
 
   constructor(
     address nativeWrapper_,
