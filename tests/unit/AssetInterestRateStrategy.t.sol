@@ -150,7 +150,7 @@ contract AssetInterestRateStrategyTest is Base {
     uint256 mockAssetId2 = uint256(keccak256('mockAssetId2'));
     vm.expectRevert(
       abi.encodeWithSelector(
-        IAssetInterestRateStrategy.InterestRateDataNotSet.selector,
+        IBasicInterestRateStrategy.InterestRateDataNotSet.selector,
         mockAssetId2
       )
     );

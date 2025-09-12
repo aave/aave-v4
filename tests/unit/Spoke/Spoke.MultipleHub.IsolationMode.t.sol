@@ -146,7 +146,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Check Bob's supplied amounts and collateral status
     assertEq(
-      newSpoke.getUserSuppliedAmount(isolationVars.reserveAId, bob),
+      newSpoke.getUserSuppliedAssets(isolationVars.reserveAId, bob),
       MAX_SUPPLY_AMOUNT,
       'bob supplied amount of reserve A on new spoke'
     );
@@ -155,7 +155,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       'bob using reserve A as collateral on new spoke'
     );
     assertEq(
-      newHub.getTotalAddedAssets(isolationVars.assetAId),
+      newHub.getAssetAddedAmount(isolationVars.assetAId),
       MAX_SUPPLY_AMOUNT,
       'total supplied amount of assetA on new hub'
     );
@@ -197,12 +197,12 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Check Alice's supplied amount of asset B on spoke 1
     assertEq(
-      spoke1.getUserSuppliedAmount(isolationVars.spoke1ReserveBId, alice),
+      spoke1.getUserSuppliedAssets(isolationVars.spoke1ReserveBId, alice),
       500_000e18,
       'alice supplied amount of reserve B on spoke 1'
     );
     assertEq(
-      hub1.getTotalAddedAssets(isolationVars.assetBIdMainHub),
+      hub1.getAssetAddedAmount(isolationVars.assetBIdMainHub),
       500_000e18,
       'total supplied amount of asset B on main hub'
     );
@@ -227,12 +227,12 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Now there is liquidity for asset B on the new hub
     assertEq(
-      newHub.getTotalAddedAssets(isolationVars.assetBId),
+      newHub.getAssetAddedAmount(isolationVars.assetBId),
       MAX_SUPPLY_AMOUNT,
       'total supplied amount of asset B on new hub'
     );
     assertEq(
-      newSpoke.getReserveSuppliedAmount(isolationVars.reserveBId),
+      newSpoke.getReserveSuppliedAssets(isolationVars.reserveBId),
       MAX_SUPPLY_AMOUNT,
       'total supplied amount of reserve B on new spoke'
     );

@@ -30,7 +30,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 amount = 1;
 
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), 0);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), 0);
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, 0));
     vm.prank(alice);
@@ -41,7 +41,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     uint256 reserveId = _daiReserveId(spoke1);
 
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), 0);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), 0);
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, 0));
     vm.prank(alice);
