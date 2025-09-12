@@ -819,19 +819,17 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     address user,
     bool refreshConfig
   ) internal returns (DataTypes.UserAccountData memory userAccountData) {
-    IAaveOracle aaveOracle = oracle;
-    uint256 reserveCount = _reserveCount;
-
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
-      positionStatus.collateralCount(reserveCount)
-    );
 
-    uint256 reserveId;
+    IAaveOracle aaveOracle = oracle;
+    uint256 reserveId = _reserveCount;
+    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
+      positionStatus.collateralCount(reserveId)
+    );
     bool borrowing;
     bool collateral;
     while (true) {
-      (reserveId, borrowing, collateral) = positionStatus.next(reserveId, reserveCount);
+      (reserveId, borrowing, collateral) = positionStatus.next(reserveId);
       if (reserveId == PositionStatus.NOT_FOUND) break;
 
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
@@ -880,8 +878,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
           1
         );
       }
-
-      reserveId = reserveId.uncheckedAdd(1);
     }
 
     // at this point avgCollateralFactor is a weighted sum of collateral scaled by collateralFactor
@@ -949,14 +945,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    * @param newUserRiskPremium The new risk premium of the user.
    */
   function _notifyRiskPremiumUpdate(address user, uint256 newUserRiskPremium) internal {
-    uint256 reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
 
-    uint256 reserveId;
-    while (
-      (reserveId = positionStatus.nextBorrowing(reserveId, reserveCount)) !=
-      PositionStatus.NOT_FOUND
-    ) {
+    uint256 reserveId = _reserveCount;
+    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatus.NOT_FOUND) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       uint256 assetId = _reserves[reserveId].assetId;
       IHubBase hub = _reserves[reserveId].hub;
@@ -985,7 +977,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
       hub.refreshPremium(assetId, premiumDelta);
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
-      reserveId = reserveId.uncheckedAdd(1);
     }
     emit UserRiskPremiumUpdate(user, newUserRiskPremium);
   }
@@ -997,13 +988,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    */
   function _reportDeficit(address user) internal {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-    uint256 reserveCount = _reserveCount;
-    uint256 reserveId;
+    uint256 reserveId = _reserveCount;
 
-    while (
-      (reserveId = positionStatus.nextBorrowing(reserveId, reserveCount)) !=
-      PositionStatus.NOT_FOUND
-    ) {
+    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatus.NOT_FOUND) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       DataTypes.Reserve storage reserve = _reserves[reserveId];
       // validation should already have occurred during liquidation
@@ -1031,23 +1018,15 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       // newUserRiskPremium is 0 due to no collateral remaining
       // non-zero deficit means user ends up with zero total debt
       positionStatus.setBorrowing(reserveId, false);
-
-      reserveId = reserveId.uncheckedAdd(1);
     }
     emit UserRiskPremiumUpdate(user, 0);
   }
 
   function _refreshDynamicConfig(address user) internal {
-    uint256 reserveCount = _reserveCount;
-    uint256 reserveId;
+    uint256 reserveId = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-    while (
-      (reserveId = positionStatus.nextCollateral(reserveId, reserveCount)) !=
-      PositionStatus.NOT_FOUND
-    ) {
+    while ((reserveId = positionStatus.nextCollateral(reserveId)) != PositionStatus.NOT_FOUND) {
       _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
-
-      reserveId = reserveId.uncheckedAdd(1);
     }
     emit RefreshAllUserDynamicConfig(user);
   }
