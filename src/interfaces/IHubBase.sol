@@ -190,6 +190,37 @@ interface IHubBase {
   function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
+   * @notice Returns the amount of owed drawn and premium assets for the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The amount of owed drawn assets.
+   * @return The amount of owed premium assets.
+   */
+  function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
+
+  /**
+   * @notice Returns the total amount of the specified asset owed to the hub.
+   * @param assetId The identifier of the asset.
+   * @return The total amount of the asset owed.
+   */
+  function getAssetTotalOwed(uint256 assetId) external view returns (uint256);
+
+  /**
+   * @notice Returns the amount of drawn shares of the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The amount of drawn shares.
+   */
+  function getAssetDrawnShares(uint256 assetId) external view returns (uint256);
+
+  /**
+   * @notice Returns the information regarding premium shares of the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The amount of premium shares owed to the asset.
+   * @return The premium offset of the asset.
+   * @return The realized premium of the asset.
+   */
+  function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256);
+
+  /**
    * @notice Returns the total amount of the specified assets owed to the hub by the specified spoke.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
