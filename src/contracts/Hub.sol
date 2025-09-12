@@ -533,24 +533,15 @@ contract Hub is IHub, AccessManaged {
     return _getSpokeDrawn(spokeData, assetId) + _getSpokePremium(spokeData, assetId);
   }
 
-  function getAssetAddedAmount(uint256 assetId) external view returns (uint256) {
-    DataTypes.Asset storage asset = _assets[assetId];
-    return previewRemoveByShares(assetId, asset.addedShares);
-  }
-
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].drawnRate;
   }
 
-  function getAssetAddedShares(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].addedShares;
-  }
-
-  function getTotalAddedAssets(uint256 assetId) external view override returns (uint256) {
+  function getTotalAddedAssets(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].totalAddedAssets();
   }
 
-  function getTotalAddedShares(uint256 assetId) external view override returns (uint256) {
+  function getTotalAddedShares(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].totalAddedShares();
   }
 
