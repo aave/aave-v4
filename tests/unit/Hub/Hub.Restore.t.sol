@@ -577,9 +577,9 @@ contract HubRestoreTest is HubBase {
 
     // hub
     assertApproxEqAbs(
-      hub1.getTotalAddedAssets(daiAssetId),
-      hub1.getSpokeAddedAmount(daiAssetId, address(spoke2)) +
-        hub1.getSpokeAddedAmount(daiAssetId, feeReceiver) +
+      hub1.getAssetAddedAmount(daiAssetId),
+      hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)) +
+        hub1.getSpokeAddedAssets(daiAssetId, feeReceiver) +
         _calculateBurntInterest(hub1, daiAssetId),
       1,
       'hub dai total addedAmount'
@@ -589,7 +589,7 @@ contract HubRestoreTest is HubBase {
     assertEq(daiData.liquidity, daiAmount - drawAmount + restoreDrawnAmount, 'hub dai liquidity');
     assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
     // spoke1
-    assertEq(hub1.getSpokeAddedAmount(daiAssetId, address(spoke1)), 0, 'hub spoke1 addedAmount');
+    assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)), 0, 'hub spoke1 addedAmount');
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(spoke1)), 0, 'hub spoke1 addedShares');
     (uint256 spoke1DaiDrawn, uint256 spoke1DaiPremium) = hub1.getSpokeOwed(
       daiAssetId,
@@ -759,8 +759,8 @@ contract HubRestoreTest is HubBase {
     // spoke
     assertApproxEqAbs(
       daiData.addedAmount,
-      hub1.getSpokeAddedAmount(daiAssetId, daiFeeReceiver) +
-        hub1.getSpokeAddedAmount(daiAssetId, address(spoke2)),
+      hub1.getSpokeAddedAssets(daiAssetId, daiFeeReceiver) +
+        hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
       1,
       'spoke addedAmount'
     );
@@ -863,8 +863,8 @@ contract HubRestoreTest is HubBase {
     // spoke
     assertApproxEqAbs(
       daiData.addedAmount,
-      hub1.getSpokeAddedAmount(daiAssetId, daiFeeReceiver) +
-        hub1.getSpokeAddedAmount(daiAssetId, address(spoke2)),
+      hub1.getSpokeAddedAssets(daiAssetId, daiFeeReceiver) +
+        hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
       1,
       'spoke addedAmount'
     );

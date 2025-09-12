@@ -29,7 +29,7 @@ contract HubPayFeeTest is HubBase {
     });
 
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
-    uint256 feeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
+    uint256 feeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
 
     vm.expectRevert(
       abi.encodeWithSelector(IHub.AddedSharesExceeded.selector, feeShares),
@@ -53,7 +53,7 @@ contract HubPayFeeTest is HubBase {
     _drawLiquidity(daiAssetId, addAmount, true);
 
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
-    uint256 feeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
+    uint256 feeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
 
     // supply ex rate increases due to interest
     assertGt(feeAmount, feeShares);

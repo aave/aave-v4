@@ -45,7 +45,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
 
     // treasury
-    assertEq(hub1.getSpokeAddedAmount(daiAssetId, address(treasurySpoke)), 0);
+    assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke)), 0);
   }
 
   function test_accrueLiquidityFee_fuzz_BorrowAmountAndSkipTime(
@@ -518,12 +518,12 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
 
     assertEq(
-      spoke1.getUserSuppliedAmount(reserveId, alice),
+      spoke1.getUserSuppliedAssets(reserveId, alice),
       supplyAmount,
       'alice does not earn anything'
     );
     assertEq(
-      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
       expectedDrawnDebtAccrual + expectedPremiumDebt,
       'treasury all accumulated interest'
     );

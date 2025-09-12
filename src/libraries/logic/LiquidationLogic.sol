@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {IHub} from 'src/interfaces/IHub.sol';
+import {IHubBase} from 'src/interfaces/IHubBase.sol';
 import {ISpoke, ISpokeBase} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 import {Constants} from 'src/libraries/helpers/Constants.sol';
@@ -258,7 +258,7 @@ library LiquidationLogic {
     DataTypes.UserPosition storage position,
     LiquidateCollateralParams memory params
   ) internal returns (bool) {
-    IHub hub = reserve.hub;
+    IHubBase hub = reserve.hub;
     uint256 assetId = reserve.assetId;
 
     uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
@@ -324,7 +324,7 @@ library LiquidationLogic {
     DataTypes.DynamicReserveConfig storage collateralDynConfig,
     DataTypes.LiquidateUserParams memory params
   ) external returns (bool) {
-    IHub collateralHub = collateralReserve.hub;
+    IHubBase collateralHub = collateralReserve.hub;
     _validateLiquidationCall(
       ValidateLiquidationCallParams({
         user: params.user,

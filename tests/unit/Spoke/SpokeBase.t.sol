@@ -144,7 +144,7 @@ contract SpokeBase is Base {
   /// @dev Opens a supply position for a random user
   function _openSupplyPosition(ISpoke spoke, uint256 reserveId, uint256 amount) public {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 initialLiq = spoke.getReserve(reserveId).hub.getLiquidity(assetId);
+    uint256 initialLiq = _hub(spoke, reserveId).getLiquidity(assetId);
 
     address tempUser = makeUser();
     deal(spoke, reserveId, tempUser, amount);
@@ -169,7 +169,7 @@ contract SpokeBase is Base {
     address user
   ) public {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 initialLiq = spoke.getReserve(reserveId).hub.getLiquidity(assetId);
+    uint256 initialLiq = _hub(spoke, reserveId).getLiquidity(assetId);
 
     deal(spoke, reserveId, user, amount);
     Utils.approve(spoke, reserveId, user, UINT256_MAX);
@@ -441,7 +441,7 @@ contract SpokeBase is Base {
     return
       TestData({
         data: getSpokePosition(spoke, reserveId),
-        addedAmount: spoke.getReserveSuppliedAmount(reserveId)
+        addedAmount: spoke.getReserveSuppliedAssets(reserveId)
       });
   }
 
@@ -452,7 +452,7 @@ contract SpokeBase is Base {
   ) internal view returns (TestUserData memory) {
     TestUserData memory userInfo;
     userInfo.data = getUserInfo(spoke, user, reserveId);
-    userInfo.suppliedAmount = spoke.getUserSuppliedAmount(reserveId, user);
+    userInfo.suppliedAmount = spoke.getUserSuppliedAssets(reserveId, user);
     return userInfo;
   }
 

@@ -361,7 +361,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     skip(skipTime);
 
     // Check Bob's dai collateral amount is now enough to cover his weth debt
-    uint256 daiSupplied = spoke2.getUserSuppliedAmount(_daiReserveId(spoke2), bob);
+    uint256 daiSupplied = spoke2.getUserSuppliedAssets(_daiReserveId(spoke2), bob);
     uint256 bobWethDebt = spoke2.getUserTotalDebt(_wethReserveId(spoke2), bob);
     assertGt(
       _getValueInBaseCurrency(spoke2, _daiReserveId(spoke2), daiSupplied),
@@ -479,7 +479,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       _getValueInBaseCurrency(
         spoke2,
         _daiReserveId(spoke2),
-        spoke2.getUserSuppliedAmount(_daiReserveId(spoke2), bob)
+        spoke2.getUserSuppliedAssets(_daiReserveId(spoke2), bob)
       ),
       'Bob weth debt exceeds dai collateral after time skip'
     );
@@ -599,7 +599,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     skip(skipTime);
 
     // Ensure that Bob's collateral amount has changed
-    uint256 bobDaiCollateral = spoke2.getUserSuppliedAmount(_daiReserveId(spoke2), bob);
+    uint256 bobDaiCollateral = spoke2.getUserSuppliedAssets(_daiReserveId(spoke2), bob);
     assertGt(bobDaiCollateral, daiSupplyAmount, 'Bob dai collateral after 1 year');
 
     // Ensure Bob's weth debt has grown beyond dai collateral

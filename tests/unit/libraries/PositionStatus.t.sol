@@ -128,16 +128,16 @@ contract PositionStatusTest is Base {
 
   function test_isUsingAsCollateralOrBorrowing_slot1() public {
     p.setUsingAsCollateral(128, true);
-    assertEq(p.isUsingAsCollateral(128), true);
+    assertEq(p.isUsingAsCollateralOrBorrowing(128), true);
 
     p.setUsingAsCollateral(128, false);
-    assertEq(p.isUsingAsCollateral(128), false);
+    assertEq(p.isUsingAsCollateralOrBorrowing(128), false);
 
     p.setUsingAsCollateral(255, true);
-    assertEq(p.isUsingAsCollateral(255), true);
+    assertEq(p.isUsingAsCollateralOrBorrowing(255), true);
 
     p.setUsingAsCollateral(255, false);
-    assertEq(p.isUsingAsCollateral(255), false);
+    assertEq(p.isUsingAsCollateralOrBorrowing(255), false);
   }
 
   function test_collateralCount() public {
@@ -247,16 +247,15 @@ contract PositionStatusTest is Base {
     reserveCount = bound(reserveCount, 1, 1 << 10); // gas limit
     vm.setArbitraryStorage(address(p));
 
-    uint256 startReserveId = vm.randomUint(0, reserveCount - 1);
+    uint256 startReserveId = vm.randomUint(1, reserveCount);
     uint256 expectedReserveId = PositionStatus.NOT_FOUND;
-    uint256 endReserveId = ((reserveCount / 128) + 1) * 128; // last bucket
-    for (uint256 i = startReserveId; i < endReserveId; ++i) {
+    for (uint256 i = startReserveId - 1; i >= 0; --i) {
       if (p.isUsingAsCollateral(i) || p.isBorrowing(i)) {
         expectedReserveId = i;
         break;
       }
     }
-    (uint256 reserveId, bool borrowing, bool collateral) = p.next(startReserveId, reserveCount);
+    (uint256 reserveId, bool borrowing, bool collateral) = p.next(startReserveId);
     assertEq(reserveId, expectedReserveId);
     assertEq(borrowing, reserveId != PositionStatus.NOT_FOUND && p.isBorrowing(reserveId));
     assertEq(collateral, reserveId != PositionStatus.NOT_FOUND && p.isUsingAsCollateral(reserveId));
@@ -266,16 +265,15 @@ contract PositionStatusTest is Base {
     reserveCount = bound(reserveCount, 1, 1 << 10); // gas limit
     vm.setArbitraryStorage(address(p));
 
-    uint256 startReserveId = vm.randomUint(0, reserveCount - 1);
+    uint256 startReserveId = vm.randomUint(1, reserveCount);
     uint256 expectedReserveId = PositionStatus.NOT_FOUND;
-    uint256 endReserveId = ((reserveCount / 128) + 1) * 128; // last bucket
-    for (uint256 i = startReserveId; i < endReserveId; ++i) {
+    for (uint256 i = startReserveId - 1; i >= 0; --i) {
       if (p.isBorrowing(i)) {
         expectedReserveId = i;
         break;
       }
     }
-    uint256 reserveId = p.nextBorrowing(startReserveId, reserveCount);
+    uint256 reserveId = p.nextBorrowing(startReserveId);
     assertEq(reserveId, expectedReserveId);
     assertEq(p.isBorrowing(reserveId), reserveId != PositionStatus.NOT_FOUND);
   }
@@ -284,90 +282,93 @@ contract PositionStatusTest is Base {
     reserveCount = bound(reserveCount, 1, 1 << 10); // gas limit
     vm.setArbitraryStorage(address(p));
 
-    uint256 startReserveId = vm.randomUint(0, reserveCount - 1);
+    uint256 startReserveId = vm.randomUint(1, reserveCount);
     uint256 expectedReserveId = PositionStatus.NOT_FOUND;
-    uint256 endReserveId = ((reserveCount / 128) + 1) * 128; // last bucket
-    for (uint256 i = startReserveId; i < endReserveId; ++i) {
+    for (uint256 i = startReserveId - 1; i >= 0; --i) {
       if (p.isUsingAsCollateral(i)) {
         expectedReserveId = i;
         break;
       }
     }
-    uint256 reserveId = p.nextCollateral(startReserveId, reserveCount);
+    uint256 reserveId = p.nextCollateral(startReserveId);
     assertEq(reserveId, expectedReserveId);
     assertEq(p.isUsingAsCollateral(reserveId), reserveId != PositionStatus.NOT_FOUND);
   }
 
   function test_next_continuous() public {
     uint256 reserveCount = 10000;
-    for (uint256 i; i < reserveCount; ++i) {
+    for (uint256 i; i < reserveCount; i++) {
       p.setBorrowing(i, vm.randomBool());
       p.setUsingAsCollateral(i, vm.randomBool());
     }
-    uint256 lastSeenReserveId;
-    uint256 nextReserveId;
+    uint256 lastSeenReserveId = reserveCount;
+    uint256 nextReserveId = reserveCount;
     bool borrowing;
     bool collateral;
     while (true) {
-      (nextReserveId, borrowing, collateral) = p.next(lastSeenReserveId, reserveCount);
+      (nextReserveId, borrowing, collateral) = p.next(lastSeenReserveId);
       if (nextReserveId == PositionStatus.NOT_FOUND) break;
 
       assertEq(p.isBorrowing(nextReserveId), borrowing);
       assertEq(p.isUsingAsCollateral(nextReserveId), collateral);
-      for (uint256 i = lastSeenReserveId; i < nextReserveId; ++i) {
-        assertFalse(p.isBorrowing(i));
-        assertFalse(p.isUsingAsCollateral(i));
+      if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
+      while (lastSeenReserveId > nextReserveId) {
+        assertFalse(p.isBorrowing(lastSeenReserveId));
+        assertFalse(p.isUsingAsCollateral(lastSeenReserveId));
+        lastSeenReserveId--;
       }
-      lastSeenReserveId = nextReserveId + 1;
     }
-    for (uint256 i = lastSeenReserveId; i < reserveCount; ++i) {
-      assertFalse(p.isBorrowing(i));
-      assertFalse(p.isUsingAsCollateral(i));
+    if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
+    while (lastSeenReserveId > 0) {
+      assertFalse(p.isBorrowing(lastSeenReserveId));
+      assertFalse(p.isUsingAsCollateral(lastSeenReserveId));
+      lastSeenReserveId--;
     }
   }
 
   function test_nextBorrowing_continuous() public {
     uint256 reserveCount = 10000;
-    for (uint256 i; i < reserveCount; ++i) {
+    for (uint256 i; i < reserveCount; i++) {
       p.setBorrowing(i, vm.randomBool());
       p.setUsingAsCollateral(i, vm.randomBool());
     }
-    uint256 lastSeenReserveId;
-    uint256 nextReserveId;
-    while (
-      (nextReserveId = p.nextBorrowing(lastSeenReserveId, reserveCount)) != PositionStatus.NOT_FOUND
-    ) {
+    uint256 lastSeenReserveId = reserveCount;
+    uint256 nextReserveId = reserveCount;
+    while ((nextReserveId = p.nextBorrowing(lastSeenReserveId)) != PositionStatus.NOT_FOUND) {
       assertTrue(p.isBorrowing(nextReserveId));
-      for (uint256 i = lastSeenReserveId; i < nextReserveId; ++i) {
-        assertFalse(p.isBorrowing(i));
+      if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
+      while (lastSeenReserveId > nextReserveId) {
+        assertFalse(p.isBorrowing(lastSeenReserveId));
+        lastSeenReserveId--;
       }
-      lastSeenReserveId = nextReserveId + 1;
     }
-    for (uint256 i = lastSeenReserveId; i < reserveCount; ++i) {
-      assertFalse(p.isBorrowing(i));
+    if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
+    while (lastSeenReserveId > 0) {
+      assertFalse(p.isBorrowing(lastSeenReserveId));
+      lastSeenReserveId--;
     }
   }
 
   function test_nextCollateral_continuous() public {
     uint256 reserveCount = 10000;
-    for (uint256 i; i < reserveCount; ++i) {
+    for (uint256 i; i < reserveCount; i++) {
       p.setBorrowing(i, vm.randomBool());
       p.setUsingAsCollateral(i, vm.randomBool());
     }
-    uint256 lastSeenReserveId;
-    uint256 nextReserveId;
-    while (
-      (nextReserveId = p.nextCollateral(lastSeenReserveId, reserveCount)) !=
-      PositionStatus.NOT_FOUND
-    ) {
+    uint256 lastSeenReserveId = reserveCount;
+    uint256 nextReserveId = reserveCount;
+    while ((nextReserveId = p.nextCollateral(lastSeenReserveId)) != PositionStatus.NOT_FOUND) {
       assertTrue(p.isUsingAsCollateral(nextReserveId));
-      for (uint256 i = lastSeenReserveId; i < nextReserveId; ++i) {
-        assertFalse(p.isUsingAsCollateral(i));
+      if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
+      while (lastSeenReserveId > nextReserveId) {
+        assertFalse(p.isUsingAsCollateral(lastSeenReserveId));
+        lastSeenReserveId--;
       }
-      lastSeenReserveId = nextReserveId + 1;
     }
-    for (uint256 i = lastSeenReserveId; i < reserveCount; ++i) {
-      assertFalse(p.isUsingAsCollateral(i));
+    if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
+    while (lastSeenReserveId > 0) {
+      assertFalse(p.isUsingAsCollateral(lastSeenReserveId));
+      lastSeenReserveId--;
     }
   }
 
@@ -395,14 +396,14 @@ contract PositionStatusTest is Base {
     }
   }
 
-  function test_isolateBorrowingFrom(uint256 word, uint256 reserveId) public view {
-    uint256 result = p.isolateBorrowingFrom(word, reserveId);
-    uint256 startBitId = (reserveId % 128) * 2;
+  function test_isolateBorrowingUntil(uint256 word, uint256 reserveCount) public view {
+    uint256 result = p.isolateBorrowingUntil(word, reserveCount);
+    uint256 endBitId = (reserveCount % 128) * 2;
 
     for (uint256 bitId; bitId < 256; ++bitId) {
       uint256 resultBit = (result >> bitId) & 1;
-      if (bitId < startBitId) {
-        // bit value before startBitId should be 0 (disregarded)
+      if (bitId >= endBitId) {
+        // bit value after endBitId should be 0 (disregarded)
         assertEq(resultBit, 0);
       } else {
         // retain borrow info on even bits, ignore collateral info on odd bits
@@ -412,14 +413,14 @@ contract PositionStatusTest is Base {
     }
   }
 
-  function test_isolateFrom(uint256 word, uint256 reserveId) public view {
-    uint256 result = p.isolateFrom(word, reserveId);
-    uint256 startBitId = (reserveId % 128) * 2;
+  function test_isolateUntil(uint256 word, uint256 reserveCount) public view {
+    uint256 result = p.isolateUntil(word, reserveCount);
+    uint256 endBitId = (reserveCount % 128) * 2;
 
     for (uint256 bitId; bitId < 256; ++bitId) {
       uint256 resultBit = (result >> bitId) & 1;
-      if (bitId < startBitId) {
-        // bit value before startBitId should be 0 (disregarded)
+      if (bitId >= endBitId) {
+        // bit value after endBitId should be 0 (disregarded)
         assertEq(resultBit, 0);
       } else {
         // bit value after startBitId should be retained
@@ -439,30 +440,13 @@ contract PositionStatusTest is Base {
     }
   }
 
-  function test_isolateCollateralFrom(uint256 word, uint256 reserveId) public view {
-    uint256 result = p.isolateCollateralFrom(word, reserveId);
-    uint256 startBitId = (reserveId % 128) * 2;
-
-    for (uint256 bitId; bitId < 256; ++bitId) {
-      uint256 resultBit = (result >> bitId) & 1;
-      if (bitId < startBitId) {
-        // bit value before startBitId should be 0 (disregarded)
-        assertEq(resultBit, 0);
-      } else {
-        // retain collateral info on odd bits, ignore borrow info on even bits
-        uint256 expectedBit = bitId % 2 == 0 ? 0 : (word >> bitId) & 1;
-        assertEq(resultBit, expectedBit);
-      }
-    }
-  }
-
   function test_isolateCollateralUntil(uint256 word, uint256 reserveCount) public view {
     uint256 result = p.isolateCollateralUntil(word, reserveCount);
     uint256 endBitId = (reserveCount % 128) * 2;
 
     for (uint256 bitId; bitId < 256; ++bitId) {
       uint256 resultBit = (result >> bitId) & 1;
-      if (bitId > endBitId) {
+      if (bitId >= endBitId) {
         // bit value after endBitId should be 0 (disregarded)
         assertEq(resultBit, 0);
       } else {
@@ -485,13 +469,13 @@ contract PositionStatusTest is Base {
     }
   }
 
-  function test_ffs() public {
-    assertEq(LibBit.ffs(0xff << 3), 3);
-    for (uint256 i; i < 256; ++i) {
-      assertEq(LibBit.ffs(1 << i), i);
-      assertEq(LibBit.ffs(type(uint256).max << i), i);
-      assertEq(LibBit.ffs((vm.randomUint() | 1) << i), i);
+  function test_fls() public {
+    assertEq(LibBit.fls(0xff << 3), 10);
+    for (uint256 i = 1; i < 255; i++) {
+      assertEq(LibBit.fls((1 << i) - 1), i - 1);
+      assertEq(LibBit.fls((1 << i)), i);
+      assertEq(LibBit.fls((1 << i) + 1), i);
     }
-    assertEq(LibBit.ffs(0), 256);
+    assertEq(LibBit.fls(0), 256);
   }
 }
