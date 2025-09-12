@@ -18,9 +18,10 @@ jobs:
       - name: Build snapshot tree
         run: |
           mkdir -p /tmp/snap
-          rsync -aL \
+          rsync -a \
             --exclude '.git' \
             --exclude '.github' \
+            --exclude 'lib' \
             . /tmp/snap/
 
           cd /tmp/snap
@@ -28,6 +29,15 @@ jobs:
           git add .
           git -c user.name="Snapshot Bot" -c user.email="snapshot-bot@local" commit -m "Snapshot: ${GITHUB_SHA}"
           git branch -M main
+
+          # Add submodule with actual content at the same commit as source
+          FORGE_STD_COMMIT=$(cd "${GITHUB_WORKSPACE}" && git submodule status lib/forge-std | awk '{print $1}' | sed 's/^[-+]//')
+          git submodule add https://github.com/foundry-rs/forge-std.git lib/forge-std
+          cd lib/forge-std
+          git checkout $FORGE_STD_COMMIT
+          cd ../..
+          git add .gitmodules lib/forge-std
+          git commit -m "Add submodule content at commit $FORGE_STD_COMMIT"
 
       - name: Create GitHub App token for target repo
         id: app-token
