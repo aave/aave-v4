@@ -337,6 +337,7 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(assetId, newConfig);
     assumeUnusedAddress(newConfig.irStrategy);
+    assumeUnusedAddress(newConfig.feeReceiver);
 
     vm.mockCall(
       newConfig.irStrategy,
@@ -349,7 +350,7 @@ contract HubConfigTest is HubBase {
       'custom revert'
     );
 
-    vm.expectRevert(address(newConfig.irStrategy));
+    vm.expectRevert(newConfig.irStrategy);
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig, encodedIrData);
   }
