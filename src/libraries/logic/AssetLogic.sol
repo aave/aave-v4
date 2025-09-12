@@ -173,9 +173,8 @@ library AssetLogic {
     if (liquidityFee == 0) return 0;
 
     // @dev we do not simplify further to avoid overestimating the liquidity growth
-    uint256 feesAmount = liquidityFee.percentMulDown(
-      asset.drawnShares.rayMulDown(indexDelta) + asset.premiumShares.rayMulDown(indexDelta)
-    );
+    uint256 feesAmount = (asset.drawnShares.rayMulDown(indexDelta) +
+      asset.premiumShares.rayMulDown(indexDelta)).percentMulDown(liquidityFee);
 
     return feesAmount.toSharesDown(asset.totalAddedAssets() - feesAmount, asset.addedShares);
   }

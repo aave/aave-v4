@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 /// forge-config: default.isolate = true
-contract SpokeOperations_Gas_Tests is Base {
+contract SpokeOperations_Gas_Tests is SpokeBase {
   function setUp() public override {
     deployFixtures();
     initEnvironment();
@@ -140,7 +140,7 @@ contract SpokeOperations_Gas_Tests is Base {
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
     vm.stopPrank();
 
-    _borrowToBeBelowHf(spoke1, alice, _daiReserveId(spoke1), 0.9e18);
+    _borrowToBeAtHf(spoke1, alice, _daiReserveId(spoke1), 0.9e18);
 
     skip(100);
 
@@ -150,6 +150,7 @@ contract SpokeOperations_Gas_Tests is Base {
 
     spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, type(uint256).max);
     vm.snapshotGasLastCall('Spoke.Operations', 'liquidationCall: full');
+
     vm.stopPrank();
   }
 
@@ -176,13 +177,13 @@ contract SpokeOperations_Gas_Tests is Base {
   function test_updateUserDynamicConfig() public {
     vm.startPrank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
-    updateLiquidationFee(spoke1, _usdxReserveId(spoke1), 10_00);
+    _updateLiquidationFee(spoke1, _usdxReserveId(spoke1), 10_00);
 
     spoke1.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'updateUserDynamicConfig: 1 collateral');
 
     spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, alice);
-    updateLiquidationFee(spoke1, _daiReserveId(spoke1), 15_00);
+    _updateLiquidationFee(spoke1, _daiReserveId(spoke1), 15_00);
 
     spoke1.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'updateUserDynamicConfig: 2 collaterals');
@@ -287,5 +288,51 @@ contract SpokeOperations_Gas_Tests is Base {
     );
 
     vm.stopPrank();
+  }
+
+  function test_setUserPositionManagerWithSig() public {
+    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
+    vm.label(user, 'user');
+    address positionManager = vm.randomAddress();
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updatePositionManager(positionManager, true);
+
+    vm.prank(user);
+    spoke1.useNonce();
+
+    EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
+      positionManager: positionManager,
+      user: user,
+      approve: true,
+      nonce: spoke1.nonces(user),
+      deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
+    });
+    bytes32 digest = _getTypedDataHash(spoke1, params);
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
+    bytes memory signature = abi.encodePacked(r, s, v);
+
+    spoke1.setUserPositionManagerWithSig(
+      params.positionManager,
+      params.user,
+      params.approve,
+      params.deadline,
+      signature
+    );
+    vm.snapshotGasLastCall('Spoke.Operations', 'setUserPositionManagerWithSig: enable');
+
+    params.approve = false;
+    params.nonce = spoke1.nonces(user);
+    digest = _getTypedDataHash(spoke1, params);
+    (v, r, s) = vm.sign(userPk, digest);
+    signature = abi.encodePacked(r, s, v);
+
+    spoke1.setUserPositionManagerWithSig(
+      params.positionManager,
+      params.user,
+      params.approve,
+      params.deadline,
+      signature
+    );
+    vm.snapshotGasLastCall('Spoke.Operations', 'setUserPositionManagerWithSig: disable');
   }
 }

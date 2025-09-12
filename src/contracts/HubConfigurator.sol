@@ -33,23 +33,14 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address irStrategy,
     bytes calldata data
   ) external override onlyOwner returns (uint256) {
-    IHub targetHub = IHub(hub);
-
-    uint256 assetId = targetHub.addAsset(
-      underlying,
-      IERC20Metadata(underlying).decimals(),
-      feeReceiver,
-      irStrategy,
-      data
-    );
-
-    targetHub.addSpoke(
-      assetId,
-      feeReceiver,
-      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
-    );
-
-    return assetId;
+    return
+      IHub(hub).addAsset(
+        underlying,
+        IERC20Metadata(underlying).decimals(),
+        feeReceiver,
+        irStrategy,
+        data
+      );
   }
 
   /// @inheritdoc IHubConfigurator
@@ -61,17 +52,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address irStrategy,
     bytes calldata data
   ) external override onlyOwner returns (uint256) {
-    IHub targetHub = IHub(hub);
-
-    uint256 assetId = targetHub.addAsset(underlying, decimals, feeReceiver, irStrategy, data);
-
-    targetHub.addSpoke(
-      assetId,
-      feeReceiver,
-      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
-    );
-
-    return assetId;
+    return IHub(hub).addAsset(underlying, decimals, feeReceiver, irStrategy, data);
   }
 
   /// @inheritdoc IHubConfigurator
@@ -94,7 +75,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    _updateFeeReceiverSpokeConfig(targetHub, assetId, config.feeReceiver, feeReceiver);
+    _updateSpokeCaps(targetHub, assetId, config.feeReceiver, 0, 0);
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config);
   }
@@ -108,7 +89,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    _updateFeeReceiverSpokeConfig(targetHub, assetId, config.feeReceiver, feeReceiver);
+    _updateSpokeCaps(targetHub, assetId, config.feeReceiver, 0, 0);
     config.liquidityFee = liquidityFee.toUint16();
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config);
@@ -135,22 +116,6 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     IHub targetHub = IHub(hub);
     DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.reinvestmentController = reinvestmentController;
-    targetHub.updateAssetConfig(assetId, config);
-  }
-
-  /// @inheritdoc IHubConfigurator
-  function updateAssetConfig(
-    address hub,
-    uint256 assetId,
-    DataTypes.AssetConfig calldata config
-  ) external override onlyOwner {
-    IHub targetHub = IHub(hub);
-    _updateFeeReceiverSpokeConfig(
-      targetHub,
-      assetId,
-      targetHub.getAssetConfig(assetId).feeReceiver,
-      config.feeReceiver
-    );
     targetHub.updateAssetConfig(assetId, config);
   }
 
@@ -250,17 +215,6 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateSpokeConfig(
-    address hub,
-    uint256 assetId,
-    address spoke,
-    DataTypes.SpokeConfig calldata config
-  ) external override onlyOwner {
-    IHub targetHub = IHub(hub);
-    targetHub.updateSpokeConfig(assetId, spoke, config);
-  }
-
-  /// @inheritdoc IHubConfigurator
   function pauseSpoke(address hub, address spoke) external override onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
@@ -291,40 +245,6 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     bytes calldata data
   ) external override onlyOwner {
     IHub(hub).setInterestRateData(assetId, data);
-  }
-
-  /**
-   * @dev Updates the spoke configs for the old and new fee receivers.
-   *  - updates the caps for the old fee receiver to 0.
-   *  - if new fee receiver is not already a spoke, it adds it with max caps and active flag set to true.
-   *  - if new fee receiver is already a spoke, it updates the caps to max, without changing the active flag.
-   * @dev If the old and new fee receivers are the same, it does nothing.
-   * @param hub The address of the Hub contract.
-   * @param assetId The identifier of the asset.
-   * @param oldFeeReceiver The old fee receiver.
-   * @param newFeeReceiver The new fee receiver.
-   */
-  function _updateFeeReceiverSpokeConfig(
-    IHub hub,
-    uint256 assetId,
-    address oldFeeReceiver,
-    address newFeeReceiver
-  ) internal {
-    if (oldFeeReceiver == newFeeReceiver) {
-      return;
-    }
-
-    _updateSpokeCaps(hub, assetId, oldFeeReceiver, 0, 0);
-
-    if (!hub.isSpokeListed(assetId, newFeeReceiver)) {
-      hub.addSpoke(
-        assetId,
-        newFeeReceiver,
-        DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
-      );
-    } else {
-      _updateSpokeCaps(hub, assetId, newFeeReceiver, Constants.MAX_CAP, Constants.MAX_CAP);
-    }
   }
 
   /**

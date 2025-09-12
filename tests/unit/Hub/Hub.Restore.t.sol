@@ -573,13 +573,14 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, restoreDrawnAmount, premium, premiumDelta, alice);
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
-    address feeReceiver = _getFeeReceiver(daiAssetId);
+    address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // hub
     assertApproxEqAbs(
-      hub1.getAssetAddedAmount(daiAssetId),
+      hub1.getTotalAddedAssets(daiAssetId),
       hub1.getSpokeAddedAmount(daiAssetId, address(spoke2)) +
-        hub1.getSpokeAddedAmount(daiAssetId, feeReceiver),
+        hub1.getSpokeAddedAmount(daiAssetId, feeReceiver) +
+        _calculateBurntInterest(hub1, daiAssetId),
       1,
       'hub dai total addedAmount'
     );
@@ -749,7 +750,7 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, drawn, premium, premiumDelta, alice);
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
-    address daiFeeReceiver = _getFeeReceiver(daiAssetId);
+    address daiFeeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // asset
     assertEq(daiData.drawn, 0, 'asset drawn');
@@ -853,7 +854,7 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, drawn, premiumRestored, premiumDelta, alice);
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
-    address daiFeeReceiver = _getFeeReceiver(daiAssetId);
+    address daiFeeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // asset
     assertEq(daiData.drawn, 0, 'asset drawn');
