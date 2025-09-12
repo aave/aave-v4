@@ -1098,7 +1098,7 @@ abstract contract Base is Test {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateCollateralRisk(
+  function _updateCollateralRisk(
     ISpoke spoke,
     uint256 reserveId,
     uint24 newCollateralRisk

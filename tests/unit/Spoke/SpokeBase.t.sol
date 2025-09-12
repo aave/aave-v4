@@ -217,7 +217,7 @@ contract SpokeBase is Base {
     uint24 cachedCollateralRisk;
     if (withPremium) {
       cachedCollateralRisk = _getCollateralRisk(spoke, reserveId);
-      updateCollateralRisk(spoke, reserveId, 50_00);
+      _updateCollateralRisk(spoke, reserveId, 50_00);
     }
 
     Utils.borrow({
@@ -235,7 +235,7 @@ contract SpokeBase is Base {
     if (withPremium) {
       assertGt(premiumDebt, 0);
       // restore cached collateral risk
-      updateCollateralRisk(spoke, reserveId, cachedCollateralRisk);
+      _updateCollateralRisk(spoke, reserveId, cachedCollateralRisk);
     }
 
     return tempUser;
