@@ -614,7 +614,7 @@ abstract contract Base is Test {
       paused: false,
       frozen: false,
       borrowable: true,
-      collateralRisk: 0
+      collateralRisk: 1_00
     });
     spokeInfo[spoke2].wbtc.dynReserveConfig = DataTypes.DynamicReserveConfig({
       collateralFactor: 80_00,
