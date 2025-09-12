@@ -337,6 +337,8 @@ contract Hub is IHub, AccessManaged {
     // no premium change allowed
     _applyPremiumDelta(assetId, asset, spoke, premiumDelta, 0);
 
+    asset.updateDrawnRate(assetId);
+
     emit RefreshPremium(assetId, msg.sender, premiumDelta);
   }
 
@@ -766,8 +768,7 @@ contract Hub is IHub, AccessManaged {
     uint256 addCap = receiver.addCap;
     require(
       addCap == Constants.MAX_CAP ||
-        addCap * 10 ** asset.decimals >=
-        previewRemoveByShares(assetId, receiver.addedShares + shares),
+        addCap * 10 ** asset.decimals >= previewAddByShares(assetId, receiver.addedShares + shares),
       AddCapExceeded(addCap)
     );
   }
