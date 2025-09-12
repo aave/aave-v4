@@ -9,7 +9,9 @@ contract SpokeConfigTest is SpokeBase {
   using PercentageMath for uint256;
 
   function test_updateOracle_revertsWith_AccessManagedUnauthorized(address caller) public {
-    vm.assume(caller != SPOKE_ADMIN && caller != ADMIN);
+    vm.assume(
+      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+    );
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
     );
@@ -42,7 +44,9 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
-    vm.assume(caller != SPOKE_ADMIN && caller != ADMIN);
+    vm.assume(
+      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+    );
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
     );
