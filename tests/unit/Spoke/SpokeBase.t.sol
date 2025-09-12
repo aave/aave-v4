@@ -467,7 +467,7 @@ contract SpokeBase is Base {
     uint256 debtReserveId,
     uint256 collAmount
   ) internal view returns (uint256) {
-    IPriceOracle oracle = spoke.oracle();
+    IPriceOracle oracle = IPriceOracle(spoke.getOracle());
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
     DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
     uint256 collPrice = oracle.getReservePrice(collReserveId);

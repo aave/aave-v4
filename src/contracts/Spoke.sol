@@ -31,8 +31,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using PositionStatus for *;
   using MathUtils for *;
 
-  IAaveOracle public oracle;
-
+  IAaveOracle public _oracle;
   uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
     internal _userPositions;
@@ -67,9 +66,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   /// @inheritdoc ISpoke
   function updateOracle(address newOracle) external restricted {
-    oracle = IAaveOracle(newOracle);
+    _oracle = IAaveOracle(newOracle);
     require(
-      newOracle != address(0) && oracle.DECIMALS() == Constants.ORACLE_DECIMALS,
+      newOracle != address(0) && _oracle.DECIMALS() == Constants.ORACLE_DECIMALS,
       InvalidOracle()
     );
     emit OracleUpdate(newOracle);
@@ -323,7 +322,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.LiquidateUserParams memory params = DataTypes.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
-      oracle: address(oracle),
+      oracle: address(_oracle),
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
@@ -539,6 +538,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     return _reserveCount;
   }
 
+  function getOracle() external view returns (address) {
+    return address(_oracle);
+  }
+
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     return reserve.hub.getSpokeOwed(reserve.assetId, address(this));
@@ -681,8 +684,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
-    require(address(oracle) != address(0), InvalidAddress());
-    oracle.setReserveSource(reserveId, priceSource);
+    require(address(_oracle) != address(0), InvalidAddress());
+    _oracle.setReserveSource(reserveId, priceSource);
     emit ReservePriceSourceUpdate(reserveId, priceSource);
   }
 
@@ -783,7 +786,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     address user,
     bool refreshConfig
   ) internal returns (DataTypes.UserAccountData memory userAccountData) {
-    IAaveOracle aaveOracle = oracle;
+    IAaveOracle oracle = _oracle;
     uint256 reserveCount = _reserveCount;
 
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
@@ -801,7 +804,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       DataTypes.Reserve storage reserve = _reserves[reserveId];
 
-      uint256 assetPrice = aaveOracle.getReservePrice(reserveId);
+      uint256 assetPrice = oracle.getReservePrice(reserveId);
       uint256 assetUnit = uint256(10).uncheckedExp(reserve.decimals);
 
       if (collateral) {

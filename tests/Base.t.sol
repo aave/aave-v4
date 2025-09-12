@@ -1321,7 +1321,7 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 amount
   ) internal view returns (uint256) {
-    IPriceOracle oracle = spoke.oracle();
+    IPriceOracle oracle = IPriceOracle(spoke.getOracle());
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
       (amount * oracle.getReservePrice(reserveId)).wadDivDown(
@@ -1335,7 +1335,7 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 amount
   ) internal view returns (uint256) {
-    IPriceOracle oracle = spoke.oracle();
+    IPriceOracle oracle = IPriceOracle(spoke.getOracle());
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
       (amount * oracle.getReservePrice(reserveId)).wadDivUp(
@@ -1693,7 +1693,7 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 amount
   ) internal view returns (uint256) {
-    IPriceOracle oracle = spoke.oracle();
+    IPriceOracle oracle = IPriceOracle(spoke.getOracle());
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
       _convertAmountToBaseCurrency(
@@ -1717,7 +1717,7 @@ abstract contract Base is Test {
     uint256 baseCurrencyAmount
   ) internal view returns (uint256) {
     DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    IPriceOracle oracle = spoke.oracle();
+    IPriceOracle oracle = IPriceOracle(spoke.getOracle());
     return
       _convertBaseCurrencyToAmount(
         baseCurrencyAmount,
@@ -1795,7 +1795,7 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     if (debtAmount == 0) return 1;
 
-    IPriceOracle oracle = spoke.oracle();
+    IPriceOracle oracle = IPriceOracle(spoke.getOracle());
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
     DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
     uint256 collPrice = oracle.getReservePrice(collReserveId);
@@ -2197,7 +2197,7 @@ abstract contract Base is Test {
 
   function _mockReservePrice(ISpoke spoke, uint256 reserveId, uint256 price) internal {
     require(price > 0, 'mockReservePrice: price must be positive');
-    AaveOracle oracle = AaveOracle(address(spoke.oracle()));
+    AaveOracle oracle = AaveOracle(address(spoke.getOracle()));
     address mockPriceFeed = address(
       new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price)
     );
@@ -2210,13 +2210,13 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 percentage
   ) internal {
-    uint256 initialPrice = spoke.oracle().getReservePrice(reserveId);
+    uint256 initialPrice = IPriceOracle(spoke.getOracle()).getReservePrice(reserveId);
     uint256 newPrice = initialPrice.percentMulDown(percentage);
     _mockReservePrice(spoke, reserveId, newPrice);
   }
 
   function _deployMockPriceFeed(ISpoke spoke, uint256 price) internal returns (address) {
-    AaveOracle oracle = AaveOracle(address(spoke.oracle()));
+    AaveOracle oracle = AaveOracle(spoke.getOracle());
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
   }
 

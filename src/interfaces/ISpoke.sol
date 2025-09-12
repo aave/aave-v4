@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
-import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
 
 /**
@@ -326,7 +325,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
 
-  function oracle() external view returns (IAaveOracle);
+  function getOracle() external view returns (address);
 
   function nonces(address user) external view returns (uint256);
 
