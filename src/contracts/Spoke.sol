@@ -9,7 +9,7 @@ import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 
-// libraries
+import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
@@ -18,9 +18,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {SignatureCheckerHelper} from 'src/libraries/helpers/SignatureCheckerHelper.sol';
 
-// interfaces
 import {IHub} from 'src/interfaces/IHub.sol';
 import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
@@ -434,7 +432,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         )
       )
     );
-    require(SignatureCheckerHelper.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
 
