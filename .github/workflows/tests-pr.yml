@@ -26,9 +26,7 @@ jobs:
           FOUNDRY_VERSION: stable
 
       - name: Run Forge size
-        uses: bgd-labs/github-workflows/.github/actions/foundry-size@main
-        with:
-          FOUNDRY_PROFILE: codesize
+        run: forge build src --sizes
 
       - name: Run Gas snapshot check
         uses: bgd-labs/github-workflows/.github/actions/foundry-test@main

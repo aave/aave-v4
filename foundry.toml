@@ -31,9 +31,6 @@ runs = 5000
 [profile.ci.fuzz]
 runs = 10000
 
-[profile.codesize]
-test = 'src'
-
 [profile.gas]
 gas_snapshot_check = true
 test = 'tests/gas'
