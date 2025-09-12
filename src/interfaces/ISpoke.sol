@@ -100,7 +100,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   );
   event OracleUpdate(address indexed oracle);
   event ReservePriceSourceUpdate(uint256 indexed reserveId, address indexed priceSource);
-  event LiquidationConfigUpdate(DataTypes.LiquidationConfig config);
+  event UpdateLiquidationConfig(DataTypes.LiquidationConfig config);
 
   error AssetNotListed();
   error ReserveExists();

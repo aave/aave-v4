@@ -87,7 +87,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateLiquidationConfig, (expectedLiquidationConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.LiquidationConfigUpdate(expectedLiquidationConfig);
+    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationTargetHealthFactor(spokeAddr, newTargetHealthFactor);
 
@@ -111,7 +111,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateLiquidationConfig, (expectedLiquidationConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.LiquidationConfigUpdate(expectedLiquidationConfig);
+    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateHealthFactorForMaxBonus(spokeAddr, newHealthFactorForMaxBonus);
 
@@ -135,7 +135,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateLiquidationConfig, (expectedLiquidationConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.LiquidationConfigUpdate(expectedLiquidationConfig);
+    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationBonusFactor(spokeAddr, newLiquidationBonusFactor);
 
@@ -167,7 +167,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateLiquidationConfig, (newLiquidationConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.LiquidationConfigUpdate(newLiquidationConfig);
+    emit ISpoke.UpdateLiquidationConfig(newLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationConfig(spokeAddr, newLiquidationConfig);
 

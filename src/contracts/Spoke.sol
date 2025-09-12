@@ -58,7 +58,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   constructor(address authority_) AccessManaged(authority_) {
     require(authority_ != address(0), InvalidAddress());
     _liquidationConfig.targetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-    emit LiquidationConfigUpdate(_liquidationConfig);
+    emit UpdateLiquidationConfig(_liquidationConfig);
   }
 
   // /////
@@ -90,7 +90,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       InvalidLiquidationConfig()
     );
     _liquidationConfig = config;
-    emit LiquidationConfigUpdate(config);
+    emit UpdateLiquidationConfig(config);
   }
 
   function addReserve(

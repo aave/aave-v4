@@ -14,7 +14,7 @@ contract SpokeConfigTest is SpokeBase {
       vm.getNonce(address(this))
     );
     vm.expectEmit(predictedSpokeAddress);
-    emit ISpoke.LiquidationConfigUpdate(
+    emit ISpoke.UpdateLiquidationConfig(
       DataTypes.LiquidationConfig({
         targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
         healthFactorForMaxBonus: 0,
@@ -288,7 +288,7 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.targetHealthFactor = newTargetHealthFactor;
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.LiquidationConfigUpdate(liquidationConfig);
+    emit ISpoke.UpdateLiquidationConfig(liquidationConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
 
@@ -328,7 +328,7 @@ contract SpokeConfigTest is SpokeBase {
     ).toUint128();
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.LiquidationConfigUpdate(liquidationConfig);
+    emit ISpoke.UpdateLiquidationConfig(liquidationConfig);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
 
