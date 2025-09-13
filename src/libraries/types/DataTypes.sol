@@ -72,6 +72,7 @@ library DataTypes {
     uint24 collateralRisk;
     IHubBase hub;
     uint16 assetId;
+    //
     address underlying;
   }
 
