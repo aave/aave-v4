@@ -443,17 +443,13 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         ),
         collateralFeeReceiverBalanceInfo: _getBalanceInfo(
           params.spoke,
-          _hub(params.spoke, params.collateralReserveId)
-            .getAssetConfig(params.spoke.getReserve(params.collateralReserveId).assetId)
-            .feeReceiver,
+          _getFeeReceiver(params.spoke, params.collateralReserveId),
           params.collateralReserveId,
           params.debtReserveId
         ),
         debtFeeReceiverBalanceInfo: _getBalanceInfo(
           params.spoke,
-          _hub(params.spoke, params.debtReserveId)
-            .getAssetConfig(params.spoke.getReserve(params.debtReserveId).assetId)
-            .feeReceiver,
+          _getFeeReceiver(params.spoke, params.debtReserveId),
           params.collateralReserveId,
           params.debtReserveId
         ),
@@ -833,10 +829,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   }
 
   function _checkHubBalances(
+    CheckedLiquidationCallParams memory params,
     AccountsInfo memory accountsInfoBefore,
     AccountsInfo memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata
-  ) internal pure {
+  ) internal view {
     // User
     assertEq(
       accountsInfoAfter.userBalanceInfo.addedInHub,
@@ -897,16 +894,22 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       accountsInfoBefore.collateralFeeReceiverBalanceInfo.drawnFromHub,
       'collateral fee receiver: drawn'
     );
-    assertEq(
-      accountsInfoAfter.debtFeeReceiverBalanceInfo.addedInHub,
-      accountsInfoBefore.debtFeeReceiverBalanceInfo.addedInHub,
-      'debt fee receiver: added'
-    );
-    assertEq(
-      accountsInfoAfter.debtFeeReceiverBalanceInfo.drawnFromHub,
-      accountsInfoBefore.debtFeeReceiverBalanceInfo.drawnFromHub,
-      'debt fee receiver: drawn'
-    );
+
+    if (
+      _getFeeReceiver(params.spoke, params.collateralReserveId) !=
+      _getFeeReceiver(params.spoke, params.debtReserveId)
+    ) {
+      assertEq(
+        accountsInfoAfter.debtFeeReceiverBalanceInfo.addedInHub,
+        accountsInfoBefore.debtFeeReceiverBalanceInfo.addedInHub,
+        'debt fee receiver: added'
+      );
+      assertEq(
+        accountsInfoAfter.debtFeeReceiverBalanceInfo.drawnFromHub,
+        accountsInfoBefore.debtFeeReceiverBalanceInfo.drawnFromHub,
+        'debt fee receiver: drawn'
+      );
+    }
 
     // Spoke
     assertApproxEqRel(
@@ -1016,7 +1019,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _checkHealthFactor(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkErc20Balances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkSpokeBalances(accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
-    _checkHubBalances(accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
+    _checkHubBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkRiskPremium(params, accountsInfoAfter, liquidationMetadata, logs);
     _checkAvgCollateralFactor(accountsInfoAfter, liquidationMetadata);
   }

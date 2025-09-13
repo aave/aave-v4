@@ -1927,6 +1927,10 @@ abstract contract Base is Test {
     return hub.getAssetConfig(assetId).feeReceiver;
   }
 
+  function _getFeeReceiver(ISpoke spoke, uint256 reserveId) internal view returns (address) {
+    return _getFeeReceiver(_hub(spoke, reserveId), spoke.getReserve(reserveId).assetId);
+  }
+
   function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint24) {
     return spoke.getReserveConfig(reserveId).collateralRisk;
   }
