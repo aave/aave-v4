@@ -13,7 +13,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {Constants} from 'src/libraries/helpers/Constants.sol';
+import {Constants} from 'tests/Constants.sol';
 
 import {IHubBase, IHub} from 'src/interfaces/IHub.sol';
 import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
@@ -27,6 +27,12 @@ contract Hub is IHub, AccessManaged {
   using PercentageMath for uint256;
   using AssetLogic for Asset;
   using MathUtils for *;
+
+  /// @inheritdoc IHub
+  uint8 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
+
+  /// @inheritdoc IHub
+  uint56 public constant MAX_CAP = type(uint56).max;
 
   uint256 internal _assetCount;
   mapping(uint256 assetId => Asset assetData) internal _assets;
@@ -54,7 +60,7 @@ contract Hub is IHub, AccessManaged {
       underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
       InvalidAddress()
     );
-    require(decimals <= Constants.MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
+    require(decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
 
     uint256 assetId = _assetCount++;
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
@@ -688,7 +694,7 @@ contract Hub is IHub, AccessManaged {
     require(spoke.active, SpokeNotActive());
     uint256 addCap = spoke.addCap;
     require(
-      addCap == Constants.MAX_CAP ||
+      addCap == MAX_CAP ||
         addCap * 10 ** asset.decimals >= previewAddByShares(assetId, spoke.addedShares) + amount,
       AddCapExceeded(addCap)
     );
@@ -721,7 +727,7 @@ contract Hub is IHub, AccessManaged {
     uint256 drawn = _getSpokeDrawn(spoke, assetId);
     uint256 premium = _getSpokePremium(spoke, assetId);
     require(
-      drawCap == Constants.MAX_CAP || drawCap * 10 ** asset.decimals >= drawn + premium + amount,
+      drawCap == MAX_CAP || drawCap * 10 ** asset.decimals >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
     );
   }
@@ -777,7 +783,7 @@ contract Hub is IHub, AccessManaged {
     require(shares > 0, InvalidShares());
     uint256 addCap = receiver.addCap;
     require(
-      addCap == Constants.MAX_CAP ||
+      addCap == MAX_CAP ||
         addCap * 10 ** asset.decimals >= previewAddByShares(assetId, receiver.addedShares + shares),
       AddCapExceeded(addCap)
     );
@@ -805,7 +811,7 @@ contract Hub is IHub, AccessManaged {
     _updateSpokeConfig(
       assetId,
       feeReceiver,
-      SpokeConfig({addCap: Constants.MAX_CAP, drawCap: 0, active: true})
+      SpokeConfig({addCap: MAX_CAP, drawCap: 0, active: true})
     );
   }
 }

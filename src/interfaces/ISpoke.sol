@@ -330,6 +330,16 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     bytes32 s
   ) external;
 
+  function ORACLE_DECIMALS() external view returns (uint8);
+
+  function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint64);
+
+  function MIN_LEFTOVER_BASE() external view returns (uint256);
+
+  function MAX_COLLATERAL_RISK() external view returns (uint24);
+
+  function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32);
+
   function getHealthFactor(address user) external view returns (uint256);
 
   function getReserve(uint256 reserveId) external view returns (ISpoke.Reserve memory);

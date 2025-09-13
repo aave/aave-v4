@@ -24,7 +24,7 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {Constants} from 'src/libraries/helpers/Constants.sol';
+import {Constants} from 'tests/Constants.sol';
 import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
 import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';

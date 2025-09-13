@@ -229,6 +229,10 @@ interface IHub is IHubBase, IAccessManaged {
    */
   function reclaim(uint256 assetId, uint256 amount) external;
 
+  function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint8);
+
+  function MAX_CAP() external view returns (uint56);
+
   /**
    * @notice Converts the specified amount of supplied shares to assets amount.
    * @dev Rounds down to the nearest assets amount.

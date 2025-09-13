@@ -6,7 +6,7 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IHubBase} from 'src/interfaces/IHubBase.sol';
 import {ISpoke, ISpokeBase} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
-import {Constants} from 'src/libraries/helpers/Constants.sol';
+import {Constants} from 'tests/Constants.sol';
 import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -102,6 +102,8 @@ library LiquidationLogic {
     uint256 collateralToLiquidator;
     address liquidator;
   }
+
+  uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
   /**
    * @dev This constant represents the minimum amount of assets in base currency that need to be leftover after a liquidation, if not clearing collateral on a position completely.
