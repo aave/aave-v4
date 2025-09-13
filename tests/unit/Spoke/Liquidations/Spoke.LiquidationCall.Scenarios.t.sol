@@ -41,7 +41,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 124_00);
     _updateLiquidationConfig(
       spoke,
-      DataTypes.LiquidationConfig({
+      ISpoke.LiquidationConfig({
         targetHealthFactor: _getTargetHealthFactor(spoke),
         healthFactorForMaxBonus: 0.99e18,
         liquidationBonusFactor: 100_00
@@ -78,7 +78,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     // This will have no effect on the user since liquidation is not refreshing user's dynamic config key.
     _updateCollateralFactor(spoke, _wethReserveId(spoke), 70_00);
 
-    DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
     // Health Factor: ($4000 * 0.8 + $500 * 0.7 + $100 * 0.72) / $3600 = ~1.0061
     assertApproxEqAbs(
