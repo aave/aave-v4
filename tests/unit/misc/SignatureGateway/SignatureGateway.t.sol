@@ -118,8 +118,6 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    skip(vm.randomUint(0, MAX_SKIP_TIME));
-
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
       spoke1,
       p.reserveId,
@@ -152,7 +150,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
     if (spoke1.isUsingAsCollateral(p.reserveId, alice) != p.useAsCollateral) {
       vm.expectEmit(address(spoke1));
-      emit ISpoke.UsingAsCollateral(p.reserveId, address(gateway), alice, p.useAsCollateral);
+      emit ISpoke.SetUsingAsCollateral(p.reserveId, address(gateway), alice, p.useAsCollateral);
     }
 
     vm.prank(vm.randomAddress());
@@ -175,7 +173,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserRiskPremiumUpdate(alice, 0);
+    emit ISpoke.UpdateUserRiskPremium(alice, 0);
 
     vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(alice, p.deadline, signature);

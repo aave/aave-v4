@@ -18,6 +18,7 @@ contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
     assertEq(address(gateway.SPOKE()), address(spoke1));
     assertEq(Ownable2Step(address(gateway)).owner(), ADMIN);
     assertEq(Ownable2Step(address(gateway)).pendingOwner(), address(0));
+    assertEq(gateway.rescueGuardian(), ADMIN);
   }
 
   function test_eip712Domain() public {

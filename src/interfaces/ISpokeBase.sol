@@ -141,4 +141,70 @@ interface ISpokeBase {
     address user,
     uint256 debtToCover
   ) external;
+
+  /**
+   * @notice Returns the debt of a specific user for a given reserve.
+   * @dev The total debt of the user is the sum of drawn debt and premium debt.
+   * @param reserveId The identifier of the reserve.
+   * @param user The address of the user.
+   * @return The amount of drawn debt.
+   * @return The amount of premium debt.
+   */
+  function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256);
+
+  /**
+   * @notice Returns the total debt of a specific user for a given reserve.
+   * @dev The total debt of the user is the sum of drawn debt and premium debt.
+   * @param reserveId The identifier of the reserve.
+   * @param user The address of the user.
+   * @return The total debt amount.
+   */
+  function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
+
+  /**
+   * @notice Returns the total amount of supplied assets of a given reserve.
+   * @param reserveId The identifier of the reserve.
+   * @return The amount of supplied assets.
+   */
+  function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256);
+
+  /**
+   * @notice Returns the total amount of supplied shares of a given reserve.
+   * @param reserveId The identifier of the reserve.
+   * @return The amount of supplied shares.
+   */
+  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
+
+  /**
+   * @notice Returns the amount of assets supplied by a specific user for a given reserve.
+   * @param reserveId The identifier of the reserve.
+   * @param user The address of the user.
+   * @return The amount of assets supplied by the user.
+   */
+  function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256);
+
+  /**
+   * @notice Returns the amount of shares supplied by a specific user for a given reserve.
+   * @param reserveId The identifier of the reserve.
+   * @param user The address of the user.
+   * @return The amount of shares supplied by the user.
+   */
+  function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
+
+  /**
+   * @notice Returns the debt of a given reserve.
+   * @dev The total debt of the reserve is the sum of drawn debt and premium debt.
+   * @param reserveId The identifier of the reserve.
+   * @return The amount of drawn debt.
+   * @return The amount of premium debt.
+   */
+  function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
+
+  /**
+   * @notice Returns the total debt of a given reserve.
+   * @dev The total debt of the reserve is the sum of drawn debt and premium debt.
+   * @param reserveId The identifier of the reserve.
+   * @return The total debt amount.
+   */
+  function getReserveTotalDebt(uint256 reserveId) external view returns (uint256);
 }

@@ -15,7 +15,7 @@ interface IAaveOracle is IPriceOracle {
    * @param reserveId The identifier of the reserve.
    * @param source The price feed source of the reserve.
    */
-  event ReserveSourceUpdated(uint256 indexed reserveId, address indexed source);
+  event UpdateReserveSource(uint256 indexed reserveId, address indexed source);
 
   /**
    * @dev Thrown when the price feed source uses a different number of decimals than the oracle.

@@ -15,7 +15,7 @@ import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
  */
 interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event AddReserve(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
-  event ReserveConfigUpdate(uint256 indexed reserveId, DataTypes.ReserveConfig config);
+  event UpdateReserveConfig(uint256 indexed reserveId, DataTypes.ReserveConfig config);
 
   /**
    * @notice Emitted when a dynamic reserve config is added.
@@ -64,7 +64,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param user The owner of the position being modified.
    * @param usingAsCollateral Boolean whether the reserve is enabled or disabled as collateral.
    */
-  event UsingAsCollateral(
+  event SetUsingAsCollateral(
     uint256 indexed reserveId,
     address indexed caller,
     address indexed user,
@@ -76,7 +76,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param user The owner of the position being modified.
    * @param riskPremium The new risk premium (BPS) value of user.
    */
-  event UserRiskPremiumUpdate(address indexed user, uint256 riskPremium);
+  event UpdateUserRiskPremium(address indexed user, uint256 riskPremium);
 
   /**
    * @notice Emitted on setUserPositionManager or renouncePositionManagerRole action.
@@ -98,15 +98,14 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     address indexed user,
     DataTypes.PremiumDelta premiumDelta
   );
-  event OracleUpdate(address indexed oracle);
-  event ReservePriceSourceUpdate(uint256 indexed reserveId, address indexed priceSource);
-  event LiquidationConfigUpdate(DataTypes.LiquidationConfig config);
+  event UpdateOracle(address indexed oracle);
+  event UpdateReservePriceSource(uint256 indexed reserveId, address indexed priceSource);
+  event UpdateLiquidationConfig(DataTypes.LiquidationConfig config);
 
   error AssetNotListed();
   error ReserveExists();
   error InvalidAssetId();
   error ReserveNotListed();
-  error InsufficientSupply(uint256 supply);
   error ReserveNotBorrowable();
   error ReservePaused();
   error ReserveFrozen();
@@ -281,8 +280,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
 
-  function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
-
   function getReserveConfig(
     uint256 reserveId
   ) external view returns (DataTypes.ReserveConfig memory);
@@ -296,17 +293,9 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     uint16 configKey
   ) external view returns (DataTypes.DynamicReserveConfig memory);
 
-  function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
-
-  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
-
-  function getReserveTotalDebt(uint256 reserveId) external view returns (uint256);
-
   function getUserAccountData(
     address user
   ) external view returns (DataTypes.UserAccountData memory);
-
-  function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256);
 
   function getUserPosition(
     uint256 reserveId,
@@ -314,12 +303,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   ) external view returns (DataTypes.UserPosition memory);
 
   function getUserRiskPremium(address user) external view returns (uint256);
-
-  function getUserSuppliedAmount(uint256 reserveId, address user) external view returns (uint256);
-
-  function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
-
-  function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
 
   function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
 

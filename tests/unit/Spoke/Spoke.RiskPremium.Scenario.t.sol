@@ -137,12 +137,12 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // Since only DAI is borrowed in the system, supply interest is accrued only on it
     assertEq(
-      spoke1.getUserSuppliedAmount(reservesIds.usdx, alice),
+      spoke1.getUserSuppliedAssets(reservesIds.usdx, alice),
       vars.usdxSupplyAmount,
       'supplied usdx'
     );
     assertEq(
-      spoke1.getUserSuppliedAmount(reservesIds.weth, alice),
+      spoke1.getUserSuppliedAssets(reservesIds.weth, alice),
       vars.wethSupplyAmount,
       'supplied weth'
     );
@@ -845,7 +845,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Alice borrows more usdx and we check risk premiums
     if (
       aliceUsdxInfo.borrowAmount > 2 &&
-      spoke1.getUserSuppliedAmount(_usdxReserveId(spoke1), alice) >
+      spoke1.getUserSuppliedAssets(_usdxReserveId(spoke1), alice) >
       spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice) * 3 &&
       spoke1.getHealthFactor(alice) > WadRayMath.WAD
     ) {

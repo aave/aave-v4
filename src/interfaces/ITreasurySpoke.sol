@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IHub} from 'src/interfaces/IHub.sol';
+import {IHubBase} from 'src/interfaces/IHubBase.sol';
 import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
 
 /**
@@ -61,5 +61,5 @@ interface ITreasurySpoke is ISpokeBase {
    * @notice Returns the address of the associated Hub.
    * @return The address of the Hub.
    */
-  function HUB() external view returns (IHub);
+  function HUB() external view returns (IHubBase);
 }

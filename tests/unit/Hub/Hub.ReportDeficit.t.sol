@@ -134,7 +134,8 @@ contract HubReportDeficitTest is HubBase {
       address(spoke1),
       hub1.convertToDrawnShares(usdxAssetId, baseAmount),
       premiumDelta,
-      totalDeficit
+      baseAmount,
+      premiumAmount
     );
     vm.prank(address(spoke1));
     hub1.reportDeficit(usdxAssetId, baseAmount, premiumAmount, premiumDelta);

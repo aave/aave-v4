@@ -188,14 +188,14 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
 
     assertApproxEqAbs(
-      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
       hub1.getAssetTotalOwed(assetId) - amount,
       3,
       'treasury spoke supplied amount on hub'
     );
     assertApproxEqAbs(
       fees,
-      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
       3,
       'treasury spoke supplied amount on spoke'
     );
@@ -211,7 +211,7 @@ contract TreasurySpokeTest is SpokeBase {
       assertEq(balanceBefore + fees, asset.balanceOf(TREASURY_ADMIN), 'Treasury admin balance');
       assertEq(
         0,
-        hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+        hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
         'treasury spoke remaining supplied amount'
       );
     }
@@ -235,6 +235,47 @@ contract TreasurySpokeTest is SpokeBase {
       vm.randomAddress(),
       vm.randomUint()
     );
+  }
+
+  function test_getters() public {
+    uint256 reserveId = _daiReserveId(spoke1);
+    uint256 assetId = daiAssetId;
+    uint256 amount = 10_000e18;
+    uint256 skipTime = 322 days;
+
+    (uint256 drawn, uint256 premium) = treasurySpoke.getUserDebt(reserveId, alice);
+    assertEq(drawn, 0);
+    assertEq(premium, 0);
+    assertEq(treasurySpoke.getUserTotalDebt(reserveId, alice), 0);
+
+    updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
+
+    // create debt
+    address tempUser = _openDebtPosition(spoke1, reserveId, amount, true);
+
+    skip(skipTime);
+
+    uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
+
+    assertApproxEqAbs(
+      treasurySpoke.getReserveSuppliedAssets(reserveId),
+      fees,
+      1,
+      'reserve supplied assets'
+    );
+    assertApproxEqAbs(
+      treasurySpoke.getReserveSuppliedShares(reserveId),
+      hub1.convertToAddedShares(assetId, fees),
+      1,
+      'reserve supplied shares'
+    );
+
+    assertEq(treasurySpoke.getUserSuppliedAssets(reserveId, alice), 0);
+    assertEq(treasurySpoke.getUserSuppliedShares(reserveId, alice), 0);
+    (drawn, premium) = treasurySpoke.getReserveDebt(reserveId);
+    assertEq(drawn, 0);
+    assertEq(premium, 0);
+    assertEq(treasurySpoke.getReserveTotalDebt(reserveId), 0);
   }
 
   function _treasurySpoke() internal view returns (ISpoke) {

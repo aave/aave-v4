@@ -44,11 +44,11 @@ contract HubAccessTest is HubBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub1.updateAssetConfig(daiAssetId, assetConfig);
+    hub1.updateAssetConfig(daiAssetId, assetConfig, new bytes(0));
 
     // Hub Admin can update asset config
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(daiAssetId, assetConfig);
+    hub1.updateAssetConfig(daiAssetId, assetConfig, new bytes(0));
 
     // Only Hub Admin can add spoke
     vm.expectRevert(
@@ -282,7 +282,7 @@ contract HubAccessTest is HubBase {
 
     // Hub admin can call update asset config on the hub after authority change
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(daiAssetId, assetConfig);
+    hub1.updateAssetConfig(daiAssetId, assetConfig, new bytes(0));
 
     // Hub admin cannot call update spoke config on the hub after authority change
     vm.expectRevert(

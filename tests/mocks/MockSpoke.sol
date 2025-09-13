@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Spoke, DataTypes, IHub, SafeCast, PositionStatus} from 'src/contracts/Spoke.sol';
+import {Spoke, DataTypes, IHubBase, SafeCast, PositionStatus} from 'src/contracts/Spoke.sol';
 
 contract MockSpoke is Spoke {
   using SafeCast for *;
@@ -16,7 +16,7 @@ contract MockSpoke is Spoke {
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     uint256 assetId = reserve.assetId;
-    IHub hub = reserve.hub;
+    IHubBase hub = reserve.hub;
 
     _validateBorrow(reserve);
 

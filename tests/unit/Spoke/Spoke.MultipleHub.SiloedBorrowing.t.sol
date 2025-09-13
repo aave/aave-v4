@@ -145,7 +145,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     uint256 assetAAddCapAmount = siloedVars.assetAAddCap * 10 ** assetA.decimals();
     Utils.supplyCollateral(newSpoke, siloedVars.reserveAIdNewSpoke, bob, assetAAddCapAmount, bob);
     assertEq(
-      newSpoke.getUserSuppliedAmount(siloedVars.reserveAIdNewSpoke, bob),
+      newSpoke.getUserSuppliedAssets(siloedVars.reserveAIdNewSpoke, bob),
       assetAAddCapAmount,
       'bob supplied amount of asset A on new spoke'
     );
@@ -154,7 +154,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       'bob using asset A as collateral on new spoke'
     );
     assertEq(
-      hub1.getTotalAddedAssets(siloedVars.assetAId),
+      hub1.getAssetAddedAmount(siloedVars.assetAId),
       assetAAddCapAmount,
       'total supplied amount of asset A on canonical hub'
     );
