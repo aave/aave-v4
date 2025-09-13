@@ -13,32 +13,23 @@ contract SpokeConfigTest is SpokeBase {
       address(this),
       vm.getNonce(address(this))
     );
-    vm.expectEmit(predictedSpokeAddress);
-    emit ISpoke.UpdateLiquidationConfig(
-      DataTypes.LiquidationConfig({
-        targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-        healthFactorForMaxBonus: 0,
-        liquidationBonusFactor: 0
-      })
-    );
-    new Spoke(makeAddr('AccessManager'), makeAddr('AaveOracle'));
+    address oracle = makeAddr('AaveOracle');
+    SpokeInstance instance = new SpokeInstance(oracle);
+    assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
+    assertEq(instance.getOracle(), oracle);
   }
 
   function test_spoke_deploy_revertsWith_InvalidAddress() public {
     vm.expectRevert(ISpoke.InvalidAddress.selector);
-    new Spoke(address(0), vm.randomAddress());
-
-    vm.expectRevert(ISpoke.InvalidAddress.selector);
-    new Spoke(vm.randomAddress(), address(0));
-
-    vm.expectRevert(ISpoke.InvalidAddress.selector);
-    new Spoke(address(0), address(0));
+    new SpokeInstance(address(0));
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
-    vm.assume(caller != SPOKE_ADMIN && caller != ADMIN);
+    vm.assume(
+      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+    );
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
     );
@@ -184,7 +175,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_InvalidAddress_oracle() public {
-    (ISpoke newSpoke, ) = _deploySpokeWithOracle(address(accessManager), 'New Spoke (USD)');
+    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       paused: true,

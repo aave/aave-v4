@@ -38,13 +38,17 @@ contract SpokeMultipleHubBase is SpokeBase {
     accessManager = new AccessManager(ADMIN);
     // Canonical hub and spoke
     hub1 = new Hub(address(accessManager));
-    (spoke1, oracle1) = _deploySpokeWithOracle(address(accessManager), 'Spoke 1 (USD)');
+    (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
     treasurySpoke = new TreasurySpoke(ADMIN, address(hub1));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
 
     // New hub and spoke
     newHub = new Hub(address(accessManager));
-    (newSpoke, newOracle) = _deploySpokeWithOracle(address(accessManager), 'New Spoke (USD)');
+    (newSpoke, newOracle) = _deploySpokeWithOracle(
+      ADMIN,
+      address(accessManager),
+      'New Spoke (USD)'
+    );
     newIrStrategy = new AssetInterestRateStrategy(address(newHub));
 
     assetA = new TestnetERC20('Asset A', 'A', 18);

@@ -6,7 +6,7 @@ import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
-import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
+import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
@@ -23,7 +23,12 @@ import {IHubBase} from 'src/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
-contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
+/**
+ * @dev Future upgrades can safely append new storage variables to the Spoke's storage layout
+ * as long as any new variables added to inherited contracts continue to not depend on the
+ * Spoke's storage layout namespace.
+ */
+abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
   using PercentageMath for *;
@@ -52,16 +57,14 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   /**
    * @dev Constructor.
-   * @dev The authority should implement the AccessManaged interface to control access.
-   * @param authority_ The address of the authority contract which manages permissions.
    * @param oracle_ The address of the AaveOracle contract.
    */
-  constructor(address authority_, address oracle_) AccessManaged(authority_) {
-    require(authority_ != address(0) && oracle_ != address(0), InvalidAddress());
+  constructor(address oracle_) {
+    require(oracle_ != address(0), InvalidAddress());
     _ORACLE = IAaveOracle(oracle_);
-    _liquidationConfig.targetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-    emit UpdateLiquidationConfig(_liquidationConfig);
   }
+
+  function initialize(address _authority) external virtual;
 
   // /////
   // Governance
