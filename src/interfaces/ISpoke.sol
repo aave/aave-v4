@@ -356,7 +356,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function ORACLE() external view returns (address);
 
   function getReserve(uint256 reserveId) external view returns (Reserve memory);
-  
+
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory);
 
   function getDynamicReserveConfig(
