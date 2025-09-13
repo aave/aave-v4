@@ -300,7 +300,7 @@ contract SpokeSupplyTest is SpokeBase {
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     rate = bound(rate, 1, MAX_BORROW_RATE);
-    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ASSET_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     // set weth collateral risk to 0 for no premium contribution
@@ -468,7 +468,7 @@ contract SpokeSupplyTest is SpokeBase {
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     rate = bound(rate, 1, MAX_BORROW_RATE);
-    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ASSET_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     (uint256 assetId, IERC20 underlying) = getAssetByReserveId(spoke1, reserveId);

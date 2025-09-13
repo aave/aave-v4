@@ -429,7 +429,7 @@ contract SpokeWithdrawTest is SpokeBase {
   function test_withdraw_fuzz_all_liquidity_with_interest_no_premium(
     TestWithInterestFuzzParams memory params
   ) public {
-    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_ASSET_ID);
     params.borrowReserveSupplyAmount = bound(
       params.borrowReserveSupplyAmount,
       2,
@@ -687,7 +687,7 @@ contract SpokeWithdrawTest is SpokeBase {
   function test_withdraw_fuzz_all_liquidity_with_interest_with_premium(
     TestWithInterestFuzzParams memory params
   ) public {
-    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_ASSET_ID);
     params.borrowReserveSupplyAmount = bound(
       params.borrowReserveSupplyAmount,
       2,

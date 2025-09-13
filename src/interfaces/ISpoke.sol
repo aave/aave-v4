@@ -336,7 +336,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     bytes32 s
   ) external;
 
-  function MAX_RESERVE_ID() external view returns (uint256);
+  function MAX_ASSET_ID() external view returns (uint256);
 
   /**
    * @notice Returns the type hash for the SetUserPositionManager intent.

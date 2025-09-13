@@ -174,7 +174,7 @@ abstract contract Base is Test {
     ReserveInfo usdx;
     ReserveInfo usdy;
     ReserveInfo dai2; // Special case: dai listed twice on hub and spoke2 (unique assetIds)
-    uint256 MAX_RESERVE_ID;
+    uint256 MAX_ASSET_ID;
   }
 
   struct ReserveInfo {

@@ -35,7 +35,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using MathUtils for *;
 
   /// @inheritdoc ISpoke
-  uint256 public constant MAX_RESERVE_ID = type(uint16).max;
+  uint256 public constant MAX_ASSET_ID = type(uint16).max;
 
   /// @inheritdoc ISpoke
   uint24 public constant MAX_COLLATERAL_RISK = 1000_00; // 1000.00%
@@ -111,7 +111,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
     require(hub != address(0), InvalidAddress());
-    require(assetId <= MAX_RESERVE_ID, InvalidAssetId());
+    require(assetId <= MAX_ASSET_ID, InvalidAssetId());
     require(!_reserveExists[hub][assetId], ReserveExists());
 
     _validateReserveConfig(config);
