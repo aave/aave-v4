@@ -188,7 +188,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_fuzz_revertsWith_AssetNotListed() public {
-    uint256 assetId = vm.randomUint(hub1.getAssetCount(), type(uint256).max); // invalid assetId
+    uint256 assetId = vm.randomUint(hub1.getAssetCount(), Constants.MAX_RESERVE_ID); // non-existing asset id
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       paused: true,
@@ -286,7 +286,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(ADMIN);
     spoke1.addReserve(
       address(hub1),
-      type(uint16).max,
+      Constants.MAX_RESERVE_ID + 1, // invalid assetId
       address(0),
       newReserveConfig,
       newDynReserveConfig
