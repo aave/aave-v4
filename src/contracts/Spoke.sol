@@ -476,6 +476,11 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /// @inheritdoc ISpoke
+  function getLiquidationLogic() public pure returns (address) {
+    return address(LiquidationLogic);
+  }
+
+  /// @inheritdoc ISpoke
   function isPositionManager(address user, address positionManager) external view returns (bool) {
     return _isPositionManager(user, positionManager);
   }

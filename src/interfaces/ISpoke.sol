@@ -297,6 +297,11 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function renouncePositionManagerRole(address user) external;
 
   /**
+   * @notice Gets the address of the external getLiquidationLogic library.
+   */
+  function getLiquidationLogic() external pure returns (address);
+
+  /**
    * @notice Returns true if positionManager is active and approved by user, false otherwise.
    */
   function isPositionManager(address user, address positionManager) external view returns (bool);
