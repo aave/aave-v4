@@ -64,16 +64,15 @@ library DataTypes {
 
   // Spoke types
   struct Reserve {
-    address underlying;
-    //
-    IHubBase hub;
-    uint16 assetId;
     uint8 decimals;
     uint16 dynamicConfigKey; // key of the last reserve config
     bool paused;
     bool frozen;
     bool borrowable;
     uint24 collateralRisk;
+    IHubBase hub;
+    uint16 assetId;
+    address underlying;
   }
 
   struct DynamicReserveConfig {
