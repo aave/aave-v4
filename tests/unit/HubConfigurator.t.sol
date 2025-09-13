@@ -153,7 +153,7 @@ contract HubConfiguratorTest is HubBase {
       reinvestmentController: address(0)
     });
     IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
-      addCap: Constants.MAX_CAP,
+      addCap: Constants.SPOKE_MAX_CAP,
       drawCap: 0,
       active: true
     });

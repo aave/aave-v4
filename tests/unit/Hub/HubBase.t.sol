@@ -104,7 +104,11 @@ contract HubBase is Base {
     hub1.addSpoke(
       assetId,
       tempSpoke,
-      IHub.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
+      IHub.SpokeConfig({
+        active: true,
+        addCap: Constants.SPOKE_MAX_CAP,
+        drawCap: Constants.SPOKE_MAX_CAP
+      })
     );
 
     if (withPremium) {
@@ -192,7 +196,11 @@ contract HubBase is Base {
     hub1.addSpoke(
       assetId,
       tempSpoke,
-      IHub.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
+      IHub.SpokeConfig({
+        addCap: Constants.SPOKE_MAX_CAP,
+        drawCap: Constants.SPOKE_MAX_CAP,
+        active: true
+      })
     );
 
     Utils.add({hub: hub1, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});

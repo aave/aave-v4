@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 library Constants {
   /// @dev Hub Constants
   uint8 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
-  uint56 public constant MAX_CAP = type(uint56).max;
+  uint56 public constant SPOKE_MAX_CAP = type(uint56).max;
   /// @dev Spoke Constants
   uint8 public constant ORACLE_DECIMALS = 8;
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;

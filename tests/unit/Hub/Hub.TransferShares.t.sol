@@ -16,8 +16,8 @@ contract HubTransferSharesTest is HubBase {
     /// @dev add a zero decimal asset to test add cap rounding
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      addCap: Constants.MAX_CAP,
-      drawCap: Constants.MAX_CAP
+      addCap: Constants.SPOKE_MAX_CAP,
+      drawCap: Constants.SPOKE_MAX_CAP
     });
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({

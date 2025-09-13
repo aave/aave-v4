@@ -229,7 +229,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint8);
 
-  function MAX_CAP() external view returns (uint56);
+  function SPOKE_MAX_CAP() external view returns (uint56);
 
   /**
    * @notice Converts the specified amount of supplied shares to assets amount.

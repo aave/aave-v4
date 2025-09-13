@@ -57,7 +57,11 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     newHub.addSpoke(
       siloedVars.assetBId,
       address(newSpoke),
-      IHub.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: siloedVars.assetBDrawCap})
+      IHub.SpokeConfig({
+        active: true,
+        addCap: Constants.SPOKE_MAX_CAP,
+        drawCap: siloedVars.assetBDrawCap
+      })
     );
 
     // Add asset A to the canonical hub
@@ -83,7 +87,11 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     hub1.addSpoke(
       siloedVars.assetAId,
       address(spoke1),
-      IHub.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
+      IHub.SpokeConfig({
+        active: true,
+        addCap: Constants.SPOKE_MAX_CAP,
+        drawCap: Constants.SPOKE_MAX_CAP
+      })
     );
 
     // Add reserve A from canonical hub to the new spoke

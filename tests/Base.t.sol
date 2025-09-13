@@ -403,8 +403,8 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      addCap: Constants.MAX_CAP,
-      drawCap: Constants.MAX_CAP
+      addCap: Constants.SPOKE_MAX_CAP,
+      drawCap: Constants.SPOKE_MAX_CAP
     });
 
     bytes memory encodedIrData = abi.encode(

@@ -31,7 +31,7 @@ contract Hub is IHub, AccessManaged {
   uint8 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
 
   /// @inheritdoc IHub
-  uint56 public constant MAX_CAP = type(uint56).max;
+  uint56 public constant SPOKE_MAX_CAP = type(uint56).max;
 
   uint256 internal _assetCount;
   mapping(uint256 assetId => Asset) internal _assets;
@@ -693,7 +693,7 @@ contract Hub is IHub, AccessManaged {
     require(spoke.active, SpokeNotActive());
     uint256 addCap = spoke.addCap;
     require(
-      addCap == MAX_CAP ||
+      addCap == SPOKE_MAX_CAP ||
         addCap * 10 ** asset.decimals >= previewAddByShares(assetId, spoke.addedShares) + amount,
       AddCapExceeded(addCap)
     );
@@ -726,7 +726,7 @@ contract Hub is IHub, AccessManaged {
     uint256 drawn = _getSpokeDrawn(spoke, assetId);
     uint256 premium = _getSpokePremium(spoke, assetId);
     require(
-      drawCap == MAX_CAP || drawCap * 10 ** asset.decimals >= drawn + premium + amount,
+      drawCap == SPOKE_MAX_CAP || drawCap * 10 ** asset.decimals >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
     );
   }
@@ -782,7 +782,7 @@ contract Hub is IHub, AccessManaged {
     require(shares > 0, InvalidShares());
     uint256 addCap = receiver.addCap;
     require(
-      addCap == MAX_CAP ||
+      addCap == SPOKE_MAX_CAP ||
         addCap * 10 ** asset.decimals >= previewAddByShares(assetId, receiver.addedShares + shares),
       AddCapExceeded(addCap)
     );
@@ -810,7 +810,7 @@ contract Hub is IHub, AccessManaged {
     _updateSpokeConfig(
       assetId,
       feeReceiver,
-      SpokeConfig({addCap: MAX_CAP, drawCap: 0, active: true})
+      SpokeConfig({addCap: SPOKE_MAX_CAP, drawCap: 0, active: true})
     );
   }
 }
