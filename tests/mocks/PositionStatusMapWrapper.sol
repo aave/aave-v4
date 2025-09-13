@@ -3,11 +3,12 @@
 pragma solidity ^0.8.10;
 
 import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
 contract PositionStatusMapWrapper {
-  using PositionStatusMap for DataTypes.PositionStatus;
-  DataTypes.PositionStatus internal _p;
+  using PositionStatusMap for ISpoke.PositionStatus;
+
+  ISpoke.PositionStatus internal _p;
 
   function BORROWING_MASK() external pure returns (uint256) {
     return PositionStatusMap.BORROWING_MASK;

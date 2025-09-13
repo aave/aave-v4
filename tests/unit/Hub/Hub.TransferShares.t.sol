@@ -14,7 +14,7 @@ contract HubTransferSharesTest is HubBase {
     super.setUp();
 
     /// @dev add a zero decimal asset to test add cap rounding
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       addCap: Constants.MAX_CAP,
       drawCap: Constants.MAX_CAP
@@ -37,7 +37,7 @@ contract HubTransferSharesTest is HubBase {
     );
     hub1.updateAssetConfig(
       zeroDecimalAssetId,
-      DataTypes.AssetConfig({
+      IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
@@ -103,7 +103,7 @@ contract HubTransferSharesTest is HubBase {
     Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
     // deactivate spoke1
-    DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
     spokeConfig.active = false;
     vm.prank(HUB_ADMIN);
     hub1.updateSpokeConfig(daiAssetId, address(spoke1), spokeConfig);

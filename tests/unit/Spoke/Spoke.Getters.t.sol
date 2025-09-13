@@ -6,10 +6,10 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 
 contract SpokeGettersTest is SpokeBase {
-  using LiquidationLogic for DataTypes.LiquidationConfig;
+  using LiquidationLogic for ISpoke.LiquidationConfig;
   using SafeCast for uint256;
 
-  DataTypes.LiquidationConfig internal _config;
+  ISpoke.LiquidationConfig internal _config;
 
   function test_getLiquidationBonus_notConfigured() public {
     uint256 reserveId = _daiReserveId(spoke1);
@@ -28,7 +28,7 @@ contract SpokeGettersTest is SpokeBase {
     _config = spoke1.getLiquidationConfig();
     assertEq(
       _config,
-      DataTypes.LiquidationConfig({
+      ISpoke.LiquidationConfig({
         targetHealthFactor: WadRayMath.WAD.toUint128(),
         healthFactorForMaxBonus: 0,
         liquidationBonusFactor: 0
@@ -69,7 +69,7 @@ contract SpokeGettersTest is SpokeBase {
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
     ).toUint64();
 
-    DataTypes.LiquidationConfig memory config = DataTypes.LiquidationConfig({
+    ISpoke.LiquidationConfig memory config = ISpoke.LiquidationConfig({
       targetHealthFactor: WadRayMath.WAD.toUint128(),
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor

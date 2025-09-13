@@ -146,13 +146,13 @@ contract HubConfiguratorTest is HubBase {
       })
     );
 
-    DataTypes.AssetConfig memory expectedConfig = DataTypes.AssetConfig({
+    IHub.AssetConfig memory expectedConfig = IHub.AssetConfig({
       liquidityFee: 0,
       feeReceiver: feeReceiver,
       irStrategy: interestRateStrategy,
       reinvestmentController: address(0)
     });
-    DataTypes.SpokeConfig memory expectedSpokeConfig = DataTypes.SpokeConfig({
+    IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
       addCap: Constants.MAX_CAP,
       drawCap: 0,
       active: true
@@ -205,7 +205,7 @@ contract HubConfiguratorTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     liquidityFee = uint16(bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR));
 
-    DataTypes.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
     expectedConfig.liquidityFee = liquidityFee;
 
     vm.expectCall(
@@ -238,8 +238,8 @@ contract HubConfiguratorTest is HubBase {
 
   function test_updateFeeReceiver_fuzz(address feeReceiver) public {
     assumeNotZeroAddress(feeReceiver);
-    DataTypes.AssetConfig memory oldConfig = hub1.getAssetConfig(assetId);
-    DataTypes.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory oldConfig = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
 
     // if new feeReceiver is different than old one, and is not listed, update the spoke config of old feeReceiver
     if (feeReceiver != oldConfig.feeReceiver) {
@@ -462,8 +462,8 @@ contract HubConfiguratorTest is HubBase {
     liquidityFee = uint16(bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR));
     assumeNotZeroAddress(feeReceiver);
 
-    DataTypes.AssetConfig memory oldConfig = hub1.getAssetConfig(assetId);
-    DataTypes.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory oldConfig = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
     expectedConfig.liquidityFee = liquidityFee;
     // if new fee receiver is different from old one, and is not listed, update the spoke config of old fee receiver
     if (oldConfig.feeReceiver != feeReceiver) {
@@ -510,7 +510,7 @@ contract HubConfiguratorTest is HubBase {
   function test_updateInterestRateStrategy() public {
     address interestRateStrategy = makeAddr('newInterestRateStrategy');
 
-    DataTypes.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
     expectedConfig.irStrategy = interestRateStrategy;
     _mockInterestRateBps(interestRateStrategy, 5_00);
 
@@ -578,7 +578,7 @@ contract HubConfiguratorTest is HubBase {
 
   function test_updateReinvestmentController() public {
     address reinvestmentController = makeAddr('newReinvestmentController');
-    DataTypes.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
     expectedConfig.reinvestmentController = reinvestmentController;
     vm.expectCall(
       address(hub1),
@@ -598,7 +598,7 @@ contract HubConfiguratorTest is HubBase {
 
   function test_freezeAsset() public {
     for (uint256 i; i < spokeAddresses.length; i++) {
-      DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddresses[i]);
+      IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddresses[i]);
       spokeConfig.addCap = 0;
       spokeConfig.drawCap = 0;
       vm.expectCall(
@@ -611,7 +611,7 @@ contract HubConfiguratorTest is HubBase {
     hubConfigurator.freezeAsset(address(hub1), assetId);
 
     for (uint256 i; i < spokeAddresses.length; i++) {
-      DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddresses[i]);
+      IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddresses[i]);
       assertEq(spokeConfig.addCap, 0);
       assertEq(spokeConfig.drawCap, 0);
     }
@@ -625,7 +625,7 @@ contract HubConfiguratorTest is HubBase {
 
   function test_pauseAsset() public {
     for (uint256 i; i < spokeAddresses.length; i++) {
-      DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddresses[i]);
+      IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddresses[i]);
       spokeConfig.active = false;
       vm.expectCall(
         address(hub1),
@@ -637,7 +637,7 @@ contract HubConfiguratorTest is HubBase {
     hubConfigurator.pauseAsset(address(hub1), assetId);
 
     for (uint256 i; i < spokeAddresses.length; i++) {
-      DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddresses[i]);
+      IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddresses[i]);
       assertEq(spokeConfig.active, false);
     }
   }
@@ -645,14 +645,14 @@ contract HubConfiguratorTest is HubBase {
   function test_addSpoke_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    DataTypes.SpokeConfig memory spokeConfig;
+    IHub.SpokeConfig memory spokeConfig;
     hubConfigurator.addSpoke(address(hub1), vm.randomAddress(), 0, spokeConfig);
   }
 
   function test_addSpoke() public {
     address newSpoke = makeAddr('newSpoke');
 
-    DataTypes.SpokeConfig memory daiSpokeConfig = DataTypes.SpokeConfig({
+    IHub.SpokeConfig memory daiSpokeConfig = IHub.SpokeConfig({
       addCap: 1,
       drawCap: 2,
       active: true
@@ -673,7 +673,7 @@ contract HubConfiguratorTest is HubBase {
       address(hub1),
       vm.randomAddress(),
       new uint256[](0),
-      new DataTypes.SpokeConfig[](0)
+      new IHub.SpokeConfig[](0)
     );
   }
 
@@ -682,10 +682,10 @@ contract HubConfiguratorTest is HubBase {
     assetIds[0] = daiAssetId;
     assetIds[1] = wethAssetId;
 
-    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](3);
-    spokeConfigs[0] = DataTypes.SpokeConfig({addCap: 1, drawCap: 2, active: true});
-    spokeConfigs[1] = DataTypes.SpokeConfig({addCap: 3, drawCap: 4, active: true});
-    spokeConfigs[2] = DataTypes.SpokeConfig({addCap: 5, drawCap: 6, active: true});
+    IHub.SpokeConfig[] memory spokeConfigs = new IHub.SpokeConfig[](3);
+    spokeConfigs[0] = IHub.SpokeConfig({addCap: 1, drawCap: 2, active: true});
+    spokeConfigs[1] = IHub.SpokeConfig({addCap: 3, drawCap: 4, active: true});
+    spokeConfigs[2] = IHub.SpokeConfig({addCap: 5, drawCap: 6, active: true});
 
     vm.expectRevert(IHubConfigurator.MismatchedConfigs.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -699,18 +699,18 @@ contract HubConfiguratorTest is HubBase {
     assetIds[0] = daiAssetId;
     assetIds[1] = wethAssetId;
 
-    DataTypes.SpokeConfig memory daiSpokeConfig = DataTypes.SpokeConfig({
+    IHub.SpokeConfig memory daiSpokeConfig = IHub.SpokeConfig({
       addCap: 1,
       drawCap: 2,
       active: true
     });
-    DataTypes.SpokeConfig memory wethSpokeConfig = DataTypes.SpokeConfig({
+    IHub.SpokeConfig memory wethSpokeConfig = IHub.SpokeConfig({
       addCap: 3,
       drawCap: 4,
       active: true
     });
 
-    DataTypes.SpokeConfig[] memory spokeConfigs = new DataTypes.SpokeConfig[](2);
+    IHub.SpokeConfig[] memory spokeConfigs = new IHub.SpokeConfig[](2);
     spokeConfigs[0] = daiSpokeConfig;
     spokeConfigs[1] = wethSpokeConfig;
 
@@ -721,8 +721,8 @@ contract HubConfiguratorTest is HubBase {
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.addSpokeToAssets(address(hub1), newSpoke, assetIds, spokeConfigs);
 
-    DataTypes.SpokeConfig memory daiSpokeData = hub1.getSpokeConfig(daiAssetId, newSpoke);
-    DataTypes.SpokeConfig memory wethSpokeData = hub1.getSpokeConfig(wethAssetId, newSpoke);
+    IHub.SpokeConfig memory daiSpokeData = hub1.getSpokeConfig(daiAssetId, newSpoke);
+    IHub.SpokeConfig memory wethSpokeData = hub1.getSpokeConfig(wethAssetId, newSpoke);
 
     assertEq(daiSpokeData, daiSpokeConfig);
     assertEq(wethSpokeData, wethSpokeConfig);
@@ -735,7 +735,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateSpokeActive() public {
-    DataTypes.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
     for (uint256 i = 0; i < 2; ++i) {
       bool active = (i == 0) ? false : true;
       expectedSpokeConfig.active = active;
@@ -757,7 +757,7 @@ contract HubConfiguratorTest is HubBase {
 
   function test_updateSpokeSupplyCap() public {
     uint56 newSupplyCap = 100;
-    DataTypes.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
     expectedSpokeConfig.addCap = newSupplyCap;
     vm.expectCall(
       address(hub1),
@@ -776,7 +776,7 @@ contract HubConfiguratorTest is HubBase {
 
   function test_updateSpokeDrawCap() public {
     uint56 newDrawCap = 100;
-    DataTypes.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
     expectedSpokeConfig.drawCap = newDrawCap;
     vm.expectCall(
       address(hub1),
@@ -796,7 +796,7 @@ contract HubConfiguratorTest is HubBase {
   function test_updateSpokeCaps() public {
     uint56 newSupplyCap = 100;
     uint56 newDrawCap = 200;
-    DataTypes.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
     expectedSpokeConfig.addCap = newSupplyCap;
     expectedSpokeConfig.drawCap = newDrawCap;
     vm.expectCall(
@@ -821,10 +821,7 @@ contract HubConfiguratorTest is HubBase {
     for (uint256 assetId = 0; assetId < 4; ++assetId) {
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
 
-      DataTypes.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(
-        assetId,
-        address(spoke3)
-      );
+      IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
       expectedSpokeConfig.active = false;
       vm.expectCall(
         address(hub1),
@@ -840,7 +837,7 @@ contract HubConfiguratorTest is HubBase {
     hubConfigurator.pauseSpoke(address(hub1), address(spoke3));
 
     for (uint256 assetId = 0; assetId < 4; ++assetId) {
-      DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
+      IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
       assertEq(spokeConfig.active, false);
     }
   }
@@ -858,10 +855,7 @@ contract HubConfiguratorTest is HubBase {
     for (uint256 assetId = 0; assetId < 4; ++assetId) {
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
 
-      DataTypes.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(
-        assetId,
-        address(spoke3)
-      );
+      IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
       expectedSpokeConfig.addCap = 0;
       expectedSpokeConfig.drawCap = 0;
       vm.expectCall(
@@ -878,7 +872,7 @@ contract HubConfiguratorTest is HubBase {
     hubConfigurator.freezeSpoke(address(hub1), address(spoke3));
 
     for (uint256 assetId = 0; assetId < 4; ++assetId) {
-      DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
+      IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
       assertEq(spokeConfig.addCap, 0);
       assertEq(spokeConfig.drawCap, 0);
     }

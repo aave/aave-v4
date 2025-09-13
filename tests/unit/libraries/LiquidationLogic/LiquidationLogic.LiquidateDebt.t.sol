@@ -33,7 +33,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setBorrowingStatus(reserveId, true);
 
     // Add liquidation logic wrapper as a spoke
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       addCap: Constants.MAX_CAP,
       drawCap: Constants.MAX_CAP
@@ -49,7 +49,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     vm.startPrank(address(spoke));
     hub.refreshPremium(
       assetId,
-      DataTypes.PremiumDelta(
+      IHubBase.PremiumDelta(
         hub.previewRestoreByAssets(assetId, 1e6 * 1e18).toInt256(),
         1e6 * 1e18,
         0
@@ -67,7 +67,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     vm.prank(address(spoke));
     hub.refreshPremium(
       assetId,
-      DataTypes.PremiumDelta(-1e3 * 1e18, -1e3 * 1e18, realizedPremium.toInt256())
+      IHubBase.PremiumDelta(-1e3 * 1e18, -1e3 * 1e18, realizedPremium.toInt256())
     );
     liquidationLogicWrapper.setDebtPositionRealizedPremium(realizedPremium);
 
@@ -85,7 +85,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 premiumDebtToLiquidate = _min(debtToLiquidate, premiumDebt);
     uint256 drawnDebtToLiquidate = _min(drawnDebt, debtToLiquidate - premiumDebtToLiquidate);
 
-    DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -hub.previewRestoreByAssets(assetId, premiumDebt).toInt256(),
       offsetDelta: -(premiumDebt - accruedPremium).toInt256(),
       realizedDelta: accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
@@ -113,7 +113,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       premiumDebt
     );
 
-    DataTypes.UserPosition memory initialPosition = updateStorage(
+    ISpoke.UserPosition memory initialPosition = updateStorage(
       drawnDebt,
       premiumDebt,
       accruedPremium
@@ -219,7 +219,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 drawnDebt,
     uint256 premiumDebt,
     uint256 accruedPremium
-  ) internal returns (DataTypes.UserPosition memory) {
+  ) internal returns (ISpoke.UserPosition memory) {
     liquidationLogicWrapper.setDebtPositionDrawnShares(
       hub.previewRestoreByAssets(assetId, drawnDebt)
     );
@@ -232,8 +232,8 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   }
 
   function assertPosition(
-    DataTypes.UserPosition memory newPosition,
-    DataTypes.UserPosition memory initialPosition,
+    ISpoke.UserPosition memory newPosition,
+    ISpoke.UserPosition memory initialPosition,
     uint256 drawnSharesLiquidated,
     uint256 accruedPremium,
     uint256 premiumDebtToLiquidate

@@ -9,7 +9,6 @@ import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 import {INativeTokenGateway} from 'src/interfaces/INativeTokenGateway.sol';
@@ -129,7 +128,7 @@ contract NativeTokenGateway is
   }
 
   function _getReserveData(uint256 reserveId) internal view returns (address, address) {
-    DataTypes.Reserve memory reserveData = _spoke.getReserve(reserveId);
+    ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
     return (reserveData.underlying, address(reserveData.hub));
   }
 

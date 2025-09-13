@@ -33,7 +33,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   }
 
   struct AccountsInfo {
-    DataTypes.UserAccountData userAccountData;
+    ISpoke.UserAccountData userAccountData;
     BalanceInfo userBalanceInfo;
     BalanceInfo collateralHubBalanceInfo;
     BalanceInfo debtHubBalanceInfo;
@@ -57,8 +57,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   /// @notice Bound liquidation config to full range of possible values
   function _bound(
-    DataTypes.LiquidationConfig memory liqConfig
-  ) internal pure virtual returns (DataTypes.LiquidationConfig memory) {
+    ISpoke.LiquidationConfig memory liqConfig
+  ) internal pure virtual returns (ISpoke.LiquidationConfig memory) {
     liqConfig.targetHealthFactor = bound(
       liqConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
@@ -81,8 +81,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   }
 
   function _bound(
-    DataTypes.DynamicReserveConfig memory dynConfig
-  ) internal pure virtual returns (DataTypes.DynamicReserveConfig memory) {
+    ISpoke.DynamicReserveConfig memory dynConfig
+  ) internal pure virtual returns (ISpoke.DynamicReserveConfig memory) {
     dynConfig.maxLiquidationBonus = bound(
       dynConfig.maxLiquidationBonus,
       MIN_LIQUIDATION_BONUS,
@@ -166,7 +166,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     address user,
     uint256 debtToCover
   ) internal virtual returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
-    DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
     return
       LiquidationLogic.CalculateMaxDebtToLiquidateParams({
         debtReserveBalance: spoke.getUserTotalDebt(debtReserveId, user),
@@ -196,7 +196,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 debtReserveId,
     address user
   ) internal virtual returns (LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory) {
-    DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
         totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
@@ -225,7 +225,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     address user,
     uint256 debtToCover
   ) internal virtual returns (LiquidationLogic.CalculateLiquidationAmountsParams memory) {
-    DataTypes.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
     return
       LiquidationLogic.CalculateLiquidationAmountsParams({
         healthFactorForMaxBonus: spoke.getLiquidationConfig().healthFactorForMaxBonus,
@@ -279,7 +279,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _calculateExpectedUserRiskPremiumAndAvgCollateralFactor(
     CheckedLiquidationCallParams memory params,
-    DataTypes.UserAccountData memory userAccountDataBefore,
+    ISpoke.UserAccountData memory userAccountDataBefore,
     uint256 collateralToLiquidate,
     uint256 debtToLiquidate
   ) internal virtual returns (uint256, uint256) {
@@ -468,7 +468,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _getLiquidationMetadata(
     CheckedLiquidationCallParams memory params,
-    DataTypes.UserAccountData memory userAccountDataBefore
+    ISpoke.UserAccountData memory userAccountDataBefore
   ) internal virtual returns (LiquidationMetadata memory) {
     uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getCalculateDebtToTargetHealthFactorParams(
@@ -956,7 +956,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
       if (params.spoke.isBorrowing(reserveId, params.user)) {
-        DataTypes.UserPosition memory userPosition = params.spoke.getUserPosition(
+        ISpoke.UserPosition memory userPosition = params.spoke.getUserPosition(
           reserveId,
           params.user
         );

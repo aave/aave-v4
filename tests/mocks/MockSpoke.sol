@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Spoke, DataTypes, IHubBase, SafeCast, PositionStatusMap} from 'src/contracts/Spoke.sol';
+import {Spoke, ISpoke, IHubBase, SafeCast, PositionStatusMap} from 'src/contracts/Spoke.sol';
 
 contract MockSpoke is Spoke {
   using SafeCast for *;
@@ -12,9 +12,9 @@ contract MockSpoke is Spoke {
 
   // same as spoke's borrow, but without health factor check and no position manager check for onBehalfOf
   function borrowWithoutHfCheck(uint256 reserveId, uint256 amount, address onBehalfOf) external {
-    DataTypes.Reserve storage reserve = _reserves[reserveId];
-    DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
+    ISpoke.Reserve storage reserve = _reserves[reserveId];
+    ISpoke.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    ISpoke.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     uint256 assetId = reserve.assetId;
     IHubBase hub = reserve.hub;
 
@@ -27,9 +27,7 @@ contract MockSpoke is Spoke {
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    DataTypes.UserAccountData memory userAccountData = _calculateAndRefreshUserAccountData(
-      onBehalfOf
-    );
+    ISpoke.UserAccountData memory userAccountData = _calculateAndRefreshUserAccountData(onBehalfOf);
     _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.userRiskPremium);
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);

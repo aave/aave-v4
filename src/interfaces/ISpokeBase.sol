@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {IHubBase} from 'src/interfaces/IHubBase.sol';
 
 /**
  * @title ISpokeBase
@@ -65,7 +65,7 @@ interface ISpokeBase {
     address indexed caller,
     address indexed user,
     uint256 drawnShares,
-    DataTypes.PremiumDelta premiumDelta
+    IHubBase.PremiumDelta premiumDelta
   );
 
   /**

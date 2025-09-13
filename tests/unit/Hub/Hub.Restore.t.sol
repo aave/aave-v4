@@ -59,7 +59,7 @@ contract HubRestoreTest is HubBase {
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -73,7 +73,7 @@ contract HubRestoreTest is HubBase {
   }
 
   function test_restore_revertsWith_InvalidAmount_zero() public {
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -89,7 +89,7 @@ contract HubRestoreTest is HubBase {
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.pauseAsset(address(hub1), daiAssetId);
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -136,7 +136,7 @@ contract HubRestoreTest is HubBase {
     assertEq(premium, 0);
     uint256 drawnShares = hub1.previewRestoreByAssets(daiAssetId, drawnRestored);
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -250,7 +250,7 @@ contract HubRestoreTest is HubBase {
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     assertEq(premium, 0);
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -324,7 +324,7 @@ contract HubRestoreTest is HubBase {
 
     premiumRestored = bound(premiumRestored, 1, premium);
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -363,7 +363,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawnRestored = drawn;
     uint256 restoreAmount = drawnRestored + premium;
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -411,7 +411,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawnRestored = drawn;
     uint256 restoreAmount = drawnRestored + premium;
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -450,7 +450,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawnRestored = drawn;
     uint256 restoreAmount = drawnRestored + premium;
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -489,7 +489,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawnRestored = drawn;
     uint256 restoreAmount = drawnRestored + premium;
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -527,7 +527,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawnRestored = drawn;
     uint256 restoreAmount = drawnRestored + premium;
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -562,7 +562,7 @@ contract HubRestoreTest is HubBase {
     // no premium accrued
     assertEq(premium, 0);
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -629,7 +629,7 @@ contract HubRestoreTest is HubBase {
     // no premium accrued in the same block
     assertEq(premium, 0);
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -738,7 +738,7 @@ contract HubRestoreTest is HubBase {
     // no premium accrued
     assertEq(premium, 0);
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,
@@ -840,7 +840,7 @@ contract HubRestoreTest is HubBase {
 
     premiumRestored = bound(premiumRestored, 1, premium);
 
-    DataTypes.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
       reserveId: daiAssetId,

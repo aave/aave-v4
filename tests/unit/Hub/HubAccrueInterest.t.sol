@@ -16,11 +16,11 @@ contract HubAccrueInterestTest is Base {
   }
 
   struct AssetDataLocal {
-    DataTypes.Asset t0;
-    DataTypes.Asset t1;
-    DataTypes.Asset t2;
-    DataTypes.Asset t3;
-    DataTypes.Asset t4;
+    IHub.Asset t0;
+    IHub.Asset t1;
+    IHub.Asset t2;
+    IHub.Asset t3;
+    IHub.Asset t4;
   }
 
   struct CumulatedInterest {
@@ -51,7 +51,7 @@ contract HubAccrueInterestTest is Base {
 
   /// no interest accrued when no action taken
   function test_accrueInterest_NoActionTaken() public view {
-    DataTypes.Asset memory daiInfo = hub1.getAsset(daiAssetId);
+    IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
     assertEq(daiInfo.drawnIndex, WadRayMath.RAY);
     assertEq(daiInfo.realizedPremium, 0);
@@ -72,7 +72,7 @@ contract HubAccrueInterestTest is Base {
     // Spoke 2 does a add to accrue interest
     Utils.add(hub1, daiAssetId, address(spoke2), addAmount, address(spoke2));
 
-    DataTypes.Asset memory daiInfo = hub1.getAsset(daiAssetId);
+    IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
 
     // Timestamp does not update when no interest accrued
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
@@ -100,7 +100,7 @@ contract HubAccrueInterestTest is Base {
     // Spoke 2 does a add to accrue interest
     Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
-    DataTypes.Asset memory daiInfo = hub1.getAsset(daiAssetId);
+    IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
 
     (uint256 expectedDrawnIndex1, uint256 expectedDrawnDebt1) = calculateExpectedDebt(
       daiInfo.drawnShares,
@@ -178,7 +178,7 @@ contract HubAccrueInterestTest is Base {
     // Spoke 2 does a add to accrue interest
     Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
-    DataTypes.Asset memory daiInfo = hub1.getAsset(daiAssetId);
+    IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
 
     (uint256 expectedDrawnIndex, uint256 expectedDrawnDebt) = calculateExpectedDebt(
       daiInfo.drawnShares,
@@ -217,7 +217,7 @@ contract HubAccrueInterestTest is Base {
     // Spoke 2 does a add to accrue interest
     Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
-    DataTypes.Asset memory daiInfo = hub1.getAsset(daiAssetId);
+    IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
 
     (uint256 expectedDrawnIndex, uint256 expectedDrawnDebt) = calculateExpectedDebt(
       daiInfo.drawnShares,

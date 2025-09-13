@@ -14,7 +14,7 @@ contract HubRefreshPremiumTest is HubBase {
   }
 
   function test_refreshPremium_revertsWith_SpokeNotActive() public {
-    DataTypes.PremiumDelta memory premiumDelta;
+    IHubBase.PremiumDelta memory premiumDelta;
     updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
@@ -25,7 +25,7 @@ contract HubRefreshPremiumTest is HubBase {
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, daiAssetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
 
-    DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: 1,
       offsetDelta: 1,
       realizedDelta: 1
@@ -56,7 +56,7 @@ contract HubRefreshPremiumTest is HubBase {
     sharesDelta = bound(sharesDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
     offsetDelta = bound(offsetDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
     realizedDelta = bound(realizedDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
-    DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: sharesDelta,
       offsetDelta: offsetDelta,
       realizedDelta: realizedDelta
@@ -94,7 +94,7 @@ contract HubRefreshPremiumTest is HubBase {
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 10000e18, bob);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
 
-    DataTypes.Asset memory asset = hub1.getAsset(assetId);
+    IHub.Asset memory asset = hub1.getAsset(assetId);
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
 
@@ -104,7 +104,7 @@ contract HubRefreshPremiumTest is HubBase {
       offsetDeltaPos = asset.premiumOffset.toInt256();
     }
 
-    DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -sharesDeltaPos,
       offsetDelta: -offsetDeltaPos,
       realizedDelta: 0
@@ -134,7 +134,7 @@ contract HubRefreshPremiumTest is HubBase {
     skip(322 days);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 1e18, bob);
 
-    DataTypes.Asset memory asset = hub1.getAsset(assetId);
+    IHub.Asset memory asset = hub1.getAsset(assetId);
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
     bool reverting;
@@ -151,7 +151,7 @@ contract HubRefreshPremiumTest is HubBase {
       realizedDeltaPos = 0;
     }
 
-    DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -sharesDeltaPos.toInt256(),
       offsetDelta: -offsetDeltaPos.toInt256(),
       realizedDelta: -realizedDeltaPos.toInt256()
@@ -203,7 +203,7 @@ contract HubRefreshPremiumTest is HubBase {
     skip(skipTime);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 1e18, bob);
 
-    DataTypes.Asset memory asset = hub1.getAsset(assetId);
+    IHub.Asset memory asset = hub1.getAsset(assetId);
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
     bool reverting;
@@ -227,7 +227,7 @@ contract HubRefreshPremiumTest is HubBase {
     );
     uint256 userPremiumOffsetNew = hub1.previewDrawByShares(assetId, userPremiumSharesNew);
 
-    DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: userPremiumSharesNew.toInt256() - userPremiumShares.toInt256(),
       offsetDelta: userPremiumOffsetNew.toInt256() - userPremiumOffset.toInt256(),
       realizedDelta: userAccruedPremium.toInt256()
@@ -279,7 +279,7 @@ contract HubRefreshPremiumTest is HubBase {
     vm.prank(address(spoke1));
     hub1.refreshPremium(
       assetId,
-      DataTypes.PremiumDelta({
+      IHubBase.PremiumDelta({
         sharesDelta: 0,
         offsetDelta: (spoke1AccruedPremium + spoke2AccruedPremium).toInt256(),
         realizedDelta: (spoke1AccruedPremium + spoke2AccruedPremium).toInt256()
@@ -292,7 +292,7 @@ contract HubRefreshPremiumTest is HubBase {
     uint256 assetId,
     address spoke
   ) internal view returns (uint256) {
-    DataTypes.SpokeData memory spokeData = hub.getSpoke(assetId, spoke);
+    IHub.SpokeData memory spokeData = hub.getSpoke(assetId, spoke);
     return hub.previewRestoreByShares(assetId, spokeData.premiumShares) - spokeData.premiumOffset;
   }
 
@@ -300,13 +300,13 @@ contract HubRefreshPremiumTest is HubBase {
     IHub hub,
     uint256 assetId
   ) internal view returns (PremiumDataLocal memory) {
-    DataTypes.Asset memory asset = hub.getAsset(assetId);
+    IHub.Asset memory asset = hub.getAsset(assetId);
     return PremiumDataLocal(asset.premiumShares, asset.premiumOffset, asset.realizedPremium);
   }
 
   function _applyPremiumDelta(
     PremiumDataLocal memory premiumData,
-    DataTypes.PremiumDelta memory premiumDelta
+    IHubBase.PremiumDelta memory premiumDelta
   ) internal pure returns (PremiumDataLocal memory) {
     premiumData.premiumShares = premiumData.premiumShares.add(premiumDelta.sharesDelta).toUint128();
     premiumData.premiumOffset = premiumData.premiumOffset.add(premiumDelta.offsetDelta).toUint128();

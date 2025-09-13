@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
 /**
  * @title ISpokeConfigurator
@@ -54,7 +54,7 @@ interface ISpokeConfigurator {
    */
   function updateLiquidationConfig(
     address spoke,
-    DataTypes.LiquidationConfig calldata liquidationConfig
+    ISpoke.LiquidationConfig calldata liquidationConfig
   ) external;
 
   /**
@@ -73,8 +73,8 @@ interface ISpokeConfigurator {
     address hub,
     uint256 assetId,
     address priceSource,
-    DataTypes.ReserveConfig calldata config,
-    DataTypes.DynamicReserveConfig calldata dynamicConfig
+    ISpoke.ReserveConfig calldata config,
+    ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external returns (uint256 reserveId);
 
   /**
@@ -185,7 +185,7 @@ interface ISpokeConfigurator {
   function addDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
-    DataTypes.DynamicReserveConfig calldata dynamicConfig
+    ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external returns (uint16 configKey);
 
   /**
@@ -199,7 +199,7 @@ interface ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint16 configKey,
-    DataTypes.DynamicReserveConfig calldata dynamicConfig
+    ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external;
 
   /**

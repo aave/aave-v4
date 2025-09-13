@@ -15,8 +15,8 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
   uint256 assetId;
   uint256 suppliedShares;
 
-  DataTypes.Reserve initialReserve;
-  DataTypes.UserPosition initialPosition;
+  ISpoke.Reserve initialReserve;
+  ISpoke.UserPosition initialPosition;
 
   function setUp() public override {
     super.setUp();
@@ -36,7 +36,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
 
     params.liquidator = makeAddr('liquidator');
 
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       addCap: Constants.MAX_CAP,
       drawCap: Constants.MAX_CAP
@@ -115,8 +115,8 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
   }
 
   function assertPosition(
-    DataTypes.UserPosition memory newPosition,
-    DataTypes.UserPosition memory initialPosition,
+    ISpoke.UserPosition memory newPosition,
+    ISpoke.UserPosition memory initialPosition,
     uint256 newSuppliedShares
   ) internal {
     initialPosition.suppliedShares = newSuppliedShares.toUint128();

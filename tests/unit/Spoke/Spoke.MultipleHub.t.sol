@@ -28,13 +28,13 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     vm.startPrank(ADMIN);
     // Relist hub 2's dai on spoke1
-    DataTypes.ReserveConfig memory daiHub2Config = DataTypes.ReserveConfig({
+    ISpoke.ReserveConfig memory daiHub2Config = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
       collateralRisk: 20_00
     });
-    DataTypes.DynamicReserveConfig memory dynDaiHub2Config = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory dynDaiHub2Config = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 100_00,
       liquidationFee: 0
@@ -48,13 +48,13 @@ contract SpokeMultipleHubTest is SpokeBase {
     );
 
     // Relist hub 3's dai on spoke 1
-    DataTypes.ReserveConfig memory daiHub3Config = DataTypes.ReserveConfig({
+    ISpoke.ReserveConfig memory daiHub3Config = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
       collateralRisk: 20_00
     });
-    DataTypes.DynamicReserveConfig memory dynDaiHub3Config = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory dynDaiHub3Config = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 100_00,
       liquidationFee: 0
@@ -67,7 +67,7 @@ contract SpokeMultipleHubTest is SpokeBase {
       dynDaiHub3Config
     );
 
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       addCap: Constants.MAX_CAP,
       drawCap: Constants.MAX_CAP

@@ -317,7 +317,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: derl
     });
 
-    DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
+    ISpoke.Reserve memory reserve = spoke1.getReserve(reserveId);
 
     IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
 
@@ -372,7 +372,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: derl
     });
 
-    DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
+    ISpoke.Reserve memory reserve = spoke1.getReserve(reserveId);
 
     IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
 

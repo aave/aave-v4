@@ -5,7 +5,6 @@ pragma solidity ^0.8.10;
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {Constants} from 'src/libraries/helpers/Constants.sol';
 import {IHub} from 'src/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/interfaces/IHubConfigurator.sol';
@@ -62,7 +61,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 liquidityFee
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
-    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
     targetHub.updateAssetConfig(assetId, config, new bytes(0));
   }
@@ -74,7 +73,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address feeReceiver
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
-    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config, new bytes(0));
   }
@@ -87,7 +86,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address feeReceiver
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
-    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
     config.feeReceiver = feeReceiver;
     targetHub.updateAssetConfig(assetId, config, new bytes(0));
@@ -101,7 +100,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     bytes calldata irData
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
-    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.irStrategy = irStrategy;
     targetHub.updateAssetConfig(assetId, config, irData);
   }
@@ -113,7 +112,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address reinvestmentController
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
-    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.reinvestmentController = reinvestmentController;
     targetHub.updateAssetConfig(assetId, config, new bytes(0));
   }
@@ -134,7 +133,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
       address spokeAddress = targetHub.getSpokeAddress(assetId, i);
-      DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spokeAddress);
+      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spokeAddress);
       config.active = false;
       targetHub.updateSpokeConfig(assetId, spokeAddress, config);
     }
@@ -145,7 +144,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address hub,
     address spoke,
     uint256 assetId,
-    DataTypes.SpokeConfig calldata config
+    IHub.SpokeConfig calldata config
   ) external onlyOwner {
     IHub(hub).addSpoke(assetId, spoke, config);
   }
@@ -155,7 +154,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address hub,
     address spoke,
     uint256[] calldata assetIds,
-    DataTypes.SpokeConfig[] calldata configs
+    IHub.SpokeConfig[] calldata configs
   ) external onlyOwner {
     require(assetIds.length == configs.length, MismatchedConfigs());
     for (uint256 i = 0; i < assetIds.length; ++i) {
@@ -171,7 +170,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     bool active
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
-    DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     config.active = active;
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
@@ -184,7 +183,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 addCap
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
-    DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     config.addCap = addCap.toUint56();
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
@@ -197,7 +196,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 drawCap
   ) external override onlyOwner {
     IHub targetHub = IHub(hub);
-    DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     config.drawCap = drawCap.toUint56();
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
@@ -219,7 +218,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
       if (targetHub.isSpokeListed(assetId, spoke)) {
-        DataTypes.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+        IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
         config.active = false;
         targetHub.updateSpokeConfig(assetId, spoke, config);
       }
@@ -261,7 +260,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 addCap,
     uint256 drawCap
   ) internal {
-    DataTypes.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
     config.addCap = addCap.toUint56();
     config.drawCap = drawCap.toUint56();
     hub.updateSpokeConfig(assetId, spoke, config);

@@ -2,14 +2,18 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-
 /**
  * @title IHubBase
  * @author Aave Labs
  * @notice Minimal interface for Hub
  */
 interface IHubBase {
+  struct PremiumDelta {
+    int256 sharesDelta;
+    int256 offsetDelta;
+    int256 realizedDelta;
+  }
+
   event Add(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
   event Remove(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
   event Draw(
@@ -22,7 +26,7 @@ interface IHubBase {
     uint256 indexed assetId,
     address indexed spoke,
     uint256 drawnShares,
-    DataTypes.PremiumDelta premiumDelta,
+    PremiumDelta premiumDelta,
     uint256 drawnAmount,
     uint256 premiumAmount
   );
@@ -72,7 +76,7 @@ interface IHubBase {
     uint256 assetId,
     uint256 drawnAmount,
     uint256 premiumAmount,
-    DataTypes.PremiumDelta calldata premiumDelta,
+    PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256);
 
@@ -89,7 +93,7 @@ interface IHubBase {
     uint256 assetId,
     uint256 drawnAmount,
     uint256 premiumAmount,
-    DataTypes.PremiumDelta calldata premiumDelta
+    PremiumDelta calldata premiumDelta
   ) external returns (uint256);
 
   /**
@@ -99,7 +103,7 @@ interface IHubBase {
    * @param assetId The identifier of the asset.
    * @param premiumDelta The change in premium.
    */
-  function refreshPremium(uint256 assetId, DataTypes.PremiumDelta calldata premiumDelta) external;
+  function refreshPremium(uint256 assetId, PremiumDelta calldata premiumDelta) external;
 
   /**
    * @notice Pay existing liquidity to feeReceiver.

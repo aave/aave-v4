@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {IHub} from 'src/interfaces/IHub.sol';
 
 /**
  * @title IHubConfigurator
@@ -138,7 +138,7 @@ interface IHubConfigurator {
     address hub,
     address spoke,
     uint256 assetId,
-    DataTypes.SpokeConfig calldata config
+    IHub.SpokeConfig calldata config
   ) external;
 
   /**
@@ -153,7 +153,7 @@ interface IHubConfigurator {
     address hub,
     address spoke,
     uint256[] calldata assetIds,
-    DataTypes.SpokeConfig[] calldata configs
+    IHub.SpokeConfig[] calldata configs
   ) external;
 
   /**

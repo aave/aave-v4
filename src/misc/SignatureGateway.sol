@@ -12,7 +12,6 @@ import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 import {ISignatureGateway} from 'src/interfaces/ISignatureGateway.sol';
@@ -336,7 +335,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
   }
 
   function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
-    DataTypes.Reserve memory reserveData = _spoke.getReserve(reserveId);
+    ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
     require(reserveData.underlying != address(0), InvalidReserveId());
     return (IERC20(reserveData.underlying), address(reserveData.hub));
   }

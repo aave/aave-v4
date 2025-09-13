@@ -465,7 +465,7 @@ contract NativeTokenGatewayTest is Base {
       repayAmount,
       wethAssetId
     );
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _wethReserveId(spoke1),
@@ -519,7 +519,7 @@ contract NativeTokenGatewayTest is Base {
       wethAssetId
     );
     uint256 totalRepaid = baseRestored + premiumRestored;
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _wethReserveId(spoke1),
@@ -581,7 +581,7 @@ contract NativeTokenGatewayTest is Base {
       wethAssetId
     );
     uint256 totalRepaid = baseRestored + premiumRestored;
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _wethReserveId(spoke1),
@@ -651,7 +651,7 @@ contract NativeTokenGatewayTest is Base {
     address(nativeTokenGateway).call{value: 1 ether}(invalidCall);
   }
 
-  function _getUserData(address user) internal view returns (DataTypes.UserPosition memory) {
+  function _getUserData(address user) internal view returns (ISpoke.UserPosition memory) {
     return getUserInfo(spoke1, user, _wethReserveId(spoke1));
   }
 

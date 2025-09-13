@@ -247,7 +247,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     skip(skipTime);
 
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
-    DataTypes.UserPosition memory bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
+    ISpoke.UserPosition memory bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.daiBorrowAmount,
       rates.daiBaseBorrowRate,

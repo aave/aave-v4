@@ -67,7 +67,7 @@ contract HubHandler is Test {
     hub1.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
     hub1.updateAssetConfig(
       0,
-      DataTypes.AssetConfig({
+      IHub.AssetConfig({
         feeReceiver: address(treasurySpoke),
         liquidityFee: 0,
         irStrategy: address(irStrategy),
@@ -79,8 +79,8 @@ contract HubHandler is Test {
       address(hub1),
       0,
       _deployMockPriceFeed(spoke1, 1e8),
-      DataTypes.ReserveConfig({frozen: false, paused: false, collateralRisk: 0, borrowable: false}),
-      DataTypes.DynamicReserveConfig({
+      ISpoke.ReserveConfig({frozen: false, paused: false, collateralRisk: 0, borrowable: false}),
+      ISpoke.DynamicReserveConfig({
         collateralFactor: 0,
         maxLiquidationBonus: 100_00,
         liquidationFee: 0
@@ -147,7 +147,7 @@ contract HubHandler is Test {
   function _updateState(uint256 assetId) internal {
     revert('implement me');
 
-    // DataTypes.Asset memory reserveData = hub1.getAsset(assetId);
+    // IHub.Asset memory reserveData = hub1.getAsset(assetId);
     // // todo: remove last exchange rate, bad idea to store like this, looses precision
     // s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
     //   ? 0

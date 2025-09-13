@@ -2,11 +2,11 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
+import {IHubBase} from 'src/interfaces/IHubBase.sol';
 
 /**
  * @title ISpoke
@@ -14,8 +14,71 @@ import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
  * @notice Full interface for Spoke
  */
 interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
+  struct Reserve {
+    address underlying;
+    //
+    IHubBase hub;
+    uint16 assetId;
+    uint8 decimals;
+    uint16 dynamicConfigKey; // key of the last reserve config
+    bool paused;
+    bool frozen;
+    bool borrowable;
+    uint24 collateralRisk;
+  }
+
+  struct ReserveConfig {
+    bool paused;
+    bool frozen;
+    bool borrowable;
+    uint24 collateralRisk; // BPS
+  }
+
+  struct DynamicReserveConfig {
+    uint16 collateralFactor;
+    uint32 maxLiquidationBonus; // BPS, 100_00 represent a 0% bonus
+    uint16 liquidationFee; // BPS
+  }
+
+  struct LiquidationConfig {
+    uint128 targetHealthFactor; // WAD, HF value to restore to during a liquidation
+    uint64 healthFactorForMaxBonus; // WAD, health factor under which liquidation bonus is max
+    uint16 liquidationBonusFactor; // BPS, as a percentage of effective lb
+  }
+
+  struct UserPosition {
+    //
+    uint128 drawnShares;
+    uint128 realizedPremium;
+    //
+    uint128 premiumShares;
+    uint128 premiumOffset;
+    //
+    uint128 suppliedShares;
+    uint16 configKey; // key of the last user config
+  }
+
+  struct PositionManagerConfig {
+    bool active;
+    mapping(address user => bool approved) approval;
+  }
+
+  struct PositionStatus {
+    mapping(uint256 slot => uint256 status) map;
+  }
+
+  struct UserAccountData {
+    uint256 userRiskPremium;
+    uint256 avgCollateralFactor;
+    uint256 healthFactor;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
+    uint256 suppliedCollateralsCount; // number of reserves with collateral factor > 0, enabled as collateral and strictly positive supplied amount
+    uint256 borrowedReservesCount; // number of reserves with strictly positive debt
+  }
+
   event AddReserve(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
-  event UpdateReserveConfig(uint256 indexed reserveId, DataTypes.ReserveConfig config);
+  event UpdateReserveConfig(uint256 indexed reserveId, ISpoke.ReserveConfig config);
 
   /**
    * @notice Emitted when a dynamic reserve config is added.
@@ -29,7 +92,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event AddDynamicReserveConfig(
     uint256 indexed reserveId,
     uint16 indexed configKey,
-    DataTypes.DynamicReserveConfig config
+    ISpoke.DynamicReserveConfig config
   );
 
   /**
@@ -41,7 +104,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event UpdateDynamicReserveConfig(
     uint256 indexed reserveId,
     uint16 indexed configKey,
-    DataTypes.DynamicReserveConfig config
+    ISpoke.DynamicReserveConfig config
   );
 
   /**
@@ -96,11 +159,11 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
     address indexed user,
-    DataTypes.PremiumDelta premiumDelta
+    IHubBase.PremiumDelta premiumDelta
   );
   event UpdateOracle(address indexed oracle);
   event UpdateReservePriceSource(uint256 indexed reserveId, address indexed priceSource);
-  event UpdateLiquidationConfig(DataTypes.LiquidationConfig config);
+  event UpdateLiquidationConfig(ISpoke.LiquidationConfig config);
 
   error AssetNotListed();
   error ReserveExists();
@@ -126,7 +189,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error MustNotLeaveDust();
   error InvalidDebtToCover();
 
-  function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
+  function updateLiquidationConfig(ISpoke.LiquidationConfig calldata config) external;
 
   /**
    * @notice Allows governance to update the spoke oracle.
@@ -140,11 +203,11 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     address hub,
     uint256 assetId,
     address priceSource,
-    DataTypes.ReserveConfig calldata config,
-    DataTypes.DynamicReserveConfig calldata dynConfig
+    ISpoke.ReserveConfig calldata config,
+    ISpoke.DynamicReserveConfig calldata dynConfig
   ) external returns (uint256);
 
-  function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;
+  function updateReserveConfig(uint256 reserveId, ISpoke.ReserveConfig calldata params) external;
 
   /**
    * @notice Updates the dynamic reserve config for a given reserve.
@@ -155,7 +218,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    */
   function addDynamicReserveConfig(
     uint256 reserveId,
-    DataTypes.DynamicReserveConfig calldata dynamicConfig
+    ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external returns (uint16 configKey);
 
   /**
@@ -168,7 +231,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function updateDynamicReserveConfig(
     uint256 reserveId,
     uint16 configKey,
-    DataTypes.DynamicReserveConfig calldata dynamicConfig
+    ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external;
 
   /**
@@ -269,29 +332,25 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getHealthFactor(address user) external view returns (uint256);
 
-  function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
+  function getReserve(uint256 reserveId) external view returns (ISpoke.Reserve memory);
 
-  function getReserveConfig(
-    uint256 reserveId
-  ) external view returns (DataTypes.ReserveConfig memory);
+  function getReserveConfig(uint256 reserveId) external view returns (ISpoke.ReserveConfig memory);
 
   function getDynamicReserveConfig(
     uint256 reserveId
-  ) external view returns (DataTypes.DynamicReserveConfig memory);
+  ) external view returns (ISpoke.DynamicReserveConfig memory);
 
   function getDynamicReserveConfig(
     uint256 reserveId,
     uint16 configKey
-  ) external view returns (DataTypes.DynamicReserveConfig memory);
+  ) external view returns (ISpoke.DynamicReserveConfig memory);
 
-  function getUserAccountData(
-    address user
-  ) external view returns (DataTypes.UserAccountData memory);
+  function getUserAccountData(address user) external view returns (ISpoke.UserAccountData memory);
 
   function getUserPosition(
     uint256 reserveId,
     address user
-  ) external view returns (DataTypes.UserPosition memory);
+  ) external view returns (ISpoke.UserPosition memory);
 
   function getUserRiskPremium(address user) external view returns (uint256);
 
@@ -307,7 +366,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     uint256 healthFactor
   ) external view returns (uint256);
 
-  function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
+  function getLiquidationConfig() external view returns (ISpoke.LiquidationConfig memory);
 
   function oracle() external view returns (IAaveOracle);
 
