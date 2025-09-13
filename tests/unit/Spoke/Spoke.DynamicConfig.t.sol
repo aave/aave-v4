@@ -330,7 +330,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
 
     // existing users: alice, bob
     // alice still healthy
-    assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGt(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     // bob cannot borrow after collateral is disabled
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     Utils.borrow(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);

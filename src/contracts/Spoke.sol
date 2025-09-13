@@ -570,16 +570,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return drawnDebt + premiumDebt;
   }
 
-  function getUserRiskPremium(address user) external view returns (uint256) {
-    UserAccountData memory userAccountData = _calculateUserAccountData(user);
-    return userAccountData.userRiskPremium;
-  }
-
-  function getHealthFactor(address user) external view returns (uint256) {
-    UserAccountData memory userAccountData = _calculateUserAccountData(user);
-    return userAccountData.healthFactor;
-  }
-
   function getLiquidationBonus(
     uint256 reserveId,
     address user,

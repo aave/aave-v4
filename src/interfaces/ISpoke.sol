@@ -355,8 +355,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function ORACLE() external view returns (address);
 
-  function getHealthFactor(address user) external view returns (uint256);
-
   function getReserve(uint256 reserveId) external view returns (Reserve memory);
 
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory);
@@ -376,8 +374,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     uint256 reserveId,
     address user
   ) external view returns (UserPosition memory);
-
-  function getUserRiskPremium(address user) external view returns (uint256);
 
   function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
 

@@ -1778,6 +1778,14 @@ abstract contract Base is Test {
       userAccountData.totalDebtInBaseCurrency;
   }
 
+  function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {
+    return spoke.getUserAccountData(user).healthFactor;
+  }
+
+  function _getUserRiskPremium(ISpoke spoke, address user) internal view returns (uint256) {
+    return spoke.getUserAccountData(user).userRiskPremium;
+  }
+
   function _approxRelFromBps(uint256 bps) internal pure returns (uint256) {
     return (bps * 1e18) / 100_00;
   }
@@ -2117,7 +2125,7 @@ abstract contract Base is Test {
     vm.prank(user);
     spoke.borrow(reserveId, requiredDebtAmount, user);
 
-    uint256 finalHf = spoke.getHealthFactor(user);
+    uint256 finalHf = _getUserHealthFactor(spoke, user);
     assertGt(finalHf, desiredHf, 'should borrow so that HF is above desiredHf');
     return (finalHf, requiredDebtAmount);
   }

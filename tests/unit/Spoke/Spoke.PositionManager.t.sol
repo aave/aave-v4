@@ -218,9 +218,9 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 1500e6, alice);
 
-    uint256 riskPremiumBefore = spoke1.getUserRiskPremium(alice);
+    uint256 riskPremiumBefore = _getUserRiskPremium(spoke1, alice);
     updateCollateralRisk(spoke1, _wethReserveId(spoke1), 100_00);
-    assertGt(spoke1.getUserRiskPremium(alice), riskPremiumBefore);
+    assertGt(_getUserRiskPremium(spoke1, alice), riskPremiumBefore);
 
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, POSITION_MANAGER)
@@ -235,9 +235,9 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserRiskPremium(alice);
 
-    riskPremiumBefore = spoke1.getUserRiskPremium(alice);
+    riskPremiumBefore = _getUserRiskPremium(spoke1, alice);
     updateCollateralRisk(spoke1, _wethReserveId(spoke1), 1000_00);
-    assertGt(spoke1.getUserRiskPremium(alice), riskPremiumBefore);
+    assertGt(_getUserRiskPremium(spoke1, alice), riskPremiumBefore);
     _disablePositionManager();
 
     vm.expectRevert(
