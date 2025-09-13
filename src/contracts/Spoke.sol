@@ -2,8 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-// import {console2 as console} from 'forge-std/console2.sol';
-
 import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -950,17 +948,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         realizedDelta: accruedUserPremium.toInt256()
       });
 
-      // console.log(
-      //   'PREM DELTA',
-      //   uint256(premiumDelta.sharesDelta),
-      //   uint256(premiumDelta.offsetDelta),
-      //   uint256(premiumDelta.realizedDelta)
-      // );
-
-      // if (_isNonZeroPremiumDelta(premiumDelta)) {
-      hub.refreshPremium(assetId, premiumDelta);
-      emit RefreshPremiumDebt(reserveId, user, premiumDelta);
-      // }
+      if (_isNonZeroPremiumDelta(premiumDelta)) {
+        hub.refreshPremium(assetId, premiumDelta);
+        emit RefreshPremiumDebt(reserveId, user, premiumDelta);
+      }
       reserveId = reserveId.uncheckedAdd(1);
     }
     emit UserRiskPremiumUpdate(user, newUserRiskPremium);
