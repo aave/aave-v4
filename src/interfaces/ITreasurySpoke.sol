@@ -44,7 +44,7 @@ interface ITreasurySpoke is ISpokeBase {
    * @notice Returns the amount of assets supplied.
    * @dev The reserve identifier **should match** corresponding asset identifier in the Hub.
    * @param reserveId The identifier of the reserve.
-   * @return The amount of assets supplied
+   * @return The amount of assets supplied.
    */
   function getSuppliedAmount(uint256 reserveId) external view returns (uint256);
 
