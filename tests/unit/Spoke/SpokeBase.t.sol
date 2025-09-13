@@ -3,13 +3,13 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
+import {KeyValueList} from 'src/libraries/helpers/KeyValueList.sol';
 
 contract SpokeBase is Base {
   using SafeCast for *;
   using PercentageMath for *;
   using WadRayMath for uint256;
-  using KeyValueListInMemory for KeyValueListInMemory.List;
+  using KeyValueList for KeyValueList.List;
 
   struct TestData {
     SpokePosition data;
@@ -467,7 +467,7 @@ contract SpokeBase is Base {
     uint256 debtReserveId,
     uint256 collAmount
   ) internal view returns (uint256) {
-    IPriceOracle oracle = spoke.oracle();
+    IPriceOracle oracle = IPriceOracle(spoke.ORACLE());
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
     DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
     uint256 collPrice = oracle.getReservePrice(collReserveId);
@@ -817,9 +817,7 @@ contract SpokeBase is Base {
     }
 
     // Gather up list of reserves as collateral to sort by collateral risk
-    KeyValueListInMemory.List memory reserveCollateralRisk = KeyValueListInMemory.init(
-      suppliedReservesCount
-    );
+    KeyValueList.List memory reserveCollateralRisk = KeyValueList.init(suppliedReservesCount);
     uint256 idx = 0;
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); reserveId++) {
       if (spoke.isUsingAsCollateral(reserveId, user)) {
@@ -1010,7 +1008,7 @@ contract SpokeBase is Base {
     uint256 reserveId,
     uint256 debtAmount
   ) internal {
-    address mockSpoke = address(new MockSpoke());
+    address mockSpoke = address(new MockSpoke(spoke.ORACLE()));
 
     address implementation = _getImplementationAddress(address(spoke));
 

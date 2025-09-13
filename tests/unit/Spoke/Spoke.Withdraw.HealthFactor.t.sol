@@ -185,7 +185,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 collAmount,
     uint256 newPrice
   ) public {
-    uint256 currPrice = spoke1.oracle().getReservePrice(_wethReserveId(spoke1));
+    uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_wethReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
     collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
     uint256 collReserveId = _wethReserveId(spoke1);
@@ -602,7 +602,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmount,
     uint256 newPrice
   ) public {
-    uint256 currPrice = spoke1.oracle().getReservePrice(_wethReserveId(spoke1));
+    uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_wethReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
 
     daiDebtAmount = bound(daiDebtAmount, 1, MAX_SUPPLY_AMOUNT);
@@ -1154,7 +1154,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmountDai,
     uint256 newPrice
   ) public {
-    uint256 currPrice = spoke1.oracle().getReservePrice(_wethReserveId(spoke1));
+    uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_wethReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
     usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
     usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);
@@ -1277,7 +1277,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmountDai,
     uint256 newPrice
   ) public {
-    uint256 currPrice = spoke1.oracle().getReservePrice(_daiReserveId(spoke1));
+    uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_daiReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
     usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
     usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);

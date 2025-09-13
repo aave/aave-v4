@@ -244,19 +244,6 @@ abstract contract Base is Test {
     deployFixtures();
   }
 
-  function _deploySpokeProxy(
-    address proxyAdminOwner,
-    address accessManager
-  ) internal returns (ISpoke) {
-    address spokeImplAddress = address(new SpokeInstance());
-    TransparentUpgradeableProxy spokeProxy = new TransparentUpgradeableProxy(
-      spokeImplAddress,
-      proxyAdminOwner,
-      abi.encodeCall(Spoke.initialize, (address(accessManager)))
-    );
-    return ISpoke(address(spokeProxy));
-  }
-
   function _getProxyAdminAddress(address proxy) internal view returns (address) {
     bytes32 slotData = vm.load(proxy, ERC1967_ADMIN_SLOT);
     return address(uint160(uint256(slotData)));
@@ -272,12 +259,9 @@ abstract contract Base is Test {
     accessManager = new AccessManager(ADMIN);
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
-    spoke1 = _deploySpokeProxy(ADMIN, address(accessManager));
-    spoke2 = _deploySpokeProxy(ADMIN, address(accessManager));
-    spoke3 = _deploySpokeProxy(ADMIN, address(accessManager));
-    oracle1 = IAaveOracle(new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)'));
-    oracle2 = IAaveOracle(new AaveOracle(address(spoke2), 8, 'Spoke 2 (USD)'));
-    oracle3 = IAaveOracle(new AaveOracle(address(spoke3), 8, 'Spoke 3 (USD)'));
+    (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
+    (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
+    (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)');
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
     dai = new MockERC20();
     eth = new MockERC20();
@@ -309,15 +293,14 @@ abstract contract Base is Test {
 
     // Grant responsibilities to roles
     {
-      bytes4[] memory selectors = new bytes4[](8);
+      bytes4[] memory selectors = new bytes4[](7);
       selectors[0] = ISpoke.updateLiquidationConfig.selector;
       selectors[1] = ISpoke.addReserve.selector;
       selectors[2] = ISpoke.updateReserveConfig.selector;
       selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
       selectors[4] = ISpoke.addDynamicReserveConfig.selector;
       selectors[5] = ISpoke.updatePositionManager.selector;
-      selectors[6] = ISpoke.updateOracle.selector;
-      selectors[7] = ISpoke.updateReservePriceSource.selector;
+      selectors[6] = ISpoke.updateReservePriceSource.selector;
       manager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
     }
 
@@ -544,11 +527,6 @@ abstract contract Base is Test {
       }),
       new bytes(0)
     );
-
-    // configure oracle in spokes
-    spoke1.updateOracle(address(oracle1));
-    spoke2.updateOracle(address(oracle2));
-    spoke3.updateOracle(address(oracle3));
 
     // Spoke 1 reserve configs
     spokeInfo[spoke1].weth.reserveConfig = DataTypes.ReserveConfig({
@@ -1362,10 +1340,10 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 amount
   ) internal view returns (uint256) {
-    IPriceOracle oracle = spoke.oracle();
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    (, uint8 decimals) = _hub(spoke, reserveId).getAssetUnderlyingAndDecimals(assetId);
-    return (amount * oracle.getReservePrice(reserveId)).wadDivDown(10 ** decimals);
+    return
+      (amount * IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId)).wadDivDown(
+        10 ** _underlying(spoke, reserveId).decimals()
+      );
   }
 
   /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
@@ -1374,10 +1352,10 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 amount
   ) internal view returns (uint256) {
-    IPriceOracle oracle = spoke.oracle();
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    (, uint8 decimals) = _hub(spoke, reserveId).getAssetUnderlyingAndDecimals(assetId);
-    return (amount * oracle.getReservePrice(reserveId)).wadDivUp(10 ** decimals);
+    return
+      (amount * IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId)).wadDivUp(
+        10 ** _underlying(spoke, reserveId).decimals()
+      );
   }
 
   /// @notice Convert 1 asset amount to equivalent amount in another asset.
@@ -1730,13 +1708,11 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 amount
   ) internal view returns (uint256) {
-    IPriceOracle oracle = spoke.oracle();
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
       _convertAmountToBaseCurrency(
         amount,
-        oracle.getReservePrice(reserveId),
-        10 ** hub1.getAsset(assetId).decimals
+        IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId),
+        10 ** _underlying(spoke, reserveId).decimals()
       );
   }
 
@@ -1753,14 +1729,11 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 baseCurrencyAmount
   ) internal view returns (uint256) {
-    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    IPriceOracle oracle = spoke.oracle();
-    (, uint8 decimals) = _hub(spoke, reserveId).getAssetUnderlyingAndDecimals(reserve.assetId);
     return
       _convertBaseCurrencyToAmount(
         baseCurrencyAmount,
-        oracle.getReservePrice(reserveId),
-        10 ** decimals
+        IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId),
+        10 ** _underlying(spoke, reserveId).decimals()
       );
   }
 
@@ -1833,7 +1806,7 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     if (debtAmount == 0) return 1;
 
-    IPriceOracle oracle = spoke.oracle();
+    IPriceOracle oracle = IPriceOracle(spoke.ORACLE());
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
     DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
     uint256 collPrice = oracle.getReservePrice(collReserveId);
@@ -1982,16 +1955,48 @@ abstract contract Base is Test {
     return spoke.getReserve(reserveId).assetId;
   }
 
-  function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (IERC20) {
-    return IERC20(spoke.getReserve(reserveId).underlying);
+  function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (TestnetERC20) {
+    return TestnetERC20(spoke.getReserve(reserveId).underlying);
   }
 
   function _approveAllUnderlying(ISpoke spoke, address owner, address spender) internal {
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
-      IERC20 underlying = _underlying(spoke, reserveId);
+      TestnetERC20 underlying = _underlying(spoke, reserveId);
       vm.prank(owner);
       underlying.approve(spender, UINT256_MAX);
     }
+  }
+
+  function _deploySpokeWithOracle(
+    address proxyAdminOwner,
+    address _accessManager,
+    string memory _oracleDesc
+  ) internal pausePrank returns (ISpoke, IAaveOracle) {
+    address deployer = makeAddr('deployer');
+    address predictedOracle = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
+    address spokeImpl = address(new SpokeInstance(predictedOracle));
+    ISpoke spoke = ISpoke(
+      _proxify(spokeImpl, proxyAdminOwner, abi.encodeCall(Spoke.initialize, (_accessManager)))
+    );
+    vm.prank(deployer);
+    IAaveOracle oracle = new AaveOracle(address(spoke), 8, _oracleDesc);
+    assertEq(address(oracle), predictedOracle, 'predictedOracle');
+    assertEq(spoke.ORACLE(), address(oracle));
+    assertEq(oracle.SPOKE(), address(spoke));
+    return (spoke, oracle);
+  }
+
+  function _proxify(
+    address impl,
+    address proxyAdminOwner,
+    bytes memory initData
+  ) internal returns (address) {
+    TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+      impl,
+      proxyAdminOwner,
+      initData
+    );
+    return address(proxy);
   }
 
   function assertEq(DataTypes.AssetConfig memory a, DataTypes.AssetConfig memory b) internal pure {
@@ -2238,7 +2243,7 @@ abstract contract Base is Test {
 
   function _mockReservePrice(ISpoke spoke, uint256 reserveId, uint256 price) internal {
     require(price > 0, 'mockReservePrice: price must be positive');
-    AaveOracle oracle = AaveOracle(address(spoke.oracle()));
+    AaveOracle oracle = AaveOracle(spoke.ORACLE());
     address mockPriceFeed = address(
       new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price)
     );
@@ -2251,13 +2256,13 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 percentage
   ) internal {
-    uint256 initialPrice = spoke.oracle().getReservePrice(reserveId);
+    uint256 initialPrice = IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId);
     uint256 newPrice = initialPrice.percentMulDown(percentage);
     _mockReservePrice(spoke, reserveId, newPrice);
   }
 
   function _deployMockPriceFeed(ISpoke spoke, uint256 price) internal returns (address) {
-    AaveOracle oracle = AaveOracle(address(spoke.oracle()));
+    AaveOracle oracle = AaveOracle(spoke.ORACLE());
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
   }
 

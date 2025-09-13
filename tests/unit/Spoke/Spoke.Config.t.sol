@@ -8,37 +8,20 @@ contract SpokeConfigTest is SpokeBase {
   using SafeCast for *;
   using PercentageMath for uint256;
 
-  function test_updateOracle_revertsWith_AccessManagedUnauthorized(address caller) public {
-    vm.assume(
-      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+  function test_spoke_deploy() public {
+    address predictedSpokeAddress = vm.computeCreateAddress(
+      address(this),
+      vm.getNonce(address(this))
     );
-    vm.expectRevert(
-      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
-    );
-    vm.prank(caller);
-    spoke1.updateOracle(vm.randomAddress());
+    address oracle = makeAddr('AaveOracle');
+    SpokeInstance instance = new SpokeInstance(oracle);
+    assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
+    assertEq(instance.ORACLE(), oracle);
   }
 
-  function test_updateOracle_revertsWith_InvalidOracle_AddressZero() public {
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateOracle(address(0));
-  }
-
-  function test_updateOracle_revertsWith_InvalidOracle_DecimalsMismatch() public {
-    address newOracle = address(new AaveOracle(SPOKE_ADMIN, 18, 'New Aave Oracle'));
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateOracle(newOracle);
-  }
-
-  function test_updateOracle() public {
-    address newOracle = address(new AaveOracle(SPOKE_ADMIN, 8, 'New Aave Oracle'));
-    vm.expectCall(newOracle, abi.encodeCall(IPriceOracle.DECIMALS, ()));
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateOracle(newOracle);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateOracle(newOracle);
+  function test_spoke_deploy_revertsWith_InvalidAddress() public {
+    vm.expectRevert(ISpoke.InvalidAddress.selector);
+    new SpokeInstance(address(0));
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(
@@ -192,7 +175,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_InvalidAddress_oracle() public {
-    Spoke newSpoke = Spoke(address(_deploySpokeProxy(ADMIN, address(accessManager))));
+    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       paused: true,

@@ -11,13 +11,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  */
 interface ISpokeConfigurator {
   /**
-   * @notice Updates the oracle of a spoke.
-   * @param spoke The address of the spoke.
-   * @param oracle The new oracle.
-   */
-  function updateOracle(address spoke, address oracle) external;
-
-  /**
    * @notice Updates the price source of a reserve.
    * @dev The price source must implement the AggregatorV3Interface.
    * @param spoke The address of the spoke.

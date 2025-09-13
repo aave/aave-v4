@@ -12,7 +12,7 @@ import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
+import {KeyValueList} from 'src/libraries/helpers/KeyValueList.sol';
 import {Constants} from 'src/libraries/helpers/Constants.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
@@ -32,20 +32,21 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
   using PercentageMath for *;
-  using KeyValueListInMemory for KeyValueListInMemory.List;
+  using KeyValueList for KeyValueList.List;
   using PositionStatus for *;
   using MathUtils for *;
 
-  IAaveOracle public oracle;
+  /// @inheritdoc ISpoke
+  address public immutable ORACLE;
 
   uint256 internal _reserveCount;
-  mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition position))
+  mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition))
     internal _userPositions;
-  mapping(address user => DataTypes.PositionStatus positionStatus) internal _positionStatus;
-  mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
+  mapping(address user => DataTypes.PositionStatus) internal _positionStatus;
+  mapping(uint256 reserveId => DataTypes.Reserve) internal _reserves;
   mapping(address positionManager => DataTypes.PositionManagerConfig) internal _positionManager;
   mapping(address user => uint256 nonce) internal _nonces;
-  mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
+  mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   DataTypes.LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool exists)) internal _reserveExists;
@@ -55,21 +56,20 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     _;
   }
 
+  /**
+   * @dev Constructor.
+   * @param oracle_ The address of the AaveOracle contract.
+   */
+  constructor(address oracle_) {
+    require(oracle_ != address(0), InvalidAddress());
+    ORACLE = oracle_;
+  }
+
   function initialize(address _authority) external virtual;
 
   // /////
   // Governance
   // /////
-
-  /// @inheritdoc ISpoke
-  function updateOracle(address newOracle) external restricted {
-    oracle = IAaveOracle(newOracle);
-    require(
-      newOracle != address(0) && oracle.DECIMALS() == Constants.ORACLE_DECIMALS,
-      InvalidOracle()
-    );
-    emit UpdateOracle(newOracle);
-  }
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
@@ -198,11 +198,9 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   ) external onlyPositionManager(onBehalfOf) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-
     _validateSupply(reserve);
 
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount, msg.sender);
-
     userPosition.suppliedShares += suppliedShares.toUint128();
 
     emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares);
@@ -217,12 +215,14 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve);
-    uint256 assetId = reserve.assetId;
     IHubBase hub = reserve.hub;
+    uint256 assetId = reserve.assetId;
 
-    amount = MathUtils.min(amount, hub.previewRemoveByShares(assetId, userPosition.suppliedShares));
-
-    uint256 withdrawnShares = hub.remove(assetId, amount, msg.sender);
+    uint256 withdrawAmount = MathUtils.min(
+      amount,
+      hub.previewRemoveByShares(assetId, userPosition.suppliedShares)
+    );
+    uint256 withdrawnShares = hub.remove(assetId, withdrawAmount, msg.sender);
 
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
@@ -241,13 +241,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    uint256 assetId = reserve.assetId;
+    _validateBorrow(reserve);
     IHubBase hub = reserve.hub;
 
-    _validateBorrow(reserve);
-
-    uint256 drawnShares = hub.draw(assetId, amount, msg.sender);
-
+    uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint128();
     if (!positionStatus.isBorrowing(reserveId)) {
       positionStatus.setBorrowing(reserveId, true);
@@ -268,9 +265,9 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     _validateRepay(reserve);
-
     IHubBase hub = reserve.hub;
     uint256 assetId = reserve.assetId;
+
     (uint256 drawnDebtRestored, uint256 premiumDebtRestored, uint256 accruedPremium) = _getUserDebt(
       hub,
       assetId,
@@ -318,7 +315,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     DataTypes.LiquidateUserParams memory params = DataTypes.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
-      oracle: address(oracle),
+      oracle: address(ORACLE),
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
@@ -675,8 +672,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
-    require(address(oracle) != address(0), InvalidAddress());
-    oracle.setReserveSource(reserveId, priceSource);
+    require(priceSource != address(0), InvalidAddress());
+    IAaveOracle(ORACLE).setReserveSource(reserveId, priceSource);
     emit UpdateReservePriceSource(reserveId, priceSource);
   }
 
@@ -779,11 +776,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   ) internal returns (DataTypes.UserAccountData memory userAccountData) {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
 
-    IAaveOracle aaveOracle = oracle;
     uint256 reserveId = _reserveCount;
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
-      positionStatus.collateralCount(reserveId)
-    );
+    KeyValueList.List memory list = KeyValueList.init(positionStatus.collateralCount(reserveId));
     bool borrowing;
     bool collateral;
     while (true) {
@@ -793,7 +787,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       DataTypes.Reserve storage reserve = _reserves[reserveId];
 
-      uint256 assetPrice = aaveOracle.getReservePrice(reserveId);
+      uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
       uint256 assetUnit = uint256(10).uncheckedExp(reserve.decimals);
 
       if (collateral) {

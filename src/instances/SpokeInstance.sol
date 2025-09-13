@@ -13,7 +13,7 @@ import {Spoke} from 'src/contracts/Spoke.sol';
 contract SpokeInstance is Spoke {
   uint64 public constant SPOKE_REVISION = 1;
 
-  constructor() {
+  constructor(address oracle_) Spoke(oracle_) {
     _disableInitializers();
   }
 
