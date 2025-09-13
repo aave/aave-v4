@@ -15,6 +15,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     hub1.add(wethAssetId, 1000e18, bob);
     hub1.add(usdxAssetId, 1000e6, bob);
     hub1.add(wbtcAssetId, 1000e8, bob);
+    hub1.add(usdyAssetId, 1000e8, bob);
     vm.stopPrank();
   }
 
@@ -90,7 +91,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
   function test_borrow() public {
     vm.startPrank(bob);
-    spoke1.supply(_daiReserveId(spoke1), 1000e18, bob);
+    spoke1.supply(_daiReserveId(spoke1), 10_000e18, bob);
     spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, bob);
     spoke1.borrow(_daiReserveId(spoke1), 500e18, bob);
     vm.stopPrank();
@@ -98,7 +99,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     skip(100);
 
     vm.startPrank(alice);
-    spoke1.supply(_usdxReserveId(spoke1), 1000e6, alice);
+    spoke1.supply(_usdxReserveId(spoke1), 10_000e6, alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
 
     spoke1.borrow(_daiReserveId(spoke1), 500e18, alice);
@@ -108,6 +109,28 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
     spoke1.borrow(_daiReserveId(spoke1), 1e18, alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'borrow: second action, same reserve');
+    vm.stopPrank();
+  }
+
+  function test_borrow_skipped_ops() public {
+    vm.startPrank(bob);
+    spoke1.supply(_daiReserveId(spoke1), 10_000e18, bob);
+    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, bob);
+    spoke1.borrow(_daiReserveId(spoke1), 500e18, bob);
+    vm.stopPrank();
+
+    vm.startPrank(alice);
+    spoke1.supply(_usdxReserveId(spoke1), 10_000e6, alice);
+    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
+
+    spoke1.borrow(_daiReserveId(spoke1), 500e18, alice);
+
+    spoke1.borrow(_wethReserveId(spoke1), 1e15, alice);
+
+    spoke1.borrow(_wbtcReserveId(spoke1), 1e4, alice);
+
+    spoke1.borrow(_usdyReserveId(spoke1), 1e5, alice);
+    vm.snapshotGasLastCall('Spoke.Operations', 'borrow without refresh: fourth');
     vm.stopPrank();
   }
 
