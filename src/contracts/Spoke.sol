@@ -2,6 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -201,6 +203,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
 
+    console.log('supply');
+
     _validateSupply(reserve);
 
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount, msg.sender);
@@ -221,6 +225,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 assetId = reserve.assetId;
     IHub hub = reserve.hub;
 
+    console.log('withdraw');
+
     // If uint256.max is passed, withdraw all user's supplied assets
     if (amount == type(uint256).max) {
       amount = hub.previewRemoveByShares(assetId, userPosition.suppliedShares);
@@ -235,6 +241,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
 
     emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
+    console.log('WITHDRAW', newUserRiskPremium);
   }
 
   /// @inheritdoc ISpokeBase
@@ -249,6 +256,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 assetId = reserve.assetId;
     IHub hub = reserve.hub;
 
+    console.log('borrow');
+
     _validateBorrow(reserve);
 
     uint256 drawnShares = hub.draw(assetId, amount, msg.sender);
@@ -262,6 +271,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
+    console.log('BORROW', newUserRiskPremium);
   }
 
   /// @inheritdoc ISpokeBase
@@ -272,6 +282,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   ) external onlyPositionManager(onBehalfOf) {
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.Reserve storage reserve = _reserves[reserveId];
+
+    console.log('repay');
+
     _validateRepay(reserve);
 
     IHub hub = reserve.hub;
@@ -310,6 +323,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.userRiskPremium);
 
     emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, premiumDelta);
+    console.log('REPAY', userAccountData.userRiskPremium);
   }
 
   /// @inheritdoc ISpokeBase
@@ -319,6 +333,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     address user,
     uint256 debtToCover
   ) external {
+    console.log('liquidationCall');
+
     DataTypes.UserAccountData memory userAccountData = _calculateUserAccountData(user);
     DataTypes.LiquidateUserParams memory params = DataTypes.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
@@ -362,6 +378,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     } else {
       // new risk premium only needs to be propagated if no deficit exists
       _notifyRiskPremiumUpdate(user, _calculateUserAccountData(user).userRiskPremium);
+      console.log('LIQUIDATION CALL', _calculateUserAccountData(user).userRiskPremium);
     }
   }
 
@@ -947,8 +964,25 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         realizedDelta: accruedUserPremium.toInt256()
       });
 
-      hub.refreshPremium(assetId, premiumDelta);
-      emit RefreshPremiumDebt(reserveId, user, premiumDelta);
+      if (_isNonZeroPremiumDelta(premiumDelta)) {
+        hub.refreshPremium(assetId, premiumDelta);
+        emit RefreshPremiumDebt(reserveId, user, premiumDelta);
+      } else {
+        console.log(
+          'ZERO PREM DATA shares / offset / realized',
+          uint256(premiumDelta.sharesDelta),
+          uint256(premiumDelta.offsetDelta),
+          uint256(premiumDelta.realizedDelta)
+        );
+        console.log(
+          'SP ZERO old user rp; new rp',
+          userPosition.userRiskPremium,
+          newUserRiskPremium
+        );
+        console.log('ZERO PREM DELTA: user; rp; reserveId', user, newUserRiskPremium, reserveId);
+        // revert('ZERO PREM DELTA');
+      }
+      userPosition.userRiskPremium = newUserRiskPremium.toUint16();
       reserveId = reserveId.uncheckedAdd(1);
     }
     emit UserRiskPremiumUpdate(user, newUserRiskPremium);
@@ -1049,5 +1083,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     require(!approve || config.active, InactivePositionManager());
     config.approval[user] = approve;
     emit SetUserPositionManager(user, positionManager, approve);
+  }
+
+  function _isNonZeroPremiumDelta(DataTypes.PremiumDelta memory d) internal pure returns (bool) {
+    return (uint256(d.sharesDelta) | uint256(d.offsetDelta) | uint256(d.realizedDelta)) != 0;
   }
 }
