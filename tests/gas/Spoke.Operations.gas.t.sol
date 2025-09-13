@@ -132,6 +132,9 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_liquidation() public {
+    _updateMaxLiquidationBonus(spoke1, _usdxReserveId(spoke1), 105_00);
+    _updateLiquidationFee(spoke1, _usdxReserveId(spoke1), 10_00);
+
     vm.prank(bob);
     spoke1.supply(_daiReserveId(spoke1), 1_000_000e18, bob);
 
