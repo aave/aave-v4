@@ -34,22 +34,6 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.stopPrank();
   }
 
-  function test_updateOracle_revertsWith_OwnableUnauthorizedAccount() public {
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
-    vm.prank(alice);
-    spokeConfigurator.updateOracle(spokeAddr, address(0));
-  }
-
-  function test_updateOracle() public {
-    address newOracle = makeAddr('NEW_ORACLE');
-    vm.mockCall(newOracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
-    vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateOracle, (newOracle)));
-    vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateOracle(newOracle);
-    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateOracle(spokeAddr, newOracle);
-  }
-
   function test_updateReservePriceSource_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);

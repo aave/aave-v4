@@ -12,7 +12,7 @@ import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
+import {KeyValueList} from 'src/libraries/helpers/KeyValueList.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -30,12 +30,15 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
   using PercentageMath for *;
-  using KeyValueListInMemory for KeyValueListInMemory.List;
+  using KeyValueList for KeyValueList.List;
   using PositionStatusMap for *;
   using MathUtils for *;
 
   /// @inheritdoc ISpoke
-  uint8 public constant ORACLE_DECIMALS = 8;
+  address public immutable ORACLE;
+
+  /// @inheritdoc ISpoke
+  uint256 public constant MAX_RESERVE_ID = type(uint16).max;
 
   /// @inheritdoc ISpoke
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
@@ -51,8 +54,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
     // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
     0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
-
-  IAaveOracle public oracle;
 
   uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
@@ -70,18 +71,20 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     _;
   }
 
+  /**
+   * @dev Constructor.
+   * @param oracle_ The address of the AaveOracle contract.
+   */
+  constructor(address oracle_) {
+    require(oracle_ != address(0), InvalidAddress());
+    ORACLE = oracle_;
+  }
+
   function initialize(address _authority) external virtual;
 
   // /////
   // Governance
   // /////
-
-  /// @inheritdoc ISpoke
-  function updateOracle(address newOracle) external restricted {
-    oracle = IAaveOracle(newOracle);
-    require(newOracle != address(0) && oracle.DECIMALS() == ORACLE_DECIMALS, InvalidOracle());
-    emit UpdateOracle(newOracle);
-  }
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
@@ -99,6 +102,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     emit UpdateLiquidationConfig(config);
   }
 
+  /// @inheritdoc ISpoke
   function addReserve(
     address hub,
     uint256 assetId,
@@ -107,6 +111,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
     require(hub != address(0), InvalidAddress());
+    require(assetId <= MAX_RESERVE_ID, InvalidAssetId());
     require(!_reserveExists[hub][assetId], ReserveExists());
 
     _validateReserveConfig(config);
@@ -122,7 +127,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     _reserves[reserveId] = Reserve({
       underlying: underlying,
       hub: IHubBase(hub),
-      assetId: assetId.toUint16(),
+      assetId: uint16(assetId),
       decimals: decimals,
       dynamicConfigKey: dynamicConfigKey,
       paused: config.paused,
@@ -206,11 +211,9 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   ) external onlyPositionManager(onBehalfOf) {
     Reserve storage reserve = _reserves[reserveId];
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-
     _validateSupply(reserve);
 
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount, msg.sender);
-
     userPosition.suppliedShares += suppliedShares.toUint128();
 
     emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares);
@@ -225,12 +228,14 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     Reserve storage reserve = _reserves[reserveId];
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve);
-    uint256 assetId = reserve.assetId;
     IHubBase hub = reserve.hub;
+    uint256 assetId = reserve.assetId;
 
-    amount = MathUtils.min(amount, hub.previewRemoveByShares(assetId, userPosition.suppliedShares));
-
-    uint256 withdrawnShares = hub.remove(assetId, amount, msg.sender);
+    uint256 withdrawAmount = MathUtils.min(
+      amount,
+      hub.previewRemoveByShares(assetId, userPosition.suppliedShares)
+    );
+    uint256 withdrawnShares = hub.remove(assetId, withdrawAmount, msg.sender);
 
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
@@ -249,13 +254,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     Reserve storage reserve = _reserves[reserveId];
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    uint256 assetId = reserve.assetId;
+    _validateBorrow(reserve);
     IHubBase hub = reserve.hub;
 
-    _validateBorrow(reserve);
-
-    uint256 drawnShares = hub.draw(assetId, amount, msg.sender);
-
+    uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint128();
     if (!positionStatus.isBorrowing(reserveId)) {
       positionStatus.setBorrowing(reserveId, true);
@@ -276,9 +278,9 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     Reserve storage reserve = _reserves[reserveId];
     _validateRepay(reserve);
-
     IHubBase hub = reserve.hub;
     uint256 assetId = reserve.assetId;
+
     (uint256 drawnDebtRestored, uint256 premiumDebtRestored, uint256 accruedPremium) = _getUserDebt(
       hub,
       assetId,
@@ -326,7 +328,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
-      oracle: address(oracle),
+      oracle: address(ORACLE),
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
@@ -684,8 +686,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
-    require(address(oracle) != address(0), InvalidAddress());
-    oracle.setReserveSource(reserveId, priceSource);
+    require(priceSource != address(0), InvalidAddress());
+    IAaveOracle(ORACLE).setReserveSource(reserveId, priceSource);
     emit UpdateReservePriceSource(reserveId, priceSource);
   }
 
@@ -781,11 +783,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   ) internal returns (UserAccountData memory userAccountData) {
     PositionStatus storage positionStatus = _positionStatus[user];
 
-    IAaveOracle aaveOracle = oracle;
     uint256 reserveId = _reserveCount;
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
-      positionStatus.collateralCount(reserveId)
-    );
+    KeyValueList.List memory list = KeyValueList.init(positionStatus.collateralCount(reserveId));
     bool borrowing;
     bool collateral;
     while (true) {
@@ -795,7 +794,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       UserPosition storage userPosition = _userPositions[user][reserveId];
       Reserve storage reserve = _reserves[reserveId];
 
-      uint256 assetPrice = aaveOracle.getReservePrice(reserveId);
+      uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
       uint256 assetUnit = uint256(10).uncheckedExp(reserve.decimals);
 
       if (collateral) {

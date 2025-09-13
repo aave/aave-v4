@@ -8,7 +8,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   using SafeCast for *;
   using PercentageMath for *;
   using WadRayMath for *;
-  using KeyValueListInMemory for KeyValueListInMemory.List;
+  using KeyValueList for KeyValueList.List;
 
   uint256 internal constant MAX_AMOUNT_IN_BASE_CURRENCY = 1_000_000_000e26; // 1 billion USD
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26; // 1 USD
@@ -185,7 +185,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             spoke.getUserPosition(collateralReserveId, user).configKey
           )
           .collateralFactor,
-        debtAssetPrice: spoke.oracle().getReservePrice(debtReserveId),
+        debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
         debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals
       });
   }
@@ -213,7 +213,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             spoke.getUserPosition(collateralReserveId, user).configKey
           )
           .collateralFactor,
-        debtAssetPrice: spoke.oracle().getReservePrice(debtReserveId),
+        debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
         debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals
       });
   }
@@ -248,9 +248,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             spoke.getUserPosition(collateralReserveId, user).configKey
           )
           .collateralFactor,
-        debtAssetPrice: spoke.oracle().getReservePrice(debtReserveId),
+        debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
         debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals,
-        collateralAssetPrice: spoke.oracle().getReservePrice(collateralReserveId),
+        collateralAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(collateralReserveId),
         collateralAssetUnit: 10 ** spoke.getReserve(collateralReserveId).decimals,
         liquidationFee: spoke
           .getDynamicReserveConfig(
@@ -283,7 +283,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 collateralToLiquidate,
     uint256 debtToLiquidate
   ) internal virtual returns (uint256, uint256) {
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
+    KeyValueList.List memory list = KeyValueList.init(
       userAccountDataBefore.suppliedCollateralsCount
     );
 

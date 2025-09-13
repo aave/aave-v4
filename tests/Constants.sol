@@ -13,4 +13,5 @@ library Constants {
   // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
   bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
     0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
+  uint256 public constant MAX_RESERVE_ID = type(uint16).max;
 }

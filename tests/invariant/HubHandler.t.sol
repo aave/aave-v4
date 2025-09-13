@@ -41,23 +41,24 @@ contract HubHandler is Test {
 
   State internal s;
 
-  constructor() {
+  function setUp() public {
     vm.startPrank(hubAdmin);
     accessManager = new AccessManager(hubAdmin);
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
-    address spokeImplAddress = address(new SpokeInstance());
+    address predictedOracle = vm.computeCreateAddress(hubAdmin, vm.getNonce(hubAdmin) + 1);
+    address spokeImpl = address(new SpokeInstance(predictedOracle));
+    oracle = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
     spoke1 = Spoke(
       address(
         new TransparentUpgradeableProxy(
-          spokeImplAddress,
+          spokeImpl,
           hubAdmin,
           abi.encodeCall(Spoke.initialize, (address(accessManager)))
         )
       )
     );
-    oracle = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
-    spoke1.updateOracle(address(oracle));
+    assertEq(address(oracle), predictedOracle, 'predictedOracle');
     treasurySpoke = new TreasurySpoke(hubAdmin, address(hub1));
     usdc = new MockERC20();
     dai = new MockERC20();
@@ -166,7 +167,7 @@ contract HubHandler is Test {
   }
 
   function _deployMockPriceFeed(Spoke spoke, uint256 price) internal returns (address) {
-    AaveOracle oracle = AaveOracle(address(spoke.oracle()));
+    AaveOracle oracle = AaveOracle(spoke.ORACLE());
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
   }
 }

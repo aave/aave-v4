@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
-import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
 import {IHubBase} from 'src/interfaces/IHubBase.sol';
 
@@ -166,6 +165,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   error AssetNotListed();
   error ReserveExists();
+  error InvalidAssetId();
   error ReserveNotListed();
   error ReserveNotBorrowable();
   error ReservePaused();
@@ -190,20 +190,22 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
-  /**
-   * @notice Allows governance to update the spoke oracle.
-   * @dev Does not validate all existing reserves are supported on `newOracle`.
-   */
-  function updateOracle(address newOracle) external;
-
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;
 
+  /**
+   * @notice Adds a new reserve to the spoke.
+   * @param hub The address of the Hub where the asset is listed.
+   * @param assetId The identifier of the asset in the Hub.
+   * @param priceSource The address of the price source for the asset.
+   * @param config The initial reserve configuration.
+   * @param dynamicConfig The initial dynamic reserve configuration.
+   */
   function addReserve(
     address hub,
     uint256 assetId,
     address priceSource,
     ReserveConfig calldata config,
-    DynamicReserveConfig calldata dynConfig
+    DynamicReserveConfig calldata dynamicConfig
   ) external returns (uint256);
 
   function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external;
@@ -334,7 +336,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     bytes32 s
   ) external;
 
-  function ORACLE_DECIMALS() external view returns (uint8);
+  function MAX_RESERVE_ID() external view returns (uint256);
 
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint64);
 
@@ -377,6 +379,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getReserveCount() external view returns (uint256);
 
+  function ORACLE() external view returns (address);
+
   function getLiquidationBonus(
     uint256 reserveId,
     address user,
@@ -384,8 +388,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   ) external view returns (uint256);
 
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
-
-  function oracle() external view returns (IAaveOracle);
 
   function nonces(address user) external view returns (uint256);
 

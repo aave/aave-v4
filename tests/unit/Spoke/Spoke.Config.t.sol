@@ -8,37 +8,20 @@ contract SpokeConfigTest is SpokeBase {
   using SafeCast for *;
   using PercentageMath for uint256;
 
-  function test_updateOracle_revertsWith_AccessManagedUnauthorized(address caller) public {
-    vm.assume(
-      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+  function test_spoke_deploy() public {
+    address predictedSpokeAddress = vm.computeCreateAddress(
+      address(this),
+      vm.getNonce(address(this))
     );
-    vm.expectRevert(
-      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
-    );
-    vm.prank(caller);
-    spoke1.updateOracle(vm.randomAddress());
+    address oracle = makeAddr('AaveOracle');
+    SpokeInstance instance = new SpokeInstance(oracle);
+    assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
+    assertEq(instance.ORACLE(), oracle);
   }
 
-  function test_updateOracle_revertsWith_InvalidOracle_AddressZero() public {
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateOracle(address(0));
-  }
-
-  function test_updateOracle_revertsWith_InvalidOracle_DecimalsMismatch() public {
-    address newOracle = address(new AaveOracle(SPOKE_ADMIN, 18, 'New Aave Oracle'));
-    vm.expectRevert(ISpoke.InvalidOracle.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateOracle(newOracle);
-  }
-
-  function test_updateOracle() public {
-    address newOracle = address(new AaveOracle(SPOKE_ADMIN, 8, 'New Aave Oracle'));
-    vm.expectCall(newOracle, abi.encodeCall(IPriceOracle.DECIMALS, ()));
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateOracle(newOracle);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateOracle(newOracle);
+  function test_spoke_deploy_revertsWith_InvalidAddress() public {
+    vm.expectRevert(ISpoke.InvalidAddress.selector);
+    new SpokeInstance(address(0));
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(
@@ -171,7 +154,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_fuzz_revertsWith_AssetNotListed() public {
-    uint256 assetId = vm.randomUint(hub1.getAssetCount(), type(uint256).max); // invalid assetId
+    uint256 assetId = vm.randomUint(hub1.getAssetCount(), Constants.MAX_RESERVE_ID); // non-existing asset id
 
     ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
       paused: true,
@@ -192,7 +175,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_InvalidAddress_oracle() public {
-    Spoke newSpoke = Spoke(address(_deploySpokeProxy(ADMIN, address(accessManager))));
+    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
 
     ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
       paused: true,
@@ -247,6 +230,30 @@ contract SpokeConfigTest is SpokeBase {
       address(hub1),
       dai2AssetId,
       reserveSource,
+      newReserveConfig,
+      newDynReserveConfig
+    );
+  }
+
+  function test_addReserve_revertsWith_InvalidAssetId() public {
+    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
+      paused: true,
+      frozen: true,
+      borrowable: true,
+      collateralRisk: 10_00
+    });
+    ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 10_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 10_00
+    });
+
+    vm.expectRevert(ISpoke.InvalidAssetId.selector, address(spoke1));
+    vm.prank(ADMIN);
+    spoke1.addReserve(
+      address(hub1),
+      Constants.MAX_RESERVE_ID + 1, // invalid assetId
+      address(0),
       newReserveConfig,
       newDynReserveConfig
     );

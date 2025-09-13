@@ -170,7 +170,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     uint256 invalidReserveId = vm.randomUint(spoke1.getReserveCount(), type(uint256).max);
     ISpoke.DynamicReserveConfig memory dynConf;
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotListed.selector, invalidReserveId));
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(invalidReserveId, _randomConfigKey(), dynConf);
   }
