@@ -56,6 +56,9 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     TestAmounts memory amounts,
     uint40 skipTime
   ) public {
+    // ensure collaterals have > 0 CF to trigger accrual
+    _updateCollateralRisk(spoke2, _wbtcReserveId(spoke2), 10_00);
+
     amounts = _bound(amounts);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 2).toUint40();
 
@@ -84,12 +87,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     if (amounts.wbtcSupplyAmount > 0) {
       Utils.supplyCollateral(spoke2, _wbtcReserveId(spoke2), bob, amounts.wbtcSupplyAmount, bob);
     }
-
-    console.log('CF dai', _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
-    console.log('CF weth', _getCollateralRisk(spoke2, _wethReserveId(spoke2)));
-    console.log('CF usdx', _getCollateralRisk(spoke2, _usdxReserveId(spoke2)));
-    console.log('CF wbtc', _getCollateralRisk(spoke2, _wbtcReserveId(spoke2)));
-
     // Deploy remainder of liquidity
     if (amounts.daiSupplyAmount < MAX_SUPPLY_AMOUNT) {
       _openSupplyPosition(
