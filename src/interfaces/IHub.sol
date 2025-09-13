@@ -12,7 +12,6 @@ import {IHubBase} from 'src/interfaces/IHubBase.sol';
  */
 interface IHub is IHubBase, IAccessManaged {
   struct Asset {
-    //
     uint128 liquidity;
     uint128 addedShares;
     //
@@ -48,7 +47,6 @@ interface IHub is IHubBase, IAccessManaged {
   }
 
   struct SpokeData {
-    //
     uint128 premiumShares;
     uint128 premiumOffset;
     //

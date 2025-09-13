@@ -13,7 +13,6 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {Constants} from 'tests/Constants.sol';
 
 import {IHubBase, IHub} from 'src/interfaces/IHub.sol';
 import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
@@ -35,9 +34,9 @@ contract Hub is IHub, AccessManaged {
   uint56 public constant MAX_CAP = type(uint56).max;
 
   uint256 internal _assetCount;
-  mapping(uint256 assetId => Asset assetData) internal _assets;
-  mapping(uint256 assetId => mapping(address spoke => SpokeData spokeData)) internal _spokes;
-  mapping(uint256 assetId => EnumerableSet.AddressSet spoke) internal _assetToSpokes;
+  mapping(uint256 assetId => Asset) internal _assets;
+  mapping(uint256 assetId => mapping(address spoke => SpokeData)) internal _spokes;
+  mapping(uint256 assetId => EnumerableSet.AddressSet) internal _assetToSpokes;
 
   /**
    * @dev Constructor.
