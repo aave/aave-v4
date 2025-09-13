@@ -64,7 +64,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     // keccak256('UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)')
     0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
 
-  mapping(address user => uint256 nonce) internal _nonces;
+  mapping(address user => uint256) internal _nonces;
 
   constructor(address spoke_, address initialOwner_) Ownable(initialOwner_) {
     require(spoke_ != address(0) && initialOwner_ != address(0), InvalidAddress());
