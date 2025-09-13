@@ -948,10 +948,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
         realizedDelta: accruedUserPremium.toInt256()
       });
 
-      if (_isNonZeroPremiumDelta(premiumDelta)) {
-        hub.refreshPremium(assetId, premiumDelta);
-        emit RefreshPremiumDebt(reserveId, user, premiumDelta);
-      }
+      // if (_isNonZeroPremiumDelta(premiumDelta)) {
+      hub.refreshPremium(assetId, premiumDelta);
+      emit RefreshPremiumDebt(reserveId, user, premiumDelta);
+      // }
       reserveId = reserveId.uncheckedAdd(1);
     }
     emit UserRiskPremiumUpdate(user, newUserRiskPremium);
