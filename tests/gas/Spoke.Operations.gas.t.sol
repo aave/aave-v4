@@ -165,14 +165,14 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke1.borrow(_daiReserveId(spoke1), 500e18, alice);
 
     // skip time to accrue premium
-    skip(123 days);
+    // skip(123 days);
     spoke1.updateUserRiskPremium(alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'updateUserRiskPremium: 1 borrow');
 
     spoke1.borrow(_usdxReserveId(spoke1), 500e6, alice);
 
     // skip time to accrue premium
-    skip(123 days);
+    // skip(123 days);
     spoke1.updateUserRiskPremium(alice);
     vm.snapshotGasLastCall('Spoke.Operations', 'updateUserRiskPremium: 2 borrows');
     vm.stopPrank();
