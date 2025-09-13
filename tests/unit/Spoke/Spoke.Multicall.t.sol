@@ -225,8 +225,7 @@ contract SpokeMulticall is SpokeBase {
     assertEq(ret[0].length, 0);
     assertEq(ret[1].length, 0);
     assertEq(ret[2].length, 0);
-    assertEq(ret[3], abi.encode(_calculateExpectedUserRP(alice, spoke1)));
-    assertEq(ret[4], abi.encode(80e18, 0));
+    assertEq(ret[3], abi.encode(80e18, 0));
   }
 
   function test_multicall_forwards_first_revert() public {
