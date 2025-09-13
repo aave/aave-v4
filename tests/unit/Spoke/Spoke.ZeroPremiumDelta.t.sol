@@ -14,6 +14,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     _openSupplyPosition(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT);
     _openSupplyPosition(spoke1, _wethReserveId(spoke1), MAX_SUPPLY_AMOUNT);
     _openSupplyPosition(spoke1, _wbtcReserveId(spoke1), MAX_SUPPLY_AMOUNT);
+    _openSupplyPosition(spoke1, _usdyReserveId(spoke1), MAX_SUPPLY_AMOUNT);
 
     zeroPremiumDelta = DataTypes.PremiumDelta(0, 0, 0);
   }
@@ -163,5 +164,23 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.refreshPremium.selector), 2);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice); // $100
     assertEq(spoke1.getUserRiskPremium(alice), collateralRisk);
+  }
+
+  function test_withdraw_excess() public {
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1_000_000e18, alice);
+
+    Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 50e6, alice);
+    Utils.borrow(spoke1, _usdyReserveId(spoke1), alice, 50e6, alice);
+    Utils.borrow(spoke1, _wethReserveId(spoke1), alice, 1e16, alice);
+    Utils.borrow(spoke1, _wbtcReserveId(spoke1), alice, 1e4, alice);
+
+    uint256 userRiskPremium = spoke1.getUserRiskPremium(alice);
+
+    // all ops skipped
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.refreshPremium.selector), 0);
+    // withdraw excess that doesnt change user rp
+    Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, 10e18, alice);
+    // user risk premium remains the same
+    assertEq(spoke1.getUserRiskPremium(alice), userRiskPremium);
   }
 }
