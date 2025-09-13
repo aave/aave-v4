@@ -33,12 +33,15 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Utils} from 'tests/Utils.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
+import {NativeTokenGateway, INativeTokenGateway} from 'src/misc/NativeTokenGateway.sol';
+import {Rescuable, IRescuable} from 'src/misc/Rescuable.sol';
 
 // mocks
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusWrapper} from 'tests/mocks/PositionStatusWrapper.sol';
+import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 
@@ -414,7 +417,8 @@ abstract contract Base is Test {
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
-      })
+      }),
+      new bytes(0)
     );
     // add USDX
     hub1.addAsset(
@@ -431,7 +435,8 @@ abstract contract Base is Test {
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
-      })
+      }),
+      new bytes(0)
     );
     // add DAI
     hub1.addAsset(
@@ -448,7 +453,8 @@ abstract contract Base is Test {
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
-      })
+      }),
+      new bytes(0)
     );
     // add WBTC
     hub1.addAsset(
@@ -465,7 +471,8 @@ abstract contract Base is Test {
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
-      })
+      }),
+      new bytes(0)
     );
     // add USDY
     hub1.addAsset(
@@ -482,7 +489,8 @@ abstract contract Base is Test {
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
-      })
+      }),
+      new bytes(0)
     );
     // add DAI again
     hub1.addAsset(
@@ -499,7 +507,8 @@ abstract contract Base is Test {
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
-      })
+      }),
+      new bytes(0)
     );
 
     // Spoke 1 reserve configs
@@ -943,7 +952,7 @@ abstract contract Base is Test {
     config.feeReceiver = newFeeReceiver;
 
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, config);
+    hub.updateAssetConfig(assetId, config, new bytes(0));
 
     assertEq(hub.getAssetConfig(assetId), config);
   }
@@ -957,7 +966,7 @@ abstract contract Base is Test {
     config.reinvestmentController = newReinvestmentController;
 
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, config);
+    hub.updateAssetConfig(assetId, config, new bytes(0));
 
     assertEq(hub.getAssetConfig(assetId), config);
   }
@@ -1107,7 +1116,7 @@ abstract contract Base is Test {
     DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, config);
+    hub1.updateAssetConfig(assetId, config, new bytes(0));
 
     assertEq(hub1.getAssetConfig(assetId), config);
   }

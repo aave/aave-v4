@@ -50,7 +50,7 @@ contract Hub is IHub, AccessManaged {
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
-    bytes calldata data
+    bytes calldata irData
   ) external restricted returns (uint256) {
     require(
       underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
@@ -59,7 +59,7 @@ contract Hub is IHub, AccessManaged {
     require(decimals <= Constants.MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
 
     uint256 assetId = _assetCount++;
-    IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, data);
+    IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
     uint256 drawnRate = IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
       assetId: assetId,
       liquidity: 0,
@@ -90,12 +90,7 @@ contract Hub is IHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
-    _addSpoke(assetId, feeReceiver);
-    _updateSpokeConfig(
-      assetId,
-      feeReceiver,
-      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: 0, active: true})
-    );
+    _addFeeReceiver(assetId, feeReceiver);
 
     emit AddAsset(assetId, underlying, decimals);
     emit UpdateAssetConfig(
@@ -115,7 +110,8 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function updateAssetConfig(
     uint256 assetId,
-    DataTypes.AssetConfig calldata config
+    DataTypes.AssetConfig calldata config,
+    bytes calldata irData
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     DataTypes.Asset storage asset = _assets[assetId];
@@ -128,19 +124,21 @@ contract Hub is IHub, AccessManaged {
       InvalidReinvestmentController()
     );
 
-    asset.liquidityFee = config.liquidityFee;
-    asset.irStrategy = config.irStrategy;
-    asset.reinvestmentController = config.reinvestmentController;
+    if (config.irStrategy != asset.irStrategy) {
+      asset.irStrategy = config.irStrategy;
+      IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData);
+    } else {
+      require(irData.length == 0, InvalidInterestRateStrategyUpdate());
+    }
 
     if (asset.feeReceiver != config.feeReceiver) {
+      _updateSpokeConfig(assetId, asset.feeReceiver, DataTypes.SpokeConfig(true, 0, 0));
       asset.feeReceiver = config.feeReceiver;
-      _addSpoke(assetId, config.feeReceiver);
-      _updateSpokeConfig(
-        assetId,
-        config.feeReceiver,
-        DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: 0, active: true})
-      );
+      _addFeeReceiver(assetId, config.feeReceiver);
     }
+
+    asset.liquidityFee = config.liquidityFee;
+    asset.reinvestmentController = config.reinvestmentController;
 
     asset.updateDrawnRate(assetId);
 
@@ -168,10 +166,10 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function setInterestRateData(uint256 assetId, bytes calldata data) external restricted {
+  function setInterestRateData(uint256 assetId, bytes calldata irData) external restricted {
     DataTypes.Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
-    IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, data);
+    IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, irData);
     asset.updateDrawnRate(assetId);
   }
 
@@ -823,5 +821,14 @@ contract Hub is IHub, AccessManaged {
   function _addSpoke(uint256 assetId, address spoke) internal {
     require(_assetToSpokes[assetId].add(spoke), SpokeAlreadyListed());
     emit AddSpoke(assetId, spoke);
+  }
+
+  function _addFeeReceiver(uint256 assetId, address feeReceiver) internal {
+    _addSpoke(assetId, feeReceiver);
+    _updateSpokeConfig(
+      assetId,
+      feeReceiver,
+      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: 0, active: true})
+    );
   }
 }
