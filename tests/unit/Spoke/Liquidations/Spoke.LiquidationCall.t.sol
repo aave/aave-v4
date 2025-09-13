@@ -462,6 +462,16 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
     uint256 targetHealthFactor = vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR);
     _updateTargetHealthFactor(spoke, targetHealthFactor.toUint128());
 
+    uint32 maxLiquidationBonus = vm
+      .randomUint(
+        MIN_LIQUIDATION_BONUS,
+        (PercentageMath.PERCENTAGE_FACTOR - 1).percentDivDown(
+          _getCollateralFactor(spoke, collateralReserveId)
+        )
+      )
+      .toUint32();
+    _updateMaxLiquidationBonus(spoke, collateralReserveId, maxLiquidationBonus);
+
     uint256 liquidationFee = vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE);
     _updateLiquidationFee(spoke, collateralReserveId, liquidationFee.toUint16());
 
