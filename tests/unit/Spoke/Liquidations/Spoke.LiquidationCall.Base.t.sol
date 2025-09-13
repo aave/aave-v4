@@ -231,7 +231,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         healthFactorForMaxBonus: spoke.getLiquidationConfig().healthFactorForMaxBonus,
         liquidationBonusFactor: spoke.getLiquidationConfig().liquidationBonusFactor,
         debtReserveBalance: spoke.getUserTotalDebt(debtReserveId, user),
-        collateralReserveBalance: spoke.getUserSuppliedAmount(collateralReserveId, user),
+        collateralReserveBalance: spoke.getUserSuppliedAssets(collateralReserveId, user),
         debtToCover: debtToCover,
         totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
         healthFactor: userAccountData.healthFactor,
@@ -301,7 +301,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         continue;
       }
 
-      uint256 userSuppliedAmount = params.spoke.getUserSuppliedAmount(reserveId, params.user);
+      uint256 userSuppliedAmount = params.spoke.getUserSuppliedAssets(reserveId, params.user);
       if (params.collateralReserveId == reserveId) {
         userSuppliedAmount -= collateralToLiquidate;
       }
@@ -367,7 +367,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         vm.expectCall(
           address(params.spoke.getReserve(reserveId).hub),
           abi.encodeWithSelector(
-            IHub.reportDeficit.selector,
+            IHubBase.reportDeficit.selector,
             params.spoke.getReserve(reserveId).assetId
           ),
           liquidationMetadata.hasDeficit ? 1 : 0
@@ -379,10 +379,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       vm.expectEmit(false, false, false, false, address(params.spoke));
       // topics > 0 and data are not checked here
       // they are checked after the liquidation call since risk premium calculation is an approximation
-      emit ISpoke.UserRiskPremiumUpdate(address(0), 0);
+      emit ISpoke.UpdateUserRiskPremium(address(0), 0);
     } else {
       vm.expectEmit(address(params.spoke));
-      emit ISpoke.UserRiskPremiumUpdate(params.user, 0);
+      emit ISpoke.UpdateUserRiskPremium(params.user, 0);
     }
   }
 
@@ -397,14 +397,14 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         collateralErc20Balance: getAssetUnderlyingByReserveId(spoke, collateralReserveId).balanceOf(
           addr
         ),
-        suppliedInSpoke: spoke.getUserSuppliedAmount(collateralReserveId, addr),
-        addedInHub: spoke.getReserve(collateralReserveId).hub.getSpokeAddedAmount(
+        suppliedInSpoke: spoke.getUserSuppliedAssets(collateralReserveId, addr),
+        addedInHub: spoke.getReserve(collateralReserveId).hub.getSpokeAddedAssets(
           spoke.getReserve(collateralReserveId).assetId,
           addr
         ),
         debtErc20Balance: getAssetUnderlyingByReserveId(spoke, debtReserveId).balanceOf(addr),
         borrowedFromSpoke: spoke.getUserTotalDebt(debtReserveId, addr),
-        drawnFromHub: spoke.getReserve(debtReserveId).hub.getSpokeTotalOwed(
+        drawnFromHub: _hub(spoke, debtReserveId).getSpokeTotalOwed(
           spoke.getReserve(debtReserveId).assetId,
           addr
         )
@@ -443,10 +443,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         ),
         collateralFeeReceiverBalanceInfo: _getBalanceInfo(
           params.spoke,
-          params
-            .spoke
-            .getReserve(params.collateralReserveId)
-            .hub
+          _hub(params.spoke, params.collateralReserveId)
             .getAssetConfig(params.spoke.getReserve(params.collateralReserveId).assetId)
             .feeReceiver,
           params.collateralReserveId,
@@ -454,10 +451,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         ),
         debtFeeReceiverBalanceInfo: _getBalanceInfo(
           params.spoke,
-          params
-            .spoke
-            .getReserve(params.debtReserveId)
-            .hub
+          _hub(params.spoke, params.debtReserveId)
             .getAssetConfig(params.spoke.getReserve(params.debtReserveId).assetId)
             .feeReceiver,
           params.collateralReserveId,
@@ -540,7 +534,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     bool hasDeficit = (userAccountDataBefore.suppliedCollateralsCount == 1) &&
       (!params.isSolvent || isLiquidationBonusAffectingUserHf) &&
       (collateralToLiquidate ==
-        params.spoke.getUserSuppliedAmount(params.collateralReserveId, params.user));
+        params.spoke.getUserSuppliedAssets(params.collateralReserveId, params.user));
 
     return
       LiquidationMetadata({
@@ -939,7 +933,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   ) internal view {
     bool riskPremiumEventEmitted;
     for (uint256 i = 0; i < logs.length; i++) {
-      if (logs[i].topics[0] == ISpoke.UserRiskPremiumUpdate.selector) {
+      if (logs[i].topics[0] == ISpoke.UpdateUserRiskPremium.selector) {
         riskPremiumEventEmitted = true;
         assertEq(address(uint160(uint256(logs[i].topics[1]))), address(params.user));
         uint256 actualUserRiskPremium = abi.decode(logs[i].data, (uint256));

@@ -77,8 +77,8 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, POSITION_MANAGER), 0);
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), amount);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, POSITION_MANAGER), 0);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), amount);
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -106,8 +106,8 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.withdraw(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, POSITION_MANAGER), 0);
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), amount);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, POSITION_MANAGER), 0);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), amount);
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -202,7 +202,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UsingAsCollateral(reserveId, POSITION_MANAGER, alice, usingAsCollateral);
+    emit ISpoke.SetUsingAsCollateral(reserveId, POSITION_MANAGER, alice, usingAsCollateral);
     Utils.setUsingAsCollateral(spoke1, reserveId, POSITION_MANAGER, usingAsCollateral, alice);
 
     assertEq(spoke1.isUsingAsCollateral(reserveId, alice), usingAsCollateral);
@@ -231,7 +231,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserRiskPremiumUpdate(alice, _calculateExpectedUserRP(alice, spoke1));
+    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(alice, spoke1));
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserRiskPremium(alice);
 

@@ -57,16 +57,15 @@ contract PositionStatusWrapper {
     return PositionStatus.isolateBorrowing(word);
   }
 
-  function isolateBorrowingFrom(uint256 word, uint256 reserveId) external pure returns (uint256) {
-    return PositionStatus.isolateBorrowingFrom(word, reserveId);
+  function isolateBorrowingUntil(
+    uint256 word,
+    uint256 reserveCount
+  ) external pure returns (uint256) {
+    return PositionStatus.isolateBorrowingUntil(word, reserveCount);
   }
 
-  function isolateFrom(uint256 word, uint256 reserveId) external pure returns (uint256) {
-    return PositionStatus.isolateFrom(word, reserveId);
-  }
-
-  function isolateCollateralFrom(uint256 word, uint256 reserveId) external pure returns (uint256) {
-    return PositionStatus.isolateCollateralFrom(word, reserveId);
+  function isolateUntil(uint256 word, uint256 reserveId) external pure returns (uint256) {
+    return PositionStatus.isolateUntil(word, reserveId);
   }
 
   function isolateCollateral(uint256 word) external pure returns (uint256) {
@@ -80,25 +79,16 @@ contract PositionStatusWrapper {
     return PositionStatus.isolateCollateralUntil(word, reserveCount);
   }
 
-  function next(
-    uint256 startReserveId,
-    uint256 reserveCount
-  ) external view returns (uint256, bool, bool) {
-    return _p.next(startReserveId, reserveCount);
+  function next(uint256 startReserveId) external view returns (uint256, bool, bool) {
+    return _p.next(startReserveId);
   }
 
-  function nextBorrowing(
-    uint256 startReserveId,
-    uint256 reserveCount
-  ) external view returns (uint256) {
-    return _p.nextBorrowing(startReserveId, reserveCount);
+  function nextBorrowing(uint256 startReserveId) external view returns (uint256) {
+    return _p.nextBorrowing(startReserveId);
   }
 
-  function nextCollateral(
-    uint256 startReserveId,
-    uint256 reserveCount
-  ) external view returns (uint256) {
-    return _p.nextCollateral(startReserveId, reserveCount);
+  function nextCollateral(uint256 startReserveId) external view returns (uint256) {
+    return _p.nextCollateral(startReserveId);
   }
 
   function slot() external pure returns (bytes32 s) {

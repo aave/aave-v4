@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Math} from 'src/dependencies/openzeppelin/Math.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 library SharesMath {
-  using Math for uint256;
+  using MathUtils for uint256;
 
   /// @dev Virtual assets and shares are used to mitigate share manipulation attacks
   uint256 internal constant VIRTUAL_ASSETS = 1e6;
@@ -16,12 +16,7 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
-    return
-      assets.mulDiv(
-        totalShares + VIRTUAL_SHARES,
-        totalAssets + VIRTUAL_ASSETS,
-        Math.Rounding.Floor
-      );
+    return assets.mulDivDown(totalShares + VIRTUAL_SHARES, totalAssets + VIRTUAL_ASSETS);
   }
 
   function toAssetsDown(
@@ -29,12 +24,7 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
-    return
-      shares.mulDiv(
-        totalAssets + VIRTUAL_ASSETS,
-        totalShares + VIRTUAL_SHARES,
-        Math.Rounding.Floor
-      );
+    return shares.mulDivDown(totalAssets + VIRTUAL_ASSETS, totalShares + VIRTUAL_SHARES);
   }
 
   function toSharesUp(
@@ -42,8 +32,7 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
-    return
-      assets.mulDiv(totalShares + VIRTUAL_SHARES, totalAssets + VIRTUAL_ASSETS, Math.Rounding.Ceil);
+    return assets.mulDivUp(totalShares + VIRTUAL_SHARES, totalAssets + VIRTUAL_ASSETS);
   }
 
   function toAssetsUp(
@@ -51,7 +40,6 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
-    return
-      shares.mulDiv(totalAssets + VIRTUAL_ASSETS, totalShares + VIRTUAL_SHARES, Math.Rounding.Ceil);
+    return shares.mulDivUp(totalAssets + VIRTUAL_ASSETS, totalShares + VIRTUAL_SHARES);
   }
 }

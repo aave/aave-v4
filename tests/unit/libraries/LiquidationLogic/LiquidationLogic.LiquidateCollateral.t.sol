@@ -132,7 +132,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
 
     vm.expectCall(
       address(hub),
-      abi.encodeCall(IHub.previewRemoveByAssets, (assetId, params.collateralToLiquidate)),
+      abi.encodeCall(IHubBase.previewRemoveByAssets, (assetId, params.collateralToLiquidate)),
       1
     );
     vm.expectCall(
@@ -141,7 +141,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       1
     );
     if (sharesToPayFee > 0) {
-      vm.expectCall(address(hub), abi.encodeCall(IHub.payFee, (assetId, sharesToPayFee)), 1);
+      vm.expectCall(address(hub), abi.encodeCall(IHubBase.payFee, (assetId, sharesToPayFee)), 1);
     }
 
     return sharesToLiquidate;

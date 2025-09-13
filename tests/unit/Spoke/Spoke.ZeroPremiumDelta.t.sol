@@ -29,7 +29,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     // Updating risk premium without change in accrued premium, op skipped
     vm.expectCall(
       address(hub1),
-      abi.encodeCall(IHub.refreshPremium, (_usdxReserveId(spoke1), zeroPremiumDelta)),
+      abi.encodeCall(IHubBase.refreshPremium, (_usdxReserveId(spoke1), zeroPremiumDelta)),
       0
     );
     vm.prank(alice);
@@ -54,7 +54,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     assertEq(userRiskPremiumAfter, userRiskPremium);
 
     // Updating risk premium without change in accrued premium, op not skipped
-    vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.refreshPremium.selector), 1);
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 1);
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
   }
@@ -65,7 +65,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
     assertEq(spoke1.getUserRiskPremium(alice), 0);
 
-    vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.refreshPremium.selector), 0);
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 0);
 
     // first borrow, 0 rp -> 0 rp
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 50e6, alice);
@@ -89,7 +89,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     _updateCollateralRisk(spoke1, _daiReserveId(spoke1), collateralRisk.toUint24());
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
 
-    vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.refreshPremium.selector));
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector));
 
     // first borrow, 0 rp -> non zero rp
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 50e6, alice);
@@ -97,7 +97,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
 
     vm.expectCall(
       address(hub1),
-      abi.encodeCall(IHub.refreshPremium, (_usdxReserveId(spoke1), zeroPremiumDelta)),
+      abi.encodeCall(IHubBase.refreshPremium, (_usdxReserveId(spoke1), zeroPremiumDelta)),
       0
     );
 
@@ -123,14 +123,14 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     // first borrow covered by 0 CF asset, op skipped
     vm.expectCall(
       address(hub1),
-      abi.encodeCall(IHub.refreshPremium, (_usdxReserveId(spoke1), zeroPremiumDelta)),
+      abi.encodeCall(IHubBase.refreshPremium, (_usdxReserveId(spoke1), zeroPremiumDelta)),
       0
     );
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice); // $1k
     assertEq(spoke1.getUserRiskPremium(alice), 0);
 
     // second borrow covered by non zero CF asset, op not skipped
-    vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.refreshPremium.selector));
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector));
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 100e6, alice);
     assertGt(spoke1.getUserRiskPremium(alice), 0);
   }
@@ -144,7 +144,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     assertEq(spoke1.getUserRiskPremium(alice), collateralRisk);
 
     // only 1 op expected for dai; usdx is skipped
-    vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.refreshPremium.selector), 1);
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 1);
 
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice); // $100
     assertEq(spoke1.getUserRiskPremium(alice), collateralRisk);
@@ -161,7 +161,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     skip(123 days);
 
     // due to accrual, both borrowed reserves are refreshed
-    vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.refreshPremium.selector), 2);
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 2);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice); // $100
     assertEq(spoke1.getUserRiskPremium(alice), collateralRisk);
   }
@@ -177,7 +177,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     uint256 userRiskPremium = spoke1.getUserRiskPremium(alice);
 
     // all ops skipped
-    vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.refreshPremium.selector), 0);
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 0);
     // withdraw excess that doesnt change user rp
     Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, 10e18, alice);
     // user risk premium remains the same
