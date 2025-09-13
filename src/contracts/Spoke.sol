@@ -35,10 +35,15 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using MathUtils for *;
 
   /// @inheritdoc ISpoke
-  address public immutable ORACLE;
+  uint256 public constant MAX_RESERVE_ID = type(uint16).max;
 
   /// @inheritdoc ISpoke
-  uint256 public constant MAX_RESERVE_ID = type(uint16).max;
+  uint24 public constant MAX_COLLATERAL_RISK = 1000_00; // 1000.00%
+
+  /// @inheritdoc ISpoke
+  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
+    // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
+    0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
 
   /// @inheritdoc ISpoke
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
@@ -48,12 +53,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   uint256 public constant MIN_LEFTOVER_BASE = LiquidationLogic.MIN_LEFTOVER_BASE;
 
   /// @inheritdoc ISpoke
-  uint24 public constant MAX_COLLATERAL_RISK = 1000_00; // 1000.00%
-
-  /// @inheritdoc ISpoke
-  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
-    // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
-    0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
+  address public immutable ORACLE;
 
   uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;

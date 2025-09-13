@@ -102,12 +102,10 @@ library LiquidationLogic {
     address liquidator;
   }
 
+  // see ISpoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD docs
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
-  /**
-   * @dev This constant represents the minimum amount of assets in base currency that need to be leftover after a liquidation, if not clearing collateral on a position completely.
-   * @notice The default value assumes that the basePrice is usd denominated by 26 decimals.
-   */
+  // see ISpoke.MIN_LEFTOVER_BASE docs
   uint256 constant MIN_LEFTOVER_BASE = 1000e26;
 
   function calculateLiquidationBonus(
