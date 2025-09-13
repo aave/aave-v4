@@ -36,7 +36,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using PositionStatus for *;
   using MathUtils for *;
 
-  IAaveOracle internal immutable _ORACLE;
+  /// @inheritdoc ISpoke
+  address public immutable ORACLE;
 
   uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition))
@@ -61,7 +62,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    */
   constructor(address oracle_) {
     require(oracle_ != address(0), InvalidAddress());
-    _ORACLE = IAaveOracle(oracle_);
+    ORACLE = oracle_;
   }
 
   function initialize(address _authority) external virtual;
@@ -312,7 +313,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     DataTypes.LiquidateUserParams memory params = DataTypes.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
-      oracle: address(_ORACLE),
+      oracle: address(ORACLE),
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
@@ -533,10 +534,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return _reserveCount;
   }
 
-  function getOracle() external view returns (address) {
-    return address(_ORACLE);
-  }
-
   /// @inheritdoc ISpokeBase
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
@@ -674,7 +671,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
     require(priceSource != address(0), InvalidAddress());
-    _ORACLE.setReserveSource(reserveId, priceSource);
+    IAaveOracle(ORACLE).setReserveSource(reserveId, priceSource);
     emit UpdateReservePriceSource(reserveId, priceSource);
   }
 
@@ -788,7 +785,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       DataTypes.Reserve storage reserve = _reserves[reserveId];
 
-      uint256 assetPrice = _ORACLE.getReservePrice(reserveId);
+      uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
       uint256 assetUnit = uint256(10).uncheckedExp(reserve.decimals);
 
       if (collateral) {

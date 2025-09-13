@@ -294,7 +294,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getReserveCount() external view returns (uint256);
 
-  function getOracle() external view returns (address);
+  function ORACLE() external view returns (address);
 
   function getLiquidationBonus(
     uint256 reserveId,

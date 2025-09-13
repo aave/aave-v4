@@ -467,7 +467,7 @@ contract SpokeBase is Base {
     uint256 debtReserveId,
     uint256 collAmount
   ) internal view returns (uint256) {
-    IPriceOracle oracle = IPriceOracle(spoke.getOracle());
+    IPriceOracle oracle = IPriceOracle(spoke.ORACLE());
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
     DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
     uint256 collPrice = oracle.getReservePrice(collReserveId);
@@ -1008,7 +1008,7 @@ contract SpokeBase is Base {
     uint256 reserveId,
     uint256 debtAmount
   ) internal {
-    address mockSpoke = address(new MockSpoke(spoke.getOracle()));
+    address mockSpoke = address(new MockSpoke(spoke.ORACLE()));
 
     address implementation = _getImplementationAddress(address(spoke));
 

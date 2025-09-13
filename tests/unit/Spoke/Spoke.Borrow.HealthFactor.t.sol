@@ -392,7 +392,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 wethSupplyAmount,
     uint256 newPrice
   ) public {
-    uint256 currPrice = IPriceOracle(spoke1.getOracle()).getReservePrice(_wethReserveId(spoke1));
+    uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_wethReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
     // weth collateral
     wethSupplyAmount = bound(wethSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
@@ -704,7 +704,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai
   ) public {
-    uint256 currPrice = IPriceOracle(spoke1.getOracle()).getReservePrice(_wethReserveId(spoke1));
+    uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_wethReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
     usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT / 4);
     usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT / 4);
@@ -819,7 +819,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai
   ) public {
-    uint256 currPrice = IPriceOracle(spoke1.getOracle()).getReservePrice(_wethReserveId(spoke1));
+    uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_wethReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
     usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT / 4);
     usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT / 4);
