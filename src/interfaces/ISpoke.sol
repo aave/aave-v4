@@ -58,11 +58,11 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   struct PositionManagerConfig {
     bool active;
-    mapping(address user => bool approved) approval;
+    mapping(address user => bool) approval;
   }
 
   struct PositionStatus {
-    mapping(uint256 slot => uint256 status) map;
+    mapping(uint256 slot => uint256) map;
   }
 
   struct UserAccountData {
@@ -356,7 +356,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function ORACLE() external view returns (address);
 
   function getReserve(uint256 reserveId) external view returns (Reserve memory);
-
+  
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory);
 
   function getDynamicReserveConfig(

@@ -27,7 +27,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   address public immutable HUB;
 
   /// @dev Map of assetId and their interest rate data (assetId => interestRateData)
-  mapping(uint256 assetId => InterestRateData data) internal _interestRateData;
+  mapping(uint256 assetId => InterestRateData) internal _interestRateData;
 
   /**
    * @dev Constructor.

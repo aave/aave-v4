@@ -19,7 +19,7 @@ contract AaveOracle is IAaveOracle {
   /// @inheritdoc IAaveOracle
   string public override DESCRIPTION;
 
-  mapping(uint256 reserveId => AggregatorV3Interface source) internal _sources;
+  mapping(uint256 reserveId => AggregatorV3Interface) internal _sources;
 
   /**
    * @dev Constructor.
