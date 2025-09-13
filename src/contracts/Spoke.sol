@@ -13,7 +13,6 @@ import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.s
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
-import {Constants} from 'tests/Constants.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';

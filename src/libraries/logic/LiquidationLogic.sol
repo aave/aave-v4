@@ -6,7 +6,6 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IHubBase} from 'src/interfaces/IHubBase.sol';
 import {ISpoke, ISpokeBase} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
-import {Constants} from 'tests/Constants.sol';
 import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -125,12 +124,12 @@ library LiquidationLogic {
       .percentMulDown(liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
 
     // linear interpolation between min and max
-    // denominator cannot be zero as healthFactorForMaxBonus is always < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    // denominator cannot be zero as healthFactorForMaxBonus is always < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     return
       minLiquidationBonus +
       (maxLiquidationBonus - minLiquidationBonus).mulDivDown(
-        Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactor,
-        Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactorForMaxBonus
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactor,
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactorForMaxBonus
       );
   }
 
@@ -143,7 +142,7 @@ library LiquidationLogic {
     );
     require(!params.collateralReservePaused && !params.debtReservePaused, ISpoke.ReservePaused());
     require(
-      params.healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       ISpoke.HealthFactorNotBelowThreshold()
     );
     require(
@@ -161,7 +160,7 @@ library LiquidationLogic {
     );
 
     // denominator cannot be zero as liquidationBonus * collateralFactor is always < PercentageMath.PERCENTAGE_FACTOR
-    // and targetHealthFactor is always >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    // and targetHealthFactor is always >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     return
       params.totalDebtInBaseCurrency.mulDivUp(
         params.debtAssetUnit * (params.targetHealthFactor - params.healthFactor),
