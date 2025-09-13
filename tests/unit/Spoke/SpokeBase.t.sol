@@ -1010,12 +1010,17 @@ contract SpokeBase is Base {
     uint256 reserveId,
     uint256 debtAmount
   ) internal {
-    address mockSpoke = address(new MockSpoke(spoke.authority()));
+    address mockSpoke = address(new MockSpoke());
 
-    vm.prank(address(spoke), true);
-    (bool success, ) = mockSpoke.delegatecall(
-      abi.encodeCall(MockSpoke.borrowWithoutHfCheck, (reserveId, debtAmount, user))
-    );
-    require(success, 'borrowWithoutHfCheck failed');
+    address implementation = _getImplementationAddress(address(spoke));
+
+    vm.prank(_getProxyAdminAddress(address(spoke)));
+    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(address(mockSpoke), '');
+
+    vm.prank(user);
+    MockSpoke(address(spoke)).borrowWithoutHfCheck(reserveId, debtAmount, user);
+
+    vm.prank(_getProxyAdminAddress(address(spoke)));
+    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
   }
 }

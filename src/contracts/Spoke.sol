@@ -6,7 +6,7 @@ import {Multicall} from 'src/misc/Multicall.sol';
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
-import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
+import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
@@ -23,7 +23,12 @@ import {IHubBase} from 'src/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
-contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
+/**
+ * @dev Future upgrades can safely append new storage variables to the Spoke's storage layout
+ * as long as any new variables added to inherited contracts continue to not depend on the
+ * Spoke's storage layout namespace.
+ */
+abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
   using PercentageMath for *;
@@ -50,16 +55,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     _;
   }
 
-  /**
-   * @dev Constructor.
-   * @dev The authority should implement the AccessManaged interface to control access.
-   * @param authority_ The address of the authority contract which manages permissions.
-   */
-  constructor(address authority_) AccessManaged(authority_) {
-    require(authority_ != address(0), InvalidAddress());
-    _liquidationConfig.targetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-    emit UpdateLiquidationConfig(_liquidationConfig);
-  }
+  function initialize(address _authority) external virtual;
 
   // /////
   // Governance
@@ -415,7 +411,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     address user,
     bool approve,
     uint256 deadline,
-    bytes memory signature
+    bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(

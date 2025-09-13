@@ -11,6 +11,7 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
+import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {Hub, IHub} from 'src/contracts/Hub.sol';
 import {IHubBase} from 'src/interfaces/IHubBase.sol';
@@ -20,6 +21,7 @@ import {AaveOracle, IAaveOracle} from 'src/contracts/AaveOracle.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/contracts/HubConfigurator.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/contracts/SpokeConfigurator.sol';
+import {SpokeInstance} from 'src/instances/SpokeInstance.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
@@ -65,6 +67,11 @@ abstract contract Base is Test {
   using PercentageMath for uint256;
   using SafeCast for *;
   using MathUtils for uint256;
+
+  bytes32 internal constant ERC1967_ADMIN_SLOT =
+    0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
+  bytes32 internal constant IMPLEMENTATION_SLOT =
+    0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED = 18;
@@ -237,14 +244,37 @@ abstract contract Base is Test {
     deployFixtures();
   }
 
+  function _deploySpokeProxy(
+    address proxyAdminOwner,
+    address accessManager
+  ) internal returns (ISpoke) {
+    address spokeImplAddress = address(new SpokeInstance());
+    TransparentUpgradeableProxy spokeProxy = new TransparentUpgradeableProxy(
+      spokeImplAddress,
+      proxyAdminOwner,
+      abi.encodeCall(Spoke.initialize, (address(accessManager)))
+    );
+    return ISpoke(address(spokeProxy));
+  }
+
+  function _getProxyAdminAddress(address proxy) internal view returns (address) {
+    bytes32 slotData = vm.load(proxy, ERC1967_ADMIN_SLOT);
+    return address(uint160(uint256(slotData)));
+  }
+
+  function _getImplementationAddress(address proxy) internal view returns (address) {
+    bytes32 slotData = vm.load(proxy, IMPLEMENTATION_SLOT);
+    return address(uint160(uint256(slotData)));
+  }
+
   function deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
     accessManager = new AccessManager(ADMIN);
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
-    spoke1 = ISpoke(new Spoke(address(accessManager)));
-    spoke2 = ISpoke(new Spoke(address(accessManager)));
-    spoke3 = ISpoke(new Spoke(address(accessManager)));
+    spoke1 = _deploySpokeProxy(ADMIN, address(accessManager));
+    spoke2 = _deploySpokeProxy(ADMIN, address(accessManager));
+    spoke3 = _deploySpokeProxy(ADMIN, address(accessManager));
     oracle1 = IAaveOracle(new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)'));
     oracle2 = IAaveOracle(new AaveOracle(address(spoke2), 8, 'Spoke 2 (USD)'));
     oracle3 = IAaveOracle(new AaveOracle(address(spoke3), 8, 'Spoke 3 (USD)'));
@@ -1892,7 +1922,10 @@ abstract contract Base is Test {
         user != address(hub1) &&
         user != address(spoke1) &&
         user != address(spoke2) &&
-        user != address(spoke3)
+        user != address(spoke3) &&
+        user != _getProxyAdminAddress(address(spoke1)) &&
+        user != _getProxyAdminAddress(address(spoke2)) &&
+        user != _getProxyAdminAddress(address(spoke3))
     );
   }
 

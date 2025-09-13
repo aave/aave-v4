@@ -201,7 +201,8 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
       caller != alice &&
         caller != POSITION_MANAGER &&
         caller != SPOKE_ADMIN &&
-        caller != USER_POSITION_UPDATER
+        caller != USER_POSITION_UPDATER &&
+        caller != _getProxyAdminAddress(address(spoke1))
     );
 
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);

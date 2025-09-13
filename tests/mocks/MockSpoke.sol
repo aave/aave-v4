@@ -8,10 +8,14 @@ contract MockSpoke is Spoke {
   using SafeCast for *;
   using PositionStatus for *;
 
-  constructor(address authority_) Spoke(authority_) {}
+  function initialize(address) external override {}
 
-  // same as spoke's borrow, but without health factor check and no position manager check for onBehalfOf
-  function borrowWithoutHfCheck(uint256 reserveId, uint256 amount, address onBehalfOf) external {
+  // same as spoke's borrow, but without health factor check
+  function borrowWithoutHfCheck(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     DataTypes.UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
