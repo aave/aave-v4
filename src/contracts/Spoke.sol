@@ -9,9 +9,9 @@ import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 
+import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {SignatureCheckerHelper} from 'src/libraries/helpers/SignatureCheckerHelper.sol';
 import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.sol';
 import {Constants} from 'src/libraries/helpers/Constants.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
@@ -55,12 +55,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     _;
   }
 
-  /**
-   * @dev Initializes the contract (intended to be called via delegatecall).
-   * It updates the authority on every initialization and, only on the first initialization,
-   * sets the target health factor to its default value.
-   * @param _authority The address of the authority contract which manages permissions.
-   */
   function initialize(address _authority) external virtual;
 
   // /////
@@ -415,7 +409,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     address user,
     bool approve,
     uint256 deadline,
-    bytes memory signature
+    bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
@@ -430,7 +424,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
         )
       )
     );
-    require(SignatureCheckerHelper.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
 
