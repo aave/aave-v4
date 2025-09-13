@@ -11,9 +11,10 @@ contract MockSpokeInstance is Spoke {
   /**
    * @dev Constructor
    * @dev It sets the spoke revision and disables the initializers.
-   * @param spokeRevision_ The revision of the spoke contract
+   * @param spokeRevision_ The revision of the spoke contract.
+   * @param oracle_ The address of the oracle.
    */
-  constructor(uint64 spokeRevision_) {
+  constructor(uint64 spokeRevision_, address oracle_) Spoke(oracle_) {
     SPOKE_REVISION = spokeRevision_;
     _disableInitializers();
   }
