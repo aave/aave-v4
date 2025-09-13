@@ -337,6 +337,9 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function MAX_COLLATERAL_RISK() external view returns (uint24);
 
+  /**
+   * @notice Returns the type hash for the SetUserPositionManager intent.
+   */
   function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32);
 
   function getHealthFactor(address user) external view returns (uint256);

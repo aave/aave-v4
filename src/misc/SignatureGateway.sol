@@ -31,25 +31,38 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
 
   /// @inheritdoc ISignatureGateway
   bytes32 public constant SUPPLY_TYPEHASH =
-    0xe85497eb293c001e8483fe105efadd1d50aa0dadfc0570b27058031dfceab2e6; // keccak256('Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
+    // keccak256('Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
+    0xe85497eb293c001e8483fe105efadd1d50aa0dadfc0570b27058031dfceab2e6;
+
   /// @inheritdoc ISignatureGateway
   bytes32 public constant WITHDRAW_TYPEHASH =
-    0x0bc73eb58cf4068a29b9593ef18c0d26b3b4453bd2155424a90cb26a22f41d7f; // keccak256('Withdraw(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
+    // keccak256('Withdraw(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
+    0x0bc73eb58cf4068a29b9593ef18c0d26b3b4453bd2155424a90cb26a22f41d7f;
+
   /// @inheritdoc ISignatureGateway
   bytes32 public constant BORROW_TYPEHASH =
-    0xe248895a233688ba2a70b6f560472dbc27e35ece0d86914f7d43bf2f7df8025b; // keccak256('Borrow(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
+    // keccak256('Borrow(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
+    0xe248895a233688ba2a70b6f560472dbc27e35ece0d86914f7d43bf2f7df8025b;
+
   /// @inheritdoc ISignatureGateway
   bytes32 public constant REPAY_TYPEHASH =
-    0xd23fe99a7aac398d03952a098faa8889259d062784bd80ea0f159e4af604c045; // keccak256('Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
+    // keccak256('Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
+    0xd23fe99a7aac398d03952a098faa8889259d062784bd80ea0f159e4af604c045;
+
   /// @inheritdoc ISignatureGateway
   bytes32 public constant SET_USING_AS_COLLATERAL_TYPEHASH =
-    0xd4350e1f25ecd62a35b50e8cd1e00bc34331ae8c728ee4dbb69ecf1023daecf7; // keccak256('SetUsingAsCollateral(address spoke,uint256 reserveId,bool useAsCollateral,address onBehalfOf,uint256 nonce,uint256 deadline)')
+    // keccak256('SetUsingAsCollateral(address spoke,uint256 reserveId,bool useAsCollateral,address onBehalfOf,uint256 nonce,uint256 deadline)')
+    0xd4350e1f25ecd62a35b50e8cd1e00bc34331ae8c728ee4dbb69ecf1023daecf7;
+
   /// @inheritdoc ISignatureGateway
   bytes32 public constant UPDATE_USER_RISK_PREMIUM_TYPEHASH =
-    0xb41e132023782c9b02febf1b9b7fe98c4a73f57ebc63ba44cd71f6365ea09eaf; // keccak256('UpdateUserRiskPremium(address spoke,address user,uint256 nonce,uint256 deadline)')
+    // keccak256('UpdateUserRiskPremium(address spoke,address user,uint256 nonce,uint256 deadline)')
+    0xb41e132023782c9b02febf1b9b7fe98c4a73f57ebc63ba44cd71f6365ea09eaf;
+
   /// @inheritdoc ISignatureGateway
   bytes32 public constant UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH =
-    0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c; // keccak256('UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)')
+    // keccak256('UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)')
+    0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
 
   mapping(address user => uint256 nonce) internal _nonces;
 
