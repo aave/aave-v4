@@ -31,7 +31,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using PositionStatus for *;
   using MathUtils for *;
 
-  IAaveOracle public immutable oracle;
+  IAaveOracle internal immutable _ORACLE;
 
   uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => DataTypes.UserPosition))
@@ -58,7 +58,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    */
   constructor(address authority_, address oracle_) AccessManaged(authority_) {
     require(authority_ != address(0) && oracle_ != address(0), InvalidAddress());
-    oracle = IAaveOracle(oracle_);
+    _ORACLE = IAaveOracle(oracle_);
     _liquidationConfig.targetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     emit UpdateLiquidationConfig(_liquidationConfig);
   }
@@ -238,7 +238,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
     uint256 drawnShares = hub.draw(assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint128();
-    if (!positionStatus.isBorrowing(reserveId)) positionStatus.setBorrowing(reserveId, true);
+    if (!positionStatus.isBorrowing(reserveId)) {
+      positionStatus.setBorrowing(reserveId, true);
+    }
 
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
@@ -304,7 +306,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.LiquidateUserParams memory params = DataTypes.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
-      oracle: address(oracle),
+      oracle: address(_ORACLE),
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
@@ -525,6 +527,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     return _reserveCount;
   }
 
+  function getOracle() external view returns (address) {
+    return address(_ORACLE);
+  }
+
   /// @inheritdoc ISpokeBase
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
@@ -670,7 +676,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
     require(priceSource != address(0), InvalidAddress());
-    oracle.setReserveSource(reserveId, priceSource);
+    _ORACLE.setReserveSource(reserveId, priceSource);
     emit UpdateReservePriceSource(reserveId, priceSource);
   }
 
@@ -784,7 +790,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       DataTypes.Reserve storage reserve = _reserves[reserveId];
 
-      uint256 assetPrice = oracle.getReservePrice(reserveId);
+      uint256 assetPrice = _ORACLE.getReservePrice(reserveId);
       uint256 assetUnit = uint256(10).uncheckedExp(reserve.decimals);
 
       if (collateral) {

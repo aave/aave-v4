@@ -157,7 +157,7 @@ contract HubHandler is Test {
   }
 
   function _deployMockPriceFeed(Spoke spoke, uint256 price) internal returns (address) {
-    AaveOracle oracle = AaveOracle(address(spoke.oracle()));
+    AaveOracle oracle = AaveOracle(spoke.getOracle());
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
   }
 }

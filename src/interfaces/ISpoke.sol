@@ -6,7 +6,6 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
-import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
 /**
  * @title ISpoke
@@ -295,7 +294,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getReserveCount() external view returns (uint256);
 
-  function oracle() external view returns (IAaveOracle);
+  function getOracle() external view returns (address);
 
   function getLiquidationBonus(
     uint256 reserveId,
