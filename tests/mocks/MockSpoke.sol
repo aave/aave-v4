@@ -2,11 +2,11 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Spoke, DataTypes, IHubBase, SafeCast, PositionStatus} from 'src/contracts/Spoke.sol';
+import {Spoke, DataTypes, IHubBase, SafeCast, PositionStatusMap} from 'src/contracts/Spoke.sol';
 
 contract MockSpoke is Spoke {
   using SafeCast for *;
-  using PositionStatus for *;
+  using PositionStatusMap for *;
 
   constructor(address authority_) Spoke(authority_) {}
 

@@ -10,8 +10,8 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @author Aave Labs
  * @notice Implements the bitmap logic to handle the user configuration.
  */
-library PositionStatus {
-  using PositionStatus for *;
+library PositionStatusMap {
+  using PositionStatusMap for *;
   using LibBit for uint256;
 
   uint256 internal constant NOT_FOUND = type(uint256).max;

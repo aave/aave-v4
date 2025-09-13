@@ -4,13 +4,13 @@ pragma solidity ^0.8.10;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IHub} from 'src/interfaces/IHub.sol';
-import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
+import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 
 contract LiquidationLogicWrapper {
   using SafeCast for uint256;
-  using PositionStatus for DataTypes.PositionStatus;
+  using PositionStatusMap for DataTypes.PositionStatus;
 
   DataTypes.Reserve internal collateralReserve;
   DataTypes.UserPosition internal collateralPosition;

@@ -4,11 +4,11 @@ pragma solidity ^0.8.10;
 
 import 'tests/Base.t.sol';
 
-contract PositionStatusTest is Base {
-  PositionStatusWrapper internal p;
+contract PositionStatusMapTest is Base {
+  PositionStatusMapWrapper internal p;
 
   function setUp() public override {
-    p = new PositionStatusWrapper();
+    p = new PositionStatusMapWrapper();
   }
 
   function test_constants() public view {
@@ -248,7 +248,7 @@ contract PositionStatusTest is Base {
     vm.setArbitraryStorage(address(p));
 
     uint256 startReserveId = vm.randomUint(1, reserveCount);
-    uint256 expectedReserveId = PositionStatus.NOT_FOUND;
+    uint256 expectedReserveId = PositionStatusMap.NOT_FOUND;
     for (uint256 i = startReserveId - 1; i >= 0; --i) {
       if (p.isUsingAsCollateral(i) || p.isBorrowing(i)) {
         expectedReserveId = i;
@@ -257,8 +257,11 @@ contract PositionStatusTest is Base {
     }
     (uint256 reserveId, bool borrowing, bool collateral) = p.next(startReserveId);
     assertEq(reserveId, expectedReserveId);
-    assertEq(borrowing, reserveId != PositionStatus.NOT_FOUND && p.isBorrowing(reserveId));
-    assertEq(collateral, reserveId != PositionStatus.NOT_FOUND && p.isUsingAsCollateral(reserveId));
+    assertEq(borrowing, reserveId != PositionStatusMap.NOT_FOUND && p.isBorrowing(reserveId));
+    assertEq(
+      collateral,
+      reserveId != PositionStatusMap.NOT_FOUND && p.isUsingAsCollateral(reserveId)
+    );
   }
 
   function test_nextBorrowing(uint256 reserveCount) public {
@@ -266,7 +269,7 @@ contract PositionStatusTest is Base {
     vm.setArbitraryStorage(address(p));
 
     uint256 startReserveId = vm.randomUint(1, reserveCount);
-    uint256 expectedReserveId = PositionStatus.NOT_FOUND;
+    uint256 expectedReserveId = PositionStatusMap.NOT_FOUND;
     for (uint256 i = startReserveId - 1; i >= 0; --i) {
       if (p.isBorrowing(i)) {
         expectedReserveId = i;
@@ -275,7 +278,7 @@ contract PositionStatusTest is Base {
     }
     uint256 reserveId = p.nextBorrowing(startReserveId);
     assertEq(reserveId, expectedReserveId);
-    assertEq(p.isBorrowing(reserveId), reserveId != PositionStatus.NOT_FOUND);
+    assertEq(p.isBorrowing(reserveId), reserveId != PositionStatusMap.NOT_FOUND);
   }
 
   function test_nextCollateral(uint256 reserveCount) public {
@@ -283,7 +286,7 @@ contract PositionStatusTest is Base {
     vm.setArbitraryStorage(address(p));
 
     uint256 startReserveId = vm.randomUint(1, reserveCount);
-    uint256 expectedReserveId = PositionStatus.NOT_FOUND;
+    uint256 expectedReserveId = PositionStatusMap.NOT_FOUND;
     for (uint256 i = startReserveId - 1; i >= 0; --i) {
       if (p.isUsingAsCollateral(i)) {
         expectedReserveId = i;
@@ -292,7 +295,7 @@ contract PositionStatusTest is Base {
     }
     uint256 reserveId = p.nextCollateral(startReserveId);
     assertEq(reserveId, expectedReserveId);
-    assertEq(p.isUsingAsCollateral(reserveId), reserveId != PositionStatus.NOT_FOUND);
+    assertEq(p.isUsingAsCollateral(reserveId), reserveId != PositionStatusMap.NOT_FOUND);
   }
 
   function test_next_continuous() public {
@@ -307,7 +310,7 @@ contract PositionStatusTest is Base {
     bool collateral;
     while (true) {
       (nextReserveId, borrowing, collateral) = p.next(lastSeenReserveId);
-      if (nextReserveId == PositionStatus.NOT_FOUND) break;
+      if (nextReserveId == PositionStatusMap.NOT_FOUND) break;
 
       assertEq(p.isBorrowing(nextReserveId), borrowing);
       assertEq(p.isUsingAsCollateral(nextReserveId), collateral);
@@ -334,7 +337,7 @@ contract PositionStatusTest is Base {
     }
     uint256 lastSeenReserveId = reserveCount;
     uint256 nextReserveId = reserveCount;
-    while ((nextReserveId = p.nextBorrowing(lastSeenReserveId)) != PositionStatus.NOT_FOUND) {
+    while ((nextReserveId = p.nextBorrowing(lastSeenReserveId)) != PositionStatusMap.NOT_FOUND) {
       assertTrue(p.isBorrowing(nextReserveId));
       if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
       while (lastSeenReserveId > nextReserveId) {
@@ -357,7 +360,7 @@ contract PositionStatusTest is Base {
     }
     uint256 lastSeenReserveId = reserveCount;
     uint256 nextReserveId = reserveCount;
-    while ((nextReserveId = p.nextCollateral(lastSeenReserveId)) != PositionStatus.NOT_FOUND) {
+    while ((nextReserveId = p.nextCollateral(lastSeenReserveId)) != PositionStatusMap.NOT_FOUND) {
       assertTrue(p.isUsingAsCollateral(nextReserveId));
       if (lastSeenReserveId > 0) lastSeenReserveId--; // skipping : search is exclusive, Id was already checked
       while (lastSeenReserveId > nextReserveId) {

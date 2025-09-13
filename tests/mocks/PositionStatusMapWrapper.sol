@@ -2,19 +2,19 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
-import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
+import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
-contract PositionStatusWrapper {
-  using PositionStatus for DataTypes.PositionStatus;
+contract PositionStatusMapWrapper {
+  using PositionStatusMap for DataTypes.PositionStatus;
   DataTypes.PositionStatus internal _p;
 
   function BORROWING_MASK() external pure returns (uint256) {
-    return PositionStatus.BORROWING_MASK;
+    return PositionStatusMap.BORROWING_MASK;
   }
 
   function COLLATERAL_MASK() external pure returns (uint256) {
-    return PositionStatus.COLLATERAL_MASK;
+    return PositionStatusMap.COLLATERAL_MASK;
   }
 
   function setBorrowing(uint256 reserveId, bool borrowing) external {
@@ -46,37 +46,37 @@ contract PositionStatusWrapper {
   }
 
   function bucketId(uint256 reserveId) external pure returns (uint256) {
-    return PositionStatus.bucketId(reserveId);
+    return PositionStatusMap.bucketId(reserveId);
   }
 
   function fromBitId(uint256 bitId, uint256 bucket) external pure returns (uint256) {
-    return PositionStatus.fromBitId(bitId, bucket);
+    return PositionStatusMap.fromBitId(bitId, bucket);
   }
 
   function isolateBorrowing(uint256 word) external pure returns (uint256) {
-    return PositionStatus.isolateBorrowing(word);
+    return PositionStatusMap.isolateBorrowing(word);
   }
 
   function isolateBorrowingUntil(
     uint256 word,
     uint256 reserveCount
   ) external pure returns (uint256) {
-    return PositionStatus.isolateBorrowingUntil(word, reserveCount);
+    return PositionStatusMap.isolateBorrowingUntil(word, reserveCount);
   }
 
   function isolateUntil(uint256 word, uint256 reserveId) external pure returns (uint256) {
-    return PositionStatus.isolateUntil(word, reserveId);
+    return PositionStatusMap.isolateUntil(word, reserveId);
   }
 
   function isolateCollateral(uint256 word) external pure returns (uint256) {
-    return PositionStatus.isolateCollateral(word);
+    return PositionStatusMap.isolateCollateral(word);
   }
 
   function isolateCollateralUntil(
     uint256 word,
     uint256 reserveCount
   ) external pure returns (uint256) {
-    return PositionStatus.isolateCollateralUntil(word, reserveCount);
+    return PositionStatusMap.isolateCollateralUntil(word, reserveCount);
   }
 
   function next(uint256 startReserveId) external view returns (uint256, bool, bool) {

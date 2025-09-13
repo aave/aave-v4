@@ -16,7 +16,7 @@ import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.s
 import {Constants} from 'src/libraries/helpers/Constants.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
-import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
+import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 import {IHubBase} from 'src/interfaces/IHubBase.sol';
@@ -28,7 +28,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using WadRayMath for uint256;
   using PercentageMath for *;
   using KeyValueListInMemory for KeyValueListInMemory.List;
-  using PositionStatus for *;
+  using PositionStatusMap for *;
   using MathUtils for *;
 
   IAaveOracle public oracle;
@@ -790,7 +790,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     bool collateral;
     while (true) {
       (reserveId, borrowing, collateral) = positionStatus.next(reserveId);
-      if (reserveId == PositionStatus.NOT_FOUND) break;
+      if (reserveId == PositionStatusMap.NOT_FOUND) break;
 
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       DataTypes.Reserve storage reserve = _reserves[reserveId];
@@ -908,7 +908,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
 
     uint256 reserveId = _reserveCount;
-    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatus.NOT_FOUND) {
+    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       uint256 assetId = _reserves[reserveId].assetId;
       IHubBase hub = _reserves[reserveId].hub;
@@ -950,7 +950,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     uint256 reserveId = _reserveCount;
 
-    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatus.NOT_FOUND) {
+    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
       DataTypes.Reserve storage reserve = _reserves[reserveId];
       // validation should already have occurred during liquidation
@@ -985,7 +985,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   function _refreshDynamicConfig(address user) internal {
     uint256 reserveId = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-    while ((reserveId = positionStatus.nextCollateral(reserveId)) != PositionStatus.NOT_FOUND) {
+    while ((reserveId = positionStatus.nextCollateral(reserveId)) != PositionStatusMap.NOT_FOUND) {
       _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
     }
     emit RefreshAllUserDynamicConfig(user);

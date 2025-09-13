@@ -7,7 +7,7 @@ import {IHubBase} from 'src/interfaces/IHubBase.sol';
 import {ISpoke, ISpokeBase} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 import {Constants} from 'src/libraries/helpers/Constants.sol';
-import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
+import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -18,7 +18,7 @@ library LiquidationLogic {
   using WadRayMath for uint256;
   using MathUtils for *;
   using SafeCast for *;
-  using PositionStatus for DataTypes.PositionStatus;
+  using PositionStatusMap for DataTypes.PositionStatus;
 
   struct ValidateLiquidationCallParams {
     address user;
