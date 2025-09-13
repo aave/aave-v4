@@ -7,16 +7,12 @@ import {Spoke} from 'src/contracts/Spoke.sol';
 
 /**
  * @title SpokeInstance
- * @author Aave
- * @notice Implementation contract for the Spoke contract.
+ * @author Aave Labs
+ * @notice Implementation contract for the Spoke.
  */
 contract SpokeInstance is Spoke {
   uint64 public constant SPOKE_REVISION = 1;
 
-  /**
-   * @dev Constructor
-   * @dev It disables the initializers.
-   */
   constructor() {
     _disableInitializers();
   }
