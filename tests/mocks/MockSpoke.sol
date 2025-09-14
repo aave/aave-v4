@@ -19,7 +19,7 @@ contract MockSpoke is Spoke {
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
     Reserve storage reserve = _reserves[reserveId];
-    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    UserPosition storage userPosition = _userPositions[_positionIdentifier(reserveId, onBehalfOf)];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     uint256 assetId = reserve.assetId;
     IHubBase hub = reserve.hub;
