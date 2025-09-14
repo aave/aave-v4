@@ -62,6 +62,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   }
 
   struct PositionStatus {
+    bool hasRiskPremium;
     mapping(uint256 slot => uint256) map;
   }
 
