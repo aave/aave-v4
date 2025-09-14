@@ -14,14 +14,14 @@ contract SpokeConfigTest is SpokeBase {
       vm.getNonce(address(this))
     );
     address oracle = makeAddr('AaveOracle');
-    SpokeInstance instance = new SpokeInstance(oracle);
+    ISpoke instance = Deploy.deploySpokeInstance(oracle);
     assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
     assertEq(instance.ORACLE(), oracle);
   }
 
   function test_spoke_deploy_revertsWith_InvalidAddress() public {
     vm.expectRevert(ISpoke.InvalidAddress.selector);
-    new SpokeInstance(address(0));
+    Deploy.deploySpokeInstance(address(0));
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(

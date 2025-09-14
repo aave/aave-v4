@@ -336,6 +336,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     bytes32 s
   ) external;
 
+  function initialize(address authority) external;
+
   /**
    * @notice Returns the maximum allowed value for an asset identifier.
    * @return The maximum asset identifier value (inclusive).

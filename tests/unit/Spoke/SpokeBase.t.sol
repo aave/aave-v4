@@ -1004,7 +1004,7 @@ contract SpokeBase is Base {
     uint256 reserveId,
     uint256 debtAmount
   ) internal {
-    address mockSpoke = address(new MockSpoke(spoke.ORACLE()));
+    address mockSpoke = address(Deploy.deployMockSpokeInstance(1, spoke.ORACLE()));
 
     address implementation = _getImplementationAddress(address(spoke));
 
@@ -1012,9 +1012,13 @@ contract SpokeBase is Base {
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(address(mockSpoke), '');
 
     vm.prank(user);
-    MockSpoke(address(spoke)).borrowWithoutHfCheck(reserveId, debtAmount, user);
+    IMockSpoke(address(spoke)).borrowWithoutHfCheck(reserveId, debtAmount, user);
 
     vm.prank(_getProxyAdminAddress(address(spoke)));
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
   }
+}
+
+interface IMockSpoke {
+  function borrowWithoutHfCheck(uint256, uint256, address) external;
 }

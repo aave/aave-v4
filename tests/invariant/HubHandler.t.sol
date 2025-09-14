@@ -2,21 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Test} from 'forge-std/Test.sol';
-
-import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
-import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
-import {Hub} from 'src/hub/Hub.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
-import {AaveOracle} from 'src/spoke/AaveOracle.sol';
-import {Spoke} from 'src/spoke/Spoke.sol';
-import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
-import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
-import {MockPriceFeed} from '../mocks/MockPriceFeed.sol';
-import '../mocks/MockERC20.sol';
-import '../Utils.sol';
+import 'tests/Base.t.sol';
 
 contract HubHandler is Test {
   IERC20 public usdc;
@@ -24,8 +10,8 @@ contract HubHandler is Test {
   IERC20 public usdt;
 
   IPriceOracle public oracle;
-  Hub public hub1;
-  Spoke public spoke1;
+  IHub public hub1;
+  ISpoke public spoke1;
   TreasurySpoke public treasurySpoke;
   AccessManager public accessManager;
   AssetInterestRateStrategy irStrategy;
@@ -44,17 +30,17 @@ contract HubHandler is Test {
   function setUp() public {
     vm.startPrank(hubAdmin);
     accessManager = new AccessManager(hubAdmin);
-    hub1 = new Hub(address(accessManager));
+    hub1 = Deploy.deployHub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     address predictedOracle = vm.computeCreateAddress(hubAdmin, vm.getNonce(hubAdmin) + 1);
-    address spokeImpl = address(new SpokeInstance(predictedOracle));
+    address spokeImpl = address(Deploy.deploySpokeInstance(predictedOracle));
     oracle = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
-    spoke1 = Spoke(
+    spoke1 = ISpoke(
       address(
         new TransparentUpgradeableProxy(
           spokeImpl,
           hubAdmin,
-          abi.encodeCall(Spoke.initialize, (address(accessManager)))
+          abi.encodeCall(ISpoke.initialize, (address(accessManager)))
         )
       )
     );
@@ -166,7 +152,7 @@ contract HubHandler is Test {
     //   : hub1.getTotalAssets(assetId) / reserveData.suppliedShares;
   }
 
-  function _deployMockPriceFeed(Spoke spoke, uint256 price) internal returns (address) {
+  function _deployMockPriceFeed(ISpoke spoke, uint256 price) internal returns (address) {
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
   }

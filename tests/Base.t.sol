@@ -40,18 +40,17 @@ import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
 
 // hub
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
-import {Hub, IHub, IHubBase} from 'src/hub/Hub.sol';
+import {IHub, IHubBase} from 'src/hub/Hub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
-import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
+import {ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
-import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
@@ -62,6 +61,7 @@ import {SignatureGateway, ISignatureGateway} from 'src/position-manager/Signatur
 
 // test
 import {Constants} from 'tests/Constants.sol';
+import {Deploy} from 'tests/Deploy.sol';
 import {Utils} from 'tests/Utils.sol';
 
 // mocks
@@ -70,9 +70,7 @@ import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
-import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
-import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 
 abstract contract Base is Test {
   using WadRayMath for uint256;
@@ -270,7 +268,7 @@ abstract contract Base is Test {
   function deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
     accessManager = new AccessManager(ADMIN);
-    hub1 = new Hub(address(accessManager));
+    hub1 = Deploy.deployHub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
@@ -849,7 +847,7 @@ abstract contract Base is Test {
    */
   function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager2 = new AccessManager(ADMIN);
-    IHub hub2 = new Hub(address(accessManager2));
+    IHub hub2 = Deploy.deployHub(address(accessManager2));
     vm.label(address(hub2), 'Hub2');
     AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
 
@@ -916,7 +914,7 @@ abstract contract Base is Test {
    */
   function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager3 = new AccessManager(ADMIN);
-    IHub hub3 = new Hub(address(accessManager3));
+    IHub hub3 = Deploy.deployHub(address(accessManager3));
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
     // Configure IR Strategy for hub 3
@@ -1991,9 +1989,9 @@ abstract contract Base is Test {
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
     address predictedOracle = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
-    address spokeImpl = address(new SpokeInstance(predictedOracle));
+    address spokeImpl = address(Deploy.deploySpokeInstance(predictedOracle));
     ISpoke spoke = ISpoke(
-      _proxify(spokeImpl, proxyAdminOwner, abi.encodeCall(Spoke.initialize, (_accessManager)))
+      _proxify(spokeImpl, proxyAdminOwner, abi.encodeCall(ISpoke.initialize, (_accessManager)))
     );
     vm.prank(deployer);
     IAaveOracle oracle = new AaveOracle(address(spoke), 8, _oracleDesc);

@@ -13,6 +13,18 @@ bytecode_hash = "none"
 gas_snapshot_check = false
 gas_limit = 1099511627776
 
+additional_compiler_profiles = [
+    { name = "hub", via_ir = true, optimizer_runs = 4444444 },
+    { name = "spoke", via_ir = true, optimizer_runs = 200 },
+]
+
+compilation_restrictions = [
+    { paths = "src/hub/Hub.sol", via_ir = true, optimizer_runs = 4444444 },
+    { paths = "src/spoke/SpokeInstance.sol", via_ir = true, optimizer_runs = 200 },
+    { paths = "tests/mocks/MockSpokeInstance.sol", via_ir = true, optimizer_runs = 200 },
+]
+
+
 [bind_json]
 out = "tests/mocks/JsonBindings.sol"
 include = ["src/libraries/types/EIP712Types.sol"]
