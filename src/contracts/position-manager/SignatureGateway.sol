@@ -11,7 +11,7 @@ import {EIP712} from 'src/contracts/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/contracts/libraries/math/MathUtils.sol';
 import {Rescuable} from 'src/contracts/utils/Rescuable.sol';
 import {Multicall} from 'src/contracts/utils/Multicall.sol';
-import {ISpoke} from 'src/contracts/interfaces/ISpoke.sol';
+import {ISpoke} from 'src/contracts/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/contracts/position-manager/interfaces/ISignatureGateway.sol';
 
 /**

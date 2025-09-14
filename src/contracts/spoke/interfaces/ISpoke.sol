@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {IAccessManaged} from 'src/contracts/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/contracts/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/contracts/hub/interfaces/IHubBase.sol';
-import {ISpokeBase} from 'src/contracts/interfaces/ISpokeBase.sol';
+import {ISpokeBase} from 'src/contracts/spoke/interfaces/ISpokeBase.sol';
 
 /**
  * @title ISpoke

@@ -39,8 +39,6 @@ import {Rescuable, IRescuable} from 'src/contracts/utils/Rescuable.sol';
 import {UnitPriceFeed} from 'src/contracts/misc/UnitPriceFeed.sol';
 
 // hub
-import {IPriceOracle} from 'src/contracts/hub/interfaces/IPriceOracle.sol';
-import {AaveOracle, IAaveOracle} from 'src/contracts/contracts/hub/AaveOracle.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/contracts/hub/HubConfigurator.sol';
 import {Hub, IHub, IHubBase} from 'src/contracts/hub/Hub.sol';
 import {SharesMath} from 'src/contracts/hub/libraries/SharesMath.sol';
@@ -49,6 +47,9 @@ import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRat
 // spoke
 import {Spoke, ISpoke, ISpokeBase} from 'src/contracts/spoke/Spoke.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/spoke/TreasurySpoke.sol';
+import {IPriceOracle} from 'src/contracts/spoke/interfaces/IPriceOracle.sol';
+import {AaveOracle} from 'src/contracts/spoke/AaveOracle.sol';
+import {IAaveOracle} from 'src/contracts/spoke/interfaces/IAaveOracle.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/contracts/spoke/SpokeConfigurator.sol';
 import {SpokeInstance} from 'src/contracts/spoke/instances/SpokeInstance.sol';
 import {PositionStatusMap} from 'src/contracts/spoke/libraries/PositionStatusMap.sol';
@@ -57,6 +58,7 @@ import {KeyValueList} from 'src/contracts/spoke/libraries/KeyValueList.sol';
 
 // position manager
 import {NativeTokenGateway, INativeTokenGateway} from 'src/contracts/position-manager/NativeTokenGateway.sol';
+import {SignatureGateway, ISignatureGateway} from 'src/contracts/position-manager/SignatureGateway.sol';
 
 // test
 import {Constants} from 'tests/Constants.sol';

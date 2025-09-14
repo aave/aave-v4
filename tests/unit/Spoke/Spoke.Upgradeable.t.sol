@@ -2,9 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Initializable} from 'src/contracts/dependencies/openzeppelin-upgradeable/Initializable.sol';
-import {IERC1967} from 'src/contracts/dependencies/openzeppelin/IERC1967.sol';
-import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeUpgradeableTest is SpokeBase {

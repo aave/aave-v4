@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {KeyValueList} from 'src/contracts/spoke/libraries/KeyValueList.sol';
 
 contract SpokeBase is Base {
   using SafeCast for *;

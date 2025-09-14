@@ -10,13 +10,13 @@ import {EIP712} from 'src/contracts/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/contracts/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/libraries/math/WadRayMath.sol';
-import {KeyValueList} from 'src/contracts/spoke/libraries/helpers/KeyValueList.sol';
-import {LiquidationLogic} from 'src/contracts/spoke/libraries/logic/LiquidationLogic.sol';
-import {PositionStatusMap} from 'src/contracts/spoke/libraries/configuration/PositionStatusMap.sol';
+import {KeyValueList} from 'src/contracts/spoke/libraries/KeyValueList.sol';
+import {LiquidationLogic} from 'src/contracts/spoke/libraries/LiquidationLogic.sol';
+import {PositionStatusMap} from 'src/contracts/spoke/libraries/PositionStatusMap.sol';
 import {Multicall} from 'src/contracts/utils/Multicall.sol';
-import {IAaveOracle} from 'src/contracts/interfaces/IAaveOracle.sol';
+import {IAaveOracle} from 'src/contracts/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/contracts/hub/interfaces/IHubBase.sol';
-import {ISpokeBase, ISpoke} from 'src/contracts/interfaces/ISpoke.sol';
+import {ISpokeBase, ISpoke} from 'src/contracts/spoke/interfaces/ISpoke.sol';
 
 abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;

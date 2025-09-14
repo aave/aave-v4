@@ -10,8 +10,8 @@ import {SafeCast} from 'src/contracts/dependencies/openzeppelin/SafeCast.sol';
 import {MathUtils} from 'src/contracts/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/libraries/math/WadRayMath.sol';
-import {AssetLogic} from 'src/contracts/hub/libraries/logic/AssetLogic.sol';
-import {SharesMath} from 'src/contracts/hub/libraries/math/SharesMath.sol';
+import {AssetLogic} from 'src/contracts/hub/libraries/AssetLogic.sol';
+import {SharesMath} from 'src/contracts/hub/libraries/SharesMath.sol';
 import {IBasicInterestRateStrategy} from 'src/contracts/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHubBase, IHub} from 'src/contracts/hub/interfaces/IHub.sol';
 
