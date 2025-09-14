@@ -71,8 +71,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(newSpoke),
       IHub.SpokeConfig({
         active: true,
-        addCap: Constants.SPOKE_MAX_CAP,
-        drawCap: Constants.SPOKE_MAX_CAP
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
       })
     );
     newHub.addSpoke(
@@ -80,8 +80,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(newSpoke),
       IHub.SpokeConfig({
         active: true,
-        addCap: Constants.SPOKE_MAX_CAP,
-        drawCap: Constants.SPOKE_MAX_CAP
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
       })
     );
     vm.stopPrank();
@@ -112,8 +112,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(spoke1),
       IHub.SpokeConfig({
         active: true,
-        addCap: Constants.SPOKE_MAX_CAP,
-        drawCap: Constants.SPOKE_MAX_CAP
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
       })
     );
     vm.stopPrank();

@@ -105,8 +105,8 @@ library LiquidationLogic {
   // see ISpoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD docs
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
-  // see ISpoke.MIN_LEFTOVER_BASE docs
-  uint256 constant MIN_LEFTOVER_BASE = 1000e26;
+  // see ISpoke.DUST_DEBT_LIQUIDATION_THRESHOLD docs
+  uint256 constant DUST_DEBT_LIQUIDATION_THRESHOLD = 1000e26;
 
   function calculateLiquidationBonus(
     uint256 healthFactorForMaxBonus,
@@ -192,7 +192,7 @@ library LiquidationLogic {
     uint256 remainingDebtInBaseCurrency = (params.debtReserveBalance - maxDebtToLiquidate)
       .mulDivDown(params.debtAssetPrice.toWad(), params.debtAssetUnit);
 
-    if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE) {
+    if (remainingDebtInBaseCurrency < DUST_DEBT_LIQUIDATION_THRESHOLD) {
       // target health factor is ignored to prevent leaving dust, only if the liquidator intends to fully cover the debt
       require(params.debtToCover >= params.debtReserveBalance, ISpoke.MustNotLeaveDust());
       maxDebtToLiquidate = params.debtReserveBalance;

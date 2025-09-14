@@ -135,7 +135,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
   function test_withdraw_fuzz_all_liquidity_with_interest_multi_user(
     MultiUserFuzzParams memory params
   ) public {
-    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_ASSET_ID);
+    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     params.aliceAmount = bound(params.aliceAmount, 1, MAX_SUPPLY_AMOUNT - 1);
     params.bobAmount = bound(params.bobAmount, 1, MAX_SUPPLY_AMOUNT - params.aliceAmount);
     params.skipTime[0] = bound(params.skipTime[0], 0, MAX_SKIP_TIME);

@@ -304,7 +304,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateCollateralRisk() public {
-    uint24 newCollateralRisk = Constants.MAX_COLLATERAL_RISK / 2;
+    uint24 newCollateralRisk = Constants.MAX_ALLOWED_COLLATERAL_RISK / 2;
 
     ISpoke.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
     expectedReserveConfig.collateralRisk = newCollateralRisk;

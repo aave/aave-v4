@@ -35,10 +35,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using MathUtils for *;
 
   /// @inheritdoc ISpoke
-  uint256 public constant MAX_ASSET_ID = type(uint16).max;
+  uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
 
   /// @inheritdoc ISpoke
-  uint24 public constant MAX_COLLATERAL_RISK = 1000_00; // 1000.00%
+  uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
 
   /// @inheritdoc ISpoke
   bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
@@ -50,7 +50,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
 
   /// @inheritdoc ISpoke
-  uint256 public constant MIN_LEFTOVER_BASE = LiquidationLogic.MIN_LEFTOVER_BASE;
+  uint256 public constant DUST_DEBT_LIQUIDATION_THRESHOLD =
+    LiquidationLogic.DUST_DEBT_LIQUIDATION_THRESHOLD;
 
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
@@ -111,7 +112,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint256) {
     require(hub != address(0), InvalidAddress());
-    require(assetId <= MAX_ASSET_ID, InvalidAssetId());
+    require(assetId <= MAX_ALLOWED_ASSET_ID, InvalidAssetId());
     require(!_reserveExists[hub][assetId], ReserveExists());
 
     _validateReserveConfig(config);
@@ -692,7 +693,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {
-    require(config.collateralRisk <= MAX_COLLATERAL_RISK, InvalidCollateralRisk());
+    require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
   }
 
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {

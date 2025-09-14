@@ -174,7 +174,7 @@ abstract contract Base is Test {
     ReserveInfo usdx;
     ReserveInfo usdy;
     ReserveInfo dai2; // Special case: dai listed twice on hub and spoke2 (unique assetIds)
-    uint256 MAX_ASSET_ID;
+    uint256 MAX_ALLOWED_ASSET_ID;
   }
 
   struct ReserveInfo {
@@ -403,8 +403,8 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      addCap: Constants.SPOKE_MAX_CAP,
-      drawCap: Constants.SPOKE_MAX_CAP
+      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });
 
     bytes memory encodedIrData = abi.encode(
