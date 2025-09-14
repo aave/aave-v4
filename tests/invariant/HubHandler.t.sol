@@ -4,14 +4,16 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
+import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
-import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
-import {AaveOracle} from 'src/contracts/AaveOracle.sol';
-import {Hub} from 'src/contracts/Hub.sol';
-import {Spoke} from 'src/contracts/Spoke.sol';
-import {TreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
+import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
+import {Hub} from 'src/hub/Hub.sol';
+import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {AaveOracle} from 'src/spoke/AaveOracle.sol';
+import {Spoke} from 'src/spoke/Spoke.sol';
+import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
+import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
 import {MockPriceFeed} from '../mocks/MockPriceFeed.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.sol';
@@ -39,14 +41,24 @@ contract HubHandler is Test {
 
   State internal s;
 
-  constructor() {
+  function setUp() public {
     vm.startPrank(hubAdmin);
     accessManager = new AccessManager(hubAdmin);
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
-    spoke1 = new Spoke(address(accessManager));
+    address predictedOracle = vm.computeCreateAddress(hubAdmin, vm.getNonce(hubAdmin) + 1);
+    address spokeImpl = address(new SpokeInstance(predictedOracle));
     oracle = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
-    spoke1.updateOracle(address(oracle));
+    spoke1 = Spoke(
+      address(
+        new TransparentUpgradeableProxy(
+          spokeImpl,
+          hubAdmin,
+          abi.encodeCall(Spoke.initialize, (address(accessManager)))
+        )
+      )
+    );
+    assertEq(address(oracle), predictedOracle, 'predictedOracle');
     treasurySpoke = new TreasurySpoke(hubAdmin, address(hub1));
     usdc = new MockERC20();
     dai = new MockERC20();
@@ -67,7 +79,7 @@ contract HubHandler is Test {
     hub1.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
     hub1.updateAssetConfig(
       0,
-      DataTypes.AssetConfig({
+      IHub.AssetConfig({
         feeReceiver: address(treasurySpoke),
         liquidityFee: 0,
         irStrategy: address(irStrategy),
@@ -79,8 +91,8 @@ contract HubHandler is Test {
       address(hub1),
       0,
       _deployMockPriceFeed(spoke1, 1e8),
-      DataTypes.ReserveConfig({frozen: false, paused: false, collateralRisk: 0, borrowable: false}),
-      DataTypes.DynamicReserveConfig({
+      ISpoke.ReserveConfig({frozen: false, paused: false, collateralRisk: 0, borrowable: false}),
+      ISpoke.DynamicReserveConfig({
         collateralFactor: 0,
         maxLiquidationBonus: 100_00,
         liquidationFee: 0
@@ -147,7 +159,7 @@ contract HubHandler is Test {
   function _updateState(uint256 assetId) internal {
     revert('implement me');
 
-    // DataTypes.Asset memory reserveData = hub1.getAsset(assetId);
+    // IHub.Asset memory reserveData = hub1.getAsset(assetId);
     // // todo: remove last exchange rate, bad idea to store like this, looses precision
     // s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
     //   ? 0
@@ -155,7 +167,7 @@ contract HubHandler is Test {
   }
 
   function _deployMockPriceFeed(Spoke spoke, uint256 price) internal returns (address) {
-    AaveOracle oracle = AaveOracle(address(spoke.oracle()));
+    AaveOracle oracle = AaveOracle(spoke.ORACLE());
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
   }
 }

@@ -7,7 +7,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeZeroPremiumDeltaTest is SpokeBase {
   using SafeCast for uint256;
 
-  DataTypes.PremiumDelta public zeroPremiumDelta;
+  IHubBase.PremiumDelta public zeroPremiumDelta;
 
   function setUp() public override {
     super.setUp();
@@ -17,7 +17,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     _openSupplyPosition(spoke1, _wbtcReserveId(spoke1), MAX_SUPPLY_AMOUNT);
     _openSupplyPosition(spoke1, _usdyReserveId(spoke1), MAX_SUPPLY_AMOUNT);
 
-    zeroPremiumDelta = DataTypes.PremiumDelta(0, 0, 0);
+    zeroPremiumDelta = IHubBase.PremiumDelta(0, 0, 0);
   }
 
   /// @dev Updating risk premium without change in accrued premium causes 0 premium delta
@@ -25,7 +25,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 50e6, alice);
 
-    assertEq(spoke1.getUserRiskPremium(alice), _getCollateralRisk(spoke1, _daiReserveId(spoke1)));
+    assertEq(_getUserRiskPremium(spoke1, alice), _getCollateralRisk(spoke1, _daiReserveId(spoke1)));
 
     // Updating risk premium without change in accrued premium, op skipped
     vm.expectCall(
@@ -36,7 +36,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
 
-    assertEq(spoke1.getUserRiskPremium(alice), _getCollateralRisk(spoke1, _daiReserveId(spoke1)));
+    assertEq(_getUserRiskPremium(spoke1, alice), _getCollateralRisk(spoke1, _daiReserveId(spoke1)));
   }
 
   /// @dev Updating risk premium with change in accrued premium causes non-zero premium delta
@@ -45,10 +45,10 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 50e6, alice);
 
     (, uint256 accruedPremium) = spoke1.getUserDebt(_usdxReserveId(spoke1), alice);
-    uint256 userRiskPremium = spoke1.getUserRiskPremium(alice);
+    uint256 userRiskPremium = _getUserRiskPremium(spoke1, alice);
     skip(123 days);
     (, uint256 accruedPremiumAfter) = spoke1.getUserDebt(_usdxReserveId(spoke1), alice);
-    uint256 userRiskPremiumAfter = spoke1.getUserRiskPremium(alice);
+    uint256 userRiskPremiumAfter = _getUserRiskPremium(spoke1, alice);
 
     assertGt(accruedPremiumAfter, accruedPremium);
     // user risk premium remains the same, but Premium Delta is non zero
@@ -64,25 +64,25 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
   function test_zeroCollateralRisk() public {
     _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
-    assertEq(spoke1.getUserRiskPremium(alice), 0);
+    assertEq(_getUserRiskPremium(spoke1, alice), 0);
 
     vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 0);
 
     // first borrow, 0 rp -> 0 rp
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 50e6, alice);
-    assertEq(spoke1.getUserRiskPremium(alice), 0);
+    assertEq(_getUserRiskPremium(spoke1, alice), 0);
 
     // second borrow, 0 rp -> 0 rp
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 10e6, alice);
-    assertEq(spoke1.getUserRiskPremium(alice), 0);
+    assertEq(_getUserRiskPremium(spoke1, alice), 0);
 
     // repay, 0 rp -> 0 rp
     Utils.repay(spoke1, _usdxReserveId(spoke1), alice, 20e6, alice);
-    assertEq(spoke1.getUserRiskPremium(alice), 0);
+    assertEq(_getUserRiskPremium(spoke1, alice), 0);
 
     // withdraw, 0 rp -> 0 rp
     Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, 10e18, alice);
-    assertEq(spoke1.getUserRiskPremium(alice), 0);
+    assertEq(_getUserRiskPremium(spoke1, alice), 0);
   }
 
   function test_nonZeroCollateralRisk() public {
@@ -94,7 +94,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
 
     // first borrow, 0 rp -> non zero rp
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 50e6, alice);
-    assertEq(spoke1.getUserRiskPremium(alice), collateralRisk);
+    assertEq(_getUserRiskPremium(spoke1, alice), collateralRisk);
 
     vm.expectCall(
       address(hub1),
@@ -104,15 +104,15 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
 
     // second borrow, non zero rp stays the same
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 10e6, alice);
-    assertEq(spoke1.getUserRiskPremium(alice), collateralRisk);
+    assertEq(_getUserRiskPremium(spoke1, alice), collateralRisk);
 
     // repay, 0 rp -> 0 rp
     Utils.repay(spoke1, _usdxReserveId(spoke1), alice, 20e6, alice);
-    assertEq(spoke1.getUserRiskPremium(alice), collateralRisk);
+    assertEq(_getUserRiskPremium(spoke1, alice), collateralRisk);
 
     // withdraw, 0 rp -> 0 rp
     Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, 10e18, alice);
-    assertEq(spoke1.getUserRiskPremium(alice), collateralRisk);
+    assertEq(_getUserRiskPremium(spoke1, alice), collateralRisk);
   }
 
   function test_zeroCollateralRisk_multiReserves() public {
@@ -128,12 +128,12 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
       0
     );
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice); // $1k
-    assertEq(spoke1.getUserRiskPremium(alice), 0);
+    assertEq(_getUserRiskPremium(spoke1, alice), 0);
 
     // second borrow covered by non zero CF asset, op not skipped
     vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector));
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 100e6, alice);
-    assertGt(spoke1.getUserRiskPremium(alice), 0);
+    assertGt(_getUserRiskPremium(spoke1, alice), 0);
   }
 
   function test_multiDebtReserves() public {
@@ -142,13 +142,13 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice); // $2k
 
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 100e6, alice); // $100
-    assertEq(spoke1.getUserRiskPremium(alice), collateralRisk);
+    assertEq(_getUserRiskPremium(spoke1, alice), collateralRisk);
 
     // only 1 op expected for dai; usdx is skipped
     vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 1);
 
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice); // $100
-    assertEq(spoke1.getUserRiskPremium(alice), collateralRisk);
+    assertEq(_getUserRiskPremium(spoke1, alice), collateralRisk);
   }
 
   function test_multiDebtReserves_accrual() public {
@@ -157,14 +157,14 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice); // $2k
 
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 100e6, alice); // $100
-    assertEq(spoke1.getUserRiskPremium(alice), collateralRisk);
+    assertEq(_getUserRiskPremium(spoke1, alice), collateralRisk);
 
     skip(123 days);
 
     // due to accrual, both borrowed reserves are refreshed
     vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 2);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice); // $100
-    assertEq(spoke1.getUserRiskPremium(alice), collateralRisk);
+    assertEq(_getUserRiskPremium(spoke1, alice), collateralRisk);
   }
 
   function test_withdraw_excess() public {
@@ -175,13 +175,13 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
     Utils.borrow(spoke1, _wethReserveId(spoke1), alice, 1e16, alice);
     Utils.borrow(spoke1, _wbtcReserveId(spoke1), alice, 1e4, alice);
 
-    uint256 userRiskPremium = spoke1.getUserRiskPremium(alice);
+    uint256 userRiskPremium = _getUserRiskPremium(spoke1, alice);
 
     // all ops skipped
     vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 0);
     // withdraw excess that doesnt change user rp
     Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, 10e18, alice);
     // user risk premium remains the same
-    assertEq(spoke1.getUserRiskPremium(alice), userRiskPremium);
+    assertEq(_getUserRiskPremium(spoke1, alice), userRiskPremium);
   }
 }

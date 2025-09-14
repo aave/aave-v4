@@ -23,16 +23,8 @@ contract SpokeRepayTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiBefore;
     Debts memory bobWethBefore;
     bobWethBefore.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
@@ -63,7 +55,7 @@ contract SpokeRepayTest is SpokeBase {
       daiAssetId
     );
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -82,12 +74,8 @@ contract SpokeRepayTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
 
     daiRepayAmount = baseRestored + premiumRestored;
 
@@ -123,7 +111,7 @@ contract SpokeRepayTest is SpokeBase {
 
     skip(365 days);
 
-    DataTypes.UserPosition memory pos = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
+    ISpoke.UserPosition memory pos = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
     assertGt(pos.drawnShares, 0, 'user drawnShares after repay');
     assertGt(hub1.convertToDrawnAssets(daiAssetId, pos.drawnShares), 0, 'user baseDrawnAssets');
 
@@ -155,16 +143,8 @@ contract SpokeRepayTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
     uint256 bobTotalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
@@ -173,7 +153,7 @@ contract SpokeRepayTest is SpokeBase {
       bob
     );
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -195,12 +175,8 @@ contract SpokeRepayTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     (uint256 bobWethDrawnDebtAfter, uint256 bobWethPremiumDebtAfter) = spoke1.getUserDebt(
       _wethReserveId(spoke1),
       bob
@@ -239,16 +215,8 @@ contract SpokeRepayTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiBefore;
     Debts memory bobWethBefore;
 
@@ -287,7 +255,7 @@ contract SpokeRepayTest is SpokeBase {
       daiAssetId
     );
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -305,12 +273,8 @@ contract SpokeRepayTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiAfter;
 
     (bobDaiAfter.drawnDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
@@ -363,16 +327,8 @@ contract SpokeRepayTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
     uint256 bobDaiDebtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
@@ -401,7 +357,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount;
     daiRepayAmount = bound(daiRepayAmount, 1, bobDaiPremiumDebtBefore);
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -413,12 +369,8 @@ contract SpokeRepayTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
     assertApproxEqAbs(
@@ -459,11 +411,7 @@ contract SpokeRepayTest is SpokeBase {
     // Bob borrows DAI
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiBefore;
     Debts memory bobWethBefore;
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
@@ -493,7 +441,7 @@ contract SpokeRepayTest is SpokeBase {
     // Calculate full debt before repayment
     uint256 fullDebt = bobDaiBefore.drawnDebt + bobDaiBefore.premiumDebt;
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -567,16 +515,8 @@ contract SpokeRepayTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiBefore;
     Debts memory bobWethBefore;
     bobWethBefore.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
@@ -604,7 +544,7 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     {
-      DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -624,12 +564,8 @@ contract SpokeRepayTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobWethAfter = getUserDebt(spoke1, bob, _wethReserveId(spoke1));
     daiRepayAmount = baseRestored + premiumRestored;
@@ -680,16 +616,8 @@ contract SpokeRepayTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiBefore;
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
     (bobDaiBefore.drawnDebt, bobDaiBefore.premiumDebt) = spoke1.getUserDebt(
@@ -731,7 +659,7 @@ contract SpokeRepayTest is SpokeBase {
       daiAssetId
     );
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -750,12 +678,8 @@ contract SpokeRepayTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
@@ -817,16 +741,8 @@ contract SpokeRepayTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
     Debts memory bobDaiBefore;
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
@@ -862,7 +778,7 @@ contract SpokeRepayTest is SpokeBase {
     deal(address(tokenList.dai), bob, daiRepayAmount);
 
     {
-      DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -885,12 +801,8 @@ contract SpokeRepayTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     uint256 bobDaiAfterTotalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
     daiRepayAmount = baseRestored + premiumRestored;
 
@@ -938,16 +850,8 @@ contract SpokeRepayTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
     Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
@@ -988,7 +892,7 @@ contract SpokeRepayTest is SpokeBase {
         daiRepayAmount,
         daiAssetId
       );
-      DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -1001,12 +905,8 @@ contract SpokeRepayTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiAfter;
     bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
@@ -1060,16 +960,8 @@ contract SpokeRepayTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
 
@@ -1110,7 +1002,7 @@ contract SpokeRepayTest is SpokeBase {
     );
     deal(address(tokenList.dai), bob, daiRepayAmount);
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -1132,12 +1024,8 @@ contract SpokeRepayTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
@@ -1192,16 +1080,8 @@ contract SpokeRepayTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
 
@@ -1234,7 +1114,7 @@ contract SpokeRepayTest is SpokeBase {
     deal(address(tokenList.dai), bob, daiRepayAmount);
 
     {
-      DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -1258,12 +1138,8 @@ contract SpokeRepayTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
@@ -1567,11 +1443,7 @@ contract SpokeRepayTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     assertEq(bobDaiDataBefore.drawnShares, expectedDrawnShares, 'bob drawn shares');
     assertEq(
       tokenList.dai.balanceOf(bob),
@@ -1600,7 +1472,7 @@ contract SpokeRepayTest is SpokeBase {
     bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 bobTotalDebtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),

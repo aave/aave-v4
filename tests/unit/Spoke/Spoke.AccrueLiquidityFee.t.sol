@@ -65,7 +65,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     uint256 drawnRate = hub1.getAssetDrawnRate(assetId);
     uint256 initialBaseIndex = hub1.getAsset(assetId).drawnIndex;
-    uint256 userRp = spoke1.getUserRiskPremium(bob);
+    uint256 userRp = _getUserRiskPremium(spoke1, bob);
 
     // withdraw any treasury fees
     withdrawLiquidityFees(assetId, type(uint256).max);
@@ -73,7 +73,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // Time passes
     skip(skipTime);
 
-    DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(reserveId, bob);
+    ISpoke.UserPosition memory bobPosition = spoke1.getUserPosition(reserveId, bob);
     {
       uint256 drawnDebt = _calculateExpectedDrawnDebt(borrowAmount, drawnRate, startTime);
       uint256 expectedpremiumShares = bobPosition.drawnShares.percentMulUp(userRp);

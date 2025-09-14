@@ -57,14 +57,14 @@ contract HubOperations_Gas_Tests is Base {
     skip(1000);
 
     (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
-    hub1.restore(daiAssetId, drawnRemaining / 2, 0, DataTypes.PremiumDelta(0, 0, 0), alice);
+    hub1.restore(daiAssetId, drawnRemaining / 2, 0, IHubBase.PremiumDelta(0, 0, 0), alice);
     // todo: do refresh call to fully encapsulate a `hub1.restore` call
     vm.snapshotGasLastCall('Hub.Operations', 'restore: partial');
 
     skip(100);
 
     (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
-    hub1.restore(daiAssetId, drawnRemaining, 0, DataTypes.PremiumDelta(0, 0, 0), alice);
+    hub1.restore(daiAssetId, drawnRemaining, 0, IHubBase.PremiumDelta(0, 0, 0), alice);
     vm.snapshotGasLastCall('Hub.Operations', 'restore: full');
     vm.stopPrank();
   }
@@ -90,7 +90,7 @@ contract HubOperations_Gas_Tests is Base {
     skip(100);
 
     vm.prank(address(spoke1));
-    hub1.refreshPremium(daiAssetId, DataTypes.PremiumDelta(2, 1, -1));
+    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(2, 1, -1));
     vm.snapshotGasLastCall('Hub.Operations', 'refreshPremium');
   }
 }

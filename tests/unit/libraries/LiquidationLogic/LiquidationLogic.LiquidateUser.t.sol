@@ -12,9 +12,9 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   uint256 usdxReserveId;
   uint256 wethReserveId;
 
-  DataTypes.LiquidationConfig liquidationConfig;
-  DataTypes.DynamicReserveConfig dynamicCollateralConfig;
-  DataTypes.LiquidateUserParams params;
+  ISpoke.LiquidationConfig liquidationConfig;
+  ISpoke.DynamicReserveConfig dynamicCollateralConfig;
+  LiquidationLogic.LiquidateUserParams params;
 
   // variable liquidation bonus is max: 120%
   // liquidation penalty: 1.2 * 0.5 = 0.6
@@ -31,7 +31,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     // Mock params
     usdxReserveId = _usdxReserveId(spoke1);
     wethReserveId = _wethReserveId(spoke1);
-    params = DataTypes.LiquidateUserParams({
+    params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: usdxReserveId,
       debtReserveId: wethReserveId,
       oracle: address(oracle1),
@@ -48,10 +48,10 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     });
 
     // Set liquidationLogicWrapper as a spoke
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      addCap: Constants.MAX_CAP,
-      drawCap: Constants.MAX_CAP
+      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });
     vm.startPrank(HUB_ADMIN);
     hub1.addSpoke(usdxAssetId, address(liquidationLogicWrapper), spokeConfig);
@@ -74,7 +74,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setBorrowingStatus(wethReserveId, true);
 
     // Mock storage for liquidation config
-    liquidationConfig = DataTypes.LiquidationConfig({
+    liquidationConfig = ISpoke.LiquidationConfig({
       healthFactorForMaxBonus: 0.8e18,
       liquidationBonusFactor: 50_00,
       targetHealthFactor: 1e18
@@ -82,7 +82,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     updateStorage(liquidationConfig);
 
     // Mock storage for dynamic collateral config
-    dynamicCollateralConfig = DataTypes.DynamicReserveConfig({
+    dynamicCollateralConfig = ISpoke.DynamicReserveConfig({
       maxLiquidationBonus: 120_00,
       collateralFactor: 50_00,
       liquidationFee: 10_00
@@ -101,7 +101,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     vm.startPrank(address(liquidationLogicWrapper));
     hub2.refreshPremium(
       wethAssetId,
-      DataTypes.PremiumDelta(
+      IHubBase.PremiumDelta(
         hub2.previewRestoreByAssets(wethAssetId, 1e6 * 1e18).toInt256(),
         1e6 * 1e18,
         0
@@ -122,7 +122,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     vm.prank(address(liquidationLogicWrapper));
     hub2.refreshPremium(
       wethAssetId,
-      DataTypes.PremiumDelta(-1e3 * 1e18, -1e3 * 1e18, realizedPremium.toInt256())
+      IHubBase.PremiumDelta(-1e3 * 1e18, -1e3 * 1e18, realizedPremium.toInt256())
     );
     liquidationLogicWrapper.setDebtPositionRealizedPremium(realizedPremium);
 
@@ -147,7 +147,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     uint256 initialHub2Balance = tokenList.weth.balanceOf(address(hub2));
     uint256 initialLiquidatorWethBalance = tokenList.weth.balanceOf(address(params.liquidator));
 
-    DataTypes.UserPosition memory debtPosition = liquidationLogicWrapper.getDebtPosition();
+    ISpoke.UserPosition memory debtPosition = liquidationLogicWrapper.getDebtPosition();
 
     uint256 feeShares = hub1.previewRemoveByAssets(usdxAssetId, 6000e6) -
       hub1.previewRemoveByAssets(usdxAssetId, 5900e6);
@@ -174,7 +174,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
           wethAssetId,
           2e18,
           0.5e18,
-          DataTypes.PremiumDelta(
+          IHubBase.PremiumDelta(
             -debtPosition.premiumShares.toInt256(),
             -debtPosition.premiumOffset.toInt256(),
             0.2e18 - 0.5e18
@@ -212,11 +212,11 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.liquidateUser(params);
   }
 
-  function updateStorage(DataTypes.LiquidationConfig memory liquidationConfig) internal {
+  function updateStorage(ISpoke.LiquidationConfig memory liquidationConfig) internal {
     liquidationLogicWrapper.setLiquidationConfig(liquidationConfig);
   }
 
-  function updateStorage(DataTypes.DynamicReserveConfig memory dynamicCollateralConfig) internal {
+  function updateStorage(ISpoke.DynamicReserveConfig memory dynamicCollateralConfig) internal {
     liquidationLogicWrapper.setDynamicCollateralConfig(dynamicCollateralConfig);
   }
 }

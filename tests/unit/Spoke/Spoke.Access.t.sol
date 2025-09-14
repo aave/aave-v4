@@ -21,10 +21,10 @@ contract SpokeAccessTest is SpokeBase {
     hub1.draw(daiAssetId, 1000e18, bob);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
-    hub1.restore(daiAssetId, 1000e18, 0, DataTypes.PremiumDelta(0, 0, 0), bob);
+    hub1.restore(daiAssetId, 1000e18, 0, IHubBase.PremiumDelta(0, 0, 0), bob);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
-    hub1.refreshPremium(daiAssetId, DataTypes.PremiumDelta(0, 0, 0));
+    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(0, 0, 0));
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
     hub1.payFee(daiAssetId, 1000e18);
@@ -39,9 +39,9 @@ contract SpokeAccessTest is SpokeBase {
     deal(address(tokenList.dai), address(spoke1), 1000e18);
     hub1.add(daiAssetId, 1000e18, address(spoke1));
     hub1.draw(daiAssetId, 500e18, address(spoke1));
-    hub1.restore(daiAssetId, 500e18, 0, DataTypes.PremiumDelta(0, 0, 0), address(spoke1));
+    hub1.restore(daiAssetId, 500e18, 0, IHubBase.PremiumDelta(0, 0, 0), address(spoke1));
     hub1.remove(daiAssetId, 1000e18, address(spoke1));
-    hub1.refreshPremium(daiAssetId, DataTypes.PremiumDelta(0, 0, 0));
+    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(0, 0, 0));
     hub1.add(daiAssetId, 1000e18, address(spoke1));
     hub1.payFee(daiAssetId, 1e18);
     hub1.transferShares(
@@ -59,7 +59,7 @@ contract SpokeAccessTest is SpokeBase {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
     spoke1.updateLiquidationConfig(
-      DataTypes.LiquidationConfig({
+      ISpoke.LiquidationConfig({
         targetHealthFactor: WadRayMath.WAD.toUint128(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18
@@ -69,7 +69,7 @@ contract SpokeAccessTest is SpokeBase {
     // Spoke admin can call updateLiquidationConfig
     vm.prank(address(SPOKE_ADMIN));
     spoke1.updateLiquidationConfig(
-      DataTypes.LiquidationConfig({
+      ISpoke.LiquidationConfig({
         targetHealthFactor: WadRayMath.WAD.toUint128(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18
@@ -85,8 +85,8 @@ contract SpokeAccessTest is SpokeBase {
       address(hub1),
       dai2AssetId,
       reserveSource,
-      DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
-      DataTypes.DynamicReserveConfig({
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
+      ISpoke.DynamicReserveConfig({
         collateralFactor: 75_00,
         maxLiquidationBonus: 100_00,
         liquidationFee: 0
@@ -99,8 +99,8 @@ contract SpokeAccessTest is SpokeBase {
       address(hub1),
       dai2AssetId,
       reserveSource,
-      DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
-      DataTypes.DynamicReserveConfig({
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
+      ISpoke.DynamicReserveConfig({
         collateralFactor: 75_00,
         maxLiquidationBonus: 100_00,
         liquidationFee: 0
@@ -113,14 +113,14 @@ contract SpokeAccessTest is SpokeBase {
     );
     spoke1.updateReserveConfig(
       _daiReserveId(spoke1),
-      DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0})
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0})
     );
 
     // Spoke admin can call updateReserveConfig
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReserveConfig(
       _daiReserveId(spoke1),
-      DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0})
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0})
     );
 
     // addDynamicReserveConfig only callable by spoke admin
@@ -129,7 +129,7 @@ contract SpokeAccessTest is SpokeBase {
     );
     spoke1.addDynamicReserveConfig(
       _daiReserveId(spoke1),
-      DataTypes.DynamicReserveConfig({
+      ISpoke.DynamicReserveConfig({
         collateralFactor: 75_00,
         maxLiquidationBonus: 100_00,
         liquidationFee: 0
@@ -140,7 +140,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addDynamicReserveConfig(
       _daiReserveId(spoke1),
-      DataTypes.DynamicReserveConfig({
+      ISpoke.DynamicReserveConfig({
         collateralFactor: 75_00,
         maxLiquidationBonus: 100_00,
         liquidationFee: 0
@@ -181,7 +181,7 @@ contract SpokeAccessTest is SpokeBase {
     // Spoke admin can call update liquidation config on the spoke after authority change
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(
-      DataTypes.LiquidationConfig({
+      ISpoke.LiquidationConfig({
         targetHealthFactor: WadRayMath.WAD.toUint128(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18
@@ -198,8 +198,8 @@ contract SpokeAccessTest is SpokeBase {
       address(hub1),
       5,
       reserveSource,
-      DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
-      DataTypes.DynamicReserveConfig({
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
+      ISpoke.DynamicReserveConfig({
         collateralFactor: 75_00,
         maxLiquidationBonus: 100_00,
         liquidationFee: 0
@@ -217,8 +217,8 @@ contract SpokeAccessTest is SpokeBase {
       address(hub1),
       5,
       reserveSource,
-      DataTypes.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
-      DataTypes.DynamicReserveConfig({
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
+      ISpoke.DynamicReserveConfig({
         collateralFactor: 75_00,
         maxLiquidationBonus: 100_00,
         liquidationFee: 0
