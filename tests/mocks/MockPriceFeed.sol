@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {AggregatorV3Interface} from 'src/contracts/dependencies/chainlink/AggregatorV3Interface.sol';
+import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
 
 contract MockPriceFeed is AggregatorV3Interface {
   uint8 public immutable override decimals;

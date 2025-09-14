@@ -2,11 +2,11 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
-import {IERC20Metadata} from 'src/contracts/dependencies/openzeppelin/IERC20Metadata.sol';
-import {Ownable2Step, Ownable} from 'src/contracts/dependencies/openzeppelin/Ownable2Step.sol';
-import {SafeCast} from 'src/contracts/dependencies/openzeppelin/SafeCast.sol';
-import {IHub} from 'src/contracts/hub/interfaces/IHub.sol';
-import {IHubConfigurator} from 'src/contracts/hub/interfaces/IHubConfigurator.sol';
+import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 
 /**
  * @title HubConfigurator

@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IPriceOracle} from 'src/contracts/spoke/interfaces/IPriceOracle.sol';
+import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 
 /**
  * @title IAaveOracle

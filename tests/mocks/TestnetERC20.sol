@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {ERC20} from 'src/contracts/dependencies/openzeppelin/ERC20.sol';
-import {IERC20Permit} from 'src/contracts/dependencies/openzeppelin/IERC20Permit.sol';
+import {ERC20} from 'src/dependencies/openzeppelin/ERC20.sol';
+import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 
 /**
  * @title TestnetERC20

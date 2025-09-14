@@ -10,55 +10,55 @@ import {Vm, VmSafe} from 'forge-std/Vm.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
-import {AggregatorV3Interface} from 'src/contracts/dependencies/chainlink/AggregatorV3Interface.sol';
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/contracts/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
-import {IERC20Metadata} from 'src/contracts/dependencies/openzeppelin/IERC20Metadata.sol';
-import {SafeCast} from 'src/contracts/dependencies/openzeppelin/SafeCast.sol';
-import {IERC20Errors} from 'src/contracts/dependencies/openzeppelin/IERC20Errors.sol';
-import {IERC20} from 'src/contracts/dependencies/openzeppelin/IERC20.sol';
-import {IERC5267} from 'src/contracts/dependencies/openzeppelin/IERC5267.sol';
-import {AccessManager} from 'src/contracts/dependencies/openzeppelin/AccessManager.sol';
-import {IAccessManager} from 'src/contracts/dependencies/openzeppelin/IAccessManager.sol';
-import {IAccessManaged} from 'src/contracts/dependencies/openzeppelin/IAccessManaged.sol';
-import {AuthorityUtils} from 'src/contracts/dependencies/openzeppelin/AuthorityUtils.sol';
-import {Ownable2Step, Ownable} from 'src/contracts/dependencies/openzeppelin/Ownable2Step.sol';
-import {Math} from 'src/contracts/dependencies/openzeppelin/Math.sol';
-import {WETH9} from 'src/contracts/dependencies/weth/WETH9.sol';
-import {LibBit} from 'src/contracts/dependencies/solady/LibBit.sol';
+import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
+import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {IERC5267} from 'src/dependencies/openzeppelin/IERC5267.sol';
+import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
+import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
+import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
+import {Math} from 'src/dependencies/openzeppelin/Math.sol';
+import {WETH9} from 'src/dependencies/weth/WETH9.sol';
+import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 
-import {Initializable} from 'src/contracts/dependencies/openzeppelin-upgradeable/Initializable.sol';
-import {IERC1967} from 'src/contracts/dependencies/openzeppelin/IERC1967.sol';
+import {Initializable} from 'src/dependencies/openzeppelin-upgradeable/Initializable.sol';
+import {IERC1967} from 'src/dependencies/openzeppelin/IERC1967.sol';
 
 // shared
-import {WadRayMath} from 'src/contracts/libraries/math/WadRayMath.sol';
-import {MathUtils} from 'src/contracts/libraries/math/MathUtils.sol';
-import {PercentageMath} from 'src/contracts/libraries/math/PercentageMath.sol';
-import {EIP712Types} from 'src/contracts/libraries/types/EIP712Types.sol';
-import {Roles} from 'src/contracts/libraries/types/Roles.sol';
-import {Rescuable, IRescuable} from 'src/contracts/utils/Rescuable.sol';
-import {UnitPriceFeed} from 'src/contracts/misc/UnitPriceFeed.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
+import {Roles} from 'src/libraries/types/Roles.sol';
+import {Rescuable, IRescuable} from 'src/utils/Rescuable.sol';
+import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
 
 // hub
-import {HubConfigurator, IHubConfigurator} from 'src/contracts/hub/HubConfigurator.sol';
-import {Hub, IHub, IHubBase} from 'src/contracts/hub/Hub.sol';
-import {SharesMath} from 'src/contracts/hub/libraries/SharesMath.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/contracts/hub/AssetInterestRateStrategy.sol';
+import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
+import {Hub, IHub, IHubBase} from 'src/hub/Hub.sol';
+import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
+import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
-import {Spoke, ISpoke, ISpokeBase} from 'src/contracts/spoke/Spoke.sol';
-import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/spoke/TreasurySpoke.sol';
-import {IPriceOracle} from 'src/contracts/spoke/interfaces/IPriceOracle.sol';
-import {AaveOracle} from 'src/contracts/spoke/AaveOracle.sol';
-import {IAaveOracle} from 'src/contracts/spoke/interfaces/IAaveOracle.sol';
-import {SpokeConfigurator, ISpokeConfigurator} from 'src/contracts/spoke/SpokeConfigurator.sol';
-import {SpokeInstance} from 'src/contracts/spoke/instances/SpokeInstance.sol';
-import {PositionStatusMap} from 'src/contracts/spoke/libraries/PositionStatusMap.sol';
-import {LiquidationLogic} from 'src/contracts/spoke/libraries/LiquidationLogic.sol';
-import {KeyValueList} from 'src/contracts/spoke/libraries/KeyValueList.sol';
+import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
+import {TreasurySpoke, ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
+import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
+import {AaveOracle} from 'src/spoke/AaveOracle.sol';
+import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
+import {SpokeConfigurator, ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
+import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
+import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
+import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
+import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 
 // position manager
-import {NativeTokenGateway, INativeTokenGateway} from 'src/contracts/position-manager/NativeTokenGateway.sol';
-import {SignatureGateway, ISignatureGateway} from 'src/contracts/position-manager/SignatureGateway.sol';
+import {NativeTokenGateway, INativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
+import {SignatureGateway, ISignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 
 // test
 import {Constants} from 'tests/Constants.sol';

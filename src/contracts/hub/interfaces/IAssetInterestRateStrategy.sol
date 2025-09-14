@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
-import {IBasicInterestRateStrategy} from 'src/contracts/hub/interfaces/IBasicInterestRateStrategy.sol';
+import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 
 /**
  * @title IAssetInterestRateStrategy

@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
-import {MathUtils} from 'src/contracts/libraries/math/MathUtils.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 /// forge-config: default.allow_internal_expect_revert = true
 contract MathUtilsTest is Test {

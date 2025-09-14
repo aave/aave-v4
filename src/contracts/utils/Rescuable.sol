@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {SafeERC20} from 'src/contracts/dependencies/openzeppelin/SafeERC20.sol';
-import {Address} from 'src/contracts/dependencies/openzeppelin/Address.sol';
-import {IERC20} from 'src/contracts/dependencies/openzeppelin/IERC20.sol';
-import {IRescuable} from 'src/contracts/interfaces/IRescuable.sol';
+import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {Address} from 'src/dependencies/openzeppelin/Address.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
 abstract contract Rescuable is IRescuable {
   using SafeERC20 for IERC20;

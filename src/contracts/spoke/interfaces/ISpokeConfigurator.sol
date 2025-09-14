@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {ISpoke} from 'src/contracts/spoke/interfaces/ISpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /**
  * @title ISpokeConfigurator

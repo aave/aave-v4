@@ -2,15 +2,15 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {ReentrancyGuardTransient} from 'src/contracts/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
-import {Ownable2Step, Ownable} from 'src/contracts/dependencies/openzeppelin/Ownable2Step.sol';
-import {SafeERC20} from 'src/contracts/dependencies/openzeppelin/SafeERC20.sol';
-import {Address} from 'src/contracts/dependencies/openzeppelin/Address.sol';
-import {MathUtils} from 'src/contracts/libraries/math/MathUtils.sol';
-import {Rescuable} from 'src/contracts/utils/Rescuable.sol';
-import {ISpoke} from 'src/contracts/spoke/interfaces/ISpoke.sol';
-import {INativeWrapper} from 'src/contracts/position-manager/interfaces/INativeWrapper.sol';
-import {INativeTokenGateway} from 'src/contracts/position-manager/interfaces/INativeTokenGateway.sol';
+import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
+import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {Address} from 'src/dependencies/openzeppelin/Address.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {Rescuable} from 'src/utils/Rescuable.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {INativeWrapper} from 'src/position-manager/interfaces/INativeWrapper.sol';
+import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
 
 /**
  * @title NativeTokenGateway

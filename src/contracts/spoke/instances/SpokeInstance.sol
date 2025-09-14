@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Spoke} from 'src/contracts/spoke/Spoke.sol';
+import {Spoke} from 'src/spoke/Spoke.sol';
 
 /**
  * @title SpokeInstance

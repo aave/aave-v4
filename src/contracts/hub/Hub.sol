@@ -2,18 +2,18 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {EnumerableSet} from 'src/contracts/dependencies/openzeppelin/EnumerableSet.sol';
-import {SafeERC20} from 'src/contracts/dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from 'src/contracts/dependencies/openzeppelin/IERC20.sol';
-import {AccessManaged} from 'src/contracts/dependencies/openzeppelin/AccessManaged.sol';
-import {SafeCast} from 'src/contracts/dependencies/openzeppelin/SafeCast.sol';
-import {MathUtils} from 'src/contracts/libraries/math/MathUtils.sol';
-import {PercentageMath} from 'src/contracts/libraries/math/PercentageMath.sol';
-import {WadRayMath} from 'src/contracts/libraries/math/WadRayMath.sol';
-import {AssetLogic} from 'src/contracts/hub/libraries/AssetLogic.sol';
-import {SharesMath} from 'src/contracts/hub/libraries/SharesMath.sol';
-import {IBasicInterestRateStrategy} from 'src/contracts/hub/interfaces/IBasicInterestRateStrategy.sol';
-import {IHubBase, IHub} from 'src/contracts/hub/interfaces/IHub.sol';
+import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
+import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {AssetLogic} from 'src/hub/libraries/AssetLogic.sol';
+import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
+import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
+import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;

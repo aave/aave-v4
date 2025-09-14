@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IHubBase} from 'src/contracts/hub/interfaces/IHubBase.sol';
-import {ISpokeBase} from 'src/contracts/spoke/interfaces/ISpokeBase.sol';
+import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
+import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 
 /**
  * @title ITreasurySpoke

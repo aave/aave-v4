@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.24;
 
-import {IERC1271} from 'src/contracts/dependencies/openzeppelin/IERC1271.sol';
+import {IERC1271} from 'src/dependencies/openzeppelin/IERC1271.sol';
 
 contract MockERC1271Wallet is IERC1271 {
   address public owner;

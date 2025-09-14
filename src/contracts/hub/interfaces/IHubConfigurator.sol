@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IHub} from 'src/contracts/hub/interfaces/IHub.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 /**
  * @title IHubConfigurator

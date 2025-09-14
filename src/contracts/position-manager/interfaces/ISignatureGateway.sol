@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IMulticall} from 'src/contracts/interfaces/IMulticall.sol';
-import {IRescuable} from 'src/contracts/interfaces/IRescuable.sol';
+import {IMulticall} from 'src/interfaces/IMulticall.sol';
+import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
 interface ISignatureGateway is IMulticall, IRescuable {
   /**

@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IAccessManaged} from 'src/contracts/dependencies/openzeppelin/IAccessManaged.sol';
-import {IHubBase} from 'src/contracts/hub/interfaces/IHubBase.sol';
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
+import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 
 /**
  * @title IHub

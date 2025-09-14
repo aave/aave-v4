@@ -4,16 +4,16 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
-import {TransparentUpgradeableProxy} from 'src/contracts/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
-import {IERC20} from 'src/contracts/dependencies/openzeppelin/IERC20.sol';
-import {AccessManager} from 'src/contracts/dependencies/openzeppelin/AccessManager.sol';
-import {IPriceOracle} from 'src/contracts/spoke/interfaces/IPriceOracle.sol';
-import {Hub} from 'src/contracts/hub/Hub.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/contracts/hub/AssetInterestRateStrategy.sol';
-import {AaveOracle} from 'src/contracts/spoke/AaveOracle.sol';
-import {Spoke} from 'src/contracts/spoke/Spoke.sol';
-import {TreasurySpoke} from 'src/contracts/spoke/TreasurySpoke.sol';
-import {SpokeInstance} from 'src/contracts/spoke/instances/SpokeInstance.sol';
+import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
+import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
+import {Hub} from 'src/hub/Hub.sol';
+import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {AaveOracle} from 'src/spoke/AaveOracle.sol';
+import {Spoke} from 'src/spoke/Spoke.sol';
+import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
+import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
 import {MockPriceFeed} from '../mocks/MockPriceFeed.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.sol';

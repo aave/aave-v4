@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {SafeCast} from 'src/contracts/dependencies/openzeppelin/SafeCast.sol';
-import {Ownable2Step, Ownable} from 'src/contracts/dependencies/openzeppelin/Ownable2Step.sol';
-import {ISpoke} from 'src/contracts/spoke/interfaces/ISpoke.sol';
-import {ISpokeConfigurator} from 'src/contracts/spoke/interfaces/ISpokeConfigurator.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
 /**
  * @title SpokeConfigurator

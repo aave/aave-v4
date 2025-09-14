@@ -18,7 +18,7 @@ out = "tests/mocks/JsonBindings.sol"
 include = ["src/libraries/types/EIP712Types.sol"]
 
 [lint]
-ignore = ["src/contracts/dependencies/**/*", "tests/**/*"]
+ignore = ["src/dependencies/**/*", "tests/**/*"]
 lint_on_build = false
 
 [profile.default.fuzz]

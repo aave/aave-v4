@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {MathUtils} from 'src/contracts/libraries/math/MathUtils.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 library SharesMath {
   using MathUtils for uint256;

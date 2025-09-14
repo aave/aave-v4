@@ -2,13 +2,13 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {SafeCast} from 'src/contracts/dependencies/openzeppelin/SafeCast.sol';
-import {MathUtils} from 'src/contracts/libraries/math/MathUtils.sol';
-import {PercentageMath} from 'src/contracts/libraries/math/PercentageMath.sol';
-import {WadRayMath} from 'src/contracts/libraries/math/WadRayMath.sol';
-import {SharesMath} from 'src/contracts/hub/libraries/SharesMath.sol';
-import {IBasicInterestRateStrategy} from 'src/contracts/hub/interfaces/IBasicInterestRateStrategy.sol';
-import {IHub} from 'src/contracts/hub/interfaces/IHub.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
+import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 library AssetLogic {
   using AssetLogic for IHub.Asset;

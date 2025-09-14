@@ -2,21 +2,21 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {SafeCast} from 'src/contracts/dependencies/openzeppelin/SafeCast.sol';
-import {IERC20Permit} from 'src/contracts/dependencies/openzeppelin/IERC20Permit.sol';
-import {SignatureChecker} from 'src/contracts/dependencies/openzeppelin/SignatureChecker.sol';
-import {AccessManagedUpgradeable} from 'src/contracts/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
-import {EIP712} from 'src/contracts/dependencies/solady/EIP712.sol';
-import {MathUtils} from 'src/contracts/libraries/math/MathUtils.sol';
-import {PercentageMath} from 'src/contracts/libraries/math/PercentageMath.sol';
-import {WadRayMath} from 'src/contracts/libraries/math/WadRayMath.sol';
-import {KeyValueList} from 'src/contracts/spoke/libraries/KeyValueList.sol';
-import {LiquidationLogic} from 'src/contracts/spoke/libraries/LiquidationLogic.sol';
-import {PositionStatusMap} from 'src/contracts/spoke/libraries/PositionStatusMap.sol';
-import {Multicall} from 'src/contracts/utils/Multicall.sol';
-import {IAaveOracle} from 'src/contracts/spoke/interfaces/IAaveOracle.sol';
-import {IHubBase} from 'src/contracts/hub/interfaces/IHubBase.sol';
-import {ISpokeBase, ISpoke} from 'src/contracts/spoke/interfaces/ISpoke.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
+import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
+import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {EIP712} from 'src/dependencies/solady/EIP712.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
+import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
+import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
+import {Multicall} from 'src/utils/Multicall.sol';
+import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
+import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
+import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;

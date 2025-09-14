@@ -2,14 +2,14 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {SafeCast} from 'src/contracts/dependencies/openzeppelin/SafeCast.sol';
-import {MathUtils} from 'src/contracts/libraries/math/MathUtils.sol';
-import {PercentageMath} from 'src/contracts/libraries/math/PercentageMath.sol';
-import {WadRayMath} from 'src/contracts/libraries/math/WadRayMath.sol';
-import {PositionStatusMap} from 'src/contracts/spoke/libraries/PositionStatusMap.sol';
-import {IHubBase} from 'src/contracts/hub/interfaces/IHubBase.sol';
-import {IAaveOracle} from 'src/contracts/spoke/interfaces/IAaveOracle.sol';
-import {ISpoke, ISpokeBase} from 'src/contracts/spoke/interfaces/ISpoke.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
+import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
+import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
+import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 
 library LiquidationLogic {
   using SafeCast for *;

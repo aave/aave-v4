@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Arrays} from 'src/contracts/dependencies/openzeppelin/Arrays.sol';
+import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
 
 /**
  * @notice Library to pack key-value pairs in a list.

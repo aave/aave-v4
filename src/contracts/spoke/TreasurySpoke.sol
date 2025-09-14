@@ -2,12 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Ownable} from 'src/contracts/dependencies/openzeppelin/Ownable.sol';
-import {SafeERC20} from 'src/contracts/dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from 'src/contracts/dependencies/openzeppelin/IERC20.sol';
-import {MathUtils} from 'src/contracts/libraries/math/MathUtils.sol';
-import {IHubBase} from 'src/contracts/hub/interfaces/IHubBase.sol';
-import {ITreasurySpoke, ISpokeBase} from 'src/contracts/spoke/interfaces/ITreasurySpoke.sol';
+import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
+import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
+import {ITreasurySpoke, ISpokeBase} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 
 /**
  * @title TreasurySpoke

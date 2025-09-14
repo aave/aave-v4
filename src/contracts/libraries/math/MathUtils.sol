@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {WadRayMath} from 'src/contracts/libraries/math/WadRayMath.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 
 /**
  * @title MathUtils library

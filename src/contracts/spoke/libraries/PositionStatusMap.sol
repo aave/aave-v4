@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {LibBit} from 'src/contracts/dependencies/solady/LibBit.sol';
-import {ISpoke} from 'src/contracts/spoke/interfaces/ISpoke.sol';
+import {LibBit} from 'src/dependencies/solady/LibBit.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /**
  * @title PositionStatus

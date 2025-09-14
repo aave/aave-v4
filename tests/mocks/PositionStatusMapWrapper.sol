@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
-import {PositionStatusMap} from 'src/contracts/spoke/libraries/PositionStatusMap.sol';
-import {ISpoke} from 'src/contracts/spoke/interfaces/ISpoke.sol';
+import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 contract PositionStatusMapWrapper {
   using PositionStatusMap for ISpoke.PositionStatus;

@@ -2,17 +2,17 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Ownable2Step, Ownable} from 'src/contracts/dependencies/openzeppelin/Ownable2Step.sol';
-import {SignatureChecker} from 'src/contracts/dependencies/openzeppelin/SignatureChecker.sol';
-import {IERC20Permit} from 'src/contracts/dependencies/openzeppelin/IERC20Permit.sol';
-import {SafeERC20} from 'src/contracts/dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from 'src/contracts/dependencies/openzeppelin/IERC20.sol';
-import {EIP712} from 'src/contracts/dependencies/solady/EIP712.sol';
-import {MathUtils} from 'src/contracts/libraries/math/MathUtils.sol';
-import {Rescuable} from 'src/contracts/utils/Rescuable.sol';
-import {Multicall} from 'src/contracts/utils/Multicall.sol';
-import {ISpoke} from 'src/contracts/spoke/interfaces/ISpoke.sol';
-import {ISignatureGateway} from 'src/contracts/position-manager/interfaces/ISignatureGateway.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
+import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
+import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
+import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {EIP712} from 'src/dependencies/solady/EIP712.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {Rescuable} from 'src/utils/Rescuable.sol';
+import {Multicall} from 'src/utils/Multicall.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
 
 /**
  * @title SignatureGateway
