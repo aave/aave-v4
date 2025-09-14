@@ -29,7 +29,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(daiReserveId, maxDebtAmount, bob);
 
     // valid HF after borrow
-    assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot borrow a non trivial amount that brings HF below threshold
     vm.prank(bob);
@@ -60,13 +60,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.prank(bob);
     spoke1.borrow(daiReserveId, maxDebtAmount, bob);
 
-    assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // accrue debt to decrease HF
     skip(365 days);
 
     // now HF is < 1
-    assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
@@ -103,12 +103,12 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.prank(bob);
     spoke1.borrow(daiReserveId, maxDebtAmount, bob);
 
-    assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     // accrue debt to decrease HF
     skip(skipTime);
 
     // ensure enough time passes to reduce HF < 1
-    vm.assume(spoke1.getHealthFactor(bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    vm.assume(_getUserHealthFactor(spoke1, bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
@@ -154,7 +154,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
 
     // valid HF
-    assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot borrow more dai
     vm.prank(bob);
@@ -214,7 +214,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
 
     // valid HF
-    assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to low debt/coll amounts
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to low debt/coll amounts
 
     // todo: should these failed amounts be 1? Could be off due to extremely edge low debt/coll amounts
     uint256 daiFailedBorrowAmount = daiDebtAmount; // some amount guaranteed to cause HF < 1
@@ -272,12 +272,12 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
 
     // valid HF
-    assertApproxEqAbs(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD, 1);
+    assertApproxEqAbs(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD, 1);
 
     skip(365 days);
 
     // after accrual, invalid HF
-    assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot borrow more dai
     vm.prank(bob);
@@ -337,10 +337,10 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
 
     // valid HF
-    assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE for edge cases of coll/debt amount, ie 1
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE for edge cases of coll/debt amount, ie 1
 
     skip(skipTime);
-    vm.assume(spoke1.getHealthFactor(bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    vm.assume(_getUserHealthFactor(spoke1, bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot borrow more dai
     vm.prank(bob);
@@ -376,11 +376,11 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.prank(bob);
     spoke1.borrow(daiReserveId, maxDebtAmount, bob);
 
-    assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
     _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
-    assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
@@ -420,11 +420,11 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.prank(bob);
     spoke1.borrow(daiReserveId, maxDebtAmount, bob);
 
-    assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop so that bob is undercollateralized
     _mockReservePrice(spoke1, wethReserveId, newPrice);
-    assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
@@ -469,7 +469,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot borrow more usdx
     vm.prank(bob);
@@ -521,7 +521,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases of coll/debt ratios
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases of coll/debt ratios
 
     // cannot borrow more usdx
     vm.prank(bob);
@@ -569,13 +569,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // skip time to accrue debt and reduce HF < 1
     skip(365 days);
 
     // invalid HF
-    assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot borrow more usdx
     vm.prank(bob);
@@ -629,13 +629,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases of coll/debt ratios
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases of coll/debt ratios
 
     // skip time to accrue debt and reduce HF < 1
     skip(skipTime);
 
     // invalid HF
-    vm.assume(spoke1.getHealthFactor(bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    vm.assume(_getUserHealthFactor(spoke1, bob) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     vm.assume(hub1.getLiquidity(usdxAssetId) > 0);
 
     // cannot borrow more usdx
@@ -684,13 +684,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
     _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
 
     // invalid HF
-    assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot borrow more usdx
     vm.prank(bob);
@@ -745,13 +745,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases
 
     // collateral price drop by half so that bob is undercollateralized
     _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
 
     // invalid HF
-    assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot borrow more usdx
     vm.prank(bob);
@@ -799,13 +799,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
     _mockReservePriceByPercent(spoke1, daiReserveId, 50_00);
 
     // invalid HF
-    assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot borrow more usdx
     vm.prank(bob);
@@ -859,13 +859,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertGe(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases
 
     // collateral price drop by half so that bob is undercollateralized
     _mockReservePriceByPercent(spoke1, daiReserveId, 50_00);
 
     // invalid HF
-    assertLt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot borrow more usdx
     vm.prank(bob);

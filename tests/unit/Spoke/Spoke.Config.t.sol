@@ -79,7 +79,7 @@ contract SpokeConfigTest is SpokeBase {
     newReserveConfig.collateralRisk = bound(
       newReserveConfig.collateralRisk,
       0,
-      Constants.MAX_COLLATERAL_RISK
+      Constants.MAX_ALLOWED_COLLATERAL_RISK
     ).toUint24();
 
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -154,7 +154,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_fuzz_revertsWith_AssetNotListed() public {
-    uint256 assetId = vm.randomUint(hub1.getAssetCount(), Constants.MAX_RESERVE_ID); // non-existing asset id
+    uint256 assetId = vm.randomUint(hub1.getAssetCount(), Constants.MAX_ALLOWED_ASSET_ID); // non-existing asset id
 
     ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
       paused: true,
@@ -252,7 +252,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(ADMIN);
     spoke1.addReserve(
       address(hub1),
-      Constants.MAX_RESERVE_ID + 1, // invalid assetId
+      Constants.MAX_ALLOWED_ASSET_ID + 1, // invalid assetId
       address(0),
       newReserveConfig,
       newDynReserveConfig

@@ -231,7 +231,7 @@ contract NativeTokenGatewayTest is Base {
     });
 
     skip(322 days);
-    vm.assume(hub1.getAssetAddedAmount(wethAssetId) > supplyAmount);
+    vm.assume(hub1.getAddedAssets(wethAssetId) > supplyAmount);
     uint256 repayAmount = spoke1.getReserveTotalDebt(_wethReserveId(spoke1));
     deal(address(tokenList.weth), bob, repayAmount);
 

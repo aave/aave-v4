@@ -50,8 +50,8 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     // Set liquidationLogicWrapper as a spoke
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      addCap: Constants.SPOKE_MAX_CAP,
-      drawCap: Constants.SPOKE_MAX_CAP
+      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });
     vm.startPrank(HUB_ADMIN);
     hub1.addSpoke(usdxAssetId, address(liquidationLogicWrapper), spokeConfig);

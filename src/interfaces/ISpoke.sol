@@ -336,26 +336,37 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     bytes32 s
   ) external;
 
-  function MAX_RESERVE_ID() external view returns (uint256);
+  /**
+   * @notice Returns the maximum allowed value for an asset identifier.
+   * @return The maximum asset identifier value (inclusive).
+   */
+  function MAX_ALLOWED_ASSET_ID() external view returns (uint256);
 
   /**
    * @notice Returns the type hash for the SetUserPositionManager intent.
+   * @return The bytes-encoded EIP-712 struct hash representing the intent.
    */
   function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32);
 
+  /**
+   * @notice Returns the minimum health factor below which a position is considered unhealthy and subject to liquidation.
+   * @return The minimum health factor considered healthy, expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
+   */
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint64);
 
   /**
-   * @dev This constant represents the minimum amount of assets in base currency that need to be leftover after a liquidation, if not clearing collateral on a position completely.
-   * @notice The default value assumes that the basePrice is usd denominated by 26 decimals.
+   * @notice Returns the minimum required remaining base currency amount after a partial liquidation.
+   * @return The minimum debt amount considered as dust, denominated in USD with 26 decimals.
    */
-  function MIN_LEFTOVER_BASE() external view returns (uint256);
+  function DUST_DEBT_LIQUIDATION_THRESHOLD() external view returns (uint256);
 
-  function MAX_COLLATERAL_RISK() external view returns (uint24);
+  /**
+   * @notice Returns the maximum allowed collateral risk value for a reserve.
+   * @return The maximum collateral risk value, expressed in bps (e.g. 100_00 is 100.00%).
+   */
+  function MAX_ALLOWED_COLLATERAL_RISK() external view returns (uint24);
 
   function ORACLE() external view returns (address);
-
-  function getHealthFactor(address user) external view returns (uint256);
 
   function getReserve(uint256 reserveId) external view returns (Reserve memory);
 
@@ -376,8 +387,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     uint256 reserveId,
     address user
   ) external view returns (UserPosition memory);
-
-  function getUserRiskPremium(address user) external view returns (uint256);
 
   function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
 

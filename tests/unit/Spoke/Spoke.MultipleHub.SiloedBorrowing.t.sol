@@ -59,7 +59,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(newSpoke),
       IHub.SpokeConfig({
         active: true,
-        addCap: Constants.SPOKE_MAX_CAP,
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: siloedVars.assetBDrawCap
       })
     );
@@ -89,8 +89,8 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(spoke1),
       IHub.SpokeConfig({
         active: true,
-        addCap: Constants.SPOKE_MAX_CAP,
-        drawCap: Constants.SPOKE_MAX_CAP
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
       })
     );
 
@@ -143,7 +143,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       'bob using asset A as collateral on new spoke'
     );
     assertEq(
-      hub1.getAssetAddedAmount(siloedVars.assetAId),
+      hub1.getAddedAssets(siloedVars.assetAId),
       assetAAddCapAmount,
       'total supplied amount of asset A on canonical hub'
     );

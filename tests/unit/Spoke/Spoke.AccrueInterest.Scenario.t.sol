@@ -136,7 +136,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     }
 
     // Check Bob's risk premium
-    uint256 bobRp = spoke2.getUserRiskPremium(bob);
+    uint256 bobRp = _getUserRiskPremium(spoke2, bob);
     assertEq(bobRp, _calculateExpectedUserRP(bob, spoke2), 'user risk premium Before');
 
     // Store base borrow rates
@@ -431,7 +431,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     );
 
     // Only proceed with test if position is healthy
-    if (spoke2.getHealthFactor(bob) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
+    if (_getUserHealthFactor(spoke2, bob) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
       // Supply more collateral to ensure bob can borrow more dai to trigger accrual
       deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT);
       Utils.supplyCollateral(spoke2, _dai2ReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);

@@ -159,7 +159,7 @@ contract SpokeGettersTest is SpokeBase {
     );
 
     // Asset supply
-    assertEq(hub1.getAssetAddedAmount(assetId), supplyAmount);
-    assertEq(hub1.getAssetAddedShares(assetId), hub1.convertToAddedShares(assetId, supplyAmount));
+    assertEq(hub1.getAddedAssets(assetId), supplyAmount);
+    assertEq(hub1.getAddedShares(assetId), hub1.convertToAddedShares(assetId, supplyAmount));
   }
 }
