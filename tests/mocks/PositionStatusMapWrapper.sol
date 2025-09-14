@@ -3,6 +3,7 @@
 pragma solidity ^0.8.10;
 
 import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
+import {Mapping} from 'src/libraries/types/Mapping.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
 contract PositionStatusMapWrapper {
@@ -92,9 +93,10 @@ contract PositionStatusMapWrapper {
     return _p.nextCollateral(startReserveId);
   }
 
-  function slot() external pure returns (bytes32 s) {
+  function slot() external view returns (bytes32 s) {
+    Mapping storage map = _p.config;
     assembly ('memory-safe') {
-      s := _p.slot
+      s := map.slot
     }
   }
 }

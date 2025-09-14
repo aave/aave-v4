@@ -303,4 +303,5 @@ library PositionStatusMap {
       ret := and(word, shr(sub(256, shl(1, mod(reserveCount, 128))), COLLATERAL_MASK))
     }
   }
+
 }
