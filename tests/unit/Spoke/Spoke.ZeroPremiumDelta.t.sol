@@ -8,6 +8,7 @@ contract SpokeZeroPremiumDeltaTest is SpokeBase {
   using SafeCast for uint256;
 
   DataTypes.PremiumDelta public zeroPremiumDelta;
+
   function setUp() public override {
     super.setUp();
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT);
