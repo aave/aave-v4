@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
-import {KeyValueList} from 'src/libraries/helpers/KeyValueList.sol';
+import {KeyValueList} from 'src/contracts/spoke/libraries/KeyValueList.sol';
 
 contract KeyValueListTest is Test {
   using KeyValueList for KeyValueList.List;

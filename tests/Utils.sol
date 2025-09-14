@@ -3,10 +3,9 @@
 pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {IHub, IHubBase} from 'src/interfaces/IHub.sol';
-import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {IERC20} from 'src/contracts/dependencies/openzeppelin/IERC20.sol';
+import {IHub, IHubBase} from 'src/contracts/hub/interfaces/IHub.sol';
+import {ISpokeBase, ISpoke} from 'src/contracts/spoke/interfaces/ISpoke.sol';
 
 library Utils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));

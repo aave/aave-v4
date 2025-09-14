@@ -2,11 +2,11 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
-import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {IHub} from 'src/interfaces/IHub.sol';
-import {ISpoke} from 'src/interfaces/ISpoke.sol';
-import {PositionStatusMap} from 'src/libraries/configuration/PositionStatusMap.sol';
-import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
+import {SafeCast} from 'src/contracts/dependencies/openzeppelin/SafeCast.sol';
+import {IHub} from 'src/contracts/hub/interfaces/IHub.sol';
+import {ISpoke} from 'src/contracts/spoke/interfaces/ISpoke.sol';
+import {PositionStatusMap} from 'src/contracts/spoke/libraries/PositionStatusMap.sol';
+import {LiquidationLogic} from 'src/contracts/spoke/libraries/LiquidationLogic.sol';
 
 contract LiquidationLogicWrapper {
   using SafeCast for uint256;

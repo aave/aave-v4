@@ -2,9 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
-import {LiquidationLogicWrapper} from 'tests/mocks/LiquidationLogicWrapper.sol';
 import 'tests/unit/Spoke/SpokeBase.t.sol';
+import {LiquidationLogicWrapper} from 'tests/mocks/LiquidationLogicWrapper.sol';
 
 contract LiquidationLogicBaseTest is SpokeBase {
   using PercentageMath for uint256;

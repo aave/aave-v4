@@ -6,7 +6,7 @@ import 'forge-std/Test.sol';
 import 'forge-std/StdInvariant.sol';
 import './HubHandler.t.sol';
 
-import {Hub} from 'src/contracts/Hub.sol';
+import {Hub} from 'src/contracts/hub/Hub.sol';
 
 contract HubInvariant is StdInvariant, Test {
   HubHandler hubHandler;

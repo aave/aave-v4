@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {SignatureGateway, ISignatureGateway} from 'src/misc/SignatureGateway.sol';
 
 contract SignatureGatewayBaseTest is Base {
   using stdStorage for StdStorage;

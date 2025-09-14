@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
-import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {PercentageMath} from 'src/contracts/libraries/math/PercentageMath.sol';
 
 contract PercentageMathWrapper {
   function PERCENTAGE_FACTOR() public pure returns (uint256) {
