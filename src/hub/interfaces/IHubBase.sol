@@ -31,6 +31,7 @@ interface IHubBase {
     uint256 premiumAmount
   );
   event RefreshPremium(uint256 indexed assetId, address indexed spoke, PremiumDelta premiumDelta);
+  event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
 
   /**
    * @notice Add asset on behalf of user.

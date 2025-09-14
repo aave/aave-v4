@@ -102,7 +102,7 @@ contract HubPayFeeTest is HubBase {
     );
 
     vm.expectEmit(address(hub1));
-    emit IHub.TransferShares(
+    emit IHubBase.TransferShares(
       daiAssetId,
       feeShares,
       address(spoke1),
