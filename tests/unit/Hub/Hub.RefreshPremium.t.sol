@@ -31,7 +31,7 @@ contract HubRefreshPremiumTest is HubBase {
       realizedDelta: 1
     });
     vm.expectEmit(address(hub1));
-    emit IHub.RefreshPremium(daiAssetId, address(spoke1), premiumDelta);
+    emit IHubBase.RefreshPremium(daiAssetId, address(spoke1), premiumDelta);
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);

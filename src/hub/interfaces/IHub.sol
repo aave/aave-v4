@@ -75,7 +75,6 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 drawnRate,
     uint256 latestUpdateTimestamp
   );
-  event RefreshPremium(uint256 indexed assetId, address indexed spoke, PremiumDelta premiumDelta);
   event ReportDeficit(
     uint256 indexed assetId,
     address indexed spoke,
