@@ -28,7 +28,7 @@ contract Hub is IHub, AccessManaged {
   using MathUtils for *;
 
   /// @inheritdoc IHub
-  uint8 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
+  uint8 public constant MAX_ALLOWED_UNDERLYING_DECIMALS = 18;
 
   /// @inheritdoc IHub
   uint56 public constant MAX_ALLOWED_SPOKE_CAP = type(uint56).max;
@@ -59,7 +59,7 @@ contract Hub is IHub, AccessManaged {
       underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
       InvalidAddress()
     );
-    require(decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
+    require(decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS, InvalidAssetDecimals());
 
     uint256 assetId = _assetCount++;
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
