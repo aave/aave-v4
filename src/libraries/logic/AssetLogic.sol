@@ -103,7 +103,6 @@ library AssetLogic {
       assetId: assetId,
       liquidity: asset.liquidity,
       drawn: asset.drawn(),
-      premium: asset.premium(),
       deficit: asset.deficit,
       swept: asset.swept
     });

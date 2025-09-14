@@ -270,13 +270,13 @@ contract HubAddTest is HubBase {
 
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
-    (uint256 drawnBefore, uint256 premiumBefore) = hub1.getAssetOwed(assetId);
+    (uint256 drawnBefore, ) = hub1.getAssetOwed(assetId);
     uint256 liquidityBefore = hub1.getLiquidity(assetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, liquidityBefore + amount, drawnBefore, premiumBefore, 0, 0)
+        (assetId, liquidityBefore + amount, drawnBefore, 0, 0)
       )
     );
 
@@ -512,13 +512,13 @@ contract HubAddTest is HubBase {
     uint256 addedAssetsBefore = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
     uint256 addedSharesBefore = hub1.getAssetAddedShares(daiAssetId);
 
-    (uint256 drawnBefore, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
+    (uint256 drawnBefore, ) = hub1.getAssetOwed(daiAssetId);
     uint256 liquidityBefore = hub1.getLiquidity(daiAssetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (daiAssetId, liquidityBefore + addAmount, drawnBefore, premiumBefore, 0, 0)
+        (daiAssetId, liquidityBefore + addAmount, drawnBefore, 0, 0)
       )
     );
 

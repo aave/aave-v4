@@ -159,7 +159,6 @@ contract AssetInterestRateStrategyTest is Base {
       assetId: mockAssetId2,
       liquidity: 0,
       drawn: 0,
-      premium: 0,
       deficit: 0,
       swept: 0
     });
@@ -172,7 +171,6 @@ contract AssetInterestRateStrategyTest is Base {
       assetId: mockAssetId,
       liquidity: liquidity,
       drawn: 0,
-      premium: 0,
       deficit: 0,
       swept: 0
     });
@@ -190,7 +188,6 @@ contract AssetInterestRateStrategyTest is Base {
     (
       uint256 liquidity,
       uint256 drawn,
-      uint256 premium,
       uint256 deficit,
       uint256 swept
     ) = _generateCalculateInterestRateParams(utilizationRatioRay);
@@ -199,7 +196,6 @@ contract AssetInterestRateStrategyTest is Base {
       assetId: mockAssetId,
       liquidity: liquidity,
       drawn: drawn,
-      premium: premium,
       deficit: deficit,
       swept: swept
     });
@@ -227,7 +223,6 @@ contract AssetInterestRateStrategyTest is Base {
     (
       uint256 liquidity,
       uint256 drawn,
-      uint256 premium,
       uint256 deficit,
       uint256 swept
     ) = _generateCalculateInterestRateParams(utilizationRatioRay);
@@ -236,7 +231,6 @@ contract AssetInterestRateStrategyTest is Base {
       assetId: mockAssetId,
       liquidity: liquidity,
       drawn: drawn,
-      premium: premium,
       deficit: deficit,
       swept: swept
     });
@@ -262,10 +256,7 @@ contract AssetInterestRateStrategyTest is Base {
 
   function _generateCalculateInterestRateParams(
     uint256 targetUtilizationRatioRay
-  )
-    internal
-    returns (uint256 liquidity, uint256 drawn, uint256 premium, uint256 deficit, uint256 swept)
-  {
+  ) internal returns (uint256 liquidity, uint256 drawn, uint256 deficit, uint256 swept) {
     drawn = bound(vm.randomUint(), 1, MAX_SUPPLY_AMOUNT);
 
     // utilizationRatio = drawn / (drawn + liquidity)
@@ -278,8 +269,7 @@ contract AssetInterestRateStrategyTest is Base {
     swept = vm.randomUint(0, liquidity);
     liquidity -= swept;
 
-    // premium and deficit unused in the current IR strategy
-    premium = vm.randomUint();
+    // deficit unused in the current IR strategy
     deficit = vm.randomUint();
   }
 }

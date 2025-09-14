@@ -107,7 +107,6 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
-    uint256 premium, // unused
     uint256 deficit, // unused
     uint256 swept
   ) external view virtual override returns (uint256) {

@@ -67,7 +67,6 @@ contract Hub is IHub, AccessManaged {
       assetId: assetId,
       liquidity: 0,
       drawn: 0,
-      premium: 0,
       deficit: 0,
       swept: 0
     });
@@ -333,11 +332,8 @@ contract Hub is IHub, AccessManaged {
 
     require(spoke.active, SpokeNotActive());
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
-
     // no premium change allowed
     _applyPremiumDelta(assetId, asset, spoke, premiumDelta, 0);
-
-    asset.updateDrawnRate(assetId);
 
     emit RefreshPremium(assetId, msg.sender, premiumDelta);
   }

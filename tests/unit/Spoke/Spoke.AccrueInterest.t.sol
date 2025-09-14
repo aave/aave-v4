@@ -695,13 +695,11 @@ contract SpokeAccrueInterestTest is SpokeBase {
     if (amounts.daiBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(daiAssetId);
       uint256 daiBorrowShares = hub1.previewDrawByAssets(daiAssetId, amounts.daiBorrowAmount);
-      (, uint256 premium) = hub1.getAssetOwed(daiAssetId);
       _mockInterestRateRay({
         interestRateRay: rates.daiBaseBorrowRate,
         assetId: daiAssetId,
         liquidity: asset.liquidity - amounts.daiBorrowAmount,
-        drawn: hub1.convertToDrawnAssets(daiAssetId, asset.drawnShares + daiBorrowShares),
-        premium: premium
+        drawn: hub1.convertToDrawnAssets(daiAssetId, asset.drawnShares + daiBorrowShares)
       });
       Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
     }
@@ -710,13 +708,11 @@ contract SpokeAccrueInterestTest is SpokeBase {
     if (amounts.wethBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(wethAssetId);
       uint256 wethBorrowShares = hub1.previewDrawByAssets(wethAssetId, amounts.wethBorrowAmount);
-      (, uint256 premium) = hub1.getAssetOwed(wethAssetId);
       _mockInterestRateRay({
         interestRateRay: rates.wethBaseBorrowRate,
         assetId: wethAssetId,
         liquidity: asset.liquidity - amounts.wethBorrowAmount,
-        drawn: hub1.convertToDrawnAssets(wethAssetId, asset.drawnShares + wethBorrowShares),
-        premium: premium
+        drawn: hub1.convertToDrawnAssets(wethAssetId, asset.drawnShares + wethBorrowShares)
       });
       Utils.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
     }
@@ -725,13 +721,11 @@ contract SpokeAccrueInterestTest is SpokeBase {
     if (amounts.usdxBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(usdxAssetId);
       uint256 usdxBorrowShares = hub1.previewDrawByAssets(usdxAssetId, amounts.usdxBorrowAmount);
-      (, uint256 premium) = hub1.getAssetOwed(usdxAssetId);
       _mockInterestRateRay({
         interestRateRay: rates.usdxBaseBorrowRate,
         assetId: usdxAssetId,
         liquidity: asset.liquidity - amounts.usdxBorrowAmount,
-        drawn: hub1.convertToDrawnAssets(usdxAssetId, asset.drawnShares + usdxBorrowShares),
-        premium: premium
+        drawn: hub1.convertToDrawnAssets(usdxAssetId, asset.drawnShares + usdxBorrowShares)
       });
       Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
     }
@@ -740,13 +734,11 @@ contract SpokeAccrueInterestTest is SpokeBase {
     if (amounts.wbtcBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(wbtcAssetId);
       uint256 wbtcBorrowShares = hub1.previewDrawByAssets(wbtcAssetId, amounts.wbtcBorrowAmount);
-      (, uint256 premium) = hub1.getAssetOwed(wbtcAssetId);
       _mockInterestRateRay({
         interestRateRay: rates.wbtcBaseBorrowRate,
         assetId: wbtcAssetId,
         liquidity: asset.liquidity - amounts.wbtcBorrowAmount,
-        drawn: hub1.convertToDrawnAssets(wbtcAssetId, asset.drawnShares + wbtcBorrowShares),
-        premium: premium
+        drawn: hub1.convertToDrawnAssets(wbtcAssetId, asset.drawnShares + wbtcBorrowShares)
       });
       Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
     }
