@@ -33,11 +33,13 @@ library PositionStatusMap {
     bool borrowing
   ) internal {
     unchecked {
+      uint256 bucket = reserveId.bucketId();
+      uint256 data = self.config.get(bucket);
       uint256 bit = 1 << ((reserveId % 128) << 1);
       if (borrowing) {
-        self.map[reserveId.bucketId()] |= bit;
+        self.config.set(bucket, data | bit);
       } else {
-        self.map[reserveId.bucketId()] &= ~bit;
+        self.config.set(bucket, data & (~bit));
       }
     }
   }
@@ -54,11 +56,13 @@ library PositionStatusMap {
     bool usingAsCollateral
   ) internal {
     unchecked {
+      uint256 bucket = reserveId.bucketId();
+      uint256 data = self.config.get(bucket);
       uint256 bit = 1 << (((reserveId % 128) << 1) + 1);
       if (usingAsCollateral) {
-        self.map[reserveId.bucketId()] |= bit;
+        self.config.set(bucket, data | bit);
       } else {
-        self.map[reserveId.bucketId()] &= ~bit;
+        self.config.set(bucket, data & (~bit));
       }
     }
   }
@@ -74,7 +78,7 @@ library PositionStatusMap {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      return (self.map[reserveId.bucketId()] >> ((reserveId % 128) << 1)) & 3 != 0;
+      return (self.getBucketWord(reserveId) >> ((reserveId % 128) << 1)) & 3 != 0;
     }
   }
 
@@ -120,9 +124,9 @@ library PositionStatusMap {
   ) internal view returns (uint256) {
     unchecked {
       uint256 bucket = reserveCount.bucketId();
-      uint256 count = self.map[bucket].isolateCollateralUntil(reserveCount).popCount();
+      uint256 count = self.config.get(bucket).isolateCollateralUntil(reserveCount).popCount();
       while (bucket != 0) {
-        count += self.map[--bucket].isolateCollateral().popCount();
+        count += self.config.get(--bucket).isolateCollateral().popCount();
       }
       return count;
     }
@@ -145,10 +149,10 @@ library PositionStatusMap {
   ) internal view returns (uint256, bool, bool) {
     unchecked {
       uint256 bucket = fromReserveId.bucketId();
-      uint256 map = self.map[bucket];
+      uint256 map = self.config.get(bucket);
       uint256 setBitId = map.isolateUntil(fromReserveId).fls();
       while (setBitId == 256 && bucket != 0) {
-        map = self.map[--bucket];
+        map = self.config.get(--bucket);
         setBitId = map.fls();
       }
       if (setBitId == 256) {
@@ -175,9 +179,9 @@ library PositionStatusMap {
   ) internal view returns (uint256 reserveId) {
     unchecked {
       uint256 bucket = fromReserveId.bucketId();
-      uint256 setBitId = self.map[bucket].isolateBorrowingUntil(fromReserveId).fls();
+      uint256 setBitId = self.config.get(bucket).isolateBorrowingUntil(fromReserveId).fls();
       while (setBitId == 256 && bucket != 0) {
-        setBitId = self.map[--bucket].isolateBorrowing().fls();
+        setBitId = self.config.get(--bucket).isolateBorrowing().fls();
       }
       return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(bucket);
     }
@@ -198,9 +202,9 @@ library PositionStatusMap {
   ) internal view returns (uint256 reserveId) {
     unchecked {
       uint256 bucket = fromReserveId.bucketId();
-      uint256 setBitId = self.map[bucket].isolateCollateralUntil(fromReserveId).fls();
+      uint256 setBitId = self.config.get(bucket).isolateCollateralUntil(fromReserveId).fls();
       while (setBitId == 256 && bucket != 0) {
-        setBitId = self.map[--bucket].isolateCollateral().fls();
+        setBitId = self.config.get(--bucket).isolateCollateral().fls();
       }
       return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(bucket);
     }
@@ -215,7 +219,7 @@ library PositionStatusMap {
     ISpoke.PositionStatus storage self,
     uint256 reserveId
   ) internal view returns (uint256) {
-    return self.map[reserveId.bucketId()];
+    return self.config.get(reserveId.bucketId());
   }
 
   /**

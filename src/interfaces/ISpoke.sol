@@ -6,6 +6,7 @@ import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {ISpokeBase} from 'src/interfaces/ISpokeBase.sol';
 import {IHubBase} from 'src/interfaces/IHubBase.sol';
+import {Mapping} from 'src/libraries/types/Mapping.sol';
 
 /**
  * @title ISpoke
@@ -62,7 +63,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   }
 
   struct PositionStatus {
-    mapping(uint256 slot => uint256) map;
+    bool hasRiskPremium;
+    Mapping config;
   }
 
   struct UserAccountData {
