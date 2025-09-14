@@ -419,8 +419,8 @@ contract SpokeBase is Base {
         assertEq(spoke.getUserTotalDebt(reserveId, user), 0, 'user debt not zero');
         assertFalse(spoke.isBorrowing(reserveId, user));
         // If the user has no debt in any asset (hf will be max), user risk premium should be zero
-        if (spoke.getHealthFactor(user) == UINT256_MAX) {
-          assertEq(spoke.getUserRiskPremium(user), 0, 'user risk premium not zero');
+        if (_getUserHealthFactor(spoke, user) == UINT256_MAX) {
+          assertEq(_getUserRiskPremium(spoke, user), 0, 'user risk premium not zero');
         }
       }
     }
@@ -987,7 +987,7 @@ contract SpokeBase is Base {
 
     _borrowWithoutHfCheck(spoke, user, reserveId, requiredDebtAmount);
 
-    uint256 finalHf = spoke.getHealthFactor(user);
+    uint256 finalHf = _getUserHealthFactor(spoke, user);
     assertApproxEqRel(
       finalHf,
       desiredHf,

@@ -227,9 +227,18 @@ interface IHub is IHubBase, IAccessManaged {
    */
   function reclaim(uint256 assetId, uint256 amount) external;
 
-  function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint8);
+  /**
+   * @notice Returns the maximum allowed number of decimals for the underlying asset.
+   * @return The maximum number of decimals (inclusive).
+   */
+  function MAX_ALLOWED_UNDERLYING_DECIMALS() external view returns (uint8);
 
-  function SPOKE_MAX_CAP() external view returns (uint56);
+  /**
+   * @notice Returns the maximum value for any spoke cap (add or draw).
+   * @dev The value is not inclusive; using the maximum value indicates no cap.
+   * @return The maximum cap value, expressed in asset units.
+   */
+  function MAX_ALLOWED_SPOKE_CAP() external view returns (uint56);
 
   /**
    * @notice Converts the specified amount of supplied shares to assets amount.

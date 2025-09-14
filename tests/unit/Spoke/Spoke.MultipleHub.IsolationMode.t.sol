@@ -71,8 +71,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(newSpoke),
       IHub.SpokeConfig({
         active: true,
-        addCap: Constants.SPOKE_MAX_CAP,
-        drawCap: Constants.SPOKE_MAX_CAP
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
       })
     );
     newHub.addSpoke(
@@ -80,8 +80,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(newSpoke),
       IHub.SpokeConfig({
         active: true,
-        addCap: Constants.SPOKE_MAX_CAP,
-        drawCap: Constants.SPOKE_MAX_CAP
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
       })
     );
     vm.stopPrank();
@@ -112,8 +112,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(spoke1),
       IHub.SpokeConfig({
         active: true,
-        addCap: Constants.SPOKE_MAX_CAP,
-        drawCap: Constants.SPOKE_MAX_CAP
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
       })
     );
     vm.stopPrank();
@@ -157,7 +157,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       'bob using reserve A as collateral on new spoke'
     );
     assertEq(
-      newHub.getAssetAddedAmount(isolationVars.assetAId),
+      newHub.getAddedAssets(isolationVars.assetAId),
       MAX_SUPPLY_AMOUNT,
       'total supplied amount of assetA on new hub'
     );
@@ -199,7 +199,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       'alice supplied amount of reserve B on spoke 1'
     );
     assertEq(
-      hub1.getAssetAddedAmount(isolationVars.assetBIdMainHub),
+      hub1.getAddedAssets(isolationVars.assetBIdMainHub),
       500_000e18,
       'total supplied amount of asset B on main hub'
     );
@@ -224,7 +224,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Now there is liquidity for asset B on the new hub
     assertEq(
-      newHub.getAssetAddedAmount(isolationVars.assetBId),
+      newHub.getAddedAssets(isolationVars.assetBId),
       MAX_SUPPLY_AMOUNT,
       'total supplied amount of asset B on new hub'
     );

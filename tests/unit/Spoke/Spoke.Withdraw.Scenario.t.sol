@@ -65,7 +65,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     skip(elapsed);
 
     // Ensure interest has accrued
-    vm.assume(hub1.getAssetAddedAmount(daiAssetId) > supplyAmount);
+    vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -80,7 +80,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     });
 
     uint256 treasuryFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
-    uint256 interestAccrued = hub1.getAssetAddedAmount(daiAssetId) -
+    uint256 interestAccrued = hub1.getAddedAssets(daiAssetId) -
       _calculateBurntInterest(hub1, daiAssetId) -
       treasuryFees -
       supplyAmount;
@@ -100,7 +100,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     treasuryFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
     interestAccrued =
-      hub1.getAssetAddedAmount(daiAssetId) -
+      hub1.getAddedAssets(daiAssetId) -
       _calculateBurntInterest(hub1, daiAssetId) -
       treasuryFees -
       (supplyAmount - partialWithdrawAmount);
@@ -135,7 +135,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
   function test_withdraw_fuzz_all_liquidity_with_interest_multi_user(
     MultiUserFuzzParams memory params
   ) public {
-    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     params.aliceAmount = bound(params.aliceAmount, 1, MAX_SUPPLY_AMOUNT - 1);
     params.bobAmount = bound(params.bobAmount, 1, MAX_SUPPLY_AMOUNT - params.aliceAmount);
     params.skipTime[0] = bound(params.skipTime[0], 0, MAX_SKIP_TIME);

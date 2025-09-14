@@ -106,8 +106,8 @@ contract HubBase is Base {
       tempSpoke,
       IHub.SpokeConfig({
         active: true,
-        addCap: Constants.SPOKE_MAX_CAP,
-        drawCap: Constants.SPOKE_MAX_CAP
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
       })
     );
 
@@ -197,8 +197,8 @@ contract HubBase is Base {
       assetId,
       tempSpoke,
       IHub.SpokeConfig({
-        addCap: Constants.SPOKE_MAX_CAP,
-        drawCap: Constants.SPOKE_MAX_CAP,
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         active: true
       })
     );

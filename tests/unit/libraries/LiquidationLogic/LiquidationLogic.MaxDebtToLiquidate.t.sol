@@ -23,7 +23,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
     );
   }
 
-  /// function never reverts if 1 wei of debt is worth more than MIN_LEFTOVER_BASE
+  /// function never reverts if 1 wei of debt is worth more than DUST_DEBT_LIQUIDATION_THRESHOLD
   function test_calculateMaxDebtToLiquidate_fuzz_ImpossibleToLeaveDust(
     LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
   ) public {
@@ -31,7 +31,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
     params.debtAssetUnit = 10 ** bound(params.debtAssetUnit, 1, 5);
     params.debtAssetPrice = bound(
       params.debtAssetPrice,
-      LiquidationLogic.MIN_LEFTOVER_BASE.fromWadDown() * params.debtAssetUnit,
+      LiquidationLogic.DUST_DEBT_LIQUIDATION_THRESHOLD.fromWadDown() * params.debtAssetUnit,
       MAX_ASSET_PRICE
     );
     liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
@@ -45,7 +45,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
     params.debtAssetPrice = bound(
       params.debtAssetPrice,
       1,
-      LiquidationLogic.MIN_LEFTOVER_BASE.fromWadDown() * params.debtAssetUnit - 1
+      LiquidationLogic.DUST_DEBT_LIQUIDATION_THRESHOLD.fromWadDown() * params.debtAssetUnit - 1
     );
     uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
@@ -55,7 +55,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
       debtToTarget + 1,
       debtToTarget +
         _convertBaseCurrencyToAmount(
-          LiquidationLogic.MIN_LEFTOVER_BASE - 1,
+          LiquidationLogic.DUST_DEBT_LIQUIDATION_THRESHOLD - 1,
           params.debtAssetPrice,
           params.debtAssetUnit
         )
@@ -69,7 +69,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
     assertEq(maxDebtToLiquidate, params.debtReserveBalance);
   }
 
-  /// function reverts with MustNotLeaveDust if remaining debt is less than MIN_LEFTOVER_BASE and debtToCover is not enough to cover all debt
+  /// function reverts with MustNotLeaveDust if remaining debt is less than DUST_DEBT_LIQUIDATION_THRESHOLD and debtToCover is not enough to cover all debt
   function test_calculateMaxDebtToLiquidate_fuzz_revertsWith_MustNotLeaveDust(
     LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
   ) public {
@@ -77,7 +77,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
     params.debtAssetPrice = bound(
       params.debtAssetPrice,
       1,
-      LiquidationLogic.MIN_LEFTOVER_BASE.fromWadDown() * params.debtAssetUnit - 1
+      LiquidationLogic.DUST_DEBT_LIQUIDATION_THRESHOLD.fromWadDown() * params.debtAssetUnit - 1
     );
     uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
@@ -88,7 +88,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
       debtToLiquidate + 1,
       debtToLiquidate +
         _convertBaseCurrencyToAmount(
-          LiquidationLogic.MIN_LEFTOVER_BASE - 1,
+          LiquidationLogic.DUST_DEBT_LIQUIDATION_THRESHOLD - 1,
           params.debtAssetPrice,
           params.debtAssetUnit
         )

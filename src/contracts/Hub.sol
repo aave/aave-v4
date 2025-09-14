@@ -28,10 +28,10 @@ contract Hub is IHub, AccessManaged {
   using MathUtils for *;
 
   /// @inheritdoc IHub
-  uint8 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
+  uint8 public constant MAX_ALLOWED_UNDERLYING_DECIMALS = 18;
 
   /// @inheritdoc IHub
-  uint56 public constant SPOKE_MAX_CAP = type(uint56).max;
+  uint56 public constant MAX_ALLOWED_SPOKE_CAP = type(uint56).max;
 
   uint256 internal _assetCount;
   mapping(uint256 assetId => Asset) internal _assets;
@@ -59,7 +59,7 @@ contract Hub is IHub, AccessManaged {
       underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
       InvalidAddress()
     );
-    require(decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
+    require(decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS, InvalidAssetDecimals());
 
     uint256 assetId = _assetCount++;
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
@@ -566,12 +566,12 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function getAssetAddedAmount(uint256 assetId) external view returns (uint256) {
+  function getAddedAssets(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].totalAddedAssets();
   }
 
   /// @inheritdoc IHubBase
-  function getAssetAddedShares(uint256 assetId) external view returns (uint256) {
+  function getAddedShares(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].totalAddedShares();
   }
 
@@ -693,7 +693,7 @@ contract Hub is IHub, AccessManaged {
     require(spoke.active, SpokeNotActive());
     uint256 addCap = spoke.addCap;
     require(
-      addCap == SPOKE_MAX_CAP ||
+      addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * 10 ** asset.decimals >= previewAddByShares(assetId, spoke.addedShares) + amount,
       AddCapExceeded(addCap)
     );
@@ -726,7 +726,8 @@ contract Hub is IHub, AccessManaged {
     uint256 drawn = _getSpokeDrawn(spoke, assetId);
     uint256 premium = _getSpokePremium(spoke, assetId);
     require(
-      drawCap == SPOKE_MAX_CAP || drawCap * 10 ** asset.decimals >= drawn + premium + amount,
+      drawCap == MAX_ALLOWED_SPOKE_CAP ||
+        drawCap * 10 ** asset.decimals >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
     );
   }
@@ -782,7 +783,7 @@ contract Hub is IHub, AccessManaged {
     require(shares > 0, InvalidShares());
     uint256 addCap = receiver.addCap;
     require(
-      addCap == SPOKE_MAX_CAP ||
+      addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * 10 ** asset.decimals >= previewAddByShares(assetId, receiver.addedShares + shares),
       AddCapExceeded(addCap)
     );
@@ -810,7 +811,7 @@ contract Hub is IHub, AccessManaged {
     _updateSpokeConfig(
       assetId,
       feeReceiver,
-      SpokeConfig({addCap: SPOKE_MAX_CAP, drawCap: 0, active: true})
+      SpokeConfig({addCap: MAX_ALLOWED_SPOKE_CAP, drawCap: 0, active: true})
     );
   }
 }
