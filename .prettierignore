@@ -4,5 +4,5 @@ cache
 node_modules
 snapshots
 report
-src/dependencies
+src/contracts/dependencies
 tests/mocks/JsonBindings.sol
