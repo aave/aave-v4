@@ -900,6 +900,9 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
       UserPosition storage userPosition = _userPositions[user][reserveId];
+      if (newUserRiskPremium == 0 && !userPosition.hasRiskPremium) return;
+      userPosition.hasRiskPremium = newUserRiskPremium > 0;
+
       uint256 assetId = _reserves[reserveId].assetId;
       IHubBase hub = _reserves[reserveId].hub;
 

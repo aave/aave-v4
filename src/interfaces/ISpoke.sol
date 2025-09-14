@@ -54,6 +54,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     //
     uint128 suppliedShares;
     uint16 configKey; // key of the last user config
+    bool hasRiskPremium;
   }
 
   struct PositionManagerConfig {
