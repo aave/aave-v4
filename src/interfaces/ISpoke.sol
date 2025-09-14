@@ -362,7 +362,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   /**
    * @notice Returns the maximum allowed collateral risk value for a reserve.
-   * @return The maximum collateral risk value, expressed in bps (e.g. 100_00 is 100.00%)
+   * @return The maximum collateral risk value, expressed in bps (e.g. 100_00 is 100.00%).
    */
   function MAX_ALLOWED_COLLATERAL_RISK() external view returns (uint24);
 
