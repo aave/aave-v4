@@ -62,7 +62,7 @@ contract HubTransferSharesTest is HubBase {
     Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
-    uint256 assetSuppliedShares = hub1.getAssetAddedShares(daiAssetId);
+    uint256 assetSuppliedShares = hub1.getAddedShares(daiAssetId);
     assertEq(suppliedShares, hub1.convertToAddedAssets(daiAssetId, supplyAmount));
     assertEq(suppliedShares, assetSuppliedShares);
 
@@ -73,7 +73,7 @@ contract HubTransferSharesTest is HubBase {
     assertBorrowRateSynced(hub1, daiAssetId, 'transferShares');
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(spoke1)), suppliedShares - moveAmount);
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(spoke2)), moveAmount);
-    assertEq(hub1.getAssetAddedShares(daiAssetId), assetSuppliedShares);
+    assertEq(hub1.getAddedShares(daiAssetId), assetSuppliedShares);
   }
 
   /// @dev Test transferring more shares than a spoke has supplied
@@ -145,8 +145,8 @@ contract HubTransferSharesTest is HubBase {
     _addLiquidity(zeroDecimalAssetId, 100e18);
     _drawLiquidity(zeroDecimalAssetId, 45e18, true);
 
-    uint256 totalAddedAssets = hub1.getAssetAddedAmount(zeroDecimalAssetId);
-    uint256 totalAddedShares = hub1.getAssetAddedShares(zeroDecimalAssetId);
+    uint256 totalAddedAssets = hub1.getAddedAssets(zeroDecimalAssetId);
+    uint256 totalAddedShares = hub1.getAddedShares(zeroDecimalAssetId);
 
     uint256 addedAmount = uint256(1e4).toAssetsDown(totalAddedAssets, totalAddedShares) + 1;
     uint256 addedShares = hub1.convertToAddedShares(zeroDecimalAssetId, addedAmount);

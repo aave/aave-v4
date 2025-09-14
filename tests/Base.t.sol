@@ -1448,12 +1448,12 @@ abstract contract Base is Test {
   ) internal view {
     uint256 expectedSuppliedShares = hub1.convertToAddedShares(assetId, expectedSuppliedAmount);
     assertEq(
-      hub1.getAssetAddedShares(assetId),
+      hub1.getAddedShares(assetId),
       expectedSuppliedShares,
       string(abi.encodePacked('asset supplied shares ', label))
     );
     assertEq(
-      hub1.getAssetAddedAmount(assetId) - _calculateBurntInterest(hub1, assetId),
+      hub1.getAddedAssets(assetId) - _calculateBurntInterest(hub1, assetId),
       expectedSuppliedAmount,
       string(abi.encodePacked('asset supplied amount ', label))
     );
@@ -1676,7 +1676,7 @@ abstract contract Base is Test {
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     assertApproxEqAbs(
-      hub1.getAssetAddedAmount(assetId) - _calculateBurntInterest(hub1, assetId),
+      hub1.getAddedAssets(assetId) - _calculateBurntInterest(hub1, assetId),
       expectedSuppliedAmount,
       3,
       string.concat('asset supplied amount ', label)
@@ -1876,8 +1876,7 @@ abstract contract Base is Test {
   /// @dev Helper function to calculate burnt interest in assets terms (originated from virtual shares and assets)
   function _calculateBurntInterest(IHub hub, uint256 assetId) internal view returns (uint256) {
     return
-      hub.getAssetAddedAmount(assetId) -
-      hub.previewRemoveByShares(assetId, hub.getAssetAddedShares(assetId));
+      hub.getAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getAddedShares(assetId));
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke
@@ -2339,7 +2338,7 @@ abstract contract Base is Test {
         assetId: assetId,
         liquidity: assetData.liquidity,
         addedShares: assetData.addedShares,
-        addedAmount: hub.getAssetAddedAmount(assetId) - _calculateBurntInterest(hub, assetId),
+        addedAmount: hub.getAddedAssets(assetId) - _calculateBurntInterest(hub, assetId),
         drawnShares: assetData.drawnShares,
         drawn: drawn,
         premiumShares: assetData.premiumShares,
