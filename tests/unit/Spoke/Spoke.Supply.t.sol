@@ -114,10 +114,10 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertEq(
       amount,
-      hub1.getSpokeAddedAmount(daiAssetId, address(spoke1)),
+      hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)),
       'spoke supplied amount after-supply'
     );
-    assertEq(amount, hub1.getAssetAddedAmount(daiAssetId), 'asset supplied amount after-supply');
+    assertEq(amount, hub1.getAddedAssets(daiAssetId), 'asset supplied amount after-supply');
 
     // user
     assertEq(bobData[stage].data.drawnShares, 0, 'bob drawnShares after-supply');
@@ -131,7 +131,7 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertEq(
       amount,
-      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob),
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob),
       'user supplied amount after-supply'
     );
   }
@@ -190,10 +190,10 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertEq(
       amount,
-      hub1.getSpokeAddedAmount(daiAssetId, address(spoke1)),
+      hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)),
       'spoke supplied amount after-supply'
     );
-    assertEq(amount, hub1.getAssetAddedAmount(daiAssetId), 'asset supplied amount after-supply');
+    assertEq(amount, hub1.getAddedAssets(daiAssetId), 'asset supplied amount after-supply');
 
     // user
     assertEq(bobData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
@@ -207,7 +207,7 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertEq(
       amount,
-      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob),
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob),
       'user supplied amount after-supply'
     );
   }
@@ -280,7 +280,7 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertApproxEqAbs(
       amount,
-      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), carol),
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), carol),
       1,
       'user supplied amount after-supply'
     );
@@ -300,7 +300,7 @@ contract SpokeSupplyTest is SpokeBase {
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     rate = bound(rate, 1, MAX_BORROW_RATE);
-    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     // set weth collateral risk to 0 for no premium contribution
@@ -468,7 +468,7 @@ contract SpokeSupplyTest is SpokeBase {
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     rate = bound(rate, 1, MAX_BORROW_RATE);
-    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     (uint256 assetId, IERC20 underlying) = getAssetByReserveId(spoke1, reserveId);

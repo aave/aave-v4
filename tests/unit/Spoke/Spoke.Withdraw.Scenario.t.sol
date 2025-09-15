@@ -65,7 +65,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     skip(elapsed);
 
     // Ensure interest has accrued
-    vm.assume(hub1.getAssetAddedAmount(daiAssetId) > supplyAmount);
+    vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -79,13 +79,15 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    uint256 treasuryFees = hub1.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
-    uint256 interestAccrued = hub1.getAssetAddedAmount(daiAssetId) - treasuryFees - supplyAmount;
-
+    uint256 treasuryFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
+    uint256 interestAccrued = hub1.getAddedAssets(daiAssetId) -
+      _calculateBurntInterest(hub1, daiAssetId) -
+      treasuryFees -
+      supplyAmount;
     uint256 totalSupplied = interestAccrued + supplyAmount;
     assertApproxEqAbs(
       totalSupplied,
-      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob),
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob),
       1,
       'total supplied'
     );
@@ -96,16 +98,17 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // Withdraw partial supplied assets
     Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, partialWithdrawAmount, bob);
 
-    treasuryFees = hub1.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
+    treasuryFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
     interestAccrued =
-      hub1.getAssetAddedAmount(daiAssetId) -
+      hub1.getAddedAssets(daiAssetId) -
+      _calculateBurntInterest(hub1, daiAssetId) -
       treasuryFees -
       (supplyAmount - partialWithdrawAmount);
 
     totalSupplied = interestAccrued + supplyAmount - partialWithdrawAmount;
     assertApproxEqAbs(
       totalSupplied,
-      spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob),
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob),
       1,
       'expected supplied'
     );
@@ -132,7 +135,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
   function test_withdraw_fuzz_all_liquidity_with_interest_multi_user(
     MultiUserFuzzParams memory params
   ) public {
-    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     params.aliceAmount = bound(params.aliceAmount, 1, MAX_SUPPLY_AMOUNT - 1);
     params.bobAmount = bound(params.bobAmount, 1, MAX_SUPPLY_AMOUNT - params.aliceAmount);
     params.skipTime[0] = bound(params.skipTime[0], 0, MAX_SKIP_TIME);
@@ -314,7 +317,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: derl
     });
 
-    DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
+    ISpoke.Reserve memory reserve = spoke1.getReserve(reserveId);
 
     IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
 
@@ -369,7 +372,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: derl
     });
 
-    DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
+    ISpoke.Reserve memory reserve = spoke1.getReserve(reserveId);
 
     IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
 

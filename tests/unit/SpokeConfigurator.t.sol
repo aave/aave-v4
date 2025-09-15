@@ -34,22 +34,6 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.stopPrank();
   }
 
-  function test_updateOracle_revertsWith_OwnableUnauthorizedAccount() public {
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
-    vm.prank(alice);
-    spokeConfigurator.updateOracle(spokeAddr, address(0));
-  }
-
-  function test_updateOracle() public {
-    address newOracle = makeAddr('NEW_ORACLE');
-    vm.mockCall(newOracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
-    vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateOracle, (newOracle)));
-    vm.expectEmit(address(spoke));
-    emit ISpoke.OracleUpdate(newOracle);
-    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateOracle(spokeAddr, newOracle);
-  }
-
   function test_updateReservePriceSource_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
@@ -63,31 +47,33 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateReservePriceSource, (reserveId, newPriceSource))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.ReservePriceSourceUpdate(reserveId, newPriceSource);
+    emit ISpoke.UpdateReservePriceSource(reserveId, newPriceSource);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateReservePriceSource(spokeAddr, reserveId, newPriceSource);
   }
 
-  function test_updateLiquidationCloseFactor_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_updateLiquidationTargetHealthFactor_revertsWith_OwnableUnauthorizedAccount()
+    public
+  {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    spokeConfigurator.updateLiquidationCloseFactor(spokeAddr, 0);
+    spokeConfigurator.updateLiquidationTargetHealthFactor(spokeAddr, 0);
   }
 
-  function test_updateLiquidationCloseFactor() public {
-    uint128 newCloseFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2;
+  function test_updateLiquidationTargetHealthFactor() public {
+    uint128 newTargetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2;
 
-    DataTypes.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
-    expectedLiquidationConfig.closeFactor = newCloseFactor;
+    ISpoke.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
+    expectedLiquidationConfig.targetHealthFactor = newTargetHealthFactor;
 
     vm.expectCall(
       spokeAddr,
       abi.encodeCall(ISpoke.updateLiquidationConfig, (expectedLiquidationConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.LiquidationConfigUpdate(expectedLiquidationConfig);
+    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateLiquidationCloseFactor(spokeAddr, newCloseFactor);
+    spokeConfigurator.updateLiquidationTargetHealthFactor(spokeAddr, newTargetHealthFactor);
 
     assertEq(spoke.getLiquidationConfig(), expectedLiquidationConfig);
   }
@@ -101,7 +87,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_updateHealthFactorForMaxBonus() public {
     uint64 newHealthFactorForMaxBonus = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2;
 
-    DataTypes.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
+    ISpoke.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
     expectedLiquidationConfig.healthFactorForMaxBonus = newHealthFactorForMaxBonus;
 
     vm.expectCall(
@@ -109,7 +95,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateLiquidationConfig, (expectedLiquidationConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.LiquidationConfigUpdate(expectedLiquidationConfig);
+    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateHealthFactorForMaxBonus(spokeAddr, newHealthFactorForMaxBonus);
 
@@ -125,7 +111,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_updateLiquidationBonusFactor() public {
     uint16 newLiquidationBonusFactor = PercentageMath.PERCENTAGE_FACTOR.toUint16() / 2;
 
-    DataTypes.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
+    ISpoke.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
     expectedLiquidationConfig.liquidationBonusFactor = newLiquidationBonusFactor;
 
     vm.expectCall(
@@ -133,7 +119,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateLiquidationConfig, (expectedLiquidationConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.LiquidationConfigUpdate(expectedLiquidationConfig);
+    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationBonusFactor(spokeAddr, newLiquidationBonusFactor);
 
@@ -145,8 +131,8 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.prank(alice);
     spokeConfigurator.updateLiquidationConfig(
       spokeAddr,
-      DataTypes.LiquidationConfig({
-        closeFactor: 0,
+      ISpoke.LiquidationConfig({
+        targetHealthFactor: 0,
         healthFactorForMaxBonus: 0,
         liquidationBonusFactor: 0
       })
@@ -154,8 +140,8 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateLiquidationConfig() public {
-    DataTypes.LiquidationConfig memory newLiquidationConfig = DataTypes.LiquidationConfig({
-      closeFactor: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2,
+    ISpoke.LiquidationConfig memory newLiquidationConfig = ISpoke.LiquidationConfig({
+      targetHealthFactor: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2,
       healthFactorForMaxBonus: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2,
       liquidationBonusFactor: PercentageMath.PERCENTAGE_FACTOR.toUint16() / 2
     });
@@ -165,7 +151,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateLiquidationConfig, (newLiquidationConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.LiquidationConfigUpdate(newLiquidationConfig);
+    emit ISpoke.UpdateLiquidationConfig(newLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationConfig(spokeAddr, newLiquidationConfig);
 
@@ -180,15 +166,15 @@ contract SpokeConfiguratorTest is SpokeBase {
       hub: address(hub1),
       assetId: 0,
       priceSource: address(0),
-      config: DataTypes.ReserveConfig({
+      config: ISpoke.ReserveConfig({
         paused: false,
         frozen: false,
         borrowable: true,
         collateralRisk: 15_00
       }),
-      dynamicConfig: DataTypes.DynamicReserveConfig({
+      dynamicConfig: ISpoke.DynamicReserveConfig({
         collateralFactor: 80_00,
-        liquidationBonus: 100_00,
+        maxLiquidationBonus: 100_00,
         liquidationFee: 0
       })
     });
@@ -196,15 +182,15 @@ contract SpokeConfiguratorTest is SpokeBase {
 
   function test_addReserve() public {
     address newPriceSource = _deployMockPriceFeed(spoke, 1000e8);
-    DataTypes.ReserveConfig memory config = DataTypes.ReserveConfig({
+    ISpoke.ReserveConfig memory config = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
       collateralRisk: 15_00
     });
-    DataTypes.DynamicReserveConfig memory dynamicConfig = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
 
@@ -220,7 +206,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.AddReserve(expectedReserveId, dai2AssetId, address(hub1));
     vm.expectEmit(address(spoke));
-    emit ISpoke.ReserveConfigUpdate(expectedReserveId, config);
+    emit ISpoke.UpdateReserveConfig(expectedReserveId, config);
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(expectedReserveId, 0, dynamicConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
@@ -243,7 +229,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updatePaused() public {
-    DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
+    ISpoke.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
 
     for (uint256 i = 0; i < 2; i += 1) {
       expectedReserveConfig.paused = (i == 0) ? false : true;
@@ -253,7 +239,7 @@ contract SpokeConfiguratorTest is SpokeBase {
         abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
       );
       vm.expectEmit(address(spoke));
-      emit ISpoke.ReserveConfigUpdate(reserveId, expectedReserveConfig);
+      emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
       vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updatePaused(spokeAddr, reserveId, expectedReserveConfig.paused);
 
@@ -268,7 +254,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateFrozen() public {
-    DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
+    ISpoke.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
 
     for (uint256 i = 0; i < 2; i += 1) {
       expectedReserveConfig.frozen = (i == 0) ? false : true;
@@ -278,7 +264,7 @@ contract SpokeConfiguratorTest is SpokeBase {
         abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
       );
       vm.expectEmit(address(spoke));
-      emit ISpoke.ReserveConfigUpdate(reserveId, expectedReserveConfig);
+      emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
       vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updateFrozen(spokeAddr, reserveId, expectedReserveConfig.frozen);
 
@@ -293,7 +279,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateBorrowable() public {
-    DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
+    ISpoke.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
 
     for (uint256 i = 0; i < 2; i += 1) {
       expectedReserveConfig.borrowable = (i == 0) ? false : true;
@@ -303,7 +289,7 @@ contract SpokeConfiguratorTest is SpokeBase {
         abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
       );
       vm.expectEmit(address(spoke));
-      emit ISpoke.ReserveConfigUpdate(reserveId, expectedReserveConfig);
+      emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
       vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updateBorrowable(spokeAddr, reserveId, expectedReserveConfig.borrowable);
 
@@ -318,9 +304,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateCollateralRisk() public {
-    uint24 newCollateralRisk = Constants.MAX_COLLATERAL_RISK / 2;
+    uint24 newCollateralRisk = Constants.MAX_ALLOWED_COLLATERAL_RISK / 2;
 
-    DataTypes.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
+    ISpoke.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
     expectedReserveConfig.collateralRisk = newCollateralRisk;
 
     vm.expectCall(
@@ -328,7 +314,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.ReserveConfigUpdate(reserveId, expectedReserveConfig);
+    emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateCollateralRisk(spokeAddr, reserveId, newCollateralRisk);
 
@@ -344,8 +330,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_addCollateralFactor() public {
     uint16 newCollateralFactor = PercentageMath.PERCENTAGE_FACTOR.toUint16() / 2;
 
-    DataTypes.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke
-      .getDynamicReserveConfig(reserveId);
+    ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
+      reserveId
+    );
     expectedDynamicReserveConfig.collateralFactor = newCollateralFactor;
 
     uint16 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
@@ -374,8 +361,10 @@ contract SpokeConfiguratorTest is SpokeBase {
 
     uint16 configKey = 0;
 
-    DataTypes.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke
-      .getDynamicReserveConfig(reserveId, configKey);
+    ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
+      reserveId,
+      configKey
+    );
     expectedDynamicReserveConfig.collateralFactor = newCollateralFactor;
 
     vm.expectCall(
@@ -402,9 +391,10 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_addLiquidationBonus() public {
     uint32 newLiquidationBonus = PercentageMath.PERCENTAGE_FACTOR.toUint32() + 1;
 
-    DataTypes.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke
-      .getDynamicReserveConfig(reserveId);
-    expectedDynamicReserveConfig.liquidationBonus = newLiquidationBonus;
+    ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
+      reserveId
+    );
+    expectedDynamicReserveConfig.maxLiquidationBonus = newLiquidationBonus;
 
     uint16 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
 
@@ -420,20 +410,22 @@ contract SpokeConfiguratorTest is SpokeBase {
     assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
   }
 
-  function test_updateLiquidationBonus_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_updateMaxLiquidationBonus_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    spokeConfigurator.updateLiquidationBonus(spokeAddr, reserveId, 0, 0);
+    spokeConfigurator.updateMaxLiquidationBonus(spokeAddr, reserveId, 0, 0);
   }
 
-  function test_updateLiquidationBonus() public {
+  function test_updateMaxLiquidationBonus() public {
     uint32 newLiquidationBonus = PercentageMath.PERCENTAGE_FACTOR.toUint32() + 123;
 
     uint16 configKey = 0;
 
-    DataTypes.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke
-      .getDynamicReserveConfig(reserveId, configKey);
-    expectedDynamicReserveConfig.liquidationBonus = newLiquidationBonus;
+    ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
+      reserveId,
+      configKey
+    );
+    expectedDynamicReserveConfig.maxLiquidationBonus = newLiquidationBonus;
 
     vm.expectCall(
       spokeAddr,
@@ -445,7 +437,12 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.UpdateDynamicReserveConfig(reserveId, configKey, expectedDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateLiquidationBonus(spokeAddr, reserveId, configKey, newLiquidationBonus);
+    spokeConfigurator.updateMaxLiquidationBonus(
+      spokeAddr,
+      reserveId,
+      configKey,
+      newLiquidationBonus
+    );
 
     assertEq(spoke.getDynamicReserveConfig(reserveId, configKey), expectedDynamicReserveConfig);
   }
@@ -459,8 +456,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_addLiquidationFee() public {
     uint16 newLiquidationFee = PercentageMath.PERCENTAGE_FACTOR.toUint16() / 2;
 
-    DataTypes.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke
-      .getDynamicReserveConfig(reserveId);
+    ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
+      reserveId
+    );
     expectedDynamicReserveConfig.liquidationFee = newLiquidationFee;
 
     uint16 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
@@ -488,8 +486,10 @@ contract SpokeConfiguratorTest is SpokeBase {
 
     uint16 configKey = 0;
 
-    DataTypes.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke
-      .getDynamicReserveConfig(reserveId, configKey);
+    ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
+      reserveId,
+      configKey
+    );
     expectedDynamicReserveConfig.liquidationFee = newLiquidationFee;
 
     vm.expectCall(
@@ -507,59 +507,24 @@ contract SpokeConfiguratorTest is SpokeBase {
     assertEq(spoke.getDynamicReserveConfig(reserveId, configKey), expectedDynamicReserveConfig);
   }
 
-  function test_updateReserveConfig_revertsWith_OwnableUnauthorizedAccount() public {
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
-    vm.prank(alice);
-    spokeConfigurator.updateReserveConfig(
-      spokeAddr,
-      reserveId,
-      DataTypes.ReserveConfig({
-        frozen: false,
-        paused: false,
-        borrowable: true,
-        collateralRisk: 15_00
-      })
-    );
-  }
-
-  function test_updateReserveConfig() public {
-    DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
-      frozen: false,
-      paused: false,
-      borrowable: true,
-      collateralRisk: 15_00
-    });
-
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, newReserveConfig))
-    );
-    vm.expectEmit(address(spoke));
-    emit ISpoke.ReserveConfigUpdate(reserveId, newReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateReserveConfig(spokeAddr, reserveId, newReserveConfig);
-
-    assertEq(spoke.getReserveConfig(reserveId), newReserveConfig);
-  }
-
   function test_addDynamicReserveConfig_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
     spokeConfigurator.addDynamicReserveConfig(
       spokeAddr,
       reserveId,
-      DataTypes.DynamicReserveConfig({
+      ISpoke.DynamicReserveConfig({
         collateralFactor: 20_00,
-        liquidationBonus: 130_00,
+        maxLiquidationBonus: 130_00,
         liquidationFee: 15_00
       })
     );
   }
 
   function test_addDynamicReserveConfig() public {
-    DataTypes.DynamicReserveConfig memory newDynamicReserveConfig = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory newDynamicReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 20_00,
-      liquidationBonus: 130_00,
+      maxLiquidationBonus: 130_00,
       liquidationFee: 15_00
     });
 
@@ -589,9 +554,9 @@ contract SpokeConfiguratorTest is SpokeBase {
       spokeAddr,
       reserveId,
       0,
-      DataTypes.DynamicReserveConfig({
+      ISpoke.DynamicReserveConfig({
         collateralFactor: 10_00,
-        liquidationBonus: 150_00,
+        maxLiquidationBonus: 150_00,
         liquidationFee: 12_00
       })
     );
@@ -602,9 +567,9 @@ contract SpokeConfiguratorTest is SpokeBase {
     for (uint256 i; i < count; ++i) test_addDynamicReserveConfig();
     assertEq(spoke.getReserve(reserveId).dynamicConfigKey, count);
 
-    DataTypes.DynamicReserveConfig memory newDynamicReserveConfig = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory newDynamicReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
-      liquidationBonus: 150_00,
+      maxLiquidationBonus: 150_00,
       liquidationFee: 12_00
     });
     uint16 configKeyToUpdate = vm.randomUint(0, count).toUint16();
@@ -638,14 +603,14 @@ contract SpokeConfiguratorTest is SpokeBase {
 
   function test_pauseAllReserves() public {
     for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
-      DataTypes.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
+      ISpoke.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
       reserveConfig.paused = true;
       vm.expectCall(
         spokeAddr,
         abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig))
       );
       vm.expectEmit(address(spoke));
-      emit ISpoke.ReserveConfigUpdate(reserveId, reserveConfig);
+      emit ISpoke.UpdateReserveConfig(reserveId, reserveConfig);
     }
 
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
@@ -664,11 +629,11 @@ contract SpokeConfiguratorTest is SpokeBase {
 
   function test_freezeAllReserves() public {
     for (uint256 id; id < spoke.getReserveCount(); ++id) {
-      DataTypes.ReserveConfig memory reserveConfig = spoke.getReserveConfig(id);
+      ISpoke.ReserveConfig memory reserveConfig = spoke.getReserveConfig(id);
       reserveConfig.frozen = true;
       vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateReserveConfig, (id, reserveConfig)));
       vm.expectEmit(address(spoke));
-      emit ISpoke.ReserveConfigUpdate(id, reserveConfig);
+      emit ISpoke.UpdateReserveConfig(id, reserveConfig);
     }
 
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);

@@ -8,13 +8,13 @@ contract HubAccessTest is HubBase {
   /// @dev Test showing that restricted functions on hub can only be called by hub admin.
   function test_hub_admin_access() public {
     TestnetERC20 tokenA = new TestnetERC20('A', 'A', 18);
-    DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
+    IHub.AssetConfig memory assetConfig = IHub.AssetConfig({
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
       irStrategy: address(irStrategy),
       reinvestmentController: address(0)
     });
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       addCap: 1000,
       drawCap: 1000
@@ -44,11 +44,11 @@ contract HubAccessTest is HubBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub1.updateAssetConfig(daiAssetId, assetConfig);
+    hub1.updateAssetConfig(daiAssetId, assetConfig, new bytes(0));
 
     // Hub Admin can update asset config
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(daiAssetId, assetConfig);
+    hub1.updateAssetConfig(daiAssetId, assetConfig, new bytes(0));
 
     // Only Hub Admin can add spoke
     vm.expectRevert(
@@ -135,7 +135,7 @@ contract HubAccessTest is HubBase {
     hub1.updateSpokeConfig(
       daiAssetId,
       address(spoke1),
-      DataTypes.SpokeConfig({active: true, addCap: 1000, drawCap: 1000})
+      IHub.SpokeConfig({active: true, addCap: 1000, drawCap: 1000})
     );
   }
 
@@ -240,13 +240,13 @@ contract HubAccessTest is HubBase {
 
   /// @dev Test showcasing ability to change the authority contract governing access control on the hub1.
   function test_change_authority() public {
-    DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
+    IHub.AssetConfig memory assetConfig = IHub.AssetConfig({
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
       irStrategy: address(irStrategy),
       reinvestmentController: address(0)
     });
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       addCap: 1000,
       drawCap: 1000
@@ -282,7 +282,7 @@ contract HubAccessTest is HubBase {
 
     // Hub admin can call update asset config on the hub after authority change
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(daiAssetId, assetConfig);
+    hub1.updateAssetConfig(daiAssetId, assetConfig, new bytes(0));
 
     // Hub admin cannot call update spoke config on the hub after authority change
     vm.expectRevert(

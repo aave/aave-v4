@@ -7,6 +7,13 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeConfigTest is SpokeBase {
   using SafeCast for uint256;
 
+  function test_setUsingAsCollateral_revertsWith_ReserveNotListed() public {
+    uint256 reserveCount = spoke1.getReserveCount();
+    vm.prank(alice);
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    spoke1.setUsingAsCollateral(reserveCount, true, alice);
+  }
+
   function test_setUsingAsCollateral_revertsWith_ReserveFrozen() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -62,7 +69,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.recordLogs();
     Utils.setUsingAsCollateral(spoke1, daiReserveId, bob, false, bob);
-    _assertEventNotEmitted(ISpoke.UsingAsCollateral.selector);
+    _assertEventNotEmitted(ISpoke.SetUsingAsCollateral.selector);
 
     assertFalse(spoke1.isUsingAsCollateral(daiReserveId, bob));
     assertEq(_getUserRpStored(spoke1, daiReserveId, bob), bobRp);
@@ -84,7 +91,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.recordLogs();
     Utils.setUsingAsCollateral(spoke1, daiReserveId, bob, true, bob);
     _assertEventsNotEmitted(
-      ISpoke.UsingAsCollateral.selector,
+      ISpoke.SetUsingAsCollateral.selector,
       ISpoke.RefreshSingleUserDynamicConfig.selector,
       ISpoke.RefreshAllUserDynamicConfig.selector
     );
@@ -95,7 +102,6 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_setUsingAsCollateral() public {
-    bool newCollateralFlag = true;
     bool usingAsCollateral = true;
     uint256 daiAmount = 100e18;
 
@@ -107,7 +113,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UsingAsCollateral(daiReserveId, bob, bob, usingAsCollateral);
+    emit ISpoke.SetUsingAsCollateral(daiReserveId, bob, bob, usingAsCollateral);
     spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral, bob);
 
     assertEq(

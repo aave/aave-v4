@@ -8,19 +8,19 @@ contract SpokeDynamicConfigTest is SpokeBase {
   using SafeCast for uint256;
   using PercentageMath for uint256;
 
-  function test_addDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndLiquidationBonus_liquidationBonus()
+  function test_addDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_liquidationBonus()
     public
   {
     uint256 reserveId = _randomReserveId(spoke1);
-    DataTypes.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
-    config.liquidationBonus = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR - 1).toUint32();
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
+    config.maxLiquidationBonus = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR - 1).toUint32();
 
-    vm.expectRevert(ISpoke.InvalidCollateralFactorAndLiquidationBonus.selector, address(spoke1));
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addDynamicReserveConfig(reserveId, config);
   }
 
-  function test_addDynamicReserveConfig_fuzz_revertsWith_InvalidCollateralFactorAndLiquidationBonus_incompatible(
+  function test_addDynamicReserveConfig_fuzz_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_incompatible(
     uint16 collateralFactor,
     uint32 liquidationBonus
   ) public {
@@ -33,18 +33,18 @@ contract SpokeDynamicConfigTest is SpokeBase {
     ).toUint32();
 
     uint256 reserveId = _randomReserveId(spoke1);
-    DataTypes.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
     config.collateralFactor = collateralFactor;
-    config.liquidationBonus = liquidationBonus;
+    config.maxLiquidationBonus = liquidationBonus;
 
-    vm.expectRevert(ISpoke.InvalidCollateralFactorAndLiquidationBonus.selector, address(spoke1));
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addDynamicReserveConfig(reserveId, config);
   }
 
   function test_addDynamicReserveConfig_revertsWith_InvalidLiquidationFee() public {
     uint256 reserveId = _randomReserveId(spoke1);
-    DataTypes.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
     config.liquidationFee = vm
       .randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
       .toUint16();
@@ -54,7 +54,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     spoke1.addDynamicReserveConfig(reserveId, config);
   }
 
-  function test_addDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndLiquidationBonus_collateralFactor()
+  function test_addDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_collateralFactor()
     public
   {
     uint16 collateralFactor = vm
@@ -62,17 +62,17 @@ contract SpokeDynamicConfigTest is SpokeBase {
       .toUint16();
 
     uint256 reserveId = _randomReserveId(spoke1);
-    DataTypes.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
     config.collateralFactor = collateralFactor;
 
-    vm.expectRevert(ISpoke.InvalidCollateralFactorAndLiquidationBonus.selector, address(spoke1));
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addDynamicReserveConfig(reserveId, config);
   }
 
   function test_addDynamicReserveConfig_revertsWith_ReserveNotListed() public {
     uint256 invalidReserveId = vm.randomUint(spoke1.getReserveCount(), type(uint256).max);
-    DataTypes.DynamicReserveConfig memory dynConf;
+    ISpoke.DynamicReserveConfig memory dynConf;
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
@@ -82,12 +82,14 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function test_addDynamicReserveConfig_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
-    vm.assume(caller != SPOKE_ADMIN && caller != ADMIN);
+    vm.assume(
+      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+    );
     uint256 reserveId = _randomReserveId(spoke1);
     uint16 configKey = _randomInitializedConfigKey(spoke1, reserveId);
-    DataTypes.DynamicReserveConfig memory dynConf = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory dynConf = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
 
@@ -98,20 +100,20 @@ contract SpokeDynamicConfigTest is SpokeBase {
     spoke1.updateDynamicReserveConfig(reserveId, configKey, dynConf);
   }
 
-  function test_updateDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndLiquidationBonus_liquidationBonus()
+  function test_updateDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_liquidationBonus()
     public
   {
     uint256 reserveId = _randomReserveId(spoke1);
     uint16 configKey = _randomInitializedConfigKey(spoke1, reserveId);
-    DataTypes.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
-    config.liquidationBonus = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR - 1).toUint32();
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
+    config.maxLiquidationBonus = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR - 1).toUint32();
 
-    vm.expectRevert(ISpoke.InvalidCollateralFactorAndLiquidationBonus.selector, address(spoke1));
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(reserveId, configKey, config);
   }
 
-  function test_updateDynamicReserveConfig_fuzz_revertsWith_InvalidCollateralFactorAndLiquidationBonus(
+  function test_updateDynamicReserveConfig_fuzz_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus(
     uint16 collateralFactor,
     uint32 liquidationBonus
   ) public {
@@ -125,11 +127,11 @@ contract SpokeDynamicConfigTest is SpokeBase {
 
     uint256 reserveId = _randomReserveId(spoke1);
     uint16 configKey = _randomInitializedConfigKey(spoke1, reserveId);
-    DataTypes.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
     config.collateralFactor = collateralFactor;
-    config.liquidationBonus = liquidationBonus;
+    config.maxLiquidationBonus = liquidationBonus;
 
-    vm.expectRevert(ISpoke.InvalidCollateralFactorAndLiquidationBonus.selector, address(spoke1));
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(reserveId, configKey, config);
   }
@@ -137,7 +139,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function test_updateDynamicReserveConfig_revertsWith_InvalidLiquidationFee() public {
     uint256 reserveId = _randomReserveId(spoke1);
     uint16 configKey = _randomInitializedConfigKey(spoke1, reserveId);
-    DataTypes.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
     config.liquidationFee = vm
       .randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
       .toUint16();
@@ -147,7 +149,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     spoke1.updateDynamicReserveConfig(reserveId, configKey, config);
   }
 
-  function test_updateDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndLiquidationBonus_collateralFactor()
+  function test_updateDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_collateralFactor()
     public
   {
     uint16 collateralFactor = vm
@@ -156,19 +158,19 @@ contract SpokeDynamicConfigTest is SpokeBase {
 
     uint256 reserveId = _randomReserveId(spoke1);
     uint16 configKey = _randomInitializedConfigKey(spoke1, reserveId);
-    DataTypes.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
     config.collateralFactor = collateralFactor;
 
-    vm.expectRevert(ISpoke.InvalidCollateralFactorAndLiquidationBonus.selector, address(spoke1));
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(reserveId, configKey, config);
   }
 
   function test_updateDynamicReserveConfig_revertsWith_ReserveNotListed() public {
     uint256 invalidReserveId = vm.randomUint(spoke1.getReserveCount(), type(uint256).max);
-    DataTypes.DynamicReserveConfig memory dynConf;
+    ISpoke.DynamicReserveConfig memory dynConf;
 
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotListed.selector, invalidReserveId));
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(invalidReserveId, _randomConfigKey(), dynConf);
   }
@@ -176,12 +178,14 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function test_updateDynamicReserveConfig_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
-    vm.assume(caller != SPOKE_ADMIN && caller != ADMIN);
+    vm.assume(
+      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+    );
     uint256 reserveId = _randomReserveId(spoke1);
     uint16 configKey = _randomInitializedConfigKey(spoke1, reserveId);
-    DataTypes.DynamicReserveConfig memory dynConf = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory dynConf = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
 
@@ -195,7 +199,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function test_updateDynamicReserveConfig_revertsWith_ConfigKeyUninitialized() public {
     uint256 reserveId = _randomReserveId(spoke1);
     uint16 configKey = _randomUninitializedConfigKey(spoke1, reserveId);
-    DataTypes.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
+    ISpoke.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
 
     vm.expectRevert(ISpoke.ConfigKeyUninitialized.selector);
     vm.prank(SPOKE_ADMIN);
@@ -203,9 +207,9 @@ contract SpokeDynamicConfigTest is SpokeBase {
   }
 
   function test_addDynamicReserveConfig() public {
-    DataTypes.DynamicReserveConfig memory dynConf = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory dynConf = ISpoke.DynamicReserveConfig({
       collateralFactor: 20_00,
-      liquidationBonus: 130_00,
+      maxLiquidationBonus: 130_00,
       liquidationFee: 15_00
     });
     uint256 reserveId = _randomReserveId(spoke1);
@@ -221,9 +225,9 @@ contract SpokeDynamicConfigTest is SpokeBase {
   }
 
   function test_updateDynamicReserveConfig() public {
-    DataTypes.DynamicReserveConfig memory dynConf = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory dynConf = ISpoke.DynamicReserveConfig({
       collateralFactor: 20_00,
-      liquidationBonus: 130_00,
+      maxLiquidationBonus: 130_00,
       liquidationFee: 15_00
     });
     uint256 reserveId = _randomReserveId(spoke1);
@@ -254,7 +258,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     for (uint256 reserveId; reserveId < spoke1.getReserveCount(); ++reserveId) {
       uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
-      DataTypes.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
+      ISpoke.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
       dynConf.collateralFactor = _randomBps();
       vm.expectEmit(address(spoke1));
       emit ISpoke.AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
@@ -275,7 +279,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
       uint256 reserveId = _randomReserveId(spoke1);
       uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
-      DataTypes.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
+      ISpoke.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
       dynConf.collateralFactor = _randomBps();
 
       vm.expectEmit(address(spoke1));
@@ -297,7 +301,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
       uint256 reserveId = _randomReserveId(spoke1);
       uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
-      DataTypes.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
+      ISpoke.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
       dynConf.collateralFactor = vm.randomUint() % 2 == 0
         ? spoke1
           .getDynamicReserveConfig(reserveId, vm.randomUint(0, dynamicConfigKey - 1).toUint16())
@@ -326,7 +330,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
 
     // existing users: alice, bob
     // alice still healthy
-    assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGt(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     // bob cannot borrow after collateral is disabled
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     Utils.borrow(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);

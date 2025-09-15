@@ -29,7 +29,7 @@ contract HubPayFeeTest is HubBase {
     });
 
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
-    uint256 feeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
+    uint256 feeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
 
     vm.expectRevert(
       abi.encodeWithSelector(IHub.AddedSharesExceeded.selector, feeShares),
@@ -53,7 +53,7 @@ contract HubPayFeeTest is HubBase {
     _drawLiquidity(daiAssetId, addAmount, true);
 
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
-    uint256 feeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
+    uint256 feeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
 
     // supply ex rate increases due to interest
     assertGt(feeAmount, feeShares);
@@ -95,15 +95,19 @@ contract HubPayFeeTest is HubBase {
     assertGe(hub1.convertToAddedAssets(daiAssetId, WadRayMath.RAY), WadRayMath.RAY);
 
     feeShares = bound(feeShares, 1, spokeSharesBefore);
-    uint256 feeAmount = hub1.convertToAddedAssets(daiAssetId, feeShares);
 
     uint256 feeReceiverSharesBefore = hub1.getSpokeAddedShares(
       daiAssetId,
-      _getFeeReceiver(daiAssetId)
+      _getFeeReceiver(hub1, daiAssetId)
     );
 
     vm.expectEmit(address(hub1));
-    emit IHub.TransferShares(daiAssetId, feeShares, address(spoke1), _getFeeReceiver(daiAssetId));
+    emit IHubBase.TransferShares(
+      daiAssetId,
+      feeShares,
+      address(spoke1),
+      _getFeeReceiver(hub1, daiAssetId)
+    );
 
     vm.prank(address(spoke1));
     hub1.payFee(daiAssetId, feeShares);
@@ -112,7 +116,7 @@ contract HubPayFeeTest is HubBase {
     uint256 spokeSharesAfter = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 feeReceiverSharesAfter = hub1.getSpokeAddedShares(
       daiAssetId,
-      _getFeeReceiver(daiAssetId)
+      _getFeeReceiver(hub1, daiAssetId)
     );
 
     assertEq(spokeSharesAfter, spokeSharesBefore - feeShares, 'spoke supplied shares after');

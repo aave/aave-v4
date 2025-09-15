@@ -1,0 +1,354 @@
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
+pragma solidity ^0.8.0;
+
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
+import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
+
+/**
+ * @title IHub
+ * @author Aave Labs
+ * @notice Full interface for Hub
+ */
+interface IHub is IHubBase, IAccessManaged {
+  struct Asset {
+    uint128 liquidity;
+    uint128 addedShares;
+    //
+    uint128 deficit;
+    uint128 swept;
+    //
+    uint128 premiumShares;
+    uint128 premiumOffset;
+    //
+    uint128 drawnIndex;
+    uint128 drawnShares;
+    //
+    uint128 realizedPremium;
+    uint16 liquidityFee;
+    uint40 lastUpdateTimestamp;
+    uint8 decimals;
+    //
+    address underlying;
+    //
+    uint96 drawnRate;
+    address irStrategy;
+    //
+    address reinvestmentController;
+    //
+    address feeReceiver;
+  }
+
+  struct AssetConfig {
+    address feeReceiver;
+    uint16 liquidityFee;
+    address irStrategy;
+    address reinvestmentController;
+  }
+
+  struct SpokeData {
+    uint128 premiumShares;
+    uint128 premiumOffset;
+    //
+    uint128 realizedPremium;
+    uint128 drawnShares;
+    //
+    uint128 addedShares;
+    uint56 addCap;
+    uint56 drawCap;
+    bool active;
+  }
+
+  struct SpokeConfig {
+    bool active;
+    uint56 addCap;
+    uint56 drawCap;
+  }
+
+  event AddSpoke(uint256 indexed assetId, address indexed spoke);
+  event AddAsset(uint256 indexed assetId, address indexed underlying, uint8 decimals);
+  event UpdateAssetConfig(uint256 indexed assetId, AssetConfig config);
+  event UpdateSpokeConfig(uint256 indexed assetId, address indexed spoke, SpokeConfig config);
+  event UpdateAsset(
+    uint256 indexed assetId,
+    uint256 drawnIndex,
+    uint256 drawnRate,
+    uint256 latestUpdateTimestamp
+  );
+  event ReportDeficit(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 drawnShares,
+    PremiumDelta premiumDelta,
+    uint256 drawnAmount,
+    uint256 premiumAmount
+  );
+  event AccrueFees(uint256 indexed assetId, uint256 shares);
+
+  /**
+   * @notice Emitted when an amount of liquidity is swept/reinvested.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount swept.
+   */
+  event Sweep(uint256 indexed assetId, uint256 amount);
+
+  /**
+   * @notice Emitted when an amount of liquidity is reclaimed (from swept/reinvested liquidity).
+   * @param assetId The identifier of the asset.
+   * @param amount The amount reclaimed.
+   */
+  event Reclaim(uint256 indexed assetId, uint256 amount);
+
+  /**
+   * @notice Emitted when deficit is eliminated.
+   * @param assetId The identifier of the asset.
+   * @param spoke The spoke that eliminated the deficit, and had supplied shares removed.
+   * @param shares The amount of shares removed.
+   * @param amount The amount of deficit eliminated.
+   */
+  event EliminateDeficit(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 shares,
+    uint256 amount
+  );
+
+  error AssetNotListed();
+  error AddCapExceeded(uint256 addCap);
+  error AddedAmountExceeded(uint256 addedAmount);
+  error AddedSharesExceeded(uint256 addedShares);
+  error InsufficientLiquidity(uint256 liquidity);
+  error DrawCapExceeded(uint256 drawCap);
+  error SurplusAmountRestored(uint256 maxAllowedRestore);
+  error InvalidPremiumChange();
+  error SurplusDeficitReported(uint256 amount);
+  error SpokeNotActive();
+  error InvalidReinvestmentController();
+  error OnlyReinvestmentController();
+  error SpokeAlreadyListed();
+  error SpokeNotListed();
+  error InvalidAmount();
+  error InvalidShares();
+  error InvalidAddress();
+  error InvalidLiquidityFee();
+  error InvalidAssetDecimals();
+  error InvalidInterestRateStrategyUpdate();
+
+  /**
+   * @notice Adds a new asset to the hub.
+   * @dev The same underlying asset address can be added as an asset multiple times.
+   * @dev The fee receiver is added as a new spoke with maximum add cap and zero draw cap.
+   * @param underlying The address of the underlying asset.
+   * @param decimals The number of decimals of the asset.
+   * @param feeReceiver The address of the fee receiver spoke.
+   * @param irStrategy The address of the interest rate strategy contract.
+   * @param irData The interest rate data to apply to the given asset encoded in bytes.
+   * @return The unique identifier of the added asset.
+   */
+  function addAsset(
+    address underlying,
+    uint8 decimals,
+    address feeReceiver,
+    address irStrategy,
+    bytes calldata irData
+  ) external returns (uint256);
+
+  /**
+   * @notice Updates the configuration of an asset.
+   * @dev If the fee receiver is updated, it is added as a new spoke with maximum add cap and zero draw cap, and set old fee receiver caps to zero.
+   * @dev If the interest rate strategy is updated, it is configured with `irData`. Otherwise, `irData` must be empty.
+   * @param assetId The identifier of the asset.
+   * @param config The new configuration for the asset.
+   * @param irData The interest rate data to apply to the given asset, encoded in bytes.
+   */
+  function updateAssetConfig(
+    uint256 assetId,
+    AssetConfig calldata config,
+    bytes calldata irData
+  ) external;
+
+  /**
+   * @notice Registers a new spoke for a specific asset in the hub.
+   * @dev Reverts if spoke is already listed with SpokeAlreadyListed.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke to add.
+   * @param params The configuration parameters for the spoke.
+   */
+  function addSpoke(uint256 assetId, address spoke, SpokeConfig calldata params) external;
+
+  /**
+   * @notice Updates the configuration of a spoke for a specific asset.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke to update.
+   * @param config The new configuration for the spoke.
+   */
+  function updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig calldata config) external;
+
+  /**
+   * @notice Updates the interest rate strategy for a specified asset.
+   * @param assetId The identifier of the asset.
+   * @param irData The interest rate data to apply to the given asset, encoded in bytes.
+   */
+  function setInterestRateData(uint256 assetId, bytes calldata irData) external;
+
+  /**
+   * @notice Allows a spoke to transfer its supplied shares of an asset to another spoke.
+   * @dev Only callable by spokes.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to move.
+   * @param toSpoke The address of the spoke to move shares to.
+   */
+  function transferShares(uint256 assetId, uint256 shares, address toSpoke) external;
+
+  /**
+   * @notice Eliminates deficit by removing supplied shares of caller spoke.
+   * @dev Only callable by active spokes.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount of deficit to eliminate.
+   * @return The amount of shares removed.
+   */
+  function eliminateDeficit(uint256 assetId, uint256 amount) external returns (uint256);
+
+  /**
+   * @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment controller.
+   * @dev The controller handles the actual reinvestment of funds, redistribution of interest, and investment caps.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount to sweep.
+   */
+  function sweep(uint256 assetId, uint256 amount) external;
+
+  /**
+   * @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment controller.
+   * @dev The controller can only reclaim up to swept amount. All accrued interest is distributed offchain.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount to reclaim.
+   */
+  function reclaim(uint256 assetId, uint256 amount) external;
+
+  /**
+   * @notice Returns the maximum allowed number of decimals for the underlying asset.
+   * @return The maximum number of decimals (inclusive).
+   */
+  function MAX_ALLOWED_UNDERLYING_DECIMALS() external view returns (uint8);
+
+  /**
+   * @notice Returns the maximum value for any spoke cap (add or draw).
+   * @dev The value is not inclusive; using the maximum value indicates no cap.
+   * @return The maximum cap value, expressed in asset units.
+   */
+  function MAX_ALLOWED_SPOKE_CAP() external view returns (uint56);
+
+  /**
+   * @notice Converts the specified amount of supplied shares to assets amount.
+   * @dev Rounds down to the nearest assets amount.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of supplied shares to convert to assets amount.
+   * @return The amount of supplied assets converted from shares amount.
+   */
+  function convertToAddedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of supplied assets to shares amount.
+   * @dev Rounds down to the nearest shares amount.
+   * @param assetId The identifier of the asset.
+   * @param assets The amount of supplied assets to convert to shares amount.
+   * @return The amount of supplied shares converted from assets amount.
+   */
+  function convertToAddedShares(uint256 assetId, uint256 assets) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of drawn shares to assets amount.
+   * @dev Rounds up to the nearest assets amount.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of drawn shares to convert to assets amount.
+   * @return The amount of drawn assets converted from shares amount.
+   */
+  function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+
+  /**
+   * @notice Converts the specified amount of drawn assets to shares amount.
+   * @dev Rounds down to the nearest shares amount.
+   * @param assetId The identifier of the asset.
+   * @param assets The amount of drawn assets to convert to shares amount.
+   * @return The amount of drawn shares converted from assets amount.
+   */
+  function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
+
+  /**
+   * @notice Calculates the current drawn index of the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The calculated current drawn index of the asset.
+   */
+  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256);
+
+  /**
+   * @notice Returns the current drawn rate of the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The current drawn rate of the asset.
+   */
+  function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
+
+  /**
+   * @notice Returns a struct containing information about the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The asset info struct.
+   */
+  function getAsset(uint256 assetId) external view returns (Asset memory);
+
+  function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory);
+
+  function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
+
+  function getAssetTotalOwed(uint256 assetId) external view returns (uint256);
+
+  /**
+   * @notice Returns the amount of drawn shares of the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The amount of drawn shares.
+   */
+  function getAssetDrawnShares(uint256 assetId) external view returns (uint256);
+
+  /**
+   * @notice Returns the information regarding premium shares of the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The premium shares of the asset.
+   * @return The premium offset of the asset.
+   * @return The realized premium of the asset.
+   */
+  function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256);
+
+  /**
+   * @notice Returns the amount of available liquidity of the specified asset.
+   * @param assetId The identifier of the asset.
+   */
+  function getLiquidity(uint256 assetId) external view returns (uint256);
+
+  /**
+   * @notice Returns the amount swept (reinvested) liquidity of the specified asset.
+   * @param assetId The identifier of the asset.
+   */
+  function getSwept(uint256 assetId) external view returns (uint256);
+
+  /**
+   * @notice Returns the amount of deficit of the specified asset.
+   * @param assetId The identifier of the asset.
+   */
+  function getDeficit(uint256 assetId) external view returns (uint256);
+
+  function getSpokeCount(uint256 assetId) external view returns (uint256);
+
+  function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address);
+
+  function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
+
+  function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory);
+
+  function getSpokeConfig(
+    uint256 assetId,
+    address spoke
+  ) external view returns (SpokeConfig memory);
+
+  function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256);
+
+  function getAssetCount() external view returns (uint256);
+}
