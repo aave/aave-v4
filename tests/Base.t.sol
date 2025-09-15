@@ -71,6 +71,8 @@ import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
+import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
+import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 
 abstract contract Base is Test {
   using WadRayMath for uint256;

@@ -36,17 +36,4 @@ library Deploy {
       hub := create2(0, add(initCode, 0x20), mload(initCode), salt)
     }
   }
-
-  function deployMockSpokeInstance(
-    uint64 revision,
-    address oracle
-  ) internal returns (ISpoke spoke) {
-    bytes memory initCode = abi.encodePacked(
-      vm.getCode('tests/mocks/MockSpokeInstance.sol:MockSpokeInstance'),
-      abi.encode(revision, oracle)
-    );
-    assembly {
-      spoke := create(0, add(initCode, 0x20), mload(initCode))
-    }
-  }
 }
