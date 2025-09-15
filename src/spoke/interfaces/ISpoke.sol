@@ -40,9 +40,9 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   }
 
   struct LiquidationConfig {
-    uint128 targetHealthFactor; // WAD, HF value to restore to during a liquidation
+    uint128 targetHealthFactor; // WAD, ideal health factor to restore user position during liquidation
     uint64 healthFactorForMaxBonus; // WAD, health factor under which liquidation bonus is max
-    uint16 liquidationBonusFactor; // BPS, as a percentage of effective lb
+    uint16 liquidationBonusFactor; // BPS, liquidation bonus factor * maxLiquidationBonus is the minimum liquidation bonus
   }
 
   struct UserPosition {
@@ -75,7 +75,19 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     uint256 borrowedReservesCount; // number of reserves with strictly positive debt
   }
 
+  /**
+   * @notice Emitted when a reserve is added.
+   * @param reserveId The identifier of the reserve.
+   * @param assetId The identifier of the asset.
+   * @param hub The address of the hub where the asset is listed.
+   */
   event AddReserve(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
+
+  /**
+   * @notice Emitted when a reserve configuration is updated.
+   * @param reserveId The identifier of the reserve.
+   * @param config The reserve configuration object.
+   */
   event UpdateReserveConfig(uint256 indexed reserveId, ReserveConfig config);
 
   /**
@@ -154,42 +166,157 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    */
   event UpdatePositionManager(address indexed positionManager, bool active);
 
+  /**
+   * @notice Emitted on refreshPremiumDebt action.
+   * @param reserveId The identifier of the reserve.
+   * @param user The address of the user.
+   * @param premiumDelta The premium delta.
+   */
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
     address indexed user,
     IHubBase.PremiumDelta premiumDelta
   );
-  event UpdateOracle(address indexed oracle);
+
+  /**
+   * @notice Emitted when a reserve price source is updated.
+   * @param reserveId The identifier of the reserve.
+   * @param priceSource The address of the price source.
+   */
   event UpdateReservePriceSource(uint256 indexed reserveId, address indexed priceSource);
+
+  /**
+   * @notice Emitted when a liquidation config is updated.
+   * @param config The liquidation config object.
+   */
   event UpdateLiquidationConfig(LiquidationConfig config);
 
+  /**
+   * @notice Thrown when an asset is not listed.
+   */
   error AssetNotListed();
+
+  /**
+   * @notice Thrown when a reserve already exists.
+   */
   error ReserveExists();
+
+  /**
+   * @notice Thrown when an asset id is invalid.
+   */
   error InvalidAssetId();
+
+  /**
+   * @notice Thrown when a reserve is not listed.
+   */
   error ReserveNotListed();
+
+  /**
+   * @notice Thrown when a reserve is not borrowable.
+   */
   error ReserveNotBorrowable();
+
+  /**
+   * @notice Thrown when a reserve is paused.
+   */
   error ReservePaused();
+
+  /**
+   * @notice Thrown when a reserve is frozen.
+   */
   error ReserveFrozen();
+
+  /**
+   * @notice Thrown when an action causes a user's health factor to fall below the liquidationthreshold.
+   */
   error HealthFactorBelowThreshold();
+
+  /**
+   * @notice Thrown when collateral cannot be liquidated.
+   */
   error CollateralCannotBeLiquidated();
+
+  /**
+   * @notice Thrown when a specified reserve is not borrowed by the user.
+   */
   error SpecifiedCurrencyNotBorrowedByUser();
+
+  /**
+   * @notice Thrown when an unauthorized caller attempts an action.
+   */
   error Unauthorized();
+
+  /**
+   * @notice Thrown when a config key is uninitialized.
+   */
   error ConfigKeyUninitialized();
+
+  /**
+   * @notice Thrown when a position manager is inactive.
+   */
   error InactivePositionManager();
+
+  /**
+   * @notice Thrown when a signature is invalid.
+   */
   error InvalidSignature();
+
+  /**
+   * @notice Thrown for an invalid zero address.
+   */
   error InvalidAddress();
-  error InvalidOracle();
+
+  /**
+   * @notice Thrown when a collateral risk is invalid.
+   */
   error InvalidCollateralRisk();
+
+  /**
+   * @notice Thrown when a liquidation config is invalid.
+   */
   error InvalidLiquidationConfig();
+
+  /**
+   * @notice Thrown when a liquidation fee is invalid.
+   */
   error InvalidLiquidationFee();
+
+  /**
+   * @notice Thrown when a collateral factor and max liquidation bonus are invalid.
+   */
   error InvalidCollateralFactorAndMaxLiquidationBonus();
+
+  /**
+   * @notice Thrown when a self-liquidation occurs.
+   */
   error SelfLiquidation();
+
+  /**
+   * @notice Thrown during liquidation when a user's health factor is not below the liquidation threshold.
+   */
   error HealthFactorNotBelowThreshold();
+
+  /**
+   * @notice Thrown when a dust debt is left after a liquidation.
+   */
   error MustNotLeaveDust();
+
+  /**
+   * @notice Thrown when a debt to cover is invalid.
+   */
   error InvalidDebtToCover();
 
+  /**
+   * @notice Updates the liquidation config.
+   * @param config The liquidation config object.
+   */
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
+  /**
+   * @notice Updates the price source of a reserve.
+   * @param reserveId The identifier of the reserve.
+   * @param priceSource The address of the price source.
+   */
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;
 
   /**
@@ -366,43 +493,115 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    */
   function MAX_ALLOWED_COLLATERAL_RISK() external view returns (uint24);
 
+  /**
+   * @notice Returns the address of the AaveOracle contract.
+   * @return The address of the AaveOracle contract.
+   */
   function ORACLE() external view returns (address);
 
+  /**
+   * @notice Returns the reserve object.
+   * @param reserveId The identifier of the reserve.
+   * @return The reserve object.
+   */
   function getReserve(uint256 reserveId) external view returns (Reserve memory);
 
+  /**
+   * @notice Returns the reserve configuration object.
+   * @param reserveId The identifier of the reserve.
+   * @return The reserve configuration object.
+   */
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory);
 
+  /**
+   * @notice Returns the dynamic reserve configuration object.
+   * @param reserveId The identifier of the reserve.
+   * @return The dynamic reserve configuration object.
+   */
   function getDynamicReserveConfig(
     uint256 reserveId
   ) external view returns (DynamicReserveConfig memory);
 
+  /**
+   * @notice Returns the dynamic reserve configuration object at the specified key.
+   * @param reserveId The identifier of the reserve.
+   * @param configKey The key of the dynamic config.
+   * @return The dynamic reserve configuration object.
+   */
   function getDynamicReserveConfig(
     uint256 reserveId,
     uint16 configKey
   ) external view returns (DynamicReserveConfig memory);
 
+  /**
+   * @notice Returns the user account data object.
+   * @param user The address of the user.
+   * @return The user account data object.
+   */
   function getUserAccountData(address user) external view returns (UserAccountData memory);
 
+  /**
+   * @notice Returns the user position object.
+   * @param reserveId The identifier of the reserve.
+   * @param user The address of the user.
+   * @return The user position object.
+   */
   function getUserPosition(
     uint256 reserveId,
     address user
   ) external view returns (UserPosition memory);
 
+  /**
+   * @notice Returns true if the user is using the reserve as collateral, false otherwise.
+   * @param reserveId The identifier of the reserve.
+   * @param user The address of the user.
+   * @return True if the user is using the reserve as collateral, false otherwise.
+   */
   function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
 
+  /**
+   * @notice Returns true if the user is borrowing the reserve, false otherwise.
+   * @param reserveId The identifier of the reserve.
+   * @param user The address of the user.
+   * @return True if the user is borrowing the reserve, false otherwise.
+   */
   function isBorrowing(uint256 reserveId, address user) external view returns (bool);
 
+  /**
+   * @notice Returns the number of reserves.
+   * @return The number of reserves.
+   */
   function getReserveCount() external view returns (uint256);
 
+  /**
+   * @notice Returns the liquidation bonus for a given health factor, based on the user's dynamic config.
+   * @param reserveId The identifier of the reserve.
+   * @param user The address of the user.
+   * @param healthFactor The health factor of the user.
+   * @return The liquidation bonus, in BPS.
+   */
   function getLiquidationBonus(
     uint256 reserveId,
     address user,
     uint256 healthFactor
   ) external view returns (uint256);
 
+  /**
+   * @notice Returns the liquidation config object.
+   * @return The liquidation config object.
+   */
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
 
+  /**
+   * @notice Returns the nonce of a user.
+   * @param user The address of the user.
+   * @return The nonce of the user.
+   */
   function nonces(address user) external view returns (uint256);
 
+  /**
+   * @notice Returns the domain separator.
+   * @return The domain separator.
+   */
   function DOMAIN_SEPARATOR() external view returns (bytes32);
 }
