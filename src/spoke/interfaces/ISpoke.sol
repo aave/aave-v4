@@ -75,6 +75,21 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     uint256 borrowedReservesCount; // number of reserves with strictly positive debt
   }
 
+  struct RefreshUserAccountDataVars {
+    uint256 reserveId;
+    bool borrowing;
+    bool collateral;
+    uint256 assetPrice;
+    uint256 assetUnit;
+    uint256 collateralFactor;
+    uint256 userCollateralInBaseCurrency;
+    uint256 drawnDebt;
+    uint256 premiumDebt;
+    uint256 debtCounterInBaseCurrency;
+    uint256 collateralCounterInBaseCurrency;
+    uint256 collateralRisk;
+  }
+
   event AddReserve(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
   event UpdateReserveConfig(uint256 indexed reserveId, ReserveConfig config);
 

@@ -764,42 +764,47 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     address user,
     bool refreshConfig
   ) internal returns (UserAccountData memory userAccountData) {
+    RefreshUserAccountDataVars memory vars;
     PositionStatus storage positionStatus = _positionStatus[user];
 
-    uint256 reserveId = _reserveCount;
-    KeyValueList.List memory list = KeyValueList.init(positionStatus.collateralCount(reserveId));
-    bool borrowing;
-    bool collateral;
+    vars.reserveId = _reserveCount;
+    KeyValueList.List memory list = KeyValueList.init(
+      positionStatus.collateralCount(vars.reserveId)
+    );
+    vars.borrowing;
+    vars.collateral;
     while (true) {
-      (reserveId, borrowing, collateral) = positionStatus.next(reserveId);
-      if (reserveId == PositionStatusMap.NOT_FOUND) break;
+      (vars.reserveId, vars.borrowing, vars.collateral) = positionStatus.next(vars.reserveId);
+      if (vars.reserveId == PositionStatusMap.NOT_FOUND) break;
 
-      UserPosition storage userPosition = _userPositions[user][reserveId];
-      Reserve storage reserve = _reserves[reserveId];
+      UserPosition storage userPosition = _userPositions[user][vars.reserveId];
+      Reserve storage reserve = _reserves[vars.reserveId];
 
-      uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
-      uint256 assetUnit = uint256(10).uncheckedExp(reserve.decimals);
+      vars.assetPrice = IAaveOracle(ORACLE).getReservePrice(vars.reserveId);
+      vars.assetUnit = uint256(10).uncheckedExp(reserve.decimals);
 
-      if (collateral) {
-        uint256 collateralFactor = _dynamicConfig[reserveId][
+      if (vars.collateral) {
+        vars.collateralFactor = _dynamicConfig[vars.reserveId][
           refreshConfig
             ? (userPosition.configKey = reserve.dynamicConfigKey)
             : userPosition.configKey
         ].collateralFactor;
-        if (collateralFactor > 0) {
-          uint256 userCollateralInBaseCurrency = (reserve.hub.previewRemoveByShares(
+        if (vars.collateralFactor > 0) {
+          vars.userCollateralInBaseCurrency = (reserve.hub.previewRemoveByShares(
             reserve.assetId,
             userPosition.suppliedShares
-          ) * assetPrice).wadDivDown(assetUnit);
+          ) * vars.assetPrice).wadDivDown(vars.assetUnit);
 
-          if (userCollateralInBaseCurrency > 0) {
-            userAccountData.totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
+          if (vars.userCollateralInBaseCurrency > 0) {
+            userAccountData.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
             list.add(
               userAccountData.suppliedCollateralsCount,
               reserve.collateralRisk,
-              userCollateralInBaseCurrency
+              vars.userCollateralInBaseCurrency
             );
-            userAccountData.avgCollateralFactor += collateralFactor * userCollateralInBaseCurrency;
+            userAccountData.avgCollateralFactor +=
+              vars.collateralFactor *
+              vars.userCollateralInBaseCurrency;
             userAccountData.suppliedCollateralsCount = userAccountData
               .suppliedCollateralsCount
               .uncheckedAdd(1);
@@ -807,15 +812,15 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
         }
       }
 
-      if (borrowing) {
-        (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
+      if (vars.borrowing) {
+        (vars.drawnDebt, vars.premiumDebt, ) = _getUserDebt(
           reserve.hub,
           reserve.assetId,
           userPosition
         );
         userAccountData.totalDebtInBaseCurrency +=
-          (drawnDebt * assetPrice).wadDivUp(assetUnit) +
-          (premiumDebt * assetPrice).wadDivUp(assetUnit);
+          (vars.drawnDebt * vars.assetPrice).wadDivUp(vars.assetUnit) +
+          (vars.premiumDebt * vars.assetPrice).wadDivUp(vars.assetUnit);
         userAccountData.borrowedReservesCount = userAccountData.borrowedReservesCount.uncheckedAdd(
           1
         );
@@ -840,28 +845,28 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
         .wadDivDown(userAccountData.totalCollateralInBaseCurrency)
         .fromBpsDown();
 
-    uint256 debtCounterInBaseCurrency = userAccountData.totalDebtInBaseCurrency;
-    uint256 collateralCounterInBaseCurrency = 0;
+    vars.debtCounterInBaseCurrency = userAccountData.totalDebtInBaseCurrency;
+    vars.collateralCounterInBaseCurrency = 0;
 
     list.sortByKey(); // sort by collateral risk
     uint256 i = 0;
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
-    while (i < list.length() && debtCounterInBaseCurrency > 0) {
-      (uint256 collateralRisk, uint256 userCollateralInBaseCurrency) = list.get(i);
-      if (userCollateralInBaseCurrency > debtCounterInBaseCurrency) {
-        userCollateralInBaseCurrency = debtCounterInBaseCurrency;
+    while (i < list.length() && vars.debtCounterInBaseCurrency > 0) {
+      (vars.collateralRisk, vars.userCollateralInBaseCurrency) = list.get(i);
+      if (vars.userCollateralInBaseCurrency > vars.debtCounterInBaseCurrency) {
+        vars.userCollateralInBaseCurrency = vars.debtCounterInBaseCurrency;
       }
-      userAccountData.userRiskPremium += userCollateralInBaseCurrency * collateralRisk;
-      collateralCounterInBaseCurrency += userCollateralInBaseCurrency;
-      debtCounterInBaseCurrency -= userCollateralInBaseCurrency;
+      userAccountData.userRiskPremium += vars.userCollateralInBaseCurrency * vars.collateralRisk;
+      vars.collateralCounterInBaseCurrency += vars.userCollateralInBaseCurrency;
+      vars.debtCounterInBaseCurrency -= vars.userCollateralInBaseCurrency;
       i = i.uncheckedAdd(1);
     }
 
-    if (collateralCounterInBaseCurrency > 0) {
+    if (vars.collateralCounterInBaseCurrency > 0) {
       userAccountData.userRiskPremium =
         userAccountData.userRiskPremium /
-        collateralCounterInBaseCurrency;
+        vars.collateralCounterInBaseCurrency;
     }
 
     return userAccountData;

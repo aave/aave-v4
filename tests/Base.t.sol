@@ -40,12 +40,12 @@ import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
 
 // hub
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
-import {IHub, IHubBase} from 'src/hub/Hub.sol';
+import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
-import {ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
+import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
