@@ -823,7 +823,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   /**
    * @notice Calculates the user account data and refreshes the dynamic config.
    * @param user The address of the user.
-   * @return The user account data object.
+   * @return userAccountData The user account data object.
    */
   function _calculateAndRefreshUserAccountData(
     address user
@@ -837,7 +837,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    * @dev User rp calc runs until the first of either debt or collateral is exhausted
    * @param user The address of the user.
    * @param refreshConfig True if the dynamic config should be refreshed, false otherwise.
-   * @return The user account data object.
+   * @return userAccountData The user account data object.
    */
   function _calculateAndPotentiallyRefreshUserAccountData(
     address user,
@@ -1099,7 +1099,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    * @notice Casts a function to a view function.
    * @dev Only utilized for the _calculateUserAccountData function.
    * @param fnIn The function to cast.
-   * @return The view function.
+   * @return fnOut The view function.
    */
   function _castToView(
     function(address, bool) internal returns (UserAccountData memory) fnIn
