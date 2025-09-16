@@ -118,8 +118,17 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     // Liquidated amounts:
     //   - Collateral: 2 WETH
     //   - Debt: $4000 / ($1 * 1.249) = ~3225.8 DAI
-    vm.prank(liquidator);
-    spoke.liquidationCall(_wethReserveId(spoke), _daiReserveId(spoke), user, 4000e18);
+    _checkedLiquidationCall(
+      CheckedLiquidationCallParams({
+        spoke: spoke,
+        collateralReserveId: _wethReserveId(spoke),
+        debtReserveId: _daiReserveId(spoke),
+        user: user,
+        debtToCover: 4000e18,
+        liquidator: liquidator,
+        isSolvent: true
+      })
+    );
 
     // Debt left after liquidation: 3713.4 - 3225.8 = 487.6 DAI (all drawn)
     assertApproxEqAbs(
@@ -190,8 +199,17 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     // Liquidated amounts:
     //   - Collateral: 0.1003 * 1.03 = ~0.1033 WBTC
     //   - Debt: 0.1003 WBTC
-    vm.prank(liquidator);
-    spoke.liquidationCall(_wbtcReserveId(spoke), _wbtcReserveId(spoke), user, 0.13e8);
+    _checkedLiquidationCall(
+      CheckedLiquidationCallParams({
+        spoke: spoke,
+        collateralReserveId: _wbtcReserveId(spoke),
+        debtReserveId: _wbtcReserveId(spoke),
+        user: user,
+        debtToCover: 0.13e8,
+        liquidator: liquidator,
+        isSolvent: true
+      })
+    );
 
     // Debt left after liquidation: 0.18 - 0.1003 = 0.0797 WBTC
     assertApproxEqAbs(
