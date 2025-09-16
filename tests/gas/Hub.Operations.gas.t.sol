@@ -29,6 +29,9 @@ contract HubOperations_Gas_Tests is Base {
   }
 
   function test_draw() public {
+    // update draw cap to avoid short circuiting when draw cap is MAX_ALLOWED_SPOKE_CAP
+    updateDrawCap(hub1, daiAssetId, address(spoke1), 1000);
+
     vm.prank(address(spoke2));
     hub1.add(daiAssetId, 1000e18, alice);
 
