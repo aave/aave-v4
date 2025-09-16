@@ -14,14 +14,47 @@ interface IHubBase {
     int256 realizedDelta;
   }
 
+  /**
+   * @notice Emitted on the add action.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param shares The amount of shares added.
+   * @param amount The amount of assets added.
+   */
   event Add(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
+
+  /**
+   * @notice Emitted on the remove action.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param shares The amount of shares removed.
+   * @param amount The amount of assets removed.
+   */
   event Remove(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
+
+  /**
+   * @notice Emitted on the draw action.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param drawnShares The amount of drawn shares.
+   * @param drawnAmount The amount of drawn assets.
+   */
   event Draw(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 drawnShares,
     uint256 drawnAmount
   );
+
+  /**
+   * @notice Emitted on the restore action.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param drawnShares The amount of drawn shares.
+   * @param premiumDelta The premium delta object.
+   * @param drawnAmount The amount of drawn assets restored.
+   * @param premiumAmount The amount of premium assets restored.
+   */
   event Restore(
     uint256 indexed assetId,
     address indexed spoke,
@@ -31,6 +64,23 @@ interface IHubBase {
     uint256 premiumAmount
   );
   event RefreshPremium(uint256 indexed assetId, address indexed spoke, PremiumDelta premiumDelta);
+
+  /**
+   * @notice Emitted on the refresh premium action.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param premiumDelta The premium delta object.
+   */
+  event RefreshPremium(uint256 indexed assetId, address indexed spoke, PremiumDelta premiumDelta);
+
+  /**
+   * @notice Emitted on the transfer shares action.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares transferred.
+   * @param sender The address of the sender.
+   * @param receiver The address of the receiver.
+   */
+  event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
 
   /**
    * @notice Add asset on behalf of user.
