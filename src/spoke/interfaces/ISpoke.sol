@@ -159,7 +159,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     address indexed user,
     IHubBase.PremiumDelta premiumDelta
   );
-  event UpdateOracle(address indexed oracle);
   event UpdateReservePriceSource(uint256 indexed reserveId, address indexed priceSource);
   event UpdateLiquidationConfig(LiquidationConfig config);
 
@@ -178,7 +177,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error InactivePositionManager();
   error InvalidSignature();
   error InvalidAddress();
-  error InvalidOracle();
   error InvalidCollateralRisk();
   error InvalidLiquidationConfig();
   error InvalidLiquidationFee();
