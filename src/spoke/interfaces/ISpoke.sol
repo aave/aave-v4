@@ -177,12 +177,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     address indexed user,
     IHubBase.PremiumDelta premiumDelta
   );
-
-  /**
-   * @notice Emitted when a reserve price source is updated.
-   * @param reserveId The identifier of the reserve.
-   * @param priceSource The address of the price source.
-   */
   event UpdateReservePriceSource(uint256 indexed reserveId, address indexed priceSource);
 
   /**
