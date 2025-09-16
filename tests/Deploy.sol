@@ -13,7 +13,7 @@ library Deploy {
     return deploySpokeInstance(oracle, '');
   }
 
-  function deploySpokeInstance(address oracle, bytes memory salt) internal returns (ISpoke spoke) {
+  function deploySpokeInstance(address oracle, bytes32 salt) internal returns (ISpoke spoke) {
     bytes memory initCode = abi.encodePacked(
       vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
       abi.encode(oracle)
@@ -23,11 +23,44 @@ library Deploy {
     }
   }
 
+  function getDeterministicSpokeInstanceAddress(address oracle) internal view returns (address) {
+    return getDeterministicSpokeInstanceAddress(oracle, '');
+  }
+
+  function getDeterministicSpokeInstanceAddress(
+    address oracle,
+    bytes32 salt
+  ) internal view returns (address) {
+    bytes memory initCode = abi.encodePacked(
+      vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
+      abi.encode(oracle)
+    );
+    bytes32 initCodeHash = keccak256(initCode);
+    return computeAddress(salt, initCodeHash, address(this));
+  }
+
+  function computeAddress(
+    bytes32 salt,
+    bytes32 bytecodeHash,
+    address deployer
+  ) internal pure returns (address addr) {
+    /// @solidity memory-safe-assembly
+    assembly {
+      let ptr := mload(0x40)
+      mstore(add(ptr, 0x40), bytecodeHash)
+      mstore(add(ptr, 0x20), salt)
+      mstore(ptr, deployer)
+      let start := add(ptr, 0x0b)
+      mstore8(start, 0xff)
+      addr := keccak256(start, 85)
+    }
+  }
+
   function deployHub(address authority) internal returns (IHub) {
     return deployHub(authority, '');
   }
 
-  function deployHub(address authority, bytes memory salt) internal returns (IHub hub) {
+  function deployHub(address authority, bytes32 salt) internal returns (IHub hub) {
     bytes memory initCode = abi.encodePacked(
       vm.getCode('src/hub/Hub.sol:Hub'),
       abi.encode(authority)

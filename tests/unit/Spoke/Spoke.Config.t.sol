@@ -9,13 +9,10 @@ contract SpokeConfigTest is SpokeBase {
   using PercentageMath for uint256;
 
   function test_spoke_deploy() public {
-    address predictedSpokeAddress = vm.computeCreateAddress(
-      address(this),
-      vm.getNonce(address(this))
-    );
     address oracle = makeAddr('AaveOracle');
+    address predictedSpokeAddress = Deploy.getDeterministicSpokeInstanceAddress(oracle);
     ISpoke instance = Deploy.deploySpokeInstance(oracle);
-    //assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
+    assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
     assertEq(instance.ORACLE(), oracle);
   }
 

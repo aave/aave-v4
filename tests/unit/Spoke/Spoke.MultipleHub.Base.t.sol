@@ -37,13 +37,13 @@ contract SpokeMultipleHubBase is SpokeBase {
     vm.startPrank(ADMIN);
     accessManager = new AccessManager(ADMIN);
     // Canonical hub and spoke
-    hub1 = Deploy.deployHub(address(accessManager));
+    hub1 = Deploy.deployHub(address(accessManager), hex'01');
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
     treasurySpoke = new TreasurySpoke(ADMIN, address(hub1));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
 
     // New hub and spoke
-    newHub = Deploy.deployHub(address(accessManager));
+    newHub = Deploy.deployHub(address(accessManager), hex'02');
     (newSpoke, newOracle) = _deploySpokeWithOracle(
       ADMIN,
       address(accessManager),
