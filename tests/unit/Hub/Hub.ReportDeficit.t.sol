@@ -57,7 +57,7 @@ contract HubReportDeficitTest is HubBase {
     // draw usdx liquidity to be restored
     Utils.draw({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: usdxAssetId,
       caller: address(spoke1),
       amount: drawnAmount,
       to: address(spoke1)
@@ -67,9 +67,8 @@ contract HubReportDeficitTest is HubBase {
     skip(skipTime);
 
     (uint256 drawn, ) = hub1.getSpokeOwed(usdxAssetId, address(spoke1));
-    vm.assume(baseAmount > drawn);
-
-    premiumAmount = bound(premiumAmount, 0, UINT256_MAX - baseAmount);
+    baseAmount = bound(baseAmount, drawn + 1, uint256(type(int256).max));
+    premiumAmount = bound(premiumAmount, 0, uint256(type(int256).max) - baseAmount);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDeficitReported.selector, drawn));
     vm.prank(address(spoke1));
