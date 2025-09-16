@@ -163,7 +163,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
       skip(100);
       vm.snapshotGasLastCall(
         'Spoke.Operations',
-        string.concat('borrow without refresh (CF=0): # reserves = ', vm.toString(i + 1))
+        string.concat('borrow w/o refresh (CR=0): # reserves = ', vm.toString(i + 1))
       );
     }
   }
