@@ -134,7 +134,36 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
       skip(100);
       vm.snapshotGasLastCall(
         'Spoke.Operations',
-        string.concat('borrow without refresh: # reserves = ', vm.toString(i + 1))
+        string.concat('borrow with refresh: # reserves = ', vm.toString(i + 1))
+      );
+    }
+  }
+
+  function test_borrow_notify_scaled_cf0() public {
+    deal(address(tokenList.wbtc), bob, MAX_SUPPLY_AMOUNT);
+
+    _updateCollateralRisk(spoke1, _wbtcReserveId(spoke1), 0);
+
+    vm.startPrank(bob);
+    spoke1.supply(_wbtcReserveId(spoke1), MAX_SUPPLY_AMOUNT, bob); // max borrowing power
+    spoke1.setUsingAsCollateral(_wbtcReserveId(spoke1), true, bob);
+    vm.stopPrank();
+
+    uint256 numReserves = 100;
+    for (uint256 i = 0; i < numReserves; i++) {
+      (address token, uint256 assetId, uint256 reserveId) = _setUpNewAsset(hub1, spoke1);
+      _addLiquidity(assetId, MAX_SUPPLY_AMOUNT);
+      deal(token, bob, MAX_SUPPLY_AMOUNT);
+
+      vm.startPrank(bob);
+      IERC20(token).approve(address(hub1), MAX_SUPPLY_AMOUNT);
+      spoke1.borrow(reserveId, 100e18, bob);
+      vm.stopPrank();
+
+      skip(100);
+      vm.snapshotGasLastCall(
+        'Spoke.Operations',
+        string.concat('borrow without refresh (CF=0): # reserves = ', vm.toString(i + 1))
       );
     }
   }
