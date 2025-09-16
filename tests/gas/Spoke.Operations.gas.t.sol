@@ -112,26 +112,31 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.stopPrank();
   }
 
-  function test_borrow_skipped_ops() public {
+  function test_borrow_notify_scaled() public {
+    deal(address(tokenList.wbtc), bob, MAX_SUPPLY_AMOUNT);
+
     vm.startPrank(bob);
-    spoke1.supply(_daiReserveId(spoke1), 10_000e18, bob);
-    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, bob);
-    spoke1.borrow(_daiReserveId(spoke1), 500e18, bob);
+    spoke1.supply(_wbtcReserveId(spoke1), MAX_SUPPLY_AMOUNT, bob); // max borrowing power
+    spoke1.setUsingAsCollateral(_wbtcReserveId(spoke1), true, bob);
     vm.stopPrank();
 
-    vm.startPrank(alice);
-    spoke1.supply(_usdxReserveId(spoke1), 10_000e6, alice);
-    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
+    uint256 numReserves = 100;
+    for (uint256 i = 0; i < numReserves; i++) {
+      (address token, uint256 assetId, uint256 reserveId) = _setUpNewAsset(hub1, spoke1);
+      _addLiquidity(assetId, MAX_SUPPLY_AMOUNT);
+      deal(token, bob, MAX_SUPPLY_AMOUNT);
 
-    spoke1.borrow(_daiReserveId(spoke1), 500e18, alice);
+      vm.startPrank(bob);
+      IERC20(token).approve(address(hub1), MAX_SUPPLY_AMOUNT);
+      spoke1.borrow(reserveId, 100e18, bob);
+      vm.stopPrank();
 
-    spoke1.borrow(_wethReserveId(spoke1), 1e15, alice);
-
-    spoke1.borrow(_wbtcReserveId(spoke1), 1e4, alice);
-
-    spoke1.borrow(_usdyReserveId(spoke1), 1e5, alice);
-    vm.snapshotGasLastCall('Spoke.Operations', 'borrow without refresh: fourth');
-    vm.stopPrank();
+      skip(100);
+      vm.snapshotGasLastCall(
+        'Spoke.Operations',
+        string.concat('borrow without refresh: # reserves = ', vm.toString(i + 1))
+      );
+    }
   }
 
   function test_restore() public {

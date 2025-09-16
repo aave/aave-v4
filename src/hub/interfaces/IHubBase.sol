@@ -63,7 +63,6 @@ interface IHubBase {
     uint256 drawnAmount,
     uint256 premiumAmount
   );
-  event RefreshPremium(uint256 indexed assetId, address indexed spoke, PremiumDelta premiumDelta);
 
   /**
    * @notice Emitted on the refresh premium action.

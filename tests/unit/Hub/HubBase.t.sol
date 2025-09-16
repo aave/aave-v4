@@ -179,35 +179,6 @@ contract HubBase is Base {
     }
   }
 
-  /// @dev Adds liquidity to the Hub via a random spoke
-  function _addLiquidity(uint256 assetId, uint256 amount) public {
-    address tempSpoke = vm.randomAddress();
-    address tempUser = vm.randomAddress();
-
-    uint256 initialLiq = hub1.getLiquidity(assetId);
-
-    address underlying = hub1.getAsset(assetId).underlying;
-    deal(underlying, tempUser, amount);
-
-    vm.prank(tempUser);
-    IERC20(underlying).approve(address(hub1), UINT256_MAX);
-
-    vm.prank(ADMIN);
-    hub1.addSpoke(
-      assetId,
-      tempSpoke,
-      IHub.SpokeConfig({
-        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        active: true
-      })
-    );
-
-    Utils.add({hub: hub1, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
-
-    assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
-  }
-
   function _getExpectedPremiumDelta(
     ISpoke spoke,
     address user,

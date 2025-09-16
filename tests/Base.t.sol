@@ -2471,4 +2471,84 @@ abstract contract Base is Test {
         )
       );
   }
+
+  function _addNewDefaultAsset(IHub hub) internal returns (address, uint256) {
+    TestnetERC20 newToken = new TestnetERC20('ASSET', 'ASSET', 18); // default 18 decimal asset
+    bytes memory encodedIrData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseVariableBorrowRate: 5_00, // 5.00%
+        variableRateSlope1: 5_00, // 5.00%
+        variableRateSlope2: 5_00 // 5.00%
+      })
+    );
+    vm.startPrank(ADMIN);
+    uint256 newAssetId = hub.addAsset(
+      address(newToken),
+      newToken.decimals(),
+      address(treasurySpoke),
+      address(irStrategy),
+      encodedIrData
+    );
+    vm.stopPrank();
+
+    return (address(newToken), newAssetId);
+  }
+
+  function _setUpNewAsset(IHub hub, ISpoke spoke) internal returns (address, uint256, uint256) {
+    (address token, uint256 assetId) = _addNewDefaultAsset(hub);
+    vm.startPrank(ADMIN);
+    uint256 reserveId = spoke.addReserve(
+      address(hub),
+      assetId,
+      _deployMockPriceFeed(spoke, 1e8),
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 25_00}),
+      ISpoke.DynamicReserveConfig({
+        collateralFactor: 80_00,
+        maxLiquidationBonus: 110_00,
+        liquidationFee: 0
+      })
+    );
+    hub.addSpoke(
+      assetId,
+      address(spoke),
+      IHub.SpokeConfig({
+        active: true,
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+      })
+    );
+    vm.stopPrank();
+
+    return (token, assetId, reserveId);
+  }
+
+  /// @dev Adds liquidity to the Hub via a random spoke
+  function _addLiquidity(uint256 assetId, uint256 amount) public {
+    address tempSpoke = vm.randomAddress();
+    address tempUser = vm.randomAddress();
+
+    uint256 initialLiq = hub1.getLiquidity(assetId);
+
+    address underlying = hub1.getAsset(assetId).underlying;
+    deal(underlying, tempUser, amount);
+
+    vm.prank(tempUser);
+    IERC20(underlying).approve(address(hub1), UINT256_MAX);
+
+    vm.prank(ADMIN);
+    hub1.addSpoke(
+      assetId,
+      tempSpoke,
+      IHub.SpokeConfig({
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        active: true
+      })
+    );
+
+    Utils.add({hub: hub1, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
+
+    assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
+  }
 }
