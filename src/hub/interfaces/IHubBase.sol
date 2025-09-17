@@ -82,6 +82,24 @@ interface IHubBase {
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
 
   /**
+   * @notice Emitted when deficit is reported.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param drawnShares The amount of drawn shares.
+   * @param premiumDelta The premium delta object.
+   * @param drawnAmount The amount of drawn assets.
+   * @param premiumAmount The amount of premium assets.
+   */
+  event ReportDeficit(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 drawnShares,
+    PremiumDelta premiumDelta,
+    uint256 drawnAmount,
+    uint256 premiumAmount
+  );
+
+  /**
    * @notice Add asset on behalf of user.
    * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.

@@ -65,24 +65,55 @@ interface IHub is IHubBase, IAccessManaged {
     uint56 drawCap;
   }
 
+  /**
+   * @notice Emitted when a spoke is added.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   */
   event AddSpoke(uint256 indexed assetId, address indexed spoke);
+
+  /**
+   * @notice Emitted when an asset is added.
+   * @param assetId The identifier of the asset.
+   * @param underlying The address of the underlying asset.
+   * @param decimals The number of decimals of the asset.
+   */
   event AddAsset(uint256 indexed assetId, address indexed underlying, uint8 decimals);
+
+  /**
+   * @notice Emitted when an asset configuration is updated.
+   * @param assetId The identifier of the asset.
+   * @param config The new asset configuration object.
+   */
   event UpdateAssetConfig(uint256 indexed assetId, AssetConfig config);
+
+  /**
+   * @notice Emitted when a spoke configuration is updated.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param config The new spoke configuration object.
+   */
   event UpdateSpokeConfig(uint256 indexed assetId, address indexed spoke, SpokeConfig config);
+
+  /**
+   * @notice Emitted when an asset is updated.
+   * @param assetId The identifier of the asset.
+   * @param drawnIndex The new drawn index of the asset.
+   * @param drawnRate The new drawn rate of the asset.
+   * @param latestUpdateTimestamp The timestamp of the latest update.
+   */
   event UpdateAsset(
     uint256 indexed assetId,
     uint256 drawnIndex,
     uint256 drawnRate,
     uint256 latestUpdateTimestamp
   );
-  event ReportDeficit(
-    uint256 indexed assetId,
-    address indexed spoke,
-    uint256 drawnShares,
-    PremiumDelta premiumDelta,
-    uint256 drawnAmount,
-    uint256 premiumAmount
-  );
+
+  /**
+   * @notice Emitted when fees are accrued.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares accrued.
+   */
   event AccrueFees(uint256 indexed assetId, uint256 shares);
 
   /**
@@ -113,25 +144,111 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 amount
   );
 
+  /**
+   * @notice Emitted when an asset is not listed.
+   */
   error AssetNotListed();
+
+  /**
+   * @notice Emitted when the add cap is exceeded.
+   * @param addCap The add cap.
+   */
   error AddCapExceeded(uint256 addCap);
+
+  /**
+   * @notice Emitted when the added amount is exceeded.
+   * @param addedAmount The maximum added amount.
+   */
   error AddedAmountExceeded(uint256 addedAmount);
+
+  /**
+   * @notice Emitted when the added shares are exceeded.
+   * @param addedShares The maximum added shares.
+   */
   error AddedSharesExceeded(uint256 addedShares);
+
+  /**
+   * @notice Emitted when the liquidity is insufficient.
+   * @param liquidity The maximum liquidity.
+   */
   error InsufficientLiquidity(uint256 liquidity);
+
+  /**
+   * @notice Emitted when the draw cap is exceeded.
+   * @param drawCap The draw cap.
+   */
   error DrawCapExceeded(uint256 drawCap);
+
+  /**
+   * @notice Emitted when a surplus amount is restored.
+   * @param maxAllowedRestore The maximum allowed restore amount.
+   */
   error SurplusAmountRestored(uint256 maxAllowedRestore);
+
+  /**
+   * @notice Emitted when the premium change is invalid.
+   */
   error InvalidPremiumChange();
+
+  /**
+   * @notice Emitted when a surplus deficit is reported.
+   * @param amount The amount of surplus deficit.
+   */
   error SurplusDeficitReported(uint256 amount);
+
+  /**
+   * @notice Emitted when a spoke is not active.
+   */
   error SpokeNotActive();
+
+  /**
+   * @notice Emitted when the reinvestment controller is invalid.
+   */
   error InvalidReinvestmentController();
+
+  /**
+   * @notice Emitted when the caller is an invalid reinvestment controller.
+   */
   error OnlyReinvestmentController();
+
+  /**
+   * @notice Emitted when a spoke is already listed.
+   */
   error SpokeAlreadyListed();
+
+  /**
+   * @notice Emitted when a spoke is not listed.
+   */
   error SpokeNotListed();
+
+  /**
+   * @notice Emitted when the amount is invalid.
+   */
   error InvalidAmount();
+
+  /**
+   * @notice Emitted when the shares amount is invalid.
+   */
   error InvalidShares();
+
+  /**
+   * @notice Emitted when the address is invalid.
+   */
   error InvalidAddress();
+
+  /**
+   * @notice Emitted when the liquidity fee is invalid.
+   */
   error InvalidLiquidityFee();
+
+  /**
+   * @notice Emitted when the asset decimals are invalid.
+   */
   error InvalidAssetDecimals();
+
+  /**
+   * @notice Emitted when the interest rate strategy update is invalid.
+   */
   error InvalidInterestRateStrategyUpdate();
 
   /**
@@ -335,20 +452,59 @@ interface IHub is IHubBase, IAccessManaged {
    */
   function getDeficit(uint256 assetId) external view returns (uint256);
 
+  /**
+   * @notice Returns the number of spokes for the specified asset.
+   * @param assetId The identifier of the asset.
+   * @return The number of spokes.
+   */
   function getSpokeCount(uint256 assetId) external view returns (uint256);
 
+  /**
+   * @notice Returns the address of the spoke at the specified index for the specified asset.
+   * @param assetId The identifier of the asset.
+   * @param index The index of the spoke.
+   * @return The address of the spoke.
+   */
   function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address);
 
+  /**
+   * @notice Returns whether the spoke is listed for the specified asset.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @return True if the spoke is listed, false otherwise.
+   */
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
 
+  /**
+   * @notice Returns the spoke data for the specified asset and spoke.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @return The spoke data.
+   */
   function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory);
 
+  /**
+   * @notice Returns the spoke configuration for the specified asset and spoke.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @return The spoke configuration.
+   */
   function getSpokeConfig(
     uint256 assetId,
     address spoke
   ) external view returns (SpokeConfig memory);
 
+  /**
+   * @notice Returns the total asset amount owed to the hub by the specified spoke.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @return The total asset amount owed.
+   */
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256);
 
+  /**
+   * @notice Returns the number of assets.
+   * @return The number of assets.
+   */
   function getAssetCount() external view returns (uint256);
 }
