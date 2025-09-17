@@ -10,7 +10,7 @@ contract SpokeLiqTest is SpokeBase {
   function setUp() public override {
     super.setUp();
 
-    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 99_99);
+    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 90_00);
     updateCollateralFactor(spoke1, _wethReserveId(spoke1), 99_99);
     updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 99_99);
     updateCollateralFactor(spoke1, _wbtcReserveId(spoke1), 99_99);
@@ -20,7 +20,7 @@ contract SpokeLiqTest is SpokeBase {
     _updateMaxLiquidationBonus(spoke1, _usdxReserveId(spoke1), 100_00);
     _updateMaxLiquidationBonus(spoke1, _wbtcReserveId(spoke1), 100_00);
 
-    _updateLiquidationFee(spoke1, _daiReserveId(spoke1), 100_00);
+    _updateLiquidationFee(spoke1, _daiReserveId(spoke1), 0);
     _updateLiquidationFee(spoke1, _wethReserveId(spoke1), 100_00);
     _updateLiquidationFee(spoke1, _usdxReserveId(spoke1), 100_00);
     _updateLiquidationFee(spoke1, _wbtcReserveId(spoke1), 100_00);
@@ -45,6 +45,20 @@ contract SpokeLiqTest is SpokeBase {
   /// POC test for using restore donations to put user positions closer to possibility of bad debt
   /// by doing multiple liquidations where <1 full debt share is liquidated
   function test_liq_donation() public {
+    uint256 desiredHF = 0.95e18;
+
+    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 50_00);
+    _updateMaxLiquidationBonus(spoke1, _daiReserveId(spoke1), 199_00); // >0 LB so that liquidator earns
+    _updateLiquidationFee(spoke1, _daiReserveId(spoke1), 0);
+    _updateLiquidationConfig(
+      spoke1,
+      ISpoke.LiquidationConfig({
+        targetHealthFactor: 2e18,
+        healthFactorForMaxBonus: uint64(desiredHF),
+        liquidationBonusFactor: 100_00
+      })
+    );
+
     updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 100e18, alice);
     _mockInterestRateBps(1_000_00);
@@ -54,11 +68,12 @@ contract SpokeLiqTest is SpokeBase {
     skip(365 days);
     // now debt index is 11
 
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 1_100e18, bob);
-    _borrowToBeAtHf(spoke1, bob, _daiReserveId(spoke1), 0.95e18);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
+    _borrowToBeAtHf(spoke1, bob, _daiReserveId(spoke1), desiredHF);
+    uint256 liquidatorBalanceBefore = tokenList.dai.balanceOf(liquidator);
 
     console.log('bob hf before liquidation %e', spoke1.getUserAccountData(bob).healthFactor);
-    console.log('liquidator balance before %e', tokenList.dai.balanceOf(liquidator));
+    console.log('liquidator balance before %e', liquidatorBalanceBefore);
 
     uint256 numIterations = 100_000;
     uint256[] memory supplyExRate = new uint256[](numIterations);
@@ -103,12 +118,15 @@ contract SpokeLiqTest is SpokeBase {
       premiumDebtSharesBefore - premiumDebtSharesAfter
     );
     console.log('bob hf after series of liqs %e', spoke1.getUserAccountData(bob).healthFactor);
-    console.log('liquidator balance after %e', tokenList.dai.balanceOf(liquidator));
+    console.log(
+      'liquidator DAI earned %e',
+      tokenList.dai.balanceOf(liquidator) - liquidatorBalanceBefore
+    );
 
     /// after liquidations:
     /// bob's debt has decreased by 0
     /// bob's collateral value has reduced
     /// bob's HF has decreased
-    /// liquidator balance remains unchanged, but spent gas to execute these actions
+    /// liquidator earns DAI from LiqBonus, and spent gas to execute these actions
   }
 }
