@@ -51,6 +51,6 @@ contract SpokeLiquidationCallFuzzTest is SpokeLiquidationCallHelperTest {
     LiquidationMetadata memory liquidationMetadata
   ) internal virtual override {
     (, uint256 premiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
-    assertGt(premiumDebt, 0, 'premium debt should be greater than 0');
+    assertGt(premiumDebt, 0, 'premium debt');
   }
 }
