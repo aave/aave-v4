@@ -63,7 +63,7 @@ contract SpokeLiqTest is SpokeBase {
     uint256 numIterations = 100_000;
     uint256[] memory supplyExRate = new uint256[](numIterations);
 
-    uint256 supplyAmountBefore = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob);
+    uint256 supplySharesBefore = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), bob);
     uint256 debtAmountBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
     uint256 debtAmountSharesBefore = spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares;
     uint256 premiumDebtSharesBefore = spoke1
@@ -77,7 +77,7 @@ contract SpokeLiqTest is SpokeBase {
     }
     vm.stopPrank();
 
-    uint256 supplyAmountAfter = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob);
+    uint256 supplySharesAfter = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), bob);
     uint256 debtAmountAfter = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
     uint256 debtAmountSharesAfter = spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares;
     uint256 premiumDebtSharesAfter = spoke1
@@ -85,16 +85,10 @@ contract SpokeLiqTest is SpokeBase {
       .premiumShares;
 
     console.log(
-      'bob supplied amt before/after liqs %e %e delta: %e',
-      supplyAmountBefore,
-      supplyAmountAfter,
-      supplyAmountBefore - supplyAmountAfter
-    );
-    console.log(
-      'bob debt amt before/after liqs %e %e delta: %e',
-      debtAmountBefore,
-      debtAmountAfter,
-      debtAmountBefore - debtAmountAfter
+      'bob supplied shares before/after liqs %e %e delta: %e',
+      supplySharesBefore,
+      supplySharesAfter,
+      supplySharesBefore - supplySharesAfter
     );
     console.log(
       'bob debt shares before/after liqs %e %e delta: %e',
