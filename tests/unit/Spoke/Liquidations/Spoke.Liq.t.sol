@@ -47,8 +47,8 @@ contract SpokeLiqTest is SpokeBase {
   function test_liq_donation() public {
     uint256 desiredHF = 0.95e18;
 
-    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 50_00);
-    _updateMaxLiquidationBonus(spoke1, _daiReserveId(spoke1), 199_00); // >0 LB so that liquidator earns
+    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 10_00);
+    _updateMaxLiquidationBonus(spoke1, _daiReserveId(spoke1), 999_00); // >0 LB so that liquidator earns
     _updateLiquidationFee(spoke1, _daiReserveId(spoke1), 0);
     _updateLiquidationConfig(
       spoke1,
@@ -68,7 +68,7 @@ contract SpokeLiqTest is SpokeBase {
     skip(365 days);
     // now debt index is 11
 
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 1_000_000e18, bob);
     _borrowToBeAtHf(spoke1, bob, _daiReserveId(spoke1), desiredHF);
     uint256 liquidatorBalanceBefore = tokenList.dai.balanceOf(liquidator);
 
