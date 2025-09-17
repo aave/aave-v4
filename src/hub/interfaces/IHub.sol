@@ -8,7 +8,7 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 /**
  * @title IHub
  * @author Aave Labs
- * @notice Full interface for Hub
+ * @notice Full interface for Hub.
  */
 interface IHub is IHubBase, IAccessManaged {
   struct Asset {
@@ -83,7 +83,7 @@ interface IHub is IHubBase, IAccessManaged {
   /**
    * @notice Emitted when an asset configuration is updated.
    * @param assetId The identifier of the asset.
-   * @param config The new asset configuration object.
+   * @param config The new asset configuration struct.
    */
   event UpdateAssetConfig(uint256 indexed assetId, AssetConfig config);
 
@@ -91,7 +91,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @notice Emitted when a spoke configuration is updated.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
-   * @param config The new spoke configuration object.
+   * @param config The new spoke configuration struct.
    */
   event UpdateSpokeConfig(uint256 indexed assetId, address indexed spoke, SpokeConfig config);
 
@@ -408,14 +408,14 @@ interface IHub is IHubBase, IAccessManaged {
   /**
    * @notice Returns information regarding the specified asset.
    * @param assetId The identifier of the asset.
-   * @return The asset info object.
+   * @return The asset info struct.
    */
   function getAsset(uint256 assetId) external view returns (Asset memory);
 
   /**
    * @notice Returns the configuration of the specified asset.
    * @param assetId The identifier of the asset.
-   * @return The asset configuration object.
+   * @return The asset configuration struct.
    */
   function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory);
 
@@ -495,7 +495,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @notice Returns the spoke data for the specified asset and spoke.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
-   * @return The spoke data object.
+   * @return The spoke data struct.
    */
   function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory);
 
@@ -503,7 +503,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @notice Returns the spoke configuration for the specified asset and spoke.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
-   * @return The spoke configuration object.
+   * @return The spoke configuration struct.
    */
   function getSpokeConfig(
     uint256 assetId,

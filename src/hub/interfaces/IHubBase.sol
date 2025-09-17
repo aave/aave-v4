@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 /**
  * @title IHubBase
  * @author Aave Labs
- * @notice Minimal interface for Hub
+ * @notice Minimal interface for Hub.
  */
 interface IHubBase {
   struct PremiumDelta {
@@ -51,7 +51,7 @@ interface IHubBase {
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @param drawnShares The amount of drawn shares.
-   * @param premiumDelta The premium delta object.
+   * @param premiumDelta The premium delta data struct.
    * @param drawnAmount The amount of drawn assets restored.
    * @param premiumAmount The amount of premium assets restored.
    */
@@ -68,7 +68,7 @@ interface IHubBase {
    * @notice Emitted on the refresh premium action.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
-   * @param premiumDelta The premium delta object.
+   * @param premiumDelta The premium delta data struct.
    */
   event RefreshPremium(uint256 indexed assetId, address indexed spoke, PremiumDelta premiumDelta);
 
@@ -86,7 +86,7 @@ interface IHubBase {
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @param drawnShares The amount of drawn shares.
-   * @param premiumDelta The premium delta object.
+   * @param premiumDelta The premium delta data struct.
    * @param drawnAmount The amount of drawn assets.
    * @param premiumAmount The amount of premium assets.
    */

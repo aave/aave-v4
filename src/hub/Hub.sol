@@ -15,6 +15,11 @@ import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 
+/**
+ * @title Hub
+ * @author Aave Labs
+ * @notice Hub contract used to manage assets and spokes.
+ */
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
@@ -145,6 +150,7 @@ contract Hub is IHub, AccessManaged {
     emit UpdateAssetConfig(assetId, config);
   }
 
+  /// @inheritdoc IHub
   function addSpoke(
     uint256 assetId,
     address spoke,
@@ -156,6 +162,7 @@ contract Hub is IHub, AccessManaged {
     _updateSpokeConfig(assetId, spoke, config);
   }
 
+  /// @inheritdoc IHub
   function updateSpokeConfig(
     uint256 assetId,
     address spoke,
@@ -555,10 +562,6 @@ contract Hub is IHub, AccessManaged {
     return (spokeData.premiumShares, spokeData.premiumOffset, spokeData.realizedPremium);
   }
 
-  function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].drawnRate;
-  }
-
   /// @inheritdoc IHubBase
   function getAddedAssets(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].totalAddedAssets();
@@ -587,10 +590,17 @@ contract Hub is IHub, AccessManaged {
     return _spokes[assetId][spoke].addedShares;
   }
 
+  /// @inheritdoc IHub
+  function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].drawnRate;
+  }
+
+  /// @inheritdoc IHub
   function getLiquidity(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].liquidity;
   }
 
+  /// @inheritdoc IHub
   function getDeficit(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].deficit;
   }
@@ -600,6 +610,7 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].swept;
   }
 
+  /// @inheritdoc IHub
   function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory) {
     Asset storage asset = _assets[assetId];
     return
@@ -611,6 +622,12 @@ contract Hub is IHub, AccessManaged {
       });
   }
 
+  /**
+   * @notice Updates the spoke configuration.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param config The new spoke configuration struct.
+   */
   function _updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig memory config) internal {
     SpokeData storage spokeData = _spokes[assetId][spoke];
     spokeData.active = config.active;
@@ -620,8 +637,13 @@ contract Hub is IHub, AccessManaged {
   }
 
   /**
-   * @dev Applies premium deltas on asset and spoke owed, and validates that total premium
-   * and spoke premium cannot decrease by more than `premiumAmount`.
+   * @notice Applies premium deltas on asset and spoke owed.
+   * @dev Validates that total premium and spoke premium cannot decrease by more than `premiumAmount`.
+   * @param assetId The identifier of the asset.
+   * @param asset The asset struct.
+   * @param spoke The spoke data struct.
+   * @param premium The premium delta data struct.
+   * @param premiumAmount The amount of premium assets.
    */
   function _applyPremiumDelta(
     uint256 assetId,
@@ -647,6 +669,12 @@ contract Hub is IHub, AccessManaged {
     require(spokePremiumAfter + premiumAmount - spokePremiumBefore <= 2, InvalidPremiumChange());
   }
 
+  /**
+   * @notice Transfers shares between two spokes.
+   * @param sender The sender spoke data struct.
+   * @param receiver The receiver spoke data struct.
+   * @param shares The amount of shares to transfer.
+   */
   function _transferShares(
     SpokeData storage sender,
     SpokeData storage receiver,
@@ -659,6 +687,12 @@ contract Hub is IHub, AccessManaged {
     receiver.addedShares += shares.toUint128();
   }
 
+  /**
+   * @notice Gets the amount of drawn assets owed for a spoke.
+   * @param spoke The spoke data struct.
+   * @param assetId The identifier of the asset.
+   * @return The amount of drawn assets owed.
+   */
   function _getSpokeDrawn(
     SpokeData storage spoke,
     uint256 assetId
@@ -666,6 +700,12 @@ contract Hub is IHub, AccessManaged {
     return previewRestoreByShares(assetId, spoke.drawnShares);
   }
 
+  /**
+   * @notice Gets the amount of premium assets owed for a spoke.
+   * @param spoke The spoke data struct.
+   * @param assetId The identifier of the asset.
+   * @return The amount of premium assets owed.
+   */
   function _getSpokePremium(
     SpokeData storage spoke,
     uint256 assetId
@@ -675,6 +715,14 @@ contract Hub is IHub, AccessManaged {
     return spoke.realizedPremium + accruedPremium;
   }
 
+  /**
+   * @notice Validates the add action.
+   * @param asset The asset struct.
+   * @param spoke The spoke data struct.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount of assets to add.
+   * @param from The address of the sender.
+   */
   function _validateAdd(
     Asset storage asset,
     SpokeData storage spoke,
@@ -693,6 +741,13 @@ contract Hub is IHub, AccessManaged {
     );
   }
 
+  /**
+   * @notice Validates the remove action.
+   * @param spoke The spoke data struct.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount of assets to remove.
+   * @param to The address of the receiver.
+   */
   function _validateRemove(
     SpokeData storage spoke,
     uint256 assetId,
@@ -706,6 +761,14 @@ contract Hub is IHub, AccessManaged {
     require(amount <= removable, AddedAmountExceeded(removable));
   }
 
+  /**
+   * @notice Validates the draw action.
+   * @param asset The asset struct.
+   * @param spoke The spoke data struct.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount of assets to draw.
+   * @param to The address of the receiver.
+   */
   function _validateDraw(
     Asset storage asset,
     SpokeData storage spoke,
@@ -726,6 +789,14 @@ contract Hub is IHub, AccessManaged {
     );
   }
 
+  /**
+   * @notice Validates the restore action.
+   * @param spoke The spoke data struct.
+   * @param assetId The identifier of the asset.
+   * @param drawnAmount The amount of drawn assets to restore.
+   * @param premiumAmount The amount of premium assets to restore.
+   * @param from The address of the sender.
+   */
   function _validateRestore(
     SpokeData storage spoke,
     uint256 assetId,
@@ -742,6 +813,13 @@ contract Hub is IHub, AccessManaged {
     require(premiumAmount <= premium, SurplusAmountRestored(premium));
   }
 
+  /**
+   * @notice Validates the report deficit action.
+   * @param spoke The spoke data struct.
+   * @param assetId The identifier of the asset.
+   * @param drawnAmount The amount of drawn assets to report as deficit.
+   * @param premiumAmount The amount of premium assets to report as deficit.
+   */
   function _validateReportDeficit(
     SpokeData storage spoke,
     uint256 assetId,
@@ -756,16 +834,34 @@ contract Hub is IHub, AccessManaged {
     require(premiumAmount <= premium, SurplusDeficitReported(premium));
   }
 
+  /**
+   * @notice Validates the eliminate deficit action.
+   * @param spoke The spoke data struct.
+   * @param amount The amount of assets to eliminate.
+   */
   function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {
     require(spoke.active, SpokeNotActive());
     require(amount > 0, InvalidAmount());
   }
 
+  /**
+   * @notice Validates the pay fee action.
+   * @param senderSpoke The sender spoke data struct.
+   * @param feeShares The amount of shares to pay.
+   */
   function _validatePayFee(SpokeData storage senderSpoke, uint256 feeShares) internal view {
     require(senderSpoke.active, SpokeNotActive());
     require(feeShares > 0, InvalidShares());
   }
 
+  /**
+   * @notice Validates the transfer shares action.
+   * @param asset The asset struct.
+   * @param sender The sender spoke data struct.
+   * @param receiver The receiver spoke data struct.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares to transfer.
+   */
   function _validateTransferShares(
     Asset storage asset,
     SpokeData storage sender,
@@ -783,23 +879,46 @@ contract Hub is IHub, AccessManaged {
     );
   }
 
+  /**
+   * @notice Validates the sweep action.
+   * @param asset The asset struct.
+   * @param caller The address of the caller.
+   * @param amount The amount of assets to sweep.
+   */
   function _validateSweep(Asset storage asset, address caller, uint256 amount) internal view {
     // sufficient check to disallow when controller unset
     require(caller == asset.reinvestmentController, OnlyReinvestmentController());
     require(amount > 0 && amount <= asset.liquidity, InvalidAmount());
   }
 
+  /**
+   * @notice Validates the reclaim action.
+   * @param asset The asset struct.
+   * @param caller The address of the caller.
+   * @param amount The amount of assets to reclaim.
+   */
   function _validateReclaim(Asset storage asset, address caller, uint256 amount) internal view {
     // sufficient check to disallow when controller unset
     require(caller == asset.reinvestmentController, OnlyReinvestmentController());
     require(amount > 0 && amount <= asset.swept, InvalidAmount());
   }
 
+  /**
+   * @notice Adds a spoke to an asset.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   */
   function _addSpoke(uint256 assetId, address spoke) internal {
     require(_assetToSpokes[assetId].add(spoke), SpokeAlreadyListed());
     emit AddSpoke(assetId, spoke);
   }
 
+  /**
+   * @notice Adds a fee receiver to an asset.
+   * @dev Emits an AddSpoke event and an UpdateSpokeConfig event.
+   * @param assetId The identifier of the asset.
+   * @param feeReceiver The address of the fee receiver.
+   */
   function _addFeeReceiver(uint256 assetId, address feeReceiver) internal {
     _addSpoke(assetId, feeReceiver);
     _updateSpokeConfig(
