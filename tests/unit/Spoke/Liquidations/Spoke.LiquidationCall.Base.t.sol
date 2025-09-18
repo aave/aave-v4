@@ -1112,15 +1112,27 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     );
   }
 
+  function _execBeforeLiquidation(CheckedLiquidationCallParams memory params) internal virtual {}
+
+  function _assertBeforeLiquidation(
+    CheckedLiquidationCallParams memory params,
+    AccountsInfo memory accountsInfoBefore,
+    LiquidationMetadata memory liquidationMetadata
+  ) internal virtual {}
+
   function _checkedLiquidationCall(CheckedLiquidationCallParams memory params) internal virtual {
     // make sure there is enough liquidity to liquidate
     _openSupplyPosition(params.spoke, params.collateralReserveId, MAX_AMOUNT_IN_BASE_CURRENCY);
+
+    _execBeforeLiquidation(params);
 
     AccountsInfo memory accountsInfoBefore = _getAccountsInfo(params);
     LiquidationMetadata memory liquidationMetadata = _getLiquidationMetadata(
       params,
       accountsInfoBefore.userAccountData
     );
+
+    _assertBeforeLiquidation(params, accountsInfoBefore, liquidationMetadata);
 
     _expectEventsAndCalls(params, accountsInfoBefore, liquidationMetadata);
     vm.recordLogs();

@@ -582,8 +582,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     aliceDaiAction = _boundUserBorrowAction(aliceDaiAction);
     aliceUsdxAction = _boundUserBorrowAction(aliceUsdxAction);
 
-    daiCollateralRisk = bound(daiCollateralRisk, 0, MAX_RISK_PREMIUM_BPS).toUint16();
-    usdxCollateralRisk = bound(usdxCollateralRisk, 0, MAX_RISK_PREMIUM_BPS).toUint16();
+    daiCollateralRisk = bound(daiCollateralRisk, 0, MAX_COLLATERAL_RISK_BPS).toUint16();
+    usdxCollateralRisk = bound(usdxCollateralRisk, 0, MAX_COLLATERAL_RISK_BPS).toUint16();
 
     timeSkip[0] = bound(timeSkip[0], 0, MAX_SKIP_TIME).toUint40();
     timeSkip[1] = bound(timeSkip[1], 0, MAX_SKIP_TIME).toUint40();
