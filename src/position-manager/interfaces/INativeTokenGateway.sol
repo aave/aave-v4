@@ -4,6 +4,11 @@ pragma solidity ^0.8.0;
 
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
+/**
+ * @title Interface for NativeTokenGateway contract
+ * @author Aave Labs
+ * @notice Abstracts actions to the protocol involving the native token.
+ */
 interface INativeTokenGateway is IRescuable {
   /**
    * @notice Thrown when the given address is invalid.
@@ -54,21 +59,21 @@ interface INativeTokenGateway is IRescuable {
   function borrowNative(uint256 reserveId, uint256 amount, address receiver) external;
 
   /**
-   * @notice Wraps the native asset and repay debt on the Spoke.
+   * @notice Wraps the native asset and repays debt on the Spoke.
    * @param reserveId The identifier of the reserve for the wrapped asset.
    * @param amount Amount to wrap and repay.
    **/
   function repayNative(uint256 reserveId, uint256 amount) external payable;
 
   /**
-   * @notice Renounces the positionManager approval given by an user.
+   * @notice Renounces the positionManager approval given by a user.
    * @param user The address of the user.
    */
   function renouncePositionManagerRole(address user) external;
 
-  /// @notice Native Wrapper contract
+  /// @notice Returns address of the Native Wrapper contract.
   function NATIVE_WRAPPER() external view returns (address);
 
-  /// @notice Spoke contract
+  /// @notice Returns address of the Spoke contract.
   function SPOKE() external view returns (address);
 }

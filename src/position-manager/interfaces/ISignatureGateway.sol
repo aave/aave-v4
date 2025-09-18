@@ -5,6 +5,11 @@ pragma solidity ^0.8.0;
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
+/**
+ * @title Interface for SignatureGateway contract
+ * @author Aave Labs
+ * @notice Abstracts actions to the protocol involving signed intents.
+ */
 interface ISignatureGateway is IMulticall, IRescuable {
   /**
    * @notice Thrown when the given address is invalid.
@@ -137,7 +142,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
    * @param user The address of the user to set as position manager.
    * @param approve The approval status.
    * @param deadline The deadline for the signature.
-   * @param signature The signed bytes for the action.
+   * @param signature The signed bytes for the intent.
    */
   function setSelfAsUserPositionManagerWithSig(
     address user,
@@ -153,6 +158,9 @@ interface ISignatureGateway is IMulticall, IRescuable {
    * @param onBehalfOf The address of the user on whose behalf the permit is being used.
    * @param value The amount of the underlying asset to permit.
    * @param deadline The deadline for the permit.
+   * @param v Part of the secp256k1 signature.
+   * @param r Part of the secp256k1 signature.
+   * @param s Part of the secp256k1 signature.
    */
   function permitReserve(
     uint256 reserveId,

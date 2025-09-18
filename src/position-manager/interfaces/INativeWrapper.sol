@@ -4,6 +4,11 @@ pragma solidity ^0.8.0;
 
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 
+/**
+ * @title INativeWrapper interface
+ * @author Aave Labs
+ * @notice Minimal interface for interacting with a wrapped native token contract.
+ */
 interface INativeWrapper is IERC20 {
   function deposit() external payable;
 
