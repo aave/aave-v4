@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.LiquidationCall.t.sol';
 
-contract SpokeLiquidationCallFuzzTest is SpokeLiquidationCallHelperTest {
+contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
   using SafeCast for uint256;
 
   uint256 internal baseAmountInBaseCurrency;
