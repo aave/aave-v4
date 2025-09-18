@@ -5,7 +5,7 @@ pragma solidity ^0.8.10;
 /**
  * @title IBasicInterestRateStrategy
  * @author Aave Labs
- * @notice Basic interface for any rate strategy used by the Aave protocol
+ * @notice Basic interface for any rate strategy used by the Aave protocol.
  */
 interface IBasicInterestRateStrategy {
   /**

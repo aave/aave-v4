@@ -10,7 +10,7 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 /**
  * @title ISpoke
  * @author Aave Labs
- * @notice Full interface for Spoke
+ * @notice Full interface for Spoke.
  */
 interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   struct Reserve {
@@ -86,7 +86,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   /**
    * @notice Emitted when a reserve configuration is updated.
    * @param reserveId The identifier of the reserve.
-   * @param config The reserve configuration object.
+   * @param config The reserve configuration.
    */
   event UpdateReserveConfig(uint256 indexed reserveId, ReserveConfig config);
 
