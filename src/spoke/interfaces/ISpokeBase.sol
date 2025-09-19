@@ -7,7 +7,7 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 /**
  * @title ISpokeBase
  * @author Aave Labs
- * @notice Minimal interface for Spoke
+ * @notice Minimal interface for Spoke.
  */
 interface ISpokeBase {
   /**
@@ -87,8 +87,8 @@ interface ISpokeBase {
   );
 
   /**
-   * @notice Supply an amount of underlying asset of the specified reserve.
-   * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior token approval is required.
+   * @notice Supplies an amount of underlying asset of the specified reserve.
+   * @dev The Hub pulls the underlying asset from the caller, so prior token approval is required.
    * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
    * @param reserveId The reserve identifier.
    * @param amount The amount of asset to supply.
@@ -119,7 +119,7 @@ interface ISpokeBase {
 
   /**
    * @notice Repays a specified amount of underlying asset to a given reserve.
-   * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior approval is required.
+   * @dev The Hub pulls the underlying asset from the caller, so prior approval is required.
    * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to repay.
@@ -129,7 +129,7 @@ interface ISpokeBase {
 
   /**
    * @notice Liquidates a user position.
-   * @dev Invokes Liquidity Hub restore, and pulls underlying repaid debt asset from caller (Liquidator), hence it needs prior approval.
+   * @dev Invokes Hub restore, and pulls underlying repaid debt asset from caller (Liquidator), hence it needs prior approval.
    * @param collateralReserveId The reserveId of the underlying asset used as collateral by the liquidated user.
    * @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator during liquidation.
    * @param user The address of the user to liquidate.
