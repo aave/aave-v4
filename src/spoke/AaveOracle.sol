@@ -8,7 +8,7 @@ import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 /**
  * @title AaveOracle
  * @author Aave Labs
- * @notice Oracle contract for the Aave protocol.
+ * @notice Oracle contract.
  * @dev Oracles are spoke-specific, due to the usage of reserve id as index of the _sources.
  */
 contract AaveOracle is IAaveOracle {
@@ -64,6 +64,12 @@ contract AaveOracle is IAaveOracle {
     return address(_sources[reserveId]);
   }
 
+  /**
+   * @notice Returns the price of a reserve from the source.
+   * @dev Zero is considered an invalid price and will revert.
+   * @param reserveId The identifier of the reserve.
+   * @return The price of the reserve.
+   */
   function _getSourcePrice(uint256 reserveId) internal view returns (uint256) {
     AggregatorV3Interface source = _sources[reserveId];
     require(address(source) != address(0), InvalidSource(reserveId));

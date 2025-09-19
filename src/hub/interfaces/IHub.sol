@@ -313,7 +313,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @dev Only callable by spokes.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to move.
-   * @param toSpoke The address of the spoke to move shares to.
+   * @param toSpoke The recipient spoke address.
    */
   function transferShares(uint256 assetId, uint256 shares, address toSpoke) external;
 
