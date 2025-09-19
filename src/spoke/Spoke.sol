@@ -73,17 +73,16 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     ORACLE = oracle_;
   }
 
+  /// @inheritdoc Spoke
   function initialize(address _authority) external virtual;
 
-  // /////
-  // Governance
-  // /////
-
+  /// @inheritdoc ISpoke
   function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
     _updateReservePriceSource(reserveId, priceSource);
   }
 
+  /// @inheritdoc ISpoke
   function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
     require(
       config.targetHealthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
@@ -192,10 +191,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     _positionManager[positionManager].active = active;
     emit UpdatePositionManager(positionManager, active);
   }
-
-  // /////
-  // Users
-  // /////
 
   /// @inheritdoc ISpokeBase
   function supply(
@@ -547,6 +542,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return _userPositions[user][reserveId].suppliedShares;
   }
 
+  /// @inheritdoc ISpoke
   function getReserveCount() external view returns (uint256) {
     return _reserveCount;
   }
@@ -644,7 +640,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return _domainSeparator();
   }
 
-  // internal
   /**
    * @notice Validates the reserve can be supplied.
    * @param reserve The reserve to be supplied.
@@ -924,8 +919,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
     list.sortByKey(); // sort by collateral risk
     uint256 i = 0;
-    // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
-    // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
+    /// @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
+    /// value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
     while (i < list.length() && debtCounterInBaseCurrency > 0) {
       (uint256 collateralRisk, uint256 userCollateralInBaseCurrency) = list.get(i);
       if (userCollateralInBaseCurrency > debtCounterInBaseCurrency) {
@@ -951,7 +946,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    * @param hub The hub.
    * @param assetId The identifier of the asset.
    * @param userPosition The user position object.
-   * @return The user's drawn debt .
+   * @return The user's drawn debt.
    * @return The user's premium debt.
    * @return The user's accrued premium.
    */
