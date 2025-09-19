@@ -73,7 +73,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     ORACLE = oracle_;
   }
 
-  /// @inheritdoc Spoke
   function initialize(address _authority) external virtual;
 
   /// @inheritdoc ISpoke
