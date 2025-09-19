@@ -7,7 +7,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 /**
  * @title IHubConfigurator
  * @author Aave Labs
- * @notice Interface for the HubConfigurator
+ * @notice Interface for the HubConfigurator.
  */
 interface IHubConfigurator {
   /**
@@ -210,14 +210,14 @@ interface IHubConfigurator {
   ) external;
 
   /**
-   * @notice Pauses all assets of a spoke
+   * @notice Pauses all assets of a spoke by setting the active flag to false.
    * @param hub The address of the Hub contract.
    * @param spoke The address of the spoke.
    */
   function pauseSpoke(address hub, address spoke) external;
 
   /**
-   * @notice Freezes all assets of a spoke
+   * @notice Freezes all assets of a spoke by setting the add and draw caps to 0.
    * @param hub The address of the Hub contract.
    * @param spoke The address of the spoke.
    */
