@@ -6,7 +6,7 @@ import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /**
- * @title PositionStatus
+ * @title PositionStatusMap
  * @author Aave Labs
  * @notice Implements the bitmap logic to handle the user configuration.
  */

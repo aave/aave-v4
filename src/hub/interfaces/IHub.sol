@@ -145,109 +145,109 @@ interface IHub is IHubBase, IAccessManaged {
   );
 
   /**
-   * @notice Emitted when an asset is not listed.
+   * @notice Thrown when an asset is not listed.
    */
   error AssetNotListed();
 
   /**
-   * @notice Emitted when the add cap is exceeded.
+   * @notice Thrown when the add cap is exceeded.
    * @param addCap The add cap.
    */
   error AddCapExceeded(uint256 addCap);
 
   /**
-   * @notice Emitted when the added amount is exceeded.
+   * @notice Thrown when the added amount is exceeded.
    * @param addedAmount The maximum added amount.
    */
   error AddedAmountExceeded(uint256 addedAmount);
 
   /**
-   * @notice Emitted when the added shares are exceeded.
+   * @notice Thrown when the added shares are exceeded.
    * @param addedShares The maximum added shares.
    */
   error AddedSharesExceeded(uint256 addedShares);
 
   /**
-   * @notice Emitted when the liquidity is insufficient.
+   * @notice Thrown when the liquidity is insufficient.
    * @param liquidity The maximum liquidity.
    */
   error InsufficientLiquidity(uint256 liquidity);
 
   /**
-   * @notice Emitted when the draw cap is exceeded.
+   * @notice Thrown when the draw cap is exceeded.
    * @param drawCap The draw cap.
    */
   error DrawCapExceeded(uint256 drawCap);
 
   /**
-   * @notice Emitted when a surplus amount is restored.
+   * @notice Thrown when a surplus amount is restored.
    * @param maxAllowedRestore The maximum allowed restore amount.
    */
   error SurplusAmountRestored(uint256 maxAllowedRestore);
 
   /**
-   * @notice Emitted when the premium change is invalid.
+   * @notice Thrown when the premium change is invalid.
    */
   error InvalidPremiumChange();
 
   /**
-   * @notice Emitted when a surplus deficit is reported.
+   * @notice Thrown when a surplus deficit is reported.
    * @param amount The amount of surplus deficit.
    */
   error SurplusDeficitReported(uint256 amount);
 
   /**
-   * @notice Emitted when a spoke is not active.
+   * @notice Thrown when a spoke is not active.
    */
   error SpokeNotActive();
 
   /**
-   * @notice Emitted when the reinvestment controller is invalid.
+   * @notice Thrown when the reinvestment controller is invalid.
    */
   error InvalidReinvestmentController();
 
   /**
-   * @notice Emitted when the caller is an invalid reinvestment controller.
+   * @notice Thrown when the caller is an invalid reinvestment controller.
    */
   error OnlyReinvestmentController();
 
   /**
-   * @notice Emitted when a spoke is already listed.
+   * @notice Thrown when a spoke is already listed.
    */
   error SpokeAlreadyListed();
 
   /**
-   * @notice Emitted when a spoke is not listed.
+   * @notice Thrown when a spoke is not listed.
    */
   error SpokeNotListed();
 
   /**
-   * @notice Emitted when the amount is invalid.
+   * @notice Thrown when the amount is invalid.
    */
   error InvalidAmount();
 
   /**
-   * @notice Emitted when the shares amount is invalid.
+   * @notice Thrown when the shares amount is invalid.
    */
   error InvalidShares();
 
   /**
-   * @notice Emitted when the address is invalid.
+   * @notice Thrown when the address is invalid.
    */
   error InvalidAddress();
 
   /**
-   * @notice Emitted when the liquidity fee is invalid.
+   * @notice Thrown when the liquidity fee is invalid.
    */
   error InvalidLiquidityFee();
 
   /**
-   * @notice Emitted when the asset decimals are invalid.
+   * @notice Thrown when the asset decimals are invalid.
    */
   error InvalidAssetDecimals();
 
   /**
-   * @notice Emitted when the interest rate strategy update is invalid.
+   * @notice Thrown when the interest rate strategy update is invalid.
    */
   error InvalidInterestRateStrategyUpdate();
 
