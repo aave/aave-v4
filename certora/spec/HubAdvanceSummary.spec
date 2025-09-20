@@ -9,11 +9,11 @@ Base definitions used in all of LiquidityHuv spec files
 methods {
 
     function AssetLogic.getFeeShares(
-        DataTypes.Asset storage asset,
+        IHub.Asset storage asset,
         uint256 indexDelta
     ) internal returns (uint256) => SummaryLibrary.getFeeShares(asset, indexDelta);
 
-    function AssetLogic.getDrawnIndex(DataTypes.Asset storage asset) internal returns (uint256) => SummaryLibrary.getDrawnIndex(asset);
+    function AssetLogic.getDrawnIndex(IHub.Asset storage asset) internal returns (uint256) => SummaryLibrary.getDrawnIndex(asset);
 
     // todo prove getFeeShares function
     function SummaryLibrary.calcFees(uint256 indexDelta, uint256 totalDrawnShares, uint256 liquidityFee) internal  returns (uint256) => 

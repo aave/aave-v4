@@ -22,8 +22,39 @@ To run this spec file:
         function rayDivDown(uint256 a, uint256 b) external returns (uint256) envfree;
         function rayDivUp(uint256 a, uint256 b) external returns (uint256) envfree;
         function percentMulDown(uint256 percentage, uint256 value) external  returns (uint256) envfree;
+        function mulDivDown(uint256 x, uint256 y, uint256 denominator) external returns (uint256) envfree;
+        function mulDivUp(uint256 x, uint256 y, uint256 denominator) external returns (uint256) envfree;
 
     }
+
+
+/** @title Prove:
+    function MathUtils.mulDivDown(uint256 x, uint256 y, uint256 denominator) internal returns (uint256) => 
+        mulDivDownCVL(x,y,denominator);
+*/
+    rule MathUtils_mulDivDown(uint256 x, uint256 y, uint256 denominator)  {
+        uint256 cvlResult = mulDivDownCVL@withrevert(x, y, denominator);
+        bool cvlReverted = lastReverted;
+        uint256 solResult = mulDivDown@withrevert(x, y, denominator);
+        bool solReverted = lastReverted;
+        assert cvlReverted == solReverted;
+        assert !cvlReverted => cvlResult == solResult;
+    }
+
+
+/** @title Prove:
+    function MathUtils.mulDivUp(uint256 x, uint256 y, uint256 denominator) internal returns (uint256) => 
+        mulDivUpCVL(x,y,denominator);
+*/
+    rule MathUtils_mulDivUp(uint256 x, uint256 y, uint256 denominator)  {
+        uint256 cvlResult = mulDivUpCVL@withrevert(x, y, denominator);
+        bool cvlReverted = lastReverted;
+        uint256 solResult = mulDivUp@withrevert(x, y, denominator);
+        bool solReverted = lastReverted;
+        assert cvlReverted == solReverted;
+        assert !cvlReverted => cvlResult == solResult;
+    }
+
 /** @title Prove:
     function WadRayMathExtended.rayMulDown(uint256 a, uint256 b) internal returns (uint256) => 
         mulDivDownCVL(a,b,wadRayMath.RAY());

@@ -1,10 +1,10 @@
-import "../../src/contracts/Hub.sol";
-import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
-import {SharesMath} from 'src/libraries/math/SharesMath.sol';
+import "../../src/hub/Hub.sol";
+import {AssetLogic} from 'src/hub/libraries/AssetLogic.sol';
+import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 pragma solidity ^0.8.0;
 
 contract HubHarness is Hub {
-      using AssetLogic for DataTypes.Asset;
+      using AssetLogic for Asset;
 
   constructor(address authority_) Hub(authority_) {
     // Intentionally left blank
@@ -15,7 +15,7 @@ contract HubHarness is Hub {
     uint256 assetId
   ) external  {
     
-    DataTypes.Asset storage asset = _assets[assetId];
+    Asset storage asset = _assets[assetId];
 
     asset.accrue( assetId, _spokes[assetId][asset.feeReceiver]);
   
@@ -61,12 +61,12 @@ contract HubHarness is Hub {
   /*
   function getFeeShares(uint256 assetId, uint256 indexDelta) 
     external view returns (uint256) {
-        DataTypes.Asset storage asset = _assets[assetId];
+        Asset storage asset = _assets[assetId];
         return asset.getFeeShares(indexDelta);
     }
     */
     function unrealizedFeeShares(uint256 assetId) external view returns (uint256) {
-        DataTypes.Asset storage asset = _assets[assetId];
+        Asset storage asset = _assets[assetId];
         return asset.unrealizedFeeShares();
   }
 }

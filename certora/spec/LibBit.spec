@@ -6,7 +6,7 @@ Verification of Solady's LibBit.sol
 
 methods {
     function popCount(uint256 x) external  returns (uint256) envfree;
-    function ffs(uint256 x) external  returns (uint256) envfree;
+    function fls(uint256 x) external  returns (uint256) envfree;
     function isBitTrue(uint256 x, uint16 pos) external  returns (bool) envfree;
     function changeOneBit(uint256 x, uint16 pos) external returns (uint256 ) envfree;
 }
@@ -40,20 +40,20 @@ rule popCount_noRevert(uint256 x) {
     assert !lastReverted; 
 }
 
-/** @title ffs(x) is the position of the first set bit in x.
-Verifying by checking that any bit below the ffs(x) is not set.
+/** @title fls(x) is the position of the last set bit in x.
+Verifying by checking that any bit below the fls(x) is not set.
 **/
-rule ffs_integrity(uint256 x, uint16 pos) {
+rule fls_integrity(uint256 x, uint16 pos) {
     // base check
-    assert x == 0 <=> ffs(x) == 256;
+    assert x == 0 <=> fls(x) == 256;
     
-    uint256 r = ffs(x);
-    assert pos < r =>  !isBitTrue(x, pos);
+    uint256 r = fls(x);
+    assert (pos > r  && pos < 256 ) =>  !isBitTrue(x, pos);
     assert r < 256 => isBitTrue(x, assert_uint16(r));
 }
 
-/// @title ffs should never revert
-rule ffs_noRevert(uint256 x) {
-    ffs@withrevert(x);
+/// @title fls should never revert
+rule fls_noRevert(uint256 x) {
+    fls@withrevert(x);
     assert !lastReverted; 
 }

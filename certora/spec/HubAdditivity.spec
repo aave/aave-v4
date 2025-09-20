@@ -134,9 +134,9 @@ rule restoreAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, addres
     requireAllInvariants(assetId,e);
     storage init = lastStorage;
 
-    DataTypes.PremiumDelta premiumDeltaX;
-    DataTypes.PremiumDelta premiumDeltaY;       
-    DataTypes.PremiumDelta premiumDeltaXY;
+    IHubBase.PremiumDelta premiumDeltaX;
+    IHubBase.PremiumDelta premiumDeltaY;       
+    IHubBase.PremiumDelta premiumDeltaXY;
     uint256 premiumAmountX ;
     uint256 premiumAmountY ;
     require premiumDeltaXY.sharesDelta == premiumDeltaX.sharesDelta + premiumDeltaY.sharesDelta;
@@ -158,9 +158,9 @@ rule reportDeficitAdditivity(uint256 assetId, uint256 amountX, uint256 amountY) 
     address spoke = e.msg.sender;
     requireAllInvariants(assetId,e);
     storage init = lastStorage;
-    DataTypes.PremiumDelta premiumDeltaX;
-    DataTypes.PremiumDelta premiumDeltaY;       
-    DataTypes.PremiumDelta premiumDeltaXY;
+    IHubBase.PremiumDelta premiumDeltaX;
+    IHubBase.PremiumDelta premiumDeltaY;       
+    IHubBase.PremiumDelta premiumDeltaXY;
     uint256 premiumAmountX ;
     uint256 premiumAmountY ;
 
@@ -199,8 +199,8 @@ ghost uint256 supplyShareBefore;
 
 function requireAllInvariants(uint256 assetId, env e)  {
     // optimize the calls to 
-    supplyAmountBefore = getAssetAddedAmount(e,assetId);
-    supplyShareBefore = getAssetAddedShares(e,assetId); 
+    supplyAmountBefore = getAddedAssets(e,assetId);
+    supplyShareBefore = getAddedShares(e,assetId); 
     //requireInvariant totalAssetsVsShares(assetId,e);
     require supplyAmountBefore >= supplyShareBefore;
 }

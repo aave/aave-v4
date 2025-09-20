@@ -3,6 +3,7 @@
 import {Math} from '../../src/dependencies/openzeppelin/Math.sol';
 import {WadRayMath} from '../../src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from '../../src/libraries/math/PercentageMath.sol';
+import {MathUtils} from '../../src/libraries/math/MathUtils.sol';
 pragma solidity ^0.8.0;
 
 
@@ -15,6 +16,15 @@ contract MathWrapper  {
     function mulDiv(uint256 x, uint256 y, uint256 denominator) external pure returns (uint256 result) {
         return Math.mulDiv(x,y, denominator);
     }
+
+    function mulDivDown(uint256 x, uint256 y, uint256 denominator) external pure returns (uint256 result) {
+        return MathUtils.mulDivDown(x,y, denominator);
+    }
+
+    function mulDivUp(uint256 x, uint256 y, uint256 denominator) external pure returns (uint256 result) {
+        return MathUtils.mulDivUp(x,y, denominator);
+    }
+    
 
     function RAY() public pure returns (uint256) {
         return WadRayMath.RAY;

@@ -15,30 +15,30 @@ Assuming accrue has been called before any other function.
 ***/
 methods {
     function _validateAdd(
-        DataTypes.Asset storage asset,
-        DataTypes.SpokeData storage spoke,
+        IHub.Asset storage asset,
+        IHub.SpokeData storage spoke,
         uint256 assetId,
         uint256 amount,
         address from
     ) internal => NONDET;
 
     function _validateRemove(
-        DataTypes.SpokeData storage spoke,
+        IHub.SpokeData storage spoke,
         uint256 assetId,
         uint256 amount,
         address to
     ) internal => NONDET;
 
     function _validateDraw(
-        DataTypes.Asset storage asset,
-        DataTypes.SpokeData storage spoke,
+        IHub.Asset storage asset,
+        IHub.SpokeData storage spoke,
         uint256 assetId,
         uint256 amount,
         address to
     ) internal => NONDET;
 
     function _validateRestore(
-        DataTypes.SpokeData storage spoke,
+        IHub.SpokeData storage spoke,
         uint256 assetId,
         uint256 drawnAmount,
         uint256 premiumAmount,
@@ -46,42 +46,43 @@ methods {
     ) internal => NONDET;
 
     function _validateReportDeficit(
-        DataTypes.SpokeData storage spoke,
+        IHub.SpokeData storage spoke,
         uint256 assetId,
         uint256 drawnAmount,
         uint256 premiumAmount
     ) internal => NONDET;
 
     function _validateEliminateDeficit(
-        DataTypes.SpokeData storage spoke,
+        IHub.SpokeData storage spoke,
         uint256 amount
     ) internal => NONDET;
 
     function _validatePayFee(
-        DataTypes.SpokeData storage senderSpoke,
+        IHub.SpokeData storage senderSpoke,
         uint256 feeShares
     ) internal => NONDET;
 
     function _validateTransferShares(
-        DataTypes.Asset storage asset,
-        DataTypes.SpokeData storage sender,
-        DataTypes.SpokeData storage receiver,
+        IHub.Asset storage asset,
+        IHub.SpokeData storage sender,
+        IHub.SpokeData storage receiver,
         uint256 assetId,
         uint256 shares
     ) internal => NONDET;
 
     function _validateSweep(
-        DataTypes.Asset storage asset,
+        IHub.Asset storage asset,
         address caller,
         uint256 amount
     ) internal => NONDET;
 
     function _validateReclaim(
-        DataTypes.Asset storage asset,
+        IHub.Asset storage asset,
         address caller,
         uint256 amount
     ) internal => NONDET;
 }
+
 
 // when not accruing interest, every function should increase supply exchange rate 
 rule supplyExchangeRateIsMonotonic(env e, method f, calldataarg args)
@@ -102,8 +103,8 @@ filtered {
 
     f(e, args);
 
-    mathint assetsAfter = getTotalAddedAssets(e,assetId);
-    mathint sharesAfter = getTotalAddedShares(e,assetId);
+    mathint assetsAfter = getAddedAssets(e,assetId);
+    mathint sharesAfter = getAddedShares(e,assetId);
 
     // > when only considering accrue interest
     assert (assetsAfter + OneM) * (sharesBefore + OneM) >= (assetsBefore + OneM )* (sharesAfter + OneM);
@@ -130,7 +131,7 @@ rule noChangeToOtherSpoke(address spoke, uint256 assetId, address otherSpoke, me
     uint256 cumulativeDebt_  = getSpokeTotalOwed(e, assetId, spoke); 
 
     uint256 shares_ = getSpokeAddedShares(e, assetId, spoke);
-    uint256 assets = getSpokeAddedAmount(e, assetId, spoke);
+    uint256 assets = getSpokeAddedAssets(e, assetId, spoke);
 
     address toOnTransfer;
     uint256 x;
@@ -147,7 +148,7 @@ rule noChangeToOtherSpoke(address spoke, uint256 assetId, address otherSpoke, me
     // cases where shares can increase 
     assert (spoke == feeReceiver || spoke == toOnTransfer) => shares_ <= getSpokeAddedShares(e, assetId, spoke);
     // asset can increase due to other's operations 
-    assert assets <= getSpokeAddedAmount(e, assetId, spoke); 
+    assert assets <= getSpokeAddedAssets(e, assetId, spoke); 
 } 
 
 

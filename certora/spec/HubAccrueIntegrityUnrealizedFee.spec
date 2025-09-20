@@ -11,7 +11,7 @@ using MathWrapper as mathWrapper;
 methods {
 
     function MathWrapper.PERCENTAGE_FACTOR() external returns (uint256) envfree;
-    function AssetLogic.getDrawnIndex(DataTypes.Asset storage asset) internal returns (uint256)  with (env e) => symbolicDrawnIndex(e.block.timestamp);
+    function AssetLogic.getDrawnIndex(IHub.Asset storage asset) internal returns (uint256)  with (env e) => symbolicDrawnIndex(e.block.timestamp);
 
     function PercentageMath.percentMulDown(uint256 percentage, uint256 value) internal  returns (uint256) => 
     mulDivDownCVL(value,percentage,mathWrapper.PERCENTAGE_FACTOR());
@@ -52,8 +52,9 @@ rule maxUnrealizedFeeShares(uint256 assetId){
 
     //assume any value that can be set in updateAssetConfig
     // must be called at e1 as accrue is happening in updateAssetConfig
-    DataTypes.AssetConfig config;
-    updateAssetConfig(e1,assetId,config) at init_state;
+    IHub.AssetConfig config;
+    bytes irData;
+    updateAssetConfig(e1,assetId,config,irData) at init_state;
     assert unrealizedFeeShares(e2,assetId) <= feeSharesAtMax;
 
 }

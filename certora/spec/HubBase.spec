@@ -14,9 +14,11 @@ Here we have only safe assumptions, safe summarization that are either proved in
 
 methods {
  
-    function Math.mulDiv(uint256 x, uint256 y, uint256 denominator) internal  returns (uint256) => mulDivDownCVL(x,y,denominator);
-    function Math.mulDiv(uint256 x, uint256 y, uint256 denominator, Math.Rounding rounding
-  ) internal returns (uint256) => mulDivCheckRounding(x,y,denominator,rounding);
+    function _.mulDiv(uint256 x, uint256 y, uint256 denominator) internal  => mulDivDownCVL(x,y,denominator) expect uint256;
+    function _.mulDivDown(uint256 a, uint256 b, uint256 c) internal => mulDivDownCVL(a,b,c) expect uint256;
+    function _.mulDivUp(uint256 a, uint256 b, uint256 c) internal => mulDivUpCVL(a,b,c) expect uint256;
+    function _.mulDiv(uint256 x, uint256 y, uint256 denominator, Math.Rounding rounding
+  ) internal => mulDivCheckRounding(x,y,denominator,rounding) expect uint256;
 
     function WadRayMathWrapper.RAY() external returns (uint256) envfree;
     function WadRayMathWrapper.PERCENTAGE_FACTOR() external returns (uint256) envfree;

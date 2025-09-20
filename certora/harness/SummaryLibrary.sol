@@ -3,14 +3,14 @@ pragma solidity ^0.8.0;
 
 
 
-import '../../src/libraries/logic/AssetLogic.sol';
+import '../../src/hub/libraries/AssetLogic.sol';
 
 library SummaryLibrary {
-    using AssetLogic for DataTypes.Asset;
+    using AssetLogic for IHub.Asset;
     using SharesMath for uint256;
 
 function getFeeShares(
-      DataTypes.Asset storage asset,
+      IHub.Asset storage asset,
     uint256 indexDelta
     ) external view returns (uint256) {
       uint256 liquidityFee = asset.liquidityFee;
@@ -26,7 +26,7 @@ function getFeeShares(
     require(true, "cvl summarized only") ; 
   }
 
-  function getDrawnIndex(DataTypes.Asset storage asset) external view returns (uint256) {
+  function getDrawnIndex(IHub.Asset storage asset) external view returns (uint256) {
     return  asset.drawnIndex;
     }
 

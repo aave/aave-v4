@@ -17,10 +17,10 @@ using MathWrapper as mathWrapper;
 
 methods {
     
-    function AssetLogic.getDrawnIndex(DataTypes.Asset storage asset) internal returns (uint256)  with (env e) => symbolicDrawnIndex(e.block.timestamp);
+    function AssetLogic.getDrawnIndex(IHub.Asset storage asset) internal returns (uint256)  with (env e) => symbolicDrawnIndex(e.block.timestamp);
 
-// todo - fix when the code is fix to have the correct order of arguments
-    function PercentageMath.percentMulDown(uint256 percentage, uint256 value) internal  returns (uint256) => 
+    // proved in HubAccrueIntegrityUnrealizedFee.spec that this is the max value of unrealizedFeeShares
+    function PercentageMath.percentMulDown(uint256 value, uint256 percentage) internal  returns (uint256) => 
     identity(value);
 
 }
@@ -58,14 +58,15 @@ rule unrealizedFeeSharesSupplyRate(uint256 assetId){
     require  symbolicDrawnIndex(e1.block.timestamp) >= wadRayMath.RAY();
     assert unrealizedFeeShares(e1,assetId) == 0 ;
 
-    mathint assets_e1 = getTotalAddedAssets(e1, assetId);
+
+    mathint assets_e1 = getAddedAssets(e1, assetId);
     mathint shares_e1 = hub._assets[assetId].addedShares;
     //requireInvariant totalAssetsVsShares(assetId,e);
     require assets_e1 >= shares_e1 ;
     
     // get the fee shares and asset at e2
     uint256 feeShares = unrealizedFeeShares(e2,assetId);
-    mathint assets_e2 = getTotalAddedAssets(e2, assetId);
+    mathint assets_e2 = getAddedAssets(e2, assetId);
     mathint shares_e2 = hub._assets[assetId].addedShares + feeShares;
 
     mathint changeInAsset  = assets_e2 - assets_e1;

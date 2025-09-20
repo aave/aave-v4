@@ -52,6 +52,37 @@ rule lastUpdateTimestamp_notInFuture(){
     assert hub._assets[assetId].lastUpdateTimestamp == e.block.timestamp;
 }
 
+rule revert_on_accrue(){
+    env e;
+    uint256 assetId;
+    require emptyAsset(assetId);
+    accrueInterest(e,assetId);
+    assert emptyAsset(assetId);
+}
+
+definition emptyAsset(uint256 assetId) returns bool =
+    hub._assets[assetId].addedShares == 0 &&
+        hub._assets[assetId].liquidity == 0 &&
+        hub._assets[assetId].addedShares == 0 &&
+        hub._assets[assetId].deficit == 0 &&
+        hub._assets[assetId].swept == 0 &&
+        hub._assets[assetId].premiumShares == 0 &&
+        hub._assets[assetId].premiumOffset == 0 &&
+        hub._assets[assetId].realizedPremium == 0 &&
+        hub._assets[assetId].drawnShares == 0 &&
+        hub._assets[assetId].drawnIndex == 0 &&
+        hub._assets[assetId].drawnRate == 0 &&
+        hub._assets[assetId].lastUpdateTimestamp == 0 &&
+        ( forall address spoke. 
+            hub._spokes[assetId][spoke].addedShares == 0 &&
+            hub._spokes[assetId][spoke].drawnShares == 0 &&
+            hub._spokes[assetId][spoke].premiumShares == 0  &&
+            hub._spokes[assetId][spoke].premiumOffset == 0 &&
+            hub._spokes[assetId][spoke].realizedPremium == 0 
+        ) && 
+        hub._assets[assetId].underlying == 0;
+
+
 /**
 @title BaseDebtIndex is increasing on block change when baseRate is at least SECONDS_PER_YEAR and index is set
 Fails on cases in which baseBorrowRate <= SECONDS_PER_YEAR
@@ -118,7 +149,10 @@ rule viewFunctionsIntegrity(uint256 assetId, method f) filtered { f-> f.isView &
                                 f.selector != sig:toSharesUp(uint256,uint256,uint256).selector &&
                                 f.selector != sig:toAssetsUp(uint256,uint256,uint256).selector &&
                                 f.selector != sig:getAssetSuppliedAmountUp(uint256).selector &&
-                                f.selector != sig:unrealizedFeeShares(uint256 ).selector 
+                                f.selector != sig:unrealizedFeeShares(uint256 ).selector &&
+                                f.selector != sig:MAX_ALLOWED_UNDERLYING_DECIMALS().selector &&
+                                f.selector != sig:MAX_ALLOWED_SPOKE_CAP().selector &&
+                                f.selector != sig:getAssetUnderlyingAndDecimals(uint256).selector 
                                 }
 {
     env e;
@@ -205,23 +239,18 @@ function callViewFunction(method f, env e, calldataarg args) returns mathint {
     else if (f.selector == sig:getSpokeTotalOwed(uint256,address).selector) {
         return getSpokeTotalOwed(e, args);
     }
-    else if (f.selector == sig:getAssetAddedAmount(uint256).selector) {
-        return getAssetAddedAmount(e, args);
-    }
+    
     else if (f.selector == sig:getAssetDrawnRate(uint256).selector) {
         return getAssetDrawnRate(e, args);
     }
-    else if (f.selector == sig:getAssetAddedShares(uint256).selector) {
-        return getAssetAddedShares(e, args);
+    else if (f.selector == sig:getAddedAssets(uint256).selector) {
+        return getAddedAssets(e, args);
     }
-    else if (f.selector == sig:getTotalAddedAssets(uint256).selector) {
-        return getTotalAddedAssets(e, args);
+    else if (f.selector == sig:getAddedShares(uint256).selector) {
+        return getAddedShares(e, args);
     }
-    else if (f.selector == sig:getTotalAddedShares(uint256).selector) {
-        return getTotalAddedShares(e, args);
-    }
-    else if (f.selector == sig:getSpokeAddedAmount(uint256,address).selector) {
-        return getSpokeAddedAmount(e, args);
+    else if (f.selector == sig:getSpokeAddedAssets(uint256,address).selector) {
+        return getSpokeAddedAssets(e, args);
     }
     else if (f.selector == sig:getSpokeAddedShares(uint256,address).selector) {
         return getSpokeAddedShares(e, args);
@@ -234,6 +263,22 @@ function callViewFunction(method f, env e, calldataarg args) returns mathint {
     }
     else if (f.selector == sig:getSwept(uint256).selector) {
         return getSwept(e, args);
+    }
+    else if (f.selector == sig:getAssetDrawnShares(uint256).selector) {
+        return getAssetDrawnShares(e, args);
+    }
+    else if (f.selector == sig:getAssetPremiumData(uint256).selector) {
+        uint256 a; uint256 b; uint256 c; 
+        (a, b, c) = getAssetPremiumData(e, args); 
+        return a + b + c;
+    }
+    else if (f.selector == sig:getSpokePremiumData(uint256,address).selector) {
+        uint256 a; uint256 b; uint256 c; 
+        (a, b, c) = getSpokePremiumData(e, args); 
+        return a + b + c;
+    }
+    else if (f.selector == sig:getSpokeDrawnShares(uint256,address).selector) {
+        return getSpokeDrawnShares(e, args);
     }
     else
     {

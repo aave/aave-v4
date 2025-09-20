@@ -65,7 +65,7 @@ rule nothingForZero_draw(uint256 assetId, uint256 amount, address to) {
 }
 
 /** @title Restore operation decreases debt shares and transfers assets from payer */
-rule nothingForZero_restore(uint256 assetId, uint256 drawnAmount, uint256 premiumAmount, DataTypes.PremiumDelta premiumDelta, address from) {
+rule nothingForZero_restore(uint256 assetId, uint256 drawnAmount, uint256 premiumAmount, IHubBase.PremiumDelta premiumDelta, address from) {
     env e;
     address asset = hub._assets[assetId].underlying;
     address spoke = e.msg.sender;
@@ -84,7 +84,7 @@ rule nothingForZero_restore(uint256 assetId, uint256 drawnAmount, uint256 premiu
 }
 
 /** @title Report deficit operation decreases debt shares and increases deficit without external transfers */
-rule nothingForZero_reportDeficit(uint256 assetId, uint256 drawnAmount, uint256 premiumAmount, DataTypes.PremiumDelta premiumDelta) {       
+rule nothingForZero_reportDeficit(uint256 assetId, uint256 drawnAmount, uint256 premiumAmount, IHubBase.PremiumDelta premiumDelta) {       
     env e;
     address asset = hub._assets[assetId].underlying;
     address spoke = e.msg.sender;
