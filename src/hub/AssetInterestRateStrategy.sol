@@ -8,7 +8,7 @@ import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/in
 /**
  * @title AssetInterestRateStrategy contract
  * @author Aave Labs
- * @notice Asset interest rate strategy used by the Aave protocol
+ * @notice Asset interest rate strategy.
  * @dev Strategies are hub-specific, due to the usage of asset identifier as index of the _interestRateData.
  */
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {

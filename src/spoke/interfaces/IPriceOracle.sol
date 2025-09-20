@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 /**
  * @title IPriceOracle
  * @author Aave Labs
- * @notice Basic interface for any price oracle used by the Aave protocol.
+ * @notice Basic interface for any price oracle.
  * @dev All prices must use the same number of decimals as the oracle and should be returned in the same currency.
  */
 interface IPriceOracle {
