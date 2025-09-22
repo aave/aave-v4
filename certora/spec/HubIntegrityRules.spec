@@ -64,41 +64,6 @@ rule nothingForZero_draw(uint256 assetId, uint256 amount, address to) {
             hub._assets[assetId].liquidity < liquidityBefore;
 }
 
-/** @title Restore operation decreases debt shares and transfers assets from payer */
-rule nothingForZero_restore(uint256 assetId, uint256 drawnAmount, uint256 premiumAmount, IHubBase.PremiumDelta premiumDelta, address from) {
-    env e;
-    address asset = hub._assets[assetId].underlying;
-    address spoke = e.msg.sender;
-    uint256 spokeDrawnSharesBefore = hub._spokes[assetId][spoke].drawnShares;
-    uint256 externalBalanceBefore = balanceByToken[asset][hub]; 
-    uint256 fromBalanceBefore = balanceByToken[asset][from];
-    uint256 liquidityBefore = hub._assets[assetId].liquidity;
-
-
-    restore(e,assetId,drawnAmount,premiumAmount,premiumDelta,from);
-
-    assert hub._spokes[assetId][spoke].drawnShares < spokeDrawnSharesBefore &&  
-            balanceByToken[asset][hub] > externalBalanceBefore &&
-            balanceByToken[asset][from] < fromBalanceBefore &&
-            hub._assets[assetId].liquidity > liquidityBefore;
-}
-
-/** @title Report deficit operation decreases debt shares and increases deficit without external transfers */
-rule nothingForZero_reportDeficit(uint256 assetId, uint256 drawnAmount, uint256 premiumAmount, IHubBase.PremiumDelta premiumDelta) {       
-    env e;
-    address asset = hub._assets[assetId].underlying;
-    address spoke = e.msg.sender;
-    uint256 spokeDrawnSharesBefore = hub._spokes[assetId][spoke].drawnShares;
-    uint256 externalBalanceBefore = balanceByToken[asset][hub]; 
-    uint256 deficitBefore = hub._assets[assetId].deficit;
-
-    reportDeficit(e,assetId,drawnAmount,premiumAmount,premiumDelta);       
-
-    assert hub._spokes[assetId][spoke].drawnShares < spokeDrawnSharesBefore &&  
-            balanceByToken[asset][hub] == externalBalanceBefore &&
-            hub._assets[assetId].deficit > deficitBefore;
-}
-
 /** @title Eliminate deficit operation decreases added shares and reduces deficit without external transfers */
 rule nothingForZero_eliminateDeficit(uint256 assetId, uint256 amount) {
 

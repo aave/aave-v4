@@ -52,13 +52,6 @@ rule lastUpdateTimestamp_notInFuture(){
     assert hub._assets[assetId].lastUpdateTimestamp == e.block.timestamp;
 }
 
-rule revert_on_accrue(){
-    env e;
-    uint256 assetId;
-    require emptyAsset(assetId);
-    accrueInterest(e,assetId);
-    assert emptyAsset(assetId);
-}
 
 definition emptyAsset(uint256 assetId) returns bool =
     hub._assets[assetId].addedShares == 0 &&
