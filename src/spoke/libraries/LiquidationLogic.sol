@@ -11,6 +11,11 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 
+/**
+ * @title LiquidationLogic library
+ * @author Aave Labs
+ * @notice Implements the logic for liquidations.
+ */
 library LiquidationLogic {
   using SafeCast for *;
   using PositionStatusMap for ISpoke.PositionStatus;

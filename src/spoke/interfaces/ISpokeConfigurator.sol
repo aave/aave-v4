@@ -7,7 +7,7 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /**
  * @title ISpokeConfigurator
  * @author Aave Labs
- * @notice Interface for the SpokeConfigurator
+ * @notice Interface for the SpokeConfigurator.
  */
 interface ISpokeConfigurator {
   /**
@@ -52,9 +52,10 @@ interface ISpokeConfigurator {
 
   /**
    * @notice Adds a new reserve to a spoke.
+   * @dev The asset corresponding to the reserve must be already listed on the hub.
    * @dev The price source must implement the AggregatorV3Interface.
    * @param spoke The address of the spoke.
-   * @param hub The address of the hub where the asset is listed.
+   * @param hub The address of the hub where the asset corresponding to the reserve is listed.
    * @param assetId The identifier of the asset.
    * @param priceSource The address of the price source.
    * @param config The configuration of the reserve.

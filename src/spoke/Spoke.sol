@@ -18,6 +18,12 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
+/**
+ * @title Spoke
+ * @author Aave Labs
+ * @notice Base contract for the Spoke.
+ * @dev Facilitates user interactions with the Hub.
+ */
 abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
@@ -79,11 +85,13 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   // Governance
   // /////
 
+  /// @inheritdoc ISpoke
   function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
     _updateReservePriceSource(reserveId, priceSource);
   }
 
+  /// @inheritdoc ISpoke
   function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
     require(
       config.targetHealthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
@@ -547,6 +555,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return _userPositions[user][reserveId].suppliedShares;
   }
 
+  /// @inheritdoc ISpoke
   function getReserveCount() external view returns (uint256) {
     return _reserveCount;
   }
@@ -970,7 +979,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @dev Trigger risk premium update on all drawn reserves of `user`.
+   * @notice Trigger risk premium update on all drawn reserves of `user`.
    * @param user The address of the user whose risk premium is being updated.
    * @param newUserRiskPremium The new risk premium of the user.
    */
@@ -1012,7 +1021,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @dev Reports deficits for all borrowing reserves of the user.
+   * @notice Reports deficits for all borrowing reserves of the user.
    * @dev Includes the debt reserve being repaid during liquidation.
    * @param user The address of the user whose deficits are being reported.
    */
