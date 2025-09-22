@@ -47,7 +47,7 @@ contract NativeTokenGateway is
   /// @inheritdoc INativeTokenGateway
   function supplyNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
     (IERC20 underlying, address hub) = _getReserveData(reserveId);
-    _validateParams(address(underlying), amount);
+    _validateParams(underlying, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
     _nativeWrapper.deposit{value: amount}();
@@ -58,7 +58,7 @@ contract NativeTokenGateway is
   /// @inheritdoc INativeTokenGateway
   function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external {
     (IERC20 underlying, ) = _getReserveData(reserveId);
-    _validateParams(address(underlying), amount);
+    _validateParams(underlying, amount);
     require(receiver != address(0), InvalidAddress());
 
     uint256 withdrawAmount = MathUtils.min(
@@ -74,7 +74,7 @@ contract NativeTokenGateway is
   /// @inheritdoc INativeTokenGateway
   function borrowNative(uint256 reserveId, uint256 amount, address receiver) external {
     (IERC20 underlying, ) = _getReserveData(reserveId);
-    _validateParams(address(underlying), amount);
+    _validateParams(underlying, amount);
     require(receiver != address(0), InvalidAddress());
 
     _spoke.borrow(reserveId, amount, msg.sender);
@@ -85,7 +85,7 @@ contract NativeTokenGateway is
   /// @inheritdoc INativeTokenGateway
   function repayNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
     (IERC20 underlying, address hub) = _getReserveData(reserveId);
-    _validateParams(address(underlying), amount);
+    _validateParams(underlying, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
     uint256 userDebtAmount = _spoke.getUserTotalDebt(reserveId, msg.sender);
@@ -119,8 +119,8 @@ contract NativeTokenGateway is
     return owner();
   }
 
-  function _validateParams(address underlying, uint256 amount) internal view {
-    require(underlying == address(_nativeWrapper), InvalidReserveId());
+  function _validateParams(IERC20 underlying, uint256 amount) internal view {
+    require(address(underlying) == address(_nativeWrapper), InvalidReserveId());
     require(amount > 0, InvalidAmount());
   }
 
