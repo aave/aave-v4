@@ -92,9 +92,9 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
-    (IERC20 underlying, address hub) = _getReserveData(reserveId);
-    underlying.safeTransferFrom(onBehalfOf, address(this), amount);
-    underlying.forceApprove(hub, amount);
+    (address underlying, address hub) = _getReserveData(reserveId);
+    IERC20(underlying).safeTransferFrom(onBehalfOf, address(this), amount);
+    IERC20(underlying).forceApprove(hub, amount);
 
     _spoke.supply(reserveId, amount, onBehalfOf);
   }
@@ -123,14 +123,14 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
-    (IERC20 underlying, ) = _getReserveData(reserveId);
+    (address underlying, ) = _getReserveData(reserveId);
     uint256 withdrawAmount = MathUtils.min(
       amount,
       _spoke.getUserSuppliedAssets(reserveId, onBehalfOf)
     );
 
     _spoke.withdraw(reserveId, withdrawAmount, onBehalfOf);
-    underlying.safeTransfer(onBehalfOf, withdrawAmount);
+    IERC20(underlying).safeTransfer(onBehalfOf, withdrawAmount);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -157,10 +157,10 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
-    (IERC20 underlying, ) = _getReserveData(reserveId);
+    (address underlying, ) = _getReserveData(reserveId);
 
     _spoke.borrow(reserveId, amount, onBehalfOf);
-    underlying.safeTransfer(onBehalfOf, amount);
+    IERC20(underlying).safeTransfer(onBehalfOf, amount);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -187,11 +187,11 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
 
-    (IERC20 underlying, address hub) = _getReserveData(reserveId);
+    (address underlying, address hub) = _getReserveData(reserveId);
     uint256 repayAmount = MathUtils.min(amount, _spoke.getUserTotalDebt(reserveId, onBehalfOf));
 
-    underlying.safeTransferFrom(onBehalfOf, address(this), repayAmount);
-    underlying.forceApprove(hub, repayAmount);
+    IERC20(underlying).safeTransferFrom(onBehalfOf, address(this), repayAmount);
+    IERC20(underlying).forceApprove(hub, repayAmount);
 
     _spoke.repay(reserveId, repayAmount, onBehalfOf);
   }
@@ -291,9 +291,9 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     bytes32 r,
     bytes32 s
   ) external {
-    (IERC20 underlying, ) = _getReserveData(reserveId);
+    (address underlying, ) = _getReserveData(reserveId);
     try
-      IERC20Permit(address(underlying)).permit({
+      IERC20Permit(underlying).permit({
         owner: onBehalfOf,
         spender: address(this),
         value: value,
@@ -344,9 +344,9 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     return owner();
   }
 
-  function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
+  function _getReserveData(uint256 reserveId) internal view returns (address, address) {
     ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
     require(reserveData.underlying != address(0), InvalidReserveId());
-    return (IERC20(reserveData.underlying), address(reserveData.hub));
+    return (reserveData.underlying, address(reserveData.hub));
   }
 }
