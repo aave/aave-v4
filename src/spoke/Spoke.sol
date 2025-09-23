@@ -48,6 +48,9 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
+  /// @inheritdoc ISpoke
+  uint256 public immutable RISK_PREMIUM_CHANGE_THRESHOLD;
+
   uint256 internal constant INVALID_RESERVE_ID = type(uint256).max;
 
   uint256 internal _reserveCount;
@@ -71,9 +74,14 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    * @dev Constructor.
    * @param oracle_ The address of the AaveOracle contract.
    */
-  constructor(address oracle_) {
+  constructor(address oracle_, uint256 riskPremiumChangeThreshold_) {
     require(oracle_ != address(0), InvalidAddress());
     ORACLE = oracle_;
+    require(
+      riskPremiumChangeThreshold_ < PercentageMath.PERCENTAGE_FACTOR,
+      InvalidRiskPremiumChangeThreshold()
+    );
+    RISK_PREMIUM_CHANGE_THRESHOLD = riskPremiumChangeThreshold_;
   }
 
   function initialize(address _authority) external virtual;
@@ -901,7 +909,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     uint256 refreshReserveId
   ) internal {
     uint256 oldUserRiskPremium = _riskPremiums[user];
-    if (newUserRiskPremium != oldUserRiskPremium) {
+    if (newUserRiskPremium.absDiff(oldUserRiskPremium) >= RISK_PREMIUM_CHANGE_THRESHOLD) {
       _notifyRiskPremiumUpdate(user, newUserRiskPremium);
     } else if (refreshReserveId != INVALID_RESERVE_ID) {
       _refreshRiskPremium(user, refreshReserveId, oldUserRiskPremium);

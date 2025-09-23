@@ -13,7 +13,11 @@ contract MockSpokeInstance is Spoke {
    * @param spokeRevision_ The revision of the spoke contract.
    * @param oracle_ The address of the oracle.
    */
-  constructor(uint64 spokeRevision_, address oracle_) Spoke(oracle_) {
+  constructor(
+    uint64 spokeRevision_,
+    address oracle_,
+    uint256 riskPremiumChangeThreshold_
+  ) Spoke(oracle_, riskPremiumChangeThreshold_) {
     SPOKE_REVISION = spokeRevision_;
     _disableInitializers();
   }

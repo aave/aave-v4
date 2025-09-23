@@ -47,7 +47,7 @@ contract HubHandler is Test {
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     address predictedOracle = vm.computeCreateAddress(hubAdmin, vm.getNonce(hubAdmin) + 1);
-    address spokeImpl = address(new SpokeInstance(predictedOracle));
+    address spokeImpl = address(new SpokeInstance(predictedOracle, 3_00));
     oracle = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
     spoke1 = Spoke(
       address(

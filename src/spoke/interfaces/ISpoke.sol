@@ -185,6 +185,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error HealthFactorNotBelowThreshold();
   error MustNotLeaveDust();
   error InvalidDebtToCover();
+  error InvalidRiskPremiumChangeThreshold();
 
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
@@ -365,6 +366,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function MAX_ALLOWED_COLLATERAL_RISK() external view returns (uint24);
 
   function ORACLE() external view returns (address);
+
+  function RISK_PREMIUM_CHANGE_THRESHOLD() external view returns (uint256);
 
   function getReserve(uint256 reserveId) external view returns (Reserve memory);
 

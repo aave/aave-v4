@@ -145,7 +145,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
-    SpokeInstance spokeImpl = new SpokeInstance(oracle);
+    SpokeInstance spokeImpl = new SpokeInstance(oracle, DEFAULT_RISK_PREMIUM_CHANGE_THRESHOLD);
     vm.expectRevert(ISpoke.InvalidAddress.selector);
     new TransparentUpgradeableProxy(
       address(spokeImpl),
@@ -155,7 +155,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_reinitialization_revertsWith_InvalidAddress() public {
-    SpokeInstance spokeImpl = new SpokeInstance(oracle);
+    SpokeInstance spokeImpl = new SpokeInstance(oracle, DEFAULT_RISK_PREMIUM_CHANGE_THRESHOLD);
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(
@@ -173,7 +173,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
-    SpokeInstance spokeImpl = new SpokeInstance(oracle);
+    SpokeInstance spokeImpl = new SpokeInstance(oracle, DEFAULT_RISK_PREMIUM_CHANGE_THRESHOLD);
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(
@@ -204,6 +204,9 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function _deployMockSpokeInstance(uint64 revision) internal returns (SpokeInstance) {
-    return SpokeInstance(address(new MockSpokeInstance(revision, oracle)));
+    return
+      SpokeInstance(
+        address(new MockSpokeInstance(revision, oracle, DEFAULT_RISK_PREMIUM_CHANGE_THRESHOLD))
+      );
   }
 }

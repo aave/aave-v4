@@ -44,6 +44,10 @@ library MathUtils {
     }
   }
 
+  function absDiff(uint256 a, uint256 b) internal pure returns (uint256) {
+    return a > b ? uncheckedSub(a, b) : uncheckedSub(b, a);
+  }
+
   /**
    * @notice Adds a signed integer to an unsigned integer.
    * @dev Reverts on underflow.

@@ -12,7 +12,10 @@ import {Spoke} from 'src/spoke/Spoke.sol';
 contract SpokeInstance is Spoke {
   uint64 public constant SPOKE_REVISION = 1;
 
-  constructor(address oracle_) Spoke(oracle_) {
+  constructor(
+    address oracle_,
+    uint256 riskPremiumChangeThreshold_
+  ) Spoke(oracle_, riskPremiumChangeThreshold_) {
     _disableInitializers();
   }
 

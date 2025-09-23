@@ -8,7 +8,10 @@ contract MockSpoke is Spoke {
   using SafeCast for *;
   using PositionStatusMap for *;
 
-  constructor(address oracle_) Spoke(oracle_) {}
+  constructor(
+    address oracle_,
+    uint256 riskPremiumChangeThreshold_
+  ) Spoke(oracle_, riskPremiumChangeThreshold_) {}
 
   function initialize(address) external override {}
 

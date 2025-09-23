@@ -113,6 +113,7 @@ abstract contract Base is Test {
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8; // $100M per token
   uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =
     PercentageMath.PERCENTAGE_FACTOR;
+  uint256 internal constant DEFAULT_RISK_PREMIUM_CHANGE_THRESHOLD = 3_00;
 
   // TODO: remove after migrating to token list
   IERC20 internal usdc;
@@ -1991,7 +1992,9 @@ abstract contract Base is Test {
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
     address predictedOracle = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
-    address spokeImpl = address(new SpokeInstance(predictedOracle));
+    address spokeImpl = address(
+      new SpokeInstance(predictedOracle, DEFAULT_RISK_PREMIUM_CHANGE_THRESHOLD)
+    );
     ISpoke spoke = ISpoke(
       _proxify(spokeImpl, proxyAdminOwner, abi.encodeCall(Spoke.initialize, (_accessManager)))
     );
