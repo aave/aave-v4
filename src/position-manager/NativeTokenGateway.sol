@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {Rescuable} from 'src/utils/Rescuable.sol';
@@ -46,7 +46,7 @@ contract NativeTokenGateway is
 
   /// @inheritdoc INativeTokenGateway
   function supplyNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
-    (address underlying, address hub) = _getReserveData(reserveId);
+    (IERC20 underlying, address hub) = _getReserveData(reserveId);
     _validateParams(underlying, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
@@ -57,7 +57,7 @@ contract NativeTokenGateway is
 
   /// @inheritdoc INativeTokenGateway
   function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external {
-    (address underlying, ) = _getReserveData(reserveId);
+    (IERC20 underlying, ) = _getReserveData(reserveId);
     _validateParams(underlying, amount);
     require(receiver != address(0), InvalidAddress());
 
@@ -73,7 +73,7 @@ contract NativeTokenGateway is
 
   /// @inheritdoc INativeTokenGateway
   function borrowNative(uint256 reserveId, uint256 amount, address receiver) external {
-    (address underlying, ) = _getReserveData(reserveId);
+    (IERC20 underlying, ) = _getReserveData(reserveId);
     _validateParams(underlying, amount);
     require(receiver != address(0), InvalidAddress());
 
@@ -84,7 +84,7 @@ contract NativeTokenGateway is
 
   /// @inheritdoc INativeTokenGateway
   function repayNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
-    (address underlying, address hub) = _getReserveData(reserveId);
+    (IERC20 underlying, address hub) = _getReserveData(reserveId);
     _validateParams(underlying, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
@@ -119,14 +119,14 @@ contract NativeTokenGateway is
     return owner();
   }
 
-  function _validateParams(address underlying, uint256 amount) internal view {
-    require(underlying == address(_nativeWrapper), InvalidReserveId());
+  function _validateParams(IERC20 underlying, uint256 amount) internal view {
+    require(address(underlying) == address(_nativeWrapper), InvalidReserveId());
     require(amount > 0, InvalidAmount());
   }
 
-  function _getReserveData(uint256 reserveId) internal view returns (address, address) {
+  function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
     ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
-    return (reserveData.underlying, address(reserveData.hub));
+    return (IERC20(reserveData.underlying), address(reserveData.hub));
   }
 
   receive() external payable {
