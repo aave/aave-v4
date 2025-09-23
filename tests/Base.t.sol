@@ -137,9 +137,9 @@ abstract contract Base is Test {
   AccessManager internal accessManager;
   AccessManager internal accessManager2;
 
-  // TODO: remove after migrating to other mock users
-  address internal USER1 = makeAddr('USER1');
-  address internal USER2 = makeAddr('USER2');
+  // // TODO: remove after migrating to other mock users
+  // address internal USER1 = makeAddr('USER1');
+  // address internal USER2 = makeAddr('USER2');
 
   address internal alice = makeAddr('alice');
   address internal bob = makeAddr('bob');
@@ -190,6 +190,18 @@ abstract contract Base is Test {
     TestnetERC20 dai;
     TestnetERC20 wbtc;
     TestnetERC20 usdy;
+  }
+
+  struct AssetList {
+    uint256 weth;
+    uint256 dai;
+    uint256 wbtc;
+    uint256 usdy;
+    uint256 usdx;
+    uint256 dai2;
+    uint256 weth2;
+    uint256 wbtc2;
+    uint256 usdx2;
   }
 
   struct SpokeInfo {
@@ -266,6 +278,7 @@ abstract contract Base is Test {
   }
 
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
+  mapping(IHub => AssetList) internal assetIds;
 
   function setUp() public virtual {
     deployFixtures();
@@ -290,11 +303,7 @@ abstract contract Base is Test {
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
     (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)');
-    (spoke4, oracle4) = _deploySpokeWithOracle(
-      ADMIN,
-      address(accessManager),
-      'MultiHubSpoke4 (USD)'
-    );
+    (spoke4, oracle4) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke4 (USD)');
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
     dai = new MockERC20();
     eth = new MockERC20();
@@ -455,6 +464,356 @@ abstract contract Base is Test {
     }
   }
 
+  function _addAsset(
+    IHub hub,
+    address underlying,
+    ITreasurySpoke feeReceiver,
+    IAssetInterestRateStrategy irStrategy,
+    uint16 liquidityFee,
+    bytes memory encodedIrData
+  ) internal pausePrank returns (uint256 assetId) {
+    vm.startPrank(ADMIN);
+    assetId = hub1.addAsset(
+      underlying,
+      IERC20Metadata(underlying).decimals(),
+      address(feeReceiver),
+      address(irStrategy),
+      encodedIrData
+    );
+    hub.updateAssetConfig(
+      assetId,
+      IHub.AssetConfig({
+        liquidityFee: liquidityFee,
+        feeReceiver: address(feeReceiver),
+        irStrategy: address(irStrategy),
+        reinvestmentController: address(0)
+      }),
+      new bytes(0)
+    );
+    vm.stopPrank();
+  }
+
+  function _addReserveAndSpoke(
+    IHub hub,
+    ISpoke spoke,
+    uint256 assetId,
+    uint256 collateralRisk,
+    uint16 collateralFactor,
+    uint32 maxLiquidationBonus,
+    uint16 liquidationFee,
+    uint256 oraclePrice
+  ) internal pausePrank returns (ReserveInfo memory reserveInfo) {
+    vm.startPrank(ADMIN);
+    reserveInfo.reserveConfig = ISpoke.ReserveConfig({
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      collateralRisk: collateralRisk.toUint24()
+    });
+    reserveInfo.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: collateralFactor,
+      maxLiquidationBonus: maxLiquidationBonus,
+      liquidationFee: liquidationFee
+    });
+    reserveInfo.reserveId = spoke.addReserve(
+      address(hub),
+      assetId,
+      _deployMockPriceFeed(spoke, oraclePrice),
+      reserveInfo.reserveConfig,
+      reserveInfo.dynReserveConfig
+    );
+    hub.addSpoke(
+      assetId,
+      address(spoke),
+      IHub.SpokeConfig({
+        active: true,
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+      })
+    );
+    vm.stopPrank();
+  }
+
+  function _configureHub1(bytes memory encodedIrData) internal {
+    vm.startPrank(ADMIN);
+    // add WETH
+    assetIds[hub1].weth = _addAsset({
+      hub: hub1,
+      underlying: address(tokenList.weth),
+      feeReceiver: treasurySpoke,
+      irStrategy: irStrategy,
+      liquidityFee: 10_00,
+      encodedIrData: encodedIrData
+    });
+    // add USDX
+    assetIds[hub1].usdx = _addAsset({
+      hub: hub1,
+      underlying: address(tokenList.usdx),
+      feeReceiver: treasurySpoke,
+      irStrategy: irStrategy,
+      liquidityFee: 5_00,
+      encodedIrData: encodedIrData
+    });
+    // add DAI
+    assetIds[hub1].dai = _addAsset({
+      hub: hub1,
+      underlying: address(tokenList.dai),
+      feeReceiver: treasurySpoke,
+      irStrategy: irStrategy,
+      liquidityFee: 5_00,
+      encodedIrData: encodedIrData
+    });
+    // add WBTC
+    assetIds[hub1].wbtc = _addAsset({
+      hub: hub1,
+      underlying: address(tokenList.wbtc),
+      feeReceiver: treasurySpoke,
+      irStrategy: irStrategy,
+      liquidityFee: 10_00,
+      encodedIrData: encodedIrData
+    });
+    // add USDY
+    assetIds[hub1].usdy = _addAsset({
+      hub: hub1,
+      underlying: address(tokenList.usdy),
+      feeReceiver: treasurySpoke,
+      irStrategy: irStrategy,
+      liquidityFee: 10_00,
+      encodedIrData: encodedIrData
+    });
+    // add DAI2
+    assetIds[hub1].dai2 = _addAsset({
+      hub: hub1,
+      underlying: address(tokenList.dai),
+      feeReceiver: treasurySpoke,
+      irStrategy: irStrategy,
+      liquidityFee: 5_00,
+      encodedIrData: encodedIrData
+    });
+    vm.stopPrank();
+  }
+
+  function _configureSpoke1(IHub hub) internal pausePrank {
+    vm.startPrank(ADMIN);
+    spokeInfo[spoke1].weth = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke1,
+      assetId: wethAssetId,
+      collateralRisk: 15_00,
+      collateralFactor: 80_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 2000e8
+    });
+    spokeInfo[spoke1].wbtc = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke1,
+      assetId: wbtcAssetId,
+      collateralRisk: 15_00,
+      collateralFactor: 75_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 50_000e8
+    });
+    spokeInfo[spoke1].dai = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke1,
+      assetId: daiAssetId,
+      collateralRisk: 20_00,
+      collateralFactor: 78_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 1e8
+    });
+    spokeInfo[spoke1].usdx = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke1,
+      assetId: usdxAssetId,
+      collateralRisk: 50_00,
+      collateralFactor: 78_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 1e8
+    });
+    spokeInfo[spoke1].usdy = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke1,
+      assetId: usdyAssetId,
+      collateralRisk: 50_00,
+      collateralFactor: 78_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 1e8
+    });
+    vm.stopPrank();
+  }
+
+  function _configureSpoke2(IHub hub) internal pausePrank {
+    vm.startPrank(ADMIN);
+    spokeInfo[spoke2].wbtc = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke2,
+      assetId: wbtcAssetId,
+      collateralRisk: 0,
+      collateralFactor: 80_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 50000e8
+    });
+    spokeInfo[spoke2].weth = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke2,
+      assetId: wethAssetId,
+      collateralRisk: 10_00,
+      collateralFactor: 76_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 2000e8
+    });
+    spokeInfo[spoke2].dai = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke2,
+      assetId: daiAssetId,
+      collateralRisk: 20_00,
+      collateralFactor: 72_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 1e8
+    });
+    spokeInfo[spoke2].usdx = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke2,
+      assetId: usdxAssetId,
+      collateralRisk: 50_00,
+      collateralFactor: 72_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 1e8
+    });
+    spokeInfo[spoke2].usdy = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke2,
+      assetId: usdyAssetId,
+      collateralRisk: 50_00,
+      collateralFactor: 72_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 1e8
+    });
+    spokeInfo[spoke2].dai2 = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke2,
+      assetId: dai2AssetId,
+      collateralRisk: 100_00,
+      collateralFactor: 70_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 1e8
+    });
+    vm.stopPrank();
+  }
+
+  function _configureSpoke3(IHub hub) internal pausePrank {
+    vm.startPrank(ADMIN);
+    spokeInfo[spoke3].dai = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke3,
+      assetId: daiAssetId,
+      collateralRisk: 0,
+      collateralFactor: 75_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 1e8
+    });
+    spokeInfo[spoke3].usdx = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke3,
+      assetId: usdxAssetId,
+      collateralRisk: 10_00,
+      collateralFactor: 75_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 1e8
+    });
+    spokeInfo[spoke3].weth = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke3,
+      assetId: wethAssetId,
+      collateralRisk: 20_00,
+      collateralFactor: 79_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 2000e8
+    });
+    spokeInfo[spoke3].wbtc = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke3,
+      assetId: wbtcAssetId,
+      collateralRisk: 50_00,
+      collateralFactor: 77_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0,
+      oraclePrice: 50_000e8
+    });
+    vm.stopPrank();
+  }
+
+  // function _configureSpoke4(IHub hub) internal pausePrank {
+  //   vm.startPrank(ADMIN);
+  //   spokeInfo[spoke4].weth = _addReserveAndSpoke({
+  //     hub: hub,
+  //     spoke: spoke4,
+  //     assetId: wethAssetId,
+  //     collateralRisk: 0,
+  //     collateralFactor: 80_00,
+  //     maxLiquidationBonus: 108_00,
+  //     liquidationFee: 0,
+  //     oraclePrice: 2000e8
+  //   });
+  //   spokeInfo[spoke4].wbtc = _addReserveAndSpoke({
+  //     hub: hub,
+  //     spoke: spoke4,
+  //     assetId: wbtcAssetId,
+  //     collateralRisk: 5_00,
+  //     collateralFactor: 80_00,
+  //     maxLiquidationBonus: 110_00,
+  //     liquidationFee: 7_00,
+  //     oraclePrice: 50_000e8
+  //   });
+  //   spokeInfo[spoke4].dai = _addReserveAndSpoke({
+  //     hub: hub,
+  //     spoke: spoke4,
+  //     assetId: daiAssetId,
+  //     collateralRisk: 15_00,
+  //     collateralFactor: 74_00,
+  //     maxLiquidationBonus: 106_00,
+  //     liquidationFee: 0,
+  //     oraclePrice: 1e8
+  //   });
+  //   spokeInfo[spoke4].usdx = _addReserveAndSpoke({
+  //     hub: hub,
+  //     spoke: spoke4,
+  //     assetId: usdxAssetId,
+  //     collateralRisk: 40_00,
+  //     collateralFactor: 80_00,
+  //     maxLiquidationBonus: 112_00,
+  //     liquidationFee: 5_00,
+  //     oraclePrice: 1e8
+  //   });
+  //   spokeInfo[spoke4].usdy = _addReserveAndSpoke({
+  //     hub: hub,
+  //     spoke: spoke4,
+  //     assetId: usdyAssetId,
+  //     collateralRisk: 45_00,
+  //     collateralFactor: 81_00,
+  //     maxLiquidationBonus: 109_00,
+  //     liquidationFee: 4_00,
+  //     oraclePrice: 1e8
+  //   });
+
+  //   vm.stopPrank();
+  // }
+
   function configureTokenList() internal {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
@@ -471,413 +830,13 @@ abstract contract Base is Test {
       })
     );
 
+    _configureHub1(encodedIrData);
+    _configureSpoke1(hub1);
+    _configureSpoke2(hub1);
+    _configureSpoke3(hub1);
+
     // Add all assets to the Hub
     vm.startPrank(ADMIN);
-    // add WETH
-    hub1.addAsset(
-      address(tokenList.weth),
-      tokenList.weth.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      wethAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
-    // add USDX
-    hub1.addAsset(
-      address(tokenList.usdx),
-      tokenList.usdx.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      usdxAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
-    // add DAI
-    hub1.addAsset(
-      address(tokenList.dai),
-      tokenList.dai.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      daiAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
-    // add WBTC
-    hub1.addAsset(
-      address(tokenList.wbtc),
-      tokenList.wbtc.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      wbtcAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
-    // add USDY
-    hub1.addAsset(
-      address(tokenList.usdy),
-      tokenList.usdy.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      usdyAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
-    // add DAI again
-    hub1.addAsset(
-      address(tokenList.dai),
-      tokenList.dai.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      hub1.getAssetCount() - 1,
-      IHub.AssetConfig({
-        liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
-
-    // Spoke 1 reserve configs
-    spokeInfo[spoke1].weth.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 15_00
-    });
-    spokeInfo[spoke1].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 80_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-    spokeInfo[spoke1].wbtc.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 15_00
-    });
-    spokeInfo[spoke1].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 75_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-    spokeInfo[spoke1].dai.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 20_00
-    });
-    spokeInfo[spoke1].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 78_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-    spokeInfo[spoke1].usdx.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 50_00
-    });
-    spokeInfo[spoke1].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 78_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-    spokeInfo[spoke1].usdy.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 50_00
-    });
-    spokeInfo[spoke1].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 78_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-
-    spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
-      address(hub1),
-      wethAssetId,
-      _deployMockPriceFeed(spoke1, 2000e8),
-      spokeInfo[spoke1].weth.reserveConfig,
-      spokeInfo[spoke1].weth.dynReserveConfig
-    );
-    spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
-      address(hub1),
-      wbtcAssetId,
-      _deployMockPriceFeed(spoke1, 50_000e8),
-      spokeInfo[spoke1].wbtc.reserveConfig,
-      spokeInfo[spoke1].wbtc.dynReserveConfig
-    );
-    spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(
-      address(hub1),
-      daiAssetId,
-      _deployMockPriceFeed(spoke1, 1e8),
-      spokeInfo[spoke1].dai.reserveConfig,
-      spokeInfo[spoke1].dai.dynReserveConfig
-    );
-    spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(
-      address(hub1),
-      usdxAssetId,
-      _deployMockPriceFeed(spoke1, 1e8),
-      spokeInfo[spoke1].usdx.reserveConfig,
-      spokeInfo[spoke1].usdx.dynReserveConfig
-    );
-    spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(
-      address(hub1),
-      usdyAssetId,
-      _deployMockPriceFeed(spoke1, 1e8),
-      spokeInfo[spoke1].usdy.reserveConfig,
-      spokeInfo[spoke1].usdy.dynReserveConfig
-    );
-
-    hub1.addSpoke(wethAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(wbtcAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(daiAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(usdxAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(usdyAssetId, address(spoke1), spokeConfig);
-
-    // Spoke 2 reserve configs
-    spokeInfo[spoke2].wbtc.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 0
-    });
-    spokeInfo[spoke2].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 80_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-    spokeInfo[spoke2].weth.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
-    spokeInfo[spoke2].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 76_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-    spokeInfo[spoke2].dai.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 20_00
-    });
-    spokeInfo[spoke2].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 72_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-    spokeInfo[spoke2].usdx.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 50_00
-    });
-    spokeInfo[spoke2].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 72_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-    spokeInfo[spoke2].usdy.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 50_00
-    });
-    spokeInfo[spoke2].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 72_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-    spokeInfo[spoke2].dai2.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 100_00
-    });
-    spokeInfo[spoke2].dai2.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 70_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-
-    spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
-      address(hub1),
-      wbtcAssetId,
-      _deployMockPriceFeed(spoke2, 50_000e8),
-      spokeInfo[spoke2].wbtc.reserveConfig,
-      spokeInfo[spoke2].wbtc.dynReserveConfig
-    );
-    spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(
-      address(hub1),
-      wethAssetId,
-      _deployMockPriceFeed(spoke2, 2000e8),
-      spokeInfo[spoke2].weth.reserveConfig,
-      spokeInfo[spoke2].weth.dynReserveConfig
-    );
-    spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(
-      address(hub1),
-      daiAssetId,
-      _deployMockPriceFeed(spoke2, 1e8),
-      spokeInfo[spoke2].dai.reserveConfig,
-      spokeInfo[spoke2].dai.dynReserveConfig
-    );
-    spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(
-      address(hub1),
-      usdxAssetId,
-      _deployMockPriceFeed(spoke2, 1e8),
-      spokeInfo[spoke2].usdx.reserveConfig,
-      spokeInfo[spoke2].usdx.dynReserveConfig
-    );
-    spokeInfo[spoke2].usdy.reserveId = spoke2.addReserve(
-      address(hub1),
-      usdyAssetId,
-      _deployMockPriceFeed(spoke2, 1e8),
-      spokeInfo[spoke2].usdy.reserveConfig,
-      spokeInfo[spoke2].usdy.dynReserveConfig
-    );
-    spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(
-      address(hub1),
-      dai2AssetId,
-      _deployMockPriceFeed(spoke2, 1e8),
-      spokeInfo[spoke2].dai2.reserveConfig,
-      spokeInfo[spoke2].dai2.dynReserveConfig
-    );
-
-    hub1.addSpoke(wbtcAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(wethAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(daiAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(usdxAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(usdyAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(dai2AssetId, address(spoke2), spokeConfig);
-
-    // Spoke 3 reserve configs
-    spokeInfo[spoke3].dai.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 0
-    });
-    spokeInfo[spoke3].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 75_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-    spokeInfo[spoke3].usdx.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
-    spokeInfo[spoke3].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 75_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-    spokeInfo[spoke3].weth.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 20_00
-    });
-    spokeInfo[spoke3].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 79_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-    spokeInfo[spoke3].wbtc.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 50_00
-    });
-    spokeInfo[spoke3].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 77_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
-    });
-
-    spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
-      address(hub1),
-      daiAssetId,
-      _deployMockPriceFeed(spoke3, 1e8),
-      spokeInfo[spoke3].dai.reserveConfig,
-      spokeInfo[spoke3].dai.dynReserveConfig
-    );
-    spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(
-      address(hub1),
-      usdxAssetId,
-      _deployMockPriceFeed(spoke3, 1e8),
-      spokeInfo[spoke3].usdx.reserveConfig,
-      spokeInfo[spoke3].usdx.dynReserveConfig
-    );
-    spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(
-      address(hub1),
-      wethAssetId,
-      _deployMockPriceFeed(spoke3, 2000e8),
-      spokeInfo[spoke3].weth.reserveConfig,
-      spokeInfo[spoke3].weth.dynReserveConfig
-    );
-    spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(
-      address(hub1),
-      wbtcAssetId,
-      _deployMockPriceFeed(spoke3, 50_000e8),
-      spokeInfo[spoke3].wbtc.reserveConfig,
-      spokeInfo[spoke3].wbtc.dynReserveConfig
-    );
-
-    hub1.addSpoke(daiAssetId, address(spoke3), spokeConfig);
-    hub1.addSpoke(usdxAssetId, address(spoke3), spokeConfig);
-    hub1.addSpoke(wethAssetId, address(spoke3), spokeConfig);
-    hub1.addSpoke(wbtcAssetId, address(spoke3), spokeConfig);
 
     // MultiHub Spoke4 reserve configs
     // list all assets from hub1 and hub2
@@ -1037,7 +996,7 @@ abstract contract Base is Test {
     vm.startPrank(ADMIN);
     // Add assets to the second hub
     // Add DAI
-    hub2.addAsset(
+    assetIds[hub2].dai = hub2.addAsset(
       address(tokenList.dai),
       tokenList.dai.decimals(),
       address(treasurySpoke),
@@ -1045,7 +1004,7 @@ abstract contract Base is Test {
       encodedIrData
     );
     hub2.updateAssetConfig(
-      daiAssetId2,
+      assetIds[hub2].dai,
       IHub.AssetConfig({
         liquidityFee: 6_00,
         feeReceiver: address(treasurySpoke),
@@ -1056,7 +1015,7 @@ abstract contract Base is Test {
     );
 
     // Add WBTC
-    hub2.addAsset(
+    assetIds[hub2].wbtc = hub2.addAsset(
       address(tokenList.wbtc),
       tokenList.wbtc.decimals(),
       address(treasurySpoke),
@@ -1064,7 +1023,7 @@ abstract contract Base is Test {
       encodedIrData
     );
     hub2.updateAssetConfig(
-      wbtcAssetId2,
+      assetIds[hub2].wbtc,
       IHub.AssetConfig({
         liquidityFee: 4_00,
         feeReceiver: address(treasurySpoke),
@@ -1075,7 +1034,7 @@ abstract contract Base is Test {
     );
 
     // Add WETH
-    hub2.addAsset(
+    assetIds[hub2].weth = hub2.addAsset(
       address(tokenList.weth),
       tokenList.weth.decimals(),
       address(treasurySpoke),
@@ -1083,7 +1042,7 @@ abstract contract Base is Test {
       encodedIrData
     );
     hub2.updateAssetConfig(
-      wethAssetId2,
+      assetIds[hub2].weth,
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
@@ -1094,7 +1053,7 @@ abstract contract Base is Test {
     );
 
     // Add USDX
-    hub2.addAsset(
+    assetIds[hub2].usdx = hub2.addAsset(
       address(tokenList.usdx),
       tokenList.usdx.decimals(),
       address(treasurySpoke),
@@ -1102,7 +1061,7 @@ abstract contract Base is Test {
       encodedIrData
     );
     hub2.updateAssetConfig(
-      usdxAssetId2,
+      assetIds[hub2].usdx,
       IHub.AssetConfig({
         liquidityFee: 6_50,
         feeReceiver: address(treasurySpoke),
@@ -1420,6 +1379,50 @@ abstract contract Base is Test {
   // assumes spoke has dai2 supported
   function _dai2ReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].dai2.reserveId;
+  }
+
+  // assumes hub has dai listed
+  function _daiAssetId(IHub hub) internal view returns (uint256) {
+    return assetIds[hub].dai;
+  }
+
+  // assumes hub has wbtc listed
+  function _wbtcAssetId(IHub hub) internal view returns (uint256) {
+    return assetIds[hub].wbtc;
+  }
+
+  // assumes hub has weth listed
+  function _wethAssetId(IHub hub) internal view returns (uint256) {
+    return assetIds[hub].weth;
+  }
+
+  // assumes hub has usdx listed
+  function _usdxAssetId(IHub hub) internal view returns (uint256) {
+    return assetIds[hub].usdx;
+  }
+
+  // assumes hub has usdy listed
+  function _usdyAssetId(IHub hub) internal view returns (uint256) {
+    return assetIds[hub].usdy;
+  }
+
+  // assumes hub has dai2 listed
+  function _dai2AssetId(IHub hub) internal view returns (uint256) {
+    return assetIds[hub].dai2;
+  }
+
+  function _weth2AssetId(IHub hub) internal view returns (uint256) {
+    return assetIds[hub].weth2;
+  }
+
+  // assumes hub has wbtc2 listed
+  function _wbtc2AssetId(IHub hub) internal view returns (uint256) {
+    return assetIds[hub].wbtc2;
+  }
+
+  // assumes hub has usdx2 listed
+  function _usdx2AssetId(IHub hub) internal view returns (uint256) {
+    return assetIds[hub].usdx2;
   }
 
   function updateSpokeActive(
