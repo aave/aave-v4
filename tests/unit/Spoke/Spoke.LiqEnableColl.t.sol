@@ -94,5 +94,7 @@ contract SpokeLiqEnableColl is SpokeBase {
       vm.prank(alice);
       spoke1.setUsingAsCollateral(reserveId, true, alice);
     }
+
+    console.log('number enabled colls', spoke1.getReserveCount());
   }
 }
