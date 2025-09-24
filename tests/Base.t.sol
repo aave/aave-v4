@@ -593,7 +593,7 @@ abstract contract Base is Test {
     vm.stopPrank();
   }
 
-  function _configureSpoke1(IHub hub) internal pausePrank {
+  function _configureSpoke1(IHub hub) internal {
     vm.startPrank(ADMIN);
     spokeInfo[spoke1].weth = _addReserveAndSpoke({
       hub: hub,
@@ -648,7 +648,7 @@ abstract contract Base is Test {
     vm.stopPrank();
   }
 
-  function _configureSpoke2(IHub hub) internal pausePrank {
+  function _configureSpoke2(IHub hub) internal {
     vm.startPrank(ADMIN);
     spokeInfo[spoke2].wbtc = _addReserveAndSpoke({
       hub: hub,
@@ -713,7 +713,7 @@ abstract contract Base is Test {
     vm.stopPrank();
   }
 
-  function _configureSpoke3(IHub hub) internal pausePrank {
+  function _configureSpoke3(IHub hub) internal {
     vm.startPrank(ADMIN);
     spokeInfo[spoke3].dai = _addReserveAndSpoke({
       hub: hub,
@@ -758,61 +758,61 @@ abstract contract Base is Test {
     vm.stopPrank();
   }
 
-  // function _configureSpoke4(IHub hub) internal pausePrank {
-  //   vm.startPrank(ADMIN);
-  //   spokeInfo[spoke4].weth = _addReserveAndSpoke({
-  //     hub: hub,
-  //     spoke: spoke4,
-  //     assetId: wethAssetId,
-  //     collateralRisk: 0,
-  //     collateralFactor: 80_00,
-  //     maxLiquidationBonus: 108_00,
-  //     liquidationFee: 0,
-  //     oraclePrice: 2000e8
-  //   });
-  //   spokeInfo[spoke4].wbtc = _addReserveAndSpoke({
-  //     hub: hub,
-  //     spoke: spoke4,
-  //     assetId: wbtcAssetId,
-  //     collateralRisk: 5_00,
-  //     collateralFactor: 80_00,
-  //     maxLiquidationBonus: 110_00,
-  //     liquidationFee: 7_00,
-  //     oraclePrice: 50_000e8
-  //   });
-  //   spokeInfo[spoke4].dai = _addReserveAndSpoke({
-  //     hub: hub,
-  //     spoke: spoke4,
-  //     assetId: daiAssetId,
-  //     collateralRisk: 15_00,
-  //     collateralFactor: 74_00,
-  //     maxLiquidationBonus: 106_00,
-  //     liquidationFee: 0,
-  //     oraclePrice: 1e8
-  //   });
-  //   spokeInfo[spoke4].usdx = _addReserveAndSpoke({
-  //     hub: hub,
-  //     spoke: spoke4,
-  //     assetId: usdxAssetId,
-  //     collateralRisk: 40_00,
-  //     collateralFactor: 80_00,
-  //     maxLiquidationBonus: 112_00,
-  //     liquidationFee: 5_00,
-  //     oraclePrice: 1e8
-  //   });
-  //   spokeInfo[spoke4].usdy = _addReserveAndSpoke({
-  //     hub: hub,
-  //     spoke: spoke4,
-  //     assetId: usdyAssetId,
-  //     collateralRisk: 45_00,
-  //     collateralFactor: 81_00,
-  //     maxLiquidationBonus: 109_00,
-  //     liquidationFee: 4_00,
-  //     oraclePrice: 1e8
-  //   });
+  function _configureSpoke4(IHub hub) internal {
+    vm.startPrank(ADMIN);
+    spokeInfo[spoke4].weth = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke4,
+      assetId: wethAssetId,
+      collateralRisk: 0,
+      collateralFactor: 80_00,
+      maxLiquidationBonus: 108_00,
+      liquidationFee: 0,
+      oraclePrice: 2000e8
+    });
+    spokeInfo[spoke4].wbtc = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke4,
+      assetId: wbtcAssetId,
+      collateralRisk: 5_00,
+      collateralFactor: 80_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 7_00,
+      oraclePrice: 50_000e8
+    });
+    spokeInfo[spoke4].dai = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke4,
+      assetId: daiAssetId,
+      collateralRisk: 15_00,
+      collateralFactor: 74_00,
+      maxLiquidationBonus: 106_00,
+      liquidationFee: 0,
+      oraclePrice: 1e8
+    });
+    spokeInfo[spoke4].usdx = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke4,
+      assetId: usdxAssetId,
+      collateralRisk: 40_00,
+      collateralFactor: 80_00,
+      maxLiquidationBonus: 112_00,
+      liquidationFee: 5_00,
+      oraclePrice: 1e8
+    });
+    spokeInfo[spoke4].usdy = _addReserveAndSpoke({
+      hub: hub,
+      spoke: spoke4,
+      assetId: usdyAssetId,
+      collateralRisk: 45_00,
+      collateralFactor: 81_00,
+      maxLiquidationBonus: 109_00,
+      liquidationFee: 4_00,
+      oraclePrice: 1e8
+    });
 
-  //   vm.stopPrank();
-  // }
+    vm.stopPrank();
+  }
 
   function configureTokenList() internal {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
@@ -834,109 +834,110 @@ abstract contract Base is Test {
     _configureSpoke1(hub1);
     _configureSpoke2(hub1);
     _configureSpoke3(hub1);
+    _configureSpoke4(hub1);
 
     // Add all assets to the Hub
     vm.startPrank(ADMIN);
 
-    // MultiHub Spoke4 reserve configs
-    // list all assets from hub1 and hub2
-    spokeInfo[spoke4].weth.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 0
-    });
-    spokeInfo[spoke4].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 80_00,
-      maxLiquidationBonus: 108_00,
-      liquidationFee: 8_00
-    });
-    spokeInfo[spoke4].wbtc.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 5_00
-    });
-    spokeInfo[spoke4].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 80_00,
-      maxLiquidationBonus: 110_00,
-      liquidationFee: 7_00
-    });
-    spokeInfo[spoke4].dai.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 15_00
-    });
-    spokeInfo[spoke4].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 74_00,
-      maxLiquidationBonus: 106_00,
-      liquidationFee: 6_00
-    });
-    spokeInfo[spoke4].usdx.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 40_00
-    });
-    spokeInfo[spoke4].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 80_00,
-      maxLiquidationBonus: 112_00,
-      liquidationFee: 5_00
-    });
-    spokeInfo[spoke4].usdy.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 45_00
-    });
-    spokeInfo[spoke4].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 81_00,
-      maxLiquidationBonus: 109_00,
-      liquidationFee: 4_00
-    });
+    // // MultiHub Spoke4 reserve configs
+    // // list all assets from hub1 and hub2
+    // spokeInfo[spoke4].weth.reserveConfig = ISpoke.ReserveConfig({
+    //   paused: false,
+    //   frozen: false,
+    //   borrowable: true,
+    //   collateralRisk: 0
+    // });
+    // spokeInfo[spoke4].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
+    //   collateralFactor: 80_00,
+    //   maxLiquidationBonus: 108_00,
+    //   liquidationFee: 8_00
+    // });
+    // spokeInfo[spoke4].wbtc.reserveConfig = ISpoke.ReserveConfig({
+    //   paused: false,
+    //   frozen: false,
+    //   borrowable: true,
+    //   collateralRisk: 5_00
+    // });
+    // spokeInfo[spoke4].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
+    //   collateralFactor: 80_00,
+    //   maxLiquidationBonus: 110_00,
+    //   liquidationFee: 7_00
+    // });
+    // spokeInfo[spoke4].dai.reserveConfig = ISpoke.ReserveConfig({
+    //   paused: false,
+    //   frozen: false,
+    //   borrowable: true,
+    //   collateralRisk: 15_00
+    // });
+    // spokeInfo[spoke4].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
+    //   collateralFactor: 74_00,
+    //   maxLiquidationBonus: 106_00,
+    //   liquidationFee: 6_00
+    // });
+    // spokeInfo[spoke4].usdx.reserveConfig = ISpoke.ReserveConfig({
+    //   paused: false,
+    //   frozen: false,
+    //   borrowable: true,
+    //   collateralRisk: 40_00
+    // });
+    // spokeInfo[spoke4].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
+    //   collateralFactor: 80_00,
+    //   maxLiquidationBonus: 112_00,
+    //   liquidationFee: 5_00
+    // });
+    // spokeInfo[spoke4].usdy.reserveConfig = ISpoke.ReserveConfig({
+    //   paused: false,
+    //   frozen: false,
+    //   borrowable: true,
+    //   collateralRisk: 45_00
+    // });
+    // spokeInfo[spoke4].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
+    //   collateralFactor: 81_00,
+    //   maxLiquidationBonus: 109_00,
+    //   liquidationFee: 4_00
+    // });
 
-    spokeInfo[spoke4].weth.reserveId = spoke4.addReserve(
-      address(hub1),
-      wethAssetId,
-      _deployMockPriceFeed(spoke4, 2000e8),
-      spokeInfo[spoke4].weth.reserveConfig,
-      spokeInfo[spoke4].weth.dynReserveConfig
-    );
-    spokeInfo[spoke4].usdx.reserveId = spoke4.addReserve(
-      address(hub1),
-      usdxAssetId,
-      _deployMockPriceFeed(spoke4, 1e8),
-      spokeInfo[spoke4].usdx.reserveConfig,
-      spokeInfo[spoke4].usdx.dynReserveConfig
-    );
-    spokeInfo[spoke4].dai.reserveId = spoke4.addReserve(
-      address(hub1),
-      daiAssetId,
-      _deployMockPriceFeed(spoke4, 1e8),
-      spokeInfo[spoke4].dai.reserveConfig,
-      spokeInfo[spoke4].dai.dynReserveConfig
-    );
-    spokeInfo[spoke4].wbtc.reserveId = spoke4.addReserve(
-      address(hub1),
-      wbtcAssetId,
-      _deployMockPriceFeed(spoke4, 50_000e8),
-      spokeInfo[spoke4].wbtc.reserveConfig,
-      spokeInfo[spoke4].wbtc.dynReserveConfig
-    );
-    spokeInfo[spoke4].usdy.reserveId = spoke4.addReserve(
-      address(hub1),
-      usdyAssetId,
-      _deployMockPriceFeed(spoke4, 1e8),
-      spokeInfo[spoke4].usdy.reserveConfig,
-      spokeInfo[spoke4].usdy.dynReserveConfig
-    );
+    // spokeInfo[spoke4].weth.reserveId = spoke4.addReserve(
+    //   address(hub1),
+    //   wethAssetId,
+    //   _deployMockPriceFeed(spoke4, 2000e8),
+    //   spokeInfo[spoke4].weth.reserveConfig,
+    //   spokeInfo[spoke4].weth.dynReserveConfig
+    // );
+    // spokeInfo[spoke4].usdx.reserveId = spoke4.addReserve(
+    //   address(hub1),
+    //   usdxAssetId,
+    //   _deployMockPriceFeed(spoke4, 1e8),
+    //   spokeInfo[spoke4].usdx.reserveConfig,
+    //   spokeInfo[spoke4].usdx.dynReserveConfig
+    // );
+    // spokeInfo[spoke4].dai.reserveId = spoke4.addReserve(
+    //   address(hub1),
+    //   daiAssetId,
+    //   _deployMockPriceFeed(spoke4, 1e8),
+    //   spokeInfo[spoke4].dai.reserveConfig,
+    //   spokeInfo[spoke4].dai.dynReserveConfig
+    // );
+    // spokeInfo[spoke4].wbtc.reserveId = spoke4.addReserve(
+    //   address(hub1),
+    //   wbtcAssetId,
+    //   _deployMockPriceFeed(spoke4, 50_000e8),
+    //   spokeInfo[spoke4].wbtc.reserveConfig,
+    //   spokeInfo[spoke4].wbtc.dynReserveConfig
+    // );
+    // spokeInfo[spoke4].usdy.reserveId = spoke4.addReserve(
+    //   address(hub1),
+    //   usdyAssetId,
+    //   _deployMockPriceFeed(spoke4, 1e8),
+    //   spokeInfo[spoke4].usdy.reserveConfig,
+    //   spokeInfo[spoke4].usdy.dynReserveConfig
+    // );
 
-    hub1.addSpoke(wethAssetId, address(spoke4), spokeConfig);
-    hub1.addSpoke(wbtcAssetId, address(spoke4), spokeConfig);
-    hub1.addSpoke(daiAssetId, address(spoke4), spokeConfig);
-    hub1.addSpoke(usdxAssetId, address(spoke4), spokeConfig);
-    hub1.addSpoke(usdyAssetId, address(spoke4), spokeConfig);
+    // hub1.addSpoke(wethAssetId, address(spoke4), spokeConfig);
+    // hub1.addSpoke(wbtcAssetId, address(spoke4), spokeConfig);
+    // hub1.addSpoke(daiAssetId, address(spoke4), spokeConfig);
+    // hub1.addSpoke(usdxAssetId, address(spoke4), spokeConfig);
+    // hub1.addSpoke(usdyAssetId, address(spoke4), spokeConfig);
 
     // hub2 setup
     _configureHub2Assets();
