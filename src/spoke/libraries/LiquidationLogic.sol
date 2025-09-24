@@ -118,7 +118,7 @@ library LiquidationLogic {
    * @param liquidationConfig The liquidation config.
    * @param collateralDynConfig The collateral dynamic config.
    * @param params The liquidate user params.
-   * @return True if the liquidaiton results in deficit.
+   * @return True if the liquidation results in deficit.
    */
   function liquidateUser(
     ISpoke.Reserve storage collateralReserve,
