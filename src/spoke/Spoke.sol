@@ -744,15 +744,24 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   function _calculateUserAccountData(address user) internal view returns (UserAccountData memory) {
-    // SAFETY: function does not modify state when refreshConfig is false
-    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
+    (UserAccountData memory userAccountData, ) = _calculateUserAccountData(user, false);
+    return userAccountData;
   }
 
   function _calculateAndRefreshUserAccountData(
     address user
-  ) internal returns (UserAccountData memory userAccountData) {
-    userAccountData = _calculateAndPotentiallyRefreshUserAccountData(user, true);
+  ) internal returns (UserAccountData memory) {
+    (
+      UserAccountData memory userAccountData,
+      uint256[] memory reservesAndKeysToRefresh
+    ) = _calculateUserAccountData(user, true);
+    for (uint256 i = 0; i < reservesAndKeysToRefresh.length; i++) {
+      uint256 reserveId = reservesAndKeysToRefresh[i] >> 16;
+      uint16 dynamicConfigKey = uint16(reservesAndKeysToRefresh[i] & 0xFFFF);
+      _userPositions[user][reserveId].configKey = dynamicConfigKey;
+    }
     emit RefreshAllUserDynamicConfig(user);
+    return userAccountData;
   }
 
   /**
@@ -760,16 +769,25 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    * @param user address of the user
    * @return userAccountData
    */
-  function _calculateAndPotentiallyRefreshUserAccountData(
+  function _calculateUserAccountData(
     address user,
-    bool refreshConfig
-  ) internal returns (UserAccountData memory userAccountData) {
+    bool withRefreshedConfig
+  )
+    internal
+    view
+    returns (UserAccountData memory userAccountData, uint256[] memory reservesAndKeysToRefresh)
+  {
     PositionStatus storage positionStatus = _positionStatus[user];
 
     uint256 reserveId = _reserveCount;
     KeyValueList.List memory list = KeyValueList.init(positionStatus.collateralCount(reserveId));
+    if (withRefreshedConfig) {
+      reservesAndKeysToRefresh = new uint256[](list.length());
+    }
+
     bool borrowing;
     bool collateral;
+    uint256 i;
     while (true) {
       (reserveId, borrowing, collateral) = positionStatus.next(reserveId);
       if (reserveId == PositionStatusMap.NOT_FOUND) break;
@@ -777,16 +795,43 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       UserPosition storage userPosition = _userPositions[user][reserveId];
       Reserve storage reserve = _reserves[reserveId];
 
-      uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
-      uint256 assetUnit = uint256(10).uncheckedExp(reserve.decimals);
+      uint256 assetPrice;
+      uint256 assetUnit;
+
+      if (borrowing) {
+        assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
+        assetUnit = uint256(10).uncheckedExp(reserve.decimals);
+
+        (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
+          reserve.hub,
+          reserve.assetId,
+          userPosition
+        );
+        userAccountData.totalDebtInBaseCurrency +=
+          (drawnDebt * assetPrice).wadDivUp(assetUnit) +
+          (premiumDebt * assetPrice).wadDivUp(assetUnit);
+        userAccountData.borrowedReservesCount = userAccountData.borrowedReservesCount.uncheckedAdd(
+          1
+        );
+      }
 
       if (collateral) {
-        uint256 collateralFactor = _dynamicConfig[reserveId][
-          refreshConfig
-            ? (userPosition.configKey = reserve.dynamicConfigKey)
-            : userPosition.configKey
-        ].collateralFactor;
+        uint256 collateralFactor;
+        if (withRefreshedConfig) {
+          reservesAndKeysToRefresh[i] = (reserveId << 16) | reserve.dynamicConfigKey;
+          collateralFactor = _dynamicConfig[reserveId][uint16(reservesAndKeysToRefresh[i] & 0xFFFF)]
+            .collateralFactor;
+          i = i.uncheckedAdd(1);
+        } else {
+          collateralFactor = _dynamicConfig[reserveId][userPosition.configKey].collateralFactor;
+        }
+
         if (collateralFactor > 0) {
+          if (!borrowing) {
+            assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
+            assetUnit = uint256(10).uncheckedExp(reserve.decimals);
+          }
+
           uint256 userCollateralInBaseCurrency = (reserve.hub.previewRemoveByShares(
             reserve.assetId,
             userPosition.suppliedShares
@@ -805,20 +850,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
               .uncheckedAdd(1);
           }
         }
-      }
-
-      if (borrowing) {
-        (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
-          reserve.hub,
-          reserve.assetId,
-          userPosition
-        );
-        userAccountData.totalDebtInBaseCurrency +=
-          (drawnDebt * assetPrice).wadDivUp(assetUnit) +
-          (premiumDebt * assetPrice).wadDivUp(assetUnit);
-        userAccountData.borrowedReservesCount = userAccountData.borrowedReservesCount.uncheckedAdd(
-          1
-        );
       }
     }
 
@@ -844,7 +875,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     uint256 collateralCounterInBaseCurrency = 0;
 
     list.sortByKey(); // sort by collateral risk
-    uint256 i = 0;
+    i = 0;
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
     while (i < list.length() && debtCounterInBaseCurrency > 0) {
@@ -864,7 +895,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
         collateralCounterInBaseCurrency;
     }
 
-    return userAccountData;
+    return (userAccountData, reservesAndKeysToRefresh);
   }
 
   function _getUserDebt(
@@ -985,18 +1016,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   function _useNonce(address user) internal returns (uint256) {
     unchecked {
       return _nonces[user]++;
-    }
-  }
-
-  function _castToView(
-    function(address, bool) internal returns (UserAccountData memory) fnIn
-  )
-    internal
-    pure
-    returns (function(address, bool) internal view returns (UserAccountData memory) fnOut)
-  {
-    assembly ('memory-safe') {
-      fnOut := fnIn
     }
   }
 
