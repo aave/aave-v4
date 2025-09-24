@@ -113,6 +113,18 @@ library LiquidationLogic {
   // see ISpoke.DUST_DEBT_LIQUIDATION_THRESHOLD docs
   uint256 constant DUST_DEBT_LIQUIDATION_THRESHOLD = 1000e26;
 
+  /**
+   * @notice Liquidates a user position.
+   * @param collateralReserve The collateral reserve to seize during liquidation.
+   * @param debtReserve The debt reserve to repay during liquidation.
+   * @param collateralPosition The user's collateral position struct in storage.
+   * @param debtPosition The user's debt position struct in storage.
+   * @param positionStatus The user's position status.
+   * @param liquidationConfig The liquidation config.
+   * @param collateralDynConfig The collateral dynamic config.
+   * @param params The liquidate user params.
+   * @return True if the liquidation results in deficit.
+   */
   function liquidateUser(
     ISpoke.Reserve storage collateralReserve,
     ISpoke.Reserve storage debtReserve,
@@ -211,6 +223,10 @@ library LiquidationLogic {
       });
   }
 
+  /**
+   * @notice Validates the liquidation call.
+   * @param params The validate liquidation call params.
+   */
   function _validateLiquidationCall(ValidateLiquidationCallParams memory params) internal pure {
     require(params.user != params.liquidator, ISpoke.SelfLiquidation());
     require(params.debtToCover > 0, ISpoke.InvalidDebtToCover());
@@ -230,6 +246,13 @@ library LiquidationLogic {
     require(params.debtReserveBalance > 0, ISpoke.SpecifiedCurrencyNotBorrowedByUser());
   }
 
+  /**
+   * @notice Calculates the liquidation amounts.
+   * @param params The calculate liquidation amounts params.
+   * @return The collateral to liquidate.
+   * @return The collateral to give to liquidator.
+   * @return The debt to liquidate.
+   */
   function _calculateLiquidationAmounts(
     CalculateLiquidationAmountsParams memory params
   ) internal pure returns (uint256, uint256, uint256) {
@@ -274,6 +297,14 @@ library LiquidationLogic {
     return (collateralToLiquidate, collateralToLiquidator, debtToLiquidate);
   }
 
+  /**
+   * @notice Calculates the liquidation bonus at a given health factor.
+   * @param healthFactorForMaxBonus The health factor for max bonus.
+   * @param liquidationBonusFactor The liquidation bonus factor.
+   * @param healthFactor The health factor.
+   * @param maxLiquidationBonus The max liquidation bonus.
+   * @return The liquidation bonus.
+   */
   function calculateLiquidationBonus(
     uint256 healthFactorForMaxBonus,
     uint256 liquidationBonusFactor,
@@ -297,6 +328,11 @@ library LiquidationLogic {
       );
   }
 
+  /**
+   * @notice Calculates the maximum debt to liquidate.
+   * @param params The calculate max debt to liquidate params.
+   * @return The maximum debt to liquidate.
+   */
   function _calculateMaxDebtToLiquidate(
     CalculateMaxDebtToLiquidateParams memory params
   ) internal pure returns (uint256) {
@@ -332,6 +368,11 @@ library LiquidationLogic {
     return maxDebtToLiquidate;
   }
 
+  /**
+   * @notice Calculates the debt to restore a position to the target health factor.
+   * @param params The calculate debt to target health factor params.
+   * @return The debt to target health factor.
+   */
   function _calculateDebtToTargetHealthFactor(
     CalculateDebtToTargetHealthFactorParams memory params
   ) internal pure returns (uint256) {
@@ -348,6 +389,14 @@ library LiquidationLogic {
       );
   }
 
+  /**
+   * @notice Liquidates the debt of a position.
+   * @param reserve The reserve.
+   * @param position The position.
+   * @param positionStatus The position status.
+   * @param params The liquidate debt params.
+   * @return True if the debt position is empty, false otherwise.
+   */
   function _liquidateDebt(
     ISpoke.Reserve storage reserve,
     ISpoke.UserPosition storage position,
@@ -384,6 +433,13 @@ library LiquidationLogic {
     return false;
   }
 
+  /**
+   * @notice Liquidates the collateral of a position.
+   * @param reserve The reserve.
+   * @param position The position.
+   * @param params The liquidate collateral params.
+   * @return True if the collateral position is empty, false otherwise.
+   */
   function _liquidateCollateral(
     ISpoke.Reserve storage reserve,
     ISpoke.UserPosition storage position,
@@ -409,6 +465,14 @@ library LiquidationLogic {
     return position.suppliedShares == 0;
   }
 
+  /**
+   * @notice Evaluates if the liquidation results in deficit.
+   * @param isCollateralPositionEmpty True if the collateral position is empty.
+   * @param isDebtPositionEmpty True if the debt position is empty.
+   * @param suppliedCollateralsCount The number of supplied collateral reserves.
+   * @param borrowedReservesCount The number of borrowed reserves.
+   * @return True if the liquidation results in deficit, false otherwise.
+   */
   function _evaluateDeficit(
     bool isCollateralPositionEmpty,
     bool isDebtPositionEmpty,
@@ -422,6 +486,12 @@ library LiquidationLogic {
     return !isDebtPositionEmpty || borrowedReservesCount > 1;
   }
 
+  /**
+   * @notice Settles the premium debt.
+   * @dev Duplicates logic from Spoke.
+   * @param debtPosition The debt position.
+   * @param realizedDelta The realized premium delta.
+   */
   function _settlePremiumDebt(
     ISpoke.UserPosition storage debtPosition,
     int256 realizedDelta
