@@ -244,7 +244,6 @@ abstract contract Base is Test {
     IHub hub;
     uint16 assetId;
     uint8 decimals;
-    uint16 dynamicConfigKey; // key of the last reserve config
     bool paused;
     bool frozen;
     bool borrowable;
@@ -2387,7 +2386,6 @@ abstract contract Base is Test {
         hub: _hub(spoke, reserveId),
         assetId: reserve.assetId,
         decimals: reserve.decimals,
-        dynamicConfigKey: reserve.dynamicConfigKey,
         paused: reserve.paused,
         frozen: reserve.frozen,
         borrowable: reserve.borrowable,

@@ -19,7 +19,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     IHubBase hub;
     uint16 assetId;
     uint8 decimals;
-    uint16 dynamicConfigKey; // key of the last reserve config
     bool paused;
     bool frozen;
     bool borrowable;
@@ -62,6 +61,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   }
 
   struct PositionStatus {
+    uint24 configKeyInfo;
     mapping(uint256 slot => uint256) map;
   }
 
@@ -295,6 +295,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param user The address of the user.
    */
   function renouncePositionManagerRole(address user) external;
+
+  function getGlobalConfigKey() external view returns (uint16);
 
   /**
    * @notice Gets the address of the external getLiquidationLogic library.

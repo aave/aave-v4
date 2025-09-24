@@ -49,6 +49,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   address public immutable ORACLE;
 
   uint256 internal _reserveCount;
+  uint16 internal _globalConfigKey;
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
   mapping(address user => PositionStatus) internal _positionStatus;
   mapping(uint256 reserveId => Reserve) internal _reserves;
@@ -110,7 +111,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
     uint256 reserveId = _reserveCount++;
-    uint16 dynamicConfigKey; // 0 as first key to use
+    uint16 dynamicConfigKey = _globalConfigKey;
 
     (address underlying, uint8 decimals) = IHubBase(hub).getAssetUnderlyingAndDecimals(assetId);
     require(underlying != address(0), AssetNotListed());
@@ -122,7 +123,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       hub: IHubBase(hub),
       assetId: uint16(assetId),
       decimals: decimals,
-      dynamicConfigKey: dynamicConfigKey,
       paused: config.paused,
       frozen: config.frozen,
       borrowable: config.borrowable,
@@ -158,14 +158,20 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint16) {
     require(reserveId < _reserveCount, ReserveNotListed());
+    uint16 oldGlobalConfigKey = _globalConfigKey;
     uint16 configKey;
     // @dev overflow is desired, we implicitly invalidate & override stale config
     unchecked {
-      configKey = ++_reserves[reserveId].dynamicConfigKey;
+      configKey = ++_globalConfigKey;
     }
     _validateDynamicReserveConfig(dynamicConfig);
     _dynamicConfig[reserveId][configKey] = dynamicConfig;
     emit AddDynamicReserveConfig(reserveId, configKey, dynamicConfig);
+    for (uint256 i = 0; i < _reserveCount; i++) {
+      if (i != reserveId) {
+        _dynamicConfig[i][configKey] = _dynamicConfig[i][oldGlobalConfigKey];
+      }
+    }
     return configKey;
   }
 
@@ -341,7 +347,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     );
 
     DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
-      _userPositions[user][collateralReserveId].configKey
+      _getUserConfigKey(user, collateralReserveId)
     ];
 
     bool isUserInDeficit = LiquidationLogic.liquidateUser(
@@ -471,6 +477,11 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /// @inheritdoc ISpoke
+  function getGlobalConfigKey() external view returns (uint16) {
+    return _globalConfigKey;
+  }
+
+  /// @inheritdoc ISpoke
   function getLiquidationLogic() public pure returns (address) {
     return address(LiquidationLogic);
   }
@@ -573,7 +584,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
         healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
         healthFactor: healthFactor,
-        maxLiquidationBonus: _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey]
+        maxLiquidationBonus: _dynamicConfig[reserveId][_getUserConfigKey(user, reserveId)]
           .maxLiquidationBonus
       });
   }
@@ -604,7 +615,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   function getDynamicReserveConfig(
     uint256 reserveId
   ) external view returns (DynamicReserveConfig memory) {
-    return _dynamicConfig[reserveId][_reserves[reserveId].dynamicConfigKey];
+    return _dynamicConfig[reserveId][_globalConfigKey];
   }
 
   function getDynamicReserveConfig(
@@ -744,15 +755,16 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   function _calculateUserAccountData(address user) internal view returns (UserAccountData memory) {
-    // SAFETY: function does not modify state when refreshConfig is false
-    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
+    return _calculateUserAccountData(user, false);
   }
 
   function _calculateAndRefreshUserAccountData(
     address user
-  ) internal returns (UserAccountData memory userAccountData) {
-    userAccountData = _calculateAndPotentiallyRefreshUserAccountData(user, true);
+  ) internal returns (UserAccountData memory) {
+    UserAccountData memory userAccountData = _calculateUserAccountData(user, true);
+    _positionStatus[user].configKeyInfo = (_globalConfigKey << 8) | 1;
     emit RefreshAllUserDynamicConfig(user);
+    return userAccountData;
   }
 
   /**
@@ -760,11 +772,13 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    * @param user address of the user
    * @return userAccountData
    */
-  function _calculateAndPotentiallyRefreshUserAccountData(
+  function _calculateUserAccountData(
     address user,
-    bool refreshConfig
-  ) internal returns (UserAccountData memory userAccountData) {
+    bool useLatestConfigKey
+  ) internal view returns (UserAccountData memory userAccountData) {
     PositionStatus storage positionStatus = _positionStatus[user];
+
+    uint16 globalConfigKey = useLatestConfigKey ? _globalConfigKey : 0;
 
     uint256 reserveId = _reserveCount;
     KeyValueList.List memory list = KeyValueList.init(positionStatus.collateralCount(reserveId));
@@ -782,9 +796,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
       if (collateral) {
         uint256 collateralFactor = _dynamicConfig[reserveId][
-          refreshConfig
-            ? (userPosition.configKey = reserve.dynamicConfigKey)
-            : userPosition.configKey
+          useLatestConfigKey ? globalConfigKey : userPosition.configKey
         ].collateralFactor;
         if (collateralFactor > 0) {
           uint256 userCollateralInBaseCurrency = (reserve.hub.previewRemoveByShares(
@@ -964,17 +976,43 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     emit UpdateUserRiskPremium(user, 0);
   }
 
+  function _getUserConfigKey(address user, uint256 reserveId) internal view returns (uint16) {
+    uint24 configKeyInfo = _positionStatus[user].configKeyInfo;
+    if ((configKeyInfo & 1) != 0) {
+      return uint16(configKeyInfo >> 8);
+    } else {
+      return _globalConfigKey;
+    }
+  }
+
   function _refreshDynamicConfig(address user) internal {
     uint256 reserveId = _reserveCount;
     PositionStatus storage positionStatus = _positionStatus[user];
+    uint16 globalConfigKey = _globalConfigKey;
     while ((reserveId = positionStatus.nextCollateral(reserveId)) != PositionStatusMap.NOT_FOUND) {
-      _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
+      _userPositions[user][reserveId].configKey = globalConfigKey;
     }
+    positionStatus.configKeyInfo = 0;
     emit RefreshAllUserDynamicConfig(user);
   }
 
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
-    _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
+    PositionStatus storage positionStatus = _positionStatus[user];
+    uint24 configKeyInfo = positionStatus.configKeyInfo;
+    if ((configKeyInfo & 1) != 0) {
+      uint16 configKey = uint16(configKeyInfo >> 8);
+      uint256 currentReserveId = _reserveCount;
+      while (
+        (currentReserveId = positionStatus.nextCollateral(currentReserveId)) !=
+        PositionStatusMap.NOT_FOUND
+      ) {
+        if (currentReserveId != reserveId) {
+          _userPositions[user][currentReserveId].configKey = configKey;
+        }
+      }
+      positionStatus.configKeyInfo = 0;
+    }
+    _userPositions[user][reserveId].configKey = _globalConfigKey;
     emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 
@@ -985,18 +1023,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   function _useNonce(address user) internal returns (uint256) {
     unchecked {
       return _nonces[user]++;
-    }
-  }
-
-  function _castToView(
-    function(address, bool) internal returns (UserAccountData memory) fnIn
-  )
-    internal
-    pure
-    returns (function(address, bool) internal view returns (UserAccountData memory) fnOut)
-  {
-    assembly ('memory-safe') {
-      fnOut := fnIn
     }
   }
 

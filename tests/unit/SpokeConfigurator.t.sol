@@ -335,7 +335,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     expectedDynamicReserveConfig.collateralFactor = newCollateralFactor;
 
-    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke);
 
     vm.expectCall(
       spokeAddr,
@@ -347,7 +347,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     spokeConfigurator.addCollateralFactor(spokeAddr, reserveId, newCollateralFactor);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
-    assertEq(spoke.getReserve(reserveId).dynamicConfigKey, expectedConfigKey);
+    assertEq(spoke.getGlobalConfigKey(), expectedConfigKey);
   }
 
   function test_updateCollateralFactor_revertsWith_OwnableUnauthorizedAccount() public {
@@ -396,7 +396,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     expectedDynamicReserveConfig.maxLiquidationBonus = newLiquidationBonus;
 
-    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke);
 
     vm.expectCall(
       spokeAddr,
@@ -461,7 +461,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     expectedDynamicReserveConfig.liquidationFee = newLiquidationFee;
 
-    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke);
 
     vm.expectCall(
       spokeAddr,
@@ -528,7 +528,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       liquidationFee: 15_00
     });
 
-    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke);
 
     vm.expectCall(
       spokeAddr,
@@ -565,7 +565,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_updateDynamicReserveConfig() public {
     uint256 count = vm.randomUint(1, 50);
     for (uint256 i; i < count; ++i) test_addDynamicReserveConfig();
-    assertEq(spoke.getReserve(reserveId).dynamicConfigKey, count);
+    assertEq(spoke.getGlobalConfigKey(), count);
 
     ISpoke.DynamicReserveConfig memory newDynamicReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,

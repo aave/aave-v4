@@ -715,7 +715,6 @@ contract SpokeBase is Base {
     assertEq(address(a.hub), address(b.hub), 'hub');
     assertEq(a.assetId, b.assetId, 'asset Id');
     assertEq(a.decimals, b.decimals, 'decimals');
-    assertEq(a.dynamicConfigKey, b.dynamicConfigKey, 'dynamicConfigKey');
     assertEq(a.paused, b.paused, 'paused');
     assertEq(a.frozen, b.frozen, 'frozen');
     assertEq(a.borrowable, b.borrowable, 'borrowable');
@@ -856,7 +855,7 @@ contract SpokeBase is Base {
     uint256 reserveCount = spoke.getReserveCount();
     DynamicConfig[] memory configs = new DynamicConfig[](reserveCount);
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
-      configs[reserveId] = DynamicConfig(spoke.getReserve(reserveId).dynamicConfigKey, true);
+      configs[reserveId] = DynamicConfig(spoke.getGlobalConfigKey(), true);
     }
     return configs;
   }
@@ -934,8 +933,8 @@ contract SpokeBase is Base {
     revert('not found');
   }
 
-  function _nextDynamicConfigKey(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
-    uint16 dynamicConfigKey = spoke.getReserve(reserveId).dynamicConfigKey;
+  function _nextDynamicConfigKey(ISpoke spoke) internal view returns (uint16) {
+    uint16 dynamicConfigKey = spoke.getGlobalConfigKey();
     return (dynamicConfigKey + 1) % type(uint16).max;
   }
 
@@ -943,7 +942,7 @@ contract SpokeBase is Base {
     ISpoke spoke,
     uint256 reserveId
   ) internal returns (uint16) {
-    uint16 configKey = _nextDynamicConfigKey(spoke, reserveId);
+    uint16 configKey = _nextDynamicConfigKey(spoke);
     if (spoke.getDynamicReserveConfig(reserveId, configKey).maxLiquidationBonus != 0) {
       revert('no uninitialized config keys');
     }
@@ -951,12 +950,12 @@ contract SpokeBase is Base {
   }
 
   function _randomInitializedConfigKey(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
-    uint16 configKey = _nextDynamicConfigKey(spoke, reserveId);
+    uint16 configKey = _nextDynamicConfigKey(spoke);
     if (spoke.getDynamicReserveConfig(reserveId, configKey).maxLiquidationBonus != 0) {
       // all config keys are initialized
       return vm.randomUint(0, type(uint16).max).toUint16();
     }
-    return vm.randomUint(0, spoke.getReserve(reserveId).dynamicConfigKey).toUint16();
+    return vm.randomUint(0, spoke.getGlobalConfigKey()).toUint16();
   }
 
   /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
