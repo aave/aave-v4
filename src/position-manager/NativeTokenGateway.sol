@@ -142,7 +142,7 @@ contract NativeTokenGateway is
   /**
    * @notice Returns the reserve data.
    * @param reserveId The identifier of the reserve.
-   * @return The underlying asset address.
+   * @return The underlying asset.
    * @return The hub address.
    **/
   function _getReserveData(uint256 reserveId) internal view returns (address, address) {
@@ -160,7 +160,7 @@ contract NativeTokenGateway is
 
   /**
    * @notice Fallback function.
-   * @dev Reverts with an `UnsupportedAction` error.
+   * @dev Reverts with `UnsupportedAction`.
    **/
   fallback() external payable {
     revert UnsupportedAction();

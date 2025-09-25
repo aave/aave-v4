@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 /**
  * @title IRescuable
  * @author Aave Labs
- * @notice Interface for the Rescuable contract.
+ * @notice Interface for Rescuable.
  */
 interface IRescuable {
   /**
@@ -15,15 +15,15 @@ interface IRescuable {
 
   /**
    * @notice Recovers ERC20 tokens sent to this contract.
-   * @param token Address of the ERC20 token to rescue.
-   * @param to Address to send the rescued tokens to.
+   * @param token The address of the ERC20 token to rescue.
+   * @param to The address to send the rescued tokens to.
    **/
   function rescueToken(address token, address to) external;
 
   /**
-   * @notice Recovers native asset remaining in this contract.
-   * @param to Recipient of rescued native asset.
-   * @param amount Amount of native asset to rescue.
+   * @notice Recovers native assets remaining in this contract.
+   * @param to The address to send rescued native assets to.
+   * @param amount The amount of native assets to rescue.
    **/
   function rescueNative(address to, uint256 amount) external;
 

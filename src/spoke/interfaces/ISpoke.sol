@@ -10,7 +10,7 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 /**
  * @title ISpoke
  * @author Aave Labs
- * @notice Full interface for Spoke
+ * @notice Full interface for Spoke.
  */
 interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   struct Reserve {
@@ -420,7 +420,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function renouncePositionManagerRole(address user) external;
 
   /**
-   * @notice Gets the address of the external getLiquidationLogic library.
+   * @notice Returns the address of the external getLiquidationLogic library.
    */
   function getLiquidationLogic() external pure returns (address);
 
