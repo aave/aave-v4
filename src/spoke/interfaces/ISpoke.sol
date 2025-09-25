@@ -354,9 +354,10 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   /**
    * @notice Returns the minimum required remaining base currency amount after a partial liquidation.
-   * @return The minimum debt amount considered as dust, denominated in USD with 26 decimals.
+   * @return The minimum amount considered as dust, denominated in USD with 26 decimals.
+   * @dev Applicable to both collateral and debt.
    */
-  function DUST_DEBT_LIQUIDATION_THRESHOLD() external view returns (uint256);
+  function DUST_LIQUIDATION_THRESHOLD() external view returns (uint256);
 
   /**
    * @notice Returns the maximum allowed collateral risk value for a reserve.
