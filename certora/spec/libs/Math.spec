@@ -1,4 +1,4 @@
-import "./Math_CVL.spec";
+import "../symbolicRepresentation/Math_CVL.spec";
 
 
 /**
@@ -107,7 +107,10 @@ To run this spec file:
         assert cvlReverted == solReverted;
         assert !cvlReverted => cvlResult == solResult;
     }
-
+/** @title Prove:
+    function PercentageMath.percentMulDown(uint256 value, uint256 percentage) internal returns (uint256) => 
+        mulDivDownCVL(value, percentage, PERCENTAGE_FACTOR());
+*/
     rule percentMulDown_integrity(uint256 percentage, uint256 value)  {    
         uint256 solResult = percentMulDown@withrevert(value, percentage);
         bool solReverted = lastReverted;
@@ -117,7 +120,8 @@ To run this spec file:
         assert !cvlReverted => cvlResult == solResult;
     }
 
-
+/** @title Prove: order of arguments does not matter for percentMulDown
+*/
     rule percentMulDown_associativity(uint256 percentage, uint256 value)  {    
         uint256 result1 = percentMulDown@withrevert(percentage, value);
         bool result1Reverted = lastReverted;

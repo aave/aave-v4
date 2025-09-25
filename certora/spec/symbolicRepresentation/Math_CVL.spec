@@ -58,19 +58,6 @@ function mulDivRayUpCVL(uint256 x, uint256 y) returns uint256 {
     return require_uint256(res); 
 }
 
-/* if need optimization .... 
-function mulDivDownCVL_no_div(uint256 x, uint256 y, uint256 z) returns uint256 {
-    uint256 res;
-    if (z == 0) {
-        revert();
-    }
-    mathint xy = x * y;
-    mathint fz = res * z;
-
-    require xy >= fz;
-    require fz + z > xy;
-    return res; 
-}  */
 
 ghost mulDivHalResult(uint256, uint256, uint256 ) returns uint256; 
 /*

@@ -2,7 +2,7 @@ import "./HubBase.spec";
 
 /***
 
-Base definitions used in all of LiquidityHuv spec files
+Advance over-approximations summarization used in additivity rules.
 
 ***/
 

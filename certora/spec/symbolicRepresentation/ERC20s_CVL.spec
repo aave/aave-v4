@@ -5,6 +5,8 @@ The functionality it summarize:
 - balanceOf
 - transfer
 - transferFrom 
+
+it simulates the behavior of erc20 tokens including reverting/returning false cases.
 **/
 methods {
     function _.transfer(address to, uint256 amount) external with (env e)

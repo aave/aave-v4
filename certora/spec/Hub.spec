@@ -1,6 +1,6 @@
 
-import "./ERC20s_CVL.spec";
-import "./Math_CVL.spec";
+import "./symbolicRepresentation/ERC20s_CVL.spec";
+import "./symbolicRepresentation/Math_CVL.spec";
 import "./HubValidState.spec";
 
 
@@ -84,7 +84,9 @@ methods {
 }
 
 
-// when not accruing interest, every function should increase supply exchange rate 
+/** @title supply rate is never decreasing
+when not accruing interest, every function should never decrease supply exchange rate 
+*/
 rule supplyExchangeRateIsMonotonic(env e, method f, calldataarg args)
 filtered {
     f -> !f.isView
@@ -113,8 +115,6 @@ filtered {
 
 
 /** @title No change to a spoke's asset or debt. assume accrue has been called.  
-@status breaks because:
--  spoke can be re-added thus deleting current supply and debt 
 **/
 rule noChangeToOtherSpoke(address spoke, uint256 assetId, address otherSpoke, method f) 
     filtered { f -> !f.isView }
@@ -170,6 +170,9 @@ rule accrueWasCalled(uint256 assetId, method f) filtered { f-> !f.isView &&
 
 }
 
+/**
+@title lastUpdateTimestamp is never in the future
+*/
 rule lastUpdateTimestamp_notInFuture(uint256 assetId, method f) filtered { f-> !f.isView} {
     env e;
     require hub._assets[assetId].lastUpdateTimestamp <= e.block.timestamp;

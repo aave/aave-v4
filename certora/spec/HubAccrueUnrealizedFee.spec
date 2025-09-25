@@ -20,7 +20,9 @@ methods {
 // symbolic representation of drawnIndex that is a function of the block timestamp.
 ghost symbolicDrawnIndex(uint256) returns uint256;
 
-// Share increase in accrue is equal to the unrealized fee shares at this timestamp
+/**
+@title Share increase in accrue is equal to the unrealized fee shares at this timestamp
+**/
 rule sharesIncreaseAsFeeShares(uint256 assetId){
     env e1; env e2; 
     
@@ -35,7 +37,9 @@ rule sharesIncreaseAsFeeShares(uint256 assetId){
     assert hub._assets[assetId].addedShares == sharesBefore + feeShares;
 }
 
-//prove that the maximum value of unrealizedFeeShares is at 100% liquidityFee
+/**
+@title Prove that the maximum value of unrealizedFeeShares is at 100% liquidityFee
+**/
 rule maxUnrealizedFeeShares(uint256 assetId){
     env e1; env e2;
     require e1.block.timestamp < e2.block.timestamp;

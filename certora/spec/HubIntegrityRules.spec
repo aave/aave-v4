@@ -1,6 +1,6 @@
 
-import "./ERC20s_CVL.spec";
-import "./Math_CVL.spec";
+import "./symbolicRepresentation/ERC20s_CVL.spec";
+import "./symbolicRepresentation/Math_CVL.spec";
 import "./HubValidState.spec";
 
 

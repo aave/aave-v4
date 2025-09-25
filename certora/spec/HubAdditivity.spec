@@ -1,8 +1,8 @@
 
-import "./ERC20s_CVL.spec";
-import "./Math_CVL.spec";
+import "./symbolicRepresentation/ERC20s_CVL.spec";
+import "./symbolicRepresentation/Math_CVL.spec";
 import "./HubAdvanceSummary.spec";
-import "./SharesMath.spec";
+import "./libs/SharesMath.spec";
 /**
 Verify  the additivity of the operation: add, remove, draw, restore, reportDeficit, eliminateDeficit.
 For each operation, we verify that splitting an operation to two operation is less beneficial to the user than doing it in one step.
@@ -69,7 +69,9 @@ use rule toSharesUp_nonZero;
 use rule toAssetsUp_additivity;
 use rule toAssetsUp_monotonicity;
 
-
+/**
+@title Prove that adding in two steps is less beneficial to the user than doing it in one step
+**/
 rule addAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
     env e;
     address spoke = e.msg.sender;
@@ -89,7 +91,9 @@ rule addAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address fr
     satisfy afterOneStep > afterTwoSteps;
 }
 
-
+/**     
+@title Prove that removing in two steps is less beneficial to the user than doing it in one step
+**/
 rule removeAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
     env e;
     address spoke = e.msg.sender;
@@ -110,6 +114,9 @@ rule removeAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address
 }
 
 
+/**
+@title Prove that drawing in two steps is less beneficial to the user than doing it in one step
+**/
 rule drawAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
     env e;
     address spoke = e.msg.sender;
@@ -128,6 +135,9 @@ rule drawAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address f
     satisfy afterOneStep < afterTwoSteps;
 }
 
+/**
+@title Prove that restoring in two steps is less beneficial to the user than doing it in one step
+**/
 rule restoreAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
     env e;
     address spoke = e.msg.sender;
@@ -153,6 +163,9 @@ rule restoreAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, addres
     satisfy afterOneStep < afterTwoSteps;
 }
 
+/**
+@title Prove that reporting deficit in two steps is less beneficial to the user than doing it in one step
+**/
 rule reportDeficitAdditivity(uint256 assetId, uint256 amountX, uint256 amountY) {
     env e;
     address spoke = e.msg.sender;
@@ -178,6 +191,9 @@ rule reportDeficitAdditivity(uint256 assetId, uint256 amountX, uint256 amountY) 
     satisfy afterOneStep < afterTwoSteps;
 }
 
+/**
+@title Prove that eliminating deficit in two steps is less beneficial to the user than doing it in one step
+**/
 rule eliminateDeficitAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
     env e;
     address spoke = e.msg.sender;

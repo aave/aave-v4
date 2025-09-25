@@ -101,7 +101,7 @@ rule baseDebtIndex_increasing(uint256 assetId) {
 }
 
 /**
-@title Prove premiumOffset is always less than or equal to premiumShares * drawnIndex / RAY.
+@title Prove premiumOffset is always less than or equal to premiumShares * drawnIndex / RAY rounded up.
 This is important to avoid revert on accrue
 **/
 rule premiumOffset_Integrity_accrue(uint256 assetId, address spokeId) {
@@ -111,14 +111,15 @@ rule premiumOffset_Integrity_accrue(uint256 assetId, address spokeId) {
     
     //requireInvariant baseDebtIndexMin(assetId); 
     require hub._assets[assetId].drawnIndex == 0 || hub._assets[assetId].drawnIndex >= wadRayMath.RAY();
-    // todo - check this is always true 
-    require hub._spokes[assetId][spokeId].premiumOffset <= hub._spokes[assetId][spokeId].premiumShares * hub._assets[assetId].drawnIndex / wadRayMath.RAY();
-    require hub._assets[assetId].premiumOffset <= hub._assets[assetId].premiumShares * hub._assets[assetId].drawnIndex / wadRayMath.RAY();
 
+    require previewRestoreByShares(e,assetId,hub._assets[assetId].premiumShares) >=  hub._assets[assetId].premiumOffset && 
+    previewRestoreByShares(e,assetId,hub._spokes[assetId][spokeId].premiumShares) >=  hub._spokes[assetId][spokeId].premiumOffset; 
+    
     accrueInterest(e, assetId);
 
-    assert hub._spokes[assetId][spokeId].premiumOffset <= hub._spokes[assetId][spokeId].premiumShares * hub._assets[assetId].drawnIndex / wadRayMath.RAY();
-    assert hub._assets[assetId].premiumOffset <= hub._assets[assetId].premiumShares * hub._assets[assetId].drawnIndex / wadRayMath.RAY();
+    assert previewRestoreByShares(e,assetId,hub._assets[assetId].premiumShares) >=  hub._assets[assetId].premiumOffset && 
+    previewRestoreByShares(e,assetId,hub._spokes[assetId][spokeId].premiumShares) >=  hub._spokes[assetId][spokeId].premiumOffset;
+    
 }
 
 /**

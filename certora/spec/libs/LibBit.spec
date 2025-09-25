@@ -40,7 +40,7 @@ rule popCount_noRevert(uint256 x) {
     assert !lastReverted; 
 }
 
-/** @title fls(x) is the position of the last set bit in x.
+/** @title fls(x) is the position of the last (most significant) set bit in x.
 Verifying by checking that any bit below the fls(x) is not set.
 **/
 rule fls_integrity(uint256 x, uint16 pos) {

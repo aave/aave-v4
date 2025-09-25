@@ -39,6 +39,8 @@ Given e1, a timestamp last accrue, we prove that the share rate is the same or i
 We prove this for the maximum value of unrealizedFeeShares, as proved in HubAccrueIntegrityUnrealizedFee.spec
 Therefore, it holds for any smaller value of unrealizedFeeShares, as shares_e2 will be smaller
 **/
+
+
 rule unrealizedFeeSharesSupplyRate(uint256 assetId){
     env e1; env e2; 
     uint256 oneM = 1000000;
@@ -76,3 +78,4 @@ rule unrealizedFeeSharesSupplyRate(uint256 assetId){
     satisfy (assets_e2 + oneM) * (shares_e1 + oneM) > (assets_e1 + oneM) * (shares_e2 + oneM); 
 
 }
+
