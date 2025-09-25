@@ -24,8 +24,8 @@ interface ITreasurySpoke is ISpokeBase {
 
   /**
    * @notice Supplies a specified amount of the underlying asset to a given reserve.
-   * @dev The Hub pulls the underlying asset from the caller, so prior approval is required.
-   * @dev The reserve identifier should be the asset identifier in the Hub.
+   * @dev The hub pulls the underlying asset from the caller, so prior approval is required.
+   * @dev The reserve identifier should be the asset identifier in the hub.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to supply.
    * @param onBehalfOf Unused parameter for this spoke.
@@ -35,7 +35,7 @@ interface ITreasurySpoke is ISpokeBase {
   /**
    * @notice Withdraws a specified amount of underlying asset from the given reserve.
    * @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
-   * @dev The reserve identifier should be the asset identifier in the Hub.
+   * @dev The reserve identifier must be the asset identifier in the hub.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to withdraw.
    * @param onBehalfOf Unused parameter for this spoke.
@@ -52,7 +52,7 @@ interface ITreasurySpoke is ISpokeBase {
 
   /**
    * @notice Returns the amount of assets supplied.
-   * @dev The reserve identifier should be the asset identifier in the Hub.
+   * @dev The reserve identifier must be the asset identifier in the hub.
    * @param reserveId The identifier of the reserve.
    * @return The amount of assets supplied.
    */
@@ -61,14 +61,14 @@ interface ITreasurySpoke is ISpokeBase {
   /**
    * @notice Returns the amount of assets supplied, expressed in shares.
    * @dev Shares are denominated relative to the supply side.
-   * @dev The reserve identifier should be the asset identifier in the Hub.
+   * @dev The reserve identifier must be the asset identifier in the hub.
    * @param reserveId The identifier of the reserve.
    * @return The amount of assets supplied, expressed in shares.
    */
   function getSuppliedShares(uint256 reserveId) external view returns (uint256);
 
   /**
-   * @notice Returns the interface of the associated Hub.
+   * @notice Returns the interface of the associated hub.
    * @return The HubBase interface.
    */
   function HUB() external view returns (IHubBase);

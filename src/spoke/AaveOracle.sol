@@ -9,7 +9,7 @@ import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
  * @title AaveOracle
  * @author Aave Labs
  * @notice Oracle contract.
- * @dev Oracles are spoke-specific, due to the usage of reserve id as index of the _sources.
+ * @dev Oracles are spoke-specific, due to the usage of reserve id as index of the `_sources` mapping.
  */
 contract AaveOracle is IAaveOracle {
   /// @inheritdoc IPriceOracle

@@ -18,6 +18,11 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
+/**
+ * @title Spoke
+ * @author Aave Labs
+ * @notice Spoke contract used to manage reserves and user positions.
+ */
 abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
@@ -59,6 +64,11 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
 
+  /**
+   * @notice Modifier that checks if the caller is the position manager.
+   * @dev A user will always be able to act on behalf of themself.
+   * @param onBehalfOf The address of the user on behalf of which the action is being performed.
+   */
   modifier onlyPositionManager(address onBehalfOf) {
     require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
     _;
@@ -375,7 +385,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     if (usingAsCollateral) {
       _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
-      // If unsetting, check HF and update user rp
+      // If unsetting, check HF and update user RP
       uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
       _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
     }
@@ -683,6 +693,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    * @notice Calculates the user's premium debt offset in assets amount from a given share amount.
    * @dev Rounds down to the nearest assets amount. Uses the opposite rounding direction of the
    * debt shares-to-assets conversion to prevent underflow in premium debt.
+   * @param hub The hub.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares.
+   * @return The user's premium offset in assets amount.
    */
   function _previewPremiumOffset(
     IHubBase hub,
@@ -720,7 +734,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /**
    * @notice Validates the reserve config.
-   * @param config The reserve config object.
+   * @param config The reserve config struct.
    */
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {
     require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
@@ -728,10 +742,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /**
    * @notice Validates the dynamic reserve config.
-   * @param config The dynamic reserve config object.
+   * @param config The dynamic reserve config struct.
    */
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
-    // Enforce that at moment loan is taken, there should be enough collateral to cover liquidation
+    // Enforce that at the moment debt is created, there should be enough collateral to cover liquidation
     require(
       config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
@@ -754,17 +768,17 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   ) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
-    // deactivation should be allowed
+    // deactivation is allowed if the reserve is frozen
     require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
   }
 
   /**
-   * @notice Calculates the restore amount.
-   * @dev Allows donation on drawn debt
+   * @notice Calculates the max allowable amount of drawn debt and premium debt to restore.
+   * @dev Allows donation on drawn debt.
    * @param drawnDebt The drawn debt.
    * @param premiumDebt The premium debt.
    * @param amount The amount to restore.
-   * @return The restore amount.
+   * @return The max allowable amount of drawn debt and premium debt to restore.
    */
   function _calculateRestoreAmount(
     uint256 drawnDebt,
@@ -782,7 +796,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /**
    * @notice Settles the premium debt.
-   * @param userPosition The user position object.
+   * @param userPosition The user position struct.
    * @param realizedDelta The realized delta.
    */
   function _settlePremiumDebt(UserPosition storage userPosition, int256 realizedDelta) internal {
@@ -808,7 +822,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    * @notice Calculates the user account data.
    * @dev SAFETY: function does not modify state when refreshConfig is false
    * @param user The address of the user.
-   * @return The user account data object.
+   * @return The user account data struct.
    */
   function _calculateUserAccountData(address user) internal view returns (UserAccountData memory) {
     return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
@@ -817,7 +831,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   /**
    * @notice Calculates the user account data and refreshes the dynamic config.
    * @param user The address of the user.
-   * @return userAccountData The user account data object.
+   * @return userAccountData The user account data struct.
    */
   function _calculateAndRefreshUserAccountData(
     address user
@@ -828,10 +842,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /**
    * @notice Calculates the user account data and potentially refreshes the dynamic config.
-   * @dev User rp calc runs until the first of either debt or collateral is exhausted
+   * @dev User RP calc runs until the first of either debt or collateral is exhausted
    * @param user The address of the user.
    * @param refreshConfig True if the dynamic config should be refreshed, false otherwise.
-   * @return userAccountData The user account data object.
+   * @return userAccountData The user account data struct.
    */
   function _calculateAndPotentiallyRefreshUserAccountData(
     address user,
@@ -895,7 +909,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       }
     }
 
-    // at this point avgCollateralFactor is a weighted sum of collateral scaled by collateralFactor
+    // at this point avgCollateralFactor is the weighted sum of collateral scaled by collateralFactor
     // (avgCollateralFactor / totalCollateral) * totalCollateral can be simplified to avgCollateralFactor
     // strip BPS factor from result, because running avgCollateralFactor sum has been scaled by collateralFactor (in BPS) above
     userAccountData.healthFactor = userAccountData.totalDebtInBaseCurrency == 0
@@ -918,8 +932,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
     list.sortByKey(); // sort by collateral risk
     uint256 i = 0;
-    /// @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
-    /// value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
+    // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
+    // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
     while (i < list.length() && debtCounterInBaseCurrency > 0) {
       (uint256 collateralRisk, uint256 userCollateralInBaseCurrency) = list.get(i);
       if (userCollateralInBaseCurrency > debtCounterInBaseCurrency) {
@@ -944,7 +958,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    * @notice Calculates the user's debt.
    * @param hub The hub.
    * @param assetId The identifier of the asset.
-   * @param userPosition The user position object.
+   * @param userPosition The user position struct.
    * @return The user's drawn debt.
    * @return The user's premium debt.
    * @return The user's accrued premium.

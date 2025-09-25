@@ -88,7 +88,7 @@ interface ISpokeBase {
 
   /**
    * @notice Supplies an amount of underlying asset of the specified reserve.
-   * @dev The Hub pulls the underlying asset from the caller, so prior token approval is required.
+   * @dev The hub pulls the underlying asset from the caller, so prior token approval is required.
    * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
    * @param reserveId The reserve identifier.
    * @param amount The amount of asset to supply.
@@ -119,7 +119,7 @@ interface ISpokeBase {
 
   /**
    * @notice Repays a specified amount of underlying asset to a given reserve.
-   * @dev The Hub pulls the underlying asset from the caller, so prior approval is required.
+   * @dev The hub pulls the underlying asset from the caller, so prior approval is required.
    * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to repay.
@@ -129,11 +129,13 @@ interface ISpokeBase {
 
   /**
    * @notice Liquidates a user position.
-   * @dev Invokes Hub restore, and pulls underlying repaid debt asset from caller (Liquidator), hence it needs prior approval.
-   * @param collateralReserveId The reserveId of the underlying asset used as collateral by the liquidated user.
+   * @dev Invokes hub `Restore`, and pulls underlying repaid debt assets from caller (Liquidator), hence it needs prior approval.
+   * @dev Only callable by active spokes.
+   * @dev Emits `LiquidationCall` event.
+   * @param collateralReserveId   The reserveId of the underlying asset used as collateral by the liquidated user.
    * @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator during liquidation.
    * @param user The address of the user to liquidate.
-   * @param debtToCover The amount of debt to cover.
+   * @param debtToCover The desired amount of debt to cover.
    */
   function liquidationCall(
     uint256 collateralReserveId,
