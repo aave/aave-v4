@@ -16,8 +16,8 @@ abstract contract Rescuable is IRescuable {
   }
 
   /// @inheritdoc IRescuable
-  function rescueToken(address token, address to) external onlyRescueGuardian {
-    IERC20(token).safeTransfer(to, IERC20(token).balanceOf(address(this)));
+  function rescueToken(address token, address to, uint256 amount) external onlyRescueGuardian {
+    IERC20(token).safeTransfer(to, amount);
   }
 
   /// @inheritdoc IRescuable
