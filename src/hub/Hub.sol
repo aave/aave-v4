@@ -43,7 +43,7 @@ contract Hub is IHub, AccessManaged {
 
   /**
    * @dev Constructor.
-   * @dev The authority contract must implement the AccessManaged interface for access control.
+   * @dev The authority contract must implement the `AccessManaged` interface for access control.
    * @param authority_ The address of the authority contract which manages permissions.
    */
   constructor(address authority_) AccessManaged(authority_) {
@@ -767,7 +767,7 @@ contract Hub is IHub, AccessManaged {
    * @param spoke The spoke data struct.
    * @param assetId The identifier of the asset.
    * @param amount The amount of assets to draw.
-   * @param to The address of the receiver.
+   * @param to The address of the recipient.
    */
   function _validateDraw(
     Asset storage asset,
@@ -837,7 +837,7 @@ contract Hub is IHub, AccessManaged {
   /**
    * @notice Validates the eliminate deficit action.
    * @param spoke The spoke data struct.
-   * @param amount The amount of assets to eliminate.
+   * @param amount The amount of deficit asset to eliminate.
    */
   function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {
     require(spoke.active, SpokeNotActive());
@@ -847,7 +847,7 @@ contract Hub is IHub, AccessManaged {
   /**
    * @notice Validates the pay fee action.
    * @param senderSpoke The sender spoke data struct.
-   * @param feeShares The amount of shares to pay.
+   * @param feeShares The amount of added shares to pay to feeReceiver.
    */
   function _validatePayFee(SpokeData storage senderSpoke, uint256 feeShares) internal view {
     require(senderSpoke.active, SpokeNotActive());
@@ -914,8 +914,8 @@ contract Hub is IHub, AccessManaged {
   }
 
   /**
-   * @notice Adds a fee receiver to an asset.
-   * @dev Emits an AddSpoke event and an UpdateSpokeConfig event.
+   * @notice Adds a fee receiver to an asset with maximum add cap and zero draw cap.
+   * @dev Emits an `AddSpoke` event and an `UpdateSpokeConfig` event.
    * @param assetId The identifier of the asset.
    * @param feeReceiver The address of the fee receiver.
    */

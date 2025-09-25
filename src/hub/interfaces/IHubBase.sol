@@ -175,7 +175,7 @@ interface IHubBase {
   function refreshPremium(uint256 assetId, PremiumDelta calldata premiumDelta) external;
 
   /**
-   * @notice Pay existing supplied shares to feeReceiver.
+   * @notice Pay existing added shares to feeReceiver.
    * @dev Only callable by active spokes.
    * @dev Utilized to pay fees during liquidation.
    * @param assetId The identifier of the asset.
