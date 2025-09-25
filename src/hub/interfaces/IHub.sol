@@ -192,7 +192,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   /**
    * @notice Thrown when a surplus deficit is reported.
-   * @param amount The amount of surplus deficit.
+   * @param amount The amount of surplus deficit assets.
    */
   error SurplusDeficitReported(uint256 amount);
 
@@ -247,9 +247,9 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidAssetDecimals();
 
   /**
-   * @notice Thrown when the interest rate strategy update is invalid.
+   * @notice Thrown when the interest rate strategy is invalid.
    */
-  error InvalidInterestRateStrategyUpdate();
+  error InvalidInterestRateStrategy();
 
   /**
    * @notice Adds a new asset to the hub.

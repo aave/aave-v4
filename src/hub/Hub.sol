@@ -133,7 +133,7 @@ contract Hub is IHub, AccessManaged {
       asset.irStrategy = config.irStrategy;
       IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData);
     } else {
-      require(irData.length == 0, InvalidInterestRateStrategyUpdate());
+      require(irData.length == 0, InvalidInterestRateStrategy());
     }
 
     if (asset.feeReceiver != config.feeReceiver) {
