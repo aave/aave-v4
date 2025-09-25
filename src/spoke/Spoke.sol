@@ -42,8 +42,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
 
   /// @inheritdoc ISpoke
-  uint256 public constant DUST_DEBT_LIQUIDATION_THRESHOLD =
-    LiquidationLogic.DUST_DEBT_LIQUIDATION_THRESHOLD;
+  uint256 public constant DUST_LIQUIDATION_THRESHOLD = LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
 
   /// @inheritdoc ISpoke
   address public immutable ORACLE;

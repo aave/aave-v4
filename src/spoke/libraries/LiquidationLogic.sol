@@ -105,8 +105,8 @@ library LiquidationLogic {
   // see ISpoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD docs
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
-  // see ISpoke.DUST_DEBT_LIQUIDATION_THRESHOLD docs
-  uint256 constant DUST_DEBT_LIQUIDATION_THRESHOLD = 1000e26;
+  // see ISpoke.DUST_LIQUIDATION_THRESHOLD docs
+  uint256 constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
 
   function liquidateUser(
     ISpoke.Reserve storage collateralReserve,
@@ -261,6 +261,19 @@ library LiquidationLogic {
         params.collateralAssetPrice * params.debtAssetUnit,
         params.debtAssetPrice * params.collateralAssetUnit
       );
+    } else if (
+      collateralToLiquidate < params.collateralReserveBalance &&
+      debtToLiquidate < params.debtReserveBalance
+    ) {
+      uint256 remainingCollateralInBaseCurrency = (params.collateralReserveBalance -
+        collateralToLiquidate).mulDivDown(
+          params.collateralAssetPrice.toWad(),
+          params.collateralAssetUnit
+        );
+      require(
+        remainingCollateralInBaseCurrency >= DUST_LIQUIDATION_THRESHOLD,
+        ISpoke.MustNotLeaveDust()
+      );
     }
 
     uint256 collateralToLiquidator = collateralToLiquidate -
@@ -318,7 +331,7 @@ library LiquidationLogic {
     uint256 remainingDebtInBaseCurrency = (params.debtReserveBalance - maxDebtToLiquidate)
       .mulDivDown(params.debtAssetPrice.toWad(), params.debtAssetUnit);
 
-    if (remainingDebtInBaseCurrency < DUST_DEBT_LIQUIDATION_THRESHOLD) {
+    if (remainingDebtInBaseCurrency < DUST_LIQUIDATION_THRESHOLD) {
       // target health factor is ignored to prevent leaving dust, only if the liquidator intends to fully cover the debt
       require(params.debtToCover >= params.debtReserveBalance, ISpoke.MustNotLeaveDust());
       maxDebtToLiquidate = params.debtReserveBalance;
