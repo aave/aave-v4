@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.22;
 
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
