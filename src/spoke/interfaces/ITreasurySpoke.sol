@@ -11,7 +11,14 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
  * @notice Interface for the TreasurySpoke.
  */
 interface ITreasurySpoke is ISpokeBase {
+  /**
+   * @notice Thrown when an unsupported action is attempted.
+   */
   error UnsupportedAction();
+
+  /**
+   * @notice Thrown when the given address is invalid.
+   */
   error InvalidAddress();
 
   /**
