@@ -10,14 +10,14 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 /**
  * @title SpokeConfigurator
  * @author Aave Labs
- * @notice SpokeConfigurator contract for the Aave protocol
- * @dev Must be granted permission by the Spoke
+ * @notice SpokeConfigurator contract.
+ * @dev Must be granted permission by the Spoke.
  */
 contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   using SafeCast for uint256;
 
   /**
-   * @dev Constructor
+   * @dev Constructor.
    * @param owner_ The address of the owner
    */
   constructor(address owner_) Ownable(owner_) {}

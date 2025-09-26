@@ -30,7 +30,7 @@ contract NativeTokenGateway is
   ISpoke internal immutable _spoke;
 
   /**
-   * @dev Constructor
+   * @dev Constructor.
    * @param nativeWrapper_ The address of the native wrapper contract.
    * @param spoke_ The address of the spoke contract.
    * @param initialOwner_ The address of the initial owner.

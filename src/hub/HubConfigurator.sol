@@ -18,7 +18,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   using SafeCast for uint256;
 
   /**
-   * @dev Constructor
+   * @dev Constructor.
    * @param owner_ The address of the owner
    */
   constructor(address owner_) Ownable(owner_) {}

@@ -13,7 +13,7 @@ contract SpokeInstance is Spoke {
   uint64 public constant SPOKE_REVISION = 1;
 
   /**
-   * @dev Constructor
+   * @dev Constructor.
    * @param oracle_ The address of the oracle.
    */
   constructor(address oracle_) Spoke(oracle_) {

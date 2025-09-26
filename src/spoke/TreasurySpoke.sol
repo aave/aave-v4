@@ -23,7 +23,7 @@ contract TreasurySpoke is ITreasurySpoke, Ownable {
   IHubBase public immutable HUB;
 
   /**
-   * @dev Constructor
+   * @dev Constructor.
    * @param owner_ The address of the owner.
    * @param hub_ The address of the Hub.
    */

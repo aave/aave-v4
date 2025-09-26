@@ -64,7 +64,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
   mapping(address user => uint256) internal _nonces;
 
   /**
-   * @dev Constructor
+   * @dev Constructor.
    * @dev Reverts if the spoke or initial owner is zero address.
    * @param spoke_ The address of the spoke contract.
    * @param initialOwner_ The address of the initial owner.
