@@ -132,7 +132,7 @@ interface ISpokeBase {
    * @dev Invokes hub `Restore`, and pulls underlying repaid debt assets from caller (Liquidator), hence it needs prior approval.
    * @dev Only callable by active spokes.
    * @dev Emits `LiquidationCall` event.
-   * @param collateralReserveId   The reserveId of the underlying asset used as collateral by the liquidated user.
+   * @param collateralReserveId The reserveId of the underlying asset used as collateral by the liquidated user.
    * @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator during liquidation.
    * @param user The address of the user to liquidate.
    * @param debtToCover The desired amount of debt to cover.

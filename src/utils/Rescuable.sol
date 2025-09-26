@@ -41,7 +41,7 @@ abstract contract Rescuable is IRescuable {
   /**
    * @notice Returns the rescue guardian address.
    * @return The address allowed to rescue funds.
-   **/
+   */
   function _rescueGuardian() internal view virtual returns (address);
 
   /**

@@ -18,7 +18,7 @@ import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 /**
  * @title Hub
  * @author Aave Labs
- * @notice Hub contract used to manage assets and spokes.
+ * @notice A liquidity hub that manages assets and spokes.
  */
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;

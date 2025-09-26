@@ -15,7 +15,7 @@ interface IHubBase {
   }
 
   /**
-   * @notice Emitted on the `Add` action.
+   * @notice Emitted on the `add` action.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @param shares The amount of shares added.
@@ -24,7 +24,7 @@ interface IHubBase {
   event Add(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
 
   /**
-   * @notice Emitted on the `Remove` action.
+   * @notice Emitted on the `remove` action.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @param shares The amount of shares removed.
@@ -33,7 +33,7 @@ interface IHubBase {
   event Remove(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
 
   /**
-   * @notice Emitted on the `Draw` action.
+   * @notice Emitted on the `draw` action.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @param drawnShares The amount of drawn shares.
@@ -47,7 +47,7 @@ interface IHubBase {
   );
 
   /**
-   * @notice Emitted on the `Restore` action.
+   * @notice Emitted on the `restore` action.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @param drawnShares The amount of drawn shares.
@@ -65,7 +65,7 @@ interface IHubBase {
   );
 
   /**
-   * @notice Emitted on the `RefreshPremium` action.
+   * @notice Emitted on the `refreshPremium` action.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @param premiumDelta The premium delta data struct.
@@ -73,7 +73,7 @@ interface IHubBase {
   event RefreshPremium(uint256 indexed assetId, address indexed spoke, PremiumDelta premiumDelta);
 
   /**
-   * @notice Emitted on the `TransferShares` action.
+   * @notice Emitted on the `transferShares` action.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares transferred.
    * @param sender The address of the sender.
@@ -85,10 +85,10 @@ interface IHubBase {
    * @notice Emitted on the `ReportDeficit` action.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
-   * @param drawnShares The amount of drawn shares.
+   * @param drawnShares The amount of drawn shares reported as deficit.
    * @param premiumDelta The premium delta data struct.
-   * @param drawnAmount The amount of drawn assets.
-   * @param premiumAmount The amount of premium assets.
+   * @param drawnAmount The amount of drawn assets reported as deficit.
+   * @param premiumAmount The amount of premium assets reported as deficit.
    */
   event ReportDeficit(
     uint256 indexed assetId,

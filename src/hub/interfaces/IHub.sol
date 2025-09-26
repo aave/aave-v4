@@ -100,7 +100,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @param assetId The identifier of the asset.
    * @param drawnIndex The new drawn index of the asset.
    * @param drawnRate The new drawn rate of the asset.
-   * @param latestUpdateTimestamp The timestamp of the latest update.
+   * @param latestUpdateTimestamp The timestamp of the latest update, which is the block.timestamp of the event emission.
    */
   event UpdateAsset(
     uint256 indexed assetId,
@@ -117,14 +117,14 @@ interface IHub is IHubBase, IAccessManaged {
   event AccrueFees(uint256 indexed assetId, uint256 shares);
 
   /**
-   * @notice Emitted when an amount of liquidity is swept.
+   * @notice Emitted when an amount of liquidity is swept by the reinvestment controller.
    * @param assetId The identifier of the asset.
    * @param amount The amount swept.
    */
   event Sweep(uint256 indexed assetId, uint256 amount);
 
   /**
-   * @notice Emitted when an amount of liquidity is reclaimed (from swept liquidity).
+   * @notice Emitted when an amount of liquidity is reclaimed (from swept liquidity) by the reinvestment controller.
    * @param assetId The identifier of the asset.
    * @param amount The amount reclaimed.
    */
@@ -356,7 +356,7 @@ interface IHub is IHubBase, IAccessManaged {
   function MAX_ALLOWED_SPOKE_CAP() external view returns (uint56);
 
   /**
-   * @notice Converts the specified amount of supplied shares to assets amount.
+   * @notice Converts the specified amount of supplied shares to assets amount for the specified asset.
    * @dev Rounds down to the nearest assets amount.
    * @param assetId The identifier of the asset.
    * @param shares The amount of supplied shares to convert to assets amount.
@@ -365,7 +365,7 @@ interface IHub is IHubBase, IAccessManaged {
   function convertToAddedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of supplied assets to shares amount.
+   * @notice Converts the specified amount of supplied assets to shares amount for the specified asset.
    * @dev Rounds down to the nearest shares amount.
    * @param assetId The identifier of the asset.
    * @param assets The amount of supplied assets to convert to shares amount.
@@ -374,7 +374,7 @@ interface IHub is IHubBase, IAccessManaged {
   function convertToAddedShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of drawn shares to assets amount.
+   * @notice Converts the specified amount of drawn shares to assets amount for the specified asset.
    * @dev Rounds up to the nearest assets amount.
    * @param assetId The identifier of the asset.
    * @param shares The amount of drawn shares to convert to assets amount.
@@ -383,7 +383,7 @@ interface IHub is IHubBase, IAccessManaged {
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of drawn assets to shares amount.
+   * @notice Converts the specified amount of drawn assets to shares amount for the specified asset.
    * @dev Rounds down to the nearest shares amount.
    * @param assetId The identifier of the asset.
    * @param assets The amount of drawn assets to convert to shares amount.
@@ -392,35 +392,35 @@ interface IHub is IHubBase, IAccessManaged {
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
-   * @notice Calculates the current drawn index.
+   * @notice Calculates the current drawn index for the specified asset.
    * @param assetId The identifier of the asset.
    * @return The current drawn index of the asset.
    */
   function getAssetDrawnIndex(uint256 assetId) external view returns (uint256);
 
   /**
-   * @notice Returns the current drawn rate.
+   * @notice Returns the current drawn rate for the specified asset.
    * @param assetId The identifier of the asset.
    * @return The current drawn rate of the asset.
    */
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
 
   /**
-   * @notice Returns information regarding the asset.
+   * @notice Returns information regarding the specified asset.
    * @param assetId The identifier of the asset.
    * @return The asset struct.
    */
   function getAsset(uint256 assetId) external view returns (Asset memory);
 
   /**
-   * @notice Returns the asset configuration.
+   * @notice Returns the asset configuration for the specified asset.
    * @param assetId The identifier of the asset.
    * @return The asset configuration struct.
    */
   function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory);
 
   /**
-   * @notice Returns the amount of drawn and premium assets owed.
+   * @notice Returns the amount of drawn and premium assets owed for the specified asset.
    * @param assetId The identifier of the asset.
    * @return The amount of drawn assets owed.
    * @return The amount of premium assets owed.
@@ -428,21 +428,22 @@ interface IHub is IHubBase, IAccessManaged {
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
 
   /**
-   * @notice Returns the total amount of assets owed.
+   * @notice Returns the total amount of assets owed for the specified asset.
+   * @dev The total amount of assets owed is the sum of the drawn and premium assets owed.
    * @param assetId The identifier of the asset.
    * @return The total amount of the assets owed.
    */
   function getAssetTotalOwed(uint256 assetId) external view returns (uint256);
 
   /**
-   * @notice Returns the amount of drawn shares.
+   * @notice Returns the amount of drawn shares for the specified asset.
    * @param assetId The identifier of the asset.
    * @return The amount of drawn shares.
    */
   function getAssetDrawnShares(uint256 assetId) external view returns (uint256);
 
   /**
-   * @notice Returns the premium data.
+   * @notice Returns the premium data for the specified asset.
    * @param assetId The identifier of the asset.
    * @return The premium shares of the asset.
    * @return The premium offset of the asset.
@@ -451,32 +452,32 @@ interface IHub is IHubBase, IAccessManaged {
   function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256);
 
   /**
-   * @notice Returns the amount of available liquidity assets.
+   * @notice Returns the amount of available liquidity for the specified asset.
    * @param assetId The identifier of the asset.
    */
   function getLiquidity(uint256 assetId) external view returns (uint256);
 
   /**
-   * @notice Returns the amount of swept liquidity assets.
+   * @notice Returns the amount of liquidity swept by the reinvestment controller for the specified asset.
    * @param assetId The identifier of the asset.
    */
   function getSwept(uint256 assetId) external view returns (uint256);
 
   /**
-   * @notice Returns the amount of deficit assets.
+   * @notice Returns the amount of deficit for the specified asset.
    * @param assetId The identifier of the asset.
    */
   function getDeficit(uint256 assetId) external view returns (uint256);
 
   /**
-   * @notice Returns the number of spokes.
+   * @notice Returns the number of spokes listed for the specified asset.
    * @param assetId The identifier of the asset.
-   * @return The number of spokes.
+   * @return The number of spokes listed for the specified asset.
    */
   function getSpokeCount(uint256 assetId) external view returns (uint256);
 
   /**
-   * @notice Returns the address of the spoke.
+   * @notice Returns the address of the spoke for an asset at the given index.
    * @param assetId The identifier of the asset.
    * @param index The index of the spoke.
    * @return The address of the spoke.
@@ -484,10 +485,10 @@ interface IHub is IHubBase, IAccessManaged {
   function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address);
 
   /**
-   * @notice Returns whether the spoke is listed.
+   * @notice Returns whether the spoke is listed for the specified asset.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
-   * @return True if the spoke is listed, false otherwise.
+   * @return True if the spoke is listed for the specified asset, false otherwise.
    */
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
 
@@ -511,7 +512,8 @@ interface IHub is IHubBase, IAccessManaged {
   ) external view returns (SpokeConfig memory);
 
   /**
-   * @notice Returns the total amount of assets owed to the hub by the spoke.
+   * @notice Returns the total asset amount owed to the hub by the spoke for the specified asset.
+   * @dev The total amount owed is the sum of the drawn and premium assets owed.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @return The total amount of assets owed.

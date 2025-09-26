@@ -17,19 +17,19 @@ interface IRescuable {
    * @notice Recovers ERC20 tokens sent to this contract.
    * @param token The address of the ERC20 token to rescue.
    * @param to The address to send the rescued tokens to.
-   **/
+   */
   function rescueToken(address token, address to) external;
 
   /**
    * @notice Recovers native assets remaining in this contract.
    * @param to The address to send rescued native assets to.
    * @param amount The amount of native assets to rescue.
-   **/
+   */
   function rescueNative(address to, uint256 amount) external;
 
   /**
    * @notice Returns the rescue guardian address.
    * @return The address allowed to rescue funds.
-   **/
+   */
   function rescueGuardian() external view returns (address);
 }

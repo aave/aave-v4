@@ -34,7 +34,7 @@ interface INativeTokenGateway is IRescuable {
    * @notice Wraps the native asset and supplies to the Spoke.
    * @param reserveId The identifier of the reserve for the wrapped asset.
    * @param amount Amount to wrap and supply.
-   **/
+   */
   function supplyNative(uint256 reserveId, uint256 amount) external payable;
 
   /**
@@ -42,7 +42,7 @@ interface INativeTokenGateway is IRescuable {
    * @param reserveId The identifier of the reserve for the wrapped asset.
    * @param amount Amount to withdraw and unwrap.
    * @param receiver Address that will receive the unwrapped native asset.
-   **/
+   */
   function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external;
 
   /**
@@ -50,14 +50,14 @@ interface INativeTokenGateway is IRescuable {
    * @param reserveId The identifier of the reserve for the wrapped asset.
    * @param amount Amount to borrow and unwrap.
    * @param receiver Address that will receive the unwrapped native asset.
-   **/
+   */
   function borrowNative(uint256 reserveId, uint256 amount, address receiver) external;
 
   /**
    * @notice Wraps the native asset and repay debt on the Spoke.
    * @param reserveId The identifier of the reserve for the wrapped asset.
    * @param amount Amount to wrap and repay.
-   **/
+   */
   function repayNative(uint256 reserveId, uint256 amount) external payable;
 
   /**

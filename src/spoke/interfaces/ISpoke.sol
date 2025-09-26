@@ -420,7 +420,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function renouncePositionManagerRole(address user) external;
 
   /**
-   * @notice Returns the address of the external getLiquidationLogic library.
+   * @notice Returns the address of the external `LiquidationLogic` library.
    */
   function getLiquidationLogic() external pure returns (address);
 

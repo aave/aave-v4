@@ -21,7 +21,8 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /**
  * @title Spoke
  * @author Aave Labs
- * @notice Spoke contract used to manage reserves and user positions.
+ * @notice Handles accounting for reserves and user positions.
+ * @dev Each reserve can be associated with a separate hub.
  */
 abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
@@ -773,12 +774,12 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @notice Calculates the max allowable amount of drawn debt and premium debt to restore.
+   * @notice Calculates the amount of drawn debt and premium debt to restore.
    * @dev Allows donation on drawn debt.
    * @param drawnDebt The drawn debt.
    * @param premiumDebt The premium debt.
    * @param amount The amount to restore.
-   * @return The max allowable amount of drawn debt and premium debt to restore.
+   * @return The amount of drawn debt and premium debt to restore.
    */
   function _calculateRestoreAmount(
     uint256 drawnDebt,
@@ -820,7 +821,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /**
    * @notice Calculates the user account data.
-   * @dev SAFETY: function does not modify state when refreshConfig is false
+   * @dev SAFETY: function does not modify state when refreshConfig is false.
    * @param user The address of the user.
    * @return The user account data struct.
    */
@@ -842,7 +843,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /**
    * @notice Calculates the user account data and potentially refreshes the dynamic config.
-   * @dev User RP calc runs until the first of either debt or collateral is exhausted
+   * @dev User RP calc runs until the first of either debt or collateral is exhausted.
    * @param user The address of the user.
    * @param refreshConfig True if the dynamic config should be refreshed, false otherwise.
    * @return userAccountData The user account data struct.

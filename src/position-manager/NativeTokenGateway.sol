@@ -124,7 +124,7 @@ contract NativeTokenGateway is
   /**
    * @notice Returns the rescue guardian address.
    * @return The address allowed to rescue funds.
-   **/
+   */
   function _rescueGuardian() internal view override returns (address) {
     return owner();
   }
@@ -133,7 +133,7 @@ contract NativeTokenGateway is
    * @notice Validates the reserve data.
    * @param underlying The underlying asset.
    * @param amount The amount.
-   **/
+   */
   function _validateParams(address underlying, uint256 amount) internal view {
     require(underlying == address(_nativeWrapper), InvalidReserveId());
     require(amount > 0, InvalidAmount());
@@ -144,7 +144,7 @@ contract NativeTokenGateway is
    * @param reserveId The identifier of the reserve.
    * @return The underlying asset.
    * @return The hub address.
-   **/
+   */
   function _getReserveData(uint256 reserveId) internal view returns (address, address) {
     ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
     return (reserveData.underlying, address(reserveData.hub));
@@ -153,7 +153,7 @@ contract NativeTokenGateway is
   /**
    * @notice Receives native assets.
    * @dev Reverts if the caller is not the native wrapper.
-   **/
+   */
   receive() external payable {
     require(msg.sender == address(_nativeWrapper), UnsupportedAction());
   }
@@ -161,7 +161,7 @@ contract NativeTokenGateway is
   /**
    * @notice Fallback function.
    * @dev Reverts with `UnsupportedAction`.
-   **/
+   */
   fallback() external payable {
     revert UnsupportedAction();
   }

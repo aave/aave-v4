@@ -11,8 +11,8 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 /**
  * @title HubConfigurator
  * @author Aave Labs
- * @notice HubConfigurator contract.
- * @dev Must be granted permission by the Hub.
+ * @notice Handles administrative functions on the hub.
+ * @dev Must be granted permission by the hub.
  */
 contract HubConfigurator is Ownable2Step, IHubConfigurator {
   using SafeCast for uint256;
@@ -245,7 +245,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /**
-   * @dev Updates the spoke caps, without changing the active flag.
+   * @notice Updates the spoke caps, without changing the active flag.
    * @param hub The hub.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.

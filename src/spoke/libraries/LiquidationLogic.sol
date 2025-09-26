@@ -11,6 +11,11 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 
+/**
+ * @title LiquidationLogic Library
+ * @author Aave Labs
+ * @notice Library to manage liquidation logic for a spoke.
+ */
 library LiquidationLogic {
   using SafeCast for *;
   using PositionStatusMap for ISpoke.PositionStatus;
@@ -385,9 +390,9 @@ library LiquidationLogic {
   }
 
   /**
-   * @notice Liquidates the debt of a position.
+   * @notice Liquidates the debt of a user position.
    * @param reserve The reserve.
-   * @param position The position.
+   * @param position The user position.
    * @param positionStatus The position status.
    * @param params The liquidate debt params.
    * @return True if the debt position is empty, false otherwise.
