@@ -18,7 +18,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
 
   /**
    * @dev Constructor.
-   * @param owner_ The address of the owner
+   * @param owner_ The address of the owner.
    */
   constructor(address owner_) Ownable(owner_) {}
 

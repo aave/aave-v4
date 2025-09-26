@@ -5,9 +5,10 @@ pragma solidity ^0.8.0;
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
 /**
- * @title Interface for NativeTokenGateway contract
+ * @title NativeTokenGateway
  * @author Aave Labs
  * @notice Abstracts actions to the protocol involving the native token.
+ * @dev Must be set as `PositionManager` on the spoke for the user.
  */
 interface INativeTokenGateway is IRescuable {
   /**

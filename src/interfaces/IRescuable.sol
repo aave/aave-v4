@@ -2,7 +2,15 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+/**
+ * @title IRescuable
+ * @author Aave Labs
+ * @notice Interface for the Rescuable contract.
+ */
 interface IRescuable {
+  /**
+   * @notice Thrown when caller is not the rescue guardian.
+   */
   error OnlyRescueGuardian();
 
   /**
@@ -10,18 +18,19 @@ interface IRescuable {
    * @param token Address of the ERC20 token to rescue.
    * @param to Address to send the rescued tokens to.
    * @param amount Amount of tokens to rescue.
-   **/
+   */
   function rescueToken(address token, address to, uint256 amount) external;
 
   /**
    * @notice Recovers native asset left in this contract.
    * @param to Address to send the rescued native asset to.
    * @param amount Amount of native asset to rescue.
-   **/
+   */
   function rescueNative(address to, uint256 amount) external;
 
   /**
    * @notice Returns the address that is allowed to rescue funds.
-   **/
+   * @return The address of the rescue guardian.
+   */
   function rescueGuardian() external view returns (address);
 }

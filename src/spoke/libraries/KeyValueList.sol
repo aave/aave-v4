@@ -82,7 +82,7 @@ library KeyValueList {
 
   /**
    * @notice Packs a key-value pair into a single uint256.
-   * @dev key, value < ceiling checks are expected to be done before packing
+   * @dev key, value < ceiling checks are expected to be done before packing.
    * @param key The key to pack.
    * @param value The value to pack.
    * @return The packed key-value pair as a single uint256.

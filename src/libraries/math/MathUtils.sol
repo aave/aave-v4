@@ -57,7 +57,8 @@ library MathUtils {
   }
 
   /**
-   * @notice Adds two unsigned integers. Does not revert on overflow.
+   * @notice Adds two unsigned integers.
+   * @dev Does not revert on overflow.
    * @param a The first unsigned integer.
    * @param b The second unsigned integer.
    * @return The unsigned result of the addition.
@@ -79,7 +80,8 @@ library MathUtils {
   }
 
   /**
-   * @notice Subtracts an unsigned integer from an unsigned integer. Does not revert on underflow.
+   * @notice Subtracts an unsigned integer from an unsigned integer.
+   * @dev Does not revert on underflow.
    * @param a The first unsigned integer.
    * @param b The second unsigned integer.
    * @return The unsigned result of the subtraction.
@@ -91,7 +93,8 @@ library MathUtils {
   }
 
   /**
-   * @notice Raises an unsigned integer to the power of an unsigned integer. Does not revert on overflow.
+   * @notice Raises an unsigned integer to the power of an unsigned integer.
+   * @dev Does not revert on overflow.
    * @param a The base.
    * @param b The exponent.
    * @return The result of the exponentiation.

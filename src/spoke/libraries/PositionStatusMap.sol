@@ -221,7 +221,7 @@ library PositionStatusMap {
   }
 
   /**
-   * @notice Converts a reserveId to it's corresponding bucketId.
+   * @notice Converts a reserveId to its corresponding bucketId.
    * @param reserveId The index of the reserve in the bitmap.
    * @return wordId The bucket identifier.
    */
@@ -232,7 +232,7 @@ library PositionStatusMap {
   }
 
   /**
-   * @notice Converts a bit index to it's corresponding reserve index in the bitmap.
+   * @notice Converts a bit index to its corresponding reserve index in the bitmap.
    * @dev BitId 0, 1 correspond to reserveId 0; BitId 2, 3 correspond to reserveId 1; etc.
    * @param bitId The index of the bit.
    * @param bucket The bucket identifier.

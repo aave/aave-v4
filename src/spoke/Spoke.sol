@@ -21,8 +21,8 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /**
  * @title Spoke
  * @author Aave Labs
- * @notice Base contract for the Spoke.
- * @dev Facilitates user interactions with the Hub.
+ * @notice Base contract for the spoke.
+ * @dev Facilitates user interactions with the hub.
  */
 abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
@@ -655,7 +655,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @notice Validates the supply action.
+   * @notice Validates the `supply` action.
    * @param reserve The reserve to be supplied.
    */
   function _validateSupply(Reserve storage reserve) internal view {
@@ -665,7 +665,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @notice Validates the withdraw action.
+   * @notice Validates the `withdraw` action.
    * @param reserve The reserve to be withdrawn.
    */
   function _validateWithdraw(Reserve storage reserve) internal view {
@@ -674,7 +674,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @notice Validates the borrow action.
+   * @notice Validates the `borrow` action.
    * @param reserve The reserve to be borrowed.
    */
   function _validateBorrow(Reserve storage reserve) internal view {
@@ -686,7 +686,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @notice Validates the repay action.
+   * @notice Validates the `repay` action.
    * @param reserve The reserve to be repaid.
    */
   function _validateRepay(Reserve storage reserve) internal view {
@@ -762,7 +762,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @notice Validates the set as collateral action.
+   * @notice Validates the `setUsingAsCollateral` action.
    * @dev Collateral can be disabled if the reserve is frozen.
    * @param reserve The reserve to be set as collateral.
    * @param usingAsCollateral True if enabling the reserve as collateral, false otherwise.

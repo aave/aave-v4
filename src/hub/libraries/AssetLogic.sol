@@ -13,7 +13,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 /**
  * @title AssetLogic library
  * @author Aave Labs
- * @notice Implements the logic and calculations for operations involving the asset data struct.
+ * @notice Implements the logic and calculations for asset data.
  */
 library AssetLogic {
   using AssetLogic for IHub.Asset;
@@ -25,7 +25,7 @@ library AssetLogic {
 
   /**
    * @notice Converts an amount of shares to the equivalent amount of drawn assets, rounding up.
-   * @dev Drawn exchange rate does not include premium, in order to accrue base rate separately.
+   * @dev Drawn index does not account for premium, in order to accrue drawn assets separately.
    * @param asset The data struct of the asset being converted.
    * @param shares The amount of shares to be converted.
    * @return The resulting amount of drawn assets.
@@ -39,7 +39,7 @@ library AssetLogic {
 
   /**
    * @notice Converts an amount of shares to the equivalent amount of drawn assets, rounding down.
-   * @dev Drawn exchange rate does not include premium, in order to accrue base rate separately.
+   * @dev Drawn index does not account for premium, in order to accrue drawn assets separately.
    * @param asset The data struct of the asset being converted.
    * @param shares The amount of shares to be converted.
    * @return The resulting amount of drawn assets.
@@ -181,6 +181,7 @@ library AssetLogic {
    * @notice Updates the drawn rate of a specified asset.
    * @param asset The data struct of the asset.
    * @param assetId The identifier of the asset.
+   * @dev Premium debt is not used in the interest rate calculation.
    */
   function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
@@ -222,7 +223,7 @@ library AssetLogic {
   }
 
   /**
-   * @notice Calculates the drawn index of a specified asset based on the base drawn rate and the previous index.
+   * @notice Calculates the drawn index of a specified asset based on the drawn rate and the previous index.
    * @param asset The data struct of the asset.
    * @return The resulting drawn index.
    */

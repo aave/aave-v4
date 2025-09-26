@@ -2,6 +2,11 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+/**
+ * @title IMulticall
+ * @author Aave Labs
+ * @notice Interface for Multicall.
+ */
 interface IMulticall {
   /**
    * @notice Call multiple functions in the current contract and return the data from all of them if they all succeed.
