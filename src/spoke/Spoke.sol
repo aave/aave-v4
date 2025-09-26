@@ -181,6 +181,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       _dynamicConfig[reserveId][configKey].maxLiquidationBonus != 0,
       ConfigKeyUninitialized()
     );
+    // @dev CF of historical config keys cannot be 0, otherwise liquidations of prior positions cannot occur
+    require(dynamicConfig.collateralFactor > 0, InvalidCollateralFactor());
     _validateDynamicReserveConfig(dynamicConfig);
     _dynamicConfig[reserveId][configKey] = dynamicConfig;
     emit UpdateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
@@ -689,6 +691,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
+    // @dev sufficient check since maxLiquidationBonus is always >= 100_00
     // Enforce that at moment loan is taken, there should be enough collateral to cover liquidation
     require(
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&

@@ -186,6 +186,11 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error MustNotLeaveDust();
   error InvalidDebtToCover();
 
+  /**
+   * @notice Emitted when the collateral factor is invalid during update of historical dynamic risk config.
+   */
+  error InvalidCollateralFactor();
+
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;
