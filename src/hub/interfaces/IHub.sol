@@ -356,7 +356,7 @@ interface IHub is IHubBase, IAccessManaged {
   function MAX_ALLOWED_SPOKE_CAP() external view returns (uint56);
 
   /**
-   * @notice Converts the specified amount of supplied shares to assets amount for the specified asset.
+   * @notice Converts the given amount of supplied shares to assets amount for the specified asset.
    * @dev Rounds down to the nearest assets amount.
    * @param assetId The identifier of the asset.
    * @param shares The amount of supplied shares to convert to assets amount.
@@ -365,7 +365,7 @@ interface IHub is IHubBase, IAccessManaged {
   function convertToAddedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of supplied assets to shares amount for the specified asset.
+   * @notice Converts the given amount of supplied assets to shares amount for the specified asset.
    * @dev Rounds down to the nearest shares amount.
    * @param assetId The identifier of the asset.
    * @param assets The amount of supplied assets to convert to shares amount.
@@ -374,7 +374,7 @@ interface IHub is IHubBase, IAccessManaged {
   function convertToAddedShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of drawn shares to assets amount for the specified asset.
+   * @notice Converts the given amount of drawn shares to assets amount for the specified asset.
    * @dev Rounds up to the nearest assets amount.
    * @param assetId The identifier of the asset.
    * @param shares The amount of drawn shares to convert to assets amount.
@@ -383,7 +383,7 @@ interface IHub is IHubBase, IAccessManaged {
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of drawn assets to shares amount for the specified asset.
+   * @notice Converts the given amount of drawn assets to shares amount for the specified asset.
    * @dev Rounds down to the nearest shares amount.
    * @param assetId The identifier of the asset.
    * @param assets The amount of drawn assets to convert to shares amount.
@@ -472,7 +472,7 @@ interface IHub is IHubBase, IAccessManaged {
   /**
    * @notice Returns the number of spokes listed for the specified asset.
    * @param assetId The identifier of the asset.
-   * @return The number of spokes listed for the specified asset.
+   * @return The number of spokes.
    */
   function getSpokeCount(uint256 assetId) external view returns (uint256);
 
@@ -488,7 +488,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @notice Returns whether the spoke is listed for the specified asset.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
-   * @return True if the spoke is listed for the specified asset, false otherwise.
+   * @return True if the spoke is listed, false otherwise.
    */
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
 

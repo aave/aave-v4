@@ -639,6 +639,7 @@ contract Hub is IHub, AccessManaged {
   /**
    * @notice Applies premium deltas on asset and spoke owed.
    * @dev Validates that total premium and spoke premium cannot decrease by more than `premiumAmount`.
+   * @dev Increase of asset and spoke premium cannot exceed 2 wei, reverts with `InvalidPremiumChange` otherwise.
    * @param assetId The identifier of the asset.
    * @param asset The asset struct.
    * @param spoke The spoke data struct.
@@ -716,7 +717,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /**
-   * @notice Validates the `Add` action.
+   * @notice Validates the `add` action.
    * @param asset The asset struct.
    * @param spoke The spoke data struct.
    * @param assetId The identifier of the asset.
@@ -742,7 +743,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /**
-   * @notice Validates the `Remove` action.
+   * @notice Validates the `remove` action.
    * @param spoke The spoke data struct.
    * @param assetId The identifier of the asset.
    * @param amount The amount of assets to remove.
@@ -762,7 +763,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /**
-   * @notice Validates the `Draw` action.
+   * @notice Validates the `draw` action.
    * @param asset The asset struct.
    * @param spoke The spoke data struct.
    * @param assetId The identifier of the asset.
@@ -790,7 +791,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /**
-   * @notice Validates the restore action.
+   * @notice Validates the `restore` action.
    * @param spoke The spoke data struct.
    * @param assetId The identifier of the asset.
    * @param drawnAmount The amount of drawn assets to restore.
@@ -814,7 +815,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /**
-   * @notice Validates the `ReportDeficit` action.
+   * @notice Validates the `reportDeficit` action.
    * @param spoke The spoke data struct.
    * @param assetId The identifier of the asset.
    * @param drawnAmount The amount of drawn assets to report as deficit.
@@ -835,7 +836,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /**
-   * @notice Validates the `EliminateDeficit` action.
+   * @notice Validates the `eliminateDeficit` action.
    * @param spoke The spoke data struct.
    * @param amount The amount of deficit asset to eliminate.
    */
@@ -845,7 +846,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /**
-   * @notice Validates the `PayFee` action.
+   * @notice Validates the `payFee` action.
    * @param senderSpoke The sender spoke data struct.
    * @param feeShares The amount of added shares to pay to feeReceiver.
    */
@@ -855,7 +856,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /**
-   * @notice Validates the `TransferShares` action.
+   * @notice Validates the `transferShares` action.
    * @param asset The asset struct.
    * @param sender The sender spoke data struct.
    * @param receiver The receiver spoke data struct.
@@ -880,7 +881,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /**
-   * @notice Validates the `Sweep` action.
+   * @notice Validates the `sweep` action.
    * @param asset The asset struct.
    * @param caller The address of the caller.
    * @param amount The amount of assets to sweep.
@@ -892,7 +893,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /**
-   * @notice Validates the `Reclaim` action.
+   * @notice Validates the `reclaim` action.
    * @param asset The asset struct.
    * @param caller The address of the caller.
    * @param amount The amount of assets to reclaim.

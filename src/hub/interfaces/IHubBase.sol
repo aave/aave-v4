@@ -82,7 +82,7 @@ interface IHubBase {
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
 
   /**
-   * @notice Emitted on the `ReportDeficit` action.
+   * @notice Emitted on the `reportDeficit` action.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @param drawnShares The amount of drawn shares reported as deficit.
@@ -192,7 +192,7 @@ interface IHubBase {
   function getAssetUnderlyingAndDecimals(uint256 assetId) external view returns (address, uint8);
 
   /**
-   * @notice Converts the specified amount of assets to shares upon an `Add` action.
+   * @notice Converts the specified amount of assets to shares upon an `add` action.
    * @dev Rounds down to the nearest shares amount.
    * @param assetId The identifier of the asset.
    * @param assets The amount of assets to convert to shares amount.
@@ -201,7 +201,7 @@ interface IHubBase {
   function previewAddByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
-   * @notice Converts the specified shares amount to assets amount added upon an `Add` action.
+   * @notice Converts the specified shares amount to assets amount added upon an `add` action.
    * @dev Rounds up to the nearest assets amount.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to convert to assets amount.
@@ -210,7 +210,7 @@ interface IHubBase {
   function previewAddByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of assets to shares amount removed upon a `Remove` action.
+   * @notice Converts the specified amount of assets to shares amount removed upon a `remove` action.
    * @dev Rounds up to the nearest shares amount.
    * @param assetId The identifier of the asset.
    * @param assets The amount of assets to convert to shares amount.
@@ -219,7 +219,7 @@ interface IHubBase {
   function previewRemoveByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of shares to assets amount removed upon a `Remove` action.
+   * @notice Converts the specified amount of shares to assets amount removed upon a `remove` action.
    * @dev Rounds down to the nearest assets amount.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to convert to assets amount.
@@ -228,7 +228,7 @@ interface IHubBase {
   function previewRemoveByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of assets to shares amount drawn upon a `Draw` action.
+   * @notice Converts the specified amount of assets to shares amount drawn upon a `draw` action.
    * @dev Rounds up to the nearest shares amount.
    * @param assetId The identifier of the asset.
    * @param assets The amount of assets to convert to shares amount.
@@ -237,7 +237,7 @@ interface IHubBase {
   function previewDrawByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of shares to assets amount drawn upon a `Draw` action.
+   * @notice Converts the specified amount of shares to assets amount drawn upon a `draw` action.
    * @dev Rounds down to the nearest assets amount.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to convert to assets amount.
@@ -246,7 +246,7 @@ interface IHubBase {
   function previewDrawByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of assets to shares amount restored upon a `Restore` action.
+   * @notice Converts the specified amount of assets to shares amount restored upon a `restore` action.
    * @dev Rounds down to the nearest shares amount.
    * @param assetId The identifier of the asset.
    * @param assets The amount of assets to convert to shares amount.
@@ -255,7 +255,7 @@ interface IHubBase {
   function previewRestoreByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of shares to assets amount restored upon a `Restore` action.
+   * @notice Converts the specified amount of shares to assets amount restored upon a `restore` action.
    * @dev Rounds up to the nearest assets amount.
    * @param assetId The identifier of the asset.
    * @param shares The amount of drawn shares to convert to assets amount.
