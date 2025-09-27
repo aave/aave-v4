@@ -181,7 +181,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       _dynamicConfig[reserveId][configKey].maxLiquidationBonus != 0,
       ConfigKeyUninitialized()
     );
-    // @dev CF of historical config keys cannot be 0, otherwise liquidations of prior positions cannot occur
+    // @dev CF of historical config keys cannot be 0, otherwise liquidations of prior positions will revert
     require(dynamicConfig.collateralFactor > 0, InvalidCollateralFactor());
     _validateDynamicReserveConfig(dynamicConfig);
     _dynamicConfig[reserveId][configKey] = dynamicConfig;
