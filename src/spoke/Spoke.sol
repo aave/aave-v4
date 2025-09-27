@@ -401,6 +401,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       _checkCanCall(msg.sender, msg.data);
     }
     _refreshDynamicConfig(onBehalfOf);
+    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
+    _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
   }
 
   /// @inheritdoc ISpoke
