@@ -1,33 +1,28 @@
-import "../../src/hub/Hub.sol";
+import '../../src/hub/Hub.sol';
 import {AssetLogic} from 'src/hub/libraries/AssetLogic.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
+
 pragma solidity ^0.8.0;
 
 contract HubHarness is Hub {
-      using AssetLogic for Asset;
+  using AssetLogic for Asset;
 
   constructor(address authority_) Hub(authority_) {
     // Intentionally left blank
   }
 
-
-  function accrueInterest(
-    uint256 assetId
-  ) external  {
-    
+  function accrueInterest(uint256 assetId) external {
     Asset storage asset = _assets[assetId];
 
-    asset.accrue( assetId, _spokes[assetId][asset.feeReceiver]);
-  
+    asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
   }
-
 
   function toSharesDown(
     uint256 assets,
     uint256 totalAssets,
     uint256 totalShares
   ) external pure returns (uint256) {
-    return  SharesMath.toSharesDown(assets, totalAssets, totalShares);
+    return SharesMath.toSharesDown(assets, totalAssets, totalShares);
   }
 
   function toAssetsDown(
@@ -35,7 +30,7 @@ contract HubHarness is Hub {
     uint256 totalAssets,
     uint256 totalShares
   ) external pure returns (uint256) {
-    return  SharesMath.toAssetsDown(shares, totalAssets, totalShares);
+    return SharesMath.toAssetsDown(shares, totalAssets, totalShares);
   }
 
   function toSharesUp(
@@ -43,7 +38,7 @@ contract HubHarness is Hub {
     uint256 totalAssets,
     uint256 totalShares
   ) external pure returns (uint256) {
-      return  SharesMath.toSharesUp(assets, totalAssets, totalShares);
+    return SharesMath.toSharesUp(assets, totalAssets, totalShares);
   }
 
   function toAssetsUp(
@@ -51,22 +46,16 @@ contract HubHarness is Hub {
     uint256 totalAssets,
     uint256 totalShares
   ) external pure returns (uint256) {
-      return  SharesMath.toAssetsUp(shares, totalAssets, totalShares);
+    return SharesMath.toAssetsUp(shares, totalAssets, totalShares);
   }
 
   function getAssetSuppliedAmountUp(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].toAddedAssetsUp(_assets[assetId].addedShares);
   }
-  
-  /*
-  function getFeeShares(uint256 assetId, uint256 indexDelta) 
-    external view returns (uint256) {
-        Asset storage asset = _assets[assetId];
-        return asset.getFeeShares(indexDelta);
-    }
-    */
-    function unrealizedFeeShares(uint256 assetId) external view returns (uint256) {
-        Asset storage asset = _assets[assetId];
-        return asset.unrealizedFeeShares();
+
+
+  function unrealizedFeeShares(uint256 assetId) external view returns (uint256) {
+    Asset storage asset = _assets[assetId];
+    return asset.unrealizedFeeShares();
   }
 }
