@@ -52,10 +52,9 @@ contract HubHarness is Hub {
   function getAssetSuppliedAmountUp(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].toAddedAssetsUp(_assets[assetId].addedShares);
   }
-
-
-  function unrealizedFeeShares(uint256 assetId) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    return asset.unrealizedFeeShares();
+  
+    function unrealizedFeeShares(uint256 assetId) external view returns (uint256) {
+        Asset storage asset = _assets[assetId];
+        return asset.unrealizedFeeShares();
   }
 }
