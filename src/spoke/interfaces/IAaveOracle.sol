@@ -7,7 +7,7 @@ import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 /**
  * @title IAaveOracle
  * @author Aave Labs
- * @notice Interface for the Aave Oracle
+ * @notice Interface for the Aave Oracle.
  */
 interface IAaveOracle is IPriceOracle {
   /**
