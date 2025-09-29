@@ -4,88 +4,17 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-/// @dev inherit from Test to exclude contract from forge size check
-contract MockStorageSpoke is Spoke, Test {
-  using PositionStatusMap for PositionStatus;
-  using SafeCast for *;
-
-  struct AccountDataInfo {
-    uint256[] collateralReserveIds;
-    uint256[] collateralAmounts;
-    uint256[] collateralDynamicConfigKeys;
-    uint256[] suppliedAssetsReserveIds;
-    uint256[] suppliedAssetsAmounts;
-    uint256[] debtReserveIds;
-    uint256[] drawnDebtAmounts;
-    uint256[] realizedPremiumAmounts;
-    uint256[] accruedPremiumAmounts;
-  }
-
-  constructor(address oracle_) Spoke(oracle_) {}
-
-  function initialize(address) external override {}
-
-  function mockStorage(address user, AccountDataInfo memory info) external {
-    PositionStatus storage positionStatus = _positionStatus[user];
-    for (uint256 i = 0; i < info.collateralReserveIds.length; i++) {
-      positionStatus.setUsingAsCollateral(info.collateralReserveIds[i], true);
-      Reserve storage reserve = _reserves[info.collateralReserveIds[i]];
-      _userPositions[user][info.collateralReserveIds[i]].suppliedShares = reserve
-        .hub
-        .previewAddByAssets(reserve.assetId, info.collateralAmounts[i])
-        .toUint128();
-
-      _userPositions[user][info.collateralReserveIds[i]].configKey = info
-        .collateralDynamicConfigKeys[i]
-        .toUint16();
-    }
-
-    for (uint256 i = 0; i < info.suppliedAssetsReserveIds.length; i++) {
-      Reserve storage reserve = _reserves[info.suppliedAssetsReserveIds[i]];
-      _userPositions[user][info.suppliedAssetsReserveIds[i]].suppliedShares = reserve
-        .hub
-        .previewAddByAssets(reserve.assetId, info.suppliedAssetsAmounts[i])
-        .toUint128();
-    }
-
-    for (uint256 i = 0; i < info.debtReserveIds.length; i++) {
-      positionStatus.setBorrowing(info.debtReserveIds[i], true);
-      Reserve storage reserve = _reserves[info.debtReserveIds[i]];
-      _userPositions[user][info.debtReserveIds[i]].drawnShares = reserve
-        .hub
-        .previewDrawByAssets(reserve.assetId, info.drawnDebtAmounts[i])
-        .toUint128();
-      _userPositions[user][info.debtReserveIds[i]].realizedPremium = info
-        .realizedPremiumAmounts[i]
-        .toUint128();
-      _userPositions[user][info.debtReserveIds[i]].premiumOffset = vm
-        .randomUint(1, 100e18)
-        .toUint128();
-      _userPositions[user][info.debtReserveIds[i]].premiumShares =
-        reserve.hub.previewAddByAssets(reserve.assetId, info.accruedPremiumAmounts[i]).toUint128() +
-        _userPositions[user][info.debtReserveIds[i]].premiumOffset;
-    }
-  }
-
-  function calculateAndPotentiallyRefreshUserAccountData(
-    address user,
-    bool refreshConfig
-  ) external returns (UserAccountData memory) {
-    return _calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig);
-  }
-}
-
 contract SpokeUserAccountDataTest is SpokeBase {
   address internal user = makeAddr('user');
-  MockStorageSpoke internal spoke;
+  MockSpoke internal spoke;
 
-  MockStorageSpoke.AccountDataInfo internal accountDataInfo;
+  MockSpoke.AccountDataInfo internal accountDataInfo;
 
   function setUp() public override {
     super.setUp();
-    spoke = MockStorageSpoke(address(spoke1));
-    address mockStorageSpokeImpl = address(new MockStorageSpoke(address(spoke.ORACLE())));
-    vm.etch(address(spoke1), mockStorageSpokeImpl.code);
+    spoke = MockSpoke(address(spoke1));
+    address mockSpokeImpl = address(new MockSpoke(address(spoke.ORACLE())));
+    vm.etch(address(spoke1), mockSpokeImpl.code);
 
     _updateCollateralFactor(spoke, _wethReserveId(spoke), 80_00);
     _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 70_00);
