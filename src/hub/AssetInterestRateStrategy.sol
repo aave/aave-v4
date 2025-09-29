@@ -6,9 +6,9 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 
 /**
- * @title AssetInterestRateStrategy contract
+ * @title AssetInterestRateStrategy
  * @author Aave Labs
- * @notice Asset interest rate strategy.
+ * @notice Manages the interest rate strategy for an asset.
  * @dev Strategies are hub-specific, due to the usage of asset identifier as index of the _interestRateData.
  */
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {

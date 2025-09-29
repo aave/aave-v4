@@ -27,7 +27,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   error InvalidReserveId();
 
   /**
-   * @notice Facilitates supply action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @notice Facilitates `supply` action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to supply.
@@ -44,7 +44,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   ) external;
 
   /**
-   * @notice Facilitates withdraw action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @notice Facilitates `withdraw` action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Providing an amount exceeding the user's current withdrawable balance indicates a request for a maximum withdrawal.
    * @dev Withdrawn assets are pushed to `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
@@ -62,7 +62,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   ) external;
 
   /**
-   * @notice Facilitates borrow action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @notice Facilitates `borrow` action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Borrowed assets are pushed to `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to borrow.
@@ -79,7 +79,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   ) external;
 
   /**
-   * @notice Facilitates repay action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @notice Facilitates `repay` action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Repay assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
    * @dev Providing an amount greater than the user's current debt indicates a request to repay the maximum possible amount.
    * @param reserveId The identifier of the reserve.
@@ -97,7 +97,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   ) external;
 
   /**
-   * @notice Facilitates setUsingAsCollateral action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @notice Facilitates `setUsingAsCollateral` action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param useAsCollateral True if enabling reserve as collateral.
    * @param onBehalfOf The address of the user to set the use as collateral status on behalf of.
@@ -113,7 +113,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   ) external;
 
   /**
-   * @notice Facilitates updateUserRiskPremium action on connected SPOKE() with a typed signature from `user`.
+   * @notice Facilitates `updateUserRiskPremium` action on connected SPOKE() with a typed signature from `user`.
    * @param user The address of the user to update the risk premium for.
    * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
@@ -125,7 +125,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   ) external;
 
   /**
-   * @notice Facilitates updateUserDynamicConfig action on connected SPOKE() with a typed signature from `user`.
+   * @notice Facilitates `updateUserDynamicConfig` action on connected SPOKE() with a typed signature from `user`.
    * @param user The address of the user to update the dynamic config for.
    * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.

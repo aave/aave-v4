@@ -192,42 +192,43 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   event UpdateLiquidationConfig(LiquidationConfig config);
 
   /**
-   * @notice Thrown when an asset is not listed.
+   * @notice Thrown when an asset is not listed on the hub when adding a reserve.
    */
   error AssetNotListed();
 
   /**
-   * @notice Thrown when a reserve already exists.
+   * @notice Thrown when adding a new reserve if that reserve already exists for a given hub/assetId pair.
    */
   error ReserveExists();
 
   /**
-   * @notice Thrown when an asset id is invalid.
+   * @notice Thrown when adding a new reserve if an asset id is invalid.
    */
   error InvalidAssetId();
 
   /**
-   * @notice Thrown when a reserve is not listed.
+   * @notice Thrown when updating a reserve if it is not listed.
    */
   error ReserveNotListed();
 
   /**
-   * @notice Thrown when a reserve is not borrowable.
+   * @notice Thrown when a reserve is not borrowable during a `borrow` action.
    */
   error ReserveNotBorrowable();
 
   /**
-   * @notice Thrown when a reserve is paused.
+   * @notice Thrown when a reserve is paused during an attempted action.
    */
   error ReservePaused();
 
   /**
    * @notice Thrown when a reserve is frozen.
+   * @dev Can only occur during an attempted `supply`, `borrow`, or `setUsingAsCollateral` action.
    */
   error ReserveFrozen();
 
   /**
-   * @notice Thrown when an action causes a user's health factor to fall below the liquidationthreshold.
+   * @notice Thrown when an action causes a user's health factor to fall below the liquidation threshold.
    */
   error HealthFactorBelowThreshold();
 
@@ -237,7 +238,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error CollateralCannotBeLiquidated();
 
   /**
-   * @notice Thrown when a specified reserve is not borrowed by the user.
+   * @notice Thrown when a specified reserve is not borrowed by the user during liquidation.
    */
   error SpecifiedCurrencyNotBorrowedByUser();
 
@@ -247,12 +248,12 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error Unauthorized();
 
   /**
-   * @notice Thrown when a config key is uninitialized.
+   * @notice Thrown if a config key is uninitialized when updating a dynamic reserve config.
    */
   error ConfigKeyUninitialized();
 
   /**
-   * @notice Thrown when a position manager is inactive.
+   * @notice Thrown if an inactive position manager is set as a user's position manager.
    */
   error InactivePositionManager();
 
@@ -267,12 +268,12 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error InvalidAddress();
 
   /**
-   * @notice Thrown when a collateral risk is invalid.
+   * @notice Thrown when a collateral risk exceeds the maximum allowed.
    */
   error InvalidCollateralRisk();
 
   /**
-   * @notice Thrown when a liquidation config is invalid.
+   * @notice Thrown if a liquidation config is invalid when it is updated.
    */
   error InvalidLiquidationConfig();
 
@@ -297,12 +298,12 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error HealthFactorNotBelowThreshold();
 
   /**
-   * @notice Thrown when a dust debt is left after a liquidation.
+   * @notice Thrown when dust debt remains after a liquidation.
    */
   error MustNotLeaveDust();
 
   /**
-   * @notice Thrown when a debt to cover is invalid.
+   * @notice Thrown when a debt to cover input is zero.
    */
   error InvalidDebtToCover();
 
@@ -432,8 +433,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function renouncePositionManagerRole(address user) external;
 
   /**
-   * @notice Gets the address of the external getLiquidationLogic library.
-   * @return The address of the external getLiquidationLogic library.
+   * @notice Returns the address of the external `LiquidationLogic` library.
+   * @return The address of the library.
    */
   function getLiquidationLogic() external pure returns (address);
 

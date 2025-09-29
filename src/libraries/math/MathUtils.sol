@@ -16,8 +16,9 @@ library MathUtils {
 
   /**
    * @notice Function to calculate the interest accumulated using a linear interest rate formula.
+   * @dev Calculates interest rate from provided `lastUpdateTimestamp` until present.
    * @param rate The interest rate, in ray.
-   * @param lastUpdateTimestamp The timestamp to calculate interest rate from (until present).
+   * @param lastUpdateTimestamp The timestamp to calculate interest rate from.
    * @return The interest rate linearly accumulated during the timeDelta, in ray.
    */
   function calculateLinearInterest(

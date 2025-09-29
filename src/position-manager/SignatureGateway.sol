@@ -17,8 +17,8 @@ import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGatew
 /**
  * @title SignatureGateway
  * @author Aave Labs
- * @notice Gateway to consume simple EIP-712 typed intents for spoke actions on behalf of a user.
- * @dev This contract needs to be an active & approved user position manager to execute spoke actions on user's behalf.
+ * @notice Gateway to consume EIP-712 typed intents for spoke actions on behalf of a user.
+ * @dev Contract must be an active & approved user position manager to execute spoke actions on user's behalf.
  * @dev Intents bundled through multicall can be executed independently in order of signed nonce & deadline.
  */
 contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2Step, EIP712 {

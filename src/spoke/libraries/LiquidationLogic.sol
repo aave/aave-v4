@@ -250,7 +250,7 @@ library LiquidationLogic {
    * @notice Calculates the liquidation amounts.
    * @param params The calculate liquidation amounts params.
    * @return The collateral to liquidate.
-   * @return The collateral to give to liquidator.
+   * @return The collateral to transfer to liquidator.
    * @return The debt to liquidate.
    */
   function _calculateLiquidationAmounts(

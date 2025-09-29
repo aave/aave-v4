@@ -179,9 +179,9 @@ library AssetLogic {
 
   /**
    * @notice Updates the drawn rate of a specified asset.
+   * @dev Premium debt is not used in the interest rate calculation.
    * @param asset The data struct of the asset.
    * @param assetId The identifier of the asset.
-   * @dev Premium debt is not used in the interest rate calculation.
    */
   function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({

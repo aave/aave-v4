@@ -21,8 +21,9 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /**
  * @title Spoke
  * @author Aave Labs
- * @notice Base contract for the spoke.
- * @dev Facilitates user interactions with the hub.
+ * @notice Handles accounting for reserves and user positions.
+ * @dev Facilitates user interactions with hubs.
+ * @dev Each reserve can be associated with a separate hub.
  */
 abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
@@ -750,7 +751,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    * @param config The dynamic reserve config struct.
    */
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
-    // Enforce that at moment loan is taken, there should be enough collateral to cover liquidation
+    // Enforce that at the moment debt is created, there should be enough collateral to cover liquidation
     require(
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
@@ -773,13 +774,13 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   ) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
-    // deactivation should be allowed
+    // deactivation is allowed if the reserve is frozen
     require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
   }
 
   /**
    * @notice Calculates the restore amounts.
-   * @dev Allows donation on drawn debt
+   * @dev Allows donation on drawn debt.
    * @param drawnDebt The drawn debt.
    * @param premiumDebt The premium debt.
    * @param amount The desired amount to restore.
@@ -802,7 +803,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /**
    * @notice Settles the premium debt.
-   * @param userPosition The user position object.
+   * @param userPosition The user position struct.
    * @param realizedDelta The realized delta.
    */
   function _settlePremiumDebt(UserPosition storage userPosition, int256 realizedDelta) internal {
@@ -826,7 +827,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /**
    * @notice Calculates the user account data.
-   * @dev SAFETY: function does not modify state when refreshConfig is false
+   * @dev SAFETY: function does not modify state when refreshConfig is false.
    * @param user The address of the user.
    * @return The user account data struct.
    */
@@ -848,7 +849,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /**
    * @notice Calculates the user account data and potentially refreshes the dynamic config.
-   * @dev User RP calc runs until the first of either debt or collateral is exhausted
+   * @dev User RP calc runs until the first of either debt or collateral is exhausted.
    * @param user The address of the user.
    * @param refreshConfig True if the dynamic config should be refreshed, false otherwise.
    * @return userAccountData The user account data struct.
@@ -915,7 +916,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       }
     }
 
-    // at this point avgCollateralFactor is a weighted sum of collateral scaled by collateralFactor
+    // at this point avgCollateralFactor is the weighted sum of collateral scaled by collateralFactor
     // (avgCollateralFactor / totalCollateral) * totalCollateral can be simplified to avgCollateralFactor
     // strip BPS factor from result, because running avgCollateralFactor sum has been scaled by collateralFactor (in BPS) above
     userAccountData.healthFactor = userAccountData.totalDebtInBaseCurrency == 0
