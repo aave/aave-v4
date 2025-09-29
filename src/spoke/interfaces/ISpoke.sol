@@ -187,7 +187,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error InvalidDebtToCover();
 
   /**
-   * @dev Emitted when the collateral factor is invalid during update of historical dynamic risk config.
+   * @dev Thrown when trying to set zero collateralFactor on historic dynamic configuration keys.
    */
   error InvalidCollateralFactor();
 
