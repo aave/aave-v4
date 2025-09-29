@@ -748,7 +748,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
     // Enforce that at the moment debt is created, there should be enough collateral to cover liquidation
     require(
-      config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR &&
+      config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
         PercentageMath.PERCENTAGE_FACTOR,
