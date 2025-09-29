@@ -202,22 +202,22 @@ interface IHub is IHubBase, IAccessManaged {
   error SpokeNotActive();
 
   /**
-   * @notice Thrown when the reinvestment controller is invalid.
+   * @notice Thrown when a new reinvestment controller is the zero address and the asset has existing swept liquidity.
    */
   error InvalidReinvestmentController();
 
   /**
-   * @notice Thrown when the caller is an invalid reinvestment controller.
+   * @notice Thrown when an invalid reinvestment controller attempts to perform a `sweep` action.
    */
   error OnlyReinvestmentController();
 
   /**
-   * @notice Thrown when a spoke is already listed.
+   * @notice Thrown when a spoke being added is already listed.
    */
   error SpokeAlreadyListed();
 
   /**
-   * @notice Thrown when a spoke is not listed.
+   * @notice Thrown when a spoke being updated is not listed.
    */
   error SpokeNotListed();
 
@@ -232,22 +232,23 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidShares();
 
   /**
-   * @notice Thrown when the address is invalid.
+   * @notice Thrown when an input address is invalid.
    */
   error InvalidAddress();
 
   /**
-   * @notice Thrown when the liquidity fee is invalid.
+   * @notice Thrown if the liquidity fee is invalid when updating an asset configuration.
    */
   error InvalidLiquidityFee();
 
   /**
-   * @notice Thrown when the asset decimals are invalid.
+   * @notice Thrown when the asset decimals exceed the maximum allowed decimals.
    */
   error InvalidAssetDecimals();
 
   /**
-   * @notice Thrown when the interest rate strategy is invalid.
+   * @notice Thrown if the interest rate strategy is invalid when updating an asset configuration.
+   * @dev The `irData` must be empty if the interest rate strategy is not updated.
    */
   error InvalidInterestRateStrategy();
 
