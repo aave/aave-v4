@@ -4,11 +4,10 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract MockStorageSpoke is Spoke {
+/// @dev inherit from Test to exclude contract from forge size check
+contract MockStorageSpoke is Spoke, Test {
   using PositionStatusMap for PositionStatus;
   using SafeCast for *;
-
-  Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   struct AccountDataInfo {
     uint256[] collateralReserveIds;
