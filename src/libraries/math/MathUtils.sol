@@ -38,10 +38,12 @@ library MathUtils {
    * @param b The second value to compare.
    * @return result The minimum of the two values.
    */
-  function min(uint256 a, uint256 b) internal pure returns (uint256 result) {
+  function min(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 result;
     assembly ('memory-safe') {
       result := xor(b, mul(xor(a, b), lt(a, b)))
     }
+    return result;
   }
 
   /**
@@ -110,7 +112,8 @@ library MathUtils {
    * @param c The divisor.
    * @return d The result of the multiplication and division, rounded down.
    */
-  function mulDivDown(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
+  function mulDivDown(uint256 a, uint256 b, uint256 c) internal pure returns (uint256) {
+    uint256 d;
     assembly ('memory-safe') {
       if iszero(c) {
         revert(0, 0)
@@ -120,6 +123,7 @@ library MathUtils {
       }
       d := div(mul(a, b), c)
     }
+    return d;
   }
 
   /**
@@ -130,7 +134,8 @@ library MathUtils {
    * @param c The divisor.
    * @return d The result of the multiplication and division, rounded up.
    */
-  function mulDivUp(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
+  function mulDivUp(uint256 a, uint256 b, uint256 c) internal pure returns (uint256) {
+    uint256 d;
     assembly ('memory-safe') {
       if iszero(c) {
         revert(0, 0)
@@ -141,5 +146,6 @@ library MathUtils {
       let product := mul(a, b)
       d := add(div(product, c), gt(mod(product, c), 0))
     }
+    return d;
   }
 }

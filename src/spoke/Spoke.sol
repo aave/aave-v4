@@ -750,9 +750,13 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   function _calculateAndRefreshUserAccountData(
     address user
-  ) internal returns (UserAccountData memory userAccountData) {
-    userAccountData = _calculateAndPotentiallyRefreshUserAccountData(user, true);
+  ) internal returns (UserAccountData memory) {
+    UserAccountData memory userAccountData = _calculateAndPotentiallyRefreshUserAccountData(
+      user,
+      true
+    );
     emit RefreshAllUserDynamicConfig(user);
+    return userAccountData;
   }
 
   /**
@@ -763,8 +767,9 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   function _calculateAndPotentiallyRefreshUserAccountData(
     address user,
     bool refreshConfig
-  ) internal returns (UserAccountData memory userAccountData) {
+  ) internal returns (UserAccountData memory) {
     PositionStatus storage positionStatus = _positionStatus[user];
+    UserAccountData memory userAccountData;
 
     uint256 reserveId = _reserveCount;
     KeyValueList.List memory list = KeyValueList.init(positionStatus.collateralCount(reserveId));
