@@ -687,7 +687,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   /**
    * @dev CollateralFactor of historical config keys cannot be 0.
    * @param currentConfig The current dynamic reserve config.
-   * @param config The dynamic reserve config to validate.
+   * @param newConfig The dynamic reserve config to validate.
    */
   function _validateHistoricDynamicReserveConfig(
     DynamicReserveConfig storage currentConfig,
