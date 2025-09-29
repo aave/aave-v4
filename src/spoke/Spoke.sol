@@ -176,13 +176,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
-    // @dev sufficient check since maxLiquidationBonus is always >= 100_00
-    require(
-      _dynamicConfig[reserveId][configKey].maxLiquidationBonus != 0,
-      ConfigKeyUninitialized()
-    );
-    // @dev CF of historical config keys cannot be 0, otherwise liquidations of prior positions will revert
-    require(dynamicConfig.collateralFactor > 0, InvalidCollateralFactor());
+    _validateHistoricDynamicReserveConfig(_dynamicConfig[reserveId][configKey], dynamicConfig);
     _validateDynamicReserveConfig(dynamicConfig);
     _dynamicConfig[reserveId][configKey] = dynamicConfig;
     emit UpdateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
@@ -690,8 +684,21 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
   }
 
-  function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
+  /**
+   * @dev CollateralFactor of historical config keys cannot be 0.
+   * @param currentConfig The current dynamic reserve config.
+   * @param config The dynamic reserve config to validate.
+   */
+  function _validateHistoricDynamicReserveConfig(
+    DynamicReserveConfig storage currentConfig,
+    DynamicReserveConfig calldata newConfig
+  ) internal view {
     // @dev sufficient check since maxLiquidationBonus is always >= 100_00
+    require(currentConfig.maxLiquidationBonus != 0, ConfigKeyUninitialized());
+    require(newConfig.collateralFactor > 0, InvalidCollateralFactor());
+  }
+
+  function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
     // Enforce that at moment loan is taken, there should be enough collateral to cover liquidation
     require(
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
