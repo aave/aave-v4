@@ -118,12 +118,13 @@ library LiquidationLogic {
     ISpoke.DynamicReserveConfig storage collateralDynConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
+    IHubBase collateralHub = collateralReserve.hub;
     _validateLiquidationCall(
       ValidateLiquidationCallParams({
         user: params.user,
         liquidator: params.liquidator,
         debtToCover: params.debtToCover,
-        collateralReserveHub: address(collateralReserve.hub),
+        collateralReserveHub: address(collateralHub),
         debtReserveHub: address(debtReserve.hub),
         collateralReservePaused: collateralReserve.paused,
         debtReservePaused: debtReserve.paused,
@@ -139,7 +140,7 @@ library LiquidationLogic {
         healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
         debtReserveBalance: params.drawnDebt + params.premiumDebt,
-        collateralReserveBalance: collateralReserve.hub.previewRemoveByShares(
+        collateralReserveBalance: collateralHub.previewRemoveByShares(
           collateralReserve.assetId,
           collateralPosition.suppliedShares
         ),
@@ -164,6 +165,16 @@ library LiquidationLogic {
       uint256 debtToLiquidate
     ) = _calculateLiquidationAmounts(calculateLiquidationAmountsParams);
 
+    bool isCollateralPositionEmpty = _liquidateCollateral(
+      collateralReserve,
+      collateralPosition,
+      LiquidateCollateralParams({
+        collateralToLiquidate: collateralToLiquidate,
+        collateralToLiquidator: collateralToLiquidator,
+        liquidator: params.liquidator
+      })
+    );
+
     bool isDebtPositionEmpty = _liquidateDebt(
       debtReserve,
       debtPosition,
@@ -173,16 +184,6 @@ library LiquidationLogic {
         debtToLiquidate: debtToLiquidate,
         premiumDebt: params.premiumDebt,
         accruedPremium: params.accruedPremium,
-        liquidator: params.liquidator
-      })
-    );
-
-    bool isCollateralPositionEmpty = _liquidateCollateral(
-      collateralReserve,
-      collateralPosition,
-      LiquidateCollateralParams({
-        collateralToLiquidate: collateralToLiquidate,
-        collateralToLiquidator: collateralToLiquidator,
         liquidator: params.liquidator
       })
     );
