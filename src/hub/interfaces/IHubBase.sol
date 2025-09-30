@@ -167,7 +167,7 @@ interface IHubBase {
   /**
    * @notice Refreshes premium accounting.
    * @dev Only callable by active spokes.
-   * @dev Overall asset premium should not decrease, and spoke premium should not decrease.
+   * @dev Asset and spoke premium should not decrease.
    * @dev Increase of asset and spoke premium cannot exceed 2 wei, reverts with `InvalidPremiumChange` otherwise.
    * @param assetId The identifier of the asset.
    * @param premiumDelta The change in premium.
