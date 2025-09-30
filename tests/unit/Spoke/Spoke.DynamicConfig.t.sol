@@ -119,6 +119,18 @@ contract SpokeDynamicConfigTest is SpokeBase {
     spoke1.updateDynamicReserveConfig(reserveId, configKey, config);
   }
 
+  /// cannot set collateral factor for a historical config key to 0
+  function test_updateDynamicReserveConfig_revertsWith_InvalidCollateralFactor() public {
+    uint256 reserveId = _randomReserveId(spoke1);
+    uint16 configKey = _randomInitializedConfigKey(spoke1, reserveId);
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
+    config.collateralFactor = 0;
+
+    vm.expectRevert(ISpoke.InvalidCollateralFactor.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(reserveId, configKey, config);
+  }
+
   function test_updateDynamicReserveConfig_fuzz_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus(
     uint16 collateralFactor,
     uint32 liquidationBonus

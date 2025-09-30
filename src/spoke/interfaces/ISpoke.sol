@@ -186,6 +186,11 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error MustNotLeaveDust();
   error InvalidDebtToCover();
 
+  /**
+   * @dev Thrown when trying to set zero collateralFactor on historic dynamic configuration keys.
+   */
+  error InvalidCollateralFactor();
+
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;
@@ -223,6 +228,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   /**
    * @notice Updates the dynamic reserve config for a given reserve at the specified key.
    * @dev Reverts with `ConfigKeyUninitialized` if the config key has not been initialized yet.
+   * @dev Reverts with `InvalidCollateralFactor` if the collateral factor is 0.
    * @param reserveId The identifier of the reserve.
    * @param configKey The key of the config to update.
    * @param dynamicConfig The dynamic reserve config to update.
