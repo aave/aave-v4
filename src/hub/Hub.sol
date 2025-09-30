@@ -636,16 +636,8 @@ contract Hub is IHub, AccessManaged {
     emit UpdateSpokeConfig(assetId, spoke, config);
   }
 
-  /**
-   * @notice Applies premium deltas on asset and spoke owed.
-   * @dev Validates that total premium and spoke premium cannot decrease by more than `premiumAmount`.
-   * @dev Increase of asset and spoke premium cannot exceed 2 wei, reverts with `InvalidPremiumChange` otherwise.
-   * @param assetId The identifier of the asset.
-   * @param asset The asset struct.
-   * @param spoke The spoke data struct.
-   * @param premium The premium delta data struct.
-   * @param premiumAmount The amount of premium assets.
-   */
+  /// @dev Applies premium deltas on asset and spoke owed, and validates that total premium
+  /// and spoke premium cannot decrease by more than `premiumAmount`.
   function _applyPremiumDelta(
     uint256 assetId,
     Asset storage asset,
