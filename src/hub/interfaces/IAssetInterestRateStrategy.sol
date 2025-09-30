@@ -7,7 +7,7 @@ import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateS
 /**
  * @title IAssetInterestRateStrategy
  * @author Aave Labs
- * @notice Interface of the asset interest rate strategy used by the Aave protocol
+ * @notice Interface of the asset interest rate strategy.
  */
 interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /**
