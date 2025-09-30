@@ -688,7 +688,8 @@ contract Hub is IHub, AccessManaged {
     uint256 addCap = spoke.addCap;
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
-        addCap * 10 ** asset.decimals >= previewAddByShares(assetId, spoke.addedShares) + amount,
+        addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
+        previewAddByShares(assetId, spoke.addedShares) + amount,
       AddCapExceeded(addCap)
     );
   }
