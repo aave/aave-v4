@@ -257,10 +257,12 @@ library LiquidationLogic {
     if (collateralToLiquidate > params.collateralReserveBalance) {
       collateralToLiquidate = params.collateralReserveBalance;
       debtToCollateral = collateralToLiquidate.percentDivUp(liquidationBonus);
-      debtToLiquidate = debtToCollateral.mulDivUp(
-        params.collateralAssetPrice * params.debtAssetUnit,
-        params.debtAssetPrice * params.collateralAssetUnit
-      );
+      debtToLiquidate = debtToCollateral
+        .mulDivUp(
+          params.collateralAssetPrice * params.debtAssetUnit,
+          params.debtAssetPrice * params.collateralAssetUnit
+        )
+        .min(params.debtReserveBalance);
     }
 
     uint256 collateralToLiquidator = collateralToLiquidate -
