@@ -219,7 +219,7 @@ library LiquidationLogic {
       ISpoke.HealthFactorNotBelowThreshold()
     );
     require(
-      params.isUsingAsCollateral && params.collateralFactor != 0,
+      params.isUsingAsCollateral && params.collateralFactor > 0,
       ISpoke.CollateralCannotBeLiquidated()
     );
     require(params.debtReserveBalance > 0, ISpoke.SpecifiedCurrencyNotBorrowedByUser());
