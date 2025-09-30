@@ -328,6 +328,7 @@ interface IHubBase {
 
   /**
    * @notice Returns the total amount of the specified assets added to the hub by the specified spoke.
+   * @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @return The amount of added assets.
