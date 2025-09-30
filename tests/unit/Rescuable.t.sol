@@ -26,7 +26,7 @@ contract RescuableTest is Base {
     uint256 prevBalanceThis = tokenList.dai.balanceOf(address(this));
 
     vm.prank(address(ADMIN));
-    rescuable.rescueToken(address(tokenList.dai), address(this));
+    rescuable.rescueToken(address(tokenList.dai), address(this), lostAmount);
 
     assertEq(tokenList.dai.balanceOf(address(this)), prevBalanceThis + lostAmount);
     assertEq(tokenList.dai.balanceOf(address(rescuable)), 0);
@@ -39,7 +39,7 @@ contract RescuableTest is Base {
 
     vm.expectRevert(IRescuable.OnlyRescueGuardian.selector);
     vm.prank(bob);
-    rescuable.rescueToken(address(tokenList.dai), address(this));
+    rescuable.rescueToken(address(tokenList.dai), address(this), lostAmount);
   }
 
   function test_rescueNative_fuzz(uint256 lostAmount) public {
