@@ -4,23 +4,22 @@ pragma solidity ^0.8.0;
 
 /**
  * @title WadRayMath library
- * @author Aave
- * @notice Provides functions to perform calculations with Wad and Ray units with explicit rounding
- * @dev Provides mul and div function for wads (decimal numbers with 18 digits of precision) and rays (decimal numbers
- * with 27 digits of precision)
+ * @author Aave Labs
+ * @notice Provides functions to perform calculations with Wad and Ray units with explicit rounding.
+ * @dev Provides mul and div function for Wads (decimal numbers with 18 digits of precision) and Rays (decimal numbers
+ * with 27 digits of precision).
  */
-
 library WadRayMath {
   uint256 internal constant WAD = 1e18;
   uint256 internal constant RAY = 1e27;
   uint256 internal constant PERCENTAGE_FACTOR = 1e4;
 
   /**
-   * @dev Multiplies two wad, rounding down
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Wad
-   * @param b Wad
-   * @return c = floor(a*b), in wad
+   * @notice Multiplies two Wad numbers, rounding down.
+   * @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
+   * @param a First Wad number.
+   * @param b Second Wad number.
+   * @return c The result of the multiplication.
    */
   function wadMulDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
@@ -34,11 +33,11 @@ library WadRayMath {
   }
 
   /**
-   * @dev Multiplies two wad, rounding up
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Wad
-   * @param b Wad
-   * @return c = ceil(a*b), in wad
+   * @notice Multiplies two Wad numbers, rounding up.
+   * @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
+   * @param a First Wad number.
+   * @param b Second Wad number.
+   * @return c The result of the multiplication.
    */
   function wadMulUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
@@ -53,11 +52,11 @@ library WadRayMath {
   }
 
   /**
-   * @dev Divides two wad, rounding down
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Wad
-   * @param b Wad
-   * @return c = floor(a/b), in wad
+   * @notice Divides two Wad numbers, rounding down.
+   * @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
+   * @param a First Wad number.
+   * @param b Second Wad number.
+   * @return c The result of the division.
    */
   function wadDivDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / WAD
@@ -71,11 +70,11 @@ library WadRayMath {
   }
 
   /**
-   * @dev Divides two wad, rounding up
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Wad
-   * @param b Wad
-   * @return c = ceil(a/b), in wad
+   * @notice Divides two Wad numbers, rounding up.
+   * @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
+   * @param a First Wad number.
+   * @param b Second Wad number.
+   * @return c The result of the division.
    */
   function wadDivUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / WAD
@@ -90,11 +89,11 @@ library WadRayMath {
   }
 
   /**
-   * @dev Multiplies two ray, rounding down
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Ray
-   * @param b Ray
-   * @return c = floor(a*b), in ray
+   * @notice Multiplies two Ray numbers, rounding down.
+   * @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
+   * @param a First Ray number.
+   * @param b Second Ray number.
+   * @return c The result of the multiplication.
    */
   function rayMulDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
@@ -108,11 +107,11 @@ library WadRayMath {
   }
 
   /**
-   * @dev Multiplies two ray, rounding up
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Ray
-   * @param b Ray
-   * @return c = ceil(a*b), in ray
+   * @notice Multiplies two Ray numbers, rounding up.
+   * @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
+   * @param a First Ray number.
+   * @param b Second Ray number.
+   * @return c The result of the multiplication.
    */
   function rayMulUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
@@ -127,11 +126,11 @@ library WadRayMath {
   }
 
   /**
-   * @dev Divides two ray, rounding down
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Ray
-   * @param b Ray
-   * @return c = floor(a/b), in ray
+   * @notice Divides two Ray numbers, rounding down.
+   * @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
+   * @param a First Ray number.
+   * @param b Second Ray number.
+   * @return c The result of the division.
    */
   function rayDivDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / RAY
@@ -145,11 +144,11 @@ library WadRayMath {
   }
 
   /**
-   * @dev Divides two ray, rounding up
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
-   * @param a Ray
-   * @param b Ray
-   * @return c = ceil(a/b), in ray
+   * @notice Divides two Ray numbers, rounding up.
+   * @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
+   * @param a First Ray number.
+   * @param b Second Ray number.
+   * @return c The result of the division.
    */
   function rayDivUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / RAY
@@ -164,9 +163,9 @@ library WadRayMath {
   }
 
   /**
-   * @notice Casts value to Wad, adding 18 digits of precision
-   * @param a The number
-   * @return b (= a * 1e18)
+   * @notice Casts value to Wad, adding 18 digits of precision.
+   * @param a The number to cast to Wad.
+   * @return b The resulting casted value.
    */
   function toWad(uint256 a) internal pure returns (uint256 b) {
     // to avoid overflow, b/WAD == a
@@ -180,9 +179,9 @@ library WadRayMath {
   }
 
   /**
-   * @notice Converts number from Wad precision by rounding down
-   * @param a The number in Wad precision
-   * @return b (= a / 1e18, rounded down)
+   * @notice Converts number from Wad precision, rounding down.
+   * @param a The number in Wad precision.
+   * @return b The resulting truncated value.
    */
   function fromWadDown(uint256 a) internal pure returns (uint256 b) {
     assembly {
@@ -191,18 +190,18 @@ library WadRayMath {
   }
 
   /**
-   * @notice Converts value from basis points to wad
-   * @param a The value in basis points
-   * @return The value in wad (= a * 1e18 / 1e4)
+   * @notice Converts value from basis points to Wad.
+   * @param a The value in basis points.
+   * @return The resulting value in Wad.
    */
   function bpsToWad(uint256 a) internal pure returns (uint256) {
     return (a * WAD) / PERCENTAGE_FACTOR;
   }
 
   /**
-   * @notice Converts value from basis points to ray
-   * @param a The value in basis points
-   * @return The value in ray (= a * 1e27 / 1e4)
+   * @notice Converts value from basis points to Ray.
+   * @param a The value in basis points.
+   * @return The resulting value in Ray.
    */
   function bpsToRay(uint256 a) internal pure returns (uint256) {
     return (a * RAY) / PERCENTAGE_FACTOR;

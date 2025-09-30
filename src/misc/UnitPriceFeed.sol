@@ -7,8 +7,8 @@ import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Inte
 /**
  * @title UnitPriceFeed contract
  * @author Aave Labs
- * @notice Price feed that returns the unit price (1), with decimals precision
- * @dev This price feed can be set for reserves that use the base currency as collateral
+ * @notice Price feed that returns the unit price (1), with decimals precision.
+ * @dev This price feed can be set for reserves that use the base currency as collateral.
  */
 contract UnitPriceFeed is AggregatorV3Interface {
   /// @inheritdoc AggregatorV3Interface

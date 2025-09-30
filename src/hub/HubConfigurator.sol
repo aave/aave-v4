@@ -11,15 +11,15 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 /**
  * @title HubConfigurator
  * @author Aave Labs
- * @notice HubConfigurator contract for the Aave protocol
- * @dev Must be granted permission by the Hub
+ * @notice Handles administrative functions on the hub.
+ * @dev Must be granted permission by the hub.
  */
 contract HubConfigurator is Ownable2Step, IHubConfigurator {
   using SafeCast for uint256;
 
   /**
-   * @dev Constructor
-   * @param owner_ The address of the owner
+   * @dev Constructor.
+   * @param owner_ The address of the owner.
    */
   constructor(address owner_) Ownable(owner_) {}
 
@@ -245,8 +245,8 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /**
-   * @dev Updates the spoke caps, without changing the active flag.
-   * @param hub The address of the Hub contract.
+   * @notice Updates the spoke caps, without changing the active flag.
+   * @param hub The hub.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @param addCap The new add cap.
