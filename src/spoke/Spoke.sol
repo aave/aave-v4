@@ -177,10 +177,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   ) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
     // @dev sufficient check since maxLiquidationBonus is always >= 100_00
-    require(
-      _dynamicConfig[reserveId][configKey].maxLiquidationBonus != 0,
-      ConfigKeyUninitialized()
-    );
+    require(_dynamicConfig[reserveId][configKey].maxLiquidationBonus > 0, ConfigKeyUninitialized());
     _validateDynamicReserveConfig(dynamicConfig);
     _dynamicConfig[reserveId][configKey] = dynamicConfig;
     emit UpdateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
