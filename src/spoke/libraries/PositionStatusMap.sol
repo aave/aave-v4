@@ -22,7 +22,7 @@ library PositionStatusMap {
     0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA;
 
   /**
-   * @dev Sets if the user is borrowing the reserve identified by reserveId.
+   * @notice Sets if the user is borrowing the specified reserve.
    * @param self The configuration struct.
    * @param reserveId The index of the reserve in the bitmap.
    * @param borrowing True if the user is borrowing the reserve, false otherwise.
@@ -43,7 +43,7 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Sets if the user is using as collateral the reserve identified by reserveId.
+   * @notice Sets if the user is using as collateral the specified reserve.
    * @param self The configuration struct.
    * @param reserveId The index of the reserve in the bitmap.
    * @param usingAsCollateral True if the user is using the reserve as collateral, false otherwise.
@@ -64,7 +64,7 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Returns if a user is using the reserve for borrowing or as collateral.
+   * @notice Returns if a user is using the specified reserve for borrowing or as collateral.
    * @param self The configuration struct.
    * @param reserveId The index of the reserve in the bitmap.
    * @return True if the user is using a reserve for borrowing or as collateral, false otherwise.
@@ -79,7 +79,7 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Returns if a user is using the reserve for borrowing.
+   * @notice Returns if a user is using the specified reserve for borrowing.
    * @param self The configuration struct.
    * @param reserveId The index of the reserve in the bitmap.
    * @return True if the user is using a reserve for borrowing, false otherwise.
@@ -94,7 +94,7 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Returns if a user is using the reserve as collateral.
+   * @notice Returns if a user is using the specified reserve as collateral.
    * @param self The configuration struct.
    * @param reserveId The index of the reserve in the bitmap.
    * @return True if the user is using a reserve as collateral, false otherwise.
@@ -109,10 +109,11 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Counts the number of reserves enabled as collateral.
+   * @notice Counts the number of reserves enabled as collateral.
    * @dev Disregards potential dirty bits set after `reserveCount`.
    * @param self The configuration struct.
    * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
+   * @return The number of reserves enabled as collateral.
    */
   function collateralCount(
     ISpoke.PositionStatus storage self,
@@ -129,15 +130,15 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Finds the previous borrowing or collateralized reserve strictly before `fromReserveId`.
+   * @notice Finds the previous borrowing or collateralized reserve strictly before `fromReserveId`.
    * @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
    * @dev Returns `NOT_FOUND` if no borrowing or collateralized reserve exists before the bound.
    * @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
    * @param self The configuration object.
    * @param fromReserveId The reserveId to start searching from.
-   * @return reserveId The next reserveId that is borrowing or using as collateral.
-   * @return borrowing True if the next reserveId is borrowing, false otherwise.
-   * @return collateral True if the next reserveId is using as collateral, false otherwise.
+   * @return reserveId The reserve identifier for the next reserve that is borrowed or used as collateral.
+   * @return borrowing True if the next reserveId is borrowed, false otherwise.
+   * @return collateral True if the next reserveId is used as collateral, false otherwise.
    */
   function next(
     ISpoke.PositionStatus storage self,
@@ -161,13 +162,13 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Finds the previous borrowing reserve strictly before `fromReserveId`.
+   * @notice Finds the previous borrowed reserve strictly before `fromReserveId`.
    * @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
-   * @dev Returns `NOT_FOUND` if no borrowing reserve exists before the bound.
+   * @dev Returns `NOT_FOUND` if no borrowed reserve exists before the bound.
    * @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
    * @param self The position status storing reserves bitmap.
    * @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
-   * @return reserveId The previous borrowing reserveId, or `NOT_FOUND` if none is found.
+   * @return reserveId The previous borrowed reserveId, or `NOT_FOUND` if none is found.
    */
   function nextBorrowing(
     ISpoke.PositionStatus storage self,
@@ -184,13 +185,13 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Finds the previous collateralized reserve strictly before `fromReserveId`.
+   * @notice Finds the previous collateral reserve strictly before `fromReserveId`.
    * @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
-   * @dev Returns `NOT_FOUND` if no collateralized reserve exists before the bound.
+   * @dev Returns `NOT_FOUND` if no collateral reserve exists before the bound.
    * @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
    * @param self The position status storing reserves bitmap.
    * @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
-   * @return reserveId The previous collateralized reserveId, or `NOT_FOUND` if none is found.
+   * @return reserveId The previous collateral reserveId, or `NOT_FOUND` if none is found.
    */
   function nextCollateral(
     ISpoke.PositionStatus storage self,
@@ -207,8 +208,9 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Returns the word containing the reserve state in the bitmap.
+   * @notice Returns the word containing the reserve state in the bitmap.
    * @param self The configuration struct.
+   * @param reserveId The index of the reserve in the bitmap.
    * @return The word containing the state of the reserve.
    */
   function getBucketWord(
@@ -219,7 +221,9 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Converts a reserveId to it's corresponding bucketId.
+   * @notice Converts a reserveId to its corresponding bucketId.
+   * @param reserveId The index of the reserve in the bitmap.
+   * @return wordId The bucket identifier.
    */
   function bucketId(uint256 reserveId) internal pure returns (uint256 wordId) {
     assembly ('memory-safe') {
@@ -228,8 +232,11 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Converts a bitId (bit index) to it's corresponding reserveId.
+   * @notice Converts a bit index to its corresponding reserve index in the bitmap.
    * @dev BitId 0, 1 correspond to reserveId 0; BitId 2, 3 correspond to reserveId 1; etc.
+   * @param bitId The index of the bit.
+   * @param bucket The bucket identifier.
+   * @return reserveId The reserve index in the bitmap.
    */
   function fromBitId(uint256 bitId, uint256 bucket) internal pure returns (uint256 reserveId) {
     assembly ('memory-safe') {
@@ -238,7 +245,9 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Isolates the borrowing bits from word.
+   * @notice Isolates the borrowing bits from word.
+   * @param word The 256-bit value encoding reserves configuration.
+   * @return ret The portion of the word containing only borrowing bits.
    */
   function isolateBorrowing(uint256 word) internal pure returns (uint256 ret) {
     assembly ('memory-safe') {
@@ -247,7 +256,7 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Isolates borrowing bits up to the given `reserveCount`, clearing all later reserves.
+   * @notice Isolates borrowing bits up to the given `reserveCount`, clearing all later reserves.
    * @param word The 256-bit value encoding reserves configuration.
    * @param reserveCount The number of reserves (2 bits each) to include.
    * @return ret The portion of word containing borrowing bits from the first reserve up to `reserveCount`.
@@ -263,7 +272,7 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Isolates bits up to the given `reserveCount`, clearing all later reserves.
+   * @notice Isolates bits up to the given `reserveCount`, clearing all later reserves.
    * @param word The 256-bit value encoding reserves configuration.
    * @param reserveCount The number of reserves (2 bits each) to include.
    * @return ret The portion of word containing bits from the first reserve up to `reserveCount`.
@@ -276,7 +285,9 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Isolates the collateral bits from word.
+   * @notice Isolates the collateral bits from word.
+   * @param word The 256-bit value encoding reserves configuration.
+   * @return ret The portion of the word containing only collateral bits.
    */
   function isolateCollateral(uint256 word) internal pure returns (uint256 ret) {
     assembly ('memory-safe') {
@@ -285,7 +296,7 @@ library PositionStatusMap {
   }
 
   /**
-   * @dev Isolates collateral bits up to the given `reserveCount`, clearing all later reserves.
+   * @notice Isolates collateral bits up to the given `reserveCount`, clearing all later reserves.
    * @param word The 256-bit value encoding reserves configuration.
    * @param reserveCount The number of reserves (2 bits each) to include.
    * @return ret The portion of word containing collateral bits from the first reserve up to `reserveCount`.

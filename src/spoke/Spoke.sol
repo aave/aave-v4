@@ -22,6 +22,7 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
  * @title Spoke
  * @author Aave Labs
  * @notice Handles accounting for reserves and user positions.
+ * @dev Facilitates user interactions with hubs.
  * @dev Each reserve can be associated with a separate hub.
  */
 abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
@@ -84,6 +85,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     ORACLE = oracle_;
   }
 
+  /**
+   * @notice Initializes the spoke contract, setting the authority.
+   * @param _authority The address of the authority contract.
+   */
   function initialize(address _authority) external virtual;
 
   /// @inheritdoc ISpoke
@@ -651,7 +656,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @notice Validates the reserve can be supplied.
+   * @notice Validates the `supply` action.
    * @param reserve The reserve to be supplied.
    */
   function _validateSupply(Reserve storage reserve) internal view {
@@ -661,7 +666,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @notice Validates the reserve can be withdrawn.
+   * @notice Validates the `withdraw` action.
    * @param reserve The reserve to be withdrawn.
    */
   function _validateWithdraw(Reserve storage reserve) internal view {
@@ -670,7 +675,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @notice Validates the reserve can be borrowed.
+   * @notice Validates the `borrow` action.
    * @param reserve The reserve to be borrowed.
    */
   function _validateBorrow(Reserve storage reserve) internal view {
@@ -682,7 +687,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @notice Validates the reserve can be repaid.
+   * @notice Validates the `repay` action.
    * @param reserve The reserve to be repaid.
    */
   function _validateRepay(Reserve storage reserve) internal view {
@@ -721,7 +726,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   /**
    * @notice Refreshes and validates the user's position.
    * @param user The address of the user.
-   * @return The user's position.
+   * @return The user's new risk premium.
    */
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
     // @dev refresh user position dynamic config only on borrow, withdraw, disableUsingAsCollateral
@@ -758,10 +763,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @notice Validates the reserve can be set as collateral.
+   * @notice Validates the `setUsingAsCollateral` action.
    * @dev Collateral can be disabled if the reserve is frozen.
    * @param reserve The reserve to be set as collateral.
-   * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
+   * @param usingAsCollateral True if enabling the reserve as collateral, false otherwise.
    */
   function _validateSetUsingAsCollateral(
     Reserve storage reserve,
@@ -774,12 +779,13 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @notice Calculates the amount of drawn debt and premium debt to restore.
+   * @notice Calculates the restore amounts.
    * @dev Allows donation on drawn debt.
    * @param drawnDebt The drawn debt.
    * @param premiumDebt The premium debt.
-   * @param amount The amount to restore.
-   * @return The amount of drawn debt and premium debt to restore.
+   * @param amount The desired amount to restore.
+   * @return The drawn amount to restore.
+   * @return The premium amount to restore.
    */
   function _calculateRestoreAmount(
     uint256 drawnDebt,
@@ -979,7 +985,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @dev Trigger risk premium update on all drawn reserves of `user`.
+   * @notice Trigger risk premium update on all drawn reserves of `user`.
    * @param user The address of the user whose risk premium is being updated.
    * @param newUserRiskPremium The new risk premium of the user.
    */
@@ -1021,7 +1027,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @dev Reports deficits for all borrowing reserves of the user.
+   * @notice Reports deficits for all borrowing reserves of the user.
    * @dev Includes the debt reserve being repaid during liquidation.
    * @param user The address of the user whose deficits are being reported.
    */
@@ -1077,7 +1083,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   /**
    * @notice Refreshes the dynamic config for a single reserve of the user.
    * @param user The address of the user.
-   * @param reserveId The identifier of the reserve.
+   * @param reserveId The identifier of the reserve to refresh dynamic config.
    */
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
     _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;

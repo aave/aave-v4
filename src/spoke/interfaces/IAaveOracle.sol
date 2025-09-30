@@ -43,8 +43,8 @@ interface IAaveOracle is IPriceOracle {
   function setReserveSource(uint256 reserveId, address source) external;
 
   /**
-   * @notice Returns the description of the oracle
-   * @return The description of the oracle
+   * @notice Returns the description of the oracle.
+   * @return The description of the oracle.
    */
   function DESCRIPTION() external view returns (string memory);
 

@@ -9,7 +9,7 @@ pragma solidity ^0.8.0;
  */
 interface IRescuable {
   /**
-   * @notice Thrown when the caller is not the rescue guardian.
+   * @notice Thrown when caller is not the rescue guardian.
    */
   error OnlyRescueGuardian();
 
@@ -24,7 +24,7 @@ interface IRescuable {
   /**
    * @notice Recovers native assets remaining in this contract.
    * @param to The address to send rescued native assets to.
-   * @param amount The amount of native assets to rescue.
+   * @param amount Amount of native assets to rescue.
    */
   function rescueNative(address to, uint256 amount) external;
 

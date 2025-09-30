@@ -17,8 +17,8 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   using SafeCast for uint256;
 
   /**
-   * @dev Constructor
-   * @param owner_ The address of the owner
+   * @dev Constructor.
+   * @param owner_ The address of the owner.
    */
   constructor(address owner_) Ownable(owner_) {}
 

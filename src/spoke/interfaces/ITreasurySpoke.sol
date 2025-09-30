@@ -8,12 +8,11 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 /**
  * @title ITreasurySpoke
  * @author Aave Labs
- * @notice Interface for the TreasurySpoke contract.
- * @dev Extends the ISpokeBase interface.
+ * @notice Interface for the TreasurySpoke.
  */
 interface ITreasurySpoke is ISpokeBase {
   /**
-   * @notice Thrown when an unsupported action is called.
+   * @notice Thrown when an unsupported action is attempted.
    */
   error UnsupportedAction();
 
@@ -59,11 +58,11 @@ interface ITreasurySpoke is ISpokeBase {
   function getSuppliedAmount(uint256 reserveId) external view returns (uint256);
 
   /**
-   * @notice Returns the amount of assets supplied, expressed in shares.
+   * @notice Returns the amount of shares supplied.
    * @dev Shares are denominated relative to the supply side.
    * @dev The reserve identifier must match the asset identifier in the hub.
    * @param reserveId The identifier of the reserve.
-   * @return The amount of assets supplied, expressed in shares.
+   * @return The amount of shares supplied.
    */
   function getSuppliedShares(uint256 reserveId) external view returns (uint256);
 

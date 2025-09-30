@@ -86,7 +86,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   /**
    * @notice Emitted when a reserve configuration is updated.
    * @param reserveId The identifier of the reserve.
-   * @param config The reserve configuration object.
+   * @param config The reserve configuration.
    */
   event UpdateReserveConfig(uint256 indexed reserveId, ReserveConfig config);
 
@@ -132,7 +132,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   /**
    * @notice Emitted on setUsingAsCollateral action.
-   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param reserveId The reserve identifier of the underlying asset.
    * @param caller The transaction initiator.
    * @param user The owner of the position being modified.
    * @param usingAsCollateral Boolean whether the reserve is enabled or disabled as collateral.
@@ -170,18 +170,24 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @notice Emitted on refreshPremiumDebt action.
    * @param reserveId The identifier of the reserve.
    * @param user The address of the user.
-   * @param premiumDelta The premium delta.
+   * @param premiumDelta The change in premium values.
    */
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
     address indexed user,
     IHubBase.PremiumDelta premiumDelta
   );
+
+  /**
+   * @notice Emitted when the price source of a reserve is updated.
+   * @param reserveId The identifier of the reserve.
+   * @param priceSource The address of the new price source.
+   */
   event UpdateReservePriceSource(uint256 indexed reserveId, address indexed priceSource);
 
   /**
    * @notice Emitted when a liquidation config is updated.
-   * @param config The liquidation config object.
+   * @param config The new liquidation config.
    */
   event UpdateLiquidationConfig(LiquidationConfig config);
 
@@ -282,7 +288,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error InvalidCollateralFactorAndMaxLiquidationBonus();
 
   /**
-   * @notice Thrown when a self-liquidation occurs.
+   * @notice Thrown when a self-liquidation is attempted.
    */
   error SelfLiquidation();
 
@@ -303,7 +309,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   /**
    * @notice Updates the liquidation config.
-   * @param config The liquidation config object.
+   * @param config The liquidation config.
    */
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
@@ -321,6 +327,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param priceSource The address of the price source for the asset.
    * @param config The initial reserve configuration.
    * @param dynamicConfig The initial dynamic reserve configuration.
+   * @return The identifier of the newly added reserve.
    */
   function addReserve(
     address hub,
@@ -330,13 +337,18 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     DynamicReserveConfig calldata dynamicConfig
   ) external returns (uint256);
 
+  /**
+   * @notice Updates the reserve config for a given reserve.
+   * @param reserveId The identifier of the reserve.
+   * @param params The new reserve config.
+   */
   function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external;
 
   /**
    * @notice Updates the dynamic reserve config for a given reserve.
    * @dev Appends dynamic config to the next valid config key, and overrides existing config if the key is already used.
    * @param reserveId The identifier of the reserve.
-   * @param dynamicConfig The dynamic reserve config to update.
+   * @param dynamicConfig The new dynamic reserve config.
    * @return configKey The key of the added dynamic config.
    */
   function addDynamicReserveConfig(
@@ -349,7 +361,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @dev Reverts with `ConfigKeyUninitialized` if the config key has not been initialized yet.
    * @param reserveId The identifier of the reserve.
    * @param configKey The key of the config to update.
-   * @param dynamicConfig The dynamic reserve config to update.
+   * @param dynamicConfig The new dynamic reserve config.
    */
   function updateDynamicReserveConfig(
     uint256 reserveId,
@@ -367,7 +379,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   /**
    * @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
    * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
-   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param reserveId The reserve identifier of the underlying asset.
    * @param usingAsCollateral True if the user wants to use the supply as collateral, false otherwise.
    * @param onBehalfOf The owner of the position being modified.
    */
@@ -422,16 +434,22 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   /**
    * @notice Returns the address of the external `LiquidationLogic` library.
+   * @return The address of the library.
    */
   function getLiquidationLogic() external pure returns (address);
 
   /**
-   * @notice Returns true if positionManager is active and approved by user, false otherwise.
+   * @notice Returns whether positionManager is active and approved by user.
+   * @param user The address of the user.
+   * @param positionManager The address of the position manager.
+   * @return True if positionManager is active and approved by user, false otherwise.
    */
   function isPositionManager(address user, address positionManager) external view returns (bool);
 
   /**
-   * @notice Returns true if positionManager is currently active, false otherwise.
+   * @notice Returns whether positionManager is currently active.
+   * @param positionManager The address of the position manager.
+   * @return True if positionManager is currently active, false otherwise.
    */
   function isPositionManagerActive(address positionManager) external view returns (bool);
 
@@ -447,6 +465,9 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param onBehalfOf The address of the user on whose behalf the permit is being used.
    * @param value The amount of the underlying asset to permit.
    * @param deadline The deadline for the permit.
+   * @param v The v component of the permit signature.
+   * @param r The r component of the permit signature.
+   * @param s The s component of the permit signature.
    */
   function permitReserve(
     uint256 reserveId,
@@ -495,33 +516,33 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function ORACLE() external view returns (address);
 
   /**
-   * @notice Returns the reserve object.
+   * @notice Returns the reserve struct data in storage.
    * @param reserveId The identifier of the reserve.
-   * @return The reserve object.
+   * @return The reserve struct.
    */
   function getReserve(uint256 reserveId) external view returns (Reserve memory);
 
   /**
-   * @notice Returns the reserve configuration object.
+   * @notice Returns the reserve configuration struct data in storage.
    * @param reserveId The identifier of the reserve.
-   * @return The reserve configuration object.
+   * @return The reserve configuration struct.
    */
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory);
 
   /**
-   * @notice Returns the dynamic reserve configuration object.
+   * @notice Returns the dynamic reserve configuration struct data in storage.
    * @param reserveId The identifier of the reserve.
-   * @return The dynamic reserve configuration object.
+   * @return The dynamic reserve configuration struct.
    */
   function getDynamicReserveConfig(
     uint256 reserveId
   ) external view returns (DynamicReserveConfig memory);
 
   /**
-   * @notice Returns the dynamic reserve configuration object at the specified key.
+   * @notice Returns the dynamic reserve configuration struct at the specified key.
    * @param reserveId The identifier of the reserve.
    * @param configKey The key of the dynamic config.
-   * @return The dynamic reserve configuration object.
+   * @return The dynamic reserve configuration struct.
    */
   function getDynamicReserveConfig(
     uint256 reserveId,
@@ -529,17 +550,17 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   ) external view returns (DynamicReserveConfig memory);
 
   /**
-   * @notice Returns the user account data object.
+   * @notice Returns the user account data struct in storage.
    * @param user The address of the user.
-   * @return The user account data object.
+   * @return The user account data struct.
    */
   function getUserAccountData(address user) external view returns (UserAccountData memory);
 
   /**
-   * @notice Returns the user position object.
+   * @notice Returns the user position struct in storage.
    * @param reserveId The identifier of the reserve.
    * @param user The address of the user.
-   * @return The user position object.
+   * @return The user position struct.
    */
   function getUserPosition(
     uint256 reserveId,
@@ -582,8 +603,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   ) external view returns (uint256);
 
   /**
-   * @notice Returns the liquidation config object.
-   * @return The liquidation config object.
+   * @notice Returns the liquidation config struct.
+   * @return The liquidation config struct.
    */
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
 

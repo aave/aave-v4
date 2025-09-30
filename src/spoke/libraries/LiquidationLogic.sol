@@ -12,9 +12,9 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 
 /**
- * @title LiquidationLogic Library
+ * @title LiquidationLogic library
  * @author Aave Labs
- * @notice Library to manage liquidation logic for a spoke.
+ * @notice Implements the logic for liquidations.
  */
 library LiquidationLogic {
   using SafeCast for *;
@@ -115,11 +115,11 @@ library LiquidationLogic {
 
   /**
    * @notice Liquidates a user position.
-   * @param collateralReserve The collateral reserve.
-   * @param debtReserve The debt reserve.
-   * @param collateralPosition The collateral position.
-   * @param debtPosition The debt position.
-   * @param positionStatus The position status.
+   * @param collateralReserve The collateral reserve to seize during liquidation.
+   * @param debtReserve The debt reserve to repay during liquidation.
+   * @param collateralPosition The user's collateral position struct in storage.
+   * @param debtPosition The user's debt position struct in storage.
+   * @param positionStatus The user's position status.
    * @param liquidationConfig The liquidation config.
    * @param collateralDynConfig The collateral dynamic config.
    * @param params The liquidate user params.
@@ -250,7 +250,7 @@ library LiquidationLogic {
    * @notice Calculates the liquidation amounts.
    * @param params The calculate liquidation amounts params.
    * @return The collateral to liquidate.
-   * @return The collateral to liquidator.
+   * @return The collateral to transfer to liquidator.
    * @return The debt to liquidate.
    */
   function _calculateLiquidationAmounts(
@@ -390,9 +390,9 @@ library LiquidationLogic {
   }
 
   /**
-   * @notice Liquidates the debt of a user position.
+   * @notice Liquidates the debt of a position.
    * @param reserve The reserve.
-   * @param position The user position.
+   * @param position The position.
    * @param positionStatus The position status.
    * @param params The liquidate debt params.
    * @return True if the debt position is empty, false otherwise.
