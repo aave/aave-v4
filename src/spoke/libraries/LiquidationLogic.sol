@@ -277,7 +277,7 @@ library LiquidationLogic {
           params.collateralAssetPrice.toWad(),
           params.collateralAssetUnit
         );
-      console.log('LL remainingCollateralInBaseCurrency %26e', remainingCollateralInBaseCurrency);
+      console.log('LL remainingCollateralInBaseCurrency $%26e', remainingCollateralInBaseCurrency);
       require(
         remainingCollateralInBaseCurrency >= DUST_LIQUIDATION_THRESHOLD,
         ISpoke.MustNotLeaveDust()
@@ -339,7 +339,7 @@ library LiquidationLogic {
       maxDebtToLiquidate = debtToTarget;
     }
 
-    console.log('LL debtToTarget %6e', debtToTarget);
+    console.log('LL debtToTarget $%6e', debtToTarget);
 
     uint256 remainingDebtInBaseCurrency = (params.debtReserveBalance - maxDebtToLiquidate)
       .mulDivDown(params.debtAssetPrice.toWad(), params.debtAssetUnit);
@@ -350,7 +350,7 @@ library LiquidationLogic {
       maxDebtToLiquidate = params.debtReserveBalance;
     }
 
-    console.log('LL maxDebtToLiquidate %6e', maxDebtToLiquidate);
+    console.log('LL maxDebtToLiquidate $%6e', maxDebtToLiquidate);
 
     return maxDebtToLiquidate;
   }

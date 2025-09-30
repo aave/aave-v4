@@ -69,10 +69,10 @@ contract LiquidationDustTest is SpokeLiquidationCallBaseTest {
     });
     _borrowToBeAtHf(spoke, alice, _usdxReserveId(spoke), 0.9999e18);
 
-    console.log('dai collateral %18e', spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice));
-    console.log('usdy collateral %18e', spoke.getUserSuppliedAssets(_usdyReserveId(spoke), alice));
-    console.log('usdx debt %6e', spoke.getUserTotalDebt(_usdxReserveId(spoke), alice));
-    console.log('usdy debt %18e', spoke.getUserTotalDebt(_usdyReserveId(spoke), alice));
+    console.log('dai collateral $%18e', spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice));
+    console.log('usdy collateral $%18e', spoke.getUserSuppliedAssets(_usdyReserveId(spoke), alice));
+    console.log('usdx debt $%6e', spoke.getUserTotalDebt(_usdxReserveId(spoke), alice));
+    console.log('usdy debt $%18e', spoke.getUserTotalDebt(_usdyReserveId(spoke), alice));
     console.log('health factor %18e', spoke.getUserAccountData(alice).healthFactor);
 
     vm.startPrank(liquidator);
@@ -91,8 +91,8 @@ contract LiquidationDustTest is SpokeLiquidationCallBaseTest {
       'usdy collateral after liq %18e',
       spoke.getUserSuppliedAssets(_usdyReserveId(spoke), alice)
     );
-    console.log('usdx debt after liq %6e', spoke.getUserTotalDebt(_usdxReserveId(spoke), alice));
-    console.log('usdy debt after liq %18e', spoke.getUserTotalDebt(_usdyReserveId(spoke), alice));
+    console.log('usdx debt after liq $%6e', spoke.getUserTotalDebt(_usdxReserveId(spoke), alice));
+    console.log('usdy debt after liq $%18e', spoke.getUserTotalDebt(_usdyReserveId(spoke), alice));
     console.log('health factor %18e', spoke.getUserAccountData(alice).healthFactor);
   }
 
