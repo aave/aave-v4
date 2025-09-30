@@ -48,7 +48,7 @@ library AssetLogic {
   }
 
   function drawn(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.drawnShares.rayMulUp(asset.getDrawnIndex());
+    return asset.toDrawnAssetsUp(asset.drawnShares);
   }
 
   function premium(IHub.Asset storage asset) internal view returns (uint256) {
