@@ -6,8 +6,9 @@ import {IMulticall} from 'src/interfaces/IMulticall.sol';
 
 /**
  * @title Multicall
- * @author Aave Labs, inspired by the OpenZeppelin Multicall contract
+ * @author Aave Labs
  * @notice This contract allows for batching multiple calls into a single call.
+ * @dev Inspired by the OpenZeppelin Multicall contract.
  */
 abstract contract Multicall is IMulticall {
   /// @inheritdoc IMulticall

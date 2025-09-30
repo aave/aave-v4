@@ -7,7 +7,7 @@ import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 /**
  * @title IAaveOracle
  * @author Aave Labs
- * @notice Interface for the Aave Oracle
+ * @notice Interface for the Aave Oracle.
  */
 interface IAaveOracle is IPriceOracle {
   /**
@@ -43,8 +43,8 @@ interface IAaveOracle is IPriceOracle {
   function setReserveSource(uint256 reserveId, address source) external;
 
   /**
-   * @notice Returns the description of the oracle
-   * @return The description of the oracle
+   * @notice Returns the description of the oracle.
+   * @return The description of the oracle.
    */
   function DESCRIPTION() external view returns (string memory);
 

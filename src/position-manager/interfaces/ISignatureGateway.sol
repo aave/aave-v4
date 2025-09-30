@@ -5,6 +5,11 @@ pragma solidity ^0.8.0;
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
+/**
+ * @title Interface for SignatureGateway contract
+ * @author Aave Labs
+ * @notice Abstracts actions to the protocol involving signed intents.
+ */
 interface ISignatureGateway is IMulticall, IRescuable {
   /**
    * @notice Thrown when the given address is invalid.
@@ -22,7 +27,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   error InvalidReserveId();
 
   /**
-   * @notice Facilitates supply action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @notice Facilitates `supply` action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to supply.
@@ -39,7 +44,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   ) external;
 
   /**
-   * @notice Facilitates withdraw action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @notice Facilitates `withdraw` action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Providing an amount exceeding the user's current withdrawable balance indicates a request for a maximum withdrawal.
    * @dev Withdrawn assets are pushed to `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
@@ -57,7 +62,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   ) external;
 
   /**
-   * @notice Facilitates borrow action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @notice Facilitates `borrow` action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Borrowed assets are pushed to `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to borrow.
@@ -74,7 +79,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   ) external;
 
   /**
-   * @notice Facilitates repay action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @notice Facilitates `repay` action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Repay assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
    * @dev Providing an amount greater than the user's current debt indicates a request to repay the maximum possible amount.
    * @param reserveId The identifier of the reserve.
@@ -92,7 +97,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   ) external;
 
   /**
-   * @notice Facilitates setUsingAsCollateral action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @notice Facilitates `setUsingAsCollateral` action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param useAsCollateral True if enabling reserve as collateral.
    * @param onBehalfOf The address of the user to set the use as collateral status on behalf of.
@@ -108,7 +113,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   ) external;
 
   /**
-   * @notice Facilitates updateUserRiskPremium action on connected SPOKE() with a typed signature from `user`.
+   * @notice Facilitates `updateUserRiskPremium` action on connected SPOKE() with a typed signature from `user`.
    * @param user The address of the user to update the risk premium for.
    * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
@@ -120,7 +125,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
   ) external;
 
   /**
-   * @notice Facilitates updateUserDynamicConfig action on connected SPOKE() with a typed signature from `user`.
+   * @notice Facilitates `updateUserDynamicConfig` action on connected SPOKE() with a typed signature from `user`.
    * @param user The address of the user to update the dynamic config for.
    * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
@@ -137,7 +142,7 @@ interface ISignatureGateway is IMulticall, IRescuable {
    * @param user The address of the user to set as position manager.
    * @param approve The approval status.
    * @param deadline The deadline for the signature.
-   * @param signature The signed bytes for the action.
+   * @param signature The signed bytes for the intent.
    */
   function setSelfAsUserPositionManagerWithSig(
     address user,
@@ -153,6 +158,9 @@ interface ISignatureGateway is IMulticall, IRescuable {
    * @param onBehalfOf The address of the user on whose behalf the permit is being used.
    * @param value The amount of the underlying asset to permit.
    * @param deadline The deadline for the permit.
+   * @param v Part of the secp256k1 signature.
+   * @param r Part of the secp256k1 signature.
+   * @param s Part of the secp256k1 signature.
    */
   function permitReserve(
     uint256 reserveId,
