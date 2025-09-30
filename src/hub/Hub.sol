@@ -721,7 +721,7 @@ contract Hub is IHub, AccessManaged {
     uint256 premium = _getSpokePremium(spoke, assetId);
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
-        drawCap * 10 ** asset.decimals >= drawn + premium + amount,
+        drawCap * MathUtils.uncheckedExp(10, asset.decimals) >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
     );
   }
