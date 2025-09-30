@@ -348,7 +348,7 @@ contract Hub is IHub, AccessManaged {
     _transferShares(sender, receiver, shares);
     asset.updateDrawnRate(assetId);
 
-    emit TransferShares(assetId, shares, msg.sender, feeReceiver);
+    emit TransferShares(assetId, msg.sender, feeReceiver, shares);
   }
 
   /// @inheritdoc IHub
@@ -362,7 +362,7 @@ contract Hub is IHub, AccessManaged {
     _transferShares(sender, receiver, shares);
     asset.updateDrawnRate(assetId);
 
-    emit TransferShares(assetId, shares, msg.sender, toSpoke);
+    emit TransferShares(assetId, msg.sender, toSpoke, shares);
   }
 
   /// @inheritdoc IHub
