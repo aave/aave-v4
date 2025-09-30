@@ -889,6 +889,9 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   function _notifyRiskPremiumUpdate(address user, uint256 newUserRiskPremium) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
 
+    if (positionStatus.riskPremium == newUserRiskPremium) return;
+    positionStatus.riskPremium = newUserRiskPremium.toUint32();
+
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
       UserPosition storage userPosition = _userPositions[user][reserveId];
