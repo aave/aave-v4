@@ -7,12 +7,12 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 /**
  * @title ISpokeBase
  * @author Aave Labs
- * @notice Minimal interface for Spoke
+ * @notice Minimal interface for Spoke.
  */
 interface ISpokeBase {
   /**
    * @notice Emitted on the supply action.
-   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param reserveId The reserve identifier of the underlying asset.
    * @param caller The transaction initiator, and supplier of the underlying asset.
    * @param user The owner of the modified position.
    * @param suppliedShares The amount of supply shares minted.
@@ -26,7 +26,7 @@ interface ISpokeBase {
 
   /**
    * @notice Emitted on the withdraw action.
-   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param reserveId The reserve identifier of the underlying asset.
    * @param caller The transaction initiator, and recipient of the underlying asset being withdrawn.
    * @param user The owner of the modified position.
    * @param suppliedShares The amount of supply shares burned.
@@ -40,7 +40,7 @@ interface ISpokeBase {
 
   /**
    * @notice Emitted on the borrow action.
-   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
+   * @param reserveId The reserve identifier of the underlying asset.
    * @param caller The transaction initiator, and recipient of the underlying asset being borrowed.
    * @param user The owner of the position on which debt is generated.
    * @param drawnShares The amount of debt shares minted.
@@ -54,8 +54,8 @@ interface ISpokeBase {
 
   /**
    * @notice Emitted on the repay action.
-   * @param reserveId The reserve identifier of the underlying asset as registered on the spoke.
-   * @param caller The transaction initiator, and supplier of the underlying asset being repaid.
+   * @param reserveId The reserve identifier of the underlying asset.
+   * @param caller The transaction initiator who is repaying the underlying asset.
    * @param user The owner of the position whose debt is being repaid.
    * @param drawnShares The amount of debt shares burned.
    * @param premiumDelta A struct representing the changes to premium debt after repayment.
@@ -87,12 +87,12 @@ interface ISpokeBase {
   );
 
   /**
-   * @notice Supply an amount of underlying asset of the specified reserve.
-   * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior token approval is required.
+   * @notice Supplies an amount of underlying asset of the specified reserve.
+   * @dev The hub pulls the underlying asset from the caller, so prior token approval is required.
    * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
    * @param reserveId The reserve identifier.
    * @param amount The amount of asset to supply.
-   * @param onBehalfOf The owner of position to add supply shares to.
+   * @param onBehalfOf The owner of the position to add supply shares to.
    */
   function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external;
 
@@ -119,7 +119,7 @@ interface ISpokeBase {
 
   /**
    * @notice Repays a specified amount of underlying asset to a given reserve.
-   * @dev The Liquidity Hub pulls the underlying asset from the caller, so prior approval is required.
+   * @dev The hub pulls the underlying asset from the caller, so prior approval is required.
    * @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to repay.
@@ -129,11 +129,11 @@ interface ISpokeBase {
 
   /**
    * @notice Liquidates a user position.
-   * @dev Invokes Liquidity Hub restore, and pulls underlying repaid debt asset from caller (Liquidator), hence it needs prior approval.
+   * @dev Invokes hub `restore`, and pulls underlying repaid debt assets from caller (Liquidator), hence it needs prior approval.
    * @param collateralReserveId The reserveId of the underlying asset used as collateral by the liquidated user.
-   * @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator during liquidation.
+   * @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator.
    * @param user The address of the user to liquidate.
-   * @param debtToCover The amount of debt to cover.
+   * @param debtToCover The desired amount of debt to cover.
    */
   function liquidationCall(
     uint256 collateralReserveId,

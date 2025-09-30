@@ -15,8 +15,8 @@ import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenG
 /**
  * @title NativeTokenGateway
  * @author Aave Labs
- * @notice Gateway to interact with the spoke using the native coin of a chain.
- * @dev This contract needs to be an active & approved user position manager in order execute spoke actions on user's behalf.
+ * @notice Gateway to interact with a spoke using the native coin of a chain.
+ * @dev Contract must be an active & approved user position manager in order to execute spoke actions on a user's behalf.
  */
 contract NativeTokenGateway is
   INativeTokenGateway,
@@ -29,6 +29,12 @@ contract NativeTokenGateway is
   INativeWrapper internal immutable _nativeWrapper;
   ISpoke internal immutable _spoke;
 
+  /**
+   * @dev Constructor.
+   * @param nativeWrapper_ The address of the native wrapper contract.
+   * @param spoke_ The address of the spoke contract.
+   * @param initialOwner_ The address of the initial owner.
+   */
   constructor(
     address nativeWrapper_,
     address spoke_,
@@ -115,24 +121,47 @@ contract NativeTokenGateway is
     return address(_spoke);
   }
 
+  /**
+   * @notice Returns the rescue guardian address.
+   * @return The address allowed to rescue funds.
+   */
   function _rescueGuardian() internal view override returns (address) {
     return owner();
   }
 
+  /**
+   * @notice Validates the reserve data.
+   * @param underlying The underlying asset.
+   * @param amount The amount.
+   */
   function _validateParams(IERC20 underlying, uint256 amount) internal view {
     require(address(underlying) == address(_nativeWrapper), InvalidReserveId());
     require(amount > 0, InvalidAmount());
   }
 
+  /**
+   * @notice Returns the reserve data.
+   * @param reserveId The identifier of the reserve.
+   * @return The underlying asset.
+   * @return The hub address.
+   */
   function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
     ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
     return (IERC20(reserveData.underlying), address(reserveData.hub));
   }
 
+  /**
+   * @notice Receives native assets.
+   * @dev Reverts if the caller is not the native wrapper.
+   */
   receive() external payable {
     require(msg.sender == address(_nativeWrapper), UnsupportedAction());
   }
 
+  /**
+   * @notice Fallback function.
+   * @dev Reverts with `UnsupportedAction`.
+   */
   fallback() external payable {
     revert UnsupportedAction();
   }

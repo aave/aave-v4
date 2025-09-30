@@ -18,6 +18,13 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
+/**
+ * @title Spoke
+ * @author Aave Labs
+ * @notice Handles accounting for reserves and user positions.
+ * @dev Facilitates user interactions with hubs.
+ * @dev Each reserve can be associated with a separate hub.
+ */
 abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
@@ -59,6 +66,11 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
 
+  /**
+   * @notice Modifier that checks if the caller is the position manager.
+   * @dev A user will always be able to act on behalf of themself.
+   * @param onBehalfOf The address of the user on behalf of which the action is being performed.
+   */
   modifier onlyPositionManager(address onBehalfOf) {
     require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
     _;
@@ -73,17 +85,19 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     ORACLE = oracle_;
   }
 
+  /**
+   * @notice Initializes the spoke contract, setting the authority.
+   * @param _authority The address of the authority contract.
+   */
   function initialize(address _authority) external virtual;
 
-  // /////
-  // Governance
-  // /////
-
+  /// @inheritdoc ISpoke
   function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
     _updateReservePriceSource(reserveId, priceSource);
   }
 
+  /// @inheritdoc ISpoke
   function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
     require(
       config.targetHealthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
@@ -138,6 +152,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return reserveId;
   }
 
+  /// @inheritdoc ISpoke
   function updateReserveConfig(
     uint256 reserveId,
     ReserveConfig calldata config
@@ -191,10 +206,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     _positionManager[positionManager].active = active;
     emit UpdatePositionManager(positionManager, active);
   }
-
-  // /////
-  // Users
-  // /////
 
   /// @inheritdoc ISpokeBase
   function supply(
@@ -380,7 +391,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     if (usingAsCollateral) {
       _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
-      // If unsetting, check HF and update user rp
+      // If unsetting, check HF and update user RP
       uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
       _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
     }
@@ -485,10 +496,12 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return _positionManager[positionManager].active;
   }
 
+  /// @inheritdoc ISpoke
   function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
     return _positionStatus[user].isUsingAsCollateral(reserveId);
   }
 
+  /// @inheritdoc ISpoke
   function isBorrowing(uint256 reserveId, address user) external view returns (bool) {
     return _positionStatus[user].isBorrowing(reserveId);
   }
@@ -517,6 +530,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return drawnDebt + premiumDebt;
   }
 
+  /// @inheritdoc ISpokeBase
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
     Reserve storage reserve = _reserves[reserveId];
     return reserve.hub.getSpokeAddedAssets(reserve.assetId, address(this));
@@ -543,6 +557,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return _userPositions[user][reserveId].suppliedShares;
   }
 
+  /// @inheritdoc ISpoke
   function getReserveCount() external view returns (uint256) {
     return _reserveCount;
   }
@@ -563,6 +578,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return drawnDebt + premiumDebt;
   }
 
+  /// @inheritdoc ISpoke
   function getLiquidationBonus(
     uint256 reserveId,
     address user,
@@ -578,18 +594,22 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       });
   }
 
+  /// @inheritdoc ISpoke
   function getLiquidationConfig() external view returns (LiquidationConfig memory) {
     return _liquidationConfig;
   }
 
+  /// @inheritdoc ISpoke
   function getUserAccountData(address user) external view returns (UserAccountData memory) {
     return _calculateUserAccountData(user);
   }
 
+  /// @inheritdoc ISpoke
   function getReserve(uint256 reserveId) external view returns (Reserve memory) {
     return _reserves[reserveId];
   }
 
+  /// @inheritdoc ISpoke
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory) {
     Reserve storage reserve = _reserves[reserveId];
     return
@@ -601,12 +621,14 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       });
   }
 
+  /// @inheritdoc ISpoke
   function getDynamicReserveConfig(
     uint256 reserveId
   ) external view returns (DynamicReserveConfig memory) {
     return _dynamicConfig[reserveId][_reserves[reserveId].dynamicConfigKey];
   }
 
+  /// @inheritdoc ISpoke
   function getDynamicReserveConfig(
     uint256 reserveId,
     uint16 configKey
@@ -615,6 +637,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return _dynamicConfig[reserveId][configKey];
   }
 
+  /// @inheritdoc ISpoke
   function getUserPosition(
     uint256 reserveId,
     address user
@@ -622,26 +645,39 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return _userPositions[user][reserveId];
   }
 
+  /// @inheritdoc ISpoke
   function nonces(address user) external view returns (uint256) {
     return _nonces[user];
   }
 
+  /// @inheritdoc ISpoke
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparator();
   }
 
-  // internal
+  /**
+   * @notice Validates the `supply` action.
+   * @param reserve The reserve to be supplied.
+   */
   function _validateSupply(Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     require(!reserve.frozen, ReserveFrozen());
   }
 
+  /**
+   * @notice Validates the `withdraw` action.
+   * @param reserve The reserve to be withdrawn.
+   */
   function _validateWithdraw(Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
   }
 
+  /**
+   * @notice Validates the `borrow` action.
+   * @param reserve The reserve to be borrowed.
+   */
   function _validateBorrow(Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
@@ -650,15 +686,23 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     // HF checked at the end of borrow action
   }
 
+  /**
+   * @notice Validates the `repay` action.
+   * @param reserve The reserve to be repaid.
+   */
   function _validateRepay(Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
   }
 
   /**
-   * @dev Calculates the user's premium debt offset in assets amount from a given share amount.
+   * @notice Calculates the user's premium debt offset in assets amount from a given share amount.
    * @dev Rounds down to the nearest assets amount. Uses the opposite rounding direction of the
    * debt shares-to-assets conversion to prevent underflow in premium debt.
+   * @param hub The hub.
+   * @param assetId The identifier of the asset.
+   * @param shares The amount of shares.
+   * @return The user's premium offset in assets amount.
    */
   function _previewPremiumOffset(
     IHubBase hub,
@@ -668,12 +712,22 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return hub.previewDrawByShares(assetId, shares);
   }
 
+  /**
+   * @notice Updates the price source of a reserve.
+   * @param reserveId The identifier of the reserve.
+   * @param priceSource The address of the price source.
+   */
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
     require(priceSource != address(0), InvalidAddress());
     IAaveOracle(ORACLE).setReserveSource(reserveId, priceSource);
     emit UpdateReservePriceSource(reserveId, priceSource);
   }
 
+  /**
+   * @notice Refreshes and validates the user's position.
+   * @param user The address of the user.
+   * @return The user's new risk premium.
+   */
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
     // @dev refresh user position dynamic config only on borrow, withdraw, disableUsingAsCollateral
     UserAccountData memory userAccountData = _calculateAndRefreshUserAccountData(user);
@@ -684,12 +738,20 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return userAccountData.userRiskPremium;
   }
 
+  /**
+   * @notice Validates the reserve config.
+   * @param config The reserve config struct.
+   */
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {
     require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
   }
 
+  /**
+   * @notice Validates the dynamic reserve config.
+   * @param config The dynamic reserve config struct.
+   */
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
-    // Enforce that at moment loan is taken, there should be enough collateral to cover liquidation
+    // Enforce that at the moment debt is created, there should be enough collateral to cover liquidation
     require(
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
@@ -701,10 +763,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @dev Validates the reserve can be set as collateral.
+   * @notice Validates the `setUsingAsCollateral` action.
    * @dev Collateral can be disabled if the reserve is frozen.
    * @param reserve The reserve to be set as collateral.
-   * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
+   * @param usingAsCollateral True if enabling the reserve as collateral, false otherwise.
    */
   function _validateSetUsingAsCollateral(
     Reserve storage reserve,
@@ -712,11 +774,19 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   ) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
-    // deactivation should be allowed
+    // deactivation is allowed if the reserve is frozen
     require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
   }
 
-  // @dev allows donation on drawn debt
+  /**
+   * @notice Calculates the restore amounts.
+   * @dev Allows donation on drawn debt.
+   * @param drawnDebt The drawn debt.
+   * @param premiumDebt The premium debt.
+   * @param amount The desired amount to restore.
+   * @return The drawn amount to restore.
+   * @return The premium amount to restore.
+   */
   function _calculateRestoreAmount(
     uint256 drawnDebt,
     uint256 premiumDebt,
@@ -731,23 +801,45 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return (amount - premiumDebt, premiumDebt);
   }
 
+  /**
+   * @notice Settles the premium debt.
+   * @param userPosition The user position struct.
+   * @param realizedDelta The realized delta.
+   */
   function _settlePremiumDebt(UserPosition storage userPosition, int256 realizedDelta) internal {
     userPosition.premiumShares = 0;
     userPosition.premiumOffset = 0;
     userPosition.realizedPremium = userPosition.realizedPremium.add(realizedDelta).toUint128();
   }
 
+  /**
+   * @notice Checks if a manager is allowed to act on behalf of a user.
+   * @dev True if the manager is the user or if the manager is active and has approval for the user.
+   * @param user The address of the user.
+   * @param manager The address of the manager.
+   * @return True if the manager is allowed to act on behalf of the user, false otherwise.
+   */
   function _isPositionManager(address user, address manager) private view returns (bool) {
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
   }
 
+  /**
+   * @notice Calculates the user account data.
+   * @dev SAFETY: function does not modify state when refreshConfig is false.
+   * @param user The address of the user.
+   * @return The user account data struct.
+   */
   function _calculateUserAccountData(address user) internal view returns (UserAccountData memory) {
-    // SAFETY: function does not modify state when refreshConfig is false
     return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
   }
 
+  /**
+   * @notice Calculates the user account data and refreshes the dynamic config.
+   * @param user The address of the user.
+   * @return userAccountData The user account data struct.
+   */
   function _calculateAndRefreshUserAccountData(
     address user
   ) internal returns (UserAccountData memory userAccountData) {
@@ -756,9 +848,11 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @dev User rp calc runs until the first of either debt or collateral is exhausted
-   * @param user address of the user
-   * @return userAccountData
+   * @notice Calculates the user account data and potentially refreshes the dynamic config.
+   * @dev User RP calc runs until the first of either debt or collateral is exhausted.
+   * @param user The address of the user.
+   * @param refreshConfig True if the dynamic config should be refreshed, false otherwise.
+   * @return userAccountData The user account data struct.
    */
   function _calculateAndPotentiallyRefreshUserAccountData(
     address user,
@@ -822,7 +916,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       }
     }
 
-    // at this point avgCollateralFactor is a weighted sum of collateral scaled by collateralFactor
+    // at this point avgCollateralFactor is the weighted sum of collateral scaled by collateralFactor
     // (avgCollateralFactor / totalCollateral) * totalCollateral can be simplified to avgCollateralFactor
     // strip BPS factor from result, because running avgCollateralFactor sum has been scaled by collateralFactor (in BPS) above
     userAccountData.healthFactor = userAccountData.totalDebtInBaseCurrency == 0
@@ -867,6 +961,15 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return userAccountData;
   }
 
+  /**
+   * @notice Calculates the user's debt.
+   * @param hub The hub.
+   * @param assetId The identifier of the asset.
+   * @param userPosition The user position struct.
+   * @return The user's drawn debt.
+   * @return The user's premium debt.
+   * @return The user's accrued premium.
+   */
   function _getUserDebt(
     IHubBase hub,
     uint256 assetId,
@@ -882,7 +985,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @dev Trigger risk premium update on all drawn reserves of `user`.
+   * @notice Trigger risk premium update on all drawn reserves of `user`.
    * @param user The address of the user whose risk premium is being updated.
    * @param newUserRiskPremium The new risk premium of the user.
    */
@@ -924,7 +1027,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /**
-   * @dev Reports deficits for all borrowing reserves of the user.
+   * @notice Reports deficits for all borrowing reserves of the user.
    * @dev Includes the debt reserve being repaid during liquidation.
    * @param user The address of the user whose deficits are being reported.
    */
@@ -964,6 +1067,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     emit UpdateUserRiskPremium(user, 0);
   }
 
+  /**
+   * @notice Refreshes the dynamic config for all collateral reserves of the user.
+   * @param user The address of the user.
+   */
   function _refreshDynamicConfig(address user) internal {
     uint256 reserveId = _reserveCount;
     PositionStatus storage positionStatus = _positionStatus[user];
@@ -973,21 +1080,42 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     emit RefreshAllUserDynamicConfig(user);
   }
 
+  /**
+   * @notice Refreshes the dynamic config for a single reserve of the user.
+   * @param user The address of the user.
+   * @param reserveId The identifier of the reserve to refresh dynamic config.
+   */
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
     _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
     emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 
+  /**
+   * @notice Returns the domain name and version.
+   * @return The domain name.
+   * @return The version.
+   */
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
     return ('Spoke', '1');
   }
 
+  /**
+   * @notice Uses the nonce for a user.
+   * @param user The address of the user.
+   * @return The nonce.
+   */
   function _useNonce(address user) internal returns (uint256) {
     unchecked {
       return _nonces[user]++;
     }
   }
 
+  /**
+   * @notice Casts a function to a view function.
+   * @dev Only utilized for the _calculateUserAccountData function.
+   * @param fnIn The function to cast.
+   * @return fnOut The view function.
+   */
   function _castToView(
     function(address, bool) internal returns (UserAccountData memory) fnIn
   )
@@ -1000,6 +1128,12 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     }
   }
 
+  /**
+   * @notice Sets the user position manager.
+   * @param positionManager The address of the position manager.
+   * @param user The address of the user.
+   * @param approve True if the position manager is approved, false otherwise.
+   */
   function _setUserPositionManager(address positionManager, address user, bool approve) internal {
     PositionManagerConfig storage config = _positionManager[positionManager];
     // @dev only allow approval when position manager is active for improved UX

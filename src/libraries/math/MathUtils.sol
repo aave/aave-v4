@@ -15,9 +15,10 @@ library MathUtils {
   uint256 internal constant SECONDS_PER_YEAR = 365 days;
 
   /**
-   * @dev Function to calculate the interest accumulated using a linear interest rate formula.
+   * @notice Function to calculate the interest accumulated using a linear interest rate formula.
+   * @dev Calculates interest rate from provided `lastUpdateTimestamp` until present.
    * @param rate The interest rate, in ray.
-   * @param lastUpdateTimestamp The timestamp of the last update of the interest.
+   * @param lastUpdateTimestamp The timestamp to calculate interest rate from.
    * @return The interest rate linearly accumulated during the timeDelta, in ray.
    */
   function calculateLinearInterest(
@@ -34,8 +35,8 @@ library MathUtils {
 
   /**
    * @notice Returns the minimum of two values.
-   * @param a The first value to compare.
-   * @param b The second value to compare.
+   * @param a The first value.
+   * @param b The second value.
    * @return result The minimum of the two values.
    */
   function min(uint256 a, uint256 b) internal pure returns (uint256 result) {
@@ -49,7 +50,7 @@ library MathUtils {
    * @dev Reverts on underflow.
    * @param a The unsigned integer.
    * @param b The signed integer.
-   * @return The result of the addition.
+   * @return The unsigned result of the addition.
    */
   function add(uint256 a, int256 b) internal pure returns (uint256) {
     if (b >= 0) return a + uint256(b);
@@ -57,10 +58,11 @@ library MathUtils {
   }
 
   /**
-   * @notice Adds two unsigned integers which does not revert on overflow.
+   * @notice Adds two unsigned integers.
+   * @dev Does not revert on overflow.
    * @param a The first unsigned integer.
    * @param b The second unsigned integer.
-   * @return The result of the addition.
+   * @return The unsigned result of the addition.
    */
   function uncheckedAdd(uint256 a, uint256 b) internal pure returns (uint256) {
     unchecked {
@@ -70,8 +72,8 @@ library MathUtils {
 
   /**
    * @notice Subtracts an unsigned integer from an unsigned integer.
-   * @param a The unsigned integer.
-   * @param b The unsigned integer.
+   * @param a The first unsigned integer.
+   * @param b The second unsigned integer.
    * @return The signed result of the subtraction.
    */
   function signedSub(uint256 a, uint256 b) internal pure returns (int256) {
@@ -79,9 +81,10 @@ library MathUtils {
   }
 
   /**
-   * @notice Subtracts an unsigned integer from an unsigned integer which does not revert on underflow.
-   * @param a The unsigned integer.
-   * @param b The unsigned integer.
+   * @notice Subtracts an unsigned integer from an unsigned integer.
+   * @dev Does not revert on underflow.
+   * @param a The first unsigned integer.
+   * @param b The second unsigned integer.
    * @return The unsigned result of the subtraction.
    */
   function uncheckedSub(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -91,7 +94,8 @@ library MathUtils {
   }
 
   /**
-   * @notice Raises an unsigned integer to the power of an unsigned integer which does not revert on overflow.
+   * @notice Raises an unsigned integer to the power of an unsigned integer.
+   * @dev Does not revert on overflow.
    * @param a The base.
    * @param b The exponent.
    * @return The result of the exponentiation.

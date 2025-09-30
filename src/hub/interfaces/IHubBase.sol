@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 /**
  * @title IHubBase
  * @author Aave Labs
- * @notice Minimal interface for Hub
+ * @notice Minimal interface for Hub.
  */
 interface IHubBase {
   struct PremiumDelta {
@@ -15,7 +15,7 @@ interface IHubBase {
   }
 
   /**
-   * @notice Emitted on the add action.
+   * @notice Emitted on the `add` action.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @param shares The amount of shares added.
@@ -24,7 +24,7 @@ interface IHubBase {
   event Add(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
 
   /**
-   * @notice Emitted on the remove action.
+   * @notice Emitted on the `remove` action.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @param shares The amount of shares removed.
@@ -33,7 +33,7 @@ interface IHubBase {
   event Remove(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
 
   /**
-   * @notice Emitted on the draw action.
+   * @notice Emitted on the `draw` action.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @param drawnShares The amount of drawn shares.
@@ -47,11 +47,11 @@ interface IHubBase {
   );
 
   /**
-   * @notice Emitted on the restore action.
+   * @notice Emitted on the `restore` action.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @param drawnShares The amount of drawn shares.
-   * @param premiumDelta The premium delta object.
+   * @param premiumDelta The premium delta data struct.
    * @param drawnAmount The amount of drawn assets restored.
    * @param premiumAmount The amount of premium assets restored.
    */
@@ -65,21 +65,39 @@ interface IHubBase {
   );
 
   /**
-   * @notice Emitted on the refresh premium action.
+   * @notice Emitted on the `refreshPremium` action.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
-   * @param premiumDelta The premium delta object.
+   * @param premiumDelta The premium delta data struct.
    */
   event RefreshPremium(uint256 indexed assetId, address indexed spoke, PremiumDelta premiumDelta);
 
   /**
-   * @notice Emitted on the transfer shares action.
+   * @notice Emitted on the `transferShares` action.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares transferred.
    * @param sender The address of the sender.
    * @param receiver The address of the receiver.
    */
   event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
+
+  /**
+   * @notice Emitted on the `reportDeficit` action.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @param drawnShares The amount of drawn shares reported as deficit.
+   * @param premiumDelta The premium delta data struct.
+   * @param drawnAmount The amount of drawn assets reported as deficit.
+   * @param premiumAmount The amount of premium assets reported as deficit.
+   */
+  event ReportDeficit(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 drawnShares,
+    PremiumDelta premiumDelta,
+    uint256 drawnAmount,
+    uint256 premiumAmount
+  );
 
   /**
    * @notice Add asset on behalf of user.
@@ -148,16 +166,18 @@ interface IHubBase {
 
   /**
    * @notice Refreshes premium accounting.
-   * @dev Only callable by active spokes, reverts with `SpokeNotActive` otherwise.
-   * @dev Overall premium should not decrease, reverts with `InvalidPremiumChange` otherwise.
+   * @dev Only callable by active spokes.
+   * @dev Asset and spoke premium should not decrease.
+   * @dev Asset and spoke premium can increase up to 2 wei due to opposite rounding directions of shares and offset.
    * @param assetId The identifier of the asset.
    * @param premiumDelta The change in premium.
    */
   function refreshPremium(uint256 assetId, PremiumDelta calldata premiumDelta) external;
 
   /**
-   * @notice Pay existing liquidity to feeReceiver.
+   * @notice Pay existing added shares to feeReceiver.
    * @dev Only callable by active spokes.
+   * @dev Utilized to pay fees during liquidation.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to pay to feeReceiver.
    */
@@ -172,7 +192,7 @@ interface IHubBase {
   function getAssetUnderlyingAndDecimals(uint256 assetId) external view returns (address, uint8);
 
   /**
-   * @notice Converts the specified amount of assets to shares amount added upon an Add action.
+   * @notice Converts the specified amount of assets to shares upon an `add` action.
    * @dev Rounds down to the nearest shares amount.
    * @param assetId The identifier of the asset.
    * @param assets The amount of assets to convert to shares amount.
@@ -181,7 +201,7 @@ interface IHubBase {
   function previewAddByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
-   * @notice Converts the specified shares amount to assets amount added upon an Add action.
+   * @notice Converts the specified shares amount to assets amount added upon an `add` action.
    * @dev Rounds up to the nearest assets amount.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to convert to assets amount.
@@ -190,7 +210,7 @@ interface IHubBase {
   function previewAddByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of assets to shares amount removed upon a Remove action.
+   * @notice Converts the specified amount of assets to shares amount removed upon a `remove` action.
    * @dev Rounds up to the nearest shares amount.
    * @param assetId The identifier of the asset.
    * @param assets The amount of assets to convert to shares amount.
@@ -199,7 +219,7 @@ interface IHubBase {
   function previewRemoveByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of shares to assets amount removed upon a Remove action.
+   * @notice Converts the specified amount of shares to assets amount removed upon a `remove` action.
    * @dev Rounds down to the nearest assets amount.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to convert to assets amount.
@@ -208,7 +228,7 @@ interface IHubBase {
   function previewRemoveByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of assets to shares amount drawn upon a Draw action.
+   * @notice Converts the specified amount of assets to shares amount drawn upon a `draw` action.
    * @dev Rounds up to the nearest shares amount.
    * @param assetId The identifier of the asset.
    * @param assets The amount of assets to convert to shares amount.
@@ -217,7 +237,7 @@ interface IHubBase {
   function previewDrawByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of shares to assets amount drawn upon a Draw action.
+   * @notice Converts the specified amount of shares to assets amount drawn upon a `draw` action.
    * @dev Rounds down to the nearest assets amount.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to convert to assets amount.
@@ -226,7 +246,7 @@ interface IHubBase {
   function previewDrawByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of assets to shares amount restored upon a Restore action.
+   * @notice Converts the specified amount of assets to shares amount restored upon a `restore` action.
    * @dev Rounds down to the nearest shares amount.
    * @param assetId The identifier of the asset.
    * @param assets The amount of assets to convert to shares amount.
@@ -235,7 +255,7 @@ interface IHubBase {
   function previewRestoreByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
 
   /**
-   * @notice Converts the specified amount of shares to assets amount restored upon a Restore action.
+   * @notice Converts the specified amount of shares to assets amount restored upon a `restore` action.
    * @dev Rounds up to the nearest assets amount.
    * @param assetId The identifier of the asset.
    * @param shares The amount of drawn shares to convert to assets amount.
@@ -252,9 +272,9 @@ interface IHubBase {
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
 
   /**
-   * @notice Returns the total amount of the specified asset owed to the hub.
+   * @notice Returns the total amount of assets owed to the hub.
    * @param assetId The identifier of the asset.
-   * @return The total amount of the asset owed.
+   * @return The total amount of the assets owed.
    */
   function getAssetTotalOwed(uint256 assetId) external view returns (uint256);
 
@@ -328,6 +348,7 @@ interface IHubBase {
 
   /**
    * @notice Returns the total amount of the specified assets added to the hub by the specified spoke.
+   * @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
    * @return The amount of added assets.
