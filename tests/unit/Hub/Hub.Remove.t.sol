@@ -370,6 +370,8 @@ contract HubRemoveTest is HubBase {
 
   function test_remove_revertsWith_AddedAmountExceeded_zero_added() public {
     uint256 amount = 1;
+    // Add amount from spoke 2 to have enough liquidity
+    Utils.add(hub1, daiAssetId, address(spoke2), amount, alice);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, 0));
     vm.prank(address(spoke1));
@@ -380,25 +382,22 @@ contract HubRemoveTest is HubBase {
     uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
+    // Add amount from spoke 2 to have enough liquidity
+    Utils.add(hub1, assetId, address(spoke2), amount, alice);
+
     // User add
-    Utils.add({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
-      amount: amount,
-      user: alice
-    });
+    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
 
     vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, amount));
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, amount + 1, alice);
+    hub1.remove(assetId, amount + 1, alice);
 
     // advance time, but no accrual
     skip(365 days);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, amount));
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, amount + 1, alice);
+    hub1.remove(assetId, amount + 1, alice);
   }
 
   function test_remove_revertsWith_InsufficientLiquidity() public {

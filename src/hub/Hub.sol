@@ -202,9 +202,8 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
-    _validateRemove(spoke, assetId, amount, to);
     uint256 liquidity = asset.liquidity;
-    require(amount <= liquidity, InsufficientLiquidity(liquidity));
+    _validateRemove(spoke, assetId, amount, to, liquidity);
 
     uint128 shares = previewRemoveByAssets(assetId, amount).toUint128(); // non zero since we round up
     asset.addedShares -= shares;
@@ -697,11 +696,13 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage spoke,
     uint256 assetId,
     uint256 amount,
-    address to
+    address to,
+    uint256 assetLiquidity
   ) internal view {
     require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
+    require(amount <= assetLiquidity, InsufficientLiquidity(assetLiquidity));
     uint256 removable = previewRemoveByShares(assetId, spoke.addedShares);
     require(amount <= removable, AddedAmountExceeded(removable));
   }
