@@ -1,8 +1,9 @@
 {
   "add": "118251",
   "draw": "111323",
+  "refreshPremium": "88608",
   "remove: full": "78590",
   "remove: partial": "85090",
-  "restore: full": "112646",
+  "restore: full": "109666",
   "restore: partial": "118498"
 }
