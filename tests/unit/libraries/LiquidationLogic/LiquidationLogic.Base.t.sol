@@ -109,6 +109,11 @@ contract LiquidationLogicBaseTest is SpokeBase {
         debtToTargetParams.debtAssetUnit
       )
     );
+    uint256 collateralReserveBalanceInBaseCurrency = bound(
+      params.collateralReserveBalanceInBaseCurrency,
+      0,
+      MAX_SUPPLY_IN_BASE_CURRENCY
+    );
 
     return
       LiquidationLogic.CalculateMaxDebtToLiquidateParams({
@@ -120,7 +125,8 @@ contract LiquidationLogicBaseTest is SpokeBase {
         liquidationBonus: debtToTargetParams.liquidationBonus,
         collateralFactor: debtToTargetParams.collateralFactor,
         debtAssetPrice: debtToTargetParams.debtAssetPrice,
-        debtAssetUnit: debtToTargetParams.debtAssetUnit
+        debtAssetUnit: debtToTargetParams.debtAssetUnit,
+        collateralReserveBalanceInBaseCurrency: collateralReserveBalanceInBaseCurrency
       });
   }
 
@@ -132,6 +138,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
       return params;
     } catch {
       params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, MAX_SUPPLY_AMOUNT);
+      console.log('params.debtToCover', params.debtToCover);
       return params;
     }
   }
@@ -155,7 +162,8 @@ contract LiquidationLogicBaseTest is SpokeBase {
         liquidationBonus: liquidationBonus,
         collateralFactor: params.collateralFactor,
         debtAssetPrice: params.debtAssetPrice,
-        debtAssetUnit: params.debtAssetUnit
+        debtAssetUnit: params.debtAssetUnit,
+        collateralReserveBalanceInBaseCurrency: params.collateralReserveBalance
       });
   }
 

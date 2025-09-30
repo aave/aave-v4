@@ -2471,4 +2471,20 @@ abstract contract Base is Test {
         )
       );
   }
+
+  function _updateCollateralFactorAndLiquidationBonus(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 newCollateralFactor,
+    uint256 newLiquidationBonus
+  ) internal {
+    ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
+    config.collateralFactor = newCollateralFactor.toUint16();
+    config.maxLiquidationBonus = newLiquidationBonus.toUint32();
+
+    vm.prank(SPOKE_ADMIN);
+    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
+
+    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+  }
 }

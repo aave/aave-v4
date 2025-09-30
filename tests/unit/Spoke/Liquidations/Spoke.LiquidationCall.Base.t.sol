@@ -174,6 +174,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
         healthFactor: userAccountData.healthFactor,
         targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor,
+        collateralReserveBalanceInBaseCurrency: _convertAmountToBaseCurrency(
+          spoke,
+          collateralReserveId,
+          spoke.getUserSuppliedAssets(collateralReserveId, user)
+        ),
         liquidationBonus: spoke.getLiquidationBonus(
           collateralReserveId,
           user,
