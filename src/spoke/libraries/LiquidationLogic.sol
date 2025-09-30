@@ -2,6 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -255,25 +257,34 @@ library LiquidationLogic {
     );
     uint256 collateralToLiquidate = debtToCollateral.percentMulDown(liquidationBonus);
     if (collateralToLiquidate > params.collateralReserveBalance) {
+      console.log('LL collateralToLiquidate > params.collateralReserveBalance');
       collateralToLiquidate = params.collateralReserveBalance;
       debtToCollateral = collateralToLiquidate.percentDivUp(liquidationBonus);
       debtToLiquidate = debtToCollateral.mulDivUp(
         params.collateralAssetPrice * params.debtAssetUnit,
         params.debtAssetPrice * params.collateralAssetUnit
       );
+      console.log('LL debtToLiquidate %e', debtToLiquidate);
     } else if (
       collateralToLiquidate < params.collateralReserveBalance &&
       debtToLiquidate < params.debtReserveBalance
     ) {
+      console.log(
+        'LL collateralToLiquidate < params.collateralReserveBalance && debtToLiquidate < params.debtReserveBalance'
+      );
       uint256 remainingCollateralInBaseCurrency = (params.collateralReserveBalance -
         collateralToLiquidate).mulDivDown(
           params.collateralAssetPrice.toWad(),
           params.collateralAssetUnit
         );
+      console.log('LL remainingCollateralInBaseCurrency %26e', remainingCollateralInBaseCurrency);
       require(
         remainingCollateralInBaseCurrency >= DUST_LIQUIDATION_THRESHOLD,
         ISpoke.MustNotLeaveDust()
       );
+    } else {
+      console.log('else');
+      console.log('LL collateralToLiquidate no branch %e', collateralToLiquidate);
     }
 
     uint256 collateralToLiquidator = collateralToLiquidate -
@@ -328,6 +339,8 @@ library LiquidationLogic {
       maxDebtToLiquidate = debtToTarget;
     }
 
+    console.log('LL debtToTarget %6e', debtToTarget);
+
     uint256 remainingDebtInBaseCurrency = (params.debtReserveBalance - maxDebtToLiquidate)
       .mulDivDown(params.debtAssetPrice.toWad(), params.debtAssetUnit);
 
@@ -336,6 +349,8 @@ library LiquidationLogic {
       require(params.debtToCover >= params.debtReserveBalance, ISpoke.MustNotLeaveDust());
       maxDebtToLiquidate = params.debtReserveBalance;
     }
+
+    console.log('LL maxDebtToLiquidate %6e', maxDebtToLiquidate);
 
     return maxDebtToLiquidate;
   }
