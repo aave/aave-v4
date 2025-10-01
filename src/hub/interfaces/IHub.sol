@@ -88,16 +88,18 @@ interface IHub is IHubBase, IAccessManaged {
   /**
    * @notice Emitted when an amount of liquidity is swept/reinvested.
    * @param assetId The identifier of the asset.
+   * @param reinvestmentController The active asset controller.
    * @param amount The amount swept.
    */
-  event Sweep(uint256 indexed assetId, uint256 amount);
+  event Sweep(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
 
   /**
    * @notice Emitted when an amount of liquidity is reclaimed (from swept/reinvested liquidity).
    * @param assetId The identifier of the asset.
+   * @param reinvestmentController The active asset controller.
    * @param amount The amount reclaimed.
    */
-  event Reclaim(uint256 indexed assetId, uint256 amount);
+  event Reclaim(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
 
   /**
    * @notice Emitted when deficit is eliminated.

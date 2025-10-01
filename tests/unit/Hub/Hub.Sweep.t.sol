@@ -49,7 +49,7 @@ contract HubSweepTest is HubBase {
     emit IERC20.Transfer(address(hub1), reinvestmentController, sweepAmount);
 
     vm.expectEmit(address(hub1));
-    emit IHub.Sweep(daiAssetId, sweepAmount);
+    emit IHub.Sweep(daiAssetId, reinvestmentController, sweepAmount);
 
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, sweepAmount);
