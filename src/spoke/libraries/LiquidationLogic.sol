@@ -335,6 +335,7 @@ library LiquidationLogic {
         debtAssetUnit: params.debtAssetUnit
       })
     );
+    console.log('LL debtToTarget $%6e', debtToTarget);
     if (debtToTarget < maxDebtToLiquidate) {
       maxDebtToLiquidate = debtToTarget;
     }

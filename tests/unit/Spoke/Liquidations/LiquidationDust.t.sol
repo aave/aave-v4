@@ -76,12 +76,55 @@ contract LiquidationDustTest is SpokeLiquidationCallBaseTest {
     console.log('health factor %18e', spoke.getUserAccountData(alice).healthFactor);
 
     vm.startPrank(liquidator);
-    spoke.liquidationCall(
-      _daiReserveId(spoke),
-      _usdxReserveId(spoke),
-      alice,
-      spoke.getUserTotalDebt(_usdxReserveId(spoke), alice)
+    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, 1020e6);
+
+    console.log(
+      'dai collateral after liq %18e',
+      spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice)
     );
+    console.log(
+      'usdy collateral after liq %18e',
+      spoke.getUserSuppliedAssets(_usdyReserveId(spoke), alice)
+    );
+    console.log('usdx debt after liq $%6e', spoke.getUserTotalDebt(_usdxReserveId(spoke), alice));
+    console.log('usdy debt after liq $%18e', spoke.getUserTotalDebt(_usdyReserveId(spoke), alice));
+    console.log('health factor %18e', spoke.getUserAccountData(alice).healthFactor);
+  }
+
+  function testCollDust2() public {
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateLiquidationConfig(
+      ISpoke.LiquidationConfig({
+        targetHealthFactor: 1.0001e18,
+        healthFactorForMaxBonus: 0.99e18,
+        liquidationBonusFactor: 0
+      })
+    );
+
+    _updateCollateralFactorAndLiquidationBonus(spoke, _daiReserveId(spoke), 80_00, 124_00);
+    _increaseCollateralSupply(spoke, _daiReserveId(spoke), 1100e18, alice);
+    _increaseCollateralSupply(spoke, _usdyReserveId(spoke), 10_000e18, alice);
+
+    Utils.borrow({
+      spoke: spoke,
+      reserveId: _usdyReserveId(spoke),
+      caller: alice,
+      amount: 8_500e18,
+      onBehalfOf: alice
+    });
+    _borrowToBeAtHf(spoke, alice, _usdxReserveId(spoke), 0.98e18);
+
+    console.log('dai collateral $%18e', spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice));
+    console.log('usdy collateral $%18e', spoke.getUserSuppliedAssets(_usdyReserveId(spoke), alice));
+    console.log('usdx debt $%6e', spoke.getUserTotalDebt(_usdxReserveId(spoke), alice));
+    console.log('usdy debt $%18e', spoke.getUserTotalDebt(_usdyReserveId(spoke), alice));
+    console.log('health factor %18e', spoke.getUserAccountData(alice).healthFactor);
+
+    uint256 debtToCover = 1800e6;
+    console.log('debtToCover $%6e', debtToCover);
+
+    vm.startPrank(liquidator);
+    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, debtToCover);
 
     console.log(
       'dai collateral after liq %18e',
