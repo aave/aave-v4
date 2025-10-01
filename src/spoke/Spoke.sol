@@ -647,16 +647,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     require(!reserve.paused, ReservePaused());
   }
 
-  /// @notice Evaluate premiumOffset from shares.
-  /// @dev Rounds down as principal premium debt is owed by the system to the user.
-  function _previewPremiumOffset(
-    IHubBase hub,
-    uint256 assetId,
-    uint256 shares
-  ) internal view returns (uint256) {
-    return hub.previewDrawByShares(assetId, shares);
-  }
-
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
     require(priceSource != address(0), InvalidAddress());
     IAaveOracle(ORACLE).setReserveSource(reserveId, priceSource);
@@ -908,7 +898,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
         oldPremiumOffset;
 
       uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newUserRiskPremium);
-      uint256 newPremiumOffset = _previewPremiumOffset(hub, assetId, newPremiumShares);
+      // uses opposite rounding direction as premiumOffset is virtual debt owed by the protocol
+      uint256 newPremiumOffset = hub.previewDrawByShares(assetId, newPremiumShares);
 
       userPosition.premiumShares = newPremiumShares.toUint128();
       userPosition.premiumOffset = newPremiumOffset.toUint128();
