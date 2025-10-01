@@ -655,20 +655,17 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     return _domainSeparator();
   }
 
-  /// @dev `supply` action is not allowed if the reserve is paused or frozen.
   function _validateSupply(Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     require(!reserve.frozen, ReserveFrozen());
   }
 
-  /// @dev `withdraw` action is not allowed if the reserve is paused.
   function _validateWithdraw(Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
   }
 
-  /// @dev `borrow` action is not allowed if the reserve is paused or frozen.
   function _validateBorrow(Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
@@ -677,7 +674,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     // HF checked at the end of borrow action
   }
 
-  /// @dev `repay` action is not allowed if the reserve is paused.
   function _validateRepay(Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
@@ -715,7 +711,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
   }
 
-  /// @dev Enforces compatible `maxLiquidationBonus` and `collateralFactor` so that at the moment debt is created,
+  /// @dev Enforces compatible `maxLiquidationBonus` and `collateralFactor` so at the moment debt is created
   /// there is enough collateral to cover liquidation.
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
     require(
@@ -728,7 +724,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
   }
 
-  /// @dev Collateral can be disabled as collateral if the reserve is frozen.
+  /// @dev Can disable as collateral if the reserve is frozen.
   function _validateSetUsingAsCollateral(
     Reserve storage reserve,
     bool usingAsCollateral
@@ -760,23 +756,19 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     userPosition.realizedPremium = userPosition.realizedPremium.add(realizedDelta).toUint128();
   }
 
-  /// @notice Checks if a manager is allowed to act on behalf of a user.
-  /// @return True if the manager is the user or if the manager is active and has approval for the user.
+  /// @notice Checks if a position manager is the user or it is active and has approval for the user.
   function _isPositionManager(address user, address manager) private view returns (bool) {
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
   }
 
-  /// @notice Calculates the user account data.
   /// @dev SAFETY: function does not modify state when refreshConfig is false.
-  /// @return The user account data struct.
   function _calculateUserAccountData(address user) internal view returns (UserAccountData memory) {
     return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
   }
 
   /// @notice Calculates the user account data and refreshes the dynamic config.
-  /// @return userAccountData The user account data struct.
   function _calculateAndRefreshUserAccountData(
     address user
   ) internal returns (UserAccountData memory userAccountData) {
@@ -786,7 +778,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /// @notice Calculates the user account data and refreshes the dynamic config if `refreshConfig` is true.
   /// @dev User RiskPremium calc runs until the first of either debt or collateral is exhausted.
-  /// @return userAccountData The user account data struct.
   function _calculateAndPotentiallyRefreshUserAccountData(
     address user,
     bool refreshConfig
@@ -956,6 +947,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     PositionStatus storage positionStatus = _positionStatus[user];
     uint256 reserveId = _reserveCount;
 
+    // deficit validation should already have occurred during liquidation
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
       UserPosition storage userPosition = _userPositions[user][reserveId];
       Reserve storage reserve = _reserves[reserveId];
@@ -1003,7 +995,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 
-  /// @notice Returns the domain name and version.
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
     return ('Spoke', '1');
   }

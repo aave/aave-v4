@@ -669,7 +669,7 @@ contract Hub is IHub, AccessManaged {
     receiver.addedShares += shares.toUint128();
   }
 
-  /// @dev Returns the drawn assets owed by a spoke.
+  /// @dev Returns the drawn amount in unit of assets.
   function _getSpokeDrawn(
     SpokeData storage spoke,
     uint256 assetId
@@ -677,7 +677,7 @@ contract Hub is IHub, AccessManaged {
     return previewRestoreByShares(assetId, spoke.drawnShares);
   }
 
-  /// @dev Returns the premium assets owed by a spoke.
+  /// @dev Returns the premium amount in unit of assets.
   function _getSpokePremium(
     SpokeData storage spoke,
     uint256 assetId
@@ -739,7 +739,6 @@ contract Hub is IHub, AccessManaged {
     );
   }
 
-  /// @dev Spokes can restore `drawnAmount` that rounds to zero shares. Excess is donated to `liquidity`.
   function _validateRestore(
     SpokeData storage spoke,
     uint256 assetId,
@@ -756,7 +755,6 @@ contract Hub is IHub, AccessManaged {
     require(premiumAmount <= premium, SurplusAmountRestored(premium));
   }
 
-  /// @dev Spokes that report `drawnAmount` that rounds to zero shares. Excess is donated to `deficit`.
   function _validateReportDeficit(
     SpokeData storage spoke,
     uint256 assetId,
