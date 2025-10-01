@@ -172,8 +172,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     EIP712Types.UpdateUserRiskPremium memory p = _updateRiskPremiumData(spoke1, alice, deadline);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateUserRiskPremium(alice, 0);
+    vm.expectCall(address(spoke1), abi.encodeCall(ISpoke.updateUserRiskPremium, (alice)));
 
     vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(alice, p.deadline, signature);

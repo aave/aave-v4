@@ -92,9 +92,10 @@ contract PositionStatusMapWrapper {
     return _p.nextCollateral(startReserveId);
   }
 
-  function slot() external pure returns (bytes32 s) {
+  function slot() external view returns (bytes32 s) {
+    mapping(uint256 => uint256) storage map = _p.map;
     assembly ('memory-safe') {
-      s := _p.slot
+      s := map.slot
     }
   }
 }

@@ -460,9 +460,31 @@ contract PositionStatusMapTest is Base {
     }
   }
 
+  function test_popCount_all() public pure {
+    for (uint256 i = 1; i < 256; ++i) {
+      assertEq(LibBit.popCount((1 << i) | 1), 2);
+    }
+    assertEq(LibBit.popCount(0), 0);
+  }
+
   function test_popCount(bytes32) public {
     uint256 bits = vm.randomUint();
     assertEq(LibBit.popCount(bits), _popCountNaive(bits));
+  }
+
+  function test_fls_all() public pure {
+    assertEq(LibBit.fls(0xff << 3), 10);
+    for (uint256 i = 1; i < 255; ++i) {
+      assertEq(LibBit.fls((1 << i) - 1), i - 1);
+      assertEq(LibBit.fls((1 << i)), i);
+      assertEq(LibBit.fls((1 << i) + 1), i);
+    }
+    assertEq(LibBit.fls(0), 256);
+  }
+
+  function test_fls(bytes32) public {
+    uint256 bits = vm.randomUint();
+    assertEq(LibBit.fls(bits), _flsNaive(bits));
   }
 
   function _popCountNaive(uint256 x) internal pure returns (uint256 count) {
@@ -472,13 +494,10 @@ contract PositionStatusMapTest is Base {
     }
   }
 
-  function test_fls() public {
-    assertEq(LibBit.fls(0xff << 3), 10);
-    for (uint256 i = 1; i < 255; i++) {
-      assertEq(LibBit.fls((1 << i) - 1), i - 1);
-      assertEq(LibBit.fls((1 << i)), i);
-      assertEq(LibBit.fls((1 << i) + 1), i);
+  function _flsNaive(uint256 x) internal pure returns (uint256) {
+    for (uint256 i = 255; i >= 0; --i) {
+      if ((x >> i) & 1 != 0) return i;
     }
-    assertEq(LibBit.fls(0), 256);
+    return 256;
   }
 }
