@@ -111,7 +111,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     uint256 swept
   ) external view virtual override returns (uint256) {
     InterestRateData memory rateData = _interestRateData[assetId];
-    require(rateData.optimalUsageRatio != 0, InterestRateDataNotSet(assetId));
+    require(rateData.optimalUsageRatio > 0, InterestRateDataNotSet(assetId));
 
     uint256 currentVariableBorrowRateRay = rateData.baseVariableBorrowRate.bpsToRay();
     if (drawn == 0) {
