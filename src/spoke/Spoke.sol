@@ -776,7 +776,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /// @notice Calculates the user account data and refreshes the dynamic config.
-  /// @return The user account data struct.
+  /// @return userAccountData The user account data struct.
   function _calculateAndRefreshUserAccountData(
     address user
   ) internal returns (UserAccountData memory userAccountData) {
@@ -786,7 +786,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /// @notice Calculates the user account data and refreshes the dynamic config if `refreshConfig` is true.
   /// @dev User RiskPremium calc runs until the first of either debt or collateral is exhausted.
-  /// @return The user account data struct.
+  /// @return userAccountData The user account data struct.
   function _calculateAndPotentiallyRefreshUserAccountData(
     address user,
     bool refreshConfig
