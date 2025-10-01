@@ -10,7 +10,7 @@ contract AssetInterestRateStrategyTest is Base {
 
   uint256 mockAssetId = uint256(keccak256('mockAssetId'));
 
-  AssetInterestRateStrategy public rateStrategy;
+  IAssetInterestRateStrategy public rateStrategy;
   IAssetInterestRateStrategy.InterestRateData public rateData;
   bytes public encodedRateData;
 
@@ -27,6 +27,11 @@ contract AssetInterestRateStrategyTest is Base {
 
     vm.prank(address(hub1));
     rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
+  }
+
+  function test_deploy_revertsWith_InvalidAddress() public {
+    vm.expectRevert(IAssetInterestRateStrategy.InvalidAddress.selector);
+    new AssetInterestRateStrategy(address(0));
   }
 
   function test_maxBorrowRate() public view {
