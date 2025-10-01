@@ -639,7 +639,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     require(!reserve.paused, ReservePaused());
     require(!reserve.frozen, ReserveFrozen());
     require(reserve.borrowable, ReserveNotBorrowable());
-    // @dev health factor is checked at the end of borrow action
+    // health factor is checked at the end of borrow action
   }
 
   function _validateRepay(Reserve storage reserve) internal view {
@@ -693,7 +693,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
-    // @dev there should be enough collateral to cover liquidation at moment a loan is taken
+    // there should be enough collateral to cover liquidation at moment a loan is taken
     require(
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
