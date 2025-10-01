@@ -376,9 +376,9 @@ contract Hub is IHub, AccessManaged {
     asset.swept += amount.toUint128();
     asset.updateDrawnRate(assetId);
 
-    IERC20(asset.underlying).safeTransfer(asset.reinvestmentController, amount);
+    IERC20(asset.underlying).safeTransfer(msg.sender, amount);
 
-    emit Sweep(assetId, amount);
+    emit Sweep(assetId, msg.sender, amount);
   }
 
   /// @inheritdoc IHub
@@ -392,9 +392,9 @@ contract Hub is IHub, AccessManaged {
     asset.swept -= amount.toUint128();
     asset.updateDrawnRate(assetId);
 
-    IERC20(asset.underlying).safeTransferFrom(asset.reinvestmentController, address(this), amount);
+    IERC20(asset.underlying).safeTransferFrom(msg.sender, address(this), amount);
 
-    emit Reclaim(assetId, amount);
+    emit Reclaim(assetId, msg.sender, amount);
   }
 
   /// @inheritdoc IHub
