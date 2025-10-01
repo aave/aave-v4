@@ -177,6 +177,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error InactivePositionManager();
   error InvalidSignature();
   error InvalidAddress();
+  error InvalidOracleDecimals();
   error InvalidCollateralRisk();
   error InvalidLiquidationConfig();
   error InvalidLiquidationFee();
