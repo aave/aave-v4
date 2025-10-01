@@ -296,8 +296,8 @@ contract SignatureGateway is
   }
 
   /// @inheritdoc ISignatureGateway
-  function useNonce(uint256 keyNonce) external {
-    _useCheckedNonce(msg.sender, keyNonce);
+  function useNonce(uint192 key) external {
+    _useNonce(msg.sender, key);
   }
 
   /// @inheritdoc ISignatureGateway

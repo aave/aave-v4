@@ -186,10 +186,9 @@ interface ISignatureGateway is IMulticall, IRescuable {
   function renounceSelfAsUserPositionManager(address user) external;
 
   /**
-   * @notice Allows caller to revoke their next sequential keyed nonce.
-   * @param keyNonce The packed nonce (24 bytes key ++ 8 bytes nonce).
+   * @notice Allows caller to revoke their next sequential nonce at specified `key`.
    */
-  function useNonce(uint256 keyNonce) external;
+  function useNonce(uint192 key) external;
 
   /**
    * @notice Returns the next unused nonce for `user` at given `key`. Result contains the key prefix.

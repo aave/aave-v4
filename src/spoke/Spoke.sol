@@ -410,7 +410,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712, 
     bool approve,
     uint256 nonce,
     uint256 deadline,
-    bytes memory signature
+    bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
@@ -431,8 +431,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712, 
   }
 
   /// @inheritdoc ISpoke
-  function useNonce(uint256 nonce) external {
-    _useCheckedNonce(msg.sender, nonce);
+  function useNonce(uint192 key) external {
+    _useNonce(msg.sender, key);
   }
 
   /// @inheritdoc ISpoke

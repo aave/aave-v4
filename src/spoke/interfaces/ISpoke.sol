@@ -295,7 +295,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     bool approve,
     uint256 nonce,
     uint256 deadline,
-    bytes memory signature
+    bytes calldata signature
   ) external;
 
   /**
@@ -320,10 +320,9 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function isPositionManagerActive(address positionManager) external view returns (bool);
 
   /**
-   * @notice Allows caller to revoke their next sequential keyed nonce.
-   * @param keyNonce The packed nonce (24 bytes key ++ 8 bytes nonce).
+   * @notice Allows caller to revoke their next sequential nonce at specified `key`.
    */
-  function useNonce(uint256 keyNonce) external;
+  function useNonce(uint192 key) external;
 
   /**
    * @notice Allows consuming a permit signature for the given reserve's underlying asset.
