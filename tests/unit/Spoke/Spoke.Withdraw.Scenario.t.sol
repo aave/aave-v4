@@ -296,6 +296,65 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     );
   }
 
+  /// Put position underwater, and show can withdraw reserve of CF 0 and reserve not set as collateral
+  function test_withdraw_underwater_reserve_not_collateral() public {
+    // Supply 3 collaterals, one used to borrow, one not set as collateral, one set as collateral but CF = 0
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 usdxReserveId = _usdxReserveId(spoke1);
+    uint256 wbtcReserveId = _wbtcReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
+
+    // Change usdx CF to 0
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: 10_000e18,
+      onBehalfOf: bob
+    });
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: bob,
+      amount: 10_000e18,
+      onBehalfOf: bob
+    });
+    Utils.supply({
+      spoke: spoke1,
+      reserveId: wbtcReserveId,
+      caller: bob,
+      amount: 1e8,
+      onBehalfOf: bob
+    });
+
+    _openSupplyPosition(spoke1, wethReserveId, 2e18);
+
+    // Bob borrows weth
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: 2e18,
+      onBehalfOf: bob
+    });
+
+    skip(3560 days);
+
+    // Position is underwater
+    ISpoke.UserAccountData memory userData = spoke1.getUserAccountData(bob);
+    assertLt(userData.healthFactor, 1e18, 'hf below 1');
+
+    vm.startPrank(bob);
+    // Can still withdraw usdx because CF = 0
+    spoke1.withdraw(usdxReserveId, type(uint256).max, bob);
+
+    // Can still withdraw wbtc because not set as collateral
+    spoke1.withdraw(wbtcReserveId, type(uint256).max, bob);
+    vm.stopPrank();
+  }
+
   /// Let protocol have some funds initially. User deposits, immediately withdraws, check delta on share amounts
   function test_withdraw_round_trip_deposit_withdraw(
     uint256 reserveId,
