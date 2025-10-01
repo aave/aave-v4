@@ -15,11 +15,9 @@ import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 
-/**
- * @title Hub
- * @author Aave Labs
- * @notice A liquidity hub that manages assets and spokes.
- */
+/// @title Hub
+/// @author Aave Labs
+/// @notice A liquidity hub that manages assets and spokes.
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
@@ -41,11 +39,9 @@ contract Hub is IHub, AccessManaged {
   mapping(uint256 assetId => mapping(address spoke => SpokeData)) internal _spokes;
   mapping(uint256 assetId => EnumerableSet.AddressSet) internal _assetToSpokes;
 
-  /**
-   * @dev Constructor.
-   * @dev The authority contract must implement the `AccessManaged` interface for access control.
-   * @param authority_ The address of the authority contract which manages permissions.
-   */
+  /// @dev Constructor.
+  /// @dev The authority contract must implement the `AccessManaged` interface for access control.
+  /// @param authority_ The address of the authority contract which manages permissions.
   constructor(address authority_) AccessManaged(authority_) {
     require(authority_ != address(0), InvalidAddress());
   }

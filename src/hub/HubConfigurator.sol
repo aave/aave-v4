@@ -8,19 +8,15 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 
-/**
- * @title HubConfigurator
- * @author Aave Labs
- * @notice Handles administrative functions on the hub.
- * @dev Must be granted permission by the hub.
- */
+/// @title HubConfigurator
+/// @author Aave Labs
+/// @notice Handles administrative functions on the hub.
+/// @dev Must be granted permission by the hub.
 contract HubConfigurator is Ownable2Step, IHubConfigurator {
   using SafeCast for uint256;
 
-  /**
-   * @dev Constructor.
-   * @param owner_ The address of the owner.
-   */
+  /// @dev Constructor.
+  /// @param owner_ The address of the owner.
   constructor(address owner_) Ownable(owner_) {}
 
   /// @inheritdoc IHubConfigurator

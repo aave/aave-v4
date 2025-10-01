@@ -4,18 +4,14 @@ pragma solidity ^0.8.0;
 
 import {Spoke} from 'src/spoke/Spoke.sol';
 
-/**
- * @title SpokeInstance
- * @author Aave Labs
- * @notice Implementation contract for the Spoke.
- */
+/// @title SpokeInstance
+/// @author Aave Labs
+/// @notice Implementation contract for the Spoke.
 contract SpokeInstance is Spoke {
   uint64 public constant SPOKE_REVISION = 1;
 
-  /**
-   * @dev Constructor.
-   * @param oracle_ The address of the oracle.
-   */
+  /// @dev Constructor.
+  /// @param oracle_ The address of the oracle.
   constructor(address oracle_) Spoke(oracle_) {
     _disableInitializers();
   }

@@ -5,12 +5,10 @@ pragma solidity ^0.8.10;
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 
-/**
- * @title AssetInterestRateStrategy
- * @author Aave Labs
- * @notice Manages the interest rate strategy for an asset.
- * @dev Strategies are hub-specific, due to the usage of asset identifier as index of the _interestRateData.
- */
+/// @title AssetInterestRateStrategy
+/// @author Aave Labs
+/// @notice Manages the interest rate strategy for an asset.
+/// @dev Strategies are hub-specific, due to the usage of asset identifier as index of the _interestRateData.
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;
 
@@ -29,19 +27,15 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @dev Map of assetId and their interest rate data (assetId => interestRateData)
   mapping(uint256 assetId => InterestRateData) internal _interestRateData;
 
-  /**
-   * @dev Constructor.
-   */
+  /// @dev Constructor.
   constructor(address hub_) {
     HUB = hub_;
   }
 
-  /**
-   * @notice Sets the interest rate parameters for a specified asset.
-   * @dev data contains bps values encoded in bytes.
-   * @param assetId The identifier of the asset.
-   * @param data The encoded parameters used to configure the interest rate of the asset.
-   */
+  /// @notice Sets the interest rate parameters for a specified asset.
+  /// @dev data contains bps values encoded in bytes.
+  /// @param assetId The identifier of the asset.
+  /// @param data The encoded parameters used to configure the interest rate of the asset.
   function setInterestRateData(uint256 assetId, bytes calldata data) external {
     require(HUB == msg.sender, OnlyHub());
     InterestRateData memory rateData = abi.decode(data, (InterestRateData));

@@ -18,13 +18,11 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
-/**
- * @title Spoke
- * @author Aave Labs
- * @notice Handles accounting for reserves and user positions.
- * @dev Facilitates user interactions with hubs.
- * @dev Each reserve can be associated with a separate hub.
- */
+/// @title Spoke
+/// @author Aave Labs
+/// @notice Handles accounting for reserves and user positions.
+/// @dev Facilitates user interactions with hubs.
+/// @dev Each reserve can be associated with a separate hub.
 abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
@@ -66,29 +64,23 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
 
-  /**
-   * @notice Modifier that checks if the caller is the position manager.
-   * @dev A user will always be able to act on behalf of themself.
-   * @param onBehalfOf The address of the user on behalf of which the action is being performed.
-   */
+  /// @notice Modifier that checks if the caller is the position manager.
+  /// @dev A user will always be able to act on behalf of themself.
+  /// @param onBehalfOf The address of the user on behalf of which the action is being performed.
   modifier onlyPositionManager(address onBehalfOf) {
     require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
     _;
   }
 
-  /**
-   * @dev Constructor.
-   * @param oracle_ The address of the AaveOracle contract.
-   */
+  /// @dev Constructor.
+  /// @param oracle_ The address of the AaveOracle contract.
   constructor(address oracle_) {
     require(oracle_ != address(0), InvalidAddress());
     ORACLE = oracle_;
   }
 
-  /**
-   * @notice Initializes the spoke contract, setting the authority.
-   * @param _authority The address of the authority contract.
-   */
+  /// @notice Initializes the spoke contract, setting the authority.
+  /// @param _authority The address of the authority contract.
   function initialize(address _authority) external virtual;
 
   /// @inheritdoc ISpoke
