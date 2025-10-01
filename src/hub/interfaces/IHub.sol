@@ -31,8 +31,8 @@ interface IHub is IHubBase, IAccessManaged {
     //
     address underlying;
     //
-    uint96 drawnRate;
     address irStrategy;
+    uint96 drawnRate;
     //
     address reinvestmentController;
     //
