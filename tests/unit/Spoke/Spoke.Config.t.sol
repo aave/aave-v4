@@ -19,6 +19,7 @@ contract SpokeConfigTest is SpokeBase {
     SpokeInstance instance = new SpokeInstance(oracle);
     assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
     assertEq(instance.ORACLE(), oracle);
+    assertNotEq(instance.getLiquidationLogic(), address(0));
   }
 
   function test_spoke_deploy_reverts_on_InvalidConstructorInput() public {
