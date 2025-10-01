@@ -24,6 +24,11 @@ contract UnitPriceFeed is AggregatorV3Interface {
   error OperationNotSupported();
 
   /**
+   * @notice Thrown when requesting a `roundId` in the future.
+   */
+  error InvalidRoundId();
+
+  /**
    * @dev Constructor.
    * @param decimals_ The number of decimals used to represent the unit price.
    * @param description_ The description of the unit price feed.
@@ -41,9 +46,24 @@ contract UnitPriceFeed is AggregatorV3Interface {
 
   /// @inheritdoc AggregatorV3Interface
   function getRoundData(
-    uint80
-  ) external pure override returns (uint80, int256, uint256, uint256, uint80) {
-    revert OperationNotSupported();
+    uint80 _roundId
+  )
+    external
+    view
+    returns (
+      uint80 roundId,
+      int256 answer,
+      uint256 startedAt,
+      uint256 updatedAt,
+      uint80 answeredInRound
+    )
+  {
+    require(_roundId <= uint80(block.timestamp), InvalidRoundId());
+    roundId = _roundId;
+    answer = _units;
+    startedAt = _roundId;
+    updatedAt = _roundId;
+    answeredInRound = _roundId;
   }
 
   /// @inheritdoc AggregatorV3Interface

@@ -29,9 +29,26 @@ contract UnitPriceFeedTest is Base {
     assertEq(unitPriceFeed.version(), 1);
   }
 
-  function test_getRoundData_revertsWith_OperationNotSupported() public {
-    vm.expectRevert(UnitPriceFeed.OperationNotSupported.selector);
-    unitPriceFeed.getRoundData(0);
+  function test_getRoundData() public {
+    uint80 roundId = uint80(vm.randomUint(0, block.timestamp));
+    (
+      uint80 _roundId,
+      int256 answer,
+      uint256 startedAt,
+      uint256 updatedAt,
+      uint80 answeredInRound
+    ) = unitPriceFeed.getRoundData(roundId);
+    assertEq(_roundId, roundId);
+    assertEq(answer, int256(10 ** _decimals));
+    assertEq(startedAt, roundId);
+    assertEq(updatedAt, roundId);
+    assertEq(answeredInRound, roundId);
+  }
+
+  function test_getRoundData_revertsWith_InvalidRoundId() public {
+    uint80 roundId = uint80(vm.randomUint(block.timestamp + 1, type(uint80).max));
+    vm.expectRevert(UnitPriceFeed.InvalidRoundId.selector);
+    unitPriceFeed.getRoundData(roundId);
   }
 
   function test_fuzz_latestRoundData(uint80 blockTimestamp) public {
