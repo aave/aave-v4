@@ -275,15 +275,16 @@ library LiquidationLogic {
       //  - if it increases, it will increase by at most DUST_LIQUIDATION_THRESHOLD (in base currency).
       //    Since debtToLiquidate < params.debtReserveBalance and debt dust condition was enforced, it
       //    is guaranteed that the increase will not make debtToLiquidate exceed params.debtReserveBalance
+      //  - target health factor is ignored to prevent leaving dust
       debtToLiquidate = debtToCollateral.mulDivUp(
         params.collateralAssetPrice * params.debtAssetUnit,
         params.debtAssetPrice * params.collateralAssetUnit
       );
-      if (leavesCollateralDust) {
-        // target health factor is ignored to prevent leaving dust, only if the liquidator intends to cover the necessary debt
-        require(params.debtToCover >= debtToLiquidate, ISpoke.MustNotLeaveDust());
-      }
     }
+
+    // make sure the liquidator intends to cover the necessary debt
+    // in case the amount was adjusted due to dust conditions
+    require(params.debtToCover >= debtToLiquidate, ISpoke.MustNotLeaveDust());
 
     uint256 collateralToLiquidator = collateralToLiquidate -
       (collateralToLiquidate - debtToCollateral).percentMulDown(params.liquidationFee);
@@ -345,8 +346,7 @@ library LiquidationLogic {
       DUST_LIQUIDATION_THRESHOLD;
 
     if (leavesDebtDust) {
-      // target health factor is ignored to prevent leaving dust, only if the liquidator intends to fully cover the debt
-      require(params.debtToCover >= params.debtReserveBalance, ISpoke.MustNotLeaveDust());
+      // target health factor is ignored to prevent leaving dust
       maxDebtToLiquidate = params.debtReserveBalance;
     }
 
