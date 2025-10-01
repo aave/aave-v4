@@ -688,7 +688,8 @@ contract Hub is IHub, AccessManaged {
     uint256 addCap = spoke.addCap;
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
-        addCap * 10 ** asset.decimals >= previewAddByShares(assetId, spoke.addedShares) + amount,
+        addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
+        previewAddByShares(assetId, spoke.addedShares) + amount,
       AddCapExceeded(addCap)
     );
   }
@@ -721,7 +722,7 @@ contract Hub is IHub, AccessManaged {
     uint256 premium = _getSpokePremium(spoke, assetId);
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
-        drawCap * 10 ** asset.decimals >= drawn + premium + amount,
+        drawCap * MathUtils.uncheckedExp(10, asset.decimals) >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
     );
   }
@@ -778,7 +779,8 @@ contract Hub is IHub, AccessManaged {
     uint256 addCap = receiver.addCap;
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
-        addCap * 10 ** asset.decimals >= previewAddByShares(assetId, receiver.addedShares + shares),
+        addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
+        previewAddByShares(assetId, receiver.addedShares + shares),
       AddCapExceeded(addCap)
     );
   }
