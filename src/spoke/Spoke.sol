@@ -934,12 +934,11 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   /// @notice Reports deficits for all debt reserves of the user, including the reserve being repaid during liquidation.
-  /// @dev Only invoked as a part of liquidation flow.
+  /// @dev Deficit validation should already have occurred during liquidation.
   function _reportDeficit(address user) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
     uint256 reserveId = _reserveCount;
 
-    // deficit validation should already have occurred during liquidation
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
       UserPosition storage userPosition = _userPositions[user][reserveId];
       Reserve storage reserve = _reserves[reserveId];
@@ -964,10 +963,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       );
       _settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
       userPosition.drawnShares -= deficitShares.toUint128();
-      // newUserRiskPremium is 0 due to no collateral remaining
-      // non-zero deficit means user ends up with zero total debt
       positionStatus.setBorrowing(reserveId, false);
     }
+    // `newUserRiskPremium` is 0 due to no collateral remaining
+    // non-zero deficit means user ends up with zero total debt
     emit UpdateUserRiskPremium(user, 0);
   }
 
