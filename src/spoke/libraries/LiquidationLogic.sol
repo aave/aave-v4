@@ -488,7 +488,7 @@ library LiquidationLogic {
 
   /**
    * @notice Settles the premium debt.
-   * @dev Duplicates logic from Spoke.
+   * @dev Duplicates logic from spoke.
    * @param debtPosition The debt position.
    * @param realizedDelta The realized premium delta.
    */
