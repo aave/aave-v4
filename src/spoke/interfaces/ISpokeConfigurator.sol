@@ -8,7 +8,6 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Interface for the SpokeConfigurator.
 interface ISpokeConfigurator {
-
   /// @notice Updates the price source of a reserve.
   /// @dev The price source must implement the AggregatorV3Interface.
   /// @param spoke The address of the spoke.

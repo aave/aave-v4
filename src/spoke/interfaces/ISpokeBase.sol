@@ -8,7 +8,6 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 /// @author Aave Labs
 /// @notice Minimal interface for Spoke.
 interface ISpokeBase {
-
   /// @notice Emitted on the supply action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator, and supplier of the underlying asset.

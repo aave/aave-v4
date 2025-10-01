@@ -9,7 +9,6 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 /// @author Aave Labs
 /// @notice Interface for the TreasurySpoke.
 interface ITreasurySpoke is ISpokeBase {
-
   /// @notice Thrown when an unsupported action is attempted.
   error UnsupportedAction();
 

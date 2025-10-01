@@ -8,7 +8,6 @@ import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 /// @author Aave Labs
 /// @notice Interface for the Aave Oracle.
 interface IAaveOracle is IPriceOracle {
-
   /// @dev Emitted when the price feed source of a reserve is updated.
   /// @param reserveId The identifier of the reserve.
   /// @param source The price feed source of the reserve.

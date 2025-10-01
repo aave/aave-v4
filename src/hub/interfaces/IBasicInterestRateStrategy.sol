@@ -6,7 +6,6 @@ pragma solidity ^0.8.10;
 /// @author Aave Labs
 /// @notice Basic interface for any rate strategy.
 interface IBasicInterestRateStrategy {
-
   /// @notice Thrown when the interest rate data is not set for the asset.
   /// @param assetId The identifier of the asset with no interest rate data set.
   error InterestRateDataNotSet(uint256 assetId);

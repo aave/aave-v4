@@ -10,7 +10,6 @@ import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 /// @notice Provides reserve prices.
 /// @dev Oracles are spoke-specific, due to the usage of reserve id as index of the `_sources` mapping.
 contract AaveOracle is IAaveOracle {
-
   /// @inheritdoc IPriceOracle
   address public immutable override SPOKE;
 

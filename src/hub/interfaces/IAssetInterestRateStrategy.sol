@@ -8,7 +8,6 @@ import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateS
 /// @author Aave Labs
 /// @notice Interface of the asset interest rate strategy.
 interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
-
   /// @notice Emitted when new interest rate data is set for an asset.
   /// @param hub The address of the associated hub.
   /// @param assetId Identifier of the asset that has new interest rate data set.
