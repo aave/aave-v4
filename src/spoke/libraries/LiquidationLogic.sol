@@ -256,35 +256,35 @@ library LiquidationLogic {
       params.debtAssetUnit * params.collateralAssetPrice
     );
     uint256 collateralToLiquidate = debtToCollateral.percentMulDown(liquidationBonus);
-    if (collateralToLiquidate > params.collateralReserveBalance) {
-      console.log('LL collateralToLiquidate > params.collateralReserveBalance');
+
+    bool leavesCollateralDust = collateralToLiquidate < params.collateralReserveBalance &&
+      (params.collateralReserveBalance - collateralToLiquidate).mulDivDown(
+        params.collateralAssetPrice.toWad(),
+        params.collateralAssetUnit
+      ) <
+      DUST_LIQUIDATION_THRESHOLD;
+
+    if (
+      collateralToLiquidate > params.collateralReserveBalance ||
+      (leavesCollateralDust && debtToLiquidate < params.debtReserveBalance)
+    ) {
       collateralToLiquidate = params.collateralReserveBalance;
       debtToCollateral = collateralToLiquidate.percentDivUp(liquidationBonus);
+
+      // decreases if collateralToLiquidate > params.collateralReserveBalance
+      //  - if it decreases, it might bypass the debt dust condition
+      // increases if leavesCollateralDust && debtToLiquidate < params.debtReserveBalance
+      //  - if it increases, it will increase by at most DUST_LIQUIDATION_THRESHOLD (in base currency).
+      //    Since debtToLiquidate < params.debtReserveBalance and debt dust condition was enforced, it
+      //    is guaranteed that the increase will not make debtToLiquidate exceed params.debtReserveBalance
       debtToLiquidate = debtToCollateral.mulDivUp(
         params.collateralAssetPrice * params.debtAssetUnit,
         params.debtAssetPrice * params.collateralAssetUnit
       );
-      console.log('LL debtToLiquidate %e', debtToLiquidate);
-    } else if (
-      collateralToLiquidate < params.collateralReserveBalance &&
-      debtToLiquidate < params.debtReserveBalance
-    ) {
-      console.log(
-        'LL collateralToLiquidate < params.collateralReserveBalance && debtToLiquidate < params.debtReserveBalance'
-      );
-      uint256 remainingCollateralInBaseCurrency = (params.collateralReserveBalance -
-        collateralToLiquidate).mulDivDown(
-          params.collateralAssetPrice.toWad(),
-          params.collateralAssetUnit
-        );
-      console.log('LL remainingCollateralInBaseCurrency $%26e', remainingCollateralInBaseCurrency);
-      require(
-        remainingCollateralInBaseCurrency >= DUST_LIQUIDATION_THRESHOLD,
-        ISpoke.MustNotLeaveDust()
-      );
-    } else {
-      console.log('else');
-      console.log('LL collateralToLiquidate no branch %e', collateralToLiquidate);
+      if (leavesCollateralDust) {
+        // target health factor is ignored to prevent leaving dust, only if the liquidator intends to cover the necessary debt
+        require(params.debtToCover >= debtToLiquidate, ISpoke.MustNotLeaveDust());
+      }
     }
 
     uint256 collateralToLiquidator = collateralToLiquidate -
@@ -339,12 +339,14 @@ library LiquidationLogic {
       maxDebtToLiquidate = debtToTarget;
     }
 
-    console.log('LL debtToTarget $%6e', debtToTarget);
+    bool leavesDebtDust = maxDebtToLiquidate < params.debtReserveBalance &&
+      (params.debtReserveBalance - maxDebtToLiquidate).mulDivDown(
+        params.debtAssetPrice.toWad(),
+        params.debtAssetUnit
+      ) <
+      DUST_LIQUIDATION_THRESHOLD;
 
-    uint256 remainingDebtInBaseCurrency = (params.debtReserveBalance - maxDebtToLiquidate)
-      .mulDivDown(params.debtAssetPrice.toWad(), params.debtAssetUnit);
-
-    if (remainingDebtInBaseCurrency < DUST_LIQUIDATION_THRESHOLD) {
+    if (leavesDebtDust) {
       // target health factor is ignored to prevent leaving dust, only if the liquidator intends to fully cover the debt
       require(params.debtToCover >= params.debtReserveBalance, ISpoke.MustNotLeaveDust());
       maxDebtToLiquidate = params.debtReserveBalance;

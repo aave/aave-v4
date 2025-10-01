@@ -188,7 +188,8 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.debtAssetUnit = maxDebtToLiquidateParams.debtAssetUnit;
 
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
-    params.collateralAssetUnit = bound(params.collateralAssetUnit, 0, MAX_TOKEN_DECIMALS_SUPPORTED);
+    params.collateralAssetUnit =
+      10 ** bound(params.collateralAssetUnit, 0, MAX_TOKEN_DECIMALS_SUPPORTED);
     params.liquidationFee = bound(params.liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     params.collateralReserveBalance = bound(params.collateralReserveBalance, 0, MAX_SUPPLY_AMOUNT);
 
