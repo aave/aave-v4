@@ -244,14 +244,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     IHub(hub).setInterestRateData(assetId, irData);
   }
 
-  /**
-   * @notice Updates the spoke caps, without changing the active flag.
-   * @param hub The hub.
-   * @param assetId The identifier of the asset.
-   * @param spoke The address of the spoke.
-   * @param addCap The new add cap.
-   * @param drawCap The new draw cap.
-   */
+  /// @dev Updates spoke caps without changing the active flag.
   function _updateSpokeCaps(
     IHub hub,
     uint256 assetId,
