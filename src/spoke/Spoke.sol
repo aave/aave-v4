@@ -46,6 +46,9 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     LiquidationLogic.DUST_DEBT_LIQUIDATION_THRESHOLD;
 
   /// @inheritdoc ISpoke
+  uint8 public constant ORACLE_DECIMALS = 8;
+
+  /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
   uint256 internal _reserveCount;
@@ -64,13 +67,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     _;
   }
 
-  /**
-   * @dev Constructor.
-   * @param oracle_ The address of the AaveOracle contract.
-   */
+  /// @dev Constructor.
+  /// @dev `oracle_` should should support existing reserves on contract upgrades.
   constructor(address oracle_) {
-    require(oracle_ != address(0), InvalidAddress());
-    require(IAaveOracle(oracle_).DECIMALS() == 8, InvalidOracleDecimals());
+    require(IAaveOracle(oracle_).DECIMALS() == ORACLE_DECIMALS, InvalidOracleDecimals());
     ORACLE = oracle_;
   }
 
@@ -121,7 +121,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     _reserves[reserveId] = Reserve({
       underlying: underlying,
       hub: IHubBase(hub),
-      assetId: uint16(assetId),
+      assetId: assetId.toUint16(),
       decimals: decimals,
       dynamicConfigKey: dynamicConfigKey,
       paused: config.paused,
@@ -159,12 +159,12 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint16) {
     require(reserveId < _reserveCount, ReserveNotListed());
+    _validateDynamicReserveConfig(dynamicConfig);
     uint16 configKey;
     // @dev overflow is desired, we implicitly invalidate & override stale config
     unchecked {
       configKey = ++_reserves[reserveId].dynamicConfigKey;
     }
-    _validateDynamicReserveConfig(dynamicConfig);
     _dynamicConfig[reserveId][configKey] = dynamicConfig;
     emit AddDynamicReserveConfig(reserveId, configKey, dynamicConfig);
     return configKey;
@@ -177,7 +177,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
-    _validateHistoricDynamicReserveConfig(_dynamicConfig[reserveId][configKey], dynamicConfig);
+    _validateUpdateDynamicReserveConfig(_dynamicConfig[reserveId][configKey], dynamicConfig);
     _dynamicConfig[reserveId][configKey] = dynamicConfig;
     emit UpdateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
   }
@@ -552,11 +552,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   /// @inheritdoc ISpokeBase
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
     Reserve storage reserve = _reserves[reserveId];
-    (uint256 drawnDebt, uint256 premiumDebt) = reserve.hub.getSpokeOwed(
-      reserve.assetId,
-      address(this)
-    );
-    return drawnDebt + premiumDebt;
+    return reserve.hub.getSpokeTotalOwed(reserve.assetId, address(this));
   }
 
   function getLiquidationBonus(
@@ -643,7 +639,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     require(!reserve.paused, ReservePaused());
     require(!reserve.frozen, ReserveFrozen());
     require(reserve.borrowable, ReserveNotBorrowable());
-    // HF checked at the end of borrow action
+    // @dev health factor is checked at the end of borrow action
   }
 
   function _validateRepay(Reserve storage reserve) internal view {
@@ -651,11 +647,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     require(!reserve.paused, ReservePaused());
   }
 
-  /**
-   * @dev Calculates the user's premium debt offset in assets amount from a given share amount.
-   * @dev Rounds down to the nearest assets amount. Uses the opposite rounding direction of the
-   * debt shares-to-assets conversion to prevent underflow in premium debt.
-   */
+  /// @notice Evaluate premiumOffset from shares.
+  /// @dev Rounds down as principal premium debt is owed by the system to the user.
   function _previewPremiumOffset(
     IHubBase hub,
     uint256 assetId,
@@ -689,18 +682,18 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    * @param currentConfig The current dynamic reserve config.
    * @param newConfig The dynamic reserve config to validate.
    */
-  function _validateHistoricDynamicReserveConfig(
+  function _validateUpdateDynamicReserveConfig(
     DynamicReserveConfig storage currentConfig,
     DynamicReserveConfig calldata newConfig
   ) internal view {
     // @dev sufficient check since maxLiquidationBonus is always >= 100_00
-    require(currentConfig.maxLiquidationBonus != 0, ConfigKeyUninitialized());
+    require(currentConfig.maxLiquidationBonus > 0, ConfigKeyUninitialized());
     require(newConfig.collateralFactor > 0, InvalidCollateralFactor());
     _validateDynamicReserveConfig(newConfig);
   }
 
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
-    // Enforce that at moment loan is taken, there should be enough collateral to cover liquidation
+    // @dev there should be enough collateral to cover liquidation at moment a loan is taken
     require(
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
@@ -727,7 +720,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
   }
 
-  // @dev allows donation on drawn debt
+  /// @dev Allows donation on drawn debt.
   function _calculateRestoreAmount(
     uint256 drawnDebt,
     uint256 premiumDebt,
@@ -778,7 +771,9 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     PositionStatus storage positionStatus = _positionStatus[user];
 
     uint256 reserveId = _reserveCount;
-    KeyValueList.List memory list = KeyValueList.init(positionStatus.collateralCount(reserveId));
+    KeyValueList.List memory collateralInfo = KeyValueList.init(
+      positionStatus.collateralCount(reserveId)
+    );
     bool borrowing;
     bool collateral;
     while (true) {
@@ -789,7 +784,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       Reserve storage reserve = _reserves[reserveId];
 
       uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
-      uint256 assetUnit = uint256(10).uncheckedExp(reserve.decimals);
+      uint256 assetUnit = MathUtils.uncheckedExp(10, reserve.decimals);
 
       if (collateral) {
         uint256 collateralFactor = _dynamicConfig[reserveId][
@@ -798,14 +793,15 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
             : userPosition.configKey
         ].collateralFactor;
         if (collateralFactor > 0) {
-          uint256 userCollateralInBaseCurrency = (reserve.hub.previewRemoveByShares(
-            reserve.assetId,
-            userPosition.suppliedShares
-          ) * assetPrice).wadDivDown(assetUnit);
-
-          if (userCollateralInBaseCurrency > 0) {
+          uint256 suppliedShares = userPosition.suppliedShares;
+          if (suppliedShares > 0) {
+            // cannot round down to zero
+            uint256 userCollateralInBaseCurrency = (reserve.hub.previewRemoveByShares(
+              reserve.assetId,
+              suppliedShares
+            ) * assetPrice).wadDivDown(assetUnit);
             userAccountData.totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
-            list.add(
+            collateralInfo.add(
               userAccountData.suppliedCollateralsCount,
               reserve.collateralRisk,
               userCollateralInBaseCurrency
@@ -824,9 +820,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
           reserve.assetId,
           userPosition
         );
-        userAccountData.totalDebtInBaseCurrency +=
-          (drawnDebt * assetPrice).wadDivUp(assetUnit) +
-          (premiumDebt * assetPrice).wadDivUp(assetUnit);
+        userAccountData.totalDebtInBaseCurrency += ((drawnDebt + premiumDebt) * assetPrice)
+          .wadDivUp(assetUnit);
         userAccountData.borrowedReservesCount = userAccountData.borrowedReservesCount.uncheckedAdd(
           1
         );
@@ -854,12 +849,12 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     uint256 debtCounterInBaseCurrency = userAccountData.totalDebtInBaseCurrency;
     uint256 collateralCounterInBaseCurrency = 0;
 
-    list.sortByKey(); // sort by collateral risk
+    collateralInfo.sortByKey(); // sort by collateral risk
     uint256 i = 0;
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
-    while (i < list.length() && debtCounterInBaseCurrency > 0) {
-      (uint256 collateralRisk, uint256 userCollateralInBaseCurrency) = list.get(i);
+    while (i < collateralInfo.length() && debtCounterInBaseCurrency > 0) {
+      (uint256 collateralRisk, uint256 userCollateralInBaseCurrency) = collateralInfo.get(i);
       if (userCollateralInBaseCurrency > debtCounterInBaseCurrency) {
         userCollateralInBaseCurrency = debtCounterInBaseCurrency;
       }
@@ -903,28 +898,25 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
       UserPosition storage userPosition = _userPositions[user][reserveId];
-      uint256 assetId = _reserves[reserveId].assetId;
-      IHubBase hub = _reserves[reserveId].hub;
+      Reserve storage reserve = _reserves[reserveId];
+      uint256 assetId = reserve.assetId;
+      IHubBase hub = reserve.hub;
 
-      uint256 oldUserPremiumShares = userPosition.premiumShares;
-      uint256 oldUserPremiumOffset = userPosition.premiumOffset;
-      uint256 accruedUserPremium = hub.previewRestoreByShares(assetId, oldUserPremiumShares) -
-        oldUserPremiumOffset;
+      uint256 oldPremiumShares = userPosition.premiumShares;
+      uint256 oldPremiumOffset = userPosition.premiumOffset;
+      uint256 accruedUserPremium = hub.previewRestoreByShares(assetId, oldPremiumShares) -
+        oldPremiumOffset;
 
-      uint256 newPremiumShares = (userPosition.premiumShares = userPosition
-        .drawnShares
-        .percentMulUp(newUserRiskPremium)
-        .toUint128());
-      uint256 newPremiumOffset = (userPosition.premiumOffset = _previewPremiumOffset(
-        hub,
-        assetId,
-        userPosition.premiumShares
-      ).toUint128());
+      uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newUserRiskPremium);
+      uint256 newPremiumOffset = _previewPremiumOffset(hub, assetId, newPremiumShares);
+
+      userPosition.premiumShares = newPremiumShares.toUint128();
+      userPosition.premiumOffset = newPremiumOffset.toUint128();
       userPosition.realizedPremium += accruedUserPremium.toUint128();
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-        sharesDelta: newPremiumShares.signedSub(oldUserPremiumShares),
-        offsetDelta: newPremiumOffset.signedSub(oldUserPremiumOffset),
+        sharesDelta: newPremiumShares.signedSub(oldPremiumShares),
+        offsetDelta: newPremiumOffset.signedSub(oldPremiumOffset),
         realizedDelta: accruedUserPremium.toInt256()
       });
 
@@ -946,30 +938,27 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
       UserPosition storage userPosition = _userPositions[user][reserveId];
       Reserve storage reserve = _reserves[reserveId];
-      // validation should already have occurred during liquidation
       IHubBase hub = reserve.hub;
       uint256 assetId = reserve.assetId;
       (
-        uint256 drawnDebtRestored,
-        uint256 premiumDebtRestored,
+        uint256 drawnDebtReported,
+        uint256 premiumDebtReported,
         uint256 accruedPremium
       ) = _getUserDebt(hub, assetId, userPosition);
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: -userPosition.premiumShares.toInt256(),
         offsetDelta: -userPosition.premiumOffset.toInt256(),
-        realizedDelta: accruedPremium.toInt256() - premiumDebtRestored.toInt256()
+        realizedDelta: accruedPremium.toInt256() - premiumDebtReported.toInt256()
       });
       uint256 deficitShares = hub.reportDeficit(
         assetId,
-        drawnDebtRestored,
-        premiumDebtRestored,
+        drawnDebtReported,
+        premiumDebtReported,
         premiumDelta
       );
       _settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
       userPosition.drawnShares -= deficitShares.toUint128();
-      // newUserRiskPremium is 0 due to no collateral remaining
-      // non-zero deficit means user ends up with zero total debt
       positionStatus.setBorrowing(reserveId, false);
     }
     emit UpdateUserRiskPremium(user, 0);

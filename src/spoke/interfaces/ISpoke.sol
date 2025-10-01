@@ -371,6 +371,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    */
   function MAX_ALLOWED_COLLATERAL_RISK() external view returns (uint24);
 
+  function ORACLE_DECIMALS() external view returns (uint8);
+
   function ORACLE() external view returns (address);
 
   function getReserve(uint256 reserveId) external view returns (Reserve memory);
