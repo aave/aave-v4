@@ -46,9 +46,9 @@ contract HubHandler is Test {
     accessManager = new AccessManager(hubAdmin);
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
-    address predictedOracle = vm.computeCreateAddress(hubAdmin, vm.getNonce(hubAdmin) + 1);
-    address spokeImpl = address(new SpokeInstance(predictedOracle));
-    oracle = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
+    address predictedSpoke = vm.computeCreateAddress(hubAdmin, vm.getNonce(hubAdmin) + 3);
+    oracle = new AaveOracle(predictedSpoke, 8, 'Spoke 1 (USD)');
+    address spokeImpl = address(new SpokeInstance(address(oracle)));
     spoke1 = Spoke(
       address(
         new TransparentUpgradeableProxy(
@@ -58,7 +58,7 @@ contract HubHandler is Test {
         )
       )
     );
-    assertEq(address(oracle), predictedOracle, 'predictedOracle');
+    assertEq(address(spoke1), predictedSpoke, 'predictedSpoke');
     treasurySpoke = new TreasurySpoke(hubAdmin, address(hub1));
     usdc = new MockERC20();
     dai = new MockERC20();

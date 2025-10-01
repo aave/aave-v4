@@ -70,6 +70,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    */
   constructor(address oracle_) {
     require(oracle_ != address(0), InvalidAddress());
+    require(IAaveOracle(oracle_).DECIMALS() == 8, InvalidOracleDecimals());
     ORACLE = oracle_;
   }
 
@@ -316,7 +317,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
-      oracle: address(ORACLE),
+      oracle: ORACLE,
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
