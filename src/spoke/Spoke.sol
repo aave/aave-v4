@@ -436,6 +436,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /// @inheritdoc ISpoke
   function renouncePositionManagerRole(address onBehalfOf) external {
+    if (!_positionManager[msg.sender].approval[onBehalfOf]) return;
     _positionManager[msg.sender].approval[onBehalfOf] = false;
     emit SetUserPositionManager(onBehalfOf, msg.sender, false);
   }
