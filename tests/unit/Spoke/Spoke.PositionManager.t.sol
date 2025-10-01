@@ -51,10 +51,27 @@ contract SpokePositionManagerTest is SpokeBase {
     address user = vm.randomAddress();
     address positionManager = vm.randomAddress();
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(user, positionManager, false);
+    if (!spoke1.isPositionManager(user, positionManager)) {
+      vm.expectEmit(address(spoke1));
+      emit ISpoke.SetUserPositionManager(user, positionManager, false);
+    }
     vm.prank(positionManager);
     spoke1.renouncePositionManagerRole(user);
+  }
+
+  function test_renouncePositionManagerRole_noop() public {
+    vm.setArbitraryStorage(address(spoke1));
+
+    address user = vm.randomAddress();
+    address positionManager = vm.randomAddress();
+    vm.prank(user);
+    spoke1.setUserPositionManager(positionManager, false);
+
+    vm.recordLogs();
+    vm.prank(positionManager);
+    spoke1.renouncePositionManagerRole(user);
+
+    assertEq(vm.getRecordedLogs().length, 0);
   }
 
   function test_onlyPositionManager_on_supply() public {
