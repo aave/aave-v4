@@ -5,18 +5,28 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeDynamicConfigTriggersTest is SpokeBase {
+  using SafeCast for *;
+
   function test_supply_does_not_trigger_dynamicConfigUpdate() public {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    updateCollateralFactor(
+      spoke1,
+      _usdxReserveId(spoke1),
+      vm.randomUint(50_00, PercentageMath.PERCENTAGE_FACTOR).toUint16()
+    );
 
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500e18);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
     configs = _getUserDynConfigKeys(spoke1, alice);
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    updateCollateralFactor(
+      spoke1,
+      _usdxReserveId(spoke1),
+      vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR).toUint16()
+    );
 
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
 
@@ -55,7 +65,15 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     skip(322 days);
 
     // usdx (user coll) is offboarded
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(
+      _usdxReserveId(spoke1)
+    );
+    config.collateralFactor = 0;
+    config.maxLiquidationBonus = 0;
+    config.liquidationFee = 0;
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(_usdxReserveId(spoke1), config);
+
     // position is still healthy
     assertGe(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
@@ -71,7 +89,11 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     skip(123 days);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 80_00);
+    config.collateralFactor = 80_00;
+    config.maxLiquidationBonus = 105_00;
+    config.liquidationFee = 50;
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(_usdxReserveId(spoke1), config);
 
     vm.prank(bob);
     spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, UINT256_MAX);
@@ -90,12 +112,16 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 1);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     vm.prank(alice);
     spoke1.borrow(_daiReserveId(spoke1), 100e18, alice);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    updateCollateralFactor(
+      spoke1,
+      _usdxReserveId(spoke1),
+      vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR).toUint16()
+    );
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
@@ -116,12 +142,16 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 1);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     vm.prank(alice);
     spoke1.withdraw(_usdxReserveId(spoke1), 500e6, alice);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    updateCollateralFactor(
+      spoke1,
+      _usdxReserveId(spoke1),
+      vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR).toUint16()
+    );
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
@@ -142,12 +172,16 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 1);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    updateCollateralFactor(
+      spoke1,
+      _usdxReserveId(spoke1),
+      vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR).toUint16()
+    );
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supply(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 

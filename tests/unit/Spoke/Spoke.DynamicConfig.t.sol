@@ -106,6 +106,36 @@ contract SpokeDynamicConfigTest is SpokeBase {
     spoke1.updateDynamicReserveConfig(reserveId, configKey, dynConf);
   }
 
+  function test_addDynamicReserveConfig_revertsWith_InvalidDynamicConfig() public {
+    uint256 reserveId = _randomReserveId(spoke1);
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
+    config.collateralFactor = 0;
+    config.maxLiquidationBonus = vm.randomUint(100_01, MAX_LIQUIDATION_BONUS).toUint32();
+    config.liquidationFee = vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+
+    vm.expectRevert(ISpoke.InvalidDynamicConfig.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(reserveId, config);
+  }
+
+  /// If adding a config with collateral factor 0, max liquidation bonus and liquidation fee must also be 0
+  function test_addDynamicReserveConfig_zero_cf() public {
+    uint256 reserveId = _randomReserveId(spoke1);
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
+    config.collateralFactor = 0;
+    config.maxLiquidationBonus = 0;
+    config.liquidationFee = 0;
+    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, config);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(reserveId, config);
+
+    assertEq(spoke1.getDynamicReserveConfig(reserveId), config);
+    assertEq(spoke1.getReserve(reserveId).dynamicConfigKey, expectedConfigKey);
+  }
+
   function test_updateDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_liquidationBonus()
     public
   {
@@ -344,7 +374,14 @@ contract SpokeDynamicConfigTest is SpokeBase {
     Utils.borrow(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
     // offboard usdx
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(
+      _usdxReserveId(spoke1)
+    );
+    config.collateralFactor = 0;
+    config.maxLiquidationBonus = 0;
+    config.liquidationFee = 0;
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(_usdxReserveId(spoke1), config);
 
     // existing users: alice, bob
     // alice still healthy

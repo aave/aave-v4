@@ -585,7 +585,14 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     uint256 debtReserveId = _usdxReserveId(spoke1);
     uint256 debtBorrowAmount = 500e6;
 
-    updateCollateralFactor(spoke1, coll1ReserveId, 0);
+    // Update collateral factor to 0 for coll1
+    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(coll1ReserveId);
+    config.collateralFactor = 0;
+    config.maxLiquidationBonus = 0;
+    config.liquidationFee = 0;
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(coll1ReserveId, config);
+
     assertEq(_getCollateralFactor(spoke1, coll1ReserveId), 0); // initially
     assertNotEq(_getCollateralFactor(spoke1, coll2ReserveId), 0);
 

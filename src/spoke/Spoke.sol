@@ -699,15 +699,22 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
-    // Enforce that at moment loan is taken, there should be enough collateral to cover liquidation
-    require(
-      config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
-        config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
-        config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
-        PercentageMath.PERCENTAGE_FACTOR,
-      InvalidCollateralFactorAndMaxLiquidationBonus()
-    );
-    require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
+    if (config.collateralFactor == 0) {
+      require(
+        config.maxLiquidationBonus == 0 && config.liquidationFee == 0,
+        InvalidDynamicConfig()
+      );
+    } else {
+      // Enforce that at moment loan is taken, there should be enough collateral to cover liquidation
+      require(
+        config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
+          config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
+          config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
+          PercentageMath.PERCENTAGE_FACTOR,
+        InvalidCollateralFactorAndMaxLiquidationBonus()
+      );
+      require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
+    }
   }
 
   /**
