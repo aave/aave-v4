@@ -67,8 +67,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     _;
   }
 
-  /// @dev Constructor.
-  /// @dev `oracle_` should should support existing reserves on contract upgrades.
+  /**
+   * @dev Constructor.
+   * @param oracle_ The address of the AaveOracle contract.
+   */
   constructor(address oracle_) {
     require(IAaveOracle(oracle_).DECIMALS() == ORACLE_DECIMALS, InvalidOracleDecimals());
     ORACLE = oracle_;
