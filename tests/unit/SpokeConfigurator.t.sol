@@ -385,10 +385,10 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_addLiquidationBonus_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    spokeConfigurator.addLiquidationBonus(spokeAddr, reserveId, 0);
+    spokeConfigurator.addMaxLiquidationBonus(spokeAddr, reserveId, 0);
   }
 
-  function test_addLiquidationBonus() public {
+  function test_addMaxLiquidationBonus() public {
     uint32 newLiquidationBonus = PercentageMath.PERCENTAGE_FACTOR.toUint32() + 1;
 
     ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
@@ -405,7 +405,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.addLiquidationBonus(spokeAddr, reserveId, newLiquidationBonus);
+    spokeConfigurator.addMaxLiquidationBonus(spokeAddr, reserveId, newLiquidationBonus);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
   }
