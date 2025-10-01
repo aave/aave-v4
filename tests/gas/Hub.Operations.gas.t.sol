@@ -40,7 +40,6 @@ contract HubOperations_Gas_Tests is Base {
     skip(100);
 
     hub1.draw(daiAssetId, 500e18, alice);
-    // todo: do refresh call to fully encapsulate a `hub1.restore` call
     vm.snapshotGasLastCall('Hub.Operations', 'draw');
     vm.stopPrank();
   }
@@ -54,45 +53,39 @@ contract HubOperations_Gas_Tests is Base {
     vm.startPrank(address(spoke1));
     hub1.add(usdxAssetId, 1000e6, alice);
     hub1.draw(daiAssetId, 500e18, alice);
-    // todo: do refresh call to fully encapsulate a `hub1.restore` call & add premium debt
+    int256 premiumShares = hub1.previewDrawByAssets(daiAssetId, 500e18).toInt256();
+    int256 premiumOffset = hub1
+      .previewRestoreByShares(daiAssetId, uint256(premiumShares))
+      .toInt256();
+    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(premiumShares, premiumOffset, 0));
 
     skip(1000);
 
     (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     hub1.restore(daiAssetId, drawnRemaining / 2, 0, IHubBase.PremiumDelta(0, 0, 0), alice);
-    // todo: do refresh call to fully encapsulate a `hub1.restore` call
     vm.snapshotGasLastCall('Hub.Operations', 'restore: partial');
 
     skip(100);
 
     (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
-    hub1.restore(daiAssetId, drawnRemaining, 0, IHubBase.PremiumDelta(0, 0, 0), alice);
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta(
+      -premiumShares,
+      -premiumOffset,
+      0
+    );
+    hub1.restore(daiAssetId, drawnRemaining, premiumRemaining, premiumDelta, alice);
     vm.snapshotGasLastCall('Hub.Operations', 'restore: full');
     vm.stopPrank();
   }
 
   function test_refreshPremium() public {
-    vm.startPrank(bob);
-    spoke2.supply(_daiReserveId(spoke2), 10000e18, bob);
-    spoke2.setUsingAsCollateral(_daiReserveId(spoke2), true, bob);
-    spoke2.borrow(_daiReserveId(spoke2), 500e18, bob);
-    vm.stopPrank();
-
-    vm.startPrank(alice);
-    spoke1.supply(_usdxReserveId(spoke1), 1000e6, alice);
-    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
-    spoke1.borrow(_daiReserveId(spoke1), 500e18, alice);
-    vm.stopPrank();
-
-    skip(100);
-
-    vm.prank(alice);
-    spoke1.borrow(_daiReserveId(spoke1), 1e18, alice);
-
-    skip(100);
+    int256 premiumShares = hub1.previewDrawByAssets(daiAssetId, 500e18).toInt256();
+    int256 premiumOffset = hub1
+      .previewRestoreByShares(daiAssetId, uint256(premiumShares))
+      .toInt256();
 
     vm.prank(address(spoke1));
-    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(2, 1, -1));
+    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(premiumShares, premiumOffset, 0));
     vm.snapshotGasLastCall('Hub.Operations', 'refreshPremium');
   }
 
