@@ -281,10 +281,11 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function setUserPositionManager(address positionManager, bool approve) external;
 
   /**
-   * @notice Enables a user to grant or revoke approval for a position manager using an EIP712-compliant signature.
+   * @notice Enables a user to grant or revoke approval for a position manager using an EIP712-typed intent.
    * @param positionManager The address of the position manager.
    * @param user The address of the user on whose behalf position manager can act.
    * @param approve True to approve the position manager, false to revoke approval.
+   * @param nonce The nonce for the signature.
    * @param deadline The deadline for the signature.
    * @param signature The EIP712-compliant signature bytes.
    */
@@ -292,6 +293,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     address positionManager,
     address user,
     bool approve,
+    uint256 nonce,
     uint256 deadline,
     bytes memory signature
   ) external;
@@ -318,9 +320,10 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function isPositionManagerActive(address positionManager) external view returns (bool);
 
   /**
-   * @notice Allows caller to revoke their nonce used in `setUserPositionManagerWithSig`.
+   * @notice Allows caller to revoke their next sequential keyed nonce.
+   * @param keyNonce The packed nonce (24 bytes key ++ 8 bytes nonce).
    */
-  function useNonce() external;
+  function useNonce(uint256 keyNonce) external;
 
   /**
    * @notice Allows consuming a permit signature for the given reserve's underlying asset.
@@ -406,7 +409,11 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
 
-  function nonces(address user) external view returns (uint256);
+  /**
+   * @notice Returns the next unused nonce for `user` at given `key`. Result contains the key prefix.
+   * @return keyNonce The 24 bytes for the key, & the last 8 bytes for the nonce.
+   */
+  function nonces(address user, uint192 key) external view returns (uint256);
 
   function DOMAIN_SEPARATOR() external view returns (bytes32);
 }
