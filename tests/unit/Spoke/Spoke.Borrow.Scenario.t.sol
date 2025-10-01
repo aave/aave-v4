@@ -586,10 +586,11 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     uint256 debtBorrowAmount = 500e6;
 
     // Update collateral factor to 0 for coll1
-    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(coll1ReserveId);
-    config.collateralFactor = 0;
-    config.maxLiquidationBonus = 0;
-    config.liquidationFee = 0;
+    ISpoke.DynamicReserveConfig memory config = ISpoke.DynamicReserveConfig({
+      collateralFactor: 0,
+      maxLiquidationBonus: 0,
+      liquidationFee: 0
+    });
     vm.prank(SPOKE_ADMIN);
     spoke1.addDynamicReserveConfig(coll1ReserveId, config);
 

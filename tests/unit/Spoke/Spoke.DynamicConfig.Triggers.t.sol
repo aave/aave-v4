@@ -65,12 +65,11 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     skip(322 days);
 
     // usdx (user coll) is offboarded
-    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(
-      _usdxReserveId(spoke1)
-    );
-    config.collateralFactor = 0;
-    config.maxLiquidationBonus = 0;
-    config.liquidationFee = 0;
+    ISpoke.DynamicReserveConfig memory config = ISpoke.DynamicReserveConfig({
+      collateralFactor: 0,
+      maxLiquidationBonus: 0,
+      liquidationFee: 0
+    });
     vm.prank(SPOKE_ADMIN);
     spoke1.addDynamicReserveConfig(_usdxReserveId(spoke1), config);
 

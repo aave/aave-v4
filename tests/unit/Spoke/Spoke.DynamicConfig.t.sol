@@ -121,10 +121,11 @@ contract SpokeDynamicConfigTest is SpokeBase {
   /// If adding a config with collateral factor 0, max liquidation bonus and liquidation fee must also be 0
   function test_addDynamicReserveConfig_zero_cf() public {
     uint256 reserveId = _randomReserveId(spoke1);
-    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(reserveId);
-    config.collateralFactor = 0;
-    config.maxLiquidationBonus = 0;
-    config.liquidationFee = 0;
+    ISpoke.DynamicReserveConfig memory config = ISpoke.DynamicReserveConfig({
+      collateralFactor: 0,
+      maxLiquidationBonus: 0,
+      liquidationFee: 0
+    });
     uint16 expectedConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
     vm.expectEmit(address(spoke1));
@@ -374,12 +375,11 @@ contract SpokeDynamicConfigTest is SpokeBase {
     Utils.borrow(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
     // offboard usdx
-    ISpoke.DynamicReserveConfig memory config = spoke1.getDynamicReserveConfig(
-      _usdxReserveId(spoke1)
-    );
-    config.collateralFactor = 0;
-    config.maxLiquidationBonus = 0;
-    config.liquidationFee = 0;
+    ISpoke.DynamicReserveConfig memory config = ISpoke.DynamicReserveConfig({
+      collateralFactor: 0,
+      maxLiquidationBonus: 0,
+      liquidationFee: 0
+    });
     vm.prank(SPOKE_ADMIN);
     spoke1.addDynamicReserveConfig(_usdxReserveId(spoke1), config);
 
