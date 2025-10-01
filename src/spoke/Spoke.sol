@@ -778,7 +778,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   ) internal view returns (UserAccountData memory userAccountData) {
     PositionStatus storage positionStatus = _positionStatus[user];
 
-    uint16 globalConfigKey = useLatestConfigKey ? _globalConfigKey : 0;
+    uint16 configKey = useLatestConfigKey ? _globalConfigKey : (positionStatus.configKeyInfo & 1) != 0 ? uint16(positionStatus.configKeyInfo >> 8) : 0;
 
     uint256 reserveId = _reserveCount;
     KeyValueList.List memory list = KeyValueList.init(positionStatus.collateralCount(reserveId));
@@ -796,7 +796,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
       if (collateral) {
         uint256 collateralFactor = _dynamicConfig[reserveId][
-          useLatestConfigKey ? globalConfigKey : userPosition.configKey
+          configKey != 0 ? configKey : userPosition.configKey
         ].collateralFactor;
         if (collateralFactor > 0) {
           uint256 userCollateralInBaseCurrency = (reserve.hub.previewRemoveByShares(
@@ -981,7 +981,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     if ((configKeyInfo & 1) != 0) {
       return uint16(configKeyInfo >> 8);
     } else {
-      return _globalConfigKey;
+      return _userPositions[user][reserveId].configKey;
     }
   }
 
