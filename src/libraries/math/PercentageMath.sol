@@ -19,8 +19,10 @@ library PercentageMath {
    * @param percentage The percentage of the value to be calculated
    * @return result value percentMul percentage
    */
-  function percentMulDown(uint256 value, uint256 percentage) internal pure returns (uint256) {
-    uint256 result;
+  function percentMulDown(
+    uint256 value,
+    uint256 percentage
+  ) internal pure returns (uint256 result) {
     // to avoid overflow, value <= type(uint256).max / percentage
     assembly ('memory-safe') {
       if iszero(or(iszero(percentage), iszero(gt(value, div(not(0), percentage))))) {
@@ -29,7 +31,6 @@ library PercentageMath {
 
       result := div(mul(value, percentage), PERCENTAGE_FACTOR)
     }
-    return result;
   }
 
   /**
@@ -39,8 +40,7 @@ library PercentageMath {
    * @param percentage The percentage of the value to be calculated (in BPS)
    * @return result value percentMul percentage
    */
-  function percentMulUp(uint256 value, uint256 percentage) internal pure returns (uint256) {
-    uint256 result;
+  function percentMulUp(uint256 value, uint256 percentage) internal pure returns (uint256 result) {
     // to avoid overflow, value <= type(uint256).max / percentage
     assembly ('memory-safe') {
       if iszero(or(iszero(percentage), iszero(gt(value, div(not(0), percentage))))) {
@@ -51,7 +51,6 @@ library PercentageMath {
       // Add 1 if (value * percentage) % PERCENTAGE_FACTOR > 0 to round up the division of (value * percentage) by PERCENTAGE_FACTOR
       result := add(div(result, PERCENTAGE_FACTOR), gt(mod(result, PERCENTAGE_FACTOR), 0))
     }
-    return result;
   }
 
   /**
@@ -61,8 +60,10 @@ library PercentageMath {
    * @param percentage The percentage of the value to be calculated (in BPS)
    * @return result value percentDiv percentage
    */
-  function percentDivDown(uint256 value, uint256 percentage) internal pure returns (uint256) {
-    uint256 result;
+  function percentDivDown(
+    uint256 value,
+    uint256 percentage
+  ) internal pure returns (uint256 result) {
     // to avoid overflow, value <= type(uint256).max / PERCENTAGE_FACTOR
     assembly ('memory-safe') {
       if or(iszero(percentage), iszero(iszero(gt(value, div(not(0), PERCENTAGE_FACTOR))))) {
@@ -71,7 +72,6 @@ library PercentageMath {
 
       result := div(mul(value, PERCENTAGE_FACTOR), percentage)
     }
-    return result;
   }
 
   /**
@@ -81,8 +81,7 @@ library PercentageMath {
    * @param percentage The percentage of the value to be calculated (in BPS)
    * @return result value percentDiv percentage
    */
-  function percentDivUp(uint256 value, uint256 percentage) internal pure returns (uint256) {
-    uint256 result;
+  function percentDivUp(uint256 value, uint256 percentage) internal pure returns (uint256 result) {
     // to avoid overflow, value <= type(uint256).max / PERCENTAGE_FACTOR
     assembly ('memory-safe') {
       if or(iszero(percentage), iszero(iszero(gt(value, div(not(0), PERCENTAGE_FACTOR))))) {
@@ -93,7 +92,6 @@ library PercentageMath {
       // Add 1 if (value * PERCENTAGE_FACTOR) % percentage > 0 to round up the division of (value * PERCENTAGE_FACTOR) by percentage
       result := add(div(result, percentage), gt(mod(result, percentage), 0))
     }
-    return result;
   }
 
   /**
