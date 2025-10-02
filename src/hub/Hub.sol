@@ -337,14 +337,14 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function payFee(uint256 assetId, uint256 shares) external {
+  function payFeeShares(uint256 assetId, uint256 shares) external {
     SpokeData storage sender = _spokes[assetId][msg.sender];
     address feeReceiver = _assets[assetId].feeReceiver;
     Asset storage asset = _assets[assetId];
     SpokeData storage receiver = _spokes[assetId][feeReceiver];
 
     asset.accrue(assetId, receiver);
-    _validatePayFee(sender, shares);
+    _validatePayFeeShares(sender, shares);
     _transferShares(sender, receiver, shares);
     asset.updateDrawnRate(assetId);
 
@@ -762,7 +762,7 @@ contract Hub is IHub, AccessManaged {
     require(amount > 0, InvalidAmount());
   }
 
-  function _validatePayFee(SpokeData storage senderSpoke, uint256 feeShares) internal view {
+  function _validatePayFeeShares(SpokeData storage senderSpoke, uint256 feeShares) internal view {
     require(senderSpoke.active, SpokeNotActive());
     require(feeShares > 0, InvalidShares());
   }
