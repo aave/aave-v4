@@ -452,7 +452,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     bytes32 s
   ) external {
     Reserve storage reserve = _reserves[reserveId];
-    address underlying = address(reserve.underlying);
+    address underlying = reserve.underlying;
     require(underlying != address(0), ReserveNotListed());
     try
       IERC20Permit(underlying).permit({
