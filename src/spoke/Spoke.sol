@@ -366,17 +366,16 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
+    _validateSetUsingAsCollateral(_reserves[reserveId], usingAsCollateral);
+
     // process only if collateral status changes
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) return;
-
-    _validateSetUsingAsCollateral(_reserves[reserveId], usingAsCollateral);
 
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
       _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
-      // If unsetting, check HF and update user rp
       uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
       _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
     }
