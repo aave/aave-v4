@@ -29,8 +29,8 @@ interface IHub is IHubBase, IAccessManaged {
     //
     address underlying;
     //
-    uint96 drawnRate;
     address irStrategy;
+    uint96 drawnRate;
     //
     address reinvestmentController;
     //
@@ -104,13 +104,15 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Emitted when an amount of liquidity is swept by the reinvestment controller.
   /// @param assetId The identifier of the asset.
+  /// @param reinvestmentController The active asset controller.
   /// @param amount The amount swept.
-  event Sweep(uint256 indexed assetId, uint256 amount);
+  event Sweep(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
 
   /// @notice Emitted when an amount of liquidity is reclaimed (from swept liquidity) by the reinvestment controller.
   /// @param assetId The identifier of the asset.
+  /// @param reinvestmentController The active asset controller.
   /// @param amount The amount reclaimed.
-  event Reclaim(uint256 indexed assetId, uint256 amount);
+  event Reclaim(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
 
   /// @notice Emitted when deficit is eliminated.
   /// @param assetId The identifier of the asset.

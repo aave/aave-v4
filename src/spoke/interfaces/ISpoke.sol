@@ -209,6 +209,9 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   /// @notice Thrown for an invalid zero address.
   error InvalidAddress();
 
+  /// @notice Thrown when the oracle decimals are not 8 in the constructor.
+  error InvalidOracleDecimals();
+
   /// @notice Thrown when a collateral risk exceeds the maximum allowed.
   error InvalidCollateralRisk();
 
@@ -232,6 +235,9 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   /// @notice Thrown when a debt to cover input is zero.
   error InvalidDebtToCover();
+
+  /// @notice Thrown when trying to set zero collateralFactor on historic dynamic configuration keys.
+  error InvalidCollateralFactor();
 
   /// @notice Updates the liquidation config.
   /// @param config The liquidation config.
@@ -277,6 +283,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   /// @notice Updates the dynamic reserve config for a given reserve at the specified key.
   /// @dev Reverts with `ConfigKeyUninitialized` if the config key has not been initialized yet.
+  /// @dev Reverts with `InvalidCollateralFactor` if the collateral factor is 0.
   /// @param reserveId The identifier of the reserve.
   /// @param configKey The key of the config to update.
   /// @param dynamicConfig The new dynamic reserve config.

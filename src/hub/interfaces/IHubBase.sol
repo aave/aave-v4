@@ -62,10 +62,15 @@ interface IHubBase {
 
   /// @notice Emitted on the `transferShares` action.
   /// @param assetId The identifier of the asset.
-  /// @param shares The amount of shares transferred.
   /// @param sender The address of the sender.
   /// @param receiver The address of the receiver.
-  event TransferShares(uint256 indexed assetId, uint256 shares, address sender, address receiver);
+  /// @param shares The amount of shares transferred.
+  event TransferShares(
+    uint256 indexed assetId,
+    address indexed sender,
+    address indexed receiver,
+    uint256 shares
+  );
 
   /// @notice Emitted on the `reportDeficit` action.
   /// @param assetId The identifier of the asset.
