@@ -66,8 +66,7 @@ library AssetLogic {
   }
 
   function totalAddedShares(IHub.Asset storage asset) internal view returns (uint256) {
-    return
-      asset.addedShares + asset.getFeeShares(asset.getDrawnIndex().uncheckedSub(asset.drawnIndex));
+    return asset.addedShares + asset.unrealizedFeeShares();
   }
 
   function toAddedAssetsUp(
