@@ -1017,4 +1017,14 @@ contract SpokeBase is Base {
     vm.prank(_getProxyAdminAddress(address(spoke)));
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
   }
+
+  function _getReserveIds(ISpoke spoke) internal view returns (ReserveIds memory) {
+    return
+      ReserveIds({
+        dai: _daiReserveId(spoke),
+        weth: _wethReserveId(spoke),
+        usdx: _usdxReserveId(spoke),
+        wbtc: _wbtcReserveId(spoke)
+      });
+  }
 }

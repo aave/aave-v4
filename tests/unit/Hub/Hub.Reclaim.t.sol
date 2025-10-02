@@ -97,7 +97,7 @@ contract HubReclaimTest is HubBase {
     emit IERC20.Transfer(reinvestmentController, address(hub1), reclaimAmount);
 
     vm.expectEmit(address(hub1));
-    emit IHub.Reclaim(daiAssetId, reclaimAmount);
+    emit IHub.Reclaim(daiAssetId, reinvestmentController, reclaimAmount);
 
     vm.prank(reinvestmentController);
     hub1.reclaim(daiAssetId, reclaimAmount);
