@@ -120,10 +120,10 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     addExRateBefore = getAddExRate(daiAssetId);
 
     // Withdraw all supplied assets
-    Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, type(uint256).max, bob);
+    Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, type(uint256).max);
+    withdrawLiquidityFees(daiAssetId, UINT256_MAX);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
@@ -249,7 +249,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), 'after bob withdraw');
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(state.assetId, type(uint256).max);
+    withdrawLiquidityFees(state.assetId, UINT256_MAX);
 
     state.stage = 2;
     reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
@@ -348,10 +348,10 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     vm.startPrank(bob);
     // Can still withdraw usdx because CF = 0
-    spoke1.withdraw(usdxReserveId, type(uint256).max, bob);
+    spoke1.withdraw(usdxReserveId, UINT256_MAX, bob);
 
     // Can still withdraw wbtc because not set as collateral
-    spoke1.withdraw(wbtcReserveId, type(uint256).max, bob);
+    spoke1.withdraw(wbtcReserveId, UINT256_MAX, bob);
     vm.stopPrank();
   }
 

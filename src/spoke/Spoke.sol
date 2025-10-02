@@ -70,6 +70,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    */
   constructor(address oracle_) {
     require(oracle_ != address(0), InvalidAddress());
+    require(IAaveOracle(oracle_).DECIMALS() == 8, InvalidOracleDecimals());
     ORACLE = oracle_;
   }
 
@@ -228,8 +229,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
     if (
-      this.isUsingAsCollateral(reserveId, onBehalfOf) &&
-      _dynamicConfig[reserveId][userPosition.configKey].collateralFactor > 0
+      isUsingAsCollateral(reserveId, onBehalfOf) &&
+      _dynamicConfig[reserveId][reserve.dynamicConfigKey].collateralFactor > 0
     ) {
       uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
       _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
@@ -321,7 +322,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
-      oracle: address(ORACLE),
+      oracle: ORACLE,
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
@@ -440,6 +441,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /// @inheritdoc ISpoke
   function renouncePositionManagerRole(address onBehalfOf) external {
+    if (!_positionManager[msg.sender].approval[onBehalfOf]) return;
     _positionManager[msg.sender].approval[onBehalfOf] = false;
     emit SetUserPositionManager(onBehalfOf, msg.sender, false);
   }
@@ -470,6 +472,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     {} catch {}
   }
 
+  function isUsingAsCollateral(uint256 reserveId, address user) public view returns (bool) {
+    return _positionStatus[user].isUsingAsCollateral(reserveId);
+  }
+
   /// @inheritdoc ISpoke
   function getLiquidationLogic() public pure returns (address) {
     return address(LiquidationLogic);
@@ -483,10 +489,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   /// @inheritdoc ISpoke
   function isPositionManagerActive(address positionManager) external view returns (bool) {
     return _positionManager[positionManager].active;
-  }
-
-  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
-    return _positionStatus[user].isUsingAsCollateral(reserveId);
   }
 
   function isBorrowing(uint256 reserveId, address user) external view returns (bool) {
