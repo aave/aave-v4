@@ -372,7 +372,7 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     _validateSweep(asset, msg.sender, amount);
 
-    asset.liquidity -= amount.toUint128();
+    asset.liquidity = asset.liquidity.uncheckedSub(amount).toUint128();
     asset.swept += amount.toUint128();
     asset.updateDrawnRate(assetId);
 
@@ -389,7 +389,7 @@ contract Hub is IHub, AccessManaged {
     _validateReclaim(asset, msg.sender, amount);
 
     asset.liquidity += amount.toUint128();
-    asset.swept -= amount.toUint128();
+    asset.swept = asset.swept.uncheckedSub(amount).toUint128();
     asset.updateDrawnRate(assetId);
 
     IERC20(asset.underlying).safeTransferFrom(msg.sender, address(this), amount);
