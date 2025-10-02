@@ -14,13 +14,11 @@ import {Multicall} from 'src/utils/Multicall.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
 
-/**
- * @title SignatureGateway
- * @author Aave Labs
- * @notice Gateway to consume EIP-712 typed intents for spoke actions on behalf of a user.
- * @dev Contract must be an active & approved user position manager to execute spoke actions on user's behalf.
- * @dev Intents bundled through multicall can be executed independently in order of signed nonce & deadline.
- */
+/// @title SignatureGateway
+/// @author Aave Labs
+/// @notice Gateway to consume EIP-712 typed intents for spoke actions on behalf of a user.
+/// @dev Contract must be an active & approved user position manager to execute spoke actions on user's behalf.
+/// @dev Intents bundled through multicall can be executed independently in order of signed nonce & deadline.
 contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2Step, EIP712 {
   using SafeERC20 for IERC20;
 
@@ -63,12 +61,10 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
 
   mapping(address user => uint256) internal _nonces;
 
-  /**
-   * @dev Constructor.
-   * @dev Reverts if the spoke or initial owner is zero address.
-   * @param spoke_ The address of the spoke contract.
-   * @param initialOwner_ The address of the initial owner.
-   */
+  /// @dev Constructor.
+  /// @dev Reverts if the spoke or initial owner is zero address.
+  /// @param spoke_ The address of the spoke contract.
+  /// @param initialOwner_ The address of the initial owner.
   constructor(address spoke_, address initialOwner_) Ownable(initialOwner_) {
     require(spoke_ != address(0) && initialOwner_ != address(0), InvalidAddress());
     _spoke = ISpoke(spoke_);
@@ -336,40 +332,24 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     return _nonces[user];
   }
 
-  /**
-   * @notice Increments the nonce for a user.
-   * @param user The address of the user.
-   * @return The new nonce.
-   */
+  /// @return The used nonce.
   function _useNonce(address user) internal returns (uint256) {
     unchecked {
       return _nonces[user]++;
     }
   }
 
-  /**
-   * @notice Returns the domain name and version.
-   * @return The domain name.
-   * @return The version.
-   */
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
     return ('SignatureGateway', '1');
   }
 
-  /**
-   * @notice Returns the rescue guardian address.
-   * @return The address allowed to rescue funds.
-   */
+  /// @dev RescueGuardian is the owner of the contract.
   function _rescueGuardian() internal view override returns (address) {
     return owner();
   }
 
-  /**
-   * @notice Returns the reserve data.
-   * @param reserveId The identifier of the reserve.
-   * @return The underlying asset.
-   * @return The hub address.
-   */
+  /// @return The underlying asset.
+  /// @return The hub address.
   function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
     ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
     require(reserveData.underlying != address(0), InvalidReserveId());
