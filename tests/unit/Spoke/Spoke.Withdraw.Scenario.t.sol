@@ -296,27 +296,16 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     );
   }
 
-  /// Put position underwater, and show can withdraw reserve of CF 0 and reserve not set as collateral
+  /// Put position underwater, and show can withdraw reserve not set as collateral
   function test_withdraw_underwater_reserve_not_collateral() public {
-    // Supply 3 collaterals, one used to borrow, one not set as collateral, one set as collateral but CF = 0
+    // Supply 2 collaterals, one used to borrow, and one not set as collateral
     uint256 daiReserveId = _daiReserveId(spoke1);
-    uint256 usdxReserveId = _usdxReserveId(spoke1);
     uint256 wbtcReserveId = _wbtcReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
-
-    // Change usdx CF to 0
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
 
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: daiReserveId,
-      caller: bob,
-      amount: 10_000e18,
-      onBehalfOf: bob
-    });
-    Utils.supplyCollateral({
-      spoke: spoke1,
-      reserveId: usdxReserveId,
       caller: bob,
       amount: 10_000e18,
       onBehalfOf: bob
@@ -346,13 +335,9 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     ISpoke.UserAccountData memory userData = spoke1.getUserAccountData(bob);
     assertLt(userData.healthFactor, 1e18, 'hf below 1');
 
-    vm.startPrank(bob);
-    // Can still withdraw usdx because CF = 0
-    spoke1.withdraw(usdxReserveId, UINT256_MAX, bob);
-
     // Can still withdraw wbtc because not set as collateral
+    vm.prank(bob);
     spoke1.withdraw(wbtcReserveId, UINT256_MAX, bob);
-    vm.stopPrank();
   }
 
   /// Let protocol have some funds initially. User deposits, immediately withdraws, check delta on share amounts

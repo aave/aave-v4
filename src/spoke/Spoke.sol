@@ -228,10 +228,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
-    if (
-      isUsingAsCollateral(reserveId, onBehalfOf) &&
-      _dynamicConfig[reserveId][reserve.dynamicConfigKey].collateralFactor > 0
-    ) {
+    if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
       uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
       _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
     }
@@ -473,10 +470,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     {} catch {}
   }
 
-  function isUsingAsCollateral(uint256 reserveId, address user) public view returns (bool) {
-    return _positionStatus[user].isUsingAsCollateral(reserveId);
-  }
-
   /// @inheritdoc ISpoke
   function getLiquidationLogic() public pure returns (address) {
     return address(LiquidationLogic);
@@ -490,6 +483,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   /// @inheritdoc ISpoke
   function isPositionManagerActive(address positionManager) external view returns (bool) {
     return _positionManager[positionManager].active;
+  }
+
+  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
+    return _positionStatus[user].isUsingAsCollateral(reserveId);
   }
 
   function isBorrowing(uint256 reserveId, address user) external view returns (bool) {
