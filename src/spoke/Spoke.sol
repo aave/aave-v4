@@ -396,7 +396,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    _refreshDynamicConfig(onBehalfOf);
+    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
+    _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -974,15 +975,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       positionStatus.setBorrowing(reserveId, false);
     }
     emit UpdateUserRiskPremium(user, 0);
-  }
-
-  function _refreshDynamicConfig(address user) internal {
-    uint256 reserveId = _reserveCount;
-    PositionStatus storage positionStatus = _positionStatus[user];
-    while ((reserveId = positionStatus.nextCollateral(reserveId)) != PositionStatusMap.NOT_FOUND) {
-      _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
-    }
-    emit RefreshAllUserDynamicConfig(user);
   }
 
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {

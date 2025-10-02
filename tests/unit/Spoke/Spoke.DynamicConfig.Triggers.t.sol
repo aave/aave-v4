@@ -242,6 +242,53 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     _updateUserDynamicConfig({caller: USER_POSITION_UPDATER, existingConfigs: configs});
   }
 
+  function test_updateUserDynamicConfig_updatesRP() public {
+    // Supply 2 collaterals such that 1 exactly covers debt initially
+    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 2000e18);
+
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 2000e18, alice);
+
+    // Alice's dai debt is exactly covered by her weth collateral
+    assertEq(
+      _getValueInBaseCurrency(spoke1, _daiReserveId(spoke1), 2000e18),
+      _getValueInBaseCurrency(spoke1, _wethReserveId(spoke1), 1e18),
+      'weth supply covers debt'
+    );
+
+    uint256 initialRP = _getUserRiskPremium(spoke1, alice);
+
+    skip(365 days);
+
+    // Change some dynamic config
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
+
+    // Alice updates her dynamic config
+    DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+    _updateUserDynamicConfig(alice, configs);
+
+    // Alice's Risk premium updated
+    uint256 newRP = _getUserRiskPremium(spoke1, alice);
+    assertNotEq(initialRP, newRP);
+  }
+
+  function test_updateUserDynamicConfig_doesHFCheck() public {
+    // Supply 1 collateral that is sufficient to cover debt
+    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500e18);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
+
+    // Change CF such that alice's position is undercollateralized
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 1);
+
+    // Alice cannot update her dynamic config due to HF check
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
+    vm.prank(alice);
+    spoke1.updateUserDynamicConfig(alice);
+  }
+
   function _updateUserDynamicConfig(
     address caller,
     DynamicConfig[] memory existingConfigs
