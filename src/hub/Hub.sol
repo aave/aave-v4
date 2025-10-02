@@ -665,7 +665,7 @@ contract Hub is IHub, AccessManaged {
     receiver.addedShares += shares.toUint128();
   }
 
-  /// @dev Returns the drawn amount in unit of assets.
+  /// @dev Returns the spoke's drawn for a specified asset in unit of assets.
   function _getSpokeDrawn(
     SpokeData storage spoke,
     uint256 assetId
@@ -673,7 +673,7 @@ contract Hub is IHub, AccessManaged {
     return previewRestoreByShares(assetId, spoke.drawnShares);
   }
 
-  /// @dev Returns the premium amount in unit of assets.
+  /// @dev Returns the spoke's premium for a specified asset in unit of assets.
   function _getSpokePremium(
     SpokeData storage spoke,
     uint256 assetId
@@ -806,12 +806,13 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @notice Adds a spoke to an asset.
+  /// @dev Reverts with `SpokeAlreadyListed` if spoke is already listed for the given asset.
   function _addSpoke(uint256 assetId, address spoke) internal {
     require(_assetToSpokes[assetId].add(spoke), SpokeAlreadyListed());
     emit AddSpoke(assetId, spoke);
   }
 
-  /// @notice Adds a fee receiver to an asset with maximum add cap and zero draw cap.
+  /// @notice Adds a new spoke to an asset with default feeReceiver configuration (maximum add cap, zero draw cap).
   /// @dev Emits `AddSpoke` and `UpdateSpokeConfig` events.
   function _addFeeReceiver(uint256 assetId, address feeReceiver) internal {
     _addSpoke(assetId, feeReceiver);

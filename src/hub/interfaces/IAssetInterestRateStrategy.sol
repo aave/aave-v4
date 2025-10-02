@@ -26,8 +26,7 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
 
   /// @notice Holds the interest rate data for a given asset.
   /// @dev All values are in basis points (bps), where 1 bps = 0.01%.
-  /// This means that 10000 bps = 100%.
-  /// The maximum supported interest rate is 4294967295 bps (2**32-1) or 42949672.95%.
+  /// @dev The maximum supported interest rate is 4294967295 bps (2**32-1) or 42949672.95%.
   /// @param optimalUsageRatio The optimal borrow usage ratio, in bps (1-9900).
   /// @param baseVariableBorrowRate The base variable borrow rate, in bps.
   /// @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal borrow usage ratio, in bps.

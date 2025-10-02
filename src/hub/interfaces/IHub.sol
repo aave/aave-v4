@@ -348,14 +348,17 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Returns the amount of available liquidity for the specified asset.
   /// @param assetId The identifier of the asset.
+  /// @return The amount of available liquidity.
   function getLiquidity(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the amount of liquidity swept by the reinvestment controller for the specified asset.
   /// @param assetId The identifier of the asset.
+  /// @return The amount of liquidity swept.
   function getSwept(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the amount of deficit for the specified asset.
   /// @param assetId The identifier of the asset.
+  /// @return The amount of deficit.
   function getDeficit(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the number of spokes listed for the specified asset.
