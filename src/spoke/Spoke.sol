@@ -67,8 +67,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     _;
   }
 
-  /// @dev Constructor.
-  /// @param oracle_ The address of `AaveOracle` which supports existing reserves on contract upgrades.
+  /**
+   * @dev Constructor.
+   * @param oracle_ The address of the AaveOracle contract.
+   */
   constructor(address oracle_) {
     require(IAaveOracle(oracle_).DECIMALS() == ORACLE_DECIMALS, InvalidOracleDecimals());
     ORACLE = oracle_;
@@ -840,15 +842,13 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     uint256 debtCounterInBaseCurrency = userAccountData.totalDebtInBaseCurrency;
     uint256 collateralCounterInBaseCurrency = 0;
 
-    collateralInfo.sortByKey(); // sort by collateral risk
+    collateralInfo.sortByKey(); // sort by collateralRisk in asc, collateralValue in desc
     uint256 i = 0;
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
     while (i < collateralInfo.length() && debtCounterInBaseCurrency > 0) {
       (uint256 collateralRisk, uint256 userCollateralInBaseCurrency) = collateralInfo.get(i);
-      if (userCollateralInBaseCurrency > debtCounterInBaseCurrency) {
-        userCollateralInBaseCurrency = debtCounterInBaseCurrency;
-      }
+      userCollateralInBaseCurrency = userCollateralInBaseCurrency.min(debtCounterInBaseCurrency);
       userAccountData.userRiskPremium += userCollateralInBaseCurrency * collateralRisk;
       collateralCounterInBaseCurrency += userCollateralInBaseCurrency;
       debtCounterInBaseCurrency -= userCollateralInBaseCurrency;
