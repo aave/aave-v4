@@ -10,7 +10,7 @@ contract MockSpoke is Spoke {
 
   constructor(address oracle_) Spoke(oracle_) {}
 
-  function initialize(address) external override {}
+  function initialize(address) public override {}
 
   // same as spoke's borrow, but without health factor check
   function borrowWithoutHfCheck(

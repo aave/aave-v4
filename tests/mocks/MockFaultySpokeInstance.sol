@@ -4,13 +4,8 @@ pragma solidity ^0.8.0;
 
 import {Spoke} from 'src/spoke/Spoke.sol';
 
-/**
- * @title SpokeInstance
- * @author Aave Labs
- * @notice Implementation contract for the Spoke.
- */
-contract SpokeInstance is Spoke {
-  uint64 public constant SPOKE_REVISION = 1;
+contract MockFaultySpokeInstance is Spoke {
+  uint64 public immutable SPOKE_REVISION = 1;
 
   constructor(address oracle_) Spoke(oracle_) {
     _disableInitializers();
@@ -20,10 +15,6 @@ contract SpokeInstance is Spoke {
   function initialize(address _authority) public override reinitializer(SPOKE_REVISION) {
     require(_authority != address(0), InvalidAddress());
     __AccessManaged_init(_authority);
-    if (_liquidationConfig.targetHealthFactor == 0) {
-      _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-      emit UpdateLiquidationConfig(_liquidationConfig);
-    }
     super.initialize(_authority);
   }
 }

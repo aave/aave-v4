@@ -74,7 +74,9 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     ORACLE = oracle_;
   }
 
-  function initialize(address _authority) external virtual;
+  function initialize(address _authority) public virtual {
+    require(_liquidationConfig.targetHealthFactor != 0, InvalidLiquidationConfig());
+  }
 
   // /////
   // Governance

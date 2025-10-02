@@ -73,6 +73,7 @@ import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
+import {MockFaultySpokeInstance} from 'tests/mocks/MockFaultySpokeInstance.sol';
 
 abstract contract Base is Test {
   using WadRayMath for uint256;

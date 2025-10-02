@@ -177,6 +177,16 @@ contract SpokeUpgradeableTest is SpokeBase {
     spokeProxy.upgradeToAndCall(address(spokeImpl2), _getInitializeCalldata(address(0)));
   }
 
+  function test_proxy_constructor_revertsWith_InvalidLiquidationConfig() public {
+    address spokeImpl = address(new MockFaultySpokeInstance(oracle));
+    vm.expectRevert(ISpoke.InvalidLiquidationConfig.selector);
+    new TransparentUpgradeableProxy(
+      spokeImpl,
+      proxyAdminOwner,
+      _getInitializeCalldata(address(accessManager))
+    );
+  }
+
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
     SpokeInstance spokeImpl = new SpokeInstance(oracle);
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
