@@ -97,7 +97,8 @@ abstract contract Base is Test {
   uint256 internal MAX_SUPPLY_AMOUNT_WETH;
   uint256 internal MAX_SUPPLY_AMOUNT_USDY;
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
-  uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
+  uint24 internal constant MIN_COLLATERAL_RISK_BPS = 1;
+  uint24 internal constant MAX_COLLATERAL_RISK_BPS = 1000_00;
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
   uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
@@ -1070,7 +1071,7 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function updateCollateralFactor(
+  function _updateCollateralFactor(
     ISpoke spoke,
     function(ISpoke) pure returns (uint256) reserveIdFn,
     uint256 newCollateralFactor
@@ -1086,7 +1087,7 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function updateCollateralFactor(
+  function _updateCollateralFactor(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newCollateralFactor
@@ -1100,7 +1101,7 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function updateCollateralFactorAtKey(
+  function _updateCollateralFactorAtKey(
     ISpoke spoke,
     uint256 reserveId,
     uint16 configKey,
@@ -1127,7 +1128,7 @@ abstract contract Base is Test {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateCollateralRisk(
+  function _updateCollateralRisk(
     ISpoke spoke,
     uint256 reserveId,
     uint24 newCollateralRisk
@@ -1926,6 +1927,10 @@ abstract contract Base is Test {
 
   function _getFeeReceiver(IHub hub, uint256 assetId) internal view returns (address) {
     return hub.getAssetConfig(assetId).feeReceiver;
+  }
+
+  function _getFeeReceiver(ISpoke spoke, uint256 reserveId) internal view returns (address) {
+    return _getFeeReceiver(_hub(spoke, reserveId), spoke.getReserve(reserveId).assetId);
   }
 
   function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint24) {

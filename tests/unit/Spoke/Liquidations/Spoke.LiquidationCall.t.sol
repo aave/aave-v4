@@ -49,14 +49,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     for (uint256 i = 0; i < count; i++) {
       uint256 reserveId = vm.randomUint(0, spoke.getReserveCount() - 1);
       uint256 amount = _convertBaseCurrencyToAmount(spoke, reserveId, amountInBaseCurrency);
-      _openSupplyPosition(spoke, reserveId, amount);
-      Utils.borrow({
-        spoke: spoke,
-        reserveId: reserveId,
-        caller: user,
-        amount: amount,
-        onBehalfOf: user
-      });
+      _increaseReserveDebt(spoke, reserveId, amount, user);
     }
   }
 
@@ -468,6 +461,16 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
   ) internal virtual override {
     uint256 targetHealthFactor = vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR);
     _updateTargetHealthFactor(spoke, targetHealthFactor.toUint128());
+
+    uint32 maxLiquidationBonus = vm
+      .randomUint(
+        MIN_LIQUIDATION_BONUS,
+        (PercentageMath.PERCENTAGE_FACTOR - 1).percentDivDown(
+          _getCollateralFactor(spoke, collateralReserveId)
+        )
+      )
+      .toUint32();
+    _updateMaxLiquidationBonus(spoke, collateralReserveId, maxLiquidationBonus);
 
     uint256 liquidationFee = vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE);
     _updateLiquidationFee(spoke, collateralReserveId, liquidationFee.toUint16());
