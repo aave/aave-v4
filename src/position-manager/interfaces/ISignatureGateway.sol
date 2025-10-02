@@ -27,16 +27,16 @@ interface ISignatureGateway is IMulticall, IRescuable {
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to supply.
    * @param onBehalfOf The address of the user to supply assets on behalf of.
-   * @param deadline The deadline for the signature.
    * @param nonce The nonce for the signature.
+   * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
   function supplyWithSig(
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external;
 
@@ -47,16 +47,16 @@ interface ISignatureGateway is IMulticall, IRescuable {
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to withdraw.
    * @param onBehalfOf The address of the user to withdraw the asset on behalf of.
-   * @param deadline The deadline for the signature.
    * @param nonce The nonce for the signature.
+   * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
   function withdrawWithSig(
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external;
 
@@ -66,16 +66,16 @@ interface ISignatureGateway is IMulticall, IRescuable {
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to borrow.
    * @param onBehalfOf The address of the user to borrow the asset on behalf of.
-   * @param deadline The deadline for the signature.
    * @param nonce The nonce for the signature.
+   * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
   function borrowWithSig(
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external;
 
@@ -86,16 +86,16 @@ interface ISignatureGateway is IMulticall, IRescuable {
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to repay.
    * @param onBehalfOf The address of the user to repay the asset on behalf of.
-   * @param deadline The deadline for the signature.
    * @param nonce The nonce for the signature.
+   * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
   function repayWithSig(
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external;
 
@@ -104,44 +104,44 @@ interface ISignatureGateway is IMulticall, IRescuable {
    * @param reserveId The identifier of the reserve.
    * @param useAsCollateral True if enabling reserve as collateral.
    * @param onBehalfOf The address of the user to set the use as collateral status on behalf of.
-   * @param deadline The deadline for the signature.
    * @param nonce The nonce for the signature.
+   * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
   function setUsingAsCollateralWithSig(
     uint256 reserveId,
     bool useAsCollateral,
     address onBehalfOf,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external;
 
   /**
    * @notice Facilitates updateUserRiskPremium action on connected SPOKE() with a typed signature from `user`.
    * @param user The address of the user to update the risk premium for.
-   * @param deadline The deadline for the signature.
    * @param nonce The nonce for the signature.
+   * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
   function updateUserRiskPremiumWithSig(
     address user,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external;
 
   /**
    * @notice Facilitates updateUserDynamicConfig action on connected SPOKE() with a typed signature from `user`.
    * @param user The address of the user to update the dynamic config for.
-   * @param deadline The deadline for the signature.
    * @param nonce The nonce for the signature.
+   * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
   function updateUserDynamicConfigWithSig(
     address user,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external;
 
@@ -150,15 +150,15 @@ interface ISignatureGateway is IMulticall, IRescuable {
    * with a typed signature from `user`.
    * @param user The address of the user to set as position manager.
    * @param approve The approval status.
-   * @param deadline The deadline for the signature.
    * @param nonce The nonce for the signature.
+   * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the action.
    */
   function setSelfAsUserPositionManagerWithSig(
     address user,
     bool approve,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external;
 

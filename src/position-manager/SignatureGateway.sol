@@ -79,8 +79,8 @@ contract SignatureGateway is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
@@ -104,8 +104,8 @@ contract SignatureGateway is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
@@ -140,8 +140,8 @@ contract SignatureGateway is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
@@ -164,8 +164,8 @@ contract SignatureGateway is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
@@ -191,8 +191,8 @@ contract SignatureGateway is
     uint256 reserveId,
     bool useAsCollateral,
     address onBehalfOf,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
@@ -218,8 +218,8 @@ contract SignatureGateway is
   /// @inheritdoc ISignatureGateway
   function updateUserRiskPremiumWithSig(
     address user,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
@@ -237,8 +237,8 @@ contract SignatureGateway is
   /// @inheritdoc ISignatureGateway
   function updateUserDynamicConfigWithSig(
     address user,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
@@ -257,12 +257,12 @@ contract SignatureGateway is
   function setSelfAsUserPositionManagerWithSig(
     address user,
     bool approve,
-    uint256 deadline,
     uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external {
     try
-      _spoke.setUserPositionManagerWithSig(address(this), user, approve, deadline, nonce, signature)
+      _spoke.setUserPositionManagerWithSig(address(this), user, approve, nonce, deadline, signature)
     {} catch {}
   }
 

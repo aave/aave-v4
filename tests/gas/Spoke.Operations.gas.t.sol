@@ -297,39 +297,40 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(positionManager, true);
 
+    uint192 nonceKey = _randomNonceKey();
     vm.prank(user);
-    spoke1.useNonce();
+    spoke1.useNonce(nonceKey);
 
     EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
       positionManager: positionManager,
       user: user,
       approve: true,
-      nonce: spoke1.nonces(user),
+      nonce: spoke1.nonces(user, nonceKey),
       deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
     });
-    bytes32 digest = _getTypedDataHash(spoke1, params);
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke1, params));
     bytes memory signature = abi.encodePacked(r, s, v);
 
     spoke1.setUserPositionManagerWithSig(
       params.positionManager,
       params.user,
       params.approve,
+      params.nonce,
       params.deadline,
       signature
     );
     vm.snapshotGasLastCall('Spoke.Operations', 'setUserPositionManagerWithSig: enable');
 
     params.approve = false;
-    params.nonce = spoke1.nonces(user);
-    digest = _getTypedDataHash(spoke1, params);
-    (v, r, s) = vm.sign(userPk, digest);
+    params.nonce = spoke1.nonces(user, nonceKey);
+    (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke1, params));
     signature = abi.encodePacked(r, s, v);
 
     spoke1.setUserPositionManagerWithSig(
       params.positionManager,
       params.user,
       params.approve,
+      params.nonce,
       params.deadline,
       signature
     );
