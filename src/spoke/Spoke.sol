@@ -614,8 +614,9 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   function getDynamicReserveConfig(
     uint256 reserveId
   ) external view returns (DynamicReserveConfig memory) {
-    require(address(_reserves[reserveId].hub) != address(0), ReserveNotListed());
-    return _dynamicConfig[reserveId][_reserves[reserveId].dynamicConfigKey];
+    Reserve storage reserve = _reserves[reserveId];
+    require(address(reserve.hub) != address(0), ReserveNotListed());
+    return _dynamicConfig[reserveId][reserve.dynamicConfigKey];
   }
 
   function getDynamicReserveConfig(
