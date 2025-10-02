@@ -41,6 +41,17 @@ contract NativeTokenGateway is
     _spoke = ISpoke(spoke_);
   }
 
+  /// @notice Receives native assets.
+  /// @dev Reverts if the caller is not the native wrapper.
+  receive() external payable {
+    require(msg.sender == address(_nativeWrapper), UnsupportedAction());
+  }
+
+  /// @notice Unsupported fallback function.
+  fallback() external payable {
+    revert UnsupportedAction();
+  }
+
   /// @inheritdoc INativeTokenGateway
   function renouncePositionManagerRole(address user) external onlyOwner {
     _spoke.renouncePositionManagerRole(user);
@@ -117,38 +128,20 @@ contract NativeTokenGateway is
     return address(_spoke);
   }
 
-  /// @notice Returns the rescue guardian address.
-  /// @return The address allowed to rescue funds.
+  /// @dev RescueGuardian is the owner of the contract.
   function _rescueGuardian() internal view override returns (address) {
     return owner();
   }
 
-  /// @notice Validates the reserve data.
-  /// @param underlying The underlying asset.
-  /// @param amount The amount.
   function _validateParams(IERC20 underlying, uint256 amount) internal view {
     require(address(underlying) == address(_nativeWrapper), InvalidReserveId());
     require(amount > 0, InvalidAmount());
   }
 
-  /// @notice Returns the reserve data.
-  /// @param reserveId The identifier of the reserve.
   /// @return The underlying asset.
   /// @return The hub address.
   function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
     ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
     return (IERC20(reserveData.underlying), address(reserveData.hub));
-  }
-
-  /// @notice Receives native assets.
-  /// @dev Reverts if the caller is not the native wrapper.
-  receive() external payable {
-    require(msg.sender == address(_nativeWrapper), UnsupportedAction());
-  }
-
-  /// @notice Fallback function.
-  /// @dev Reverts with `UnsupportedAction`.
-  fallback() external payable {
-    revert UnsupportedAction();
   }
 }

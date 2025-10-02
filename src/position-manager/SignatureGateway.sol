@@ -332,30 +332,22 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     return _nonces[user];
   }
 
-  /// @notice Increments the nonce for a user.
-  /// @param user The address of the user.
-  /// @return The new nonce.
+  /// @return The used nonce.
   function _useNonce(address user) internal returns (uint256) {
     unchecked {
       return _nonces[user]++;
     }
   }
 
-  /// @notice Returns the domain name and version.
-  /// @return The domain name.
-  /// @return The version.
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
     return ('SignatureGateway', '1');
   }
 
-  /// @notice Returns the rescue guardian address.
-  /// @return The address allowed to rescue funds.
+  /// @dev RescueGuardian is the owner of the contract.
   function _rescueGuardian() internal view override returns (address) {
     return owner();
   }
 
-  /// @notice Returns the reserve data.
-  /// @param reserveId The identifier of the reserve.
   /// @return The underlying asset.
   /// @return The hub address.
   function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
