@@ -79,9 +79,8 @@ contract HubConfigTest is HubBase {
     address spoke,
     IHub.SpokeConfig calldata spokeConfig
   ) public {
-    if (!hub1.isSpokeListed(assetId, spoke)) {
-      assetId = bound(assetId, hub1.getAssetCount(), type(uint256).max);
-    }
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3);
+    assumeUnusedAddress(spoke);
     vm.expectRevert(IHub.SpokeNotListed.selector, address(hub1));
     Utils.updateSpokeConfig(hub1, ADMIN, assetId, spoke, spokeConfig);
   }
