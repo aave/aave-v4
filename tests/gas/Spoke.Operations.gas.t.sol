@@ -98,7 +98,6 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
     spoke.withdraw(reserveId.usdx, 1e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'withdraw: 2 borrows, partial');
-
     spoke.supply(reserveId.weth, 1000e18, alice);
 
     skip(100);
