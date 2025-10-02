@@ -367,12 +367,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     bool usingAsCollateral,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     _validateSetUsingAsCollateral(_reserves[reserveId], usingAsCollateral);
+    PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
-    // process only if collateral status changes
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) return;
-
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
@@ -686,7 +684,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
-    // there should be enough collateral to cover liquidation at the moment debt is taken
     require(
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
@@ -842,7 +839,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     uint256 debtCounterInBaseCurrency = userAccountData.totalDebtInBaseCurrency;
     uint256 collateralCounterInBaseCurrency = 0;
 
-    collateralInfo.sortByKey(); // sort by collateralRisk in asc, collateralValue in desc
+    collateralInfo.sortByKey(); // sort by `collateralRisk` in asc, `userCollateralInBaseCurrency` in desc
     uint256 i = 0;
     // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
     // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
