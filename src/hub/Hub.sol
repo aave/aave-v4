@@ -161,12 +161,14 @@ contract Hub is IHub, AccessManaged {
     address spoke,
     SpokeConfig calldata config
   ) external restricted {
+    require(assetId < _assetCount, AssetNotListed());
     require(_assetToSpokes[assetId].contains(spoke), SpokeNotListed());
     _updateSpokeConfig(assetId, spoke, config);
   }
 
   /// @inheritdoc IHub
   function setInterestRateData(uint256 assetId, bytes calldata irData) external restricted {
+    require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, irData);
@@ -367,6 +369,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function sweep(uint256 assetId, uint256 amount) external {
+    require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
@@ -383,6 +386,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function reclaim(uint256 assetId, uint256 amount) external {
+    require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
@@ -404,32 +408,38 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function getAsset(uint256 assetId) external view returns (Asset memory) {
+    require(assetId < _assetCount, AssetNotListed());
     return _assets[assetId];
   }
 
   /// @inheritdoc IHubBase
   function getAssetUnderlyingAndDecimals(uint256 assetId) external view returns (address, uint8) {
+    require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
     return (asset.underlying, asset.decimals);
   }
 
   /// @inheritdoc IHub
   function getSpokeCount(uint256 assetId) external view returns (uint256) {
+    require(assetId < _assetCount, AssetNotListed());
     return _assetToSpokes[assetId].length();
   }
 
   /// @inheritdoc IHub
   function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address) {
+    require(assetId < _assetCount, AssetNotListed());
     return _assetToSpokes[assetId].at(index);
   }
 
   /// @inheritdoc IHub
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool) {
+    require(assetId < _assetCount, AssetNotListed());
     return _assetToSpokes[assetId].contains(spoke);
   }
 
   /// @inheritdoc IHub
   function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory) {
+    require(assetId < _assetCount, AssetNotListed());
     return _spokes[assetId][spoke];
   }
 
@@ -438,6 +448,7 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     address spoke
   ) external view returns (SpokeConfig memory) {
+    require(assetId < _assetCount, AssetNotListed());
     SpokeData storage spoke = _spokes[assetId][spoke];
     return SpokeConfig(spoke.active, spoke.addCap, spoke.drawCap);
   }
@@ -504,45 +515,53 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function getAssetDrawnIndex(uint256 assetId) external view returns (uint256) {
+    require(_assets[assetId].lastUpdateTimestamp > 0, AssetNotListed());
     return _assets[assetId].getDrawnIndex();
   }
 
   /// @inheritdoc IHubBase
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256) {
     Asset storage asset = _assets[assetId];
+    require(asset.lastUpdateTimestamp > 0, AssetNotListed());
     return (asset.drawn(), asset.premium());
   }
 
   /// @inheritdoc IHubBase
   function getAssetTotalOwed(uint256 assetId) external view returns (uint256) {
+    require(_assets[assetId].lastUpdateTimestamp > 0, AssetNotListed());
     return _assets[assetId].totalOwed();
   }
 
   /// @inheritdoc IHubBase
   function getAssetDrawnShares(uint256 assetId) external view returns (uint256) {
+    require(_assets[assetId].lastUpdateTimestamp > 0, AssetNotListed());
     return _assets[assetId].drawnShares;
   }
 
   /// @inheritdoc IHubBase
   function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256) {
     Asset storage asset = _assets[assetId];
+    require(asset.lastUpdateTimestamp > 0, AssetNotListed());
     return (asset.premiumShares, asset.premiumOffset, asset.realizedPremium);
   }
 
   /// @inheritdoc IHubBase
   function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256) {
+    require(_assets[assetId].lastUpdateTimestamp > 0, AssetNotListed());
     SpokeData storage spokeData = _spokes[assetId][spoke];
     return (_getSpokeDrawn(spokeData, assetId), _getSpokePremium(spokeData, assetId));
   }
 
   /// @inheritdoc IHubBase
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256) {
+    require(_assets[assetId].lastUpdateTimestamp > 0, AssetNotListed());
     SpokeData storage spokeData = _spokes[assetId][spoke];
     return _getSpokeDrawn(spokeData, assetId) + _getSpokePremium(spokeData, assetId);
   }
 
   /// @inheritdoc IHubBase
   function getSpokeDrawnShares(uint256 assetId, address spoke) external view returns (uint256) {
+    require(_assets[assetId].lastUpdateTimestamp > 0, AssetNotListed());
     return _spokes[assetId][spoke].drawnShares;
   }
 
@@ -551,27 +570,32 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     address spoke
   ) external view returns (uint256, uint256, uint256) {
+    require(_assets[assetId].lastUpdateTimestamp > 0, AssetNotListed());
     SpokeData storage spokeData = _spokes[assetId][spoke];
     return (spokeData.premiumShares, spokeData.premiumOffset, spokeData.realizedPremium);
   }
 
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
+    require(_assets[assetId].lastUpdateTimestamp > 0, AssetNotListed());
     return _assets[assetId].drawnRate;
   }
 
   /// @inheritdoc IHubBase
   function getAddedAssets(uint256 assetId) external view returns (uint256) {
+    require(_assets[assetId].lastUpdateTimestamp > 0, AssetNotListed());
     return _assets[assetId].totalAddedAssets();
   }
 
   /// @inheritdoc IHubBase
   function getAddedShares(uint256 assetId) external view returns (uint256) {
+    require(_assets[assetId].lastUpdateTimestamp > 0, AssetNotListed());
     return _assets[assetId].totalAddedShares();
   }
 
   /// @inheritdoc IHubBase
   function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
+    require(asset.lastUpdateTimestamp > 0, AssetNotListed());
     uint256 unrealizedFeeShares;
     if (spoke == asset.feeReceiver) unrealizedFeeShares = asset.unrealizedFeeShares();
     return
@@ -581,6 +605,7 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHubBase
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
+    require(asset.lastUpdateTimestamp > 0, AssetNotListed());
     if (spoke == asset.feeReceiver) {
       return _spokes[assetId][spoke].addedShares + asset.unrealizedFeeShares();
     }
@@ -588,20 +613,24 @@ contract Hub is IHub, AccessManaged {
   }
 
   function getLiquidity(uint256 assetId) external view returns (uint256) {
+    require(_assets[assetId].lastUpdateTimestamp > 0, AssetNotListed());
     return _assets[assetId].liquidity;
   }
 
   function getDeficit(uint256 assetId) external view returns (uint256) {
+    require(_assets[assetId].lastUpdateTimestamp > 0, AssetNotListed());
     return _assets[assetId].deficit;
   }
 
   /// @inheritdoc IHub
   function getSwept(uint256 assetId) external view override returns (uint256) {
+    require(_assets[assetId].lastUpdateTimestamp > 0, AssetNotListed());
     return _assets[assetId].swept;
   }
 
   function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory) {
     Asset storage asset = _assets[assetId];
+    require(asset.lastUpdateTimestamp > 0, AssetNotListed());
     return
       AssetConfig({
         feeReceiver: asset.feeReceiver,
