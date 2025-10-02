@@ -9,6 +9,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   using PercentageMath for *;
   using WadRayMath for *;
   using KeyValueList for KeyValueList.List;
+  using MathUtils for uint256;
 
   uint256 internal constant MAX_AMOUNT_IN_BASE_CURRENCY = 1_000_000_000e26; // 1 billion USD
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26; // 1 USD
@@ -124,16 +125,37 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       MAX_SUPPLY_AMOUNT
     );
 
-    LiquidationLogic.CalculateMaxDebtToLiquidateParams
-      memory params = _getCalculateMaxDebtToLiquidateParams(
+    LiquidationLogic.CalculateLiquidationAmountsParams
+      memory params = _getCalculateLiquidationAmountsParams(
         spoke,
         collateralReserveId,
         debtReserveId,
         user,
         debtToCover
       );
-    try liquidationLogicWrapper.calculateMaxDebtToLiquidate(params) returns (uint256) {} catch {
-      debtToCover = bound(debtToCover, params.debtReserveBalance, MAX_SUPPLY_AMOUNT);
+    try liquidationLogicWrapper.calculateLiquidationAmounts(params) returns (
+      uint256,
+      uint256,
+      uint256
+    ) {} catch {
+      ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+      uint256 liquidationBonus = spoke.getLiquidationBonus(
+        collateralReserveId,
+        user,
+        userAccountData.healthFactor
+      );
+      debtToCover = bound(
+        debtToCover,
+        params.debtReserveBalance.min(
+          _convertAssetAmount(
+            spoke,
+            collateralReserveId,
+            params.collateralReserveBalance.percentDivUp(liquidationBonus),
+            debtReserveId
+          )
+        ),
+        MAX_SUPPLY_AMOUNT
+      );
     }
 
     deal(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));

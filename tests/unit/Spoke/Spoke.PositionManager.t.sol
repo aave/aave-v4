@@ -43,6 +43,9 @@ contract SpokePositionManagerTest is SpokeBase {
     emit ISpoke.SetUserPositionManager(alice, POSITION_MANAGER, false);
     vm.prank(alice);
     spoke1.setUserPositionManager(POSITION_MANAGER, false);
+
+    assertFalse(spoke1.isPositionManager(alice, POSITION_MANAGER));
+    assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
   }
 
   function test_renouncePositionManagerRole() public {
@@ -51,10 +54,30 @@ contract SpokePositionManagerTest is SpokeBase {
     address user = vm.randomAddress();
     address positionManager = vm.randomAddress();
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(user, positionManager, false);
+    if (!spoke1.isPositionManager(user, positionManager)) {
+      vm.expectEmit(address(spoke1));
+      emit ISpoke.SetUserPositionManager(user, positionManager, false);
+    }
     vm.prank(positionManager);
     spoke1.renouncePositionManagerRole(user);
+
+    assertFalse(spoke1.isPositionManager(user, positionManager));
+  }
+
+  function test_renouncePositionManagerRole_noop_from_disabled() public {
+    vm.setArbitraryStorage(address(spoke1));
+
+    address user = vm.randomAddress();
+    address positionManager = vm.randomAddress();
+    vm.prank(user);
+    spoke1.setUserPositionManager(POSITION_MANAGER, false);
+
+    vm.recordLogs();
+    vm.prank(POSITION_MANAGER);
+    spoke1.renouncePositionManagerRole(user);
+
+    assertEq(vm.getRecordedLogs().length, 0);
+    assertFalse(spoke1.isPositionManager(user, POSITION_MANAGER));
   }
 
   function test_onlyPositionManager_on_supply() public {

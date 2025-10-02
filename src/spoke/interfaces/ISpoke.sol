@@ -177,6 +177,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error InactivePositionManager();
   error InvalidSignature();
   error InvalidAddress();
+  error InvalidOracleDecimals();
   error InvalidCollateralRisk();
   error InvalidLiquidationConfig();
   error InvalidLiquidationFee();
@@ -185,6 +186,11 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error HealthFactorNotBelowThreshold();
   error MustNotLeaveDust();
   error InvalidDebtToCover();
+
+  /**
+   * @dev Thrown when trying to set zero collateralFactor on historic dynamic configuration keys.
+   */
+  error InvalidCollateralFactor();
 
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
@@ -223,6 +229,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   /**
    * @notice Updates the dynamic reserve config for a given reserve at the specified key.
    * @dev Reverts with `ConfigKeyUninitialized` if the config key has not been initialized yet.
+   * @dev Reverts with `InvalidCollateralFactor` if the collateral factor is 0.
    * @param reserveId The identifier of the reserve.
    * @param configKey The key of the config to update.
    * @param dynamicConfig The dynamic reserve config to update.
@@ -354,9 +361,10 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   /**
    * @notice Returns the minimum required remaining base currency amount after a partial liquidation.
-   * @return The minimum debt amount considered as dust, denominated in USD with 26 decimals.
+   * @return The minimum amount considered as dust, denominated in USD with 26 decimals.
+   * @dev Applicable to both collateral and debt.
    */
-  function DUST_DEBT_LIQUIDATION_THRESHOLD() external view returns (uint256);
+  function DUST_LIQUIDATION_THRESHOLD() external view returns (uint256);
 
   /**
    * @notice Returns the maximum allowed collateral risk value for a reserve.
