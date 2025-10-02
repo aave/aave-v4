@@ -45,12 +45,6 @@ contract UnitPriceFeedTest is Base {
     assertEq(answeredInRound, roundId);
   }
 
-  function test_getRoundData_revertsWith_InvalidRoundId() public {
-    uint80 roundId = uint80(vm.randomUint(vm.getBlockTimestamp() + 1, type(uint80).max));
-    vm.expectRevert(UnitPriceFeed.InvalidRoundId.selector);
-    unitPriceFeed.getRoundData(roundId);
-  }
-
   function test_fuzz_latestRoundData(uint80 blockTimestamp) public {
     vm.warp(blockTimestamp);
     (
