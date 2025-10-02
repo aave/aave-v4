@@ -328,8 +328,8 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    require(spoke.active, SpokeNotActive());
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
+    _validateRefreshPremium(spoke);
     // no premium change allowed
     _applyPremiumDelta(assetId, asset, spoke, premiumDelta, 0);
 
@@ -741,6 +741,12 @@ contract Hub is IHub, AccessManaged {
     uint256 premium = _getSpokePremium(spoke, assetId);
     require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
     require(premiumAmount <= premium, SurplusAmountRestored(premium));
+  }
+
+  function _validateRefreshPremium(SpokeData storage spoke) internal view {
+    require(spoke.active, SpokeNotActive());
+    uint256 drawCap = spoke.drawCap;
+    require(drawCap > 0, DrawCapExceeded(drawCap));
   }
 
   function _validateReportDeficit(
