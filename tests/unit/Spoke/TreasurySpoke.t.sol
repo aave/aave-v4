@@ -12,9 +12,12 @@ contract TreasurySpokeTest is SpokeBase {
     _testToken = new MockERC20();
   }
 
-  function test_deploy_revertsWith_InvalidAddress_hub() public {
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InvalidAddress.selector));
+  function test_deploy_reverts_on_invalid_params() public {
+    vm.expectRevert(ISpoke.InvalidAddress.selector);
     new TreasurySpoke(vm.randomAddress(), address(0));
+
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, address(0)));
+    new TreasurySpoke(address(0), vm.randomAddress());
   }
 
   function test_initial_state() public view {
@@ -23,6 +26,8 @@ contract TreasurySpokeTest is SpokeBase {
       assertEq(treasurySpoke.getSuppliedAmount(i), 0);
       assertEq(treasurySpoke.getSuppliedShares(i), 0);
     }
+    assertEq(Ownable2Step(address(treasurySpoke)).owner(), TREASURY_ADMIN);
+    assertEq(Ownable2Step(address(treasurySpoke)).pendingOwner(), address(0));
   }
 
   function test_supply_revertsWith_Unauthorized(address caller) public {
