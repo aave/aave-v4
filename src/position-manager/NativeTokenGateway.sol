@@ -120,7 +120,7 @@ contract NativeTokenGateway is
   }
 
   function _validateParams(IERC20 underlying, uint256 amount) internal view {
-    require(address(underlying) == address(_nativeWrapper), InvalidReserveId());
+    require(address(underlying) == address(_nativeWrapper), NotNativeWrapper());
     require(amount > 0, InvalidAmount());
   }
 

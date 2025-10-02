@@ -346,7 +346,6 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
 
   function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
     ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
-    require(reserveData.underlying != address(0), InvalidReserveId());
     return (IERC20(reserveData.underlying), address(reserveData.hub));
   }
 }

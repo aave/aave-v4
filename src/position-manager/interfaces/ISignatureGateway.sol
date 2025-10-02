@@ -17,11 +17,6 @@ interface ISignatureGateway is IMulticall, IRescuable {
   error InvalidSignature();
 
   /**
-   * @notice Thrown when reserveId does not correspond to a registered reserve.
-   */
-  error InvalidReserveId();
-
-  /**
    * @notice Facilitates supply action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
    * @param reserveId The identifier of the reserve.
