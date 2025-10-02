@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -16,7 +16,7 @@ import {ITreasurySpoke, ISpokeBase} from 'src/spoke/interfaces/ITreasurySpoke.so
  * @dev Utilizes all assets from the Hub without restrictions, making reserve and asset identifiers aligned.
  * @dev Allows withdraw to claim fees and supply to invest back into the Hub via this dedicated spoke.
  */
-contract TreasurySpoke is ITreasurySpoke, Ownable {
+contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   using SafeERC20 for IERC20;
 
   /// @inheritdoc ITreasurySpoke

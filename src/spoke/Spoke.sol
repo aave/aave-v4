@@ -70,6 +70,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
    */
   constructor(address oracle_) {
     require(oracle_ != address(0), InvalidAddress());
+    require(IAaveOracle(oracle_).DECIMALS() == 8, InvalidOracleDecimals());
     ORACLE = oracle_;
   }
 
@@ -176,12 +177,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
-    // @dev sufficient check since maxLiquidationBonus is always >= 100_00
-    require(
-      _dynamicConfig[reserveId][configKey].maxLiquidationBonus != 0,
-      ConfigKeyUninitialized()
-    );
-    _validateDynamicReserveConfig(dynamicConfig);
+    _validateHistoricDynamicReserveConfig(_dynamicConfig[reserveId][configKey], dynamicConfig);
     _dynamicConfig[reserveId][configKey] = dynamicConfig;
     emit UpdateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
   }
@@ -321,7 +317,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
-      oracle: address(ORACLE),
+      oracle: ORACLE,
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
@@ -400,7 +396,8 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    _refreshDynamicConfig(onBehalfOf);
+    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
+    _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -440,6 +437,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   /// @inheritdoc ISpoke
   function renouncePositionManagerRole(address onBehalfOf) external {
+    if (!_positionManager[msg.sender].approval[onBehalfOf]) return;
     _positionManager[msg.sender].approval[onBehalfOf] = false;
     emit SetUserPositionManager(onBehalfOf, msg.sender, false);
   }
@@ -688,10 +686,25 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
   }
 
+  /**
+   * @dev CollateralFactor of historical config keys cannot be 0.
+   * @param currentConfig The current dynamic reserve config.
+   * @param newConfig The dynamic reserve config to validate.
+   */
+  function _validateHistoricDynamicReserveConfig(
+    DynamicReserveConfig storage currentConfig,
+    DynamicReserveConfig calldata newConfig
+  ) internal view {
+    // @dev sufficient check since maxLiquidationBonus is always >= 100_00
+    require(currentConfig.maxLiquidationBonus != 0, ConfigKeyUninitialized());
+    require(newConfig.collateralFactor > 0, InvalidCollateralFactor());
+    _validateDynamicReserveConfig(newConfig);
+  }
+
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
     // Enforce that at moment loan is taken, there should be enough collateral to cover liquidation
     require(
-      config.collateralFactor <= PercentageMath.PERCENTAGE_FACTOR &&
+      config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
         PercentageMath.PERCENTAGE_FACTOR,
@@ -753,6 +766,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   ) internal returns (UserAccountData memory userAccountData) {
     userAccountData = _calculateAndPotentiallyRefreshUserAccountData(user, true);
     emit RefreshAllUserDynamicConfig(user);
+    return userAccountData;
   }
 
   /**
@@ -962,15 +976,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       positionStatus.setBorrowing(reserveId, false);
     }
     emit UpdateUserRiskPremium(user, 0);
-  }
-
-  function _refreshDynamicConfig(address user) internal {
-    uint256 reserveId = _reserveCount;
-    PositionStatus storage positionStatus = _positionStatus[user];
-    while ((reserveId = positionStatus.nextCollateral(reserveId)) != PositionStatusMap.NOT_FOUND) {
-      _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
-    }
-    emit RefreshAllUserDynamicConfig(user);
   }
 
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
