@@ -665,7 +665,7 @@ contract Hub is IHub, AccessManaged {
     receiver.addedShares += shares.toUint128();
   }
 
-  /// @dev Returns the spoke's drawn for a specified asset in unit of assets.
+  /// @dev Returns the spoke's drawn amount for a specified asset.
   function _getSpokeDrawn(
     SpokeData storage spoke,
     uint256 assetId
@@ -673,7 +673,7 @@ contract Hub is IHub, AccessManaged {
     return previewRestoreByShares(assetId, spoke.drawnShares);
   }
 
-  /// @dev Returns the spoke's premium for a specified asset in unit of assets.
+  /// @dev Returns the spoke's premium amount for a specified asset.
   function _getSpokePremium(
     SpokeData storage spoke,
     uint256 assetId

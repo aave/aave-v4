@@ -241,7 +241,7 @@ library LiquidationLogic {
   }
 
   /// @notice Calculates the liquidation amounts.
-  /// @dev Invoked by `liquidateUser`.
+  /// @dev Invoked by `liquidateUser` function.
   /// @return The collateral to liquidate.
   /// @return The collateral to transfer to liquidator.
   /// @return The debt to liquidate.
@@ -374,7 +374,7 @@ library LiquidationLogic {
       );
   }
 
-  /// @dev Invoked by `liquidateUser`.
+  /// @dev Invoked by `liquidateUser` function.
   /// @return True if the debt position is empty, false otherwise.
   function _liquidateDebt(
     ISpoke.Reserve storage reserve,
@@ -412,7 +412,7 @@ library LiquidationLogic {
     return false;
   }
 
-  /// @dev Invoked by `liquidateUser`.
+  /// @dev Invoked by `liquidateUser` function.
   /// @return True if the collateral position is empty, false otherwise.
   function _liquidateCollateral(
     ISpoke.Reserve storage reserve,

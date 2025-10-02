@@ -62,7 +62,7 @@ contract AaveOracle is IAaveOracle {
     return address(_sources[reserveId]);
   }
 
-  /// @dev Zero is considered an invalid price and reverts with `InvalidPrice`.
+  /// @dev Price of zero will revert with `InvalidPrice`.
   function _getSourcePrice(uint256 reserveId) internal view returns (uint256) {
     AggregatorV3Interface source = _sources[reserveId];
     require(address(source) != address(0), InvalidSource(reserveId));
