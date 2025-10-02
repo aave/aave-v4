@@ -137,15 +137,15 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     uint192 nonceKey = _randomNonceKey();
     EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(user, deadline);
-    uint256 currentNonce = _burnRandomNoncesAtKey(address(spoke1), params.user, nonceKey);
-    params.nonce = _getRandomInvalidNonceAtKey(address(spoke1), params.user, nonceKey);
+    uint256 currentNonce = _burnRandomNoncesAtKey(spoke1, params.user, nonceKey);
+    params.nonce = _getRandomInvalidNonceAtKey(spoke1, params.user, nonceKey);
 
     bytes32 digest = _getTypedDataHash(spoke1, params);
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.expectRevert(
-      abi.encodeWithSelector(Nonces.InvalidAccountNonce.selector, params.user, currentNonce)
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, params.user, currentNonce)
     );
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(
@@ -163,7 +163,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     vm.label(user, 'user');
     uint256 deadline = _warpBeforeRandomDeadline();
     EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(user, deadline);
-    params.nonce = _burnRandomNoncesAtKey(address(spoke1), params.user);
+    params.nonce = _burnRandomNoncesAtKey(spoke1, params.user);
 
     bytes32 digest = _getTypedDataHash(spoke1, params);
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
@@ -182,11 +182,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       signature
     );
 
-    (uint192 nonceKey, uint64 nonceValue) = _unpackNonce(params.nonce);
-    // prettier-ignore
-    unchecked { ++nonceValue; }
-
-    assertEq(spoke1.nonces(user, nonceKey), _packNonce(nonceKey, nonceValue));
+    _assertNonceIncrement(spoke1, params.user, params.nonce);
     assertEq(spoke1.isPositionManager(params.user, params.positionManager), params.approve);
   }
 
@@ -272,8 +268,8 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       deadline
     );
 
-    uint256 currentNonce = _burnRandomNoncesAtKey(address(spoke1), address(smartWallet), nonceKey);
-    params.nonce = _getRandomInvalidNonceAtKey(address(spoke1), address(smartWallet), nonceKey);
+    uint256 currentNonce = _burnRandomNoncesAtKey(spoke1, address(smartWallet), nonceKey);
+    params.nonce = _getRandomInvalidNonceAtKey(spoke1, address(smartWallet), nonceKey);
 
     bytes32 digest = _getTypedDataHash(spoke1, params);
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, digest);
@@ -284,7 +280,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        Nonces.InvalidAccountNonce.selector,
+        INoncesKeyed.InvalidAccountNonce.selector,
         address(smartWallet),
         currentNonce
       )
@@ -335,10 +331,8 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       signature
     );
 
-    assertEq(
-      spoke1.isPositionManager(address(smartWallet), params.positionManager),
-      params.approve
-    );
+    _assertNonceIncrement(spoke1, params.user, params.nonce);
+    assertEq(spoke1.isPositionManager(params.user, params.positionManager), params.approve);
   }
 
   function _setUserPositionManagerData(

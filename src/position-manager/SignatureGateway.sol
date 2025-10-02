@@ -4,12 +4,12 @@ pragma solidity ^0.8.0;
 
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {NoncesKeyed} from 'src/dependencies/openzeppelin/NoncesKeyed.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Rescuable} from 'src/utils/Rescuable.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -24,11 +24,11 @@ import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGatew
  */
 contract SignatureGateway is
   ISignatureGateway,
+  NoncesKeyed,
   Multicall,
   Rescuable,
   Ownable2Step,
-  EIP712,
-  NoncesKeyed
+  EIP712
 {
   using SafeERC20 for IERC20;
 
@@ -296,11 +296,6 @@ contract SignatureGateway is
   }
 
   /// @inheritdoc ISignatureGateway
-  function useNonce(uint192 key) external {
-    _useNonce(msg.sender, key);
-  }
-
-  /// @inheritdoc ISignatureGateway
   function SPOKE() external view returns (address) {
     return address(_spoke);
   }
@@ -308,14 +303,6 @@ contract SignatureGateway is
   /// @inheritdoc ISignatureGateway
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparator();
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function nonces(
-    address user,
-    uint192 key
-  ) public view override(NoncesKeyed, ISignatureGateway) returns (uint256) {
-    return super.nonces(user, key);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

@@ -3,9 +3,10 @@
 pragma solidity ^0.8.0;
 
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
+import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
-interface ISignatureGateway is IMulticall, IRescuable {
+interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
   /**
    * @notice Thrown when the given address is invalid.
    */
@@ -184,17 +185,6 @@ interface ISignatureGateway is IMulticall, IRescuable {
    * @notice Permissioned operation to renounce self as user position manager on connected SPOKE() for specified `user`.
    */
   function renounceSelfAsUserPositionManager(address user) external;
-
-  /**
-   * @notice Allows caller to revoke their next sequential nonce at specified `key`.
-   */
-  function useNonce(uint192 key) external;
-
-  /**
-   * @notice Returns the next unused nonce for `user` at given `key`. Result contains the key prefix.
-   * @return keyNonce The 24 bytes for the key, & the last 8 bytes for the nonce.
-   */
-  function nonces(address user, uint192 key) external view returns (uint256);
 
   /**
    * @notice Returns the address of the connected SPOKE().

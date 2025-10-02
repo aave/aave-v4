@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
+import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
@@ -12,7 +13,7 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
  * @author Aave Labs
  * @notice Full interface for Spoke
  */
-interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
+interface ISpoke is ISpokeBase, IMulticall, IAccessManaged, INoncesKeyed {
   struct Reserve {
     address underlying;
     //
@@ -321,11 +322,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function isPositionManagerActive(address positionManager) external view returns (bool);
 
   /**
-   * @notice Allows caller to revoke their next sequential nonce at specified `key`.
-   */
-  function useNonce(uint192 key) external;
-
-  /**
    * @notice Allows consuming a permit signature for the given reserve's underlying asset.
    * @dev Spender is the corresponding hub of the given reserve.
    * @param reserveId The identifier of the reserve.
@@ -408,12 +404,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   ) external view returns (uint256);
 
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
-
-  /**
-   * @notice Returns the next unused nonce for `user` at given `key`. Result contains the key prefix.
-   * @return keyNonce The 24 bytes for the key, & the last 8 bytes for the nonce.
-   */
-  function nonces(address user, uint192 key) external view returns (uint256);
 
   function DOMAIN_SEPARATOR() external view returns (bytes32);
 }

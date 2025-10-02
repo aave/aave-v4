@@ -218,15 +218,4 @@ contract SignatureGatewayBaseTest is Base {
       assertFalse(spoke.isBorrowing(reserveId, address(_gateway)));
     }
   }
-
-  function _assertNonceIncrement(
-    ISignatureGateway _gateway,
-    address who,
-    uint256 prevKeyNonce
-  ) internal view {
-    (uint192 nonceKey, uint64 nonce) = _unpackNonce(prevKeyNonce);
-    // prettier-ignore
-    unchecked { ++nonce; }
-    assertEq(_gateway.nonces(who, nonceKey), _packNonce(nonceKey, nonce));
-  }
 }

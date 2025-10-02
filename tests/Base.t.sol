@@ -22,7 +22,6 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
-import {NoncesKeyed, Nonces} from 'src/dependencies/openzeppelin/NoncesKeyed.sol';
 import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';
@@ -37,6 +36,7 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Rescuable, IRescuable} from 'src/utils/Rescuable.sol';
+import {NoncesKeyed, INoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
 
 // hub
@@ -71,6 +71,7 @@ import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
+import {NoncesKeyedMock} from 'tests/mocks/NoncesKeyedMock.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
@@ -2512,48 +2513,57 @@ abstract contract Base is Test {
    * @dev Burns random nonces from 1 at the specified key lifetime.
    */
   function _burnRandomNoncesAtKey(
-    address verifier,
+    INoncesKeyed verifier,
     address user,
     uint192 key
   ) internal returns (uint256) {
-    uint256 currentKeyNonce = NoncesKeyed(verifier).nonces(user, key);
+    uint256 currentKeyNonce = verifier.nonces(user, key);
     (, uint64 nonce) = _unpackNonce(currentKeyNonce);
 
     uint64 toBurn = vm.randomUint(1, 100).toUint64();
     for (uint256 i; i < toBurn; ++i) {
       vm.prank(user);
-      ISpoke(verifier).useNonce(key);
+      verifier.useNonce(key);
     }
     uint256 newKeyNonce = _packNonce(key, nonce + toBurn);
 
     // doesn't work because of the assumption in StdStorage.checkSlotMutatesCall :(
     // stdstore
     //   .target(verifier)
-    //   .sig(NoncesKeyed.nonces.selector)
+    //   .sig(INoncesKeyed.nonces.selector)
     //   .with_key(user)
     //   .with_key(key)
     //   .checked_write(newNonce);
 
-    assertEq(NoncesKeyed(verifier).nonces(user, key), newKeyNonce);
+    assertEq(verifier.nonces(user, key), newKeyNonce);
     return newKeyNonce;
   }
 
-  function _burnRandomNoncesAtKey(address verifier, address user) internal returns (uint256) {
+  function _burnRandomNoncesAtKey(INoncesKeyed verifier, address user) internal returns (uint256) {
     return _burnRandomNoncesAtKey(verifier, user, _randomNonceKey());
   }
 
   function _getRandomInvalidNonceAtKey(
-    address verifier,
+    INoncesKeyed verifier,
     address user,
     uint192 key
   ) internal returns (uint256) {
-    (uint192 currentKey, uint64 currentNonce) = _unpackNonce(
-      NoncesKeyed(verifier).nonces(user, key)
-    );
+    (uint192 currentKey, uint64 currentNonce) = _unpackNonce(verifier.nonces(user, key));
     assertEq(currentKey, key);
     uint64 nonce = _randomNonce();
     while (currentNonce == nonce) nonce = _randomNonce();
     return _packNonce(key, nonce);
+  }
+
+  function _assertNonceIncrement(
+    INoncesKeyed verifier,
+    address who,
+    uint256 prevKeyNonce
+  ) internal view {
+    (uint192 nonceKey, uint64 nonce) = _unpackNonce(prevKeyNonce);
+    // prettier-ignore
+    unchecked { ++nonce; }
+    assertEq(verifier.nonces(who, nonceKey), _packNonce(nonceKey, nonce));
   }
 
   /// @dev Pack key and nonce into a keyNonce

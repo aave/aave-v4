@@ -6,7 +6,6 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
-import {NoncesKeyed} from 'src/dependencies/openzeppelin/NoncesKeyed.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -14,12 +13,13 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
+import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
-abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712, NoncesKeyed {
+abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
   using PercentageMath for *;
@@ -432,11 +432,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712, 
   }
 
   /// @inheritdoc ISpoke
-  function useNonce(uint192 key) external {
-    _useNonce(msg.sender, key);
-  }
-
-  /// @inheritdoc ISpoke
   function renouncePositionManagerRole(address onBehalfOf) external {
     if (!_positionManager[msg.sender].approval[onBehalfOf]) return;
     _positionManager[msg.sender].approval[onBehalfOf] = false;
@@ -619,14 +614,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712, 
     address user
   ) external view returns (UserPosition memory) {
     return _userPositions[user][reserveId];
-  }
-
-  /// @inheritdoc ISpoke
-  function nonces(
-    address user,
-    uint192 key
-  ) public view override(NoncesKeyed, ISpoke) returns (uint256) {
-    return super.nonces(user, key);
   }
 
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
