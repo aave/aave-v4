@@ -1043,10 +1043,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           uint256(logs[i].topics[1]),
           params.spoke.getReserve(params.collateralReserveId).assetId
         );
-        (uint256 shares, address sender, address receiver) = abi.decode(
-          logs[i].data,
-          (uint256, address, address)
-        );
+        address sender = address(uint160(uint256(logs[i].topics[2])));
+        address receiver = address(uint160(uint256(logs[i].topics[3])));
+        uint256 shares = abi.decode(logs[i].data, (uint256));
         uint256 expectedShares = params
           .spoke
           .getReserve(params.collateralReserveId)
