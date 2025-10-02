@@ -399,7 +399,6 @@ library LiquidationLogic {
         premiumDelta,
         params.liquidator
       );
-      // debt accounting
       _settlePremiumDebt(position, premiumDelta.realizedDelta);
       position.drawnShares -= drawnSharesLiquidated.toUint128();
     }
@@ -451,7 +450,6 @@ library LiquidationLogic {
     if (!isCollateralPositionEmpty || suppliedCollateralsCount > 1) {
       return false;
     }
-
     return !isDebtPositionEmpty || borrowedReservesCount > 1;
   }
 
