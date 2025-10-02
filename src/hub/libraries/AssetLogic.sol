@@ -53,9 +53,10 @@ library AssetLogic {
 
   function premium(IHub.Asset storage asset) internal view returns (uint256) {
     // sanity: utilize solc underflow check
-    uint256 accruedPremium = asset.premiumShares.rayMulUp(asset.getDrawnIndex()) -
-      asset.premiumOffset;
-    return asset.realizedPremium + accruedPremium;
+    return
+      asset.premiumShares.rayMulUp(asset.getDrawnIndex()) -
+      asset.premiumOffset +
+      asset.realizedPremium;
   }
 
   function totalOwed(IHub.Asset storage asset) internal view returns (uint256) {
