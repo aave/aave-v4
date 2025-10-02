@@ -250,7 +250,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
 
   /// @notice Adds a new reserve to the spoke.
   /// @dev Allowed even if the spoke has not yet been added to the hub.
-  /// @dev Allowed even if the `active` flag is false.
+  /// @dev Allowed even if the `active` flag is `false`.
   /// @dev Allowed even if the spoke has been added but the `addCap` is zero.
   /// @param hub The address of the Hub where the asset is listed.
   /// @param assetId The identifier of the asset in the Hub.
@@ -444,7 +444,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   ) external view returns (UserPosition memory);
 
   /// @notice Returns true if the reserve is set as collateral for the user, false otherwise.
-  /// @dev Even if enabled as collateral, it will only be counted toward user position if the collateral factor is greater than 0.
+  /// @dev Even if enabled as collateral, it will only count towards user position if the collateral factor is greater than 0.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
   /// @return True if the user is using the reserve as collateral, false otherwise.
