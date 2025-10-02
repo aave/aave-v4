@@ -120,10 +120,10 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     addExRateBefore = getAddExRate(daiAssetId);
 
     // Withdraw all supplied assets
-    Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, type(uint256).max, bob);
+    Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, type(uint256).max);
+    withdrawLiquidityFees(daiAssetId, UINT256_MAX);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
@@ -249,7 +249,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), 'after bob withdraw');
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(state.assetId, type(uint256).max);
+    withdrawLiquidityFees(state.assetId, UINT256_MAX);
 
     state.stage = 2;
     reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
@@ -294,6 +294,50 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       MAX_SUPPLY_AMOUNT - params.bobAmount + bobData[1].suppliedAmount,
       'bob balance'
     );
+  }
+
+  /// Put position underwater, and show can withdraw reserve not set as collateral
+  function test_withdraw_underwater_reserve_not_collateral() public {
+    // Supply 2 collaterals, one used to borrow, and one not set as collateral
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 wbtcReserveId = _wbtcReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
+
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: 10_000e18,
+      onBehalfOf: bob
+    });
+    Utils.supply({
+      spoke: spoke1,
+      reserveId: wbtcReserveId,
+      caller: bob,
+      amount: 1e8,
+      onBehalfOf: bob
+    });
+
+    _openSupplyPosition(spoke1, wethReserveId, 2e18);
+
+    // Bob borrows weth
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: 2e18,
+      onBehalfOf: bob
+    });
+
+    skip(3560 days);
+
+    // Position is underwater
+    ISpoke.UserAccountData memory userData = spoke1.getUserAccountData(bob);
+    assertLt(userData.healthFactor, 1e18, 'hf below 1');
+
+    // Can still withdraw wbtc because not set as collateral
+    vm.prank(bob);
+    spoke1.withdraw(wbtcReserveId, UINT256_MAX, bob);
   }
 
   /// Let protocol have some funds initially. User deposits, immediately withdraws, check delta on share amounts
