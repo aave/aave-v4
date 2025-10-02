@@ -125,12 +125,16 @@ interface ISpokeConfigurator {
   ) external;
 
   /**
-   * @notice Adds a dynamic config to a reserve, identical to the latest one but with the specified liquidation bonus.
+   * @notice Adds a dynamic config to a reserve, identical to the latest one but with the specified max liquidation bonus.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
-   * @param liquidationBonus The new liquidation bonus.
+   * @param maxLiquidationBonus The new max liquidation bonus.
    */
-  function addLiquidationBonus(address spoke, uint256 reserveId, uint256 liquidationBonus) external;
+  function addMaxLiquidationBonus(
+    address spoke,
+    uint256 reserveId,
+    uint256 maxLiquidationBonus
+  ) external;
 
   /**
    * @notice Updates an existing liquidation bonus of a reserve at the specified key.

@@ -348,7 +348,7 @@ contract Hub is IHub, AccessManaged {
     _transferShares(sender, receiver, shares);
     asset.updateDrawnRate(assetId);
 
-    emit TransferShares(assetId, shares, msg.sender, feeReceiver);
+    emit TransferShares(assetId, msg.sender, feeReceiver, shares);
   }
 
   /// @inheritdoc IHub
@@ -362,7 +362,7 @@ contract Hub is IHub, AccessManaged {
     _transferShares(sender, receiver, shares);
     asset.updateDrawnRate(assetId);
 
-    emit TransferShares(assetId, shares, msg.sender, toSpoke);
+    emit TransferShares(assetId, msg.sender, toSpoke, shares);
   }
 
   /// @inheritdoc IHub
@@ -376,9 +376,9 @@ contract Hub is IHub, AccessManaged {
     asset.swept += amount.toUint128();
     asset.updateDrawnRate(assetId);
 
-    IERC20(asset.underlying).safeTransfer(asset.reinvestmentController, amount);
+    IERC20(asset.underlying).safeTransfer(msg.sender, amount);
 
-    emit Sweep(assetId, amount);
+    emit Sweep(assetId, msg.sender, amount);
   }
 
   /// @inheritdoc IHub
@@ -392,9 +392,9 @@ contract Hub is IHub, AccessManaged {
     asset.swept -= amount.toUint128();
     asset.updateDrawnRate(assetId);
 
-    IERC20(asset.underlying).safeTransferFrom(asset.reinvestmentController, address(this), amount);
+    IERC20(asset.underlying).safeTransferFrom(msg.sender, address(this), amount);
 
-    emit Reclaim(assetId, amount);
+    emit Reclaim(assetId, msg.sender, amount);
   }
 
   /// @inheritdoc IHub
@@ -688,7 +688,8 @@ contract Hub is IHub, AccessManaged {
     uint256 addCap = spoke.addCap;
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
-        addCap * 10 ** asset.decimals >= previewAddByShares(assetId, spoke.addedShares) + amount,
+        addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
+        previewAddByShares(assetId, spoke.addedShares) + amount,
       AddCapExceeded(addCap)
     );
   }
@@ -721,7 +722,7 @@ contract Hub is IHub, AccessManaged {
     uint256 premium = _getSpokePremium(spoke, assetId);
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
-        drawCap * 10 ** asset.decimals >= drawn + premium + amount,
+        drawCap * MathUtils.uncheckedExp(10, asset.decimals) >= drawn + premium + amount,
       DrawCapExceeded(drawCap)
     );
   }
@@ -778,7 +779,8 @@ contract Hub is IHub, AccessManaged {
     uint256 addCap = receiver.addCap;
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
-        addCap * 10 ** asset.decimals >= previewAddByShares(assetId, receiver.addedShares + shares),
+        addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
+        previewAddByShares(assetId, receiver.addedShares + shares),
       AddCapExceeded(addCap)
     );
   }

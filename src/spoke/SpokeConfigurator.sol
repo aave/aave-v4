@@ -151,16 +151,16 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function addLiquidationBonus(
+  function addMaxLiquidationBonus(
     address spoke,
     uint256 reserveId,
-    uint256 liquidationBonus
+    uint256 maxLiquidationBonus
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId
     );
-    dynamicReserveConfig.maxLiquidationBonus = liquidationBonus.toUint32();
+    dynamicReserveConfig.maxLiquidationBonus = maxLiquidationBonus.toUint32();
     targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
