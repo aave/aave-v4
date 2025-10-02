@@ -167,12 +167,12 @@ library PositionStatusMap {
    * @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
    * @param self The position status storing reserves bitmap.
    * @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
-   * @return reserveId The previous borrowing reserveId, or `NOT_FOUND` if none is found.
+   * @return The previous borrowing reserveId, or `NOT_FOUND` if none is found.
    */
   function nextBorrowing(
     ISpoke.PositionStatus storage self,
     uint256 fromReserveId
-  ) internal view returns (uint256 reserveId) {
+  ) internal view returns (uint256) {
     unchecked {
       uint256 bucket = fromReserveId.bucketId();
       uint256 setBitId = self.map[bucket].isolateBorrowingUntil(fromReserveId).fls();
@@ -190,12 +190,12 @@ library PositionStatusMap {
    * @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
    * @param self The position status storing reserves bitmap.
    * @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
-   * @return reserveId The previous collateralized reserveId, or `NOT_FOUND` if none is found.
+   * @return The previous collateralized reserveId, or `NOT_FOUND` if none is found.
    */
   function nextCollateral(
     ISpoke.PositionStatus storage self,
     uint256 fromReserveId
-  ) internal view returns (uint256 reserveId) {
+  ) internal view returns (uint256) {
     unchecked {
       uint256 bucket = fromReserveId.bucketId();
       uint256 setBitId = self.map[bucket].isolateCollateralUntil(fromReserveId).fls();
@@ -221,29 +221,35 @@ library PositionStatusMap {
   /**
    * @dev Converts a reserveId to it's corresponding bucketId.
    */
-  function bucketId(uint256 reserveId) internal pure returns (uint256 wordId) {
+  function bucketId(uint256 reserveId) internal pure returns (uint256) {
+    uint256 wordId;
     assembly ('memory-safe') {
       wordId := shr(7, reserveId)
     }
+    return wordId;
   }
 
   /**
    * @dev Converts a bitId (bit index) to it's corresponding reserveId.
    * @dev BitId 0, 1 correspond to reserveId 0; BitId 2, 3 correspond to reserveId 1; etc.
    */
-  function fromBitId(uint256 bitId, uint256 bucket) internal pure returns (uint256 reserveId) {
+  function fromBitId(uint256 bitId, uint256 bucket) internal pure returns (uint256) {
+    uint256 reserveId;
     assembly ('memory-safe') {
       reserveId := add(shr(1, bitId), shl(7, bucket))
     }
+    return reserveId;
   }
 
   /**
    * @dev Isolates the borrowing bits from word.
    */
-  function isolateBorrowing(uint256 word) internal pure returns (uint256 ret) {
+  function isolateBorrowing(uint256 word) internal pure returns (uint256) {
+    uint256 ret;
     assembly ('memory-safe') {
       ret := and(word, BORROWING_MASK)
     }
+    return ret;
   }
 
   /**
@@ -255,11 +261,13 @@ library PositionStatusMap {
   function isolateBorrowingUntil(
     uint256 word,
     uint256 reserveCount
-  ) internal pure returns (uint256 ret) {
+  ) internal pure returns (uint256) {
+    uint256 ret;
     // ret = word & (BORROWING_MASK >> (256 - ((reserveCount % 128) << 1)));
     assembly ('memory-safe') {
       ret := and(word, shr(sub(256, shl(1, mod(reserveCount, 128))), BORROWING_MASK))
     }
+    return ret;
   }
 
   /**
@@ -268,20 +276,24 @@ library PositionStatusMap {
    * @param reserveCount The number of reserves (2 bits each) to include.
    * @return ret The portion of word containing bits from the first reserve up to `reserveCount`.
    */
-  function isolateUntil(uint256 word, uint256 reserveCount) internal pure returns (uint256 ret) {
+  function isolateUntil(uint256 word, uint256 reserveCount) internal pure returns (uint256) {
+    uint256 ret;
     // ret = word & (type(uint256).max >> (256 - ((reserveCount % 128) << 1)));
     assembly ('memory-safe') {
       ret := and(word, shr(sub(256, shl(1, mod(reserveCount, 128))), not(0)))
     }
+    return ret;
   }
 
   /**
    * @dev Isolates the collateral bits from word.
    */
-  function isolateCollateral(uint256 word) internal pure returns (uint256 ret) {
+  function isolateCollateral(uint256 word) internal pure returns (uint256) {
+    uint256 ret;
     assembly ('memory-safe') {
       ret := and(word, COLLATERAL_MASK)
     }
+    return ret;
   }
 
   /**
@@ -293,10 +305,12 @@ library PositionStatusMap {
   function isolateCollateralUntil(
     uint256 word,
     uint256 reserveCount
-  ) internal pure returns (uint256 ret) {
+  ) internal pure returns (uint256) {
     // ret = word & (COLLATERAL_MASK >> (256 - ((reserveCount % 128) << 1)));
+    uint256 ret;
     assembly ('memory-safe') {
       ret := and(word, shr(sub(256, shl(1, mod(reserveCount, 128))), COLLATERAL_MASK))
     }
+    return ret;
   }
 }
