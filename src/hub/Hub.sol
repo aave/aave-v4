@@ -436,10 +436,10 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function getSpokeConfig(
     uint256 assetId,
-    address spokeAddr
+    address spoke
   ) external view returns (SpokeConfig memory) {
-    SpokeData storage spoke = _spokes[assetId][spokeAddr];
-    return SpokeConfig(spoke.active, spoke.addCap, spoke.drawCap);
+    SpokeData storage spokeData = _spokes[assetId][spoke];
+    return SpokeConfig(spokeData.active, spokeData.addCap, spokeData.drawCap);
   }
 
   /// @inheritdoc IHubBase
