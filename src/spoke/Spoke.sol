@@ -766,6 +766,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   ) internal returns (UserAccountData memory userAccountData) {
     userAccountData = _calculateAndPotentiallyRefreshUserAccountData(user, true);
     emit RefreshAllUserDynamicConfig(user);
+    return userAccountData;
   }
 
   /**
