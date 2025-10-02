@@ -28,5 +28,5 @@
   "withdraw: 0 borrows, partial": "138153",
   "withdraw: 1 borrow, partial": "226946",
   "withdraw: 2 borrows, partial": "310296",
-  "withdraw: non collateral, full": "135610"
+  "withdraw: non collateral": "135610"
 }

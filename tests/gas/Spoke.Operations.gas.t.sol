@@ -103,7 +103,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     skip(100);
 
     spoke.withdraw(reserveId.weth, UINT256_MAX, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'withdraw: non collateral, full');
+    vm.snapshotGasLastCall(NAMESPACE, 'withdraw: non collateral');
     vm.stopPrank();
   }
 
