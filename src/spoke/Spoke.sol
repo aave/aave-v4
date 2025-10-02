@@ -230,7 +230,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
-    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
+    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
 
     emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
@@ -254,7 +254,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
+    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
@@ -378,7 +378,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     if (usingAsCollateral) {
       _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
-      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
+      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
       _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
     }
     emit SetUsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
@@ -397,7 +397,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
+    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
     _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
   }
 
@@ -686,7 +686,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   }
 
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
-    // there should be enough collateral to cover liquidation at moment a loan is taken
+    // there should be enough collateral to cover liquidation at the moment debt is taken
     require(
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
@@ -713,7 +713,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
   }
 
-  /// @dev Allows donation on drawn debt.
   function _calculateRestoreAmount(
     uint256 drawnDebt,
     uint256 premiumDebt,
@@ -813,6 +812,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
           reserve.assetId,
           userPosition
         );
+        // we can simplify since there is no precision loss due to the division here
         userAccountData.totalDebtInBaseCurrency += ((drawnDebt + premiumDebt) * assetPrice)
           .wadDivUp(assetUnit);
         userAccountData.borrowedReservesCount = userAccountData.borrowedReservesCount.uncheckedAdd(
