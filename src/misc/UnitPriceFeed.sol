@@ -24,11 +24,6 @@ contract UnitPriceFeed is AggregatorV3Interface {
   error OperationNotSupported();
 
   /**
-   * @notice Thrown when requesting a `roundId` in the future.
-   */
-  error InvalidRoundId();
-
-  /**
    * @dev Constructor.
    * @param decimals_ The number of decimals used to represent the unit price.
    * @param description_ The description of the unit price feed.

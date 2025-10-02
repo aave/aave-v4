@@ -30,7 +30,7 @@ contract UnitPriceFeedTest is Base {
   }
 
   function test_getRoundData() public {
-    uint80 _roundId = uint80(vm.randomUint(0, vm.getBlockTimestamp()));
+    uint80 _roundId = uint80(vm.randomUint(0, UINT256_MAX));
     (
       uint80 roundId,
       int256 answer,
