@@ -7,18 +7,38 @@ contract HubRefreshPremiumTest is HubBase {
   using SafeCast for *;
   using MathUtils for uint256;
 
+  HubConfigurator public configurator;
+
   struct PremiumDataLocal {
     uint256 premiumShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
   }
 
+  function setUp() public virtual override {
+    super.setUp();
+    configurator = new HubConfigurator(ADMIN);
+    vm.prank(ADMIN);
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(configurator), 0);
+  }
+
   function test_refreshPremium_revertsWith_SpokeNotActive() public {
     IHubBase.PremiumDelta memory premiumDelta;
-    updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
+    vm.prank(ADMIN);
+    configurator.pauseSpoke(address(hub1), address(spoke1));
+
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
+  }
+
+  function test_refreshPremium_revertsWith_DrawCapExceeded() public {
+    vm.prank(ADMIN);
+    configurator.freezeSpoke(address(hub1), address(spoke1));
+
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 0));
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(0, 0, 0));
   }
 
   function test_refreshPremium_emitsEvent() public {
