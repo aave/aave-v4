@@ -87,6 +87,7 @@ abstract contract Base is Test {
     0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
+  uint256 internal constant MIN_TOKEN_DECIMALS_SUPPORTED = 6;
   uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED = 18;
   uint256 internal constant MAX_SUPPLY_ASSET_UNITS =
     MAX_SUPPLY_AMOUNT / 10 ** MAX_TOKEN_DECIMALS_SUPPORTED;
