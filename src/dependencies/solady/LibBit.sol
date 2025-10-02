@@ -8,8 +8,7 @@ pragma solidity ^0.8.4;
 /// @author Inspired by (https://graphics.stanford.edu/~seander/bithacks.html)
 library LibBit {
   /// @dev Returns the number of set bits in `x`.
-  function popCount(uint256 x) internal pure returns (uint256) {
-    uint256 c;
+  function popCount(uint256 x) internal pure returns (uint256 c) {
     /// @solidity memory-safe-assembly
     assembly {
       let max := not(0)
@@ -19,15 +18,13 @@ library LibBit {
       x := and(add(x, shr(4, x)), div(max, 17))
       c := or(shl(8, isMax), shr(248, mul(x, div(max, 255))))
     }
-    return c;
   }
 
   /// @dev Find last set.
   /// Returns the index of the most significant bit of `x`,
   /// counting from the least significant bit position.
   /// If `x` is zero, returns 256.
-  function fls(uint256 x) internal pure returns (uint256) {
-    uint256 r;
+  function fls(uint256 x) internal pure returns (uint256 r) {
     /// @solidity memory-safe-assembly
     assembly {
       r := or(shl(8, iszero(x)), shl(7, lt(0xffffffffffffffffffffffffffffffff, x)))
@@ -44,6 +41,5 @@ library LibBit {
         )
       )
     }
-    return r;
   }
 }
