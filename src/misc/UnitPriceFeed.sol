@@ -58,7 +58,6 @@ contract UnitPriceFeed is AggregatorV3Interface {
       uint80 answeredInRound
     )
   {
-    require(_roundId <= uint80(block.timestamp), InvalidRoundId());
     roundId = _roundId;
     answer = _units;
     startedAt = _roundId;
