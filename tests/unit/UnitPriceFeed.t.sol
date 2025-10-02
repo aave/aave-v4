@@ -30,15 +30,15 @@ contract UnitPriceFeedTest is Base {
   }
 
   function test_getRoundData() public {
-    uint80 roundId = uint80(vm.randomUint(0, block.timestamp));
+    uint80 _roundId = uint80(vm.randomUint(0, vm.getBlockTimestamp()));
     (
-      uint80 _roundId,
+      uint80 roundId,
       int256 answer,
       uint256 startedAt,
       uint256 updatedAt,
       uint80 answeredInRound
-    ) = unitPriceFeed.getRoundData(roundId);
-    assertEq(_roundId, roundId);
+    ) = unitPriceFeed.getRoundData(_roundId);
+    assertEq(roundId, _roundId);
     assertEq(answer, int256(10 ** _decimals));
     assertEq(startedAt, roundId);
     assertEq(updatedAt, roundId);
@@ -46,7 +46,7 @@ contract UnitPriceFeedTest is Base {
   }
 
   function test_getRoundData_revertsWith_InvalidRoundId() public {
-    uint80 roundId = uint80(vm.randomUint(block.timestamp + 1, type(uint80).max));
+    uint80 roundId = uint80(vm.randomUint(vm.getBlockTimestamp() + 1, type(uint80).max));
     vm.expectRevert(UnitPriceFeed.InvalidRoundId.selector);
     unitPriceFeed.getRoundData(roundId);
   }
