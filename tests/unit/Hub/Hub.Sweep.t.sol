@@ -7,6 +7,12 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubSweepTest is HubBase {
   address public reinvestmentController = makeAddr('reinvestmentController');
 
+  function test_sweep_revertsWith_AssetNotListed() public {
+    uint256 assetId = _randomInvalidAssetId(hub1);
+    vm.expectRevert(IHub.AssetNotListed.selector);
+    hub1.sweep(assetId, vm.randomUint());
+  }
+
   function test_sweep_revertsWith_OnlyReinvestmentController_init() public {
     assertEq(hub1.getAsset(daiAssetId).reinvestmentController, address(0));
     vm.expectRevert(IHub.OnlyReinvestmentController.selector);
