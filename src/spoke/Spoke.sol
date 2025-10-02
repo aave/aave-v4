@@ -895,7 +895,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
       uint256 oldPremiumShares = userPosition.premiumShares;
       uint256 oldPremiumOffset = userPosition.premiumOffset;
-      uint256 accruedUserPremium = hub.previewRestoreByShares(assetId, oldPremiumShares) -
+      uint256 accruedPremium = hub.previewRestoreByShares(assetId, oldPremiumShares) -
         oldPremiumOffset;
 
       uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newUserRiskPremium);
@@ -904,12 +904,12 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
       userPosition.premiumShares = newPremiumShares.toUint128();
       userPosition.premiumOffset = newPremiumOffset.toUint128();
-      userPosition.realizedPremium += accruedUserPremium.toUint128();
+      userPosition.realizedPremium += accruedPremium.toUint128();
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: newPremiumShares.signedSub(oldPremiumShares),
         offsetDelta: newPremiumOffset.signedSub(oldPremiumOffset),
-        realizedDelta: accruedUserPremium.toInt256()
+        realizedDelta: accruedPremium.toInt256()
       });
 
       hub.refreshPremium(assetId, premiumDelta);
@@ -951,6 +951,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
       );
       _settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
       userPosition.drawnShares -= deficitShares.toUint128();
+      // non-zero deficit means user ends up with zero total debt
       positionStatus.setBorrowing(reserveId, false);
     }
     emit UpdateUserRiskPremium(user, 0);
