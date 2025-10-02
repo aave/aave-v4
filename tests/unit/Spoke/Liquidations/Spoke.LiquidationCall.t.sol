@@ -450,6 +450,14 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
 
   uint256 internal baseAmountInBaseCurrency;
 
+  function setUp() public virtual override {
+    super.setUp();
+    baseAmountInBaseCurrency = vm.randomUint(
+      MIN_AMOUNT_IN_BASE_CURRENCY,
+      MAX_AMOUNT_IN_BASE_CURRENCY
+    );
+  }
+
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
     return baseAmountInBaseCurrency;
   }
@@ -474,10 +482,5 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
 
     uint256 liquidationFee = vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE);
     _updateLiquidationFee(spoke, collateralReserveId, liquidationFee.toUint16());
-
-    baseAmountInBaseCurrency = vm.randomUint(
-      MIN_AMOUNT_IN_BASE_CURRENCY,
-      MAX_AMOUNT_IN_BASE_CURRENCY
-    );
   }
 }
