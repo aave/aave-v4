@@ -7,7 +7,7 @@ contract HubRefreshPremiumTest is HubBase {
   using SafeCast for *;
   using MathUtils for uint256;
 
-  HubConfigurator public configurator;
+  IHubConfigurator public configurator;
 
   struct PremiumDataLocal {
     uint256 premiumShares;
