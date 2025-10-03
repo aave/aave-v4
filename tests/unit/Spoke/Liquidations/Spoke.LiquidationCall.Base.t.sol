@@ -420,7 +420,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     if (liquidationMetadata.collateralToLiquidate > liquidationMetadata.collateralToLiquidator) {
       vm.expectCall(
         address(params.spoke.getReserve(params.collateralReserveId).hub),
-        abi.encodeWithSelector(IHubBase.payFee.selector)
+        abi.encodeWithSelector(IHubBase.payFeeShares.selector)
       );
     }
 

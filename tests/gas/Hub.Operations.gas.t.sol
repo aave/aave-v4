@@ -107,7 +107,7 @@ contract HubOperations_Gas_Tests is Base {
     skip(100);
 
     vm.prank(address(spoke1));
-    hub1.payFee(daiAssetId, 100e18);
+    hub1.payFeeShares(daiAssetId, 100e18);
     vm.snapshotGasLastCall('Hub.Operations', 'payFee');
 
     skip(100);

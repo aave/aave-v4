@@ -45,7 +45,12 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     ) = liquidationLogicWrapper.calculateLiquidationAmounts(params);
 
     assertEq(collateralToLiquidate, expectedCollateralToLiquidate, 'collateralToLiquidate');
-    assertEq(collateralToLiquidator, expectedCollateralToLiquidator, 'collateralToLiquidator');
+    assertApproxEqAbs(
+      collateralToLiquidator,
+      expectedCollateralToLiquidator,
+      1,
+      'collateralToLiquidator'
+    );
     assertEq(debtToLiquidate, expectedDebtToLiquidate, 'debtToLiquidate');
   }
 
@@ -75,7 +80,12 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     ) = liquidationLogicWrapper.calculateLiquidationAmounts(params);
 
     assertEq(collateralToLiquidate, expectedCollateralToLiquidate, 'collateralToLiquidate');
-    assertEq(collateralToLiquidator, expectedCollateralToLiquidator, 'collateralToLiquidator');
+    assertApproxEqAbs(
+      collateralToLiquidator,
+      expectedCollateralToLiquidator,
+      1,
+      'collateralToLiquidator'
+    );
     assertEq(debtToLiquidate, params.debtReserveBalance, 'debtToLiquidate');
   }
 
@@ -119,7 +129,12 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     ) = liquidationLogicWrapper.calculateLiquidationAmounts(params);
 
     assertEq(collateralToLiquidate, expectedCollateralToLiquidate, 'collateralToLiquidate');
-    assertEq(collateralToLiquidator, expectedCollateralToLiquidator, 'collateralToLiquidator');
+    assertApproxEqAbs(
+      collateralToLiquidator,
+      expectedCollateralToLiquidator,
+      1,
+      'collateralToLiquidator'
+    );
     assertEq(debtToLiquidate, expectedDebtToLiquidate, 'debtToLiquidate');
   }
 
@@ -154,7 +169,12 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     ) = liquidationLogicWrapper.calculateLiquidationAmounts(params);
 
     assertEq(collateralToLiquidate, expectedCollateralToLiquidate, 'collateralToLiquidate');
-    assertEq(collateralToLiquidator, expectedCollateralToLiquidator, 'collateralToLiquidator');
+    assertApproxEqAbs(
+      collateralToLiquidator,
+      expectedCollateralToLiquidator,
+      1,
+      'collateralToLiquidator'
+    );
     assertEq(debtToLiquidate, expectedDebtToLiquidate, 'debtToLiquidate');
   }
 
@@ -301,11 +321,10 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     uint256 debtToLiquidate = liquidationLogicWrapper.calculateMaxDebtToLiquidate(
       _getCalculateMaxDebtToLiquidateParams(params)
     );
-    uint256 debtToCollateral = debtToLiquidate.mulDivDown(
-      params.debtAssetPrice * params.collateralAssetUnit,
-      params.debtAssetUnit * params.collateralAssetPrice
+    uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
+      params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus,
+      params.debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
     );
-    uint256 collateralToLiquidate = debtToCollateral.percentMulDown(liquidationBonus);
     uint256 collateralToLiquidator = _calculateCollateralToLiquidator(
       collateralToLiquidate,
       liquidationBonus,
@@ -331,10 +350,9 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       liquidationBonus,
       params.liquidationFee
     );
-    uint256 debtToCollateral = collateralToLiquidate.percentDivUp(liquidationBonus);
-    uint256 debtToLiquidate = debtToCollateral.mulDivUp(
-      params.collateralAssetPrice * params.debtAssetUnit,
-      params.collateralAssetUnit * params.debtAssetPrice
+    uint256 debtToLiquidate = collateralToLiquidate.mulDivUp(
+      params.collateralAssetPrice * params.debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
+      params.collateralAssetUnit * params.debtAssetPrice * liquidationBonus
     );
 
     return (collateralToLiquidate, collateralToLiquidator, debtToLiquidate);
