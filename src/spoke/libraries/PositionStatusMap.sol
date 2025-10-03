@@ -36,8 +36,6 @@ library PositionStatusMap {
   }
 
   /// @notice Sets if the user is using as collateral the specified reserve.
-  /// @param reserveId The identifier of the reserve in the bitmap.
-  /// @param usingAsCollateral True if the user is using the reserve as collateral, false otherwise.
   function setUsingAsCollateral(
     ISpoke.PositionStatus storage self,
     uint256 reserveId,
@@ -54,8 +52,6 @@ library PositionStatusMap {
   }
 
   /// @notice Returns if a user is using the specified reserve for borrowing or as collateral.
-  /// @param reserveId The identifier of the reserve in the bitmap.
-  /// @return True if the user is using a reserve for borrowing or as collateral, false otherwise.
   function isUsingAsCollateralOrBorrowing(
     ISpoke.PositionStatus storage self,
     uint256 reserveId
@@ -66,8 +62,6 @@ library PositionStatusMap {
   }
 
   /// @notice Returns if a user is using the specified reserve for borrowing.
-  /// @param reserveId The identifier of the reserve in the bitmap.
-  /// @return True if the user is using a reserve for borrowing, false otherwise.
   function isBorrowing(
     ISpoke.PositionStatus storage self,
     uint256 reserveId
@@ -78,8 +72,6 @@ library PositionStatusMap {
   }
 
   /// @notice Returns if a user is using the specified reserve as collateral.
-  /// @param reserveId The identifier of the reserve in the bitmap.
-  /// @return True if the user is using a reserve as collateral, false otherwise.
   function isUsingAsCollateral(
     ISpoke.PositionStatus storage self,
     uint256 reserveId
@@ -92,7 +84,6 @@ library PositionStatusMap {
   /// @notice Counts the number of reserves enabled as collateral.
   /// @dev Disregards potential dirty bits set after `reserveCount`.
   /// @param reserveCount The current `reserveCount`, to avoid reading uninitialized buckets.
-  /// @return The number of reserves enabled as collateral.
   function collateralCount(
     ISpoke.PositionStatus storage self,
     uint256 reserveCount
@@ -217,7 +208,7 @@ library PositionStatusMap {
     }
   }
 
-  /// @notice Isolates bits up to the given `reserveCount`, clearing all later reserves.
+  /// @notice Returns masked `word` containing bits from the first reserve up to `reserveCount`.
   function isolateUntil(uint256 word, uint256 reserveCount) internal pure returns (uint256 ret) {
     // ret = word & (type(uint256).max >> (256 - ((reserveCount % 128) << 1)));
     assembly ('memory-safe') {
@@ -232,7 +223,7 @@ library PositionStatusMap {
     }
   }
 
-  /// @notice Isolates collateral bits up to the given `reserveCount`, clearing all later reserves.
+  /// @notice Returns masked `word` containing only collateral bits from the first reserve up to `reserveCount`.
   function isolateCollateralUntil(
     uint256 word,
     uint256 reserveCount
