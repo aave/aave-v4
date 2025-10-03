@@ -21,7 +21,13 @@ contract AaveOracleTest is Base {
   uint256 private constant reserveId2 = 1;
 
   function setUp() public override {
+    deployFixtures();
     oracle = new AaveOracle(address(spoke1), _decimals, _description);
+  }
+
+  function test_deploy_revertsWith_InvalidAddress() public {
+    vm.expectRevert(IAaveOracle.InvalidAddress.selector);
+    new AaveOracle(address(0), uint8(vm.randomUint()), string(vm.randomBytes(64)));
   }
 
   function test_constructor() public {
