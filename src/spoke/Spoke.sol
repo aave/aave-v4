@@ -81,7 +81,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     ORACLE = oracle_;
   }
 
-  /// @notice Initializes the spoke contract, setting the authority.
+  /// @notice Initializes the spoke contract.
   /// @param _authority The address of the authority contract.
   function initialize(address _authority) external virtual;
 

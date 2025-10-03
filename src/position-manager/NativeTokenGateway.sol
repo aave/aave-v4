@@ -41,13 +41,12 @@ contract NativeTokenGateway is
     _spoke = ISpoke(spoke_);
   }
 
-  /// @notice Receives native assets.
   /// @dev Reverts if the caller is not the native wrapper.
   receive() external payable {
     require(msg.sender == address(_nativeWrapper), UnsupportedAction());
   }
 
-  /// @notice Unsupported fallback function.
+  /// @dev Unsupported fallback function.
   fallback() external payable {
     revert UnsupportedAction();
   }
