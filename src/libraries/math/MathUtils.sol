@@ -22,7 +22,7 @@ library MathUtils {
    */
   function calculateLinearInterest(
     uint256 rate,
-    uint40 lastUpdateTimestamp
+    uint32 lastUpdateTimestamp
   ) internal view returns (uint256) {
     uint256 result = rate * (block.timestamp - uint256(lastUpdateTimestamp));
     unchecked {
