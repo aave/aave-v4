@@ -57,6 +57,8 @@ interface IHub is IHubBase, IAccessManaged {
     uint56 addCap;
     uint56 drawCap;
     bool active;
+    //
+    uint128 deficit;
   }
 
   struct SpokeConfig {
@@ -104,13 +106,15 @@ interface IHub is IHubBase, IAccessManaged {
   /**
    * @notice Emitted when deficit is eliminated.
    * @param assetId The identifier of the asset.
-   * @param spoke The spoke that eliminated the deficit, and had supplied shares removed.
+   * @param callerSpoke The spoke that eliminated the deficit using its supplied shares.
+   * @param coveredSpoke The spoke for which the deficit was eliminated.
    * @param shares The amount of shares removed.
    * @param amount The amount of deficit eliminated.
    */
   event EliminateDeficit(
     uint256 indexed assetId,
-    address indexed spoke,
+    address indexed callerSpoke,
+    address indexed coveredSpoke,
     uint256 shares,
     uint256 amount
   );
@@ -207,9 +211,14 @@ interface IHub is IHubBase, IAccessManaged {
    * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of deficit to eliminate.
+   * @param spoke The spoke for which the deficit is eliminated.
    * @return The amount of shares removed.
    */
-  function eliminateDeficit(uint256 assetId, uint256 amount) external returns (uint256);
+  function eliminateDeficit(
+    uint256 assetId,
+    uint256 amount,
+    address spoke
+  ) external returns (uint256);
 
   /**
    * @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment controller.
@@ -335,7 +344,7 @@ interface IHub is IHubBase, IAccessManaged {
    * @notice Returns the amount of deficit of the specified asset.
    * @param assetId The identifier of the asset.
    */
-  function getDeficit(uint256 assetId) external view returns (uint256);
+  function getAssetDeficit(uint256 assetId) external view returns (uint256);
 
   function getSpokeCount(uint256 assetId) external view returns (uint256);
 
@@ -344,6 +353,14 @@ interface IHub is IHubBase, IAccessManaged {
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
 
   function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory);
+
+  /**
+   * @notice Returns the amount of a given spoke's deficit for the specified asset.
+   * @param assetId The identifier of the asset.
+   * @param spoke The address of the spoke.
+   * @return The amount of deficit.
+   */
+  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256);
 
   function getSpokeConfig(
     uint256 assetId,

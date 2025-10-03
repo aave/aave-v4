@@ -148,13 +148,13 @@ contract HubOperations_Gas_Tests is Base {
     vm.snapshotGasLastCall('Hub.Operations', 'reportDeficit');
 
     vm.prank(address(spoke1));
-    hub1.eliminateDeficit(daiAssetId, 100e18);
+    hub1.eliminateDeficit(daiAssetId, 100e18, address(spoke1));
     vm.snapshotGasLastCall('Hub.Operations', 'eliminateDeficit: partial');
 
-    uint256 deficit = hub1.getDeficit(daiAssetId);
+    uint256 deficit = hub1.getAssetDeficit(daiAssetId);
 
     vm.prank(address(spoke1));
-    hub1.eliminateDeficit(daiAssetId, deficit);
+    hub1.eliminateDeficit(daiAssetId, deficit, address(spoke1));
     vm.snapshotGasLastCall('Hub.Operations', 'eliminateDeficit: full');
   }
 }
