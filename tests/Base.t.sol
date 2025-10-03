@@ -87,6 +87,7 @@ abstract contract Base is Test {
     0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
+  uint256 internal constant MIN_TOKEN_DECIMALS_SUPPORTED = 6;
   uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED = 18;
   uint256 internal constant MAX_SUPPLY_ASSET_UNITS =
     MAX_SUPPLY_AMOUNT / 10 ** MAX_TOKEN_DECIMALS_SUPPORTED;
@@ -96,7 +97,8 @@ abstract contract Base is Test {
   uint256 internal MAX_SUPPLY_AMOUNT_WETH;
   uint256 internal MAX_SUPPLY_AMOUNT_USDY;
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
-  uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
+  uint24 internal constant MIN_COLLATERAL_RISK_BPS = 1;
+  uint24 internal constant MAX_COLLATERAL_RISK_BPS = 1000_00;
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
   uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
@@ -1101,7 +1103,7 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function updateCollateralFactor(
+  function _updateCollateralFactor(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newCollateralFactor
@@ -1115,7 +1117,7 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function updateCollateralFactorAtKey(
+  function _updateCollateralFactorAtKey(
     ISpoke spoke,
     uint256 reserveId,
     uint16 configKey,
@@ -1142,7 +1144,7 @@ abstract contract Base is Test {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateCollateralRisk(
+  function _updateCollateralRisk(
     ISpoke spoke,
     uint256 reserveId,
     uint24 newCollateralRisk
@@ -1191,7 +1193,7 @@ abstract contract Base is Test {
     return spokeInfo[spoke].usdx.reserveId;
   }
 
-  // assumes spoke has usdx supported
+  // assumes spoke has usdy supported
   function _usdyReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].usdy.reserveId;
   }
@@ -1943,6 +1945,10 @@ abstract contract Base is Test {
     return hub.getAssetConfig(assetId).feeReceiver;
   }
 
+  function _getFeeReceiver(ISpoke spoke, uint256 reserveId) internal view returns (address) {
+    return _getFeeReceiver(_hub(spoke, reserveId), spoke.getReserve(reserveId).assetId);
+  }
+
   function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint24) {
     return spoke.getReserveConfig(reserveId).collateralRisk;
   }
@@ -2006,24 +2012,30 @@ abstract contract Base is Test {
     string memory _oracleDesc
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
-    address predictedOracle = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
-    address spokeImpl = address(new SpokeInstance(predictedOracle));
+    address predictedSpoke = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
+    IAaveOracle oracle = new AaveOracle(predictedSpoke, 8, _oracleDesc);
+    address spokeImpl = address(new SpokeInstance(address(oracle)));
     ISpoke spoke = ISpoke(
-      _proxify(spokeImpl, proxyAdminOwner, abi.encodeCall(Spoke.initialize, (_accessManager)))
+      _proxify(
+        deployer,
+        spokeImpl,
+        proxyAdminOwner,
+        abi.encodeCall(Spoke.initialize, (_accessManager))
+      )
     );
-    vm.prank(deployer);
-    IAaveOracle oracle = new AaveOracle(address(spoke), 8, _oracleDesc);
-    assertEq(address(oracle), predictedOracle, 'predictedOracle');
+    assertEq(address(spoke), predictedSpoke, 'predictedSpoke');
     assertEq(spoke.ORACLE(), address(oracle));
     assertEq(oracle.SPOKE(), address(spoke));
     return (spoke, oracle);
   }
 
   function _proxify(
+    address deployer,
     address impl,
     address proxyAdminOwner,
     bytes memory initData
   ) internal returns (address) {
+    vm.prank(deployer);
     TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
       impl,
       proxyAdminOwner,

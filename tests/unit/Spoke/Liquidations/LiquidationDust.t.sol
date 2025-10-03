@@ -37,15 +37,16 @@ contract LiquidationDustTest is SpokeLiquidationCallBaseTest {
     Utils.approve(spoke, _daiReserveId(spoke), liquidator, type(uint256).max);
     Utils.approve(spoke, _usdyReserveId(spoke), liquidator, type(uint256).max);
 
-    updateCollateralFactor(spoke, _daiReserveId(spoke), 90_00);
-    updateCollateralFactor(spoke, _usdxReserveId(spoke), 99_99);
-    updateCollateralFactor(spoke, _usdyReserveId(spoke), 99_99);
+    _updateCollateralFactor(spoke, _daiReserveId(spoke), 90_00);
+    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 99_99);
+    _updateCollateralFactor(spoke, _usdyReserveId(spoke), 99_99);
 
     _openSupplyPosition(spoke, _daiReserveId(spoke), 1e30);
     _openSupplyPosition(spoke, _usdxReserveId(spoke), 1e30);
     _openSupplyPosition(spoke, _usdyReserveId(spoke), 1e30);
   }
 
+  /// @dev debtToTarget is limiting factor that would result in dust collateral
   function testCollDust() public {
     vm.prank(SPOKE_ADMIN);
     spoke.updateLiquidationConfig(
