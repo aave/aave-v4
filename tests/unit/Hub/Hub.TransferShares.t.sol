@@ -8,12 +8,12 @@ contract HubTransferSharesTest is HubBase {
   using SharesMath for uint256;
   using SafeCast for uint256;
 
-  uint256 zeroDecimalAssetId;
+  uint256 minDecimalAssetId;
 
   function setUp() public override {
     super.setUp();
 
-    /// @dev add a zero decimal asset to test add cap rounding
+    /// @dev add a minimum decimal asset to test add cap rounding
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
@@ -28,15 +28,15 @@ contract HubTransferSharesTest is HubBase {
       })
     );
     vm.startPrank(ADMIN);
-    zeroDecimalAssetId = hub1.addAsset(
+    minDecimalAssetId = hub1.addAsset(
       address(tokenList.dai),
-      0,
+      Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
       address(treasurySpoke),
       address(irStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
-      zeroDecimalAssetId,
+      minDecimalAssetId,
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
@@ -45,8 +45,8 @@ contract HubTransferSharesTest is HubBase {
       }),
       new bytes(0)
     );
-    hub1.addSpoke(zeroDecimalAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(zeroDecimalAssetId, address(spoke2), spokeConfig);
+    hub1.addSpoke(minDecimalAssetId, address(spoke1), spokeConfig);
+    hub1.addSpoke(minDecimalAssetId, address(spoke2), spokeConfig);
     vm.stopPrank();
   }
 
@@ -145,18 +145,18 @@ contract HubTransferSharesTest is HubBase {
 
   /// transferShares reverts if the cap is exceeded, with proper rounding (up) applied to shares into assets conversion
   function test_transferShares_revertsWith_AddCapExceeded_due_to_rounding() public {
-    _addLiquidity(zeroDecimalAssetId, 100e18);
-    _drawLiquidity(zeroDecimalAssetId, 45e18, true);
+    _addLiquidity(minDecimalAssetId, 100e18);
+    _drawLiquidity(minDecimalAssetId, 45e18, true);
 
-    uint256 totalAddedAssets = hub1.getAddedAssets(zeroDecimalAssetId);
-    uint256 totalAddedShares = hub1.getAddedShares(zeroDecimalAssetId);
+    uint256 totalAddedAssets = hub1.getAddedAssets(minDecimalAssetId);
+    uint256 totalAddedShares = hub1.getAddedShares(minDecimalAssetId);
 
     uint256 addedAmount = uint256(1e4).toAssetsDown(totalAddedAssets, totalAddedShares) + 1;
-    uint256 addedShares = hub1.convertToAddedShares(zeroDecimalAssetId, addedAmount);
+    uint256 addedShares = hub1.convertToAddedShares(minDecimalAssetId, addedAmount);
 
     Utils.add({
       hub: hub1,
-      assetId: zeroDecimalAssetId,
+      assetId: minDecimalAssetId,
       caller: address(spoke1),
       amount: addedAmount,
       user: alice
@@ -164,21 +164,21 @@ contract HubTransferSharesTest is HubBase {
 
     Utils.add({
       hub: hub1,
-      assetId: zeroDecimalAssetId,
+      assetId: minDecimalAssetId,
       caller: address(spoke2),
       amount: addedAmount,
       user: alice
     });
 
     uint56 newAddCap = (2 * addedAmount - 1).toUint56();
-    _updateAddCap(zeroDecimalAssetId, address(spoke1), newAddCap);
+    _updateAddCap(minDecimalAssetId, address(spoke1), newAddCap);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke2));
-    hub1.transferShares(zeroDecimalAssetId, addedShares, address(spoke1));
+    hub1.transferShares(minDecimalAssetId, addedShares, address(spoke1));
 
     // Assert than with rounding down we would have match the cap
-    uint256 previewRemoveAmount = hub1.previewRemoveByShares(zeroDecimalAssetId, addedShares * 2);
+    uint256 previewRemoveAmount = hub1.previewRemoveByShares(minDecimalAssetId, addedShares * 2);
     assertEq(previewRemoveAmount, newAddCap);
   }
 }

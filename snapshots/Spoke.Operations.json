@@ -1,6 +1,6 @@
 {
-  "borrow: first": "251723",
-  "borrow: second action, same reserve": "215195",
+  "borrow: first": "251712",
+  "borrow: second action, same reserve": "215184",
   "liquidationCall: full": "319846",
   "liquidationCall: partial": "343108",
   "permitReserve + repay (multicall)": "275496",
@@ -24,8 +24,9 @@
   "usingAsCollateral: 1 borrow, enable": "29731",
   "usingAsCollateral: 2 borrows, disable": "278173",
   "usingAsCollateral: 2 borrows, enable": "41878",
-  "withdraw: 0 borrows, full": "135888",
-  "withdraw: 0 borrows, partial": "137643",
-  "withdraw: 1 borrow, partial": "240393",
-  "withdraw: 2 borrows, partial": "337700"
+  "withdraw: 0 borrows, full": "136332",
+  "withdraw: 0 borrows, partial": "138087",
+  "withdraw: 1 borrow, partial": "240837",
+  "withdraw: 2 borrows, partial": "338144",
+  "withdraw: non collateral": "135566"
 }

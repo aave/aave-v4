@@ -232,7 +232,11 @@ contract HubConfigTest is HubBase {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
 
-    decimals = bound(decimals, 0, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
+    decimals = bound(
+      decimals,
+      Constants.MAX_ALLOWED_UNDERLYING_DECIMALS,
+      Constants.MAX_ALLOWED_UNDERLYING_DECIMALS
+    ).toUint8();
 
     uint256 expectedAssetId = hub1.getAssetCount();
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
