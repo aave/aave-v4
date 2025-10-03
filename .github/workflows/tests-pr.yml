@@ -4,10 +4,7 @@ on:
   pull_request:
 
 permissions:
-  actions: read
-  issues: write
-  checks: read
-  statuses: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -47,82 +44,11 @@ jobs:
         with:
           FOUNDRY_PROFILE: pr
 
+      - name: Run Lcov report
+        uses: bgd-labs/github-workflows/.github/actions/foundry-lcov-report@main
+
       - name: Upload & Trigger Comment artifact
         if: always()
         uses: bgd-labs/github-workflows/.github/actions/comment-artifact@main
         with:
           nameSuffix: "default"
-  artifacts:
-    name: Generate artifacts matrix
-    needs: test
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-      pr_number: ${{ steps.set-matrix.outputs.pr_number }}
-    steps:
-      - name: Download artifacts
-        uses: dawidd6/action-download-artifact@72aaadce3bc708349fc665eee3785cbb1b6e51d0 # v3.1.1
-        with:
-          run_id: ${{ github.event.workflow_run.id }}
-          github_token: ${{ secrets.READ_ONLY_PAT || github.token }}
-          name: content*
-          name_is_regexp: true
-          path: /tmp/content
-
-      - id: set-matrix
-        run: |
-          pr_number=$(find /tmp/content/* -maxdepth 2 -name 'pr_number.txt' -print -quit)
-          if test -n "$pr_number"
-          then
-              echo "pr_number=$(cat $pr_number)" >> $GITHUB_OUTPUT
-              rm /tmp/content/**/pr_number.txt
-          fi
-          echo "matrix=$(ls /tmp/content/**/*.txt | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
-  comment:
-    needs: artifacts
-    name: Comment Bot
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        artifact: ${{ fromJson(needs.artifacts.outputs.matrix) }}
-    steps:
-      - name: Download artifacts
-        uses: dawidd6/action-download-artifact@72aaadce3bc708349fc665eee3785cbb1b6e51d0 # v3.1.1
-        with:
-          run_id: ${{ github.event.workflow_run.id }}
-          github_token: ${{ secrets.READ_ONLY_PAT || github.token }}
-          name: content*
-          name_is_regexp: true
-          path: /tmp/content
-
-      - name: Prepare comment
-        run: |
-          echo "<!-- ${{ matrix.artifact }} -->" > /tmp/comment
-          cat ${{ matrix.artifact }} >> /tmp/comment
-
-      - name: Find Comment
-        uses: peter-evans/find-comment@v3
-        id: fc
-        if: ${{ needs.artifacts.outputs.pr_number != null }}
-        with:
-          issue-number: ${{ needs.artifacts.outputs.pr_number }}
-          comment-author: "github-actions[bot]"
-          body-includes: <!-- ${{ matrix.artifact }} -->
-
-      - name: Create or update pr comment
-        uses: peter-evans/create-or-update-comment@v4
-        if: ${{ needs.artifacts.outputs.pr_number != null }}
-        with:
-          token: ${{ github.token }}
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ needs.artifacts.outputs.pr_number }}
-          body-file: /tmp/comment
-          edit-mode: replace
-
-      - name: Create or update commit comment
-        uses: peter-evans/commit-comment@v3
-        if: ${{ needs.artifacts.outputs.pr_number == null }}
-        with:
-          token: ${{ secrets.READ_ONLY_PAT || github.token }}
-          sha: ${{ github.event.workflow_run.head_sha }}
-          body-path: /tmp/comment
