@@ -33,9 +33,7 @@ interface IAaveOracle is IPriceOracle {
    */
   error InvalidPrice(uint256 reserveId);
 
-  /**
-   * @dev Thrown when the given address is invalid.
-   */
+  /// @dev Thrown when the given address is invalid.
   error InvalidAddress();
 
   /**
