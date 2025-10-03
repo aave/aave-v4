@@ -89,7 +89,7 @@ contract SpokeBase is Base {
     uint256 supplyAmount;
     uint256 borrowAmount;
     uint256 repayAmount;
-    uint40 skipTime;
+    uint32 skipTime;
   }
 
   struct AssetInfo {
@@ -642,7 +642,7 @@ contract SpokeBase is Base {
     uint256 reserveId,
     uint256 prevDrawnDebt,
     ISpoke.UserPosition memory userPos,
-    uint40 lastTimestamp
+    uint32 lastTimestamp
   ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 accruedBase = MathUtils

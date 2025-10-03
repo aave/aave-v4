@@ -125,7 +125,7 @@ library AssetLogic {
     uint256 indexDelta = drawnIndex.uncheckedSub(asset.drawnIndex);
 
     asset.drawnIndex = drawnIndex.toUint128();
-    asset.lastUpdateTimestamp = block.timestamp.toUint40();
+    asset.lastUpdateTimestamp = block.timestamp.toUint32();
 
     uint128 feeShares = asset.getFeeShares(indexDelta).toUint128();
     if (feeShares > 0) {
@@ -150,7 +150,7 @@ library AssetLogic {
     }
     return
       previousIndex.rayMulUp(
-        MathUtils.calculateLinearInterest(asset.drawnRate, uint40(lastUpdateTimestamp))
+        MathUtils.calculateLinearInterest(asset.drawnRate, uint32(lastUpdateTimestamp))
       );
   }
 
