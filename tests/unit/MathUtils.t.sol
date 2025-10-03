@@ -14,15 +14,15 @@ contract MathUtilsTest is Test {
   }
 
   function test_calculateLinearInterest() public {
-    uint40 previousTimestamp = uint40(vm.getBlockTimestamp());
+    uint32 previousTimestamp = uint32(vm.getBlockTimestamp());
     skip(365 days * 7);
     assertEq(MathUtils.calculateLinearInterest(0.08e27, previousTimestamp), 1.56e27);
   }
 
   function test_fuzz_calculateLinearInterest(
     uint256 rate,
-    uint40 previousTimestamp,
-    uint40 skipTime
+    uint32 previousTimestamp,
+    uint32 skipTime
   ) public {
     rate = bound(rate, 1, 100e27);
     vm.warp(previousTimestamp);

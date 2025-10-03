@@ -211,10 +211,10 @@ contract HubConfigTest is HubBase {
   }
 
   function test_addAsset_revertsWith_BlockTimestampDowncastOverflow() public {
-    uint256 blockTimestamp = uint256(type(uint40).max) + 1;
+    uint256 blockTimestamp = uint256(type(uint32).max) + 1;
     vm.warp(blockTimestamp);
     vm.expectRevert(
-      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 40, blockTimestamp),
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 32, blockTimestamp),
       address(hub1)
     );
     Utils.addAsset(

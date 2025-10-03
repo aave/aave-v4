@@ -25,18 +25,18 @@ interface IHub is IHubBase, IAccessManaged {
     uint128 drawnShares;
     //
     uint128 realizedPremium;
-    uint16 liquidityFee;
-    uint40 lastUpdateTimestamp;
-    uint8 decimals;
+    uint96 drawnRate;
+    uint32 lastUpdateTimestamp;
     //
     address underlying;
     //
     address irStrategy;
-    uint96 drawnRate;
     //
     address reinvestmentController;
     //
     address feeReceiver;
+    uint16 liquidityFee;
+    uint8 decimals;
   }
 
   struct AssetConfig {

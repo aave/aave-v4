@@ -22,8 +22,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
   }
 
   /// Supply an asset only, and check no interest accrued.
-  function test_accrueLiquidityFee_NoInterest_OnlySupply(uint40 skipTime) public {
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
+  function test_accrueLiquidityFee_NoInterest_OnlySupply(uint32 skipTime) public {
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint32();
     uint256 amount = 1000e18;
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -50,12 +50,12 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
   function test_accrueLiquidityFee_fuzz_BorrowAmountAndSkipTime(
     uint256 borrowAmount,
-    uint40 skipTime
+    uint32 skipTime
   ) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 3).toUint40();
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 3).toUint32();
     uint256 supplyAmount = borrowAmount * 2;
-    uint40 startTime = vm.getBlockTimestamp().toUint40();
+    uint32 startTime = vm.getBlockTimestamp().toUint32();
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
