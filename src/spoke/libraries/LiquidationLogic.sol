@@ -249,10 +249,6 @@ library LiquidationLogic {
       })
     );
 
-    uint256 debtToCollateral = debtToLiquidate.mulDivDown(
-      params.debtAssetPrice * params.collateralAssetUnit,
-      params.debtAssetUnit * params.collateralAssetPrice
-    );
     uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
       params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus,
       params.debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
@@ -270,7 +266,6 @@ library LiquidationLogic {
       (leavesCollateralDust && debtToLiquidate < params.debtReserveBalance)
     ) {
       collateralToLiquidate = params.collateralReserveBalance;
-      debtToCollateral = collateralToLiquidate.percentDivUp(liquidationBonus);
 
       // decreases if collateralToLiquidate > params.collateralReserveBalance
       //  - if it decreases, it might bypass the debt dust condition
@@ -290,7 +285,10 @@ library LiquidationLogic {
     require(params.debtToCover >= debtToLiquidate, ISpoke.MustNotLeaveDust());
 
     uint256 collateralToLiquidator = collateralToLiquidate -
-      (collateralToLiquidate - debtToCollateral).percentMulDown(params.liquidationFee);
+      collateralToLiquidate.mulDivDown(
+        params.liquidationFee * (liquidationBonus - PercentageMath.PERCENTAGE_FACTOR),
+        liquidationBonus * PercentageMath.PERCENTAGE_FACTOR
+      );
 
     return (collateralToLiquidate, collateralToLiquidator, debtToLiquidate);
   }
