@@ -24,7 +24,7 @@ library KeyValueList {
   uint256 internal constant _MAX_VALUE = (1 << _VALUE_BITS) - 1;
   uint256 internal constant _KEY_SHIFT = 256 - _KEY_BITS;
 
-  /// @notice Allocates memory for a KeyValue list for `size` elements.
+  /// @notice Allocates memory for a KeyValue list of `size` elements.
   function init(uint256 size) internal pure returns (List memory) {
     return List(new uint256[](size));
   }
@@ -34,10 +34,7 @@ library KeyValueList {
     return self._inner.length;
   }
 
-  /// @notice Adds a key-value pair to the list.
-  /// @param idx The index of the list.
-  /// @param key The key.
-  /// @param value The value.
+  /// @notice Inserts packed `key`, `value` at `idx`. Reverts if data exceeds maximum allowed size.
   function add(List memory self, uint256 idx, uint256 key, uint256 value) internal pure {
     require(key <= _MAX_KEY && value <= _MAX_VALUE, MaxDataSizeExceeded());
     self._inner[idx] = pack(key, value);
@@ -46,7 +43,6 @@ library KeyValueList {
   /// @notice Returns the key-value pair at the given index.
   /// @dev Uninitialized keys are returned as (key: 0, value: 0).
   /// @param idx The index from which to retrieve the key-value pair.
-  /// @return The key-value pair.
   function get(List memory self, uint256 idx) internal pure returns (uint256, uint256) {
     return unpack(self._inner[idx]);
   }
@@ -62,23 +58,16 @@ library KeyValueList {
 
   /// @notice Packs a key-value pair into a single uint256.
   /// @dev key, value < ceiling checks are expected to be done before packing.
-  /// @param key The key.
-  /// @param value The value.
-  /// @return The packed key-value pair.
   function pack(uint256 key, uint256 value) internal pure returns (uint256) {
     return ((_MAX_KEY - key) << _KEY_SHIFT) | value;
   }
 
-  /// @notice Unpacks the key from a previously packed uint256 containing key and value.
-  /// @param data The packed key-value pair.
-  /// @return The unpacked key.
+  /// @notice Unpacks the value from a previously packed uint256 containing key and value.
   function unpackKey(uint256 data) internal pure returns (uint256) {
     return _MAX_KEY - (data >> _KEY_SHIFT);
   }
 
   /// @notice Unpacks the value from a previously packed uint256 containing key and value.
-  /// @param data The packed key-value pair.
-  /// @return The unpacked value.
   function unpackValue(uint256 data) internal pure returns (uint256) {
     return data & ((1 << _KEY_SHIFT) - 1);
   }

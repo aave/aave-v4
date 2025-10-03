@@ -120,7 +120,7 @@ library LiquidationLogic {
   /// @param liquidationConfig The liquidation config.
   /// @param collateralDynConfig The collateral dynamic config.
   /// @param params The liquidate user params.
-  /// @return True if the liquidation results in deficit.
+  /// @return True if the liquidation results in deficit, false otherwise.
   function liquidateUser(
     ISpoke.Reserve storage collateralReserve,
     ISpoke.Reserve storage debtReserve,
@@ -441,9 +441,7 @@ library LiquidationLogic {
     return position.suppliedShares == 0;
   }
 
-  /// @param suppliedCollateralsCount The number of supplied collateral reserves with CollateralFactor greater than zero.
-  /// @param borrowedReservesCount The number of borrowed reserves.
-  /// @return True if the liquidation results in deficit, false otherwise.
+  /// @notice Returns if the liquidation results in deficit.
   function _evaluateDeficit(
     bool isCollateralPositionEmpty,
     bool isDebtPositionEmpty,

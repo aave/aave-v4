@@ -206,7 +206,7 @@ library PositionStatusMap {
     }
   }
 
-  /// @notice Isolates borrowing bits up to the given `reserveCount`, clearing all later reserves.
+  /// @notice Returns masked `word` containing only borrowing bits from the first reserve up to `reserveCount`.
   function isolateBorrowingUntil(
     uint256 word,
     uint256 reserveCount
