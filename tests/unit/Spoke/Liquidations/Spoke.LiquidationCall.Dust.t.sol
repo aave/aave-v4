@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Liquidations/Spoke.LiquidationCall.Base.t.sol';
 
-contract LiquidationDustTest is SpokeLiquidationCallBaseTest {
+contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using SafeCast for *;
@@ -80,11 +80,13 @@ contract LiquidationDustTest is SpokeLiquidationCallBaseTest {
     });
     _borrowToBeAtHf(spoke, alice, _usdxReserveId(spoke), 0.9999e18);
 
-    uint256 debtToTarget = _calculateDebtToTarget(
-      spoke,
-      _daiReserveId(spoke),
-      _usdxReserveId(spoke),
-      alice
+    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+      _getCalculateDebtToTargetHealthFactorParams(
+        spoke,
+        _daiReserveId(spoke),
+        _usdxReserveId(spoke),
+        alice
+      )
     );
 
     // debtToTarget (~$11) as limiting factor would result in dust collateral
@@ -141,12 +143,15 @@ contract LiquidationDustTest is SpokeLiquidationCallBaseTest {
 
     uint256 debtToCover = 1800e6;
 
-    uint256 debtToTarget = _calculateDebtToTarget(
-      spoke,
-      _daiReserveId(spoke),
-      _usdxReserveId(spoke),
-      alice
+    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+      _getCalculateDebtToTargetHealthFactorParams(
+        spoke,
+        _daiReserveId(spoke),
+        _usdxReserveId(spoke),
+        alice
+      )
     );
+
     // debtToTarget > debtToCover, so debtToTarget doesn't come into play
     assertGt(debtToTarget, debtToCover);
     // debtToCover would result in dust debt
@@ -205,11 +210,13 @@ contract LiquidationDustTest is SpokeLiquidationCallBaseTest {
 
     uint256 debtToCover = 1200e6; // $1200, enough to liquidate whole coll reserve
 
-    uint256 debtToTarget = _calculateDebtToTarget(
-      spoke,
-      _daiReserveId(spoke),
-      _usdxReserveId(spoke),
-      alice
+    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+      _getCalculateDebtToTargetHealthFactorParams(
+        spoke,
+        _daiReserveId(spoke),
+        _usdxReserveId(spoke),
+        alice
+      )
     );
     // debtToTarget > debtToCover, so debtToTarget doesn't come into play
     assertGt(debtToTarget, debtToCover);
@@ -269,11 +276,13 @@ contract LiquidationDustTest is SpokeLiquidationCallBaseTest {
 
     uint256 debtToCover = 1200e6; // $1200, enough to liquidate whole coll reserve
 
-    uint256 debtToTarget = _calculateDebtToTarget(
-      spoke,
-      _daiReserveId(spoke),
-      _usdxReserveId(spoke),
-      alice
+    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+      _getCalculateDebtToTargetHealthFactorParams(
+        spoke,
+        _daiReserveId(spoke),
+        _usdxReserveId(spoke),
+        alice
+      )
     );
     // debtToTarget > debtToCover, so debtToTarget doesn't come into play
     assertGt(debtToTarget, debtToCover);
@@ -304,7 +313,14 @@ contract LiquidationDustTest is SpokeLiquidationCallBaseTest {
       _convertAmountToBaseCurrency(
         spoke,
         debtReserveId,
-        _calculateDebtToTarget(spoke, collateralReserveId, debtReserveId, user)
+        liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+          _getCalculateDebtToTargetHealthFactorParams(
+            spoke,
+            collateralReserveId,
+            debtReserveId,
+            user
+          )
+        )
       );
   }
 
@@ -318,31 +334,6 @@ contract LiquidationDustTest is SpokeLiquidationCallBaseTest {
         spoke,
         collateralReserveId,
         spoke.getUserSuppliedAssets(collateralReserveId, user)
-      );
-  }
-
-  function _calculateDebtToTarget(
-    ISpoke spoke,
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user
-  ) internal returns (uint256) {
-    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
-    return
-      liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
-        LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-          totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
-          healthFactor: userAccountData.healthFactor,
-          targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor,
-          liquidationBonus: spoke.getLiquidationBonus(
-            collateralReserveId,
-            user,
-            userAccountData.healthFactor
-          ),
-          collateralFactor: _getCollateralFactor(spoke, collateralReserveId),
-          debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
-          debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals
-        })
       );
   }
 }
