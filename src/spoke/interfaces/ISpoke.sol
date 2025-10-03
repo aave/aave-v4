@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
+import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
@@ -12,7 +13,7 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
  * @author Aave Labs
  * @notice Full interface for Spoke
  */
-interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
+interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   struct Reserve {
     address underlying;
     //
@@ -282,10 +283,12 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function setUserPositionManager(address positionManager, bool approve) external;
 
   /**
-   * @notice Enables a user to grant or revoke approval for a position manager using an EIP712-compliant signature.
+   * @notice Enables a user to grant or revoke approval for a position manager using an EIP712-typed intent.
+   * @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
    * @param positionManager The address of the position manager.
    * @param user The address of the user on whose behalf position manager can act.
    * @param approve True to approve the position manager, false to revoke approval.
+   * @param nonce The key-prefixed nonce for the signature.
    * @param deadline The deadline for the signature.
    * @param signature The EIP712-compliant signature bytes.
    */
@@ -293,8 +296,9 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     address positionManager,
     address user,
     bool approve,
+    uint256 nonce,
     uint256 deadline,
-    bytes memory signature
+    bytes calldata signature
   ) external;
 
   /**
@@ -317,11 +321,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @notice Returns true if positionManager is currently active, false otherwise.
    */
   function isPositionManagerActive(address positionManager) external view returns (bool);
-
-  /**
-   * @notice Allows caller to revoke their nonce used in `setUserPositionManagerWithSig`.
-   */
-  function useNonce() external;
 
   /**
    * @notice Allows consuming a permit signature for the given reserve's underlying asset.
@@ -408,8 +407,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   ) external view returns (uint256);
 
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
-
-  function nonces(address user) external view returns (uint256);
 
   function DOMAIN_SEPARATOR() external view returns (bytes32);
 }

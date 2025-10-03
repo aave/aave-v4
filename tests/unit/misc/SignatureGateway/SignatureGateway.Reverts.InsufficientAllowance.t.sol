@@ -38,7 +38,7 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
       );
     }
     vm.prank(vm.randomAddress());
-    gateway.supplyWithSig(p.reserveId, p.amount, alice, deadline, signature);
+    gateway.supplyWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 
   function test_repayWithSig_revertsWith_ERC20InsufficientAllowance() public {
@@ -62,6 +62,6 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
       address(_underlying(spoke1, p.reserveId))
     );
     vm.prank(vm.randomAddress());
-    gateway.repayWithSig(p.reserveId, p.amount, alice, deadline, signature);
+    gateway.repayWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 }

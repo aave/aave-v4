@@ -36,6 +36,7 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Rescuable, IRescuable} from 'src/utils/Rescuable.sol';
+import {NoncesKeyed, INoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
 
 // hub
@@ -70,11 +71,13 @@ import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
+import {NoncesKeyedMock} from 'tests/mocks/NoncesKeyedMock.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 
 abstract contract Base is Test {
+  using stdStorage for StdStorage;
   using WadRayMath for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
@@ -1168,6 +1171,14 @@ abstract contract Base is Test {
   /// @dev pseudo random randomizer
   function randomizer(uint256 min, uint256 max) internal returns (uint256) {
     return vm.randomUint(min, max);
+  }
+
+  function _randomNonceKey() internal returns (uint192) {
+    return uint192(vm.randomUint());
+  }
+
+  function _randomNonce() internal returns (uint64) {
+    return uint64(vm.randomUint());
   }
 
   // assumes spoke has usdx supported
@@ -2476,5 +2487,92 @@ abstract contract Base is Test {
           vm.eip712HashStruct('SetUserPositionManager', abi.encode(setUserPositionManager))
         )
       );
+  }
+
+  /**
+   * @dev Warps after to a random time after a randomly generated deadline.
+   * @return The randomly generated deadline.
+   */
+  function _warpAfterRandomDeadline() internal returns (uint256) {
+    uint256 deadline = vm.randomUint(0, MAX_SKIP_TIME - 1);
+    vm.warp(vm.randomUint(deadline + 1, MAX_SKIP_TIME));
+    return deadline;
+  }
+
+  /**
+   * @dev Warps to a random time before a randomly generated deadline.
+   * @return The randomly generated deadline.
+   */
+  function _warpBeforeRandomDeadline() internal returns (uint256) {
+    uint256 deadline = vm.randomUint(1, MAX_SKIP_TIME);
+    vm.warp(vm.randomUint(0, deadline - 1));
+    return deadline;
+  }
+
+  /**
+   * @dev Burns random nonces from 1 at the specified key lifetime.
+   */
+  function _burnRandomNoncesAtKey(
+    INoncesKeyed verifier,
+    address user,
+    uint192 key
+  ) internal returns (uint256) {
+    uint256 currentKeyNonce = verifier.nonces(user, key);
+    (, uint64 nonce) = _unpackNonce(currentKeyNonce);
+
+    uint64 toBurn = vm.randomUint(1, 100).toUint64();
+    for (uint256 i; i < toBurn; ++i) {
+      vm.prank(user);
+      verifier.useNonce(key);
+    }
+    uint256 newKeyNonce = _packNonce(key, nonce + toBurn);
+
+    // doesn't work because of the assumption in StdStorage.checkSlotMutatesCall :(
+    // stdstore
+    //   .target(verifier)
+    //   .sig(INoncesKeyed.nonces.selector)
+    //   .with_key(user)
+    //   .with_key(key)
+    //   .checked_write(newNonce);
+
+    assertEq(verifier.nonces(user, key), newKeyNonce);
+    return newKeyNonce;
+  }
+
+  function _burnRandomNoncesAtKey(INoncesKeyed verifier, address user) internal returns (uint256) {
+    return _burnRandomNoncesAtKey(verifier, user, _randomNonceKey());
+  }
+
+  function _getRandomInvalidNonceAtKey(
+    INoncesKeyed verifier,
+    address user,
+    uint192 key
+  ) internal returns (uint256) {
+    (uint192 currentKey, uint64 currentNonce) = _unpackNonce(verifier.nonces(user, key));
+    assertEq(currentKey, key);
+    uint64 nonce = _randomNonce();
+    while (currentNonce == nonce) nonce = _randomNonce();
+    return _packNonce(key, nonce);
+  }
+
+  function _assertNonceIncrement(
+    INoncesKeyed verifier,
+    address who,
+    uint256 prevKeyNonce
+  ) internal view {
+    (uint192 nonceKey, uint64 nonce) = _unpackNonce(prevKeyNonce);
+    // prettier-ignore
+    unchecked { ++nonce; }
+    assertEq(verifier.nonces(who, nonceKey), _packNonce(nonceKey, nonce));
+  }
+
+  /// @dev Pack key and nonce into a keyNonce
+  function _packNonce(uint192 key, uint64 nonce) internal pure returns (uint256) {
+    return (uint256(key) << 64) | nonce;
+  }
+
+  /// @dev Unpack a keyNonce into its key and nonce components
+  function _unpackNonce(uint256 keyNonce) internal pure returns (uint192 key, uint64 nonce) {
+    return (uint192(keyNonce >> 64), uint64(keyNonce));
   }
 }
