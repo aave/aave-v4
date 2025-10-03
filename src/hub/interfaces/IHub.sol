@@ -106,15 +106,15 @@ interface IHub is IHubBase, IAccessManaged {
   /**
    * @notice Emitted when deficit is eliminated.
    * @param assetId The identifier of the asset.
-   * @param senderSpoke The spoke that eliminated the deficit, and had supplied shares removed.
-   * @param receiverSpoke The spoke for which the deficit was eliminated.
+   * @param callerSpoke The spoke that eliminated the deficit using its supplied shares.
+   * @param coveredSpoke The spoke for which the deficit was eliminated.
    * @param shares The amount of shares removed.
    * @param amount The amount of deficit eliminated.
    */
   event EliminateDeficit(
     uint256 indexed assetId,
-    address indexed senderSpoke,
-    address indexed receiverSpoke,
+    address indexed callerSpoke,
+    address indexed coveredSpoke,
     uint256 shares,
     uint256 amount
   );
@@ -355,10 +355,10 @@ interface IHub is IHubBase, IAccessManaged {
   function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory);
 
   /**
-   * @notice Returns the amount of deficit of the specified asset and spoke.
+   * @notice Returns the amount of a given spoke's deficit for the specified asset.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
-   * @return The amount of deficit of the specified asset and spoke.
+   * @return The amount of deficit.
    */
   function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256);
 

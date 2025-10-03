@@ -307,26 +307,27 @@ contract Hub is IHub, AccessManaged {
   function eliminateDeficit(
     uint256 assetId,
     uint256 amount,
-    address spokeToCover
+    address spoke
   ) external returns (uint256) {
     Asset storage asset = _assets[assetId];
-    SpokeData storage senderSpoke = _spokes[assetId][msg.sender];
-    SpokeData storage receiverSpoke = _spokes[assetId][spokeToCover];
+    SpokeData storage callerSpoke = _spokes[assetId][msg.sender];
+    SpokeData storage coveredSpoke = _spokes[assetId][spoke];
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
-    _validateEliminateDeficit(senderSpoke, amount);
-    uint256 deficit = receiverSpoke.deficit;
+    _validateEliminateDeficit(callerSpoke, amount);
+    uint256 deficit = coveredSpoke.deficit;
     require(amount <= deficit, InvalidAmount());
 
     uint128 shares = previewRemoveByAssets(assetId, amount).toUint128();
     asset.addedShares -= shares;
-    senderSpoke.addedShares -= shares;
-    asset.deficit = asset.deficit.uncheckedSub(amount).toUint128();
-    receiverSpoke.deficit = deficit.uncheckedSub(amount).toUint128();
+    callerSpoke.addedShares -= shares;
+    // ensure that amount never exceeds asset.deficit
+    asset.deficit -= amount.toUint128();
+    coveredSpoke.deficit = deficit.uncheckedSub(amount).toUint128();
 
     asset.updateDrawnRate(assetId);
 
-    emit EliminateDeficit(assetId, msg.sender, spokeToCover, shares, amount);
+    emit EliminateDeficit(assetId, msg.sender, spoke, shares, amount);
 
     return shares;
   }
