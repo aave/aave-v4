@@ -130,7 +130,7 @@ interface IHub is IHubBase, IAccessManaged {
   error AssetNotListed();
 
   /// @notice Thrown when the add cap is exceeded.
-  /// @param addCap The add cap.
+  /// @param addCap The add cap which has been exceeded.
   error AddCapExceeded(uint256 addCap);
 
   /// @notice Thrown when the added amount is exceeded.
