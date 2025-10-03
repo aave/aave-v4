@@ -99,7 +99,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 latestUpdateTimestamp
   );
 
-  /// @notice Emitted when fees are accrued.
+  /// @notice Emitted when fees are accrued to `feeReceiver`.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of shares accrued.
   event AccrueFees(uint256 indexed assetId, uint256 shares);
