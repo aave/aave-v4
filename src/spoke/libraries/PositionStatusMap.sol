@@ -177,7 +177,6 @@ library PositionStatusMap {
   }
 
   /// @notice Returns the word containing the reserve state in the bitmap.
-  /// @return The spoke reserveId.
   function getBucketWord(
     ISpoke.PositionStatus storage self,
     uint256 reserveId
