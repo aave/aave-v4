@@ -13,12 +13,13 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
+import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
-abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
+abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
   using PercentageMath for *;
@@ -56,7 +57,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   mapping(address user => PositionStatus) internal _positionStatus;
   mapping(uint256 reserveId => Reserve) internal _reserves;
   mapping(address positionManager => PositionManagerConfig) internal _positionManager;
-  mapping(address user => uint256) internal _nonces;
   mapping(uint256 reserveId => mapping(uint16 configKey => DynamicReserveConfig))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   LiquidationConfig internal _liquidationConfig;
@@ -411,6 +411,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     address positionManager,
     address user,
     bool approve,
+    uint256 nonce,
     uint256 deadline,
     bytes calldata signature
   ) external {
@@ -422,18 +423,14 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
           positionManager,
           user,
           approve,
-          _useNonce(user),
+          nonce,
           deadline
         )
       )
     );
     require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    _useCheckedNonce(user, nonce);
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
-  }
-
-  /// @inheritdoc ISpoke
-  function useNonce() external {
-    _useNonce(msg.sender);
   }
 
   /// @inheritdoc ISpoke
@@ -615,10 +612,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     address user
   ) external view returns (UserPosition memory) {
     return _userPositions[user][reserveId];
-  }
-
-  function nonces(address user) external view returns (uint256) {
-    return _nonces[user];
   }
 
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
@@ -964,12 +957,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
     return ('Spoke', '1');
-  }
-
-  function _useNonce(address user) internal returns (uint256) {
-    unchecked {
-      return _nonces[user]++;
-    }
   }
 
   function _castToView(
