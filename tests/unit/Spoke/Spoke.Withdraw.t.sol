@@ -168,6 +168,35 @@ contract SpokeWithdrawTest is SpokeBase {
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
   }
 
+  function test_withdraw_fuzz_all_greater_than_supplied(uint256 supplyAmount) public {
+    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    Utils.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
+
+    _checkSuppliedAmounts(
+      daiAssetId,
+      _daiReserveId(spoke1),
+      spoke1,
+      bob,
+      supplyAmount,
+      'after supply'
+    );
+
+    uint256 addExRate = getAddExRate(daiAssetId);
+
+    // Withdraw all supplied assets
+    vm.prank(bob);
+    spoke1.withdraw(_daiReserveId(spoke1), supplyAmount + 1, bob);
+
+    _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
+    _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+  }
+
   function test_withdraw_fuzz_all_with_interest(uint256 supplyAmount, uint256 borrowAmount) public {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
@@ -202,7 +231,7 @@ contract SpokeWithdrawTest is SpokeBase {
     skip(365 days);
 
     // Ensure interest has accrued
-    vm.assume(hub1.getAssetAddedAmount(daiAssetId) > supplyAmount);
+    vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -268,7 +297,7 @@ contract SpokeWithdrawTest is SpokeBase {
     skip(elapsed);
 
     // Ensure interest has accrued
-    vm.assume(hub1.getAssetAddedAmount(daiAssetId) > supplyAmount);
+    vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -328,10 +357,10 @@ contract SpokeWithdrawTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    state.withdrawAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
+    state.withdrawAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
 
     assertGt(
-      spoke1.getUserSuppliedAmount(state.reserveId, bob),
+      spoke1.getUserSuppliedAssets(state.reserveId, bob),
       state.supplyAmount,
       'supplied amount with interest'
     );
@@ -400,7 +429,7 @@ contract SpokeWithdrawTest is SpokeBase {
   function test_withdraw_fuzz_all_liquidity_with_interest_no_premium(
     TestWithInterestFuzzParams memory params
   ) public {
-    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     params.borrowReserveSupplyAmount = bound(
       params.borrowReserveSupplyAmount,
       2,
@@ -476,11 +505,11 @@ contract SpokeWithdrawTest is SpokeBase {
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
-    state.withdrawAmount = hub1.getSpokeAddedAmount(state.reserveId, address(spoke1));
+    state.withdrawAmount = hub1.getSpokeAddedAssets(state.reserveId, address(spoke1));
 
     // bob's supplied amount has grown due to index increase
     assertGt(
-      spoke1.getUserSuppliedAmount(state.reserveId, bob),
+      spoke1.getUserSuppliedAssets(state.reserveId, bob),
       state.supplyAmount,
       'supplied amount with interest'
     );
@@ -583,10 +612,10 @@ contract SpokeWithdrawTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    state.withdrawAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1)); // withdraw all liquidity
+    state.withdrawAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)); // withdraw all liquidity
 
     assertGt(
-      spoke1.getUserSuppliedAmount(state.reserveId, bob),
+      spoke1.getUserSuppliedAssets(state.reserveId, bob),
       state.supplyAmount,
       'supplied amount with interest'
     );
@@ -658,7 +687,7 @@ contract SpokeWithdrawTest is SpokeBase {
   function test_withdraw_fuzz_all_liquidity_with_interest_with_premium(
     TestWithInterestFuzzParams memory params
   ) public {
-    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_RESERVE_ID);
+    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     params.borrowReserveSupplyAmount = bound(
       params.borrowReserveSupplyAmount,
       2,
@@ -724,12 +753,12 @@ contract SpokeWithdrawTest is SpokeBase {
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
-    state.withdrawAmount = hub1.getSpokeAddedAmount(state.reserveId, address(spoke1));
+    state.withdrawAmount = hub1.getSpokeAddedAssets(state.reserveId, address(spoke1));
 
     (, state.alicePremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
 
     assertGt(
-      spoke1.getUserSuppliedAmount(state.reserveId, bob),
+      spoke1.getUserSuppliedAssets(state.reserveId, bob),
       state.supplyAmount,
       'supplied amount with interest'
     );
@@ -837,5 +866,39 @@ contract SpokeWithdrawTest is SpokeBase {
 
     assertGe(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
     assertGe(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+  }
+
+  /// @dev Withdraw exceeding supplied amount withdraws everything
+  function test_withdraw_max_greater_than_supplied() public {
+    uint256 amount = 100e18;
+    uint256 reserveId = _daiReserveId(spoke1);
+
+    // User spoke supply
+    Utils.supply({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: amount,
+      onBehalfOf: alice
+    });
+
+    uint256 withdrawable = getTotalWithdrawable(spoke1, reserveId, alice);
+    assertGt(withdrawable, 0);
+
+    uint256 addExRateBefore = getAddExRate(daiAssetId);
+
+    // skip time but no index increase with no borrow
+    skip(365 days);
+    // withdrawable remains constant
+    assertEq(withdrawable, getTotalWithdrawable(spoke1, reserveId, alice));
+
+    vm.prank(alice);
+    spoke1.withdraw(reserveId, withdrawable + 1, alice);
+
+    assertEq(getTotalWithdrawable(spoke1, reserveId, alice), 0);
+    _checkSuppliedAmounts(daiAssetId, reserveId, spoke1, alice, 0, 'after withdraw');
+
+    // Check supply rate monotonically increasing after withdraw
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after withdraw');
   }
 }

@@ -57,30 +57,40 @@ contract HubOperations_Gas_Tests is Base {
     skip(1000);
 
     (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
-    hub1.restore(daiAssetId, drawnRemaining / 2, 0, DataTypes.PremiumDelta(0, 0, 0), alice);
+    hub1.restore(daiAssetId, drawnRemaining / 2, 0, IHubBase.PremiumDelta(0, 0, 0), alice);
     // todo: do refresh call to fully encapsulate a `hub1.restore` call
     vm.snapshotGasLastCall('Hub.Operations', 'restore: partial');
 
     skip(100);
 
     (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
-    hub1.restore(daiAssetId, drawnRemaining, 0, DataTypes.PremiumDelta(0, 0, 0), alice);
+    hub1.restore(daiAssetId, drawnRemaining, 0, IHubBase.PremiumDelta(0, 0, 0), alice);
     vm.snapshotGasLastCall('Hub.Operations', 'restore: full');
     vm.stopPrank();
   }
 
-  // todo validate refresh since notify will now call `refreshRiskPremium`
-  function test_accrueInterest() public {
-    vm.skip(true, 'to be replaced with refreshRiskPremium');
-    // vm.startPrank(address(spoke2));
-    // hub1.add(daiAssetId, 1000e18, bob);
-    // hub1.draw(daiAssetId, 500e18, bob);
-    // vm.stopPrank();
-    // vm.prank(address(spoke1));
-    // hub1.draw(daiAssetId, 500e18, alice);
-    // skip(100);
-    // vm.prank(address(spoke1));
-    // hub1.accrueInterest(daiAssetId);
-    // vm.snapshotGasLastCall('Hub.Operations', 'accrueInterest');
+  function test_refreshPremium() public {
+    vm.startPrank(bob);
+    spoke2.supply(_daiReserveId(spoke2), 10000e18, bob);
+    spoke2.setUsingAsCollateral(_daiReserveId(spoke2), true, bob);
+    spoke2.borrow(_daiReserveId(spoke2), 500e18, bob);
+    vm.stopPrank();
+
+    vm.startPrank(alice);
+    spoke1.supply(_usdxReserveId(spoke1), 1000e6, alice);
+    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), true, alice);
+    spoke1.borrow(_daiReserveId(spoke1), 500e18, alice);
+    vm.stopPrank();
+
+    skip(100);
+
+    vm.prank(alice);
+    spoke1.borrow(_daiReserveId(spoke1), 1e18, alice);
+
+    skip(100);
+
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(2, 1, -1));
+    vm.snapshotGasLastCall('Hub.Operations', 'refreshPremium');
   }
 }

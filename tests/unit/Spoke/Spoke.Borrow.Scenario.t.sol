@@ -103,20 +103,20 @@ contract SpokeBorrowScenarioTest is SpokeBase {
 
     // Alice borrow all reserves
     if (daiBorrowAmount > 0) {
-      assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke1, state.daiReserveId, alice, daiBorrowAmount, alice);
     }
     if (usdxBorrowAmount > 0) {
-      assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke1, state.usdxReserveId, alice, usdxBorrowAmount, alice);
     }
     // Bob borrow all reserves
     if (daiBorrowAmount2 > 0) {
-      assertGt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke1, state.daiReserveId, bob, daiBorrowAmount2, bob);
     }
     if (usdxBorrowAmount2 > 0) {
-      assertGt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke1, state.usdxReserveId, bob, usdxBorrowAmount2, bob);
     }
 
@@ -255,19 +255,19 @@ contract SpokeBorrowScenarioTest is SpokeBase {
 
     // Bob borrow all reserves
     if (daiBorrowAmount > 0) {
-      assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke2, state.daiReserveId, bob, daiBorrowAmount, bob);
     }
     if (wethBorrowAmount > 0) {
-      assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke2, state.wethReserveId, bob, wethBorrowAmount, bob);
     }
     if (usdxBorrowAmount > 0) {
-      assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke2, state.usdxReserveId, bob, usdxBorrowAmount, bob);
     }
     if (wbtcBorrowAmount > 0) {
-      assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke2, state.wbtcReserveId, bob, wbtcBorrowAmount, bob);
     }
 
@@ -408,22 +408,22 @@ contract SpokeBorrowScenarioTest is SpokeBase {
 
     // Bob borrow all reserves
     if (daiBorrowAmount > 0) {
-      assertGt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       vm.prank(bob);
       spoke1.borrow(states[0].daiReserveId, daiBorrowAmount, bob);
     }
     if (usdxBorrowAmount > 0) {
-      assertGt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       vm.prank(bob);
       spoke1.borrow(states[0].usdxReserveId, usdxBorrowAmount, bob);
     }
     if (daiBorrowAmount2 > 0) {
-      assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       vm.prank(bob);
       spoke2.borrow(states[1].daiReserveId, daiBorrowAmount2, bob);
     }
     if (usdxBorrowAmount2 > 0) {
-      assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       vm.prank(bob);
       spoke2.borrow(states[1].usdxReserveId, usdxBorrowAmount2, bob);
     }
@@ -596,16 +596,18 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     _openSupplyPosition(spoke1, debtReserveId, debtBorrowAmount);
     Utils.borrow(spoke1, debtReserveId, alice, debtBorrowAmount, alice);
 
-    (uint256 userRiskPremium, , , uint256 totalCollateralInBaseCurrency, ) = spoke1
-      .getUserAccountData(alice);
-    assertEq(_calculateExpectedUserRP(alice, spoke1), userRiskPremium);
-    assertEq(coll1InBaseCurrency + coll2InBaseCurrency, totalCollateralInBaseCurrency);
+    ISpoke.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
+    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.userRiskPremium);
+    assertEq(
+      coll1InBaseCurrency + coll2InBaseCurrency,
+      userAccountData.totalCollateralInBaseCurrency
+    );
 
     uint16 configKey = spoke1.getUserPosition(coll1ReserveId, alice).configKey;
     updateCollateralFactorAtKey(spoke1, coll1ReserveId, configKey, 0);
 
-    (userRiskPremium, , , totalCollateralInBaseCurrency, ) = spoke1.getUserAccountData(alice);
-    assertEq(_calculateExpectedUserRP(alice, spoke1), userRiskPremium);
-    assertEq(coll2InBaseCurrency, totalCollateralInBaseCurrency); // coll1 is not included
+    userAccountData = spoke1.getUserAccountData(alice);
+    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.userRiskPremium);
+    assertEq(coll2InBaseCurrency, userAccountData.totalCollateralInBaseCurrency); // coll1 is not included
   }
 }

@@ -6,6 +6,9 @@ on:
       - main
 
 jobs:
+  lint:
+    name: Prettier lint check
+    uses: bgd-labs/github-workflows/.github/workflows/foundry-lint-prettier.yml@main
   test:
     name: Foundry build n test
     runs-on: ubuntu-latest

@@ -28,15 +28,15 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     vm.startPrank(ADMIN);
     // Relist hub 2's dai on spoke1
-    DataTypes.ReserveConfig memory daiHub2Config = DataTypes.ReserveConfig({
+    ISpoke.ReserveConfig memory daiHub2Config = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
       collateralRisk: 20_00
     });
-    DataTypes.DynamicReserveConfig memory dynDaiHub2Config = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory dynDaiHub2Config = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     daiHub2ReserveId = spoke1.addReserve(
@@ -48,15 +48,15 @@ contract SpokeMultipleHubTest is SpokeBase {
     );
 
     // Relist hub 3's dai on spoke 1
-    DataTypes.ReserveConfig memory daiHub3Config = DataTypes.ReserveConfig({
+    ISpoke.ReserveConfig memory daiHub3Config = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
       collateralRisk: 20_00
     });
-    DataTypes.DynamicReserveConfig memory dynDaiHub3Config = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory dynDaiHub3Config = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
     daiHub3ReserveId = spoke1.addReserve(
@@ -67,10 +67,10 @@ contract SpokeMultipleHubTest is SpokeBase {
       dynDaiHub3Config
     );
 
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      addCap: Constants.MAX_CAP,
-      drawCap: Constants.MAX_CAP
+      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });
 
     // Connect hub 2 and spoke 1 for dai
@@ -105,8 +105,8 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     // Bob supplies dai to spoke 1 on hub 1
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, hub1SupplyAmount, bob);
-    assertEq(spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob), hub1SupplyAmount);
-    assertEq(hub1.getAssetAddedAmount(daiAssetId), hub1SupplyAmount);
+    assertEq(spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob), hub1SupplyAmount);
+    assertEq(hub1.getAddedAssets(daiAssetId), hub1SupplyAmount);
 
     // Bob borrows dai from spoke 1, hub 1
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, hub1BorrowAmount, bob);
@@ -152,8 +152,8 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     // Bob supply to spoke 1 on hub 1
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, daiSupplyAmount, bob);
-    assertEq(spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob), daiSupplyAmount);
-    assertEq(hub1.getAssetAddedAmount(daiAssetId), daiSupplyAmount);
+    assertEq(spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob), daiSupplyAmount);
+    assertEq(hub1.getAddedAssets(daiAssetId), daiSupplyAmount);
 
     // Alice seeds liquidity for dai to hub 1
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, MAX_SUPPLY_AMOUNT - daiSupplyAmount, alice);
@@ -168,12 +168,12 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     // Bob supplies collateral to hub 3
     Utils.supplyCollateral(spoke1, daiHub3ReserveId, bob, daiSupplyAmount, bob);
-    assertEq(spoke1.getUserSuppliedAmount(daiHub3ReserveId, bob), daiSupplyAmount);
-    assertEq(hub3.getAssetAddedAmount(hub3DaiAssetId), MAX_SUPPLY_AMOUNT);
+    assertEq(spoke1.getUserSuppliedAssets(daiHub3ReserveId, bob), daiSupplyAmount);
+    assertEq(hub3.getAddedAssets(hub3DaiAssetId), MAX_SUPPLY_AMOUNT);
 
     // Since Bob has sufficient collateral on hub 3 to cover his debt position, he can withdraw from hub 1
     Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, daiSupplyAmount, bob);
-    assertEq(spoke1.getUserSuppliedAmount(_daiReserveId(spoke1), bob), 0);
-    assertEq(hub1.getAssetAddedAmount(daiAssetId), MAX_SUPPLY_AMOUNT - daiSupplyAmount);
+    assertEq(spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob), 0);
+    assertEq(hub1.getAddedAssets(daiAssetId), MAX_SUPPLY_AMOUNT - daiSupplyAmount);
   }
 }

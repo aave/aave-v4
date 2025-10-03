@@ -25,14 +25,14 @@ contract SpokeMulticall is SpokeBase {
       hub1.convertToAddedShares(daiAssetId, supplyAmount)
     );
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UsingAsCollateral(daiReserveId, bob, bob, true);
+    emit ISpoke.SetUsingAsCollateral(daiReserveId, bob, bob, true);
 
     // Execute the multicall
     vm.prank(bob);
     spoke1.multicall(calls);
 
     // Check the supply
-    uint256 bobSupplied = spoke1.getUserSuppliedAmount(daiReserveId, bob);
+    uint256 bobSupplied = spoke1.getUserSuppliedAssets(daiReserveId, bob);
     assertEq(bobSupplied, supplyAmount, 'Bob supplied dai amount');
 
     // Check the collateral
@@ -67,9 +67,9 @@ contract SpokeMulticall is SpokeBase {
       hub1.convertToAddedShares(daiAssetId, MAX_SUPPLY_AMOUNT)
     );
     vm.expectEmit(address(spoke2));
-    emit ISpoke.UsingAsCollateral(_daiReserveId(spoke2), bob, bob, true);
+    emit ISpoke.SetUsingAsCollateral(_daiReserveId(spoke2), bob, bob, true);
     vm.expectEmit(address(spoke2));
-    emit ISpoke.UserRiskPremiumUpdate(bob, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
+    emit ISpoke.UpdateUserRiskPremium(bob, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
 
     // Then he supplies dai and sets as collateral, so user rp should decrease
     vm.prank(bob);
@@ -91,26 +91,26 @@ contract SpokeMulticall is SpokeBase {
     uint256 reserveCountBefore = spoke1.getReserveCount();
     uint256 dai2ReserveId = reserveCountBefore;
     uint256 dai3ReserveId = dai2ReserveId + 1;
-    DataTypes.ReserveConfig memory dai2Config = DataTypes.ReserveConfig({
+    ISpoke.ReserveConfig memory dai2Config = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
       collateralRisk: 10_00
     });
-    DataTypes.DynamicReserveConfig memory dai2DynConfig = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory dai2DynConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 88_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
-    DataTypes.ReserveConfig memory dai3Config = DataTypes.ReserveConfig({
+    ISpoke.ReserveConfig memory dai3Config = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
       collateralRisk: 5_00
     });
-    DataTypes.DynamicReserveConfig memory dai3DynConfig = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory dai3DynConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 70_00,
-      liquidationBonus: 100_00,
+      maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
 
@@ -186,10 +186,10 @@ contract SpokeMulticall is SpokeBase {
     uint256 usdxReserveId = _usdxReserveId(spoke1);
 
     // Set up the new reserve configs
-    DataTypes.ReserveConfig memory newDaiConfig = spoke1.getReserveConfig(daiReserveId);
+    ISpoke.ReserveConfig memory newDaiConfig = spoke1.getReserveConfig(daiReserveId);
     newDaiConfig.collateralRisk += 1;
     newDaiConfig.borrowable = false;
-    DataTypes.ReserveConfig memory newUsdxConfig = spoke1.getReserveConfig(usdxReserveId);
+    ISpoke.ReserveConfig memory newUsdxConfig = spoke1.getReserveConfig(usdxReserveId);
     newUsdxConfig.collateralRisk += 1;
 
     // Set up the multicall
@@ -198,9 +198,9 @@ contract SpokeMulticall is SpokeBase {
     calls[1] = abi.encodeCall(ISpoke.updateReserveConfig, (usdxReserveId, newUsdxConfig));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdate(daiReserveId, newDaiConfig);
+    emit ISpoke.UpdateReserveConfig(daiReserveId, newDaiConfig);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.ReserveConfigUpdate(usdxReserveId, newUsdxConfig);
+    emit ISpoke.UpdateReserveConfig(usdxReserveId, newUsdxConfig);
 
     // Execute the multicall
     vm.prank(SPOKE_ADMIN);
@@ -212,12 +212,11 @@ contract SpokeMulticall is SpokeBase {
   }
 
   function test_multicall_getters() public {
-    bytes[] memory calls = new bytes[](5);
+    bytes[] memory calls = new bytes[](4);
     calls[0] = abi.encodeCall(ISpokeBase.supply, (_daiReserveId(spoke1), 120e18, alice));
     calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke1), true, alice));
     calls[2] = abi.encodeCall(ISpokeBase.borrow, (_daiReserveId(spoke1), 80e18, alice));
-    calls[3] = abi.encodeCall(ISpoke.getUserRiskPremium, (alice));
-    calls[4] = abi.encodeCall(ISpoke.getUserDebt, (_daiReserveId(spoke1), alice));
+    calls[3] = abi.encodeCall(ISpokeBase.getUserDebt, (_daiReserveId(spoke1), alice));
 
     vm.prank(alice);
     bytes[] memory ret = spoke1.multicall(calls);
@@ -226,18 +225,17 @@ contract SpokeMulticall is SpokeBase {
     assertEq(ret[0].length, 0);
     assertEq(ret[1].length, 0);
     assertEq(ret[2].length, 0);
-    assertEq(ret[3], abi.encode(_calculateExpectedUserRP(alice, spoke1)));
-    assertEq(ret[4], abi.encode(80e18, 0));
+    assertEq(ret[3], abi.encode(80e18, 0));
   }
 
   function test_multicall_forwards_first_revert() public {
     bytes[] memory calls = new bytes[](3);
     calls[0] = abi.encodeCall(ISpokeBase.supply, (_daiReserveId(spoke1), 120e18, alice));
-    calls[1] = abi.encodeCall(ISpokeBase.withdraw, (_daiReserveId(spoke1), 121e18, alice));
+    calls[1] = abi.encodeCall(ISpokeBase.withdraw, (_daiReserveId(spoke1), 0, alice));
     calls[2] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke1), true, alice));
 
     vm.prank(alice);
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, 120e18));
+    vm.expectRevert(IHub.InvalidAmount.selector);
     spoke1.multicall(calls);
   }
 }

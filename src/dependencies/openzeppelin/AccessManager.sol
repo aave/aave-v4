@@ -7,7 +7,7 @@ import {IAccessManager} from './IAccessManager.sol';
 import {IAccessManaged} from './IAccessManaged.sol';
 import {Address} from './Address.sol';
 import {Context} from './Context.sol';
-import {Multicall} from 'src/misc/Multicall.sol';
+import {Multicall} from './Multicall.sol';
 import {Math} from './Math.sol';
 import {Time} from './Time.sol';
 

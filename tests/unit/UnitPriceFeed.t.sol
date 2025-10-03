@@ -2,7 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
-import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
 import 'tests/Base.t.sol';
 
 contract UnitPriceFeedTest is Base {
