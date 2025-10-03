@@ -36,7 +36,7 @@ library PositionStatusMap {
   }
 
   /// @notice Sets if the user is using as collateral the specified reserve.
-  /// @param reserveId The index of the reserve in the bitmap.
+  /// @param reserveId The identifier of the reserve in the bitmap.
   /// @param usingAsCollateral True if the user is using the reserve as collateral, false otherwise.
   function setUsingAsCollateral(
     ISpoke.PositionStatus storage self,
@@ -54,7 +54,7 @@ library PositionStatusMap {
   }
 
   /// @notice Returns if a user is using the specified reserve for borrowing or as collateral.
-  /// @param reserveId The index of the reserve in the bitmap.
+  /// @param reserveId The identifier of the reserve in the bitmap.
   /// @return True if the user is using a reserve for borrowing or as collateral, false otherwise.
   function isUsingAsCollateralOrBorrowing(
     ISpoke.PositionStatus storage self,
@@ -66,7 +66,7 @@ library PositionStatusMap {
   }
 
   /// @notice Returns if a user is using the specified reserve for borrowing.
-  /// @param reserveId The index of the reserve in the bitmap.
+  /// @param reserveId The identifier of the reserve in the bitmap.
   /// @return True if the user is using a reserve for borrowing, false otherwise.
   function isBorrowing(
     ISpoke.PositionStatus storage self,
@@ -78,7 +78,7 @@ library PositionStatusMap {
   }
 
   /// @notice Returns if a user is using the specified reserve as collateral.
-  /// @param reserveId The index of the reserve in the bitmap.
+  /// @param reserveId The identifier of the reserve in the bitmap.
   /// @return True if the user is using a reserve as collateral, false otherwise.
   function isUsingAsCollateral(
     ISpoke.PositionStatus storage self,
@@ -91,7 +91,7 @@ library PositionStatusMap {
 
   /// @notice Counts the number of reserves enabled as collateral.
   /// @dev Disregards potential dirty bits set after `reserveCount`.
-  /// @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
+  /// @param reserveCount The current `reserveCount`, to avoid reading uninitialized buckets.
   /// @return The number of reserves enabled as collateral.
   function collateralCount(
     ISpoke.PositionStatus storage self,
@@ -111,7 +111,7 @@ library PositionStatusMap {
   /// @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
   /// @dev Returns `NOT_FOUND` if no borrowing or collateralized reserve exists before the bound.
   /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
-  /// @param fromReserveId The reserveId to start searching from.
+  /// @param fromReserveId The identifier of the reserve to start searching from.
   /// @return reserveId The reserve identifier for the next reserve that is borrowed or used as collateral.
   /// @return borrowing True if the next reserveId is borrowed, false otherwise.
   /// @return collateral True if the next reserveId is used as collateral, false otherwise.

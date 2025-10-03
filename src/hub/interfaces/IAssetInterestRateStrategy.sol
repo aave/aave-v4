@@ -72,7 +72,7 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @return The InterestRateData struct for the given asset, all in bps.
   function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory);
 
-  /// @notice Returns the optimal borrow usage rate for the given asset.
+  /// @notice Returns the optimal usage rate for the given asset.
   /// @param assetId The identifier of the asset to get the optimal usage ratio for.
   /// @return The optimal usage ratio, in bps.
   function getOptimalUsageRatio(uint256 assetId) external view returns (uint256);
