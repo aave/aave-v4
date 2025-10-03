@@ -12,7 +12,7 @@ library WadRayMath {
   uint256 internal constant RAY = 1e27;
   uint256 internal constant PERCENTAGE_FACTOR = 1e4;
 
-  /// @notice Multiplies two Number in Wad precisions, rounding down.
+  /// @notice Multiplies two numbers in Wad precisions, rounding down.
   /// @param a First Number in Wad precision.
   /// @param b Second Number in Wad precision.
   /// @return c The result of the multiplication, in Wad.
@@ -27,7 +27,7 @@ library WadRayMath {
     }
   }
 
-  /// @notice Multiplies two Number in Wad precisions, rounding up.
+  /// @notice Multiplies two numbers in Wad precisions, rounding up.
   /// @param a First Number in Wad precision.
   /// @param b Second Number in Wad precision.
   /// @return c The result of the multiplication, in Wad.
@@ -58,7 +58,7 @@ library WadRayMath {
     }
   }
 
-  /// @notice Divides two Number in Wad precisions, rounding up.
+  /// @notice Divides two numbers in Wad precisions, rounding up.
   /// @param a First Number in Wad precision.
   /// @param b Second Number in Wad precision.
   /// @return c The result of the division, in Wad.
