@@ -13,7 +13,7 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
  * @author Aave Labs
  * @notice Full interface for Spoke
  */
-interface ISpoke is ISpokeBase, IMulticall, IAccessManaged, INoncesKeyed {
+interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   struct Reserve {
     address underlying;
     //
