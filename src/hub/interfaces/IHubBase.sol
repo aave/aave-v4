@@ -6,6 +6,7 @@ pragma solidity ^0.8.0;
 /// @author Aave Labs
 /// @notice Minimal interface for Hub.
 interface IHubBase {
+  /// @notice Changes to premium owed accounting.
   struct PremiumDelta {
     int256 sharesDelta;
     int256 offsetDelta;
@@ -92,7 +93,7 @@ interface IHubBase {
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset liquidity to add.
-  /// @param from The address which we pull assets from (user).
+  /// @param from The address from which to pull assets.
   /// @return The amount of shares added.
   function add(uint256 assetId, uint256 amount, address from) external returns (uint256);
 
@@ -119,7 +120,7 @@ interface IHubBase {
   /// @param drawnAmount The drawn amount to restore.
   /// @param premiumAmount The premium amount to repay.
   /// @param premiumDelta The premium delta to apply which signal premium repayment.
-  /// @param from The address to pull assets from.
+  /// @param from The address from which to pull assets.
   /// @return The amount of drawn shares restored.
   function restore(
     uint256 assetId,
@@ -146,7 +147,6 @@ interface IHubBase {
   /// @notice Refreshes premium accounting.
   /// @dev Only callable by active spokes.
   /// @dev Asset and spoke premium should not decrease.
-  /// @dev Asset and spoke premium can increase up to 2 wei due to opposite rounding directions of shares and offset.
   /// @param assetId The identifier of the asset.
   /// @param premiumDelta The change in premium.
   function refreshPremium(uint256 assetId, PremiumDelta calldata premiumDelta) external;

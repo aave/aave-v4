@@ -68,7 +68,6 @@ contract SignatureGateway is
     0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
 
   /// @dev Constructor.
-  /// @dev Reverts if the spoke or initial owner is zero address.
   /// @param spoke_ The address of the spoke contract.
   /// @param initialOwner_ The address of the initial owner.
   constructor(address spoke_, address initialOwner_) Ownable(initialOwner_) {

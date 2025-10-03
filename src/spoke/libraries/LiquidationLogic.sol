@@ -378,7 +378,7 @@ library LiquidationLogic {
   }
 
   /// @dev Invoked by `liquidateUser` function.
-  /// @return True if the debt position is empty, false otherwise.
+  /// @return True if the debt position becomes zero after restoring, false otherwise.
   function _liquidateDebt(
     ISpoke.Reserve storage reserve,
     ISpoke.UserPosition storage position,

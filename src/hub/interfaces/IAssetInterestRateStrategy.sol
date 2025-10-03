@@ -6,15 +6,15 @@ import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateS
 
 /// @title IAssetInterestRateStrategy
 /// @author Aave Labs
-/// @notice Interface of the asset interest rate strategy.
+/// @notice Interface of the kink-based asset interest rate strategy.
 interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @notice Emitted when new interest rate data is set for an asset.
   /// @param hub The address of the associated hub.
   /// @param assetId Identifier of the asset that has new interest rate data set.
-  /// @param optimalUsageRatio The optimal borrow usage ratio, in bps.
+  /// @param optimalUsageRatio The optimal usage ratio, in bps.
   /// @param baseVariableBorrowRate The base variable borrow rate, in bps.
-  /// @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal borrow usage ratio, in bps.
-  /// @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal borrow usage ratio, in bps.
+  /// @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal usage ratio, in bps.
+  /// @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal usage ratio, in bps.
   event UpdateRateData(
     address indexed hub,
     uint256 indexed assetId,
@@ -25,12 +25,10 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   );
 
   /// @notice Holds the interest rate data for a given asset.
-  /// @dev All values are in basis points (bps), where 1 bps = 0.01%.
-  /// @dev The maximum supported interest rate is 4294967295 bps (2**32-1) or 42949672.95%.
-  /// @param optimalUsageRatio The optimal borrow usage ratio, in bps (1-9900).
+  /// @param optimalUsageRatio The optimal usage ratio, in bps. Maximum and minimum values are defined by `MAX_OPTIMAL_RATIO` and `MIN_OPTIMAL_RATIO`.
   /// @param baseVariableBorrowRate The base variable borrow rate, in bps.
-  /// @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal borrow usage ratio, in bps.
-  /// @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal borrow usage ratio, in bps.
+  /// @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal usage ratio, in bps.
+  /// @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal usage ratio, in bps.
   struct InterestRateData {
     uint16 optimalUsageRatio;
     uint32 baseVariableBorrowRate;
@@ -50,22 +48,22 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @notice Thrown when slope 2 (after kink point) is less than slope 1 (before kink point).
   error Slope2MustBeGteSlope1();
 
-  /// @notice Thrown when the optimal borrow usage ratio is less than `MIN_OPTIMAL_POINT` or greater than `MAX_OPTIMAL_POINT`.
+  /// @notice Thrown when the optimal usage ratio is less than `MIN_OPTIMAL_POINT` or greater than `MAX_OPTIMAL_POINT`.
   error InvalidOptimalUsageRatio();
 
-  /// @notice Returns the maximum value achievable for variable borrow rate.
+  /// @notice Returns the maximum value achievable for the borrow rate.
   /// @return The maximum rate, in bps.
   function MAX_BORROW_RATE() external view returns (uint256);
 
-  /// @notice Returns the minimum optimal borrow usage ratio.
-  /// @return The minimum optimal borrow usage ratio, in bps.
+  /// @notice Returns the minimum optimal usage ratio.
+  /// @return The minimum optimal usage ratio, in bps.
   function MIN_OPTIMAL_RATIO() external view returns (uint256);
 
-  /// @notice Returns the maximum optimal borrow usage ratio.
-  /// @return The maximum optimal borrow usage ratio, in bps.
+  /// @notice Returns the maximum optimal usage ratio.
+  /// @return The maximum optimal usage ratio, in bps.
   function MAX_OPTIMAL_RATIO() external view returns (uint256);
 
-  /// @notice Returns the address of the hub.
+  /// @notice Returns the associated address of the hub.
   /// @return The address of the hub.
   function HUB() external view returns (address);
 
@@ -75,8 +73,8 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory);
 
   /// @notice Returns the optimal borrow usage rate for the given asset.
-  /// @param assetId The identifier of the asset to get the optimal borrow usage ratio for.
-  /// @return The optimal borrow usage ratio, in bps.
+  /// @param assetId The identifier of the asset to get the optimal usage ratio for.
+  /// @return The optimal usage ratio, in bps.
   function getOptimalUsageRatio(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the base variable borrow rate.
@@ -84,7 +82,7 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @return The base variable borrow rate, in bps.
   function getBaseVariableBorrowRate(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the variable rate slope below optimal borrow usage ratio.
+  /// @notice Returns the variable rate slope below optimal usage ratio.
   /// @dev Applicable when usage ratio > 0 and <= OPTIMAL_USAGE_RATIO.
   /// @param assetId The identifier of the asset to get the variable rate slope 1 for.
   /// @return The variable rate slope, in bps.

@@ -32,7 +32,6 @@ library MathUtils {
   /// @notice Returns the minimum of two values.
   /// @param a The first value.
   /// @param b The second value.
-  /// @return result The minimum of the two values.
   function min(uint256 a, uint256 b) internal pure returns (uint256 result) {
     assembly ('memory-safe') {
       result := xor(b, mul(xor(a, b), lt(a, b)))

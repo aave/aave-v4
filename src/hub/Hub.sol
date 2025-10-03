@@ -327,6 +327,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
+  /// @dev Asset and spoke premium can increase up to 2 wei due to opposite rounding directions of shares and offset.
   function refreshPremium(uint256 assetId, PremiumDelta calldata premiumDelta) external {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
@@ -626,8 +627,8 @@ contract Hub is IHub, AccessManaged {
     emit UpdateSpokeConfig(assetId, spoke, config);
   }
 
-  /// @dev Applies premium deltas on asset and spoke owed, and validates that total premium
-  /// and spoke premium cannot decrease by more than `premiumAmount`.
+  /// @dev Applies premium deltas on asset & spoke premium owed, also checks premium
+  /// does not increase by more than `premiumAmount`.
   function _applyPremiumDelta(
     uint256 assetId,
     Asset storage asset,
@@ -771,7 +772,6 @@ contract Hub is IHub, AccessManaged {
     require(amount > 0, InvalidAmount());
   }
 
-  /// @dev `feeReceiver` spoke `addCap` is not validated.
   function _validatePayFeeShares(SpokeData storage senderSpoke, uint256 feeShares) internal view {
     require(senderSpoke.active, SpokeNotActive());
     require(feeShares > 0, InvalidShares());

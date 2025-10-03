@@ -21,8 +21,7 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /// @title Spoke
 /// @author Aave Labs
-/// @notice Handles accounting for reserves and user positions.
-/// @dev Facilitates user interactions with hubs.
+/// @notice Handles risk configuration & borrowing strategy for reserves and user positions.
 /// @dev Each reserve can be associated with a separate hub.
 abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
@@ -67,8 +66,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
 
-  /// @notice Modifier that checks if the caller is the position manager.
-  /// @dev A user will always be able to act on behalf of themself.
+  /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
+  /// @dev A user will always be able to act on behalf of self.
   /// @param onBehalfOf The address of the user on behalf of which the action is being performed.
   modifier onlyPositionManager(address onBehalfOf) {
     require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
@@ -664,10 +663,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     emit UpdateReservePriceSource(reserveId, priceSource);
   }
 
-  /// @notice Refreshes and validates the user's position is above the liquidation threshold.
+  /// @notice Refreshes user dynamic configuration and checks the position is healthy.
+  /// @dev Refreshes user position dynamic config only on `borrow`, `withdraw`, & disable `setUsingAsCollateral`.
   /// @return The user's new risk premium.
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
-    // @dev refresh user position dynamic config only on borrow, withdraw, disableUsingAsCollateral
     UserAccountData memory userAccountData = _calculateAndRefreshUserAccountData(user);
     require(
       userAccountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
@@ -680,7 +679,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
   }
 
-  /// @dev CollateralFactor of historical config keys cannot be 0, to allow liquidations to proceed.
+  /// @dev CollateralFactor of historical config keys cannot be 0, which allows liquidations to proceed.
   function _validateUpdateDynamicReserveConfig(
     DynamicReserveConfig storage currentConfig,
     DynamicReserveConfig calldata newConfig
@@ -704,13 +703,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
   }
 
-  /// @dev Can disable as collateral if the reserve is frozen.
   function _validateSetUsingAsCollateral(
     Reserve storage reserve,
     bool usingAsCollateral
   ) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
+    // can disable as collateral if the reserve is frozen.
     require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
   }
 
@@ -728,26 +727,26 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return (amount - premiumDebt, premiumDebt);
   }
 
-  /// @notice Settles the premium debt by realizing accrued premium and resetting premium shares and offset.
+  /// @notice Settles the premium debt by realizing change in premium and resetting premium shares and offset.
   function _settlePremiumDebt(UserPosition storage userPosition, int256 realizedDelta) internal {
     userPosition.premiumShares = 0;
     userPosition.premiumOffset = 0;
     userPosition.realizedPremium = userPosition.realizedPremium.add(realizedDelta).toUint128();
   }
 
-  /// @notice Checks if a position manager is the user or it is active and has approval for the user.
+  /// @notice Returns whether `manager` is active & approved positionManager for `user`.
   function _isPositionManager(address user, address manager) private view returns (bool) {
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
   }
 
-  /// @dev SAFETY: function does not modify state when refreshConfig is false.
   function _calculateUserAccountData(address user) internal view returns (UserAccountData memory) {
+    // SAFETY: function does not modify state when refreshConfig is false.
     return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
   }
 
-  /// @notice Calculates the user account data and refreshes the dynamic config.
+  /// @notice Refreshes the dynamic config and calculates the user account data.
   function _calculateAndRefreshUserAccountData(
     address user
   ) internal returns (UserAccountData memory) {
@@ -756,7 +755,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return accountData;
   }
 
-  /// @notice Calculates the user account data and refreshes the dynamic config if `refreshConfig` is true.
+  /// @notice Refreshes the dynamic config and calculates the user account data if `refreshConfig` is true.
   /// @dev User RiskPremium calc runs until the first of either debt or collateral is exhausted.
   function _calculateAndPotentiallyRefreshUserAccountData(
     address user,
@@ -866,7 +865,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return userAccountData;
   }
 
-  /// @notice Calculates the user's debt for a given asset.
   /// @return The user's drawn debt.
   /// @return The user's premium debt.
   /// @return The user's accrued premium debt.
@@ -884,7 +882,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     );
   }
 
-  /// @notice Trigger risk premium update on all debt reserves of `user`.
+  /// @notice Refreshes premium for borrowed reserves of `user` with `newUserRiskPremium`.
   function _notifyRiskPremiumUpdate(address user, uint256 newUserRiskPremium) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
 
@@ -965,7 +963,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return ('Spoke', '1');
   }
 
-  /// @notice Casts a function to a view function.
   /// @dev Only utilized for the _calculateUserAccountData function.
   function _castToView(
     function(address, bool) internal returns (UserAccountData memory) fnIn
@@ -979,9 +976,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
   }
 
-  /// @dev Only allows approval when position manager is active for improved UX.
   function _setUserPositionManager(address positionManager, address user, bool approve) internal {
     PositionManagerConfig storage config = _positionManager[positionManager];
+    // Only allows approval when position manager is active for improved UX.
     require(!approve || config.active, InactivePositionManager());
     config.approval[user] = approve;
     emit SetUserPositionManager(user, positionManager, approve);

@@ -13,7 +13,6 @@ import {IRescuable} from 'src/interfaces/IRescuable.sol';
 abstract contract Rescuable is IRescuable {
   using SafeERC20 for IERC20;
 
-  /// @notice Modifier that checks if the caller is the rescue guardian.
   modifier onlyRescueGuardian() {
     _checkRescueGuardian();
     _;
@@ -36,7 +35,6 @@ abstract contract Rescuable is IRescuable {
 
   function _rescueGuardian() internal view virtual returns (address);
 
-  /// @dev Reverts if the caller is not the rescue guardian.
   function _checkRescueGuardian() internal view virtual {
     require(_rescueGuardian() == msg.sender, OnlyRescueGuardian());
   }

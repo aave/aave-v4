@@ -11,7 +11,7 @@ import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
 /// @dev This is achieved by sorting the packed `key-value` pair in descending order, but storing the invert of the `key` (ie `_MAX_KEY - key`).
 /// @dev Uninitialized keys are returned as (key: 0, value: 0) and are placed at the end of the list after sorting.
 library KeyValueList {
-  /// @notice Thrown upon adding an element with a key or value exceeding the maximum allowed.
+  /// @notice Thrown when adding a key which can't be stored in `_KEY_BITS` or value in `_VALUE_BITS`.
   error MaxDataSizeExceeded();
 
   struct List {
@@ -24,22 +24,18 @@ library KeyValueList {
   uint256 internal constant _MAX_VALUE = (1 << _VALUE_BITS) - 1;
   uint256 internal constant _KEY_SHIFT = 256 - _KEY_BITS;
 
-  /// @notice Initializes a new KeyValueList.
-  /// @param size The desired size of the list.
-  /// @return A new List with the specified size.
+  /// @notice Allocates memory for a KeyValue list for `size` elements.
   function init(uint256 size) internal pure returns (List memory) {
     return List(new uint256[](size));
   }
 
   /// @notice Returns the length of the list.
-  /// @param self The list.
   /// @return The length of the list.
   function length(List memory self) internal pure returns (uint256) {
     return self._inner.length;
   }
 
   /// @notice Adds a key-value pair to the list.
-  /// @param self The list.
   /// @param idx The index of the list.
   /// @param key The key.
   /// @param value The value.
@@ -50,7 +46,6 @@ library KeyValueList {
 
   /// @notice Returns the key-value pair at the given index.
   /// @dev Uninitialized keys are returned as (key: 0, value: 0).
-  /// @param self The list.
   /// @param idx The index from which to retrieve the key-value pair.
   /// @return The key-value pair.
   function get(List memory self, uint256 idx) internal pure returns (uint256, uint256) {
@@ -62,7 +57,6 @@ library KeyValueList {
   /// (so the keys are in ascending order when unpacking, due to inversion when packing).
   /// @dev In case of collision, values are sorted in descending order.
   /// @dev All uninitialized keys are placed at the end of the list after sorting.
-  /// @param self The list.
   function sortByKey(List memory self) internal pure {
     Arrays.sort(self._inner, gtComparator);
   }
@@ -100,9 +94,7 @@ library KeyValueList {
     return (unpackKey(data), unpackValue(data));
   }
 
-  /// @notice Comparator function for sorting in descending order.
-  /// @param a The first value to compare.
-  /// @param b The second value to compare.
+  /// @notice Comparator function performing the greater than comparison.
   /// @return True if `a` is greater than `b`, false otherwise.
   function gtComparator(uint256 a, uint256 b) internal pure returns (bool) {
     return a > b;

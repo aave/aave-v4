@@ -356,7 +356,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @return True if positionManager is active and approved by user, false otherwise.
   function isPositionManager(address user, address positionManager) external view returns (bool);
 
-  /// @notice Returns whether positionManager is currently active.
+  /// @notice Returns whether positionManager is currently activated by governance.
   /// @param positionManager The address of the position manager.
   /// @return True if positionManager is currently active, false otherwise.
   function isPositionManagerActive(address positionManager) external view returns (bool);

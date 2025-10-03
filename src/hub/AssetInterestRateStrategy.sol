@@ -7,7 +7,7 @@ import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/in
 
 /// @title AssetInterestRateStrategy
 /// @author Aave Labs
-/// @notice Manages the interest rate strategy for an asset.
+/// @notice Manages the kink-based interest rate strategy for an asset.
 /// @dev Strategies are hub-specific, due to the usage of asset identifier as index of the _interestRateData.
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;
@@ -28,15 +28,15 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   mapping(uint256 assetId => InterestRateData) internal _interestRateData;
 
   /// @dev Constructor.
+  /// @param hub_ The address of the associated hub.
   constructor(address hub_) {
     require(hub_ != address(0), InvalidAddress());
     HUB = hub_;
   }
 
   /// @notice Sets the interest rate parameters for a specified asset.
-  /// @dev data contains bps values encoded in bytes.
   /// @param assetId The identifier of the asset.
-  /// @param data The encoded parameters used to configure the interest rate of the asset.
+  /// @param data The encoded parameters containing BPS data used to configure the interest rate of the asset.
   function setInterestRateData(uint256 assetId, bytes calldata data) external {
     require(HUB == msg.sender, OnlyHub());
     InterestRateData memory rateData = abi.decode(data, (InterestRateData));

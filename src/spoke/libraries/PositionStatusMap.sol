@@ -20,9 +20,6 @@ library PositionStatusMap {
     0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA;
 
   /// @notice Sets if the user is borrowing the specified reserve.
-  /// @param self The configuration struct.
-  /// @param reserveId The index of the reserve in the bitmap.
-  /// @param borrowing True if the user is borrowing the reserve, false otherwise.
   function setBorrowing(
     ISpoke.PositionStatus storage self,
     uint256 reserveId,
@@ -190,7 +187,7 @@ library PositionStatusMap {
   /// @notice Returns the word containing the reserve state in the bitmap.
   /// @param self The configuration struct.
   /// @param reserveId The index of the reserve in the bitmap.
-  /// @return The word containing the state of the reserve.
+  /// @return The reserveId.
   function getBucketWord(
     ISpoke.PositionStatus storage self,
     uint256 reserveId
@@ -200,7 +197,6 @@ library PositionStatusMap {
 
   /// @notice Converts a reserveId to its corresponding bucketId.
   /// @param reserveId The index of the reserve in the bitmap.
-  /// @return wordId The bucket identifier.
   function bucketId(uint256 reserveId) internal pure returns (uint256 wordId) {
     assembly ('memory-safe') {
       wordId := shr(7, reserveId)
@@ -209,9 +205,6 @@ library PositionStatusMap {
 
   /// @notice Converts a bit index to its corresponding reserve index in the bitmap.
   /// @dev BitId 0, 1 correspond to reserveId 0; BitId 2, 3 correspond to reserveId 1; etc.
-  /// @param bitId The index of the bit.
-  /// @param bucket The bucket identifier.
-  /// @return reserveId The reserve index in the bitmap.
   function fromBitId(uint256 bitId, uint256 bucket) internal pure returns (uint256 reserveId) {
     assembly ('memory-safe') {
       reserveId := add(shr(1, bitId), shl(7, bucket))
@@ -219,8 +212,6 @@ library PositionStatusMap {
   }
 
   /// @notice Isolates the borrowing bits from word.
-  /// @param word The 256-bit value encoding reserves configuration.
-  /// @return ret The portion of the word containing only borrowing bits.
   function isolateBorrowing(uint256 word) internal pure returns (uint256 ret) {
     assembly ('memory-safe') {
       ret := and(word, BORROWING_MASK)
@@ -229,8 +220,6 @@ library PositionStatusMap {
 
   /// @notice Isolates borrowing bits up to the given `reserveCount`, clearing all later reserves.
   /// @param word The 256-bit value encoding reserves configuration.
-  /// @param reserveCount The number of reserves (2 bits each) to include.
-  /// @return ret The portion of word containing borrowing bits from the first reserve up to `reserveCount`.
   function isolateBorrowingUntil(
     uint256 word,
     uint256 reserveCount

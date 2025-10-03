@@ -89,7 +89,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param assetId The identifier of the asset.
   /// @param drawnIndex The new drawn index of the asset.
   /// @param drawnRate The new drawn rate of the asset.
-  /// @param latestUpdateTimestamp The timestamp of the latest update, which is the block.timestamp of the event emission.
+  /// @param latestUpdateTimestamp The block timestamp of last update.
   event UpdateAsset(
     uint256 indexed assetId,
     uint256 drawnIndex,
@@ -198,7 +198,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev The same underlying asset address can be added as an asset multiple times.
   /// @dev The fee receiver is added as a new spoke with maximum add cap and zero draw cap.
   /// @param underlying The address of the underlying asset.
-  /// @param decimals The number of decimals of the asset.
+  /// @param decimals The number of decimals of `underlying`.
   /// @param feeReceiver The address of the fee receiver spoke.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset encoded in bytes.
@@ -315,6 +315,7 @@ interface IHub is IHubBase, IAccessManaged {
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns information regarding the specified asset.
+  /// @dev `drawnIndex` and `drawnRate` can be outdated due to passage of time.
   /// @param assetId The identifier of the asset.
   /// @return The asset struct.
   function getAsset(uint256 assetId) external view returns (Asset memory);
