@@ -28,7 +28,9 @@ contract AaveOracle is IAaveOracle {
    * @param description_ The description of the oracle.
    */
   constructor(address spoke_, uint8 decimals_, string memory description_) {
+    require(spoke_ != address(0), InvalidAddress());
     SPOKE = spoke_;
+    // decimals compatibility should be validated on the spoke
     DECIMALS = decimals_;
     DESCRIPTION = description_;
   }
