@@ -21,8 +21,9 @@ contract NoncesKeyedTest is Base {
     uint256 keyNonce = mock.nonces(owner, key);
 
     vm.prank(owner);
-    mock.useNonce(key);
+    uint256 consumedKeyNonce = mock.useNonce(key);
 
+    assertEq(consumedKeyNonce, keyNonce);
     _assertNonceIncrement(mock, owner, keyNonce);
   }
 

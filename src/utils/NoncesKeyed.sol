@@ -11,8 +11,8 @@ contract NoncesKeyed is INoncesKeyed {
   mapping(address owner => mapping(uint192 key => uint64 nonce)) private _nonces;
 
   /// @inheritdoc INoncesKeyed
-  function useNonce(uint192 key) external {
-    _useNonce(msg.sender, key);
+  function useNonce(uint192 key) external returns (uint256) {
+    return _useNonce(msg.sender, key);
   }
 
   /// @inheritdoc INoncesKeyed
