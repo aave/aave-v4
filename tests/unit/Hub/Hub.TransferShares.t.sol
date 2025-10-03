@@ -8,48 +8,6 @@ contract HubTransferSharesTest is HubBase {
   using SharesMath for uint256;
   using SafeCast for uint256;
 
-  uint256 minDecimalAssetId;
-
-  function setUp() public override {
-    super.setUp();
-
-    /// @dev add a minimum decimal asset to test add cap rounding
-    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
-      active: true,
-      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
-    });
-    bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
-    vm.startPrank(ADMIN);
-    minDecimalAssetId = hub1.addAsset(
-      address(tokenList.dai),
-      Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      minDecimalAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
-    hub1.addSpoke(minDecimalAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(minDecimalAssetId, address(spoke2), spokeConfig);
-    vm.stopPrank();
-  }
-
   function test_transferShares() public {
     test_transferShares_fuzz(1000e18, 1000e18);
   }
