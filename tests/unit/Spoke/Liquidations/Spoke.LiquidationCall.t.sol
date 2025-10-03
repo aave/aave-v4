@@ -456,6 +456,20 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
       MIN_AMOUNT_IN_BASE_CURRENCY,
       MAX_AMOUNT_IN_BASE_CURRENCY
     );
+    for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
+      ISpoke.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
+        i,
+        spoke.getUserPosition(i, liquidator).configKey
+      );
+      dynConfig.maxLiquidationBonus = vm
+        .randomUint(
+          MIN_LIQUIDATION_BONUS,
+          (PercentageMath.PERCENTAGE_FACTOR - 1).percentDivDown(dynConfig.collateralFactor)
+        )
+        .toUint32();
+      vm.prank(SPOKE_ADMIN);
+      spoke.addDynamicReserveConfig(i, dynConfig);
+    }
   }
 
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {

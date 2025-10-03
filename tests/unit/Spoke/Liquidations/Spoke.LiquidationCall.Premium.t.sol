@@ -9,6 +9,14 @@ contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
 
   uint256 internal baseAmountInBaseCurrency;
 
+  function setUp() public virtual override {
+    super.setUp();
+    baseAmountInBaseCurrency = vm.randomUint(
+      MIN_AMOUNT_IN_BASE_CURRENCY,
+      MAX_AMOUNT_IN_BASE_CURRENCY
+    );
+  }
+
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
     return baseAmountInBaseCurrency;
   }
@@ -31,11 +39,6 @@ contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
       spoke,
       collateralReserveId,
       vm.randomUint(MIN_COLLATERAL_RISK_BPS, MAX_COLLATERAL_RISK_BPS).toUint24()
-    );
-
-    baseAmountInBaseCurrency = vm.randomUint(
-      MIN_AMOUNT_IN_BASE_CURRENCY,
-      MAX_AMOUNT_IN_BASE_CURRENCY
     );
   }
 
