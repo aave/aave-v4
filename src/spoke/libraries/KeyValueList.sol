@@ -30,7 +30,6 @@ library KeyValueList {
   }
 
   /// @notice Returns the length of the list.
-  /// @return The length of the list.
   function length(List memory self) internal pure returns (uint256) {
     return self._inner.length;
   }
