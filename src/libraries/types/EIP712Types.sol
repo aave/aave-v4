@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 /// @title EIP712Types library
 /// @author Aave Labs
-/// @notice Defines type structs used in EIP712 signatures.
+/// @notice Defines type structs used in EIP712-typed signatures.
 library EIP712Types {
   struct SetUserPositionManager {
     address positionManager;

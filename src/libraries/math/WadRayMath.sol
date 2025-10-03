@@ -12,9 +12,9 @@ library WadRayMath {
   uint256 internal constant RAY = 1e27;
   uint256 internal constant PERCENTAGE_FACTOR = 1e4;
 
-  /// @notice Multiplies two Wad numbers, rounding down.
-  /// @param a First Wad number.
-  /// @param b Second Wad number.
+  /// @notice Multiplies two Number in Wad precisions, rounding down.
+  /// @param a First Number in Wad precision.
+  /// @param b Second Number in Wad precision.
   /// @return c The result of the multiplication, in Wad.
   function wadMulDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
@@ -27,9 +27,9 @@ library WadRayMath {
     }
   }
 
-  /// @notice Multiplies two Wad numbers, rounding up.
-  /// @param a First Wad number.
-  /// @param b Second Wad number.
+  /// @notice Multiplies two Number in Wad precisions, rounding up.
+  /// @param a First Number in Wad precision.
+  /// @param b Second Number in Wad precision.
   /// @return c The result of the multiplication, in Wad.
   function wadMulUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
@@ -43,9 +43,9 @@ library WadRayMath {
     }
   }
 
-  /// @notice Divides two Wad numbers, rounding down.
-  /// @param a First Wad number.
-  /// @param b Second Wad number.
+  /// @notice Divides two Number in Wad precisions, rounding down.
+  /// @param a First Number in Wad precision.
+  /// @param b Second Number in Wad precision.
   /// @return c The result of the division, in Wad.
   function wadDivDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / WAD
@@ -58,9 +58,9 @@ library WadRayMath {
     }
   }
 
-  /// @notice Divides two Wad numbers, rounding up.
-  /// @param a First Wad number.
-  /// @param b Second Wad number.
+  /// @notice Divides two Number in Wad precisions, rounding up.
+  /// @param a First Number in Wad precision.
+  /// @param b Second Number in Wad precision.
   /// @return c The result of the division, in Wad.
   function wadDivUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / WAD
