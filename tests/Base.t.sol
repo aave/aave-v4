@@ -1410,9 +1410,9 @@ abstract contract Base is Test {
     }
     uint256 drawnRestored = _min(drawn, restoreAmount - premium);
     // round drawn debt to nearest whole share
-    drawnRestored = hub1.convertToDrawnAssets(
+    drawnRestored = hub1.previewRestoreByShares(
       assetId,
-      hub1.convertToDrawnShares(assetId, drawnRestored)
+      hub1.previewRestoreByAssets(assetId, drawnRestored)
     );
     return (drawnRestored, premium);
   }

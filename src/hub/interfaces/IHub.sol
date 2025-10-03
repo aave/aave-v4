@@ -55,6 +55,8 @@ interface IHub is IHubBase, IAccessManaged {
     uint56 addCap;
     uint56 drawCap;
     bool active;
+    //
+    uint128 deficit;
   }
 
   struct SpokeConfig {
@@ -116,12 +118,14 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Emitted when deficit is eliminated.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The spoke that eliminated the deficit, and had supplied shares removed.
+  /// @param callerSpoke The spoke that eliminated the deficit using its supplied shares.
+  /// @param coveredSpoke The spoke for which the deficit was eliminated.
   /// @param shares The amount of shares removed.
   /// @param amount The amount of deficit eliminated.
   event EliminateDeficit(
     uint256 indexed assetId,
-    address indexed spoke,
+    address indexed callerSpoke,
+    address indexed coveredSpoke,
     uint256 shares,
     uint256 amount
   );
@@ -252,8 +256,13 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of deficit to eliminate.
+  /// @param spoke The spoke for which the deficit is eliminated.
   /// @return The amount of shares removed.
-  function eliminateDeficit(uint256 assetId, uint256 amount) external returns (uint256);
+  function eliminateDeficit(
+    uint256 assetId,
+    uint256 amount,
+    address spoke
+  ) external returns (uint256);
 
   /// @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment controller.
   /// @dev The controller handles the actual reinvestment of funds, redistribution of interest, and investment caps.
@@ -297,8 +306,8 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The amount of drawn assets converted from shares amount.
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
 
-  /// @notice Converts the given amount of drawn assets to shares amount for the specified asset.
-  /// @dev Rounds down to the nearest shares amount.
+  /// @notice Converts the specified amount of drawn assets to shares amount.
+  /// @dev Rounds up to the nearest shares amount.
   /// @param assetId The identifier of the asset.
   /// @param assets The amount of drawn assets to convert to shares amount.
   /// @return The amount of drawn shares converted from assets amount.
@@ -359,10 +368,10 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The amount of liquidity swept.
   function getSwept(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the amount of deficit for the specified asset.
+  /// @notice Returns the amount of deficit of the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The amount of deficit.
-  function getDeficit(uint256 assetId) external view returns (uint256);
+  function getAssetDeficit(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the number of spokes listed for the specified asset.
   /// @param assetId The identifier of the asset.
@@ -386,6 +395,12 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param spoke The address of the spoke.
   /// @return The spoke data struct.
   function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory);
+
+  /// @notice Returns the amount of a given spoke's deficit for the specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  /// @return The amount of deficit.
+  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the spoke configuration struct.
   /// @param assetId The identifier of the asset.
