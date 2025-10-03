@@ -2,6 +2,6 @@
   "getUserAccountData: supplies: 0, borrows: 0": "12165",
   "getUserAccountData: supplies: 1, borrows: 0": "47545",
   "getUserAccountData: supplies: 2, borrows: 0": "78053",
-  "getUserAccountData: supplies: 2, borrows: 1": "101193",
-  "getUserAccountData: supplies: 2, borrows: 2": "122844"
+  "getUserAccountData: supplies: 2, borrows: 1": "101149",
+  "getUserAccountData: supplies: 2, borrows: 2": "122756"
 }
