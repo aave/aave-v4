@@ -61,7 +61,7 @@ contract Hub is IHub, AccessManaged {
       InvalidAddress()
     );
     require(
-      decimals >= MIN_ALLOWED_UNDERLYING_DECIMALS && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
+      MIN_ALLOWED_UNDERLYING_DECIMALS <= decimals && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
       InvalidAssetDecimals()
     );
 
@@ -386,8 +386,7 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     _validateSweep(asset, msg.sender, amount);
 
-    uint256 liquidity = asset.liquidity;
-    asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
+    asset.liquidity -= amount.toUint128();
     asset.swept += amount.toUint128();
     asset.updateDrawnRate(assetId);
 
@@ -403,9 +402,8 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     _validateReclaim(asset, msg.sender, amount);
 
-    uint256 swept = asset.swept;
     asset.liquidity += amount.toUint128();
-    asset.swept = swept.uncheckedSub(amount).toUint128();
+    asset.swept -= amount.toUint128();
     asset.updateDrawnRate(assetId);
 
     IERC20(asset.underlying).safeTransferFrom(msg.sender, address(this), amount);
