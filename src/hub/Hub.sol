@@ -641,7 +641,6 @@ contract Hub is IHub, AccessManaged {
 
   /// @dev Applies premium deltas on asset & spoke premium owed, also checks premium
   /// does not increase by more than `premiumAmount`.
-  /// @dev Asset and spoke premium can increase up to 2 wei due to opposite rounding directions of shares and offset.
   function _applyPremiumDelta(
     uint256 assetId,
     Asset storage asset,

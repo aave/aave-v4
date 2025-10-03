@@ -11,7 +11,6 @@ library PercentageMath {
   uint256 internal constant PERCENTAGE_FACTOR = 1e4;
 
   /// @notice Executes a percentage multiplication, rounded down.
-  /// @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
   /// @param value The value to apply the percentage.
   /// @param percentage The percentage of the value to be calculated (in BPS).
   /// @return result The resulting percentage of the value.
@@ -30,7 +29,6 @@ library PercentageMath {
   }
 
   /// @notice Executes a percentage multiplication, rounded up.
-  /// @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
   /// @param value The value to apply the percentage.
   /// @param percentage The percentage of the value to be calculated (in BPS).
   /// @return result The resulting percentage of the value.
@@ -48,7 +46,6 @@ library PercentageMath {
   }
 
   /// @notice Executes a percentage division, rounded down.
-  /// @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
   /// @param value The value to apply the percentage.
   /// @param percentage The percentage of the value to be calculated (in BPS).
   /// @return result The resulting percentage of the value.
@@ -67,10 +64,6 @@ library PercentageMath {
   }
 
   /// @notice Executes a percentage division, rounded up.
-  /// @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
-  /// @param value The value to apply the percentage.
-  /// @param percentage The percentage of the value to be calculated (in BPS).
-  /// @return result The resulting percentage of the value.
   function percentDivUp(uint256 value, uint256 percentage) internal pure returns (uint256 result) {
     // to avoid overflow, value <= type(uint256).max / PERCENTAGE_FACTOR
     assembly ('memory-safe') {

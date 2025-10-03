@@ -29,20 +29,15 @@ library MathUtils {
     return WadRayMath.RAY + result;
   }
 
-  /// @notice Returns the minimum of two values.
-  /// @param a The first value.
-  /// @param b The second value.
+  /// @notice Returns the minimum of two unsigned integers.
   function min(uint256 a, uint256 b) internal pure returns (uint256 result) {
     assembly ('memory-safe') {
       result := xor(b, mul(xor(a, b), lt(a, b)))
     }
   }
 
-  /// @notice Adds a signed integer to an unsigned integer.
+  /// @notice Adds a signed integer `b` to an unsigned integer `a`.
   /// @dev Reverts on underflow.
-  /// @param a The unsigned integer.
-  /// @param b The signed integer.
-  /// @return The unsigned result of the addition.
   function add(uint256 a, int256 b) internal pure returns (uint256) {
     if (b >= 0) return a + uint256(b);
     return a - uint256(-b);
@@ -50,28 +45,19 @@ library MathUtils {
 
   /// @notice Adds two unsigned integers.
   /// @dev Does not revert on overflow.
-  /// @param a The first unsigned integer.
-  /// @param b The second unsigned integer.
-  /// @return The unsigned result of the addition.
   function uncheckedAdd(uint256 a, uint256 b) internal pure returns (uint256) {
     unchecked {
       return a + b;
     }
   }
 
-  /// @notice Subtracts an unsigned integer from an unsigned integer.
-  /// @param a The first unsigned integer.
-  /// @param b The second unsigned integer.
-  /// @return The signed result of the subtraction.
+  /// @notice Subtracts an unsigned integer `b` from an unsigned integer `a`.
   function signedSub(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b);
   }
 
-  /// @notice Subtracts an unsigned integer from an unsigned integer.
+  /// @notice Subtracts an unsigned integer `b` from an unsigned integer `a`.
   /// @dev Does not revert on underflow.
-  /// @param a The first unsigned integer.
-  /// @param b The second unsigned integer.
-  /// @return The unsigned result of the subtraction.
   function uncheckedSub(uint256 a, uint256 b) internal pure returns (uint256) {
     unchecked {
       return a - b;
@@ -80,20 +66,14 @@ library MathUtils {
 
   /// @notice Raises an unsigned integer to the power of an unsigned integer.
   /// @dev Does not revert on overflow.
-  /// @param a The base.
-  /// @param b The exponent.
-  /// @return The result of the exponentiation.
   function uncheckedExp(uint256 a, uint256 b) internal pure returns (uint256) {
     unchecked {
       return a ** b;
     }
   }
 
-  /// @notice Multiplies two numbers and divides the result by a third number, rounding down.
-  /// @dev Reverts if division by zero or overflow occurs.
-  /// @param a The first number.
-  /// @param b The second number.
-  /// @param c The divisor.
+  /// @notice Multiplies `a` and `b` and divides the result by `c`, rounding down.
+  /// @dev Reverts if division by zero or overflow occurs, ie `mul(a,b)` exceeds 256 bits.
   /// @return d The result of the multiplication and division, rounded down.
   function mulDivDown(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
     assembly ('memory-safe') {
@@ -107,11 +87,8 @@ library MathUtils {
     }
   }
 
-  /// @notice Multiplies two numbers and divides the result by a third number, rounding up.
-  /// @dev Reverts if division by zero or overflow occurs.
-  /// @param a The first number.
-  /// @param b The second number.
-  /// @param c The divisor.
+  /// @notice Multiplies `a` and `b` and divides the result by `c`, rounding up.
+  /// @dev Reverts if division by zero or overflow occurs, ie `mul(a,b)` exceeds 256 bits.
   /// @return d The result of the multiplication and division, rounded up.
   function mulDivUp(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
     assembly ('memory-safe') {
