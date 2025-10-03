@@ -54,6 +54,7 @@ jobs:
           nameSuffix: "default"
   artifacts:
     name: Generate artifacts matrix
+    needs: test
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
