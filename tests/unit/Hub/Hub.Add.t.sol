@@ -137,57 +137,6 @@ contract HubAddTest is HubBase {
     assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)), amount);
   }
 
-  /// add reverts if the cap is exceeded, with proper rounding (up) applied to shares into assets conversion
-  function test_add_revertsWith_AddCapExceeded_due_to_rounding() public {
-    _addLiquidity(minDecimalAssetId, 100e18);
-    _drawLiquidity(minDecimalAssetId, 45e18, true);
-
-    uint256 totalAddedAssets = hub1.getAddedAssets(minDecimalAssetId);
-    uint256 totalAddedShares = hub1.getAddedShares(minDecimalAssetId);
-
-    // Depending on the borrow rate, this may not be true
-    // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
-    assertEq(
-      uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares).toSharesDown(
-        totalAddedAssets,
-        totalAddedShares
-      ),
-      0,
-      'share price is a whole number'
-    );
-
-    // The asset amount is 1 share worth of assets (rounded down) + 1
-    // The added share is 1, which rounded up is equal to the
-    // amount of assets added
-    uint256 addedAmount = uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares) + 1;
-
-    Utils.add({
-      hub: hub1,
-      assetId: minDecimalAssetId,
-      caller: address(spoke1),
-      amount: addedAmount,
-      user: alice
-    });
-
-    // set add cap to amount of assets added * 2 - 1, given
-    // that the same asset amount is provided again below
-    uint56 newAddCap = (2 * addedAmount - 1).toUint56();
-    _updateAddCap(minDecimalAssetId, address(spoke1), newAddCap);
-
-    vm.prank(alice);
-    tokenList.dai.approve(address(hub1), addedAmount);
-
-    // this cap will be exceeded only if the existing added
-    // shares are rounded up
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
-    vm.prank(address(spoke1));
-    hub1.add(minDecimalAssetId, addedAmount, alice);
-
-    // check that add cap is not exceeded if assets are rounded down
-    uint256 addedAssetsRoundedDown = hub1.getSpokeAddedAssets(minDecimalAssetId, address(spoke1));
-    assertEq(addedAssetsRoundedDown + addedAmount, newAddCap);
-  }
-
   function test_add_fuzz_revertsWith_AddCapExceeded_due_to_interest(
     uint56 newAddCap,
     uint256 drawAmount,

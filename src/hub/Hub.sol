@@ -88,7 +88,7 @@ contract Hub is IHub, AccessManaged {
       drawnIndex: drawnIndex.toUint128(),
       realizedPremium: 0,
       underlying: underlying,
-      lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
+      lastUpdateTimestamp: lastUpdateTimestamp.toUint32(),
       decimals: decimals,
       drawnRate: drawnRate.toUint96(),
       irStrategy: irStrategy,
@@ -444,8 +444,8 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     address spoke
   ) external view returns (SpokeConfig memory) {
-    SpokeData storage spoke = _spokes[assetId][spoke];
-    return SpokeConfig(spoke.active, spoke.addCap, spoke.drawCap);
+    SpokeData storage spokeData = _spokes[assetId][spoke];
+    return SpokeConfig(spokeData.active, spokeData.addCap, spokeData.drawCap);
   }
 
   /// @inheritdoc IHubBase
