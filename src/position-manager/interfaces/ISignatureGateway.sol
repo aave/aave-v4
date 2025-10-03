@@ -25,10 +25,11 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
   /**
    * @notice Facilitates supply action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
+   * @dev Uses keyed-nonces where for each key's namespace nonce are consumed sequentially.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to supply.
    * @param onBehalfOf The address of the user to supply assets on behalf of.
-   * @param nonce The nonce for the signature.
+   * @param nonce The key-prefixed nonce for the signature.
    * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
@@ -45,10 +46,11 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
    * @notice Facilitates withdraw action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Providing an amount exceeding the user's current withdrawable balance indicates a request for a maximum withdrawal.
    * @dev Withdrawn assets are pushed to `onBehalfOf`.
+   * @dev Uses keyed-nonces where for each key's namespace nonce are consumed sequentially.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to withdraw.
    * @param onBehalfOf The address of the user to withdraw the asset on behalf of.
-   * @param nonce The nonce for the signature.
+   * @param nonce The key-prefixed nonce for the signature.
    * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
@@ -64,10 +66,11 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
   /**
    * @notice Facilitates borrow action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Borrowed assets are pushed to `onBehalfOf`.
+   * @dev Uses keyed-nonces where for each key's namespace nonce are consumed sequentially.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to borrow.
    * @param onBehalfOf The address of the user to borrow the asset on behalf of.
-   * @param nonce The nonce for the signature.
+   * @param nonce The key-prefixed nonce for the signature.
    * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
@@ -84,10 +87,11 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
    * @notice Facilitates repay action on connected SPOKE() with a typed signature from `onBehalfOf`.
    * @dev Repay assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
    * @dev Providing an amount greater than the user's current debt indicates a request to repay the maximum possible amount.
+   * @dev Uses keyed-nonces where for each key's namespace nonce are consumed sequentially.
    * @param reserveId The identifier of the reserve.
    * @param amount The amount of asset to repay.
    * @param onBehalfOf The address of the user to repay the asset on behalf of.
-   * @param nonce The nonce for the signature.
+   * @param nonce The key-prefixed nonce for the signature.
    * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
@@ -102,10 +106,11 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
 
   /**
    * @notice Facilitates setUsingAsCollateral action on connected SPOKE() with a typed signature from `onBehalfOf`.
+   * @dev Uses keyed-nonces where for each key's namespace nonce are consumed sequentially.
    * @param reserveId The identifier of the reserve.
    * @param useAsCollateral True if enabling reserve as collateral.
    * @param onBehalfOf The address of the user to set the use as collateral status on behalf of.
-   * @param nonce The nonce for the signature.
+   * @param nonce The key-prefixed nonce for the signature.
    * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
@@ -120,8 +125,9 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
 
   /**
    * @notice Facilitates updateUserRiskPremium action on connected SPOKE() with a typed signature from `user`.
+   * @dev Uses keyed-nonces where for each key's namespace nonce are consumed sequentially.
    * @param user The address of the user to update the risk premium for.
-   * @param nonce The nonce for the signature.
+   * @param nonce The key-prefixed nonce for the signature.
    * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
@@ -134,8 +140,9 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
 
   /**
    * @notice Facilitates updateUserDynamicConfig action on connected SPOKE() with a typed signature from `user`.
+   * @dev Uses keyed-nonces where for each key's namespace nonce are consumed sequentially.
    * @param user The address of the user to update the dynamic config for.
-   * @param nonce The nonce for the signature.
+   * @param nonce The key-prefixed nonce for the signature.
    * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the intent.
    */
@@ -149,9 +156,10 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
   /**
    * @notice Facilitates setting this gateway as user position manager on connected SPOKE()
    * with a typed signature from `user`.
+   * @dev The signature is consumed on the connected SPOKE().
    * @param user The address of the user to set as position manager.
    * @param approve The approval status.
-   * @param nonce The nonce for the signature.
+   * @param nonce The key-prefixed nonce for the signature.
    * @param deadline The deadline for the signature.
    * @param signature The signed bytes for the action.
    */

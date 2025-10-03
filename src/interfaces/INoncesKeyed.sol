@@ -7,8 +7,9 @@ interface INoncesKeyed {
   error InvalidAccountNonce(address account, uint256 currentNonce);
 
   /// @notice Allows caller to revoke their next sequential nonce at specified `key`.
+  /// @dev This does not invalidate nonce at other `key` sessions.
   /// @param key The key which specifies lifetime of the nonce.
-  /// @return keyNonce The consumed keyNonce.
+  /// @return keyNonce The revoked key-prefixed nonce.
   function useNonce(uint192 key) external returns (uint256 keyNonce);
 
   /// @notice Returns the next unused nonce for an address and key. Result contains the key prefix.
