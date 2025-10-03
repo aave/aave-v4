@@ -321,7 +321,6 @@ contract Hub is IHub, AccessManaged {
     uint128 shares = previewRemoveByAssets(assetId, amount).toUint128();
     asset.addedShares -= shares;
     callerSpoke.addedShares -= shares;
-    // ensure that amount never exceeds asset.deficit
     asset.deficit -= amount.toUint128();
     coveredSpoke.deficit = deficit.uncheckedSub(amount).toUint128();
 

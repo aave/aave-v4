@@ -211,13 +211,13 @@ interface IHub is IHubBase, IAccessManaged {
    * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of deficit to eliminate.
-   * @param spokeToCover The spoke for which the deficit is eliminated.
+   * @param spoke The spoke for which the deficit is eliminated.
    * @return The amount of shares removed.
    */
   function eliminateDeficit(
     uint256 assetId,
     uint256 amount,
-    address spokeToCover
+    address spoke
   ) external returns (uint256);
 
   /**
