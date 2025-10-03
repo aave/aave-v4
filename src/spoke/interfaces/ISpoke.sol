@@ -172,7 +172,8 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   error ReserveFrozen();
   error HealthFactorBelowThreshold();
   error CollateralCannotBeLiquidated();
-  error SpecifiedCurrencyNotBorrowedByUser();
+  error ReserveNotSupplied();
+  error ReserveNotBorrowed();
   error Unauthorized();
   error ConfigKeyUninitialized();
   error InactivePositionManager();

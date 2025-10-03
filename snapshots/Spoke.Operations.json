@@ -1,8 +1,8 @@
 {
   "borrow: first": "248565",
   "borrow: second action, same reserve": "212037",
-  "liquidationCall: full": "336288",
-  "liquidationCall: partial": "356750",
+  "liquidationCall: full": "336770",
+  "liquidationCall: partial": "357232",
   "permitReserve + repay (multicall)": "272360",
   "permitReserve + supply (multicall)": "145172",
   "permitReserve + supply + enable collateral (multicall)": "179216",
