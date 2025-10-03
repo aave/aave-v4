@@ -134,7 +134,7 @@ interface IHub is IHubBase, IAccessManaged {
   error AssetNotListed();
 
   /// @notice Thrown when the add cap is exceeded.
-  /// @param addCap The add cap which has been exceeded.
+  /// @param addCap The current `addCap` of the asset.
   error AddCapExceeded(uint256 addCap);
 
   /// @notice Thrown when the added amount is exceeded.
@@ -150,7 +150,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InsufficientLiquidity(uint256 liquidity);
 
   /// @notice Thrown when the draw cap is exceeded.
-  /// @param drawCap The draw cap.
+  /// @param drawCap The current `drawCap` of the asset.
   error DrawCapExceeded(uint256 drawCap);
 
   /// @notice Thrown when a surplus amount is restored.
@@ -194,7 +194,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Thrown when the asset decimals exceed the maximum allowed decimals.
   error InvalidAssetDecimals();
 
-  /// @notice Thrown if the interest rate strategy params or data are invalid when updating an asset configuration.
+  /// @notice Thrown if the interest rate strategy or data are invalid when updating an asset configuration.
   /// @dev The `irData` must be empty if the interest rate strategy is not updated.
   error InvalidInterestRateStrategy();
 
