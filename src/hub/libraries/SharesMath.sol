@@ -15,10 +15,6 @@ library SharesMath {
   uint256 internal constant VIRTUAL_SHARES = 1e6;
 
   /// @notice Converts an amount of assets to the equivalent amount of shares, rounding down.
-  /// @param assets The amount of assets to be converted.
-  /// @param totalAssets The total amount of assets.
-  /// @param totalShares The total amount of shares.
-  /// @return The resulting amount of shares.
   function toSharesDown(
     uint256 assets,
     uint256 totalAssets,
@@ -28,10 +24,6 @@ library SharesMath {
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of assets, rounding down.
-  /// @param shares The amount of shares to be converted.
-  /// @param totalAssets The total amount of assets.
-  /// @param totalShares The total amount of shares.
-  /// @return The resulting amount of assets.
   function toAssetsDown(
     uint256 shares,
     uint256 totalAssets,
@@ -41,10 +33,6 @@ library SharesMath {
   }
 
   /// @notice Converts an amount of assets to the equivalent amount of shares, rounding up.
-  /// @param assets The amount of assets to be converted.
-  /// @param totalAssets The total amount of assets.
-  /// @param totalShares The total amount of shares.
-  /// @return The resulting amount of shares.
   function toSharesUp(
     uint256 assets,
     uint256 totalAssets,
@@ -54,10 +42,6 @@ library SharesMath {
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of assets, rounding up.
-  /// @param shares The amount of shares to be converted.
-  /// @param totalAssets The total amount of assets.
-  /// @param totalShares The total amount of shares.
-  /// @return The resulting amount of assets.
   function toAssetsUp(
     uint256 shares,
     uint256 totalAssets,
