@@ -243,6 +243,12 @@ interface IHub is IHubBase, IAccessManaged {
   function MAX_ALLOWED_UNDERLYING_DECIMALS() external view returns (uint8);
 
   /**
+   * @notice Returns the minimum allowed number of decimals for the underlying asset.
+   * @return The minimum number of decimals (inclusive).
+   */
+  function MIN_ALLOWED_UNDERLYING_DECIMALS() external view returns (uint8);
+
+  /**
    * @notice Returns the maximum value for any spoke cap (add or draw).
    * @dev The value is not inclusive; using the maximum value indicates no cap.
    * @return The maximum cap value, expressed in asset units.

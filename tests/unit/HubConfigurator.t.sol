@@ -123,7 +123,11 @@ contract HubConfiguratorTest is HubBase {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
 
-    decimals = bound(decimals, 0, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
+    decimals = bound(
+      decimals,
+      Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
+      Constants.MAX_ALLOWED_UNDERLYING_DECIMALS
+    ).toUint8();
     optimalUsageRatio = bound(optimalUsageRatio, MIN_OPTIMAL_RATIO, MAX_OPTIMAL_RATIO).toUint16();
 
     baseVariableBorrowRate = bound(baseVariableBorrowRate, 0, MAX_BORROW_RATE / 3).toUint32();

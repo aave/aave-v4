@@ -116,6 +116,30 @@ contract HubConfigTest is HubBase {
     );
   }
 
+  function test_addAsset_fuzz_revertsWith_InvalidAssetDecimals_tooLow(
+    address underlying,
+    uint8 decimals,
+    address feeReceiver,
+    address interestRateStrategy
+  ) public {
+    assumeUnusedAddress(underlying);
+    assumeNotZeroAddress(feeReceiver);
+    assumeNotZeroAddress(interestRateStrategy);
+
+    decimals = bound(decimals, 0, Constants.MIN_ALLOWED_UNDERLYING_DECIMALS - 1).toUint8();
+
+    vm.expectRevert(IHub.InvalidAssetDecimals.selector, address(hub1));
+    Utils.addAsset(
+      hub1,
+      ADMIN,
+      underlying,
+      decimals,
+      feeReceiver,
+      interestRateStrategy,
+      encodedIrData
+    );
+  }
+
   function test_addAsset_fuzz_revertsWith_InvalidAddress_underlying(
     uint8 decimals,
     address feeReceiver,
@@ -232,7 +256,11 @@ contract HubConfigTest is HubBase {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
 
-    decimals = bound(decimals, 0, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
+    decimals = bound(
+      decimals,
+      Constants.MAX_ALLOWED_UNDERLYING_DECIMALS,
+      Constants.MAX_ALLOWED_UNDERLYING_DECIMALS
+    ).toUint8();
 
     uint256 expectedAssetId = hub1.getAssetCount();
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
