@@ -190,7 +190,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Thrown when the asset decimals exceed the maximum allowed decimals.
   error InvalidAssetDecimals();
 
-  /// @notice Thrown if the interest rate strategy params are invalid when updating an asset configuration.
+  /// @notice Thrown if the interest rate strategy params or data are invalid when updating an asset configuration.
   /// @dev The `irData` must be empty if the interest rate strategy is not updated.
   error InvalidInterestRateStrategy();
 
