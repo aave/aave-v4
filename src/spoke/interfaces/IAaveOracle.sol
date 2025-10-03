@@ -25,6 +25,9 @@ interface IAaveOracle is IPriceOracle {
   /// @param reserveId The identifier of the reserve.
   error InvalidPrice(uint256 reserveId);
 
+  /// @dev Thrown when the given address is invalid.
+  error InvalidAddress();
+
   /// @notice Sets the price feed source of a reserve.
   /// @dev Must be called by the spoke.
   /// @dev The source must implement the AggregatorV3Interface.
