@@ -220,7 +220,7 @@ abstract contract Base is Test {
     uint256 premiumOffset;
     uint256 realizedPremium;
     uint256 premium;
-    uint40 lastUpdateTimestamp;
+    uint32 lastUpdateTimestamp;
     uint256 liquidity;
     uint256 drawnIndex;
     uint256 drawnRate;
@@ -1847,7 +1847,7 @@ abstract contract Base is Test {
   function _calculateExpectedDrawnIndex(
     uint256 initialDrawnIndex,
     uint256 borrowRate,
-    uint40 startTime
+    uint32 startTime
   ) internal view returns (uint256) {
     return initialDrawnIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
   }
@@ -1857,7 +1857,7 @@ abstract contract Base is Test {
     uint256 initialDrawnShares,
     uint256 initialDrawnIndex,
     uint256 borrowRate,
-    uint40 startTime
+    uint32 startTime
   ) internal view returns (uint256 newDrawnIndex, uint256 newDrawnDebt) {
     newDrawnIndex = _calculateExpectedDrawnIndex(initialDrawnIndex, borrowRate, startTime);
     newDrawnDebt = initialDrawnShares.rayMulUp(newDrawnIndex);
@@ -1867,7 +1867,7 @@ abstract contract Base is Test {
   function _calculateExpectedDrawnDebt(
     uint256 initialDebt,
     uint256 borrowRate,
-    uint40 startTime
+    uint32 startTime
   ) internal view returns (uint256) {
     return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(initialDebt);
   }
@@ -2350,7 +2350,7 @@ abstract contract Base is Test {
         premiumOffset: assetData.premiumOffset,
         realizedPremium: assetData.realizedPremium,
         premium: premium,
-        lastUpdateTimestamp: assetData.lastUpdateTimestamp.toUint40(),
+        lastUpdateTimestamp: assetData.lastUpdateTimestamp.toUint32(),
         drawnIndex: assetData.drawnIndex,
         drawnRate: assetData.drawnRate
       });

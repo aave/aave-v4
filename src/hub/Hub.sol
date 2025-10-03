@@ -82,7 +82,7 @@ contract Hub is IHub, AccessManaged {
       drawnIndex: drawnIndex.toUint128(),
       realizedPremium: 0,
       underlying: underlying,
-      lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
+      lastUpdateTimestamp: lastUpdateTimestamp.toUint32(),
       decimals: decimals,
       drawnRate: drawnRate.toUint96(),
       irStrategy: irStrategy,
@@ -346,14 +346,14 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function payFee(uint256 assetId, uint256 shares) external {
+  function payFeeShares(uint256 assetId, uint256 shares) external {
     SpokeData storage sender = _spokes[assetId][msg.sender];
     address feeReceiver = _assets[assetId].feeReceiver;
     Asset storage asset = _assets[assetId];
     SpokeData storage receiver = _spokes[assetId][feeReceiver];
 
     asset.accrue(assetId, receiver);
-    _validatePayFee(sender, shares);
+    _validatePayFeeShares(sender, shares);
     _transferShares(sender, receiver, shares);
     asset.updateDrawnRate(assetId);
 
@@ -452,8 +452,8 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     address spoke
   ) external view returns (SpokeConfig memory) {
-    SpokeData storage spoke = _spokes[assetId][spoke];
-    return SpokeConfig(spoke.active, spoke.addCap, spoke.drawCap);
+    SpokeData storage spokeData = _spokes[assetId][spoke];
+    return SpokeConfig(spokeData.active, spokeData.addCap, spokeData.drawCap);
   }
 
   /// @inheritdoc IHubBase
@@ -778,7 +778,7 @@ contract Hub is IHub, AccessManaged {
     require(amount > 0, InvalidAmount());
   }
 
-  function _validatePayFee(SpokeData storage senderSpoke, uint256 feeShares) internal view {
+  function _validatePayFeeShares(SpokeData storage senderSpoke, uint256 feeShares) internal view {
     require(senderSpoke.active, SpokeNotActive());
     require(feeShares > 0, InvalidShares());
   }

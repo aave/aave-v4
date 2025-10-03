@@ -54,16 +54,16 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
   /// Second accrual after an action - which should update the user rp
   function test_accrueInterest_fuzz_RPBorrowAndskipTime_twoActions(
     TestAmounts memory amounts,
-    uint40 skipTime
+    uint32 skipTime
   ) public {
     amounts = _bound(amounts);
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 2).toUint40();
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 2).toUint32();
 
     // Ensure bob does not draw more than half his normalized supply value
     amounts = _ensureSufficientCollateral(spoke2, amounts);
     TestAmounts memory originalAmounts = _copyAmounts(amounts); // deep copy original amounts
 
-    uint40 startTime = vm.getBlockTimestamp().toUint40();
+    uint32 startTime = vm.getBlockTimestamp().toUint32();
 
     // Bob supply dai on spoke 2
     if (amounts.daiSupplyAmount > 0) {
@@ -531,8 +531,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       indices.wbtcIndex = hub1.getAssetDrawnIndex(wbtcAssetId);
 
       // Store timestamp before next skip time
-      startTime = vm.getBlockTimestamp().toUint40();
-      skipTime = randomizer(0, MAX_SKIP_TIME / 2).toUint40();
+      startTime = vm.getBlockTimestamp().toUint32();
+      skipTime = randomizer(0, MAX_SKIP_TIME / 2).toUint32();
       skip(skipTime);
 
       // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
