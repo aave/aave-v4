@@ -284,7 +284,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /**
    * @notice Enables a user to grant or revoke approval for a position manager using an EIP712-typed intent.
-   * @dev Uses keyed-nonces where for each key's namespace nonce are consumed sequentially.
+   * @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
    * @param positionManager The address of the position manager.
    * @param user The address of the user on whose behalf position manager can act.
    * @param approve True to approve the position manager, false to revoke approval.
