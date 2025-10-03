@@ -66,6 +66,9 @@ contract HubTransferSharesTest is HubBase {
     assertEq(suppliedShares, hub1.convertToAddedAssets(daiAssetId, supplyAmount));
     assertEq(suppliedShares, assetSuppliedShares);
 
+    vm.expectEmit(address(hub1));
+    emit IHubBase.TransferShares(daiAssetId, address(spoke1), address(spoke2), moveAmount);
+
     // transfer supplied shares from spoke1 to spoke2
     vm.prank(address(spoke1));
     hub1.transferShares(daiAssetId, moveAmount, address(spoke2));

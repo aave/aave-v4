@@ -969,7 +969,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 baseRate = hub1.getAssetDrawnRate(wbtcAssetId);
     uint256 drawnDebt = wbtcInfo.borrowAmount;
     (uint256 actualDrawnDebt, uint256 actualPremium) = spoke3.getUserDebt(wbtcInfo.reserveId, bob);
-    uint40 startTime = vm.getBlockTimestamp().toUint40();
+    uint32 startTime = vm.getBlockTimestamp().toUint32();
 
     assertEq(drawnDebt, actualDrawnDebt, 'user drawn debt');
     assertEq(actualPremium, 0, 'user premium debt');
@@ -1119,7 +1119,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // See if drawn debt of wbtc changes appropriately
     debtChecks.drawnDebt = MathUtils
-      .calculateLinearInterest(baseRateWbtc, startTime.toUint40())
+      .calculateLinearInterest(baseRateWbtc, startTime.toUint32())
       .rayMulUp(wbtcInfo.borrowAmount);
     (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wbtcInfo.reserveId,
@@ -1172,7 +1172,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // See if drawn debt of weth changes appropriately
     debtChecks.drawnDebt = MathUtils
-      .calculateLinearInterest(baseRateWeth, startTime.toUint40())
+      .calculateLinearInterest(baseRateWeth, startTime.toUint32())
       .rayMulUp(wethInfo.borrowAmount);
     (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wethInfo.reserveId,

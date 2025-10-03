@@ -531,7 +531,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     });
 
     state.daiBob.userPosBefore = spoke1.getUserPosition(state.daiReserveId, bob);
-    uint40 lastTimestamp = vm.getBlockTimestamp().toUint40();
+    uint32 lastTimestamp = vm.getBlockTimestamp().toUint32();
     (uint256 drawnDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
 
     skip(skipTime);
@@ -585,7 +585,8 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     uint256 debtReserveId = _usdxReserveId(spoke1);
     uint256 debtBorrowAmount = 500e6;
 
-    assertNotEq(_getCollateralFactor(spoke1, coll1ReserveId), 0);
+    updateCollateralFactor(spoke1, coll1ReserveId, 0);
+    assertEq(_getCollateralFactor(spoke1, coll1ReserveId), 0); // initially
     assertNotEq(_getCollateralFactor(spoke1, coll2ReserveId), 0);
 
     uint256 coll1InBaseCurrency = _getValueInBaseCurrency(spoke1, coll1ReserveId, coll1Amount);
@@ -597,16 +598,6 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     Utils.borrow(spoke1, debtReserveId, alice, debtBorrowAmount, alice);
 
     ISpoke.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
-    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.userRiskPremium);
-    assertEq(
-      coll1InBaseCurrency + coll2InBaseCurrency,
-      userAccountData.totalCollateralInBaseCurrency
-    );
-
-    uint16 configKey = spoke1.getUserPosition(coll1ReserveId, alice).configKey;
-    updateCollateralFactorAtKey(spoke1, coll1ReserveId, configKey, 0);
-
-    userAccountData = spoke1.getUserAccountData(alice);
     assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.userRiskPremium);
     assertEq(coll2InBaseCurrency, userAccountData.totalCollateralInBaseCurrency); // coll1 is not included
   }

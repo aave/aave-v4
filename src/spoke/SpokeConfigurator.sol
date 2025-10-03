@@ -80,7 +80,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     address priceSource,
     ISpoke.ReserveConfig calldata config,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
-  ) external onlyOwner returns (uint256 reserveId) {
+  ) external onlyOwner returns (uint256) {
     return ISpoke(spoke).addReserve(hub, assetId, priceSource, config, dynamicConfig);
   }
 
@@ -151,16 +151,16 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function addLiquidationBonus(
+  function addMaxLiquidationBonus(
     address spoke,
     uint256 reserveId,
-    uint256 liquidationBonus
+    uint256 maxLiquidationBonus
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId
     );
-    dynamicReserveConfig.maxLiquidationBonus = liquidationBonus.toUint32();
+    dynamicReserveConfig.maxLiquidationBonus = maxLiquidationBonus.toUint32();
     targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
@@ -215,7 +215,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
-  ) external onlyOwner returns (uint16 configKey) {
+  ) external onlyOwner returns (uint16) {
     return ISpoke(spoke).addDynamicReserveConfig(reserveId, dynamicConfig);
   }
 

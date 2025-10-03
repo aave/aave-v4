@@ -41,9 +41,23 @@ contract UnitPriceFeed is AggregatorV3Interface {
 
   /// @inheritdoc AggregatorV3Interface
   function getRoundData(
-    uint80
-  ) external pure override returns (uint80, int256, uint256, uint256, uint80) {
-    revert OperationNotSupported();
+    uint80 _roundId
+  )
+    external
+    view
+    returns (
+      uint80 roundId,
+      int256 answer,
+      uint256 startedAt,
+      uint256 updatedAt,
+      uint80 answeredInRound
+    )
+  {
+    roundId = _roundId;
+    answer = _units;
+    startedAt = _roundId;
+    updatedAt = _roundId;
+    answeredInRound = _roundId;
   }
 
   /// @inheritdoc AggregatorV3Interface

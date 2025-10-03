@@ -25,18 +25,18 @@ interface IHub is IHubBase, IAccessManaged {
     uint128 drawnShares;
     //
     uint128 realizedPremium;
-    uint16 liquidityFee;
-    uint40 lastUpdateTimestamp;
-    uint8 decimals;
+    uint96 drawnRate;
+    uint32 lastUpdateTimestamp;
     //
     address underlying;
     //
-    uint96 drawnRate;
     address irStrategy;
     //
     address reinvestmentController;
     //
     address feeReceiver;
+    uint16 liquidityFee;
+    uint8 decimals;
   }
 
   struct AssetConfig {
@@ -88,16 +88,18 @@ interface IHub is IHubBase, IAccessManaged {
   /**
    * @notice Emitted when an amount of liquidity is swept/reinvested.
    * @param assetId The identifier of the asset.
+   * @param reinvestmentController The active asset controller.
    * @param amount The amount swept.
    */
-  event Sweep(uint256 indexed assetId, uint256 amount);
+  event Sweep(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
 
   /**
    * @notice Emitted when an amount of liquidity is reclaimed (from swept/reinvested liquidity).
    * @param assetId The identifier of the asset.
+   * @param reinvestmentController The active asset controller.
    * @param amount The amount reclaimed.
    */
-  event Reclaim(uint256 indexed assetId, uint256 amount);
+  event Reclaim(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
 
   /**
    * @notice Emitted when deficit is eliminated.

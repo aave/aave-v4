@@ -36,5 +36,5 @@ interface IBasicInterestRateStrategy {
     uint256 drawn,
     uint256 deficit,
     uint256 swept
-  ) external view returns (uint256 interestRate);
+  ) external view returns (uint256);
 }
