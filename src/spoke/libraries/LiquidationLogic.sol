@@ -2,8 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -336,7 +334,6 @@ library LiquidationLogic {
         debtAssetUnit: params.debtAssetUnit
       })
     );
-    console.log('LL debtToTarget $%6e', debtToTarget);
     if (debtToTarget < maxDebtToLiquidate) {
       maxDebtToLiquidate = debtToTarget;
     }
@@ -352,8 +349,6 @@ library LiquidationLogic {
       // target health factor is ignored to prevent leaving dust
       maxDebtToLiquidate = params.debtReserveBalance;
     }
-
-    console.log('LL maxDebtToLiquidate $%6e', maxDebtToLiquidate);
 
     return maxDebtToLiquidate;
   }
