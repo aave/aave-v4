@@ -68,7 +68,7 @@ contract SpokeRepayTest is SpokeBase {
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub1.convertToDrawnShares(daiAssetId, baseRestored),
+      hub1.previewRestoreByAssets(daiAssetId, baseRestored),
       expectedPremiumDelta
     );
     vm.prank(bob);
@@ -267,7 +267,7 @@ contract SpokeRepayTest is SpokeBase {
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub1.convertToDrawnShares(daiAssetId, baseRestored),
+      hub1.previewRestoreByAssets(daiAssetId, baseRestored),
       expectedPremiumDelta
     );
     vm.prank(bob);
@@ -453,7 +453,7 @@ contract SpokeRepayTest is SpokeBase {
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub1.convertToDrawnShares(daiAssetId, bobDaiBefore.drawnDebt),
+      hub1.previewRestoreByAssets(daiAssetId, bobDaiBefore.drawnDebt),
       expectedPremiumDelta
     );
 
@@ -557,7 +557,7 @@ contract SpokeRepayTest is SpokeBase {
         _daiReserveId(spoke1),
         bob,
         bob,
-        hub1.convertToDrawnShares(daiAssetId, baseRestored),
+        hub1.previewRestoreByAssets(daiAssetId, baseRestored),
         expectedPremiumDelta
       );
     }
@@ -648,7 +648,7 @@ contract SpokeRepayTest is SpokeBase {
     assertGe(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
     // Calculate minimum repay amount
-    if (hub1.convertToDrawnShares(daiAssetId, daiRepayAmount) == 0) {
+    if (hub1.previewRestoreByAssets(daiAssetId, daiRepayAmount) == 0) {
       daiRepayAmount = hub1.convertToDrawnAssets(daiAssetId, 1);
     }
 
@@ -672,7 +672,7 @@ contract SpokeRepayTest is SpokeBase {
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub1.convertToDrawnShares(daiAssetId, baseRestored),
+      hub1.previewRestoreByAssets(daiAssetId, baseRestored),
       expectedPremiumDelta
     );
     vm.prank(bob);
@@ -793,7 +793,7 @@ contract SpokeRepayTest is SpokeBase {
           _daiReserveId(spoke1),
           bob,
           bob,
-          hub1.convertToDrawnShares(daiAssetId, baseRestored),
+          hub1.previewRestoreByAssets(daiAssetId, baseRestored),
           expectedPremiumDelta
         );
       }
@@ -1017,7 +1017,7 @@ contract SpokeRepayTest is SpokeBase {
         _daiReserveId(spoke1),
         bob,
         bob,
-        hub1.convertToDrawnShares(daiAssetId, baseRestored),
+        hub1.previewRestoreByAssets(daiAssetId, baseRestored),
         expectedPremiumDelta
       );
     }
@@ -1129,7 +1129,7 @@ contract SpokeRepayTest is SpokeBase {
           _daiReserveId(spoke1),
           bob,
           bob,
-          hub1.convertToDrawnShares(daiAssetId, baseRestored),
+          hub1.previewRestoreByAssets(daiAssetId, baseRestored),
           expectedPremiumDelta
         );
       }
@@ -1438,7 +1438,7 @@ contract SpokeRepayTest is SpokeBase {
     // Alice supply dai such that usage ratio after bob borrows is ~45%, borrow rate ~7.5%
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
 
-    uint256 expectedDrawnShares = hub1.convertToDrawnShares(daiAssetId, borrowAmount);
+    uint256 expectedDrawnShares = hub1.previewRestoreByAssets(daiAssetId, borrowAmount);
 
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
@@ -1484,7 +1484,7 @@ contract SpokeRepayTest is SpokeBase {
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub1.convertToDrawnShares(daiAssetId, baseRestored),
+      hub1.previewRestoreByAssets(daiAssetId, baseRestored),
       expectedPremiumDelta
     );
     vm.prank(bob);

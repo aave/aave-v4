@@ -269,7 +269,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   /**
    * @notice Converts the specified amount of drawn assets to shares amount.
-   * @dev Rounds down to the nearest shares amount.
+   * @dev Rounds up to the nearest shares amount.
    * @param assetId The identifier of the asset.
    * @param assets The amount of drawn assets to convert to shares amount.
    * @return The amount of drawn shares converted from assets amount.

@@ -612,9 +612,9 @@ contract SpokeBase is Base {
   ) internal view returns (ISpoke.UserPosition memory userPos) {
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
-    userPos.drawnShares = hub1.convertToDrawnShares(assetId, debtAmount).toUint128();
+    userPos.drawnShares = hub1.previewRestoreByAssets(assetId, debtAmount).toUint128();
     userPos.premiumShares = hub1
-      .convertToDrawnShares(assetId, debtAmount)
+      .previewRestoreByAssets(assetId, debtAmount)
       .percentMulUp(userAccountData.userRiskPremium)
       .toUint128();
     userPos.premiumOffset = hub1.convertToDrawnAssets(assetId, userPos.premiumShares).toUint128();

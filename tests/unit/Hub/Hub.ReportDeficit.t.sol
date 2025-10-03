@@ -132,7 +132,7 @@ contract HubReportDeficitTest is HubBase {
     emit IHub.ReportDeficit(
       usdxAssetId,
       address(spoke1),
-      hub1.convertToDrawnShares(usdxAssetId, baseAmount),
+      hub1.previewRestoreByAssets(usdxAssetId, baseAmount),
       premiumDelta,
       baseAmount,
       premiumAmount
@@ -158,7 +158,7 @@ contract HubReportDeficitTest is HubBase {
     );
     assertEq(
       drawnSharesAfter,
-      drawnSharesBefore - hub1.convertToDrawnShares(usdxAssetId, baseAmount),
+      drawnSharesBefore - hub1.previewRestoreByAssets(usdxAssetId, baseAmount),
       'base drawn shares'
     );
     assertEq(params.premiumAfter, params.premium - premiumAmount, 'premium debt');

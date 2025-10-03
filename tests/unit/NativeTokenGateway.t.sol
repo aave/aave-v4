@@ -354,7 +354,7 @@ contract NativeTokenGatewayTest is Base {
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
-      hub1.convertToDrawnShares(wethAssetId, borrowAmount)
+      hub1.previewRestoreByAssets(wethAssetId, borrowAmount)
     );
     vm.prank(bob);
     nativeTokenGateway.borrowNative(_wethReserveId(spoke1), borrowAmount, bob);
@@ -394,7 +394,7 @@ contract NativeTokenGatewayTest is Base {
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
-      hub1.convertToDrawnShares(wethAssetId, borrowAmount)
+      hub1.previewRestoreByAssets(wethAssetId, borrowAmount)
     );
     vm.prank(bob);
     nativeTokenGateway.borrowNative(_wethReserveId(spoke1), borrowAmount, alice);
@@ -477,7 +477,7 @@ contract NativeTokenGatewayTest is Base {
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
-      hub1.convertToDrawnShares(wethAssetId, baseRestored),
+      hub1.previewRestoreByAssets(wethAssetId, baseRestored),
       expectedPremiumDelta
     );
     vm.prank(bob);
@@ -531,7 +531,7 @@ contract NativeTokenGatewayTest is Base {
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
-      hub1.convertToDrawnShares(wethAssetId, baseRestored),
+      hub1.previewRestoreByAssets(wethAssetId, baseRestored),
       expectedPremiumDelta
     );
     vm.prank(bob);
@@ -593,7 +593,7 @@ contract NativeTokenGatewayTest is Base {
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
-      hub1.convertToDrawnShares(wethAssetId, baseRestored),
+      hub1.previewRestoreByAssets(wethAssetId, baseRestored),
       expectedPremiumDelta
     );
     vm.prank(bob);

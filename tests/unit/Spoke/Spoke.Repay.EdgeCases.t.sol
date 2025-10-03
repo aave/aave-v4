@@ -236,7 +236,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     uint256 repayAmount = 1;
     // Ensure that the repay amount is less than 1 share
-    assertEq(hub1.convertToDrawnShares(daiAssetId, repayAmount), 0, 'Shares nonzero');
+    assertEq(hub1.previewRestoreByAssets(daiAssetId, repayAmount), 0, 'Shares nonzero');
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
       bobDaiDebtBefore.drawnDebt,
@@ -322,7 +322,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     uint256 repayAmount = 1;
 
     // Ensure that the repay amount is less than 1 share
-    assertEq(hub1.convertToDrawnShares(daiAssetId, repayAmount), 0, 'Shares nonzero');
+    assertEq(hub1.previewRestoreByAssets(daiAssetId, repayAmount), 0, 'Shares nonzero');
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
       bobDaiBefore.drawnDebt,
@@ -461,7 +461,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub1.convertToDrawnShares(daiAssetId, baseRestored),
+      hub1.previewRestoreByAssets(daiAssetId, baseRestored),
       expectedPremiumDelta
     );
     vm.prank(bob);
@@ -563,7 +563,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub1.convertToDrawnShares(daiAssetId, daiRepayAmount),
+      hub1.previewRestoreByAssets(daiAssetId, daiRepayAmount),
       expectedPremiumDelta
     );
     vm.prank(bob);

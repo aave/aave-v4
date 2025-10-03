@@ -89,6 +89,10 @@ contract HubDrawTest is HubBase {
     assertEq(underlying.balanceOf(bob), MAX_SUPPLY_AMOUNT - amount, 'bob asset final balance');
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
+    assertEq(
+      hub1.convertToDrawnShares(assetId, amount),
+      hub1.previewRestoreByShares(assetId, amount)
+    );
   }
 
   function test_draw_fuzz_IncreasedBorrowRate(uint256 assetId, uint256 amount) public {
