@@ -14,6 +14,7 @@ contract HubAddTest is HubBase {
     super.setUp();
 
     /// @dev add a zero decimal asset to test add cap rounding
+    IERC20 zeroDecimalsErc20 = new MockERC20Decimals(0);
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
@@ -29,7 +30,7 @@ contract HubAddTest is HubBase {
     );
     vm.startPrank(ADMIN);
     zeroDecimalAssetId = hub1.addAsset(
-      address(tokenList.dai),
+      address(zeroDecimalsErc20),
       0,
       address(treasurySpoke),
       address(irStrategy),
@@ -247,6 +248,11 @@ contract HubAddTest is HubBase {
 
     uint56 newAddCap = (spokeAddedAssetsRoundedUp + addedAmount).toUint56();
     _updateAddCap(zeroDecimalAssetId, address(spoke1), newAddCap);
+
+    address zeroDecimalsUnderlying = hub1.getAsset(zeroDecimalAssetId).underlying;
+    deal(zeroDecimalsUnderlying, alice, addedAmount);
+    vm.prank(alice);
+    IERC20(zeroDecimalsUnderlying).approve(address(hub1), addedAmount);
 
     Utils.add({
       hub: hub1,

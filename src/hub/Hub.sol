@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -57,6 +58,10 @@ contract Hub is IHub, AccessManaged {
       underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
       InvalidAddress()
     );
+    (bool success, uint8 fetchedDecimals) = _fetchDecimals(underlying);
+    if (success) {
+      require(fetchedDecimals == decimals, InvalidAssetDecimals());
+    }
     require(decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS, InvalidAssetDecimals());
 
     uint256 assetId = _assetCount++;
@@ -810,6 +815,13 @@ contract Hub is IHub, AccessManaged {
     // sufficient check to disallow when controller unset
     require(caller == asset.reinvestmentController, OnlyReinvestmentController());
     require(amount > 0 && amount <= asset.swept, InvalidAmount());
+  }
+
+  function _fetchDecimals(address underlying) internal view returns (bool, uint8) {
+    (bool ok, bytes memory ret) = address(underlying).staticcall(
+      abi.encodeCall(IERC20Metadata.decimals, ())
+    );
+    return (ok, abi.decode(ret, (uint8)));
   }
 
   function _addSpoke(uint256 assetId, address spoke) internal {
