@@ -745,8 +745,11 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
   function _calculateAndRefreshUserAccountData(
     address user
-  ) internal returns (UserAccountData memory userAccountData) {
-    userAccountData = _calculateAndPotentiallyRefreshUserAccountData(user, true);
+  ) internal returns (UserAccountData memory) {
+    UserAccountData memory userAccountData = _calculateAndPotentiallyRefreshUserAccountData(
+      user,
+      true
+    );
     emit RefreshAllUserDynamicConfig(user);
     return userAccountData;
   }
