@@ -1,6 +1,6 @@
 [profile.default]
 src = 'src'
-test = 'tests'
+test = 'tests/unit/misc'
 script = 'scripts'
 out = 'out'
 libs = ['lib']
