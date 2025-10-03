@@ -398,7 +398,7 @@ library LiquidationLogic {
     );
 
     if (sharesToLiquidate > sharesToLiquidator) {
-      hub.payFee(assetId, sharesToLiquidate - sharesToLiquidator);
+      hub.payFeeShares(assetId, sharesToLiquidate - sharesToLiquidator);
     }
 
     return position.suppliedShares == 0;

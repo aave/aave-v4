@@ -8,14 +8,14 @@ contract HubPayFeeTest is HubBase {
   function test_payFee_revertsWith_InvalidShares() public {
     vm.expectRevert(IHub.InvalidShares.selector, address(hub1));
     vm.prank(address(spoke1));
-    hub1.payFee(daiAssetId, 0);
+    hub1.payFeeShares(daiAssetId, 0);
   }
 
   function test_payFee_revertsWith_SpokeNotActive() public {
     updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
     vm.prank(address(spoke1));
-    hub1.payFee(daiAssetId, 1);
+    hub1.payFeeShares(daiAssetId, 1);
   }
 
   function test_payFee_revertsWith_AddedSharesExceeded() public {
@@ -36,7 +36,7 @@ contract HubPayFeeTest is HubBase {
       address(hub1)
     );
     vm.prank(address(spoke1));
-    hub1.payFee(daiAssetId, feeShares + 1);
+    hub1.payFeeShares(daiAssetId, feeShares + 1);
   }
 
   function test_payFee_revertsWith_AddedSharesExceeded_with_interest() public {
@@ -63,7 +63,7 @@ contract HubPayFeeTest is HubBase {
       address(hub1)
     );
     vm.prank(address(spoke1));
-    hub1.payFee(daiAssetId, feeShares + 1);
+    hub1.payFeeShares(daiAssetId, feeShares + 1);
   }
 
   function test_payFee_fuzz(uint256 addAmount, uint256 feeShares) public {
@@ -110,7 +110,7 @@ contract HubPayFeeTest is HubBase {
     );
 
     vm.prank(address(spoke1));
-    hub1.payFee(daiAssetId, feeShares);
+    hub1.payFeeShares(daiAssetId, feeShares);
 
     assertBorrowRateSynced(hub1, daiAssetId, 'payFee');
     uint256 spokeSharesAfter = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));

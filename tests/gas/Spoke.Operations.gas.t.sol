@@ -98,6 +98,12 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
     spoke.withdraw(reserveId.usdx, 1e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'withdraw: 2 borrows, partial');
+    spoke.supply(reserveId.weth, 1000e18, alice);
+
+    skip(100);
+
+    spoke.withdraw(reserveId.weth, UINT256_MAX, alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'withdraw: non collateral');
     vm.stopPrank();
   }
 
@@ -296,13 +302,13 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
     uint192 nonceKey = _randomNonceKey();
     vm.prank(user);
-    spoke1.useNonce(nonceKey);
+    spoke.useNonce(nonceKey);
 
     EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
       positionManager: positionManager,
       user: user,
       approve: true,
-      nonce: spoke1.nonces(user, nonceKey),
+      nonce: spoke.nonces(user, nonceKey),
       deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
     });
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke1, params));
@@ -319,8 +325,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: enable');
 
     params.approve = false;
-    params.nonce = spoke1.nonces(user, nonceKey);
-    (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke1, params));
+    params.nonce = spoke.nonces(user, nonceKey);
+    (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke, params));
     signature = abi.encodePacked(r, s, v);
 
     spoke.setUserPositionManagerWithSig(
