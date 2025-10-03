@@ -108,9 +108,6 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_borrow() public {
-    // update draw cap to avoid short circuiting when draw cap is MAX_ALLOWED_SPOKE_CAP
-    updateDrawCap(hub1, daiAssetId, address(spoke1), 2000);
-
     vm.startPrank(bob);
     spoke.supply(reserveId.dai, 1000e18, bob);
     spoke.setUsingAsCollateral(reserveId.dai, true, bob);
