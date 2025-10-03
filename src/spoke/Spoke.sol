@@ -738,10 +738,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   function _calculateAndRefreshUserAccountData(
     address user
-  ) internal returns (UserAccountData memory userAccountData) {
-    userAccountData = _calculateAndPotentiallyRefreshUserAccountData(user, true);
+  ) internal returns (UserAccountData memory) {
+    UserAccountData memory accountData = _calculateAndPotentiallyRefreshUserAccountData(user, true);
     emit RefreshAllUserDynamicConfig(user);
-    return userAccountData;
+    return accountData;
   }
 
   /**
