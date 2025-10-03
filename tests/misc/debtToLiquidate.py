@@ -18,15 +18,13 @@ debtAssetPrice = Int('debtAssetPrice')
 s.add(1 <= debtAssetPrice, debtAssetPrice <= 10**30)
 debtAssetDecimals = Int('debtAssetDecimals')
 s.add(1 <= debtAssetDecimals, debtAssetDecimals <= 18)
-debtAssetUnit = Int('debtAssetUnit')
-s.add(debtAssetUnit == 10**debtAssetDecimals)
+debtAssetUnit = 10**debtAssetDecimals
 
 collateralAssetPrice = Int('collateralAssetPrice')
 s.add(1 <= collateralAssetPrice, collateralAssetPrice <= 10**30)
 collateralAssetDecimals = Int('collateralAssetDecimals')
 s.add(1 <= collateralAssetDecimals, collateralAssetDecimals <= 18)
-collateralAssetUnit = Int('collateralAssetUnit')
-s.add(collateralAssetUnit == 10**collateralAssetDecimals)
+collateralAssetUnit = 10**collateralAssetDecimals
 
 liquidationBonus = Int('liquidationBonus')
 s.add(PERCENTAGE_FACTOR <= liquidationBonus, liquidationBonus < PERCENTAGE_FACTOR * PERCENTAGE_FACTOR)

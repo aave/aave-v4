@@ -52,7 +52,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 liquidationBonus;
     uint256 expectedUserRiskPremium;
     uint256 expectedUserAvgCollateralFactor;
-    bool isLiquidationBonusAffectingUserHf;
+    bool isCollateralAffectingUserHf;
     bool hasDeficit;
   }
 
@@ -611,10 +611,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       debtToLiquidate
     );
 
-    // health factor is decreasing due to liquidation bonus if:
+    // health factor is decreasing due to liquidation bonus / collateral factor if:
     //   (totalCollateralInBaseCurrency - debtToLiquidateInBaseCurrency * LB) * newCF / (totalDebtInBaseCurrency - debtToLiquidateInBaseCurrency) < totalCollateralInBaseCurrency * oldCF / totalDebtInBaseCurrency
     //   this is equivalent to: LB * totalDebtInBaseCurrency * debtToLiquidateInBaseCurrency * newCF > totalCollateralInBaseCurrency * (totalDebtInBaseCurrency * (newCF - oldCF) + debtToLiquidateInBaseCurrency * oldCF)
-    bool isLiquidationBonusAffectingUserHf = (liquidationBonus *
+    bool isCollateralAffectingUserHf = (liquidationBonus *
       userAccountDataBefore.totalDebtInBaseCurrency.wadMulUp(debtToLiquidateInBaseCurrency) *
       expectedUserAvgCollateralFactor).toInt256() >
       PercentageMath.PERCENTAGE_FACTOR.toInt256() *
@@ -629,7 +629,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           ) * userAccountDataBefore.avgCollateralFactor).toInt256());
 
     bool hasDeficit = (userAccountDataBefore.suppliedCollateralsCount == 1) &&
-      (!params.isSolvent || isLiquidationBonusAffectingUserHf) &&
+      (!params.isSolvent || isCollateralAffectingUserHf) &&
       (collateralToLiquidate ==
         params.spoke.getUserSuppliedAssets(params.collateralReserveId, params.user));
 
@@ -642,7 +642,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         liquidationBonus: liquidationBonus,
         expectedUserRiskPremium: expectedUserRiskPremium,
         expectedUserAvgCollateralFactor: expectedUserAvgCollateralFactor,
-        isLiquidationBonusAffectingUserHf: isLiquidationBonusAffectingUserHf,
+        isCollateralAffectingUserHf: isCollateralAffectingUserHf,
         hasDeficit: hasDeficit
       });
   }
@@ -672,7 +672,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   ) internal virtual {
     if (
       accountsInfoAfter.userAccountData.totalDebtInBaseCurrency == 0 ||
-      (params.isSolvent && !liquidationMetadata.isLiquidationBonusAffectingUserHf)
+      (params.isSolvent && !liquidationMetadata.isCollateralAffectingUserHf)
     ) {
       assertGe(
         accountsInfoAfter.userAccountData.healthFactor,
