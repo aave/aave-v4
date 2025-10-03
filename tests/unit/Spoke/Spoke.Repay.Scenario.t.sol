@@ -1007,7 +1007,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         _daiReserveId(spoke1),
         bob,
         bob,
-        hub1.convertToDrawnShares(daiAssetId, baseRestored),
+        hub1.previewRestoreByAssets(daiAssetId, baseRestored),
         expectedPremiumDelta
       );
     }
@@ -1114,7 +1114,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         _daiReserveId(spoke1),
         bob,
         bob,
-        hub1.convertToDrawnShares(daiAssetId, baseRestored),
+        hub1.previewRestoreByAssets(daiAssetId, baseRestored),
         expectedPremiumDelta
       );
     }
@@ -1212,7 +1212,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub1.convertToDrawnShares(daiAssetId, baseRestored),
+      hub1.previewRestoreByAssets(daiAssetId, baseRestored),
       expectedPremiumDelta
     );
 
@@ -1275,7 +1275,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub1.convertToDrawnShares(daiAssetId, baseRestored),
+      hub1.previewRestoreByAssets(daiAssetId, baseRestored),
       expectedPremiumDelta
     );
 
@@ -1347,12 +1347,12 @@ contract SpokeRepayScenarioTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
 
     // Borrow
-    uint256 shares1 = hub1.convertToDrawnShares(reserve.assetId, assets);
+    uint256 shares1 = hub1.previewRestoreByAssets(reserve.assetId, assets);
     vm.startPrank(caller);
     spoke1.borrow(reserveId, assets, caller);
 
     // Repay
-    uint256 shares2 = hub1.convertToDrawnShares(reserve.assetId, assets);
+    uint256 shares2 = hub1.previewRestoreByAssets(reserve.assetId, assets);
     deal(address(underlying), caller, assets);
     underlying.approve(address(hub1), assets);
     spoke1.repay(reserveId, assets, caller);
@@ -1403,14 +1403,14 @@ contract SpokeRepayScenarioTest is SpokeBase {
     Utils.borrow(spoke1, reserveId, caller, callerStartingDebt, caller);
 
     // Repay
-    uint256 shares1 = hub1.convertToDrawnShares(reserve.assetId, assets);
+    uint256 shares1 = hub1.previewRestoreByAssets(reserve.assetId, assets);
     deal(address(underlying), caller, assets);
     vm.startPrank(caller);
     underlying.approve(address(hub1), assets);
     spoke1.repay(reserveId, assets, caller);
 
     // Borrow
-    uint256 shares2 = hub1.convertToDrawnShares(reserve.assetId, assets);
+    uint256 shares2 = hub1.previewRestoreByAssets(reserve.assetId, assets);
     spoke1.borrow(reserveId, assets, caller);
     vm.stopPrank();
 
