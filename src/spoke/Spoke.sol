@@ -228,8 +228,10 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
 
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
-    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
-    _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
+    if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
+      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
+      _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
+    }
 
     emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
   }
@@ -766,6 +768,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
   ) internal returns (UserAccountData memory userAccountData) {
     userAccountData = _calculateAndPotentiallyRefreshUserAccountData(user, true);
     emit RefreshAllUserDynamicConfig(user);
+    return userAccountData;
   }
 
   /**
