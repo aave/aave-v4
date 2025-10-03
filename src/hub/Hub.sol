@@ -499,7 +499,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toDrawnSharesDown(assets);
+    return _assets[assetId].toDrawnSharesUp(assets);
   }
 
   /// @inheritdoc IHub
