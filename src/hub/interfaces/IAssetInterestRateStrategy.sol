@@ -48,6 +48,11 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   }
 
   /**
+   * @notice Thrown when the given address is invalid.
+   */
+  error InvalidAddress();
+
+  /**
    * @notice Thrown when the caller is not the hub.
    */
   error OnlyHub();

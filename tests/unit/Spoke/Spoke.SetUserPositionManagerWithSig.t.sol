@@ -21,13 +21,13 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       address verifyingContract,
       bytes32 salt,
       uint256[] memory extensions
-    ) = IERC5267(address(spoke1)).eip712Domain();
+    ) = IERC5267(address(spoke)).eip712Domain();
 
     assertEq(fields, bytes1(0x0f));
     assertEq(name, 'Spoke');
     assertEq(version, '1');
     assertEq(chainId, block.chainid);
-    assertEq(verifyingContract, address(spoke1));
+    assertEq(verifyingContract, address(spoke));
     assertEq(salt, bytes32(0));
     assertEq(extensions.length, 0);
   }
@@ -42,10 +42,10 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
         keccak256('Spoke'),
         keccak256('1'),
         block.chainid,
-        address(spoke1)
+        address(spoke)
       )
     );
-    assertEq(spoke1.DOMAIN_SEPARATOR(), expectedDomainSeparator);
+    assertEq(spoke.DOMAIN_SEPARATOR(), expectedDomainSeparator);
   }
 
   function test_setUserPositionManager_typeHash() public pure {

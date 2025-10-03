@@ -17,7 +17,6 @@ library WadRayMath {
 
   /**
    * @dev Multiplies two wad, rounding down
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param a Wad
    * @param b Wad
    * @return c = floor(a*b), in wad
@@ -35,7 +34,6 @@ library WadRayMath {
 
   /**
    * @dev Multiplies two wad, rounding up
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param a Wad
    * @param b Wad
    * @return c = ceil(a*b), in wad
@@ -54,7 +52,6 @@ library WadRayMath {
 
   /**
    * @dev Divides two wad, rounding down
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param a Wad
    * @param b Wad
    * @return c = floor(a/b), in wad
@@ -72,7 +69,6 @@ library WadRayMath {
 
   /**
    * @dev Divides two wad, rounding up
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param a Wad
    * @param b Wad
    * @return c = ceil(a/b), in wad
@@ -91,7 +87,6 @@ library WadRayMath {
 
   /**
    * @dev Multiplies two ray, rounding down
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param a Ray
    * @param b Ray
    * @return c = floor(a*b), in ray
@@ -109,7 +104,6 @@ library WadRayMath {
 
   /**
    * @dev Multiplies two ray, rounding up
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param a Ray
    * @param b Ray
    * @return c = ceil(a*b), in ray
@@ -128,7 +122,6 @@ library WadRayMath {
 
   /**
    * @dev Divides two ray, rounding down
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param a Ray
    * @param b Ray
    * @return c = floor(a/b), in ray
@@ -146,7 +139,6 @@ library WadRayMath {
 
   /**
    * @dev Divides two ray, rounding up
-   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
    * @param a Ray
    * @param b Ray
    * @return c = ceil(a/b), in ray
