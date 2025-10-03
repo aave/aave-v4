@@ -1071,7 +1071,23 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function _updateCollateralFactor(
+  function _updateCollateralFactorAndLiquidationBonus(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 newCollateralFactor,
+    uint256 newLiquidationBonus
+  ) internal {
+    ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
+    config.collateralFactor = newCollateralFactor.toUint16();
+    config.maxLiquidationBonus = newLiquidationBonus.toUint32();
+
+    vm.prank(SPOKE_ADMIN);
+    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
+
+    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+  }
+
+  function updateCollateralFactor(
     ISpoke spoke,
     function(ISpoke) pure returns (uint256) reserveIdFn,
     uint256 newCollateralFactor
@@ -1177,7 +1193,7 @@ abstract contract Base is Test {
     return spokeInfo[spoke].usdx.reserveId;
   }
 
-  // assumes spoke has usdx supported
+  // assumes spoke has usdy supported
   function _usdyReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].usdy.reserveId;
   }
