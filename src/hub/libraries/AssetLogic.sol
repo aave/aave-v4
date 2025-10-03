@@ -131,7 +131,7 @@ library AssetLogic {
     if (feeShares > 0) {
       feeReceiver.addedShares += feeShares;
       asset.addedShares += feeShares;
-      emit IHub.AccrueFees(assetId, feeShares);
+      emit IHub.AccrueFees(assetId, feeShares, asset.feeReceiver);
     }
   }
 
