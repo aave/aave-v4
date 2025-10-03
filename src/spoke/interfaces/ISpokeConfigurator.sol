@@ -55,7 +55,7 @@ interface ISpokeConfigurator {
     address priceSource,
     ISpoke.ReserveConfig calldata config,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint256 reserveId);
+  ) external returns (uint256);
 
   /// @notice Updates the paused flag of a reserve.
   /// @param spoke The address of the spoke.
@@ -148,7 +148,7 @@ interface ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint16 configKey);
+  ) external returns (uint16);
 
   /// @notice Updates the dynamic config of a reserve at the specified key.
   /// @param spoke The address of the spoke.

@@ -151,11 +151,11 @@ library PositionStatusMap {
   /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
   /// @param self The position status storing reserves bitmap.
   /// @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
-  /// @return reserveId The previous borrowed reserveId, or `NOT_FOUND` if none is found.
+  /// @return The previous borrowed reserveId, or `NOT_FOUND` if none is found.
   function nextBorrowing(
     ISpoke.PositionStatus storage self,
     uint256 fromReserveId
-  ) internal view returns (uint256 reserveId) {
+  ) internal view returns (uint256) {
     unchecked {
       uint256 bucket = fromReserveId.bucketId();
       uint256 setBitId = self.map[bucket].isolateBorrowingUntil(fromReserveId).fls();
@@ -172,11 +172,11 @@ library PositionStatusMap {
   /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
   /// @param self The position status storing reserves bitmap.
   /// @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
-  /// @return reserveId The previous collateral reserveId, or `NOT_FOUND` if none is found.
+  /// @return The previous collateral reserveId, or `NOT_FOUND` if none is found.
   function nextCollateral(
     ISpoke.PositionStatus storage self,
     uint256 fromReserveId
-  ) internal view returns (uint256 reserveId) {
+  ) internal view returns (uint256) {
     unchecked {
       uint256 bucket = fromReserveId.bucketId();
       uint256 setBitId = self.map[bucket].isolateCollateralUntil(fromReserveId).fls();

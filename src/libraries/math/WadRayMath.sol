@@ -13,10 +13,9 @@ library WadRayMath {
   uint256 internal constant PERCENTAGE_FACTOR = 1e4;
 
   /// @notice Multiplies two Wad numbers, rounding down.
-  /// @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
   /// @param a First Wad number.
   /// @param b Second Wad number.
-  /// @return c The result of the multiplication.
+  /// @return c The result of the multiplication, in Wad.
   function wadMulDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
     assembly ('memory-safe') {
@@ -29,10 +28,9 @@ library WadRayMath {
   }
 
   /// @notice Multiplies two Wad numbers, rounding up.
-  /// @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
   /// @param a First Wad number.
   /// @param b Second Wad number.
-  /// @return c The result of the multiplication.
+  /// @return c The result of the multiplication, in Wad.
   function wadMulUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
     assembly ('memory-safe') {
@@ -46,10 +44,9 @@ library WadRayMath {
   }
 
   /// @notice Divides two Wad numbers, rounding down.
-  /// @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
   /// @param a First Wad number.
   /// @param b Second Wad number.
-  /// @return c The result of the division.
+  /// @return c The result of the division, in Wad.
   function wadDivDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / WAD
     assembly ('memory-safe') {
@@ -62,10 +59,9 @@ library WadRayMath {
   }
 
   /// @notice Divides two Wad numbers, rounding up.
-  /// @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
   /// @param a First Wad number.
   /// @param b Second Wad number.
-  /// @return c The result of the division.
+  /// @return c The result of the division, in Wad.
   function wadDivUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / WAD
     assembly ('memory-safe') {
@@ -79,10 +75,9 @@ library WadRayMath {
   }
 
   /// @notice Multiplies two Ray numbers, rounding down.
-  /// @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
   /// @param a First Ray number.
   /// @param b Second Ray number.
-  /// @return c The result of the multiplication.
+  /// @return c The result of the multiplication, in Ray.
   function rayMulDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
     assembly ('memory-safe') {
@@ -95,10 +90,9 @@ library WadRayMath {
   }
 
   /// @notice Multiplies two Ray numbers, rounding up.
-  /// @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
   /// @param a First Ray number.
   /// @param b Second Ray number.
-  /// @return c The result of the multiplication.
+  /// @return c The result of the multiplication, in Ray.
   function rayMulUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
     assembly ('memory-safe') {
@@ -112,10 +106,9 @@ library WadRayMath {
   }
 
   /// @notice Divides two Ray numbers, rounding down.
-  /// @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
   /// @param a First Ray number.
   /// @param b Second Ray number.
-  /// @return c The result of the division.
+  /// @return c The result of the division, in Ray.
   function rayDivDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / RAY
     assembly ('memory-safe') {
@@ -128,10 +121,9 @@ library WadRayMath {
   }
 
   /// @notice Divides two Ray numbers, rounding up.
-  /// @dev Assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328.
   /// @param a First Ray number.
   /// @param b Second Ray number.
-  /// @return c The result of the division.
+  /// @return c The result of the division, in Ray.
   function rayDivUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / RAY
     assembly ('memory-safe') {

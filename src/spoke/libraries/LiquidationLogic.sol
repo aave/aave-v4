@@ -234,7 +234,7 @@ library LiquidationLogic {
       ISpoke.HealthFactorNotBelowThreshold()
     );
     require(
-      params.isUsingAsCollateral && params.collateralFactor != 0,
+      params.isUsingAsCollateral && params.collateralFactor > 0,
       ISpoke.CollateralCannotBeLiquidated()
     );
     require(params.debtReserveBalance > 0, ISpoke.SpecifiedCurrencyNotBorrowedByUser());
@@ -273,13 +273,16 @@ library LiquidationLogic {
       params.debtAssetPrice * params.collateralAssetUnit,
       params.debtAssetUnit * params.collateralAssetPrice
     );
-    uint256 collateralToLiquidate = debtToCollateral.percentMulDown(liquidationBonus);
+    uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
+      params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus,
+      params.debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
+    );
     if (collateralToLiquidate > params.collateralReserveBalance) {
       collateralToLiquidate = params.collateralReserveBalance;
       debtToCollateral = collateralToLiquidate.percentDivUp(liquidationBonus);
-      debtToLiquidate = debtToCollateral.mulDivUp(
-        params.collateralAssetPrice * params.debtAssetUnit,
-        params.debtAssetPrice * params.collateralAssetUnit
+      debtToLiquidate = collateralToLiquidate.mulDivUp(
+        params.collateralAssetPrice * params.debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
+        params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus
       );
     }
 
@@ -432,7 +435,7 @@ library LiquidationLogic {
     );
 
     if (sharesToLiquidate > sharesToLiquidator) {
-      hub.payFee(assetId, sharesToLiquidate - sharesToLiquidator);
+      hub.payFeeShares(assetId, sharesToLiquidate.uncheckedSub(sharesToLiquidator));
     }
 
     return position.suppliedShares == 0;

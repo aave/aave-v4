@@ -9,6 +9,7 @@ import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Rescuable} from 'src/utils/Rescuable.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -19,7 +20,14 @@ import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGatew
 /// @notice Gateway to consume EIP-712 typed intents for spoke actions on behalf of a user.
 /// @dev Contract must be an active & approved user position manager to execute spoke actions on user's behalf.
 /// @dev Intents bundled through multicall can be executed independently in order of signed nonce & deadline.
-contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2Step, EIP712 {
+contract SignatureGateway is
+  ISignatureGateway,
+  NoncesKeyed,
+  Multicall,
+  Rescuable,
+  Ownable2Step,
+  EIP712
+{
   using SafeERC20 for IERC20;
 
   ISpoke internal immutable _spoke;
@@ -59,8 +67,6 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     // keccak256('UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)')
     0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
 
-  mapping(address user => uint256) internal _nonces;
-
   /// @dev Constructor.
   /// @dev Reverts if the spoke or initial owner is zero address.
   /// @param spoke_ The address of the spoke contract.
@@ -75,24 +81,18 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
+    uint256 nonce,
     uint256 deadline,
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
-        abi.encode(
-          SUPPLY_TYPEHASH,
-          address(_spoke),
-          reserveId,
-          amount,
-          onBehalfOf,
-          _useNonce(onBehalfOf),
-          deadline
-        )
+        abi.encode(SUPPLY_TYPEHASH, address(_spoke), reserveId, amount, onBehalfOf, nonce, deadline)
       )
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
+    _useCheckedNonce(onBehalfOf, nonce);
 
     (IERC20 underlying, address hub) = _getReserveData(reserveId);
     underlying.safeTransferFrom(onBehalfOf, address(this), amount);
@@ -106,6 +106,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
+    uint256 nonce,
     uint256 deadline,
     bytes calldata signature
   ) external {
@@ -118,12 +119,13 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
           reserveId,
           amount,
           onBehalfOf,
-          _useNonce(onBehalfOf),
+          nonce,
           deadline
         )
       )
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
+    _useCheckedNonce(onBehalfOf, nonce);
 
     (IERC20 underlying, ) = _getReserveData(reserveId);
     uint256 withdrawAmount = MathUtils.min(
@@ -140,24 +142,18 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
+    uint256 nonce,
     uint256 deadline,
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
-        abi.encode(
-          BORROW_TYPEHASH,
-          address(_spoke),
-          reserveId,
-          amount,
-          onBehalfOf,
-          _useNonce(onBehalfOf),
-          deadline
-        )
+        abi.encode(BORROW_TYPEHASH, address(_spoke), reserveId, amount, onBehalfOf, nonce, deadline)
       )
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
+    _useCheckedNonce(onBehalfOf, nonce);
 
     (IERC20 underlying, ) = _getReserveData(reserveId);
 
@@ -170,24 +166,18 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf,
+    uint256 nonce,
     uint256 deadline,
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
-        abi.encode(
-          REPAY_TYPEHASH,
-          address(_spoke),
-          reserveId,
-          amount,
-          onBehalfOf,
-          _useNonce(onBehalfOf),
-          deadline
-        )
+        abi.encode(REPAY_TYPEHASH, address(_spoke), reserveId, amount, onBehalfOf, nonce, deadline)
       )
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
+    _useCheckedNonce(onBehalfOf, nonce);
 
     (IERC20 underlying, address hub) = _getReserveData(reserveId);
     uint256 repayAmount = MathUtils.min(amount, _spoke.getUserTotalDebt(reserveId, onBehalfOf));
@@ -203,6 +193,7 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
     uint256 reserveId,
     bool useAsCollateral,
     address onBehalfOf,
+    uint256 nonce,
     uint256 deadline,
     bytes calldata signature
   ) external {
@@ -215,12 +206,13 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
           reserveId,
           useAsCollateral,
           onBehalfOf,
-          _useNonce(onBehalfOf),
+          nonce,
           deadline
         )
       )
     );
     require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
+    _useCheckedNonce(onBehalfOf, nonce);
 
     _spoke.setUsingAsCollateral(reserveId, useAsCollateral, onBehalfOf);
   }
@@ -228,22 +220,18 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
   /// @inheritdoc ISignatureGateway
   function updateUserRiskPremiumWithSig(
     address user,
+    uint256 nonce,
     uint256 deadline,
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
-        abi.encode(
-          UPDATE_USER_RISK_PREMIUM_TYPEHASH,
-          address(_spoke),
-          user,
-          _useNonce(user),
-          deadline
-        )
+        abi.encode(UPDATE_USER_RISK_PREMIUM_TYPEHASH, address(_spoke), user, nonce, deadline)
       )
     );
     require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    _useCheckedNonce(user, nonce);
 
     _spoke.updateUserRiskPremium(user);
   }
@@ -251,22 +239,18 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
   /// @inheritdoc ISignatureGateway
   function updateUserDynamicConfigWithSig(
     address user,
+    uint256 nonce,
     uint256 deadline,
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
-        abi.encode(
-          UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
-          address(_spoke),
-          user,
-          _useNonce(user),
-          deadline
-        )
+        abi.encode(UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH, address(_spoke), user, nonce, deadline)
       )
     );
     require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    _useCheckedNonce(user, nonce);
 
     _spoke.updateUserDynamicConfig(user);
   }
@@ -275,11 +259,12 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
   function setSelfAsUserPositionManagerWithSig(
     address user,
     bool approve,
+    uint256 nonce,
     uint256 deadline,
     bytes calldata signature
   ) external {
     try
-      _spoke.setUserPositionManagerWithSig(address(this), user, approve, deadline, signature)
+      _spoke.setUserPositionManagerWithSig(address(this), user, approve, nonce, deadline, signature)
     {} catch {}
   }
 
@@ -313,11 +298,6 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
   }
 
   /// @inheritdoc ISignatureGateway
-  function useNonce() external {
-    _useNonce(msg.sender);
-  }
-
-  /// @inheritdoc ISignatureGateway
   function SPOKE() external view returns (address) {
     return address(_spoke);
   }
@@ -325,18 +305,6 @@ contract SignatureGateway is ISignatureGateway, Multicall, Rescuable, Ownable2St
   /// @inheritdoc ISignatureGateway
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparator();
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function nonces(address user) external view returns (uint256) {
-    return _nonces[user];
-  }
-
-  /// @return The used nonce.
-  function _useNonce(address user) internal returns (uint256) {
-    unchecked {
-      return _nonces[user]++;
-    }
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

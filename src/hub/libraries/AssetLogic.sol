@@ -101,8 +101,7 @@ library AssetLogic {
   /// @param asset The data struct of the asset.
   /// @return The total added shares.
   function totalAddedShares(IHub.Asset storage asset) internal view returns (uint256) {
-    return
-      asset.addedShares + asset.getFeeShares(asset.getDrawnIndex().uncheckedSub(asset.drawnIndex));
+    return asset.addedShares + asset.unrealizedFeeShares();
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
@@ -180,7 +179,7 @@ library AssetLogic {
     uint256 indexDelta = drawnIndex.uncheckedSub(asset.drawnIndex);
 
     asset.drawnIndex = drawnIndex.toUint128();
-    asset.lastUpdateTimestamp = block.timestamp.toUint40();
+    asset.lastUpdateTimestamp = block.timestamp.toUint32();
 
     uint128 feeShares = asset.getFeeShares(indexDelta).toUint128();
     if (feeShares > 0) {
@@ -203,7 +202,7 @@ library AssetLogic {
     }
     return
       previousIndex.rayMulUp(
-        MathUtils.calculateLinearInterest(asset.drawnRate, uint40(lastUpdateTimestamp))
+        MathUtils.calculateLinearInterest(asset.drawnRate, uint32(lastUpdateTimestamp))
       );
   }
 

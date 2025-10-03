@@ -151,12 +151,11 @@ interface IHubBase {
   /// @param premiumDelta The change in premium.
   function refreshPremium(uint256 assetId, PremiumDelta calldata premiumDelta) external;
 
-  /// @notice Pay existing added shares to feeReceiver.
-  /// @dev Only callable by active spokes.
-  /// @dev Utilized to pay fees during liquidation.
+  /// @notice Transfers existing `addedShares` of caller spoke to `feeReceiver`.
+  /// @dev Only callable by active spokes. Utilized to pay liquidation fee.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of shares to pay to feeReceiver.
-  function payFee(uint256 assetId, uint256 shares) external;
+  function payFeeShares(uint256 assetId, uint256 shares) external;
 
   /// @notice Returns the underlying address and decimals of the specified asset.
   /// @param assetId The identifier of the asset.

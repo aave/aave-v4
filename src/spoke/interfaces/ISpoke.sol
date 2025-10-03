@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
+import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
@@ -10,7 +11,7 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 /// @title ISpoke
 /// @author Aave Labs
 /// @notice Full interface for Spoke.
-interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
+interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   struct Reserve {
     address underlying;
     //
@@ -324,18 +325,21 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   /// @param approve True to approve the position manager, false to revoke approval.
   function setUserPositionManager(address positionManager, bool approve) external;
 
-  /// @notice Enables a user to grant or revoke approval for a position manager using an EIP712-compliant signature.
+  /// @notice Enables a user to grant or revoke approval for a position manager using an EIP712-typed intent.
+  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param positionManager The address of the position manager.
   /// @param user The address of the user on whose behalf position manager can act.
   /// @param approve True to approve the position manager, false to revoke approval.
+  /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the signature.
   /// @param signature The EIP712-compliant signature bytes.
   function setUserPositionManagerWithSig(
     address positionManager,
     address user,
     bool approve,
+    uint256 nonce,
     uint256 deadline,
-    bytes memory signature
+    bytes calldata signature
   ) external;
 
   /// @notice Allows position manager (as caller) to renounce their approval given by the user.
@@ -356,9 +360,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   /// @param positionManager The address of the position manager.
   /// @return True if positionManager is currently active, false otherwise.
   function isPositionManagerActive(address positionManager) external view returns (bool);
-
-  /// @notice Allows caller to revoke their nonce used in `setUserPositionManagerWithSig`.
-  function useNonce() external;
 
   /// @notice Allows consuming a permit signature for the given reserve's underlying asset.
   /// @dev Spender is the corresponding hub of the given reserve.
@@ -398,6 +399,10 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   /// @notice Returns the maximum allowed collateral risk value for a reserve.
   /// @return The maximum collateral risk value, expressed in bps (e.g. 100_00 is 100.00%).
   function MAX_ALLOWED_COLLATERAL_RISK() external view returns (uint24);
+
+  /// @notice Returns the number of decimals used by the oracle.
+  /// @return The number of decimals.
+  function ORACLE_DECIMALS() external view returns (uint8);
 
   /// @notice Returns the address of the AaveOracle contract.
   /// @return The address of the AaveOracle contract.
@@ -474,11 +479,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   /// @notice Returns the liquidation config struct.
   /// @return The liquidation config struct.
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
-
-  /// @notice Returns the nonce of a user.
-  /// @param user The address of the user.
-  /// @return The nonce of the user.
-  function nonces(address user) external view returns (uint256);
 
   /// @notice Returns the domain separator.
   /// @return The domain separator.

@@ -29,6 +29,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
 
   /// @dev Constructor.
   constructor(address hub_) {
+    require(hub_ != address(0), InvalidAddress());
     HUB = hub_;
   }
 
@@ -101,11 +102,11 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
-    uint256 deficit, // unused
+    uint256 /* deficit */,
     uint256 swept
   ) external view virtual override returns (uint256) {
     InterestRateData memory rateData = _interestRateData[assetId];
-    require(rateData.optimalUsageRatio != 0, InterestRateDataNotSet(assetId));
+    require(rateData.optimalUsageRatio > 0, InterestRateDataNotSet(assetId));
 
     uint256 currentVariableBorrowRateRay = rateData.baseVariableBorrowRate.bpsToRay();
     if (drawn == 0) {
