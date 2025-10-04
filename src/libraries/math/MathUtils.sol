@@ -4,22 +4,19 @@ pragma solidity ^0.8.20;
 
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 
-/**
- * @title MathUtils library
- * @author Aave Labs
- */
+/// @title MathUtils library
+/// @author Aave Labs
 library MathUtils {
   using WadRayMath for uint256;
 
   /// @dev Ignoring leap years
   uint256 internal constant SECONDS_PER_YEAR = 365 days;
 
-  /**
-   * @dev Function to calculate the interest accumulated using a linear interest rate formula.
-   * @param rate The interest rate, in ray.
-   * @param lastUpdateTimestamp The timestamp of the last update of the interest.
-   * @return The interest rate linearly accumulated during the timeDelta, in ray.
-   */
+  /// @notice Function to calculate the interest accumulated using a linear interest rate formula.
+  /// @dev Calculates interest rate from provided `lastUpdateTimestamp` until present.
+  /// @param rate The interest rate, in ray.
+  /// @param lastUpdateTimestamp The timestamp to calculate interest rate from.
+  /// @return The interest rate linearly accumulated during the timeDelta, in ray.
   function calculateLinearInterest(
     uint256 rate,
     uint32 lastUpdateTimestamp
@@ -32,84 +29,52 @@ library MathUtils {
     return WadRayMath.RAY + result;
   }
 
-  /**
-   * @notice Returns the minimum of two values.
-   * @param a The first value to compare.
-   * @param b The second value to compare.
-   * @return result The minimum of the two values.
-   */
+  /// @notice Returns the smaller of two unsigned integers.
   function min(uint256 a, uint256 b) internal pure returns (uint256 result) {
     assembly ('memory-safe') {
       result := xor(b, mul(xor(a, b), lt(a, b)))
     }
   }
 
-  /**
-   * @notice Adds a signed integer to an unsigned integer.
-   * @dev Reverts on underflow.
-   * @param a The unsigned integer.
-   * @param b The signed integer.
-   * @return The result of the addition.
-   */
+  /// @notice Returns the sum of an unsigned and signed integer.
+  /// @dev Reverts on underflow.
   function add(uint256 a, int256 b) internal pure returns (uint256) {
     if (b >= 0) return a + uint256(b);
     return a - uint256(-b);
   }
 
-  /**
-   * @notice Adds two unsigned integers which does not revert on overflow.
-   * @param a The first unsigned integer.
-   * @param b The second unsigned integer.
-   * @return The result of the addition.
-   */
+  /// @notice Returns the sum of two unsigned integers.
+  /// @dev Does not revert on overflow.
   function uncheckedAdd(uint256 a, uint256 b) internal pure returns (uint256) {
     unchecked {
       return a + b;
     }
   }
 
-  /**
-   * @notice Subtracts an unsigned integer from an unsigned integer.
-   * @param a The unsigned integer.
-   * @param b The unsigned integer.
-   * @return The signed result of the subtraction.
-   */
+  /// @notice Returns the difference of two unsigned integers as a signed integer.
+  /// @dev Does not ensure the `a` and `b` values are within the range of a signed integer.
   function signedSub(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b);
   }
 
-  /**
-   * @notice Subtracts an unsigned integer from an unsigned integer which does not revert on underflow.
-   * @param a The unsigned integer.
-   * @param b The unsigned integer.
-   * @return The unsigned result of the subtraction.
-   */
+  /// @notice Returns the difference of two unsigned integers.
+  /// @dev Does not revert on underflow.
   function uncheckedSub(uint256 a, uint256 b) internal pure returns (uint256) {
     unchecked {
       return a - b;
     }
   }
 
-  /**
-   * @notice Raises an unsigned integer to the power of an unsigned integer which does not revert on overflow.
-   * @param a The base.
-   * @param b The exponent.
-   * @return The result of the exponentiation.
-   */
+  /// @notice Raises an unsigned integer to the power of an unsigned integer.
+  /// @dev Does not revert on overflow.
   function uncheckedExp(uint256 a, uint256 b) internal pure returns (uint256) {
     unchecked {
       return a ** b;
     }
   }
 
-  /**
-   * @notice Multiplies two numbers and divides the result by a third number, rounding down.
-   * @dev Reverts if division by zero or overflow occurs.
-   * @param a The first number.
-   * @param b The second number.
-   * @param c The divisor.
-   * @return d The result of the multiplication and division, rounded down.
-   */
+  /// @notice Multiplies `a` and `b` in 256 bits and divides the result by `c`, rounding down.
+  /// @dev Reverts if division by zero or overflow occurs on intermediate multiplication.
   function mulDivDown(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
     assembly ('memory-safe') {
       if iszero(c) {
@@ -122,14 +87,8 @@ library MathUtils {
     }
   }
 
-  /**
-   * @notice Multiplies two numbers and divides the result by a third number, rounding up.
-   * @dev Reverts if division by zero or overflow occurs.
-   * @param a The first number.
-   * @param b The second number.
-   * @param c The divisor.
-   * @return d The result of the multiplication and division, rounded up.
-   */
+  /// @notice Multiplies `a` and `b` in 256 bits and divides the result by `c`, rounding up.
+  /// @dev Reverts if division by zero or overflow occurs on intermediate multiplication.
   function mulDivUp(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
     assembly ('memory-safe') {
       if iszero(c) {

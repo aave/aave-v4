@@ -15,13 +15,12 @@ import {Multicall} from 'src/utils/Multicall.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
 
-/**
- * @title SignatureGateway
- * @author Aave Labs
- * @notice Gateway to consume simple EIP-712 typed intents for spoke actions on behalf of a user.
- * @dev This contract needs to be an active & approved user position manager to execute spoke actions on user's behalf.
- * @dev Intents bundled through multicall can be executed independently in order of signed nonce & deadline.
- */
+/// @title SignatureGateway
+/// @author Aave Labs
+/// @notice Gateway to consume EIP-712 typed intents for spoke actions on behalf of a user.
+/// @dev Contract must be an active & approved user position manager to execute spoke actions on user's behalf.
+/// @dev Uses keyed-nonces where each key's namespace nonce is consumed sequentially. Intents bundled through
+/// multicall can be executed independently in order of signed nonce & deadline; does not guarantee batch atomicity.
 contract SignatureGateway is
   ISignatureGateway,
   NoncesKeyed,
@@ -69,6 +68,9 @@ contract SignatureGateway is
     // keccak256('UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)')
     0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
 
+  /// @dev Constructor.
+  /// @param spoke_ The address of the connected spoke.
+  /// @param initialOwner_ The address of the initial owner.
   constructor(address spoke_, address initialOwner_) Ownable(initialOwner_) {
     require(spoke_ != address(0) && initialOwner_ != address(0), InvalidAddress());
     _spoke = ISpoke(spoke_);
@@ -309,10 +311,13 @@ contract SignatureGateway is
     return ('SignatureGateway', '1');
   }
 
+  /// @dev RescueGuardian is the owner of the contract.
   function _rescueGuardian() internal view override returns (address) {
     return owner();
   }
 
+  /// @return The underlying asset for `reserveId` on connected spoke.
+  /// @return The corresponding hub address.
   function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
     ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
     require(reserveData.underlying != address(0), InvalidReserveId());

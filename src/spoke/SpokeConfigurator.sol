@@ -7,19 +7,15 @@ import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
-/**
- * @title SpokeConfigurator
- * @author Aave Labs
- * @notice SpokeConfigurator contract for the Aave protocol
- * @dev Must be granted permission by the Spoke
- */
+/// @title SpokeConfigurator
+/// @author Aave Labs
+/// @notice Handles administrative functions on the spoke.
+/// @dev Must be granted permission by the spoke.
 contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   using SafeCast for uint256;
 
-  /**
-   * @dev Constructor
-   * @param owner_ The address of the owner
-   */
+  /// @dev Constructor.
+  /// @param owner_ The address of the owner.
   constructor(address owner_) Ownable(owner_) {}
 
   /// @inheritdoc ISpokeConfigurator

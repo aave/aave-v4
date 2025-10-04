@@ -2,34 +2,26 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-/**
- * @title IBasicInterestRateStrategy
- * @author Aave Labs
- * @notice Basic interface for any rate strategy used by the Aave protocol
- */
+/// @title IBasicInterestRateStrategy
+/// @author Aave Labs
+/// @notice Basic interface for any rate strategy.
 interface IBasicInterestRateStrategy {
-  /**
-   * @notice Thrown when the interest rate data is not set for the asset.
-   * @param assetId The identifier of the asset with no interest rate data set.
-   */
+  /// @notice Thrown when the interest rate data is not set for the asset.
+  /// @param assetId The identifier of the asset with no interest rate data set.
   error InterestRateDataNotSet(uint256 assetId);
 
-  /**
-   * @notice Sets the interest rate parameters for a specified asset.
-   * @param assetId The identifier of the asset.
-   * @param data The encoded parameters used to configure the interest rate of the asset.
-   */
+  /// @notice Sets the interest rate parameters for a specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @param data The encoded parameters used to configure the interest rate of the asset.
   function setInterestRateData(uint256 assetId, bytes calldata data) external;
 
-  /**
-   * @notice Calculates the interest rate depending on the asset's state and configurations.
-   * @param assetId The identifier of the asset.
-   * @param liquidity The current available liquidity of the asset.
-   * @param drawn The current drawn amount of the asset.
-   * @param deficit The current deficit of the asset.
-   * @param swept The current swept (reinvested) amount of the asset.
-   * @return interestRate The interest rate expressed in ray.
-   */
+  /// @notice Calculates the interest rate depending on the asset's state and configurations.
+  /// @param assetId The identifier of the asset.
+  /// @param liquidity The current available liquidity of the asset.
+  /// @param drawn The current drawn amount of the asset.
+  /// @param deficit The current deficit of the asset.
+  /// @param swept The current swept (reinvested) amount of the asset.
+  /// @return interestRate The interest rate expressed in ray.
   function calculateInterestRate(
     uint256 assetId,
     uint256 liquidity,

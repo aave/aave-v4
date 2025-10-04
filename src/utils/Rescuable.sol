@@ -7,6 +7,9 @@ import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
+/// @title Rescuable
+/// @author Aave Labs
+/// @notice Contract that allows for the rescue of tokens and native assets.
 abstract contract Rescuable is IRescuable {
   using SafeERC20 for IERC20;
 

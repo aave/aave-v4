@@ -5,32 +5,30 @@ pragma solidity 0.8.28;
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
 import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 
-/**
- * @title AaveOracle
- * @author Aave Labs
- * @notice Oracle contract for the Aave protocol.
- * @dev Oracles are spoke-specific, due to the usage of reserve id as index of the _sources.
- */
+/// @title AaveOracle
+/// @author Aave Labs
+/// @notice Provides reserve prices.
+/// @dev Oracles are spoke-specific, due to the usage of reserve id as index of the `_sources` mapping.
 contract AaveOracle is IAaveOracle {
   /// @inheritdoc IPriceOracle
   address public immutable override SPOKE;
+
   /// @inheritdoc IPriceOracle
   uint8 public immutable override DECIMALS;
+
   /// @inheritdoc IAaveOracle
   string public override DESCRIPTION;
 
   mapping(uint256 reserveId => AggregatorV3Interface) internal _sources;
 
-  /**
-   * @dev Constructor.
-   * @param spoke_ The address of the spoke contract.
-   * @param decimals_ The number of decimals for the oracle.
-   * @param description_ The description of the oracle.
-   */
+  /// @dev Constructor.
+  /// @dev `decimals` must match the spoke's decimals for compatibility.
+  /// @param spoke_ The address of the spoke contract.
+  /// @param decimals_ The number of decimals for the oracle.
+  /// @param description_ The description of the oracle.
   constructor(address spoke_, uint8 decimals_, string memory description_) {
     require(spoke_ != address(0), InvalidAddress());
     SPOKE = spoke_;
-    // decimals compatibility should be validated on the spoke
     DECIMALS = decimals_;
     DESCRIPTION = description_;
   }
@@ -66,6 +64,7 @@ contract AaveOracle is IAaveOracle {
     return address(_sources[reserveId]);
   }
 
+  /// @dev Price of zero will revert with `InvalidPrice`.
   function _getSourcePrice(uint256 reserveId) internal view returns (uint256) {
     AggregatorV3Interface source = _sources[reserveId];
     require(address(source) != address(0), InvalidSource(reserveId));

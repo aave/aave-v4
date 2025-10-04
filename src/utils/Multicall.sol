@@ -4,11 +4,10 @@ pragma solidity ^0.8.20;
 
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 
-/**
- * @title Multicall
- * @author Aave Labs, inspired by the OpenZeppelin Multicall contract
- * @notice This contract allows for batching multiple calls into a single call.
- */
+/// @title Multicall
+/// @author Aave Labs
+/// @notice This contract allows for batching multiple calls into a single call.
+/// @dev Inspired by the OpenZeppelin Multicall contract.
 abstract contract Multicall is IMulticall {
   /// @inheritdoc IMulticall
   function multicall(bytes[] calldata data) external returns (bytes[] memory) {

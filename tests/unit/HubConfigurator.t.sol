@@ -557,8 +557,8 @@ contract HubConfiguratorTest is HubBase {
     );
   }
 
-  function test_updateInterestRateStrategy_revertsWith_InvalidInterestRateStrategyUpdate() public {
-    vm.expectRevert(IHub.InvalidInterestRateStrategyUpdate.selector, address(hub1));
+  function test_updateInterestRateStrategy_revertsWith_InvalidInterestRateStrategy() public {
+    vm.expectRevert(IHub.InvalidInterestRateStrategy.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateInterestRateStrategy(
       address(hub1),

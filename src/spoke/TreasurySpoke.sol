@@ -9,24 +9,21 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ITreasurySpoke, ISpokeBase} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 
-/**
- * @title TreasurySpoke
- * @notice Spoke contract used as a treasury where accumulated fees are treated as supplied assets.
- * @dev Dedicated to a single user, controlled exclusively by the owner.
- * @dev Utilizes all assets from the Hub without restrictions, making reserve and asset identifiers aligned.
- * @dev Allows withdraw to claim fees and supply to invest back into the Hub via this dedicated spoke.
- */
+/// @title TreasurySpoke
+/// @author Aave Labs
+/// @notice Spoke contract used as a treasury where accumulated fees are treated as supplied assets.
+/// @dev Dedicated to a single user, controlled exclusively by the owner.
+/// @dev Utilizes all assets from the Hub without restrictions, making reserve and asset identifiers aligned.
+/// @dev Allows withdraw to claim fees and supply to invest back into the Hub via this dedicated spoke.
 contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   using SafeERC20 for IERC20;
 
   /// @inheritdoc ITreasurySpoke
   IHubBase public immutable HUB;
 
-  /**
-   * @dev Constructor
-   * @param owner_ The address of the owner
-   * @param hub_ The address of the Hub
-   */
+  /// @dev Constructor.
+  /// @param owner_ The address of the owner.
+  /// @param hub_ The address of the Hub.
   constructor(address owner_, address hub_) Ownable(owner_) {
     require(hub_ != address(0), InvalidAddress());
 

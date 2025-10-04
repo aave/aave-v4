@@ -571,12 +571,12 @@ contract HubConfigTest is HubBase {
     hub1.updateAssetConfig(assetId, config, new bytes(0));
   }
 
-  function test_updateAssetConfig_fuzz_revertsWith_InvalidInterestRateStrategyUpdate(
+  function test_updateAssetConfig_fuzz_revertsWith_InvalidInterestRateStrategy(
     uint256 assetId
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
-    vm.expectRevert(IHub.InvalidInterestRateStrategyUpdate.selector, address(hub1));
+    vm.expectRevert(IHub.InvalidInterestRateStrategy.selector, address(hub1));
     Utils.updateAssetConfig(hub1, ADMIN, assetId, config, encodedIrData);
   }
 

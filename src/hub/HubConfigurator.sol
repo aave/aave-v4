@@ -8,19 +8,15 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 
-/**
- * @title HubConfigurator
- * @author Aave Labs
- * @notice HubConfigurator contract for the Aave protocol
- * @dev Must be granted permission by the Hub
- */
+/// @title HubConfigurator
+/// @author Aave Labs
+/// @notice Handles administrative functions on the hub.
+/// @dev Must be granted permission by the hub.
 contract HubConfigurator is Ownable2Step, IHubConfigurator {
   using SafeCast for uint256;
 
-  /**
-   * @dev Constructor
-   * @param owner_ The address of the owner
-   */
+  /// @dev Constructor.
+  /// @param owner_ The address of the owner.
   constructor(address owner_) Ownable(owner_) {}
 
   /// @inheritdoc IHubConfigurator
@@ -244,14 +240,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     IHub(hub).setInterestRateData(assetId, irData);
   }
 
-  /**
-   * @dev Updates the spoke caps, without changing the active flag.
-   * @param hub The address of the Hub contract.
-   * @param assetId The identifier of the asset.
-   * @param spoke The address of the spoke.
-   * @param addCap The new add cap.
-   * @param drawCap The new draw cap.
-   */
+  /// @dev Updates spoke caps without changing the active flag.
   function _updateSpokeCaps(
     IHub hub,
     uint256 assetId,
