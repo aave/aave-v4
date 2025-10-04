@@ -61,14 +61,7 @@ contract Hub is IHub, AccessManaged {
       underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
       InvalidAddress()
     );
-    (bool success, uint8 fetchedDecimals) = _fetchDecimals(underlying);
-    if (success) {
-      require(fetchedDecimals == decimals, InvalidAssetDecimals());
-    }
-    require(
-      MIN_ALLOWED_UNDERLYING_DECIMALS <= decimals && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
-      InvalidAssetDecimals()
-    );
+    _validateAssetDecimals(underlying, decimals);
 
     uint256 assetId = _assetCount++;
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
@@ -823,11 +816,18 @@ contract Hub is IHub, AccessManaged {
     require(amount > 0 && amount <= asset.swept, InvalidAmount());
   }
 
-  function _fetchDecimals(address underlying) internal view returns (bool, uint8) {
-    (bool ok, bytes memory ret) = address(underlying).staticcall(
+  function _validateAssetDecimals(address underlying, uint8 givenDecimals) internal view {
+    (bool success, bytes memory returnData) = address(underlying).staticcall(
       abi.encodeCall(IERC20Metadata.decimals, ())
     );
-    return (ok, abi.decode(ret, (uint8)));
+    if (success) {
+      require(abi.decode(returnData, (uint8)) == givenDecimals, InvalidAssetDecimals());
+    }
+    require(
+      MIN_ALLOWED_UNDERLYING_DECIMALS <= givenDecimals &&
+        givenDecimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
+      InvalidAssetDecimals()
+    );
   }
 
   function _addSpoke(uint256 assetId, address spoke) internal {
