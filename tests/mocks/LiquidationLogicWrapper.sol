@@ -124,10 +124,8 @@ contract LiquidationLogicWrapper {
       );
   }
 
-  function validateLiquidationCall(
-    LiquidationLogic.ValidateLiquidationCallParams memory params
-  ) public pure {
-    LiquidationLogic._validateLiquidationCall(params);
+  function validateLiquidationCall(ISpoke.ValidateLiquidationCallParams memory params) public pure {
+    LiquidationLogic.validateLiquidationCall(params);
   }
 
   function calculateDebtToTargetHealthFactor(

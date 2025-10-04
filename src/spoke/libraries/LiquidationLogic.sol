@@ -29,24 +29,10 @@ library LiquidationLogic {
     uint256 premiumDebt;
     uint256 accruedPremium;
     uint256 totalDebtInBaseCurrency;
+    uint256 collateralReserveBalance;
     address liquidator;
     uint256 suppliedCollateralsCount;
     uint256 borrowedReservesCount;
-  }
-
-  struct ValidateLiquidationCallParams {
-    address user;
-    address liquidator;
-    uint256 debtToCover;
-    address collateralReserveHub;
-    address debtReserveHub;
-    bool collateralReservePaused;
-    bool debtReservePaused;
-    uint256 healthFactor;
-    bool isUsingAsCollateral;
-    uint256 collateralFactor;
-    uint256 collateralReserveBalance;
-    uint256 debtReserveBalance;
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
@@ -119,33 +105,12 @@ library LiquidationLogic {
     ISpoke.DynamicReserveConfig storage collateralDynConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
-    uint256 collateralReserveBalance = collateralReserve.hub.previewRemoveByShares(
-      collateralReserve.assetId,
-      collateralPosition.suppliedShares
-    );
-    _validateLiquidationCall(
-      ValidateLiquidationCallParams({
-        user: params.user,
-        liquidator: params.liquidator,
-        debtToCover: params.debtToCover,
-        collateralReserveHub: address(collateralReserve.hub),
-        debtReserveHub: address(debtReserve.hub),
-        collateralReservePaused: collateralReserve.paused,
-        debtReservePaused: debtReserve.paused,
-        healthFactor: params.healthFactor,
-        isUsingAsCollateral: positionStatus.isUsingAsCollateral(params.collateralReserveId),
-        collateralFactor: collateralDynConfig.collateralFactor,
-        collateralReserveBalance: collateralReserveBalance,
-        debtReserveBalance: params.drawnDebt + params.premiumDebt
-      })
-    );
-
     CalculateLiquidationAmountsParams
       memory calculateLiquidationAmountsParams = CalculateLiquidationAmountsParams({
         healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
         debtReserveBalance: params.drawnDebt + params.premiumDebt,
-        collateralReserveBalance: collateralReserveBalance,
+        collateralReserveBalance: params.collateralReserveBalance,
         debtToCover: params.debtToCover,
         totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
         healthFactor: params.healthFactor,
@@ -208,7 +173,9 @@ library LiquidationLogic {
       });
   }
 
-  function _validateLiquidationCall(ValidateLiquidationCallParams memory params) internal pure {
+  function validateLiquidationCall(
+    ISpoke.ValidateLiquidationCallParams memory params
+  ) internal pure {
     require(params.user != params.liquidator, ISpoke.SelfLiquidation());
     require(params.debtToCover > 0, ISpoke.InvalidDebtToCover());
     require(
@@ -216,10 +183,6 @@ library LiquidationLogic {
       ISpoke.ReserveNotListed()
     );
     require(!params.collateralReservePaused && !params.debtReservePaused, ISpoke.ReservePaused());
-    require(
-      params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      ISpoke.HealthFactorNotBelowThreshold()
-    );
     require(
       params.isUsingAsCollateral && params.collateralFactor > 0,
       ISpoke.CollateralCannotBeLiquidated()

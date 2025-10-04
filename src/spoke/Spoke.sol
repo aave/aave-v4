@@ -316,20 +316,23 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     address user,
     uint256 debtToCover
   ) external {
-    UserAccountData memory userAccountData = _calculateUserAccountData(user);
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       oracle: ORACLE,
       user: user,
       debtToCover: debtToCover,
-      healthFactor: userAccountData.healthFactor,
+      healthFactor: 0, // populated below
       drawnDebt: 0, // populated below
       premiumDebt: 0, // populated below
       accruedPremium: 0, // populated below
-      totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
-      suppliedCollateralsCount: userAccountData.suppliedCollateralsCount,
-      borrowedReservesCount: userAccountData.borrowedReservesCount,
+      totalDebtInBaseCurrency: 0, // populated below
+      suppliedCollateralsCount: 0, // populated below
+      borrowedReservesCount: 0, // populated below
+      collateralReserveBalance: _reserves[collateralReserveId].hub.previewRemoveByShares(
+        _reserves[collateralReserveId].assetId,
+        _userPositions[user][collateralReserveId].suppliedShares
+      ),
       liquidator: msg.sender
     });
 
@@ -342,6 +345,31 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
       _userPositions[user][collateralReserveId].configKey
     ];
+    LiquidationLogic.validateLiquidationCall(
+      ValidateLiquidationCallParams({
+        user: params.user,
+        liquidator: params.liquidator,
+        debtToCover: params.debtToCover,
+        collateralReserveHub: address(_reserves[collateralReserveId].hub),
+        debtReserveHub: address(_reserves[debtReserveId].hub),
+        collateralReservePaused: _reserves[collateralReserveId].paused,
+        debtReservePaused: _reserves[debtReserveId].paused,
+        isUsingAsCollateral: _positionStatus[user].isUsingAsCollateral(params.collateralReserveId),
+        collateralFactor: collateralDynConfig.collateralFactor,
+        collateralReserveBalance: params.collateralReserveBalance,
+        debtReserveBalance: params.drawnDebt + params.premiumDebt
+      })
+    );
+    UserAccountData memory userAccountData = _calculateUserAccountData(user);
+    params.healthFactor = userAccountData.healthFactor;
+    params.totalDebtInBaseCurrency = userAccountData.totalDebtInBaseCurrency;
+    params.suppliedCollateralsCount = userAccountData.suppliedCollateralsCount;
+    params.borrowedReservesCount = userAccountData.borrowedReservesCount;
+
+    require(
+      params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      HealthFactorNotBelowThreshold()
+    );
 
     bool isUserInDeficit = LiquidationLogic.liquidateUser(
       _reserves[collateralReserveId],

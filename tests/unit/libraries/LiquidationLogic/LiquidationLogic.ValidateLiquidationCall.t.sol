@@ -5,12 +5,12 @@ pragma solidity ^0.8.0;
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest {
-  LiquidationLogic.ValidateLiquidationCallParams params;
+  ISpoke.ValidateLiquidationCallParams params;
 
   function setUp() public override {
     super.setUp();
 
-    params = LiquidationLogic.ValidateLiquidationCallParams({
+    params = ISpoke.ValidateLiquidationCallParams({
       user: alice,
       liquidator: bob,
       debtToCover: 5e18,
@@ -18,7 +18,6 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
       debtReserveHub: address(hub1),
       collateralReservePaused: false,
       debtReservePaused: false,
-      healthFactor: 0.8e18,
       isUsingAsCollateral: true,
       collateralFactor: 75_00,
       collateralReserveBalance: 120e6,
@@ -63,7 +62,7 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
   }
 
   function test_validateLiquidationCall_revertsWith_HealthFactorNotBelowThreshold() public {
-    params.healthFactor = 1.1e18;
+    // params.healthFactor = 1.1e18;
     vm.expectRevert(ISpoke.HealthFactorNotBelowThreshold.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
