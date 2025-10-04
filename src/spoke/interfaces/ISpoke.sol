@@ -367,9 +367,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
   /// @param deadline The deadline for the permit.
-  /// @param v The v component of the permit signature.
-  /// @param r The r component of the permit signature.
-  /// @param s The s component of the permit signature.
   function permitReserve(
     uint256 reserveId,
     address onBehalfOf,
@@ -380,13 +377,71 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     bytes32 s
   ) external;
 
+  /// @notice Returns the reserve struct data in storage.
+  /// @param reserveId The identifier of the reserve.
+  function getReserve(uint256 reserveId) external view returns (Reserve memory);
+
+  /// @notice Returns the reserve configuration struct data in storage.
+  /// @param reserveId The identifier of the reserve.
+  function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory);
+
+  /// @notice Returns the dynamic reserve configuration struct data in storage.
+  /// @param reserveId The identifier of the reserve.
+  function getDynamicReserveConfig(
+    uint256 reserveId
+  ) external view returns (DynamicReserveConfig memory);
+
+  /// @notice Returns the dynamic reserve configuration struct at the specified key.
+  /// @param reserveId The identifier of the reserve.
+  /// @param configKey The key of the dynamic config.
+  function getDynamicReserveConfig(
+    uint256 reserveId,
+    uint16 configKey
+  ) external view returns (DynamicReserveConfig memory);
+
+  /// @notice Returns the liquidation config struct.
+  function getLiquidationConfig() external view returns (LiquidationConfig memory);
+
+  /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @param healthFactor The health factor of the user.
+  function getLiquidationBonus(
+    uint256 reserveId,
+    address user,
+    uint256 healthFactor
+  ) external view returns (uint256);
+
+  /// @notice Returns the most up-to-date user account data information.
+  /// @dev Utilizes user's current dynamic configuration of user position.
+  function getUserAccountData(address user) external view returns (UserAccountData memory);
+
+  /// @notice Returns the user position struct in storage.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  function getUserPosition(
+    uint256 reserveId,
+    address user
+  ) external view returns (UserPosition memory);
+
+  /// @notice Returns true if the reserve is set as collateral for the user, false otherwise.
+  /// @dev Even if enabled as collateral, it will only count towards user position if the collateral factor is greater than 0.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
+
+  /// @notice Returns true if the user is borrowing the reserve, false otherwise.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  function isBorrowing(uint256 reserveId, address user) external view returns (bool);
+
+  /// @notice Returns the number of listed reserves on the spoke.
+  /// @dev Count includes reserves that are not currently active.
+  function getReserveCount() external view returns (uint256);
+
   /// @notice Returns the maximum allowed value for an asset identifier.
   /// @return The maximum asset identifier value (inclusive).
   function MAX_ALLOWED_ASSET_ID() external view returns (uint256);
-
-  /// @notice Returns the type hash for the SetUserPositionManager intent.
-  /// @return The bytes-encoded EIP-712 struct hash representing the intent.
-  function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32);
 
   /// @notice Returns the minimum health factor below which a position is considered unhealthy and subject to liquidation.
   /// @return The minimum health factor considered healthy, expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
@@ -405,82 +460,12 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   function ORACLE_DECIMALS() external view returns (uint8);
 
   /// @notice Returns the address of the AaveOracle contract.
-  /// @return The address of the AaveOracle contract.
   function ORACLE() external view returns (address);
 
-  /// @notice Returns the reserve struct data in storage.
-  /// @param reserveId The identifier of the reserve.
-  /// @return The reserve struct.
-  function getReserve(uint256 reserveId) external view returns (Reserve memory);
-
-  /// @notice Returns the reserve configuration struct data in storage.
-  /// @param reserveId The identifier of the reserve.
-  /// @return The reserve configuration struct.
-  function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory);
-
-  /// @notice Returns the dynamic reserve configuration struct data in storage.
-  /// @param reserveId The identifier of the reserve.
-  /// @return The dynamic reserve configuration struct.
-  function getDynamicReserveConfig(
-    uint256 reserveId
-  ) external view returns (DynamicReserveConfig memory);
-
-  /// @notice Returns the dynamic reserve configuration struct at the specified key.
-  /// @param reserveId The identifier of the reserve.
-  /// @param configKey The key of the dynamic config.
-  /// @return The dynamic reserve configuration struct.
-  function getDynamicReserveConfig(
-    uint256 reserveId,
-    uint16 configKey
-  ) external view returns (DynamicReserveConfig memory);
-
-  /// @notice Returns the user account data struct in storage.
-  /// @param user The address of the user.
-  /// @return The user account data struct.
-  function getUserAccountData(address user) external view returns (UserAccountData memory);
-
-  /// @notice Returns the user position struct in storage.
-  /// @param reserveId The identifier of the reserve.
-  /// @param user The address of the user.
-  /// @return The user position struct.
-  function getUserPosition(
-    uint256 reserveId,
-    address user
-  ) external view returns (UserPosition memory);
-
-  /// @notice Returns true if the reserve is set as collateral for the user, false otherwise.
-  /// @dev Even if enabled as collateral, it will only count towards user position if the collateral factor is greater than 0.
-  /// @param reserveId The identifier of the reserve.
-  /// @param user The address of the user.
-  /// @return True if the user is using the reserve as collateral, false otherwise.
-  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
-
-  /// @notice Returns true if the user is borrowing the reserve, false otherwise.
-  /// @param reserveId The identifier of the reserve.
-  /// @param user The address of the user.
-  /// @return True if the user is borrowing the reserve, false otherwise.
-  function isBorrowing(uint256 reserveId, address user) external view returns (bool);
-
-  /// @notice Returns the number of reserves.
-  /// @return The number of reserves.
-  function getReserveCount() external view returns (uint256);
-
-  /// @notice Returns the liquidation bonus for a given health factor, based on the user's dynamic config.
-  /// @param reserveId The identifier of the reserve.
-  /// @param user The address of the user.
-  /// @param healthFactor The health factor of the user.
-  /// @return The liquidation bonus, in BPS.
-  function getLiquidationBonus(
-    uint256 reserveId,
-    address user,
-    uint256 healthFactor
-  ) external view returns (uint256);
-
-  /// @notice Returns the liquidation config struct.
-  /// @return The liquidation config struct.
-  function getLiquidationConfig() external view returns (LiquidationConfig memory);
-
-  /// @notice Returns the domain separator.
-  /// @return The domain separator.
+  /// @notice Returns the EIP-712 domain separator.
   function DOMAIN_SEPARATOR() external view returns (bytes32);
+
+  /// @notice Returns the type hash for the SetUserPositionManager intent.
+  /// @return The bytes-encoded EIP-712 struct hash representing the intent.
+  function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32);
 }

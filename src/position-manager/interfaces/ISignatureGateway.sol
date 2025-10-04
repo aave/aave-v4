@@ -158,9 +158,6 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
   /// @param deadline The deadline for the permit.
-  /// @param v Part of the secp256k1 signature.
-  /// @param r Part of the secp256k1 signature.
-  /// @param s Part of the secp256k1 signature.
   function permitReserve(
     uint256 reserveId,
     address onBehalfOf,

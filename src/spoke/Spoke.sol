@@ -67,8 +67,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
-  /// @dev A user will always be able to act on behalf of self.
-  /// @param onBehalfOf The address of the user on behalf of which the action is being performed.
   modifier onlyPositionManager(address onBehalfOf) {
     require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
     _;
