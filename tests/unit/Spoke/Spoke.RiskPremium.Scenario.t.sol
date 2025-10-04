@@ -1132,7 +1132,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Reserve base drawn shares should be the sum of both users' base drawn shares
     assertApproxEqAbs(
       reserve.drawnShares,
-      hub1.convertToDrawnShares(daiAssetId, bobDaiInfo.drawnDebt + aliceDaiInfo.drawnDebt),
+      hub1.previewRestoreByAssets(daiAssetId, bobDaiInfo.drawnDebt + aliceDaiInfo.drawnDebt),
       1,
       string.concat('reserve dai base drawn shares ', label)
     );
@@ -1150,7 +1150,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Reserve base drawn shares should be the sum of both users' base drawn shares
     assertApproxEqAbs(
       reserve.drawnShares,
-      hub1.convertToDrawnShares(usdxAssetId, bobUsdxInfo.drawnDebt + aliceUsdxInfo.drawnDebt),
+      hub1.previewRestoreByAssets(usdxAssetId, bobUsdxInfo.drawnDebt + aliceUsdxInfo.drawnDebt),
       1,
       string.concat('reserve usdx base drawn shares ', label)
     );
@@ -1166,7 +1166,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     IHub.SpokeData memory spoke = hub1.getSpoke(daiAssetId, address(spoke1));
     assertApproxEqAbs(
       spoke.drawnShares,
-      hub1.convertToDrawnShares(daiAssetId, bobDaiInfo.drawnDebt + aliceDaiInfo.drawnDebt),
+      hub1.previewRestoreByAssets(daiAssetId, bobDaiInfo.drawnDebt + aliceDaiInfo.drawnDebt),
       1,
       string.concat('hub spoke dai drawn debt ', label)
     );
@@ -1180,7 +1180,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     spoke = hub1.getSpoke(usdxAssetId, address(spoke1));
     assertApproxEqAbs(
       spoke.drawnShares,
-      hub1.convertToDrawnShares(usdxAssetId, bobUsdxInfo.drawnDebt + aliceUsdxInfo.drawnDebt),
+      hub1.previewRestoreByAssets(usdxAssetId, bobUsdxInfo.drawnDebt + aliceUsdxInfo.drawnDebt),
       1,
       string.concat('hub spoke usdx drawn debt ', label)
     );
@@ -1194,7 +1194,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
     assertApproxEqAbs(
       asset.drawnShares,
-      hub1.convertToDrawnShares(daiAssetId, bobDaiInfo.drawnDebt + aliceDaiInfo.drawnDebt),
+      hub1.previewRestoreByAssets(daiAssetId, bobDaiInfo.drawnDebt + aliceDaiInfo.drawnDebt),
       1,
       string.concat('hub asset dai drawn debt ', label)
     );
@@ -1207,7 +1207,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     asset = hub1.getAsset(usdxAssetId);
     assertApproxEqAbs(
       asset.drawnShares,
-      hub1.convertToDrawnShares(usdxAssetId, bobUsdxInfo.drawnDebt + aliceUsdxInfo.drawnDebt),
+      hub1.previewRestoreByAssets(usdxAssetId, bobUsdxInfo.drawnDebt + aliceUsdxInfo.drawnDebt),
       1,
       string.concat('hub asset usdx drawn debt ', label)
     );

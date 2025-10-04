@@ -29,6 +29,9 @@ contract Hub is IHub, AccessManaged {
   uint8 public constant MAX_ALLOWED_UNDERLYING_DECIMALS = 18;
 
   /// @inheritdoc IHub
+  uint8 public constant MIN_ALLOWED_UNDERLYING_DECIMALS = 5;
+
+  /// @inheritdoc IHub
   uint56 public constant MAX_ALLOWED_SPOKE_CAP = type(uint56).max;
 
   uint256 internal _assetCount;
@@ -57,7 +60,10 @@ contract Hub is IHub, AccessManaged {
       underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
       InvalidAddress()
     );
-    require(decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS, InvalidAssetDecimals());
+    require(
+      MIN_ALLOWED_UNDERLYING_DECIMALS <= decimals && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
+      InvalidAssetDecimals()
+    );
 
     uint256 assetId = _assetCount++;
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
@@ -292,7 +298,9 @@ contract Hub is IHub, AccessManaged {
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(assetId, asset, spoke, premiumDelta, premiumAmount);
-    asset.deficit += (drawnAmount + premiumAmount).toUint128();
+    uint128 deficitAmount = (drawnAmount + premiumAmount).toUint128();
+    asset.deficit += deficitAmount;
+    spoke.deficit += deficitAmount;
 
     asset.updateDrawnRate(assetId);
 
@@ -302,23 +310,29 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function eliminateDeficit(uint256 assetId, uint256 amount) external returns (uint256) {
+  function eliminateDeficit(
+    uint256 assetId,
+    uint256 amount,
+    address spoke
+  ) external returns (uint256) {
     Asset storage asset = _assets[assetId];
-    SpokeData storage spoke = _spokes[assetId][msg.sender];
+    SpokeData storage callerSpoke = _spokes[assetId][msg.sender];
+    SpokeData storage coveredSpoke = _spokes[assetId][spoke];
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
-    _validateEliminateDeficit(spoke, amount);
-    uint256 deficit = asset.deficit;
+    _validateEliminateDeficit(callerSpoke, amount);
+    uint256 deficit = coveredSpoke.deficit;
     require(amount <= deficit, InvalidAmount());
 
     uint128 shares = previewRemoveByAssets(assetId, amount).toUint128();
     asset.addedShares -= shares;
-    spoke.addedShares -= shares;
-    asset.deficit = deficit.uncheckedSub(amount).toUint128();
+    callerSpoke.addedShares -= shares;
+    asset.deficit -= amount.toUint128();
+    coveredSpoke.deficit = deficit.uncheckedSub(amount).toUint128();
 
     asset.updateDrawnRate(assetId);
 
-    emit EliminateDeficit(assetId, msg.sender, shares, amount);
+    emit EliminateDeficit(assetId, msg.sender, spoke, shares, amount);
 
     return shares;
   }
@@ -434,6 +448,11 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
+  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256) {
+    return _spokes[assetId][spoke].deficit;
+  }
+
+  /// @inheritdoc IHub
   function getSpokeConfig(
     uint256 assetId,
     address spoke
@@ -499,7 +518,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toDrawnSharesDown(assets);
+    return _assets[assetId].toDrawnSharesUp(assets);
   }
 
   /// @inheritdoc IHub
@@ -591,7 +610,7 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].liquidity;
   }
 
-  function getDeficit(uint256 assetId) external view returns (uint256) {
+  function getAssetDeficit(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].deficit;
   }
 
@@ -720,9 +739,11 @@ contract Hub is IHub, AccessManaged {
     uint256 drawCap = spoke.drawCap;
     uint256 drawn = _getSpokeDrawn(spoke, assetId);
     uint256 premium = _getSpokePremium(spoke, assetId);
+
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
-        drawCap * MathUtils.uncheckedExp(10, asset.decimals) >= drawn + premium + amount,
+        drawCap * MathUtils.uncheckedExp(10, asset.decimals) >=
+        drawn + premium + amount + spoke.deficit,
       DrawCapExceeded(drawCap)
     );
   }

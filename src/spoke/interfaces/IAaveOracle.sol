@@ -33,6 +33,9 @@ interface IAaveOracle is IPriceOracle {
    */
   error InvalidPrice(uint256 reserveId);
 
+  /// @dev Thrown when the given address is invalid.
+  error InvalidAddress();
+
   /**
    * @notice Sets the price feed source of a reserve.
    * @dev Must be called by the spoke.
