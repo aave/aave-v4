@@ -51,12 +51,14 @@ library MathUtils {
     }
   }
 
-  /// @notice Subtracts an unsigned integer `b` from an unsigned integer `a`.
+  /// @notice Returns the difference of two unsigned integers as a signed integer.
+  /// @dev Does not ensure the unsigned integers are within the range of a signed integer.
+  /// @dev Does not revert on underflow.
   function signedSub(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b);
   }
 
-  /// @notice Subtracts an unsigned integer `b` from an unsigned integer `a`.
+  /// @notice Returns the difference of two unsigned integers.
   /// @dev Does not revert on underflow.
   function uncheckedSub(uint256 a, uint256 b) internal pure returns (uint256) {
     unchecked {
