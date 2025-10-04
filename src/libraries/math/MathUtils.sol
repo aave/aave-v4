@@ -29,21 +29,21 @@ library MathUtils {
     return WadRayMath.RAY + result;
   }
 
-  /// @notice Returns the minimum of two unsigned integers.
+  /// @notice Returns the smaller of two unsigned integers.
   function min(uint256 a, uint256 b) internal pure returns (uint256 result) {
     assembly ('memory-safe') {
       result := xor(b, mul(xor(a, b), lt(a, b)))
     }
   }
 
-  /// @notice Adds a signed integer `b` to an unsigned integer `a`.
+  /// @notice Returns the sum of an unsigned and signed integer.
   /// @dev Reverts on underflow.
   function add(uint256 a, int256 b) internal pure returns (uint256) {
     if (b >= 0) return a + uint256(b);
     return a - uint256(-b);
   }
 
-  /// @notice Adds two unsigned integers.
+  /// @notice Returns the sum of two unsigned integers.
   /// @dev Does not revert on overflow.
   function uncheckedAdd(uint256 a, uint256 b) internal pure returns (uint256) {
     unchecked {
@@ -52,8 +52,7 @@ library MathUtils {
   }
 
   /// @notice Returns the difference of two unsigned integers as a signed integer.
-  /// @dev Does not ensure the unsigned integers are within the range of a signed integer.
-  /// @dev Does not revert on underflow.
+  /// @dev Does not ensure the `a` and `b` values are within the range of a signed integer.
   function signedSub(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b);
   }
@@ -74,8 +73,8 @@ library MathUtils {
     }
   }
 
-  /// @notice Multiplies `a` and `b` and divides the result by `c`, rounding down.
-  /// @dev Reverts if division by zero or overflow occurs, ie `mul(a,b)` exceeds 256 bits.
+  /// @notice Multiplies `a` and `b` in 256 bits and divides the result by `c`, rounding down.
+  /// @dev Reverts if division by zero or overflow occurs on intermediate multiplication.
   function mulDivDown(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
     assembly ('memory-safe') {
       if iszero(c) {
@@ -88,8 +87,8 @@ library MathUtils {
     }
   }
 
-  /// @notice Multiplies `a` and `b` and divides the result by `c`, rounding up.
-  /// @dev Reverts if division by zero or overflow occurs, ie `mul(a,b)` exceeds 256 bits.
+  /// @notice Multiplies `a` and `b` in 256 bits and divides the result by `c`, rounding up.
+  /// @dev Reverts if division by zero or overflow occurs on intermediate multiplication.
   function mulDivUp(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
     assembly ('memory-safe') {
       if iszero(c) {
