@@ -16,9 +16,6 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
   /// @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
   error InvalidSignature();
 
-  /// @notice Thrown when reserveId does not correspond to a registered reserve.
-  error InvalidReserveId();
-
   /// @notice Facilitates `supply` action on connected SPOKE() with a typed signature from `onBehalfOf`.
   /// @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.

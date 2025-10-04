@@ -147,8 +147,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     ReserveConfig calldata config
   ) external restricted {
-    require(reserveId < _reserveCount, ReserveNotListed());
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _getReserve(reserveId);
     _validateReserveConfig(config);
     reserve.paused = config.paused;
     reserve.frozen = config.frozen;
@@ -198,7 +197,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve);
 
@@ -214,7 +213,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve);
     IHubBase hub = reserve.hub;
@@ -242,7 +241,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     _validateBorrow(reserve);
@@ -266,8 +265,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
+    Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    Reserve storage reserve = _reserves[reserveId];
     _validateRepay(reserve);
     IHubBase hub = reserve.hub;
     uint256 assetId = reserve.assetId;
@@ -481,18 +480,20 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
+    _getReserve(reserveId);
     return _positionStatus[user].isUsingAsCollateral(reserveId);
   }
 
   /// @inheritdoc ISpoke
   function isBorrowing(uint256 reserveId, address user) external view returns (bool) {
+    _getReserve(reserveId);
     return _positionStatus[user].isBorrowing(reserveId);
   }
 
   /// @inheritdoc ISpokeBase
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
+    Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    Reserve storage reserve = _reserves[reserveId];
     (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
       reserve.hub,
       reserve.assetId,
@@ -503,8 +504,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpokeBase
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
+    Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    Reserve storage reserve = _reserves[reserveId];
     (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
       reserve.hub,
       reserve.assetId,
@@ -515,19 +516,19 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpokeBase
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _getReserve(reserveId);
     return reserve.hub.getSpokeAddedAssets(reserve.assetId, address(this));
   }
 
   /// @inheritdoc ISpokeBase
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _getReserve(reserveId);
     return reserve.hub.getSpokeAddedShares(reserve.assetId, address(this));
   }
 
   /// @inheritdoc ISpokeBase
-  function getUserSuppliedAssets(uint256 reserveId, address user) public view returns (uint256) {
-    Reserve storage reserve = _reserves[reserveId];
+  function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256) {
+    Reserve storage reserve = _getReserve(reserveId);
     return
       reserve.hub.previewRemoveByShares(
         reserve.assetId,
@@ -537,6 +538,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpokeBase
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
+    _getReserve(reserveId);
     return _userPositions[user][reserveId].suppliedShares;
   }
 
@@ -547,13 +549,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpokeBase
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _getReserve(reserveId);
     return reserve.hub.getSpokeOwed(reserve.assetId, address(this));
   }
 
   /// @inheritdoc ISpokeBase
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _getReserve(reserveId);
     return reserve.hub.getSpokeTotalOwed(reserve.assetId, address(this));
   }
 
@@ -563,6 +565,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     address user,
     uint256 healthFactor
   ) external view returns (uint256) {
+    _getReserve(reserveId);
     return
       LiquidationLogic.calculateLiquidationBonus({
         healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
@@ -585,12 +588,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function getReserve(uint256 reserveId) external view returns (Reserve memory) {
-    return _reserves[reserveId];
+    return _getReserve(reserveId);
   }
 
   /// @inheritdoc ISpoke
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory) {
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _getReserve(reserveId);
     return
       ReserveConfig({
         paused: reserve.paused,
@@ -604,7 +607,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function getDynamicReserveConfig(
     uint256 reserveId
   ) external view returns (DynamicReserveConfig memory) {
-    return _dynamicConfig[reserveId][_reserves[reserveId].dynamicConfigKey];
+    Reserve storage reserve = _getReserve(reserveId);
+    return _dynamicConfig[reserveId][reserve.dynamicConfigKey];
   }
 
   /// @inheritdoc ISpoke
@@ -612,6 +616,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint16 configKey
   ) external view returns (DynamicReserveConfig memory) {
+    _getReserve(reserveId);
     // @dev we do not revert if key is unset
     return _dynamicConfig[reserveId][configKey];
   }
@@ -621,6 +626,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     address user
   ) external view returns (UserPosition memory) {
+    _getReserve(reserveId);
     return _userPositions[user][reserveId];
   }
 
@@ -630,18 +636,15 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   function _validateSupply(Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     require(!reserve.frozen, ReserveFrozen());
   }
 
   function _validateWithdraw(Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
   }
 
   function _validateBorrow(Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     require(!reserve.frozen, ReserveFrozen());
     require(reserve.borrowable, ReserveNotBorrowable());
@@ -649,7 +652,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   function _validateRepay(Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
   }
 
@@ -706,6 +708,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(!reserve.paused, ReservePaused());
     // can disable as collateral if the reserve is frozen
     require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
+  }
+
+  function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
+    Reserve storage reserve = _reserves[reserveId];
+    require(address(reserve.hub) != address(0), ReserveNotListed());
+    return reserve;
   }
 
   function _calculateRestoreAmount(

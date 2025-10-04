@@ -66,14 +66,21 @@ contract HubConfigTest is HubBase {
     assertEq(hub1.getSpokeConfig(assetId, newSpoke), spokeConfig);
   }
 
+  function test_updateSpokeConfig_revertsWith_AssetNotListed() public {
+    uint256 assetId = _randomInvalidAssetId(hub1);
+    address spoke = vm.randomAddress();
+    IHub.SpokeConfig memory spokeConfig;
+    vm.expectRevert(IHub.AssetNotListed.selector);
+    Utils.updateSpokeConfig(hub1, ADMIN, assetId, spoke, spokeConfig);
+  }
+
   function test_updateSpokeConfig_fuzz_revertsWith_SpokeNotListed(
     uint256 assetId,
     address spoke,
     IHub.SpokeConfig calldata spokeConfig
   ) public {
-    if (!hub1.isSpokeListed(assetId, spoke)) {
-      assetId = bound(assetId, hub1.getAssetCount(), type(uint256).max);
-    }
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3);
+    assumeUnusedAddress(spoke);
     vm.expectRevert(IHub.SpokeNotListed.selector, address(hub1));
     Utils.updateSpokeConfig(hub1, ADMIN, assetId, spoke, spokeConfig);
   }

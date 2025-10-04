@@ -320,7 +320,6 @@ contract SignatureGateway is
   /// @return The corresponding hub address.
   function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
     ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
-    require(reserveData.underlying != address(0), InvalidReserveId());
     return (IERC20(reserveData.underlying), address(reserveData.hub));
   }
 }

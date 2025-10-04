@@ -170,12 +170,14 @@ contract Hub is IHub, AccessManaged {
     address spoke,
     SpokeConfig calldata config
   ) external restricted {
+    require(assetId < _assetCount, AssetNotListed());
     require(_assetToSpokes[assetId].contains(spoke), SpokeNotListed());
     _updateSpokeConfig(assetId, spoke, config);
   }
 
   /// @inheritdoc IHub
   function setInterestRateData(uint256 assetId, bytes calldata irData) external restricted {
+    require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, irData);
@@ -385,6 +387,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function sweep(uint256 assetId, uint256 amount) external {
+    require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
@@ -401,6 +404,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function reclaim(uint256 assetId, uint256 amount) external {
+    require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);

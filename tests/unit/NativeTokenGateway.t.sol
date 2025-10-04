@@ -110,9 +110,9 @@ contract NativeTokenGatewayTest is Base {
     nativeTokenGateway.supplyNative{value: 0}(_wethReserveId(spoke1), 0);
   }
 
-  function test_supplyNative_revertsWith_InvalidReserveId() public {
+  function test_supplyNative_revertsWith_NotNativeWrappedAsset() public {
     uint256 amount = 100e18;
-    vm.expectRevert(INativeTokenGateway.InvalidReserveId.selector);
+    vm.expectRevert(INativeTokenGateway.NotNativeWrappedAsset.selector);
     vm.prank(bob);
     nativeTokenGateway.supplyNative{value: amount}(_wethReserveId(spoke1) + 1, amount);
   }
@@ -315,10 +315,10 @@ contract NativeTokenGatewayTest is Base {
     nativeTokenGateway.withdrawNative(_wethReserveId(spoke1), 0, bob);
   }
 
-  function test_withdrawNative_revertsWith_InvalidReserveId() public {
+  function test_withdrawNative_revertsWith_NotNativeWrappedAsset() public {
     uint256 amount = 100e18;
 
-    vm.expectRevert(INativeTokenGateway.InvalidReserveId.selector);
+    vm.expectRevert(INativeTokenGateway.NotNativeWrappedAsset.selector);
     vm.prank(bob);
     nativeTokenGateway.withdrawNative(_wethReserveId(spoke1) + 1, amount, bob);
   }
@@ -419,10 +419,10 @@ contract NativeTokenGatewayTest is Base {
     nativeTokenGateway.borrowNative(_wethReserveId(spoke1), 0, bob);
   }
 
-  function test_borrowNative_revertsWith_InvalidReserveId() public {
+  function test_borrowNative_revertsWith_NotNativeWrappedAsset() public {
     uint256 borrowAmount = 5e18;
 
-    vm.expectRevert(INativeTokenGateway.InvalidReserveId.selector);
+    vm.expectRevert(INativeTokenGateway.NotNativeWrappedAsset.selector);
     vm.prank(bob);
     nativeTokenGateway.borrowNative(_wethReserveId(spoke1) + 1, borrowAmount, bob);
   }
@@ -615,10 +615,10 @@ contract NativeTokenGatewayTest is Base {
     nativeTokenGateway.repayNative{value: 0}(_wethReserveId(spoke1), 0);
   }
 
-  function test_repayNative_revertsWith_InvalidReserveId() public {
+  function test_repayNative_revertsWith_NotNativeWrappedAsset() public {
     uint256 repayAmount = 5e18;
 
-    vm.expectRevert(INativeTokenGateway.InvalidReserveId.selector);
+    vm.expectRevert(INativeTokenGateway.NotNativeWrappedAsset.selector);
     vm.prank(bob);
     nativeTokenGateway.repayNative{value: repayAmount}(_wethReserveId(spoke1) + 1, repayAmount);
   }

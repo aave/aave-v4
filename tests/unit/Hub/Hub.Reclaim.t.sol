@@ -5,6 +5,12 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubReclaimTest is HubBase {
+  function test_reclaim_revertsWith_AssetNotListed() public {
+    uint256 assetId = _randomInvalidAssetId(hub1);
+    vm.expectRevert(IHub.AssetNotListed.selector);
+    hub1.reclaim(assetId, vm.randomUint());
+  }
+
   function test_reclaim_revertsWith_OnlyReinvestmentController_init() public {
     assertEq(hub1.getAsset(daiAssetId).reinvestmentController, address(0));
     vm.expectRevert(IHub.OnlyReinvestmentController.selector);

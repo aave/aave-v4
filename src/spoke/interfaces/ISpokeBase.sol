@@ -75,6 +75,7 @@ interface ISpokeBase {
   );
 
   /// @notice Supplies an amount of underlying asset of the specified reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The hub pulls the underlying asset from the caller, so prior token approval is required.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @param reserveId The reserve identifier.
@@ -83,6 +84,7 @@ interface ISpokeBase {
   function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external;
 
   /// @notice Withdraws a specified amount of underlying asset from the given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @dev Caller receives the underlying asset withdrawn.
@@ -91,7 +93,8 @@ interface ISpokeBase {
   /// @param onBehalfOf The owner of position to remove supply shares from.
   function withdraw(uint256 reserveId, uint256 amount, address onBehalfOf) external;
 
-  /// @notice Borrows a specified amount of underlying asset from the given reserve
+  /// @notice Borrows a specified amount of underlying asset from the given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @dev Caller receives the underlying asset borrowed.
   /// @param reserveId The identifier of the reserve.
@@ -100,6 +103,7 @@ interface ISpokeBase {
   function borrow(uint256 reserveId, uint256 amount, address onBehalfOf) external;
 
   /// @notice Repays a specified amount of underlying asset to a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The hub pulls the underlying asset from the caller, so prior approval is required.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @param reserveId The identifier of the reserve.
@@ -108,6 +112,7 @@ interface ISpokeBase {
   function repay(uint256 reserveId, uint256 amount, address onBehalfOf) external;
 
   /// @notice Liquidates a user position.
+  /// @dev It reverts if the reserves associated with any of the given reserve identifiers are not listed.
   /// @dev Invokes hub `restore`, and pulls underlying repaid debt assets from caller (Liquidator), hence it needs prior approval.
   /// @param collateralReserveId The reserveId of the underlying asset used as collateral by the liquidated user.
   /// @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator.
@@ -121,6 +126,7 @@ interface ISpokeBase {
   ) external;
 
   /// @notice Returns the debt of a specific user for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The total debt of the user is the sum of drawn debt and premium debt.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
@@ -129,6 +135,7 @@ interface ISpokeBase {
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256);
 
   /// @notice Returns the total debt of a specific user for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The total debt of the user is the sum of drawn debt and premium debt.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
@@ -141,23 +148,27 @@ interface ISpokeBase {
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256);
 
   /// @notice Returns the total amount of supplied shares of a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @return The amount of supplied shares.
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
 
   /// @notice Returns the amount of assets supplied by a specific user for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
   /// @return The amount of assets supplied by the user.
   function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256);
 
   /// @notice Returns the amount of shares supplied by a specific user for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
   /// @return The amount of shares supplied by the user.
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
 
   /// @notice Returns the debt of a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The total debt of the reserve is the sum of drawn debt and premium debt.
   /// @param reserveId The identifier of the reserve.
   /// @return The amount of drawn debt.
@@ -165,6 +176,7 @@ interface ISpokeBase {
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
 
   /// @notice Returns the total debt of a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The total debt of the reserve is the sum of drawn debt and premium debt.
   /// @param reserveId The identifier of the reserve.
   /// @return The total debt amount.
