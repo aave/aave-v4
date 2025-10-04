@@ -4,18 +4,15 @@ pragma solidity ^0.8.0;
 
 /// @title WadRayMath library
 /// @author Aave Labs
-/// @notice Provides functions to perform calculations with Wad and Ray units with explicit rounding.
-/// @dev Provides mul and div function for Wads (decimal numbers with 18 digits of precision) and Rays (decimal numbers
-/// with 27 digits of precision).
+/// @notice Provides utility functions to work with Wad and Ray units with explicit rounding.
 library WadRayMath {
   uint256 internal constant WAD = 1e18;
   uint256 internal constant RAY = 1e27;
   uint256 internal constant PERCENTAGE_FACTOR = 1e4;
 
-  /// @notice Multiplies two numbers in Wad precisions, rounding down.
-  /// @param a First Number in Wad precision.
-  /// @param b Second Number in Wad precision.
-  /// @return c Returns result, floor(a * b / WAD)  in Wad precision.
+  /// @notice Multiplies two Wad numbers, rounding down.
+  /// @dev Reverts if intermediate multiplication overflows.
+  /// @return c = floor(a * b / WAD) in Wad units.
   function wadMulDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
     assembly ('memory-safe') {
@@ -27,10 +24,9 @@ library WadRayMath {
     }
   }
 
-  /// @notice Multiplies two numbers in Wad precisions, rounding up.
-  /// @param a First Number in Wad precision.
-  /// @param b Second Number in Wad precision.
-  /// @return c The result of the multiplication, in Wad.
+  /// @notice Multiplies two Wad numbers, rounding up.
+  /// @dev Reverts if intermediate multiplication overflows.
+  /// @return c = ceil(a * b / WAD) in Wad units.
   function wadMulUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
     assembly ('memory-safe') {
@@ -43,10 +39,9 @@ library WadRayMath {
     }
   }
 
-  /// @notice Divides two Number in Wad precisions, rounding down.
-  /// @param a First Number in Wad precision.
-  /// @param b Second Number in Wad precision.
-  /// @return c The result of the division, in Wad.
+  /// @notice Divides two Wad numbers, rounding down.
+  /// @dev Reverts if division by zero or intermediate multiplication overflows.
+  /// @return c = floor(a * WAD / b) in Wad units.
   function wadDivDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / WAD
     assembly ('memory-safe') {
@@ -58,10 +53,9 @@ library WadRayMath {
     }
   }
 
-  /// @notice Divides two numbers in Wad precisions, rounding up.
-  /// @param a First Number in Wad precision.
-  /// @param b Second Number in Wad precision.
-  /// @return c The result of the division, in Wad.
+  /// @notice Divides two Wad numbers, rounding up.
+  /// @dev Reverts if division by zero or intermediate multiplication overflows.
+  /// @return c = ceil(a * WAD / b) in Wad units.
   function wadDivUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / WAD
     assembly ('memory-safe') {
@@ -75,9 +69,8 @@ library WadRayMath {
   }
 
   /// @notice Multiplies two Ray numbers, rounding down.
-  /// @param a First Ray number.
-  /// @param b Second Ray number.
-  /// @return c The result of the multiplication, in Ray.
+  /// @dev Reverts if intermediate multiplication overflows.
+  /// @return c = floor(a * b / RAY) in Ray units.
   function rayMulDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
     assembly ('memory-safe') {
@@ -90,9 +83,8 @@ library WadRayMath {
   }
 
   /// @notice Multiplies two Ray numbers, rounding up.
-  /// @param a First Ray number.
-  /// @param b Second Ray number.
-  /// @return c The result of the multiplication, in Ray.
+  /// @dev Reverts if intermediate multiplication overflows.
+  /// @return c = ceil(a * b / RAY) in Ray units.
   function rayMulUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
     assembly ('memory-safe') {
@@ -106,9 +98,8 @@ library WadRayMath {
   }
 
   /// @notice Divides two Ray numbers, rounding down.
-  /// @param a First Ray number.
-  /// @param b Second Ray number.
-  /// @return c The result of the division, in Ray.
+  /// @dev Reverts if division by zero or intermediate multiplication overflows.
+  /// @return c = floor(a * RAY / b) in Ray units.
   function rayDivDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / RAY
     assembly ('memory-safe') {
@@ -121,9 +112,8 @@ library WadRayMath {
   }
 
   /// @notice Divides two Ray numbers, rounding up.
-  /// @param a First Ray number.
-  /// @param b Second Ray number.
-  /// @return c The result of the division, in Ray.
+  /// @dev Reverts if division by zero or intermediate multiplication overflows.
+  /// @return c = ceil(a * RAY / b) in Ray units.
   function rayDivUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / RAY
     assembly ('memory-safe') {
@@ -137,8 +127,8 @@ library WadRayMath {
   }
 
   /// @notice Casts value to Wad, adding 18 digits of precision.
-  /// @param a The number to cast to Wad.
-  /// @return b The resulting casted value.
+  /// @dev Reverts if intermediate multiplication overflows.
+  /// @return b = a * WAD in Wad units.
   function toWad(uint256 a) internal pure returns (uint256 b) {
     // to avoid overflow, b/WAD == a
     assembly {
@@ -150,25 +140,24 @@ library WadRayMath {
     }
   }
 
-  /// @notice Converts number from Wad precision, rounding down.
-  /// @param a The number in Wad precision.
-  /// @return b The resulting truncated value.
+  /// @notice Removes Wad precision from a given value, rounding down.
+  /// @return b = a / WAD in Wad units.
   function fromWadDown(uint256 a) internal pure returns (uint256 b) {
     assembly {
       b := div(a, WAD)
     }
   }
 
-  /// @notice Converts value from basis points to Wad.
-  /// @param a The value in basis points.
-  /// @return The resulting value in Wad.
+  /// @notice Converts value from basis points to Wad, rounding down.
+  /// @dev Reverts if intermediate multiplication overflows.
+  /// @return c = floor(a * WAD / PERCENTAGE_FACTOR) in Wad units.
   function bpsToWad(uint256 a) internal pure returns (uint256) {
     return (a * WAD) / PERCENTAGE_FACTOR;
   }
 
-  /// @notice Converts value from basis points to Ray.
-  /// @param a The value in basis points.
-  /// @return The resulting value in Ray.
+  /// @notice Converts value from basis points to Ray, rounding down.
+  /// @dev Reverts if intermediate multiplication overflows.
+  /// @return c = a * RAY / PERCENTAGE_FACTOR in Ray units.
   function bpsToRay(uint256 a) internal pure returns (uint256) {
     return (a * RAY) / PERCENTAGE_FACTOR;
   }
