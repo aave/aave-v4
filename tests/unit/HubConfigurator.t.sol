@@ -66,17 +66,16 @@ contract HubConfiguratorTest is HubBase {
 
   function test_addAsset_fuzz_revertsWith_InvalidAssetDecimals(
     bool fetchErc20Decimals,
-    address underlying,
     uint8 decimals,
     address feeReceiver,
     address interestRateStrategy
   ) public {
-    assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
     assumeNotZeroAddress(interestRateStrategy);
 
     decimals = bound(decimals, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS + 1, type(uint8).max)
       .toUint8();
+    address underlying = address(new MockERC20Decimals(decimals));
 
     vm.expectRevert(IHub.InvalidAssetDecimals.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -112,7 +111,6 @@ contract HubConfiguratorTest is HubBase {
 
   function test_addAsset_fuzz(
     bool fetchErc20Decimals,
-    address underlying,
     uint8 decimals,
     address feeReceiver,
     uint16 optimalUsageRatio,
@@ -120,10 +118,14 @@ contract HubConfiguratorTest is HubBase {
     uint32 variableRateSlope1,
     uint32 variableRateSlope2
   ) public {
-    assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
 
-    decimals = bound(decimals, 0, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
+    decimals = bound(
+      decimals,
+      Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
+      Constants.MAX_ALLOWED_UNDERLYING_DECIMALS
+    ).toUint8();
+    address underlying = address(new MockERC20Decimals(decimals));
     optimalUsageRatio = bound(optimalUsageRatio, MIN_OPTIMAL_RATIO, MAX_OPTIMAL_RATIO).toUint16();
 
     baseVariableBorrowRate = bound(baseVariableBorrowRate, 0, MAX_BORROW_RATE / 3).toUint32();
