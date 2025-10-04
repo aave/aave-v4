@@ -151,14 +151,29 @@ library WadRayMath {
   /// @notice Converts value from basis points to Wad, rounding down.
   /// @dev Reverts if intermediate multiplication overflows.
   /// @return c = floor(a * WAD / PERCENTAGE_FACTOR) in Wad units.
-  function bpsToWad(uint256 a) internal pure returns (uint256) {
-    return (a * WAD) / PERCENTAGE_FACTOR;
+  function bpsToWad(uint256 a) internal pure returns (uint256 c) {
+    // to avoid overflow, b/WAD == a
+    assembly {
+      c := mul(a, WAD)
+      if iszero(eq(div(c, WAD), a)) {
+        revert(0, 0)
+      }
+
+      c := div(c, PERCENTAGE_FACTOR)
+    }
   }
 
   /// @notice Converts value from basis points to Ray, rounding down.
   /// @dev Reverts if intermediate multiplication overflows.
   /// @return c = a * RAY / PERCENTAGE_FACTOR in Ray units.
-  function bpsToRay(uint256 a) internal pure returns (uint256) {
-    return (a * RAY) / PERCENTAGE_FACTOR;
+  function bpsToRay(uint256 a) internal pure returns (uint256 c) {
+    assembly {
+      c := mul(a, RAY)
+      if iszero(eq(div(c, RAY), a)) {
+        revert(0, 0)
+      }
+
+      c := div(c, PERCENTAGE_FACTOR)
+    }
   }
 }
