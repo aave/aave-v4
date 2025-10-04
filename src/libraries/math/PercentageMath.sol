@@ -11,8 +11,6 @@ library PercentageMath {
   uint256 internal constant PERCENTAGE_FACTOR = 1e4;
 
   /// @notice Executes a percentage multiplication, rounded down.
-  /// @param value The value to apply the percentage.
-  /// @param percentage The percentage of the value to be calculated (in BPS).
   function percentMulDown(
     uint256 value,
     uint256 percentage
@@ -28,8 +26,6 @@ library PercentageMath {
   }
 
   /// @notice Executes a percentage multiplication, rounded up.
-  /// @param value The value to apply the percentage.
-  /// @param percentage The percentage of the value to be calculated (in BPS).
   function percentMulUp(uint256 value, uint256 percentage) internal pure returns (uint256 result) {
     // to avoid overflow, value <= type(uint256).max / percentage
     assembly ('memory-safe') {
@@ -44,8 +40,6 @@ library PercentageMath {
   }
 
   /// @notice Executes a percentage division, rounded down.
-  /// @param value The value to apply the percentage.
-  /// @param percentage The percentage of the value to be calculated (in BPS).
   function percentDivDown(
     uint256 value,
     uint256 percentage
