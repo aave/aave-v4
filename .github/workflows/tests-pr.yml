@@ -38,4 +38,4 @@ jobs:
         id: test
         uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
         with:
-          FOUNDRY_PROFILE: pr
+          FOUNDRY_PROFILE: ci
