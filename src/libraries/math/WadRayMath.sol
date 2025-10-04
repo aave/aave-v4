@@ -15,7 +15,7 @@ library WadRayMath {
   /// @notice Multiplies two numbers in Wad precisions, rounding down.
   /// @param a First Number in Wad precision.
   /// @param b Second Number in Wad precision.
-  /// @return c The result of the multiplication, in Wad.
+  /// @return c Returns result, floor(a * b / WAD)  in Wad precision.
   function wadMulDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     // to avoid overflow, a <= type(uint256).max / b
     assembly ('memory-safe') {

@@ -41,7 +41,7 @@ contract NativeTokenGateway is
     _spoke = ISpoke(spoke_);
   }
 
-  /// @dev Reverts if the caller is not the native wrapper.
+  /// @dev Checks only 'nativeWrapper' can transfer native tokens.
   receive() external payable {
     require(msg.sender == address(_nativeWrapper), UnsupportedAction());
   }

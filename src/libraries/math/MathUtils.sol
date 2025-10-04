@@ -74,7 +74,6 @@ library MathUtils {
 
   /// @notice Multiplies `a` and `b` and divides the result by `c`, rounding down.
   /// @dev Reverts if division by zero or overflow occurs, ie `mul(a,b)` exceeds 256 bits.
-  /// @return d The result of the multiplication and division, rounded down.
   function mulDivDown(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
     assembly ('memory-safe') {
       if iszero(c) {
@@ -89,7 +88,6 @@ library MathUtils {
 
   /// @notice Multiplies `a` and `b` and divides the result by `c`, rounding up.
   /// @dev Reverts if division by zero or overflow occurs, ie `mul(a,b)` exceeds 256 bits.
-  /// @return d The result of the multiplication and division, rounded up.
   function mulDivUp(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
     assembly ('memory-safe') {
       if iszero(c) {

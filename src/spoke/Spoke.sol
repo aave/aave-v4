@@ -707,7 +707,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
-    // can disable as collateral if the reserve is frozen.
+    // can disable as collateral if the reserve is frozen
     require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
   }
 
