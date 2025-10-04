@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.10;
+pragma solidity 0.8.28;
 
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';

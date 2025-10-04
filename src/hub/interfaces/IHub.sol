@@ -19,10 +19,10 @@ interface IHub is IHubBase, IAccessManaged {
     uint128 premiumShares;
     uint128 premiumOffset;
     //
-    uint128 drawnIndex;
     uint128 drawnShares;
-    //
     uint128 realizedPremium;
+    //
+    uint128 drawnIndex;
     uint96 drawnRate;
     uint32 lastUpdateTimestamp;
     //
@@ -91,13 +91,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param assetId The identifier of the asset.
   /// @param drawnIndex The new drawn index of the asset.
   /// @param drawnRate The new drawn rate of the asset.
-  /// @param latestUpdateTimestamp The block timestamp of last update.
-  event UpdateAsset(
-    uint256 indexed assetId,
-    uint256 drawnIndex,
-    uint256 drawnRate,
-    uint256 latestUpdateTimestamp
-  );
+  event UpdateAsset(uint256 indexed assetId, uint256 drawnIndex, uint256 drawnRate);
 
   /// @notice Emitted when fees are accrued to `feeReceiver`.
   /// @param assetId The identifier of the asset.

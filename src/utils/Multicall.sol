@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -125,7 +125,7 @@ library AssetLogic {
     asset.drawnRate = newDrawnRate.toUint96();
 
     // asset accrual should have already occurred
-    emit IHub.UpdateAsset(assetId, asset.drawnIndex, newDrawnRate, asset.lastUpdateTimestamp);
+    emit IHub.UpdateAsset(assetId, asset.drawnIndex, newDrawnRate);
   }
 
   /// @notice Accrues interest and fees for the specified asset.
