@@ -660,15 +660,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @notice Refreshes user dynamic configuration and checks the position is healthy.
-  /// @dev Refreshes user position dynamic config; should only be called on `borrow`, `withdraw`, & disable `setUsingAsCollateral`.
   /// @return The user's new risk premium.
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
-    UserAccountData memory userAccountData = _calculateAndRefreshUserAccountData(user);
+    UserAccountData memory accountData = _calculateAndRefreshUserAccountData(user);
     require(
-      userAccountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      accountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
     );
-    return userAccountData.userRiskPremium;
+    return accountData.userRiskPremium;
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {
