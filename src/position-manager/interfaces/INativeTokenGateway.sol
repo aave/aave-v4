@@ -15,9 +15,7 @@ interface INativeTokenGateway is IRescuable {
   /// @notice Thrown when the given amount is invalid.
   error InvalidAmount();
 
-  /**
-   * @notice Thrown when the underlying asset is not the wrapped native asset.
-   */
+  /// @notice Thrown when the underlying asset is not the wrapped native asset.
   error NotNativeWrappedAsset();
 
   /// @notice Thrown when the native amount sent does not match the given amount parameter.
