@@ -679,7 +679,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     DynamicReserveConfig storage currentConfig,
     DynamicReserveConfig calldata newConfig
   ) internal view {
-    // @dev sufficient check since maxLiquidationBonus is always >= 100_00
+    // sufficient check since maxLiquidationBonus is always >= 100_00
     require(currentConfig.maxLiquidationBonus > 0, ConfigKeyUninitialized());
     require(newConfig.collateralFactor > 0, InvalidCollateralFactor());
     _validateDynamicReserveConfig(newConfig);
@@ -755,7 +755,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function _calculateAndPotentiallyRefreshUserAccountData(
     address user,
     bool refreshConfig
-  ) internal returns (UserAccountData memory userAccountData) {
+  ) internal returns (UserAccountData memory accountData) {
     PositionStatus storage positionStatus = _positionStatus[user];
 
     uint256 reserveId = _reserveCount;
@@ -788,14 +788,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
               reserve.assetId,
               suppliedShares
             ) * assetPrice).wadDivDown(assetUnit);
-            userAccountData.totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
+            accountData.totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
             collateralInfo.add(
-              userAccountData.suppliedCollateralsCount,
+              accountData.suppliedCollateralsCount,
               reserve.collateralRisk,
               userCollateralInBaseCurrency
             );
-            userAccountData.avgCollateralFactor += collateralFactor * userCollateralInBaseCurrency;
-            userAccountData.suppliedCollateralsCount = userAccountData
+            accountData.avgCollateralFactor += collateralFactor * userCollateralInBaseCurrency;
+            accountData.suppliedCollateralsCount = accountData
               .suppliedCollateralsCount
               .uncheckedAdd(1);
           }
@@ -809,55 +809,51 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
           userPosition
         );
         // we can simplify since there is no precision loss due to the division here
-        userAccountData.totalDebtInBaseCurrency += ((drawnDebt + premiumDebt) * assetPrice)
-          .wadDivUp(assetUnit);
-        userAccountData.borrowedReservesCount = userAccountData.borrowedReservesCount.uncheckedAdd(
-          1
+        accountData.totalDebtInBaseCurrency += ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(
+          assetUnit
         );
+        accountData.borrowedReservesCount = accountData.borrowedReservesCount.uncheckedAdd(1);
       }
     }
 
     // at this point avgCollateralFactor is the weighted sum of collateral scaled by collateralFactor
     // (avgCollateralFactor / totalCollateral) * totalCollateral can be simplified to avgCollateralFactor
     // strip BPS factor from result, because running avgCollateralFactor sum has been scaled by collateralFactor (in BPS) above
-    userAccountData.healthFactor = userAccountData.totalDebtInBaseCurrency == 0
+    accountData.healthFactor = accountData.totalDebtInBaseCurrency == 0
       ? type(uint256).max
-      : userAccountData
+      : accountData
         .avgCollateralFactor
-        .wadDivDown(userAccountData.totalDebtInBaseCurrency)
+        .wadDivDown(accountData.totalDebtInBaseCurrency)
         .fromBpsDown();
 
     // divide by total collateral to get avg collateral factor in wad
-    userAccountData.avgCollateralFactor = userAccountData.totalCollateralInBaseCurrency == 0
+    accountData.avgCollateralFactor = accountData.totalCollateralInBaseCurrency == 0
       ? 0
-      : userAccountData
+      : accountData
         .avgCollateralFactor
-        .wadDivDown(userAccountData.totalCollateralInBaseCurrency)
+        .wadDivDown(accountData.totalCollateralInBaseCurrency)
         .fromBpsDown();
 
-    uint256 debtCounterInBaseCurrency = userAccountData.totalDebtInBaseCurrency;
+    // running debt & collateral values used in risk premium calculation
+    uint256 debtCounterInBaseCurrency = accountData.totalDebtInBaseCurrency;
     uint256 collateralCounterInBaseCurrency = 0;
 
-    collateralInfo.sortByKey(); // sort by `collateralRisk` in asc, `userCollateralInBaseCurrency` in desc
+    collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
     uint256 i = 0;
-    // @dev from this point onwards, `collateralCounterInBaseCurrency` represents running collateral
-    // value used in risk premium, `debtCounterInBaseCurrency` represents running outstanding debt
     while (i < collateralInfo.length() && debtCounterInBaseCurrency > 0) {
       (uint256 collateralRisk, uint256 userCollateralInBaseCurrency) = collateralInfo.get(i);
       userCollateralInBaseCurrency = userCollateralInBaseCurrency.min(debtCounterInBaseCurrency);
-      userAccountData.userRiskPremium += userCollateralInBaseCurrency * collateralRisk;
+      accountData.userRiskPremium += userCollateralInBaseCurrency * collateralRisk;
       collateralCounterInBaseCurrency += userCollateralInBaseCurrency;
       debtCounterInBaseCurrency -= userCollateralInBaseCurrency;
       i = i.uncheckedAdd(1);
     }
 
     if (collateralCounterInBaseCurrency > 0) {
-      userAccountData.userRiskPremium =
-        userAccountData.userRiskPremium /
-        collateralCounterInBaseCurrency;
+      accountData.userRiskPremium = accountData.userRiskPremium / collateralCounterInBaseCurrency;
     }
 
-    return userAccountData;
+    return accountData;
   }
 
   /// @return The user's drawn debt.
@@ -958,7 +954,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return ('Spoke', '1');
   }
 
-  /// @dev Only utilized for the _calculateUserAccountData function.
+  function _setUserPositionManager(address positionManager, address user, bool approve) internal {
+    PositionManagerConfig storage config = _positionManager[positionManager];
+    // only allow approval when position manager is active for improved UX
+    require(!approve || config.active, InactivePositionManager());
+    config.approval[user] = approve;
+    emit SetUserPositionManager(user, positionManager, approve);
+  }
+
   function _castToView(
     function(address, bool) internal returns (UserAccountData memory) fnIn
   )
@@ -969,13 +972,5 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     assembly ('memory-safe') {
       fnOut := fnIn
     }
-  }
-
-  function _setUserPositionManager(address positionManager, address user, bool approve) internal {
-    PositionManagerConfig storage config = _positionManager[positionManager];
-    // Only allows approval when position manager is active for improved UX.
-    require(!approve || config.active, InactivePositionManager());
-    config.approval[user] = approve;
-    emit SetUserPositionManager(user, positionManager, approve);
   }
 }
