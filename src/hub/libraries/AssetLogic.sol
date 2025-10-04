@@ -119,7 +119,8 @@ library AssetLogic {
   function accrue(
     IHub.Asset storage asset,
     uint256 assetId,
-    IHub.SpokeData storage feeReceiver
+    IHub.SpokeData storage feeReceiver,
+    address feeReceiverAddress
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
     uint256 indexDelta = drawnIndex.uncheckedSub(asset.drawnIndex);
@@ -131,7 +132,7 @@ library AssetLogic {
     if (feeShares > 0) {
       feeReceiver.addedShares += feeShares;
       asset.addedShares += feeShares;
-      emit IHub.AccrueFees(assetId, feeShares, asset.feeReceiver);
+      emit IHub.AccrueFees(assetId, feeShares, feeReceiverAddress);
     }
   }
 
