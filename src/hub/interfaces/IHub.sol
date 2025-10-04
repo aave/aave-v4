@@ -21,10 +21,10 @@ interface IHub is IHubBase, IAccessManaged {
     uint128 premiumShares;
     uint128 premiumOffset;
     //
-    uint128 drawnIndex;
     uint128 drawnShares;
-    //
     uint128 realizedPremium;
+    //
+    uint128 drawnIndex;
     uint96 drawnRate;
     uint32 lastUpdateTimestamp;
     //
@@ -71,12 +71,7 @@ interface IHub is IHubBase, IAccessManaged {
   event AddAsset(uint256 indexed assetId, address indexed underlying, uint8 decimals);
   event UpdateAssetConfig(uint256 indexed assetId, AssetConfig config);
   event UpdateSpokeConfig(uint256 indexed assetId, address indexed spoke, SpokeConfig config);
-  event UpdateAsset(
-    uint256 indexed assetId,
-    uint256 drawnIndex,
-    uint256 drawnRate,
-    uint256 latestUpdateTimestamp
-  );
+  event UpdateAsset(uint256 indexed assetId, uint256 drawnIndex, uint256 drawnRate);
   event ReportDeficit(
     uint256 indexed assetId,
     address indexed spoke,

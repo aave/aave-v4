@@ -108,7 +108,7 @@ library AssetLogic {
     asset.drawnRate = newDrawnRate.toUint96();
 
     // asset accrual should have already occurred
-    emit IHub.UpdateAsset(assetId, asset.drawnIndex, newDrawnRate, asset.lastUpdateTimestamp);
+    emit IHub.UpdateAsset(assetId, asset.drawnIndex, newDrawnRate);
   }
 
   /**
