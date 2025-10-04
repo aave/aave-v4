@@ -77,7 +77,6 @@ library PercentageMath {
   }
 
   /// @notice Truncates number from BPS precision, rounding down.
-  /// @param value The number in BPS precision.
   function fromBpsDown(uint256 value) internal pure returns (uint256) {
     return value / PERCENTAGE_FACTOR;
   }
