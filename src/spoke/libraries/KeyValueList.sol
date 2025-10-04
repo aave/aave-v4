@@ -42,47 +42,45 @@ library KeyValueList {
 
   /// @notice Returns the key-value pair at the given index.
   /// @dev Uninitialized keys are returned as (key: 0, value: 0).
-  /// @param idx The index from which to retrieve the key-value pair.
   function get(List memory self, uint256 idx) internal pure returns (uint256, uint256) {
     return unpack(self._inner[idx]);
   }
 
-  /// @notice Sorts the list in-place by ascending order of the `key`.
-  /// @dev Since `key` is in the MSB, we can sort by the key by sorting the array in descending order
-  /// (so the keys are in ascending order when unpacking, due to inversion when packing).
-  /// @dev In case of collision, values are sorted in descending order.
+  /// @notice Sorts the list in-place by ascending order of `key`, and descending order of `value` on collision.
   /// @dev All uninitialized keys are placed at the end of the list after sorting.
+  /// @dev Since `key` is in the MSB, we can sort by the key by sorting the array in descending order
+  /// (so the keys are in ascending order when unpacking, due to the inversion when packed).
   function sortByKey(List memory self) internal pure {
     Arrays.sort(self._inner, gtComparator);
   }
 
-  /// @notice Packs a key-value pair into a single uint256.
-  /// @dev key, value < ceiling checks are expected to be done before packing.
+  /// @notice Packs a given `key`, `value` pair into a single word.
+  /// @dev Bound checks are expected to be done before packing.
   function pack(uint256 key, uint256 value) internal pure returns (uint256) {
     return ((_MAX_KEY - key) << _KEY_SHIFT) | value;
   }
 
-  /// @notice Unpacks the value from a previously packed uint256 containing key and value.
+  /// @notice Unpacks `key` from a previously packed word containing `key` and `value`.
+  /// @dev The key is stored in the most significant bits of the word.
   function unpackKey(uint256 data) internal pure returns (uint256) {
     return _MAX_KEY - (data >> _KEY_SHIFT);
   }
 
-  /// @notice Unpacks the value from a previously packed uint256 containing key and value.
+  /// @notice Unpacks `value` from a previously packed word containing `key` and `value`.
+  /// @dev The value is stored in the least significant bits of the word.
   function unpackValue(uint256 data) internal pure returns (uint256) {
     return data & ((1 << _KEY_SHIFT) - 1);
   }
 
-  /// @notice Unpacks both the key and value from a previously packed uint256 containing key and value.
+  /// @notice Unpacks both `key` and `value` from a previously packed word containing `key` and `value`.
   /// @dev Uninitialized keys are returned as (key: 0, value: 0).
-  /// @param data The packed key-value pair.
-  /// @return The unpacked key.
-  /// @return The unpacked value.
+  /// @param data The packed word containing `key` and `value`.
   function unpack(uint256 data) internal pure returns (uint256, uint256) {
     if (data == 0) return (0, 0);
     return (unpackKey(data), unpackValue(data));
   }
 
-  /// @notice Comparator function performing the greater than comparison.
+  /// @notice Comparator function performing greater-than comparison.
   /// @return True if `a` is greater than `b`, false otherwise.
   function gtComparator(uint256 a, uint256 b) internal pure returns (bool) {
     return a > b;

@@ -12,7 +12,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 /// @title AssetLogic library
 /// @author Aave Labs
-/// @notice Implements the logic and calculations for asset data.
+/// @notice Implements the base logic and share price conversions for asset data.
 library AssetLogic {
   using AssetLogic for IHub.Asset;
   using PercentageMath for uint256;
@@ -22,7 +22,6 @@ library AssetLogic {
   using SafeCast for uint256;
 
   /// @notice Converts an amount of shares to the equivalent amount of drawn assets, rounding up.
-  /// @dev Drawn index does not account for premium, in order to accrue drawn assets separately.
   function toDrawnAssetsUp(
     IHub.Asset storage asset,
     uint256 shares
@@ -31,7 +30,6 @@ library AssetLogic {
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of drawn assets, rounding down.
-  /// @dev Drawn index does not account for premium, in order to accrue drawn assets separately.
   function toDrawnAssetsDown(
     IHub.Asset storage asset,
     uint256 shares
@@ -131,7 +129,6 @@ library AssetLogic {
   }
 
   /// @notice Accrues interest and fees for the specified asset.
-  /// @param feeReceiver The data struct of the fee receiver spoke associated with the asset.
   function accrue(
     IHub.Asset storage asset,
     uint256 assetId,
@@ -151,7 +148,7 @@ library AssetLogic {
     }
   }
 
-  /// @notice Calculates the drawn index of a specified asset based on the drawn rate and the previous index.
+  /// @notice Calculates the drawn index of a specified asset based on the existing drawn rate and index.
   function getDrawnIndex(IHub.Asset storage asset) internal view returns (uint256) {
     uint256 previousIndex = asset.drawnIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
@@ -184,8 +181,7 @@ library AssetLogic {
     return feesAmount.toSharesDown(asset.totalAddedAssets() - feesAmount, asset.addedShares);
   }
 
-  /// @notice Calculates the amount of fee shares generated from the asset's accrued interest.
-  /// @dev Calculates the updated drawn index on the fly using the current index and the drawn rate.
+  /// @notice Calculates the amount of unrealized fee shares since last accrual.
   function unrealizedFeeShares(IHub.Asset storage asset) internal view returns (uint256) {
     return asset.getFeeShares(asset.getDrawnIndex().uncheckedSub(asset.drawnIndex));
   }

@@ -29,7 +29,7 @@ contract NativeTokenGateway is
 
   /// @dev Constructor.
   /// @param nativeWrapper_ The address of the native wrapper contract.
-  /// @param spoke_ The address of the spoke contract.
+  /// @param spoke_ The address of the connected spoke.
   /// @param initialOwner_ The address of the initial owner.
   constructor(
     address nativeWrapper_,
@@ -137,8 +137,8 @@ contract NativeTokenGateway is
     require(amount > 0, InvalidAmount());
   }
 
-  /// @return The underlying asset.
-  /// @return The hub address.
+  /// @return The underlying asset for `reserveId` on connected spoke.
+  /// @return The corresponding hub address.
   function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
     ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
     return (IERC20(reserveData.underlying), address(reserveData.hub));

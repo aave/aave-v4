@@ -590,19 +590,15 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHubBase
   function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    uint256 unrealizedFeeShares;
-    if (spoke == asset.feeReceiver) unrealizedFeeShares = asset.unrealizedFeeShares();
-    return
-      previewRemoveByShares(assetId, _spokes[assetId][spoke].addedShares + unrealizedFeeShares);
+    uint256 unrealized = spoke == asset.feeReceiver ? asset.unrealizedFeeShares() : 0;
+    return previewRemoveByShares(assetId, _spokes[assetId][spoke].addedShares + unrealized);
   }
 
   /// @inheritdoc IHubBase
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    if (spoke == asset.feeReceiver) {
-      return _spokes[assetId][spoke].addedShares + asset.unrealizedFeeShares();
-    }
-    return _spokes[assetId][spoke].addedShares;
+    uint256 unrealized = spoke == asset.feeReceiver ? asset.unrealizedFeeShares() : 0;
+    return _spokes[assetId][spoke].addedShares + unrealized;
   }
 
   /// @inheritdoc IHub

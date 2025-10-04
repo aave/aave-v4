@@ -25,34 +25,38 @@ interface INativeTokenGateway is IRescuable {
   error UnsupportedAction();
 
   /// @notice Wraps the native asset and supplies to the Spoke.
+  /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to wrap and supply.
   function supplyNative(uint256 reserveId, uint256 amount) external payable;
 
   /// @notice Withdraws the wrapped asset from the Spoke and unwraps it back to the native asset.
+  /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to withdraw and unwrap.
   /// @param receiver Address that will receive the unwrapped native asset.
   function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external;
 
   /// @notice Borrows the wrapped asset from the Spoke and unwraps it back to the native asset.
+  /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to borrow and unwrap.
   /// @param receiver Address that will receive the unwrapped native asset.
   function borrowNative(uint256 reserveId, uint256 amount, address receiver) external;
 
   /// @notice Wraps the native asset and repays debt on the Spoke.
+  /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to wrap and repay.
   function repayNative(uint256 reserveId, uint256 amount) external payable;
 
-  /// @notice Renounces the positionManager approval given by a user.
-  /// @param user The address of the user.
+  /// @notice Allows contract to renounce its position manager role for `user`.
+  /// @dev Only authorized caller to invoke this method.
   function renouncePositionManagerRole(address user) external;
 
-  /// @notice Returns address of the Native Wrapper contract.
+  /// @notice Returns the address of Native Wrapper.
   function NATIVE_WRAPPER() external view returns (address);
 
-  /// @notice Returns address of the Spoke contract.
+  /// @notice Returns the address of connected Spoke.
   function SPOKE() external view returns (address);
 }
