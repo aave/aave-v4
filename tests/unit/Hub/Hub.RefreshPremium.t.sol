@@ -166,7 +166,7 @@ contract HubRefreshPremiumTest is HubBase {
       if (premiumAssetsPos > asset.premiumOffset) {
         // set both shares diff and offset diff to match offset
         premiumDelta.sharesDelta = -(
-          hub1.convertToDrawnShares(assetId, asset.premiumOffset).toInt256()
+          hub1.previewRestoreByAssets(assetId, asset.premiumOffset).toInt256()
         );
         premiumDelta.offsetDelta = -asset.premiumOffset.toInt256();
       }
@@ -223,7 +223,7 @@ contract HubRefreshPremiumTest is HubBase {
     userPremiumSharesNew = bound(
       userPremiumSharesNew,
       0,
-      hub1.convertToDrawnShares(assetId, MAX_SUPPLY_AMOUNT / 2)
+      hub1.previewRestoreByAssets(assetId, MAX_SUPPLY_AMOUNT / 2)
     );
     uint256 userPremiumOffsetNew = hub1.previewDrawByShares(assetId, userPremiumSharesNew);
 
