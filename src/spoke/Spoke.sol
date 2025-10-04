@@ -147,8 +147,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     ReserveConfig calldata config
   ) external restricted {
-    require(reserveId < _reserveCount, ReserveNotListed());
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _getReserve(reserveId);
     _validateReserveConfig(config);
     reserve.paused = config.paused;
     reserve.frozen = config.frozen;
@@ -198,7 +197,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve);
 
@@ -214,7 +213,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve);
     IHubBase hub = reserve.hub;
@@ -242,7 +241,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     _validateBorrow(reserve);
@@ -266,8 +265,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
+    Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    Reserve storage reserve = _reserves[reserveId];
     _validateRepay(reserve);
     IHubBase hub = reserve.hub;
     uint256 assetId = reserve.assetId;
@@ -637,18 +636,15 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   function _validateSupply(Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     require(!reserve.frozen, ReserveFrozen());
   }
 
   function _validateWithdraw(Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
   }
 
   function _validateBorrow(Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     require(!reserve.frozen, ReserveFrozen());
     require(reserve.borrowable, ReserveNotBorrowable());
@@ -656,7 +652,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   function _validateRepay(Reserve storage reserve) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
   }
 

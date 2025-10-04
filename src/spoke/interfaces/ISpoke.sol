@@ -268,11 +268,13 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   ) external returns (uint256);
 
   /// @notice Updates the reserve config for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param params The new reserve config.
   function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external;
 
   /// @notice Updates the dynamic reserve config for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Appends dynamic config to the next valid config key, and overrides existing config if the key is already used.
   /// @param reserveId The identifier of the reserve.
   /// @param dynamicConfig The new dynamic reserve config.
@@ -283,6 +285,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   ) external returns (uint16 configKey);
 
   /// @notice Updates the dynamic reserve config for a given reserve at the specified key.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Reverts with `ConfigKeyUninitialized` if the config key has not been initialized yet.
   /// @dev Reverts with `InvalidCollateralFactor` if the collateral factor is 0.
   /// @param reserveId The identifier of the reserve.
@@ -300,6 +303,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   function updatePositionManager(address positionManager, bool active) external;
 
   /// @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param usingAsCollateral True if the user wants to use the supply as collateral, false otherwise.
@@ -362,6 +366,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   function isPositionManagerActive(address positionManager) external view returns (bool);
 
   /// @notice Allows consuming a permit signature for the given reserve's underlying asset.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Spender is the corresponding hub of the given reserve.
   /// @param reserveId The identifier of the reserve.
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
@@ -378,20 +383,24 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   ) external;
 
   /// @notice Returns the reserve struct data in storage.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   function getReserve(uint256 reserveId) external view returns (Reserve memory);
 
   /// @notice Returns the reserve configuration struct data in storage.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory);
 
   /// @notice Returns the dynamic reserve configuration struct data in storage.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   function getDynamicReserveConfig(
     uint256 reserveId
   ) external view returns (DynamicReserveConfig memory);
 
   /// @notice Returns the dynamic reserve configuration struct at the specified key.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param configKey The key of the dynamic config.
   function getDynamicReserveConfig(
@@ -403,6 +412,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
 
   /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
   /// @param healthFactor The health factor of the user.
@@ -417,6 +427,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   function getUserAccountData(address user) external view returns (UserAccountData memory);
 
   /// @notice Returns the user position struct in storage.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
   function getUserPosition(
@@ -425,12 +436,14 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   ) external view returns (UserPosition memory);
 
   /// @notice Returns true if the reserve is set as collateral for the user, false otherwise.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Even if enabled as collateral, it will only count towards user position if the collateral factor is greater than 0.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
   function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
 
   /// @notice Returns true if the user is borrowing the reserve, false otherwise.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
   function isBorrowing(uint256 reserveId, address user) external view returns (bool);
