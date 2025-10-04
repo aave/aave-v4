@@ -492,8 +492,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpokeBase
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
-    UserPosition storage userPosition = _userPositions[user][reserveId];
     Reserve storage reserve = _getReserve(reserveId);
+    UserPosition storage userPosition = _userPositions[user][reserveId];
     (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
       reserve.hub,
       reserve.assetId,
@@ -504,8 +504,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpokeBase
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
-    UserPosition storage userPosition = _userPositions[user][reserveId];
     Reserve storage reserve = _getReserve(reserveId);
+    UserPosition storage userPosition = _userPositions[user][reserveId];
     (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
       reserve.hub,
       reserve.assetId,
