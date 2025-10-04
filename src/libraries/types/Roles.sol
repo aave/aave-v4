@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.20;
 
 library Roles {
   uint64 public constant DEFAULT_ADMIN_ROLE = 0;
