@@ -290,21 +290,17 @@ library LiquidationLogic {
     ) {
       collateralToLiquidate = params.collateralReserveBalance;
 
-      // decreases if collateralToLiquidate > params.collateralReserveBalance
-      //  - if it decreases, it might bypass the debt dust condition
-      // increases if leavesCollateralDust && debtToLiquidate < params.debtReserveBalance
-      //  - if it increases, it will increase by at most DUST_LIQUIDATION_THRESHOLD (in base currency).
-      //    Since debtToLiquidate < params.debtReserveBalance and debt dust condition was enforced, it
-      //    is guaranteed that the increase will not make debtToLiquidate exceed params.debtReserveBalance
-      //  - target health factor is ignored to prevent leaving dust
+      // - debtToLiquidate is decreased if collateralToLiquidate > params.collateralReserveBalance (if so, debt dust could remain).
+      // - debtToLiquidate is increased if (leavesCollateralDust && debtToLiquidate < params.debtReserveBalance), ensuring collateral reserve
+      //   is fully liquidated (potentially bypassing the target health factor). Can only increase by at most DUST_LIQUIDATION_THRESHOLD (in
+      //   base currency). Since debt dust condition was enforced, it is guaranteed that debtToLiquidate will never exceed params.debtReserveBalance.
       debtToLiquidate = collateralToLiquidate.mulDivUp(
         params.collateralAssetPrice * params.debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
         params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus
       );
     }
 
-    // make sure the liquidator intends to cover the necessary debt
-    // in case the amount was adjusted due to dust conditions
+    // revert if the liquidator does not cover the necessary debt to prevent dust from remaining
     require(params.debtToCover >= debtToLiquidate, ISpoke.MustNotLeaveDust());
 
     uint256 collateralToLiquidator = collateralToLiquidate -
@@ -379,7 +375,7 @@ library LiquidationLogic {
       DUST_LIQUIDATION_THRESHOLD;
 
     if (leavesDebtDust) {
-      // target health factor is ignored to prevent leaving dust
+      // target health factor is bypassed to prevent leaving dust
       maxDebtToLiquidate = params.debtReserveBalance;
     }
 
