@@ -74,6 +74,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint256 borrowedReservesCount; // number of reserves with strictly positive debt
   }
 
+  /// @notice Emitted when a liquidation config is updated.
+  /// @param config The new liquidation config.
+  event UpdateLiquidationConfig(LiquidationConfig config);
+
   /// @notice Emitted when a reserve is added.
   /// @param reserveId The identifier of the reserve.
   /// @param assetId The identifier of the asset.
@@ -84,6 +88,11 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param reserveId The identifier of the reserve.
   /// @param config The reserve configuration.
   event UpdateReserveConfig(uint256 indexed reserveId, ReserveConfig config);
+
+  /// @notice Emitted when the price source of a reserve is updated.
+  /// @param reserveId The identifier of the reserve.
+  /// @param priceSource The address of the new price source.
+  event UpdateReservePriceSource(uint256 indexed reserveId, address indexed priceSource);
 
   /// @notice Emitted when a dynamic reserve config is added.
   /// @dev The config key is the next available key for the reserve, which is now the latest config
@@ -108,14 +117,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     DynamicReserveConfig config
   );
 
-  /// @notice Emitted when a user's dynamic config is refreshed for all reserves to their latest config key.
-  /// @param user The address of the user.
-  event RefreshAllUserDynamicConfig(address indexed user);
-
-  /// @notice Emitted when a user's dynamic config is refreshed for a single reserve to its latest config key.
-  /// @param user The address of the user.
-  /// @param reserveId The identifier of the reserve.
-  event RefreshSingleUserDynamicConfig(address indexed user, uint256 reserveId);
+  /// @notice Emitted on updatePositionManager action.
+  /// @param positionManager The address of the position manager.
+  /// @param active True if position manager has become active, false otherwise.
+  event UpdatePositionManager(address indexed positionManager, bool active);
 
   /// @notice Emitted on setUsingAsCollateral action.
   /// @param reserveId The reserve identifier of the underlying asset.
@@ -129,6 +134,15 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     bool usingAsCollateral
   );
 
+  /// @notice Emitted when a user's dynamic config is refreshed for all reserves to their latest config key.
+  /// @param user The address of the user.
+  event RefreshAllUserDynamicConfig(address indexed user);
+
+  /// @notice Emitted when a user's dynamic config is refreshed for a single reserve to its latest config key.
+  /// @param user The address of the user.
+  /// @param reserveId The identifier of the reserve.
+  event RefreshSingleUserDynamicConfig(address indexed user, uint256 reserveId);
+
   /// @notice Emitted on updateUserRiskPremium action.
   /// @param user The owner of the position being modified.
   /// @param riskPremium The new risk premium (BPS) value of user.
@@ -140,11 +154,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param approve True if position manager approval was granted, false if it was revoked.
   event SetUserPositionManager(address indexed user, address indexed positionManager, bool approve);
 
-  /// @notice Emitted on updatePositionManager action.
-  /// @param positionManager The address of the position manager.
-  /// @param active True if position manager has become active, false otherwise.
-  event UpdatePositionManager(address indexed positionManager, bool active);
-
   /// @notice Emitted on refreshPremiumDebt action.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
@@ -154,15 +163,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     address indexed user,
     IHubBase.PremiumDelta premiumDelta
   );
-
-  /// @notice Emitted when the price source of a reserve is updated.
-  /// @param reserveId The identifier of the reserve.
-  /// @param priceSource The address of the new price source.
-  event UpdateReservePriceSource(uint256 indexed reserveId, address indexed priceSource);
-
-  /// @notice Emitted when a liquidation config is updated.
-  /// @param config The new liquidation config.
-  event UpdateLiquidationConfig(LiquidationConfig config);
 
   /// @notice Thrown when an asset is not listed on the hub when adding a reserve.
   error AssetNotListed();
@@ -225,6 +225,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when a collateral factor and max liquidation bonus are invalid.
   error InvalidCollateralFactorAndMaxLiquidationBonus();
 
+  /// @notice Thrown when trying to set zero collateralFactor on historic dynamic configuration keys.
+  error InvalidCollateralFactor();
+
   /// @notice Thrown when a self-liquidation is attempted.
   error SelfLiquidation();
 
@@ -237,17 +240,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when a debt to cover input is zero.
   error InvalidDebtToCover();
 
-  /// @notice Thrown when trying to set zero collateralFactor on historic dynamic configuration keys.
-  error InvalidCollateralFactor();
-
   /// @notice Updates the liquidation config.
   /// @param config The liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
-
-  /// @notice Updates the price source of a reserve.
-  /// @param reserveId The identifier of the reserve.
-  /// @param priceSource The address of the price source.
-  function updateReservePriceSource(uint256 reserveId, address priceSource) external;
 
   /// @notice Adds a new reserve to the spoke.
   /// @dev Allowed even if the spoke has not yet been added to the hub.
@@ -272,6 +267,11 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param reserveId The identifier of the reserve.
   /// @param params The new reserve config.
   function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external;
+
+  /// @notice Updates the price source of a reserve.
+  /// @param reserveId The identifier of the reserve.
+  /// @param priceSource The address of the price source.
+  function updateReservePriceSource(uint256 reserveId, address priceSource) external;
 
   /// @notice Updates the dynamic reserve config for a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -350,21 +350,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param user The address of the user.
   function renouncePositionManagerRole(address user) external;
 
-  /// @notice Returns the address of the external `LiquidationLogic` library.
-  /// @return The address of the library.
-  function getLiquidationLogic() external pure returns (address);
-
-  /// @notice Returns whether positionManager is active and approved by user.
-  /// @param user The address of the user.
-  /// @param positionManager The address of the position manager.
-  /// @return True if positionManager is active and approved by user, false otherwise.
-  function isPositionManager(address user, address positionManager) external view returns (bool);
-
-  /// @notice Returns whether positionManager is currently activated by governance.
-  /// @param positionManager The address of the position manager.
-  /// @return True if positionManager is currently active, false otherwise.
-  function isPositionManagerActive(address positionManager) external view returns (bool);
-
   /// @notice Allows consuming a permit signature for the given reserve's underlying asset.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Spender is the corresponding hub of the given reserve.
@@ -381,6 +366,17 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     bytes32 r,
     bytes32 s
   ) external;
+
+  /// @notice Returns the address of the external `LiquidationLogic` library.
+  /// @return The address of the library.
+  function getLiquidationLogic() external pure returns (address);
+
+  /// @notice Returns the liquidation config struct.
+  function getLiquidationConfig() external view returns (LiquidationConfig memory);
+
+  /// @notice Returns the number of listed reserves on the spoke.
+  /// @dev Count includes reserves that are not currently active.
+  function getReserveCount() external view returns (uint256);
 
   /// @notice Returns the reserve struct data in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -408,8 +404,27 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint16 configKey
   ) external view returns (DynamicReserveConfig memory);
 
-  /// @notice Returns the liquidation config struct.
-  function getLiquidationConfig() external view returns (LiquidationConfig memory);
+  /// @notice Returns true if the reserve is set as collateral for the user, false otherwise.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev Even if enabled as collateral, it will only count towards user position if the collateral factor is greater than 0.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
+
+  /// @notice Returns true if the user is borrowing the reserve, false otherwise.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  function isBorrowing(uint256 reserveId, address user) external view returns (bool);
+
+  /// @notice Returns the user position struct in storage.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  function getUserPosition(
+    uint256 reserveId,
+    address user
+  ) external view returns (UserPosition memory);
 
   /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -426,35 +441,31 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev Utilizes user's current dynamic configuration of user position.
   function getUserAccountData(address user) external view returns (UserAccountData memory);
 
-  /// @notice Returns the user position struct in storage.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @param reserveId The identifier of the reserve.
-  /// @param user The address of the user.
-  function getUserPosition(
-    uint256 reserveId,
-    address user
-  ) external view returns (UserPosition memory);
+  /// @notice Returns whether positionManager is currently activated by governance.
+  /// @param positionManager The address of the position manager.
+  /// @return True if positionManager is currently active, false otherwise.
+  function isPositionManagerActive(address positionManager) external view returns (bool);
 
-  /// @notice Returns true if the reserve is set as collateral for the user, false otherwise.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Even if enabled as collateral, it will only count towards user position if the collateral factor is greater than 0.
-  /// @param reserveId The identifier of the reserve.
+  /// @notice Returns whether positionManager is active and approved by user.
   /// @param user The address of the user.
-  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
+  /// @param positionManager The address of the position manager.
+  /// @return True if positionManager is active and approved by user, false otherwise.
+  function isPositionManager(address user, address positionManager) external view returns (bool);
 
-  /// @notice Returns true if the user is borrowing the reserve, false otherwise.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @param reserveId The identifier of the reserve.
-  /// @param user The address of the user.
-  function isBorrowing(uint256 reserveId, address user) external view returns (bool);
-
-  /// @notice Returns the number of listed reserves on the spoke.
-  /// @dev Count includes reserves that are not currently active.
-  function getReserveCount() external view returns (uint256);
+  /// @notice Returns the EIP-712 domain separator.
+  function DOMAIN_SEPARATOR() external view returns (bytes32);
 
   /// @notice Returns the maximum allowed value for an asset identifier.
   /// @return The maximum asset identifier value (inclusive).
   function MAX_ALLOWED_ASSET_ID() external view returns (uint256);
+
+  /// @notice Returns the maximum allowed collateral risk value for a reserve.
+  /// @return The maximum collateral risk value, expressed in bps (e.g. 100_00 is 100.00%).
+  function MAX_ALLOWED_COLLATERAL_RISK() external view returns (uint24);
+
+  /// @notice Returns the type hash for the SetUserPositionManager intent.
+  /// @return The bytes-encoded EIP-712 struct hash representing the intent.
+  function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32);
 
   /// @notice Returns the minimum health factor below which a position is considered unhealthy and subject to liquidation.
   /// @return The minimum health factor considered healthy, expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
@@ -464,21 +475,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @return The minimum debt amount considered as dust, denominated in USD with 26 decimals.
   function DUST_DEBT_LIQUIDATION_THRESHOLD() external view returns (uint256);
 
-  /// @notice Returns the maximum allowed collateral risk value for a reserve.
-  /// @return The maximum collateral risk value, expressed in bps (e.g. 100_00 is 100.00%).
-  function MAX_ALLOWED_COLLATERAL_RISK() external view returns (uint24);
-
   /// @notice Returns the number of decimals used by the oracle.
   /// @return The number of decimals.
   function ORACLE_DECIMALS() external view returns (uint8);
 
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);
-
-  /// @notice Returns the EIP-712 domain separator.
-  function DOMAIN_SEPARATOR() external view returns (bytes32);
-
-  /// @notice Returns the type hash for the SetUserPositionManager intent.
-  /// @return The bytes-encoded EIP-712 struct hash representing the intent.
-  function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32);
 }
