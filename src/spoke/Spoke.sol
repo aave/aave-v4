@@ -733,17 +733,17 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       }
     }
 
-    // at this point avgCollateralFactor is the weighted sum of collateral scaled by collateralFactor
-    // (avgCollateralFactor / totalCollateral) * totalCollateral can be simplified to avgCollateralFactor
-    // strip BPS factor from result, because running avgCollateralFactor sum has been scaled by collateralFactor (in BPS) above
     if (accountData.totalDebtValue > 0) {
+      // at this point, `avgCollateralFactor` is the collateral-weighted sum (scaled by collateralFactor in BPS)
+      // health factor uses this directly for simplicity, while the division by totalCollateral to compute the weighted average is done later
       accountData.healthFactor = accountData
         .avgCollateralFactor
         .wadDivDown(accountData.totalDebtValue)
         .fromBpsDown();
-    } else accountData.healthFactor = type(uint256).max;
+    } else {
+      accountData.healthFactor = type(uint256).max;
+    }
 
-    // divide by total collateral to get avg collateral factor in wad
     if (accountData.totalCollateralValue > 0) {
       accountData.avgCollateralFactor = accountData
         .avgCollateralFactor
