@@ -51,22 +51,6 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @notice Thrown when the optimal usage ratio is less than `MIN_OPTIMAL_POINT` or greater than `MAX_OPTIMAL_POINT`.
   error InvalidOptimalUsageRatio();
 
-  /// @notice Returns the maximum value achievable for the borrow rate.
-  /// @return The maximum rate, in bps.
-  function MAX_BORROW_RATE() external view returns (uint256);
-
-  /// @notice Returns the minimum optimal usage ratio.
-  /// @return The minimum optimal usage ratio, in bps.
-  function MIN_OPTIMAL_RATIO() external view returns (uint256);
-
-  /// @notice Returns the maximum optimal usage ratio.
-  /// @return The maximum optimal usage ratio, in bps.
-  function MAX_OPTIMAL_RATIO() external view returns (uint256);
-
-  /// @notice Returns the associated address of the hub.
-  /// @return The address of the hub.
-  function HUB() external view returns (address);
-
   /// @notice Returns the full InterestRateData struct for the given asset.
   /// @param assetId The identifier of the asset to get the data for.
   /// @return The InterestRateData struct for the given asset, all in bps.
@@ -98,4 +82,20 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @param assetId The identifier of the asset to get the maximum variable borrow rate for.
   /// @return The maximum variable borrow rate, in bps.
   function getMaxVariableBorrowRate(uint256 assetId) external view returns (uint256);
+
+  /// @notice Returns the maximum value achievable for the borrow rate.
+  /// @return The maximum rate, in bps.
+  function MAX_BORROW_RATE() external view returns (uint256);
+
+  /// @notice Returns the minimum optimal usage ratio.
+  /// @return The minimum optimal usage ratio, in bps.
+  function MIN_OPTIMAL_RATIO() external view returns (uint256);
+
+  /// @notice Returns the maximum optimal usage ratio.
+  /// @return The maximum optimal usage ratio, in bps.
+  function MAX_OPTIMAL_RATIO() external view returns (uint256);
+
+  /// @notice Returns the associated address of the hub.
+  /// @return The address of the hub.
+  function HUB() external view returns (address);
 }

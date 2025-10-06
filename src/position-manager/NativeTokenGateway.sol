@@ -52,11 +52,6 @@ contract NativeTokenGateway is
   }
 
   /// @inheritdoc INativeTokenGateway
-  function renouncePositionManagerRole(address user) external onlyOwner {
-    _spoke.renouncePositionManagerRole(user);
-  }
-
-  /// @inheritdoc INativeTokenGateway
   function supplyNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
     (IERC20 underlying, address hub) = _getReserveData(reserveId);
     _validateParams(underlying, amount);
@@ -118,6 +113,11 @@ contract NativeTokenGateway is
   }
 
   /// @inheritdoc INativeTokenGateway
+  function renouncePositionManagerRole(address user) external onlyOwner {
+    _spoke.renouncePositionManagerRole(user);
+  }
+
+  /// @inheritdoc INativeTokenGateway
   function NATIVE_WRAPPER() external view returns (address) {
     return address(_nativeWrapper);
   }
@@ -133,7 +133,7 @@ contract NativeTokenGateway is
   }
 
   function _validateParams(IERC20 underlying, uint256 amount) internal view {
-    require(address(underlying) == address(_nativeWrapper), InvalidReserveId());
+    require(address(underlying) == address(_nativeWrapper), NotNativeWrappedAsset());
     require(amount > 0, InvalidAmount());
   }
 

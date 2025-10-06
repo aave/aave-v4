@@ -61,18 +61,6 @@ interface IHubBase {
   /// @param premiumDelta The premium delta data struct.
   event RefreshPremium(uint256 indexed assetId, address indexed spoke, PremiumDelta premiumDelta);
 
-  /// @notice Emitted on the `transferShares` action.
-  /// @param assetId The identifier of the asset.
-  /// @param sender The address of the sender.
-  /// @param receiver The address of the receiver.
-  /// @param shares The amount of shares transferred.
-  event TransferShares(
-    uint256 indexed assetId,
-    address indexed sender,
-    address indexed receiver,
-    uint256 shares
-  );
-
   /// @notice Emitted on the `reportDeficit` action.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
@@ -87,6 +75,18 @@ interface IHubBase {
     PremiumDelta premiumDelta,
     uint256 drawnAmount,
     uint256 premiumAmount
+  );
+
+  /// @notice Emitted on the `transferShares` action.
+  /// @param assetId The identifier of the asset.
+  /// @param sender The address of the sender.
+  /// @param receiver The address of the receiver.
+  /// @param shares The amount of shares transferred.
+  event TransferShares(
+    uint256 indexed assetId,
+    address indexed sender,
+    address indexed receiver,
+    uint256 shares
   );
 
   /// @notice Add asset on behalf of user.
@@ -157,12 +157,6 @@ interface IHubBase {
   /// @param shares The amount of shares to pay to feeReceiver.
   function payFeeShares(uint256 assetId, uint256 shares) external;
 
-  /// @notice Returns the underlying address and decimals of the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The underlying address of the asset.
-  /// @return The decimals of the asset.
-  function getAssetUnderlyingAndDecimals(uint256 assetId) external view returns (address, uint8);
-
   /// @notice Converts the specified amount of assets to shares upon an `add` action.
   /// @dev Rounds down to the nearest shares amount.
   /// @param assetId The identifier of the asset.
@@ -219,6 +213,22 @@ interface IHubBase {
   /// @return The amount of assets converted from shares amount.
   function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
+  /// @notice Returns the underlying address and decimals of the specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @return The underlying address of the asset.
+  /// @return The decimals of the asset.
+  function getAssetUnderlyingAndDecimals(uint256 assetId) external view returns (address, uint8);
+
+  /// @notice Returns the total amount of the specified asset added to the hub.
+  /// @param assetId The identifier of the asset.
+  /// @return The amount of the asset added.
+  function getAddedAssets(uint256 assetId) external view returns (uint256);
+
+  /// @notice Returns the total amount of shares of the specified asset added to the hub.
+  /// @param assetId The identifier of the asset.
+  /// @return The amount of shares of the asset added.
+  function getAddedShares(uint256 assetId) external view returns (uint256);
+
   /// @notice Returns the amount of owed drawn and premium assets for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The amount of owed drawn assets.
@@ -241,6 +251,20 @@ interface IHubBase {
   /// @return The premium offset of the asset.
   /// @return The realized premium of the asset.
   function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256);
+
+  /// @notice Returns the total amount of the specified assets added to the hub by the specified spoke.
+  /// @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  /// @return The amount of added assets.
+  function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256);
+
+  /// @notice Returns the total amount of shares of the specified asset added to the hub by the specified spoke.
+  /// @dev If spoke is `asset.feeReceiver`, includes `unrealizedFeeShares` in return value.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  /// @return The amount of added shares.
+  function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the amount of the specified assets owed to the hub by the specified spoke.
   /// @param assetId The identifier of the asset.
@@ -271,28 +295,4 @@ interface IHubBase {
     uint256 assetId,
     address spoke
   ) external view returns (uint256, uint256, uint256);
-
-  /// @notice Returns the total amount of the specified asset added to the hub.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of the asset added.
-  function getAddedAssets(uint256 assetId) external view returns (uint256);
-
-  /// @notice Returns the total amount of shares of the specified asset added to the hub.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of shares of the asset added.
-  function getAddedShares(uint256 assetId) external view returns (uint256);
-
-  /// @notice Returns the total amount of the specified assets added to the hub by the specified spoke.
-  /// @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
-  /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
-  /// @return The amount of added assets.
-  function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256);
-
-  /// @notice Returns the total amount of shares of the specified asset added to the hub by the specified spoke.
-  /// @dev If spoke is `asset.feeReceiver`, includes `unrealizedFeeShares` in return value.
-  /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
-  /// @return The amount of added shares.
-  function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256);
 }
