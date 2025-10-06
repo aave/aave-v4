@@ -23,15 +23,22 @@ contract MathUtilsTest is Base {
   function test_fuzz_calculateLinearInterest(
     uint96 rate,
     uint32 previousTimestamp,
-    uint32 skipTime
+    uint256 skipTime
   ) public {
-    rate = bound(rate, 1, 100e27).toUint96();
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
     vm.warp(previousTimestamp);
     skip(skipTime);
     assertEq(
       MathUtils.calculateLinearInterest(rate, previousTimestamp),
-      1e27 + (rate * skipTime) / 365 days
+      1e27 + (uint256(rate) * uint256(skipTime)) / 365 days
     );
+  }
+
+  function test_calculateLinearInterest_edge_cases() public {
+    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint32).max, 0);
+    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint32).max, 1);
+    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint32).max, MAX_SKIP_TIME);
+    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint32).max - 1, MAX_SKIP_TIME);
   }
 
   function test_min(uint256 a, uint256 b) public pure {

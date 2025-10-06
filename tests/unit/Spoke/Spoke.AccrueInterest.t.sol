@@ -1133,8 +1133,4 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     return amounts;
   }
-
-  function _bpsToRay(uint256 bps) internal pure returns (uint256) {
-    return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
-  }
 }

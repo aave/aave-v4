@@ -2575,4 +2575,8 @@ abstract contract Base is Test {
   function _unpackNonce(uint256 keyNonce) internal pure returns (uint192 key, uint64 nonce) {
     return (uint192(keyNonce >> 64), uint64(keyNonce));
   }
+
+  function _bpsToRay(uint256 bps) internal pure returns (uint256) {
+    return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
+  }
 }

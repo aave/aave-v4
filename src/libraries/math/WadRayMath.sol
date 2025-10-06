@@ -150,31 +150,31 @@ library WadRayMath {
 
   /// @notice Converts value from basis points to Wad, rounding down.
   /// @dev Reverts if intermediate multiplication overflows.
-  /// @return c = floor(a * WAD / PERCENTAGE_FACTOR) in Wad units.
-  function bpsToWad(uint256 a) internal pure returns (uint256 c) {
+  /// @return b = floor(a * WAD / PERCENTAGE_FACTOR) in Wad units.
+  function bpsToWad(uint256 a) internal pure returns (uint256 b) {
     // to avoid overflow, b/WAD == a
     assembly ('memory-safe') {
-      c := mul(a, WAD)
-      if iszero(eq(div(c, WAD), a)) {
+      b := mul(a, WAD)
+      if iszero(eq(div(b, WAD), a)) {
         revert(0, 0)
       }
 
-      c := div(c, PERCENTAGE_FACTOR)
+      b := div(b, PERCENTAGE_FACTOR)
     }
   }
 
   /// @notice Converts value from basis points to Ray, rounding down.
   /// @dev Reverts if intermediate multiplication overflows.
-  /// @return c = a * RAY / PERCENTAGE_FACTOR in Ray units.
-  function bpsToRay(uint256 a) internal pure returns (uint256 c) {
+  /// @return b = a * RAY / PERCENTAGE_FACTOR in Ray units.
+  function bpsToRay(uint256 a) internal pure returns (uint256 b) {
     // to avoid overflow, b/RAY == a
     assembly ('memory-safe') {
-      c := mul(a, RAY)
-      if iszero(eq(div(c, RAY), a)) {
+      b := mul(a, RAY)
+      if iszero(eq(div(b, RAY), a)) {
         revert(0, 0)
       }
 
-      c := div(c, PERCENTAGE_FACTOR)
+      b := div(b, PERCENTAGE_FACTOR)
     }
   }
 }

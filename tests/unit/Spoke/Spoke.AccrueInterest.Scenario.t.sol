@@ -848,8 +848,4 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         wbtcBorrowAmount: amounts.wbtcBorrowAmount
       });
   }
-
-  function _bpsToRay(uint256 bps) internal pure returns (uint256) {
-    return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
-  }
 }
