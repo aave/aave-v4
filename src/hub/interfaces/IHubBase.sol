@@ -252,6 +252,16 @@ interface IHubBase {
   /// @return The realized premium of the asset.
   function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256);
 
+  /// @notice Returns the amount of available liquidity for the specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @return The amount of available liquidity.
+  function getAssetLiquidity(uint256 assetId) external view returns (uint256);
+
+  /// @notice Returns the amount of deficit of the specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @return The amount of deficit.
+  function getAssetDeficit(uint256 assetId) external view returns (uint256);
+
   /// @notice Returns the total amount of the specified assets added to the hub by the specified spoke.
   /// @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
   /// @param assetId The identifier of the asset.
@@ -295,4 +305,10 @@ interface IHubBase {
     uint256 assetId,
     address spoke
   ) external view returns (uint256, uint256, uint256);
+
+  /// @notice Returns the amount of a given spoke's deficit for the specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  /// @return The amount of deficit.
+  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256);
 }

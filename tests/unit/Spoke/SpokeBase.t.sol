@@ -143,7 +143,7 @@ contract SpokeBase is Base {
   /// @dev Opens a supply position for a random user
   function _openSupplyPosition(ISpoke spoke, uint256 reserveId, uint256 amount) public {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 initialLiq = _hub(spoke, reserveId).getLiquidity(assetId);
+    uint256 initialLiq = _hub(spoke, reserveId).getAssetLiquidity(assetId);
 
     address tempUser = makeUser();
     deal(spoke, reserveId, tempUser, amount);
@@ -157,7 +157,7 @@ contract SpokeBase is Base {
       onBehalfOf: tempUser
     });
 
-    assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
+    assertEq(hub1.getAssetLiquidity(assetId), initialLiq + amount);
   }
 
   /// @dev Increases the collateral supply for a user
@@ -168,7 +168,7 @@ contract SpokeBase is Base {
     address user
   ) public {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 initialLiq = _hub(spoke, reserveId).getLiquidity(assetId);
+    uint256 initialLiq = _hub(spoke, reserveId).getAssetLiquidity(assetId);
 
     deal(spoke, reserveId, user, amount);
     Utils.approve(spoke, reserveId, user, UINT256_MAX);
@@ -181,7 +181,7 @@ contract SpokeBase is Base {
       onBehalfOf: user
     });
 
-    assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
+    assertEq(hub1.getAssetLiquidity(assetId), initialLiq + amount);
   }
 
   /// @dev Opens a debt position for a random user, using same asset as collateral and borrow
@@ -615,7 +615,7 @@ contract SpokeBase is Base {
     userPos.drawnShares = hub1.previewRestoreByAssets(assetId, debtAmount).toUint128();
     userPos.premiumShares = hub1
       .previewRestoreByAssets(assetId, debtAmount)
-      .percentMulUp(userAccountData.userRiskPremium)
+      .percentMulUp(userAccountData.riskPremium)
       .toUint128();
     userPos.premiumOffset = hub1.convertToDrawnAssets(assetId, userPos.premiumShares).toUint128();
     userPos.realizedPremium = expectedRealizedPremium.toUint128();
@@ -737,7 +737,7 @@ contract SpokeBase is Base {
     ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
     uint256 riskPremiumStored = pos.premiumShares.percentDivDown(pos.drawnShares);
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
-    assertEq(userAccountData.userRiskPremium, riskPremiumStored, 'user risk premium mismatch');
+    assertEq(userAccountData.riskPremium, riskPremiumStored, 'user risk premium mismatch');
   }
 
   function _getUserRpStored(
@@ -805,7 +805,7 @@ contract SpokeBase is Base {
         ++suppliedReservesCount;
       }
       uint256 userDebt = spoke.getUserTotalDebt(reserveId, user);
-      totalDebt += _getValueInBaseCurrency(spoke, reserveId, userDebt);
+      totalDebt += _getValue(spoke, reserveId, userDebt);
     }
 
     if (totalDebt == 0) {
@@ -833,7 +833,7 @@ contract SpokeBase is Base {
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
       uint256 suppliedAssets = hub1.convertToAddedAssets(assetId, userPosition.suppliedShares);
-      uint256 supplyAmount = _getValueInBaseCurrency(spoke, reserveId, suppliedAssets);
+      uint256 supplyAmount = _getValue(spoke, reserveId, suppliedAssets);
 
       if (supplyAmount >= totalDebt) {
         userRP += totalDebt * collateralRisk;

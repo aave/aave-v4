@@ -95,9 +95,9 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Emitted when fees are accrued to `feeReceiver`.
   /// @param assetId The identifier of the asset.
-  /// @param shares The amount of shares accrued.
   /// @param feeReceiver The address of the fee receiver spoke.
-  event AccrueFees(uint256 indexed assetId, uint256 shares, address feeReceiver);
+  /// @param shares The amount of shares accrued.
+  event AccrueFees(uint256 indexed assetId, address indexed feeReceiver, uint256 shares);
 
   /// @notice Emitted when an amount of liquidity is swept by the reinvestment controller.
   /// @param assetId The identifier of the asset.
@@ -314,20 +314,10 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The asset configuration struct.
   function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory);
 
-  /// @notice Returns the amount of available liquidity for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of available liquidity.
-  function getLiquidity(uint256 assetId) external view returns (uint256);
-
-  /// @notice Returns the amount of deficit of the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of deficit.
-  function getAssetDeficit(uint256 assetId) external view returns (uint256);
-
   /// @notice Returns the amount of liquidity swept by the reinvestment controller for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The amount of liquidity swept.
-  function getSwept(uint256 assetId) external view returns (uint256);
+  function getAssetSwept(uint256 assetId) external view returns (uint256);
 
   /// @notice Calculates the current drawn index for the specified asset.
   /// @param assetId The identifier of the asset.
@@ -370,12 +360,6 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 assetId,
     address spoke
   ) external view returns (SpokeConfig memory);
-
-  /// @notice Returns the amount of a given spoke's deficit for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
-  /// @return The amount of deficit.
-  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the maximum allowed number of decimals for the underlying asset.
   /// @return The maximum number of decimals (inclusive).

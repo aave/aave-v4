@@ -63,7 +63,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, reserveId, bob, borrowAmount, bob);
 
-    uint256 drawnRate = hub1.getAssetDrawnRate(assetId);
+    uint96 drawnRate = hub1.getAssetDrawnRate(assetId).toUint96();
     uint256 initialBaseIndex = hub1.getAsset(assetId).drawnIndex;
     uint256 userRp = _getUserRiskPremium(spoke1, bob);
 
@@ -76,8 +76,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     ISpoke.UserPosition memory bobPosition = spoke1.getUserPosition(reserveId, bob);
     {
       uint256 drawnDebt = _calculateExpectedDrawnDebt(borrowAmount, drawnRate, startTime);
-      uint256 expectedpremiumShares = bobPosition.drawnShares.percentMulUp(userRp);
-      uint256 expectedPremiumDebt = hub1.convertToDrawnAssets(assetId, expectedpremiumShares) -
+      uint256 expectedPremiumShares = bobPosition.drawnShares.percentMulUp(userRp);
+      uint256 expectedPremiumDebt = hub1.convertToDrawnAssets(assetId, expectedPremiumShares) -
         bobPosition.premiumOffset +
         bobPosition.realizedPremium;
 
@@ -106,7 +106,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       _calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.drawnShares,
         initialPremiumShares: bobPosition.premiumShares,
-        liquidityFee: _getLiquidityFee(assetId),
+        liquidityFee: _getAssetLiquidityFee(assetId),
         indexDelta: hub1.getAsset(assetId).drawnIndex - initialBaseIndex
       })
     );
@@ -143,7 +143,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       _calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.drawnShares,
         initialPremiumShares: 0,
-        liquidityFee: _getLiquidityFee(assetId),
+        liquidityFee: _getAssetLiquidityFee(assetId),
         indexDelta: hub1.getAsset(assetId).drawnIndex - initialBaseIndex
       })
     );
@@ -222,8 +222,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     vm.expectEmit(address(hub1));
     emit IHub.AccrueFees(
       assetId,
-      hub1.convertToAddedShares(assetId, expectedTreasuryFees),
-      address(treasurySpoke)
+      address(treasurySpoke),
+      hub1.convertToAddedShares(assetId, expectedTreasuryFees)
     );
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
@@ -257,8 +257,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     vm.expectEmit(address(hub1));
     emit IHub.AccrueFees(
       assetId,
-      hub1.convertToAddedShares(assetId, expectedTreasuryFees),
-      address(treasurySpoke)
+      address(treasurySpoke),
+      hub1.convertToAddedShares(assetId, expectedTreasuryFees)
     );
 
     // 0.00% liquidity fee
@@ -345,8 +345,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     vm.expectEmit(address(hub1));
     emit IHub.AccrueFees(
       assetId,
-      hub1.convertToAddedShares(assetId, expectedTreasuryFees),
-      address(treasurySpoke)
+      address(treasurySpoke),
+      hub1.convertToAddedShares(assetId, expectedTreasuryFees)
     );
 
     vm.prank(alice);
@@ -382,8 +382,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     vm.expectEmit(address(hub1));
     emit IHub.AccrueFees(
       assetId,
-      hub1.convertToAddedShares(assetId, expectedTreasuryFees),
-      address(treasurySpoke)
+      address(treasurySpoke),
+      hub1.convertToAddedShares(assetId, expectedTreasuryFees)
     );
 
     // 0.00% liquidity fee

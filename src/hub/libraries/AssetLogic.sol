@@ -132,20 +132,20 @@ library AssetLogic {
   function accrue(
     IHub.Asset storage asset,
     uint256 assetId,
-    IHub.SpokeData storage feeReceiver,
-    address feeReceiverAddress
+    IHub.SpokeData storage feeReceiverSpoke,
+    address feeReceiver
   ) internal {
-    uint256 drawnIndex = asset.getDrawnIndex();
-    uint256 indexDelta = drawnIndex.uncheckedSub(asset.drawnIndex);
+    uint256 newDrawnIndex = asset.getDrawnIndex();
+    uint256 indexDelta = newDrawnIndex.uncheckedSub(asset.drawnIndex);
 
-    asset.drawnIndex = drawnIndex.toUint128();
+    asset.drawnIndex = newDrawnIndex.toUint128();
     asset.lastUpdateTimestamp = block.timestamp.toUint32();
 
     uint128 feeShares = asset.getFeeShares(indexDelta).toUint128();
     if (feeShares > 0) {
-      feeReceiver.addedShares += feeShares;
+      feeReceiverSpoke.addedShares += feeShares;
       asset.addedShares += feeShares;
-      emit IHub.AccrueFees(assetId, feeShares, feeReceiverAddress);
+      emit IHub.AccrueFees(assetId, feeReceiver, feeShares);
     }
   }
 
