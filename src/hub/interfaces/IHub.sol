@@ -313,16 +313,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The asset configuration struct.
   function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory);
 
-  /// @notice Returns the amount of available liquidity for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of available liquidity.
-  function getAssetLiquidity(uint256 assetId) external view returns (uint256);
-
-  /// @notice Returns the amount of deficit of the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of deficit.
-  function getAssetDeficit(uint256 assetId) external view returns (uint256);
-
   /// @notice Returns the amount of liquidity swept by the reinvestment controller for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The amount of liquidity swept.
