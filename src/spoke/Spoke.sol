@@ -439,9 +439,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (!_positionManager[msg.sender].approval[onBehalfOf]) {
       return;
     }
-
     _positionManager[msg.sender].approval[onBehalfOf] = false;
-
     emit SetUserPositionManager(onBehalfOf, msg.sender, false);
   }
 
