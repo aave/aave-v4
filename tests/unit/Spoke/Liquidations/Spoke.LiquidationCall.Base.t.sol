@@ -283,9 +283,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 collateralToLiquidate,
     uint256 debtToLiquidate
   ) internal virtual returns (uint256, uint256) {
-    KeyValueList.List memory list = KeyValueList.init(
-      userAccountDataBefore.suppliedCollateralsCount
-    );
+    KeyValueList.List memory list = KeyValueList.init(userAccountDataBefore.activeCollateralCount);
 
     uint256 totalCollateralValue = 0;
     uint256 newAvgCollateralFactor = 0;
@@ -525,7 +523,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           (userAccountDataBefore.totalCollateralValue.wadMulDown(debtToLiquidateValue) *
             userAccountDataBefore.avgCollateralFactor).toInt256());
 
-    bool hasDeficit = (userAccountDataBefore.suppliedCollateralsCount == 1) &&
+    bool hasDeficit = (userAccountDataBefore.activeCollateralCount == 1) &&
       (!params.isSolvent || isLiquidationBonusAffectingUserHf) &&
       (collateralToLiquidate ==
         params.spoke.getUserSuppliedAssets(params.collateralReserveId, params.user));

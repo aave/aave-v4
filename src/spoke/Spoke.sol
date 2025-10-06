@@ -326,8 +326,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       premiumDebt: 0, // populated below
       accruedPremium: 0, // populated below
       totalDebtValue: userAccountData.totalDebtValue,
-      suppliedCollateralsCount: userAccountData.suppliedCollateralsCount,
-      borrowedReservesCount: userAccountData.borrowedReservesCount,
+      activeCollateralCount: userAccountData.activeCollateralCount,
+      borrowedCount: userAccountData.borrowedCount,
       liquidator: msg.sender
     });
 
@@ -709,14 +709,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
             ) * assetPrice).wadDivDown(assetUnit);
             accountData.totalCollateralValue += userCollateralValue;
             collateralInfo.add(
-              accountData.suppliedCollateralsCount,
+              accountData.activeCollateralCount,
               reserve.collateralRisk,
               userCollateralValue
             );
             accountData.avgCollateralFactor += collateralFactor * userCollateralValue;
-            accountData.suppliedCollateralsCount = accountData
-              .suppliedCollateralsCount
-              .uncheckedAdd(1);
+            accountData.activeCollateralCount = accountData.activeCollateralCount.uncheckedAdd(1);
           }
         }
       }
@@ -729,7 +727,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         );
         // we can simplify since there is no precision loss due to the division here
         accountData.totalDebtValue += ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
-        accountData.borrowedReservesCount = accountData.borrowedReservesCount.uncheckedAdd(1);
+        accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
       }
     }
 

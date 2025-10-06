@@ -33,8 +33,8 @@ library LiquidationLogic {
     uint256 accruedPremium;
     uint256 totalDebtValue;
     address liquidator;
-    uint256 suppliedCollateralsCount;
-    uint256 borrowedReservesCount;
+    uint256 activeCollateralCount;
+    uint256 borrowedCount;
   }
 
   struct ValidateLiquidationCallParams {
@@ -214,8 +214,8 @@ library LiquidationLogic {
       _evaluateDeficit({
         isCollateralPositionEmpty: isCollateralPositionEmpty,
         isDebtPositionEmpty: isDebtPositionEmpty,
-        suppliedCollateralsCount: params.suppliedCollateralsCount,
-        borrowedReservesCount: params.borrowedReservesCount
+        activeCollateralCount: params.activeCollateralCount,
+        borrowedCount: params.borrowedCount
       });
   }
 
@@ -447,13 +447,13 @@ library LiquidationLogic {
   function _evaluateDeficit(
     bool isCollateralPositionEmpty,
     bool isDebtPositionEmpty,
-    uint256 suppliedCollateralsCount,
-    uint256 borrowedReservesCount
+    uint256 activeCollateralCount,
+    uint256 borrowedCount
   ) internal pure returns (bool) {
-    if (!isCollateralPositionEmpty || suppliedCollateralsCount > 1) {
+    if (!isCollateralPositionEmpty || activeCollateralCount > 1) {
       return false;
     }
-    return !isDebtPositionEmpty || borrowedReservesCount > 1;
+    return !isDebtPositionEmpty || borrowedCount > 1;
   }
 
   function _settlePremiumDebt(
