@@ -537,7 +537,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     skip(skipTime);
 
     uint256 cumulatedInterest = MathUtils.calculateLinearInterest(
-      hub1.getAsset(daiAssetId).drawnRate.toUint96(),
+      hub1.getAsset(daiAssetId).drawnRate,
       lastTimestamp
     );
     uint256 expectedDrawnDebt = cumulatedInterest.rayMulUp(borrowAmount1) + borrowAmount2;
