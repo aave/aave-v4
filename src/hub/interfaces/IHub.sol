@@ -65,33 +65,33 @@ interface IHub is IHubBase, IAccessManaged {
     uint56 drawCap;
   }
 
-  /// @notice Emitted when a spoke is added.
-  /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
-  event AddSpoke(uint256 indexed assetId, address indexed spoke);
-
   /// @notice Emitted when an asset is added.
   /// @param assetId The identifier of the asset.
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of the asset.
   event AddAsset(uint256 indexed assetId, address indexed underlying, uint8 decimals);
 
+  /// @notice Emitted when an asset is updated.
+  /// @param assetId The identifier of the asset.
+  /// @param drawnIndex The new drawn index of the asset.
+  /// @param drawnRate The new drawn rate of the asset.
+  event UpdateAsset(uint256 indexed assetId, uint256 drawnIndex, uint256 drawnRate);
+
   /// @notice Emitted when an asset configuration is updated.
   /// @param assetId The identifier of the asset.
   /// @param config The new asset configuration struct.
   event UpdateAssetConfig(uint256 indexed assetId, AssetConfig config);
+
+  /// @notice Emitted when a spoke is added.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  event AddSpoke(uint256 indexed assetId, address indexed spoke);
 
   /// @notice Emitted when a spoke configuration is updated.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @param config The new spoke configuration struct.
   event UpdateSpokeConfig(uint256 indexed assetId, address indexed spoke, SpokeConfig config);
-
-  /// @notice Emitted when an asset is updated.
-  /// @param assetId The identifier of the asset.
-  /// @param drawnIndex The new drawn index of the asset.
-  /// @param drawnRate The new drawn rate of the asset.
-  event UpdateAsset(uint256 indexed assetId, uint256 drawnIndex, uint256 drawnRate);
 
   /// @notice Emitted when fees are accrued to `feeReceiver`.
   /// @param assetId The identifier of the asset.
@@ -239,13 +239,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   function setInterestRateData(uint256 assetId, bytes calldata irData) external;
 
-  /// @notice Allows a spoke to transfer its supplied shares of an asset to another spoke.
-  /// @dev Only callable by spokes.
-  /// @param assetId The identifier of the asset.
-  /// @param shares The amount of shares to move.
-  /// @param toSpoke The address of the recipient spoke.
-  function transferShares(uint256 assetId, uint256 shares, address toSpoke) external;
-
   /// @notice Eliminates deficit by removing supplied shares of caller spoke.
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
@@ -257,6 +250,13 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 amount,
     address spoke
   ) external returns (uint256);
+
+  /// @notice Allows a spoke to transfer its supplied shares of an asset to another spoke.
+  /// @dev Only callable by spokes.
+  /// @param assetId The identifier of the asset.
+  /// @param shares The amount of shares to move.
+  /// @param toSpoke The address of the recipient spoke.
+  function transferShares(uint256 assetId, uint256 shares, address toSpoke) external;
 
   /// @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment controller.
   /// @dev The controller handles the actual reinvestment of funds, redistribution of interest, and investment caps.
@@ -270,18 +270,9 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param amount The amount to reclaim.
   function reclaim(uint256 assetId, uint256 amount) external;
 
-  /// @notice Returns the maximum allowed number of decimals for the underlying asset.
-  /// @return The maximum number of decimals (inclusive).
-  function MAX_ALLOWED_UNDERLYING_DECIMALS() external view returns (uint8);
-
-  /// @notice Returns the minimum allowed number of decimals for the underlying asset.
-  /// @return The minimum number of decimals (inclusive).
-  function MIN_ALLOWED_UNDERLYING_DECIMALS() external view returns (uint8);
-
-  /// @notice Returns the maximum value for any spoke cap (add or draw).
-  /// @dev The value is not inclusive; using the maximum value indicates no cap.
-  /// @return The maximum cap value, expressed in asset units.
-  function MAX_ALLOWED_SPOKE_CAP() external view returns (uint56);
+  /// @notice Returns the number of listed assets.
+  /// @return The number of listed assets.
+  function getAssetCount() external view returns (uint256);
 
   /// @notice Converts the given amount of supplied shares to assets amount for the specified asset.
   /// @dev Rounds down to the nearest assets amount.
@@ -311,16 +302,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The amount of drawn shares converted from assets amount.
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
-  /// @notice Calculates the current drawn index for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The current drawn index of the asset.
-  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256);
-
-  /// @notice Returns the current drawn rate for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The current drawn rate of the asset.
-  function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
-
   /// @notice Returns information regarding the specified asset.
   /// @dev `drawnIndex`, `drawnRate` and `lastUpdateTimestamp` can be outdated due to passage of time.
   /// @param assetId The identifier of the asset.
@@ -332,55 +313,35 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The asset configuration struct.
   function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory);
 
-  /// @notice Returns the amount of drawn and premium assets owed for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of drawn assets owed.
-  /// @return The amount of premium assets owed.
-  function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
-
-  /// @notice Returns the total amount of assets owed for the specified asset.
-  /// @dev The total amount of assets owed is the sum of the drawn and premium assets owed.
-  /// @param assetId The identifier of the asset.
-  /// @return The total amount of the assets owed.
-  function getAssetTotalOwed(uint256 assetId) external view returns (uint256);
-
-  /// @notice Returns the amount of drawn shares for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of drawn shares.
-  function getAssetDrawnShares(uint256 assetId) external view returns (uint256);
-
-  /// @notice Returns the premium data for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The premium shares of the asset.
-  /// @return The premium offset of the asset.
-  /// @return The realized premium of the asset.
-  function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256);
-
   /// @notice Returns the amount of available liquidity for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The amount of available liquidity.
   function getLiquidity(uint256 assetId) external view returns (uint256);
-
-  /// @notice Returns the amount of liquidity swept by the reinvestment controller for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of liquidity swept.
-  function getSwept(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the amount of deficit of the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The amount of deficit.
   function getAssetDeficit(uint256 assetId) external view returns (uint256);
 
+  /// @notice Returns the amount of liquidity swept by the reinvestment controller for the specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @return The amount of liquidity swept.
+  function getSwept(uint256 assetId) external view returns (uint256);
+
+  /// @notice Calculates the current drawn index for the specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @return The current drawn index of the asset.
+  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256);
+
+  /// @notice Returns the current drawn rate for the specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @return The current drawn rate of the asset.
+  function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
+
   /// @notice Returns the number of spokes listed for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The number of spokes.
   function getSpokeCount(uint256 assetId) external view returns (uint256);
-
-  /// @notice Returns the address of the spoke for an asset at the given index.
-  /// @param assetId The identifier of the asset.
-  /// @param index The index of the spoke.
-  /// @return The address of the spoke.
-  function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address);
 
   /// @notice Returns whether the spoke is listed for the specified asset.
   /// @param assetId The identifier of the asset.
@@ -388,17 +349,17 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return True if the spoke is listed, false otherwise.
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
 
+  /// @notice Returns the address of the spoke for an asset at the given index.
+  /// @param assetId The identifier of the asset.
+  /// @param index The index of the spoke.
+  /// @return The address of the spoke.
+  function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address);
+
   /// @notice Returns the spoke data struct.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @return The spoke data struct.
   function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory);
-
-  /// @notice Returns the amount of a given spoke's deficit for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
-  /// @return The amount of deficit.
-  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the spoke configuration struct.
   /// @param assetId The identifier of the asset.
@@ -409,14 +370,22 @@ interface IHub is IHubBase, IAccessManaged {
     address spoke
   ) external view returns (SpokeConfig memory);
 
-  /// @notice Returns the total asset amount owed to the hub by the spoke for the specified asset.
-  /// @dev The total amount owed is the sum of the drawn and premium assets owed.
+  /// @notice Returns the amount of a given spoke's deficit for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
-  /// @return The total amount of assets owed.
-  function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256);
+  /// @return The amount of deficit.
+  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256);
 
-  /// @notice Returns the number of listed assets.
-  /// @return The number of listed assets.
-  function getAssetCount() external view returns (uint256);
+  /// @notice Returns the maximum allowed number of decimals for the underlying asset.
+  /// @return The maximum number of decimals (inclusive).
+  function MAX_ALLOWED_UNDERLYING_DECIMALS() external view returns (uint8);
+
+  /// @notice Returns the minimum allowed number of decimals for the underlying asset.
+  /// @return The minimum number of decimals (inclusive).
+  function MIN_ALLOWED_UNDERLYING_DECIMALS() external view returns (uint8);
+
+  /// @notice Returns the maximum value for any spoke cap (add or draw).
+  /// @dev The value is not inclusive; using the maximum value indicates no cap.
+  /// @return The maximum cap value, expressed in asset units.
+  function MAX_ALLOWED_SPOKE_CAP() external view returns (uint56);
 }

@@ -52,11 +52,6 @@ contract NativeTokenGateway is
   }
 
   /// @inheritdoc INativeTokenGateway
-  function renouncePositionManagerRole(address user) external onlyOwner {
-    _spoke.renouncePositionManagerRole(user);
-  }
-
-  /// @inheritdoc INativeTokenGateway
   function supplyNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
     (IERC20 underlying, address hub) = _getReserveData(reserveId);
     _validateParams(underlying, amount);
@@ -115,6 +110,11 @@ contract NativeTokenGateway is
     if (leftovers > 0) {
       Address.sendValue(payable(msg.sender), leftovers);
     }
+  }
+
+  /// @inheritdoc INativeTokenGateway
+  function renouncePositionManagerRole(address user) external onlyOwner {
+    _spoke.renouncePositionManagerRole(user);
   }
 
   /// @inheritdoc INativeTokenGateway

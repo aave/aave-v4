@@ -82,12 +82,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function initialize(address _authority) external virtual;
 
   /// @inheritdoc ISpoke
-  function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
-    require(reserveId < _reserveCount, ReserveNotListed());
-    _updateReservePriceSource(reserveId, priceSource);
-  }
-
-  /// @inheritdoc ISpoke
   function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
     require(
       config.targetHealthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
@@ -154,6 +148,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     reserve.borrowable = config.borrowable;
     reserve.collateralRisk = config.collateralRisk;
     emit UpdateReserveConfig(reserveId, config);
+  }
+
+  /// @inheritdoc ISpoke
+  function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
+    require(reserveId < _reserveCount, ReserveNotListed());
+    _updateReservePriceSource(reserveId, priceSource);
   }
 
   /// @inheritdoc ISpoke
@@ -469,49 +469,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
-  function isPositionManager(address user, address positionManager) external view returns (bool) {
-    return _isPositionManager(user, positionManager);
+  function getLiquidationConfig() external view returns (LiquidationConfig memory) {
+    return _liquidationConfig;
   }
 
   /// @inheritdoc ISpoke
-  function isPositionManagerActive(address positionManager) external view returns (bool) {
-    return _positionManager[positionManager].active;
-  }
-
-  /// @inheritdoc ISpoke
-  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
-    _getReserve(reserveId);
-    return _positionStatus[user].isUsingAsCollateral(reserveId);
-  }
-
-  /// @inheritdoc ISpoke
-  function isBorrowing(uint256 reserveId, address user) external view returns (bool) {
-    _getReserve(reserveId);
-    return _positionStatus[user].isBorrowing(reserveId);
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    UserPosition storage userPosition = _userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
-      reserve.hub,
-      reserve.assetId,
-      userPosition
-    );
-    return (drawnDebt, premiumDebt);
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    UserPosition storage userPosition = _userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
-      reserve.hub,
-      reserve.assetId,
-      userPosition
-    );
-    return drawnDebt + premiumDebt;
+  function getReserveCount() external view returns (uint256) {
+    return _reserveCount;
   }
 
   /// @inheritdoc ISpokeBase
@@ -527,27 +491,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpokeBase
-  function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    return
-      reserve.hub.previewRemoveByShares(
-        reserve.assetId,
-        _userPositions[user][reserveId].suppliedShares
-      );
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
-    _getReserve(reserveId);
-    return _userPositions[user][reserveId].suppliedShares;
-  }
-
-  /// @inheritdoc ISpoke
-  function getReserveCount() external view returns (uint256) {
-    return _reserveCount;
-  }
-
-  /// @inheritdoc ISpokeBase
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     return reserve.hub.getSpokeOwed(reserve.assetId, address(this));
@@ -557,33 +500,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     return reserve.hub.getSpokeTotalOwed(reserve.assetId, address(this));
-  }
-
-  /// @inheritdoc ISpoke
-  function getLiquidationBonus(
-    uint256 reserveId,
-    address user,
-    uint256 healthFactor
-  ) external view returns (uint256) {
-    _getReserve(reserveId);
-    return
-      LiquidationLogic.calculateLiquidationBonus({
-        healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
-        liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
-        healthFactor: healthFactor,
-        maxLiquidationBonus: _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey]
-          .maxLiquidationBonus
-      });
-  }
-
-  /// @inheritdoc ISpoke
-  function getLiquidationConfig() external view returns (LiquidationConfig memory) {
-    return _liquidationConfig;
-  }
-
-  /// @inheritdoc ISpoke
-  function getUserAccountData(address user) external view returns (UserAccountData memory) {
-    return _calculateUserAccountData(user);
   }
 
   /// @inheritdoc ISpoke
@@ -622,6 +538,58 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
+  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
+    _getReserve(reserveId);
+    return _positionStatus[user].isUsingAsCollateral(reserveId);
+  }
+
+  /// @inheritdoc ISpoke
+  function isBorrowing(uint256 reserveId, address user) external view returns (bool) {
+    _getReserve(reserveId);
+    return _positionStatus[user].isBorrowing(reserveId);
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256) {
+    Reserve storage reserve = _getReserve(reserveId);
+    return
+      reserve.hub.previewRemoveByShares(
+        reserve.assetId,
+        _userPositions[user][reserveId].suppliedShares
+      );
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
+    _getReserve(reserveId);
+    return _userPositions[user][reserveId].suppliedShares;
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
+    Reserve storage reserve = _getReserve(reserveId);
+    UserPosition storage userPosition = _userPositions[user][reserveId];
+    (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
+      reserve.hub,
+      reserve.assetId,
+      userPosition
+    );
+    return (drawnDebt, premiumDebt);
+  }
+
+  /// @inheritdoc ISpokeBase
+  function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
+    Reserve storage reserve = _getReserve(reserveId);
+    UserPosition storage userPosition = _userPositions[user][reserveId];
+    (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
+      reserve.hub,
+      reserve.assetId,
+      userPosition
+    );
+    return drawnDebt + premiumDebt;
+  }
+
+  /// @inheritdoc ISpoke
   function getUserPosition(
     uint256 reserveId,
     address user
@@ -631,34 +599,54 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
+  function getLiquidationBonus(
+    uint256 reserveId,
+    address user,
+    uint256 healthFactor
+  ) external view returns (uint256) {
+    _getReserve(reserveId);
+    return
+      LiquidationLogic.calculateLiquidationBonus({
+        healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
+        liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
+        healthFactor: healthFactor,
+        maxLiquidationBonus: _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey]
+          .maxLiquidationBonus
+      });
+  }
+
+  /// @inheritdoc ISpoke
+  function getUserAccountData(address user) external view returns (UserAccountData memory) {
+    return _calculateUserAccountData(user);
+  }
+
+  /// @inheritdoc ISpoke
+  function isPositionManagerActive(address positionManager) external view returns (bool) {
+    return _positionManager[positionManager].active;
+  }
+
+  /// @inheritdoc ISpoke
+  function isPositionManager(address user, address positionManager) external view returns (bool) {
+    return _isPositionManager(user, positionManager);
+  }
+
+  /// @inheritdoc ISpoke
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparator();
-  }
-
-  function _validateSupply(Reserve storage reserve) internal view {
-    require(!reserve.paused, ReservePaused());
-    require(!reserve.frozen, ReserveFrozen());
-  }
-
-  function _validateWithdraw(Reserve storage reserve) internal view {
-    require(!reserve.paused, ReservePaused());
-  }
-
-  function _validateBorrow(Reserve storage reserve) internal view {
-    require(!reserve.paused, ReservePaused());
-    require(!reserve.frozen, ReserveFrozen());
-    require(reserve.borrowable, ReserveNotBorrowable());
-    // health factor is checked at the end of borrow action
-  }
-
-  function _validateRepay(Reserve storage reserve) internal view {
-    require(!reserve.paused, ReservePaused());
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
     require(priceSource != address(0), InvalidAddress());
     IAaveOracle(ORACLE).setReserveSource(reserveId, priceSource);
     emit UpdateReservePriceSource(reserveId, priceSource);
+  }
+
+  function _setUserPositionManager(address positionManager, address user, bool approve) internal {
+    PositionManagerConfig storage config = _positionManager[positionManager];
+    // only allow approval when position manager is active for improved UX
+    require(!approve || config.active, InactivePositionManager());
+    config.approval[user] = approve;
+    emit SetUserPositionManager(user, positionManager, approve);
   }
 
   /// @notice Refreshes user dynamic configuration and checks the position is healthy.
@@ -670,83 +658,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       HealthFactorBelowThreshold()
     );
     return accountData.userRiskPremium;
-  }
-
-  function _validateReserveConfig(ReserveConfig calldata config) internal pure {
-    require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
-  }
-
-  /// @dev CollateralFactor of historical config keys cannot be 0, which allows liquidations to proceed.
-  function _validateUpdateDynamicReserveConfig(
-    DynamicReserveConfig storage currentConfig,
-    DynamicReserveConfig calldata newConfig
-  ) internal view {
-    // sufficient check since maxLiquidationBonus is always >= 100_00
-    require(currentConfig.maxLiquidationBonus > 0, ConfigKeyUninitialized());
-    require(newConfig.collateralFactor > 0, InvalidCollateralFactor());
-    _validateDynamicReserveConfig(newConfig);
-  }
-
-  /// @dev Enforces compatible `maxLiquidationBonus` and `collateralFactor` so at the moment debt is created
-  /// there is enough collateral to cover liquidation.
-  function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
-    require(
-      config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
-        config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
-        config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
-        PercentageMath.PERCENTAGE_FACTOR,
-      InvalidCollateralFactorAndMaxLiquidationBonus()
-    );
-    require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
-  }
-
-  function _validateSetUsingAsCollateral(
-    Reserve storage reserve,
-    bool usingAsCollateral
-  ) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
-    require(!reserve.paused, ReservePaused());
-    // can disable as collateral if the reserve is frozen
-    require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
-  }
-
-  function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
-    Reserve storage reserve = _reserves[reserveId];
-    require(address(reserve.hub) != address(0), ReserveNotListed());
-    return reserve;
-  }
-
-  function _calculateRestoreAmount(
-    uint256 drawnDebt,
-    uint256 premiumDebt,
-    uint256 amount
-  ) internal pure returns (uint256, uint256) {
-    if (amount >= drawnDebt + premiumDebt) {
-      return (drawnDebt, premiumDebt);
-    }
-    if (amount <= premiumDebt) {
-      return (0, amount);
-    }
-    return (amount - premiumDebt, premiumDebt);
-  }
-
-  /// @notice Settles the premium debt by realizing change in premium and resetting premium shares and offset.
-  function _settlePremiumDebt(UserPosition storage userPosition, int256 realizedDelta) internal {
-    userPosition.premiumShares = 0;
-    userPosition.premiumOffset = 0;
-    userPosition.realizedPremium = userPosition.realizedPremium.add(realizedDelta).toUint128();
-  }
-
-  /// @notice Returns whether `manager` is active & approved positionManager for `user`.
-  function _isPositionManager(address user, address manager) private view returns (bool) {
-    if (user == manager) return true;
-    PositionManagerConfig storage config = _positionManager[manager];
-    return config.active && config.approval[user];
-  }
-
-  function _calculateUserAccountData(address user) internal view returns (UserAccountData memory) {
-    // SAFETY: function does not modify state when refreshConfig is false.
-    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
   }
 
   /// @notice Refreshes the dynamic config and calculates the user account data.
@@ -864,21 +775,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return accountData;
   }
 
-  /// @return The user's drawn debt.
-  /// @return The user's premium debt.
-  /// @return The user's accrued premium debt.
-  function _getUserDebt(
-    IHubBase hub,
-    uint256 assetId,
-    UserPosition storage userPosition
-  ) internal view returns (uint256, uint256, uint256) {
-    uint256 accruedPremium = hub.previewRestoreByShares(assetId, userPosition.premiumShares) -
-      userPosition.premiumOffset;
-    return (
-      hub.previewRestoreByShares(assetId, userPosition.drawnShares),
-      userPosition.realizedPremium + accruedPremium,
-      accruedPremium
-    );
+  function _refreshDynamicConfig(address user, uint256 reserveId) internal {
+    _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
+    emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 
   /// @notice Refreshes premium for borrowed reserves of `user` with `newUserRiskPremium`.
@@ -953,21 +852,122 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     emit UpdateUserRiskPremium(user, 0);
   }
 
-  function _refreshDynamicConfig(address user, uint256 reserveId) internal {
-    _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
-    emit RefreshSingleUserDynamicConfig(user, reserveId);
+  /// @notice Settles the premium debt by realizing change in premium and resetting premium shares and offset.
+  function _settlePremiumDebt(UserPosition storage userPosition, int256 realizedDelta) internal {
+    userPosition.premiumShares = 0;
+    userPosition.premiumOffset = 0;
+    userPosition.realizedPremium = userPosition.realizedPremium.add(realizedDelta).toUint128();
+  }
+
+  function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
+    Reserve storage reserve = _reserves[reserveId];
+    require(address(reserve.hub) != address(0), ReserveNotListed());
+    return reserve;
+  }
+
+  function _validateReserveConfig(ReserveConfig calldata config) internal pure {
+    require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
+  }
+
+  /// @dev CollateralFactor of historical config keys cannot be 0, which allows liquidations to proceed.
+  function _validateUpdateDynamicReserveConfig(
+    DynamicReserveConfig storage currentConfig,
+    DynamicReserveConfig calldata newConfig
+  ) internal view {
+    // sufficient check since maxLiquidationBonus is always >= 100_00
+    require(currentConfig.maxLiquidationBonus > 0, ConfigKeyUninitialized());
+    require(newConfig.collateralFactor > 0, InvalidCollateralFactor());
+    _validateDynamicReserveConfig(newConfig);
+  }
+
+  function _validateSupply(Reserve storage reserve) internal view {
+    require(!reserve.paused, ReservePaused());
+    require(!reserve.frozen, ReserveFrozen());
+  }
+
+  function _validateWithdraw(Reserve storage reserve) internal view {
+    require(!reserve.paused, ReservePaused());
+  }
+
+  function _validateBorrow(Reserve storage reserve) internal view {
+    require(!reserve.paused, ReservePaused());
+    require(!reserve.frozen, ReserveFrozen());
+    require(reserve.borrowable, ReserveNotBorrowable());
+    // health factor is checked at the end of borrow action
+  }
+
+  function _validateRepay(Reserve storage reserve) internal view {
+    require(!reserve.paused, ReservePaused());
+  }
+
+  function _validateSetUsingAsCollateral(
+    Reserve storage reserve,
+    bool usingAsCollateral
+  ) internal view {
+    require(address(reserve.hub) != address(0), ReserveNotListed());
+    require(!reserve.paused, ReservePaused());
+    // can disable as collateral if the reserve is frozen
+    require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
+  }
+
+  /// @notice Returns whether `manager` is active & approved positionManager for `user`.
+  function _isPositionManager(address user, address manager) internal view returns (bool) {
+    if (user == manager) return true;
+    PositionManagerConfig storage config = _positionManager[manager];
+    return config.active && config.approval[user];
+  }
+
+  function _calculateUserAccountData(address user) internal view returns (UserAccountData memory) {
+    // SAFETY: function does not modify state when refreshConfig is false.
+    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
+  }
+
+  /// @return The user's drawn debt.
+  /// @return The user's premium debt.
+  /// @return The user's accrued premium debt.
+  function _getUserDebt(
+    IHubBase hub,
+    uint256 assetId,
+    UserPosition storage userPosition
+  ) internal view returns (uint256, uint256, uint256) {
+    uint256 accruedPremium = hub.previewRestoreByShares(assetId, userPosition.premiumShares) -
+      userPosition.premiumOffset;
+    return (
+      hub.previewRestoreByShares(assetId, userPosition.drawnShares),
+      userPosition.realizedPremium + accruedPremium,
+      accruedPremium
+    );
+  }
+
+  /// @dev Enforces compatible `maxLiquidationBonus` and `collateralFactor` so at the moment debt is created
+  /// there is enough collateral to cover liquidation.
+  function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
+    require(
+      config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
+        config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
+        config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
+        PercentageMath.PERCENTAGE_FACTOR,
+      InvalidCollateralFactorAndMaxLiquidationBonus()
+    );
+    require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
+  }
+
+  function _calculateRestoreAmount(
+    uint256 drawnDebt,
+    uint256 premiumDebt,
+    uint256 amount
+  ) internal pure returns (uint256, uint256) {
+    if (amount >= drawnDebt + premiumDebt) {
+      return (drawnDebt, premiumDebt);
+    }
+    if (amount <= premiumDebt) {
+      return (0, amount);
+    }
+    return (amount - premiumDebt, premiumDebt);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
     return ('Spoke', '1');
-  }
-
-  function _setUserPositionManager(address positionManager, address user, bool approve) internal {
-    PositionManagerConfig storage config = _positionManager[positionManager];
-    // only allow approval when position manager is active for improved UX
-    require(!approve || config.active, InactivePositionManager());
-    config.approval[user] = approve;
-    emit SetUserPositionManager(user, positionManager, approve);
   }
 
   function _castToView(
