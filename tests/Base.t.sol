@@ -1857,7 +1857,7 @@ abstract contract Base is Test {
   /// @dev Calculate expected debt index based on input params
   function _calculateExpectedDrawnIndex(
     uint256 initialDrawnIndex,
-    uint256 borrowRate,
+    uint96 borrowRate,
     uint32 startTime
   ) internal view returns (uint256) {
     return initialDrawnIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
@@ -1867,7 +1867,7 @@ abstract contract Base is Test {
   function calculateExpectedDebt(
     uint256 initialDrawnShares,
     uint256 initialDrawnIndex,
-    uint256 borrowRate,
+    uint96 borrowRate,
     uint32 startTime
   ) internal view returns (uint256 newDrawnIndex, uint256 newDrawnDebt) {
     newDrawnIndex = _calculateExpectedDrawnIndex(initialDrawnIndex, borrowRate, startTime);
@@ -1877,7 +1877,7 @@ abstract contract Base is Test {
   /// @dev Calculate expected drawn debt based on specified borrow rate
   function _calculateExpectedDrawnDebt(
     uint256 initialDebt,
-    uint256 borrowRate,
+    uint96 borrowRate,
     uint32 startTime
   ) internal view returns (uint256) {
     return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(initialDebt);

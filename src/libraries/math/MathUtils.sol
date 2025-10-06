@@ -5,9 +5,9 @@ pragma solidity ^0.8.20;
 /// @title MathUtils library
 /// @author Aave Labs
 library MathUtils {
+  uint256 internal constant RAY = 1e27;
   /// @dev Ignoring leap years
   uint256 internal constant SECONDS_PER_YEAR = 365 days;
-  uint256 internal constant RAY = 1e27;
 
   /// @notice Function to calculate the interest accumulated using a linear interest rate formula.
   /// @dev Reverts if `lastUpdateTimestamp` is greater than `block.timestamp`.
@@ -15,7 +15,7 @@ library MathUtils {
   /// @param lastUpdateTimestamp The timestamp to calculate interest rate from.
   /// @return result The interest rate linearly accumulated during the time delta in Ray units.
   function calculateLinearInterest(
-    uint256 rate,
+    uint96 rate,
     uint32 lastUpdateTimestamp
   ) internal view returns (uint256 result) {
     assembly ('memory-safe') {

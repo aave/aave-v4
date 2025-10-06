@@ -2,11 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'forge-std/Test.sol';
-import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import 'tests/Base.t.sol';
 
 /// forge-config: default.allow_internal_expect_revert = true
-contract MathUtilsTest is Test {
+contract MathUtilsTest is Base {
+  using SafeCast for uint256;
+
   int256 internal constant INT256_MAX = type(int256).max;
 
   function test_constants() public pure {
@@ -20,11 +21,11 @@ contract MathUtilsTest is Test {
   }
 
   function test_fuzz_calculateLinearInterest(
-    uint256 rate,
+    uint96 rate,
     uint32 previousTimestamp,
     uint32 skipTime
   ) public {
-    rate = bound(rate, 1, 100e27);
+    rate = bound(rate, 1, 100e27).toUint96();
     vm.warp(previousTimestamp);
     skip(skipTime);
     assertEq(
