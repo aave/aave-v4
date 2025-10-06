@@ -15,8 +15,8 @@ interface INativeTokenGateway is IRescuable {
   /// @notice Thrown when the given amount is invalid.
   error InvalidAmount();
 
-  /// @notice Thrown when the given reserveId does not match the wrapped native asset reserveId on the Spoke.
-  error InvalidReserveId();
+  /// @notice Thrown when the underlying asset is not the wrapped native asset.
+  error NotNativeWrappedAsset();
 
   /// @notice Thrown when the native amount sent does not match the given amount parameter.
   error NativeAmountMismatch();
