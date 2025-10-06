@@ -75,7 +75,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getBaseVariableBorrowRate(uint256 assetId) external view override returns (uint256) {
+  function getBaseVariableBorrowRate(uint256 assetId) external view returns (uint256) {
     return _interestRateData[assetId].baseVariableBorrowRate;
   }
 
@@ -90,7 +90,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getMaxVariableBorrowRate(uint256 assetId) external view override returns (uint256) {
+  function getMaxVariableBorrowRate(uint256 assetId) external view returns (uint256) {
     return
       _interestRateData[assetId].baseVariableBorrowRate +
       _interestRateData[assetId].variableRateSlope1 +
@@ -104,7 +104,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     uint256 drawn,
     uint256 /* deficit */,
     uint256 swept
-  ) external view virtual override returns (uint256) {
+  ) external view returns (uint256) {
     InterestRateData memory rateData = _interestRateData[assetId];
     require(rateData.optimalUsageRatio > 0, InterestRateDataNotSet(assetId));
 

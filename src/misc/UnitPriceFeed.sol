@@ -10,10 +10,10 @@ import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Inte
 /// @dev This price feed can be set for reserves that use the base currency as collateral.
 contract UnitPriceFeed is AggregatorV3Interface {
   /// @inheritdoc AggregatorV3Interface
-  uint8 public immutable override decimals;
+  uint8 public immutable decimals;
 
   /// @inheritdoc AggregatorV3Interface
-  string public override description;
+  string public description;
 
   int256 private immutable _units;
 
@@ -30,7 +30,7 @@ contract UnitPriceFeed is AggregatorV3Interface {
   }
 
   /// @inheritdoc AggregatorV3Interface
-  function version() external pure override returns (uint256) {
+  function version() external pure returns (uint256) {
     return 1;
   }
 
@@ -59,8 +59,6 @@ contract UnitPriceFeed is AggregatorV3Interface {
   function latestRoundData()
     external
     view
-    virtual
-    override
     returns (
       uint80 roundId,
       int256 answer,
