@@ -734,8 +734,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
 
     if (accountData.totalDebtValue > 0) {
-      // at this point, `avgCollateralFactor` is the collateral-weighted sum (scaled by collateralFactor in BPS)
-      // health factor uses this directly for simplicity, while the division by totalCollateral to compute the weighted average is done later
+      // at this point, `avgCollateralFactor` is the collateral-weighted sum (scaled by `collateralFactor` in BPS)
+      // health factor uses this directly for simplicity, while the division by `totalCollateral` to compute the weighted average is done later
       accountData.healthFactor = accountData
         .avgCollateralFactor
         .wadDivDown(accountData.totalDebtValue)
