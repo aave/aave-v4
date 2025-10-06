@@ -844,16 +844,15 @@ contract Hub is IHub, AccessManaged {
     require(amount > 0 && amount <= asset.swept, InvalidAmount());
   }
 
-  function _validateAssetDecimals(address underlying, uint8 givenDecimals) internal view {
+  function _validateAssetDecimals(address underlying, uint8 decimals) internal view {
     (bool success, bytes memory returnData) = address(underlying).staticcall(
       abi.encodeCall(IERC20Metadata.decimals, ())
     );
     if (success) {
-      require(abi.decode(returnData, (uint8)) == givenDecimals, InvalidAssetDecimals());
+      require(abi.decode(returnData, (uint8)) == decimals, InvalidAssetDecimals());
     }
     require(
-      MIN_ALLOWED_UNDERLYING_DECIMALS <= givenDecimals &&
-        givenDecimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
+      MIN_ALLOWED_UNDERLYING_DECIMALS <= decimals && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
       InvalidAssetDecimals()
     );
   }
