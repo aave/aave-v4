@@ -1925,7 +1925,7 @@ abstract contract Base is Test {
     );
   }
 
-  function _getLiquidityFee(uint256 assetId) internal view returns (uint256) {
+  function _getAssetLiquidityFee(uint256 assetId) internal view returns (uint256) {
     return hub1.getAssetConfig(assetId).liquidityFee;
   }
 
