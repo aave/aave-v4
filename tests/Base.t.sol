@@ -555,8 +555,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 105_00,
+      liquidationFee: 10_00
     });
     spokeInfo[spoke1].wbtc.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -566,8 +566,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 103_00,
+      liquidationFee: 15_00
     });
     spokeInfo[spoke1].dai.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -577,8 +577,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 102_00,
+      liquidationFee: 10_00
     });
     spokeInfo[spoke1].usdx.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -588,8 +588,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 101_00,
+      liquidationFee: 12_00
     });
     spokeInfo[spoke1].usdy.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -599,8 +599,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 101_50,
+      liquidationFee: 15_00
     });
 
     spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
@@ -654,8 +654,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 105_00,
+      liquidationFee: 10_00
     });
     spokeInfo[spoke2].weth.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -665,8 +665,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 76_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 103_00,
+      liquidationFee: 15_00
     });
     spokeInfo[spoke2].dai.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -676,8 +676,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 72_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 102_00,
+      liquidationFee: 10_00
     });
     spokeInfo[spoke2].usdx.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -687,8 +687,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 72_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 101_00,
+      liquidationFee: 12_00
     });
     spokeInfo[spoke2].usdy.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -698,8 +698,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 72_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 101_50,
+      liquidationFee: 15_00
     });
     spokeInfo[spoke2].dai2.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -709,8 +709,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].dai2.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 70_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 106_00,
+      liquidationFee: 10_00
     });
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
@@ -772,8 +772,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 104_00,
+      liquidationFee: 11_00
     });
     spokeInfo[spoke3].usdx.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -783,8 +783,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 103_00,
+      liquidationFee: 15_00
     });
     spokeInfo[spoke3].weth.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -794,8 +794,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 79_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 102_00,
+      liquidationFee: 10_00
     });
     spokeInfo[spoke3].wbtc.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -805,8 +805,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 77_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 101_00,
+      liquidationFee: 12_00
     });
 
     spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(

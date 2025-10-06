@@ -954,6 +954,34 @@ contract SpokeBase is Base {
     return vm.randomUint(0, spoke.getReserve(reserveId).dynamicConfigKey).toUint16();
   }
 
+  function _maxLiquidationBonusUpperBound(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal returns (uint32) {
+    return
+      (PercentageMath.PERCENTAGE_FACTOR - 1)
+        .percentDivDown(spoke.getDynamicReserveConfig(reserveId).collateralFactor)
+        .toUint32();
+  }
+
+  function _randomMaxLiquidationBonus(ISpoke spoke, uint256 reserveId) internal returns (uint32) {
+    return
+      vm
+        .randomUint(MIN_LIQUIDATION_BONUS, _maxLiquidationBonusUpperBound(spoke, reserveId))
+        .toUint32();
+  }
+
+  function _collateralFactorUpperBound(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
+    return
+      (PercentageMath.PERCENTAGE_FACTOR - 1)
+        .percentDivDown(spoke.getDynamicReserveConfig(reserveId).maxLiquidationBonus)
+        .toUint16();
+  }
+
+  function _randomCollateralFactor(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
+    return vm.randomUint(1, _collateralFactorUpperBound(spoke, reserveId)).toUint16();
+  }
+
   /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
   function getReserveIdByAssetId(
     ISpoke spoke,

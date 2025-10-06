@@ -277,7 +277,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
       uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
       ISpoke.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
-      dynConf.collateralFactor = _randomBps();
+      dynConf.collateralFactor = _randomCollateralFactor(spoke1, reserveId);
       vm.expectEmit(address(spoke1));
       emit ISpoke.AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
       vm.prank(SPOKE_ADMIN);
