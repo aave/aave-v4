@@ -138,8 +138,8 @@ contract Hub is IHub, AccessManaged {
       require(irData.length == 0, InvalidInterestRateStrategyUpdate());
     }
 
-    if (asset.feeReceiver != config.feeReceiver) {
-      _updateSpokeConfig(assetId, asset.feeReceiver, SpokeConfig(true, 0, 0));
+    if (feeReceiver != config.feeReceiver) {
+      _updateSpokeConfig(assetId, feeReceiver, SpokeConfig(true, 0, 0));
       asset.feeReceiver = config.feeReceiver;
       _addFeeReceiver(assetId, config.feeReceiver);
     }
