@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
 
@@ -555,8 +555,8 @@ contract HubConfiguratorTest is HubBase {
     );
   }
 
-  function test_updateInterestRateStrategy_revertsWith_InvalidInterestRateStrategyUpdate() public {
-    vm.expectRevert(IHub.InvalidInterestRateStrategyUpdate.selector, address(hub1));
+  function test_updateInterestRateStrategy_revertsWith_InvalidInterestRateStrategy() public {
+    vm.expectRevert(IHub.InvalidInterestRateStrategy.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateInterestRateStrategy(
       address(hub1),
