@@ -158,16 +158,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // Now since debt has grown, weth supply is not enough to cover debt, hence rp changes
     // usdx is enough to cover remaining debt
-    uint256 daiDebtValue = _getValueInBaseCurrency(
-      spoke1,
-      reservesIds.dai,
-      accruedDaiDebt + daiPremiumDebt
-    );
-    uint256 usdxSupplyValue = _getValueInBaseCurrency(
-      spoke1,
-      reservesIds.usdx,
-      vars.usdxSupplyAmount
-    );
+    uint256 daiDebtValue = _getValue(spoke1, reservesIds.dai, accruedDaiDebt + daiPremiumDebt);
+    uint256 usdxSupplyValue = _getValue(spoke1, reservesIds.usdx, vars.usdxSupplyAmount);
     assertLt(daiDebtValue, usdxSupplyValue);
 
     vars.expectedUserRiskPremium = _calculateExpectedUserRP(alice, spoke1);
@@ -920,15 +912,15 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // Ensure supplied value is at least double borrowed value to pass hf checks
     vm.assume(
-      _getValueInBaseCurrency(spoke1, _daiReserveId(spoke1), daiAmounts.supplyAmount) +
-        _getValueInBaseCurrency(spoke1, _wethReserveId(spoke1), wethAmounts.supplyAmount) +
-        _getValueInBaseCurrency(spoke1, _usdxReserveId(spoke1), usdxAmounts.supplyAmount) +
-        _getValueInBaseCurrency(spoke1, _wbtcReserveId(spoke1), wbtcAmounts.supplyAmount) >=
+      _getValue(spoke1, _daiReserveId(spoke1), daiAmounts.supplyAmount) +
+        _getValue(spoke1, _wethReserveId(spoke1), wethAmounts.supplyAmount) +
+        _getValue(spoke1, _usdxReserveId(spoke1), usdxAmounts.supplyAmount) +
+        _getValue(spoke1, _wbtcReserveId(spoke1), wbtcAmounts.supplyAmount) >=
         2 *
-          (_getValueInBaseCurrency(spoke1, _daiReserveId(spoke1), daiAmounts.borrowAmount) +
-            _getValueInBaseCurrency(spoke1, _wethReserveId(spoke1), wethAmounts.borrowAmount) +
-            _getValueInBaseCurrency(spoke1, _usdxReserveId(spoke1), usdxAmounts.borrowAmount) +
-            _getValueInBaseCurrency(spoke1, _wbtcReserveId(spoke1), wbtcAmounts.borrowAmount))
+          (_getValue(spoke1, _daiReserveId(spoke1), daiAmounts.borrowAmount) +
+            _getValue(spoke1, _wethReserveId(spoke1), wethAmounts.borrowAmount) +
+            _getValue(spoke1, _usdxReserveId(spoke1), usdxAmounts.borrowAmount) +
+            _getValue(spoke1, _wbtcReserveId(spoke1), wbtcAmounts.borrowAmount))
     );
 
     // Bob supplies and draws all assets on spoke1

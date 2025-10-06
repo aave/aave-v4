@@ -274,9 +274,9 @@ contract SignatureGateway is
     address onBehalfOf,
     uint256 value,
     uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
+    uint8 permitV,
+    bytes32 permitR,
+    bytes32 permitS
   ) external {
     (IERC20 underlying, ) = _getReserveData(reserveId);
     try
@@ -285,9 +285,9 @@ contract SignatureGateway is
         spender: address(this),
         value: value,
         deadline: deadline,
-        v: v,
-        r: r,
-        s: s
+        v: permitV,
+        r: permitR,
+        s: permitS
       })
     {} catch {}
   }

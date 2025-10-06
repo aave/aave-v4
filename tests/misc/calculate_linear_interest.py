@@ -7,10 +7,11 @@ RAY = IntVal(10**27)
 SECONDS_PER_YEAR = IntVal(365 * 24 * 60 * 60)
 
 rate = IntVal(2**96 - 1)
-lastUpdateTimestamp = IntVal(2**32 - 1)
+lastUpdateTimestamp = IntVal(1)
 currentTimestamp = Int("currentTimestamp")
 elapsed = currentTimestamp - lastUpdateTimestamp
 
+s.add(elapsed >= 0)
 s.add(rate * elapsed <= UINT256_MAX)
 s.add(RAY + ((rate * elapsed) / SECONDS_PER_YEAR) <= UINT256_MAX)
 

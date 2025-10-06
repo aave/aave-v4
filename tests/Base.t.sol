@@ -1356,7 +1356,7 @@ abstract contract Base is Test {
   }
 
   /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
-  function _getValueInBaseCurrency(
+  function _getValue(
     ISpoke spoke,
     uint256 reserveId,
     uint256 amount
@@ -1368,7 +1368,7 @@ abstract contract Base is Test {
   }
 
   /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
-  function _getDebtValueInBaseCurrency(
+  function _getDebtValue(
     ISpoke spoke,
     uint256 reserveId,
     uint256 amount
@@ -1389,11 +1389,7 @@ abstract contract Base is Test {
     uint256 toReserveId
   ) internal view returns (uint256) {
     return
-      _convertBaseCurrencyToAmount(
-        spoke,
-        toReserveId,
-        _convertAmountToBaseCurrency(spoke, reserveId, amount)
-      );
+      _convertValueToAmount(spoke, toReserveId, _convertAmountToValue(spoke, reserveId, amount));
   }
 
   /// @dev Helper function to calculate the amount of base and premium debt to restore
@@ -1724,20 +1720,20 @@ abstract contract Base is Test {
     _assertAssetSupply(spoke, reserveId, expectedSuppliedAmount, label);
   }
 
-  function _convertAmountToBaseCurrency(
+  function _convertAmountToValue(
     ISpoke spoke,
     uint256 reserveId,
     uint256 amount
   ) internal view returns (uint256) {
     return
-      _convertAmountToBaseCurrency(
+      _convertAmountToValue(
         amount,
         IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId),
         10 ** _underlying(spoke, reserveId).decimals()
       );
   }
 
-  function _convertAmountToBaseCurrency(
+  function _convertAmountToValue(
     uint256 amount,
     uint256 assetPrice,
     uint256 assetUnit
@@ -1745,26 +1741,26 @@ abstract contract Base is Test {
     return (amount * assetPrice).wadDivUp(assetUnit);
   }
 
-  function _convertBaseCurrencyToAmount(
+  function _convertValueToAmount(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 baseCurrencyAmount
+    uint256 valueAmount
   ) internal view returns (uint256) {
     return
-      _convertBaseCurrencyToAmount(
-        baseCurrencyAmount,
+      _convertValueToAmount(
+        valueAmount,
         IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId),
         10 ** _underlying(spoke, reserveId).decimals()
       );
   }
 
   /// @dev Convert base currency to asset amount
-  function _convertBaseCurrencyToAmount(
-    uint256 baseCurrencyAmount,
+  function _convertValueToAmount(
+    uint256 valueAmount,
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return ((baseCurrencyAmount * assetUnit) / assetPrice).fromWadDown();
+    return ((valueAmount * assetUnit) / assetPrice).fromWadDown();
   }
 
   /**
@@ -1777,30 +1773,25 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 desiredHf
   ) internal view returns (uint256 requiredDebtAmount) {
-    uint256 requiredDebtAmountInBaseCurrency = _getRequiredDebtInBaseCurrencyForHf(
-      spoke,
-      user,
-      desiredHf
-    );
-    return _convertBaseCurrencyToAmount(spoke, reserveId, requiredDebtAmountInBaseCurrency);
+    uint256 requiredDebtAmountValue = _getRequiredDebtValueForHf(spoke, user, desiredHf);
+    return _convertValueToAmount(spoke, reserveId, requiredDebtAmountValue);
   }
 
   /**
    * @notice Returns the required debt in base currency to ensure user position is below a certain health factor.
    */
-  function _getRequiredDebtInBaseCurrencyForHf(
+  function _getRequiredDebtValueForHf(
     ISpoke spoke,
     address user,
     uint256 desiredHf
-  ) internal view returns (uint256 requiredDebtInBaseCurrency) {
+  ) internal view returns (uint256 requiredDebtValue) {
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
-    requiredDebtInBaseCurrency =
-      userAccountData
-        .totalCollateralInBaseCurrency
-        .wadMulUp(userAccountData.avgCollateralFactor)
-        .wadDivUp(desiredHf) -
-      userAccountData.totalDebtInBaseCurrency;
+    requiredDebtValue =
+      userAccountData.totalCollateralValue.wadMulUp(userAccountData.avgCollateralFactor).wadDivUp(
+        desiredHf
+      ) -
+      userAccountData.totalDebtValue;
   }
 
   function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {
@@ -1808,7 +1799,7 @@ abstract contract Base is Test {
   }
 
   function _getUserRiskPremium(ISpoke spoke, address user) internal view returns (uint256) {
-    return spoke.getUserAccountData(user).userRiskPremium;
+    return spoke.getUserAccountData(user).riskPremium;
   }
 
   function _approxRelFromBps(uint256 bps) internal pure returns (uint256) {
@@ -2128,10 +2119,10 @@ abstract contract Base is Test {
 
     return
       userAccountData
-        .totalCollateralInBaseCurrency
+        .totalCollateralValue
         .percentMulDown(userAccountData.avgCollateralFactor.fromWadDown())
         .percentMulDown(99_00)
-        .wadDivDown(desiredHf) - userAccountData.totalDebtInBaseCurrency;
+        .wadDivDown(desiredHf) - userAccountData.totalDebtValue;
     // buffer to force debt lower (ie making sure resultant debt creates HF that is gt desired)
   }
 
@@ -2144,11 +2135,7 @@ abstract contract Base is Test {
     uint256 desiredHf
   ) internal returns (uint256, uint256) {
     uint256 requiredDebtInBase = _getRequiredDebtForGtHf(spoke, user, desiredHf);
-    uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(
-      spoke,
-      reserveId,
-      requiredDebtInBase
-    ) - 1;
+    uint256 requiredDebtAmount = _convertValueToAmount(spoke, reserveId, requiredDebtInBase) - 1;
 
     vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
 

@@ -65,13 +65,13 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   }
 
   struct UserAccountData {
-    uint256 userRiskPremium;
+    uint256 riskPremium;
     uint256 avgCollateralFactor;
     uint256 healthFactor;
-    uint256 totalCollateralInBaseCurrency;
-    uint256 totalDebtInBaseCurrency;
-    uint256 suppliedCollateralsCount; // number of reserves with collateral factor > 0, enabled as collateral and strictly positive supplied amount
-    uint256 borrowedReservesCount; // number of reserves with strictly positive debt
+    uint256 totalCollateralValue;
+    uint256 totalDebtValue;
+    uint256 activeCollateralCount; // 'active' collateral: collateralFactor > 0, enabledAsCollateral and suppliedAmount > 0
+    uint256 borrowedCount;
   }
 
   /// @notice Emitted when a liquidation config is updated.
@@ -362,9 +362,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     address onBehalfOf,
     uint256 value,
     uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
+    uint8 permitV,
+    bytes32 permitR,
+    bytes32 permitS
   ) external;
 
   /// @notice Returns the address of the external `LiquidationLogic` library.
@@ -397,6 +397,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Returns the dynamic reserve configuration struct at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev Does not revert if `configKey` is unset.
   /// @param reserveId The identifier of the reserve.
   /// @param configKey The key of the dynamic config.
   function getDynamicReserveConfig(

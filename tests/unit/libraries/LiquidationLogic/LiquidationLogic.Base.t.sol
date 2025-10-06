@@ -37,11 +37,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
   function _bound(
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory params
   ) internal virtual returns (LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory) {
-    uint256 totalDebtInBaseCurrency = bound(
-      params.totalDebtInBaseCurrency,
-      1,
-      MAX_SUPPLY_IN_BASE_CURRENCY
-    );
+    uint256 totalDebtValue = bound(params.totalDebtValue, 1, MAX_SUPPLY_IN_BASE_CURRENCY);
 
     uint256 liquidationBonus = bound(
       params.liquidationBonus,
@@ -67,7 +63,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-        totalDebtInBaseCurrency: totalDebtInBaseCurrency,
+        totalDebtValue: totalDebtValue,
         healthFactor: healthFactor,
         targetHealthFactor: targetHealthFactor,
         liquidationBonus: liquidationBonus,
@@ -82,7 +78,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
   ) internal pure returns (LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory) {
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-        totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
+        totalDebtValue: params.totalDebtValue,
         healthFactor: params.healthFactor,
         targetHealthFactor: params.targetHealthFactor,
         liquidationBonus: params.liquidationBonus,
@@ -103,8 +99,8 @@ contract LiquidationLogicBaseTest is SpokeBase {
     uint256 debtReserveBalance = bound(
       params.debtReserveBalance,
       0,
-      _convertBaseCurrencyToAmount(
-        debtToTargetParams.totalDebtInBaseCurrency,
+      _convertValueToAmount(
+        debtToTargetParams.totalDebtValue,
         debtToTargetParams.debtAssetPrice,
         debtToTargetParams.debtAssetUnit
       )
@@ -114,7 +110,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
       LiquidationLogic.CalculateMaxDebtToLiquidateParams({
         debtReserveBalance: debtReserveBalance,
         debtToCover: debtToCover,
-        totalDebtInBaseCurrency: debtToTargetParams.totalDebtInBaseCurrency,
+        totalDebtValue: debtToTargetParams.totalDebtValue,
         healthFactor: debtToTargetParams.healthFactor,
         targetHealthFactor: debtToTargetParams.targetHealthFactor,
         liquidationBonus: debtToTargetParams.liquidationBonus,
@@ -149,7 +145,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
       LiquidationLogic.CalculateMaxDebtToLiquidateParams({
         debtReserveBalance: params.debtReserveBalance,
         debtToCover: params.debtToCover,
-        totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
+        totalDebtValue: params.totalDebtValue,
         healthFactor: params.healthFactor,
         targetHealthFactor: params.targetHealthFactor,
         liquidationBonus: liquidationBonus,
@@ -180,7 +176,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
     params.debtReserveBalance = maxDebtToLiquidateParams.debtReserveBalance;
     params.debtToCover = maxDebtToLiquidateParams.debtToCover;
-    params.totalDebtInBaseCurrency = maxDebtToLiquidateParams.totalDebtInBaseCurrency;
+    params.totalDebtValue = maxDebtToLiquidateParams.totalDebtValue;
     params.healthFactor = maxDebtToLiquidateParams.healthFactor;
     params.targetHealthFactor = maxDebtToLiquidateParams.targetHealthFactor;
     params.collateralFactor = maxDebtToLiquidateParams.collateralFactor;

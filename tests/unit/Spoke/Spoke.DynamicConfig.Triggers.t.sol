@@ -256,8 +256,8 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     // Alice's dai debt is exactly covered by her weth collateral
     assertEq(
-      _getValueInBaseCurrency(spoke1, _daiReserveId(spoke1), 2000e18),
-      _getValueInBaseCurrency(spoke1, _wethReserveId(spoke1), 1e18),
+      _getValue(spoke1, _daiReserveId(spoke1), 2000e18),
+      _getValue(spoke1, _wethReserveId(spoke1), 1e18),
       'weth supply covers debt'
     );
 

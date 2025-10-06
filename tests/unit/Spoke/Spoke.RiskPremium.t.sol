@@ -172,29 +172,21 @@ contract SpokeRiskPremiumTest is SpokeBase {
     _mockReservePrice(spoke2, _dai2ReserveId(spoke2), 100000e8);
 
     // Check that debt has outgrown collateral
-    uint256 collateralValue = _getValueInBaseCurrency(
-      spoke2,
-      _wbtcReserveId(spoke2),
-      wbtcSupplyAmount
-    ) +
-      _getValueInBaseCurrency(spoke2, _daiReserveId(spoke2), daiSupplyAmount) +
-      _getValueInBaseCurrency(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) +
-      _getValueInBaseCurrency(spoke2, _wethReserveId(spoke2), wethSupplyAmount);
-    uint256 debtValue = _getValueInBaseCurrency(spoke2, _dai2ReserveId(spoke2), borrowAmount);
+    uint256 collateralValue = _getValue(spoke2, _wbtcReserveId(spoke2), wbtcSupplyAmount) +
+      _getValue(spoke2, _daiReserveId(spoke2), daiSupplyAmount) +
+      _getValue(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) +
+      _getValue(spoke2, _wethReserveId(spoke2), wethSupplyAmount);
+    uint256 debtValue = _getValue(spoke2, _dai2ReserveId(spoke2), borrowAmount);
     assertGt(debtValue, collateralValue, 'debt outgrows collateral');
 
     // Now user rp should be weighted sum of the collaterals
-    uint256 expectedRiskPremium = (_getValueInBaseCurrency(
-      spoke2,
-      _daiReserveId(spoke2),
-      daiSupplyAmount
-    ) *
+    uint256 expectedRiskPremium = (_getValue(spoke2, _daiReserveId(spoke2), daiSupplyAmount) *
       _getCollateralRisk(spoke2, _daiReserveId(spoke2)) +
-      _getValueInBaseCurrency(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) *
+      _getValue(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) *
       _getCollateralRisk(spoke2, _usdxReserveId(spoke2)) +
-      _getValueInBaseCurrency(spoke2, _wbtcReserveId(spoke2), wbtcSupplyAmount) *
+      _getValue(spoke2, _wbtcReserveId(spoke2), wbtcSupplyAmount) *
       _getCollateralRisk(spoke2, _wbtcReserveId(spoke2)) +
-      _getValueInBaseCurrency(spoke2, _wethReserveId(spoke2), wethSupplyAmount) *
+      _getValue(spoke2, _wethReserveId(spoke2), wethSupplyAmount) *
       _getCollateralRisk(spoke2, _wethReserveId(spoke2))) / collateralValue;
     assertEq(
       _getUserRiskPremium(spoke2, bob),
@@ -267,9 +259,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Weth is enough to cover the total debt
     assertGe(
-      _getValueInBaseCurrency(spoke1, wethInfo.reserveId, wethInfo.supplyAmount),
-      _getValueInBaseCurrency(spoke1, daiInfo.reserveId, daiInfo.borrowAmount) +
-        _getValueInBaseCurrency(spoke1, usdxInfo.reserveId, usdxInfo.borrowAmount),
+      _getValue(spoke1, wethInfo.reserveId, wethInfo.supplyAmount),
+      _getValue(spoke1, daiInfo.reserveId, daiInfo.borrowAmount) +
+        _getValue(spoke1, usdxInfo.reserveId, usdxInfo.borrowAmount),
       'weth supply covers debt'
     );
     uint256 expectedUserRiskPremium = wethInfo.collateralRisk;
@@ -315,8 +307,8 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Dai2 is enough to cover the total debt
     assertGe(
-      _getValueInBaseCurrency(spoke2, dai2Info.reserveId, dai2Info.supplyAmount),
-      _getValueInBaseCurrency(spoke2, daiInfo.reserveId, daiInfo.borrowAmount),
+      _getValue(spoke2, dai2Info.reserveId, dai2Info.supplyAmount),
+      _getValue(spoke2, daiInfo.reserveId, daiInfo.borrowAmount),
       'dai2 supply covers debt'
     );
 
