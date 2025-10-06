@@ -63,7 +63,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, reserveId, bob, borrowAmount, bob);
 
-    uint256 drawnRate = hub1.getAssetDrawnRate(assetId);
+    uint96 drawnRate = hub1.getAssetDrawnRate(assetId).toUint96();
     uint256 initialBaseIndex = hub1.getAsset(assetId).drawnIndex;
     uint256 userRp = _getUserRiskPremium(spoke1, bob);
 
@@ -76,8 +76,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     ISpoke.UserPosition memory bobPosition = spoke1.getUserPosition(reserveId, bob);
     {
       uint256 drawnDebt = _calculateExpectedDrawnDebt(borrowAmount, drawnRate, startTime);
-      uint256 expectedpremiumShares = bobPosition.drawnShares.percentMulUp(userRp);
-      uint256 expectedPremiumDebt = hub1.convertToDrawnAssets(assetId, expectedpremiumShares) -
+      uint256 expectedPremiumShares = bobPosition.drawnShares.percentMulUp(userRp);
+      uint256 expectedPremiumDebt = hub1.convertToDrawnAssets(assetId, expectedPremiumShares) -
         bobPosition.premiumOffset +
         bobPosition.realizedPremium;
 

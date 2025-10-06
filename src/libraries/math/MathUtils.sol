@@ -2,31 +2,29 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-
 /// @title MathUtils library
 /// @author Aave Labs
 library MathUtils {
-  using WadRayMath for uint256;
-
+  uint256 internal constant RAY = 1e27;
   /// @dev Ignoring leap years
   uint256 internal constant SECONDS_PER_YEAR = 365 days;
 
-  /// @notice Function to calculate the interest accumulated using a linear interest rate formula.
-  /// @dev Calculates interest rate from provided `lastUpdateTimestamp` until present.
-  /// @param rate The interest rate, in ray.
+  /// @notice Calculates the interest accumulated using a linear interest rate formula.
+  /// @dev Reverts if `lastUpdateTimestamp` is greater than `block.timestamp`.
+  /// @param rate The interest rate in Ray units.
   /// @param lastUpdateTimestamp The timestamp to calculate interest rate from.
-  /// @return The interest rate linearly accumulated during the timeDelta, in ray.
+  /// @return result The interest rate linearly accumulated during the time delta in Ray units.
   function calculateLinearInterest(
-    uint256 rate,
+    uint96 rate,
     uint32 lastUpdateTimestamp
-  ) internal view returns (uint256) {
-    uint256 result = rate * (block.timestamp - uint256(lastUpdateTimestamp));
-    unchecked {
-      result = result / SECONDS_PER_YEAR;
+  ) internal view returns (uint256 result) {
+    assembly ('memory-safe') {
+      if gt(lastUpdateTimestamp, timestamp()) {
+        revert(0, 0)
+      }
+      result := sub(timestamp(), lastUpdateTimestamp)
+      result := add(div(mul(rate, result), SECONDS_PER_YEAR), RAY)
     }
-
-    return WadRayMath.RAY + result;
   }
 
   /// @notice Returns the smaller of two unsigned integers.
@@ -75,7 +73,9 @@ library MathUtils {
 
   /// @notice Multiplies `a` and `b` in 256 bits and divides the result by `c`, rounding down.
   /// @dev Reverts if division by zero or overflow occurs on intermediate multiplication.
+  /// @return d = floor(a * b / c).
   function mulDivDown(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
+    // to avoid overflow, a <= type(uint256).max / b
     assembly ('memory-safe') {
       if iszero(c) {
         revert(0, 0)
@@ -89,7 +89,9 @@ library MathUtils {
 
   /// @notice Multiplies `a` and `b` in 256 bits and divides the result by `c`, rounding up.
   /// @dev Reverts if division by zero or overflow occurs on intermediate multiplication.
+  /// @return d = ceil(a * b / c).
   function mulDivUp(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
+    // to avoid overflow, a <= type(uint256).max / b
     assembly ('memory-safe') {
       if iszero(c) {
         revert(0, 0)
@@ -97,8 +99,9 @@ library MathUtils {
       if iszero(or(iszero(b), iszero(gt(a, div(not(0), b))))) {
         revert(0, 0)
       }
-      let product := mul(a, b)
-      d := add(div(product, c), gt(mod(product, c), 0))
+      d := mul(a, b)
+      // add 1 if (a * b) % c > 0 to round up the division of (a * b) by c
+      d := add(div(d, c), gt(mod(d, c), 0))
     }
   }
 }

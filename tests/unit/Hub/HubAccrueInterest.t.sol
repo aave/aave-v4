@@ -87,12 +87,12 @@ contract HubAccrueInterestTest is Base {
 
     uint256 addAmount = 1000e18;
     uint256 addAmount2 = 100e18;
-    uint256 startTime = vm.getBlockTimestamp();
+    uint32 startTime = vm.getBlockTimestamp().toUint32();
     uint256 borrowAmount = 100e18;
 
     Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
-    uint256 drawnRate = hub1.getAssetDrawnRate(daiAssetId);
+    uint96 drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
 
     // Time passes
     skip(elapsed);
@@ -106,7 +106,7 @@ contract HubAccrueInterestTest is Base {
       daiInfo.drawnShares,
       WadRayMath.RAY,
       drawnRate,
-      startTime.toUint32()
+      startTime
     );
     uint256 interest = expectedDrawnDebt1 - borrowAmount;
 
@@ -115,15 +115,15 @@ contract HubAccrueInterestTest is Base {
     assertEq(hub1.getAddedAssets(daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
     assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt1, 'drawn');
 
-    startTime = vm.getBlockTimestamp();
-    drawnRate = hub1.getAssetDrawnRate(daiAssetId);
+    startTime = vm.getBlockTimestamp().toUint32();
+    drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
 
     // calculate expected drawn to restore
     (uint256 expectedDrawnIndex2, uint256 expectedDrawnDebt2) = calculateExpectedDebt(
       daiInfo.drawnShares,
       expectedDrawnIndex1,
       drawnRate,
-      startTime.toUint32()
+      startTime
     );
 
     // Full repayment, so back to zero debt
@@ -160,13 +160,13 @@ contract HubAccrueInterestTest is Base {
 
     uint256 addAmount = 1000e18;
     uint256 addAmount2 = 100e18;
-    uint256 startTime = vm.getBlockTimestamp();
+    uint32 startTime = vm.getBlockTimestamp().toUint32();
     uint256 borrowAmount = 100e18;
     uint256 initialDrawnIndex = WadRayMath.RAY;
 
     Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
-    uint256 drawnRate = hub1.getAssetDrawnRate(daiAssetId);
+    uint96 drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
 
     // Time passes
     skip(elapsed);
@@ -180,7 +180,7 @@ contract HubAccrueInterestTest is Base {
       daiInfo.drawnShares,
       initialDrawnIndex,
       drawnRate,
-      startTime.toUint32()
+      startTime
     );
     uint256 interest = expectedDrawnDebt - borrowAmount;
 
@@ -198,14 +198,14 @@ contract HubAccrueInterestTest is Base {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     elapsed = bound(elapsed, 1, type(uint32).max / 3).toUint32();
 
-    uint256 startTime = vm.getBlockTimestamp();
+    uint32 startTime = vm.getBlockTimestamp().toUint32();
     uint256 addAmount = borrowAmount * 2;
     uint256 addAmount2 = 100e18;
     uint256 initialDrawnIndex = WadRayMath.RAY;
 
     Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
-    uint256 drawnRate = hub1.getAssetDrawnRate(daiAssetId);
+    uint96 drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
 
     // Time passes
     skip(elapsed);
@@ -219,7 +219,7 @@ contract HubAccrueInterestTest is Base {
       daiInfo.drawnShares,
       initialDrawnIndex,
       drawnRate,
-      startTime.toUint32()
+      startTime
     );
     uint256 interest = expectedDrawnDebt - borrowAmount;
 

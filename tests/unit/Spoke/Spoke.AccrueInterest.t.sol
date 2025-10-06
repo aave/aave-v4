@@ -22,10 +22,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
   }
 
   struct Rates {
-    uint256 daiBaseBorrowRate;
-    uint256 wethBaseBorrowRate;
-    uint256 usdxBaseBorrowRate;
-    uint256 wbtcBaseBorrowRate;
+    uint96 daiBaseBorrowRate;
+    uint96 wethBaseBorrowRate;
+    uint96 usdxBaseBorrowRate;
+    uint96 wbtcBaseBorrowRate;
   }
 
   function setUp() public override {
@@ -95,7 +95,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     Utils.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
-    uint256 drawnRate = hub1.getAssetDrawnRate(daiAssetId);
+    uint96 drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
     uint256 userRp = _getUserRiskPremium(spoke1, bob);
 
     // Time passes
@@ -125,7 +125,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
 
     startTime = vm.getBlockTimestamp().toUint32();
-    drawnRate = hub1.getAssetDrawnRate(daiAssetId);
+    drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
 
     // Full repayment, so back to zero debt
     Utils.repay(spoke1, daiReserveId, bob, type(uint256).max, bob);
@@ -173,7 +173,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     Utils.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
-    uint256 drawnRate = hub1.getAssetDrawnRate(daiAssetId);
+    uint96 drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
     uint256 userRp = _getUserRiskPremium(spoke1, bob);
 
     // Time passes
@@ -220,7 +220,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     // User risk premium should be 10%
     uint256 riskPremium = _getUserRiskPremium(spoke1, bob);
     assertEq(riskPremium, 10_00, 'user risk premium');
-    uint256 drawnRate = hub1.getAssetDrawnRate(usdxAssetId);
+    uint96 drawnRate = hub1.getAssetDrawnRate(usdxAssetId).toUint96();
 
     skip(skipTime);
 
@@ -340,10 +340,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Store base borrow rates
     Rates memory rates;
-    rates.daiBaseBorrowRate = hub1.getAssetDrawnRate(daiAssetId);
-    rates.wethBaseBorrowRate = hub1.getAssetDrawnRate(wethAssetId);
-    rates.usdxBaseBorrowRate = hub1.getAssetDrawnRate(usdxAssetId);
-    rates.wbtcBaseBorrowRate = hub1.getAssetDrawnRate(wbtcAssetId);
+    rates.daiBaseBorrowRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
+    rates.wethBaseBorrowRate = hub1.getAssetDrawnRate(wethAssetId).toUint96();
+    rates.usdxBaseBorrowRate = hub1.getAssetDrawnRate(usdxAssetId).toUint96();
+    rates.wbtcBaseBorrowRate = hub1.getAssetDrawnRate(wbtcAssetId).toUint96();
 
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     uint256 drawnDebt = _calculateExpectedDrawnDebt(
@@ -1057,16 +1057,18 @@ contract SpokeAccrueInterestTest is SpokeBase {
   }
 
   function _bound(Rates memory rates) internal view returns (Rates memory) {
-    rates.daiBaseBorrowRate = bound(rates.daiBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE());
-    rates.wethBaseBorrowRate = bound(rates.wethBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE());
-    rates.usdxBaseBorrowRate = bound(rates.usdxBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE());
-    rates.wbtcBaseBorrowRate = bound(rates.wbtcBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE());
-
-    // Put rates in ray
-    rates.daiBaseBorrowRate = _bpsToRay(rates.daiBaseBorrowRate);
-    rates.wethBaseBorrowRate = _bpsToRay(rates.wethBaseBorrowRate);
-    rates.usdxBaseBorrowRate = _bpsToRay(rates.usdxBaseBorrowRate);
-    rates.wbtcBaseBorrowRate = _bpsToRay(rates.wbtcBaseBorrowRate);
+    rates.daiBaseBorrowRate = _bpsToRay(
+      bound(rates.daiBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
+    ).toUint96();
+    rates.wethBaseBorrowRate = _bpsToRay(
+      bound(rates.wethBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
+    ).toUint96();
+    rates.usdxBaseBorrowRate = _bpsToRay(
+      bound(rates.usdxBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
+    ).toUint96();
+    rates.wbtcBaseBorrowRate = _bpsToRay(
+      bound(rates.wbtcBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
+    ).toUint96();
 
     return rates;
   }
@@ -1130,9 +1132,5 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
 
     return amounts;
-  }
-
-  function _bpsToRay(uint256 bps) internal pure returns (uint256) {
-    return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
   }
 }
