@@ -369,7 +369,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _validateSetUsingAsCollateral(_reserves[reserveId], usingAsCollateral);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
-    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) return;
+    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
+      return;
+    }
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
@@ -378,6 +380,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
+
     emit SetUsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
   }
 
@@ -433,8 +436,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function renouncePositionManagerRole(address onBehalfOf) external {
-    if (!_positionManager[msg.sender].approval[onBehalfOf]) return;
+    if (!_positionManager[msg.sender].approval[onBehalfOf]) {
+      return;
+    }
+
     _positionManager[msg.sender].approval[onBehalfOf] = false;
+
     emit SetUserPositionManager(onBehalfOf, msg.sender, false);
   }
 
