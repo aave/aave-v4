@@ -72,7 +72,7 @@ contract SignatureGateway is
   /// @param spoke_ The address of the connected spoke.
   /// @param initialOwner_ The address of the initial owner.
   constructor(address spoke_, address initialOwner_) Ownable(initialOwner_) {
-    require(spoke_ != address(0) && initialOwner_ != address(0), InvalidAddress());
+    require(spoke_ != address(0), InvalidAddress());
     _spoke = ISpoke(spoke_);
   }
 

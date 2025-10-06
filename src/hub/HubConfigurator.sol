@@ -26,7 +26,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address feeReceiver,
     address irStrategy,
     bytes calldata irData
-  ) external override onlyOwner returns (uint256) {
+  ) external onlyOwner returns (uint256) {
     return
       IHub(hub).addAsset(
         underlying,
@@ -45,7 +45,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address feeReceiver,
     address irStrategy,
     bytes calldata irData
-  ) external override onlyOwner returns (uint256) {
+  ) external onlyOwner returns (uint256) {
     return IHub(hub).addAsset(underlying, decimals, feeReceiver, irStrategy, irData);
   }
 
@@ -54,7 +54,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address hub,
     uint256 assetId,
     uint256 liquidityFee
-  ) external override onlyOwner {
+  ) external onlyOwner {
     IHub targetHub = IHub(hub);
     IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
@@ -62,11 +62,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateFeeReceiver(
-    address hub,
-    uint256 assetId,
-    address feeReceiver
-  ) external override onlyOwner {
+  function updateFeeReceiver(address hub, uint256 assetId, address feeReceiver) external onlyOwner {
     IHub targetHub = IHub(hub);
     IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.feeReceiver = feeReceiver;
@@ -79,7 +75,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     uint256 liquidityFee,
     address feeReceiver
-  ) external override onlyOwner {
+  ) external onlyOwner {
     IHub targetHub = IHub(hub);
     IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
@@ -93,7 +89,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     address irStrategy,
     bytes calldata irData
-  ) external override onlyOwner {
+  ) external onlyOwner {
     IHub targetHub = IHub(hub);
     IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.irStrategy = irStrategy;
@@ -105,7 +101,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address hub,
     uint256 assetId,
     address reinvestmentController
-  ) external override onlyOwner {
+  ) external onlyOwner {
     IHub targetHub = IHub(hub);
     IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.reinvestmentController = reinvestmentController;
@@ -113,7 +109,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function freezeAsset(address hub, uint256 assetId) external override onlyOwner {
+  function freezeAsset(address hub, uint256 assetId) external onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
@@ -123,7 +119,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function pauseAsset(address hub, uint256 assetId) external override onlyOwner {
+  function pauseAsset(address hub, uint256 assetId) external onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
@@ -163,7 +159,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     address spoke,
     bool active
-  ) external override onlyOwner {
+  ) external onlyOwner {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     config.active = active;
@@ -176,7 +172,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     address spoke,
     uint256 addCap
-  ) external override onlyOwner {
+  ) external onlyOwner {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     config.addCap = addCap.toUint56();
@@ -189,7 +185,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     address spoke,
     uint256 drawCap
-  ) external override onlyOwner {
+  ) external onlyOwner {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     config.drawCap = drawCap.toUint56();
@@ -203,12 +199,12 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address spoke,
     uint256 addCap,
     uint256 drawCap
-  ) external override onlyOwner {
+  ) external onlyOwner {
     _updateSpokeCaps(IHub(hub), assetId, spoke, addCap, drawCap);
   }
 
   /// @inheritdoc IHubConfigurator
-  function pauseSpoke(address hub, address spoke) external override onlyOwner {
+  function pauseSpoke(address hub, address spoke) external onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
@@ -221,7 +217,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function freezeSpoke(address hub, address spoke) external override onlyOwner {
+  function freezeSpoke(address hub, address spoke) external onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
@@ -236,7 +232,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address hub,
     uint256 assetId,
     bytes calldata irData
-  ) external override onlyOwner {
+  ) external onlyOwner {
     IHub(hub).setInterestRateData(assetId, irData);
   }
 

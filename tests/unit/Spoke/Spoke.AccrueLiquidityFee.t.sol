@@ -106,7 +106,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       _calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.drawnShares,
         initialPremiumShares: bobPosition.premiumShares,
-        liquidityFee: _getLiquidityFee(assetId),
+        liquidityFee: _getAssetLiquidityFee(assetId),
         indexDelta: hub1.getAsset(assetId).drawnIndex - initialBaseIndex
       })
     );
@@ -143,7 +143,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       _calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.drawnShares,
         initialPremiumShares: 0,
-        liquidityFee: _getLiquidityFee(assetId),
+        liquidityFee: _getAssetLiquidityFee(assetId),
         indexDelta: hub1.getAsset(assetId).drawnIndex - initialBaseIndex
       })
     );

@@ -143,7 +143,7 @@ contract SpokeBase is Base {
   /// @dev Opens a supply position for a random user
   function _openSupplyPosition(ISpoke spoke, uint256 reserveId, uint256 amount) public {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 initialLiq = _hub(spoke, reserveId).getLiquidity(assetId);
+    uint256 initialLiq = _hub(spoke, reserveId).getAssetLiquidity(assetId);
 
     address tempUser = makeUser();
     deal(spoke, reserveId, tempUser, amount);
@@ -157,7 +157,7 @@ contract SpokeBase is Base {
       onBehalfOf: tempUser
     });
 
-    assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
+    assertEq(hub1.getAssetLiquidity(assetId), initialLiq + amount);
   }
 
   /// @dev Increases the collateral supply for a user
@@ -168,7 +168,7 @@ contract SpokeBase is Base {
     address user
   ) public {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 initialLiq = _hub(spoke, reserveId).getLiquidity(assetId);
+    uint256 initialLiq = _hub(spoke, reserveId).getAssetLiquidity(assetId);
 
     deal(spoke, reserveId, user, amount);
     Utils.approve(spoke, reserveId, user, UINT256_MAX);
@@ -181,7 +181,7 @@ contract SpokeBase is Base {
       onBehalfOf: user
     });
 
-    assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
+    assertEq(hub1.getAssetLiquidity(assetId), initialLiq + amount);
   }
 
   /// @dev Opens a debt position for a random user, using same asset as collateral and borrow

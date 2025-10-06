@@ -11,13 +11,13 @@ import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 /// @dev Oracles are spoke-specific, due to the usage of reserve id as index of the `_sources` mapping.
 contract AaveOracle is IAaveOracle {
   /// @inheritdoc IPriceOracle
-  address public immutable override SPOKE;
+  address public immutable SPOKE;
 
   /// @inheritdoc IPriceOracle
-  uint8 public immutable override DECIMALS;
+  uint8 public immutable DECIMALS;
 
   /// @inheritdoc IAaveOracle
-  string public override DESCRIPTION;
+  string public DESCRIPTION;
 
   mapping(uint256 reserveId => AggregatorV3Interface) internal _sources;
 
@@ -34,7 +34,7 @@ contract AaveOracle is IAaveOracle {
   }
 
   /// @inheritdoc IAaveOracle
-  function setReserveSource(uint256 reserveId, address source) external override {
+  function setReserveSource(uint256 reserveId, address source) external {
     require(msg.sender == SPOKE, OnlySpoke());
     AggregatorV3Interface targetSource = AggregatorV3Interface(source);
     require(targetSource.decimals() == DECIMALS, InvalidSourceDecimals(reserveId));
@@ -44,14 +44,14 @@ contract AaveOracle is IAaveOracle {
   }
 
   /// @inheritdoc IPriceOracle
-  function getReservePrice(uint256 reserveId) external view override returns (uint256) {
+  function getReservePrice(uint256 reserveId) external view returns (uint256) {
     return _getSourcePrice(reserveId);
   }
 
   /// @inheritdoc IAaveOracle
   function getReservesPrices(
     uint256[] calldata reserveIds
-  ) external view override returns (uint256[] memory) {
+  ) external view returns (uint256[] memory) {
     uint256[] memory prices = new uint256[](reserveIds.length);
     for (uint256 i = 0; i < reserveIds.length; ++i) {
       prices[i] = _getSourcePrice(reserveIds[i]);
@@ -60,7 +60,7 @@ contract AaveOracle is IAaveOracle {
   }
 
   /// @inheritdoc IAaveOracle
-  function getReserveSource(uint256 reserveId) external view override returns (address) {
+  function getReserveSource(uint256 reserveId) external view returns (address) {
     return address(_sources[reserveId]);
   }
 

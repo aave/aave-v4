@@ -193,7 +193,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   error CollateralCannotBeLiquidated();
 
   /// @notice Thrown when a specified reserve is not borrowed by the user during liquidation.
-  error SpecifiedCurrencyNotBorrowedByUser();
+  error ReserveNotBorrowed();
 
   /// @notice Thrown when an unauthorized caller attempts an action.
   error Unauthorized();

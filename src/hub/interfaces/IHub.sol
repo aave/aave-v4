@@ -313,20 +313,10 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The asset configuration struct.
   function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory);
 
-  /// @notice Returns the amount of available liquidity for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of available liquidity.
-  function getLiquidity(uint256 assetId) external view returns (uint256);
-
-  /// @notice Returns the amount of deficit of the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of deficit.
-  function getAssetDeficit(uint256 assetId) external view returns (uint256);
-
   /// @notice Returns the amount of liquidity swept by the reinvestment controller for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The amount of liquidity swept.
-  function getSwept(uint256 assetId) external view returns (uint256);
+  function getAssetSwept(uint256 assetId) external view returns (uint256);
 
   /// @notice Calculates the current drawn index for the specified asset.
   /// @param assetId The identifier of the asset.
@@ -369,12 +359,6 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 assetId,
     address spoke
   ) external view returns (SpokeConfig memory);
-
-  /// @notice Returns the amount of a given spoke's deficit for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
-  /// @return The amount of deficit.
-  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the maximum allowed number of decimals for the underlying asset.
   /// @return The maximum number of decimals (inclusive).

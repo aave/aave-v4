@@ -340,7 +340,7 @@ contract HubConfigTest is HubBase {
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
 
     config.reinvestmentController = address(0);
-    assertEq(hub1.getSwept(assetId), 0);
+    assertEq(hub1.getAssetSwept(assetId), 0);
 
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, config, new bytes(0));
@@ -352,7 +352,7 @@ contract HubConfigTest is HubBase {
     vm.prank(reinvestmentController);
     hub1.sweep(assetId, 100e18);
 
-    assertEq(hub1.getSwept(assetId), 100e18);
+    assertEq(hub1.getAssetSwept(assetId), 100e18);
     assertEq(config.reinvestmentController, address(0));
     assertNotEq(hub1.getAsset(assetId).reinvestmentController, address(0));
 
@@ -415,7 +415,7 @@ contract HubConfigTest is HubBase {
       new bytes(0)
     );
 
-    uint256 liquidity = hub1.getLiquidity(assetId);
+    uint256 liquidity = hub1.getAssetLiquidity(assetId);
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
 
     // new spoke is added only if it is different from the old one and not yet listed

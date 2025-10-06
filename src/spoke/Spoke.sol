@@ -464,7 +464,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
-  function getLiquidationLogic() public pure returns (address) {
+  function getLiquidationLogic() external pure returns (address) {
     return address(LiquidationLogic);
   }
 

@@ -40,7 +40,7 @@ contract HubReclaimTest is HubBase {
     address reinvestmentController = makeAddr('reinvestmentController');
     updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
-    assertEq(hub1.getSwept(daiAssetId), 0);
+    assertEq(hub1.getAssetSwept(daiAssetId), 0);
 
     vm.prank(reinvestmentController);
     vm.expectRevert(IHub.InvalidAmount.selector);
@@ -59,7 +59,7 @@ contract HubReclaimTest is HubBase {
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, sweepAmount);
 
-    assertEq(hub1.getSwept(daiAssetId), sweepAmount);
+    assertEq(hub1.getAssetSwept(daiAssetId), sweepAmount);
 
     vm.prank(reinvestmentController);
     vm.expectRevert(IHub.InvalidAmount.selector);
@@ -84,13 +84,13 @@ contract HubReclaimTest is HubBase {
 
     _addLiquidity(daiAssetId, supplyAmount);
 
-    uint256 liquidityBeforeSweep = hub1.getLiquidity(daiAssetId);
+    uint256 liquidityBeforeSweep = hub1.getAssetLiquidity(daiAssetId);
 
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, sweepAmount);
 
-    uint256 liquidityAfterSweep = hub1.getLiquidity(daiAssetId);
-    uint256 sweptAfterSweep = hub1.getSwept(daiAssetId);
+    uint256 liquidityAfterSweep = hub1.getAssetLiquidity(daiAssetId);
+    uint256 sweptAfterSweep = hub1.getAssetSwept(daiAssetId);
 
     assertEq(liquidityAfterSweep, liquidityBeforeSweep - sweepAmount);
     assertEq(sweptAfterSweep, sweepAmount);
@@ -108,8 +108,8 @@ contract HubReclaimTest is HubBase {
     vm.prank(reinvestmentController);
     hub1.reclaim(daiAssetId, reclaimAmount);
 
-    assertEq(hub1.getSwept(daiAssetId), sweptAfterSweep - reclaimAmount);
-    assertEq(hub1.getLiquidity(daiAssetId), liquidityAfterSweep + reclaimAmount);
+    assertEq(hub1.getAssetSwept(daiAssetId), sweptAfterSweep - reclaimAmount);
+    assertEq(hub1.getAssetLiquidity(daiAssetId), liquidityAfterSweep + reclaimAmount);
     assertBorrowRateSynced(hub1, daiAssetId, 'reclaim');
   }
 
@@ -125,7 +125,7 @@ contract HubReclaimTest is HubBase {
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, sweepAmount);
 
-    uint256 liquidityAfterSweep = hub1.getLiquidity(daiAssetId);
+    uint256 liquidityAfterSweep = hub1.getAssetLiquidity(daiAssetId);
 
     deal(address(tokenList.dai), reinvestmentController, sweepAmount);
     vm.prank(reinvestmentController);
@@ -134,8 +134,8 @@ contract HubReclaimTest is HubBase {
     vm.prank(reinvestmentController);
     hub1.reclaim(daiAssetId, sweepAmount);
 
-    assertEq(hub1.getSwept(daiAssetId), 0);
-    assertEq(hub1.getLiquidity(daiAssetId), liquidityAfterSweep + sweepAmount);
+    assertEq(hub1.getAssetSwept(daiAssetId), 0);
+    assertEq(hub1.getAssetLiquidity(daiAssetId), liquidityAfterSweep + sweepAmount);
   }
 
   function test_reclaim_multipleSweepsAndReclaims() public {
@@ -146,7 +146,7 @@ contract HubReclaimTest is HubBase {
 
     _addLiquidity(daiAssetId, supplyAmount);
 
-    uint256 initialLiquidity = hub1.getLiquidity(daiAssetId);
+    uint256 initialLiquidity = hub1.getAssetLiquidity(daiAssetId);
 
     uint256 firstSweep = 200e18;
     vm.prank(reinvestmentController);
@@ -157,8 +157,8 @@ contract HubReclaimTest is HubBase {
     hub1.sweep(daiAssetId, secondSweep);
 
     uint256 totalSwept = firstSweep + secondSweep;
-    assertEq(hub1.getSwept(daiAssetId), totalSwept);
-    assertEq(hub1.getLiquidity(daiAssetId), initialLiquidity - totalSwept);
+    assertEq(hub1.getAssetSwept(daiAssetId), totalSwept);
+    assertEq(hub1.getAssetLiquidity(daiAssetId), initialLiquidity - totalSwept);
 
     // First reclaim
     uint256 firstReclaim = 100e18;
@@ -169,8 +169,8 @@ contract HubReclaimTest is HubBase {
     vm.prank(reinvestmentController);
     hub1.reclaim(daiAssetId, firstReclaim);
 
-    assertEq(hub1.getSwept(daiAssetId), totalSwept - firstReclaim);
-    assertEq(hub1.getLiquidity(daiAssetId), initialLiquidity - totalSwept + firstReclaim);
+    assertEq(hub1.getAssetSwept(daiAssetId), totalSwept - firstReclaim);
+    assertEq(hub1.getAssetLiquidity(daiAssetId), initialLiquidity - totalSwept + firstReclaim);
 
     // Second reclaim
     uint256 secondReclaim = 150e18;
@@ -181,9 +181,9 @@ contract HubReclaimTest is HubBase {
     vm.prank(reinvestmentController);
     hub1.reclaim(daiAssetId, secondReclaim);
 
-    assertEq(hub1.getSwept(daiAssetId), totalSwept - firstReclaim - secondReclaim);
+    assertEq(hub1.getAssetSwept(daiAssetId), totalSwept - firstReclaim - secondReclaim);
     assertEq(
-      hub1.getLiquidity(daiAssetId),
+      hub1.getAssetLiquidity(daiAssetId),
       initialLiquidity - totalSwept + firstReclaim + secondReclaim
     );
   }
