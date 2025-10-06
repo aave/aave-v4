@@ -521,6 +521,7 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     return (asset.premiumShares, asset.premiumOffset, asset.realizedPremium);
   }
+
   /// @inheritdoc IHubBase
   function getAssetLiquidity(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].liquidity;
