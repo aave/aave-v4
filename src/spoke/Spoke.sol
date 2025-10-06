@@ -735,7 +735,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     if (accountData.totalDebtValue > 0) {
       // at this point, `avgCollateralFactor` is the collateral-weighted sum (scaled by `collateralFactor` in BPS)
-      // health factor uses this directly for simplicity, while the division by `totalCollateral` to compute the weighted average is done later
+      // health factor uses this directly for simplicity
+      // the division by `totalCollateralValue` to compute the weighted average is done later
       accountData.healthFactor = accountData
         .avgCollateralFactor
         .wadDivDown(accountData.totalDebtValue)
@@ -754,8 +755,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 runningDebtValue = accountData.totalDebtValue;
     uint256 runningCollateralValue = 0;
     uint256 runningIndex = 0;
-    // sort by collateral risk in ASC, collateral value in DES
-    collateralInfo.sortByKey();
+    collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
 
     while (runningIndex < collateralInfo.length() && runningDebtValue > 0) {
       (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.get(runningIndex);
