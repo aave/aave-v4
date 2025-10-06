@@ -43,8 +43,8 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       accruedPremium: 0.2e18,
       totalDebtValue: 10_000e26,
       liquidator: makeAddr('liquidator'),
-      suppliedCollateralsCount: 1,
-      borrowedReservesCount: 1
+      activeCollateralCount: 1,
+      borrowedCount: 1
     });
 
     // Set liquidationLogicWrapper as a spoke

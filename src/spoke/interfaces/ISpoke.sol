@@ -70,8 +70,8 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint256 healthFactor;
     uint256 totalCollateralValue;
     uint256 totalDebtValue;
-    uint256 suppliedCollateralsCount; // number of reserves with collateral factor > 0, enabled as collateral and strictly positive supplied amount
-    uint256 borrowedReservesCount; // number of reserves with strictly positive debt
+    uint256 activeCollateralCount; // 'active' collateral: collateralFactor > 0, enabledAsCollateral and suppliedAmount > 0
+    uint256 borrowedCount;
   }
 
   /// @notice Emitted when a liquidation config is updated.

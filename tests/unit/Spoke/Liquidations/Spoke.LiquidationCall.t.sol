@@ -36,7 +36,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 count = vm.randomUint(1, 10);
     for (uint256 i = 0; i < count; i++) {
       uint256 reserveId = vm.randomUint(0, spoke.getReserveCount() - 1);
-      uint256 amount = _convertBaseCurrencyToAmount(spoke, reserveId, amountValue);
+      uint256 amount = _convertValueToAmount(spoke, reserveId, amountValue);
       _increaseCollateralSupply(spoke, reserveId, amount, user);
     }
   }
@@ -45,7 +45,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 count = vm.randomUint(1, 10);
     for (uint256 i = 0; i < count; i++) {
       uint256 reserveId = vm.randomUint(0, spoke.getReserveCount() - 1);
-      uint256 amount = _convertBaseCurrencyToAmount(spoke, reserveId, amountValue);
+      uint256 amount = _convertValueToAmount(spoke, reserveId, amountValue);
       _openSupplyPosition(spoke, reserveId, amount);
       Utils.borrow({
         spoke: spoke,
@@ -119,7 +119,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountValue()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 
@@ -145,7 +145,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountValue()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
     // user enables more collaterals, but still has deficit given that only one collateral is supplied
@@ -177,7 +177,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountValue()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 
@@ -205,7 +205,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountValue()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 
@@ -233,7 +233,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountValue()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 
@@ -261,7 +261,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountValue()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 
@@ -289,7 +289,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountValue()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 
@@ -318,7 +318,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountValue()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 

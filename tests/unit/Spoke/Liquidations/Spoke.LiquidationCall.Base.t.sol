@@ -120,7 +120,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   ) internal virtual returns (uint256) {
     debtToCover = bound(
       debtToCover,
-      _convertBaseCurrencyToAmount(spoke, debtReserveId, 1e26),
+      _convertValueToAmount(spoke, debtReserveId, 1e26),
       MAX_SUPPLY_AMOUNT
     );
 
@@ -283,9 +283,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 collateralToLiquidate,
     uint256 debtToLiquidate
   ) internal virtual returns (uint256, uint256) {
-    KeyValueList.List memory list = KeyValueList.init(
-      userAccountDataBefore.suppliedCollateralsCount
-    );
+    KeyValueList.List memory list = KeyValueList.init(userAccountDataBefore.activeCollateralCount);
 
     uint256 totalCollateralValue = 0;
     uint256 newAvgCollateralFactor = 0;
@@ -310,11 +308,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       }
 
       // from now, userSuppliedAmount is in base currency (to avoid stack too deep)
-      userSuppliedAmount = _convertAmountToBaseCurrency(
-        params.spoke,
-        reserveId,
-        userSuppliedAmount
-      );
+      userSuppliedAmount = _convertAmountToValue(params.spoke, reserveId, userSuppliedAmount);
       list.add(index++, _getCollateralRisk(params.spoke, reserveId), userSuppliedAmount);
       totalCollateralValue += userSuppliedAmount;
       newAvgCollateralFactor += collateralFactor * userSuppliedAmount;
@@ -327,7 +321,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     }
     list.sortByKey();
 
-    uint256 debtToLiquidateValue = _convertAmountToBaseCurrency(
+    uint256 debtToLiquidateValue = _convertAmountToValue(
       params.spoke,
       params.debtReserveId,
       debtToLiquidate
@@ -507,7 +501,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         debtToLiquidate
       );
 
-    uint256 debtToLiquidateValue = _convertAmountToBaseCurrency(
+    uint256 debtToLiquidateValue = _convertAmountToValue(
       params.spoke,
       params.debtReserveId,
       debtToLiquidate
@@ -529,7 +523,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           (userAccountDataBefore.totalCollateralValue.wadMulDown(debtToLiquidateValue) *
             userAccountDataBefore.avgCollateralFactor).toInt256());
 
-    bool hasDeficit = (userAccountDataBefore.suppliedCollateralsCount == 1) &&
+    bool hasDeficit = (userAccountDataBefore.activeCollateralCount == 1) &&
       (!params.isSolvent || isLiquidationBonusAffectingUserHf) &&
       (collateralToLiquidate ==
         params.spoke.getUserSuppliedAssets(params.collateralReserveId, params.user));

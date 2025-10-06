@@ -326,8 +326,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       premiumDebt: 0, // populated below
       accruedPremium: 0, // populated below
       totalDebtValue: userAccountData.totalDebtValue,
-      suppliedCollateralsCount: userAccountData.suppliedCollateralsCount,
-      borrowedReservesCount: userAccountData.borrowedReservesCount,
+      activeCollateralCount: userAccountData.activeCollateralCount,
+      borrowedCount: userAccountData.borrowedCount,
       liquidator: msg.sender
     });
 
@@ -709,14 +709,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
             ) * assetPrice).wadDivDown(assetUnit);
             accountData.totalCollateralValue += userCollateralValue;
             collateralInfo.add(
-              accountData.suppliedCollateralsCount,
+              accountData.activeCollateralCount,
               reserve.collateralRisk,
               userCollateralValue
             );
             accountData.avgCollateralFactor += collateralFactor * userCollateralValue;
-            accountData.suppliedCollateralsCount = accountData
-              .suppliedCollateralsCount
-              .uncheckedAdd(1);
+            accountData.activeCollateralCount = accountData.activeCollateralCount.uncheckedAdd(1);
           }
         }
       }
@@ -729,21 +727,22 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         );
         // we can simplify since there is no precision loss due to the division here
         accountData.totalDebtValue += ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
-        accountData.borrowedReservesCount = accountData.borrowedReservesCount.uncheckedAdd(1);
+        accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
       }
     }
 
-    // at this point avgCollateralFactor is the weighted sum of collateral scaled by collateralFactor
-    // (avgCollateralFactor / totalCollateral) * totalCollateral can be simplified to avgCollateralFactor
-    // strip BPS factor from result, because running avgCollateralFactor sum has been scaled by collateralFactor (in BPS) above
     if (accountData.totalDebtValue > 0) {
+      // at this point, `avgCollateralFactor` is the collateral-weighted sum (scaled by `collateralFactor` in BPS)
+      // health factor uses this directly for simplicity
+      // the division by `totalCollateralValue` to compute the weighted average is done later
       accountData.healthFactor = accountData
         .avgCollateralFactor
         .wadDivDown(accountData.totalDebtValue)
         .fromBpsDown();
-    } else accountData.healthFactor = type(uint256).max;
+    } else {
+      accountData.healthFactor = type(uint256).max;
+    }
 
-    // divide by total collateral to get avg collateral factor in wad
     if (accountData.totalCollateralValue > 0) {
       accountData.avgCollateralFactor = accountData
         .avgCollateralFactor
@@ -752,8 +751,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
 
     uint256 debtLeftToCover = accountData.totalDebtValue;
-    // sort by collateral risk in ASC, collateral value in DES
-    collateralInfo.sortByKey();
+    collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DES
     for (uint256 index = 0; index < collateralInfo.length() && debtLeftToCover > 0; ) {
       (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.get(index);
       userCollateralValue = userCollateralValue.min(debtLeftToCover);
