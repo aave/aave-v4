@@ -49,7 +49,7 @@ contract HubSweepTest is HubBase {
 
     _addLiquidity(daiAssetId, supplyAmount);
 
-    uint256 assetLiquidity = hub1.getLiquidity(daiAssetId);
+    uint256 assetLiquidity = hub1.getAssetLiquidity(daiAssetId);
 
     vm.expectEmit(address(tokenList.dai));
     emit IERC20.Transfer(address(hub1), reinvestmentController, sweepAmount);
@@ -60,8 +60,8 @@ contract HubSweepTest is HubBase {
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, sweepAmount);
 
-    assertEq(hub1.getSwept(daiAssetId), sweepAmount);
-    assertEq(hub1.getLiquidity(daiAssetId), assetLiquidity - sweepAmount);
+    assertEq(hub1.getAssetSwept(daiAssetId), sweepAmount);
+    assertEq(hub1.getAssetLiquidity(daiAssetId), assetLiquidity - sweepAmount);
     assertBorrowRateSynced(hub1, daiAssetId, 'sweep');
   }
 
@@ -112,7 +112,7 @@ contract HubSweepTest is HubBase {
       }),
       drawnRate
     );
-    assertEq(hub1.getLiquidity(daiAssetId), supplyAmount - drawAmount - swept);
-    assertEq(hub1.getSwept(daiAssetId), swept);
+    assertEq(hub1.getAssetLiquidity(daiAssetId), supplyAmount - drawAmount - swept);
+    assertEq(hub1.getAssetSwept(daiAssetId), swept);
   }
 }
