@@ -99,7 +99,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     uint256 debtReserveBalance = bound(
       params.debtReserveBalance,
       0,
-      _convertBaseCurrencyToAmount(
+      _convertValueToAmount(
         debtToTargetParams.totalDebtValue,
         debtToTargetParams.debtAssetPrice,
         debtToTargetParams.debtAssetUnit

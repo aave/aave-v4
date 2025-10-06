@@ -120,7 +120,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   ) internal virtual returns (uint256) {
     debtToCover = bound(
       debtToCover,
-      _convertBaseCurrencyToAmount(spoke, debtReserveId, 1e26),
+      _convertValueToAmount(spoke, debtReserveId, 1e26),
       MAX_SUPPLY_AMOUNT
     );
 
@@ -310,24 +310,18 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       }
 
       // from now, userSuppliedAmount is in base currency (to avoid stack too deep)
-      userSuppliedAmount = _convertAmountToBaseCurrency(
-        params.spoke,
-        reserveId,
-        userSuppliedAmount
-      );
+      userSuppliedAmount = _convertAmountToValue(params.spoke, reserveId, userSuppliedAmount);
       list.add(index++, _getCollateralRisk(params.spoke, reserveId), userSuppliedAmount);
       totalCollateralValue += userSuppliedAmount;
       newAvgCollateralFactor += collateralFactor * userSuppliedAmount;
     }
 
     if (totalCollateralValue != 0) {
-      newAvgCollateralFactor = newAvgCollateralFactor
-        .wadDivDown(totalCollateralValue)
-        .fromBpsDown();
+      newAvgCollateralFactor = newAvgCollateralFactor.wadDivDown(totalCollateralValue).fromBpsDown();
     }
     list.sortByKey();
 
-    uint256 debtToLiquidateValue = _convertAmountToBaseCurrency(
+    uint256 debtToLiquidateValue = _convertAmountToValue(
       params.spoke,
       params.debtReserveId,
       debtToLiquidate
@@ -507,7 +501,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         debtToLiquidate
       );
 
-    uint256 debtToLiquidateValue = _convertAmountToBaseCurrency(
+    uint256 debtToLiquidateValue = _convertAmountToValue(
       params.spoke,
       params.debtReserveId,
       debtToLiquidate
