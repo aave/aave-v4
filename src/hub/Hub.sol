@@ -521,6 +521,15 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     return (asset.premiumShares, asset.premiumOffset, asset.realizedPremium);
   }
+  /// @inheritdoc IHubBase
+  function getAssetLiquidity(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].liquidity;
+  }
+
+  /// @inheritdoc IHubBase
+  function getAssetDeficit(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].deficit;
+  }
 
   /// @inheritdoc IHub
   function getAsset(uint256 assetId) external view returns (Asset memory) {
@@ -540,17 +549,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getLiquidity(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].liquidity;
-  }
-
-  /// @inheritdoc IHub
-  function getAssetDeficit(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].deficit;
-  }
-
-  /// @inheritdoc IHub
-  function getSwept(uint256 assetId) external view override returns (uint256) {
+  function getAssetSwept(uint256 assetId) external view override returns (uint256) {
     return _assets[assetId].swept;
   }
 
@@ -609,6 +608,11 @@ contract Hub is IHub, AccessManaged {
     return (spokeData.premiumShares, spokeData.premiumOffset, spokeData.realizedPremium);
   }
 
+  /// @inheritdoc IHubBase
+  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256) {
+    return _spokes[assetId][spoke].deficit;
+  }
+
   /// @inheritdoc IHub
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool) {
     return _assetToSpokes[assetId].contains(spoke);
@@ -631,11 +635,6 @@ contract Hub is IHub, AccessManaged {
   ) external view returns (SpokeConfig memory) {
     SpokeData storage spokeData = _spokes[assetId][spoke];
     return SpokeConfig(spokeData.active, spokeData.addCap, spokeData.drawCap);
-  }
-
-  /// @inheritdoc IHub
-  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256) {
-    return _spokes[assetId][spoke].deficit;
   }
 
   /// @notice Adds a new spoke to an asset with default feeReceiver configuration (maximum add cap, zero draw cap).
@@ -721,6 +720,7 @@ contract Hub is IHub, AccessManaged {
     return spoke.realizedPremium + accruedPremium;
   }
 
+  /// @dev Spoke with maximum cap have unlimited add capacity.
   function _validateAdd(
     Asset storage asset,
     SpokeData storage spoke,

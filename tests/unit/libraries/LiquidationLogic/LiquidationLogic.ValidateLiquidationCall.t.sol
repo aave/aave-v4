@@ -83,9 +83,9 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
-  function test_validateLiquidationCall_revertsWith_SpecifiedCurrencyNotBorrowedByUser() public {
+  function test_validateLiquidationCall_revertsWith_SpecifiedReserveNotBorrowedByUser() public {
     params.debtReserveBalance = 0;
-    vm.expectRevert(ISpoke.SpecifiedCurrencyNotBorrowedByUser.selector);
+    vm.expectRevert(ISpoke.SpecifiedReserveNotBorrowedByUser.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
