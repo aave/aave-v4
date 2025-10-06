@@ -317,7 +317,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     }
 
     if (totalCollateralValue != 0) {
-      newAvgCollateralFactor = newAvgCollateralFactor.wadDivDown(totalCollateralValue).fromBpsDown();
+      newAvgCollateralFactor = newAvgCollateralFactor
+        .wadDivDown(totalCollateralValue)
+        .fromBpsDown();
     }
     list.sortByKey();
 
