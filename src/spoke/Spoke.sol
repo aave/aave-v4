@@ -164,7 +164,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(reserveId < _reserveCount, ReserveNotListed());
     _validateDynamicReserveConfig(dynamicConfig);
     uint16 configKey;
-    // @dev overflow is desired, we implicitly invalidate & override stale config
+    // overflow is desired, we implicitly invalidate & override stale config
     unchecked {
       configKey = ++_reserves[reserveId].dynamicConfigKey;
     }
@@ -228,8 +228,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
     if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
-      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
-      _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
+      uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
 
     emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
@@ -253,8 +253,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
-    _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
+    uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
   }
@@ -302,7 +302,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
 
     UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf);
-    _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.userRiskPremium);
+    _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
 
     emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, premiumDelta);
   }
@@ -325,7 +325,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       drawnDebt: 0, // populated below
       premiumDebt: 0, // populated below
       accruedPremium: 0, // populated below
-      totalDebtInBaseCurrency: userAccountData.totalDebtInBaseCurrency,
+      totalDebtValue: userAccountData.totalDebtValue,
       suppliedCollateralsCount: userAccountData.suppliedCollateralsCount,
       borrowedReservesCount: userAccountData.borrowedReservesCount,
       liquidator: msg.sender
@@ -356,7 +356,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _reportDeficit(user);
     } else {
       // new risk premium only needs to be propagated if no deficit exists
-      _notifyRiskPremiumUpdate(user, _calculateUserAccountData(user).userRiskPremium);
+      _notifyRiskPremiumUpdate(user, _calculateUserAccountData(user).riskPremium);
     }
   }
 
@@ -375,8 +375,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (usingAsCollateral) {
       _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
-      uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
-      _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
+      uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
     emit SetUsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
   }
@@ -386,7 +386,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    _notifyRiskPremiumUpdate(onBehalfOf, _calculateUserAccountData(onBehalfOf).userRiskPremium);
+    uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
+    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -394,8 +395,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
-    _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
+    uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -443,9 +444,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     address onBehalfOf,
     uint256 value,
     uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
+    uint8 permitV,
+    bytes32 permitR,
+    bytes32 permitS
   ) external {
     Reserve storage reserve = _reserves[reserveId];
     address underlying = reserve.underlying;
@@ -456,9 +457,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         spender: address(reserve.hub),
         value: value,
         deadline: deadline,
-        v: v,
-        r: r,
-        s: s
+        v: permitV,
+        r: permitR,
+        s: permitS
       })
     {} catch {}
   }
@@ -533,7 +534,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint16 configKey
   ) external view returns (DynamicReserveConfig memory) {
     _getReserve(reserveId);
-    // @dev we do not revert if key is unset
     return _dynamicConfig[reserveId][configKey];
   }
 
@@ -657,7 +657,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       accountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
     );
-    return accountData.userRiskPremium;
+    return accountData.riskPremium;
   }
 
   /// @notice Refreshes the dynamic config and calculates the user account data.
@@ -703,17 +703,17 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
           uint256 suppliedShares = userPosition.suppliedShares;
           if (suppliedShares > 0) {
             // cannot round down to zero
-            uint256 userCollateralInBaseCurrency = (reserve.hub.previewRemoveByShares(
+            uint256 userCollateralValue = (reserve.hub.previewRemoveByShares(
               reserve.assetId,
               suppliedShares
             ) * assetPrice).wadDivDown(assetUnit);
-            accountData.totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
+            accountData.totalCollateralValue += userCollateralValue;
             collateralInfo.add(
               accountData.suppliedCollateralsCount,
               reserve.collateralRisk,
-              userCollateralInBaseCurrency
+              userCollateralValue
             );
-            accountData.avgCollateralFactor += collateralFactor * userCollateralInBaseCurrency;
+            accountData.avgCollateralFactor += collateralFactor * userCollateralValue;
             accountData.suppliedCollateralsCount = accountData
               .suppliedCollateralsCount
               .uncheckedAdd(1);
@@ -728,9 +728,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
           userPosition
         );
         // we can simplify since there is no precision loss due to the division here
-        accountData.totalDebtInBaseCurrency += ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(
-          assetUnit
-        );
+        accountData.totalDebtValue += ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
         accountData.borrowedReservesCount = accountData.borrowedReservesCount.uncheckedAdd(1);
       }
     }
@@ -738,38 +736,38 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     // at this point avgCollateralFactor is the weighted sum of collateral scaled by collateralFactor
     // (avgCollateralFactor / totalCollateral) * totalCollateral can be simplified to avgCollateralFactor
     // strip BPS factor from result, because running avgCollateralFactor sum has been scaled by collateralFactor (in BPS) above
-    accountData.healthFactor = accountData.totalDebtInBaseCurrency == 0
-      ? type(uint256).max
-      : accountData
+    if (accountData.totalDebtValue > 0) {
+      accountData.healthFactor = accountData
         .avgCollateralFactor
-        .wadDivDown(accountData.totalDebtInBaseCurrency)
+        .wadDivDown(accountData.totalDebtValue)
         .fromBpsDown();
+    } else accountData.healthFactor = type(uint256).max;
 
     // divide by total collateral to get avg collateral factor in wad
-    accountData.avgCollateralFactor = accountData.totalCollateralInBaseCurrency == 0
-      ? 0
-      : accountData
+    if (accountData.totalCollateralValue > 0) {
+      accountData.avgCollateralFactor = accountData
         .avgCollateralFactor
-        .wadDivDown(accountData.totalCollateralInBaseCurrency)
+        .wadDivDown(accountData.totalCollateralValue)
         .fromBpsDown();
-
-    // running debt & collateral values used in risk premium calculation
-    uint256 debtCounterInBaseCurrency = accountData.totalDebtInBaseCurrency;
-    uint256 collateralCounterInBaseCurrency = 0;
-
-    collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
-    uint256 i = 0;
-    while (i < collateralInfo.length() && debtCounterInBaseCurrency > 0) {
-      (uint256 collateralRisk, uint256 userCollateralInBaseCurrency) = collateralInfo.get(i);
-      userCollateralInBaseCurrency = userCollateralInBaseCurrency.min(debtCounterInBaseCurrency);
-      accountData.userRiskPremium += userCollateralInBaseCurrency * collateralRisk;
-      collateralCounterInBaseCurrency += userCollateralInBaseCurrency;
-      debtCounterInBaseCurrency -= userCollateralInBaseCurrency;
-      i = i.uncheckedAdd(1);
     }
 
-    if (collateralCounterInBaseCurrency > 0) {
-      accountData.userRiskPremium = accountData.userRiskPremium / collateralCounterInBaseCurrency;
+    uint256 runningDebtValue = accountData.totalDebtValue;
+    uint256 runningCollateralValue = 0;
+    uint256 runningIndex = 0;
+    // sort by collateral risk in ASC, collateral value in DES
+    collateralInfo.sortByKey();
+
+    while (runningIndex < collateralInfo.length() && runningDebtValue > 0) {
+      (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.get(runningIndex);
+      userCollateralValue = userCollateralValue.min(runningDebtValue);
+      accountData.riskPremium += userCollateralValue * collateralRisk;
+      runningCollateralValue += userCollateralValue;
+      runningDebtValue -= userCollateralValue;
+      runningIndex = runningIndex.uncheckedAdd(1);
+    }
+
+    if (runningCollateralValue > 0) {
+      accountData.riskPremium = accountData.riskPremium / runningCollateralValue;
     }
 
     return accountData;
@@ -780,8 +778,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 
-  /// @notice Refreshes premium for borrowed reserves of `user` with `newUserRiskPremium`.
-  function _notifyRiskPremiumUpdate(address user, uint256 newUserRiskPremium) internal {
+  /// @notice Refreshes premium for borrowed reserves of `user` with `newRiskPremium`.
+  function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
 
     uint256 reserveId = _reserveCount;
@@ -796,7 +794,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       uint256 accruedPremium = hub.previewRestoreByShares(assetId, oldPremiumShares) -
         oldPremiumOffset;
 
-      uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newUserRiskPremium);
+      uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newRiskPremium);
       // uses opposite rounding direction as premiumOffset is virtual debt owed by the protocol
       uint256 newPremiumOffset = hub.previewDrawByShares(assetId, newPremiumShares);
 
@@ -813,7 +811,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       hub.refreshPremium(assetId, premiumDelta);
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
     }
-    emit UpdateUserRiskPremium(user, newUserRiskPremium);
+    emit UpdateUserRiskPremium(user, newRiskPremium);
   }
 
   /// @notice Reports deficits for all debt reserves of the user, including the reserve being repaid during liquidation.

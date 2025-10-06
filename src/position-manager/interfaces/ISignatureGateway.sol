@@ -160,9 +160,9 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
     address onBehalfOf,
     uint256 value,
     uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
+    uint8 permitV,
+    bytes32 permitR,
+    bytes32 permitS
   ) external;
 
   /// @notice Permissioned operation to renounce self as user position manager on connected SPOKE() for specified `user`.
