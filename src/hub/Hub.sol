@@ -420,7 +420,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getAssetCount() external view override returns (uint256) {
+  function getAssetCount() external view returns (uint256) {
     return _assetCount;
   }
 
@@ -550,7 +550,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getAssetSwept(uint256 assetId) external view override returns (uint256) {
+  function getAssetSwept(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].swept;
   }
 
