@@ -117,7 +117,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     //   - Debt to cover: 4000
     // Liquidated amounts:
     //   - Collateral: 2 WETH
-    //   - Debt: $4000 / ($1 * 1.249) = ~3225.8 DAI
+    //   - Debt: $4000 / ($1 * 1.24) = ~3225.8 DAI
     _checkedLiquidationCall(
       CheckedLiquidationCallParams({
         spoke: spoke,
@@ -153,5 +153,102 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
     // Risk Premium after liquidation: ($100 * 10% + 387.5 * 15%) / 487.6 = 13.97%
     assertApproxEqAbs(userAccountData.userRiskPremium, 13_97, 1, 'post liquidation: risk premium');
+  }
+
+  // User is solvent, but health factor decreases after liquidation due to high collateral factor.
+  function test_scenario2() public {
+    _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 103_00);
+    _updateCollateralFactor(spoke, _wethReserveId(spoke), 97_00);
+
+    // Borrow rates:
+    //   - DAI: 3%
+    vm.prank(address(hub1));
+    irStrategy.setInterestRateData(
+      _daiReserveId(spoke),
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00,
+          baseVariableBorrowRate: 3_00,
+          variableRateSlope1: 0,
+          variableRateSlope2: 0
+        })
+      )
+    );
+
+    // Collateral and debt composition
+    //   - Collaterals: 1.65 WETH, 0.01 WBTC, 100 USDX ($3900)
+    //   - Debts: 3600 DAI
+    _increaseCollateralSupply(spoke, _wethReserveId(spoke), 1.65e18, user);
+    _increaseCollateralSupply(spoke, _wbtcReserveId(spoke), 0.01e8, user);
+    _increaseCollateralSupply(spoke, _usdxReserveId(spoke), 100e6, user);
+    _increaseReserveDebt(spoke, _daiReserveId(spoke), 3600e18, user);
+
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+
+    // Health Factor: ($3300 * 0.97 + $500 * 0.7 + $100 * 0.72) / $3600 = ~1.00639
+    assertApproxEqAbs(
+      userAccountData.healthFactor,
+      1.0063e18,
+      0.0001e18,
+      'pre liquidation: health factor'
+    );
+    // Risk Premium: ($3300 * 5% + $100 * 10% + $200 * 15%) / $3600 = ~5.694%
+    assertEq(userAccountData.userRiskPremium, 5_69, 'pre liquidation: risk premium');
+
+    skip(365 days / 2);
+    userAccountData = spoke.getUserAccountData(user);
+
+    // Debt after half of year: 3600$ * 1.015 + $3600 * 0.0569 * 0.015 = ~$3657.0726
+    // Health Factor after half of year: ($3300 * 0.97 + $500 * 0.7 + $100 * 0.72) /$3657.0726 = ~0.99068
+    assertApproxEqAbs(
+      userAccountData.healthFactor,
+      0.990e18,
+      0.001e18,
+      'pre liquidation: health factor after half of year'
+    );
+
+    // Debt to target: $3657.0726 * (1.05 - 0.99068) / ($1 * (1.05 - 1.03 * 0.97)) = ~4262.03431
+    // Liquidation Parameters:
+    //   - Collateral: WETH
+    //   - Debt: DAI
+    //   - Debt to cover: 4000
+    // Liquidated amounts:
+    //   - Collateral: 1.65 WETH
+    //   - Debt: $3300 / ($1 * 1.03) = ~3203.8835 DAI
+    _checkedLiquidationCall(
+      CheckedLiquidationCallParams({
+        spoke: spoke,
+        collateralReserveId: _wethReserveId(spoke),
+        debtReserveId: _daiReserveId(spoke),
+        user: user,
+        debtToCover: 4000e18,
+        liquidator: liquidator,
+        isSolvent: true
+      })
+    );
+
+    // Debt left after liquidation: 3657.0726 - 3203.8835 = 453.1891 DAI (all drawn)
+    assertApproxEqAbs(
+      getUserDebt(spoke, user, _daiReserveId(spoke)).drawnDebt,
+      453.1891e18,
+      0.1e18,
+      'post liquidation: drawn debt left'
+    );
+    assertApproxEqAbs(
+      getUserDebt(spoke, user, _daiReserveId(spoke)).premiumDebt,
+      0,
+      2,
+      'post liquidation: premium debt left'
+    );
+    // Health Factor after liquidation: ($500 * 0.7 + $100 * 0.72) / ($3657.0726 - $3203.8835) = ~0.9311
+    userAccountData = spoke.getUserAccountData(user);
+    assertApproxEqAbs(
+      userAccountData.healthFactor,
+      0.9311e18,
+      0.0001e18,
+      'post liquidation: health factor'
+    );
+    // Risk Premium after liquidation: ($100 * 10% + $353.1891 * 15%) / $453.1891 = 13.89%
+    assertApproxEqAbs(userAccountData.userRiskPremium, 13_89, 1, 'post liquidation: risk premium');
   }
 }
