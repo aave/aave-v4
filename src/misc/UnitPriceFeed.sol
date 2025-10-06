@@ -59,7 +59,6 @@ contract UnitPriceFeed is AggregatorV3Interface {
   function latestRoundData()
     external
     view
-    virtual
     returns (
       uint80 roundId,
       int256 answer,
