@@ -237,7 +237,7 @@ library LiquidationLogic {
       params.isUsingAsCollateral && params.collateralFactor > 0,
       ISpoke.CollateralCannotBeLiquidated()
     );
-    require(params.debtReserveBalance > 0, ISpoke.SpecifiedReserveNotBorrowedByUser());
+    require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
   }
 
   /// @notice Calculates the liquidation amounts.
