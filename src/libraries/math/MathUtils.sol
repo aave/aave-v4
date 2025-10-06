@@ -10,17 +10,20 @@ library MathUtils {
   uint256 internal constant RAY = 1e27;
 
   /// @notice Function to calculate the interest accumulated using a linear interest rate formula.
-  /// @dev Calculates interest rate from provided `lastUpdateTimestamp` until present, and it has to be
-  /// greater than `block.timestamp`.
+  /// @dev Reverts if `lastUpdateTimestamp` is greater than `block.timestamp`.
   /// @param rate The interest rate in Ray units.
   /// @param lastUpdateTimestamp The timestamp to calculate interest rate from.
-  /// @return result The interest rate linearly accumulated during the timeDelta in Ray units.
+  /// @return result The interest rate linearly accumulated during the time delta in Ray units.
   function calculateLinearInterest(
     uint256 rate,
     uint32 lastUpdateTimestamp
   ) internal view returns (uint256 result) {
     assembly ('memory-safe') {
-      result := add(div(mul(rate, sub(timestamp(), lastUpdateTimestamp)), SECONDS_PER_YEAR), RAY)
+      if gt(lastUpdateTimestamp, timestamp()) {
+        revert(0, 0)
+      }
+      result := sub(timestamp(), lastUpdateTimestamp)
+      result := add(div(mul(rate, result), SECONDS_PER_YEAR), RAY)
     }
   }
 
@@ -70,7 +73,9 @@ library MathUtils {
 
   /// @notice Multiplies `a` and `b` in 256 bits and divides the result by `c`, rounding down.
   /// @dev Reverts if division by zero or overflow occurs on intermediate multiplication.
+  /// @return d = floor(a * b / c).
   function mulDivDown(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
+    // to avoid overflow, a <= type(uint256).max / b
     assembly ('memory-safe') {
       if iszero(c) {
         revert(0, 0)
@@ -84,7 +89,9 @@ library MathUtils {
 
   /// @notice Multiplies `a` and `b` in 256 bits and divides the result by `c`, rounding up.
   /// @dev Reverts if division by zero or overflow occurs on intermediate multiplication.
+  /// @return d = ceil(a * b / c).
   function mulDivUp(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
+    // to avoid overflow, a <= type(uint256).max / b
     assembly ('memory-safe') {
       if iszero(c) {
         revert(0, 0)
@@ -92,8 +99,9 @@ library MathUtils {
       if iszero(or(iszero(b), iszero(gt(a, div(not(0), b))))) {
         revert(0, 0)
       }
-      let product := mul(a, b)
-      d := add(div(product, c), gt(mod(product, c), 0))
+      d := mul(a, b)
+      // add 1 if (a * b) % c > 0 to round up the division of (a * b) by c
+      d := add(div(d, c), gt(mod(d, c), 0))
     }
   }
 }

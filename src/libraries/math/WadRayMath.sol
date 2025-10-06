@@ -131,7 +131,7 @@ library WadRayMath {
   /// @return b = a * WAD in Wad units.
   function toWad(uint256 a) internal pure returns (uint256 b) {
     // to avoid overflow, b/WAD == a
-    assembly {
+    assembly ('memory-safe') {
       b := mul(a, WAD)
 
       if iszero(eq(div(b, WAD), a)) {
@@ -143,7 +143,7 @@ library WadRayMath {
   /// @notice Removes Wad precision from a given value, rounding down.
   /// @return b = a / WAD in Wad units.
   function fromWadDown(uint256 a) internal pure returns (uint256 b) {
-    assembly {
+    assembly ('memory-safe') {
       b := div(a, WAD)
     }
   }
@@ -153,7 +153,7 @@ library WadRayMath {
   /// @return c = floor(a * WAD / PERCENTAGE_FACTOR) in Wad units.
   function bpsToWad(uint256 a) internal pure returns (uint256 c) {
     // to avoid overflow, b/WAD == a
-    assembly {
+    assembly ('memory-safe') {
       c := mul(a, WAD)
       if iszero(eq(div(c, WAD), a)) {
         revert(0, 0)
@@ -167,7 +167,8 @@ library WadRayMath {
   /// @dev Reverts if intermediate multiplication overflows.
   /// @return c = a * RAY / PERCENTAGE_FACTOR in Ray units.
   function bpsToRay(uint256 a) internal pure returns (uint256 c) {
-    assembly {
+    // to avoid overflow, b/RAY == a
+    assembly ('memory-safe') {
       c := mul(a, RAY)
       if iszero(eq(div(c, RAY), a)) {
         revert(0, 0)
