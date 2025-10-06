@@ -757,22 +757,23 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         .fromBpsDown();
     }
 
-    uint256 runningDebtValue = accountData.totalDebtValue;
-    uint256 runningCollateralValue = 0;
-    uint256 runningIndex = 0;
+    uint256 debtValueLeftToCover = accountData.totalDebtValue;
     collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
+    for (uint256 index = 0; index < collateralInfo.length(); ++index) {
+      if (debtValueLeftToCover == 0) {
+        break;
+      }
 
-    while (runningIndex < collateralInfo.length() && runningDebtValue > 0) {
-      (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.get(runningIndex);
-      userCollateralValue = userCollateralValue.min(runningDebtValue);
+      (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.get(index);
+      userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
       accountData.riskPremium += userCollateralValue * collateralRisk;
-      runningCollateralValue += userCollateralValue;
-      runningDebtValue -= userCollateralValue;
-      runningIndex = runningIndex.uncheckedAdd(1);
+      debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
     }
 
-    if (runningCollateralValue > 0) {
-      accountData.riskPremium = accountData.riskPremium / runningCollateralValue;
+    if (debtValueLeftToCover < accountData.totalDebtValue) {
+      accountData.riskPremium =
+        accountData.riskPremium /
+        accountData.totalDebtValue.uncheckedSub(debtValueLeftToCover);
     }
 
     return accountData;
