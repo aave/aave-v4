@@ -11,6 +11,8 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     super.setUp();
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(gateway), true);
+    vm.prank(address(ADMIN));
+    gateway.registerSpoke(address(spoke1), true);
     vm.prank(alice);
     spoke1.setUserPositionManager(address(gateway), true);
 
@@ -39,14 +41,14 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    gateway.renounceSelfAsUserPositionManager(address(spoke1), alice);
+    gateway.renouncePositionManagerRole(address(spoke1), alice);
   }
 
   function test_renouncePositionManagerRole() public {
     address who = vm.randomAddress();
     vm.expectCall(address(spoke1), abi.encodeCall(ISpoke.renouncePositionManagerRole, (who)));
     vm.prank(ADMIN);
-    gateway.renounceSelfAsUserPositionManager(address(spoke1), who);
+    gateway.renouncePositionManagerRole(address(spoke1), who);
   }
 
   function test_supplyWithSig() public {

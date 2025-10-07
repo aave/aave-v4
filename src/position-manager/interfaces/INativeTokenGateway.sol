@@ -2,19 +2,13 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IRescuable} from 'src/interfaces/IRescuable.sol';
+import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
 
 /// @title INativeTokenGateway
 /// @author Aave Labs
 /// @notice Abstracts actions to the protocol involving the native token.
 /// @dev Must be set as `PositionManager` on the spoke for the user.
-interface INativeTokenGateway is IRescuable {
-  /// @notice Thrown when the given address is invalid.
-  error InvalidAddress();
-
-  /// @notice Thrown when the given amount is invalid.
-  error InvalidAmount();
-
+interface INativeTokenGateway is IGatewayBase {
   /// @notice Thrown when the underlying asset is not the wrapped native asset.
   error NotNativeWrappedAsset();
 
@@ -62,12 +56,6 @@ interface INativeTokenGateway is IRescuable {
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to wrap and repay.
   function repayNative(address spoke, uint256 reserveId, uint256 amount) external payable;
-
-  /// @notice Allows contract to renounce its position manager role for `user`.
-  /// @dev Only authorized caller to invoke this method.
-  /// @param spoke The address of the spoke.
-  /// @param user The address of the user to renounce the position manager role for.
-  function renouncePositionManagerRole(address spoke, address user) external;
 
   /// @notice Returns the address of Native Wrapper.
   function NATIVE_WRAPPER() external view returns (address);

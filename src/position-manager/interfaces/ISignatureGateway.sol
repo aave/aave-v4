@@ -4,76 +4,70 @@ pragma solidity ^0.8.0;
 
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
-import {IRescuable} from 'src/interfaces/IRescuable.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
+import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
 
 /// @title ISignatureGateway
 /// @author Aave Labs
 /// @notice Minimal interface for protocol actions involving signed intents.
-interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
-  /// @notice Thrown when the given address is invalid.
-  error InvalidAddress();
-
+interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
   error InvalidSignature();
 
   /// @notice Facilitates `supply` action on the given spoke with a typed signature from `onBehalfOf`.
   /// @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param supplyParams The structured supply parameters.
+  /// @param params The structured supply parameters.
   /// @param signature The signed bytes for the intent.
-  function supplyWithSig(EIP712Types.Supply memory supplyParams, bytes calldata signature) external;
+  function supplyWithSig(EIP712Types.Supply memory params, bytes calldata signature) external;
 
   /// @notice Facilitates `withdraw` action on the given spoke with a typed signature from `onBehalfOf`.
   /// @dev Providing an amount exceeding the user's current withdrawable balance indicates a request for a maximum withdrawal.
   /// @dev Withdrawn assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param withdrawParams The structured withdraw parameters.
+  /// @param params The structured withdraw parameters.
   /// @param signature The signed bytes for the intent.
-  function withdrawWithSig(
-    EIP712Types.Withdraw memory withdrawParams,
-    bytes calldata signature
-  ) external;
+  function withdrawWithSig(EIP712Types.Withdraw memory params, bytes calldata signature) external;
 
   /// @notice Facilitates `borrow` action on the given spoke with a typed signature from `onBehalfOf`.
   /// @dev Borrowed assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param borrowParams The structured borrow parameters.
+  /// @param params The structured borrow parameters.
   /// @param signature The signed bytes for the intent.
-  function borrowWithSig(EIP712Types.Borrow memory borrowParams, bytes calldata signature) external;
+  function borrowWithSig(EIP712Types.Borrow memory params, bytes calldata signature) external;
 
   /// @notice Facilitates `repay` action on the given spoke with a typed signature from `onBehalfOf`.
   /// @dev Repay assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Providing an amount greater than the user's current debt indicates a request to repay the maximum possible amount.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param repayParams The structured repay parameters.
+  /// @param params The structured repay parameters.
   /// @param signature The signed bytes for the intent.
-  function repayWithSig(EIP712Types.Repay memory repayParams, bytes calldata signature) external;
+  function repayWithSig(EIP712Types.Repay memory params, bytes calldata signature) external;
 
   /// @notice Facilitates `setUsingAsCollateral` action on the given spoke with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param setUsingAsCollateralParams The structured setUsingAsCollateral parameters.
+  /// @param params The structured setUsingAsCollateral parameters.
   /// @param signature The signed bytes for the intent.
   function setUsingAsCollateralWithSig(
-    EIP712Types.SetUsingAsCollateral memory setUsingAsCollateralParams,
+    EIP712Types.SetUsingAsCollateral memory params,
     bytes calldata signature
   ) external;
 
   /// @notice Facilitates `updateUserRiskPremium` action on the given spoke with a typed signature from `user`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param updateRiskParams The structured updateUserRiskPremium parameters.
+  /// @param params The structured updateUserRiskPremium parameters.
   /// @param signature The signed bytes for the intent.
   function updateUserRiskPremiumWithSig(
-    EIP712Types.UpdateUserRiskPremium memory updateRiskParams,
+    EIP712Types.UpdateUserRiskPremium memory params,
     bytes calldata signature
   ) external;
 
   /// @notice Facilitates `updateUserDynamicConfig` action on the given spoke with a typed signature from `user`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param updateUserConfigParams The structured updateUserDynamicConfig parameters.
+  /// @param params The structured updateUserDynamicConfig parameters.
   /// @param signature The signed bytes for the intent.
   function updateUserDynamicConfigWithSig(
-    EIP712Types.UpdateUserDynamicConfig memory updateUserConfigParams,
+    EIP712Types.UpdateUserDynamicConfig memory params,
     bytes calldata signature
   ) external;
 
@@ -106,9 +100,6 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
     bytes32 permitR,
     bytes32 permitS
   ) external;
-
-  /// @notice Permissioned operation to renounce self as user position manager on the given spoke for specified `user`.
-  function renounceSelfAsUserPositionManager(address spoke, address user) external;
 
   /// @notice Returns the EIP712 domain separator.
   function DOMAIN_SEPARATOR() external view returns (bytes32);

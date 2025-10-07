@@ -7,8 +7,8 @@ import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {Rescuable} from 'src/utils/Rescuable.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {INativeWrapper} from 'src/position-manager/interfaces/INativeWrapper.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
 
@@ -16,12 +16,7 @@ import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenG
 /// @author Aave Labs
 /// @notice Gateway to interact with a spoke using the native coin of a chain.
 /// @dev Contract must be an active & approved user position manager in order to execute spoke actions on a user's behalf.
-contract NativeTokenGateway is
-  INativeTokenGateway,
-  ReentrancyGuardTransient,
-  Rescuable,
-  Ownable2Step
-{
+contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, GatewayBase {
   using SafeERC20 for *;
 
   INativeWrapper internal immutable _nativeWrapper;
@@ -29,7 +24,7 @@ contract NativeTokenGateway is
   /// @dev Constructor.
   /// @param nativeWrapper_ The address of the native wrapper contract.
   /// @param initialOwner_ The address of the initial owner.
-  constructor(address nativeWrapper_, address initialOwner_) Ownable(initialOwner_) {
+  constructor(address nativeWrapper_, address initialOwner_) GatewayBase(initialOwner_) {
     require(nativeWrapper_ != address(0), InvalidAddress());
     _nativeWrapper = INativeWrapper(payable(nativeWrapper_));
   }
@@ -121,23 +116,12 @@ contract NativeTokenGateway is
   }
 
   /// @inheritdoc INativeTokenGateway
-  function renouncePositionManagerRole(address spoke, address user) external onlyOwner {
-    require(user != address(0) && spoke != address(0), InvalidAddress());
-    ISpoke(spoke).renouncePositionManagerRole(user);
-  }
-
-  /// @inheritdoc INativeTokenGateway
   function NATIVE_WRAPPER() external view returns (address) {
     return address(_nativeWrapper);
   }
 
-  /// @dev RescueGuardian is the owner of the contract.
-  function _rescueGuardian() internal view override returns (address) {
-    return owner();
-  }
-
   function _validateParams(address spoke, uint256 amount) internal view {
-    require(spoke != address(0), InvalidAddress());
+    _validateSpoke(spoke);
     require(amount > 0, InvalidAmount());
   }
 

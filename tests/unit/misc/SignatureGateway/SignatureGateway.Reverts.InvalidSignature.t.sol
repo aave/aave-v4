@@ -5,6 +5,13 @@ pragma solidity ^0.8.0;
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
+  function setUp() public virtual override {
+    super.setUp();
+
+    vm.prank(address(ADMIN));
+    gateway.registerSpoke(address(spoke1), true);
+  }
+
   function test_supplyWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
     EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpAfterRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
