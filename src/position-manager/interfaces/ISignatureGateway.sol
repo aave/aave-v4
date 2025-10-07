@@ -81,17 +81,11 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IRescuable {
   /// with a typed signature from `user`.
   /// @dev The signature is consumed on the the given spoke.
   /// @param spoke The address of the spoke.
-  /// @param user The address of the user to set as position manager.
-  /// @param approve The approval status.
-  /// @param nonce The key-prefixed nonce for the signature.
-  /// @param deadline The deadline for the signature.
+  /// @param params The structured setSelfAsUserPositionManager parameters.
   /// @param signature The signed bytes for the intent.
   function setSelfAsUserPositionManagerWithSig(
     address spoke,
-    address user,
-    bool approve,
-    uint256 nonce,
-    uint256 deadline,
+    EIP712Types.SetUserPositionManager memory params,
     bytes calldata signature
   ) external;
 

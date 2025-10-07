@@ -294,19 +294,16 @@ contract SignatureGateway is
   /// @inheritdoc ISignatureGateway
   function setSelfAsUserPositionManagerWithSig(
     address spoke,
-    address user,
-    bool approve,
-    uint256 nonce,
-    uint256 deadline,
+    EIP712Types.SetUserPositionManager memory params,
     bytes calldata signature
   ) external {
     try
       ISpoke(spoke).setUserPositionManagerWithSig(
         address(this),
-        user,
-        approve,
-        nonce,
-        deadline,
+        params.user,
+        params.approve,
+        params.nonce,
+        params.deadline,
         signature
       )
     {} catch {}
