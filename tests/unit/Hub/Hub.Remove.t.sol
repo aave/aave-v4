@@ -368,15 +368,15 @@ contract HubRemoveTest is HubBase {
     assertEq(tokenList.dai.balanceOf(bob), daiBalanceBefore + removeAmount, 'bob dai balance');
   }
 
-  function test_remove_revertsWith_AddedAmountExceeded_zero_added() public {
+  function test_remove_revertsWith_underflow_zero_added() public {
     uint256 amount = 1;
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, 0));
+    vm.expectRevert(stdError.arithmeticError);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, amount, address(spoke1));
   }
 
-  function test_remove_revertsWith_AddedAmountExceeded() public {
+  function test_remove_revertsWith_underflow_exceeding_added_amount() public {
     uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
@@ -389,19 +389,19 @@ contract HubRemoveTest is HubBase {
       user: alice
     });
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, amount));
+    vm.expectRevert(stdError.arithmeticError);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, amount + 1, alice);
 
     // advance time, but no accrual
     skip(365 days);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, amount));
+    vm.expectRevert(stdError.arithmeticError);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, amount + 1, alice);
   }
 
-  function test_remove_revertsWith_InsufficientLiquidity() public {
+  function test_remove_revertsWith_underflow() public {
     uint256 amount = 100e18;
     Utils.add({
       hub: hub1,
@@ -418,7 +418,7 @@ contract HubRemoveTest is HubBase {
       amount: amount,
       to: alice
     });
-    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
+    vm.expectRevert(stdError.arithmeticError);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, amount, address(spoke1));
   }

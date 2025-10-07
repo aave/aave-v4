@@ -66,7 +66,7 @@ contract HubSweepTest is HubBase {
   }
 
   ///@dev swept amount is not withdrawable
-  function test_sweep_revertsWith_InsufficientLiquidity() public {
+  function test_sweep_revertsWith_underflow() public {
     updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     uint256 initialLiquidity = vm.randomUint(2, MAX_SUPPLY_AMOUNT);
@@ -78,9 +78,7 @@ contract HubSweepTest is HubBase {
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, swept);
 
-    vm.expectRevert(
-      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, initialLiquidity - swept)
-    );
+    vm.expectRevert(stdError.arithmeticError);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, swept + 1, alice);
   }

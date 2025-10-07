@@ -71,7 +71,7 @@ contract HubReportDeficitTest is HubBase {
 
     premiumAmount = bound(premiumAmount, 0, UINT256_MAX - baseAmount);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDeficitReported.selector, drawn));
+    vm.expectRevert();
     vm.prank(address(spoke1));
     hub1.reportDeficit(
       usdxAssetId,

@@ -214,13 +214,11 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     _validateRemove(spoke, assetId, amount, to);
-    uint256 liquidity = asset.liquidity;
-    require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
     uint128 shares = previewRemoveByAssets(assetId, amount).toUint128(); // non zero since we round up
     asset.addedShares -= shares;
     spoke.addedShares -= shares;
-    asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
+    asset.liquidity -= amount.toUint128();
 
     asset.updateDrawnRate(assetId);
 
@@ -238,13 +236,11 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     _validateDraw(asset, spoke, assetId, amount, to);
-    uint256 liquidity = asset.liquidity;
-    require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
     uint128 drawnShares = previewDrawByAssets(assetId, amount).toUint128(); // non zero since we round up
     asset.drawnShares += drawnShares;
     spoke.drawnShares += drawnShares;
-    asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
+    asset.liquidity -= amount.toUint128();
 
     asset.updateDrawnRate(assetId);
 
@@ -670,10 +666,7 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage receiver,
     uint256 shares
   ) internal {
-    uint256 addedShares = sender.addedShares;
-    require(shares <= addedShares, AddedSharesExceeded(addedShares));
-
-    sender.addedShares = addedShares.uncheckedSub(shares).toUint128();
+    sender.addedShares -= shares.toUint128();
     receiver.addedShares += shares.toUint128();
   }
 
@@ -750,8 +743,6 @@ contract Hub is IHub, AccessManaged {
     require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
-    uint256 removable = previewRemoveByShares(assetId, spoke.addedShares);
-    require(amount <= removable, AddedAmountExceeded(removable));
   }
 
   /// @dev Spoke with maximum cap have unlimited draw capacity.
@@ -787,10 +778,6 @@ contract Hub is IHub, AccessManaged {
     require(from != address(this), InvalidAddress());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
-    uint256 drawn = _getSpokeDrawn(spoke, assetId);
-    uint256 premium = _getSpokePremium(spoke, assetId);
-    require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
-    require(premiumAmount <= premium, SurplusAmountRestored(premium));
   }
 
   function _validateReportDeficit(
@@ -801,10 +788,6 @@ contract Hub is IHub, AccessManaged {
   ) internal view {
     require(spoke.active, SpokeNotActive());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
-    uint256 drawn = _getSpokeDrawn(spoke, assetId);
-    uint256 premium = _getSpokePremium(spoke, assetId);
-    require(drawnAmount <= drawn, SurplusDeficitReported(drawn));
-    require(premiumAmount <= premium, SurplusDeficitReported(premium));
   }
 
   function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {
@@ -838,12 +821,12 @@ contract Hub is IHub, AccessManaged {
   function _validateSweep(Asset storage asset, address caller, uint256 amount) internal view {
     // sufficient check to disallow when controller unset
     require(caller == asset.reinvestmentController, OnlyReinvestmentController());
-    require(amount > 0 && amount <= asset.liquidity, InvalidAmount());
+    require(amount > 0, InvalidAmount());
   }
 
   function _validateReclaim(Asset storage asset, address caller, uint256 amount) internal view {
     // sufficient check to disallow when controller unset
     require(caller == asset.reinvestmentController, OnlyReinvestmentController());
-    require(amount > 0 && amount <= asset.swept, InvalidAmount());
+    require(amount > 0, InvalidAmount());
   }
 }

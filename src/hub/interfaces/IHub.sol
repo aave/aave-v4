@@ -131,32 +131,12 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param addCap The current `addCap` of the asset.
   error AddCapExceeded(uint256 addCap);
 
-  /// @notice Thrown when the added amount is exceeded.
-  /// @param addedAmount The current removable asset balance.
-  error AddedAmountExceeded(uint256 addedAmount);
-
-  /// @notice Thrown when the added shares are exceeded.
-  /// @param addedShares The current removable shares balance.
-  error AddedSharesExceeded(uint256 addedShares);
-
-  /// @notice Thrown when the liquidity is insufficient.
-  /// @param liquidity The current available liquidity.
-  error InsufficientLiquidity(uint256 liquidity);
-
   /// @notice Thrown when the draw cap is exceeded.
   /// @param drawCap The current `drawCap` of the asset.
   error DrawCapExceeded(uint256 drawCap);
 
-  /// @notice Thrown when a surplus amount is restored.
-  /// @param maxAllowedRestore The maximum allowed restore amount.
-  error SurplusAmountRestored(uint256 maxAllowedRestore);
-
   /// @notice Thrown when the premium change is invalid.
   error InvalidPremiumChange();
-
-  /// @notice Thrown when a surplus deficit is reported.
-  /// @param amount The amount of surplus deficit assets.
-  error SurplusDeficitReported(uint256 amount);
 
   /// @notice Thrown when a spoke is not active.
   error SpokeNotActive();

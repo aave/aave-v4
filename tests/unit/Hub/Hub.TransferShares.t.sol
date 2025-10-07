@@ -38,7 +38,7 @@ contract HubTransferSharesTest is HubBase {
   }
 
   /// @dev Test transferring more shares than a spoke has supplied
-  function test_transferShares_fuzz_revertsWith_AddedSharesExceeded(uint256 supplyAmount) public {
+  function test_transferShares_fuzz_revertsWith_underflow(uint256 supplyAmount) public {
     supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT - 1);
 
     // supply from spoke1
@@ -49,7 +49,7 @@ contract HubTransferSharesTest is HubBase {
 
     // try to transfer more supplied shares than spoke1 has
     vm.prank(address(spoke1));
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddedSharesExceeded.selector, suppliedShares));
+    vm.expectRevert(stdError.arithmeticError);
     hub1.transferShares(daiAssetId, suppliedShares + 1, address(spoke2));
   }
 
