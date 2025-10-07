@@ -14,9 +14,12 @@ contract SpokeConfigTest is SpokeBase {
       vm.getNonce(address(this))
     );
     address oracle = makeAddr('AaveOracle');
+    vm.expectCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), 1);
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
     SpokeInstance instance = new SpokeInstance(oracle, DEFAULT_RISK_PREMIUM_CHANGE_THRESHOLD);
     assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
     assertEq(instance.ORACLE(), oracle);
+    assertNotEq(instance.getLiquidationLogic(), address(0));
   }
 
   function test_spoke_deploy_revertsWith_InvalidAddress() public {
@@ -27,6 +30,13 @@ contract SpokeConfigTest is SpokeBase {
   function test_spoke_deploy_revertsWith_InvalidRiskPremiumChangeThreshold() public {
     vm.expectRevert(ISpoke.InvalidRiskPremiumChangeThreshold.selector);
     new SpokeInstance(makeAddr('AaveOracle'), PercentageMath.PERCENTAGE_FACTOR + 1);
+  }
+
+  function test_spoke_deploy_revertsWith_InvalidOracleDecimals() public {
+    address oracle = makeAddr('AaveOracle');
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(7));
+    vm.expectRevert(ISpoke.InvalidOracleDecimals.selector);
+    new SpokeInstance(oracle, DEFAULT_RISK_PREMIUM_CHANGE_THRESHOLD);
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(

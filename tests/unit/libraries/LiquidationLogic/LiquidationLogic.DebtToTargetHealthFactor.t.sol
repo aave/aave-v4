@@ -57,7 +57,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
       uint256 assetUnit = assetUnitList[i];
       uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
         LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-          totalDebtInBaseCurrency: 10_000e26,
+          totalDebtValue: 10_000e26,
           healthFactor: 0.8e18,
           targetHealthFactor: 1.25e18,
           liquidationBonus: 150_00,
@@ -78,7 +78,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
       uint256 assetUnit = assetUnitList[i];
       uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
         LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-          totalDebtInBaseCurrency: 10_000e26,
+          totalDebtValue: 10_000e26,
           healthFactor: 0.8e18,
           targetHealthFactor: 1e18,
           liquidationBonus: 150_00,
@@ -97,7 +97,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToTargetHealthFactor_PrecisionLoss() public {
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory params = LiquidationLogic
       .CalculateDebtToTargetHealthFactorParams({
-        totalDebtInBaseCurrency: 10_000e26,
+        totalDebtValue: 10_000e26,
         healthFactor: 0.8e18,
         targetHealthFactor: 1e18,
         liquidationBonus: 150_00,

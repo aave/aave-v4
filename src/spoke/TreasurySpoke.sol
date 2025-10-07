@@ -1,32 +1,29 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.0;
+pragma solidity 0.8.28;
 
-import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ITreasurySpoke, ISpokeBase} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 
-/**
- * @title TreasurySpoke
- * @notice Spoke contract used as a treasury where accumulated fees are treated as supplied assets.
- * @dev Dedicated to a single user, controlled exclusively by the owner.
- * @dev Utilizes all assets from the Hub without restrictions, making reserve and asset identifiers aligned.
- * @dev Allows withdraw to claim fees and supply to invest back into the Hub via this dedicated spoke.
- */
-contract TreasurySpoke is ITreasurySpoke, Ownable {
+/// @title TreasurySpoke
+/// @author Aave Labs
+/// @notice Spoke contract used as a treasury where accumulated fees are treated as supplied assets.
+/// @dev Dedicated to a single user, controlled exclusively by the owner.
+/// @dev Utilizes all assets from the Hub without restrictions, making reserve and asset identifiers aligned.
+/// @dev Allows withdraw to claim fees and supply to invest back into the Hub via this dedicated spoke.
+contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   using SafeERC20 for IERC20;
 
   /// @inheritdoc ITreasurySpoke
   IHubBase public immutable HUB;
 
-  /**
-   * @dev Constructor
-   * @param owner_ The address of the owner
-   * @param hub_ The address of the Hub
-   */
+  /// @dev Constructor.
+  /// @param owner_ The address of the owner.
+  /// @param hub_ The address of the Hub.
   constructor(address owner_, address hub_) Ownable(owner_) {
     require(hub_ != address(0), InvalidAddress());
 

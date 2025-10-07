@@ -1,21 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.0;
+pragma solidity 0.8.28;
 
 import {Spoke} from 'src/spoke/Spoke.sol';
 
-/**
- * @title SpokeInstance
- * @author Aave Labs
- * @notice Implementation contract for the Spoke.
- */
+/// @title SpokeInstance
+/// @author Aave Labs
+/// @notice Implementation contract for the Spoke.
 contract SpokeInstance is Spoke {
   uint64 public constant SPOKE_REVISION = 1;
 
-  constructor(
-    address oracle_,
-    uint256 riskPremiumChangeThreshold_
-  ) Spoke(oracle_, riskPremiumChangeThreshold_) {
+  /// @dev Constructor.
+  /// @dev During upgrade, must ensure that the new oracle is supporting existing assets on the spoke and the replaced oracle.
+  /// @param oracle_ The address of the oracle.
+  constructor(address oracle_, uint256 riskPremiumChangeThreshold_) Spoke(oracle_, riskPremiumChangeThreshold_) {
     _disableInitializers();
   }
 
