@@ -50,10 +50,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.setUsingAsCollateralWithSig(
-      p,
-      signature
-    );
+    gateway.setUsingAsCollateralWithSig(p, signature);
   }
 
   function test_updateUserRiskPremiumWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
@@ -148,10 +145,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.setUsingAsCollateralWithSig(
-      p,
-      signature
-    );
+    gateway.setUsingAsCollateralWithSig(p, signature);
   }
 
   function test_updateUserRiskPremiumWithSig_revertsWith_InvalidSignatureDueTo_InvalidSigner()
@@ -259,10 +253,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.onBehalfOf, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    gateway.setUsingAsCollateralWithSig(
-      p,
-      signature
-    );
+    gateway.setUsingAsCollateralWithSig(p, signature);
   }
 
   function test_updateUserRiskPremiumWithSig_revertsWith_InvalidAccountNonce(bytes32) public {

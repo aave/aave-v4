@@ -164,10 +164,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     }
 
     vm.prank(vm.randomAddress());
-    gateway.setUsingAsCollateralWithSig(
-      p,
-      signature
-    );
+    gateway.setUsingAsCollateralWithSig(p, signature);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -225,7 +222,14 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     emit ISpoke.SetUserPositionManager(alice, address(gateway), p.approve);
 
     vm.prank(vm.randomAddress());
-    gateway.setSelfAsUserPositionManagerWithSig(address(spoke1), alice, p.approve, p.nonce, p.deadline, signature);
+    gateway.setSelfAsUserPositionManagerWithSig(
+      address(spoke1),
+      alice,
+      p.approve,
+      p.nonce,
+      p.deadline,
+      signature
+    );
 
     _assertNonceIncrement(ISignatureGateway(address(spoke1)), alice, p.nonce); // note: nonce consumed on spoke
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);

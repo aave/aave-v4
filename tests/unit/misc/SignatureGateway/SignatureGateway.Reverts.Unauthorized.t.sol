@@ -56,10 +56,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
     vm.prank(vm.randomAddress());
-    gateway.setUsingAsCollateralWithSig(
-      p,
-      signature
-    );
+    gateway.setUsingAsCollateralWithSig(p, signature);
   }
 
   function test_updateUserRiskPremiumWithSig_revertsWith_Unauthorized() public {
