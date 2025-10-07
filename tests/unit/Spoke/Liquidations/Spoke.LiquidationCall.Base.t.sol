@@ -329,7 +329,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         continue;
       }
 
-      // from now, userSuppliedAmount is in base currency (to avoid stack too deep)
+      // from now, userSuppliedAmount is in value terms (to avoid stack too deep)
       userSuppliedAmount = _convertAmountToValue(params.spoke, reserveId, userSuppliedAmount);
       list.add(index++, _getCollateralRisk(params.spoke, reserveId), userSuppliedAmount);
       totalCollateralValue += userSuppliedAmount;

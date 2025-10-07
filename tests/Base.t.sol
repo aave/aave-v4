@@ -1756,7 +1756,6 @@ abstract contract Base is Test {
       );
   }
 
-  /// @dev Convert base currency to asset amount
   function _convertValueToAmount(
     uint256 valueAmount,
     uint256 assetPrice,
@@ -1780,7 +1779,7 @@ abstract contract Base is Test {
   }
 
   /**
-   * @notice Returns the required debt in base currency to ensure user position is below a certain health factor.
+   * @notice Returns the required debt in value terms to ensure user position is below a certain health factor.
    */
   function _getRequiredDebtValueForHf(
     ISpoke spoke,
@@ -2113,8 +2112,8 @@ abstract contract Base is Test {
   }
 
   /**
-   * @notice Returns the required debt amount in base currency to ensure user position is above a certain health factor.
-   * @return requiredDebt The required additional debt amount in base currency.
+   * @notice Returns the required debt amount in value terms to ensure user position is above a certain health factor.
+   * @return requiredDebt The required additional debt amount in value terms.
    */
   function _getRequiredDebtForGtHf(
     ISpoke spoke,

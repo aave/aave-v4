@@ -475,9 +475,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @return The minimum health factor considered healthy, expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint64);
 
-  /// @notice Returns the minimum required remaining base currency amount after a partial liquidation.
+  /// @notice Returns the maximum amount considered as dust after a liquidation.
   /// @dev Applicable to both collateral and debt.
-  /// @return The minimum amount considered as dust, denominated in USD with 26 decimals.
+  /// @return The maximum amount considered as dust, expressed in USD with 26 decimals.
   function DUST_LIQUIDATION_THRESHOLD() external view returns (uint256);
 
   /// @notice Returns the number of decimals used by the oracle.
