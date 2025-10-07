@@ -705,6 +705,7 @@ contract Hub is IHub, AccessManaged {
       'spoke premium shares max theoretical',
       (spoke.drawnShares + 1).percentMulUp(1000_00)
     );
+    console.log('asset drawn shares actual', asset.drawnShares);
 
     // Asset premium shares cannot exceed max RP times drawn shares
     require(

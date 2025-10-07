@@ -97,8 +97,8 @@ contract HubBase is Base {
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
 
-    int256 sharesDelta = 1000;
-    int256 premiumOffsetDelta = 1000;
+    int256 sharesDelta = int256(amount);
+    int256 premiumOffsetDelta = int256(amount);
 
     vm.prank(HUB_ADMIN);
     hub1.addSpoke(
@@ -111,13 +111,13 @@ contract HubBase is Base {
       })
     );
 
+    Utils.draw(hub1, assetId, tempSpoke, tempUser, amount);
+
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(tempSpoke);
       hub1.refreshPremium(assetId, IHubBase.PremiumDelta(sharesDelta, premiumOffsetDelta, 0));
     }
-
-    Utils.draw(hub1, assetId, tempSpoke, tempUser, amount);
 
     if (skipTime) skip(365 days);
 
