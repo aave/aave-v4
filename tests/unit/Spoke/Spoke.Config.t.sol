@@ -9,16 +9,29 @@ contract SpokeConfigTest is SpokeBase {
   using PercentageMath for uint256;
 
   function test_spoke_deploy() public {
+    address predictedSpokeAddress = vm.computeCreateAddress(
+      address(this),
+      vm.getNonce(address(this))
+    );
     address oracle = makeAddr('AaveOracle');
-    address predictedSpokeAddress = Deploy.getDeterministicSpokeInstanceAddress(oracle);
-    ISpoke instance = Deploy.deploySpokeInstance(oracle);
+    vm.expectCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), 1);
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
+    ISpoke instance = ISpoke(address(Deploy.deploySpokeInstance(oracle)));
     assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
     assertEq(instance.ORACLE(), oracle);
+    assertNotEq(instance.getLiquidationLogic(), address(0));
   }
 
-  function test_spoke_deploy_revertsWith_InvalidAddress() public {
-    vm.expectRevert(ISpoke.InvalidAddress.selector);
+  function test_spoke_deploy_reverts_on_InvalidConstructorInput() public {
+    vm.expectRevert();
     Deploy.deploySpokeInstance(address(0));
+  }
+
+  function test_spoke_deploy_revertsWith_InvalidOracleDecimals() public {
+    address oracle = makeAddr('AaveOracle');
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(7));
+    vm.expectRevert(ISpoke.InvalidOracleDecimals.selector);
+    Deploy.deploySpokeInstance(oracle);
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(

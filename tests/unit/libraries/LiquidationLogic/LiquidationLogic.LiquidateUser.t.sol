@@ -41,10 +41,10 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       drawnDebt: 4.5e18,
       premiumDebt: 0.5e18,
       accruedPremium: 0.2e18,
-      totalDebtInBaseCurrency: 10_000e26,
+      totalDebtValue: 10_000e26,
       liquidator: makeAddr('liquidator'),
-      suppliedCollateralsCount: 1,
-      borrowedReservesCount: 1
+      activeCollateralCount: 1,
+      borrowedCount: 1
     });
 
     // Set liquidationLogicWrapper as a spoke
@@ -164,7 +164,11 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       1
     );
 
-    vm.expectCall(address(hub1), abi.encodeCall(IHubBase.payFee, (usdxAssetId, feeShares)), 1);
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHubBase.payFeeShares, (usdxAssetId, feeShares)),
+      1
+    );
 
     vm.expectCall(
       address(hub2),
@@ -206,7 +210,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   }
 
   function test_liquidateUser_revertsWith_MustNotLeaveDust() public {
-    params.totalDebtInBaseCurrency *= 2;
+    params.totalDebtValue *= 2;
     params.debtToCover = 4.9e18;
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.liquidateUser(params);

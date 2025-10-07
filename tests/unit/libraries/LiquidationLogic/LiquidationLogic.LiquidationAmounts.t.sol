@@ -55,7 +55,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           collateralReserveBalance: 11_000e6,
           debtReserveBalance: 5e18,
           debtToCover: 3e18,
-          totalDebtInBaseCurrency: 10_000e26,
+          totalDebtValue: 10_000e26,
           healthFactor: 0.8e18,
           targetHealthFactor: 1e18,
           maxLiquidationBonus: 120_00,
@@ -131,7 +131,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           collateralReserveBalance: 3000e6,
           debtReserveBalance: 5e18,
           debtToCover: 3e18,
-          totalDebtInBaseCurrency: 10_000e26,
+          totalDebtValue: 10_000e26,
           healthFactor: 0.8e18,
           targetHealthFactor: 1e18,
           maxLiquidationBonus: 120_00,
@@ -165,7 +165,10 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       healthFactor: params.healthFactor,
       maxLiquidationBonus: params.maxLiquidationBonus
     });
-    uint256 collateralToLiquidate = debtToCollateral.percentMulDown(liquidationBonus);
+    uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
+      params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus,
+      params.debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
+    );
 
     return (collateralToLiquidate, debtToLiquidate);
   }
@@ -194,9 +197,9 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       bonusCollateral =
         collateralToLiquidate -
         collateralToLiquidate.percentDivUp(liquidationBonus);
-      debtToLiquidate = (collateralToLiquidate - bonusCollateral).mulDivUp(
-        params.collateralAssetPrice * params.debtAssetUnit,
-        params.debtAssetPrice * params.collateralAssetUnit
+      debtToLiquidate = collateralToLiquidate.mulDivUp(
+        params.collateralAssetPrice * params.debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
+        params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus
       );
     }
 
