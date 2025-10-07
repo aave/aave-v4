@@ -30,19 +30,23 @@ interface INativeTokenGateway is IRescuable {
   /// @param amount Amount to wrap and supply.
   function supplyNative(uint256 reserveId, uint256 amount) external payable;
 
+  /// @notice Wraps the native asset,supplies to the Spoke and sets it as collateral.
+  /// @dev Contract must be an active & approved user position manager of the caller.
+  /// @param reserveId The identifier of the reserve for the wrapped asset.
+  /// @param amount Amount to wrap and supply.
+  function supplyAndCollateralNative(uint256 reserveId, uint256 amount) external payable;
+
   /// @notice Withdraws the wrapped asset from the Spoke and unwraps it back to the native asset.
   /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to withdraw and unwrap.
-  /// @param receiver Address that will receive the unwrapped native asset.
-  function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external;
+  function withdrawNative(uint256 reserveId, uint256 amount) external;
 
   /// @notice Borrows the wrapped asset from the Spoke and unwraps it back to the native asset.
   /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to borrow and unwrap.
-  /// @param receiver Address that will receive the unwrapped native asset.
-  function borrowNative(uint256 reserveId, uint256 amount, address receiver) external;
+  function borrowNative(uint256 reserveId, uint256 amount) external;
 
   /// @notice Wraps the native asset and repays debt on the Spoke.
   /// @dev Contract must be an active & approved user position manager of the caller.

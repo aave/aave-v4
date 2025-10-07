@@ -53,20 +53,21 @@ contract NativeTokenGateway is
 
   /// @inheritdoc INativeTokenGateway
   function supplyNative(uint256 reserveId, uint256 amount) external payable nonReentrant {
-    (IERC20 underlying, address hub) = _getReserveData(reserveId);
-    _validateParams(underlying, amount);
-    require(msg.value == amount, NativeAmountMismatch());
-
-    _nativeWrapper.deposit{value: amount}();
-    _nativeWrapper.forceApprove(hub, amount);
-    _spoke.supply(reserveId, amount, msg.sender);
+    _supplyNative(reserveId, amount, msg.sender, false);
   }
 
   /// @inheritdoc INativeTokenGateway
-  function withdrawNative(uint256 reserveId, uint256 amount, address receiver) external {
+  function supplyAndCollateralNative(
+    uint256 reserveId,
+    uint256 amount
+  ) external payable nonReentrant {
+    _supplyNative(reserveId, amount, msg.sender, true);
+  }
+
+  /// @inheritdoc INativeTokenGateway
+  function withdrawNative(uint256 reserveId, uint256 amount) external {
     (IERC20 underlying, ) = _getReserveData(reserveId);
     _validateParams(underlying, amount);
-    require(receiver != address(0), InvalidAddress());
 
     uint256 withdrawAmount = MathUtils.min(
       amount,
@@ -75,18 +76,17 @@ contract NativeTokenGateway is
 
     _spoke.withdraw(reserveId, withdrawAmount, msg.sender);
     _nativeWrapper.withdraw(withdrawAmount);
-    Address.sendValue(payable(receiver), withdrawAmount);
+    Address.sendValue(payable(msg.sender), withdrawAmount);
   }
 
   /// @inheritdoc INativeTokenGateway
-  function borrowNative(uint256 reserveId, uint256 amount, address receiver) external {
+  function borrowNative(uint256 reserveId, uint256 amount) external {
     (IERC20 underlying, ) = _getReserveData(reserveId);
     _validateParams(underlying, amount);
-    require(receiver != address(0), InvalidAddress());
 
     _spoke.borrow(reserveId, amount, msg.sender);
     _nativeWrapper.withdraw(amount);
-    Address.sendValue(payable(receiver), amount);
+    Address.sendValue(payable(msg.sender), amount);
   }
 
   /// @inheritdoc INativeTokenGateway
@@ -142,5 +142,24 @@ contract NativeTokenGateway is
   function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
     ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
     return (IERC20(reserveData.underlying), address(reserveData.hub));
+  }
+
+  function _supplyNative(
+    uint256 reserveId,
+    uint256 amount,
+    address user,
+    bool enableCollateral
+  ) internal {
+    (IERC20 underlying, address hub) = _getReserveData(reserveId);
+    _validateParams(underlying, amount);
+    require(msg.value == amount, NativeAmountMismatch());
+
+    _nativeWrapper.deposit{value: amount}();
+    _nativeWrapper.forceApprove(hub, amount);
+    _spoke.supply(reserveId, amount, user);
+
+    if (enableCollateral) {
+      _spoke.setUsingAsCollateral(reserveId, true, user);
+    }
   }
 }
