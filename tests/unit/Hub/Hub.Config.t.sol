@@ -668,7 +668,8 @@ contract HubConfigTest is HubBase {
   ) internal pure {
     newConfig.liquidityFee = bound(newConfig.liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
-    vm.assume(address(newConfig.feeReceiver) != address(0) || newConfig.liquidityFee == 0);
+    //vm.assume(address(newConfig.feeReceiver) != address(0) || newConfig.liquidityFee == 0);
+    assumeNotZeroAddress(newConfig.feeReceiver);
     assumeNotPrecompile(newConfig.feeReceiver);
     assumeNotForgeAddress(newConfig.feeReceiver);
     assumeNotZeroAddress(newConfig.irStrategy);

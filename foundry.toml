@@ -15,14 +15,14 @@ gas_snapshot_check = false
 gas_limit = 1099511627776
 
 additional_compiler_profiles = [
-    { name = "hub", optimizer = true, via_ir = true, optimizer_runs = 444444444 },
-    { name = "spoke", optimizer = true, via_ir = true, optimizer_runs = 640 },
+    { name = "hub", optimizer = true, via_ir = true, optimizer_runs = 64044 },
+    { name = "spoke", optimizer = true, via_ir = true, optimizer_runs = 999 },
     { name = "tests", optimizer = true, via_ir = false, optimizer_runs = 44444444444 },
 ]
 
 compilation_restrictions = [
-    { paths = "src/hub/Hub.sol", optimizer = true, via_ir = true, optimizer_runs = 444444444 },
-    { paths = "src/spoke/instances/SpokeInstance.sol", optimizer = true, via_ir = true, optimizer_runs = 640 },
+    { paths = "src/hub/Hub.sol", optimizer = true, via_ir = true, optimizer_runs = 64044 },
+    { paths = "src/spoke/instances/SpokeInstance.sol", optimizer = true, via_ir = true, optimizer_runs = 999 },
     { paths = "tests/**", optimizer = true, via_ir = false, optimizer_runs = 44444444444 },
 ]
 
