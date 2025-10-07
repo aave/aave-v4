@@ -14,6 +14,7 @@ import {Rescuable} from 'src/utils/Rescuable.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
+import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 
 /// @title SignatureGateway
 /// @author Aave Labs
@@ -30,8 +31,6 @@ contract SignatureGateway is
   EIP712
 {
   using SafeERC20 for IERC20;
-
-  ISpoke internal immutable _spoke;
 
   /// @inheritdoc ISignatureGateway
   bytes32 public constant SUPPLY_TYPEHASH =
@@ -69,194 +68,232 @@ contract SignatureGateway is
     0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
 
   /// @dev Constructor.
-  /// @param spoke_ The address of the connected spoke.
   /// @param initialOwner_ The address of the initial owner.
-  constructor(address spoke_, address initialOwner_) Ownable(initialOwner_) {
-    require(spoke_ != address(0), InvalidAddress());
-    _spoke = ISpoke(spoke_);
-  }
+  constructor(address initialOwner_) Ownable(initialOwner_) {}
 
   /// @inheritdoc ISignatureGateway
   function supplyWithSig(
-    uint256 reserveId,
-    uint256 amount,
-    address onBehalfOf,
-    uint256 nonce,
-    uint256 deadline,
+    EIP712Types.Supply memory supplyParams,
     bytes calldata signature
   ) external {
-    require(block.timestamp <= deadline, InvalidSignature());
+    require(block.timestamp <= supplyParams.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
-        abi.encode(SUPPLY_TYPEHASH, address(_spoke), reserveId, amount, onBehalfOf, nonce, deadline)
+        abi.encode(
+          SUPPLY_TYPEHASH,
+          supplyParams.spoke,
+          supplyParams.reserveId,
+          supplyParams.amount,
+          supplyParams.onBehalfOf,
+          supplyParams.nonce,
+          supplyParams.deadline
+        )
       )
     );
-    require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
-    _useCheckedNonce(onBehalfOf, nonce);
+    require(
+      SignatureChecker.isValidSignatureNow(supplyParams.onBehalfOf, hash, signature),
+      InvalidSignature()
+    );
+    _useCheckedNonce(supplyParams.onBehalfOf, supplyParams.nonce);
 
-    (IERC20 underlying, address hub) = _getReserveData(reserveId);
-    underlying.safeTransferFrom(onBehalfOf, address(this), amount);
-    underlying.forceApprove(hub, amount);
+    ISpoke _spoke = ISpoke(supplyParams.spoke);
+    (IERC20 underlying, address hub) = _getReserveData(_spoke, supplyParams.reserveId);
+    underlying.safeTransferFrom(supplyParams.onBehalfOf, address(this), supplyParams.amount);
+    underlying.forceApprove(hub, supplyParams.amount);
 
-    _spoke.supply(reserveId, amount, onBehalfOf);
+    _spoke.supply(supplyParams.reserveId, supplyParams.amount, supplyParams.onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
   function withdrawWithSig(
-    uint256 reserveId,
-    uint256 amount,
-    address onBehalfOf,
-    uint256 nonce,
-    uint256 deadline,
+    EIP712Types.Withdraw memory withdrawParams,
     bytes calldata signature
   ) external {
-    require(block.timestamp <= deadline, InvalidSignature());
+    require(block.timestamp <= withdrawParams.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
         abi.encode(
           WITHDRAW_TYPEHASH,
-          address(_spoke),
-          reserveId,
-          amount,
-          onBehalfOf,
-          nonce,
-          deadline
+          withdrawParams.spoke,
+          withdrawParams.reserveId,
+          withdrawParams.amount,
+          withdrawParams.onBehalfOf,
+          withdrawParams.nonce,
+          withdrawParams.deadline
         )
       )
     );
-    require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
-    _useCheckedNonce(onBehalfOf, nonce);
+    require(
+      SignatureChecker.isValidSignatureNow(withdrawParams.onBehalfOf, hash, signature),
+      InvalidSignature()
+    );
+    _useCheckedNonce(withdrawParams.onBehalfOf, withdrawParams.nonce);
 
-    (IERC20 underlying, ) = _getReserveData(reserveId);
+    ISpoke _spoke = ISpoke(withdrawParams.spoke);
+    (IERC20 underlying, ) = _getReserveData(_spoke, withdrawParams.reserveId);
     uint256 withdrawAmount = MathUtils.min(
-      amount,
-      _spoke.getUserSuppliedAssets(reserveId, onBehalfOf)
+      withdrawParams.amount,
+      _spoke.getUserSuppliedAssets(withdrawParams.reserveId, withdrawParams.onBehalfOf)
     );
 
-    _spoke.withdraw(reserveId, withdrawAmount, onBehalfOf);
-    underlying.safeTransfer(onBehalfOf, withdrawAmount);
+    _spoke.withdraw(withdrawParams.reserveId, withdrawAmount, withdrawParams.onBehalfOf);
+    underlying.safeTransfer(withdrawParams.onBehalfOf, withdrawAmount);
   }
 
   /// @inheritdoc ISignatureGateway
   function borrowWithSig(
-    uint256 reserveId,
-    uint256 amount,
-    address onBehalfOf,
-    uint256 nonce,
-    uint256 deadline,
+    EIP712Types.Borrow memory borrowParams,
     bytes calldata signature
   ) external {
-    require(block.timestamp <= deadline, InvalidSignature());
+    require(block.timestamp <= borrowParams.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
-        abi.encode(BORROW_TYPEHASH, address(_spoke), reserveId, amount, onBehalfOf, nonce, deadline)
+        abi.encode(
+          BORROW_TYPEHASH,
+          borrowParams.spoke,
+          borrowParams.reserveId,
+          borrowParams.amount,
+          borrowParams.onBehalfOf,
+          borrowParams.nonce,
+          borrowParams.deadline
+        )
       )
     );
-    require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
-    _useCheckedNonce(onBehalfOf, nonce);
+    require(
+      SignatureChecker.isValidSignatureNow(borrowParams.onBehalfOf, hash, signature),
+      InvalidSignature()
+    );
+    _useCheckedNonce(borrowParams.onBehalfOf, borrowParams.nonce);
 
-    (IERC20 underlying, ) = _getReserveData(reserveId);
+    ISpoke _spoke = ISpoke(borrowParams.spoke);
+    (IERC20 underlying, ) = _getReserveData(_spoke, borrowParams.reserveId);
 
-    _spoke.borrow(reserveId, amount, onBehalfOf);
-    underlying.safeTransfer(onBehalfOf, amount);
+    _spoke.borrow(borrowParams.reserveId, borrowParams.amount, borrowParams.onBehalfOf);
+    underlying.safeTransfer(borrowParams.onBehalfOf, borrowParams.amount);
   }
 
   /// @inheritdoc ISignatureGateway
-  function repayWithSig(
-    uint256 reserveId,
-    uint256 amount,
-    address onBehalfOf,
-    uint256 nonce,
-    uint256 deadline,
-    bytes calldata signature
-  ) external {
-    require(block.timestamp <= deadline, InvalidSignature());
+  function repayWithSig(EIP712Types.Repay memory repayParams, bytes calldata signature) external {
+    require(block.timestamp <= repayParams.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
-        abi.encode(REPAY_TYPEHASH, address(_spoke), reserveId, amount, onBehalfOf, nonce, deadline)
+        abi.encode(
+          REPAY_TYPEHASH,
+          repayParams.spoke,
+          repayParams.reserveId,
+          repayParams.amount,
+          repayParams.onBehalfOf,
+          repayParams.nonce,
+          repayParams.deadline
+        )
       )
     );
-    require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
-    _useCheckedNonce(onBehalfOf, nonce);
+    require(
+      SignatureChecker.isValidSignatureNow(repayParams.onBehalfOf, hash, signature),
+      InvalidSignature()
+    );
+    _useCheckedNonce(repayParams.onBehalfOf, repayParams.nonce);
 
-    (IERC20 underlying, address hub) = _getReserveData(reserveId);
-    uint256 repayAmount = MathUtils.min(amount, _spoke.getUserTotalDebt(reserveId, onBehalfOf));
+    ISpoke _spoke = ISpoke(repayParams.spoke);
+    (IERC20 underlying, address hub) = _getReserveData(_spoke, repayParams.reserveId);
+    uint256 repayAmount = MathUtils.min(
+      repayParams.amount,
+      _spoke.getUserTotalDebt(repayParams.reserveId, repayParams.onBehalfOf)
+    );
 
-    underlying.safeTransferFrom(onBehalfOf, address(this), repayAmount);
+    underlying.safeTransferFrom(repayParams.onBehalfOf, address(this), repayAmount);
     underlying.forceApprove(hub, repayAmount);
 
-    _spoke.repay(reserveId, repayAmount, onBehalfOf);
+    _spoke.repay(repayParams.reserveId, repayAmount, repayParams.onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
   function setUsingAsCollateralWithSig(
-    uint256 reserveId,
-    bool useAsCollateral,
-    address onBehalfOf,
-    uint256 nonce,
-    uint256 deadline,
+    EIP712Types.SetUsingAsCollateral memory setUsingAsCollateralParams,
     bytes calldata signature
   ) external {
-    require(block.timestamp <= deadline, InvalidSignature());
+    require(block.timestamp <= setUsingAsCollateralParams.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
         abi.encode(
           SET_USING_AS_COLLATERAL_TYPEHASH,
-          address(_spoke),
-          reserveId,
-          useAsCollateral,
-          onBehalfOf,
-          nonce,
-          deadline
+          setUsingAsCollateralParams.spoke,
+          setUsingAsCollateralParams.reserveId,
+          setUsingAsCollateralParams.useAsCollateral,
+          setUsingAsCollateralParams.onBehalfOf,
+          setUsingAsCollateralParams.nonce,
+          setUsingAsCollateralParams.deadline
         )
       )
     );
-    require(SignatureChecker.isValidSignatureNow(onBehalfOf, hash, signature), InvalidSignature());
-    _useCheckedNonce(onBehalfOf, nonce);
+    require(
+      SignatureChecker.isValidSignatureNow(setUsingAsCollateralParams.onBehalfOf, hash, signature),
+      InvalidSignature()
+    );
+    _useCheckedNonce(setUsingAsCollateralParams.onBehalfOf, setUsingAsCollateralParams.nonce);
 
-    _spoke.setUsingAsCollateral(reserveId, useAsCollateral, onBehalfOf);
+    ISpoke(setUsingAsCollateralParams.spoke).setUsingAsCollateral(
+      setUsingAsCollateralParams.reserveId,
+      setUsingAsCollateralParams.useAsCollateral,
+      setUsingAsCollateralParams.onBehalfOf
+    );
   }
 
   /// @inheritdoc ISignatureGateway
   function updateUserRiskPremiumWithSig(
-    address user,
-    uint256 nonce,
-    uint256 deadline,
+    EIP712Types.UpdateUserRiskPremium memory updateRiskParams,
     bytes calldata signature
   ) external {
-    require(block.timestamp <= deadline, InvalidSignature());
+    require(block.timestamp <= updateRiskParams.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
-        abi.encode(UPDATE_USER_RISK_PREMIUM_TYPEHASH, address(_spoke), user, nonce, deadline)
+        abi.encode(
+          UPDATE_USER_RISK_PREMIUM_TYPEHASH,
+          updateRiskParams.spoke,
+          updateRiskParams.user,
+          updateRiskParams.nonce,
+          updateRiskParams.deadline
+        )
       )
     );
-    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
-    _useCheckedNonce(user, nonce);
+    require(
+      SignatureChecker.isValidSignatureNow(updateRiskParams.user, hash, signature),
+      InvalidSignature()
+    );
+    _useCheckedNonce(updateRiskParams.user, updateRiskParams.nonce);
 
-    _spoke.updateUserRiskPremium(user);
+    ISpoke(updateRiskParams.spoke).updateUserRiskPremium(updateRiskParams.user);
   }
 
   /// @inheritdoc ISignatureGateway
   function updateUserDynamicConfigWithSig(
-    address user,
-    uint256 nonce,
-    uint256 deadline,
+    EIP712Types.UpdateUserDynamicConfig memory updateUserConfigParams,
     bytes calldata signature
   ) external {
-    require(block.timestamp <= deadline, InvalidSignature());
+    require(block.timestamp <= updateUserConfigParams.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
-        abi.encode(UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH, address(_spoke), user, nonce, deadline)
+        abi.encode(
+          UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
+          updateUserConfigParams.spoke,
+          updateUserConfigParams.user,
+          updateUserConfigParams.nonce,
+          updateUserConfigParams.deadline
+        )
       )
     );
-    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
-    _useCheckedNonce(user, nonce);
+    require(
+      SignatureChecker.isValidSignatureNow(updateUserConfigParams.user, hash, signature),
+      InvalidSignature()
+    );
+    _useCheckedNonce(updateUserConfigParams.user, updateUserConfigParams.nonce);
 
-    _spoke.updateUserDynamicConfig(user);
+    ISpoke(updateUserConfigParams.spoke).updateUserDynamicConfig(updateUserConfigParams.user);
   }
 
   /// @inheritdoc ISignatureGateway
   function setSelfAsUserPositionManagerWithSig(
+    address spoke,
     address user,
     bool approve,
     uint256 nonce,
@@ -264,12 +301,20 @@ contract SignatureGateway is
     bytes calldata signature
   ) external {
     try
-      _spoke.setUserPositionManagerWithSig(address(this), user, approve, nonce, deadline, signature)
+      ISpoke(spoke).setUserPositionManagerWithSig(
+        address(this),
+        user,
+        approve,
+        nonce,
+        deadline,
+        signature
+      )
     {} catch {}
   }
 
   /// @inheritdoc ISignatureGateway
   function permitReserve(
+    address spoke,
     uint256 reserveId,
     address onBehalfOf,
     uint256 value,
@@ -278,7 +323,7 @@ contract SignatureGateway is
     bytes32 permitR,
     bytes32 permitS
   ) external {
-    (IERC20 underlying, ) = _getReserveData(reserveId);
+    (IERC20 underlying, ) = _getReserveData(ISpoke(spoke), reserveId);
     try
       IERC20Permit(address(underlying)).permit({
         owner: onBehalfOf,
@@ -293,13 +338,8 @@ contract SignatureGateway is
   }
 
   /// @inheritdoc ISignatureGateway
-  function renounceSelfAsUserPositionManager(address user) external onlyOwner {
-    _spoke.renouncePositionManagerRole(user);
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function SPOKE() external view returns (address) {
-    return address(_spoke);
+  function renounceSelfAsUserPositionManager(address spoke, address user) external onlyOwner {
+    ISpoke(spoke).renouncePositionManagerRole(user);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -316,10 +356,13 @@ contract SignatureGateway is
     return owner();
   }
 
-  /// @return The underlying asset for `reserveId` on connected spoke.
+  /// @return The underlying asset for `reserveId` on the given spoke.
   /// @return The corresponding hub address.
-  function _getReserveData(uint256 reserveId) internal view returns (IERC20, address) {
-    ISpoke.Reserve memory reserveData = _spoke.getReserve(reserveId);
+  function _getReserveData(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (IERC20, address) {
+    ISpoke.Reserve memory reserveData = spoke.getReserve(reserveId);
     return (IERC20(reserveData.underlying), address(reserveData.hub));
   }
 }

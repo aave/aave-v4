@@ -10,6 +10,7 @@ contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(vm.randomAddress());
     gateway.permitReserve(
+      address(spoke1),
       unlistedReserveId,
       vm.randomAddress(),
       vm.randomUint(),
@@ -36,7 +37,7 @@ contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
       1
     );
     vm.prank(vm.randomAddress());
-    gateway.permitReserve(reserveId, owner, value, deadline, v, r, s);
+    gateway.permitReserve(address(spoke1), reserveId, owner, value, deadline, v, r, s);
   }
 
   function test_permitReserve_ignores_permit_reverts() public {
@@ -47,6 +48,7 @@ contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
 
     vm.prank(vm.randomAddress());
     gateway.permitReserve(
+      address(spoke1),
       reserveId,
       vm.randomAddress(),
       vm.randomUint(),
@@ -77,7 +79,7 @@ contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
     vm.expectEmit(address(token));
     emit IERC20.Approval(user, address(gateway), params.value);
     vm.prank(vm.randomAddress());
-    gateway.permitReserve(reserveId, user, params.value, params.deadline, v, r, s);
+    gateway.permitReserve(address(spoke1), reserveId, user, params.value, params.deadline, v, r, s);
 
     assertEq(token.allowance(user, address(gateway)), params.value);
   }

@@ -11,7 +11,7 @@ contract SignatureGatewayBaseTest is Base {
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
-    gateway = ISignatureGateway(new SignatureGateway(address(spoke1), ADMIN));
+    gateway = ISignatureGateway(new SignatureGateway(ADMIN));
     (alice, alicePk) = makeAddrAndKey('alice');
   }
 

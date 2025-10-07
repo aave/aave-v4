@@ -145,7 +145,7 @@ contract NativeTokenGateway is
     require(address(underlying) == address(_nativeWrapper), NotNativeWrappedAsset());
   }
 
-  /// @return The underlying asset for `reserveId` on connected spoke.
+  /// @return The underlying asset for `reserveId` on the given spoke.
   /// @return The corresponding hub address.
   function _getReserveData(
     ISpoke spoke,
