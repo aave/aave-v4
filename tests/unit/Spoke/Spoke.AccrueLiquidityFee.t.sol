@@ -22,8 +22,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
   }
 
   /// Supply an asset only, and check no interest accrued.
-  function test_accrueLiquidityFee_NoInterest_OnlySupply(uint40 skipTime) public {
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
+  function test_accrueLiquidityFee_NoInterest_OnlySupply(uint32 skipTime) public {
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint32();
     uint256 amount = 1000e18;
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -50,12 +50,12 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
   function test_accrueLiquidityFee_fuzz_BorrowAmountAndSkipTime(
     uint256 borrowAmount,
-    uint40 skipTime
+    uint32 skipTime
   ) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 3).toUint40();
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 3).toUint32();
     uint256 supplyAmount = borrowAmount * 2;
-    uint40 startTime = vm.getBlockTimestamp().toUint40();
+    uint32 startTime = vm.getBlockTimestamp().toUint32();
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
@@ -63,7 +63,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId, bob, supplyAmount, bob);
     Utils.borrow(spoke1, reserveId, bob, borrowAmount, bob);
 
-    uint256 drawnRate = hub1.getAssetDrawnRate(assetId);
+    uint96 drawnRate = hub1.getAssetDrawnRate(assetId).toUint96();
     uint256 initialBaseIndex = hub1.getAsset(assetId).drawnIndex;
     uint256 userRp = _getUserRiskPremium(spoke1, bob);
 
@@ -76,8 +76,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     ISpoke.UserPosition memory bobPosition = spoke1.getUserPosition(reserveId, bob);
     {
       uint256 drawnDebt = _calculateExpectedDrawnDebt(borrowAmount, drawnRate, startTime);
-      uint256 expectedpremiumShares = bobPosition.drawnShares.percentMulUp(userRp);
-      uint256 expectedPremiumDebt = hub1.convertToDrawnAssets(assetId, expectedpremiumShares) -
+      uint256 expectedPremiumShares = bobPosition.drawnShares.percentMulUp(userRp);
+      uint256 expectedPremiumDebt = hub1.convertToDrawnAssets(assetId, expectedPremiumShares) -
         bobPosition.premiumOffset +
         bobPosition.realizedPremium;
 
@@ -106,7 +106,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       _calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.drawnShares,
         initialPremiumShares: bobPosition.premiumShares,
-        liquidityFee: _getLiquidityFee(assetId),
+        liquidityFee: _getAssetLiquidityFee(assetId),
         indexDelta: hub1.getAsset(assetId).drawnIndex - initialBaseIndex
       })
     );
@@ -143,7 +143,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       _calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.drawnShares,
         initialPremiumShares: 0,
-        liquidityFee: _getLiquidityFee(assetId),
+        liquidityFee: _getAssetLiquidityFee(assetId),
         indexDelta: hub1.getAsset(assetId).drawnIndex - initialBaseIndex
       })
     );

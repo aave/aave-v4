@@ -54,7 +54,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
       params.debtReserveBalance,
       debtToTarget + 1,
       debtToTarget +
-        _convertBaseCurrencyToAmount(
+        _convertValueToAmount(
           LiquidationLogic.DUST_DEBT_LIQUIDATION_THRESHOLD - 1,
           params.debtAssetPrice,
           params.debtAssetUnit
@@ -87,7 +87,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
       params.debtReserveBalance,
       debtToLiquidate + 1,
       debtToLiquidate +
-        _convertBaseCurrencyToAmount(
+        _convertValueToAmount(
           LiquidationLogic.DUST_DEBT_LIQUIDATION_THRESHOLD - 1,
           params.debtAssetPrice,
           params.debtAssetUnit

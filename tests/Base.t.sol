@@ -36,6 +36,7 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Rescuable, IRescuable} from 'src/utils/Rescuable.sol';
+import {NoncesKeyed, INoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
 
 // hub
@@ -70,11 +71,13 @@ import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
+import {NoncesKeyedMock} from 'tests/mocks/NoncesKeyedMock.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 
 abstract contract Base is Test {
+  using stdStorage for StdStorage;
   using WadRayMath for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
@@ -220,7 +223,7 @@ abstract contract Base is Test {
     uint256 premiumOffset;
     uint256 realizedPremium;
     uint256 premium;
-    uint40 lastUpdateTimestamp;
+    uint32 lastUpdateTimestamp;
     uint256 liquidity;
     uint256 drawnIndex;
     uint256 drawnRate;
@@ -1170,6 +1173,14 @@ abstract contract Base is Test {
     return vm.randomUint(min, max);
   }
 
+  function _randomNonceKey() internal returns (uint192) {
+    return uint192(vm.randomUint());
+  }
+
+  function _randomNonce() internal returns (uint64) {
+    return uint64(vm.randomUint());
+  }
+
   // assumes spoke has usdx supported
   function _usdxReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].usdx.reserveId;
@@ -1345,7 +1356,7 @@ abstract contract Base is Test {
   }
 
   /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
-  function _getValueInBaseCurrency(
+  function _getValue(
     ISpoke spoke,
     uint256 reserveId,
     uint256 amount
@@ -1357,7 +1368,7 @@ abstract contract Base is Test {
   }
 
   /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
-  function _getDebtValueInBaseCurrency(
+  function _getDebtValue(
     ISpoke spoke,
     uint256 reserveId,
     uint256 amount
@@ -1378,11 +1389,7 @@ abstract contract Base is Test {
     uint256 toReserveId
   ) internal view returns (uint256) {
     return
-      _convertBaseCurrencyToAmount(
-        spoke,
-        toReserveId,
-        _convertAmountToBaseCurrency(spoke, reserveId, amount)
-      );
+      _convertValueToAmount(spoke, toReserveId, _convertAmountToValue(spoke, reserveId, amount));
   }
 
   /// @dev Helper function to calculate the amount of base and premium debt to restore
@@ -1399,9 +1406,9 @@ abstract contract Base is Test {
     }
     uint256 drawnRestored = _min(drawn, restoreAmount - premium);
     // round drawn debt to nearest whole share
-    drawnRestored = hub1.convertToDrawnAssets(
+    drawnRestored = hub1.previewRestoreByShares(
       assetId,
-      hub1.convertToDrawnShares(assetId, drawnRestored)
+      hub1.previewRestoreByAssets(assetId, drawnRestored)
     );
     return (drawnRestored, premium);
   }
@@ -1713,20 +1720,20 @@ abstract contract Base is Test {
     _assertAssetSupply(spoke, reserveId, expectedSuppliedAmount, label);
   }
 
-  function _convertAmountToBaseCurrency(
+  function _convertAmountToValue(
     ISpoke spoke,
     uint256 reserveId,
     uint256 amount
   ) internal view returns (uint256) {
     return
-      _convertAmountToBaseCurrency(
+      _convertAmountToValue(
         amount,
         IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId),
         10 ** _underlying(spoke, reserveId).decimals()
       );
   }
 
-  function _convertAmountToBaseCurrency(
+  function _convertAmountToValue(
     uint256 amount,
     uint256 assetPrice,
     uint256 assetUnit
@@ -1734,26 +1741,26 @@ abstract contract Base is Test {
     return (amount * assetPrice).wadDivUp(assetUnit);
   }
 
-  function _convertBaseCurrencyToAmount(
+  function _convertValueToAmount(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 baseCurrencyAmount
+    uint256 valueAmount
   ) internal view returns (uint256) {
     return
-      _convertBaseCurrencyToAmount(
-        baseCurrencyAmount,
+      _convertValueToAmount(
+        valueAmount,
         IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId),
         10 ** _underlying(spoke, reserveId).decimals()
       );
   }
 
   /// @dev Convert base currency to asset amount
-  function _convertBaseCurrencyToAmount(
-    uint256 baseCurrencyAmount,
+  function _convertValueToAmount(
+    uint256 valueAmount,
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return ((baseCurrencyAmount * assetUnit) / assetPrice).fromWadDown();
+    return ((valueAmount * assetUnit) / assetPrice).fromWadDown();
   }
 
   /**
@@ -1766,30 +1773,25 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 desiredHf
   ) internal view returns (uint256 requiredDebtAmount) {
-    uint256 requiredDebtAmountInBaseCurrency = _getRequiredDebtInBaseCurrencyForHf(
-      spoke,
-      user,
-      desiredHf
-    );
-    return _convertBaseCurrencyToAmount(spoke, reserveId, requiredDebtAmountInBaseCurrency);
+    uint256 requiredDebtAmountValue = _getRequiredDebtValueForHf(spoke, user, desiredHf);
+    return _convertValueToAmount(spoke, reserveId, requiredDebtAmountValue);
   }
 
   /**
    * @notice Returns the required debt in base currency to ensure user position is below a certain health factor.
    */
-  function _getRequiredDebtInBaseCurrencyForHf(
+  function _getRequiredDebtValueForHf(
     ISpoke spoke,
     address user,
     uint256 desiredHf
-  ) internal view returns (uint256 requiredDebtInBaseCurrency) {
+  ) internal view returns (uint256 requiredDebtValue) {
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
-    requiredDebtInBaseCurrency =
-      userAccountData
-        .totalCollateralInBaseCurrency
-        .wadMulUp(userAccountData.avgCollateralFactor)
-        .wadDivUp(desiredHf) -
-      userAccountData.totalDebtInBaseCurrency;
+    requiredDebtValue =
+      userAccountData.totalCollateralValue.wadMulUp(userAccountData.avgCollateralFactor).wadDivUp(
+        desiredHf
+      ) -
+      userAccountData.totalDebtValue;
   }
 
   function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {
@@ -1797,7 +1799,7 @@ abstract contract Base is Test {
   }
 
   function _getUserRiskPremium(ISpoke spoke, address user) internal view returns (uint256) {
-    return spoke.getUserAccountData(user).userRiskPremium;
+    return spoke.getUserAccountData(user).riskPremium;
   }
 
   function _approxRelFromBps(uint256 bps) internal pure returns (uint256) {
@@ -1846,8 +1848,8 @@ abstract contract Base is Test {
   /// @dev Calculate expected debt index based on input params
   function _calculateExpectedDrawnIndex(
     uint256 initialDrawnIndex,
-    uint256 borrowRate,
-    uint40 startTime
+    uint96 borrowRate,
+    uint32 startTime
   ) internal view returns (uint256) {
     return initialDrawnIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
   }
@@ -1856,8 +1858,8 @@ abstract contract Base is Test {
   function calculateExpectedDebt(
     uint256 initialDrawnShares,
     uint256 initialDrawnIndex,
-    uint256 borrowRate,
-    uint40 startTime
+    uint96 borrowRate,
+    uint32 startTime
   ) internal view returns (uint256 newDrawnIndex, uint256 newDrawnDebt) {
     newDrawnIndex = _calculateExpectedDrawnIndex(initialDrawnIndex, borrowRate, startTime);
     newDrawnDebt = initialDrawnShares.rayMulUp(newDrawnIndex);
@@ -1866,8 +1868,8 @@ abstract contract Base is Test {
   /// @dev Calculate expected drawn debt based on specified borrow rate
   function _calculateExpectedDrawnDebt(
     uint256 initialDebt,
-    uint256 borrowRate,
-    uint40 startTime
+    uint96 borrowRate,
+    uint32 startTime
   ) internal view returns (uint256) {
     return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(initialDebt);
   }
@@ -1919,7 +1921,7 @@ abstract contract Base is Test {
     );
   }
 
-  function _getLiquidityFee(uint256 assetId) internal view returns (uint256) {
+  function _getAssetLiquidityFee(uint256 assetId) internal view returns (uint256) {
     return hub1.getAssetConfig(assetId).liquidityFee;
   }
 
@@ -1990,24 +1992,30 @@ abstract contract Base is Test {
     string memory _oracleDesc
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
-    address predictedOracle = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
-    address spokeImpl = address(new SpokeInstance(predictedOracle));
+    address predictedSpoke = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
+    IAaveOracle oracle = new AaveOracle(predictedSpoke, 8, _oracleDesc);
+    address spokeImpl = address(new SpokeInstance(address(oracle)));
     ISpoke spoke = ISpoke(
-      _proxify(spokeImpl, proxyAdminOwner, abi.encodeCall(Spoke.initialize, (_accessManager)))
+      _proxify(
+        deployer,
+        spokeImpl,
+        proxyAdminOwner,
+        abi.encodeCall(Spoke.initialize, (_accessManager))
+      )
     );
-    vm.prank(deployer);
-    IAaveOracle oracle = new AaveOracle(address(spoke), 8, _oracleDesc);
-    assertEq(address(oracle), predictedOracle, 'predictedOracle');
+    assertEq(address(spoke), predictedSpoke, 'predictedSpoke');
     assertEq(spoke.ORACLE(), address(oracle));
     assertEq(oracle.SPOKE(), address(spoke));
     return (spoke, oracle);
   }
 
   function _proxify(
+    address deployer,
     address impl,
     address proxyAdminOwner,
     bytes memory initData
   ) internal returns (address) {
+    vm.prank(deployer);
     TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
       impl,
       proxyAdminOwner,
@@ -2111,10 +2119,10 @@ abstract contract Base is Test {
 
     return
       userAccountData
-        .totalCollateralInBaseCurrency
+        .totalCollateralValue
         .percentMulDown(userAccountData.avgCollateralFactor.fromWadDown())
         .percentMulDown(99_00)
-        .wadDivDown(desiredHf) - userAccountData.totalDebtInBaseCurrency;
+        .wadDivDown(desiredHf) - userAccountData.totalDebtValue;
     // buffer to force debt lower (ie making sure resultant debt creates HF that is gt desired)
   }
 
@@ -2127,11 +2135,7 @@ abstract contract Base is Test {
     uint256 desiredHf
   ) internal returns (uint256, uint256) {
     uint256 requiredDebtInBase = _getRequiredDebtForGtHf(spoke, user, desiredHf);
-    uint256 requiredDebtAmount = _convertBaseCurrencyToAmount(
-      spoke,
-      reserveId,
-      requiredDebtInBase
-    ) - 1;
+    uint256 requiredDebtAmount = _convertValueToAmount(spoke, reserveId, requiredDebtInBase) - 1;
 
     vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
 
@@ -2344,7 +2348,7 @@ abstract contract Base is Test {
         premiumOffset: assetData.premiumOffset,
         realizedPremium: assetData.realizedPremium,
         premium: premium,
-        lastUpdateTimestamp: assetData.lastUpdateTimestamp.toUint40(),
+        lastUpdateTimestamp: assetData.lastUpdateTimestamp.toUint32(),
         drawnIndex: assetData.drawnIndex,
         drawnRate: assetData.drawnRate
       });
@@ -2470,5 +2474,96 @@ abstract contract Base is Test {
           vm.eip712HashStruct('SetUserPositionManager', abi.encode(setUserPositionManager))
         )
       );
+  }
+
+  /**
+   * @dev Warps after to a random time after a randomly generated deadline.
+   * @return The randomly generated deadline.
+   */
+  function _warpAfterRandomDeadline() internal returns (uint256) {
+    uint256 deadline = vm.randomUint(0, MAX_SKIP_TIME - 1);
+    vm.warp(vm.randomUint(deadline + 1, MAX_SKIP_TIME));
+    return deadline;
+  }
+
+  /**
+   * @dev Warps to a random time before a randomly generated deadline.
+   * @return The randomly generated deadline.
+   */
+  function _warpBeforeRandomDeadline() internal returns (uint256) {
+    uint256 deadline = vm.randomUint(1, MAX_SKIP_TIME);
+    vm.warp(vm.randomUint(0, deadline - 1));
+    return deadline;
+  }
+
+  /**
+   * @dev Burns random nonces from 1 at the specified key lifetime.
+   */
+  function _burnRandomNoncesAtKey(
+    INoncesKeyed verifier,
+    address user,
+    uint192 key
+  ) internal returns (uint256) {
+    uint256 currentKeyNonce = verifier.nonces(user, key);
+    (, uint64 nonce) = _unpackNonce(currentKeyNonce);
+
+    uint64 toBurn = vm.randomUint(1, 100).toUint64();
+    for (uint256 i; i < toBurn; ++i) {
+      vm.prank(user);
+      verifier.useNonce(key);
+    }
+    uint256 newKeyNonce = _packNonce(key, nonce + toBurn);
+
+    // doesn't work because of the assumption in StdStorage.checkSlotMutatesCall :(
+    // stdstore
+    //   .target(verifier)
+    //   .sig(INoncesKeyed.nonces.selector)
+    //   .with_key(user)
+    //   .with_key(key)
+    //   .checked_write(newNonce);
+
+    assertEq(verifier.nonces(user, key), newKeyNonce);
+    return newKeyNonce;
+  }
+
+  function _burnRandomNoncesAtKey(INoncesKeyed verifier, address user) internal returns (uint256) {
+    return _burnRandomNoncesAtKey(verifier, user, _randomNonceKey());
+  }
+
+  function _getRandomInvalidNonceAtKey(
+    INoncesKeyed verifier,
+    address user,
+    uint192 key
+  ) internal returns (uint256) {
+    (uint192 currentKey, uint64 currentNonce) = _unpackNonce(verifier.nonces(user, key));
+    assertEq(currentKey, key);
+    uint64 nonce = _randomNonce();
+    while (currentNonce == nonce) nonce = _randomNonce();
+    return _packNonce(key, nonce);
+  }
+
+  function _assertNonceIncrement(
+    INoncesKeyed verifier,
+    address who,
+    uint256 prevKeyNonce
+  ) internal view {
+    (uint192 nonceKey, uint64 nonce) = _unpackNonce(prevKeyNonce);
+    // prettier-ignore
+    unchecked { ++nonce; }
+    assertEq(verifier.nonces(who, nonceKey), _packNonce(nonceKey, nonce));
+  }
+
+  /// @dev Pack key and nonce into a keyNonce
+  function _packNonce(uint192 key, uint64 nonce) internal pure returns (uint256) {
+    return (uint256(key) << 64) | nonce;
+  }
+
+  /// @dev Unpack a keyNonce into its key and nonce components
+  function _unpackNonce(uint256 keyNonce) internal pure returns (uint192 key, uint64 nonce) {
+    return (uint192(keyNonce >> 64), uint64(keyNonce));
+  }
+
+  function _bpsToRay(uint256 bps) internal pure returns (uint256) {
+    return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
   }
 }
