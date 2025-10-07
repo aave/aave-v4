@@ -24,7 +24,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     );
   }
 
-  function _baseAmountInBaseCurrency() internal virtual returns (uint256);
+  function _baseAmountValue() internal virtual returns (uint256);
 
   function _processAdditionalConfigs(
     uint256 collateralReserveId,
@@ -32,23 +32,20 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     address user
   ) internal virtual {}
 
-  function _processAdditionalCollateralReserves(
-    address user,
-    uint256 amountInBaseCurrency
-  ) internal {
+  function _processAdditionalCollateralReserves(address user, uint256 amountValue) internal {
     uint256 count = vm.randomUint(1, 10);
     for (uint256 i = 0; i < count; i++) {
       uint256 reserveId = vm.randomUint(0, spoke.getReserveCount() - 1);
-      uint256 amount = _convertBaseCurrencyToAmount(spoke, reserveId, amountInBaseCurrency);
+      uint256 amount = _convertValueToAmount(spoke, reserveId, amountValue);
       _increaseCollateralSupply(spoke, reserveId, amount, user);
     }
   }
 
-  function _processAdditionalDebtReserves(address user, uint256 amountInBaseCurrency) internal {
+  function _processAdditionalDebtReserves(address user, uint256 amountValue) internal {
     uint256 count = vm.randomUint(1, 10);
     for (uint256 i = 0; i < count; i++) {
       uint256 reserveId = vm.randomUint(0, spoke.getReserveCount() - 1);
-      uint256 amount = _convertBaseCurrencyToAmount(spoke, reserveId, amountInBaseCurrency);
+      uint256 amount = _convertValueToAmount(spoke, reserveId, amountValue);
       _increaseReserveDebt(spoke, reserveId, amount, user);
     }
   }
@@ -115,7 +112,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 
@@ -141,7 +138,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
     // user enables more collaterals, but still has deficit given that only one collateral is supplied
@@ -173,7 +170,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 
@@ -201,7 +198,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 
@@ -229,7 +226,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 
@@ -257,7 +254,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 
@@ -285,7 +282,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 
@@ -314,7 +311,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
-      _convertBaseCurrencyToAmount(spoke, collateralReserveId, _baseAmountInBaseCurrency()),
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
       user
     );
 
@@ -329,7 +326,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 contract SpokeLiquidationCallTest_NoLiquidationBonus_SmallPosition is
   SpokeLiquidationCallHelperTest
 {
-  function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
+  function _baseAmountValue() internal virtual override returns (uint256) {
     return 100e26;
   }
 }
@@ -338,7 +335,7 @@ contract SpokeLiquidationCallTest_NoLiquidationBonus_SmallPosition is
 contract SpokeLiquidationCallTest_NoLiquidationBonus_LargePosition is
   SpokeLiquidationCallHelperTest
 {
-  function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
+  function _baseAmountValue() internal virtual override returns (uint256) {
     return 10000e26;
   }
 }
@@ -360,7 +357,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_SmallPosition is
     }
   }
 
-  function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
+  function _baseAmountValue() internal virtual override returns (uint256) {
     return 100e26;
   }
 }
@@ -382,7 +379,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_LargePosition is
     }
   }
 
-  function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
+  function _baseAmountValue() internal virtual override returns (uint256) {
     return 10000e26;
   }
 }
@@ -407,7 +404,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_SmallPosition is
     }
   }
 
-  function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
+  function _baseAmountValue() internal virtual override returns (uint256) {
     return 100e26;
   }
 }
@@ -432,7 +429,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_LargePosition is
     }
   }
 
-  function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
+  function _baseAmountValue() internal virtual override returns (uint256) {
     return 10000e26;
   }
 }
@@ -444,14 +441,11 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
   using PercentageMath for uint256;
   using SafeCast for uint256;
 
-  uint256 internal baseAmountInBaseCurrency;
+  uint256 internal baseAmountValue;
 
   function setUp() public virtual override {
     super.setUp();
-    baseAmountInBaseCurrency = vm.randomUint(
-      MIN_AMOUNT_IN_BASE_CURRENCY,
-      MAX_AMOUNT_IN_BASE_CURRENCY
-    );
+    baseAmountValue = vm.randomUint(MIN_AMOUNT_IN_BASE_CURRENCY, MAX_AMOUNT_IN_BASE_CURRENCY);
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
       ISpoke.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
         i,
@@ -463,8 +457,8 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
     }
   }
 
-  function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
-    return baseAmountInBaseCurrency;
+  function _baseAmountValue() internal virtual override returns (uint256) {
+    return baseAmountValue;
   }
 
   function _processAdditionalConfigs(

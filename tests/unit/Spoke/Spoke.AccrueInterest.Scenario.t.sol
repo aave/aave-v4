@@ -777,57 +777,55 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     ISpoke spoke,
     TestAmounts memory amounts
   ) internal view returns (TestAmounts memory) {
-    uint256 remainingCollateralValue = _getValueInBaseCurrency(
+    uint256 remainingCollateralValue = _getValue(
       spoke,
       _daiReserveId(spoke),
       amounts.daiSupplyAmount
     ) +
-      _getValueInBaseCurrency(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
-      _getValueInBaseCurrency(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
-      _getValueInBaseCurrency(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount);
+      _getValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
+      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
+      _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount);
 
     // Bound each debt amount to be no more than half the remaining collateral value
     amounts.daiBorrowAmount = bound(
       amounts.daiBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValueInBaseCurrency(spoke, _daiReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _getValue(spoke, _daiReserveId(spoke), 1)
     );
     // Subtract out the set debt value from the remaining collateral value
-    remainingCollateralValue -=
-      _getValueInBaseCurrency(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) *
-      2;
+    remainingCollateralValue -= _getValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) * 2;
     amounts.wethBorrowAmount = bound(
       amounts.wethBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValueInBaseCurrency(spoke, _wethReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _getValue(spoke, _wethReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValueInBaseCurrency(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) *
+      _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) *
       2;
     amounts.usdxBorrowAmount = bound(
       amounts.usdxBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValueInBaseCurrency(spoke, _usdxReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _getValue(spoke, _usdxReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValueInBaseCurrency(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) *
+      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) *
       2;
     amounts.wbtcBorrowAmount = bound(
       amounts.wbtcBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValueInBaseCurrency(spoke, _wbtcReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _getValue(spoke, _wbtcReserveId(spoke), 1)
     );
 
     assertGt(
-      _getValueInBaseCurrency(spoke, _daiReserveId(spoke), amounts.daiSupplyAmount) +
-        _getValueInBaseCurrency(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
-        _getValueInBaseCurrency(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
-        _getValueInBaseCurrency(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount),
+      _getValue(spoke, _daiReserveId(spoke), amounts.daiSupplyAmount) +
+        _getValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
+        _getValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
+        _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount),
       2 *
-        (_getValueInBaseCurrency(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) +
-          _getValueInBaseCurrency(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) +
-          _getValueInBaseCurrency(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) +
-          _getValueInBaseCurrency(spoke, _wbtcReserveId(spoke), amounts.wbtcBorrowAmount)),
+        (_getValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) +
+          _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) +
+          _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) +
+          _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcBorrowAmount)),
       'collateral sufficiently covers debt'
     );
 

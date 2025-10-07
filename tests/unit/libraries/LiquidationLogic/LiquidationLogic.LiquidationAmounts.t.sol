@@ -21,14 +21,14 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     params.collateralReserveBalance = bound(
       params.collateralReserveBalance,
       expectedCollateralToLiquidate +
-        _convertBaseCurrencyToAmount(
+        _convertValueToAmount(
           LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
           params.collateralAssetPrice,
           params.collateralAssetUnit
         ) +
         1,
       expectedCollateralToLiquidate +
-        _convertBaseCurrencyToAmount(
+        _convertValueToAmount(
           LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
           params.collateralAssetPrice,
           params.collateralAssetUnit
@@ -105,7 +105,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       params.collateralReserveBalance,
       expectedCollateralToLiquidate + 1,
       expectedCollateralToLiquidate +
-        _convertBaseCurrencyToAmount(
+        _convertValueToAmount(
           LiquidationLogic.DUST_LIQUIDATION_THRESHOLD - 1,
           params.collateralAssetPrice,
           params.collateralAssetUnit
@@ -208,7 +208,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       params.collateralReserveBalance,
       expectedCollateralToLiquidate + 1,
       expectedCollateralToLiquidate +
-        _convertBaseCurrencyToAmount(
+        _convertValueToAmount(
           LiquidationLogic.DUST_LIQUIDATION_THRESHOLD - 1,
           params.collateralAssetPrice,
           params.collateralAssetUnit
@@ -250,7 +250,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           collateralReserveBalance: 11_000e6,
           debtReserveBalance: 5e18,
           debtToCover: 3e18,
-          totalDebtInBaseCurrency: 10_000e26,
+          totalDebtValue: 10_000e26,
           healthFactor: 0.8e18,
           targetHealthFactor: 1e18,
           maxLiquidationBonus: 120_00,
@@ -290,7 +290,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           collateralReserveBalance: 3000e6,
           debtReserveBalance: 5e18,
           debtToCover: 3e18,
-          totalDebtInBaseCurrency: 10_000e26,
+          totalDebtValue: 10_000e26,
           healthFactor: 0.8e18,
           targetHealthFactor: 1e18,
           maxLiquidationBonus: 120_00,

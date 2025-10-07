@@ -96,7 +96,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       'pre liquidation: health factor'
     );
     // Risk Premium: 5%
-    assertEq(userAccountData.userRiskPremium, 5_00, 'pre liquidation: risk premium');
+    assertEq(userAccountData.riskPremium, 5_00, 'pre liquidation: risk premium');
 
     skip(365 days);
     userAccountData = spoke.getUserAccountData(user);
@@ -152,7 +152,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       'post liquidation: health factor'
     );
     // Risk Premium after liquidation: ($100 * 10% + 387.5 * 15%) / 487.6 = 13.97%
-    assertApproxEqAbs(userAccountData.userRiskPremium, 13_97, 1, 'post liquidation: risk premium');
+    assertApproxEqAbs(userAccountData.riskPremium, 13_97, 1, 'post liquidation: risk premium');
   }
 
   // User is solvent, but health factor decreases after liquidation due to high collateral factor.
@@ -193,7 +193,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       'pre liquidation: health factor'
     );
     // Risk Premium: ($3300 * 5% + $100 * 10% + $200 * 15%) / $3600 = ~5.694%
-    assertEq(userAccountData.userRiskPremium, 5_69, 'pre liquidation: risk premium');
+    assertEq(userAccountData.riskPremium, 5_69, 'pre liquidation: risk premium');
 
     skip(365 days / 2);
     userAccountData = spoke.getUserAccountData(user);
@@ -249,6 +249,6 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       'post liquidation: health factor'
     );
     // Risk Premium after liquidation: ($100 * 10% + $353.1891 * 15%) / $453.1891 = 13.89%
-    assertApproxEqAbs(userAccountData.userRiskPremium, 13_89, 1, 'post liquidation: risk premium');
+    assertApproxEqAbs(userAccountData.riskPremium, 13_89, 1, 'post liquidation: risk premium');
   }
 }

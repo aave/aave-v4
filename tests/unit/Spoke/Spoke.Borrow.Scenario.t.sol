@@ -589,8 +589,8 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     assertEq(_getCollateralFactor(spoke1, coll1ReserveId), 0); // initially
     assertNotEq(_getCollateralFactor(spoke1, coll2ReserveId), 0);
 
-    uint256 coll1InBaseCurrency = _getValueInBaseCurrency(spoke1, coll1ReserveId, coll1Amount);
-    uint256 coll2InBaseCurrency = _getValueInBaseCurrency(spoke1, coll2ReserveId, coll2Amount);
+    uint256 coll1Value = _getValue(spoke1, coll1ReserveId, coll1Amount);
+    uint256 coll2Value = _getValue(spoke1, coll2ReserveId, coll2Amount);
 
     Utils.supplyCollateral(spoke1, coll1ReserveId, alice, coll1Amount, alice);
     Utils.supplyCollateral(spoke1, coll2ReserveId, alice, coll2Amount, alice);
@@ -598,7 +598,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     Utils.borrow(spoke1, debtReserveId, alice, debtBorrowAmount, alice);
 
     ISpoke.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
-    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.userRiskPremium);
-    assertEq(coll2InBaseCurrency, userAccountData.totalCollateralInBaseCurrency); // coll1 is not included
+    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.riskPremium);
+    assertEq(coll2Value, userAccountData.totalCollateralValue); // coll1 is not included
   }
 }

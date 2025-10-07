@@ -31,10 +31,10 @@ library LiquidationLogic {
     uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 accruedPremium;
-    uint256 totalDebtInBaseCurrency;
+    uint256 totalDebtValue;
     address liquidator;
-    uint256 suppliedCollateralsCount;
-    uint256 borrowedReservesCount;
+    uint256 activeCollateralCount;
+    uint256 borrowedCount;
   }
 
   struct ValidateLiquidationCallParams {
@@ -53,7 +53,7 @@ library LiquidationLogic {
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
-    uint256 totalDebtInBaseCurrency;
+    uint256 totalDebtValue;
     uint256 healthFactor;
     uint256 targetHealthFactor;
     uint256 liquidationBonus;
@@ -65,7 +65,7 @@ library LiquidationLogic {
   struct CalculateMaxDebtToLiquidateParams {
     uint256 debtReserveBalance;
     uint256 debtToCover;
-    uint256 totalDebtInBaseCurrency;
+    uint256 totalDebtValue;
     uint256 healthFactor;
     uint256 targetHealthFactor;
     uint256 liquidationBonus;
@@ -80,7 +80,7 @@ library LiquidationLogic {
     uint256 debtReserveBalance;
     uint256 collateralReserveBalance;
     uint256 debtToCover;
-    uint256 totalDebtInBaseCurrency;
+    uint256 totalDebtValue;
     uint256 healthFactor;
     uint256 targetHealthFactor;
     uint256 maxLiquidationBonus;
@@ -160,7 +160,7 @@ library LiquidationLogic {
         debtReserveBalance: params.drawnDebt + params.premiumDebt,
         collateralReserveBalance: collateralReserveBalance,
         debtToCover: params.debtToCover,
-        totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
+        totalDebtValue: params.totalDebtValue,
         healthFactor: params.healthFactor,
         targetHealthFactor: liquidationConfig.targetHealthFactor,
         maxLiquidationBonus: collateralDynConfig.maxLiquidationBonus,
@@ -216,8 +216,8 @@ library LiquidationLogic {
       _evaluateDeficit({
         isCollateralPositionEmpty: isCollateralPositionEmpty,
         isDebtPositionEmpty: isDebtPositionEmpty,
-        suppliedCollateralsCount: params.suppliedCollateralsCount,
-        borrowedReservesCount: params.borrowedReservesCount
+        activeCollateralCount: params.activeCollateralCount,
+        borrowedCount: params.borrowedCount
       });
   }
 
@@ -262,7 +262,7 @@ library LiquidationLogic {
       CalculateMaxDebtToLiquidateParams({
         debtReserveBalance: params.debtReserveBalance,
         debtToCover: params.debtToCover,
-        totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
+        totalDebtValue: params.totalDebtValue,
         healthFactor: params.healthFactor,
         targetHealthFactor: params.targetHealthFactor,
         liquidationBonus: liquidationBonus,
@@ -354,7 +354,7 @@ library LiquidationLogic {
 
     uint256 debtToTarget = _calculateDebtToTargetHealthFactor(
       CalculateDebtToTargetHealthFactorParams({
-        totalDebtInBaseCurrency: params.totalDebtInBaseCurrency,
+        totalDebtValue: params.totalDebtValue,
         healthFactor: params.healthFactor,
         targetHealthFactor: params.targetHealthFactor,
         liquidationBonus: params.liquidationBonus,
@@ -394,7 +394,7 @@ library LiquidationLogic {
     // `liquidationBonus.percentMulUp(collateralFactor) < PercentageMath.PERCENTAGE_FACTOR` is enforced in `_validateDynamicReserveConfig`
     // and targetHealthFactor is always >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     return
-      params.totalDebtInBaseCurrency.mulDivUp(
+      params.totalDebtValue.mulDivUp(
         params.debtAssetUnit * (params.targetHealthFactor - params.healthFactor),
         (params.targetHealthFactor - liquidationPenalty) * params.debtAssetPrice.toWad()
       );
@@ -468,13 +468,13 @@ library LiquidationLogic {
   function _evaluateDeficit(
     bool isCollateralPositionEmpty,
     bool isDebtPositionEmpty,
-    uint256 suppliedCollateralsCount,
-    uint256 borrowedReservesCount
+    uint256 activeCollateralCount,
+    uint256 borrowedCount
   ) internal pure returns (bool) {
-    if (!isCollateralPositionEmpty || suppliedCollateralsCount > 1) {
+    if (!isCollateralPositionEmpty || activeCollateralCount > 1) {
       return false;
     }
-    return !isDebtPositionEmpty || borrowedReservesCount > 1;
+    return !isDebtPositionEmpty || borrowedCount > 1;
   }
 
   function _settlePremiumDebt(

@@ -23,7 +23,7 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
       debtToTarget
     );
 
-    bool leavesDebtDust = _convertAmountToBaseCurrency(
+    bool leavesDebtDust = _convertAmountToValue(
       params.debtReserveBalance - rawMaxDebtToLiquidate,
       params.debtAssetPrice,
       params.debtAssetUnit

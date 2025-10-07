@@ -91,8 +91,8 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
 
     // debtToTarget (~$11) as limiting factor would result in dust collateral
     assertLt(
-      _getCollateralInBaseCurrency(spoke, _daiReserveId(spoke), alice) -
-        _convertAmountToBaseCurrency(spoke, _usdxReserveId(spoke), debtToTarget),
+      _getCollateralValue(spoke, _daiReserveId(spoke), alice) -
+        _convertAmountToValue(spoke, _usdxReserveId(spoke), debtToTarget),
       LiquidationLogic.DUST_LIQUIDATION_THRESHOLD
     );
 
@@ -158,7 +158,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     uint256 theoreticalRemainingDebt = spoke.getUserTotalDebt(_usdxReserveId(spoke), alice) -
       debtToCover;
     assertLt(
-      _convertAmountToBaseCurrency(spoke, _usdxReserveId(spoke), theoreticalRemainingDebt),
+      _convertAmountToValue(spoke, _usdxReserveId(spoke), theoreticalRemainingDebt),
       LiquidationLogic.DUST_LIQUIDATION_THRESHOLD
     );
 
@@ -232,7 +232,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     assertEq(spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice), 0);
     // dust is allowed on debt reserve
     assertLt(
-      _convertAmountToBaseCurrency(
+      _convertAmountToValue(
         spoke,
         _usdxReserveId(spoke),
         spoke.getUserTotalDebt(_usdxReserveId(spoke), alice)
@@ -298,19 +298,19 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     assertEq(spoke.getUserTotalDebt(_usdxReserveId(spoke), alice), 0);
     // dust is allowed on coll reserve
     assertLt(
-      _getCollateralInBaseCurrency(spoke, _daiReserveId(spoke), alice),
+      _getCollateralValue(spoke, _daiReserveId(spoke), alice),
       LiquidationLogic.DUST_LIQUIDATION_THRESHOLD
     );
   }
 
-  function _calculateDebtToTargetInBaseCurrency(
+  function _calculateDebtToTargetValue(
     ISpoke spoke,
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user
   ) internal returns (uint256) {
     return
-      _convertAmountToBaseCurrency(
+      _convertAmountToValue(
         spoke,
         debtReserveId,
         liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
@@ -324,13 +324,13 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
       );
   }
 
-  function _getCollateralInBaseCurrency(
+  function _getCollateralValue(
     ISpoke spoke,
     uint256 collateralReserveId,
     address user
   ) internal returns (uint256) {
     return
-      _convertAmountToBaseCurrency(
+      _convertAmountToValue(
         spoke,
         collateralReserveId,
         spoke.getUserSuppliedAssets(collateralReserveId, user)

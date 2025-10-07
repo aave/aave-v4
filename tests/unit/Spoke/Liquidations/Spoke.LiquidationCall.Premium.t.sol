@@ -7,18 +7,15 @@ import 'tests/unit/Spoke/Liquidations/Spoke.LiquidationCall.t.sol';
 contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
   using SafeCast for uint256;
 
-  uint256 internal baseAmountInBaseCurrency;
+  uint256 internal baseAmountValue;
 
   function setUp() public virtual override {
     super.setUp();
-    baseAmountInBaseCurrency = vm.randomUint(
-      MIN_AMOUNT_IN_BASE_CURRENCY,
-      MAX_AMOUNT_IN_BASE_CURRENCY
-    );
+    baseAmountValue = vm.randomUint(MIN_AMOUNT_IN_BASE_CURRENCY, MAX_AMOUNT_IN_BASE_CURRENCY);
   }
 
-  function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
-    return baseAmountInBaseCurrency;
+  function _baseAmountValue() internal virtual override returns (uint256) {
+    return baseAmountValue;
   }
 
   function _processAdditionalConfigs(

@@ -49,13 +49,13 @@ contract SpokeUserAccountDataTest is SpokeBase {
     _checkedUserAccounData(
       false,
       ISpoke.UserAccountData({
-        totalCollateralInBaseCurrency: 100e26,
-        totalDebtInBaseCurrency: 75e26,
+        totalCollateralValue: 100e26,
+        totalDebtValue: 75e26,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
-        userRiskPremium: 10_00,
-        suppliedCollateralsCount: 1,
-        borrowedReservesCount: 1
+        riskPremium: 10_00,
+        activeCollateralCount: 1,
+        borrowedCount: 1
       })
     );
   }
@@ -83,13 +83,13 @@ contract SpokeUserAccountDataTest is SpokeBase {
     _checkedUserAccounData(
       false,
       ISpoke.UserAccountData({
-        totalCollateralInBaseCurrency: 100e26,
-        totalDebtInBaseCurrency: 75e26,
+        totalCollateralValue: 100e26,
+        totalDebtValue: 75e26,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
-        userRiskPremium: 10_00,
-        suppliedCollateralsCount: 1,
-        borrowedReservesCount: 1
+        riskPremium: 10_00,
+        activeCollateralCount: 1,
+        borrowedCount: 1
       })
     );
   }
@@ -117,13 +117,13 @@ contract SpokeUserAccountDataTest is SpokeBase {
     _checkedUserAccounData(
       true,
       ISpoke.UserAccountData({
-        totalCollateralInBaseCurrency: 100e26,
-        totalDebtInBaseCurrency: 75e26,
+        totalCollateralValue: 100e26,
+        totalDebtValue: 75e26,
         avgCollateralFactor: 0.96e18,
         healthFactor: 1.28e18,
-        userRiskPremium: 10_00,
-        suppliedCollateralsCount: 1,
-        borrowedReservesCount: 1
+        riskPremium: 10_00,
+        activeCollateralCount: 1,
+        borrowedCount: 1
       })
     );
   }
@@ -159,13 +159,13 @@ contract SpokeUserAccountDataTest is SpokeBase {
     _checkedUserAccounData(
       true,
       ISpoke.UserAccountData({
-        totalCollateralInBaseCurrency: 5100e26,
-        totalDebtInBaseCurrency: 1000e26,
+        totalCollateralValue: 5100e26,
+        totalDebtValue: 1000e26,
         avgCollateralFactor: 0.509019608e18,
         healthFactor: 2.596e18,
-        userRiskPremium: 14_50,
-        suppliedCollateralsCount: 2,
-        borrowedReservesCount: 1
+        riskPremium: 14_50,
+        activeCollateralCount: 2,
+        borrowedCount: 1
       })
     );
   }
@@ -201,13 +201,13 @@ contract SpokeUserAccountDataTest is SpokeBase {
     _checkedUserAccounData(
       false,
       ISpoke.UserAccountData({
-        totalCollateralInBaseCurrency: 100e26,
-        totalDebtInBaseCurrency: 125e26,
+        totalCollateralValue: 100e26,
+        totalDebtValue: 125e26,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.576e18,
-        userRiskPremium: 10_00,
-        suppliedCollateralsCount: 1,
-        borrowedReservesCount: 2
+        riskPremium: 10_00,
+        activeCollateralCount: 1,
+        borrowedCount: 2
       })
     );
   }
@@ -241,13 +241,13 @@ contract SpokeUserAccountDataTest is SpokeBase {
     _checkedUserAccounData(
       false,
       ISpoke.UserAccountData({
-        totalCollateralInBaseCurrency: 100e26,
-        totalDebtInBaseCurrency: 75e26,
+        totalCollateralValue: 100e26,
+        totalDebtValue: 75e26,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
-        userRiskPremium: 10_00,
-        suppliedCollateralsCount: 1,
-        borrowedReservesCount: 1
+        riskPremium: 10_00,
+        activeCollateralCount: 1,
+        borrowedCount: 1
       })
     );
   }
@@ -271,16 +271,12 @@ contract SpokeUserAccountDataTest is SpokeBase {
     ISpoke.UserAccountData memory a,
     ISpoke.UserAccountData memory b
   ) internal pure {
-    assertEq(
-      a.totalCollateralInBaseCurrency,
-      b.totalCollateralInBaseCurrency,
-      'totalCollateralInBaseCurrency'
-    );
-    assertEq(a.totalDebtInBaseCurrency, b.totalDebtInBaseCurrency, 'totalDebtInBaseCurrency');
+    assertEq(a.totalCollateralValue, b.totalCollateralValue, 'totalCollateralValue');
+    assertEq(a.totalDebtValue, b.totalDebtValue, 'totalDebtValue');
     assertApproxEqAbs(a.avgCollateralFactor, b.avgCollateralFactor, 1e12, 'avgCollateralFactor');
     assertApproxEqAbs(a.healthFactor, b.healthFactor, 1e12, 'healthFactor');
-    assertApproxEqAbs(a.userRiskPremium, b.userRiskPremium, 1, 'userRiskPremium');
-    assertEq(a.suppliedCollateralsCount, b.suppliedCollateralsCount, 'suppliedCollateralsCount');
-    assertEq(a.borrowedReservesCount, b.borrowedReservesCount, 'borrowedReservesCount');
+    assertApproxEqAbs(a.riskPremium, b.riskPremium, 1, 'riskPremium');
+    assertEq(a.activeCollateralCount, b.activeCollateralCount, 'activeCollateralCount');
+    assertEq(a.borrowedCount, b.borrowedCount, 'borrowedCount');
   }
 }
