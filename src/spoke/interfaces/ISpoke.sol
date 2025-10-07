@@ -197,6 +197,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
    * @param priceSource The address of the price source for the asset.
    * @param config The initial reserve configuration.
    * @param dynamicConfig The initial dynamic reserve configuration.
+   * @return reserveId The identifier of the newly added reserve.
    */
   function addReserve(
     address hub,
@@ -204,7 +205,7 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
     address priceSource,
     ReserveConfig calldata config,
     DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint256);
+  ) external returns (uint256 reserveId);
 
   function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external;
 
