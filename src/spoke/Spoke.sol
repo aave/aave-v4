@@ -53,6 +53,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   uint8 public constant ORACLE_DECIMALS = 8;
 
   /// @inheritdoc ISpoke
+  uint8 public constant ORACLE_DECIMALS = 8;
+
+  /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
   uint256 internal _reserveCount;
