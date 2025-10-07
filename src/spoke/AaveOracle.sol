@@ -17,7 +17,7 @@ contract AaveOracle is IAaveOracle {
   uint8 public immutable DECIMALS;
 
   /// @inheritdoc IAaveOracle
-  string public DESCRIPTION;
+  string public immutable DESCRIPTION;
 
   mapping(uint256 reserveId => AggregatorV3Interface) internal _sources;
 
