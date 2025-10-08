@@ -8,6 +8,8 @@ contract MockSpoke is Spoke {
   using SafeCast for *;
   using PositionStatusMap for *;
 
+  bool public constant IS_TEST = true;
+
   constructor(address oracle_) Spoke(oracle_) {}
 
   function initialize(address) external override {}
