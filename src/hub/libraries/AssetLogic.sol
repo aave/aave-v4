@@ -133,10 +133,12 @@ library AssetLogic {
     mapping(uint256 => IHub.Asset) storage assets,
     mapping(uint256 => mapping(address => IHub.SpokeData)) storage spokes,
     uint256 assetId
-  ) internal returns (IHub.Asset storage) {
+  ) internal {
     IHub.Asset storage asset = assets[assetId];
 
-    if (asset.lastUpdateTimestamp == block.timestamp) return asset;
+    if (asset.lastUpdateTimestamp == block.timestamp) {
+      return;
+    }
 
     uint256 drawnIndex = asset.getDrawnIndex();
     uint256 indexDelta = drawnIndex.uncheckedSub(asset.drawnIndex);
@@ -151,7 +153,6 @@ library AssetLogic {
       spokes[assetId][feeReceiver].addedShares += feeShares;
       emit IHub.AccrueFees(assetId, feeReceiver, feeShares);
     }
-    return asset;
   }
 
   /// @notice Calculates the drawn index of a specified asset based on the existing drawn rate and index.
