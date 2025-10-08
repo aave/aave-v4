@@ -18,13 +18,13 @@ debtAssetPrice = Int('debtAssetPrice')
 s.add(1 <= debtAssetPrice, debtAssetPrice <= 10**30)
 debtAssetDecimals = Int('debtAssetDecimals')
 s.add(1 <= debtAssetDecimals, debtAssetDecimals <= 18)
-debtAssetUnit = 10**debtAssetDecimals
+debtAssetUnit = ToInt(10**debtAssetDecimals)
 
 collateralAssetPrice = Int('collateralAssetPrice')
 s.add(1 <= collateralAssetPrice, collateralAssetPrice <= 10**30)
 collateralAssetDecimals = Int('collateralAssetDecimals')
 s.add(1 <= collateralAssetDecimals, collateralAssetDecimals <= 18)
-collateralAssetUnit = 10**collateralAssetDecimals
+collateralAssetUnit = ToInt(10**collateralAssetDecimals)
 
 liquidationBonus = Int('liquidationBonus')
 s.add(PERCENTAGE_FACTOR <= liquidationBonus, liquidationBonus < PERCENTAGE_FACTOR * PERCENTAGE_FACTOR)
@@ -39,7 +39,6 @@ s.add(0 <= collateralReserveBalance, collateralReserveBalance <= 10**30)
 collateralToLiquidate = Int('collateralToLiquidate')
 s.add(collateralToLiquidate == mulDivDown(debtToLiquidate, debtAssetPrice * collateralAssetUnit * liquidationBonus, debtAssetUnit * collateralAssetPrice * PERCENTAGE_FACTOR))
 
-
 s.add(
   Or(
     collateralToLiquidate > collateralReserveBalance,
@@ -52,7 +51,7 @@ s.add(
 
 s.add(
   Not(
-    mulDivDown(
+    mulDivUp(
       collateralReserveBalance,
       collateralAssetPrice * debtAssetUnit * PERCENTAGE_FACTOR,
       debtAssetPrice * collateralAssetUnit * liquidationBonus
