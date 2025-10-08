@@ -290,10 +290,10 @@ library LiquidationLogic {
     ) {
       collateralToLiquidate = params.collateralReserveBalance;
 
-      // - debtToLiquidate is decreased if collateralToLiquidate > params.collateralReserveBalance (if so, debt dust could remain).
-      // - debtToLiquidate is increased if (leavesCollateralDust && debtToLiquidate < params.debtReserveBalance), ensuring collateral reserve
-      //   is fully liquidated (potentially bypassing the target health factor). Can only increase by at most DUST_LIQUIDATION_THRESHOLD (in
-      //   value terms). Since debt dust condition was enforced, it is guaranteed that debtToLiquidate will never exceed params.debtReserveBalance.
+      // - `debtToLiquidate` is decreased if `collateralToLiquidate > params.collateralReserveBalance` (if so, debt dust could remain).
+      // - `debtToLiquidate` is increased if `(leavesCollateralDust && debtToLiquidate < params.debtReserveBalance)`, ensuring collateral reserve
+      //   is fully liquidated (potentially bypassing the target health factor). Can only increase by at most `DUST_LIQUIDATION_THRESHOLD` (in
+      //   value terms). Since debt dust condition was enforced, it is guaranteed that `debtToLiquidate` will never exceed `params.debtReserveBalance`.
       debtToLiquidate = collateralToLiquidate.mulDivUp(
         params.collateralAssetPrice * params.debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
         params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus
