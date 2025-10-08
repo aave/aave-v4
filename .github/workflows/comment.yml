@@ -1,6 +1,7 @@
 name: PR Comment
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: [Tests-PR]
     types:
