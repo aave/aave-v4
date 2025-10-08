@@ -347,7 +347,7 @@ library LiquidationLogic {
 
   /// @notice Calculates the debt that should be liquidated.
   /// @dev Generally, it returns the minimum of `debtToCover`, `debtReserveBalance` and `debtToTarget`.
-  /// If it would result in dust debt being left behind, the function returns `debtReserveBalance`.
+  /// If dust debt would be left behind, it returns `debtReserveBalance` to ensure the debt is fully cleared and no dust is left.
   function _calculateDebtToLiquidate(
     CalculateDebtToLiquidateParams memory params
   ) internal pure returns (uint256) {
