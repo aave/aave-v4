@@ -770,9 +770,14 @@ contract SpokeRepayTest is SpokeBase {
     // Bob repays
     uint256 bobDaiInterest = bobDaiBefore.totalDebt - daiBorrowAmount;
     daiRepayAmount = bound(daiRepayAmount, 0, bobDaiInterest);
+    (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
+      bobDaiBefore.drawnDebt,
+      bobDaiBefore.premiumDebt,
+      daiRepayAmount,
+      daiAssetId
+    );
     deal(address(tokenList.dai), bob, daiRepayAmount);
 
-    uint256 expectedShares;
     {
       IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
         spoke1,
@@ -784,21 +789,12 @@ contract SpokeRepayTest is SpokeBase {
       if (daiRepayAmount == 0) {
         vm.expectRevert(IHub.InvalidAmount.selector);
       } else {
-        (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
-          bobDaiBefore.drawnDebt,
-          bobDaiBefore.premiumDebt,
-          daiRepayAmount,
-          daiAssetId
-        );
-        daiRepayAmount = baseRestored + premiumRestored;
-        expectedShares = hub1.previewRestoreByAssets(daiAssetId, baseRestored);
-
         vm.expectEmit(address(spoke1));
         emit ISpokeBase.Repay(
           _daiReserveId(spoke1),
           bob,
           bob,
-          expectedShares,
+          hub1.previewRestoreByAssets(daiAssetId, baseRestored),
           expectedPremiumDelta
         );
       }
@@ -808,13 +804,13 @@ contract SpokeRepayTest is SpokeBase {
 
     ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
-    uint256 bobDaiAfterTotalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
+    daiRepayAmount = baseRestored + premiumRestored;
 
-    assertEq(returnedShares, expectedShares);
+    assertEq(returnedShares, hub1.previewRestoreByAssets(daiAssetId, baseRestored));
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
     assertApproxEqAbs(
-      bobDaiAfterTotalDebt,
+      spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       daiRepayAmount >= bobDaiBefore.totalDebt ? 0 : bobDaiBefore.totalDebt - daiRepayAmount,
       2,
       'bob dai debt final balance'
@@ -827,7 +823,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // repays only interest
     // it can be equal because of 1 wei rounding issue when repaying
-    assertGe(bobDaiAfterTotalDebt, daiBorrowAmount);
+    assertGe(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), daiBorrowAmount);
   }
 
   /// repay all or a portion of premium debt
