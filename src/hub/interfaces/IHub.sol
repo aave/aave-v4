@@ -55,6 +55,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint56 addCap;
     uint56 drawCap;
     bool active;
+    bool paused;
     //
     uint128 deficit;
   }
@@ -160,6 +161,9 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Thrown when a spoke is not active.
   error SpokeNotActive();
+
+  /// @notice Thrown when a spoke is paused.
+  error SpokePaused();
 
   /// @notice Thrown when a new reinvestment controller is the zero address and the asset has existing swept liquidity.
   error InvalidReinvestmentController();

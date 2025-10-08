@@ -347,7 +347,7 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    require(spoke.active, SpokeNotActive());
+    require(spoke.active, SpokeNotActive()); // allow paused spokes
     asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
     // no premium change allowed
     _applyPremiumDelta(assetId, asset, spoke, premiumDelta, 0);
@@ -659,6 +659,7 @@ contract Hub is IHub, AccessManaged {
   function _updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig memory config) internal {
     SpokeData storage spokeData = _spokes[assetId][spoke];
     spokeData.active = config.active;
+    spokeData.paused = false;
     spokeData.addCap = config.addCap;
     spokeData.drawCap = config.drawCap;
     emit UpdateSpokeConfig(assetId, spoke, config);
@@ -732,6 +733,7 @@ contract Hub is IHub, AccessManaged {
     require(from != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
+    require(!spoke.paused, SpokePaused());
     uint256 addCap = spoke.addCap;
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
@@ -750,6 +752,7 @@ contract Hub is IHub, AccessManaged {
     require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
+    require(!spoke.paused, SpokePaused());
     uint256 removable = previewRemoveByShares(assetId, spoke.addedShares);
     require(amount <= removable, AddedAmountExceeded(removable));
   }
@@ -765,6 +768,7 @@ contract Hub is IHub, AccessManaged {
     require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
+    require(!spoke.paused, SpokePaused());
     uint256 drawCap = spoke.drawCap;
     uint256 drawn = _getSpokeDrawn(spoke, assetId);
     uint256 premium = _getSpokePremium(spoke, assetId);
@@ -787,6 +791,7 @@ contract Hub is IHub, AccessManaged {
     require(from != address(this), InvalidAddress());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
+    require(!spoke.paused, SpokePaused());
     uint256 drawn = _getSpokeDrawn(spoke, assetId);
     uint256 premium = _getSpokePremium(spoke, assetId);
     require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
@@ -800,6 +805,7 @@ contract Hub is IHub, AccessManaged {
     uint256 premiumAmount
   ) internal view {
     require(spoke.active, SpokeNotActive());
+    require(!spoke.paused, SpokePaused());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
     uint256 drawn = _getSpokeDrawn(spoke, assetId);
     uint256 premium = _getSpokePremium(spoke, assetId);
@@ -809,11 +815,13 @@ contract Hub is IHub, AccessManaged {
 
   function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {
     require(spoke.active, SpokeNotActive());
+    require(!spoke.paused, SpokePaused());
     require(amount > 0, InvalidAmount());
   }
 
   function _validatePayFeeShares(SpokeData storage senderSpoke, uint256 feeShares) internal view {
     require(senderSpoke.active, SpokeNotActive());
+    require(!senderSpoke.paused, SpokePaused());
     require(feeShares > 0, InvalidShares());
   }
 
@@ -825,6 +833,7 @@ contract Hub is IHub, AccessManaged {
     uint256 shares
   ) internal view {
     require(sender.active && receiver.active, SpokeNotActive());
+    require(!sender.paused && !receiver.paused, SpokeNotActive());
     require(shares > 0, InvalidShares());
     uint256 addCap = receiver.addCap;
     require(
