@@ -20,59 +20,54 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
     assertFalse(gateway.isSpokeRegistered(address(spoke1)));
   }
 
-  function test_supplyWithSig_revertsWith_SpokeNotRegistered() public {
-    EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+  function test_supplyWithSig_revertsWith_SpokeNotRegistered(EIP712Types.Supply memory p) public {
+    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
 
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
     gateway.supplyWithSig(p, signature);
   }
 
-  function test_withdrawWithSig_revertsWith_SpokeNotRegistered() public {
-    EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+  function test_withdrawWithSig_revertsWith_SpokeNotRegistered(
+    EIP712Types.Withdraw memory p
+  ) public {
+    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
 
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
     gateway.withdrawWithSig(p, signature);
   }
 
-  function test_borrowWithSig_revertsWith_SpokeNotRegistered() public {
-    EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpBeforeRandomDeadline());
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+  function test_borrowWithSig_revertsWith_SpokeNotRegistered(EIP712Types.Borrow memory p) public {
+    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
 
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
     gateway.borrowWithSig(p, signature);
   }
 
-  function test_repayWithSig_revertsWith_SpokeNotRegistered() public {
-    EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpBeforeRandomDeadline());
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+  function test_repayWithSig_revertsWith_SpokeNotRegistered(EIP712Types.Repay memory p) public {
+    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
 
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
     gateway.repayWithSig(p, signature);
   }
 
-  function test_setUsingAsCollateralWithSig_revertsWith_SpokeNotRegistered() public {
-    uint256 deadline = _warpBeforeRandomDeadline();
-    EIP712Types.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+  function test_setUsingAsCollateralWithSig_revertsWith_SpokeNotRegistered(
+    EIP712Types.SetUsingAsCollateral memory p
+  ) public {
+    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
 
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
     gateway.setUsingAsCollateralWithSig(p, signature);
   }
 
-  function test_updateUserRiskPremiumWithSig_revertsWith_SpokeNotRegistered() public {
-    EIP712Types.UpdateUserRiskPremium memory p = _updateRiskPremiumData(
-      spoke1,
-      alice,
-      _warpBeforeRandomDeadline()
-    );
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+  function test_updateUserRiskPremiumWithSig_revertsWith_SpokeNotRegistered(
+    EIP712Types.UpdateUserRiskPremium memory p
+  ) public {
+    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
 
     vm.expectRevert(
       abi.encodeWithSelector(IGatewayBase.SpokeNotRegistered.selector, address(gateway))
@@ -81,13 +76,10 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
     gateway.updateUserRiskPremiumWithSig(p, signature);
   }
 
-  function test_updateUserDynamicConfigWithSig_revertsWith_SpokeNotRegistered() public {
-    EIP712Types.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(
-      spoke1,
-      alice,
-      _warpBeforeRandomDeadline()
-    );
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+  function test_updateUserDynamicConfigWithSig_revertsWith_SpokeNotRegistered(
+    EIP712Types.UpdateUserDynamicConfig memory p
+  ) public {
+    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
 
     vm.expectRevert(
       abi.encodeWithSelector(IGatewayBase.SpokeNotRegistered.selector, address(gateway))
