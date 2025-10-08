@@ -129,16 +129,6 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
     require(address(underlying) == address(_nativeWrapper), NotNativeWrappedAsset());
   }
 
-  /// @return The underlying asset for `reserveId` on the given spoke.
-  /// @return The corresponding hub address.
-  function _getReserveData(
-    ISpoke spoke,
-    uint256 reserveId
-  ) internal view returns (IERC20, address) {
-    ISpoke.Reserve memory reserveData = spoke.getReserve(reserveId);
-    return (IERC20(reserveData.underlying), address(reserveData.hub));
-  }
-
   function _supplyNative(
     address spoke,
     uint256 reserveId,

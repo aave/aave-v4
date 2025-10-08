@@ -3,6 +3,7 @@
 pragma solidity 0.8.28;
 
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {Rescuable} from 'src/utils/Rescuable.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
@@ -37,8 +38,17 @@ abstract contract GatewayBase is IGatewayBase, Rescuable, Ownable2Step {
   }
 
   function _validateSpoke(address spoke) internal view {
-    require(spoke != address(0), InvalidAddress());
     require(_registeredSpokes[spoke], SpokeNotRegistered());
+  }
+
+  /// @return The underlying asset for `reserveId` on the specified spoke.
+  /// @return The corresponding hub address.
+  function _getReserveData(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (IERC20, address) {
+    ISpoke.Reserve memory reserveData = spoke.getReserve(reserveId);
+    return (IERC20(reserveData.underlying), address(reserveData.hub));
   }
 
   /// @dev RescueGuardian is the owner of the contract.

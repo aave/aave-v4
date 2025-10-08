@@ -29,7 +29,7 @@ contract GatewayBaseTest is Base {
   function test_registerSpoke_fuzz(address newSpoke) public {
     assertFalse(gateway.isSpokeRegistered(newSpoke));
 
-    vm.expectEmit(true, true, true, true);
+    vm.expectEmit();
     emit IGatewayBase.SpokeRegistered(newSpoke, true);
     vm.prank(ADMIN);
     gateway.registerSpoke(newSpoke, true);
@@ -40,14 +40,14 @@ contract GatewayBaseTest is Base {
   function test_registerSpoke_unregister() public {
     assertFalse(gateway.isSpokeRegistered(address(spoke1)));
 
-    vm.expectEmit(true, true, true, true);
+    vm.expectEmit();
     emit IGatewayBase.SpokeRegistered(address(spoke1), true);
     vm.prank(ADMIN);
     gateway.registerSpoke(address(spoke1), true);
 
     assertTrue(gateway.isSpokeRegistered(address(spoke1)));
 
-    vm.expectEmit(true, true, true, true);
+    vm.expectEmit();
     emit IGatewayBase.SpokeRegistered(address(spoke1), false);
     vm.prank(ADMIN);
     gateway.registerSpoke(address(spoke1), false);
@@ -104,10 +104,6 @@ contract GatewayBaseTest is Base {
     spoke1.setUserPositionManager(address(gateway), true);
     vm.prank(ADMIN);
     gateway.registerSpoke(address(spoke1), true);
-
-    vm.expectRevert(IGatewayBase.InvalidAddress.selector);
-    vm.prank(ADMIN);
-    gateway.renouncePositionManagerRole(address(0), user);
 
     vm.expectRevert(IGatewayBase.InvalidAddress.selector);
     vm.prank(ADMIN);

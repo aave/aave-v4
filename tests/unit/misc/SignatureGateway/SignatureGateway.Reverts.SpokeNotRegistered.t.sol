@@ -12,9 +12,12 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
     spoke1.updatePositionManager(address(gateway), true);
     vm.prank(alice);
     spoke1.setUserPositionManager(address(gateway), true);
+    vm.prank(address(ADMIN));
+    gateway.registerSpoke(address(spoke1), false);
 
     assertTrue(spoke1.isPositionManagerActive(address(gateway)));
     assertTrue(spoke1.isPositionManager(alice, address(gateway)));
+    assertFalse(gateway.isSpokeRegistered(address(spoke1)));
   }
 
   function test_supplyWithSig_revertsWith_SpokeNotRegistered() public {

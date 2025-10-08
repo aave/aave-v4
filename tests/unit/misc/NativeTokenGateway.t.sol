@@ -71,18 +71,15 @@ contract NativeTokenGatewayTest is Base {
     assertFalse(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
   }
 
-  function test_supplyNative_revertsWith_InvalidAddress() public {
-    uint256 amount = 100e18;
-    vm.expectRevert(IGatewayBase.InvalidAddress.selector);
-    vm.prank(bob);
-    nativeTokenGateway.supplyNative{value: 0}(address(0), _wethReserveId(spoke1), amount);
-  }
-
   function test_supplyNative_revertsWith_SpokeNotRegistered() public {
     uint256 amount = 100e18;
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(bob);
-    nativeTokenGateway.supplyNative{value: 0}(address(spoke2), _wethReserveId(spoke1), amount);
+    nativeTokenGateway.supplyNative{value: amount}(address(spoke2), _wethReserveId(spoke1), amount);
+
+    vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
+    vm.prank(bob);
+    nativeTokenGateway.supplyNative{value: amount}(address(0), _wethReserveId(spoke1), amount);
   }
 
   function test_supplyNative_revertsWith_InvalidAmount() public {
@@ -288,19 +285,15 @@ contract NativeTokenGatewayTest is Base {
     _checkFinalBalances();
   }
 
-  function test_withdrawNative_revertsWith_InvalidAddress() public {
-    uint256 amount = 100e18;
-
-    vm.expectRevert(IGatewayBase.InvalidAddress.selector);
-    vm.prank(bob);
-    nativeTokenGateway.withdrawNative(address(0), _wethReserveId(spoke1), amount);
-  }
-
   function test_withdrawNative_revertsWith_SpokeNotRegistered() public {
     uint256 amount = 100e18;
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(bob);
     nativeTokenGateway.withdrawNative(address(spoke2), _wethReserveId(spoke1), amount);
+
+    vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
+    vm.prank(bob);
+    nativeTokenGateway.withdrawNative(address(0), _wethReserveId(spoke1), amount);
   }
 
   function test_withdrawNative_revertsWith_InvalidAmount() public {
@@ -358,19 +351,15 @@ contract NativeTokenGatewayTest is Base {
     _checkFinalBalances();
   }
 
-  function test_borrowNative_revertsWith_InvalidAddress() public {
-    uint256 borrowAmount = 5e18;
-
-    vm.expectRevert(IGatewayBase.InvalidAddress.selector);
-    vm.prank(bob);
-    nativeTokenGateway.borrowNative(address(0), _wethReserveId(spoke1), borrowAmount);
-  }
-
   function test_borrowNative_revertsWith_SpokeNotRegistered() public {
     uint256 amount = 100e18;
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(bob);
     nativeTokenGateway.borrowNative(address(spoke2), _wethReserveId(spoke1), amount);
+
+    vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
+    vm.prank(bob);
+    nativeTokenGateway.borrowNative(address(0), _wethReserveId(spoke1), amount);
   }
 
   function test_borrowNative_revertsWith_InvalidAmount() public {
@@ -573,18 +562,6 @@ contract NativeTokenGatewayTest is Base {
     _checkFinalBalances();
   }
 
-  function test_repayNative_revertsWith_InvalidAddress() public {
-    uint256 repayAmount = 5e18;
-
-    vm.expectRevert(IGatewayBase.InvalidAddress.selector);
-    vm.prank(bob);
-    nativeTokenGateway.repayNative{value: repayAmount}(
-      address(0),
-      _wethReserveId(spoke1),
-      repayAmount
-    );
-  }
-
   function test_repayNative_revertsWith_SpokeNotRegistered() public {
     uint256 repayAmount = 5e18;
 
@@ -592,6 +569,14 @@ contract NativeTokenGatewayTest is Base {
     vm.prank(bob);
     nativeTokenGateway.repayNative{value: repayAmount}(
       address(spoke2),
+      _wethReserveId(spoke1),
+      repayAmount
+    );
+
+    vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
+    vm.prank(bob);
+    nativeTokenGateway.repayNative{value: repayAmount}(
+      address(0),
       _wethReserveId(spoke1),
       repayAmount
     );

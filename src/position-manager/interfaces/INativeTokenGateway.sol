@@ -18,16 +18,16 @@ interface INativeTokenGateway is IGatewayBase {
   /// @notice Thrown when trying to call an unsupported action or sending native assets to this contract directly.
   error UnsupportedAction();
 
-  /// @notice Wraps the native asset and supplies to the Spoke.
+  /// @notice Wraps the native asset and supplies to a specified registered `spoke`.
   /// @dev Contract must be an active & approved user position manager of the caller.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to wrap and supply.
   function supplyNative(address spoke, uint256 reserveId, uint256 amount) external payable;
 
-  /// @notice Wraps the native asset,supplies to the Spoke and sets it as collateral.
+  /// @notice Wraps the native asset,supplies to a specified registered `spoke` and sets it as collateral.
   /// @dev Contract must be an active & approved user position manager of the caller.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to wrap and supply.
   function supplyAndCollateralNative(
@@ -36,23 +36,23 @@ interface INativeTokenGateway is IGatewayBase {
     uint256 amount
   ) external payable;
 
-  /// @notice Withdraws the wrapped asset from the Spoke and unwraps it back to the native asset.
+  /// @notice Withdraws the wrapped asset from a specified registered `spoke` and unwraps it back to the native asset.
   /// @dev Contract must be an active & approved user position manager of the caller.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to withdraw and unwrap.
   function withdrawNative(address spoke, uint256 reserveId, uint256 amount) external;
 
-  /// @notice Borrows the wrapped asset from the Spoke and unwraps it back to the native asset.
+  /// @notice Borrows the wrapped asset from a specified registered `spoke` and unwraps it back to the native asset.
   /// @dev Contract must be an active & approved user position manager of the caller.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to borrow and unwrap.
   function borrowNative(address spoke, uint256 reserveId, uint256 amount) external;
 
-  /// @notice Wraps the native asset and repays debt on the Spoke.
+  /// @notice Wraps the native asset and repays debt on a specified registered `spoke`.
   /// @dev Contract must be an active & approved user position manager of the caller.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to wrap and repay.
   function repayNative(address spoke, uint256 reserveId, uint256 amount) external payable;

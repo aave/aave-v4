@@ -14,14 +14,14 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
   error InvalidSignature();
 
-  /// @notice Facilitates `supply` action on the given spoke with a typed signature from `onBehalfOf`.
+  /// @notice Facilitates `supply` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured supply parameters.
   /// @param signature The signed bytes for the intent.
   function supplyWithSig(EIP712Types.Supply memory params, bytes calldata signature) external;
 
-  /// @notice Facilitates `withdraw` action on the given spoke with a typed signature from `onBehalfOf`.
+  /// @notice Facilitates `withdraw` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Providing an amount exceeding the user's current withdrawable balance indicates a request for a maximum withdrawal.
   /// @dev Withdrawn assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
@@ -29,14 +29,14 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @param signature The signed bytes for the intent.
   function withdrawWithSig(EIP712Types.Withdraw memory params, bytes calldata signature) external;
 
-  /// @notice Facilitates `borrow` action on the given spoke with a typed signature from `onBehalfOf`.
+  /// @notice Facilitates `borrow` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Borrowed assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured borrow parameters.
   /// @param signature The signed bytes for the intent.
   function borrowWithSig(EIP712Types.Borrow memory params, bytes calldata signature) external;
 
-  /// @notice Facilitates `repay` action on the given spoke with a typed signature from `onBehalfOf`.
+  /// @notice Facilitates `repay` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Repay assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Providing an amount greater than the user's current debt indicates a request to repay the maximum possible amount.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
@@ -44,7 +44,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @param signature The signed bytes for the intent.
   function repayWithSig(EIP712Types.Repay memory params, bytes calldata signature) external;
 
-  /// @notice Facilitates `setUsingAsCollateral` action on the given spoke with a typed signature from `onBehalfOf`.
+  /// @notice Facilitates `setUsingAsCollateral` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured setUsingAsCollateral parameters.
   /// @param signature The signed bytes for the intent.
@@ -53,7 +53,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
     bytes calldata signature
   ) external;
 
-  /// @notice Facilitates `updateUserRiskPremium` action on the given spoke with a typed signature from `user`.
+  /// @notice Facilitates `updateUserRiskPremium` action on the specified registered `spoke` with a typed signature from `user`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured updateUserRiskPremium parameters.
   /// @param signature The signed bytes for the intent.
@@ -62,7 +62,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
     bytes calldata signature
   ) external;
 
-  /// @notice Facilitates `updateUserDynamicConfig` action on the given spoke with a typed signature from `user`.
+  /// @notice Facilitates `updateUserDynamicConfig` action on the specified registered `spoke` with a typed signature from `user`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured updateUserDynamicConfig parameters.
   /// @param signature The signed bytes for the intent.
@@ -71,9 +71,9 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
     bytes calldata signature
   ) external;
 
-  /// @notice Facilitates setting this gateway as user position manager on the given spoke
+  /// @notice Facilitates setting this gateway as user position manager on the specified registered `spoke`
   /// with a typed signature from `user`.
-  /// @dev The signature is consumed on the the given spoke.
+  /// @dev The signature is consumed on the the specified registered `spoke`.
   /// @param spoke The address of the spoke.
   /// @param params The structured setSelfAsUserPositionManager parameters.
   /// @param signature The signed bytes for the intent.
@@ -83,7 +83,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
     bytes calldata signature
   ) external;
 
-  /// @notice Allows consuming a permit for the given reserve's underlying asset on the given spoke.
+  /// @notice Allows consuming a permit for the given reserve's underlying asset on the specified registered `spoke`.
   /// @dev Spender is this gateway contract.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.

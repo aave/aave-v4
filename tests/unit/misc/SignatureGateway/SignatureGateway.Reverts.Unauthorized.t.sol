@@ -9,9 +9,6 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
     super.setUp();
     _approveAllUnderlying(spoke1, alice, address(gateway));
 
-    vm.prank(address(ADMIN));
-    gateway.registerSpoke(address(spoke1), true);
-
     assertFalse(spoke1.isPositionManagerActive(address(gateway)));
     assertFalse(spoke1.isPositionManager(alice, address(gateway)));
   }

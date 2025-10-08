@@ -328,14 +328,4 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
     return ('SignatureGateway', '1');
   }
-
-  /// @return The underlying asset for `reserveId` on the given spoke.
-  /// @return The corresponding hub address.
-  function _getReserveData(
-    ISpoke spoke,
-    uint256 reserveId
-  ) internal view returns (IERC20, address) {
-    ISpoke.Reserve memory reserveData = spoke.getReserve(reserveId);
-    return (IERC20(reserveData.underlying), address(reserveData.hub));
-  }
 }

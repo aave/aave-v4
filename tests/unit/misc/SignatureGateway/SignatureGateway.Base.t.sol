@@ -13,6 +13,9 @@ contract SignatureGatewayBaseTest is Base {
     initEnvironment();
     gateway = ISignatureGateway(new SignatureGateway(ADMIN));
     (alice, alicePk) = makeAddrAndKey('alice');
+
+    vm.prank(address(ADMIN));
+    gateway.registerSpoke(address(spoke1), true);
   }
 
   function _sign(uint256 pk, bytes32 digest) internal pure returns (bytes memory) {
