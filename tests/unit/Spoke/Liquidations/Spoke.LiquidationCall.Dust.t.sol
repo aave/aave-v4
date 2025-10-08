@@ -108,7 +108,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     assertEq(spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice), 0);
   }
 
-  /// @dev debtToCover would theoretically results in dust debt, but is allowed to proceed because collateral reserve was fully liquidated
+  /// @dev debtToCover would theoretically results in debt dust, but is allowed to proceed because collateral reserve was fully liquidated
   function test_debtToCover_exceeds_collateralValue() public {
     uint256 collateralFactor = 80_00;
     uint256 liquidationBonus = 124_00;
@@ -154,7 +154,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
 
     // debtToTarget > debtToCover, so debtToTarget doesn't come into play
     assertGt(debtToTarget, debtToCover);
-    // debtToCover would result in dust debt
+    // debtToCover would result in debt dust
     uint256 theoreticalRemainingDebt = spoke.getUserTotalDebt(_usdxReserveId(spoke), alice) -
       debtToCover;
     assertLt(
@@ -175,7 +175,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     assertGt(spoke.getUserTotalDebt(_usdxReserveId(spoke), alice), theoreticalRemainingDebt);
   }
 
-  /// @dev dust debt allowed if all collateral is liquidated
+  /// @dev debt dust allowed if all collateral is liquidated
   function test_dustDebt_allowed() public {
     uint256 collateralFactor = 80_00;
     uint256 liquidationBonus = 124_00;

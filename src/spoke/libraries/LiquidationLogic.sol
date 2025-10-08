@@ -244,10 +244,7 @@ library LiquidationLogic {
   }
 
   /// @notice Calculates the liquidation amounts.
-  /// @dev Invoked by `liquidateUser` method. To prevent accumulation of dust, it enforces one of the following conditions:
-  /// 1. liquidate all debt
-  /// 2. liquidate all collateral
-  /// 3. leave at least `DUST_LIQUIDATION_THRESHOLD` of collateral and debt (in value terms)
+  /// @dev Invoked by `liquidateUser` method.
   /// @return The collateral to liquidate.
   /// @return The collateral to transfer to liquidator.
   /// @return The debt to liquidate.
@@ -261,6 +258,10 @@ library LiquidationLogic {
       maxLiquidationBonus: params.maxLiquidationBonus
     });
 
+    // To prevent accumulation of dust, one of the following conditions is enforced:
+    // 1. liquidate all debt
+    // 2. liquidate all collateral
+    // 3. leave at least `DUST_LIQUIDATION_THRESHOLD` of collateral and debt (in value terms)
     uint256 debtToLiquidate = _calculateDebtToLiquidate(
       CalculateDebtToLiquidateParams({
         debtReserveBalance: params.debtReserveBalance,
@@ -347,7 +348,7 @@ library LiquidationLogic {
 
   /// @notice Calculates the debt that should be liquidated.
   /// @dev Generally, it returns the minimum of `debtToCover`, `debtReserveBalance` and `debtToTarget`.
-  /// If dust debt would be left behind, it returns `debtReserveBalance` to ensure the debt is fully cleared and no dust is left.
+  /// If debt dust would be left behind, it returns `debtReserveBalance` to ensure the debt is fully cleared and no dust is left.
   function _calculateDebtToLiquidate(
     CalculateDebtToLiquidateParams memory params
   ) internal pure returns (uint256) {
