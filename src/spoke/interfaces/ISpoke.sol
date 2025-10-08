@@ -338,7 +338,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param params The structured setUserPositionManager parameters.
   /// @param signature The EIP712-compliant signature bytes.
   function setUserPositionManagerWithSig(
-    EIP712Types.SetUserPositionManager memory params,
+    EIP712Types.SetUserPositionManager calldata params,
     bytes calldata signature
   ) external;
 

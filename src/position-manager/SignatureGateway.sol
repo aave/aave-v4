@@ -31,7 +31,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
 
   /// @inheritdoc ISignatureGateway
   function supplyWithSig(
-    EIP712Types.Supply memory params,
+    EIP712Types.Supply calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -42,17 +42,17 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     );
     _useCheckedNonce(params.onBehalfOf, params.nonce);
 
-    ISpoke _spoke = ISpoke(params.spoke);
-    (IERC20 underlying, address hub) = _getReserveData(_spoke, params.reserveId);
+    ISpoke spoke = ISpoke(params.spoke);
+    (IERC20 underlying, address hub) = _getReserveData(spoke, params.reserveId);
     underlying.safeTransferFrom(params.onBehalfOf, address(this), params.amount);
     underlying.forceApprove(hub, params.amount);
 
-    _spoke.supply(params.reserveId, params.amount, params.onBehalfOf);
+    spoke.supply(params.reserveId, params.amount, params.onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
   function withdrawWithSig(
-    EIP712Types.Withdraw memory params,
+    EIP712Types.Withdraw calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -63,20 +63,20 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     );
     _useCheckedNonce(params.onBehalfOf, params.nonce);
 
-    ISpoke _spoke = ISpoke(params.spoke);
-    (IERC20 underlying, ) = _getReserveData(_spoke, params.reserveId);
+    ISpoke spoke = ISpoke(params.spoke);
+    (IERC20 underlying, ) = _getReserveData(spoke, params.reserveId);
     uint256 withdrawAmount = MathUtils.min(
       params.amount,
-      _spoke.getUserSuppliedAssets(params.reserveId, params.onBehalfOf)
+      spoke.getUserSuppliedAssets(params.reserveId, params.onBehalfOf)
     );
 
-    _spoke.withdraw(params.reserveId, withdrawAmount, params.onBehalfOf);
+    spoke.withdraw(params.reserveId, withdrawAmount, params.onBehalfOf);
     underlying.safeTransfer(params.onBehalfOf, withdrawAmount);
   }
 
   /// @inheritdoc ISignatureGateway
   function borrowWithSig(
-    EIP712Types.Borrow memory params,
+    EIP712Types.Borrow calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -87,16 +87,16 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     );
     _useCheckedNonce(params.onBehalfOf, params.nonce);
 
-    ISpoke _spoke = ISpoke(params.spoke);
-    (IERC20 underlying, ) = _getReserveData(_spoke, params.reserveId);
+    ISpoke spoke = ISpoke(params.spoke);
+    (IERC20 underlying, ) = _getReserveData(spoke, params.reserveId);
 
-    _spoke.borrow(params.reserveId, params.amount, params.onBehalfOf);
+    spoke.borrow(params.reserveId, params.amount, params.onBehalfOf);
     underlying.safeTransfer(params.onBehalfOf, params.amount);
   }
 
   /// @inheritdoc ISignatureGateway
   function repayWithSig(
-    EIP712Types.Repay memory params,
+    EIP712Types.Repay calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -107,22 +107,22 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     );
     _useCheckedNonce(params.onBehalfOf, params.nonce);
 
-    ISpoke _spoke = ISpoke(params.spoke);
-    (IERC20 underlying, address hub) = _getReserveData(_spoke, params.reserveId);
+    ISpoke spoke = ISpoke(params.spoke);
+    (IERC20 underlying, address hub) = _getReserveData(spoke, params.reserveId);
     uint256 repayAmount = MathUtils.min(
       params.amount,
-      _spoke.getUserTotalDebt(params.reserveId, params.onBehalfOf)
+      spoke.getUserTotalDebt(params.reserveId, params.onBehalfOf)
     );
 
     underlying.safeTransferFrom(params.onBehalfOf, address(this), repayAmount);
     underlying.forceApprove(hub, repayAmount);
 
-    _spoke.repay(params.reserveId, repayAmount, params.onBehalfOf);
+    spoke.repay(params.reserveId, repayAmount, params.onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
   function setUsingAsCollateralWithSig(
-    EIP712Types.SetUsingAsCollateral memory params,
+    EIP712Types.SetUsingAsCollateral calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -142,7 +142,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
 
   /// @inheritdoc ISignatureGateway
   function updateUserRiskPremiumWithSig(
-    EIP712Types.UpdateUserRiskPremium memory params,
+    EIP712Types.UpdateUserRiskPremium calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -155,7 +155,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
 
   /// @inheritdoc ISignatureGateway
   function updateUserDynamicConfigWithSig(
-    EIP712Types.UpdateUserDynamicConfig memory params,
+    EIP712Types.UpdateUserDynamicConfig calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -169,7 +169,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
   /// @inheritdoc ISignatureGateway
   function setSelfAsUserPositionManagerWithSig(
     address spoke,
-    EIP712Types.SetUserPositionManager memory params,
+    EIP712Types.SetUserPositionManager calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(spoke) {
     require(params.positionManager == address(this), InvalidPositionManager());

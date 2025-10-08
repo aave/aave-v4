@@ -93,10 +93,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
   }
 
   function test_setUserPositionManagerWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner()
@@ -113,10 +110,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
   }
 
   function test_setUserPositionManagerWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
@@ -140,10 +134,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, params.user, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
   }
 
   function test_setUserPositionManagerWithSig() public {
@@ -161,10 +152,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     emit ISpoke.SetUserPositionManager(params.user, params.positionManager, params.approve);
 
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
 
     _assertNonceIncrement(spoke1, params.user, params.nonce);
     assertEq(spoke1.isPositionManager(params.user, params.positionManager), params.approve);
@@ -189,10 +177,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
   }
 
   function test_setUserPositionManagerWithSig_ERC1271_revertsWith_InvalidSignature_dueTo_InvalidHash()
@@ -225,10 +210,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      invalidParams,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(invalidParams, signature);
   }
 
   function test_setUserPositionManagerWithSig_ERC1271_revertsWith_InvalidAccountNonce(
@@ -262,10 +244,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       )
     );
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
   }
 
   function test_setUserPositionManagerWithSig_ERC1271() public {
@@ -294,10 +273,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     emit ISpoke.SetUserPositionManager(params.user, params.positionManager, params.approve);
 
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
 
     _assertNonceIncrement(spoke1, params.user, params.nonce);
     assertEq(spoke1.isPositionManager(params.user, params.positionManager), params.approve);

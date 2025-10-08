@@ -406,7 +406,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function setUserPositionManagerWithSig(
-    EIP712Types.SetUserPositionManager memory params,
+    EIP712Types.SetUserPositionManager calldata params,
     bytes calldata signature
   ) external {
     require(block.timestamp <= params.deadline, InvalidSignature());

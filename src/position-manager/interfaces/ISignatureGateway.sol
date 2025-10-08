@@ -22,7 +22,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured supply parameters.
   /// @param signature The signed bytes for the intent.
-  function supplyWithSig(EIP712Types.Supply memory params, bytes calldata signature) external;
+  function supplyWithSig(EIP712Types.Supply calldata params, bytes calldata signature) external;
 
   /// @notice Facilitates `withdraw` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Providing an amount exceeding the user's current withdrawable balance indicates a request for a maximum withdrawal.
@@ -30,14 +30,14 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured withdraw parameters.
   /// @param signature The signed bytes for the intent.
-  function withdrawWithSig(EIP712Types.Withdraw memory params, bytes calldata signature) external;
+  function withdrawWithSig(EIP712Types.Withdraw calldata params, bytes calldata signature) external;
 
   /// @notice Facilitates `borrow` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Borrowed assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured borrow parameters.
   /// @param signature The signed bytes for the intent.
-  function borrowWithSig(EIP712Types.Borrow memory params, bytes calldata signature) external;
+  function borrowWithSig(EIP712Types.Borrow calldata params, bytes calldata signature) external;
 
   /// @notice Facilitates `repay` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Repay assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
@@ -45,14 +45,14 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured repay parameters.
   /// @param signature The signed bytes for the intent.
-  function repayWithSig(EIP712Types.Repay memory params, bytes calldata signature) external;
+  function repayWithSig(EIP712Types.Repay calldata params, bytes calldata signature) external;
 
   /// @notice Facilitates `setUsingAsCollateral` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured setUsingAsCollateral parameters.
   /// @param signature The signed bytes for the intent.
   function setUsingAsCollateralWithSig(
-    EIP712Types.SetUsingAsCollateral memory params,
+    EIP712Types.SetUsingAsCollateral calldata params,
     bytes calldata signature
   ) external;
 
@@ -61,7 +61,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @param params The structured updateUserRiskPremium parameters.
   /// @param signature The signed bytes for the intent.
   function updateUserRiskPremiumWithSig(
-    EIP712Types.UpdateUserRiskPremium memory params,
+    EIP712Types.UpdateUserRiskPremium calldata params,
     bytes calldata signature
   ) external;
 
@@ -70,7 +70,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @param params The structured updateUserDynamicConfig parameters.
   /// @param signature The signed bytes for the intent.
   function updateUserDynamicConfigWithSig(
-    EIP712Types.UpdateUserDynamicConfig memory params,
+    EIP712Types.UpdateUserDynamicConfig calldata params,
     bytes calldata signature
   ) external;
 
@@ -82,7 +82,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @param signature The signed bytes for the intent.
   function setSelfAsUserPositionManagerWithSig(
     address spoke,
-    EIP712Types.SetUserPositionManager memory params,
+    EIP712Types.SetUserPositionManager calldata params,
     bytes calldata signature
   ) external;
 

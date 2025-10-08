@@ -100,9 +100,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(
-    EIP712Types.SetUsingAsCollateral memory params
-  ) internal pure returns (bytes32) {
+  function hash(EIP712Types.SetUsingAsCollateral memory params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -117,9 +115,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(
-    EIP712Types.UpdateUserRiskPremium memory params
-  ) internal pure returns (bytes32) {
+  function hash(EIP712Types.UpdateUserRiskPremium memory params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -132,9 +128,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(
-    EIP712Types.UpdateUserDynamicConfig memory params
-  ) internal pure returns (bytes32) {
+  function hash(EIP712Types.UpdateUserDynamicConfig memory params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -147,9 +141,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(
-    EIP712Types.SetUserPositionManager memory params
-  ) internal pure returns (bytes32) {
+  function hash(EIP712Types.SetUserPositionManager memory params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
