@@ -12,7 +12,7 @@ import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
+import {EIP712Hash, EIP712Types} from 'src/libraries/cryptography/EIP712Hash.sol';
 import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 
 /// @title SignatureGateway
@@ -24,41 +24,6 @@ import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayBase, EIP712 {
   using SafeERC20 for IERC20;
 
-  /// @inheritdoc ISignatureGateway
-  bytes32 public constant SUPPLY_TYPEHASH =
-    // keccak256('Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
-    0xe85497eb293c001e8483fe105efadd1d50aa0dadfc0570b27058031dfceab2e6;
-
-  /// @inheritdoc ISignatureGateway
-  bytes32 public constant WITHDRAW_TYPEHASH =
-    // keccak256('Withdraw(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
-    0x0bc73eb58cf4068a29b9593ef18c0d26b3b4453bd2155424a90cb26a22f41d7f;
-
-  /// @inheritdoc ISignatureGateway
-  bytes32 public constant BORROW_TYPEHASH =
-    // keccak256('Borrow(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
-    0xe248895a233688ba2a70b6f560472dbc27e35ece0d86914f7d43bf2f7df8025b;
-
-  /// @inheritdoc ISignatureGateway
-  bytes32 public constant REPAY_TYPEHASH =
-    // keccak256('Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
-    0xd23fe99a7aac398d03952a098faa8889259d062784bd80ea0f159e4af604c045;
-
-  /// @inheritdoc ISignatureGateway
-  bytes32 public constant SET_USING_AS_COLLATERAL_TYPEHASH =
-    // keccak256('SetUsingAsCollateral(address spoke,uint256 reserveId,bool useAsCollateral,address onBehalfOf,uint256 nonce,uint256 deadline)')
-    0xd4350e1f25ecd62a35b50e8cd1e00bc34331ae8c728ee4dbb69ecf1023daecf7;
-
-  /// @inheritdoc ISignatureGateway
-  bytes32 public constant UPDATE_USER_RISK_PREMIUM_TYPEHASH =
-    // keccak256('UpdateUserRiskPremium(address spoke,address user,uint256 nonce,uint256 deadline)')
-    0xb41e132023782c9b02febf1b9b7fe98c4a73f57ebc63ba44cd71f6365ea09eaf;
-
-  /// @inheritdoc ISignatureGateway
-  bytes32 public constant UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH =
-    // keccak256('UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)')
-    0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
-
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
   constructor(address initialOwner_) GatewayBase(initialOwner_) {}
@@ -69,19 +34,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(
-      keccak256(
-        abi.encode(
-          SUPPLY_TYPEHASH,
-          params.spoke,
-          params.reserveId,
-          params.amount,
-          params.onBehalfOf,
-          params.nonce,
-          params.deadline
-        )
-      )
-    );
+    bytes32 hash = _hashTypedData(EIP712Hash.hashSupply(params));
     require(
       SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
       InvalidSignature()
@@ -102,19 +55,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(
-      keccak256(
-        abi.encode(
-          WITHDRAW_TYPEHASH,
-          params.spoke,
-          params.reserveId,
-          params.amount,
-          params.onBehalfOf,
-          params.nonce,
-          params.deadline
-        )
-      )
-    );
+    bytes32 hash = _hashTypedData(EIP712Hash.hashWithdraw(params));
     require(
       SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
       InvalidSignature()
@@ -138,19 +79,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(
-      keccak256(
-        abi.encode(
-          BORROW_TYPEHASH,
-          params.spoke,
-          params.reserveId,
-          params.amount,
-          params.onBehalfOf,
-          params.nonce,
-          params.deadline
-        )
-      )
-    );
+    bytes32 hash = _hashTypedData(EIP712Hash.hashBorrow(params));
     require(
       SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
       InvalidSignature()
@@ -170,19 +99,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(
-      keccak256(
-        abi.encode(
-          REPAY_TYPEHASH,
-          params.spoke,
-          params.reserveId,
-          params.amount,
-          params.onBehalfOf,
-          params.nonce,
-          params.deadline
-        )
-      )
-    );
+    bytes32 hash = _hashTypedData(EIP712Hash.hashRepay(params));
     require(
       SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
       InvalidSignature()
@@ -208,19 +125,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(
-      keccak256(
-        abi.encode(
-          SET_USING_AS_COLLATERAL_TYPEHASH,
-          params.spoke,
-          params.reserveId,
-          params.useAsCollateral,
-          params.onBehalfOf,
-          params.nonce,
-          params.deadline
-        )
-      )
-    );
+    bytes32 hash = _hashTypedData(EIP712Hash.hashSetUsingAsCollateral(params));
     require(
       SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
       InvalidSignature()
@@ -240,17 +145,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(
-      keccak256(
-        abi.encode(
-          UPDATE_USER_RISK_PREMIUM_TYPEHASH,
-          params.spoke,
-          params.user,
-          params.nonce,
-          params.deadline
-        )
-      )
-    );
+    bytes32 hash = _hashTypedData(EIP712Hash.hashUpdateUserRiskPremium(params));
     require(SignatureChecker.isValidSignatureNow(params.user, hash, signature), InvalidSignature());
     _useCheckedNonce(params.user, params.nonce);
 
@@ -263,17 +158,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(
-      keccak256(
-        abi.encode(
-          UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
-          params.spoke,
-          params.user,
-          params.nonce,
-          params.deadline
-        )
-      )
-    );
+    bytes32 hash = _hashTypedData(EIP712Hash.hashUpdateUserDynamicConfig(params));
     require(SignatureChecker.isValidSignatureNow(params.user, hash, signature), InvalidSignature());
     _useCheckedNonce(params.user, params.nonce);
 
@@ -326,6 +211,41 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
   /// @inheritdoc ISignatureGateway
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparator();
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function SUPPLY_TYPEHASH() external view returns (bytes32) {
+    return EIP712Hash.SUPPLY_TYPEHASH;
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function WITHDRAW_TYPEHASH() external view returns (bytes32) {
+    return EIP712Hash.WITHDRAW_TYPEHASH;
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function BORROW_TYPEHASH() external view returns (bytes32) {
+    return EIP712Hash.BORROW_TYPEHASH;
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function REPAY_TYPEHASH() external view returns (bytes32) {
+    return EIP712Hash.REPAY_TYPEHASH;
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function SET_USING_AS_COLLATERAL_TYPEHASH() external view returns (bytes32) {
+    return EIP712Hash.SET_USING_AS_COLLATERAL_TYPEHASH;
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function UPDATE_USER_RISK_PREMIUM_TYPEHASH() external view returns (bytes32) {
+    return EIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH;
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH() external view returns (bytes32) {
+    return EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH;
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
