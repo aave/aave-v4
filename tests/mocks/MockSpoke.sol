@@ -3,10 +3,25 @@
 pragma solidity ^0.8.0;
 
 import {Spoke, ISpoke, IHubBase, SafeCast, PositionStatusMap} from 'src/spoke/Spoke.sol';
+import {Test} from 'forge-std/Test.sol';
 
-contract MockSpoke is Spoke {
+/// @dev inherit from Test to exclude contract from forge size check
+contract MockSpoke is Spoke, Test {
   using SafeCast for *;
   using PositionStatusMap for *;
+
+  // Data structure to mock the user account data
+  struct AccountDataInfo {
+    uint256[] collateralReserveIds;
+    uint256[] collateralAmounts;
+    uint256[] collateralDynamicConfigKeys;
+    uint256[] suppliedAssetsReserveIds;
+    uint256[] suppliedAssetsAmounts;
+    uint256[] debtReserveIds;
+    uint256[] drawnDebtAmounts;
+    uint256[] realizedPremiumAmounts;
+    uint256[] accruedPremiumAmounts;
+  }
 
   constructor(address oracle_) Spoke(oracle_) {}
 
@@ -33,5 +48,56 @@ contract MockSpoke is Spoke {
     _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
+  }
+
+  // Mock the user account data
+  function mockStorage(address user, AccountDataInfo memory info) external {
+    PositionStatus storage positionStatus = _positionStatus[user];
+    for (uint256 i = 0; i < info.collateralReserveIds.length; i++) {
+      positionStatus.setUsingAsCollateral(info.collateralReserveIds[i], true);
+      Reserve storage reserve = _reserves[info.collateralReserveIds[i]];
+      _userPositions[user][info.collateralReserveIds[i]].suppliedShares = reserve
+        .hub
+        .previewAddByAssets(reserve.assetId, info.collateralAmounts[i])
+        .toUint128();
+
+      _userPositions[user][info.collateralReserveIds[i]].configKey = info
+        .collateralDynamicConfigKeys[i]
+        .toUint16();
+    }
+
+    for (uint256 i = 0; i < info.suppliedAssetsReserveIds.length; i++) {
+      Reserve storage reserve = _reserves[info.suppliedAssetsReserveIds[i]];
+      _userPositions[user][info.suppliedAssetsReserveIds[i]].suppliedShares = reserve
+        .hub
+        .previewAddByAssets(reserve.assetId, info.suppliedAssetsAmounts[i])
+        .toUint128();
+    }
+
+    for (uint256 i = 0; i < info.debtReserveIds.length; i++) {
+      positionStatus.setBorrowing(info.debtReserveIds[i], true);
+      Reserve storage reserve = _reserves[info.debtReserveIds[i]];
+      _userPositions[user][info.debtReserveIds[i]].drawnShares = reserve
+        .hub
+        .previewDrawByAssets(reserve.assetId, info.drawnDebtAmounts[i])
+        .toUint128();
+      _userPositions[user][info.debtReserveIds[i]].realizedPremium = info
+        .realizedPremiumAmounts[i]
+        .toUint128();
+      _userPositions[user][info.debtReserveIds[i]].premiumOffset = vm
+        .randomUint(1, 100e18)
+        .toUint128();
+      _userPositions[user][info.debtReserveIds[i]].premiumShares =
+        reserve.hub.previewAddByAssets(reserve.assetId, info.accruedPremiumAmounts[i]).toUint128() +
+        _userPositions[user][info.debtReserveIds[i]].premiumOffset;
+    }
+  }
+
+  // Exposes spoke's calculateAndPotentiallyRefreshUserAccountData
+  function calculateAndPotentiallyRefreshUserAccountData(
+    address user,
+    bool refreshConfig
+  ) external returns (UserAccountData memory) {
+    return _calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig);
   }
 }

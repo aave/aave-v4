@@ -8,6 +8,7 @@ import {LiquidationLogicWrapper} from 'tests/mocks/LiquidationLogicWrapper.sol';
 contract LiquidationLogicBaseTest is SpokeBase {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
+  using MathUtils for uint256;
 
   LiquidationLogicWrapper public liquidationLogicWrapper;
 
@@ -59,7 +60,8 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
     uint256 healthFactor = bound(params.healthFactor, 0, targetHealthFactor);
     uint256 debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_ASSET_PRICE);
-    uint256 debtAssetUnit = 10 ** bound(params.debtAssetUnit, 0, MAX_TOKEN_DECIMALS_SUPPORTED);
+    uint256 debtAssetUnit = 10 **
+      bound(params.debtAssetUnit, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
 
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
@@ -73,24 +75,9 @@ contract LiquidationLogicBaseTest is SpokeBase {
       });
   }
 
-  function _getDebtToTargetHealthFactorParams(
-    LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
-  ) internal pure returns (LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory) {
-    return
-      LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-        totalDebtValue: params.totalDebtValue,
-        healthFactor: params.healthFactor,
-        targetHealthFactor: params.targetHealthFactor,
-        liquidationBonus: params.liquidationBonus,
-        collateralFactor: params.collateralFactor,
-        debtAssetPrice: params.debtAssetPrice,
-        debtAssetUnit: params.debtAssetUnit
-      });
-  }
-
   function _bound(
-    LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
-  ) internal virtual returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
+    LiquidationLogic.CalculateDebtToLiquidateParams memory params
+  ) internal virtual returns (LiquidationLogic.CalculateDebtToLiquidateParams memory) {
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory debtToTargetParams = _bound(
       _getDebtToTargetHealthFactorParams(params)
     );
@@ -103,11 +90,11 @@ contract LiquidationLogicBaseTest is SpokeBase {
         debtToTargetParams.totalDebtValue,
         debtToTargetParams.debtAssetPrice,
         debtToTargetParams.debtAssetUnit
-      )
+      ).min(MAX_SUPPLY_AMOUNT)
     );
 
     return
-      LiquidationLogic.CalculateMaxDebtToLiquidateParams({
+      LiquidationLogic.CalculateDebtToLiquidateParams({
         debtReserveBalance: debtReserveBalance,
         debtToCover: debtToCover,
         totalDebtValue: debtToTargetParams.totalDebtValue,
@@ -120,39 +107,24 @@ contract LiquidationLogicBaseTest is SpokeBase {
       });
   }
 
-  function _boundNoDustRevert(
-    LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
-  ) internal virtual returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
+  function _boundWithDustAdjustment(
+    LiquidationLogic.CalculateDebtToLiquidateParams memory params
+  ) internal virtual returns (LiquidationLogic.CalculateDebtToLiquidateParams memory) {
     params = _bound(params);
-    try liquidationLogicWrapper.calculateMaxDebtToLiquidate(params) returns (uint256) {
-      return params;
-    } catch {
-      params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, MAX_SUPPLY_AMOUNT);
-      return params;
-    }
-  }
-
-  function _getCalculateMaxDebtToLiquidateParams(
-    LiquidationLogic.CalculateLiquidationAmountsParams memory params
-  ) internal pure returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
-    uint256 liquidationBonus = LiquidationLogic.calculateLiquidationBonus({
-      healthFactorForMaxBonus: params.healthFactorForMaxBonus,
-      liquidationBonusFactor: params.liquidationBonusFactor,
-      healthFactor: params.healthFactor,
-      maxLiquidationBonus: params.maxLiquidationBonus
-    });
-    return
-      LiquidationLogic.CalculateMaxDebtToLiquidateParams({
-        debtReserveBalance: params.debtReserveBalance,
-        debtToCover: params.debtToCover,
-        totalDebtValue: params.totalDebtValue,
-        healthFactor: params.healthFactor,
-        targetHealthFactor: params.targetHealthFactor,
-        liquidationBonus: liquidationBonus,
-        collateralFactor: params.collateralFactor,
-        debtAssetPrice: params.debtAssetPrice,
-        debtAssetUnit: params.debtAssetUnit
-      });
+    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+      _getDebtToTargetHealthFactorParams(params)
+    );
+    params.debtReserveBalance = bound(
+      params.debtReserveBalance,
+      debtToTarget.min(params.debtToCover) + 1,
+      debtToTarget.min(params.debtToCover) +
+        _convertValueToAmount(
+          LiquidationLogic.DUST_LIQUIDATION_THRESHOLD - 1,
+          params.debtAssetPrice,
+          params.debtAssetUnit
+        )
+    );
+    return params;
   }
 
   function _bound(
@@ -170,24 +142,88 @@ contract LiquidationLogicBaseTest is SpokeBase {
       params.maxLiquidationBonus
     );
 
-    LiquidationLogic.CalculateMaxDebtToLiquidateParams
-      memory maxDebtToLiquidateParams = _getCalculateMaxDebtToLiquidateParams(params);
-    maxDebtToLiquidateParams = _boundNoDustRevert(maxDebtToLiquidateParams);
+    LiquidationLogic.CalculateDebtToLiquidateParams
+      memory debtToLiquidateParams = _getCalculateDebtToLiquidateParams(params);
+    debtToLiquidateParams = _bound(debtToLiquidateParams);
 
-    params.debtReserveBalance = maxDebtToLiquidateParams.debtReserveBalance;
-    params.debtToCover = maxDebtToLiquidateParams.debtToCover;
-    params.totalDebtValue = maxDebtToLiquidateParams.totalDebtValue;
-    params.healthFactor = maxDebtToLiquidateParams.healthFactor;
-    params.targetHealthFactor = maxDebtToLiquidateParams.targetHealthFactor;
-    params.collateralFactor = maxDebtToLiquidateParams.collateralFactor;
-    params.debtAssetPrice = maxDebtToLiquidateParams.debtAssetPrice;
-    params.debtAssetUnit = maxDebtToLiquidateParams.debtAssetUnit;
+    params.debtReserveBalance = debtToLiquidateParams.debtReserveBalance;
+    params.debtToCover = debtToLiquidateParams.debtToCover;
+    params.totalDebtValue = debtToLiquidateParams.totalDebtValue;
+    params.healthFactor = debtToLiquidateParams.healthFactor;
+    params.targetHealthFactor = debtToLiquidateParams.targetHealthFactor;
+    params.collateralFactor = debtToLiquidateParams.collateralFactor;
+    params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
+    params.debtAssetUnit = debtToLiquidateParams.debtAssetUnit;
 
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
-    params.collateralAssetUnit = bound(params.collateralAssetUnit, 0, MAX_TOKEN_DECIMALS_SUPPORTED);
+    params.collateralAssetUnit =
+      10 **
+        bound(
+          params.collateralAssetUnit,
+          MIN_TOKEN_DECIMALS_SUPPORTED,
+          MAX_TOKEN_DECIMALS_SUPPORTED
+        );
     params.liquidationFee = bound(params.liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     params.collateralReserveBalance = bound(params.collateralReserveBalance, 0, MAX_SUPPLY_AMOUNT);
 
     return params;
+  }
+
+  function _boundWithDebtDustAdjustment(
+    LiquidationLogic.CalculateLiquidationAmountsParams memory params
+  ) internal virtual returns (LiquidationLogic.CalculateLiquidationAmountsParams memory) {
+    params = _bound(params);
+    LiquidationLogic.CalculateDebtToLiquidateParams
+      memory debtToLiquidateParams = _getCalculateDebtToLiquidateParams(params);
+    debtToLiquidateParams = _boundWithDustAdjustment(debtToLiquidateParams);
+
+    params.debtReserveBalance = debtToLiquidateParams.debtReserveBalance;
+    params.debtToCover = debtToLiquidateParams.debtToCover;
+    params.totalDebtValue = debtToLiquidateParams.totalDebtValue;
+    params.healthFactor = debtToLiquidateParams.healthFactor;
+    params.targetHealthFactor = debtToLiquidateParams.targetHealthFactor;
+    params.collateralFactor = debtToLiquidateParams.collateralFactor;
+    params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
+    params.debtAssetUnit = debtToLiquidateParams.debtAssetUnit;
+
+    return params;
+  }
+
+  function _getDebtToTargetHealthFactorParams(
+    LiquidationLogic.CalculateDebtToLiquidateParams memory params
+  ) internal pure returns (LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory) {
+    return
+      LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
+        totalDebtValue: params.totalDebtValue,
+        healthFactor: params.healthFactor,
+        targetHealthFactor: params.targetHealthFactor,
+        liquidationBonus: params.liquidationBonus,
+        collateralFactor: params.collateralFactor,
+        debtAssetPrice: params.debtAssetPrice,
+        debtAssetUnit: params.debtAssetUnit
+      });
+  }
+
+  function _getCalculateDebtToLiquidateParams(
+    LiquidationLogic.CalculateLiquidationAmountsParams memory params
+  ) internal pure returns (LiquidationLogic.CalculateDebtToLiquidateParams memory) {
+    uint256 liquidationBonus = LiquidationLogic.calculateLiquidationBonus({
+      healthFactorForMaxBonus: params.healthFactorForMaxBonus,
+      liquidationBonusFactor: params.liquidationBonusFactor,
+      healthFactor: params.healthFactor,
+      maxLiquidationBonus: params.maxLiquidationBonus
+    });
+    return
+      LiquidationLogic.CalculateDebtToLiquidateParams({
+        debtReserveBalance: params.debtReserveBalance,
+        debtToCover: params.debtToCover,
+        totalDebtValue: params.totalDebtValue,
+        healthFactor: params.healthFactor,
+        targetHealthFactor: params.targetHealthFactor,
+        liquidationBonus: liquidationBonus,
+        collateralFactor: params.collateralFactor,
+        debtAssetPrice: params.debtAssetPrice,
+        debtAssetUnit: params.debtAssetUnit
+      });
   }
 }

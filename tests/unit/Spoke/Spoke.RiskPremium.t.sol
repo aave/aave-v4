@@ -788,7 +788,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     // Change the collateral risk of wbtc
-    updateCollateralRisk(spoke2, wbtcInfo.reserveId, newCrValue);
+    _updateCollateralRisk(spoke2, wbtcInfo.reserveId, newCrValue);
 
     assertEq(
       _getUserRiskPremium(spoke2, bob),
@@ -880,10 +880,10 @@ contract SpokeRiskPremiumTest is SpokeBase {
     _mockReservePrice(spoke2, _wbtcReserveId(spoke2), wbtcInfo.price);
 
     // Update reserves' collateral risk
-    updateCollateralRisk(spoke2, _daiReserveId(spoke2), daiInfo.collateralRisk);
-    updateCollateralRisk(spoke2, _wethReserveId(spoke2), wethInfo.collateralRisk);
-    updateCollateralRisk(spoke2, _usdxReserveId(spoke2), usdxInfo.collateralRisk);
-    updateCollateralRisk(spoke2, _wbtcReserveId(spoke2), wbtcInfo.collateralRisk);
+    _updateCollateralRisk(spoke2, _daiReserveId(spoke2), daiInfo.collateralRisk);
+    _updateCollateralRisk(spoke2, _wethReserveId(spoke2), wethInfo.collateralRisk);
+    _updateCollateralRisk(spoke2, _usdxReserveId(spoke2), usdxInfo.collateralRisk);
+    _updateCollateralRisk(spoke2, _wbtcReserveId(spoke2), wbtcInfo.collateralRisk);
 
     // Check user risk premium
     assertEq(

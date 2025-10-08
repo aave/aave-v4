@@ -209,9 +209,19 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.liquidateUser(params);
   }
 
-  function test_liquidateUser_revertsWith_MustNotLeaveDust() public {
+  function test_liquidateUser_revertsWith_MustNotLeaveDust_Debt() public {
     params.totalDebtValue *= 2;
     params.debtToCover = 4.9e18;
+    liquidationLogicWrapper.setCollateralPositionSuppliedShares(
+      liquidationLogicWrapper.getCollateralPosition().suppliedShares * 2
+    );
+    vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
+    liquidationLogicWrapper.liquidateUser(params);
+  }
+
+  function test_liquidateUser_revertsWith_MustNotLeaveDust_Collateral() public {
+    liquidationLogicWrapper.setCollateralPositionSuppliedShares(6500e6);
+    params.debtToCover = 2.6e18;
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.liquidateUser(params);
   }

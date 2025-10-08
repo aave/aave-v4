@@ -192,6 +192,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when collateral cannot be liquidated.
   error CollateralCannotBeLiquidated();
 
+  /// @notice Thrown when a specified reserve is not supplied by the user during liquidation.
+  error ReserveNotSupplied();
+
   /// @notice Thrown when a specified reserve is not borrowed by the user during liquidation.
   error ReserveNotBorrowed();
 
@@ -234,7 +237,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown during liquidation when a user's health factor is not below the liquidation threshold.
   error HealthFactorNotBelowThreshold();
 
-  /// @notice Thrown when dust debt remains after a liquidation.
+  /// @notice Thrown when collateral or debt dust remains after a liquidation, and neither reserve is fully liquidated.
   error MustNotLeaveDust();
 
   /// @notice Thrown when a debt to cover input is zero.
@@ -472,9 +475,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @return The minimum health factor considered healthy, expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint64);
 
-  /// @notice Returns the minimum required remaining base currency amount after a partial liquidation.
-  /// @return The minimum debt amount considered as dust, denominated in USD with 26 decimals.
-  function DUST_DEBT_LIQUIDATION_THRESHOLD() external view returns (uint256);
+  /// @notice Returns the maximum amount considered as dust for a user's collateral and debt balances after a liquidation.
+  /// @return The maximum amount considered as dust, expressed in USD with 26 decimals.
+  function DUST_LIQUIDATION_THRESHOLD() external view returns (uint256);
 
   /// @notice Returns the number of decimals used by the oracle.
   /// @return The number of decimals.
