@@ -64,8 +64,10 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
   constructor(address initialOwner_) GatewayBase(initialOwner_) {}
 
   /// @inheritdoc ISignatureGateway
-  function supplyWithSig(EIP712Types.Supply memory params, bytes calldata signature) external {
-    _validateSpoke(params.spoke);
+  function supplyWithSig(
+    EIP712Types.Supply memory params,
+    bytes calldata signature
+  ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
@@ -95,8 +97,10 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
   }
 
   /// @inheritdoc ISignatureGateway
-  function withdrawWithSig(EIP712Types.Withdraw memory params, bytes calldata signature) external {
-    _validateSpoke(params.spoke);
+  function withdrawWithSig(
+    EIP712Types.Withdraw memory params,
+    bytes calldata signature
+  ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
@@ -129,8 +133,10 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
   }
 
   /// @inheritdoc ISignatureGateway
-  function borrowWithSig(EIP712Types.Borrow memory params, bytes calldata signature) external {
-    _validateSpoke(params.spoke);
+  function borrowWithSig(
+    EIP712Types.Borrow memory params,
+    bytes calldata signature
+  ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
@@ -159,8 +165,10 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
   }
 
   /// @inheritdoc ISignatureGateway
-  function repayWithSig(EIP712Types.Repay memory params, bytes calldata signature) external {
-    _validateSpoke(params.spoke);
+  function repayWithSig(
+    EIP712Types.Repay memory params,
+    bytes calldata signature
+  ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
@@ -198,8 +206,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
   function setUsingAsCollateralWithSig(
     EIP712Types.SetUsingAsCollateral memory params,
     bytes calldata signature
-  ) external {
-    _validateSpoke(params.spoke);
+  ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
@@ -231,8 +238,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
   function updateUserRiskPremiumWithSig(
     EIP712Types.UpdateUserRiskPremium memory params,
     bytes calldata signature
-  ) external {
-    _validateSpoke(params.spoke);
+  ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
@@ -255,8 +261,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
   function updateUserDynamicConfigWithSig(
     EIP712Types.UpdateUserDynamicConfig memory params,
     bytes calldata signature
-  ) external {
-    _validateSpoke(params.spoke);
+  ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 hash = _hashTypedData(
       keccak256(
@@ -280,8 +285,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     address spoke,
     EIP712Types.SetUserPositionManager memory params,
     bytes calldata signature
-  ) external {
-    _validateSpoke(spoke);
+  ) external onlyRegisteredSpoke(spoke) {
     try
       ISpoke(spoke).setUserPositionManagerWithSig(
         address(this),
@@ -304,8 +308,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     uint8 permitV,
     bytes32 permitR,
     bytes32 permitS
-  ) external {
-    _validateSpoke(spoke);
+  ) external onlyRegisteredSpoke(spoke) {
     (IERC20 underlying, ) = _getReserveData(ISpoke(spoke), reserveId);
     try
       IERC20Permit(address(underlying)).permit({

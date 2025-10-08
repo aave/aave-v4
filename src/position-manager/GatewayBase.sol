@@ -14,6 +14,11 @@ import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
 abstract contract GatewayBase is IGatewayBase, Rescuable, Ownable2Step {
   mapping(address => bool) internal _registeredSpokes;
 
+  modifier onlyRegisteredSpoke(address spoke) {
+    _isSpokeValid(spoke);
+    _;
+  }
+
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
   constructor(address initialOwner_) Ownable(initialOwner_) {}
@@ -27,7 +32,7 @@ abstract contract GatewayBase is IGatewayBase, Rescuable, Ownable2Step {
 
   /// @inheritdoc IGatewayBase
   function renouncePositionManagerRole(address spoke, address user) external onlyOwner {
-    _validateSpoke(spoke);
+    _isSpokeValid(spoke);
     require(user != address(0), InvalidAddress());
     ISpoke(spoke).renouncePositionManagerRole(user);
   }
@@ -37,7 +42,7 @@ abstract contract GatewayBase is IGatewayBase, Rescuable, Ownable2Step {
     return _registeredSpokes[spoke];
   }
 
-  function _validateSpoke(address spoke) internal view {
+  function _isSpokeValid(address spoke) internal view {
     require(_registeredSpokes[spoke], SpokeNotRegistered());
   }
 

@@ -44,7 +44,7 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
     address spoke,
     uint256 reserveId,
     uint256 amount
-  ) external payable nonReentrant {
+  ) external payable nonReentrant onlyRegisteredSpoke(spoke) {
     _supplyNative(spoke, reserveId, amount, msg.sender, false);
   }
 
@@ -53,16 +53,19 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
     address spoke,
     uint256 reserveId,
     uint256 amount
-  ) external payable nonReentrant {
+  ) external payable nonReentrant onlyRegisteredSpoke(spoke) {
     _supplyNative(spoke, reserveId, amount, msg.sender, true);
   }
 
   /// @inheritdoc INativeTokenGateway
-  function withdrawNative(address spoke, uint256 reserveId, uint256 amount) external {
-    _validateParams(spoke, amount);
+  function withdrawNative(
+    address spoke,
+    uint256 reserveId,
+    uint256 amount
+  ) external onlyRegisteredSpoke(spoke) {
     ISpoke _spoke = ISpoke(spoke);
     (IERC20 underlying, address hub) = _getReserveData(_spoke, reserveId);
-    _validateUnderlying(underlying);
+    _validateParams(underlying, amount);
 
     uint256 withdrawAmount = MathUtils.min(
       amount,
@@ -75,11 +78,14 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
   }
 
   /// @inheritdoc INativeTokenGateway
-  function borrowNative(address spoke, uint256 reserveId, uint256 amount) external {
-    _validateParams(spoke, amount);
+  function borrowNative(
+    address spoke,
+    uint256 reserveId,
+    uint256 amount
+  ) external onlyRegisteredSpoke(spoke) {
     ISpoke _spoke = ISpoke(spoke);
     (IERC20 underlying, address hub) = _getReserveData(_spoke, reserveId);
-    _validateUnderlying(underlying);
+    _validateParams(underlying, amount);
 
     _spoke.borrow(reserveId, amount, msg.sender);
     _nativeWrapper.withdraw(amount);
@@ -91,11 +97,10 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
     address spoke,
     uint256 reserveId,
     uint256 amount
-  ) external payable nonReentrant {
-    _validateParams(spoke, amount);
+  ) external payable nonReentrant onlyRegisteredSpoke(spoke) {
     ISpoke _spoke = ISpoke(spoke);
     (IERC20 underlying, address hub) = _getReserveData(_spoke, reserveId);
-    _validateUnderlying(underlying);
+    _validateParams(underlying, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
     uint256 userDebtAmount = _spoke.getUserTotalDebt(reserveId, msg.sender);
@@ -120,13 +125,9 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
     return address(_nativeWrapper);
   }
 
-  function _validateParams(address spoke, uint256 amount) internal view {
-    _validateSpoke(spoke);
-    require(amount > 0, InvalidAmount());
-  }
-
-  function _validateUnderlying(IERC20 underlying) internal view {
+  function _validateParams(IERC20 underlying, uint256 amount) internal view {
     require(address(underlying) == address(_nativeWrapper), NotNativeWrappedAsset());
+    require(amount > 0, InvalidAmount());
   }
 
   function _supplyNative(
@@ -136,10 +137,9 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
     address user,
     bool enableCollateral
   ) internal {
-    _validateParams(spoke, amount);
     ISpoke _spoke = ISpoke(spoke);
     (IERC20 underlying, address hub) = _getReserveData(_spoke, reserveId);
-    _validateUnderlying(underlying);
+    _validateParams(underlying, amount);
     require(msg.value == amount, NativeAmountMismatch());
 
     _nativeWrapper.deposit{value: amount}();
