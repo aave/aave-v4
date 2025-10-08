@@ -237,7 +237,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown during liquidation when a user's health factor is not below the liquidation threshold.
   error HealthFactorNotBelowThreshold();
 
-  /// @notice Thrown when dust debt remains after a liquidation.
+  /// @notice Thrown when collateral or debt dust remains after a liquidation, and neither reserve is fully liquidated.
   error MustNotLeaveDust();
 
   /// @notice Thrown when a debt to cover input is zero.

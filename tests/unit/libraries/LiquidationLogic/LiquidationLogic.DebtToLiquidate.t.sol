@@ -4,40 +4,40 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
-contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
+contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
   using MathUtils for uint256;
   using WadRayMath for uint256;
 
   /// function always returns min between reserve debt, debt to cover and debt to restore target health factor,
   /// unless it leaves dust, in which case it returns reserve debt
-  function test_calculateMaxDebtToLiquidate_fuzz(
-    LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
+  function test_calculateDebtToLiquidate_fuzz(
+    LiquidationLogic.CalculateDebtToLiquidateParams memory params
   ) public {
     params = _bound(params);
 
-    uint256 maxDebtToLiquidate = liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
+    uint256 debtToLiquidate = liquidationLogicWrapper.calculateDebtToLiquidate(params);
     uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
     );
-    uint256 rawMaxDebtToLiquidate = params.debtReserveBalance.min(params.debtToCover).min(
+    uint256 rawDebtToLiquidate = params.debtReserveBalance.min(params.debtToCover).min(
       debtToTarget
     );
 
     bool leavesDebtDust = _convertAmountToValue(
-      params.debtReserveBalance - rawMaxDebtToLiquidate,
+      params.debtReserveBalance - rawDebtToLiquidate,
       params.debtAssetPrice,
       params.debtAssetUnit
     ) < LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
     if (leavesDebtDust) {
-      assertEq(maxDebtToLiquidate, params.debtReserveBalance);
+      assertEq(debtToLiquidate, params.debtReserveBalance);
     } else {
-      assertEq(maxDebtToLiquidate, rawMaxDebtToLiquidate);
+      assertEq(debtToLiquidate, rawDebtToLiquidate);
     }
   }
 
   /// function never adjusts for dust if 1 wei of debt is worth more than DUST_LIQUIDATION_THRESHOLD
-  function test_calculateMaxDebtToLiquidate_fuzz_ImpossibleToAdjustForDust(
-    LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
+  function test_calculateDebtToLiquidate_fuzz_ImpossibleToAdjustForDust(
+    LiquidationLogic.CalculateDebtToLiquidateParams memory params
   ) public {
     params = _bound(params);
     params.debtAssetUnit = 10 ** bound(params.debtAssetUnit, 1, 5);
@@ -55,16 +55,16 @@ contract LiquidationLogicMaxDebtToLiquidateTest is LiquidationLogicBaseTest {
       MAX_SUPPLY_AMOUNT
     );
 
-    uint256 maxDebtToLiquidate = liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
-    assertEq(maxDebtToLiquidate, debtToTarget.min(params.debtToCover));
+    uint256 debtToLiquidate = liquidationLogicWrapper.calculateDebtToLiquidate(params);
+    assertEq(debtToLiquidate, debtToTarget.min(params.debtToCover));
   }
 
   /// function returns total reserve debt if dust is left
-  function test_calculateMaxDebtToLiquidate_fuzz_AmountAdjustedDueToDust(
-    LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
+  function test_calculateDebtToLiquidate_fuzz_AmountAdjustedDueToDust(
+    LiquidationLogic.CalculateDebtToLiquidateParams memory params
   ) public {
     params = _boundWithDustAdjustment(params);
-    uint256 maxDebtToLiquidate = liquidationLogicWrapper.calculateMaxDebtToLiquidate(params);
-    assertEq(maxDebtToLiquidate, params.debtReserveBalance);
+    uint256 debtToLiquidate = liquidationLogicWrapper.calculateDebtToLiquidate(params);
+    assertEq(debtToLiquidate, params.debtReserveBalance);
   }
 }

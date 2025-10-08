@@ -62,7 +62,7 @@ library LiquidationLogic {
     uint256 debtAssetUnit;
   }
 
-  struct CalculateMaxDebtToLiquidateParams {
+  struct CalculateDebtToLiquidateParams {
     uint256 debtReserveBalance;
     uint256 debtToCover;
     uint256 totalDebtValue;
@@ -244,7 +244,10 @@ library LiquidationLogic {
   }
 
   /// @notice Calculates the liquidation amounts.
-  /// @dev Invoked by `liquidateUser` method.
+  /// @dev Invoked by `liquidateUser` method. To prevent accumulation of dust, it enforces one of the following conditions:
+  /// 1. liquidate all debt
+  /// 2. liquidate all collateral
+  /// 3. leave at least `DUST_LIQUIDATION_THRESHOLD` of collateral and debt (in value terms)
   /// @return The collateral to liquidate.
   /// @return The collateral to transfer to liquidator.
   /// @return The debt to liquidate.
@@ -258,8 +261,8 @@ library LiquidationLogic {
       maxLiquidationBonus: params.maxLiquidationBonus
     });
 
-    uint256 debtToLiquidate = _calculateMaxDebtToLiquidate(
-      CalculateMaxDebtToLiquidateParams({
+    uint256 debtToLiquidate = _calculateDebtToLiquidate(
+      CalculateDebtToLiquidateParams({
         debtReserveBalance: params.debtReserveBalance,
         debtToCover: params.debtToCover,
         totalDebtValue: params.totalDebtValue,
@@ -342,14 +345,15 @@ library LiquidationLogic {
       );
   }
 
-  /// @notice Calculates the maximum debt that can be liquidated.
-  /// @dev Dust debt less than the `DUST_DEBT_LIQUIDATION_THRESHOLD` cannot be left behind, unless the collateral reserve is fully liquidated.
-  function _calculateMaxDebtToLiquidate(
-    CalculateMaxDebtToLiquidateParams memory params
+  /// @notice Calculates the debt that should be liquidated.
+  /// @dev Generally, it returns the minimum of `debtToCover`, `debtReserveBalance` and `debtToTarget`.
+  /// If it would result in dust debt being left behind, the function returns `debtReserveBalance`.
+  function _calculateDebtToLiquidate(
+    CalculateDebtToLiquidateParams memory params
   ) internal pure returns (uint256) {
-    uint256 maxDebtToLiquidate = params.debtReserveBalance;
-    if (params.debtToCover < maxDebtToLiquidate) {
-      maxDebtToLiquidate = params.debtToCover;
+    uint256 debtToLiquidate = params.debtReserveBalance;
+    if (params.debtToCover < debtToLiquidate) {
+      debtToLiquidate = params.debtToCover;
     }
 
     uint256 debtToTarget = _calculateDebtToTargetHealthFactor(
@@ -363,12 +367,12 @@ library LiquidationLogic {
         debtAssetUnit: params.debtAssetUnit
       })
     );
-    if (debtToTarget < maxDebtToLiquidate) {
-      maxDebtToLiquidate = debtToTarget;
+    if (debtToTarget < debtToLiquidate) {
+      debtToLiquidate = debtToTarget;
     }
 
-    bool leavesDebtDust = maxDebtToLiquidate < params.debtReserveBalance &&
-      (params.debtReserveBalance - maxDebtToLiquidate).mulDivDown(
+    bool leavesDebtDust = debtToLiquidate < params.debtReserveBalance &&
+      (params.debtReserveBalance - debtToLiquidate).mulDivDown(
         params.debtAssetPrice.toWad(),
         params.debtAssetUnit
       ) <
@@ -376,10 +380,10 @@ library LiquidationLogic {
 
     if (leavesDebtDust) {
       // target health factor is bypassed to prevent leaving dust
-      maxDebtToLiquidate = params.debtReserveBalance;
+      debtToLiquidate = params.debtReserveBalance;
     }
 
-    return maxDebtToLiquidate;
+    return debtToLiquidate;
   }
 
   /// @notice Calculates the amount of debt needed to be liquidated to restore a position to the target health factor.

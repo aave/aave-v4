@@ -47,7 +47,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
   }
 
   /// @dev debtToTarget is limiting factor that would result in dust collateral
-  /// maxDebtToLiquidate is adjusted to allow full liquidation
+  /// debtToLiquidate is adjusted to allow full liquidation
   function test_collateralDust_min_debtToTarget() public {
     uint256 collateralFactor = 80_00;
     uint256 liquidationBonus = 124_00;

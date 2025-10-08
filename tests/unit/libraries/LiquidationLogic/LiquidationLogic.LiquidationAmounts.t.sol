@@ -318,8 +318,8 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       maxLiquidationBonus: params.maxLiquidationBonus
     });
 
-    uint256 debtToLiquidate = liquidationLogicWrapper.calculateMaxDebtToLiquidate(
-      _getCalculateMaxDebtToLiquidateParams(params)
+    uint256 debtToLiquidate = liquidationLogicWrapper.calculateDebtToLiquidate(
+      _getCalculateDebtToLiquidateParams(params)
     );
     uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
       params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus,

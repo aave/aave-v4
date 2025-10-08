@@ -181,16 +181,16 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     return abi.encode(boundedReserveIds);
   }
 
-  function _getCalculateMaxDebtToLiquidateParams(
+  function _getCalculateDebtToLiquidateParams(
     ISpoke spoke,
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
     uint256 debtToCover
-  ) internal virtual returns (LiquidationLogic.CalculateMaxDebtToLiquidateParams memory) {
+  ) internal virtual returns (LiquidationLogic.CalculateDebtToLiquidateParams memory) {
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
     return
-      LiquidationLogic.CalculateMaxDebtToLiquidateParams({
+      LiquidationLogic.CalculateDebtToLiquidateParams({
         debtReserveBalance: spoke.getUserTotalDebt(debtReserveId, user),
         debtToCover: debtToCover,
         totalDebtValue: userAccountData.totalDebtValue,
