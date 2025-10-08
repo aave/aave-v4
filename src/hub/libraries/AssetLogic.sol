@@ -134,16 +134,10 @@ library AssetLogic {
     mapping(uint256 => mapping(address => IHub.SpokeData)) storage spokes,
     uint256 assetId
   ) internal {
-    IHub.Asset storage asset = assets[assetId];
+    uint256 newDrawnIndex = asset.getDrawnIndex();
+    uint256 indexDelta = newDrawnIndex.uncheckedSub(asset.drawnIndex);
 
-    if (asset.lastUpdateTimestamp == block.timestamp) {
-      return;
-    }
-
-    uint256 drawnIndex = asset.getDrawnIndex();
-    uint256 indexDelta = drawnIndex.uncheckedSub(asset.drawnIndex);
-
-    asset.drawnIndex = drawnIndex.toUint128();
+    asset.drawnIndex = newDrawnIndex.toUint128();
     asset.lastUpdateTimestamp = block.timestamp.toUint32();
 
     uint128 feeShares = asset.getFeeShares(indexDelta).toUint128();
