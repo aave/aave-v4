@@ -686,28 +686,26 @@ contract Hub is IHub, AccessManaged {
     PremiumDelta calldata premium,
     uint256 premiumAmount
   ) internal {
-    uint256 spokePremiumShares = spoke.premiumShares;
-    uint256 spokePremiumOffset = spoke.premiumOffset;
-    uint256 spokeRealizedPremium = spoke.realizedPremium;
-    uint256 spokePremiumBefore = previewRestoreByShares(assetId, spokePremiumShares) -
-      spokePremiumOffset;
-    spokePremiumBefore += spokeRealizedPremium;
+    uint256 premiumShares = spoke.premiumShares;
+    uint256 premiumOffset = spoke.premiumOffset;
+    uint256 realizedPremium = spoke.realizedPremium;
+    uint256 spokePremiumBefore = previewRestoreByShares(assetId, premiumShares) - premiumOffset;
+    spokePremiumBefore += realizedPremium;
 
     asset.premiumShares = asset.premiumShares.add(premium.sharesDelta).toUint128();
     asset.premiumOffset = asset.premiumOffset.add(premium.offsetDelta).toUint128();
     asset.realizedPremium = asset.realizedPremium.add(premium.realizedDelta).toUint128();
 
-    spokePremiumShares = spokePremiumShares.add(premium.sharesDelta);
-    spokePremiumOffset = spokePremiumOffset.add(premium.offsetDelta);
-    spokeRealizedPremium = spokeRealizedPremium.add(premium.realizedDelta);
-    spoke.premiumShares = spokePremiumShares.toUint128();
-    spoke.premiumOffset = spokePremiumOffset.toUint128();
-    spoke.realizedPremium = spokeRealizedPremium.toUint128();
+    premiumShares = premiumShares.add(premium.sharesDelta);
+    premiumOffset = premiumOffset.add(premium.offsetDelta);
+    realizedPremium = realizedPremium.add(premium.realizedDelta);
+    spoke.premiumShares = premiumShares.toUint128();
+    spoke.premiumOffset = premiumOffset.toUint128();
+    spoke.realizedPremium = realizedPremium.toUint128();
 
     // can increase due to precision loss on premium (drawn unchanged)
-    uint256 spokePremiumAfter = previewRestoreByShares(assetId, spokePremiumShares) -
-      spokePremiumOffset;
-    spokePremiumAfter += spokeRealizedPremium;
+    uint256 spokePremiumAfter = previewRestoreByShares(assetId, premiumShares) - premiumOffset;
+    spokePremiumAfter += realizedPremium;
     require(spokePremiumAfter + premiumAmount - spokePremiumBefore <= 2, InvalidPremiumChange());
   }
 
