@@ -142,22 +142,7 @@ contract SpokeBase is Base {
 
   /// @dev Opens a supply position for a random user
   function _openSupplyPosition(ISpoke spoke, uint256 reserveId, uint256 amount) public {
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 initialLiq = _hub(spoke, reserveId).getAssetLiquidity(assetId);
-
-    address tempUser = makeUser();
-    deal(spoke, reserveId, tempUser, amount);
-    Utils.approve(spoke, reserveId, tempUser, UINT256_MAX);
-
-    Utils.supply({
-      spoke: spoke,
-      reserveId: reserveId,
-      caller: tempUser,
-      amount: amount,
-      onBehalfOf: tempUser
-    });
-
-    assertEq(hub1.getAssetLiquidity(assetId), initialLiq + amount);
+    _increaseCollateralSupply(spoke, reserveId, amount, makeUser());
   }
 
   /// @dev Increases the collateral supply for a user
@@ -182,6 +167,16 @@ contract SpokeBase is Base {
     });
 
     assertEq(hub1.getAssetLiquidity(assetId), initialLiq + amount);
+  }
+
+  function _increaseReserveDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount,
+    address user
+  ) internal {
+    _openSupplyPosition(spoke, reserveId, amount);
+    Utils.borrow(spoke, reserveId, user, amount, user);
   }
 
   /// @dev Opens a debt position for a random user, using same asset as collateral and borrow
@@ -216,7 +211,7 @@ contract SpokeBase is Base {
     uint24 cachedCollateralRisk;
     if (withPremium) {
       cachedCollateralRisk = _getCollateralRisk(spoke, reserveId);
-      updateCollateralRisk(spoke, reserveId, 50_00);
+      _updateCollateralRisk(spoke, reserveId, 50_00);
     }
 
     Utils.borrow({
@@ -234,7 +229,7 @@ contract SpokeBase is Base {
     if (withPremium) {
       assertGt(premiumDebt, 0);
       // restore cached collateral risk
-      updateCollateralRisk(spoke, reserveId, cachedCollateralRisk);
+      _updateCollateralRisk(spoke, reserveId, cachedCollateralRisk);
     }
 
     return tempUser;
@@ -957,6 +952,34 @@ contract SpokeBase is Base {
       return vm.randomUint(0, type(uint16).max).toUint16();
     }
     return vm.randomUint(0, spoke.getReserve(reserveId).dynamicConfigKey).toUint16();
+  }
+
+  function _maxLiquidationBonusUpperBound(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal returns (uint32) {
+    return
+      (PercentageMath.PERCENTAGE_FACTOR - 1)
+        .percentDivDown(spoke.getDynamicReserveConfig(reserveId).collateralFactor)
+        .toUint32();
+  }
+
+  function _randomMaxLiquidationBonus(ISpoke spoke, uint256 reserveId) internal returns (uint32) {
+    return
+      vm
+        .randomUint(MIN_LIQUIDATION_BONUS, _maxLiquidationBonusUpperBound(spoke, reserveId))
+        .toUint32();
+  }
+
+  function _collateralFactorUpperBound(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
+    return
+      (PercentageMath.PERCENTAGE_FACTOR - 1)
+        .percentDivDown(spoke.getDynamicReserveConfig(reserveId).maxLiquidationBonus)
+        .toUint16();
+  }
+
+  function _randomCollateralFactor(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
+    return vm.randomUint(1, _collateralFactorUpperBound(spoke, reserveId)).toUint16();
   }
 
   /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id

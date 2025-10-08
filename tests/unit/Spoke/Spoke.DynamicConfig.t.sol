@@ -277,7 +277,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
       uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
 
       ISpoke.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
-      dynConf.collateralFactor = _randomBps();
+      dynConf.collateralFactor = _randomCollateralFactor(spoke1, reserveId);
       vm.expectEmit(address(spoke1));
       emit ISpoke.AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
       vm.prank(SPOKE_ADMIN);
@@ -344,7 +344,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     Utils.borrow(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
     // offboard usdx
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
 
     // existing users: alice, bob
     // alice still healthy
