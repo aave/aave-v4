@@ -7,6 +7,7 @@ import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
+import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 
 /// @title ISpoke
 /// @author Aave Labs
@@ -334,18 +335,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Enables a user to grant or revoke approval for a position manager using an EIP712-typed intent.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param positionManager The address of the position manager.
-  /// @param user The address of the user on whose behalf position manager can act.
-  /// @param approve True to approve the position manager, false to revoke approval.
-  /// @param nonce The key-prefixed nonce for the signature.
-  /// @param deadline The deadline for the signature.
+  /// @param params The structured setUserPositionManager parameters.
   /// @param signature The EIP712-compliant signature bytes.
   function setUserPositionManagerWithSig(
-    address positionManager,
-    address user,
-    bool approve,
-    uint256 nonce,
-    uint256 deadline,
+    EIP712Types.SetUserPositionManager memory params,
     bytes calldata signature
   ) external;
 

@@ -94,11 +94,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
+      params,
       signature
     );
   }
@@ -118,11 +114,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
+      params,
       signature
     );
   }
@@ -149,11 +141,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     );
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
+      params,
       signature
     );
   }
@@ -174,11 +162,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
+      params,
       signature
     );
 
@@ -206,11 +190,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
+      params,
       signature
     );
   }
@@ -246,11 +226,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(
-      invalidParams.positionManager,
-      invalidParams.user,
-      invalidParams.approve,
-      params.nonce,
-      invalidParams.deadline,
+      invalidParams,
       signature
     );
   }
@@ -287,11 +263,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     );
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
+      params,
       signature
     );
   }
@@ -323,11 +295,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
+      params,
       signature
     );
 

@@ -318,11 +318,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     bytes memory signature = abi.encodePacked(r, s, v);
 
     spoke.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
+      params,
       signature
     );
     vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: enable');
@@ -333,11 +329,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     signature = abi.encodePacked(r, s, v);
 
     spoke.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
+      params,
       signature
     );
     vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: disable');

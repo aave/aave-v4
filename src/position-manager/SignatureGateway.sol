@@ -171,16 +171,8 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     EIP712Types.SetUserPositionManager memory params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(spoke) {
-    try
-      ISpoke(spoke).setUserPositionManagerWithSig(
-        address(this),
-        params.user,
-        params.approve,
-        params.nonce,
-        params.deadline,
-        signature
-      )
-    {} catch {}
+    require(params.positionManager == address(this), InvalidPositionManager());
+    try ISpoke(spoke).setUserPositionManagerWithSig(params, signature) {} catch {}
   }
 
   /// @inheritdoc ISignatureGateway
