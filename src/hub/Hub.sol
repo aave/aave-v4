@@ -324,8 +324,8 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage coveredSpoke = _spokes[assetId][spoke];
 
     _assets.accrue(_spokes, assetId);
-    uint256 deficit = coveredSpoke.deficit;
     _validateEliminateDeficit(callerSpoke, amount);
+    uint256 deficit = coveredSpoke.deficit;
     require(amount <= deficit, InvalidAmount());
 
     uint128 shares = previewRemoveByAssets(assetId, amount).toUint128();
