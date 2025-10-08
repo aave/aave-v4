@@ -140,6 +140,7 @@ library AssetLogic {
       return;
     }
 
+
     uint256 newDrawnIndex = asset.getDrawnIndex();
     uint256 indexDelta = newDrawnIndex.uncheckedSub(asset.drawnIndex);
 
