@@ -23,6 +23,7 @@ import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 /// multicall can be executed independently in order of signed nonce & deadline; does not guarantee batch atomicity.
 contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayBase, EIP712 {
   using SafeERC20 for IERC20;
+  using EIP712Hash for *;
 
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
@@ -34,7 +35,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(EIP712Hash.hashSupply(params));
+    bytes32 hash = _hashTypedData(params.hash());
     require(
       SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
       InvalidSignature()
@@ -55,7 +56,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(EIP712Hash.hashWithdraw(params));
+    bytes32 hash = _hashTypedData(params.hash());
     require(
       SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
       InvalidSignature()
@@ -79,7 +80,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(EIP712Hash.hashBorrow(params));
+    bytes32 hash = _hashTypedData(params.hash());
     require(
       SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
       InvalidSignature()
@@ -99,7 +100,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(EIP712Hash.hashRepay(params));
+    bytes32 hash = _hashTypedData(params.hash());
     require(
       SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
       InvalidSignature()
@@ -125,7 +126,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(EIP712Hash.hashSetUsingAsCollateral(params));
+    bytes32 hash = _hashTypedData(params.hash());
     require(
       SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
       InvalidSignature()
@@ -145,7 +146,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(EIP712Hash.hashUpdateUserRiskPremium(params));
+    bytes32 hash = _hashTypedData(params.hash());
     require(SignatureChecker.isValidSignatureNow(params.user, hash, signature), InvalidSignature());
     _useCheckedNonce(params.user, params.nonce);
 
@@ -158,7 +159,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(EIP712Hash.hashUpdateUserDynamicConfig(params));
+    bytes32 hash = _hashTypedData(params.hash());
     require(SignatureChecker.isValidSignatureNow(params.user, hash, signature), InvalidSignature());
     _useCheckedNonce(params.user, params.nonce);
 

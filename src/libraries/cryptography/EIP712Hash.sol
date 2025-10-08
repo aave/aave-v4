@@ -40,7 +40,7 @@ library EIP712Hash {
     // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
     0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
 
-  function hashSupply(EIP712Types.Supply memory params) internal pure returns (bytes32) {
+  function hash(EIP712Types.Supply memory params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -55,7 +55,7 @@ library EIP712Hash {
       );
   }
 
-  function hashWithdraw(EIP712Types.Withdraw memory params) internal pure returns (bytes32) {
+  function hash(EIP712Types.Withdraw memory params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -70,7 +70,7 @@ library EIP712Hash {
       );
   }
 
-  function hashBorrow(EIP712Types.Borrow memory params) internal pure returns (bytes32) {
+  function hash(EIP712Types.Borrow memory params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -85,7 +85,7 @@ library EIP712Hash {
       );
   }
 
-  function hashRepay(EIP712Types.Repay memory params) internal pure returns (bytes32) {
+  function hash(EIP712Types.Repay memory params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -100,7 +100,7 @@ library EIP712Hash {
       );
   }
 
-  function hashSetUsingAsCollateral(
+  function hash(
     EIP712Types.SetUsingAsCollateral memory params
   ) internal pure returns (bytes32) {
     return
@@ -117,7 +117,7 @@ library EIP712Hash {
       );
   }
 
-  function hashUpdateUserRiskPremium(
+  function hash(
     EIP712Types.UpdateUserRiskPremium memory params
   ) internal pure returns (bytes32) {
     return
@@ -132,7 +132,7 @@ library EIP712Hash {
       );
   }
 
-  function hashUpdateUserDynamicConfig(
+  function hash(
     EIP712Types.UpdateUserDynamicConfig memory params
   ) internal pure returns (bytes32) {
     return
@@ -147,7 +147,7 @@ library EIP712Hash {
       );
   }
 
-  function hashSetUserPositionManager(
+  function hash(
     EIP712Types.SetUserPositionManager memory params
   ) internal pure returns (bytes32) {
     return

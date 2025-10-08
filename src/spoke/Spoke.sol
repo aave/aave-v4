@@ -32,6 +32,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   using KeyValueList for KeyValueList.List;
   using PositionStatusMap for *;
   using MathUtils for *;
+  using EIP712Hash for *;
 
   /// @inheritdoc ISpoke
   uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
@@ -409,7 +410,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bytes calldata signature
   ) external {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(EIP712Hash.hashSetUserPositionManager(params));
+    bytes32 hash = _hashTypedData(params.hash());
     require(SignatureChecker.isValidSignatureNow(params.user, hash, signature), InvalidSignature());
     _useCheckedNonce(params.user, params.nonce);
     _setUserPositionManager({
