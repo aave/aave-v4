@@ -135,6 +135,10 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param drawCap The current `drawCap` of the asset.
   error DrawCapExceeded(uint256 drawCap);
 
+  /// @notice Thrown when a surplus amount is restored.
+  /// @param maxAllowedRestore The maximum allowed restore amount.
+  error SurplusAmountRestored(uint256 maxAllowedRestore);
+
   /// @notice Thrown when the premium change is invalid.
   error InvalidPremiumChange();
 

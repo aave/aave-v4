@@ -24,7 +24,7 @@ contract HubRestoreTest is HubBase {
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
   }
 
-  function test_restore_revertsWith_underflow() public {
+  function test_restore_revertsWith_SurplusAmountRestored() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
 
@@ -67,7 +67,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // alice restore invalid amount > drawn
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, drawAmount));
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawn + 1, premium, premiumDelta, alice);
   }
@@ -205,16 +205,20 @@ contract HubRestoreTest is HubBase {
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
   }
 
-  function test_restore_revertsWith_underflow_with_interest() public {
+  function test_restore_revertsWith_SurplusAmountRestored_with_interest() public {
     uint256 daiAmount = 100e18;
     uint256 drawAmount = daiAmount / 2;
     uint256 skipTime = 365 days / 2;
 
-    test_restore_fuzz_revertsWith_underflow_with_interest(daiAmount, drawAmount, skipTime);
+    test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest(
+      daiAmount,
+      drawAmount,
+      skipTime
+    );
   }
 
   /// @dev Restore an amount greater than drawn, with drawn interest accrued (no premium).
-  function test_restore_fuzz_revertsWith_underflow_with_interest(
+  function test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest(
     uint256 daiAmount,
     uint256 drawAmount,
     uint256 skipTime
@@ -254,18 +258,18 @@ contract HubRestoreTest is HubBase {
     });
 
     // alice restore invalid amount > drawn
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, drawn));
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawn + 1, premium, premiumDelta, alice);
   }
 
-  function test_restore_revertsWith_underflow_with_interest_and_premium() public {
+  function test_restore_revertsWith_SurplusAmountRestored_with_interest_and_premium() public {
     uint256 daiAmount = 100e18;
     uint256 drawAmount = daiAmount / 2;
     uint256 skipTime = 365 days;
     uint256 premiumRestored = 1;
 
-    test_restore_fuzz_revertsWith_underflow_with_interest_and_premium(
+    test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest_and_premium(
       daiAmount,
       drawAmount,
       skipTime,
@@ -274,7 +278,7 @@ contract HubRestoreTest is HubBase {
   }
 
   /// @dev Restore an amount greater than the drawn, with drawn interest and premium accrued.
-  function test_restore_fuzz_revertsWith_underflow_with_interest_and_premium(
+  function test_restore_fuzz_revertsWith_SurplusAmountRestored_with_interest_and_premium(
     uint256 daiAmount,
     uint256 drawAmount,
     uint256 skipTime,
@@ -328,7 +332,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // alice restore invalid drawn
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, drawn));
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawn + 1, premiumRestored, premiumDelta, alice);
   }
