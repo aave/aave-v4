@@ -184,6 +184,23 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
+  function test_addReserve_revertsWith_InvalidAddress_hub() public {
+    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
+
+    ISpoke.ReserveConfig memory newReserveConfig;
+    ISpoke.DynamicReserveConfig memory newDynReserveConfig;
+
+    vm.expectRevert(ISpoke.InvalidAddress.selector, address(newSpoke));
+    vm.prank(ADMIN);
+    newSpoke.addReserve(
+      address(0),
+      vm.randomUint(),
+      vm.randomAddress(),
+      newReserveConfig,
+      newDynReserveConfig
+    );
+  }
+
   function test_addReserve_revertsWith_InvalidAddress_oracle() public {
     (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
 
