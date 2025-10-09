@@ -81,7 +81,7 @@ interface ISpokeBase {
   /// @param reserveId The reserve identifier.
   /// @param amount The amount of asset to supply.
   /// @param onBehalfOf The owner of the position to add supply shares to.
-  /// @return The amount of shares minted.
+  /// @return The amount of shares supplied.
   function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external returns (uint256);
 
   /// @notice Withdraws a specified amount of underlying asset from the given reserve.
@@ -92,7 +92,7 @@ interface ISpokeBase {
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to withdraw.
   /// @param onBehalfOf The owner of position to remove supply shares from.
-  /// @return The amount of shares burned.
+  /// @return The amount of shares withdrawn.
   function withdraw(
     uint256 reserveId,
     uint256 amount,
@@ -106,7 +106,7 @@ interface ISpokeBase {
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to borrow.
   /// @param onBehalfOf The owner of the position against which debt is generated.
-  /// @return The amount of shares minted.
+  /// @return The amount of drawn shares.
   function borrow(uint256 reserveId, uint256 amount, address onBehalfOf) external returns (uint256);
 
   /// @notice Repays a specified amount of underlying asset to a given reserve.
@@ -116,7 +116,7 @@ interface ISpokeBase {
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to repay.
   /// @param onBehalfOf The owner of the position whose debt is repaid.
-  /// @return The amount of shares burned.
+  /// @return The amount of drawn shares restored.
   function repay(uint256 reserveId, uint256 amount, address onBehalfOf) external returns (uint256);
 
   /// @notice Liquidates a user position.
