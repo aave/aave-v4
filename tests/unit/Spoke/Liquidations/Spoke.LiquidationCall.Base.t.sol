@@ -469,12 +469,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       }
     }
 
-    if (!liquidationMetadata.hasDeficit) {
-      vm.expectEmit(false, false, false, false, address(params.spoke));
-      // topics > 0 and data are not checked here
-      // they are checked after the liquidation call since expected risk premium calculation is an approximation
-      emit ISpoke.UpdateUserRiskPremium(address(0), 0);
-    } else {
+    if (liquidationMetadata.hasDeficit) {
       vm.expectEmit(address(params.spoke));
       emit ISpoke.UpdateUserRiskPremium(params.user, 0);
     }
@@ -1063,6 +1058,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _checkRiskPremium(
     CheckedLiquidationCallParams memory params,
+    AccountsInfo memory accountsInfoBefore,
     AccountsInfo memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata,
     Vm.Log[] memory logs
@@ -1082,7 +1078,15 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         );
       }
     }
-    assertEq(riskPremiumEventCount, 1, 'user risk premium: event emitted');
+
+    if (
+      accountsInfoBefore.userAccountData.riskPremium !=
+      accountsInfoAfter.userAccountData.riskPremium
+    ) {
+      assertEq(riskPremiumEventCount, 1, 'UpdateUserRiskPremium: on premium change');
+    } else {
+      assertEq(riskPremiumEventCount, 0, 'UpdateUserRiskPremium: no premium change');
+    }
 
     assertApproxEqRel(
       accountsInfoAfter.userAccountData.riskPremium,
@@ -1162,7 +1166,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     AccountsInfo memory accountsInfoAfter = _getAccountsInfo(params);
 
     _checkTransferSharesCall(params, liquidationMetadata, logs);
-    _checkRiskPremium(params, accountsInfoAfter, liquidationMetadata, logs);
+    _checkRiskPremium(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata, logs);
     _checkAvgCollateralFactor(accountsInfoAfter, liquidationMetadata);
 
     _checkPositionStatus(params, accountsInfoBefore, liquidationMetadata);

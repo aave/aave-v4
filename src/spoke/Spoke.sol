@@ -55,6 +55,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
+  uint256 internal constant INVALID_RESERVE_ID = type(uint256).max;
+
   uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
   mapping(address user => PositionStatus) internal _positionStatus;
@@ -228,7 +230,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
       uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
-      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
+      _notifyOrRefreshRiskPremium(onBehalfOf, newRiskPremium, INVALID_RESERVE_ID);
     }
 
     emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
@@ -253,7 +255,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
 
     uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
-    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
+    _notifyOrRefreshRiskPremium(onBehalfOf, newRiskPremium, reserveId);
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
   }
@@ -300,8 +302,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
     }
 
-    UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf);
-    _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
+    _notifyOrRefreshRiskPremium(
+      onBehalfOf,
+      _calculateUserAccountData(onBehalfOf).riskPremium,
+      reserveId
+    );
 
     emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, premiumDelta);
   }
@@ -354,8 +359,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (isUserInDeficit) {
       _reportDeficit(user);
     } else {
-      // new risk premium only needs to be propagated if no deficit exists
-      _notifyRiskPremiumUpdate(user, _calculateUserAccountData(user).riskPremium);
+      // new risk premium only needs to be propagated if no deficit
+      UserAccountData memory accountData = _calculateUserAccountData(user);
+      _notifyOrRefreshRiskPremium(user, accountData.riskPremium, debtReserveId);
     }
   }
 
@@ -377,7 +383,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
       uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
-      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
+      _notifyOrRefreshRiskPremium(onBehalfOf, newRiskPremium, reserveId);
     }
 
     emit SetUsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
@@ -781,40 +787,65 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 
-  /// @notice Refreshes premium for borrowed reserves of `user` with `newRiskPremium`.
+  /// @dev If risk premium has changed, notify update. Otherwise, refresh risk premium for the given reserve.
+  /// @dev If risk premium has not changed and refreshReserveId is INVALID_RESERVE_ID, no state change is performed.
+  /// @param user The address of the user whose risk premium is potentially being updated.
+  /// @param newRiskPremium The new risk premium of the user.
+  /// @param refreshReserveId The reserve id to refresh risk premium for, only applicable if risk premium has not changed.
+  function _notifyOrRefreshRiskPremium(
+    address user,
+    uint256 newRiskPremium,
+    uint256 refreshReserveId
+  ) internal {
+    uint256 riskPremium = _positionStatus[user].riskPremium;
+    if (newRiskPremium != riskPremium) {
+      _notifyRiskPremiumUpdate(user, newRiskPremium);
+    } else if (refreshReserveId != INVALID_RESERVE_ID) {
+      _refreshRiskPremium(user, refreshReserveId, riskPremium);
+    }
+  }
+
+  /// @notice Refreshes premium for all borrowed reserve of `user` with `newRiskPremium`.
   function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
 
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
-      UserPosition storage userPosition = _userPositions[user][reserveId];
-      Reserve storage reserve = _reserves[reserveId];
-      uint256 assetId = reserve.assetId;
-      IHubBase hub = reserve.hub;
-
-      uint256 oldPremiumShares = userPosition.premiumShares;
-      uint256 oldPremiumOffset = userPosition.premiumOffset;
-      uint256 accruedPremium = hub.previewRestoreByShares(assetId, oldPremiumShares) -
-        oldPremiumOffset;
-
-      uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newRiskPremium);
-      // uses opposite rounding direction as premiumOffset is virtual debt owed by the protocol
-      uint256 newPremiumOffset = hub.previewDrawByShares(assetId, newPremiumShares);
-
-      userPosition.premiumShares = newPremiumShares.toUint128();
-      userPosition.premiumOffset = newPremiumOffset.toUint128();
-      userPosition.realizedPremium += accruedPremium.toUint128();
-
-      IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-        sharesDelta: newPremiumShares.signedSub(oldPremiumShares),
-        offsetDelta: newPremiumOffset.signedSub(oldPremiumOffset),
-        realizedDelta: accruedPremium.toInt256()
-      });
-
-      hub.refreshPremium(assetId, premiumDelta);
-      emit RefreshPremiumDebt(reserveId, user, premiumDelta);
+      _refreshRiskPremium(user, reserveId, newRiskPremium);
     }
+
+    positionStatus.riskPremium = newRiskPremium;
     emit UpdateUserRiskPremium(user, newRiskPremium);
+  }
+
+  /// @notice Refreshes premium for specified borrowed reserve of `user` with `newRiskPremium`.
+  function _refreshRiskPremium(address user, uint256 reserveId, uint256 newRiskPremium) internal {
+    UserPosition storage userPosition = _userPositions[user][reserveId];
+    Reserve storage reserve = _reserves[reserveId];
+    uint256 assetId = reserve.assetId;
+    IHubBase hub = reserve.hub;
+
+    uint256 oldPremiumShares = userPosition.premiumShares;
+    uint256 oldPremiumOffset = userPosition.premiumOffset;
+    uint256 accruedPremium = hub.previewRestoreByShares(assetId, oldPremiumShares) -
+      oldPremiumOffset;
+
+    uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newRiskPremium);
+    // uses opposite rounding direction as premiumOffset is virtual debt owed by the protocol
+    uint256 newPremiumOffset = hub.previewDrawByShares(assetId, newPremiumShares);
+
+    userPosition.premiumShares = newPremiumShares.toUint128();
+    userPosition.premiumOffset = newPremiumOffset.toUint128();
+    userPosition.realizedPremium += accruedPremium.toUint128();
+
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+      sharesDelta: newPremiumShares.signedSub(oldPremiumShares),
+      offsetDelta: newPremiumOffset.signedSub(oldPremiumOffset),
+      realizedDelta: accruedPremium.toInt256()
+    });
+
+    hub.refreshPremium(assetId, premiumDelta);
+    emit RefreshPremiumDebt(reserveId, user, premiumDelta);
   }
 
   /// @notice Reports deficits for all debt reserves of the user, including the reserve being repaid during liquidation.
