@@ -21,11 +21,15 @@ jobs:
         with:
           FOUNDRY_VERSION: stable
 
-      - name: Generate coverage
-        run: |
-          sudo apt-get -y install lcov
-          make coverage-base
-          make coverage-clean
+      - name: Generate coverage report
+        uses: bgd-labs/action-foundry-lcov@main
+        id: lcov
+        with:
+          REPORT_PATH: "lcov.info"
+      - name: Clean coverage report
+        run: sudo apt-get -y install lcov
+          lcov --remove ./lcov/lcov.info -o ./lcov/lcov.info \
+          'src/dependencies/*'
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@main
