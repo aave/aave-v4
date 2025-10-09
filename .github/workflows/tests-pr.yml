@@ -1,4 +1,4 @@
-name: Tests
+name: Tests-PR
 
 on:
   pull_request:
@@ -16,10 +16,6 @@ jobs:
           submodules: recursive
           token: ${{ secrets.READ_ONLY_PAT || github.token }}
 
-      - uses: bgd-labs/action-rpc-env@f56d90aa2505822c6c81a9242625551b68b4859f
-        with:
-          ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
-
       - name: Run Foundry setup
         uses: bgd-labs/github-workflows/.github/actions/foundry-setup@main
         with:
@@ -28,14 +24,16 @@ jobs:
       - name: Run Forge size
         uses: bgd-labs/github-workflows/.github/actions/foundry-size@main
 
-      - name: Run Gas snapshot check
-        uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
-        with:
-          FOUNDRY_PROFILE: gas
-          FORGE_SNAPSHOT_CHECK: true
+      - name: Run Gas report
+        uses: bgd-labs/github-workflows/.github/actions/foundry-gas-report@main
 
       - name: Run Forge tests
-        id: test
         uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
         with:
           FOUNDRY_PROFILE: pr
+          FORGE_SNAPSHOT_CHECK: true
+
+      - name: Upload & Trigger Comment artifact
+        uses: bgd-labs/github-workflows/.github/actions/comment-artifact@main
+        with:
+          nameSuffix: "default"
