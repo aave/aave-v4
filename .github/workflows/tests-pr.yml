@@ -60,7 +60,7 @@ jobs:
         run: |
           sudo apt-get -y install lcov
           lcov --remove ./lcov/lcov.info -o ./lcov/lcov.info \
-          'src/contracts/dependencies/*'
+          'src/dependencies/**'
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@ea99328d1c4d5f39fda7cbffe104afd6906c50b0

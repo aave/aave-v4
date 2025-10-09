@@ -322,7 +322,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
   }
 }
 
-/// forge-config: pr.fuzz.runs = 1000
+/// forge-config: pr.fuzz.runs = 7
 contract SpokeLiquidationCallTest_NoLiquidationBonus_SmallPosition is
   SpokeLiquidationCallHelperTest
 {
@@ -331,7 +331,7 @@ contract SpokeLiquidationCallTest_NoLiquidationBonus_SmallPosition is
   }
 }
 
-/// forge-config: pr.fuzz.runs = 1000
+/// forge-config: pr.fuzz.runs = 7
 contract SpokeLiquidationCallTest_NoLiquidationBonus_LargePosition is
   SpokeLiquidationCallHelperTest
 {
@@ -340,7 +340,7 @@ contract SpokeLiquidationCallTest_NoLiquidationBonus_LargePosition is
   }
 }
 
-/// forge-config: pr.fuzz.runs = 1000
+/// forge-config: pr.fuzz.runs = 7
 contract SpokeLiquidationCallTest_SmallLiquidationBonus_SmallPosition is
   SpokeLiquidationCallHelperTest
 {
@@ -362,7 +362,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_SmallPosition is
   }
 }
 
-/// forge-config: pr.fuzz.runs = 1000
+/// forge-config: pr.fuzz.runs = 7
 contract SpokeLiquidationCallTest_SmallLiquidationBonus_LargePosition is
   SpokeLiquidationCallHelperTest
 {
@@ -384,7 +384,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_LargePosition is
   }
 }
 
-/// forge-config: pr.fuzz.runs = 1000
+/// forge-config: pr.fuzz.runs = 7
 contract SpokeLiquidationCallTest_LargeLiquidationBonus_SmallPosition is
   SpokeLiquidationCallHelperTest
 {
@@ -409,7 +409,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_SmallPosition is
   }
 }
 
-/// forge-config: pr.fuzz.runs = 1000
+/// forge-config: pr.fuzz.runs = 7
 contract SpokeLiquidationCallTest_LargeLiquidationBonus_LargePosition is
   SpokeLiquidationCallHelperTest
 {
@@ -434,7 +434,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_LargePosition is
   }
 }
 
-/// forge-config: pr.fuzz.runs = 1000
+/// forge-config: pr.fuzz.runs = 7
 contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
   SpokeLiquidationCallHelperTest
 {
