@@ -106,7 +106,7 @@ interface ISpokeBase {
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to borrow.
   /// @param onBehalfOf The owner of the position against which debt is generated.
-  /// @return The amount of drawn shares.
+  /// @return The amount of shares borrowed.
   function borrow(uint256 reserveId, uint256 amount, address onBehalfOf) external returns (uint256);
 
   /// @notice Repays a specified amount of underlying asset to a given reserve.
@@ -116,7 +116,7 @@ interface ISpokeBase {
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to repay.
   /// @param onBehalfOf The owner of the position whose debt is repaid.
-  /// @return The amount of drawn shares restored.
+  /// @return The amount of shares repaid.
   function repay(uint256 reserveId, uint256 amount, address onBehalfOf) external returns (uint256);
 
   /// @notice Liquidates a user position.
