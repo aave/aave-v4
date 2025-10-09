@@ -20,8 +20,8 @@ contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
 
   function _processAdditionalConfigs(
     uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user
+    uint256 /*debtReserveId*/,
+    address /*user*/
   ) internal virtual override {
     uint256 targetHealthFactor = vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR);
     _updateTargetHealthFactor(spoke, targetHealthFactor.toUint128());
@@ -39,16 +39,14 @@ contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
     );
   }
 
-  function _execBeforeLiquidation(
-    CheckedLiquidationCallParams memory params
-  ) internal virtual override {
+  function _execBeforeLiquidation(CheckedLiquidationCallParams memory) internal virtual override {
     skip(vm.randomUint(1, MAX_SKIP_TIME));
   }
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoBefore,
-    LiquidationMetadata memory liquidationMetadata
+    AccountsInfo memory /*accountsInfoBefore*/,
+    LiquidationMetadata memory /*liquidationMetadata*/
   ) internal virtual override {
     (, uint256 premiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
     assertGt(premiumDebt, 0, 'premium debt');
