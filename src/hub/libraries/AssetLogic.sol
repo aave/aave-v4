@@ -131,7 +131,7 @@ library AssetLogic {
   /// @notice Accrues interest and fees for the specified asset.
   function accrue(
     IHub.Asset storage asset,
-    mapping(address => IHub.SpokeData) storage assetSpokes,
+    mapping(uint256 => mapping(address => IHub.SpokeData)) storage spokes,
     uint256 assetId
   ) internal {
     if (asset.lastUpdateTimestamp == block.timestamp) {
@@ -148,7 +148,7 @@ library AssetLogic {
     if (feeShares > 0) {
       address feeReceiver = asset.feeReceiver;
       asset.addedShares += feeShares;
-      assetSpokes[feeReceiver].addedShares += feeShares;
+      spokes[assetId][feeReceiver].addedShares += feeShares;
       emit IHub.AccrueFees(assetId, feeReceiver, feeShares);
     }
   }
