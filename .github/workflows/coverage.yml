@@ -26,9 +26,11 @@ jobs:
         id: lcov
         with:
           REPORT_PATH: "lcov.info"
+
       - name: Clean coverage report
-        run: sudo apt-get -y install lcov
-          lcov --remove ./lcov/lcov.info -o ./lcov/lcov.info \
+        run: |
+          sudo apt-get -y install lcov
+          lcov --remove ./lcov.info -o ./lcov.info \
           'src/dependencies/*'
 
       - name: Upload coverage reports to Codecov
