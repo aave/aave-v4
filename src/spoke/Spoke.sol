@@ -229,10 +229,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
-    if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
-      uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
-      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
-    }
+    uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
     emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
   }
@@ -377,10 +375,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     if (usingAsCollateral) {
       _refreshDynamicConfig(onBehalfOf, reserveId);
-    } else {
-      uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
-      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
+
+    uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
     emit SetUsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
   }
