@@ -193,10 +193,11 @@ contract Hub is IHub, AccessManaged {
     _validateAdd(asset, spoke, assetId, amount, from);
 
     uint128 shares = previewAddByAssets(assetId, amount).toUint128();
+    uint128 liquidity = asset.liquidity;
     require(shares > 0, InvalidShares());
     asset.addedShares += shares;
     spoke.addedShares += shares;
-    asset.liquidity += amount.toUint128();
+    asset.liquidity = liquidity + amount.toUint128();
 
     asset.updateDrawnRate(assetId);
 
@@ -274,7 +275,8 @@ contract Hub is IHub, AccessManaged {
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(assetId, asset, spoke, premiumDelta, premiumAmount);
     uint256 totalAmount = drawnAmount + premiumAmount;
-    asset.liquidity += totalAmount.toUint128();
+    uint128 liquidity = asset.liquidity;
+    asset.liquidity = liquidity + totalAmount.toUint128();
 
     asset.updateDrawnRate(assetId);
 
