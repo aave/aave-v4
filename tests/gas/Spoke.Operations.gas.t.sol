@@ -148,8 +148,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_liquidation() public {
-    _updateMaxLiquidationBonus(spoke1, _usdxReserveId(spoke1), 105_00);
-    _updateLiquidationFee(spoke1, _usdxReserveId(spoke1), 10_00);
+    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
+    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
 
     vm.prank(bob);
     spoke.supply(reserveId.dai, 1_000_000e18, bob);
@@ -159,7 +159,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
     vm.stopPrank();
 
-    _borrowToBeAtHf(spoke1, alice, reserveId.dai, 0.9e18);
+    _borrowToBeAtHf(spoke, alice, reserveId.dai, 0.9e18);
 
     skip(100);
 
@@ -198,13 +198,13 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   function test_updateUserDynamicConfig() public {
     vm.startPrank(alice);
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
-    _updateLiquidationFee(spoke1, reserveId.usdx, 10_00);
+    _updateLiquidationFee(spoke, reserveId.usdx, 10_00);
 
     spoke.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 1 collateral');
 
     spoke.setUsingAsCollateral(reserveId.dai, true, alice);
-    _updateLiquidationFee(spoke1, reserveId.dai, 15_00);
+    _updateLiquidationFee(spoke, reserveId.dai, 15_00);
 
     spoke.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 2 collaterals');
@@ -228,7 +228,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'supply + enable collateral (multicall)');
 
     // supplyWithPermit (dai)
-    IHub hub = _hub(spoke1, reserveId.dai);
+    IHub hub = _hub(spoke, reserveId.dai);
     tokenList.dai.approve(address(hub), 0);
     (, uint256 bobPk) = makeAddrAndKey('bob');
     EIP712Types.Permit memory permit = EIP712Types.Permit({
@@ -251,7 +251,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     skip(100);
 
     // repayWithPermit (usdx)
-    hub = _hub(spoke1, reserveId.usdx);
+    hub = _hub(spoke, reserveId.usdx);
     tokenList.usdx.approve(address(hub), 0);
     permit = EIP712Types.Permit({
       owner: bob,
@@ -273,7 +273,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
     // supplyWithPermitAndEnableCollateral (wbtc)
     calls = new bytes[](3);
-    hub = _hub(spoke1, reserveId.wbtc);
+    hub = _hub(spoke, reserveId.wbtc);
     tokenList.wbtc.approve(address(hub), 0);
     (, bobPk) = makeAddrAndKey('bob');
     permit = EIP712Types.Permit({
@@ -314,7 +314,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
       nonce: spoke.nonces(user, nonceKey),
       deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
     });
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke1, params));
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke, params));
     bytes memory signature = abi.encodePacked(r, s, v);
 
     spoke.setUserPositionManagerWithSig(
