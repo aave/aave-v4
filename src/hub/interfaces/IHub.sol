@@ -50,10 +50,10 @@ interface IHub is IHubBase, IAccessManaged {
     uint128 premiumShares;
     uint128 premiumOffset;
     //
-    uint128 realizedPremium;
     uint128 drawnShares;
-    //
     uint128 addedShares;
+    //
+    uint128 realizedPremium;
     uint56 addCap;
     uint56 drawCap;
     bool active;

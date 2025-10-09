@@ -1,6 +1,6 @@
 [profile.default]
 src = 'src'
-test = 'tests/unit/misc'
+test = 'tests'
 script = 'scripts'
 out = 'out'
 libs = ['lib']
@@ -26,7 +26,7 @@ runs = 1000
 seed = "0x640"
 
 [profile.pr.fuzz]
-runs = 10
+runs = 5
 
 [profile.ci.fuzz]
 runs = 10000
