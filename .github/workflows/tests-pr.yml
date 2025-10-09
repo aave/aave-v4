@@ -47,3 +47,102 @@ jobs:
         uses: bgd-labs/github-workflows/.github/actions/comment-artifact@main
         with:
           nameSuffix: "default"
+
+  artifacts:
+    name: Generate artifacts matrix
+    needs: [test]
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      pr_number: ${{ steps.set-matrix.outputs.pr_number }}
+    steps:
+      # Download artifacts from THIS run (no run_id)
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: content* # glob for your artifact names
+          path: /tmp/content
+          merge-multiple: true # put them all under /tmp/content
+
+      - id: set-matrix
+        shell: bash
+        run: |
+          # if you produce a pr_number.txt anywhere under content, read it
+          pr_number=$(find /tmp/content -maxdepth 2 -name 'pr_number.txt' -print -quit)
+          if [[ -n "$pr_number" ]]; then
+            echo "pr_number=$(cat "$pr_number")" >> "$GITHUB_OUTPUT"
+            rm "$pr_number"
+          fi
+          # collect *.txt files as a matrix
+          mapfile -t files < <(find /tmp/content -type f -name '*.txt' | sort)
+          printf 'matrix=%s\n' "$(printf '%s\n' "${files[@]}" | jq -R -s -c 'split("\n")[:-1]')" >> "$GITHUB_OUTPUT"
+
+  comment:
+    name: Comment Bot
+    needs: artifacts
+    runs-on: ubuntu-latest
+    if: ${{ always() && (github.event_name == 'pull_request' || needs.artifacts.outputs.pr_number != '') }}
+    strategy:
+      matrix:
+        artifact: ${{ fromJson(needs.artifacts.outputs.matrix) }}
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: content*
+          path: /tmp/content
+          merge-multiple: true
+
+      - name: Prepare comment
+        run: |
+          echo "<!-- ${{ matrix.artifact }} -->" > /tmp/comment
+          cat "${{ matrix.artifact }}" >> /tmp/comment
+
+      # If pr_number.txt was found, comment on the PR (preferred)
+      - name: Find Comment
+        if: ${{ needs.artifacts.outputs.pr_number != '' }}
+        id: fc
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ needs.artifacts.outputs.pr_number }}
+          comment-author: github-actions[bot]
+          body-includes: <!-- ${{ matrix.artifact }} -->
+
+      - name: Create or update PR comment
+        if: ${{ needs.artifacts.outputs.pr_number != '' }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ github.token }}
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ needs.artifacts.outputs.pr_number }}
+          body-file: /tmp/comment
+          edit-mode: replace
+
+      # Fallback: if no pr_number.txt and it's a PR event, use the event context
+      - name: Find Comment (event PR)
+        if: ${{ needs.artifacts.outputs.pr_number == '' && github.event_name == 'pull_request' }}
+        id: fc2
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: <!-- ${{ matrix.artifact }} -->
+
+      - name: Create or update PR comment (event PR)
+        if: ${{ needs.artifacts.outputs.pr_number == '' && github.event_name == 'pull_request' }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ github.token }}
+          comment-id: ${{ steps.fc2.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-file: /tmp/comment
+          edit-mode: replace
+
+      # Last fallback: comment on the commit (e.g., push events)
+      - name: Create or update commit comment
+        if: ${{ needs.artifacts.outputs.pr_number == '' && github.event_name != 'pull_request' }}
+        uses: peter-evans/commit-comment@v3
+        with:
+          token: ${{ github.token }}
+          sha: ${{ github.sha }}
+          body-path: /tmp/comment
