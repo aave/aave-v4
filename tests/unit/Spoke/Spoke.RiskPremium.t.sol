@@ -172,29 +172,21 @@ contract SpokeRiskPremiumTest is SpokeBase {
     _mockReservePrice(spoke2, _dai2ReserveId(spoke2), 100000e8);
 
     // Check that debt has outgrown collateral
-    uint256 collateralValue = _getValueInBaseCurrency(
-      spoke2,
-      _wbtcReserveId(spoke2),
-      wbtcSupplyAmount
-    ) +
-      _getValueInBaseCurrency(spoke2, _daiReserveId(spoke2), daiSupplyAmount) +
-      _getValueInBaseCurrency(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) +
-      _getValueInBaseCurrency(spoke2, _wethReserveId(spoke2), wethSupplyAmount);
-    uint256 debtValue = _getValueInBaseCurrency(spoke2, _dai2ReserveId(spoke2), borrowAmount);
+    uint256 collateralValue = _getValue(spoke2, _wbtcReserveId(spoke2), wbtcSupplyAmount) +
+      _getValue(spoke2, _daiReserveId(spoke2), daiSupplyAmount) +
+      _getValue(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) +
+      _getValue(spoke2, _wethReserveId(spoke2), wethSupplyAmount);
+    uint256 debtValue = _getValue(spoke2, _dai2ReserveId(spoke2), borrowAmount);
     assertGt(debtValue, collateralValue, 'debt outgrows collateral');
 
     // Now user rp should be weighted sum of the collaterals
-    uint256 expectedRiskPremium = (_getValueInBaseCurrency(
-      spoke2,
-      _daiReserveId(spoke2),
-      daiSupplyAmount
-    ) *
+    uint256 expectedRiskPremium = (_getValue(spoke2, _daiReserveId(spoke2), daiSupplyAmount) *
       _getCollateralRisk(spoke2, _daiReserveId(spoke2)) +
-      _getValueInBaseCurrency(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) *
+      _getValue(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) *
       _getCollateralRisk(spoke2, _usdxReserveId(spoke2)) +
-      _getValueInBaseCurrency(spoke2, _wbtcReserveId(spoke2), wbtcSupplyAmount) *
+      _getValue(spoke2, _wbtcReserveId(spoke2), wbtcSupplyAmount) *
       _getCollateralRisk(spoke2, _wbtcReserveId(spoke2)) +
-      _getValueInBaseCurrency(spoke2, _wethReserveId(spoke2), wethSupplyAmount) *
+      _getValue(spoke2, _wethReserveId(spoke2), wethSupplyAmount) *
       _getCollateralRisk(spoke2, _wethReserveId(spoke2))) / collateralValue;
     assertEq(
       _getUserRiskPremium(spoke2, bob),
@@ -267,9 +259,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Weth is enough to cover the total debt
     assertGe(
-      _getValueInBaseCurrency(spoke1, wethInfo.reserveId, wethInfo.supplyAmount),
-      _getValueInBaseCurrency(spoke1, daiInfo.reserveId, daiInfo.borrowAmount) +
-        _getValueInBaseCurrency(spoke1, usdxInfo.reserveId, usdxInfo.borrowAmount),
+      _getValue(spoke1, wethInfo.reserveId, wethInfo.supplyAmount),
+      _getValue(spoke1, daiInfo.reserveId, daiInfo.borrowAmount) +
+        _getValue(spoke1, usdxInfo.reserveId, usdxInfo.borrowAmount),
       'weth supply covers debt'
     );
     uint256 expectedUserRiskPremium = wethInfo.collateralRisk;
@@ -315,8 +307,8 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Dai2 is enough to cover the total debt
     assertGe(
-      _getValueInBaseCurrency(spoke2, dai2Info.reserveId, dai2Info.supplyAmount),
-      _getValueInBaseCurrency(spoke2, daiInfo.reserveId, daiInfo.borrowAmount),
+      _getValue(spoke2, dai2Info.reserveId, dai2Info.supplyAmount),
+      _getValue(spoke2, daiInfo.reserveId, daiInfo.borrowAmount),
       'dai2 supply covers debt'
     );
 
@@ -796,7 +788,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     // Change the collateral risk of wbtc
-    updateCollateralRisk(spoke2, wbtcInfo.reserveId, newCrValue);
+    _updateCollateralRisk(spoke2, wbtcInfo.reserveId, newCrValue);
 
     assertEq(
       _getUserRiskPremium(spoke2, bob),
@@ -888,10 +880,10 @@ contract SpokeRiskPremiumTest is SpokeBase {
     _mockReservePrice(spoke2, _wbtcReserveId(spoke2), wbtcInfo.price);
 
     // Update reserves' collateral risk
-    updateCollateralRisk(spoke2, _daiReserveId(spoke2), daiInfo.collateralRisk);
-    updateCollateralRisk(spoke2, _wethReserveId(spoke2), wethInfo.collateralRisk);
-    updateCollateralRisk(spoke2, _usdxReserveId(spoke2), usdxInfo.collateralRisk);
-    updateCollateralRisk(spoke2, _wbtcReserveId(spoke2), wbtcInfo.collateralRisk);
+    _updateCollateralRisk(spoke2, _daiReserveId(spoke2), daiInfo.collateralRisk);
+    _updateCollateralRisk(spoke2, _wethReserveId(spoke2), wethInfo.collateralRisk);
+    _updateCollateralRisk(spoke2, _usdxReserveId(spoke2), usdxInfo.collateralRisk);
+    _updateCollateralRisk(spoke2, _wbtcReserveId(spoke2), wbtcInfo.collateralRisk);
 
     // Check user risk premium
     assertEq(
@@ -966,10 +958,10 @@ contract SpokeRiskPremiumTest is SpokeBase {
     assertEq(_getUserRiskPremium(spoke3, bob), expectedUserRiskPremium, 'user risk premium');
 
     // Get the base rate of wbtc
-    uint256 baseRate = hub1.getAssetDrawnRate(wbtcAssetId);
+    uint96 baseRate = hub1.getAssetDrawnRate(wbtcAssetId).toUint96();
     uint256 drawnDebt = wbtcInfo.borrowAmount;
     (uint256 actualDrawnDebt, uint256 actualPremium) = spoke3.getUserDebt(wbtcInfo.reserveId, bob);
-    uint40 startTime = vm.getBlockTimestamp().toUint40();
+    uint32 startTime = vm.getBlockTimestamp().toUint32();
 
     assertEq(drawnDebt, actualDrawnDebt, 'user drawn debt');
     assertEq(actualPremium, 0, 'user premium debt');
@@ -1087,18 +1079,18 @@ contract SpokeRiskPremiumTest is SpokeBase {
     DebtChecks memory debtChecks;
 
     // Get the base rate of wbtc
-    uint256 baseRateWbtc = hub1.getAssetDrawnRate(wbtcAssetId);
+    uint96 baseRateWbtc = hub1.getAssetDrawnRate(wbtcAssetId).toUint96();
     (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wbtcInfo.reserveId,
       bob
     );
-    uint256 startTime = vm.getBlockTimestamp();
+    uint32 startTime = vm.getBlockTimestamp().toUint32();
 
     assertEq(wbtcInfo.borrowAmount, debtChecks.actualDrawnDebt, 'user drawn debt');
     assertEq(debtChecks.actualPremium, 0, 'user premium debt');
 
     // Get the base rate of weth
-    uint256 baseRateWeth = hub1.getAssetDrawnRate(wethAssetId);
+    uint96 baseRateWeth = hub1.getAssetDrawnRate(wethAssetId).toUint96();
     (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wethInfo.reserveId,
       bob
@@ -1118,9 +1110,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     // See if drawn debt of wbtc changes appropriately
-    debtChecks.drawnDebt = MathUtils
-      .calculateLinearInterest(baseRateWbtc, startTime.toUint40())
-      .rayMulUp(wbtcInfo.borrowAmount);
+    debtChecks.drawnDebt = MathUtils.calculateLinearInterest(baseRateWbtc, startTime).rayMulUp(
+      wbtcInfo.borrowAmount
+    );
     (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wbtcInfo.reserveId,
       bob
@@ -1171,9 +1163,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
     );
 
     // See if drawn debt of weth changes appropriately
-    debtChecks.drawnDebt = MathUtils
-      .calculateLinearInterest(baseRateWeth, startTime.toUint40())
-      .rayMulUp(wethInfo.borrowAmount);
+    debtChecks.drawnDebt = MathUtils.calculateLinearInterest(baseRateWeth, startTime).rayMulUp(
+      wethInfo.borrowAmount
+    );
     (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke3.getUserDebt(
       wethInfo.reserveId,
       bob

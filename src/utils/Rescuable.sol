@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
+/// @title Rescuable
+/// @author Aave Labs
+/// @notice Contract that allows for the rescue of tokens and native assets.
 abstract contract Rescuable is IRescuable {
   using SafeERC20 for IERC20;
 
@@ -16,8 +19,8 @@ abstract contract Rescuable is IRescuable {
   }
 
   /// @inheritdoc IRescuable
-  function rescueToken(address token, address to) external onlyRescueGuardian {
-    IERC20(token).safeTransfer(to, IERC20(token).balanceOf(address(this)));
+  function rescueToken(address token, address to, uint256 amount) external onlyRescueGuardian {
+    IERC20(token).safeTransfer(to, amount);
   }
 
   /// @inheritdoc IRescuable

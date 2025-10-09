@@ -2,11 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'forge-std/Test.sol';
-import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import 'tests/Base.t.sol';
 
 /// forge-config: default.allow_internal_expect_revert = true
-contract MathUtilsTest is Test {
+contract MathUtilsTest is Base {
+  using SafeCast for uint256;
+
   int256 internal constant INT256_MAX = type(int256).max;
 
   function test_constants() public pure {
@@ -14,22 +15,55 @@ contract MathUtilsTest is Test {
   }
 
   function test_calculateLinearInterest() public {
-    uint40 previousTimestamp = uint40(vm.getBlockTimestamp());
+    uint32 previousTimestamp = uint32(vm.getBlockTimestamp());
     skip(365 days * 7);
     assertEq(MathUtils.calculateLinearInterest(0.08e27, previousTimestamp), 1.56e27);
   }
 
   function test_fuzz_calculateLinearInterest(
-    uint256 rate,
-    uint40 previousTimestamp,
-    uint40 skipTime
+    uint96 rate,
+    uint32 previousTimestamp,
+    uint256 skipTime
   ) public {
-    rate = bound(rate, 1, 100e27);
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
     vm.warp(previousTimestamp);
     skip(skipTime);
     assertEq(
       MathUtils.calculateLinearInterest(rate, previousTimestamp),
-      1e27 + (rate * skipTime) / 365 days
+      1e27 + (uint256(rate) * uint256(skipTime)) / 365 days
+    );
+  }
+
+  function test_calculateLinearInterest_edge_cases() public {
+    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint32).max, 0);
+    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint32).max, 1);
+    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint32).max, MAX_SKIP_TIME);
+    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint32).max - 1, MAX_SKIP_TIME);
+  }
+
+  function test_calculateLinearInterest_reverts_on_past_timestamp(uint32 currentTimestamp) public {
+    currentTimestamp = bound(currentTimestamp, 1, MAX_SKIP_TIME).toUint32();
+    vm.warp(currentTimestamp);
+    vm.expectRevert();
+    MathUtils.calculateLinearInterest(uint96(vm.randomUint()), currentTimestamp + 1);
+  }
+
+  function test_calculateLinearInterest_add_edge() public {
+    uint96 rate = type(uint96).max;
+    uint32 previousTimestamp = 0;
+    uint256 skipTime = type(uint32).max;
+
+    vm.warp(skipTime);
+    assertEq(
+      MathUtils.calculateLinearInterest(rate, previousTimestamp),
+      1e27 + (uint256(rate) * uint256(skipTime)) / 365 days
+    );
+
+    skipTime = type(uint128).max;
+    vm.warp(skipTime);
+    assertEq(
+      MathUtils.calculateLinearInterest(rate, previousTimestamp),
+      1e27 + (uint256(rate) * uint256(skipTime)) / 365 days
     );
   }
 
