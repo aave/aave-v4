@@ -24,7 +24,8 @@ jobs:
       - name: Generate coverage
         run: |
           sudo apt-get -y install lcov
-          make coverage
+          make coverage-base
+          make coverage-clean
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@main
