@@ -14,6 +14,7 @@ import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
 abstract contract GatewayBase is IGatewayBase, Rescuable, Ownable2Step {
   mapping(address => bool) internal _registeredSpokes;
 
+  /// @notice Modifier that checks if the specified spoke is registered.
   modifier onlyRegisteredSpoke(address spoke) {
     _isSpokeValid(spoke);
     _;
@@ -31,8 +32,10 @@ abstract contract GatewayBase is IGatewayBase, Rescuable, Ownable2Step {
   }
 
   /// @inheritdoc IGatewayBase
-  function renouncePositionManagerRole(address spoke, address user) external onlyOwner {
-    _isSpokeValid(spoke);
+  function renouncePositionManagerRole(
+    address spoke,
+    address user
+  ) external onlyOwner onlyRegisteredSpoke(spoke) {
     require(user != address(0), InvalidAddress());
     ISpoke(spoke).renouncePositionManagerRole(user);
   }
@@ -42,6 +45,7 @@ abstract contract GatewayBase is IGatewayBase, Rescuable, Ownable2Step {
     return _registeredSpokes[spoke];
   }
 
+  /// @dev Verifies the specified spoke is registered.
   function _isSpokeValid(address spoke) internal view {
     require(_registeredSpokes[spoke], SpokeNotRegistered());
   }
@@ -56,7 +60,7 @@ abstract contract GatewayBase is IGatewayBase, Rescuable, Ownable2Step {
     return (IERC20(reserveData.underlying), address(reserveData.hub));
   }
 
-  /// @dev RescueGuardian is the owner of the contract.
+  /// @dev The `owner()` is the allowed caller for Rescuable methods.
   function _rescueGuardian() internal view override returns (address) {
     return owner();
   }

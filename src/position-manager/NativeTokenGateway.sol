@@ -3,7 +3,6 @@
 pragma solidity 0.8.28;
 
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
-import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -41,79 +40,80 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
 
   /// @inheritdoc INativeTokenGateway
   function supplyNative(
-    address spoke_,
-    uint256 reserveId_,
-    uint256 amount_
-  ) external payable nonReentrant onlyRegisteredSpoke(spoke_) {
-    _supplyNative(spoke_, reserveId_, amount_, msg.sender, false);
+    address spokeAddress,
+    uint256 reserveId,
+    uint256 amount
+  ) external payable nonReentrant onlyRegisteredSpoke(spokeAddress) {
+    _supplyNative(spokeAddress, reserveId, amount, msg.sender);
   }
 
   /// @inheritdoc INativeTokenGateway
   function supplyAndCollateralNative(
-    address spoke_,
-    uint256 reserveId_,
-    uint256 amount_
-  ) external payable nonReentrant onlyRegisteredSpoke(spoke_) {
-    _supplyNative(spoke_, reserveId_, amount_, msg.sender, true);
+    address spokeAddress,
+    uint256 reserveId,
+    uint256 amount
+  ) external payable nonReentrant onlyRegisteredSpoke(spokeAddress) {
+    _supplyNative(spokeAddress, reserveId, amount, msg.sender);
+    _setUsingAsCollateral(spokeAddress, reserveId, msg.sender);
   }
 
   /// @inheritdoc INativeTokenGateway
   function withdrawNative(
-    address spoke_,
-    uint256 reserveId_,
-    uint256 amount_
-  ) external onlyRegisteredSpoke(spoke_) {
-    ISpoke spoke = ISpoke(spoke_);
-    (IERC20 underlying, address hub) = _getReserveData(spoke, reserveId_);
-    _validateParams(underlying, amount_);
+    address spokeAddress,
+    uint256 reserveId,
+    uint256 amount
+  ) external onlyRegisteredSpoke(spokeAddress) {
+    ISpoke spoke = ISpoke(spokeAddress);
+    (IERC20 underlying, address hub) = _getReserveData(spoke, reserveId);
+    _validateParams(underlying, amount);
 
     uint256 withdrawAmount = MathUtils.min(
-      amount_,
-      spoke.getUserSuppliedAssets(reserveId_, msg.sender)
+      amount,
+      spoke.getUserSuppliedAssets(reserveId, msg.sender)
     );
 
-    spoke.withdraw(reserveId_, withdrawAmount, msg.sender);
+    spoke.withdraw(reserveId, withdrawAmount, msg.sender);
     _nativeWrapper.withdraw(withdrawAmount);
     Address.sendValue(payable(msg.sender), withdrawAmount);
   }
 
   /// @inheritdoc INativeTokenGateway
   function borrowNative(
-    address spoke_,
-    uint256 reserveId_,
-    uint256 amount_
-  ) external onlyRegisteredSpoke(spoke_) {
-    ISpoke spoke = ISpoke(spoke_);
-    (IERC20 underlying, address hub) = _getReserveData(spoke, reserveId_);
-    _validateParams(underlying, amount_);
+    address spokeAddress,
+    uint256 reserveId,
+    uint256 amount
+  ) external onlyRegisteredSpoke(spokeAddress) {
+    ISpoke spoke = ISpoke(spokeAddress);
+    (IERC20 underlying, address hub) = _getReserveData(spoke, reserveId);
+    _validateParams(underlying, amount);
 
-    spoke.borrow(reserveId_, amount_, msg.sender);
-    _nativeWrapper.withdraw(amount_);
-    Address.sendValue(payable(msg.sender), amount_);
+    spoke.borrow(reserveId, amount, msg.sender);
+    _nativeWrapper.withdraw(amount);
+    Address.sendValue(payable(msg.sender), amount);
   }
 
   /// @inheritdoc INativeTokenGateway
   function repayNative(
-    address spoke_,
-    uint256 reserveId_,
-    uint256 amount_
-  ) external payable nonReentrant onlyRegisteredSpoke(spoke_) {
-    ISpoke spoke = ISpoke(spoke_);
-    (IERC20 underlying, address hub) = _getReserveData(spoke, reserveId_);
-    _validateParams(underlying, amount_);
-    require(msg.value == amount_, NativeAmountMismatch());
+    address spokeAddress,
+    uint256 reserveId,
+    uint256 amount
+  ) external payable nonReentrant onlyRegisteredSpoke(spokeAddress) {
+    ISpoke spoke = ISpoke(spokeAddress);
+    (IERC20 underlying, address hub) = _getReserveData(spoke, reserveId);
+    _validateParams(underlying, amount);
+    require(msg.value == amount, NativeAmountMismatch());
 
-    uint256 userDebtAmount = spoke.getUserTotalDebt(reserveId_, msg.sender);
-    uint256 repayAmount = amount_;
+    uint256 userDebtAmount = spoke.getUserTotalDebt(reserveId, msg.sender);
+    uint256 repayAmount = amount;
     uint256 leftovers;
-    if (amount_ > userDebtAmount) {
-      leftovers = amount_ - userDebtAmount;
+    if (amount > userDebtAmount) {
+      leftovers = amount - userDebtAmount;
       repayAmount = userDebtAmount;
     }
 
     _nativeWrapper.deposit{value: repayAmount}();
     _nativeWrapper.forceApprove(hub, repayAmount);
-    spoke.repay(reserveId_, repayAmount, msg.sender);
+    spoke.repay(reserveId, repayAmount, msg.sender);
 
     if (leftovers > 0) {
       Address.sendValue(payable(msg.sender), leftovers);
@@ -131,23 +131,22 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
   }
 
   function _supplyNative(
-    address spoke_,
-    uint256 reserveId_,
-    uint256 amount_,
-    address user_,
-    bool enableCollateral_
+    address spokeAddress,
+    uint256 reserveId,
+    uint256 amount,
+    address user
   ) internal {
-    ISpoke spoke = ISpoke(spoke_);
-    (IERC20 underlying, address hub) = _getReserveData(spoke, reserveId_);
-    _validateParams(underlying, amount_);
-    require(msg.value == amount_, NativeAmountMismatch());
+    ISpoke spoke = ISpoke(spokeAddress);
+    (IERC20 underlying, address hub) = _getReserveData(spoke, reserveId);
+    _validateParams(underlying, amount);
+    require(msg.value == amount, NativeAmountMismatch());
 
-    _nativeWrapper.deposit{value: amount_}();
-    _nativeWrapper.forceApprove(hub, amount_);
-    spoke.supply(reserveId_, amount_, user_);
+    _nativeWrapper.deposit{value: amount}();
+    _nativeWrapper.forceApprove(hub, amount);
+    spoke.supply(reserveId, amount, user);
+  }
 
-    if (enableCollateral_) {
-      spoke.setUsingAsCollateral(reserveId_, true, user_);
-    }
+  function _setUsingAsCollateral(address spokeAddress, uint256 reserveId, address user) internal {
+    ISpoke(spokeAddress).setUsingAsCollateral(reserveId, true, user);
   }
 }
