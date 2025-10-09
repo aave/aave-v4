@@ -18,6 +18,8 @@ contract LiquidationLogicWrapper {
   ISpoke.Reserve internal debtReserve;
   ISpoke.UserPosition internal debtPosition;
 
+  ISpoke.UserPosition internal liquidatorPosition;
+
   ISpoke.PositionStatus internal positionStatus;
 
   ISpoke.LiquidationConfig internal liquidationConfig;
@@ -37,6 +39,10 @@ contract LiquidationLogicWrapper {
 
   function setCollateralPositionSuppliedShares(uint256 suppliedShares) public {
     collateralPosition.suppliedShares = suppliedShares.toUint128();
+  }
+
+  function setLiquidatorPositionSuppliedShares(uint256 suppliedShares) public {
+    liquidatorPosition.suppliedShares = suppliedShares.toUint128();
   }
 
   function getCollateralReserve() public view returns (ISpoke.Reserve memory) {
@@ -166,7 +172,13 @@ contract LiquidationLogicWrapper {
   function liquidateCollateral(
     LiquidationLogic.LiquidateCollateralParams memory params
   ) public returns (bool) {
-    return LiquidationLogic._liquidateCollateral(collateralReserve, collateralPosition, params);
+    return
+      LiquidationLogic._liquidateCollateral(
+        collateralReserve,
+        collateralPosition,
+        liquidatorPosition,
+        params
+      );
   }
 
   function liquidateDebt(LiquidationLogic.LiquidateDebtParams memory params) public returns (bool) {
@@ -174,16 +186,18 @@ contract LiquidationLogicWrapper {
   }
 
   function liquidateUser(LiquidationLogic.LiquidateUserParams memory params) public returns (bool) {
-    return
-      LiquidationLogic.liquidateUser(
-        collateralReserve,
-        debtReserve,
-        collateralPosition,
-        debtPosition,
-        positionStatus,
-        liquidationConfig,
-        dynamicCollateralConfig,
-        params
-      );
+    return false;
+    // return
+    //   LiquidationLogic.liquidateUser(
+    //     collateralReserve,
+    //     debtReserve,
+    //     collateralPosition,
+    //     debtPosition,
+    //     liquidatorPosition,
+    //     positionStatus,
+    //     liquidationConfig,
+    //     dynamicCollateralConfig,
+    //     params
+    //   );
   }
 }

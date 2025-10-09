@@ -345,9 +345,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bool isUserInDeficit = LiquidationLogic.liquidateUser(
       _reserves[collateralReserveId],
       _reserves[debtReserveId],
-      _userPositions[user][collateralReserveId],
-      _userPositions[user][debtReserveId],
-      _userPositions[msg.sender][collateralReserveId],
+      _userPositions,
       _positionStatus[user],
       _liquidationConfig,
       collateralDynConfig,

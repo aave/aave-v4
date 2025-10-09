@@ -117,9 +117,6 @@ library LiquidationLogic {
   /// @notice Liquidates a user position.
   /// @param collateralReserve The collateral reserve to seize during liquidation.
   /// @param debtReserve The debt reserve to repay during liquidation.
-  /// @param collateralPosition The user's collateral position struct in storage.
-  /// @param debtPosition The user's debt position struct in storage.
-  /// @param liquidatorCollateralPosition The liquidator's collateral position struct in storage. Utilized if liquidator receives shares.
   /// @param positionStatus The user's position status.
   /// @param liquidationConfig The liquidation config.
   /// @param collateralDynConfig The collateral dynamic config.
@@ -128,9 +125,8 @@ library LiquidationLogic {
   function liquidateUser(
     ISpoke.Reserve storage collateralReserve,
     ISpoke.Reserve storage debtReserve,
-    ISpoke.UserPosition storage collateralPosition,
-    ISpoke.UserPosition storage debtPosition,
-    ISpoke.UserPosition storage liquidatorCollateralPosition,
+    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
+      storage _userPositions,
     ISpoke.PositionStatus storage positionStatus,
     ISpoke.LiquidationConfig storage liquidationConfig,
     ISpoke.DynamicReserveConfig storage collateralDynConfig,
@@ -138,7 +134,7 @@ library LiquidationLogic {
   ) external returns (bool) {
     uint256 collateralReserveBalance = collateralReserve.hub.previewRemoveByShares(
       collateralReserve.assetId,
-      collateralPosition.suppliedShares
+      _userPositions[params.user][params.collateralReserveId].suppliedShares
     );
     _validateLiquidationCall(
       ValidateLiquidationCallParams({
@@ -186,8 +182,8 @@ library LiquidationLogic {
 
     bool isCollateralPositionEmpty = _liquidateCollateral(
       collateralReserve,
-      collateralPosition,
-      liquidatorCollateralPosition,
+      _userPositions[params.user][params.collateralReserveId],
+      _userPositions[params.liquidator][params.collateralReserveId],
       LiquidateCollateralParams({
         collateralToLiquidate: collateralToLiquidate,
         collateralToLiquidator: collateralToLiquidator,
@@ -198,7 +194,7 @@ library LiquidationLogic {
 
     bool isDebtPositionEmpty = _liquidateDebt(
       debtReserve,
-      debtPosition,
+      _userPositions[params.user][params.debtReserveId],
       positionStatus,
       LiquidateDebtParams({
         reserveId: params.debtReserveId,
