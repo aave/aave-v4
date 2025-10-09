@@ -347,6 +347,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _reserves[debtReserveId],
       _userPositions[user][collateralReserveId],
       _userPositions[user][debtReserveId],
+      _userPositions[msg.sender][collateralReserveId],
       _positionStatus[user],
       _liquidationConfig,
       collateralDynConfig,

@@ -119,6 +119,7 @@ library LiquidationLogic {
   /// @param debtReserve The debt reserve to repay during liquidation.
   /// @param collateralPosition The user's collateral position struct in storage.
   /// @param debtPosition The user's debt position struct in storage.
+  /// @param liquidatorCollateralPosition The liquidator's collateral position struct in storage. Utilized if liquidator receives shares.
   /// @param positionStatus The user's position status.
   /// @param liquidationConfig The liquidation config.
   /// @param collateralDynConfig The collateral dynamic config.
@@ -129,6 +130,7 @@ library LiquidationLogic {
     ISpoke.Reserve storage debtReserve,
     ISpoke.UserPosition storage collateralPosition,
     ISpoke.UserPosition storage debtPosition,
+    ISpoke.UserPosition storage liquidatorCollateralPosition,
     ISpoke.PositionStatus storage positionStatus,
     ISpoke.LiquidationConfig storage liquidationConfig,
     ISpoke.DynamicReserveConfig storage collateralDynConfig,
@@ -185,6 +187,7 @@ library LiquidationLogic {
     bool isCollateralPositionEmpty = _liquidateCollateral(
       collateralReserve,
       collateralPosition,
+      liquidatorCollateralPosition,
       LiquidateCollateralParams({
         collateralToLiquidate: collateralToLiquidate,
         collateralToLiquidator: collateralToLiquidator,
@@ -451,6 +454,7 @@ library LiquidationLogic {
   function _liquidateCollateral(
     ISpoke.Reserve storage reserve,
     ISpoke.UserPosition storage position,
+    ISpoke.UserPosition storage liquidatorPosition,
     LiquidateCollateralParams memory params
   ) internal returns (bool) {
     IHubBase hub = reserve.hub;
@@ -463,7 +467,8 @@ library LiquidationLogic {
     uint256 sharesToLiquidator;
     if (params.receiveShares) {
       sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
-      position.suppliedShares += sharesToLiquidator.toUint128();
+      liquidatorPosition.suppliedShares += sharesToLiquidator.toUint128();
+      // TBD: notify for liquidator? allow if reserve is frozen?
     } else {
       sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
     }
