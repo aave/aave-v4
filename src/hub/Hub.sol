@@ -25,7 +25,7 @@ contract Hub is IHub, AccessManaged {
   using WadRayMath for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
-  using AssetLogic for *;
+  using AssetLogic for Asset;
   using MathUtils for *;
 
   /// @inheritdoc IHub
@@ -122,7 +122,7 @@ contract Hub is IHub, AccessManaged {
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
-    _assets.accrue(_spokes, assetId);
+    asset.accrue(_spokes[assetId], assetId);
 
     require(config.liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
     require(config.feeReceiver != address(0) && config.irStrategy != address(0), InvalidAddress());
@@ -179,7 +179,7 @@ contract Hub is IHub, AccessManaged {
   function setInterestRateData(uint256 assetId, bytes calldata irData) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
-    _assets.accrue(_spokes, assetId);
+    asset.accrue(_spokes[assetId], assetId);
     IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, irData);
     asset.updateDrawnRate(assetId);
   }
@@ -189,7 +189,7 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _assets.accrue(_spokes, assetId);
+    asset.accrue(_spokes[assetId], assetId);
     _validateAdd(asset, spoke, assetId, amount, from);
 
     uint128 shares = previewAddByAssets(assetId, amount).toUint128();
@@ -212,7 +212,7 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _assets.accrue(_spokes, assetId);
+    asset.accrue(_spokes[assetId], assetId);
     _validateRemove(spoke, assetId, amount, to);
     uint256 liquidity = asset.liquidity;
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
@@ -236,7 +236,7 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _assets.accrue(_spokes, assetId);
+    asset.accrue(_spokes[assetId], assetId);
     _validateDraw(asset, spoke, assetId, amount, to);
     uint256 liquidity = asset.liquidity;
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
@@ -266,7 +266,7 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _assets.accrue(_spokes, assetId);
+    asset.accrue(_spokes[assetId], assetId);
     _validateRestore(spoke, assetId, drawnAmount, premiumAmount, from);
 
     uint128 drawnShares = previewRestoreByAssets(assetId, drawnAmount).toUint128();
@@ -295,7 +295,7 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _assets.accrue(_spokes, assetId);
+    asset.accrue(_spokes[assetId], assetId);
     _validateReportDeficit(spoke, assetId, drawnAmount, premiumAmount);
 
     uint128 drawnShares = previewRestoreByAssets(assetId, drawnAmount).toUint128();
@@ -323,7 +323,7 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage callerSpoke = _spokes[assetId][msg.sender];
     SpokeData storage coveredSpoke = _spokes[assetId][spoke];
 
-    _assets.accrue(_spokes, assetId);
+    asset.accrue(_spokes[assetId], assetId);
     _validateEliminateDeficit(callerSpoke, amount);
     uint256 deficit = coveredSpoke.deficit;
     require(amount <= deficit, InvalidAmount());
@@ -346,7 +346,7 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _assets.accrue(_spokes, assetId);
+    asset.accrue(_spokes[assetId], assetId);
     require(spoke.active, SpokeNotActive());
     // no premium change allowed
     _applyPremiumDelta(assetId, asset, spoke, premiumDelta, 0);
@@ -362,7 +362,7 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage receiver = _spokes[assetId][feeReceiver];
     SpokeData storage sender = _spokes[assetId][msg.sender];
 
-    _assets.accrue(_spokes, assetId);
+    asset.accrue(_spokes[assetId], assetId);
     _validatePayFeeShares(sender, shares);
     _transferShares(sender, receiver, shares);
     asset.updateDrawnRate(assetId);
@@ -376,7 +376,7 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage sender = _spokes[assetId][msg.sender];
     SpokeData storage receiver = _spokes[assetId][toSpoke];
 
-    _assets.accrue(_spokes, assetId);
+    asset.accrue(_spokes[assetId], assetId);
     _validateTransferShares(asset, sender, receiver, assetId, shares);
     _transferShares(sender, receiver, shares);
     asset.updateDrawnRate(assetId);
@@ -389,7 +389,7 @@ contract Hub is IHub, AccessManaged {
     require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
 
-    _assets.accrue(_spokes, assetId);
+    asset.accrue(_spokes[assetId], assetId);
     _validateSweep(asset, msg.sender, amount);
 
     asset.liquidity -= amount.toUint128();
@@ -406,7 +406,7 @@ contract Hub is IHub, AccessManaged {
     require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
 
-    _assets.accrue(_spokes, assetId);
+    asset.accrue(_spokes[assetId], assetId);
     _validateReclaim(asset, msg.sender, amount);
 
     asset.liquidity += amount.toUint128();
