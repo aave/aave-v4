@@ -117,6 +117,7 @@ library LiquidationLogic {
   /// @notice Liquidates a user position.
   /// @param collateralReserve The collateral reserve to seize during liquidation.
   /// @param debtReserve The debt reserve to repay during liquidation.
+  /// @param userPositions The user positions mapping in storage.
   /// @param positionStatus The user's position status.
   /// @param liquidationConfig The liquidation config.
   /// @param collateralDynConfig The collateral dynamic config.
@@ -126,7 +127,7 @@ library LiquidationLogic {
     ISpoke.Reserve storage collateralReserve,
     ISpoke.Reserve storage debtReserve,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
-      storage _userPositions,
+      storage userPositions,
     ISpoke.PositionStatus storage positionStatus,
     ISpoke.LiquidationConfig storage liquidationConfig,
     ISpoke.DynamicReserveConfig storage collateralDynConfig,
@@ -134,7 +135,7 @@ library LiquidationLogic {
   ) external returns (bool) {
     uint256 collateralReserveBalance = collateralReserve.hub.previewRemoveByShares(
       collateralReserve.assetId,
-      _userPositions[params.user][params.collateralReserveId].suppliedShares
+      userPositions[params.user][params.collateralReserveId].suppliedShares
     );
     _validateLiquidationCall(
       ValidateLiquidationCallParams({
@@ -182,8 +183,8 @@ library LiquidationLogic {
 
     bool isCollateralPositionEmpty = _liquidateCollateral(
       collateralReserve,
-      _userPositions[params.user][params.collateralReserveId],
-      _userPositions[params.liquidator][params.collateralReserveId],
+      userPositions[params.user][params.collateralReserveId],
+      userPositions[params.liquidator][params.collateralReserveId],
       LiquidateCollateralParams({
         collateralToLiquidate: collateralToLiquidate,
         collateralToLiquidator: collateralToLiquidator,
@@ -194,7 +195,7 @@ library LiquidationLogic {
 
     bool isDebtPositionEmpty = _liquidateDebt(
       debtReserve,
-      _userPositions[params.user][params.debtReserveId],
+      userPositions[params.user][params.debtReserveId],
       positionStatus,
       LiquidateDebtParams({
         reserveId: params.debtReserveId,
