@@ -88,7 +88,8 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
         user: user,
         debtToCover: debtToCover,
         liquidator: liquidator,
-        isSolvent: isSolvent
+        isSolvent: isSolvent,
+        receiveShares: false
       })
     );
   }

@@ -22,6 +22,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 debtToCover;
     address liquidator;
     bool isSolvent;
+    bool receiveShares;
   }
 
   struct BalanceInfo {
@@ -424,7 +425,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.user,
       liquidationMetadata.debtToLiquidate,
       liquidationMetadata.collateralToLiquidate,
-      params.liquidator
+      params.liquidator,
+      params.receiveShares
     );
 
     for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
@@ -1154,7 +1156,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.collateralReserveId,
       params.debtReserveId,
       params.user,
-      params.debtToCover
+      params.debtToCover,
+      params.receiveShares
     );
 
     Vm.Log[] memory logs = vm.getRecordedLogs();

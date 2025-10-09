@@ -99,10 +99,10 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     // debtToTarget would result in dust collateral, therefore reverts
     vm.startPrank(liquidator);
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, debtToTarget);
+    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, debtToTarget, false);
 
     // valid debtToCover succeeds
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, UINT256_MAX);
+    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, UINT256_MAX, false);
     vm.stopPrank();
 
     assertEq(spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice), 0);
@@ -165,9 +165,9 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     vm.startPrank(liquidator);
     // if debtToCover results in collateral dust, it should revert; $500 in collateral would remain
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, 600e6);
+    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, 600e6, false);
 
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, debtToCover);
+    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, debtToCover, false);
     vm.stopPrank();
 
     assertEq(spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice), 0);
@@ -224,9 +224,9 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     vm.startPrank(liquidator);
     // if debtToCover results in collateral and dust, it will revert; $500 in collateral would remain
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, 600e6);
+    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, 600e6, false);
 
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, debtToCover);
+    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, debtToCover, false);
     vm.stopPrank();
 
     assertEq(spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice), 0);
@@ -290,9 +290,9 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     vm.startPrank(liquidator);
     // if debtToCover results in collateral and dust, it will revert; $500 in collateral would remain
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, 600e6);
+    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, 600e6, false);
 
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, debtToCover);
+    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, debtToCover, false);
     vm.stopPrank();
 
     assertEq(spoke.getUserTotalDebt(_usdxReserveId(spoke), alice), 0);

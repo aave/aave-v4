@@ -35,6 +35,7 @@ library LiquidationLogic {
     address liquidator;
     uint256 activeCollateralCount;
     uint256 borrowedCount;
+    bool receiveShares;
   }
 
   struct ValidateLiquidationCallParams {
@@ -104,6 +105,7 @@ library LiquidationLogic {
     uint256 collateralToLiquidate;
     uint256 collateralToLiquidator;
     address liquidator;
+    bool receiveShares;
   }
 
   // see ISpoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD docs
@@ -186,7 +188,8 @@ library LiquidationLogic {
       LiquidateCollateralParams({
         collateralToLiquidate: collateralToLiquidate,
         collateralToLiquidator: collateralToLiquidator,
-        liquidator: params.liquidator
+        liquidator: params.liquidator,
+        receiveShares: params.receiveShares
       })
     );
 
@@ -209,7 +212,8 @@ library LiquidationLogic {
       params.user,
       debtToLiquidate,
       collateralToLiquidate,
-      params.liquidator
+      params.liquidator,
+      params.receiveShares
     );
 
     return
@@ -456,11 +460,13 @@ library LiquidationLogic {
 
     position.suppliedShares -= sharesToLiquidate.toUint128();
 
-    uint256 sharesToLiquidator = hub.remove(
-      assetId,
-      params.collateralToLiquidator,
-      params.liquidator
-    );
+    uint256 sharesToLiquidator;
+    if (params.receiveShares) {
+      sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
+      position.suppliedShares += sharesToLiquidator.toUint128();
+    } else {
+      sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
+    }
 
     if (sharesToLiquidate > sharesToLiquidator) {
       hub.payFeeShares(assetId, sharesToLiquidate.uncheckedSub(sharesToLiquidator));

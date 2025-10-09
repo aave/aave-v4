@@ -63,7 +63,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     assertLe(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);
-    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100_000e18);
+    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100_000e18, false);
 
     _assertDynamicConfigRefreshEventsNotEmitted();
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -74,7 +74,13 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 80_00);
 
     vm.prank(bob);
-    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, UINT256_MAX);
+    spoke1.liquidationCall(
+      _usdxReserveId(spoke1),
+      _daiReserveId(spoke1),
+      alice,
+      UINT256_MAX,
+      false
+    );
 
     _assertDynamicConfigRefreshEventsNotEmitted();
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);

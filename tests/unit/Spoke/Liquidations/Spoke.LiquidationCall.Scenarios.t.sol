@@ -126,7 +126,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
         user: user,
         debtToCover: 4000e18,
         liquidator: liquidator,
-        isSolvent: true
+        isSolvent: true,
+        receiveShares: false
       })
     );
 
@@ -223,7 +224,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
         user: user,
         debtToCover: 4000e18,
         liquidator: liquidator,
-        isSolvent: true
+        isSolvent: true,
+        receiveShares: false
       })
     );
 
