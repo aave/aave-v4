@@ -218,10 +218,6 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   function test_liquidateUser_revertsWith_MustNotLeaveDust_Debt() public {
     params.totalDebtValue *= 2;
     params.debtToCover = 4.9e18;
-    console.log(
-      'getCollateralPosition %e ',
-      liquidationLogicWrapper.getCollateralPosition().suppliedShares
-    );
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(
       liquidationLogicWrapper.getCollateralPosition().suppliedShares * 2
     );

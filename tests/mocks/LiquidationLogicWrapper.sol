@@ -60,15 +60,6 @@ contract LiquidationLogicWrapper {
     _userPositions[_borrower][_collateralReserveId].suppliedShares = suppliedShares.toUint128();
   }
 
-  // function setCollateralPositionSuppliedShares(address user, uint256 suppliedShares) public {
-  //   _userPositions[user][_collateralReserveId].suppliedShares = suppliedShares.toUint128();
-  //   console.log(
-  //     'wrapper suppliedShares %e',
-  //     _userPositions[user][_collateralReserveId].suppliedShares,
-  //     user
-  //   );
-  // }
-
   function setLiquidatorPositionSuppliedShares(address liquidator, uint256 suppliedShares) public {
     _userPositions[liquidator][_collateralReserveId].suppliedShares = suppliedShares.toUint128();
   }
@@ -240,13 +231,6 @@ contract LiquidationLogicWrapper {
   }
 
   function liquidateUser(LiquidationLogic.LiquidateUserParams memory params) public returns (bool) {
-    // return false;
-    console.log(
-      'wrapper liquidateUser',
-      params.user,
-      _userPositions[params.user][_collateralReserveId].suppliedShares,
-      _collateralReserveId
-    );
     return
       LiquidationLogic.liquidateUser(
         collateralReserve,

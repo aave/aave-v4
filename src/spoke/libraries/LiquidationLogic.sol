@@ -2,8 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -138,11 +136,6 @@ library LiquidationLogic {
     uint256 collateralReserveBalance = collateralReserve.hub.previewRemoveByShares(
       collateralReserve.assetId,
       userPositions[params.user][params.collateralReserveId].suppliedShares
-    );
-    console.log(
-      'collateralReserveBalance %e',
-      collateralReserveBalance,
-      params.collateralReserveId
     );
     _validateLiquidationCall(
       ValidateLiquidationCallParams({
