@@ -18,8 +18,6 @@ import {Multicall} from 'src/utils/Multicall.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
-import {EIP712Hash} from 'src/libraries/cryptography/EIP712Hash.sol';
 
 /// @title Spoke
 /// @author Aave Labs
@@ -32,13 +30,17 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   using KeyValueList for KeyValueList.List;
   using PositionStatusMap for *;
   using MathUtils for *;
-  using EIP712Hash for *;
 
   /// @inheritdoc ISpoke
   uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
 
   /// @inheritdoc ISpoke
   uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
+
+  /// @inheritdoc ISpoke
+  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
+    // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
+    0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
 
   /// @inheritdoc ISpoke
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
@@ -406,18 +408,29 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function setUserPositionManagerWithSig(
-    EIP712Types.SetUserPositionManager calldata params,
+    address positionManager,
+    address user,
+    bool approve,
+    uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external {
-    require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(params.hash());
-    require(SignatureChecker.isValidSignatureNow(params.user, hash, signature), InvalidSignature());
-    _useCheckedNonce(params.user, params.nonce);
-    _setUserPositionManager({
-      positionManager: params.positionManager,
-      user: params.user,
-      approve: params.approve
-    });
+    require(block.timestamp <= deadline, InvalidSignature());
+    bytes32 hash = _hashTypedData(
+      keccak256(
+        abi.encode(
+          SET_USER_POSITION_MANAGER_TYPEHASH,
+          positionManager,
+          user,
+          approve,
+          nonce,
+          deadline
+        )
+      )
+    );
+    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    _useCheckedNonce(user, nonce);
+    _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
 
   /// @inheritdoc ISpoke
@@ -624,11 +637,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparator();
-  }
-
-  /// @inheritdoc ISpoke
-  function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32) {
-    return EIP712Hash.SET_USER_POSITION_MANAGER_TYPEHASH;
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {

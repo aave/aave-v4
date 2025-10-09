@@ -14,9 +14,6 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
   error InvalidSignature();
 
-  /// @notice Thrown when the specified `positionManager` for `setSelfAsUserPositionManagerWithSig` is not this contract.
-  error InvalidPositionManager();
-
   /// @notice Facilitates `supply` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
