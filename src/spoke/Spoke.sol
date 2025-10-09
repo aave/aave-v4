@@ -786,10 +786,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
 
-    if (newRiskPremium == 0 && !positionStatus.hasRiskPremium) {
+    if (newRiskPremium == 0 && !positionStatus.hasPositivePremium) {
       return;
     }
-    positionStatus.hasRiskPremium = newRiskPremium > 0;
+    positionStatus.hasPositivePremium = newRiskPremium > 0;
 
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
