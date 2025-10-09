@@ -29,7 +29,7 @@ contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
     uint256 liquidationFee = vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE);
     _updateLiquidationFee(spoke, collateralReserveId, liquidationFee.toUint16());
 
-    uint256 liquidationBonus = vm.randomUint(MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
+    uint256 liquidationBonus = _randomMaxLiquidationBonus(spoke, collateralReserveId);
     _updateMaxLiquidationBonus(spoke, collateralReserveId, liquidationBonus.toUint32());
 
     _updateCollateralRisk(
