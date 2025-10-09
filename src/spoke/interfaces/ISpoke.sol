@@ -56,12 +56,13 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   }
 
   struct PositionManagerConfig {
-    bool active;
     mapping(address user => bool) approval;
+    bool active;
   }
 
   struct PositionStatus {
     mapping(uint256 slot => uint256) map;
+    bool hasPositiveRiskPremium; // premiumShares > 0
   }
 
   struct UserAccountData {
