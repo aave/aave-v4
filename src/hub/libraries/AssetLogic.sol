@@ -131,9 +131,13 @@ library AssetLogic {
   /// @notice Accrues interest and fees for the specified asset.
   function accrue(
     IHub.Asset storage asset,
-    uint256 assetId,
-    IHub.SpokeData storage feeReceiver
+    mapping(uint256 => mapping(address => IHub.SpokeData)) storage spokes,
+    uint256 assetId
   ) internal {
+    if (asset.lastUpdateTimestamp == block.timestamp) {
+      return;
+    }
+
     uint256 newDrawnIndex = asset.getDrawnIndex();
     uint256 indexDelta = newDrawnIndex.uncheckedSub(asset.drawnIndex);
 
@@ -142,9 +146,10 @@ library AssetLogic {
 
     uint128 feeShares = asset.getFeeShares(indexDelta).toUint128();
     if (feeShares > 0) {
-      feeReceiver.addedShares += feeShares;
+      address feeReceiver = asset.feeReceiver;
       asset.addedShares += feeShares;
-      emit IHub.AccrueFees(assetId, feeShares);
+      spokes[assetId][feeReceiver].addedShares += feeShares;
+      emit IHub.AccrueFees(assetId, feeReceiver, feeShares);
     }
   }
 
