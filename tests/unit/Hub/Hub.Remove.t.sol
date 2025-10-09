@@ -377,7 +377,6 @@ contract HubRemoveTest is HubBase {
   }
 
   function test_remove_revertsWith_AddedAmountExceeded() public {
-    uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
     // User add

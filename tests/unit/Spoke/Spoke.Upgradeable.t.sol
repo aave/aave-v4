@@ -204,8 +204,8 @@ contract SpokeUpgradeableTest is SpokeBase {
     return uint64(uint256(slotData) & ((1 << 64) - 1));
   }
 
-  function _getInitializeCalldata(address accessManager) internal view returns (bytes memory) {
-    return abi.encodeCall(Spoke.initialize, address(accessManager));
+  function _getInitializeCalldata(address manager) internal pure returns (bytes memory) {
+    return abi.encodeCall(Spoke.initialize, manager);
   }
 
   function _deployMockSpokeInstance(uint64 revision) internal returns (SpokeInstance) {

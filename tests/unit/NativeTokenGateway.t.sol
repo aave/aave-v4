@@ -49,7 +49,7 @@ contract NativeTokenGatewayTest is Base {
   }
 
   function test_renouncePositionManagerRole() public {
-    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
+    (address user, ) = makeAddrAndKey(string(vm.randomBytes(32)));
 
     vm.prank(user);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
@@ -104,7 +104,6 @@ contract NativeTokenGatewayTest is Base {
   }
 
   function test_supplyNative_revertsWith_InvalidAmount() public {
-    uint256 amount = 100e18;
     vm.expectRevert(INativeTokenGateway.InvalidAmount.selector);
     vm.prank(bob);
     nativeTokenGateway.supplyNative{value: 0}(_wethReserveId(spoke1), 0);
@@ -412,8 +411,6 @@ contract NativeTokenGatewayTest is Base {
   }
 
   function test_borrowNative_revertsWith_InvalidAmount() public {
-    uint256 borrowAmount = 5e18;
-
     vm.expectRevert(INativeTokenGateway.InvalidAmount.selector);
     vm.prank(bob);
     nativeTokenGateway.borrowNative(_wethReserveId(spoke1), 0, bob);
@@ -459,7 +456,7 @@ contract NativeTokenGatewayTest is Base {
       _wethReserveId(spoke1),
       bob
     );
-    (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
+    (uint256 baseRestored, ) = _calculateExactRestoreAmount(
       userDrawnDebt,
       userPremiumDebt,
       repayAmount,
@@ -608,8 +605,6 @@ contract NativeTokenGatewayTest is Base {
   }
 
   function test_repayNative_revertsWith_InvalidAmount() public {
-    uint256 repayAmount = 5e18;
-
     vm.expectRevert(INativeTokenGateway.InvalidAmount.selector);
     vm.prank(bob);
     nativeTokenGateway.repayNative{value: 0}(_wethReserveId(spoke1), 0);
