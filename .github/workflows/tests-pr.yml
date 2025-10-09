@@ -44,6 +44,30 @@ jobs:
         uses: bgd-labs/github-workflows/.github/actions/comment-artifact@main
         with:
           nameSuffix: "default"
+  codecov:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: lcov-report
+          path: lcov
+
+      - name: Cleanup lcov
+        run: |
+          sudo apt-get -y install lcov
+          lcov --remove ./lcov/lcov.info -o ./lcov/lcov.info \
+          'src/contracts/dependencies/*'
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@ea99328d1c4d5f39fda7cbffe104afd6906c50b0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: ${{ github.repository }}
+          files: ./lcov/lcov.info
 
   artifacts:
     name: Generate artifacts matrix
