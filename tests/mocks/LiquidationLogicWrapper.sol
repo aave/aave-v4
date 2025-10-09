@@ -136,10 +136,10 @@ contract LiquidationLogicWrapper {
     return LiquidationLogic._calculateDebtToTargetHealthFactor(params);
   }
 
-  function calculateDebtToLiquidate(
-    LiquidationLogic.CalculateDebtToLiquidateParams memory params
+  function calculateMaxDebtToLiquidate(
+    LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
   ) public pure returns (uint256) {
-    return LiquidationLogic._calculateDebtToLiquidate(params);
+    return LiquidationLogic._calculateMaxDebtToLiquidate(params);
   }
 
   function calculateLiquidationAmounts(

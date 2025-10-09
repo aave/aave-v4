@@ -148,9 +148,6 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_liquidation() public {
-    _updateMaxLiquidationBonus(spoke1, _usdxReserveId(spoke1), 105_00);
-    _updateLiquidationFee(spoke1, _usdxReserveId(spoke1), 10_00);
-
     vm.prank(bob);
     spoke.supply(reserveId.dai, 1_000_000e18, bob);
 
@@ -359,9 +356,9 @@ contract SpokeOperations_ZeroRiskPremium_Gas_Tests is SpokeOperations_Gas_Tests 
     super.setUp();
     NAMESPACE = 'Spoke.Operations.ZeroRiskPremium';
 
-    _updateCollateralRisk(spoke, reserveId.dai, 0);
-    _updateCollateralRisk(spoke, reserveId.weth, 0);
-    _updateCollateralRisk(spoke, reserveId.usdx, 0);
-    _updateCollateralRisk(spoke, reserveId.wbtc, 0);
+    updateCollateralRisk(spoke, reserveId.dai, 0);
+    updateCollateralRisk(spoke, reserveId.weth, 0);
+    updateCollateralRisk(spoke, reserveId.usdx, 0);
+    updateCollateralRisk(spoke, reserveId.wbtc, 0);
   }
 }

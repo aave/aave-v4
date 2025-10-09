@@ -48,7 +48,6 @@ library LiquidationLogic {
     uint256 healthFactor;
     bool isUsingAsCollateral;
     uint256 collateralFactor;
-    uint256 collateralReserveBalance;
     uint256 debtReserveBalance;
   }
 
@@ -62,7 +61,7 @@ library LiquidationLogic {
     uint256 debtAssetUnit;
   }
 
-  struct CalculateDebtToLiquidateParams {
+  struct CalculateMaxDebtToLiquidateParams {
     uint256 debtReserveBalance;
     uint256 debtToCover;
     uint256 totalDebtValue;
@@ -109,8 +108,8 @@ library LiquidationLogic {
   // see ISpoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD docs
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
-  // see ISpoke.DUST_LIQUIDATION_THRESHOLD docs
-  uint256 constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
+  // see ISpoke.DUST_DEBT_LIQUIDATION_THRESHOLD docs
+  uint256 constant DUST_DEBT_LIQUIDATION_THRESHOLD = 1000e26;
 
   /// @notice Liquidates a user position.
   /// @param collateralReserve The collateral reserve to seize during liquidation.
@@ -132,23 +131,19 @@ library LiquidationLogic {
     ISpoke.DynamicReserveConfig storage collateralDynConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
-    uint256 collateralReserveBalance = collateralReserve.hub.previewRemoveByShares(
-      collateralReserve.assetId,
-      collateralPosition.suppliedShares
-    );
+    IHubBase collateralHub = collateralReserve.hub;
     _validateLiquidationCall(
       ValidateLiquidationCallParams({
         user: params.user,
         liquidator: params.liquidator,
         debtToCover: params.debtToCover,
-        collateralReserveHub: address(collateralReserve.hub),
+        collateralReserveHub: address(collateralHub),
         debtReserveHub: address(debtReserve.hub),
         collateralReservePaused: collateralReserve.paused,
         debtReservePaused: debtReserve.paused,
         healthFactor: params.healthFactor,
         isUsingAsCollateral: positionStatus.isUsingAsCollateral(params.collateralReserveId),
         collateralFactor: collateralDynConfig.collateralFactor,
-        collateralReserveBalance: collateralReserveBalance,
         debtReserveBalance: params.drawnDebt + params.premiumDebt
       })
     );
@@ -158,7 +153,10 @@ library LiquidationLogic {
         healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
         debtReserveBalance: params.drawnDebt + params.premiumDebt,
-        collateralReserveBalance: collateralReserveBalance,
+        collateralReserveBalance: collateralHub.previewRemoveByShares(
+          collateralReserve.assetId,
+          collateralPosition.suppliedShares
+        ),
         debtToCover: params.debtToCover,
         totalDebtValue: params.totalDebtValue,
         healthFactor: params.healthFactor,
@@ -239,7 +237,6 @@ library LiquidationLogic {
       params.isUsingAsCollateral && params.collateralFactor > 0,
       ISpoke.CollateralCannotBeLiquidated()
     );
-    require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
   }
 
@@ -258,12 +255,8 @@ library LiquidationLogic {
       maxLiquidationBonus: params.maxLiquidationBonus
     });
 
-    // To prevent accumulation of dust, one of the following conditions is enforced:
-    // 1. liquidate all debt
-    // 2. liquidate all collateral
-    // 3. leave at least `DUST_LIQUIDATION_THRESHOLD` of collateral and debt (in value terms)
-    uint256 debtToLiquidate = _calculateDebtToLiquidate(
-      CalculateDebtToLiquidateParams({
+    uint256 debtToLiquidate = _calculateMaxDebtToLiquidate(
+      CalculateMaxDebtToLiquidateParams({
         debtReserveBalance: params.debtReserveBalance,
         debtToCover: params.debtToCover,
         totalDebtValue: params.totalDebtValue,
@@ -276,42 +269,25 @@ library LiquidationLogic {
       })
     );
 
+    uint256 debtToCollateral = debtToLiquidate.mulDivDown(
+      params.debtAssetPrice * params.collateralAssetUnit,
+      params.debtAssetUnit * params.collateralAssetPrice
+    );
     uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
       params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus,
       params.debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
     );
-
-    bool leavesCollateralDust = collateralToLiquidate < params.collateralReserveBalance &&
-      (params.collateralReserveBalance - collateralToLiquidate).mulDivDown(
-        params.collateralAssetPrice.toWad(),
-        params.collateralAssetUnit
-      ) <
-      DUST_LIQUIDATION_THRESHOLD;
-
-    if (
-      collateralToLiquidate > params.collateralReserveBalance ||
-      (leavesCollateralDust && debtToLiquidate < params.debtReserveBalance)
-    ) {
+    if (collateralToLiquidate > params.collateralReserveBalance) {
       collateralToLiquidate = params.collateralReserveBalance;
-
-      // - `debtToLiquidate` is decreased if `collateralToLiquidate > params.collateralReserveBalance` (if so, debt dust could remain).
-      // - `debtToLiquidate` is increased if `(leavesCollateralDust && debtToLiquidate < params.debtReserveBalance)`, ensuring collateral reserve
-      //   is fully liquidated (potentially bypassing the target health factor). Can only increase by at most `DUST_LIQUIDATION_THRESHOLD` (in
-      //   value terms). Since debt dust condition was enforced, it is guaranteed that `debtToLiquidate` will never exceed `params.debtReserveBalance`.
+      debtToCollateral = collateralToLiquidate.percentDivUp(liquidationBonus);
       debtToLiquidate = collateralToLiquidate.mulDivUp(
         params.collateralAssetPrice * params.debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
         params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus
       );
     }
 
-    // revert if the liquidator does not cover the necessary debt to prevent dust from remaining
-    require(params.debtToCover >= debtToLiquidate, ISpoke.MustNotLeaveDust());
-
     uint256 collateralToLiquidator = collateralToLiquidate -
-      collateralToLiquidate.mulDivDown(
-        params.liquidationFee * (liquidationBonus - PercentageMath.PERCENTAGE_FACTOR),
-        liquidationBonus * PercentageMath.PERCENTAGE_FACTOR
-      );
+      (collateralToLiquidate - debtToCollateral).percentMulDown(params.liquidationFee);
 
     return (collateralToLiquidate, collateralToLiquidator, debtToLiquidate);
   }
@@ -346,15 +322,14 @@ library LiquidationLogic {
       );
   }
 
-  /// @notice Calculates the debt that should be liquidated.
-  /// @dev Generally, it returns the minimum of `debtToCover`, `debtReserveBalance` and `debtToTarget`.
-  /// If debt dust would be left behind, it returns `debtReserveBalance` to ensure the debt is fully cleared and no dust is left.
-  function _calculateDebtToLiquidate(
-    CalculateDebtToLiquidateParams memory params
+  /// @notice Calculates the maximum debt that can be liquidated.
+  /// @dev Dust debt less than the `DUST_DEBT_LIQUIDATION_THRESHOLD` cannot be left behind, unless the collateral reserve is fully liquidated.
+  function _calculateMaxDebtToLiquidate(
+    CalculateMaxDebtToLiquidateParams memory params
   ) internal pure returns (uint256) {
-    uint256 debtToLiquidate = params.debtReserveBalance;
-    if (params.debtToCover < debtToLiquidate) {
-      debtToLiquidate = params.debtToCover;
+    uint256 maxDebtToLiquidate = params.debtReserveBalance;
+    if (params.debtToCover < maxDebtToLiquidate) {
+      maxDebtToLiquidate = params.debtToCover;
     }
 
     uint256 debtToTarget = _calculateDebtToTargetHealthFactor(
@@ -368,23 +343,22 @@ library LiquidationLogic {
         debtAssetUnit: params.debtAssetUnit
       })
     );
-    if (debtToTarget < debtToLiquidate) {
-      debtToLiquidate = debtToTarget;
+    if (debtToTarget < maxDebtToLiquidate) {
+      maxDebtToLiquidate = debtToTarget;
     }
 
-    bool leavesDebtDust = debtToLiquidate < params.debtReserveBalance &&
-      (params.debtReserveBalance - debtToLiquidate).mulDivDown(
-        params.debtAssetPrice.toWad(),
-        params.debtAssetUnit
-      ) <
-      DUST_LIQUIDATION_THRESHOLD;
+    uint256 remainingDebtValue = (params.debtReserveBalance - maxDebtToLiquidate).mulDivDown(
+      params.debtAssetPrice.toWad(),
+      params.debtAssetUnit
+    );
 
-    if (leavesDebtDust) {
-      // target health factor is bypassed to prevent leaving dust
-      debtToLiquidate = params.debtReserveBalance;
+    if (remainingDebtValue < DUST_DEBT_LIQUIDATION_THRESHOLD) {
+      // target health factor is ignored to prevent leaving dust, only if the liquidator intends to fully cover the debt
+      require(params.debtToCover >= params.debtReserveBalance, ISpoke.MustNotLeaveDust());
+      maxDebtToLiquidate = params.debtReserveBalance;
     }
 
-    return debtToLiquidate;
+    return maxDebtToLiquidate;
   }
 
   /// @notice Calculates the amount of debt needed to be liquidated to restore a position to the target health factor.
