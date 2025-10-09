@@ -2,6 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -13,17 +15,30 @@ contract LiquidationLogicWrapper {
   using PositionStatusMap for ISpoke.PositionStatus;
 
   ISpoke.Reserve internal collateralReserve;
-  ISpoke.UserPosition internal collateralPosition;
+  // ISpoke.UserPosition internal collateralPosition;
 
   ISpoke.Reserve internal debtReserve;
-  ISpoke.UserPosition internal debtPosition;
+  // ISpoke.UserPosition internal debtPosition;
+  // ISpoke.UserPosition internal liquidatorPosition;
 
-  ISpoke.UserPosition internal liquidatorPosition;
+  mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
+    internal _userPositions;
+  address internal _borrower;
+  uint256 internal _collateralReserveId;
+  uint256 internal _debtReserveId;
 
   ISpoke.PositionStatus internal positionStatus;
 
   ISpoke.LiquidationConfig internal liquidationConfig;
   ISpoke.DynamicReserveConfig internal dynamicCollateralConfig;
+
+  constructor(address borrower) {
+    _borrower = borrower;
+  }
+
+  function setBorrower(address borrower) public {
+    _borrower = borrower;
+  }
 
   function setCollateralReserveHub(IHub hub) public {
     collateralReserve.hub = hub;
@@ -37,12 +52,25 @@ contract LiquidationLogicWrapper {
     collateralReserve.assetId = assetId.toUint16();
   }
 
-  function setCollateralPositionSuppliedShares(uint256 suppliedShares) public {
-    collateralPosition.suppliedShares = suppliedShares.toUint128();
+  function setCollateralReserveId(uint256 reserveId) public {
+    _collateralReserveId = reserveId;
   }
 
-  function setLiquidatorPositionSuppliedShares(uint256 suppliedShares) public {
-    liquidatorPosition.suppliedShares = suppliedShares.toUint128();
+  function setCollateralPositionSuppliedShares(uint256 suppliedShares) public {
+    _userPositions[_borrower][_collateralReserveId].suppliedShares = suppliedShares.toUint128();
+  }
+
+  // function setCollateralPositionSuppliedShares(address user, uint256 suppliedShares) public {
+  //   _userPositions[user][_collateralReserveId].suppliedShares = suppliedShares.toUint128();
+  //   console.log(
+  //     'wrapper suppliedShares %e',
+  //     _userPositions[user][_collateralReserveId].suppliedShares,
+  //     user
+  //   );
+  // }
+
+  function setLiquidatorPositionSuppliedShares(address liquidator, uint256 suppliedShares) public {
+    _userPositions[liquidator][_collateralReserveId].suppliedShares = suppliedShares.toUint128();
   }
 
   function getCollateralReserve() public view returns (ISpoke.Reserve memory) {
@@ -50,7 +78,7 @@ contract LiquidationLogicWrapper {
   }
 
   function getCollateralPosition() public view returns (ISpoke.UserPosition memory) {
-    return collateralPosition;
+    return _userPositions[_borrower][_collateralReserveId];
   }
 
   function setDebtReserveHub(IHub hub) public {
@@ -65,21 +93,41 @@ contract LiquidationLogicWrapper {
     debtReserve.assetId = assetId.toUint16();
   }
 
+  function setDebtReserveId(uint256 reserveId) public {
+    _debtReserveId = reserveId;
+  }
+
   function setDebtPositionDrawnShares(uint256 drawnShares) public {
-    debtPosition.drawnShares = drawnShares.toUint128();
+    _userPositions[_borrower][_debtReserveId].drawnShares = drawnShares.toUint128();
   }
 
   function setDebtPositionPremiumShares(uint256 premiumShares) public {
-    debtPosition.premiumShares = premiumShares.toUint128();
+    _userPositions[_borrower][_debtReserveId].premiumShares = premiumShares.toUint128();
   }
 
   function setDebtPositionPremiumOffset(uint256 premiumOffset) public {
-    debtPosition.premiumOffset = premiumOffset.toUint128();
+    _userPositions[_borrower][_debtReserveId].premiumOffset = premiumOffset.toUint128();
   }
 
   function setDebtPositionRealizedPremium(uint256 realizedPremium) public {
-    debtPosition.realizedPremium = realizedPremium.toUint128();
+    _userPositions[_borrower][_debtReserveId].realizedPremium = realizedPremium.toUint128();
   }
+
+  // function setDebtPositionDrawnShares(address user, uint256 drawnShares) public {
+  //   _userPositions[user][_debtReserveId].drawnShares = drawnShares.toUint128();
+  // }
+
+  // function setDebtPositionPremiumShares(address user, uint256 premiumShares) public {
+  //   _userPositions[user][_debtReserveId].premiumShares = premiumShares.toUint128();
+  // }
+
+  // function setDebtPositionPremiumOffset(address user, uint256 premiumOffset) public {
+  //   _userPositions[user][_debtReserveId].premiumOffset = premiumOffset.toUint128();
+  // }
+
+  // function setDebtPositionRealizedPremium(address user, uint256 realizedPremium) public {
+  //   _userPositions[user][_debtReserveId].realizedPremium = realizedPremium.toUint128();
+  // }
 
   function setCollateralStatus(uint256 reserveId, bool status) public {
     positionStatus.setUsingAsCollateral(reserveId, status);
@@ -94,7 +142,7 @@ contract LiquidationLogicWrapper {
   }
 
   function getDebtPosition() public view returns (ISpoke.UserPosition memory) {
-    return debtPosition;
+    return _userPositions[_borrower][_debtReserveId];
   }
 
   function getCollateralStatus(uint256 reserveId) public view returns (bool) {
@@ -175,29 +223,39 @@ contract LiquidationLogicWrapper {
     return
       LiquidationLogic._liquidateCollateral(
         collateralReserve,
-        collateralPosition,
-        liquidatorPosition,
+        _userPositions[_borrower][_collateralReserveId],
+        _userPositions[params.liquidator][_collateralReserveId],
         params
       );
   }
 
   function liquidateDebt(LiquidationLogic.LiquidateDebtParams memory params) public returns (bool) {
-    return LiquidationLogic._liquidateDebt(debtReserve, debtPosition, positionStatus, params);
+    return
+      LiquidationLogic._liquidateDebt(
+        debtReserve,
+        _userPositions[_borrower][_debtReserveId],
+        positionStatus,
+        params
+      );
   }
 
   function liquidateUser(LiquidationLogic.LiquidateUserParams memory params) public returns (bool) {
-    return false;
-    // return
-    //   LiquidationLogic.liquidateUser(
-    //     collateralReserve,
-    //     debtReserve,
-    //     collateralPosition,
-    //     debtPosition,
-    //     liquidatorPosition,
-    //     positionStatus,
-    //     liquidationConfig,
-    //     dynamicCollateralConfig,
-    //     params
-    //   );
+    // return false;
+    console.log(
+      'wrapper liquidateUser',
+      params.user,
+      _userPositions[params.user][_collateralReserveId].suppliedShares,
+      _collateralReserveId
+    );
+    return
+      LiquidationLogic.liquidateUser(
+        collateralReserve,
+        debtReserve,
+        _userPositions,
+        positionStatus,
+        liquidationConfig,
+        dynamicCollateralConfig,
+        params
+      );
   }
 }

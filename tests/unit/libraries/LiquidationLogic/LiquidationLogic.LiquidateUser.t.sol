@@ -59,8 +59,12 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     hub2.addSpoke(wethAssetId, address(liquidationLogicWrapper), spokeConfig);
     vm.stopPrank();
 
+    // set borrower
+    liquidationLogicWrapper.setBorrower(params.user);
+
     // Mock storage for collateral side
     require(hub1.getAsset(usdxAssetId).underlying == address(tokenList.usdx));
+    liquidationLogicWrapper.setCollateralReserveId(usdxReserveId);
     liquidationLogicWrapper.setCollateralReserveHub(hub1);
     liquidationLogicWrapper.setCollateralReserveAssetId(usdxAssetId);
     liquidationLogicWrapper.setCollateralReserveDecimals(6);
@@ -69,6 +73,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
 
     // Mock storage for debt side
     require(hub2.getAsset(wethAssetId).underlying == address(tokenList.weth));
+    liquidationLogicWrapper.setDebtReserveId(wethReserveId);
     liquidationLogicWrapper.setDebtReserveHub(hub2);
     liquidationLogicWrapper.setDebtReserveAssetId(wethAssetId);
     liquidationLogicWrapper.setDebtReserveDecimals(18);
@@ -213,6 +218,10 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   function test_liquidateUser_revertsWith_MustNotLeaveDust_Debt() public {
     params.totalDebtValue *= 2;
     params.debtToCover = 4.9e18;
+    console.log(
+      'getCollateralPosition %e ',
+      liquidationLogicWrapper.getCollateralPosition().suppliedShares
+    );
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(
       liquidationLogicWrapper.getCollateralPosition().suppliedShares * 2
     );
