@@ -8,7 +8,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 /// @author Aave Labs
 /// @notice Interface for HubConfigurator.
 interface IHubConfigurator {
-  /// @notice Thrown when the the list of assets and spoke configs are not the same length in `addSpokeToAssets`.
+  /// @notice Thrown when the list of assets and spoke configs are not the same length in `addSpokeToAssets`.
   error MismatchedConfigs();
 
   /// @notice Adds a new asset to the hub.
@@ -120,8 +120,8 @@ interface IHubConfigurator {
   /// @notice Registers the same spoke for multiple assets with the hub, each with their own configuration.
   /// @dev The i-th asset identifier in `assetIds` corresponds to the i-th configuration in `configs`.
   /// @param hub The address of the Hub contract.
-  /// @param assetIds The list of asset identifiers to register the spoke for.
   /// @param spoke The address of the Spoke contract.
+  /// @param assetIds The list of asset identifiers to register the spoke for.
   /// @param configs The list of Spoke configurations to register.
   function addSpokeToAssets(
     address hub,
