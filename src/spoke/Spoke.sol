@@ -203,6 +203,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount, msg.sender);
     userPosition.suppliedShares += suppliedShares.toUint128();
 
+    _notifyRiskPremiumUpdate(onBehalfOf, _refreshAndValidateUserPosition(onBehalfOf));
+
     emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares);
   }
 
@@ -300,8 +302,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
     }
 
-    UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf);
-    _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
+    _notifyRiskPremiumUpdate(onBehalfOf, _calculateUserAccountData(onBehalfOf).riskPremium);
 
     emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, premiumDelta);
   }
