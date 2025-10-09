@@ -28,3 +28,6 @@ jobs:
         uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
         with:
           FOUNDRY_PROFILE: ci
+
+      - name: Run Forge coverage
+        uses: bgd-labs/github-workflows/.github/actions/foundry-lcov-report@main

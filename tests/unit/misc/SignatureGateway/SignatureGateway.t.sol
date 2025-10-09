@@ -184,8 +184,11 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     p.nonce = _burnRandomNoncesAtKey(gateway, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 10e18, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 7e18, alice);
+
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateUserRiskPremium(alice, 0);
+    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(alice, spoke1));
 
     vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(alice, p.nonce, p.deadline, signature);
