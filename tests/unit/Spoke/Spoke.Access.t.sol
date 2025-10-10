@@ -23,7 +23,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
     hub1.restore(daiAssetId, 1000e18, 0, IHubBase.PremiumDelta(0, 0, 0), bob);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
+    vm.expectRevert(abi.encodeWithSelector(IHub.RefreshPremiumNotActive.selector));
     hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(0, 0, 0));
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));

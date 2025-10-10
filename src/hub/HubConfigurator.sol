@@ -167,6 +167,19 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
+  function updateSpokeRefreshPremium(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    bool refreshPremium
+  ) external onlyOwner {
+    IHub targetHub = IHub(hub);
+    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    config.refreshPremium = refreshPremium;
+    targetHub.updateSpokeConfig(assetId, spoke, config);
+  }
+
+  /// @inheritdoc IHubConfigurator
   function updateSpokeSupplyCap(
     address hub,
     uint256 assetId,

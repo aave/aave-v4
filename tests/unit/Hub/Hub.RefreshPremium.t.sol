@@ -12,11 +12,10 @@ contract HubRefreshPremiumTest is HubBase {
     uint256 premiumOffset;
     uint256 realizedPremium;
   }
-
-  function test_refreshPremium_revertsWith_SpokeNotActive() public {
+  function test_refreshPremium_revertsWith_RefreshPremiumNotActive() public {
     IHubBase.PremiumDelta memory premiumDelta;
-    updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
-    vm.expectRevert(IHub.SpokeNotActive.selector);
+    _updateSpokeRefreshPremium(hub1, daiAssetId, address(spoke1), false);
+    vm.expectRevert(IHub.RefreshPremiumNotActive.selector);
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
   }

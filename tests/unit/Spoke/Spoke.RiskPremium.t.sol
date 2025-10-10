@@ -1215,12 +1215,4 @@ contract SpokeRiskPremiumTest is SpokeBase {
       'hub asset premium debt after accrual'
     );
   }
-
-  function test_refreshPremium_revertsWith_RefreshPremiumNotActive() public {
-    spoke3.setRefreshPremium(false);
-    spoke3.refreshPremium(
-      wbtcAssetId,
-      IHubBase.PremiumDelta({sharesDelta: 0, offsetDelta: 0, realizedDelta: 0})
-    );
-  }
 }

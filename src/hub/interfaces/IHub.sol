@@ -61,8 +61,8 @@ interface IHub is IHubBase, IAccessManaged {
   }
 
   struct SpokeConfig {
-    bool refreshPremium;
     bool active;
+    bool refreshPremium;
     uint56 addCap;
     uint56 drawCap;
   }

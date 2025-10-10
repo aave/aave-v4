@@ -1215,6 +1215,20 @@ abstract contract Base is Test {
     return spokeInfo[spoke].dai2.reserveId;
   }
 
+  function _updateSpokeRefreshPremium(
+    IHub hub,
+    uint256 assetId,
+    address spoke,
+    bool newRefreshPremium
+  ) internal pausePrank {
+    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    spokeConfig.refreshPremium = newRefreshPremium;
+    vm.prank(HUB_ADMIN);
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+
+    assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
+  }
+
   function updateSpokeActive(
     IHub hub,
     uint256 assetId,
