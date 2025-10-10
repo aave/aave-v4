@@ -465,7 +465,6 @@ library LiquidationLogic {
     if (params.receiveShares) {
       sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
       liquidatorPosition.suppliedShares += sharesToLiquidator.toUint128();
-      // TBD: notify for liquidator? allow if reserve is frozen?
     } else {
       sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
     }
