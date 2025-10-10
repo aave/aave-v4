@@ -165,10 +165,36 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, false);
-    vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: partial');
+    vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receive assets): partial');
 
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
-    vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: full');
+    vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receive assets): full');
+
+    vm.stopPrank();
+  }
+
+  function test_liquidation_receiveShares() public {
+    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
+    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
+
+    vm.prank(bob);
+    spoke.supply(reserveId.dai, 1_000_000e18, bob);
+
+    vm.startPrank(alice);
+    spoke.supply(reserveId.usdx, 1_000_000e6, alice);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+    vm.stopPrank();
+
+    _borrowToBeAtHf(spoke, alice, reserveId.dai, 0.9e18);
+
+    skip(100);
+
+    vm.startPrank(bob);
+    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, true);
+    vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): partial');
+
+    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, true);
+    vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): full');
 
     vm.stopPrank();
   }
