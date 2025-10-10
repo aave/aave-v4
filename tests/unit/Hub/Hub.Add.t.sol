@@ -79,6 +79,13 @@ contract HubAddTest is HubBase {
     hub1.add(daiAssetId, amount, makeAddr('randomUser'));
   }
 
+  function test_add_revertsWith_SpokePaused() public {
+    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+    vm.expectRevert(IHub.SpokePaused.selector);
+    vm.prank(address(spoke1));
+    hub1.add(daiAssetId, 100e18, alice);
+  }
+
   function test_add_revertsWith_SpokeNotActive() public {
     updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector);

@@ -85,7 +85,7 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, 0, 0, premiumDelta, alice);
   }
 
-  function test_restore_revertsWith_SpokeNotActive_whenPaused() public {
+  function test_restore_revertsWith_SpokeNotActive() public {
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.pauseAsset(address(hub1), daiAssetId);
 
@@ -97,6 +97,21 @@ contract HubRestoreTest is HubBase {
     });
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, 1, 0, premiumDelta, alice);
+  }
+
+  function test_restore_revertsWith_SpokePaused() public {
+    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      spoke: spoke1,
+      user: alice,
+      reserveId: daiAssetId,
+      premiumRestored: 0
+    });
+
+    vm.expectRevert(IHub.SpokePaused.selector);
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, 1, 0, premiumDelta, alice);
   }
