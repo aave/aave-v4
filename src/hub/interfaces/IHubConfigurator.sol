@@ -142,6 +142,13 @@ interface IHubConfigurator {
   /// @param active The new active flag.
   function updateSpokeActive(address hub, uint256 assetId, address spoke, bool active) external;
 
+  /// @notice Updates the paused flag of an asset's spoke.
+  /// @param hub The address of the Hub contract.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  /// @param paused The new paused flag.
+  function updateSpokePaused(address hub, uint256 assetId, address spoke, bool paused) external;
+
   /// @notice Updates the supply cap of an asset's spoke.
   /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
