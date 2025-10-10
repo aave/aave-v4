@@ -1079,7 +1079,7 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 newCollateralFactor,
     uint256 newLiquidationBonus
-  ) internal {
+  ) internal pausePrank returns (uint16) {
     ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     config.maxLiquidationBonus = newLiquidationBonus.toUint32();
@@ -1088,6 +1088,7 @@ abstract contract Base is Test {
     uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    return configKey;
   }
 
   function _updateCollateralFactor(
@@ -1145,12 +1146,12 @@ abstract contract Base is Test {
   }
 
   function updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal pausePrank {
-    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, config, new bytes(0));
+    hub.updateAssetConfig(assetId, config, new bytes(0));
 
-    assertEq(hub1.getAssetConfig(assetId), config);
+    assertEq(hub.getAssetConfig(assetId), config);
   }
 
   function _updateTargetHealthFactor(
@@ -2281,7 +2282,7 @@ abstract contract Base is Test {
     string memory operation
   ) internal view {
     IHub.Asset memory asset = targetHub.getAsset(assetId);
-    (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
+    (uint256 drawn, ) = hub1.getAssetOwed(assetId);
 
     vm.assertEq(
       asset.drawnRate,

@@ -365,17 +365,14 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _expectEventsAndCalls(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoBefore,
+    AccountsInfo memory /*accountsInfoBefore*/,
     LiquidationMetadata memory liquidationMetadata
   ) internal virtual {
     ISpoke.UserPosition memory userDebtPosition = params.spoke.getUserPosition(
       params.debtReserveId,
       params.user
     );
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = params.spoke.getUserDebt(
-      params.debtReserveId,
-      params.user
-    );
+    (, uint256 userPremiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
     uint256 premiumDebtRestored = _min(liquidationMetadata.debtToLiquidate, userPremiumDebt);
     int256 realizedDelta = (userPremiumDebt - userDebtPosition.realizedPremium).toInt256() -
       premiumDebtRestored.toInt256();
