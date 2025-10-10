@@ -16,6 +16,7 @@ contract HubAccessTest is HubBase {
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      paused: false,
       addCap: 1000,
       drawCap: 1000
     });
@@ -135,7 +136,7 @@ contract HubAccessTest is HubBase {
     hub1.updateSpokeConfig(
       daiAssetId,
       address(spoke1),
-      IHub.SpokeConfig({active: true, addCap: 1000, drawCap: 1000})
+      IHub.SpokeConfig({active: true, paused: false, addCap: 1000, drawCap: 1000})
     );
   }
 
@@ -248,6 +249,7 @@ contract HubAccessTest is HubBase {
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      paused: false,
       addCap: 1000,
       drawCap: 1000
     });

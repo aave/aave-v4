@@ -287,7 +287,8 @@ contract HubConfigTest is HubBase {
     IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: 0,
-      active: true
+      active: true,
+      paused: false
     });
 
     vm.expectEmit(address(hub1));
@@ -429,7 +430,12 @@ contract HubConfigTest is HubBase {
       emit IHub.UpdateSpokeConfig(
         assetId,
         newConfig.feeReceiver,
-        IHub.SpokeConfig({addCap: Constants.MAX_ALLOWED_SPOKE_CAP, drawCap: 0, active: true})
+        IHub.SpokeConfig({
+          addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+          drawCap: 0,
+          active: true,
+          paused: false
+        })
       );
     } else {
       newConfig.feeReceiver = _getFeeReceiver(hub1, assetId);

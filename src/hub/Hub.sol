@@ -139,7 +139,11 @@ contract Hub is IHub, AccessManaged {
     }
 
     if (asset.feeReceiver != config.feeReceiver) {
-      _updateSpokeConfig(assetId, asset.feeReceiver, SpokeConfig(true, 0, 0));
+      _updateSpokeConfig(
+        assetId,
+        asset.feeReceiver,
+        SpokeConfig({active: true, paused: false, addCap: 0, drawCap: 0})
+      );
       asset.feeReceiver = config.feeReceiver;
       _addFeeReceiver(assetId, config.feeReceiver);
     }
@@ -635,7 +639,7 @@ contract Hub is IHub, AccessManaged {
     address spoke
   ) external view returns (SpokeConfig memory) {
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    return SpokeConfig(spokeData.active, spokeData.addCap, spokeData.drawCap);
+    return SpokeConfig(spokeData.active, spokeData.paused, spokeData.addCap, spokeData.drawCap);
   }
 
   /// @notice Adds a new spoke to an asset with default feeReceiver configuration (maximum add cap, zero draw cap).
@@ -645,7 +649,7 @@ contract Hub is IHub, AccessManaged {
     _updateSpokeConfig(
       assetId,
       feeReceiver,
-      SpokeConfig({addCap: MAX_ALLOWED_SPOKE_CAP, drawCap: 0, active: true})
+      SpokeConfig({addCap: MAX_ALLOWED_SPOKE_CAP, drawCap: 0, active: true, paused: false})
     );
   }
 
@@ -659,7 +663,7 @@ contract Hub is IHub, AccessManaged {
   function _updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig memory config) internal {
     SpokeData storage spokeData = _spokes[assetId][spoke];
     spokeData.active = config.active;
-    spokeData.paused = false;
+    spokeData.paused = config.paused;
     spokeData.addCap = config.addCap;
     spokeData.drawCap = config.drawCap;
     emit UpdateSpokeConfig(assetId, spoke, config);

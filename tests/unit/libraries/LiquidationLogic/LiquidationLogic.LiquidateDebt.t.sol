@@ -35,6 +35,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     // Add liquidation logic wrapper as a spoke
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });
