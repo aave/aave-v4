@@ -114,9 +114,10 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   function test_supplyWithSig() public {
     EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
+    p.amount = 10e18;
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
-    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount * 2);
-    Utils.supply(spoke1, p.reserveId, alice, p.amount * 2, alice);
+    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+    Utils.supply(spoke1, p.reserveId, alice, p.amount, alice);
 
     vm.prank(vm.randomAddress());
     gateway.supplyWithSig(p, signature);
@@ -126,9 +127,10 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   function test_withdrawWithSig() public {
     EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
+    p.amount = 10e18;
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    Utils.supply(spoke1, p.reserveId, alice, (p.amount * 2) + 1, alice);
+    Utils.supply(spoke1, p.reserveId, alice, 15e18, alice);
     Utils.withdraw(spoke1, p.reserveId, alice, p.amount, alice);
 
     vm.prank(vm.randomAddress());
