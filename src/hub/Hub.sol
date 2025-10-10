@@ -424,27 +424,27 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function previewAddByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
+  function previewAddByAssets(uint256 assetId, uint256 assets) external view returns (uint256) {
     return _assets[assetId].toAddedSharesDown(assets);
   }
 
   /// @inheritdoc IHubBase
-  function previewAddByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+  function previewAddByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toAddedAssetsUp(shares);
   }
 
   /// @inheritdoc IHubBase
-  function previewRemoveByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
+  function previewRemoveByAssets(uint256 assetId, uint256 assets) external view returns (uint256) {
     return _assets[assetId].toAddedSharesUp(assets);
   }
 
   /// @inheritdoc IHubBase
-  function previewRemoveByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+  function previewRemoveByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toAddedAssetsDown(shares);
   }
 
   /// @inheritdoc IHubBase
-  function previewDrawByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
+  function previewDrawByAssets(uint256 assetId, uint256 assets) external view returns (uint256) {
     return _assets[assetId].toDrawnSharesUp(assets);
   }
 
@@ -454,12 +454,12 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function previewRestoreByAssets(uint256 assetId, uint256 assets) public view returns (uint256) {
+  function previewRestoreByAssets(uint256 assetId, uint256 assets) external view returns (uint256) {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
   /// @inheritdoc IHubBase
-  function previewRestoreByShares(uint256 assetId, uint256 shares) public view returns (uint256) {
+  function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toDrawnAssetsUp(shares);
   }
 
