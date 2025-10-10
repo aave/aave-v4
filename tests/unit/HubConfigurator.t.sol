@@ -737,6 +737,27 @@ contract HubConfiguratorTest is HubBase {
     assertEq(wethSpokeData, wethSpokeConfig);
   }
 
+  function test_updateSpokeRefreshPremium_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    hubConfigurator.updateSpokeRefreshPremium(address(hub1), assetId, spokeAddresses[0], false);
+  }
+
+  function test_updateSpokeRefreshPremium() public {
+    IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
+    for (uint256 i = 0; i < 2; ++i) {
+      bool refreshPremium = (i == 0) ? false : true;
+      expectedSpokeConfig.refreshPremium = refreshPremium;
+      vm.expectCall(
+        address(hub1),
+        abi.encodeCall(IHub.updateSpokeConfig, (assetId, spoke, expectedSpokeConfig))
+      );
+      vm.prank(HUB_CONFIGURATOR_ADMIN);
+      hubConfigurator.updateSpokeRefreshPremium(address(hub1), assetId, spoke, refreshPremium);
+      assertEq(hub1.getSpokeConfig(assetId, spoke), expectedSpokeConfig);
+    }
+  }
+
   function test_updateSpokeActive_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
