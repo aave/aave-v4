@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
+import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 contract PositionStatusMapWrapper {
@@ -90,6 +91,14 @@ contract PositionStatusMapWrapper {
 
   function nextCollateral(uint256 startReserveId) external view returns (uint256) {
     return _p.nextCollateral(startReserveId);
+  }
+
+  function popCount(uint256 bits) external pure returns (uint256) {
+    return LibBit.popCount(bits);
+  }
+
+  function fls(uint256 bits) external pure returns (uint256) {
+    return LibBit.fls(bits);
   }
 
   function slot() external pure returns (bytes32 s) {

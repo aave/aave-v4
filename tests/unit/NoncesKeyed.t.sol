@@ -12,7 +12,7 @@ contract NoncesKeyedTest is Base {
     mock = new NoncesKeyedMock();
   }
 
-  function test_useNonce_monotonic(bytes32) public {
+  function test_symbolic_useNonce_monotonic(bytes32) public {
     vm.setArbitraryStorage(address(mock));
 
     address owner = vm.randomAddress();
@@ -27,7 +27,7 @@ contract NoncesKeyedTest is Base {
     _assertNonceIncrement(mock, owner, keyNonce);
   }
 
-  function test_useCheckedNonce_monotonic(bytes32) public {
+  function test_symbolic_useCheckedNonce_monotonic(bytes32) public {
     vm.setArbitraryStorage(address(mock));
 
     address owner = vm.randomAddress();
@@ -40,18 +40,25 @@ contract NoncesKeyedTest is Base {
     _assertNonceIncrement(mock, owner, keyNonce);
   }
 
-  function test_useCheckedNonce_revertsWith_InvalidAccountNonce(bytes32) public {
+  function test_symbolic_useCheckedNonce_revertsWith_InvalidAccountNonce(bytes32) public {
     vm.setArbitraryStorage(address(mock));
 
     address owner = vm.randomAddress();
     uint192 key = _randomNonceKey();
 
-    uint256 currentNonce = _burnRandomNoncesAtKey(mock, owner, key);
-    uint256 invalidNonce = _getRandomInvalidNonceAtKey(mock, owner, key);
+    uint256 currentKeyNonce = mock.nonces(owner, key);
+    (, uint64 currentNonce) = _unpackNonce(currentKeyNonce);
+    uint64 invalidNonce = _randomNonce();
+    vm.assume(currentNonce != invalidNonce);
+    uint256 invalidKeyNonce = _packNonce(key, invalidNonce);
 
-    vm.expectRevert(
-      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, owner, currentNonce)
+    (bool ok, bytes memory ret) = address(mock).call(
+      abi.encodeCall(mock.useCheckedNonce, (owner, invalidKeyNonce))
     );
-    mock.useCheckedNonce(owner, invalidNonce);
+    assertFalse(ok);
+    assertEq(
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, owner, currentKeyNonce),
+      ret
+    );
   }
 }

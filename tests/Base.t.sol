@@ -70,6 +70,7 @@ import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
+import {MathUtilsWrapper} from 'tests/mocks/MathUtilsWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
 import {NoncesKeyedMock} from 'tests/mocks/NoncesKeyedMock.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
@@ -1176,12 +1177,12 @@ abstract contract Base is Test {
     return vm.randomUint(min, max);
   }
 
-  function _randomNonceKey() internal returns (uint192) {
-    return uint192(vm.randomUint());
+  function _randomNonceKey() internal view returns (uint192) {
+    return vm.randomUint(192).toUint192();
   }
 
-  function _randomNonce() internal returns (uint64) {
-    return uint64(vm.randomUint());
+  function _randomNonce() internal view returns (uint64) {
+    return vm.randomUint(64).toUint64();
   }
 
   // assumes spoke has usdx supported
@@ -2540,7 +2541,7 @@ abstract contract Base is Test {
     INoncesKeyed verifier,
     address user,
     uint192 key
-  ) internal returns (uint256) {
+  ) internal view returns (uint256) {
     (uint192 currentKey, uint64 currentNonce) = _unpackNonce(verifier.nonces(user, key));
     assertEq(currentKey, key);
     uint64 nonce = _randomNonce();

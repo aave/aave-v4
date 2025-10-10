@@ -9,9 +9,15 @@ contract MathUtilsTest is Base {
   using SafeCast for uint256;
 
   int256 internal constant INT256_MAX = type(int256).max;
+  MathUtilsWrapper public m;
+
+  function setUp() public override {
+    m = new MathUtilsWrapper();
+  }
 
   function test_constants() public pure {
     assertEq(MathUtils.SECONDS_PER_YEAR, 365 days);
+    assertEq(MathUtils.RAY, 1e27);
   }
 
   function test_calculateLinearInterest() public {
@@ -228,6 +234,74 @@ contract MathUtilsTest is Base {
       MathUtils.mulDivUp(a, b, c);
     } else {
       assertEq(MathUtils.mulDivUp(a, b, c), result / c + (result % c > 0 ? 1 : 0));
+    }
+  }
+
+  function test_symbolic_calculateLinearInterest() public {
+    uint96 rate = vm.randomUint(96).toUint96();
+    uint32 previousTimestamp = vm.randomUint(32).toUint32();
+    uint256 skipTime = vm.randomUint(150);
+
+    vm.warp(skipTime);
+
+    assertEq(
+      m.calculateLinearInterest(rate, previousTimestamp),
+      _calculateLinearInterest(rate, previousTimestamp)
+    );
+  }
+
+  function _calculateLinearInterest(
+    uint96 rate,
+    uint32 lastUpdateTimestamp
+  ) internal view returns (uint256) {
+    uint256 result = rate * (block.timestamp - uint256(lastUpdateTimestamp));
+    result = result / MathUtils.SECONDS_PER_YEAR;
+    return MathUtils.RAY + result;
+  }
+
+  function test_symbolic_min() public {
+    uint256 a = vm.randomUint();
+    uint256 b = vm.randomUint();
+    assertEq(m.min(a, b), a < b ? a : b);
+  }
+
+  function test_symbolic_mulDivDown() public {
+    uint256 a = vm.randomUint();
+    uint256 b = vm.randomUint();
+    uint256 c = vm.randomUint();
+
+    uint256 result;
+    bool safetyCheck;
+    unchecked {
+      result = a * b;
+      safetyCheck = b == 0 || result / b == a;
+    }
+
+    if (!safetyCheck || c == 0) {
+      (bool ok, ) = address(m).call(abi.encodeCall(m.mulDivDown, (a, b, c)));
+      assertFalse(ok);
+    } else {
+      assertEq(m.mulDivDown(a, b, c), result / c);
+    }
+  }
+
+  function test_symbolic_mulDivUp() public {
+    uint256 a = vm.randomUint();
+    uint256 b = vm.randomUint();
+    uint256 c = vm.randomUint();
+
+    uint256 result;
+    bool safetyCheck;
+    unchecked {
+      result = a * b;
+      safetyCheck = b == 0 || result / b == a;
+    }
+
+    if (!safetyCheck || c == 0) {
+      (bool ok, ) = address(m).call(abi.encodeCall(m.mulDivUp, (a, b, c)));
+      assertFalse(ok);
+    } else {
+      assertEq(m.mulDivUp(a, b, c), result / c + (result % c > 0 ? 1 : 0));
     }
   }
 }

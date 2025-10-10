@@ -194,6 +194,7 @@ contract PositionStatusMapTest is Base {
     assertEq(p.collateralCount(600), 6);
   }
 
+  /// @dev we do not tag these tests to run with halmos due to path loop unbounded, the symbolic test for these are written inductively
   function test_collateralCount(uint256 reserveCount) public {
     reserveCount = bound(reserveCount, 0, 1 << 10); // gas limit
     vm.setArbitraryStorage(address(p));
@@ -472,7 +473,7 @@ contract PositionStatusMapTest is Base {
     }
   }
 
-  function test_fls() public {
+  function test_fls() public pure {
     assertEq(LibBit.fls(0xff << 3), 10);
     for (uint256 i = 1; i < 255; i++) {
       assertEq(LibBit.fls((1 << i) - 1), i - 1);
@@ -480,5 +481,27 @@ contract PositionStatusMapTest is Base {
       assertEq(LibBit.fls((1 << i) + 1), i);
     }
     assertEq(LibBit.fls(0), 256);
+  }
+
+  function test_symbolic_popCount(bytes32) public {
+    uint256 bits = vm.randomUint();
+    uint256 disabledBitIndex = vm.randomUint(8); // 8 bits = [0, 255]
+
+    // disable bit instead of `vm.assume`
+    bits &= ~(1 << disabledBitIndex);
+    uint256 popCount = p.popCount(bits);
+    bits |= (1 << disabledBitIndex);
+
+    assertEq(p.popCount(bits), popCount + 1);
+  }
+
+  function test_symbolic_fls(bytes32) public {
+    uint256 bits = vm.randomUint();
+    uint256 lastSetBitIndex = vm.randomUint(8); // 8 bits = [0, 255]
+
+    // disable bits such that `lastSetBitIndex` is the last set bit
+    bits &= (1 << (lastSetBitIndex + 1)) - 1;
+
+    assertEq(p.fls(bits), lastSetBitIndex);
   }
 }
