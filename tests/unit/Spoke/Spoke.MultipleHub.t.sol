@@ -69,6 +69,7 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      refreshPremium: true,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });

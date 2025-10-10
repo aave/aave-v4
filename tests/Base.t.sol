@@ -422,6 +422,7 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      refreshPremium: true,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });
@@ -2041,6 +2042,7 @@ abstract contract Base is Test {
   function assertEq(IHub.SpokeConfig memory a, IHub.SpokeConfig memory b) internal pure {
     assertEq(a.addCap, b.addCap, 'addCap');
     assertEq(a.drawCap, b.drawCap, 'drawCap');
+    assertEq(a.refreshPremium, b.refreshPremium, 'refreshPremium');
     assertEq(a.active, b.active, 'active');
     assertEq(abi.encode(a), abi.encode(b));
   }

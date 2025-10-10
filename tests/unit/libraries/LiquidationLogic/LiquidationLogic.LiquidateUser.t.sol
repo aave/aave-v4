@@ -50,6 +50,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     // Set liquidationLogicWrapper as a spoke
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      refreshPremium: true,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });

@@ -106,6 +106,7 @@ contract HubBase is Base {
       tempSpoke,
       IHub.SpokeConfig({
         active: true,
+        refreshPremium: true,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
       })
@@ -199,6 +200,7 @@ contract HubBase is Base {
       IHub.SpokeConfig({
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        refreshPremium: true,
         active: true
       })
     );

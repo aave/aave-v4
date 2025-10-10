@@ -160,7 +160,8 @@ contract HubConfiguratorTest is HubBase {
     IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: 0,
-      active: true
+      active: true,
+      refreshPremium: true
     });
 
     vm.expectCall(
@@ -660,6 +661,7 @@ contract HubConfiguratorTest is HubBase {
     IHub.SpokeConfig memory daiSpokeConfig = IHub.SpokeConfig({
       addCap: 1,
       drawCap: 2,
+      refreshPremium: true,
       active: true
     });
 
@@ -688,9 +690,9 @@ contract HubConfiguratorTest is HubBase {
     assetIds[1] = wethAssetId;
 
     IHub.SpokeConfig[] memory spokeConfigs = new IHub.SpokeConfig[](3);
-    spokeConfigs[0] = IHub.SpokeConfig({addCap: 1, drawCap: 2, active: true});
-    spokeConfigs[1] = IHub.SpokeConfig({addCap: 3, drawCap: 4, active: true});
-    spokeConfigs[2] = IHub.SpokeConfig({addCap: 5, drawCap: 6, active: true});
+    spokeConfigs[0] = IHub.SpokeConfig({addCap: 1, drawCap: 2, refreshPremium: true, active: true});
+    spokeConfigs[1] = IHub.SpokeConfig({addCap: 3, drawCap: 4, refreshPremium: true, active: true});
+    spokeConfigs[2] = IHub.SpokeConfig({addCap: 5, drawCap: 6, refreshPremium: true, active: true});
 
     vm.expectRevert(IHubConfigurator.MismatchedConfigs.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -707,11 +709,13 @@ contract HubConfiguratorTest is HubBase {
     IHub.SpokeConfig memory daiSpokeConfig = IHub.SpokeConfig({
       addCap: 1,
       drawCap: 2,
+      refreshPremium: true,
       active: true
     });
     IHub.SpokeConfig memory wethSpokeConfig = IHub.SpokeConfig({
       addCap: 3,
       drawCap: 4,
+      refreshPremium: true,
       active: true
     });
 
