@@ -33,23 +33,19 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
     vm.prank(bob);
     nativeTokenGateway.supplyNative{value: amount}(address(spoke1), _wethReserveId(spoke1), amount);
-    vm.snapshotGasLastCall(NAMESPACE, 'supplyNative: initial');
-
-    vm.prank(bob);
-    nativeTokenGateway.supplyNative{value: amount}(address(spoke1), _wethReserveId(spoke1), amount);
-    vm.snapshotGasLastCall(NAMESPACE, 'supplyNative: second time');
+    vm.snapshotGasLastCall(NAMESPACE, 'supplyNative');
   }
 
   function test_supplyAndCollateralNative() public {
     uint256 amount = 100e18;
 
     vm.prank(bob);
-    nativeTokenGateway.supplyAndCollateralNative{value: amount}(
+    nativeTokenGateway.supplyAsCollateralNative{value: amount}(
       address(spoke1),
       _wethReserveId(spoke1),
       amount
     );
-    vm.snapshotGasLastCall(NAMESPACE, 'supplyAndCollateralNative: initial');
+    vm.snapshotGasLastCall(NAMESPACE, 'supplyAsCollateralNative');
   }
 
   function test_withdrawNative() public {

@@ -30,7 +30,7 @@ interface INativeTokenGateway is IGatewayBase {
   /// @param spokeAddress The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to wrap and supply.
-  function supplyAndCollateralNative(
+  function supplyAsCollateralNative(
     address spokeAddress,
     uint256 reserveId,
     uint256 amount

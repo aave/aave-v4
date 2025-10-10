@@ -129,7 +129,7 @@ contract NativeTokenGatewayTest is Base {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_wethReserveId(spoke1), address(nativeTokenGateway), bob, amount);
     vm.prank(bob);
-    nativeTokenGateway.supplyAndCollateralNative{value: amount}(
+    nativeTokenGateway.supplyAsCollateralNative{value: amount}(
       address(spoke1),
       _wethReserveId(spoke1),
       amount
