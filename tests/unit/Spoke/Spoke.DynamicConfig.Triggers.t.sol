@@ -9,14 +9,14 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
 
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500e18);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
     configs = _getUserDynConfigKeys(spoke1, alice);
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
 
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
 
@@ -35,7 +35,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
 
     configs = _getUserDynConfigKeys(spoke1, alice);
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 90_10);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 90_10);
     skip(322 days);
     Utils.repay(spoke1, _daiReserveId(spoke1), alice, UINT256_MAX, alice);
 
@@ -55,7 +55,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     skip(322 days);
 
     // usdx (user coll) is offboarded
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
     // position is still healthy
     assertGe(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
@@ -71,7 +71,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     skip(123 days);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 80_00);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 80_00);
 
     vm.prank(bob);
     spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, UINT256_MAX);
@@ -90,12 +90,12 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     vm.prank(alice);
     spoke1.borrow(_daiReserveId(spoke1), 100e18, alice);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
@@ -116,15 +116,15 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     vm.prank(alice);
     spoke1.withdraw(_usdxReserveId(spoke1), 500e6, alice);
 
-    updateCollateralFactor(
+    _updateCollateralFactor(
       spoke1,
       _usdxReserveId(spoke1),
-      vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR - 1)
+      _randomCollateralFactor(spoke1, _usdxReserveId(spoke1))
     );
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
@@ -146,12 +146,12 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supply(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
@@ -181,8 +181,8 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
-    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     // no action yet, so user config should not change
@@ -212,8 +212,8 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
-    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     // no action yet, so user config should not change
@@ -266,8 +266,8 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     skip(365 days);
 
     // Change some dynamic config
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
-    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
 
     // Alice updates her dynamic config
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
@@ -285,7 +285,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
 
     // Change CF such that alice's position is undercollateralized
-    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 1);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 1);
 
     // Alice cannot update her dynamic config due to HF check
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);

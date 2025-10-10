@@ -344,10 +344,15 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.addCollateralFactor(spokeAddr, reserveId, newCollateralFactor);
+    uint16 configKey = spokeConfigurator.addCollateralFactor(
+      spokeAddr,
+      reserveId,
+      newCollateralFactor
+    );
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
+    assertEq(configKey, expectedConfigKey);
     assertEq(spoke.getReserve(reserveId).dynamicConfigKey, expectedConfigKey);
+    assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
   }
 
   function test_updateCollateralFactor_revertsWith_OwnableUnauthorizedAccount() public {
@@ -405,8 +410,14 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.addMaxLiquidationBonus(spokeAddr, reserveId, newLiquidationBonus);
+    uint16 configKey = spokeConfigurator.addMaxLiquidationBonus(
+      spokeAddr,
+      reserveId,
+      newLiquidationBonus
+    );
 
+    assertEq(configKey, expectedConfigKey);
+    assertEq(spoke.getReserve(reserveId).dynamicConfigKey, expectedConfigKey);
     assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
   }
 
@@ -470,8 +481,10 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.addLiquidationFee(spokeAddr, reserveId, newLiquidationFee);
+    uint16 configKey = spokeConfigurator.addLiquidationFee(spokeAddr, reserveId, newLiquidationFee);
 
+    assertEq(configKey, expectedConfigKey);
+    assertEq(spoke.getReserve(reserveId).dynamicConfigKey, expectedConfigKey);
     assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
   }
 
