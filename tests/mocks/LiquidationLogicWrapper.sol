@@ -15,11 +15,7 @@ contract LiquidationLogicWrapper {
   using PositionStatusMap for ISpoke.PositionStatus;
 
   ISpoke.Reserve internal collateralReserve;
-  // ISpoke.UserPosition internal collateralPosition;
-
   ISpoke.Reserve internal debtReserve;
-  // ISpoke.UserPosition internal debtPosition;
-  // ISpoke.UserPosition internal liquidatorPosition;
 
   mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
     internal _userPositions;
@@ -103,23 +99,6 @@ contract LiquidationLogicWrapper {
   function setDebtPositionRealizedPremium(uint256 realizedPremium) public {
     _userPositions[_borrower][_debtReserveId].realizedPremium = realizedPremium.toUint128();
   }
-
-  // function setDebtPositionDrawnShares(address user, uint256 drawnShares) public {
-  //   _userPositions[user][_debtReserveId].drawnShares = drawnShares.toUint128();
-  // }
-
-  // function setDebtPositionPremiumShares(address user, uint256 premiumShares) public {
-  //   _userPositions[user][_debtReserveId].premiumShares = premiumShares.toUint128();
-  // }
-
-  // function setDebtPositionPremiumOffset(address user, uint256 premiumOffset) public {
-  //   _userPositions[user][_debtReserveId].premiumOffset = premiumOffset.toUint128();
-  // }
-
-  // function setDebtPositionRealizedPremium(address user, uint256 realizedPremium) public {
-  //   _userPositions[user][_debtReserveId].realizedPremium = realizedPremium.toUint128();
-  // }
-
   function setCollateralStatus(uint256 reserveId, bool status) public {
     positionStatus.setUsingAsCollateral(reserveId, status);
   }
