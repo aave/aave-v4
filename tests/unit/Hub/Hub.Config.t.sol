@@ -325,7 +325,7 @@ contract HubConfigTest is HubBase {
     IHub.AssetConfig memory newConfig
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
-    _assumeValidAssetConfig(assetId, newConfig);
+    _assumeValidAssetConfig(newConfig);
     newConfig.liquidityFee = vm
       .randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
       .toUint16();
@@ -366,7 +366,7 @@ contract HubConfigTest is HubBase {
     IHub.AssetConfig memory newConfig
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
-    _assumeValidAssetConfig(assetId, newConfig);
+    _assumeValidAssetConfig(newConfig);
     assumeUnusedAddress(newConfig.irStrategy);
     assumeUnusedAddress(newConfig.feeReceiver);
 
@@ -391,7 +391,7 @@ contract HubConfigTest is HubBase {
     IHub.AssetConfig memory newConfig
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
-    _assumeValidAssetConfig(assetId, newConfig);
+    _assumeValidAssetConfig(newConfig);
     assumeUnusedAddress(newConfig.irStrategy);
 
     vm.mockCallRevert(
@@ -407,7 +407,7 @@ contract HubConfigTest is HubBase {
 
   function test_updateAssetConfig_fuzz(uint256 assetId, IHub.AssetConfig memory newConfig) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
-    _assumeValidAssetConfig(assetId, newConfig);
+    _assumeValidAssetConfig(newConfig);
     _mockInterestRateBps(newConfig.irStrategy, 5_00);
     vm.mockCall(
       newConfig.irStrategy,
@@ -416,7 +416,7 @@ contract HubConfigTest is HubBase {
     );
 
     uint256 liquidity = hub1.getAssetLiquidity(assetId);
-    (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
+    (uint256 drawn, ) = hub1.getAssetOwed(assetId);
 
     // new spoke is added only if it is different from the old one and not yet listed
     if (
@@ -567,7 +567,6 @@ contract HubConfigTest is HubBase {
 
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
 
-    address oldFeeReceiver = config.feeReceiver;
     config.feeReceiver = address(spoke1);
 
     // spoke1 is already listed on this asset, therefore is not allowed
@@ -662,10 +661,7 @@ contract HubConfigTest is HubBase {
     assertNotEq(hub1.getSpokeAddedShares(assetId, config.feeReceiver), futureFees);
   }
 
-  function _assumeValidAssetConfig(
-    uint256 assetId,
-    IHub.AssetConfig memory newConfig
-  ) internal pure {
+  function _assumeValidAssetConfig(IHub.AssetConfig memory newConfig) internal pure {
     newConfig.liquidityFee = bound(newConfig.liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
     vm.assume(address(newConfig.feeReceiver) != address(0) || newConfig.liquidityFee == 0);

@@ -638,7 +638,7 @@ contract SpokeBase is Base {
     uint256 prevDrawnDebt,
     ISpoke.UserPosition memory userPos,
     uint32 lastTimestamp
-  ) internal view returns (uint256) {
+  ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 accruedBase = MathUtils
       .calculateLinearInterest(hub1.getAsset(assetId).drawnRate, lastTimestamp)
@@ -910,6 +910,10 @@ contract SpokeBase is Base {
     return vm.randomUint(0, spoke.getReserveCount() - 1);
   }
 
+  function _randomInvalidReserveId(ISpoke spoke) internal returns (uint256) {
+    return vm.randomUint(spoke.getReserveCount(), UINT256_MAX);
+  }
+
   function _randomConfigKey() internal returns (uint16) {
     return vm.randomUint(0, type(uint16).max).toUint16();
   }
@@ -957,7 +961,7 @@ contract SpokeBase is Base {
   function _maxLiquidationBonusUpperBound(
     ISpoke spoke,
     uint256 reserveId
-  ) internal returns (uint32) {
+  ) internal view returns (uint32) {
     return
       (PercentageMath.PERCENTAGE_FACTOR - 1)
         .percentDivDown(spoke.getDynamicReserveConfig(reserveId).collateralFactor)
@@ -971,7 +975,10 @@ contract SpokeBase is Base {
         .toUint32();
   }
 
-  function _collateralFactorUpperBound(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
+  function _collateralFactorUpperBound(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint16) {
     return
       (PercentageMath.PERCENTAGE_FACTOR - 1)
         .percentDivDown(spoke.getDynamicReserveConfig(reserveId).maxLiquidationBonus)

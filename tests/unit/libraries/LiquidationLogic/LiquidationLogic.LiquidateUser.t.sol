@@ -226,11 +226,11 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.liquidateUser(params);
   }
 
-  function updateStorage(ISpoke.LiquidationConfig memory liquidationConfig) internal {
-    liquidationLogicWrapper.setLiquidationConfig(liquidationConfig);
+  function updateStorage(ISpoke.LiquidationConfig memory config) internal {
+    liquidationLogicWrapper.setLiquidationConfig(config);
   }
 
-  function updateStorage(ISpoke.DynamicReserveConfig memory dynamicCollateralConfig) internal {
-    liquidationLogicWrapper.setDynamicCollateralConfig(dynamicCollateralConfig);
+  function updateStorage(ISpoke.DynamicReserveConfig memory config) internal {
+    liquidationLogicWrapper.setDynamicCollateralConfig(config);
   }
 }

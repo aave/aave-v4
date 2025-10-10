@@ -116,28 +116,28 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
 
   function assertPosition(
     ISpoke.UserPosition memory newPosition,
-    ISpoke.UserPosition memory initialPosition,
+    ISpoke.UserPosition memory initPosition,
     uint256 newSuppliedShares
-  ) internal {
-    initialPosition.suppliedShares = newSuppliedShares.toUint128();
-    assertEq(newPosition, initialPosition);
+  ) internal pure {
+    initPosition.suppliedShares = newSuppliedShares.toUint128();
+    assertEq(newPosition, initPosition);
   }
 
   function expectCalls(
-    LiquidationLogic.LiquidateCollateralParams memory params
+    LiquidationLogic.LiquidateCollateralParams memory p
   ) internal returns (uint256) {
-    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
-    uint256 sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
+    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, p.collateralToLiquidate);
+    uint256 sharesToLiquidator = hub.previewRemoveByAssets(assetId, p.collateralToLiquidator);
     uint256 sharesToPayFee = sharesToLiquidate - sharesToLiquidator;
 
     vm.expectCall(
       address(hub),
-      abi.encodeCall(IHubBase.previewRemoveByAssets, (assetId, params.collateralToLiquidate)),
+      abi.encodeCall(IHubBase.previewRemoveByAssets, (assetId, p.collateralToLiquidate)),
       1
     );
     vm.expectCall(
       address(hub),
-      abi.encodeCall(IHubBase.remove, (assetId, params.collateralToLiquidator, params.liquidator)),
+      abi.encodeCall(IHubBase.remove, (assetId, p.collateralToLiquidator, p.liquidator)),
       1
     );
     if (sharesToPayFee > 0) {
