@@ -230,9 +230,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     uint256 newRiskPremium;
     if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
-      newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
-    } else {
       newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+    } else {
+      newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
     }
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
