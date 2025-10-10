@@ -42,12 +42,11 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     );
     _useCheckedNonce(params.onBehalfOf, params.nonce);
 
-    ISpoke spoke = ISpoke(params.spoke);
-    (IERC20 underlying, address hub) = _getReserveData(spoke, params.reserveId);
+    (IERC20 underlying, address hub) = _getReserveData(params.spoke, params.reserveId);
     underlying.safeTransferFrom(params.onBehalfOf, address(this), params.amount);
     underlying.forceApprove(hub, params.amount);
 
-    spoke.supply(params.reserveId, params.amount, params.onBehalfOf);
+    ISpoke(params.spoke).supply(params.reserveId, params.amount, params.onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -63,14 +62,13 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     );
     _useCheckedNonce(params.onBehalfOf, params.nonce);
 
-    ISpoke spoke = ISpoke(params.spoke);
-    (IERC20 underlying, ) = _getReserveData(spoke, params.reserveId);
+    (IERC20 underlying, ) = _getReserveData(params.spoke, params.reserveId);
     uint256 withdrawAmount = MathUtils.min(
       params.amount,
-      spoke.getUserSuppliedAssets(params.reserveId, params.onBehalfOf)
+      ISpoke(params.spoke).getUserSuppliedAssets(params.reserveId, params.onBehalfOf)
     );
 
-    spoke.withdraw(params.reserveId, withdrawAmount, params.onBehalfOf);
+    ISpoke(params.spoke).withdraw(params.reserveId, withdrawAmount, params.onBehalfOf);
     underlying.safeTransfer(params.onBehalfOf, withdrawAmount);
   }
 
@@ -87,10 +85,9 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     );
     _useCheckedNonce(params.onBehalfOf, params.nonce);
 
-    ISpoke spoke = ISpoke(params.spoke);
-    (IERC20 underlying, ) = _getReserveData(spoke, params.reserveId);
+    (IERC20 underlying, ) = _getReserveData(params.spoke, params.reserveId);
 
-    spoke.borrow(params.reserveId, params.amount, params.onBehalfOf);
+    ISpoke(params.spoke).borrow(params.reserveId, params.amount, params.onBehalfOf);
     underlying.safeTransfer(params.onBehalfOf, params.amount);
   }
 
@@ -107,17 +104,16 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     );
     _useCheckedNonce(params.onBehalfOf, params.nonce);
 
-    ISpoke spoke = ISpoke(params.spoke);
-    (IERC20 underlying, address hub) = _getReserveData(spoke, params.reserveId);
+    (IERC20 underlying, address hub) = _getReserveData(params.spoke, params.reserveId);
     uint256 repayAmount = MathUtils.min(
       params.amount,
-      spoke.getUserTotalDebt(params.reserveId, params.onBehalfOf)
+      ISpoke(params.spoke).getUserTotalDebt(params.reserveId, params.onBehalfOf)
     );
 
     underlying.safeTransferFrom(params.onBehalfOf, address(this), repayAmount);
     underlying.forceApprove(hub, repayAmount);
 
-    spoke.repay(params.reserveId, repayAmount, params.onBehalfOf);
+    ISpoke(params.spoke).repay(params.reserveId, repayAmount, params.onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -195,7 +191,7 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes32 permitR,
     bytes32 permitS
   ) external onlyRegisteredSpoke(spoke) {
-    (IERC20 underlying, ) = _getReserveData(ISpoke(spoke), reserveId);
+    (IERC20 underlying, ) = _getReserveData(spoke, reserveId);
     try
       IERC20Permit(address(underlying)).permit({
         owner: onBehalfOf,
