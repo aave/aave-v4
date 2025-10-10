@@ -144,7 +144,7 @@ export class Hub {
     userGhostDrawnSharesDelta: bigint,
     userOffsetDelta: bigint,
     userRealisedPremiumDelta: bigint,
-    who: Spoke
+    who: Spoke,
   ) {
     // add invariant: offset <= premiumDebt
     // consider enforcing rp limit (per spoke) here using ghost/base (min and max cap)
@@ -266,7 +266,10 @@ export class Spoke {
 
   public suppliedShares = 0n;
 
-  constructor(public hub: Hub, public readonly id = ++spokeIdCounter) {}
+  constructor(
+    public hub: Hub,
+    public readonly id = ++spokeIdCounter,
+  ) {}
 
   supply(amount: bigint, who: User) {
     const user = this.getUser(who);
@@ -335,7 +338,7 @@ export class Spoke {
       drawnDebt,
       premiumDebt,
       amount,
-      user
+      user,
     );
 
     let userGhostDrawnShares = user.ghostDrawnShares;
@@ -348,7 +351,7 @@ export class Spoke {
       -userGhostDrawnShares,
       -userOffset,
       user.realisedPremium - userRealisedPremium,
-      user
+      user,
     ); // settle premium debt
     const drawnShares = this.hub.restore(drawnDebtRestored, premiumDebtRestored, this); // settle drawn debt
 
@@ -387,7 +390,7 @@ export class Spoke {
         'drawnDebtRestored, drawnDebt, diff',
         f(drawnDebtRestored),
         f(drawnDebt),
-        absDiff(drawnDebtRestored, drawnDebt)
+        absDiff(drawnDebtRestored, drawnDebt),
       );
       throw new Error('drawnDebtRestored exceeds drawnDebt');
     }
@@ -398,7 +401,7 @@ export class Spoke {
         'premiumDebtRestored, premiumDebt, diff',
         f(premiumDebtRestored),
         f(premiumDebt),
-        absDiff(premiumDebtRestored, premiumDebt)
+        absDiff(premiumDebtRestored, premiumDebt),
       );
       throw new Error('premiumDebtRestored exceeds premiumDebt');
     }
@@ -423,7 +426,7 @@ export class Spoke {
       user.ghostDrawnShares - oldUserGhostDrawnShares,
       user.offset - oldUserOffset,
       accruedPremium,
-      user
+      user,
     );
   }
 
@@ -431,7 +434,7 @@ export class Spoke {
     userGhostDrawnSharesDelta: bigint,
     userOffsetDelta: bigint,
     userRealisedPremiumDelta: bigint,
-    user: User
+    user: User,
   ) {
     Utils.checkBounds(user);
 
@@ -531,7 +534,7 @@ export class User {
   constructor(
     public readonly id = ++userIdCounter,
     public riskPremium = randomRiskPremium(), // don't need to store, can be derived from `ghost/base`
-    spoke: Spoke | null = null
+    spoke: Spoke | null = null,
   ) {
     if (spoke) this.assignSpoke(spoke);
   }
@@ -648,7 +651,7 @@ export class System {
         user.logAction(action, amount);
         console.log(
           'debt ex ratio before',
-          formatUnits(this.hub.convertToDrawnAssets(10n ** 50n), 50) // bigint won't overflow
+          formatUnits(this.hub.convertToDrawnAssets(10n ** 50n), 50), // bigint won't overflow
         );
 
         this.supplyExchangeRatio = this.hub.supplyExchangeRatio();
@@ -697,7 +700,7 @@ export class System {
             fail = true;
           }
         });
-      }
+      },
     );
     // ghost drawn assets >= offset, always
     all.forEach((who) => {
@@ -709,7 +712,7 @@ export class System {
           f(ghostDrawnAssets),
           f(who.offset),
           f(who.ghostDrawnShares),
-          who.offset - ghostDrawnAssets
+          who.offset - ghostDrawnAssets,
         );
         fail = true;
       }
@@ -738,7 +741,7 @@ export class System {
         f(hubDrawnDebt),
         f(spokeDrawn),
         f(userDrawnDebt),
-        diff
+        diff,
       );
       fail = true;
     }
@@ -748,7 +751,7 @@ export class System {
         'spoke & user dust drawnDebt remaining when hub drawnDebt is completely repaid',
         'spokeDrawn %d, userDrawnDebt %d',
         f(spokeDrawn),
-        f(userDrawnDebt)
+        f(userDrawnDebt),
       );
       fail = true;
     }
@@ -768,7 +771,7 @@ export class System {
         'hubPremiumDebt !== spokePremium, diff',
         f(hubPremiumDebt),
         f(spokePremium),
-        diff
+        diff,
       );
       fail = true;
     }
@@ -777,7 +780,7 @@ export class System {
         'spokePremium !== userPremiumDebt, diff',
         f(spokePremium),
         f(userPremiumDebt),
-        diff
+        diff,
       );
       fail = true;
     }
@@ -802,7 +805,7 @@ export class System {
         'spoke & user dust premiumDebt remaining when hub premiumDebt is completely repaid',
         'spokePremium %d, userPremiumDebt %d',
         f(spokePremium),
-        f(userPremiumDebt)
+        f(userPremiumDebt),
       );
       fail = true;
     }
@@ -821,7 +824,7 @@ export class System {
         'hubSuppliedShares !== spokeSuppliedShares, diff',
         f(hubSuppliedShares),
         f(spokeSuppliedShares),
-        diff
+        diff,
       );
       fail = true;
     }
@@ -830,7 +833,7 @@ export class System {
         'hubSuppliedShares !== userSuppliedShares, diff',
         f(hubSuppliedShares),
         f(userSuppliedShares),
-        diff
+        diff,
       );
       fail = true;
     }
@@ -848,12 +851,12 @@ export class System {
           if (spoke[key] !== spokeOnHub[key]) {
             console.error(
               `spoke(${spoke.id}).${key} ${f(spoke[key])} !== this.hub.spokes[${this.hub.idx(
-                spoke
-              )}].${key} ${f(spokeOnHub[key])}`
+                spoke,
+              )}].${key} ${f(spokeOnHub[key])}`,
             );
             fail = true;
           }
-        }
+        },
       );
     });
 
@@ -871,7 +874,7 @@ export class System {
         'supplyExchangeRatio < this.supplyExchangeRatio, diff',
         Utils.ratio(supplyExchangeRatio),
         Utils.ratio(this.supplyExchangeRatio),
-        Utils.diff(this.supplyExchangeRatio, supplyExchangeRatio)
+        Utils.diff(this.supplyExchangeRatio, supplyExchangeRatio),
       );
       fail = true;
     }
@@ -899,7 +902,7 @@ class Utils {
         'totalDebtAfter > totalDebtBefore, diff',
         f(totalDebtAfter),
         f(totalDebtBefore),
-        diff
+        diff,
       );
       throw new Error('totalDebt increased');
     }
@@ -926,19 +929,19 @@ class Utils {
     return formatUnits(
       (supplyExchangeRatio.totalSuppliedAssets * 10n ** BigInt(precision)) /
         supplyExchangeRatio.totalSuppliedShares,
-      precision
+      precision,
     );
   }
 
   static diff(
     a: ReturnType<typeof Hub.prototype.supplyExchangeRatio>,
-    b: ReturnType<typeof Hub.prototype.supplyExchangeRatio>
+    b: ReturnType<typeof Hub.prototype.supplyExchangeRatio>,
   ) {
     const precision = 50;
     return formatUnits(
       (a.totalSuppliedAssets * 10n ** BigInt(precision)) / a.totalSuppliedShares -
         (b.totalSuppliedAssets * 10n ** BigInt(precision)) / b.totalSuppliedShares,
-      precision
+      precision,
     );
   }
 }
