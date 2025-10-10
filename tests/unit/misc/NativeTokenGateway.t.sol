@@ -402,7 +402,7 @@ contract NativeTokenGatewayTest is Base {
       _wethReserveId(spoke1),
       bob
     );
-    (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
+    (uint256 baseRestored, ) = _calculateExactRestoreAmount(
       userDrawnDebt,
       userPremiumDebt,
       repayAmount,
