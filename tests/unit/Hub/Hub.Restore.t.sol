@@ -847,8 +847,6 @@ contract HubRestoreTest is HubBase {
       premiumRestored: premiumRestored
     });
 
-    AssetPosition memory daiDataBefore = getAssetPosition(hub1, daiAssetId);
-
     // spoke1 restore full drawn
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawn, premiumRestored, premiumDelta, alice);

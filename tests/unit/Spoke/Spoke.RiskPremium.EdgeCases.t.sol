@@ -20,7 +20,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     uint256 repayAmount
   ) public {
     // Make usdx collateral risk 10% so it's the lower collateral risk reserve compared to dai
-    updateCollateralRisk(spoke2, _usdxReserveId(spoke2), 10_00);
+    _updateCollateralRisk(spoke2, _usdxReserveId(spoke2), 10_00);
     assertLt(
       _getCollateralRisk(spoke2, _usdxReserveId(spoke2)),
       _getCollateralRisk(spoke2, _daiReserveId(spoke2)),

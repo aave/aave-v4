@@ -95,8 +95,9 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Emitted when fees are accrued to `feeReceiver`.
   /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the current feeReceiver.
   /// @param shares The amount of shares accrued.
-  event AccrueFees(uint256 indexed assetId, uint256 shares);
+  event AccrueFees(uint256 indexed assetId, address indexed spoke, uint256 shares);
 
   /// @notice Emitted when an amount of liquidity is swept by the reinvestment controller.
   /// @param assetId The identifier of the asset.
