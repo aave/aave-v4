@@ -2057,6 +2057,7 @@ abstract contract Base is Test {
     assertEq(a.addCap, b.addCap, 'addCap');
     assertEq(a.drawCap, b.drawCap, 'drawCap');
     assertEq(a.active, b.active, 'active');
+    assertEq(a.paused, b.paused, 'paused');
     assertEq(abi.encode(a), abi.encode(b));
   }
 
