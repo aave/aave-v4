@@ -30,6 +30,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
   function test_supplyNative() public {
     uint256 amount = 100e18;
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, amount, bob);
 
     vm.prank(bob);
     nativeTokenGateway.supplyNative{value: amount}(address(spoke1), _wethReserveId(spoke1), amount);
@@ -38,6 +39,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
   function test_supplyAndCollateralNative() public {
     uint256 amount = 100e18;
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, amount, bob);
 
     vm.prank(bob);
     nativeTokenGateway.supplyAsCollateralNative{value: amount}(
@@ -50,14 +52,8 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
   function test_withdrawNative() public {
     uint256 amount = 100e18;
-
-    Utils.supply({
-      spoke: spoke1,
-      reserveId: _wethReserveId(spoke1),
-      caller: bob,
-      amount: mintAmount_WETH,
-      onBehalfOf: bob
-    });
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, mintAmount_WETH, bob);
+    Utils.withdraw(spoke1, _wethReserveId(spoke1), bob, amount, bob);
 
     vm.prank(bob);
     nativeTokenGateway.withdrawNative(address(spoke1), _wethReserveId(spoke1), amount);
@@ -75,6 +71,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
     Utils.supply(spoke1, _wethReserveId(spoke1), alice, aliceSupplyAmount, alice);
+    Utils.borrow(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
 
     vm.prank(bob);
     nativeTokenGateway.borrowNative(address(spoke1), _wethReserveId(spoke1), borrowAmount);
@@ -90,6 +87,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
     Utils.supply(spoke1, _wethReserveId(spoke1), alice, aliceSupplyAmount, alice);
     Utils.borrow(spoke1, _wethReserveId(spoke1), bob, borrowAmount, bob);
+    Utils.repay(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
 
     vm.prank(bob);
     nativeTokenGateway.repayNative{value: repayAmount}(
@@ -117,7 +115,8 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
-    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount * 2);
+    Utils.supply(spoke1, p.reserveId, alice, p.amount * 2, alice);
 
     vm.prank(vm.randomAddress());
     gateway.supplyWithSig(p, signature);
@@ -129,7 +128,8 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    Utils.supply(spoke1, p.reserveId, alice, p.amount + 1, alice);
+    Utils.supply(spoke1, p.reserveId, alice, (p.amount * 2) + 1, alice);
+    Utils.withdraw(spoke1, p.reserveId, alice, p.amount, alice);
 
     vm.prank(vm.randomAddress());
     gateway.withdrawWithSig(p, signature);
@@ -141,7 +141,8 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 1e18;
-    Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 2, alice);
+    Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 4, alice);
+    Utils.borrow(spoke1, p.reserveId, alice, p.amount, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.prank(vm.randomAddress());
@@ -154,9 +155,10 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 1e18;
-    Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 2, alice);
-    Utils.borrow(spoke1, p.reserveId, alice, p.amount, alice);
-    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+    Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 10, alice);
+    Utils.borrow(spoke1, p.reserveId, alice, p.amount * 3, alice);
+    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount * 2);
+    Utils.repay(spoke1, p.reserveId, alice, p.amount, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.prank(vm.randomAddress());
@@ -183,6 +185,9 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     p.nonce = _burnRandomNoncesAtKey(gateway, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
+    vm.prank(alice);
+    spoke1.updateUserRiskPremium(alice);
+
     vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'updateUserRiskPremiumWithSig');
@@ -196,6 +201,9 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     );
     p.nonce = _burnRandomNoncesAtKey(gateway, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+
+    vm.prank(alice);
+    spoke1.updateUserDynamicConfig(alice);
 
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);
@@ -211,6 +219,9 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       deadline: _warpBeforeRandomDeadline()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
+
+    vm.prank(alice);
+    spoke1.setUserPositionManager(address(gateway), false);
 
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig(address(spoke1), p, signature);
