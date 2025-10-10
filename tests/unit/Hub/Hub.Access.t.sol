@@ -234,7 +234,7 @@ contract HubAccessTest is HubBase {
   }
 
   /// @dev Test showcasing authority contract can be accessed via hub contract.
-  function test_hub_access_manager_exposure() public {
+  function test_hub_access_manager_exposure() public view {
     assertEq(address(hub1.authority()), address(accessManager));
   }
 
