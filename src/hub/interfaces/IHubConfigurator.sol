@@ -100,6 +100,11 @@ interface IHubConfigurator {
   /// @param assetId The identifier of the asset.
   function freezeAsset(address hub, uint256 assetId) external;
 
+  /// @notice Deactivates an asset.
+  /// @param hub The address of the Hub contract.
+  /// @param assetId The identifier of the asset.
+  function deactivateAsset(address hub, uint256 assetId) external;
+
   /// @notice Pauses an asset.
   /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
@@ -175,7 +180,12 @@ interface IHubConfigurator {
     uint256 drawCap
   ) external;
 
-  /// @notice Pauses all assets of a spoke by setting the active flag to false.
+  /// @notice Deactivates all assets of a spoke by setting the active flag to false.
+  /// @param hub The address of the Hub contract.
+  /// @param spoke The address of the spoke.
+  function deactivateSpoke(address hub, address spoke) external;
+
+  /// @notice Pauses all assets of a spoke by setting the paused flag to true.
   /// @param hub The address of the Hub contract.
   /// @param spoke The address of the spoke.
   function pauseSpoke(address hub, address spoke) external;

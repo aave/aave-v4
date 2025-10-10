@@ -85,9 +85,9 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, 0, 0, premiumDelta, alice);
   }
 
-  function test_restore_revertsWith_SpokeNotActive() public {
+  function test_restore_revertsWith_SpokeNotActive_whenPaused() public {
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.pauseAsset(address(hub1), daiAssetId);
+    hubConfigurator.deactivateAsset(address(hub1), daiAssetId);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
