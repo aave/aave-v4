@@ -685,20 +685,26 @@ contract Hub is IHub, AccessManaged {
     PremiumDelta calldata premium,
     uint256 premiumAmount
   ) internal {
-    uint256 assetPremiumBefore = asset.premium();
-    uint256 spokePremiumBefore = _getSpokePremium(spoke, assetId);
+    uint256 premiumShares = spoke.premiumShares;
+    uint256 premiumOffset = spoke.premiumOffset;
+    uint256 realizedPremium = spoke.realizedPremium;
+    uint256 spokePremiumBefore = previewRestoreByShares(assetId, premiumShares) - premiumOffset;
+    spokePremiumBefore += realizedPremium;
 
     asset.premiumShares = asset.premiumShares.add(premium.sharesDelta).toUint128();
     asset.premiumOffset = asset.premiumOffset.add(premium.offsetDelta).toUint128();
     asset.realizedPremium = asset.realizedPremium.add(premium.realizedDelta).toUint128();
 
-    spoke.premiumShares = spoke.premiumShares.add(premium.sharesDelta).toUint128();
-    spoke.premiumOffset = spoke.premiumOffset.add(premium.offsetDelta).toUint128();
-    spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta).toUint128();
+    premiumShares = premiumShares.add(premium.sharesDelta);
+    premiumOffset = premiumOffset.add(premium.offsetDelta);
+    realizedPremium = realizedPremium.add(premium.realizedDelta);
+    spoke.premiumShares = premiumShares.toUint128();
+    spoke.premiumOffset = premiumOffset.toUint128();
+    spoke.realizedPremium = realizedPremium.toUint128();
 
     // can increase due to precision loss on premium (drawn unchanged)
-    require(asset.premium() + premiumAmount - assetPremiumBefore <= 2, InvalidPremiumChange());
-    uint256 spokePremiumAfter = _getSpokePremium(spoke, assetId);
+    uint256 spokePremiumAfter = previewRestoreByShares(assetId, premiumShares) - premiumOffset;
+    spokePremiumAfter += realizedPremium;
     require(spokePremiumAfter + premiumAmount - spokePremiumBefore <= 2, InvalidPremiumChange());
   }
 
