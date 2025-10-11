@@ -2,8 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -14,11 +12,9 @@ contract LiquidationLogicWrapper {
   using SafeCast for uint256;
   using PositionStatusMap for ISpoke.PositionStatus;
 
-  ISpoke.Reserve internal collateralReserve;
-  ISpoke.Reserve internal debtReserve;
-
   mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
     internal _userPositions;
+  mapping(uint256 reserveId => ISpoke.Reserve) internal _reserves;
   address internal _borrower;
   uint256 internal _collateralReserveId;
   uint256 internal _debtReserveId;
@@ -37,15 +33,15 @@ contract LiquidationLogicWrapper {
   }
 
   function setCollateralReserveHub(IHub hub) public {
-    collateralReserve.hub = hub;
+    _reserves[_collateralReserveId].hub = hub;
   }
 
   function setCollateralReserveDecimals(uint256 decimals) public {
-    collateralReserve.decimals = decimals.toUint8();
+    _reserves[_collateralReserveId].decimals = decimals.toUint8();
   }
 
   function setCollateralReserveAssetId(uint256 assetId) public {
-    collateralReserve.assetId = assetId.toUint16();
+    _reserves[_collateralReserveId].assetId = assetId.toUint16();
   }
 
   function setCollateralReserveId(uint256 reserveId) public {
@@ -61,7 +57,7 @@ contract LiquidationLogicWrapper {
   }
 
   function getCollateralReserve() public view returns (ISpoke.Reserve memory) {
-    return collateralReserve;
+    return _reserves[_collateralReserveId];
   }
 
   function getCollateralPosition() public view returns (ISpoke.UserPosition memory) {
@@ -69,15 +65,15 @@ contract LiquidationLogicWrapper {
   }
 
   function setDebtReserveHub(IHub hub) public {
-    debtReserve.hub = hub;
+    _reserves[_debtReserveId].hub = hub;
   }
 
   function setDebtReserveDecimals(uint256 decimals) public {
-    debtReserve.decimals = decimals.toUint8();
+    _reserves[_debtReserveId].decimals = decimals.toUint8();
   }
 
   function setDebtReserveAssetId(uint256 assetId) public {
-    debtReserve.assetId = assetId.toUint16();
+    _reserves[_debtReserveId].assetId = assetId.toUint16();
   }
 
   function setDebtReserveId(uint256 reserveId) public {
@@ -108,7 +104,7 @@ contract LiquidationLogicWrapper {
   }
 
   function getDebtReserve() public view returns (ISpoke.Reserve memory) {
-    return debtReserve;
+    return _reserves[_debtReserveId];
   }
 
   function getDebtPosition() public view returns (ISpoke.UserPosition memory) {
@@ -190,30 +186,17 @@ contract LiquidationLogicWrapper {
   function liquidateCollateral(
     LiquidationLogic.LiquidateCollateralParams memory params
   ) public returns (bool) {
-    return
-      LiquidationLogic._liquidateCollateral(
-        collateralReserve,
-        _userPositions[_borrower][_collateralReserveId],
-        _userPositions[params.liquidator][_collateralReserveId],
-        params
-      );
+    return LiquidationLogic._liquidateCollateral(_reserves, _userPositions, params);
   }
 
   function liquidateDebt(LiquidationLogic.LiquidateDebtParams memory params) public returns (bool) {
-    return
-      LiquidationLogic._liquidateDebt(
-        debtReserve,
-        _userPositions[_borrower][_debtReserveId],
-        positionStatus,
-        params
-      );
+    return LiquidationLogic._liquidateDebt(_reserves, _userPositions, positionStatus, params);
   }
 
   function liquidateUser(LiquidationLogic.LiquidateUserParams memory params) public returns (bool) {
     return
       LiquidationLogic.liquidateUser(
-        collateralReserve,
-        debtReserve,
+        _reserves,
         _userPositions,
         positionStatus,
         liquidationConfig,

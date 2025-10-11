@@ -165,10 +165,10 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, false);
-    vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receive assets): partial');
+    vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: partial');
 
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
-    vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receive assets): full');
+    vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: full');
 
     vm.stopPrank();
   }
