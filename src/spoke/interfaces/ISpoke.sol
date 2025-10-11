@@ -244,6 +244,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when a debt to cover input is zero.
   error InvalidDebtToCover();
 
+  /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen.
+  error CannotReceiveShares();
+
   /// @notice Updates the liquidation config.
   /// @param config The liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;

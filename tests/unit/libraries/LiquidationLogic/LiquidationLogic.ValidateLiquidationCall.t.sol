@@ -18,6 +18,8 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
       debtReserveHub: address(hub1),
       collateralReservePaused: false,
       debtReservePaused: false,
+      receiveShares: false,
+      collateralReserveFrozen: false,
       healthFactor: 0.8e18,
       isUsingAsCollateral: true,
       collateralFactor: 75_00,
@@ -53,6 +55,21 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
   function test_validateLiquidationCall_revertsWith_ReservePaused_CollateralPaused() public {
     params.collateralReservePaused = true;
     vm.expectRevert(ISpoke.ReservePaused.selector);
+    liquidationLogicWrapper.validateLiquidationCall(params);
+  }
+
+  function test_validateLiquidationCall_revertsWith_CannotReceiveShares_CollateralFrozen() public {
+    // frozen coll reserve; receiveShares false allowed
+    params.collateralReserveFrozen = true;
+    liquidationLogicWrapper.validateLiquidationCall(params);
+
+    // frozen coll reserve; receiveShares true not allowed
+    params.receiveShares = true;
+    vm.expectRevert(ISpoke.CannotReceiveShares.selector);
+    liquidationLogicWrapper.validateLiquidationCall(params);
+
+    // non-frozen coll reserve; receiveShares true allowed
+    params.collateralReserveFrozen = false;
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 

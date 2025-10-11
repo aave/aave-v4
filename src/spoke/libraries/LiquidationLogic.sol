@@ -46,11 +46,13 @@ library LiquidationLogic {
     address debtReserveHub;
     bool collateralReservePaused;
     bool debtReservePaused;
+    bool collateralReserveFrozen;
     uint256 healthFactor;
     bool isUsingAsCollateral;
     uint256 collateralFactor;
     uint256 collateralReserveBalance;
     uint256 debtReserveBalance;
+    bool receiveShares;
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
@@ -147,12 +149,14 @@ library LiquidationLogic {
         collateralReserveHub: address(reserves[params.collateralReserveId].hub),
         debtReserveHub: address(reserves[params.debtReserveId].hub),
         collateralReservePaused: reserves[params.collateralReserveId].paused,
+        collateralReserveFrozen: reserves[params.collateralReserveId].frozen,
         debtReservePaused: reserves[params.debtReserveId].paused,
         healthFactor: params.healthFactor,
         isUsingAsCollateral: positionStatus.isUsingAsCollateral(params.collateralReserveId),
         collateralFactor: collateralDynConfig.collateralFactor,
         collateralReserveBalance: collateralReserveBalance,
-        debtReserveBalance: params.drawnDebt + params.premiumDebt
+        debtReserveBalance: params.drawnDebt + params.premiumDebt,
+        receiveShares: params.receiveShares
       })
     );
 
@@ -251,6 +255,7 @@ library LiquidationLogic {
     );
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
+    require(!params.receiveShares || !params.collateralReserveFrozen, ISpoke.CannotReceiveShares());
   }
 
   /// @notice Calculates the liquidation amounts.
