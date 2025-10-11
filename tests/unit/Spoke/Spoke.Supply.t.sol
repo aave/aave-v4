@@ -44,7 +44,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.startPrank(bob);
     tokenList.dai.approve(address(hub1), approvalAmount);
-    vm.expectRevert(TransferFromFailed.selector);
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     spoke1.supply(_daiReserveId(spoke1), amount, bob);
     vm.stopPrank();
   }

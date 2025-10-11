@@ -25,6 +25,7 @@ import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.
 import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';
+import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 
 import {Initializable} from 'src/dependencies/openzeppelin-upgradeable/Initializable.sol';
 import {IERC1967} from 'src/dependencies/openzeppelin/IERC1967.sol';
@@ -83,8 +84,6 @@ abstract contract Base is Test {
   using PercentageMath for uint256;
   using SafeCast for *;
   using MathUtils for uint256;
-
-  error TransferFromFailed();
 
   bytes32 internal constant ERC1967_ADMIN_SLOT =
     0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;

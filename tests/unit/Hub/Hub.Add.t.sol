@@ -52,14 +52,14 @@ contract HubAddTest is HubBase {
   function test_add_revertsWith_TransferFromFailed() public {
     uint256 amount = 100e18;
 
-    vm.expectRevert(TransferFromFailed.selector);
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount, makeAddr('randomUser'));
   }
 
   function test_add_fuzz_revertsWith_TransferFromFailed(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    vm.expectRevert(TransferFromFailed.selector);
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount, makeAddr('randomUser'));
   }
