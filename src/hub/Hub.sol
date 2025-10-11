@@ -350,8 +350,8 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes, assetId); // allow paused spokes
-    require(spoke.active, SpokeNotActive());
+    require(spoke.active, SpokeNotActive()); // allow paused spokes
+    asset.accrue(_spokes, assetId);
     // no premium change allowed
     _applyPremiumDelta(assetId, asset, spoke, premiumDelta, 0);
     asset.updateDrawnRate(assetId);
