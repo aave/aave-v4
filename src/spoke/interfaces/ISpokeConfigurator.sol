@@ -85,7 +85,12 @@ interface ISpokeConfigurator {
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param collateralFactor The new collateral factor.
-  function addCollateralFactor(address spoke, uint256 reserveId, uint16 collateralFactor) external;
+  /// @return The configKey of the added dynamic configuration.
+  function addCollateralFactor(
+    address spoke,
+    uint256 reserveId,
+    uint16 collateralFactor
+  ) external returns (uint16);
 
   /// @notice Updates an existing collateral factor of a reserve at the specified key.
   /// @param spoke The address of the spoke.
@@ -103,11 +108,12 @@ interface ISpokeConfigurator {
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param maxLiquidationBonus The new max liquidation bonus.
+  /// @return The configKey of the added dynamic configuration.
   function addMaxLiquidationBonus(
     address spoke,
     uint256 reserveId,
     uint256 maxLiquidationBonus
-  ) external;
+  ) external returns (uint16);
 
   /// @notice Updates an existing liquidation bonus of a reserve at the specified key.
   /// @param spoke The address of the spoke.
@@ -125,7 +131,12 @@ interface ISpokeConfigurator {
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param liquidationFee The new liquidation fee.
-  function addLiquidationFee(address spoke, uint256 reserveId, uint256 liquidationFee) external;
+  /// @return The configKey of the added dynamic configuration.
+  function addLiquidationFee(
+    address spoke,
+    uint256 reserveId,
+    uint256 liquidationFee
+  ) external returns (uint16);
 
   /// @notice Updates an existing liquidation fee of a reserve at the specified key.
   /// @param spoke The address of the spoke.
