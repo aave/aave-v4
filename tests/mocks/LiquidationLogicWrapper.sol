@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
@@ -136,10 +136,10 @@ contract LiquidationLogicWrapper {
     return LiquidationLogic._calculateDebtToTargetHealthFactor(params);
   }
 
-  function calculateMaxDebtToLiquidate(
-    LiquidationLogic.CalculateMaxDebtToLiquidateParams memory params
+  function calculateDebtToLiquidate(
+    LiquidationLogic.CalculateDebtToLiquidateParams memory params
   ) public pure returns (uint256) {
-    return LiquidationLogic._calculateMaxDebtToLiquidate(params);
+    return LiquidationLogic._calculateDebtToLiquidate(params);
   }
 
   function calculateLiquidationAmounts(
@@ -151,15 +151,15 @@ contract LiquidationLogicWrapper {
   function evaluateDeficit(
     bool isCollateralPositionEmpty,
     bool isDebtPositionEmpty,
-    uint256 suppliedCollateralsCount,
-    uint256 borrowedReservesCount
+    uint256 activeCollateralCount,
+    uint256 borrowedCount
   ) public pure returns (bool) {
     return
       LiquidationLogic._evaluateDeficit(
         isCollateralPositionEmpty,
         isDebtPositionEmpty,
-        suppliedCollateralsCount,
-        borrowedReservesCount
+        activeCollateralCount,
+        borrowedCount
       );
   }
 

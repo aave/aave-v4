@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
+/// @title EIP712Types library
+/// @author Aave Labs
+/// @notice Defines type structs used in EIP712-typed signatures.
 library EIP712Types {
   struct SetUserPositionManager {
     address positionManager;

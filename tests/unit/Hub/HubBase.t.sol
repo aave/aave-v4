@@ -184,7 +184,7 @@ contract HubBase is Base {
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
 
-    uint256 initialLiq = hub1.getLiquidity(assetId);
+    uint256 initialLiq = hub1.getAssetLiquidity(assetId);
 
     address underlying = hub1.getAsset(assetId).underlying;
     deal(underlying, tempUser, amount);
@@ -205,7 +205,7 @@ contract HubBase is Base {
 
     Utils.add({hub: hub1, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
 
-    assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
+    assertEq(hub1.getAssetLiquidity(assetId), initialLiq + amount);
   }
 
   function _getExpectedPremiumDelta(
@@ -233,5 +233,9 @@ contract HubBase is Base {
 
   function _randomAssetId(IHub hub) internal returns (uint256) {
     return vm.randomUint(0, hub.getAssetCount() - 1);
+  }
+
+  function _randomInvalidAssetId(IHub hub) internal returns (uint256) {
+    return vm.randomUint(hub.getAssetCount(), UINT256_MAX);
   }
 }

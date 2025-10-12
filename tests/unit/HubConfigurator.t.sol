@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
 
@@ -123,7 +123,11 @@ contract HubConfiguratorTest is HubBase {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
 
-    decimals = bound(decimals, 0, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
+    decimals = bound(
+      decimals,
+      Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
+      Constants.MAX_ALLOWED_UNDERLYING_DECIMALS
+    ).toUint8();
     optimalUsageRatio = bound(optimalUsageRatio, MIN_OPTIMAL_RATIO, MAX_OPTIMAL_RATIO).toUint16();
 
     baseVariableBorrowRate = bound(baseVariableBorrowRate, 0, MAX_BORROW_RATE / 3).toUint32();
@@ -553,8 +557,8 @@ contract HubConfiguratorTest is HubBase {
     );
   }
 
-  function test_updateInterestRateStrategy_revertsWith_InvalidInterestRateStrategyUpdate() public {
-    vm.expectRevert(IHub.InvalidInterestRateStrategyUpdate.selector, address(hub1));
+  function test_updateInterestRateStrategy_revertsWith_InvalidInterestRateStrategy() public {
+    vm.expectRevert(IHub.InvalidInterestRateStrategy.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateInterestRateStrategy(
       address(hub1),

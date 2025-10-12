@@ -41,10 +41,10 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       drawnDebt: 4.5e18,
       premiumDebt: 0.5e18,
       accruedPremium: 0.2e18,
-      totalDebtInBaseCurrency: 10_000e26,
+      totalDebtValue: 10_000e26,
       liquidator: makeAddr('liquidator'),
-      suppliedCollateralsCount: 1,
-      borrowedReservesCount: 1
+      activeCollateralCount: 1,
+      borrowedCount: 1
     });
 
     // Set liquidationLogicWrapper as a spoke
@@ -164,7 +164,11 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       1
     );
 
-    vm.expectCall(address(hub1), abi.encodeCall(IHubBase.payFee, (usdxAssetId, feeShares)), 1);
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHubBase.payFeeShares, (usdxAssetId, feeShares)),
+      1
+    );
 
     vm.expectCall(
       address(hub2),
@@ -205,18 +209,28 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.liquidateUser(params);
   }
 
-  function test_liquidateUser_revertsWith_MustNotLeaveDust() public {
-    params.totalDebtInBaseCurrency *= 2;
+  function test_liquidateUser_revertsWith_MustNotLeaveDust_Debt() public {
+    params.totalDebtValue *= 2;
     params.debtToCover = 4.9e18;
+    liquidationLogicWrapper.setCollateralPositionSuppliedShares(
+      liquidationLogicWrapper.getCollateralPosition().suppliedShares * 2
+    );
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.liquidateUser(params);
   }
 
-  function updateStorage(ISpoke.LiquidationConfig memory liquidationConfig) internal {
-    liquidationLogicWrapper.setLiquidationConfig(liquidationConfig);
+  function test_liquidateUser_revertsWith_MustNotLeaveDust_Collateral() public {
+    liquidationLogicWrapper.setCollateralPositionSuppliedShares(6500e6);
+    params.debtToCover = 2.6e18;
+    vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
+    liquidationLogicWrapper.liquidateUser(params);
   }
 
-  function updateStorage(ISpoke.DynamicReserveConfig memory dynamicCollateralConfig) internal {
-    liquidationLogicWrapper.setDynamicCollateralConfig(dynamicCollateralConfig);
+  function updateStorage(ISpoke.LiquidationConfig memory config) internal {
+    liquidationLogicWrapper.setLiquidationConfig(config);
+  }
+
+  function updateStorage(ISpoke.DynamicReserveConfig memory config) internal {
+    liquidationLogicWrapper.setDynamicCollateralConfig(config);
   }
 }

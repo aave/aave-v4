@@ -5,9 +5,9 @@ pragma solidity ^0.8.0;
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
-  function test_permitReserve_revertsWith_InvalidReserveId() public {
+  function test_permitReserve_revertsWith_ReserveNotListed() public {
     uint256 unlistedReserveId = vm.randomUint(spoke1.getReserveCount() + 1, UINT256_MAX);
-    vm.expectRevert(ISignatureGateway.InvalidReserveId.selector);
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(vm.randomAddress());
     gateway.permitReserve(
       unlistedReserveId,

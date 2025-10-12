@@ -27,7 +27,7 @@ contract SpokeAccessTest is SpokeBase {
     hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(0, 0, 0));
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
-    hub1.payFee(daiAssetId, 1000e18);
+    hub1.payFeeShares(daiAssetId, 1000e18);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
     hub1.transferShares(daiAssetId, 1000e18, bob);
@@ -43,7 +43,7 @@ contract SpokeAccessTest is SpokeBase {
     hub1.remove(daiAssetId, 1000e18, address(spoke1));
     hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(0, 0, 0));
     hub1.add(daiAssetId, 1000e18, address(spoke1));
-    hub1.payFee(daiAssetId, 1e18);
+    hub1.payFeeShares(daiAssetId, 1e18);
     hub1.transferShares(
       daiAssetId,
       hub1.getSpokeAddedShares(daiAssetId, address(spoke1)),

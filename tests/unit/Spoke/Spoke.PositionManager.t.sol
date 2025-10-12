@@ -43,6 +43,9 @@ contract SpokePositionManagerTest is SpokeBase {
     emit ISpoke.SetUserPositionManager(alice, POSITION_MANAGER, false);
     vm.prank(alice);
     spoke1.setUserPositionManager(POSITION_MANAGER, false);
+
+    assertFalse(spoke1.isPositionManager(alice, POSITION_MANAGER));
+    assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
   }
 
   function test_renouncePositionManagerRole() public {
@@ -51,10 +54,30 @@ contract SpokePositionManagerTest is SpokeBase {
     address user = vm.randomAddress();
     address positionManager = vm.randomAddress();
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(user, positionManager, false);
+    if (!spoke1.isPositionManager(user, positionManager)) {
+      vm.expectEmit(address(spoke1));
+      emit ISpoke.SetUserPositionManager(user, positionManager, false);
+    }
     vm.prank(positionManager);
     spoke1.renouncePositionManagerRole(user);
+
+    assertFalse(spoke1.isPositionManager(user, positionManager));
+  }
+
+  function test_renouncePositionManagerRole_noop_from_disabled() public {
+    vm.setArbitraryStorage(address(spoke1));
+
+    address user = vm.randomAddress();
+    address positionManager = vm.randomAddress();
+    vm.prank(user);
+    spoke1.setUserPositionManager(POSITION_MANAGER, false);
+
+    vm.recordLogs();
+    vm.prank(POSITION_MANAGER);
+    spoke1.renouncePositionManagerRole(user);
+
+    assertEq(vm.getRecordedLogs().length, 0);
+    assertFalse(spoke1.isPositionManager(user, POSITION_MANAGER));
   }
 
   function test_onlyPositionManager_on_supply() public {
@@ -219,7 +242,7 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 1500e6, alice);
 
     uint256 riskPremiumBefore = _getUserRiskPremium(spoke1, alice);
-    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 100_00);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 100_00);
     assertGt(_getUserRiskPremium(spoke1, alice), riskPremiumBefore);
 
     vm.expectRevert(
@@ -236,7 +259,7 @@ contract SpokePositionManagerTest is SpokeBase {
     spoke1.updateUserRiskPremium(alice);
 
     riskPremiumBefore = _getUserRiskPremium(spoke1, alice);
-    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 1000_00);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 1000_00);
     assertGt(_getUserRiskPremium(spoke1, alice), riskPremiumBefore);
     _disablePositionManager();
 
@@ -253,8 +276,8 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 1500e6, alice);
 
-    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
-    updateCollateralFactor(spoke1, _daiReserveId(spoke1), 90_00);
+    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
+    _updateCollateralFactor(spoke1, _daiReserveId(spoke1), 90_00);
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     vm.expectRevert(

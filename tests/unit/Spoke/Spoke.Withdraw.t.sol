@@ -261,11 +261,11 @@ contract SpokeWithdrawTest is SpokeBase {
   function test_withdraw_fuzz_all_elapsed_with_interest(
     uint256 supplyAmount,
     uint256 borrowAmount,
-    uint40 elapsed
+    uint32 elapsed
   ) public {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
-    elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint40();
+    elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint32();
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -325,7 +325,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
   function test_withdraw_all_liquidity_with_interest_no_premium() public {
     // set weth collateral risk to 0 for no premium contribution
-    updateCollateralRisk({spoke: spoke1, reserveId: _wethReserveId(spoke1), newCollateralRisk: 0});
+    _updateCollateralRisk({spoke: spoke1, reserveId: _wethReserveId(spoke1), newCollateralRisk: 0});
 
     TestState memory state;
     state.reserveId = _daiReserveId(spoke1);
@@ -447,7 +447,7 @@ contract SpokeWithdrawTest is SpokeBase {
     (uint256 assetId, IERC20 underlying) = getAssetByReserveId(spoke1, params.reserveId);
 
     // set weth collateral risk to 0 for no premium contribution
-    updateCollateralRisk({
+    _updateCollateralRisk({
       spoke: spoke1,
       reserveId: _wbtcReserveId(spoke1), // use highest-valued asset
       newCollateralRisk: 0

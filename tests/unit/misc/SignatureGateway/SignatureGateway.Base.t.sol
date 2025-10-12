@@ -2,11 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SignatureGatewayBaseTest is Base {
-  using stdStorage for StdStorage;
-
+contract SignatureGatewayBaseTest is SpokeBase {
   ISignatureGateway public gateway;
   uint256 public alicePk;
 
@@ -17,47 +15,9 @@ contract SignatureGatewayBaseTest is Base {
     (alice, alicePk) = makeAddrAndKey('alice');
   }
 
-  /**
-   * @dev Warps after to a random time after a randomly generated deadline.
-   * @return The randomly generated deadline.
-   */
-  function _warpAfterRandomDeadline() internal returns (uint256) {
-    uint256 deadline = vm.randomUint(0, MAX_SKIP_TIME - 1);
-    vm.warp(vm.randomUint(deadline + 1, MAX_SKIP_TIME));
-    return deadline;
-  }
-
-  /**
-   * @dev Warps to a random time before a randomly generated deadline.
-   * @return The randomly generated deadline.
-   */
-  function _warpBeforeRandomDeadline() internal returns (uint256) {
-    uint256 deadline = vm.randomUint(1, MAX_SKIP_TIME);
-    vm.warp(vm.randomUint(0, deadline - 1));
-    return deadline;
-  }
-
-  function _burnRandomNonces(address user) internal {
-    uint256 newNonce = vm.randomUint(1, UINT256_MAX - 1);
-    stdstore
-      .target(address(gateway))
-      .sig(ISignatureGateway.nonces.selector)
-      .with_key(user)
-      .checked_write(newNonce);
-    assertEq(gateway.nonces(user), newNonce);
-  }
-
   function _sign(uint256 pk, bytes32 digest) internal pure returns (bytes memory) {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
     return abi.encodePacked(r, s, v);
-  }
-
-  function _randomReserveId(ISpoke spoke) internal returns (uint256) {
-    return vm.randomUint(0, spoke.getReserveCount() - 1);
-  }
-
-  function _randomInvalidReserveId(ISpoke spoke) internal returns (uint256) {
-    return vm.randomUint(spoke.getReserveCount(), UINT256_MAX);
   }
 
   function _supplyData(
@@ -71,7 +31,7 @@ contract SignatureGatewayBaseTest is Base {
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         onBehalfOf: who,
-        nonce: gateway.nonces(who),
+        nonce: gateway.nonces(who, _randomNonceKey()),
         deadline: deadline
       });
   }
@@ -87,7 +47,7 @@ contract SignatureGatewayBaseTest is Base {
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         onBehalfOf: who,
-        nonce: gateway.nonces(who),
+        nonce: gateway.nonces(who, _randomNonceKey()),
         deadline: deadline
       });
   }
@@ -103,7 +63,7 @@ contract SignatureGatewayBaseTest is Base {
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         onBehalfOf: who,
-        nonce: gateway.nonces(who),
+        nonce: gateway.nonces(who, _randomNonceKey()),
         deadline: deadline
       });
   }
@@ -119,7 +79,7 @@ contract SignatureGatewayBaseTest is Base {
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         onBehalfOf: who,
-        nonce: gateway.nonces(who),
+        nonce: gateway.nonces(who, _randomNonceKey()),
         deadline: deadline
       });
   }
@@ -135,7 +95,7 @@ contract SignatureGatewayBaseTest is Base {
         reserveId: _randomReserveId(spoke),
         useAsCollateral: vm.randomBool(),
         onBehalfOf: who,
-        nonce: gateway.nonces(who),
+        nonce: gateway.nonces(who, _randomNonceKey()),
         deadline: deadline
       });
   }
@@ -149,7 +109,7 @@ contract SignatureGatewayBaseTest is Base {
       EIP712Types.UpdateUserRiskPremium({
         spoke: address(spoke),
         user: user,
-        nonce: gateway.nonces(user),
+        nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });
   }
@@ -163,7 +123,7 @@ contract SignatureGatewayBaseTest is Base {
       EIP712Types.UpdateUserDynamicConfig({
         spoke: address(spoke),
         user: user,
-        nonce: gateway.nonces(user),
+        nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });
   }

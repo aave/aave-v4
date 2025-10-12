@@ -147,7 +147,7 @@ contract HubRestoreTest is HubBase {
     emit IHubBase.Restore(
       daiAssetId,
       address(spoke1),
-      hub1.convertToDrawnShares(daiAssetId, drawnRestored),
+      hub1.previewRestoreByAssets(daiAssetId, drawnRestored),
       premiumDelta,
       drawnRestored,
       premium
@@ -375,7 +375,7 @@ contract HubRestoreTest is HubBase {
     emit IHubBase.Restore(
       daiAssetId,
       address(spoke1),
-      hub1.convertToDrawnShares(daiAssetId, drawnRestored),
+      hub1.previewRestoreByAssets(daiAssetId, drawnRestored),
       premiumDelta,
       drawnRestored,
       premium
@@ -640,7 +640,7 @@ contract HubRestoreTest is HubBase {
     emit IHubBase.Restore(
       daiAssetId,
       address(spoke1),
-      hub1.convertToDrawnShares(daiAssetId, drawnRestored),
+      hub1.previewRestoreByAssets(daiAssetId, drawnRestored),
       premiumDelta,
       drawnRestored,
       premium
@@ -846,8 +846,6 @@ contract HubRestoreTest is HubBase {
       reserveId: daiAssetId,
       premiumRestored: premiumRestored
     });
-
-    AssetPosition memory daiDataBefore = getAssetPosition(hub1, daiAssetId);
 
     // spoke1 restore full drawn
     vm.prank(address(spoke1));

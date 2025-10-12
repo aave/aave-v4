@@ -41,7 +41,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.assume(bobDebt.premiumDebt > 1);
     uint256 daiRepayAmount = vm.randomUint(1, bobDebt.premiumDebt - 1);
 
-    (uint256 baseToRestore, uint256 premiumToRestore) = _calculateExactRestoreAmount(
+    _calculateExactRestoreAmount(
       bobDebt.drawnDebt,
       bobDebt.premiumDebt,
       daiRepayAmount,
@@ -107,8 +107,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
   function test_repay_supply_ex_rate_decr() public {
     // inflate ex rate to 1.5
     _mockInterestRateBps(50_00);
-    updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
-    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
+    _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
     updateLiquidityFee(hub1, daiAssetId, 0);
 
     // enough coll
@@ -131,7 +131,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30);
 
     // 30% rp
-    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 30_00);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 30_00);
 
     vm.prank(alice);
     spoke1.borrow(_daiReserveId(spoke1), 15, alice);
@@ -150,8 +150,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
   function test_repay_supply_ex_rate_decr_skip_time() public {
     // inflate ex rate to 1.5
     _mockInterestRateBps(50_00);
-    updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
-    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
+    _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
     updateLiquidityFee(hub1, daiAssetId, 0);
 
     // enough coll
@@ -172,7 +172,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30e18);
 
     // 30% rp
-    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 30_00);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 30_00);
 
     vm.prank(alice);
     spoke1.borrow(_daiReserveId(spoke1), 15, alice);
@@ -194,7 +194,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
   function test_repay_less_than_share() public {
     // update collateral risk to zero
-    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
 
     // Accrue interest and ensure it's less than 1 share and pay it off
     uint256 daiSupplyAmount = 1000e18;
@@ -236,7 +236,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     uint256 repayAmount = 1;
     // Ensure that the repay amount is less than 1 share
-    assertEq(hub1.convertToDrawnShares(daiAssetId, repayAmount), 0, 'Shares nonzero');
+    assertEq(hub1.previewRestoreByAssets(daiAssetId, repayAmount), 0, 'Shares nonzero');
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
       bobDaiDebtBefore.drawnDebt,
@@ -260,7 +260,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
   // repay less than 1 share of drawn debt, but nonzero premium debt
   function test_repay_zero_shares_nonzero_premium_debt() public {
     // update collateral risk of weth to 20%
-    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 20_00);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 20_00);
 
     // Accrue interest and ensure it's less than 1 share and pay it off
     uint256 daiSupplyAmount = 100e18;
@@ -322,7 +322,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     uint256 repayAmount = 1;
 
     // Ensure that the repay amount is less than 1 share
-    assertEq(hub1.convertToDrawnShares(daiAssetId, repayAmount), 0, 'Shares nonzero');
+    assertEq(hub1.previewRestoreByAssets(daiAssetId, repayAmount), 0, 'Shares nonzero');
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
       bobDaiBefore.drawnDebt,
@@ -461,7 +461,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub1.convertToDrawnShares(daiAssetId, baseRestored),
+      hub1.previewRestoreByAssets(daiAssetId, baseRestored),
       expectedPremiumDelta
     );
     vm.prank(bob);
@@ -499,7 +499,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
   /// repay all accrued drawn debt interest when premium debt is zero
   function test_repay_only_base_debt_no_premium() public {
     // update collateral risk to zero
-    updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
 
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;
@@ -563,7 +563,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       _daiReserveId(spoke1),
       bob,
       bob,
-      hub1.convertToDrawnShares(daiAssetId, daiRepayAmount),
+      hub1.previewRestoreByAssets(daiAssetId, daiRepayAmount),
       expectedPremiumDelta
     );
     vm.prank(bob);

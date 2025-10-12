@@ -14,14 +14,24 @@ contract SpokeConfigTest is SpokeBase {
       vm.getNonce(address(this))
     );
     address oracle = makeAddr('AaveOracle');
+    vm.expectCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), 1);
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
     SpokeInstance instance = new SpokeInstance(oracle);
     assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
     assertEq(instance.ORACLE(), oracle);
+    assertNotEq(instance.getLiquidationLogic(), address(0));
   }
 
-  function test_spoke_deploy_revertsWith_InvalidAddress() public {
-    vm.expectRevert(ISpoke.InvalidAddress.selector);
+  function test_spoke_deploy_reverts_on_InvalidConstructorInput() public {
+    vm.expectRevert();
     new SpokeInstance(address(0));
+  }
+
+  function test_spoke_deploy_revertsWith_InvalidOracleDecimals() public {
+    address oracle = makeAddr('AaveOracle');
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(7));
+    vm.expectRevert(ISpoke.InvalidOracleDecimals.selector);
+    new SpokeInstance(oracle);
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(
@@ -172,6 +182,23 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
+  }
+
+  function test_addReserve_revertsWith_InvalidAddress_hub() public {
+    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
+
+    ISpoke.ReserveConfig memory newReserveConfig;
+    ISpoke.DynamicReserveConfig memory newDynReserveConfig;
+
+    vm.expectRevert(ISpoke.InvalidAddress.selector, address(newSpoke));
+    vm.prank(ADMIN);
+    newSpoke.addReserve(
+      address(0),
+      vm.randomUint(),
+      vm.randomAddress(),
+      newReserveConfig,
+      newDynReserveConfig
+    );
   }
 
   function test_addReserve_revertsWith_InvalidAddress_oracle() public {

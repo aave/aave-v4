@@ -45,8 +45,7 @@ contract HubDrawTest is HubBase {
         drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
         deficit: assetBefore.deficit,
         swept: assetBefore.swept
-      }),
-      vm.getBlockTimestamp()
+      })
     );
     vm.expectEmit(address(hub1.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub1), alice, amount);
@@ -62,7 +61,7 @@ contract HubDrawTest is HubBase {
     assertEq(hub1.getAssetTotalOwed(assetId), amount, 'asset totalDebt after');
     assertEq(drawn, amount, 'asset drawn after');
     assertEq(premium, 0, 'asset premium after');
-    assertEq(hub1.getLiquidity(assetId), 0, 'asset liquidity after');
+    assertEq(hub1.getAssetLiquidity(assetId), 0, 'asset liquidity after');
     assertEq(
       hub1.getAsset(assetId).lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -89,6 +88,10 @@ contract HubDrawTest is HubBase {
     assertEq(underlying.balanceOf(bob), MAX_SUPPLY_AMOUNT - amount, 'bob asset final balance');
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
+    assertEq(
+      hub1.convertToDrawnShares(assetId, amount),
+      hub1.previewRestoreByShares(assetId, amount)
+    );
   }
 
   function test_draw_fuzz_IncreasedBorrowRate(uint256 assetId, uint256 amount) public {
@@ -126,8 +129,7 @@ contract HubDrawTest is HubBase {
         drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
         deficit: assetBefore.deficit,
         swept: assetBefore.swept
-      }),
-      vm.getBlockTimestamp()
+      })
     );
     vm.expectEmit(address(hub1.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub1), alice, amount);
@@ -161,7 +163,7 @@ contract HubDrawTest is HubBase {
   function test_draw_revertsWith_InsufficientLiquidity() public {
     uint256 drawAmount = 1;
 
-    assertTrue(hub1.getLiquidity(daiAssetId) == 0);
+    assertTrue(hub1.getAssetLiquidity(daiAssetId) == 0);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
@@ -175,7 +177,7 @@ contract HubDrawTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
-    assertTrue(hub1.getLiquidity(assetId) == 0);
+    assertTrue(hub1.getAssetLiquidity(assetId) == 0);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke2));
@@ -202,7 +204,7 @@ contract HubDrawTest is HubBase {
       to: bob
     });
 
-    assertTrue(hub1.getLiquidity(daiAssetId) == 0);
+    assertTrue(hub1.getAssetLiquidity(daiAssetId) == 0);
 
     uint256 drawAmount = 1;
 
@@ -233,7 +235,7 @@ contract HubDrawTest is HubBase {
       to: bob
     });
 
-    assertTrue(hub1.getLiquidity(daiAssetId) == 0);
+    assertTrue(hub1.getAssetLiquidity(daiAssetId) == 0);
 
     uint256 drawAmount = 1;
 
@@ -262,7 +264,7 @@ contract HubDrawTest is HubBase {
       to: bob
     });
 
-    assertTrue(hub1.getLiquidity(daiAssetId) == 0);
+    assertTrue(hub1.getAssetLiquidity(daiAssetId) == 0);
 
     uint256 drawAmount = 1;
 
@@ -291,7 +293,7 @@ contract HubDrawTest is HubBase {
       to: bob
     });
 
-    assertTrue(hub1.getLiquidity(daiAssetId) == 0);
+    assertTrue(hub1.getAssetLiquidity(daiAssetId) == 0);
 
     uint256 drawAmount = 1;
 
@@ -352,6 +354,37 @@ contract HubDrawTest is HubBase {
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
     hub1.draw({assetId: daiAssetId, amount: 1, to: bob});
     vm.stopPrank();
+  }
+
+  function test_draw_revertsWith_DrawCapExceeded_due_to_deficit() public {
+    uint56 drawCap = 100;
+    updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
+
+    uint256 amount = drawCap * 10 ** tokenList.dai.decimals();
+
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: alice,
+      addSpoke: address(spoke1),
+      addAmount: amount + 1,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: amount,
+      skipTime: 0
+    });
+
+    vm.prank(address(spoke1));
+    hub1.reportDeficit(daiAssetId, amount, 0, IHubBase.PremiumDelta(0, 0, 0));
+
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: 1,
+      to: address(spoke1)
+    });
   }
 
   /// Tests that the draw cap is checked against spoke's debt, not the hub's debt

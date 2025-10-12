@@ -11,7 +11,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.supplyWithSig(p.reserveId, p.amount, p.onBehalfOf, p.deadline, signature);
+    gateway.supplyWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 
   function test_withdrawWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
@@ -20,7 +20,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.withdrawWithSig(p.reserveId, p.amount, p.onBehalfOf, p.deadline, signature);
+    gateway.withdrawWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 
   function test_borrowWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
@@ -29,7 +29,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.borrowWithSig(p.reserveId, p.amount, p.onBehalfOf, p.deadline, signature);
+    gateway.borrowWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 
   function test_repayWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
@@ -38,7 +38,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.repayWithSig(p.reserveId, p.amount, p.onBehalfOf, p.deadline, signature);
+    gateway.repayWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 
   function test_setUsingAsCollateralWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
@@ -54,6 +54,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       p.reserveId,
       p.useAsCollateral,
       p.onBehalfOf,
+      p.nonce,
       p.deadline,
       signature
     );
@@ -68,7 +69,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.updateUserRiskPremiumWithSig(p.user, p.deadline, signature);
+    gateway.updateUserRiskPremiumWithSig(p.user, p.nonce, p.deadline, signature);
   }
 
   function test_updateUserDynamicConfigWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
@@ -83,7 +84,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.updateUserDynamicConfigWithSig(p.user, p.deadline, signature);
+    gateway.updateUserDynamicConfigWithSig(p.user, p.nonce, p.deadline, signature);
   }
 
   function test_supplyWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
@@ -96,7 +97,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.supplyWithSig(p.reserveId, p.amount, p.onBehalfOf, p.deadline, signature);
+    gateway.supplyWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 
   function test_withdrawWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
@@ -109,7 +110,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.withdrawWithSig(p.reserveId, p.amount, p.onBehalfOf, p.deadline, signature);
+    gateway.withdrawWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 
   function test_borrowWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
@@ -122,7 +123,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.borrowWithSig(p.reserveId, p.amount, p.onBehalfOf, p.deadline, signature);
+    gateway.borrowWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 
   function test_repayWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
@@ -135,7 +136,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.repayWithSig(p.reserveId, p.amount, p.onBehalfOf, p.deadline, signature);
+    gateway.repayWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 
   function test_setUsingAsCollateralWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner()
@@ -155,6 +156,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       p.reserveId,
       p.useAsCollateral,
       p.onBehalfOf,
+      p.nonce,
       p.deadline,
       signature
     );
@@ -173,7 +175,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.updateUserRiskPremiumWithSig(p.user, p.deadline, signature);
+    gateway.updateUserRiskPremiumWithSig(p.user, p.nonce, p.deadline, signature);
   }
 
   function test_updateUserDynamicConfigWithSig_revertsWith_InvalidSignatureDueTo_InvalidSigner()
@@ -189,108 +191,124 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.updateUserDynamicConfigWithSig(p.user, p.deadline, signature);
+    gateway.updateUserDynamicConfigWithSig(p.user, p.nonce, p.deadline, signature);
   }
 
-  function test_supplyWithSig_revertsWith_InvalidSignature_dueTo_InvalidNonce() public {
-    EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpAfterRandomDeadline());
-    _burnRandomNonces(alice);
-    p.nonce = vm.randomUint(0, gateway.nonces(alice) - 1);
+  function test_supplyWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
+    EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
+    uint192 nonceKey = _randomNonceKey();
+    uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf, nonceKey);
+    p.nonce = _getRandomInvalidNonceAtKey(gateway, p.onBehalfOf, nonceKey);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.onBehalfOf, currentNonce)
+    );
     vm.prank(vm.randomAddress());
-    gateway.supplyWithSig(p.reserveId, p.amount, p.onBehalfOf, p.deadline, signature);
+    gateway.supplyWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 
-  function test_withdrawWithSig_revertsWith_InvalidSignature_dueTo_InvalidNonce() public {
-    EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpAfterRandomDeadline());
-    _burnRandomNonces(alice);
-    p.nonce = vm.randomUint(0, gateway.nonces(alice) - 1);
+  function test_withdrawWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
+    EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
+    uint192 nonceKey = _randomNonceKey();
+    uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf, nonceKey);
+    p.nonce = _getRandomInvalidNonceAtKey(gateway, p.onBehalfOf, nonceKey);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.onBehalfOf, currentNonce)
+    );
     vm.prank(vm.randomAddress());
-    gateway.withdrawWithSig(p.reserveId, p.amount, p.onBehalfOf, p.deadline, signature);
+    gateway.withdrawWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 
-  function test_borrowWithSig_revertsWith_InvalidSignature_dueTo_InvalidNonce() public {
-    EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpAfterRandomDeadline());
-    _burnRandomNonces(alice);
-    p.nonce = vm.randomUint(0, gateway.nonces(alice) - 1);
+  function test_borrowWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
+    EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpBeforeRandomDeadline());
+    uint192 nonceKey = _randomNonceKey();
+    uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf, nonceKey);
+    p.nonce = _getRandomInvalidNonceAtKey(gateway, p.onBehalfOf, nonceKey);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.onBehalfOf, currentNonce)
+    );
     vm.prank(vm.randomAddress());
-    gateway.borrowWithSig(p.reserveId, p.amount, p.onBehalfOf, p.deadline, signature);
+    gateway.borrowWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 
-  function test_repayWithSig_revertsWith_InvalidSignature_dueTo_InvalidNonce() public {
-    EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpAfterRandomDeadline());
-    _burnRandomNonces(alice);
-    p.nonce = vm.randomUint(0, gateway.nonces(alice) - 1);
+  function test_repayWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
+    EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpBeforeRandomDeadline());
+    uint192 nonceKey = _randomNonceKey();
+    uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf, nonceKey);
+    p.nonce = _getRandomInvalidNonceAtKey(gateway, p.onBehalfOf, nonceKey);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.onBehalfOf, currentNonce)
+    );
     vm.prank(vm.randomAddress());
-    gateway.repayWithSig(p.reserveId, p.amount, p.onBehalfOf, p.deadline, signature);
+    gateway.repayWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
   }
 
-  function test_setUsingAsCollateralWithSig_revertsWith_InvalidSignature_dueTo_InvalidNonce()
-    public
-  {
-    uint256 deadline = _warpAfterRandomDeadline();
+  function test_setUsingAsCollateralWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
+    uint256 deadline = _warpBeforeRandomDeadline();
     EIP712Types.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
-    _burnRandomNonces(alice);
-    p.nonce = vm.randomUint(0, gateway.nonces(alice) - 1);
+    uint192 nonceKey = _randomNonceKey();
+    uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf, nonceKey);
+    p.nonce = _getRandomInvalidNonceAtKey(gateway, p.onBehalfOf, nonceKey);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.onBehalfOf, currentNonce)
+    );
     vm.prank(vm.randomAddress());
     gateway.setUsingAsCollateralWithSig(
       p.reserveId,
       p.useAsCollateral,
       p.onBehalfOf,
+      p.nonce,
       p.deadline,
       signature
     );
   }
 
-  function test_updateUserRiskPremiumWithSig_revertsWith_InvalidSignatureDueTo_InvalidNonce()
-    public
-  {
-    uint256 deadline = _warpAfterRandomDeadline();
+  function test_updateUserRiskPremiumWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
+    uint256 deadline = _warpBeforeRandomDeadline();
     EIP712Types.UpdateUserRiskPremium memory p = _updateRiskPremiumData(spoke1, alice, deadline);
-    _burnRandomNonces(alice);
-    p.nonce = vm.randomUint(0, gateway.nonces(alice) - 1);
+    uint192 nonceKey = _randomNonceKey();
+    uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.user, nonceKey);
+    p.nonce = _getRandomInvalidNonceAtKey(gateway, p.user, nonceKey);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.user, currentNonce)
+    );
     vm.prank(vm.randomAddress());
-    gateway.updateUserRiskPremiumWithSig(p.user, p.deadline, signature);
+    gateway.updateUserRiskPremiumWithSig(p.user, p.nonce, p.deadline, signature);
   }
 
-  function test_updateUserDynamicConfigWithSig_revertsWith_InvalidSignatureDueTo_InvalidNonce()
-    public
-  {
+  function test_updateUserDynamicConfigWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
     EIP712Types.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(
       spoke1,
       alice,
-      _warpAfterRandomDeadline()
+      _warpBeforeRandomDeadline()
     );
-    _burnRandomNonces(alice);
-    p.nonce = vm.randomUint(0, gateway.nonces(alice) - 1);
+    uint192 nonceKey = _randomNonceKey();
+    uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.user, nonceKey);
+    p.nonce = _getRandomInvalidNonceAtKey(gateway, p.user, nonceKey);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.user, currentNonce)
+    );
     vm.prank(vm.randomAddress());
-    gateway.updateUserDynamicConfigWithSig(p.user, p.deadline, signature);
+    gateway.updateUserDynamicConfigWithSig(p.user, p.nonce, p.deadline, signature);
   }
 }

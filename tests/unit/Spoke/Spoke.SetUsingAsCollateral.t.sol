@@ -56,9 +56,13 @@ contract SpokeConfigTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     // slight update in collateral factor so user is subject to dynamic risk config refresh
-    updateCollateralFactor(spoke1, daiReserveId, _getCollateralFactor(spoke1, daiReserveId) + 1_00);
+    _updateCollateralFactor(
+      spoke1,
+      daiReserveId,
+      _getCollateralFactor(spoke1, daiReserveId) + 1_00
+    );
     // slight update collateral risk so user is subject to risk premium refresh
-    updateCollateralRisk(spoke1, daiReserveId, _getCollateralRisk(spoke1, daiReserveId) + 1_00);
+    _updateCollateralRisk(spoke1, daiReserveId, _getCollateralRisk(spoke1, daiReserveId) + 1_00);
 
     // Bob not using DAI as collateral
     assertFalse(spoke1.isUsingAsCollateral(daiReserveId, bob), 'bob not using as collateral');
@@ -80,9 +84,13 @@ contract SpokeConfigTest is SpokeBase {
     assertTrue(spoke1.isUsingAsCollateral(daiReserveId, bob), 'bob using as collateral');
 
     // slight update in collateral factor so user is subject to dynamic risk config refresh
-    updateCollateralFactor(spoke1, daiReserveId, _getCollateralFactor(spoke1, daiReserveId) + 1_00);
+    _updateCollateralFactor(
+      spoke1,
+      daiReserveId,
+      _getCollateralFactor(spoke1, daiReserveId) + 1_00
+    );
     // slight update collateral risk so user is subject to risk premium refresh
-    updateCollateralRisk(spoke1, daiReserveId, _getCollateralRisk(spoke1, daiReserveId) + 1_00);
+    _updateCollateralRisk(spoke1, daiReserveId, _getCollateralRisk(spoke1, daiReserveId) + 1_00);
 
     // No action taken, because collateral status is already true
     bobDynConfig = _getUserDynConfigKeys(spoke1, bob);

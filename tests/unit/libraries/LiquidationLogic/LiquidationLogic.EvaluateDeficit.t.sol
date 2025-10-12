@@ -10,177 +10,177 @@ import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 /// borrowed reserves count (BRC) has 2 relevant states: 1 (O) and >1 (M)
 contract LiquidationLogicEvaluateDeficitTest is LiquidationLogicBaseTest {
   /// Collateral reserve empty (CRE), supplied collaterals count 1 (SCCO), debt reserve empty (DRE), borrowed reserves count 1 (BRCO)
-  function test_evaluateDeficit_CRE_SCCO_DRE_BRCO() public {
+  function test_evaluateDeficit_CRE_SCCO_DRE_BRCO() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRE(),
-      suppliedCollateralsCount: SCCO(),
+      activeCollateralCount: SCCO(),
       isDebtPositionEmpty: DRE(),
-      borrowedReservesCount: BRCO()
+      borrowedCount: BRCO()
     });
     assertEq(hasDeficit, false);
   }
 
   /// Collateral reserve empty (CRE), supplied collaterals count 1 (SCCO), debt reserve empty (DRE), borrowed reserves count >1 (BRCM)
-  function test_evaluateDeficit_CRE_SCCO_DRE_BRCM() public {
+  function test_evaluateDeficit_CRE_SCCO_DRE_BRCM() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRE(),
-      suppliedCollateralsCount: SCCO(),
+      activeCollateralCount: SCCO(),
       isDebtPositionEmpty: DRE(),
-      borrowedReservesCount: BRCM()
+      borrowedCount: BRCM()
     });
     assertEq(hasDeficit, true);
   }
 
   /// Collateral reserve empty (CRE), supplied collaterals count 1 (SCCO), debt reserve non-empty (DRN), borrowed reserves count 1 (BRCO)
-  function test_evaluateDeficit_CRE_SCCO_DRN_BRCO() public {
+  function test_evaluateDeficit_CRE_SCCO_DRN_BRCO() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRE(),
-      suppliedCollateralsCount: SCCO(),
+      activeCollateralCount: SCCO(),
       isDebtPositionEmpty: DRN(),
-      borrowedReservesCount: BRCO()
+      borrowedCount: BRCO()
     });
     assertEq(hasDeficit, true);
   }
 
   /// Collateral reserve empty (CRE), supplied collaterals count 1 (SCCO), debt reserve non-empty (DRN), borrowed reserves count >1 (BRCM)
-  function test_evaluateDeficit_CRE_SCCO_DRN_BRCM() public {
+  function test_evaluateDeficit_CRE_SCCO_DRN_BRCM() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRE(),
-      suppliedCollateralsCount: SCCO(),
+      activeCollateralCount: SCCO(),
       isDebtPositionEmpty: DRN(),
-      borrowedReservesCount: BRCM()
+      borrowedCount: BRCM()
     });
     assertEq(hasDeficit, true);
   }
 
   /// Collateral reserve empty (CRE), supplied collaterals count >1 (SCCM), debt reserve empty (DRE), borrowed reserves count 1 (BRCO)
-  function test_evaluateDeficit_CRE_SCCM_DRE_BRCO() public {
+  function test_evaluateDeficit_CRE_SCCM_DRE_BRCO() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRE(),
-      suppliedCollateralsCount: SCCM(),
+      activeCollateralCount: SCCM(),
       isDebtPositionEmpty: DRE(),
-      borrowedReservesCount: BRCO()
+      borrowedCount: BRCO()
     });
     assertEq(hasDeficit, false);
   }
 
   /// Collateral reserve empty (CRE), supplied collaterals count >1 (SCCM), debt reserve empty (DRE), borrowed reserves count >1 (BRCM)
-  function test_evaluateDeficit_CRE_SCCM_DRE_BRCM() public {
+  function test_evaluateDeficit_CRE_SCCM_DRE_BRCM() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRE(),
-      suppliedCollateralsCount: SCCM(),
+      activeCollateralCount: SCCM(),
       isDebtPositionEmpty: DRE(),
-      borrowedReservesCount: BRCM()
+      borrowedCount: BRCM()
     });
     assertEq(hasDeficit, false);
   }
 
   /// Collateral reserve empty (CRE), supplied collaterals count >1 (SCCM), debt reserve non-empty (DRN), borrowed reserves count 1 (BRCO)
-  function test_evaluateDeficit_CRE_SCCM_DRN_BRCO() public {
+  function test_evaluateDeficit_CRE_SCCM_DRN_BRCO() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRE(),
-      suppliedCollateralsCount: SCCM(),
+      activeCollateralCount: SCCM(),
       isDebtPositionEmpty: DRN(),
-      borrowedReservesCount: BRCO()
+      borrowedCount: BRCO()
     });
     assertEq(hasDeficit, false);
   }
 
   /// Collateral reserve empty (CRE), supplied collaterals count >1 (SCCM), debt reserve non-empty (DRN), borrowed reserves count >1 (BRCM)
-  function test_evaluateDeficit_CRE_SCCM_DRN_BRCM() public {
+  function test_evaluateDeficit_CRE_SCCM_DRN_BRCM() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRE(),
-      suppliedCollateralsCount: SCCM(),
+      activeCollateralCount: SCCM(),
       isDebtPositionEmpty: DRN(),
-      borrowedReservesCount: BRCM()
+      borrowedCount: BRCM()
     });
     assertEq(hasDeficit, false);
   }
 
   /// Collateral reserve non-empty (CRN), supplied collaterals count 1 (SCCO), debt reserve empty (DRE), borrowed reserves count 1 (BRCO)
-  function test_evaluateDeficit_CRN_SCCO_DRE_BRCO() public {
+  function test_evaluateDeficit_CRN_SCCO_DRE_BRCO() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRN(),
-      suppliedCollateralsCount: SCCO(),
+      activeCollateralCount: SCCO(),
       isDebtPositionEmpty: DRE(),
-      borrowedReservesCount: BRCO()
+      borrowedCount: BRCO()
     });
     assertEq(hasDeficit, false);
   }
 
   /// Collateral reserve non-empty (CRN), supplied collaterals count 1 (SCCO), debt reserve empty (DRE), borrowed reserves count >1 (BRCM)
-  function test_evaluateDeficit_CRN_SCCO_DRE_BRCM() public {
+  function test_evaluateDeficit_CRN_SCCO_DRE_BRCM() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRN(),
-      suppliedCollateralsCount: SCCO(),
+      activeCollateralCount: SCCO(),
       isDebtPositionEmpty: DRE(),
-      borrowedReservesCount: BRCM()
+      borrowedCount: BRCM()
     });
     assertEq(hasDeficit, false);
   }
 
   /// Collateral reserve non-empty (CRN), supplied collaterals count 1 (SCCO), debt reserve non-empty (DRN), borrowed reserves count 1 (BRCO)
-  function test_evaluateDeficit_CRN_SCCO_DRN_BRCO() public {
+  function test_evaluateDeficit_CRN_SCCO_DRN_BRCO() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRN(),
-      suppliedCollateralsCount: SCCO(),
+      activeCollateralCount: SCCO(),
       isDebtPositionEmpty: DRN(),
-      borrowedReservesCount: BRCO()
+      borrowedCount: BRCO()
     });
     assertEq(hasDeficit, false);
   }
 
   /// Collateral reserve non-empty (CRN), supplied collaterals count 1 (SCCO), debt reserve non-empty (DRN), borrowed reserves count >1 (BRCM)
-  function test_evaluateDeficit_CRN_SCCO_DRN_BRCM() public {
+  function test_evaluateDeficit_CRN_SCCO_DRN_BRCM() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRN(),
-      suppliedCollateralsCount: SCCO(),
+      activeCollateralCount: SCCO(),
       isDebtPositionEmpty: DRN(),
-      borrowedReservesCount: BRCM()
+      borrowedCount: BRCM()
     });
     assertEq(hasDeficit, false);
   }
 
   /// Collateral reserve non-empty (CRN), supplied collaterals count >1 (SCCM), debt reserve empty (DRE), borrowed reserves count 1 (BRCO)
-  function test_evaluateDeficit_CRN_SCCM_DRE_BRCO() public {
+  function test_evaluateDeficit_CRN_SCCM_DRE_BRCO() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRN(),
-      suppliedCollateralsCount: SCCM(),
+      activeCollateralCount: SCCM(),
       isDebtPositionEmpty: DRE(),
-      borrowedReservesCount: BRCO()
+      borrowedCount: BRCO()
     });
     assertEq(hasDeficit, false);
   }
 
   /// Collateral reserve non-empty (CRN), supplied collaterals count >1 (SCCM), debt reserve empty (DRE), borrowed reserves count >1 (BRCM)
-  function test_evaluateDeficit_CRN_SCCM_DRE_BRCM() public {
+  function test_evaluateDeficit_CRN_SCCM_DRE_BRCM() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRN(),
-      suppliedCollateralsCount: SCCM(),
+      activeCollateralCount: SCCM(),
       isDebtPositionEmpty: DRE(),
-      borrowedReservesCount: BRCM()
+      borrowedCount: BRCM()
     });
     assertEq(hasDeficit, false);
   }
 
   /// Collateral reserve non-empty (CRN), supplied collaterals count >1 (SCCM), debt reserve non-empty (DRN), borrowed reserves count 1 (BRCO)
-  function test_evaluateDeficit_CRN_SCCM_DRN_BRCO() public {
+  function test_evaluateDeficit_CRN_SCCM_DRN_BRCO() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRN(),
-      suppliedCollateralsCount: SCCM(),
+      activeCollateralCount: SCCM(),
       isDebtPositionEmpty: DRN(),
-      borrowedReservesCount: BRCO()
+      borrowedCount: BRCO()
     });
     assertEq(hasDeficit, false);
   }
 
   /// Collateral reserve non-empty (CRN), supplied collaterals count >1 (SCCM), debt reserve non-empty (DRN), borrowed reserves count >1 (BRCM)
-  function test_evaluateDeficit_CRN_SCCM_DRN_BRCM() public {
+  function test_evaluateDeficit_CRN_SCCM_DRN_BRCM() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRN(),
-      suppliedCollateralsCount: SCCM(),
+      activeCollateralCount: SCCM(),
       isDebtPositionEmpty: DRN(),
-      borrowedReservesCount: BRCM()
+      borrowedCount: BRCM()
     });
     assertEq(hasDeficit, false);
   }

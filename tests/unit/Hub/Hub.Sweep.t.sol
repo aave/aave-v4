@@ -7,6 +7,12 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubSweepTest is HubBase {
   address public reinvestmentController = makeAddr('reinvestmentController');
 
+  function test_sweep_revertsWith_AssetNotListed() public {
+    uint256 assetId = _randomInvalidAssetId(hub1);
+    vm.expectRevert(IHub.AssetNotListed.selector);
+    hub1.sweep(assetId, vm.randomUint());
+  }
+
   function test_sweep_revertsWith_OnlyReinvestmentController_init() public {
     assertEq(hub1.getAsset(daiAssetId).reinvestmentController, address(0));
     vm.expectRevert(IHub.OnlyReinvestmentController.selector);
@@ -43,19 +49,19 @@ contract HubSweepTest is HubBase {
 
     _addLiquidity(daiAssetId, supplyAmount);
 
-    uint256 assetLiquidity = hub1.getLiquidity(daiAssetId);
+    uint256 assetLiquidity = hub1.getAssetLiquidity(daiAssetId);
 
     vm.expectEmit(address(tokenList.dai));
     emit IERC20.Transfer(address(hub1), reinvestmentController, sweepAmount);
 
     vm.expectEmit(address(hub1));
-    emit IHub.Sweep(daiAssetId, sweepAmount);
+    emit IHub.Sweep(daiAssetId, reinvestmentController, sweepAmount);
 
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, sweepAmount);
 
-    assertEq(hub1.getSwept(daiAssetId), sweepAmount);
-    assertEq(hub1.getLiquidity(daiAssetId), assetLiquidity - sweepAmount);
+    assertEq(hub1.getAssetSwept(daiAssetId), sweepAmount);
+    assertEq(hub1.getAssetLiquidity(daiAssetId), assetLiquidity - sweepAmount);
     assertBorrowRateSynced(hub1, daiAssetId, 'sweep');
   }
 
@@ -106,7 +112,7 @@ contract HubSweepTest is HubBase {
       }),
       drawnRate
     );
-    assertEq(hub1.getLiquidity(daiAssetId), supplyAmount - drawAmount - swept);
-    assertEq(hub1.getSwept(daiAssetId), swept);
+    assertEq(hub1.getAssetLiquidity(daiAssetId), supplyAmount - drawAmount - swept);
+    assertEq(hub1.getAssetSwept(daiAssetId), swept);
   }
 }

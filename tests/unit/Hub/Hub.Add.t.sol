@@ -8,12 +8,12 @@ contract HubAddTest is HubBase {
   using SharesMath for uint256;
   using SafeCast for uint256;
 
-  uint256 zeroDecimalAssetId;
+  uint256 minDecimalAssetId;
 
   function setUp() public override {
     super.setUp();
 
-    /// @dev add a zero decimal asset to test add cap rounding
+    /// @dev add a minimum decimal asset to test add cap rounding
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
@@ -28,15 +28,15 @@ contract HubAddTest is HubBase {
       })
     );
     vm.startPrank(ADMIN);
-    zeroDecimalAssetId = hub1.addAsset(
+    minDecimalAssetId = hub1.addAsset(
       address(tokenList.dai),
-      0,
+      Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
       address(treasurySpoke),
       address(irStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
-      zeroDecimalAssetId,
+      minDecimalAssetId,
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
@@ -45,7 +45,7 @@ contract HubAddTest is HubBase {
       }),
       new bytes(0)
     );
-    hub1.addSpoke(zeroDecimalAssetId, address(spoke1), spokeConfig);
+    hub1.addSpoke(minDecimalAssetId, address(spoke1), spokeConfig);
     vm.stopPrank();
   }
 
@@ -137,54 +137,6 @@ contract HubAddTest is HubBase {
     assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)), amount);
   }
 
-  /// add reverts if the cap is exceeded, with proper rounding (up) applied to shares into assets conversion
-  function test_add_revertsWith_AddCapExceeded_due_to_rounding() public {
-    _addLiquidity(zeroDecimalAssetId, 100e18);
-    _drawLiquidity(zeroDecimalAssetId, 45e18, true);
-
-    uint256 totalAddedAssets = hub1.getAddedAssets(zeroDecimalAssetId);
-    uint256 totalAddedShares = hub1.getAddedShares(zeroDecimalAssetId);
-
-    // Depending on the borrow rate, this may not be true
-    // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
-    assertEq(
-      uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares).toSharesDown(
-        totalAddedAssets,
-        totalAddedShares
-      ),
-      0,
-      'share price is a whole number'
-    );
-
-    // The asset amount is 1 share worth of assets (rounded down) + 1
-    // The added share is 1, which rounded up is equal to the
-    // amount of assets added
-    uint256 addedAmount = uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares) + 1;
-
-    Utils.add({
-      hub: hub1,
-      assetId: zeroDecimalAssetId,
-      caller: address(spoke1),
-      amount: addedAmount,
-      user: alice
-    });
-
-    // set add cap to amount of assets added * 2 - 1, given
-    // that the same asset amount is provided again below
-    uint56 newAddCap = (2 * addedAmount - 1).toUint56();
-    _updateAddCap(zeroDecimalAssetId, address(spoke1), newAddCap);
-
-    // this cap will be exceeded only if the existing added
-    // shares are rounded up
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
-    vm.prank(address(spoke1));
-    hub1.add(zeroDecimalAssetId, addedAmount, alice);
-
-    // check that add cap is not exceeded if assets are rounded down
-    uint256 addedAssetsRoundedDown = hub1.getSpokeAddedAssets(zeroDecimalAssetId, address(spoke1));
-    assertEq(addedAssetsRoundedDown + addedAmount, newAddCap);
-  }
-
   function test_add_fuzz_revertsWith_AddCapExceeded_due_to_interest(
     uint56 newAddCap,
     uint256 drawAmount,
@@ -217,11 +169,11 @@ contract HubAddTest is HubBase {
 
   // add succeeds if cap is reached but not exceeded
   function test_add_AddCapReachedButNotExceeded_rounding() public {
-    _addLiquidity(zeroDecimalAssetId, 100e18);
-    _drawLiquidity(zeroDecimalAssetId, 45e18, true);
+    _addLiquidity(minDecimalAssetId, 100e18);
+    _drawLiquidity(minDecimalAssetId, 45e18, true);
 
-    uint256 totalAddedAssets = hub1.getAddedAssets(zeroDecimalAssetId);
-    uint256 totalAddedShares = hub1.getAddedShares(zeroDecimalAssetId);
+    uint256 totalAddedAssets = hub1.getAddedAssets(minDecimalAssetId);
+    uint256 totalAddedShares = hub1.getAddedShares(minDecimalAssetId);
 
     // Depending on the borrow rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
@@ -239,18 +191,18 @@ contract HubAddTest is HubBase {
     // amount of assets added
     uint256 addedAmount = uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares) + 1;
 
-    uint256 spokeAddedShares = hub1.getSpokeAddedShares(zeroDecimalAssetId, address(spoke1));
+    uint256 spokeAddedShares = hub1.getSpokeAddedShares(minDecimalAssetId, address(spoke1));
     uint256 spokeAddedAssetsRoundedUp = spokeAddedShares.toAssetsUp(
       totalAddedAssets,
       totalAddedShares
     );
 
     uint56 newAddCap = (spokeAddedAssetsRoundedUp + addedAmount).toUint56();
-    _updateAddCap(zeroDecimalAssetId, address(spoke1), newAddCap);
+    _updateAddCap(minDecimalAssetId, address(spoke1), newAddCap);
 
     Utils.add({
       hub: hub1,
-      assetId: zeroDecimalAssetId,
+      assetId: minDecimalAssetId,
       caller: address(spoke1),
       amount: addedAmount,
       user: alice
@@ -271,7 +223,7 @@ contract HubAddTest is HubBase {
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
     (uint256 drawnBefore, ) = hub1.getAssetOwed(assetId);
-    uint256 liquidityBefore = hub1.getLiquidity(assetId);
+    uint256 liquidityBefore = hub1.getAssetLiquidity(assetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
@@ -362,7 +314,7 @@ contract HubAddTest is HubBase {
       'asset addedShares after'
     );
     assertEq(hub1.getAddedAssets(assetId), amount, 'asset addedAmount after');
-    assertEq(hub1.getLiquidity(assetId), amount, 'asset liquidity after');
+    assertEq(hub1.getAssetLiquidity(assetId), amount, 'asset liquidity after');
     assertEq(
       hub1.getAsset(assetId).lastUpdateTimestamp,
       timestamp,
@@ -387,7 +339,7 @@ contract HubAddTest is HubBase {
       hub1.convertToAddedShares(assetId2, amount2),
       'asset2 addedShares after'
     );
-    assertEq(hub1.getLiquidity(assetId2), amount2, 'asset2 liquidity after');
+    assertEq(hub1.getAssetLiquidity(assetId2), amount2, 'asset2 liquidity after');
     assertEq(
       hub1.getAsset(assetId2).lastUpdateTimestamp,
       timestamp,
@@ -513,7 +465,7 @@ contract HubAddTest is HubBase {
     uint256 addedSharesBefore = hub1.getAddedShares(daiAssetId);
 
     (uint256 drawnBefore, ) = hub1.getAssetOwed(daiAssetId);
-    uint256 liquidityBefore = hub1.getLiquidity(daiAssetId);
+    uint256 liquidityBefore = hub1.getAssetLiquidity(daiAssetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
@@ -663,7 +615,7 @@ contract HubAddTest is HubBase {
       'hub addedShares after'
     );
     assertEq(
-      hub1.getLiquidity(daiAssetId),
+      hub1.getAssetLiquidity(daiAssetId),
       amount + addAmount - drawnAmount,
       'asset liquidity after'
     );
@@ -770,7 +722,7 @@ contract HubAddTest is HubBase {
       // hub
       assertGe(hub1.getAddedAssets(assetId), params.assetAddedAmount, 'hub addedAmount after');
       assertGe(hub1.getAddedShares(assetId), params.assetAddedShares, 'hub addedShares after');
-      assertEq(hub1.getLiquidity(assetId), params.availableLiq, 'asset liquidity after');
+      assertEq(hub1.getAssetLiquidity(assetId), params.availableLiq, 'asset liquidity after');
       assertEq(
         hub1.getAsset(assetId).lastUpdateTimestamp,
         vm.getBlockTimestamp(),

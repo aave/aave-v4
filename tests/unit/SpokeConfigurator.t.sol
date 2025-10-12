@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
@@ -344,10 +344,15 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.addCollateralFactor(spokeAddr, reserveId, newCollateralFactor);
+    uint16 configKey = spokeConfigurator.addCollateralFactor(
+      spokeAddr,
+      reserveId,
+      newCollateralFactor
+    );
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
+    assertEq(configKey, expectedConfigKey);
     assertEq(spoke.getReserve(reserveId).dynamicConfigKey, expectedConfigKey);
+    assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
   }
 
   function test_updateCollateralFactor_revertsWith_OwnableUnauthorizedAccount() public {
@@ -385,10 +390,10 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_addLiquidationBonus_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    spokeConfigurator.addLiquidationBonus(spokeAddr, reserveId, 0);
+    spokeConfigurator.addMaxLiquidationBonus(spokeAddr, reserveId, 0);
   }
 
-  function test_addLiquidationBonus() public {
+  function test_addMaxLiquidationBonus() public {
     uint32 newLiquidationBonus = PercentageMath.PERCENTAGE_FACTOR.toUint32() + 1;
 
     ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
@@ -405,8 +410,14 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.addLiquidationBonus(spokeAddr, reserveId, newLiquidationBonus);
+    uint16 configKey = spokeConfigurator.addMaxLiquidationBonus(
+      spokeAddr,
+      reserveId,
+      newLiquidationBonus
+    );
 
+    assertEq(configKey, expectedConfigKey);
+    assertEq(spoke.getReserve(reserveId).dynamicConfigKey, expectedConfigKey);
     assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
   }
 
@@ -470,8 +481,10 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.addLiquidationFee(spokeAddr, reserveId, newLiquidationFee);
+    uint16 configKey = spokeConfigurator.addLiquidationFee(spokeAddr, reserveId, newLiquidationFee);
 
+    assertEq(configKey, expectedConfigKey);
+    assertEq(spoke.getReserve(reserveId).dynamicConfigKey, expectedConfigKey);
     assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
   }
 
