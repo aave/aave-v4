@@ -96,7 +96,7 @@ library LiquidationLogic {
   }
 
   struct LiquidateDebtParams {
-    uint256 reserveId;
+    uint256 debtReserveId;
     uint256 debtToLiquidate;
     uint256 premiumDebt;
     uint256 accruedPremium;
@@ -203,7 +203,7 @@ library LiquidationLogic {
       positions,
       positionStatus,
       LiquidateDebtParams({
-        reserveId: params.debtReserveId,
+        debtReserveId: params.debtReserveId,
         debtToLiquidate: debtToLiquidate,
         premiumDebt: params.premiumDebt,
         accruedPremium: params.accruedPremium,
@@ -429,24 +429,24 @@ library LiquidationLogic {
       uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-        sharesDelta: -positions[params.user][params.reserveId].premiumShares.toInt256(),
-        offsetDelta: -positions[params.user][params.reserveId].premiumOffset.toInt256(),
+        sharesDelta: -positions[params.user][params.debtReserveId].premiumShares.toInt256(),
+        offsetDelta: -positions[params.user][params.debtReserveId].premiumOffset.toInt256(),
         realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
       });
 
-      uint256 drawnSharesLiquidated = reserves[params.reserveId].hub.restore(
-        reserves[params.reserveId].assetId,
+      uint256 drawnSharesLiquidated = reserves[params.debtReserveId].hub.restore(
+        reserves[params.debtReserveId].assetId,
         drawnDebtToLiquidate,
         premiumDebtToLiquidate,
         premiumDelta,
         params.liquidator
       );
-      _settlePremiumDebt(positions[params.user][params.reserveId], premiumDelta.realizedDelta);
-      positions[params.user][params.reserveId].drawnShares -= drawnSharesLiquidated.toUint128();
+      _settlePremiumDebt(positions[params.user][params.debtReserveId], premiumDelta.realizedDelta);
+      positions[params.user][params.debtReserveId].drawnShares -= drawnSharesLiquidated.toUint128();
     }
 
-    if (positions[params.user][params.reserveId].drawnShares == 0) {
-      positionStatus.setBorrowing(params.reserveId, false);
+    if (positions[params.user][params.debtReserveId].drawnShares == 0) {
+      positionStatus.setBorrowing(params.debtReserveId, false);
       return true;
     }
 

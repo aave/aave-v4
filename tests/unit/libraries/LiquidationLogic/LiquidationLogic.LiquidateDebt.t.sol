@@ -132,7 +132,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     );
     bool isPositionEmpty = liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
-        reserveId: reserveId,
+        debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
@@ -166,7 +166,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     vm.expectRevert(stdError.arithmeticError);
     liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
-        reserveId: reserveId,
+        debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
@@ -189,7 +189,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     vm.expectRevert();
     liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
-        reserveId: reserveId,
+        debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
@@ -212,7 +212,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     vm.expectRevert();
     liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
-        reserveId: reserveId,
+        debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
