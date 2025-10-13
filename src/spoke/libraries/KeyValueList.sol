@@ -36,7 +36,7 @@ library KeyValueList {
 
   /// @notice Inserts packed `key`, `value` at `idx`. Reverts if data exceeds maximum allowed size.
   function add(List memory self, uint256 idx, uint256 key, uint256 value) internal pure {
-    require(key <= _MAX_KEY && value <= _MAX_VALUE, MaxDataSizeExceeded());
+    require(key < _MAX_KEY && value <= _MAX_VALUE, MaxDataSizeExceeded());
     self._inner[idx] = pack(key, value);
   }
 
