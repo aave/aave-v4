@@ -186,7 +186,7 @@ library LiquidationLogic {
       );
 
     bool isCollateralPositionEmpty = _liquidateCollateral(
-      reserves,
+      collateralReserve,
       positions,
       LiquidateCollateralParams({
         collateralReserveId: params.collateralReserveId,
@@ -199,8 +199,8 @@ library LiquidationLogic {
     );
 
     bool isDebtPositionEmpty = _liquidateDebt(
-      reserves,
-      positions,
+      reserves[params.debtReserveId],
+      positions[params.user][params.debtReserveId],
       positionStatus,
       LiquidateDebtParams({
         debtReserveId: params.debtReserveId,
@@ -419,8 +419,8 @@ library LiquidationLogic {
   /// @dev Invoked by `liquidateUser` method.
   /// @return True if the debt position becomes zero after restoring, false otherwise.
   function _liquidateDebt(
-    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
-    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage positions,
+    ISpoke.Reserve storage debtReserve,
+    ISpoke.UserPosition storage debtPosition,
     ISpoke.PositionStatus storage positionStatus,
     LiquidateDebtParams memory params
   ) internal returns (bool) {
@@ -429,23 +429,23 @@ library LiquidationLogic {
       uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-        sharesDelta: -positions[params.user][params.debtReserveId].premiumShares.toInt256(),
-        offsetDelta: -positions[params.user][params.debtReserveId].premiumOffset.toInt256(),
+        sharesDelta: -debtPosition.premiumShares.toInt256(),
+        offsetDelta: -debtPosition.premiumOffset.toInt256(),
         realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
       });
 
-      uint256 drawnSharesLiquidated = reserves[params.debtReserveId].hub.restore(
-        reserves[params.debtReserveId].assetId,
+      uint256 drawnSharesLiquidated = debtReserve.hub.restore(
+        debtReserve.assetId,
         drawnDebtToLiquidate,
         premiumDebtToLiquidate,
         premiumDelta,
         params.liquidator
       );
-      _settlePremiumDebt(positions[params.user][params.debtReserveId], premiumDelta.realizedDelta);
-      positions[params.user][params.debtReserveId].drawnShares -= drawnSharesLiquidated.toUint128();
+      _settlePremiumDebt(debtPosition, premiumDelta.realizedDelta);
+      debtPosition.drawnShares -= drawnSharesLiquidated.toUint128();
     }
 
-    if (positions[params.user][params.debtReserveId].drawnShares == 0) {
+    if (debtPosition.drawnShares == 0) {
       positionStatus.setBorrowing(params.debtReserveId, false);
       return true;
     }
@@ -456,12 +456,12 @@ library LiquidationLogic {
   /// @dev Invoked by `liquidateUser` method.
   /// @return True if the collateral position is empty, false otherwise.
   function _liquidateCollateral(
-    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
+    ISpoke.Reserve storage collateralReserve,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage positions,
     LiquidateCollateralParams memory params
   ) internal returns (bool) {
-    IHubBase hub = reserves[params.collateralReserveId].hub;
-    uint256 assetId = reserves[params.collateralReserveId].assetId;
+    IHubBase hub = collateralReserve.hub;
+    uint256 assetId = collateralReserve.assetId;
 
     uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
 
