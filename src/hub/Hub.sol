@@ -350,8 +350,8 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    require(spoke.active, SpokeNotActive()); // allow paused spokes
     asset.accrue(_spokes, assetId);
+    require(spoke.active, SpokeNotActive()); // allow paused spokes
     // no premium change allowed
     _applyPremiumDelta(assetId, asset, spoke, premiumDelta, 0);
     asset.updateDrawnRate(assetId);
@@ -648,7 +648,7 @@ contract Hub is IHub, AccessManaged {
     _updateSpokeConfig(
       assetId,
       feeReceiver,
-      SpokeConfig({addCap: MAX_ALLOWED_SPOKE_CAP, drawCap: 0, active: true, paused: false})
+      SpokeConfig({active: true, paused: false, addCap: MAX_ALLOWED_SPOKE_CAP, drawCap: 0})
     );
   }
 
@@ -836,7 +836,7 @@ contract Hub is IHub, AccessManaged {
     uint256 shares
   ) internal view {
     require(sender.active && receiver.active, SpokeNotActive());
-    require(!sender.paused && !receiver.paused, SpokeNotActive());
+    require(!sender.paused && !receiver.paused, SpokePaused());
     require(shares > 0, InvalidShares());
     uint256 addCap = receiver.addCap;
     require(

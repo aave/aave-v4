@@ -1021,13 +1021,13 @@ abstract contract Base is Test {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateReservePausedFlag(
+  function _updateReservePausedFlag(
     ISpoke spoke,
     uint256 reserveId,
-    bool newPausedFlag
+    bool paused
   ) internal pausePrank {
     ISpoke.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
-    config.paused = newPausedFlag;
+    config.paused = paused;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
@@ -1219,10 +1219,10 @@ abstract contract Base is Test {
     IHub hub,
     uint256 assetId,
     address spoke,
-    bool newPaused
+    bool paused
   ) internal pausePrank {
     IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
-    spokeConfig.paused = newPaused;
+    spokeConfig.paused = paused;
     vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
 
