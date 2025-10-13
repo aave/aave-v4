@@ -23,6 +23,9 @@ jobs:
         with:
           FOUNDRY_VERSION: stable
 
+      - name: Run Forge size
+        uses: bgd-labs/github-workflows/.github/actions/foundry-size@main
+
       - name: Run Forge tests
         id: test
         uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
