@@ -686,43 +686,49 @@ contract Hub is IHub, AccessManaged {
     PremiumDelta calldata premium,
     uint256 premiumAmount
   ) internal {
+    uint256 drawnIndex = asset.getDrawnIndex();
     // asset premium change
-    uint256 premiumShares = asset.premiumShares;
-    uint256 premiumOffset = asset.premiumOffset;
-    uint256 realizedPremium = asset.realizedPremium;
-    uint256 premiumBefore = asset.toDrawnAssetsUp(premiumShares) - premiumOffset;
-    premiumBefore += realizedPremium;
-
-    premiumShares = premiumShares.add(premium.sharesDelta);
-    premiumOffset = premiumOffset.add(premium.offsetDelta);
-    realizedPremium = realizedPremium.add(premium.realizedDelta);
-    asset.premiumShares = premiumShares.toUint128();
-    asset.premiumOffset = premiumOffset.toUint128();
-    asset.realizedPremium = realizedPremium.toUint128();
-
-    uint256 premiumAfter = asset.toDrawnAssetsUp(premiumShares) - premiumOffset;
-    premiumAfter += realizedPremium;
-    // can increase due to precision loss on premium (drawn unchanged)
-    require(premiumAfter + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
+    (asset.premiumShares, asset.premiumOffset, asset.realizedPremium) = _validateApplyPremiumDelta(
+      drawnIndex,
+      asset.premiumShares,
+      asset.premiumOffset,
+      asset.realizedPremium,
+      premium,
+      premiumAmount
+    );
 
     // spoke premium change
-    premiumShares = spoke.premiumShares;
-    premiumOffset = spoke.premiumOffset;
-    realizedPremium = spoke.realizedPremium;
-    premiumBefore = asset.toDrawnAssetsUp(premiumShares) - premiumOffset;
+    (spoke.premiumShares, spoke.premiumOffset, spoke.realizedPremium) = _validateApplyPremiumDelta(
+      drawnIndex,
+      spoke.premiumShares,
+      spoke.premiumOffset,
+      spoke.realizedPremium,
+      premium,
+      premiumAmount
+    );
+  }
+
+  /// @dev Validates applied premium delta for given premium data and returns updated premium data.
+  function _validateApplyPremiumDelta(
+    uint256 drawnIndex,
+    uint256 premiumShares,
+    uint256 premiumOffset,
+    uint256 realizedPremium,
+    PremiumDelta calldata premium,
+    uint256 premiumAmount
+  ) internal view returns (uint128, uint128, uint128) {
+    uint256 premiumBefore = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
     premiumBefore += realizedPremium;
 
     premiumShares = premiumShares.add(premium.sharesDelta);
     premiumOffset = premiumOffset.add(premium.offsetDelta);
     realizedPremium = realizedPremium.add(premium.realizedDelta);
-    spoke.premiumShares = premiumShares.toUint128();
-    spoke.premiumOffset = premiumOffset.toUint128();
-    spoke.realizedPremium = realizedPremium.toUint128();
 
-    premiumAfter = asset.toDrawnAssetsUp(premiumShares) - premiumOffset;
+    uint256 premiumAfter = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
     premiumAfter += realizedPremium;
     // can increase due to precision loss on premium (drawn unchanged)
     require(premiumAfter + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
+    return (premiumShares.toUint128(), premiumOffset.toUint128(), realizedPremium.toUint128());
   }
 
   /// @dev Returns the spoke's drawn amount for a specified asset.
