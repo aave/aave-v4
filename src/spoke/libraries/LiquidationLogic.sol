@@ -221,6 +221,52 @@ library LiquidationLogic {
       });
   }
 
+  /// @dev Invoked by `liquidateUser` method.
+  /// @return True if the debt position becomes zero after restoring, false otherwise.
+  function _liquidateDebt(
+    ISpoke.Reserve storage reserve,
+    ISpoke.UserPosition storage position,
+    ISpoke.PositionStatus storage positionStatus,
+    LiquidateDebtParams memory params
+  ) internal returns (bool) {
+    {
+      uint256 premiumDebtToLiquidate = params.premiumDebt.min(params.debtToLiquidate);
+      uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
+
+      IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+        sharesDelta: -position.premiumShares.toInt256(),
+        offsetDelta: -position.premiumOffset.toInt256(),
+        realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
+      });
+
+      uint256 drawnSharesLiquidated = reserve.hub.restore(
+        reserve.assetId,
+        drawnDebtToLiquidate,
+        premiumDebtToLiquidate,
+        premiumDelta,
+        params.liquidator
+      );
+      settlePremiumDebt(position, premiumDelta.realizedDelta);
+      position.drawnShares -= drawnSharesLiquidated.toUint128();
+    }
+
+    if (position.drawnShares == 0) {
+      positionStatus.setBorrowing(params.reserveId, false);
+      return true;
+    }
+
+    return false;
+  }
+
+  function settlePremiumDebt(
+    ISpoke.UserPosition storage debtPosition,
+    int256 realizedDelta
+  ) internal {
+    debtPosition.premiumShares = 0;
+    debtPosition.premiumOffset = 0;
+    debtPosition.realizedPremium = debtPosition.realizedPremium.add(realizedDelta).toUint128();
+  }
+
   /// @notice Validates the liquidation call.
   /// @param params The validate liquidation call params.
   function _validateLiquidationCall(ValidateLiquidationCallParams memory params) internal pure {
@@ -406,43 +452,6 @@ library LiquidationLogic {
   }
 
   /// @dev Invoked by `liquidateUser` method.
-  /// @return True if the debt position becomes zero after restoring, false otherwise.
-  function _liquidateDebt(
-    ISpoke.Reserve storage reserve,
-    ISpoke.UserPosition storage position,
-    ISpoke.PositionStatus storage positionStatus,
-    LiquidateDebtParams memory params
-  ) internal returns (bool) {
-    {
-      uint256 premiumDebtToLiquidate = params.premiumDebt.min(params.debtToLiquidate);
-      uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
-
-      IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-        sharesDelta: -position.premiumShares.toInt256(),
-        offsetDelta: -position.premiumOffset.toInt256(),
-        realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
-      });
-
-      uint256 drawnSharesLiquidated = reserve.hub.restore(
-        reserve.assetId,
-        drawnDebtToLiquidate,
-        premiumDebtToLiquidate,
-        premiumDelta,
-        params.liquidator
-      );
-      _settlePremiumDebt(position, premiumDelta.realizedDelta);
-      position.drawnShares -= drawnSharesLiquidated.toUint128();
-    }
-
-    if (position.drawnShares == 0) {
-      positionStatus.setBorrowing(params.reserveId, false);
-      return true;
-    }
-
-    return false;
-  }
-
-  /// @dev Invoked by `liquidateUser` method.
   /// @return True if the collateral position is empty, false otherwise.
   function _liquidateCollateral(
     ISpoke.Reserve storage reserve,
@@ -480,14 +489,5 @@ library LiquidationLogic {
       return false;
     }
     return !isDebtPositionEmpty || borrowedCount > 1;
-  }
-
-  function _settlePremiumDebt(
-    ISpoke.UserPosition storage debtPosition,
-    int256 realizedDelta
-  ) internal {
-    debtPosition.premiumShares = 0;
-    debtPosition.premiumOffset = 0;
-    debtPosition.realizedPremium = debtPosition.realizedPremium.add(realizedDelta).toUint128();
   }
 }

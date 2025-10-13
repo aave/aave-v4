@@ -294,7 +294,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       msg.sender
     );
 
-    _settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
+    settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
     userPosition.drawnShares -= restoredShares.toUint128();
     if (userPosition.drawnShares == 0) {
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
@@ -851,7 +851,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         premiumDebtReported,
         premiumDelta
       );
-      _settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
+      settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
       userPosition.drawnShares -= deficitShares.toUint128();
       positionStatus.setBorrowing(reserveId, false);
     }
@@ -860,7 +860,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @notice Settles the premium debt by realizing change in premium and resetting premium shares and offset.
-  function _settlePremiumDebt(UserPosition storage userPosition, int256 realizedDelta) internal {
+  function settlePremiumDebt(UserPosition storage userPosition, int256 realizedDelta) internal {
     userPosition.premiumShares = 0;
     userPosition.premiumOffset = 0;
     userPosition.realizedPremium = userPosition.realizedPremium.add(realizedDelta).toUint128();
