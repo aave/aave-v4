@@ -5,19 +5,17 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 
-import {console2 as console} from 'forge-std/console2.sol';
-
+/// forge-config: default.allow_internal_expect_revert = true
 contract KeyValueListTest is Test {
   using KeyValueList for KeyValueList.List;
 
   function test_fuzz_add(uint256 key, uint256 value) public {
     KeyValueList.List memory list = KeyValueList.init(5);
-    KeyValueListWrapper wrapper = new KeyValueListWrapper();
 
     if (key >= KeyValueList._MAX_KEY || value > KeyValueList._MAX_VALUE) {
       vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
     }
-    list = wrapper.add(list, 0, key, value);
+    list.add(0, key, value);
 
     if (key < KeyValueList._MAX_KEY && value <= KeyValueList._MAX_VALUE) {
       (uint256 storedKey, uint256 storedValue) = list.get(0);
@@ -135,20 +133,5 @@ contract KeyValueListTest is Test {
 
   function _truncateValue(uint256 value) internal pure returns (uint256) {
     return value % KeyValueList._MAX_VALUE;
-  }
-}
-
-/// @dev needed to catch the emitted error from the library
-contract KeyValueListWrapper {
-  using KeyValueList for KeyValueList.List;
-
-  function add(
-    KeyValueList.List memory list,
-    uint256 idx,
-    uint256 key,
-    uint256 value
-  ) external pure returns (KeyValueList.List memory) {
-    list.add(idx, key, value);
-    return list;
   }
 }
