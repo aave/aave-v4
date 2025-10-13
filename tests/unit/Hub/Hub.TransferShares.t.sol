@@ -83,7 +83,7 @@ contract HubTransferSharesTest is HubBase {
     uint256 supplyAmount = 1000e18;
     Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
-    // deactivate spoke1
+    // pause spoke1
     IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
     spokeConfig.paused = true;
     vm.prank(HUB_ADMIN);
@@ -93,7 +93,7 @@ contract HubTransferSharesTest is HubBase {
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     assertEq(suppliedShares, hub1.convertToAddedAssets(daiAssetId, supplyAmount));
 
-    // try to transfer supplied shares from inactive spoke1
+    // try to transfer supplied shares from paused spoke1
     vm.prank(address(spoke1));
     vm.expectRevert(IHub.SpokePaused.selector);
     hub1.transferShares(daiAssetId, suppliedShares, address(spoke2));

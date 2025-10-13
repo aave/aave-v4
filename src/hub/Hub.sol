@@ -820,7 +820,6 @@ contract Hub is IHub, AccessManaged {
 
   function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {
     require(spoke.active, SpokeNotActive());
-    require(!spoke.paused, SpokePaused());
     require(amount > 0, InvalidAmount());
   }
 
