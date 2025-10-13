@@ -146,8 +146,12 @@ contract LiquidationLogicWrapper {
 
   function validateLiquidationCall(
     LiquidationLogic.ValidateLiquidationCallParams memory params
-  ) public pure {
-    LiquidationLogic._validateLiquidationCall(params);
+  ) public view {
+    LiquidationLogic._validateLiquidationCall(
+      _reserves[_collateralReserveId],
+      _reserves[_debtReserveId],
+      params
+    );
   }
 
   function calculateDebtToTargetHealthFactor(
