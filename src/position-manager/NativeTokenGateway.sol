@@ -124,6 +124,7 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
     return address(_nativeWrapper);
   }
 
+  /// @dev `msg.value` verification must be done before calling this.
   function _supplyNative(address spoke, uint256 reserveId, address user, uint256 amount) internal {
     (IERC20 underlying, address hub) = _getReserveData(spoke, reserveId);
     _validateParams(underlying, amount);

@@ -35,18 +35,18 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
+    address spoke = params.spoke;
+    uint256 reserveId = params.reserveId;
+    address user = params.onBehalfOf;
     bytes32 hash = _hashTypedData(params.hash());
-    require(
-      SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
-      InvalidSignature()
-    );
-    _useCheckedNonce(params.onBehalfOf, params.nonce);
+    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    _useCheckedNonce(user, params.nonce);
 
-    (IERC20 underlying, address hub) = _getReserveData(params.spoke, params.reserveId);
-    underlying.safeTransferFrom(params.onBehalfOf, address(this), params.amount);
+    (IERC20 underlying, address hub) = _getReserveData(spoke, reserveId);
+    underlying.safeTransferFrom(user, address(this), params.amount);
     underlying.forceApprove(hub, params.amount);
 
-    ISpoke(params.spoke).supply(params.reserveId, params.amount, params.onBehalfOf);
+    ISpoke(spoke).supply(reserveId, params.amount, user);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -55,21 +55,21 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
+    address spoke = params.spoke;
+    uint256 reserveId = params.reserveId;
+    address user = params.onBehalfOf;
     bytes32 hash = _hashTypedData(params.hash());
-    require(
-      SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
-      InvalidSignature()
-    );
-    _useCheckedNonce(params.onBehalfOf, params.nonce);
+    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    _useCheckedNonce(user, params.nonce);
 
-    (IERC20 underlying, ) = _getReserveData(params.spoke, params.reserveId);
+    (IERC20 underlying, ) = _getReserveData(spoke, reserveId);
     uint256 withdrawAmount = MathUtils.min(
       params.amount,
-      ISpoke(params.spoke).getUserSuppliedAssets(params.reserveId, params.onBehalfOf)
+      ISpoke(spoke).getUserSuppliedAssets(reserveId, user)
     );
 
-    ISpoke(params.spoke).withdraw(params.reserveId, withdrawAmount, params.onBehalfOf);
-    underlying.safeTransfer(params.onBehalfOf, withdrawAmount);
+    ISpoke(spoke).withdraw(reserveId, withdrawAmount, user);
+    underlying.safeTransfer(user, withdrawAmount);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -78,17 +78,17 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
+    address spoke = params.spoke;
+    uint256 reserveId = params.reserveId;
+    address user = params.onBehalfOf;
     bytes32 hash = _hashTypedData(params.hash());
-    require(
-      SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
-      InvalidSignature()
-    );
-    _useCheckedNonce(params.onBehalfOf, params.nonce);
+    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    _useCheckedNonce(user, params.nonce);
 
-    (IERC20 underlying, ) = _getReserveData(params.spoke, params.reserveId);
+    (IERC20 underlying, ) = _getReserveData(spoke, reserveId);
 
-    ISpoke(params.spoke).borrow(params.reserveId, params.amount, params.onBehalfOf);
-    underlying.safeTransfer(params.onBehalfOf, params.amount);
+    ISpoke(spoke).borrow(reserveId, params.amount, user);
+    underlying.safeTransfer(user, params.amount);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -97,23 +97,23 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
+    address spoke = params.spoke;
+    uint256 reserveId = params.reserveId;
+    address user = params.onBehalfOf;
     bytes32 hash = _hashTypedData(params.hash());
-    require(
-      SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
-      InvalidSignature()
-    );
-    _useCheckedNonce(params.onBehalfOf, params.nonce);
+    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    _useCheckedNonce(user, params.nonce);
 
-    (IERC20 underlying, address hub) = _getReserveData(params.spoke, params.reserveId);
+    (IERC20 underlying, address hub) = _getReserveData(spoke, reserveId);
     uint256 repayAmount = MathUtils.min(
       params.amount,
-      ISpoke(params.spoke).getUserTotalDebt(params.reserveId, params.onBehalfOf)
+      ISpoke(spoke).getUserTotalDebt(reserveId, user)
     );
 
-    underlying.safeTransferFrom(params.onBehalfOf, address(this), repayAmount);
+    underlying.safeTransferFrom(user, address(this), repayAmount);
     underlying.forceApprove(hub, repayAmount);
 
-    ISpoke(params.spoke).repay(params.reserveId, repayAmount, params.onBehalfOf);
+    ISpoke(spoke).repay(reserveId, repayAmount, user);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -122,18 +122,12 @@ contract SignatureGateway is ISignatureGateway, NoncesKeyed, Multicall, GatewayB
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
+    address user = params.onBehalfOf;
     bytes32 hash = _hashTypedData(params.hash());
-    require(
-      SignatureChecker.isValidSignatureNow(params.onBehalfOf, hash, signature),
-      InvalidSignature()
-    );
-    _useCheckedNonce(params.onBehalfOf, params.nonce);
+    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    _useCheckedNonce(user, params.nonce);
 
-    ISpoke(params.spoke).setUsingAsCollateral(
-      params.reserveId,
-      params.useAsCollateral,
-      params.onBehalfOf
-    );
+    ISpoke(params.spoke).setUsingAsCollateral(params.reserveId, params.useAsCollateral, user);
   }
 
   /// @inheritdoc ISignatureGateway

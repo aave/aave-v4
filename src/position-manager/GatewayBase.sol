@@ -32,10 +32,7 @@ abstract contract GatewayBase is IGatewayBase, Rescuable, Ownable2Step {
   }
 
   /// @inheritdoc IGatewayBase
-  function renouncePositionManagerRole(
-    address spoke,
-    address user
-  ) external onlyOwner onlyRegisteredSpoke(spoke) {
+  function renouncePositionManagerRole(address spoke, address user) external onlyOwner {
     require(user != address(0), InvalidAddress());
     ISpoke(spoke).renouncePositionManagerRole(user);
   }

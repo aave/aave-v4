@@ -21,7 +21,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   }
 
   function test_supplyWithSig_revertsWith_SpokeNotRegistered(EIP712Types.Supply memory p) public {
-    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
+    bytes memory signature = vm.randomBytes(32);
 
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
@@ -31,7 +31,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   function test_withdrawWithSig_revertsWith_SpokeNotRegistered(
     EIP712Types.Withdraw memory p
   ) public {
-    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
+    bytes memory signature = vm.randomBytes(32);
 
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
@@ -39,7 +39,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   }
 
   function test_borrowWithSig_revertsWith_SpokeNotRegistered(EIP712Types.Borrow memory p) public {
-    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
+    bytes memory signature = vm.randomBytes(32);
 
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
@@ -47,7 +47,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   }
 
   function test_repayWithSig_revertsWith_SpokeNotRegistered(EIP712Types.Repay memory p) public {
-    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
+    bytes memory signature = vm.randomBytes(32);
 
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
@@ -57,7 +57,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   function test_setUsingAsCollateralWithSig_revertsWith_SpokeNotRegistered(
     EIP712Types.SetUsingAsCollateral memory p
   ) public {
-    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
+    bytes memory signature = vm.randomBytes(32);
 
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
@@ -67,7 +67,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   function test_updateUserRiskPremiumWithSig_revertsWith_SpokeNotRegistered(
     EIP712Types.UpdateUserRiskPremium memory p
   ) public {
-    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
+    bytes memory signature = vm.randomBytes(32);
 
     vm.expectRevert(
       abi.encodeWithSelector(IGatewayBase.SpokeNotRegistered.selector, address(gateway))
@@ -79,7 +79,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   function test_updateUserDynamicConfigWithSig_revertsWith_SpokeNotRegistered(
     EIP712Types.UpdateUserDynamicConfig memory p
   ) public {
-    bytes memory signature = vm.randomBytes(vm.randomUint(1, 10));
+    bytes memory signature = vm.randomBytes(32);
 
     vm.expectRevert(
       abi.encodeWithSelector(IGatewayBase.SpokeNotRegistered.selector, address(gateway))

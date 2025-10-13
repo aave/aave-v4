@@ -29,7 +29,7 @@ contract GatewayBaseTest is Base {
   function test_registerSpoke_fuzz(address newSpoke) public {
     assertFalse(gateway.isSpokeRegistered(newSpoke));
 
-    vm.expectEmit();
+    vm.expectEmit(address(gateway));
     emit IGatewayBase.SpokeRegistered(newSpoke, true);
     vm.prank(ADMIN);
     gateway.registerSpoke(newSpoke, true);
@@ -40,14 +40,14 @@ contract GatewayBaseTest is Base {
   function test_registerSpoke_unregister() public {
     assertFalse(gateway.isSpokeRegistered(address(spoke1)));
 
-    vm.expectEmit();
+    vm.expectEmit(address(gateway));
     emit IGatewayBase.SpokeRegistered(address(spoke1), true);
     vm.prank(ADMIN);
     gateway.registerSpoke(address(spoke1), true);
 
     assertTrue(gateway.isSpokeRegistered(address(spoke1)));
 
-    vm.expectEmit();
+    vm.expectEmit(address(gateway));
     emit IGatewayBase.SpokeRegistered(address(spoke1), false);
     vm.prank(ADMIN);
     gateway.registerSpoke(address(spoke1), false);
@@ -69,7 +69,7 @@ contract GatewayBaseTest is Base {
   }
 
   function test_renouncePositionManagerRole() public {
-    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
+    address user = vm.randomAddress();
 
     vm.prank(user);
     spoke1.setUserPositionManager(address(gateway), true);
@@ -85,7 +85,7 @@ contract GatewayBaseTest is Base {
   }
 
   function test_renouncePositionManagerRole_revertsWith_OwnableUnauthorizedAccount() public {
-    (address user, ) = makeAddrAndKey(string(vm.randomBytes(32)));
+    address user = vm.randomAddress();
 
     vm.prank(user);
     spoke1.setUserPositionManager(address(gateway), true);
@@ -98,7 +98,7 @@ contract GatewayBaseTest is Base {
   }
 
   function test_renouncePositionManagerRole_revertsWith_InvalidAddress() public {
-    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
+    address user = vm.randomAddress();
 
     vm.prank(user);
     spoke1.setUserPositionManager(address(gateway), true);
@@ -108,16 +108,5 @@ contract GatewayBaseTest is Base {
     vm.expectRevert(IGatewayBase.InvalidAddress.selector);
     vm.prank(ADMIN);
     gateway.renouncePositionManagerRole(address(spoke1), address(0));
-  }
-
-  function test_renouncePositionManagerRole_revertsWith_SpokeNotRegistered() public {
-    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-
-    vm.prank(user);
-    spoke1.setUserPositionManager(address(gateway), true);
-
-    vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
-    vm.prank(ADMIN);
-    gateway.renouncePositionManagerRole(address(spoke1), user);
   }
 }
