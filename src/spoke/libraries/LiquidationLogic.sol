@@ -120,7 +120,8 @@ library LiquidationLogic {
   uint256 constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
 
   /// @notice Liquidates a user position.
-  /// @param reserves The reserves mapping in storage.
+  /// @param collateralReserve The collateral reserve to seize during liquidation.
+  /// @param debtReserve The debt reserve to repay during liquidation.
   /// @param positions The user positions mapping in storage.
   /// @param positionStatus The user's position status.
   /// @param liquidationConfig The liquidation config.
@@ -128,14 +129,14 @@ library LiquidationLogic {
   /// @param params The liquidate user params.
   /// @return True if the liquidation results in deficit, false otherwise.
   function liquidateUser(
-    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
+    ISpoke.Reserve storage collateralReserve,
+    ISpoke.Reserve storage debtReserve,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage positions,
     ISpoke.PositionStatus storage positionStatus,
     ISpoke.LiquidationConfig storage liquidationConfig,
     ISpoke.DynamicReserveConfig storage collateralDynConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
-    ISpoke.Reserve storage collateralReserve = reserves[params.collateralReserveId];
     uint256 collateralReserveBalance = collateralReserve.hub.previewRemoveByShares(
       collateralReserve.assetId,
       positions[params.user][params.collateralReserveId].suppliedShares
@@ -146,10 +147,10 @@ library LiquidationLogic {
         liquidator: params.liquidator,
         debtToCover: params.debtToCover,
         collateralReserveHub: address(collateralReserve.hub),
-        debtReserveHub: address(reserves[params.debtReserveId].hub),
+        debtReserveHub: address(debtReserve.hub),
         collateralReservePaused: collateralReserve.paused,
         collateralReserveFrozen: collateralReserve.frozen,
-        debtReservePaused: reserves[params.debtReserveId].paused,
+        debtReservePaused: debtReserve.paused,
         healthFactor: params.healthFactor,
         isUsingAsCollateral: positionStatus.isUsingAsCollateral(params.collateralReserveId),
         collateralFactor: collateralDynConfig.collateralFactor,
@@ -177,7 +178,7 @@ library LiquidationLogic {
           collateralFactor: collateralDynConfig.collateralFactor,
           liquidationFee: collateralDynConfig.liquidationFee,
           debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
-          debtAssetUnit: uint256(10).uncheckedExp(reserves[params.debtReserveId].decimals),
+          debtAssetUnit: uint256(10).uncheckedExp(debtReserve.decimals),
           collateralAssetPrice: IAaveOracle(params.oracle).getReservePrice(
             params.collateralReserveId
           ),
@@ -199,7 +200,7 @@ library LiquidationLogic {
     );
 
     bool isDebtPositionEmpty = _liquidateDebt(
-      reserves[params.debtReserveId],
+      debtReserve,
       positions[params.user][params.debtReserveId],
       positionStatus,
       LiquidateDebtParams({
