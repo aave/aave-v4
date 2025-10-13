@@ -186,11 +186,22 @@ contract LiquidationLogicWrapper {
   function liquidateCollateral(
     LiquidationLogic.LiquidateCollateralParams memory params
   ) public returns (bool) {
-    return LiquidationLogic._liquidateCollateral(_reserves, _userPositions, params);
+    return
+      LiquidationLogic._liquidateCollateral(
+        _reserves[_collateralReserveId],
+        _userPositions[_borrower][_collateralReserveId],
+        params
+      );
   }
 
   function liquidateDebt(LiquidationLogic.LiquidateDebtParams memory params) public returns (bool) {
-    return LiquidationLogic._liquidateDebt(_reserves, _userPositions, positionStatus, params);
+    return
+      LiquidationLogic._liquidateDebt(
+        _reserves[_debtReserveId],
+        _userPositions[_borrower][_debtReserveId],
+        positionStatus,
+        params
+      );
   }
 
   function liquidateUser(LiquidationLogic.LiquidateUserParams memory params) public returns (bool) {
