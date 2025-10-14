@@ -155,8 +155,8 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Thrown when the premium change is invalid.
   error InvalidPremiumChange();
 
-  /// @notice Thrown when a surplus deficit is reported.
-  /// @param amount The amount of surplus deficit assets.
+  /// @notice Thrown when a surplus on existing deficit is reported.
+  /// @param amount The amount of surplus on existing deficit assets.
   error SurplusDeficitReported(uint256 amount);
 
   /// @notice Thrown when a spoke is not active.
