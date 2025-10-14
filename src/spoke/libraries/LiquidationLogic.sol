@@ -121,7 +121,7 @@ library LiquidationLogic {
   /// @param liquidationConfig The liquidation config.
   /// @param collateralDynConfig The collateral dynamic config.
   /// @param params The liquidate user params.
-  /// @return True if the liquidation results in deficit, false otherwise.
+  /// @return True if the liquidation results in deficit.
   function liquidateUser(
     ISpoke.Reserve storage collateralReserve,
     ISpoke.Reserve storage debtReserve,
@@ -221,17 +221,35 @@ library LiquidationLogic {
       });
   }
 
-  function settlePremiumDebt(
-    ISpoke.UserPosition storage debtPosition,
-    int256 realizedDelta
-  ) internal {
-    debtPosition.premiumShares = 0;
-    debtPosition.premiumOffset = 0;
-    debtPosition.realizedPremium = debtPosition.realizedPremium.add(realizedDelta).toUint128();
+  /// @dev Invoked by `liquidateUser` method.
+  /// @return True if the collateral position is empty.
+  function _liquidateCollateral(
+    ISpoke.Reserve storage reserve,
+    ISpoke.UserPosition storage position,
+    LiquidateCollateralParams memory params
+  ) internal returns (bool) {
+    IHubBase hub = reserve.hub;
+    uint256 assetId = reserve.assetId;
+
+    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
+
+    position.suppliedShares -= sharesToLiquidate.toUint128();
+
+    uint256 sharesToLiquidator = hub.remove(
+      assetId,
+      params.collateralToLiquidator,
+      params.liquidator
+    );
+
+    if (sharesToLiquidate > sharesToLiquidator) {
+      hub.payFeeShares(assetId, sharesToLiquidate.uncheckedSub(sharesToLiquidator));
+    }
+
+    return position.suppliedShares == 0;
   }
 
   /// @dev Invoked by `liquidateUser` method.
-  /// @return True if the debt position becomes zero after restoring, false otherwise.
+  /// @return True if the debt position becomes zero after restoring.
   function _liquidateDebt(
     ISpoke.Reserve storage reserve,
     ISpoke.UserPosition storage position,
@@ -255,7 +273,7 @@ library LiquidationLogic {
         premiumDelta,
         params.liquidator
       );
-      settlePremiumDebt(position, premiumDelta.realizedDelta);
+      _settlePremiumDebt(position, premiumDelta.realizedDelta);
       position.drawnShares -= drawnSharesLiquidated.toUint128();
     }
 
@@ -265,6 +283,16 @@ library LiquidationLogic {
     }
 
     return false;
+  }
+
+  /// @dev Invoked by `_liquidateDebt` method.
+  function _settlePremiumDebt(
+    ISpoke.UserPosition storage debtPosition,
+    int256 realizedDelta
+  ) internal {
+    debtPosition.premiumShares = 0;
+    debtPosition.premiumOffset = 0;
+    debtPosition.realizedPremium = debtPosition.realizedPremium.add(realizedDelta).toUint128();
   }
 
   /// @notice Calculates the liquidation bonus at a given health factor.
@@ -449,33 +477,6 @@ library LiquidationLogic {
         params.debtAssetUnit * (params.targetHealthFactor - params.healthFactor),
         (params.targetHealthFactor - liquidationPenalty) * params.debtAssetPrice.toWad()
       );
-  }
-
-  /// @dev Invoked by `liquidateUser` method.
-  /// @return True if the collateral position is empty, false otherwise.
-  function _liquidateCollateral(
-    ISpoke.Reserve storage reserve,
-    ISpoke.UserPosition storage position,
-    LiquidateCollateralParams memory params
-  ) internal returns (bool) {
-    IHubBase hub = reserve.hub;
-    uint256 assetId = reserve.assetId;
-
-    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
-
-    position.suppliedShares -= sharesToLiquidate.toUint128();
-
-    uint256 sharesToLiquidator = hub.remove(
-      assetId,
-      params.collateralToLiquidator,
-      params.liquidator
-    );
-
-    if (sharesToLiquidate > sharesToLiquidator) {
-      hub.payFeeShares(assetId, sharesToLiquidate.uncheckedSub(sharesToLiquidator));
-    }
-
-    return position.suppliedShares == 0;
   }
 
   /// @notice Returns if the liquidation results in deficit.
