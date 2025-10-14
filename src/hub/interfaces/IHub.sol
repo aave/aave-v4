@@ -381,6 +381,6 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Returns the maximum allowed risk premium.
   /// @dev This is used to validate and limit premium values reported by spokes.
-  /// @return The maximum risk premium value, expressed in bps (e.g. 100_00 is 100.00%).
+  /// @return The maximum risk premium value, expressed in bps.
   function MAX_ALLOWED_RISK_PREMIUM() external view returns (uint24);
 }
