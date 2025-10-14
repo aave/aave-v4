@@ -86,6 +86,25 @@ contract KeyValueListTest is Test {
     }
   }
 
+  function test_fuzz_add_unique(uint256 seed, uint256 size) public pure {
+    vm.assume(size > 0 && size < 1e2);
+    uint256[] memory keys = _generateRandomUint256Array(size, seed, 1, type(uint32).max - 1);
+    uint256[] memory values = _generateRandomUint256Array(size, seed, 1, type(uint224).max - 1);
+    KeyValueList.List memory list = KeyValueList.init(keys.length);
+    for (uint256 i; i < keys.length; ++i) {
+      list.add(i, keys[i], values[i]);
+    }
+    for (uint256 i; i < keys.length; ++i) {
+      (uint256 key, uint256 value) = list.get(i);
+      assertEq(key, keys[i]);
+      assertEq(value, values[i]);
+      // No key should return as 0 unless the set key is 0 or the cell is not initialized
+      assertGt(key, 0);
+      // No value should return as 0 unless the set value is 0 or the cell is not initialized
+      assertGt(value, 0);
+    }
+  }
+
   function test_fuzz_sortByKey(uint256[] memory seed) public pure {
     vm.assume(seed.length > 0);
     KeyValueList.List memory list = KeyValueList.init(seed.length);
@@ -195,5 +214,22 @@ contract KeyValueListTest is Test {
 
   function _truncateValue(uint256 value) internal pure returns (uint256) {
     return value % KeyValueList._MAX_VALUE;
+  }
+
+  function _generateRandomUint256Array(
+    uint256 size,
+    uint256 seed,
+    uint256 lowerBound,
+    uint256 upperBound
+  ) internal pure returns (uint256[] memory) {
+    seed = seed % 1e77;
+    if (size == 0) return new uint256[](0);
+    uint256[] memory result = new uint256[](size);
+    for (uint256 i; i < size; ++i) {
+      result[i] =
+        (uint256((keccak256(abi.encode(seed + i)))) % (upperBound - lowerBound + 1)) +
+        lowerBound;
+    }
+    return result;
   }
 }
