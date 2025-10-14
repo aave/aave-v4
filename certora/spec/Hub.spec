@@ -17,14 +17,13 @@ methods {
     function _validateAdd(
         IHub.Asset storage asset,
         IHub.SpokeData storage spoke,
-        uint256 assetId,
         uint256 amount,
         address from
     ) internal => NONDET;
 
     function _validateRemove(
+        IHub.Asset storage asset,
         IHub.SpokeData storage spoke,
-        uint256 assetId,
         uint256 amount,
         address to
     ) internal => NONDET;
@@ -38,16 +37,16 @@ methods {
     ) internal => NONDET;
 
     function _validateRestore(
+        IHub.Asset storage asset,
         IHub.SpokeData storage spoke,
-        uint256 assetId,
         uint256 drawnAmount,
         uint256 premiumAmount,
         address from
     ) internal => NONDET;
 
     function _validateReportDeficit(
+        IHub.Asset storage asset,
         IHub.SpokeData storage spoke,
-        uint256 assetId,
         uint256 drawnAmount,
         uint256 premiumAmount
     ) internal => NONDET;
@@ -57,7 +56,7 @@ methods {
         uint256 amount
     ) internal => NONDET;
 
-    function _validatePayFee(
+    function _validatePayFeeShares(
         IHub.SpokeData storage senderSpoke,
         uint256 feeShares
     ) internal => NONDET;
@@ -66,7 +65,6 @@ methods {
         IHub.Asset storage asset,
         IHub.SpokeData storage sender,
         IHub.SpokeData storage receiver,
-        uint256 assetId,
         uint256 shares
     ) internal => NONDET;
 
