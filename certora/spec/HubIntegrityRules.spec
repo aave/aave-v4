@@ -69,7 +69,7 @@ rule nothingForZero_eliminateDeficit(uint256 assetId, uint256 amount) {
 
     env e;
     address asset = hub._assets[assetId].underlying;
-    address spoke;
+    address spoke ;
     uint256 spokeAddedSharesBefore = hub._spokes[assetId][spoke].addedShares;
     uint256 externalBalanceBefore = balanceByToken[asset][hub]; 
     uint256 deficitBefore = hub._assets[assetId].deficit;

@@ -196,6 +196,7 @@ rule reportDeficitAdditivity(uint256 assetId, uint256 amountX, uint256 amountY) 
 **/
 rule eliminateDeficitAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address spoke) {
     env e;
+   
     requireAllInvariants(assetId,e);
     storage init = lastStorage;
     eliminateDeficit(e, assetId, amountX, spoke);

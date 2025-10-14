@@ -74,6 +74,10 @@ ghost mapping(uint256 /*assetId*/  => mapping(address /*spoke*/ => uint256 )) sp
     init_state axiom forall uint256 X. (usum address a. spokeRealizedPremiumPerAssetMirror[X][a]) == 0; 
 }
 
+ghost mapping(uint256 /*assetId*/  => mapping(address /*spoke*/ => uint256 )) spokeDeficitPerAssetMirror {
+    init_state axiom forall uint256 X. forall address Y. spokeDeficitPerAssetMirror[X][Y] == 0 ;
+    init_state axiom forall uint256 X. (usum address a. spokeDeficitPerAssetMirror[X][a]) == 0; 
+}
 ghost bool accrueCalledOnAsset;
 //record accessed to debt fields before accrue
 ghost bool unsafeAccessBeforeAccrue;
@@ -154,6 +158,15 @@ hook Sload uint128 value hub._spokes[KEY uint256 assetId][KEY address spoke].rea
     unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
 }
 
+hook Sstore hub._spokes[KEY uint256 assetId][KEY address spoke].deficit uint128 new_value (uint128 old_value) {
+    spokeDeficitPerAssetMirror[assetId][spoke] = new_value;
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
+}
+
+hook Sload uint128 value hub._spokes[KEY uint256 assetId][KEY address spoke].deficit {
+    require spokeDeficitPerAssetMirror[assetId][spoke] == value;
+    unsafeAccessBeforeAccrue = unsafeAccessBeforeAccrue || !accrueCalledOnAsset;
+}
 /**** Valid State Rules *******/
 
 invariant totalAssetsVsShares(uint256 assetId, env e) 
@@ -253,6 +266,17 @@ invariant sumOfSpokePremiumOffset(uint256 assetId)
 */
 invariant sumOfSpokeRealizedPremium(uint256 assetId) 
     hub._assets[assetId].realizedPremium == (usum address spoke. spokeRealizedPremiumPerAssetMirror[assetId][spoke]) 
+    {
+        preserved {
+            requireInvariant validAssetId(assetId);
+        }
+    }
+
+/**
+* @title the sum of  hub._spokes[assetId][spoke].deficit for all spoke equals to hub._assets[assetId].deficit
+*/
+invariant sumOfSpokeDeficit(uint256 assetId) 
+    hub._assets[assetId].deficit == (usum address spoke. spokeDeficitPerAssetMirror[assetId][spoke]) 
     {
         preserved {
             requireInvariant validAssetId(assetId);
