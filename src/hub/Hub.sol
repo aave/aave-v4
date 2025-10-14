@@ -237,7 +237,7 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(_spokes, assetId);
-    _validateDraw(asset, spoke, assetId, amount, to);
+    _validateDraw(asset, spoke, amount, to);
     uint256 liquidity = asset.liquidity;
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
@@ -716,7 +716,7 @@ contract Hub is IHub, AccessManaged {
     uint256 realizedPremium,
     PremiumDelta calldata premium,
     uint256 premiumAmount
-  ) internal view returns (uint128, uint128, uint128) {
+  ) internal pure returns (uint128, uint128, uint128) {
     uint256 premiumBefore = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
     premiumBefore += realizedPremium;
 
@@ -784,7 +784,6 @@ contract Hub is IHub, AccessManaged {
   function _validateDraw(
     Asset storage asset,
     SpokeData storage spoke,
-    uint256 assetId,
     uint256 amount,
     address to
   ) internal view {
