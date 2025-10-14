@@ -7,6 +7,7 @@ contract HubRefreshPremiumTest is HubBase {
   using SafeCast for *;
   using PercentageMath for uint128;
   using MathUtils for uint256;
+  using WadRayMath for uint256;
 
   struct PremiumDataLocal {
     uint256 premiumShares;
@@ -72,16 +73,22 @@ contract HubRefreshPremiumTest is HubBase {
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
     bool reverting;
     IHub.Asset memory asset = hub1.getAsset(assetId);
+    uint256 expectedPremiumShares = sharesDelta > 0
+      ? asset.premiumShares + sharesDelta.toUint256()
+      : asset.premiumShares - (-sharesDelta).toUint256();
+    uint256 expectedOffset = offsetDelta > 0
+      ? asset.premiumOffset + offsetDelta.toUint256()
+      : asset.premiumOffset - (-offsetDelta).toUint256();
 
-    if (
+    if (expectedOffset > expectedPremiumShares.rayMulUp(asset.drawnIndex)) {
+      reverting = true;
+      vm.expectRevert(stdError.arithmeticError);
+    } else if (
       asset.drawnShares.percentMulUp(Constants.MAX_ALLOWED_RISK_PREMIUM) <
       asset.premiumShares + sharesDelta.toUint256()
     ) {
       reverting = true;
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
-    } else if (offsetDelta > sharesDelta) {
-      reverting = true;
-      vm.expectRevert(stdError.arithmeticError);
     } else if (sharesDelta - offsetDelta + realizedDelta > 2) {
       reverting = true;
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
