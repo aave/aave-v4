@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 library Constants {
   /// @dev Hub Constants
   uint8 public constant MAX_ALLOWED_UNDERLYING_DECIMALS = 18;
-  uint8 public constant MIN_ALLOWED_UNDERLYING_DECIMALS = 5;
+  uint8 public constant MIN_ALLOWED_UNDERLYING_DECIMALS = 6;
   uint56 public constant MAX_ALLOWED_SPOKE_CAP = type(uint56).max;
 
   /// @dev Spoke Constants
