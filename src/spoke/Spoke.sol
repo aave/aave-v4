@@ -311,7 +311,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
-    uint256 debtToCover
+    uint256 debtToCover,
+    bool receiveShares
   ) external {
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
@@ -327,7 +328,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       totalDebtValue: userAccountData.totalDebtValue,
       activeCollateralCount: userAccountData.activeCollateralCount,
       borrowedCount: userAccountData.borrowedCount,
-      liquidator: msg.sender
+      liquidator: msg.sender,
+      receiveShares: receiveShares
     });
 
     (params.drawnDebt, params.premiumDebt, params.accruedPremium) = _getUserDebt(
@@ -343,8 +345,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bool isUserInDeficit = LiquidationLogic.liquidateUser(
       _reserves[collateralReserveId],
       _reserves[debtReserveId],
-      _userPositions[user][collateralReserveId],
-      _userPositions[user][debtReserveId],
+      _userPositions,
       _positionStatus[user],
       _liquidationConfig,
       collateralDynConfig,

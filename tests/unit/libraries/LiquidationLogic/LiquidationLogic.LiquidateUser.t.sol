@@ -44,12 +44,14 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       totalDebtValue: 10_000e26,
       liquidator: makeAddr('liquidator'),
       activeCollateralCount: 1,
-      borrowedCount: 1
+      borrowedCount: 1,
+      receiveShares: false
     });
 
     // Set liquidationLogicWrapper as a spoke
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });
@@ -58,8 +60,12 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     hub2.addSpoke(wethAssetId, address(liquidationLogicWrapper), spokeConfig);
     vm.stopPrank();
 
+    // set borrower
+    liquidationLogicWrapper.setBorrower(params.user);
+
     // Mock storage for collateral side
     require(hub1.getAsset(usdxAssetId).underlying == address(tokenList.usdx));
+    liquidationLogicWrapper.setCollateralReserveId(usdxReserveId);
     liquidationLogicWrapper.setCollateralReserveHub(hub1);
     liquidationLogicWrapper.setCollateralReserveAssetId(usdxAssetId);
     liquidationLogicWrapper.setCollateralReserveDecimals(6);
@@ -68,6 +74,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
 
     // Mock storage for debt side
     require(hub2.getAsset(wethAssetId).underlying == address(tokenList.weth));
+    liquidationLogicWrapper.setDebtReserveId(wethReserveId);
     liquidationLogicWrapper.setDebtReserveHub(hub2);
     liquidationLogicWrapper.setDebtReserveAssetId(wethAssetId);
     liquidationLogicWrapper.setDebtReserveDecimals(18);

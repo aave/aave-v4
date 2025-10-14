@@ -68,7 +68,7 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   }
 
   /// @inheritdoc ISpokeBase
-  function liquidationCall(uint256, uint256, address, uint256) external pure {
+  function liquidationCall(uint256, uint256, address, uint256, bool) external pure {
     revert UnsupportedAction();
   }
 
