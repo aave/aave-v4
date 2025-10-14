@@ -1,6 +1,5 @@
 name: Certora Prover Workflow
 
-
 env:
   CONFIGS: |
     certora/conf/libs/LibBit.conf
@@ -44,8 +43,6 @@ jobs:
         uses: actions/setup-node@v4
       - name: Install dependencies
         run: npm install
-
-    
 
       # Run Certora Prover
       - uses: Certora/certora-run-action@v2
