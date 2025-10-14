@@ -14,7 +14,7 @@ contract HubHarness is Hub {
   function accrueInterest(uint256 assetId) external {
     Asset storage asset = _assets[assetId];
 
-    asset.accrue(assetId, _spokes[assetId][asset.feeReceiver]);
+    asset.accrue(_spokes, assetId);
   }
 
   function toSharesDown(

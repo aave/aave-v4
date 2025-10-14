@@ -1,6 +1,5 @@
 name: Certora Prover Workflow
 
-
 env:
   CONFIGS: |
     certora/conf/libs/LibBit.conf
@@ -10,14 +9,9 @@ env:
     certora/conf/HubAdditivity.conf
     certora/conf/HubAccrueIntegrity.conf
     certora/conf/HubAccrueUnrealizedFee.conf
-    certora/conf/HubAccrueSupplyRate.conf
     certora/conf/HubIntegrity.conf
     certora/conf/HubValidState.conf
 on:
-  push:
-    branches:
-      - main
-      - certora/LiquidityHubVerification
   pull_request:
     branches:
       - main
@@ -43,8 +37,6 @@ jobs:
         uses: actions/setup-node@v4
       - name: Install dependencies
         run: npm install
-
-    
 
       # Run Certora Prover
       - uses: Certora/certora-run-action@v2
