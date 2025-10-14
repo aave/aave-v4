@@ -113,8 +113,8 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
-      address spokeAddress = targetHub.getSpokeAddress(assetId, i);
-      _updateSpokeCaps(targetHub, assetId, spokeAddress, 0, 0);
+      address spoke = targetHub.getSpokeAddress(assetId, i);
+      _updateSpokeCaps(targetHub, assetId, spoke, 0, 0);
     }
   }
 
@@ -123,10 +123,10 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
-      address spokeAddress = targetHub.getSpokeAddress(assetId, i);
-      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spokeAddress);
+      address spoke = targetHub.getSpokeAddress(assetId, i);
+      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
       config.active = false;
-      targetHub.updateSpokeConfig(assetId, spokeAddress, config);
+      targetHub.updateSpokeConfig(assetId, spoke, config);
     }
   }
 
@@ -135,10 +135,10 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
-      address spokeAddress = targetHub.getSpokeAddress(assetId, i);
-      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spokeAddress);
+      address spoke = targetHub.getSpokeAddress(assetId, i);
+      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
       config.paused = true;
-      targetHub.updateSpokeConfig(assetId, spokeAddress, config);
+      targetHub.updateSpokeConfig(assetId, spoke, config);
     }
   }
 
@@ -167,19 +167,6 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateSpokePaused(
-    address hub,
-    uint256 assetId,
-    address spoke,
-    bool paused
-  ) external onlyOwner {
-    IHub targetHub = IHub(hub);
-    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-    config.paused = paused;
-    targetHub.updateSpokeConfig(assetId, spoke, config);
-  }
-
-  /// @inheritdoc IHubConfigurator
   function updateSpokeActive(
     address hub,
     uint256 assetId,
@@ -189,6 +176,19 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     config.active = active;
+    targetHub.updateSpokeConfig(assetId, spoke, config);
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function updateSpokePaused(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    bool paused
+  ) external onlyOwner {
+    IHub targetHub = IHub(hub);
+    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    config.paused = paused;
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 

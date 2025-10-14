@@ -351,7 +351,7 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(_spokes, assetId);
-    require(spoke.active, SpokeNotActive()); // allow paused spokes
+    require(spoke.active, SpokeNotActive());
     // no premium change allowed
     _applyPremiumDelta(asset, spoke, premiumDelta, 0);
     asset.updateDrawnRate(assetId);
@@ -644,7 +644,6 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @notice Adds a new spoke to an asset with default feeReceiver configuration (maximum add cap, zero draw cap).
-  /// @dev Emits `AddSpoke` and `UpdateSpokeConfig` events.
   function _addFeeReceiver(uint256 assetId, address feeReceiver) internal {
     _addSpoke(assetId, feeReceiver);
     _updateSpokeConfig(
