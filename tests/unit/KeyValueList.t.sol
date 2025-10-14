@@ -24,6 +24,10 @@ contract KeyValueListTest is Test {
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
     list.add(7, 45e8, 10000000000);
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
+    list.add(type(uint32).max - 1, 75e9, 10000000000);
+    vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
+    list.add(type(uint32).max, 75e9, 10000000000);
+    vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
     list.add(7, 75e9, 10000000000);
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
     list.add(8, 5e6, 2.696e67);
@@ -31,6 +35,10 @@ contract KeyValueListTest is Test {
     list.add(8, 5e6, 5e70);
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
     list.add(8, 5e6, 12.5e75);
+    vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
+    list.add(8, 5e6, type(uint224).max - 1);
+    vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
+    list.add(8, 5e6, type(uint224).max);
 
     uint256 returnedKey;
     uint256 returnedValue;
