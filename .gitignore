@@ -22,7 +22,7 @@ lcov*
 
 report/
 .DS_Store
-π
+
 # certora internal artifacts
 .certora_internal/
 
