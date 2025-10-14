@@ -716,7 +716,7 @@ contract Hub is IHub, AccessManaged {
     uint256 realizedPremium,
     PremiumDelta calldata premium,
     uint256 premiumAmount
-  ) internal view returns (uint128, uint128, uint128) {
+  ) internal pure returns (uint128, uint128, uint128) {
     uint256 premiumBefore = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
     premiumBefore += realizedPremium;
 
