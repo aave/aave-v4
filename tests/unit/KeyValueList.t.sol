@@ -87,7 +87,7 @@ contract KeyValueListTest is Test {
   }
 
   function test_fuzz_add_unique(uint256 seed, uint256 size) public pure {
-    vm.assume(size > 0 && size < 1e2);
+    size = bound(size, 1, 1e2);
     uint256[] memory keys = _generateRandomUint256Array(size, seed, 1, type(uint32).max - 1);
     uint256[] memory values = _generateRandomUint256Array(size, seed, 1, type(uint224).max - 1);
     KeyValueList.List memory list = KeyValueList.init(keys.length);
