@@ -272,9 +272,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           )
           .collateralFactor,
         debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
-        debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals,
+        debtAssetDecimals: spoke.getReserve(debtReserveId).decimals,
+        // debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals,
         collateralAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(collateralReserveId),
-        collateralAssetUnit: 10 ** spoke.getReserve(collateralReserveId).decimals,
+        // collateralAssetUnit: 10 ** spoke.getReserve(collateralReserveId).decimals,
+        collateralAssetDecimals: spoke.getReserve(collateralReserveId).decimals,
         liquidationFee: spoke
           .getDynamicReserveConfig(
             collateralReserveId,

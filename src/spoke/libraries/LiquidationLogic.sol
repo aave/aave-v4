@@ -90,9 +90,9 @@ library LiquidationLogic {
     uint256 collateralFactor;
     uint256 liquidationFee;
     uint256 debtAssetPrice;
-    uint256 debtAssetUnit;
+    uint256 debtAssetDecimals;
     uint256 collateralAssetPrice;
-    uint256 collateralAssetUnit;
+    uint256 collateralAssetDecimals;
   }
 
   struct LiquidateDebtParams {
@@ -178,11 +178,11 @@ library LiquidationLogic {
           collateralFactor: collateralDynConfig.collateralFactor,
           liquidationFee: collateralDynConfig.liquidationFee,
           debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
-          debtAssetUnit: uint256(10).uncheckedExp(debtReserve.decimals),
+          debtAssetDecimals: debtReserve.decimals,
           collateralAssetPrice: IAaveOracle(params.oracle).getReservePrice(
             params.collateralReserveId
           ),
-          collateralAssetUnit: uint256(10).uncheckedExp(collateralReserve.decimals)
+          collateralAssetDecimals: collateralReserve.decimals
         })
       );
 
@@ -263,6 +263,9 @@ library LiquidationLogic {
   function _calculateLiquidationAmounts(
     CalculateLiquidationAmountsParams memory params
   ) internal pure returns (uint256, uint256, uint256) {
+    uint256 debtAssetUnit = MathUtils.uncheckedExp(10, params.debtAssetDecimals);
+    uint256 collateralAssetUnit = MathUtils.uncheckedExp(10, params.collateralAssetDecimals);
+
     uint256 liquidationBonus = calculateLiquidationBonus({
       healthFactorForMaxBonus: params.healthFactorForMaxBonus,
       liquidationBonusFactor: params.liquidationBonusFactor,
@@ -284,19 +287,19 @@ library LiquidationLogic {
         liquidationBonus: liquidationBonus,
         collateralFactor: params.collateralFactor,
         debtAssetPrice: params.debtAssetPrice,
-        debtAssetUnit: params.debtAssetUnit
+        debtAssetUnit: debtAssetUnit
       })
     );
 
     uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
-      params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus,
-      params.debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
+      params.debtAssetPrice * collateralAssetUnit * liquidationBonus,
+      debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
     );
 
     bool leavesCollateralDust = collateralToLiquidate < params.collateralReserveBalance &&
       (params.collateralReserveBalance - collateralToLiquidate).mulDivDown(
         params.collateralAssetPrice.toWad(),
-        params.collateralAssetUnit
+        collateralAssetUnit
       ) <
       DUST_LIQUIDATION_THRESHOLD;
 
@@ -311,8 +314,8 @@ library LiquidationLogic {
       //   is fully liquidated (potentially bypassing the target health factor). Can only increase by at most `DUST_LIQUIDATION_THRESHOLD` (in
       //   value terms). Since debt dust condition was enforced, it is guaranteed that `debtToLiquidate` will never exceed `params.debtReserveBalance`.
       debtToLiquidate = collateralToLiquidate.mulDivUp(
-        params.collateralAssetPrice * params.debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
-        params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus
+        params.collateralAssetPrice * debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
+        params.debtAssetPrice * collateralAssetUnit * liquidationBonus
       );
     }
 
