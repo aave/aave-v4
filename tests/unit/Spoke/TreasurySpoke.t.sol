@@ -257,7 +257,7 @@ contract TreasurySpokeTest is SpokeBase {
     updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
 
     // create debt
-    address tempUser = _openDebtPosition(spoke1, reserveId, amount, true);
+    _openDebtPosition(spoke1, reserveId, amount, true);
 
     skip(skipTime);
 
