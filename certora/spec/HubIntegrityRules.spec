@@ -69,12 +69,12 @@ rule nothingForZero_eliminateDeficit(uint256 assetId, uint256 amount) {
 
     env e;
     address asset = hub._assets[assetId].underlying;
-    address spoke = e.msg.sender;
+    address spoke;
     uint256 spokeAddedSharesBefore = hub._spokes[assetId][spoke].addedShares;
     uint256 externalBalanceBefore = balanceByToken[asset][hub]; 
     uint256 deficitBefore = hub._assets[assetId].deficit;
 
-    eliminateDeficit(e,assetId,amount);
+    eliminateDeficit(e,assetId,amount, spoke);
 
     assert hub._spokes[assetId][spoke].addedShares < spokeAddedSharesBefore &&  
             balanceByToken[asset][hub] == externalBalanceBefore &&

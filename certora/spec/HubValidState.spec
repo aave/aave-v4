@@ -34,7 +34,7 @@ methods {
     function AssetLogic.getDrawnIndex(IHub.Asset storage   asset) internal returns (uint256) => cachedIndex;
 
     //rules concerning accrue are in HubAccrueIntegrity.spec
-    function AssetLogic.accrue(IHub.Asset storage asset, uint256 assetId, IHub.SpokeData storage feeReceiver) internal => accrueCalled();
+    function AssetLogic.accrue(IHub.Asset storage asset, mapping(uint256 => mapping(address => IHub.SpokeData)) storage spokes, uint256 assetId) internal => accrueCalled();
 
 }
 

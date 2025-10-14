@@ -194,16 +194,15 @@ rule reportDeficitAdditivity(uint256 assetId, uint256 amountX, uint256 amountY) 
 /**
 @title Prove that eliminating deficit in two steps is less beneficial to the user than doing it in one step
 **/
-rule eliminateDeficitAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address from) {
+rule eliminateDeficitAdditivity(uint256 assetId, uint256 amountX, uint256 amountY, address spoke) {
     env e;
-    address spoke = e.msg.sender;
     requireAllInvariants(assetId,e);
     storage init = lastStorage;
-    eliminateDeficit(e, assetId, amountX);
-    eliminateDeficit(e, assetId, amountY);
+    eliminateDeficit(e, assetId, amountX, spoke);
+    eliminateDeficit(e, assetId, amountY, spoke);
     uint256 afterTwoSteps = getSpokeAddedShares(e, assetId, spoke);
     //expecting the code to enforce that amountX+amountY can not overflow
-    eliminateDeficit(e, assetId, assert_uint256(amountX + amountY))at init;
+    eliminateDeficit(e, assetId, assert_uint256(amountX + amountY), spoke)at init;
     uint256 afterOneStep = getSpokeAddedShares(e, assetId, spoke);
     assert afterOneStep >= afterTwoSteps;
     satisfy afterOneStep > afterTwoSteps;

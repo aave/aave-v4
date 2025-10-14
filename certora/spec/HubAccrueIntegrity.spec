@@ -249,14 +249,14 @@ function callViewFunction(method f, env e, calldataarg args) returns mathint {
     else if (f.selector == sig:getSpokeAddedShares(uint256,address).selector) {
         return getSpokeAddedShares(e, args);
     }
-    else if (f.selector == sig:getLiquidity(uint256).selector) {
-        return getLiquidity(e, args);
+    else if (f.selector == sig:getAssetLiquidity(uint256).selector) {
+        return getAssetLiquidity(e, args);
     }
-    else if (f.selector == sig:getDeficit(uint256).selector) {
-        return getDeficit(e, args);
+    else if (f.selector == sig:getAssetDeficit(uint256).selector) {
+        return getAssetDeficit(e, args);
     }
-    else if (f.selector == sig:getSwept(uint256).selector) {
-        return getSwept(e, args);
+    else if (f.selector == sig:getAssetSwept(uint256).selector) {
+        return getAssetSwept(e, args);
     }
     else if (f.selector == sig:getAssetDrawnShares(uint256).selector) {
         return getAssetDrawnShares(e, args);
