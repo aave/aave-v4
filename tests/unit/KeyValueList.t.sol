@@ -9,15 +9,69 @@ import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 contract KeyValueListTest is Test {
   using KeyValueList for KeyValueList.List;
 
+  function test_add_unique() public {
+    KeyValueList.List memory list = KeyValueList.init(9);
+
+    list.add(0, 1, 1);
+    list.add(1, 100, 1e15);
+    list.add(2, 100, 5e20);
+    list.add(3, 5e4, 5e20);
+    list.add(4, 5e4, 1e12);
+    list.add(5, 45e6, 2.5e50);
+    list.add(6, 45e6, 10);
+    vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
+    list.add(7, 4294967295, 10000000000);
+    vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
+    list.add(7, 45e8, 10000000000);
+    vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
+    list.add(7, 75e9, 10000000000);
+    vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
+    list.add(8, 5e6, 2.696e67);
+    vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
+    list.add(8, 5e6, 5e70);
+    vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
+    list.add(8, 5e6, 12.5e75);
+
+    uint256 returnedKey;
+    uint256 returnedValue;
+    (returnedKey, returnedValue) = list.get(0);
+    assertEq(returnedKey, 1);
+    assertEq(returnedValue, 1);
+    (returnedKey, returnedValue) = list.get(1);
+    assertEq(returnedKey, 100);
+    assertEq(returnedValue, 1e15);
+    (returnedKey, returnedValue) = list.get(2);
+    assertEq(returnedKey, 100);
+    assertEq(returnedValue, 5e20);
+    (returnedKey, returnedValue) = list.get(3);
+    assertEq(returnedKey, 5e4);
+    assertEq(returnedValue, 5e20);
+    (returnedKey, returnedValue) = list.get(4);
+    assertEq(returnedKey, 5e4);
+    assertEq(returnedValue, 1e12);
+    (returnedKey, returnedValue) = list.get(5);
+    assertEq(returnedKey, 45e6);
+    assertEq(returnedValue, 2.5e50);
+    (returnedKey, returnedValue) = list.get(6);
+    assertEq(returnedKey, 45e6);
+    assertEq(returnedValue, 10);
+    (returnedKey, returnedValue) = list.get(7);
+    assertEq(returnedKey, 0);
+    assertEq(returnedValue, 0);
+    (returnedKey, returnedValue) = list.get(8);
+    assertEq(returnedKey, 0);
+    assertEq(returnedValue, 0);
+  }
+
   function test_fuzz_add(uint256 key, uint256 value) public {
     KeyValueList.List memory list = KeyValueList.init(5);
 
-    if (key >= KeyValueList._MAX_KEY || value > KeyValueList._MAX_VALUE) {
+    if (key >= KeyValueList._MAX_KEY || value >= KeyValueList._MAX_VALUE) {
       vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
     }
     list.add(0, key, value);
 
-    if (key < KeyValueList._MAX_KEY && value <= KeyValueList._MAX_VALUE) {
+    if (key < KeyValueList._MAX_KEY && value < KeyValueList._MAX_VALUE) {
       (uint256 storedKey, uint256 storedValue) = list.get(0);
       assertEq(storedKey, key);
       assertEq(storedValue, value);
