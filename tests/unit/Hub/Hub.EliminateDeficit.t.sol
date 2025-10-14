@@ -48,6 +48,18 @@ contract HubEliminateDeficitTest is HubBase {
     hub1.eliminateDeficit(assetId, vm.randomUint(), coveredSpoke);
   }
 
+  /// @dev paused but active spokes are allowed to eliminate deficit
+  function test_eliminateDeficit_allowSpokePaused() public {
+    _createDeficit(assetId, coveredSpoke, deficitAmount);
+    Utils.add(hub1, assetId, callerSpoke, deficitAmount + 1, alice);
+
+    updateSpokeActive(hub1, assetId, callerSpoke, true);
+    _updateSpokePaused(hub1, assetId, callerSpoke, true);
+
+    vm.prank(callerSpoke);
+    hub1.eliminateDeficit(assetId, deficitAmount, coveredSpoke);
+  }
+
   function test_eliminateDeficit(uint256) public {
     uint256 deficitAmount2 = deficitAmount / 2;
     _createDeficit(assetId, coveredSpoke, deficitAmount);
