@@ -27,14 +27,6 @@ jobs:
       - name: Run Gas report
         uses: bgd-labs/github-workflows/.github/actions/foundry-gas-report@main
 
-      - name: Run Lcov report
-        uses: bgd-labs/github-workflows/.github/actions/foundry-lcov-report@main
-
-      - name: Upload & Trigger Comment artifact
-        uses: bgd-labs/github-workflows/.github/actions/comment-artifact@main
-        with:
-          nameSuffix: "default"
-
       - name: Check committed gas snapshots
         uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
         with:
@@ -45,3 +37,11 @@ jobs:
         uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
         with:
           FOUNDRY_PROFILE: pr
+
+      - name: Run Lcov report
+        uses: bgd-labs/github-workflows/.github/actions/foundry-lcov-report@main
+
+      - name: Upload & Trigger Comment artifact
+        uses: bgd-labs/github-workflows/.github/actions/comment-artifact@main
+        with:
+          nameSuffix: "default"
