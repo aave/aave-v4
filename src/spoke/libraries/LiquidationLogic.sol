@@ -99,6 +99,7 @@ library LiquidationLogic {
   struct LiquidateDebtParams {
     uint256 debtReserveId;
     uint256 debtToLiquidate;
+    uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 accruedPremium;
     address liquidator;
@@ -207,6 +208,7 @@ library LiquidationLogic {
       LiquidateDebtParams({
         debtReserveId: params.debtReserveId,
         debtToLiquidate: debtToLiquidate,
+        drawnDebt: params.drawnDebt,
         premiumDebt: params.premiumDebt,
         accruedPremium: params.accruedPremium,
         liquidator: params.liquidator,
@@ -315,8 +317,9 @@ library LiquidationLogic {
     LiquidateDebtParams memory params
   ) internal returns (bool) {
     {
-      uint256 premiumDebtToLiquidate = params.premiumDebt.min(params.debtToLiquidate);
-      uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
+      (uint256 drawnDebtToLiquidate, uint256 premiumDebtToLiquidate) = params
+        .debtToLiquidate
+        .calculateRestoreAmount(params.drawnDebt, params.premiumDebt);
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: -debtPosition.premiumShares.toInt256(),
@@ -512,5 +515,19 @@ library LiquidationLogic {
       return false;
     }
     return !isDebtPositionEmpty || borrowedCount > 1;
+  }
+
+  function calculateRestoreAmount(
+    uint256 amount,
+    uint256 drawnDebt,
+    uint256 premiumDebt
+  ) internal pure returns (uint256, uint256) {
+    if (amount >= drawnDebt + premiumDebt) {
+      return (drawnDebt, premiumDebt);
+    }
+    if (amount <= premiumDebt) {
+      return (0, amount);
+    }
+    return (amount - premiumDebt, premiumDebt);
   }
 }

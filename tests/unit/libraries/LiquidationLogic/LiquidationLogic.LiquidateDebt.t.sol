@@ -135,6 +135,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       LiquidationLogic.LiquidateDebtParams({
         debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
+        drawnDebt: drawnDebt,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
         liquidator: liquidator,
@@ -155,8 +156,8 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     assertEq(asset.balanceOf(liquidator), initialLiquidatorBalance - debtToLiquidate);
   }
 
-  // reverts with arithmetic underflow if more debt is liquidated than the position has
-  function test_liquidateDebt_revertsWith_ArithmeticUnderflow() public {
+  // does not revert if more debt is attempted to be liquidated than the position has
+  function test_liquidateDebt_maxDebtToLiquidate_allowed() public {
     uint256 drawnDebt = 100e18;
     uint256 premiumDebt = 10e18;
     uint256 accruedPremium = 5e18;
@@ -164,11 +165,11 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
 
     uint256 debtToLiquidate = drawnDebt + premiumDebt + 1;
 
-    vm.expectRevert(stdError.arithmeticError);
     liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
         debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
+        drawnDebt: drawnDebt,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
         liquidator: liquidator,
@@ -192,6 +193,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       LiquidationLogic.LiquidateDebtParams({
         debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
+        drawnDebt: drawnDebt,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
         liquidator: liquidator,
@@ -215,6 +217,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       LiquidationLogic.LiquidateDebtParams({
         debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
+        drawnDebt: drawnDebt,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
         liquidator: liquidator,

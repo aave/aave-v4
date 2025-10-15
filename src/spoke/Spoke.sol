@@ -276,10 +276,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       assetId,
       userPosition
     );
-    (drawnDebtRestored, premiumDebtRestored) = _calculateRestoreAmount(
+    (drawnDebtRestored, premiumDebtRestored) = amount.calculateRestoreAmount(
       drawnDebtRestored,
-      premiumDebtRestored,
-      amount
+      premiumDebtRestored
     );
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
@@ -952,20 +951,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       InvalidCollateralFactorAndMaxLiquidationBonus()
     );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
-  }
-
-  function _calculateRestoreAmount(
-    uint256 drawnDebt,
-    uint256 premiumDebt,
-    uint256 amount
-  ) internal pure returns (uint256, uint256) {
-    if (amount >= drawnDebt + premiumDebt) {
-      return (drawnDebt, premiumDebt);
-    }
-    if (amount <= premiumDebt) {
-      return (0, amount);
-    }
-    return (amount - premiumDebt, premiumDebt);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
