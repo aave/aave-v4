@@ -21,6 +21,19 @@ contract HubRefreshPremiumTest is HubBase {
     hub1.refreshPremium(daiAssetId, premiumDelta);
   }
 
+  /// @dev paused but active spokes are allowed to refresh premium
+  function test_refreshPremium_pausedSpokesAllowed() public {
+    IHubBase.PremiumDelta memory premiumDelta;
+    updateSpokeActive(hub1, daiAssetId, address(spoke1), true);
+    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+
+    vm.expectEmit(address(hub1));
+    emit IHubBase.RefreshPremium(daiAssetId, address(spoke1), premiumDelta);
+
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(daiAssetId, premiumDelta);
+  }
+
   function test_refreshPremium_emitsEvent() public {
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, daiAssetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
