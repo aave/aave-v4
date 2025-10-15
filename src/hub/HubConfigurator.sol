@@ -113,8 +113,20 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
-      address spokeAddress = targetHub.getSpokeAddress(assetId, i);
-      _updateSpokeCaps(targetHub, assetId, spokeAddress, 0, 0);
+      address spoke = targetHub.getSpokeAddress(assetId, i);
+      _updateSpokeCaps(targetHub, assetId, spoke, 0, 0);
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function deactivateAsset(address hub, uint256 assetId) external onlyOwner {
+    IHub targetHub = IHub(hub);
+    uint256 spokesCount = targetHub.getSpokeCount(assetId);
+    for (uint256 i = 0; i < spokesCount; ++i) {
+      address spoke = targetHub.getSpokeAddress(assetId, i);
+      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+      config.active = false;
+      targetHub.updateSpokeConfig(assetId, spoke, config);
     }
   }
 
@@ -123,10 +135,10 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
-      address spokeAddress = targetHub.getSpokeAddress(assetId, i);
-      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spokeAddress);
-      config.active = false;
-      targetHub.updateSpokeConfig(assetId, spokeAddress, config);
+      address spoke = targetHub.getSpokeAddress(assetId, i);
+      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+      config.paused = true;
+      targetHub.updateSpokeConfig(assetId, spoke, config);
     }
   }
 
@@ -147,8 +159,9 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256[] calldata assetIds,
     IHub.SpokeConfig[] calldata configs
   ) external onlyOwner {
-    require(assetIds.length == configs.length, MismatchedConfigs());
-    for (uint256 i = 0; i < assetIds.length; ++i) {
+    uint256 assetCount = assetIds.length;
+    require(assetCount == configs.length, MismatchedConfigs());
+    for (uint256 i = 0; i < assetCount; ++i) {
       IHub(hub).addSpoke(assetIds[i], spoke, configs[i]);
     }
   }
@@ -163,6 +176,19 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     config.active = active;
+    targetHub.updateSpokeConfig(assetId, spoke, config);
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function updateSpokePaused(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    bool paused
+  ) external onlyOwner {
+    IHub targetHub = IHub(hub);
+    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    config.paused = paused;
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
@@ -204,13 +230,26 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function pauseSpoke(address hub, address spoke) external onlyOwner {
+  function deactivateSpoke(address hub, address spoke) external onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
       if (targetHub.isSpokeListed(assetId, spoke)) {
         IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
         config.active = false;
+        targetHub.updateSpokeConfig(assetId, spoke, config);
+      }
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function pauseSpoke(address hub, address spoke) external onlyOwner {
+    IHub targetHub = IHub(hub);
+    uint256 assetCount = targetHub.getAssetCount();
+    for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
+      if (targetHub.isSpokeListed(assetId, spoke)) {
+        IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+        config.paused = true;
         targetHub.updateSpokeConfig(assetId, spoke, config);
       }
     }
