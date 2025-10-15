@@ -48,7 +48,7 @@ jobs:
         with:
           ROOT_REPORT_PATH: "lcov/lcov.info" # The path to the first contract to compare
           REPORT_PATH: "lcov.info" # The path to the second contract to compare
-          COVERAGE_COMMAND: "make coverage"
+          COVERAGE_COMMAND: "sudo apt-get -y install lcov && make coverage"
 
       - name: Prepare comment
         shell: bash
