@@ -93,7 +93,6 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) public {
     params = _bound(params);
-    console.log('test bound');
     params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, type(uint256).max);
     console.log('params.debtToCover', params.debtToCover);
     (
