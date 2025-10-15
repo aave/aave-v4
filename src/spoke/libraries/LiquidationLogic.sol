@@ -20,6 +20,7 @@ library LiquidationLogic {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using MathUtils for *;
+  using LiquidationLogic for *;
 
   struct LiquidateUserParams {
     uint256 collateralReserveId;
@@ -328,7 +329,7 @@ library LiquidationLogic {
         premiumDelta,
         params.liquidator
       );
-      settlePremiumDebt(debtPosition, premiumDelta.realizedDelta);
+      debtPosition.settlePremiumDebt(premiumDelta.realizedDelta);
       debtPosition.drawnShares -= drawnSharesLiquidated.toUint128();
     }
 

@@ -30,6 +30,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   using KeyValueList for KeyValueList.List;
   using PositionStatusMap for *;
   using MathUtils for *;
+  using LiquidationLogic for *;
 
   /// @inheritdoc ISpoke
   uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
@@ -294,7 +295,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       msg.sender
     );
 
-    LiquidationLogic.settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
+    userPosition.settlePremiumDebt(premiumDelta.realizedDelta);
     userPosition.drawnShares -= restoredShares.toUint128();
     if (userPosition.drawnShares == 0) {
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
@@ -852,7 +853,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         premiumDebtReported,
         premiumDelta
       );
-      LiquidationLogic.settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
+      userPosition.settlePremiumDebt(premiumDelta.realizedDelta);
       userPosition.drawnShares -= deficitShares.toUint128();
       positionStatus.setBorrowing(reserveId, false);
     }
@@ -936,6 +937,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     );
   }
 
+  function _validateReserveConfig(ReserveConfig calldata config) internal pure {
+    require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
+  }
+
   /// @dev Enforces compatible `maxLiquidationBonus` and `collateralFactor` so at the moment debt is created
   /// there is enough collateral to cover liquidation.
   function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
@@ -977,9 +982,5 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     assembly ('memory-safe') {
       fnOut := fnIn
     }
-  }
-
-  function _validateReserveConfig(ReserveConfig calldata config) internal pure {
-    require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
   }
 }

@@ -127,7 +127,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator.
   /// @param user The owner of the position being modified.
-  /// @param usingAsCollateral Boolean whether the reserve is enabled or disabled as collateral.
+  /// @param usingAsCollateral Whether the reserve is enabled or disabled as collateral.
   event SetUsingAsCollateral(
     uint256 indexed reserveId,
     address indexed caller,
