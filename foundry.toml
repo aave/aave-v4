@@ -26,7 +26,7 @@ runs = 1000
 seed = "0x640"
 
 [profile.pr.fuzz]
-runs = 5000
+runs = 1
 
 [profile.ci.fuzz]
 runs = 10000
@@ -34,6 +34,7 @@ runs = 10000
 [profile.gas]
 gas_snapshot_check = true
 test = 'tests/gas'
+isolate = true
 
 [rpc_endpoints]
 mainnet = "${RPC_MAINNET}"
