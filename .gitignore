@@ -9,7 +9,6 @@ out/
 .idea
 .vscode
 
-# well, looks strange to ignore package-lock, but we have only pretter and it's temproray
 package-lock.json
 node_modules
 
