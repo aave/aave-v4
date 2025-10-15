@@ -329,16 +329,18 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue(_spokes, assetId);
     _validateEliminateDeficit(callerSpoke, amount);
-    uint256 deficit = coveredSpoke.deficit;
-    require(amount <= deficit, InvalidAmount());
+    uint256 spokeDeficit = coveredSpoke.deficit;
+    require(amount <= spokeDeficit, InvalidAmount());
+    uint256 assetDeficit = asset.deficit;
 
     uint128 shares = asset.toAddedSharesUp(amount).toUint128();
-    asset.addedShares -= shares;
-    uint128 callerAddedShares = callerSpoke.addedShares;
-    require(shares <= callerAddedShares, AddedSharesExceeded(callerAddedShares));
-    callerSpoke.addedShares = callerAddedShares.uncheckedSub(shares).toUint128();
-    asset.deficit -= amount.toUint128();
-    coveredSpoke.deficit = deficit.uncheckedSub(amount).toUint128();
+    uint128 assetAddedShares = asset.addedShares;
+    uint128 spokeAddedShares = callerSpoke.addedShares;
+    require(shares <= spokeAddedShares, AddedSharesExceeded(spokeAddedShares));
+    callerSpoke.addedShares = spokeAddedShares.uncheckedSub(shares).toUint128();
+    asset.addedShares = assetAddedShares.uncheckedSub(shares).toUint128();
+    asset.deficit = assetDeficit.uncheckedSub(amount).toUint128();
+    coveredSpoke.deficit = spokeDeficit.uncheckedSub(amount).toUint128();
 
     asset.updateDrawnRate(assetId);
 
