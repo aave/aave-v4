@@ -294,7 +294,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       msg.sender
     );
 
-    _settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
+    LiquidationLogic.settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
     userPosition.drawnShares -= restoredShares.toUint128();
     if (userPosition.drawnShares == 0) {
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
@@ -470,11 +470,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
-  function getLiquidationLogic() external pure returns (address) {
-    return address(LiquidationLogic);
-  }
-
-  /// @inheritdoc ISpoke
   function getLiquidationConfig() external view returns (LiquidationConfig memory) {
     return _liquidationConfig;
   }
@@ -638,6 +633,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparator();
+  }
+
+  /// @inheritdoc ISpoke
+  function getLiquidationLogic() external pure returns (address) {
+    return address(LiquidationLogic);
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
@@ -852,19 +852,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         premiumDebtReported,
         premiumDelta
       );
-      _settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
+      LiquidationLogic.settlePremiumDebt(userPosition, premiumDelta.realizedDelta);
       userPosition.drawnShares -= deficitShares.toUint128();
       positionStatus.setBorrowing(reserveId, false);
     }
     // non-zero deficit means user ends up with zero total debt
     emit UpdateUserRiskPremium(user, 0);
-  }
-
-  /// @notice Settles the premium debt by realizing change in premium and resetting premium shares and offset.
-  function _settlePremiumDebt(UserPosition storage userPosition, int256 realizedDelta) internal {
-    userPosition.premiumShares = 0;
-    userPosition.premiumOffset = 0;
-    userPosition.realizedPremium = userPosition.realizedPremium.add(realizedDelta).toUint128();
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {

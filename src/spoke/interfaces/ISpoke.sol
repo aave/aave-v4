@@ -374,10 +374,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     bytes32 permitS
   ) external;
 
-  /// @notice Returns the address of the external `LiquidationLogic` library.
-  /// @return The address of the library.
-  function getLiquidationLogic() external pure returns (address);
-
   /// @notice Returns the liquidation config struct.
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
 
@@ -462,6 +458,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Returns the EIP-712 domain separator.
   function DOMAIN_SEPARATOR() external view returns (bytes32);
+
+  /// @notice Returns the address of the external `LiquidationLogic` library.
+  /// @return The address of the library.
+  function getLiquidationLogic() external pure returns (address);
 
   /// @notice Returns the maximum allowed value for an asset identifier.
   /// @return The maximum asset identifier value (inclusive).

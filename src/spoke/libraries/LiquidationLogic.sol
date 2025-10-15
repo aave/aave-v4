@@ -117,7 +117,7 @@ library LiquidationLogic {
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
   // see ISpoke.DUST_LIQUIDATION_THRESHOLD docs
-  uint256 constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
+  uint256 public constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
 
   /// @notice Liquidates a user position.
   /// @param collateralReserve The collateral reserve to seize during liquidation.
@@ -232,6 +232,46 @@ library LiquidationLogic {
       });
   }
 
+  /// @notice Calculates the liquidation bonus at a given health factor.
+  /// @dev Liquidation Bonus is expressed as a BPS value greater than `PercentageMath.PERCENTAGE_FACTOR`.
+  /// @param healthFactorForMaxBonus The health factor for max bonus.
+  /// @param liquidationBonusFactor The liquidation bonus factor.
+  /// @param healthFactor The health factor.
+  /// @param maxLiquidationBonus The max liquidation bonus.
+  /// @return The liquidation bonus.
+  function calculateLiquidationBonus(
+    uint256 healthFactorForMaxBonus,
+    uint256 liquidationBonusFactor,
+    uint256 healthFactor,
+    uint256 maxLiquidationBonus
+  ) internal pure returns (uint256) {
+    if (healthFactor <= healthFactorForMaxBonus) {
+      return maxLiquidationBonus;
+    }
+
+    uint256 minLiquidationBonus = (maxLiquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
+      .percentMulDown(liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
+
+    // linear interpolation between min and max
+    // denominator cannot be zero as healthFactorForMaxBonus is always < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    return
+      minLiquidationBonus +
+      (maxLiquidationBonus - minLiquidationBonus).mulDivDown(
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactor,
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactorForMaxBonus
+      );
+  }
+
+  /// @notice Settles the premium debt by realizing change in premium and resetting premium shares and offset.
+  function settlePremiumDebt(
+    ISpoke.UserPosition storage debtPosition,
+    int256 realizedDelta
+  ) internal {
+    debtPosition.premiumShares = 0;
+    debtPosition.premiumOffset = 0;
+    debtPosition.realizedPremium = debtPosition.realizedPremium.add(realizedDelta).toUint128();
+  }
+
   /// @dev Invoked by `liquidateUser` method.
   /// @return True if the collateral position is empty, false otherwise.
   function _liquidateCollateral(
@@ -288,7 +328,7 @@ library LiquidationLogic {
         premiumDelta,
         params.liquidator
       );
-      _settlePremiumDebt(debtPosition, premiumDelta.realizedDelta);
+      settlePremiumDebt(debtPosition, premiumDelta.realizedDelta);
       debtPosition.drawnShares -= drawnSharesLiquidated.toUint128();
     }
 
@@ -298,46 +338,6 @@ library LiquidationLogic {
     }
 
     return false;
-  }
-
-  /// @dev Invoked by `_liquidateDebt` method.
-  function _settlePremiumDebt(
-    ISpoke.UserPosition storage debtPosition,
-    int256 realizedDelta
-  ) internal {
-    debtPosition.premiumShares = 0;
-    debtPosition.premiumOffset = 0;
-    debtPosition.realizedPremium = debtPosition.realizedPremium.add(realizedDelta).toUint128();
-  }
-
-  /// @notice Calculates the liquidation bonus at a given health factor.
-  /// @dev Liquidation Bonus is expressed as a BPS value greater than `PercentageMath.PERCENTAGE_FACTOR`.
-  /// @param healthFactorForMaxBonus The health factor for max bonus.
-  /// @param liquidationBonusFactor The liquidation bonus factor.
-  /// @param healthFactor The health factor.
-  /// @param maxLiquidationBonus The max liquidation bonus.
-  /// @return The liquidation bonus.
-  function calculateLiquidationBonus(
-    uint256 healthFactorForMaxBonus,
-    uint256 liquidationBonusFactor,
-    uint256 healthFactor,
-    uint256 maxLiquidationBonus
-  ) internal pure returns (uint256) {
-    if (healthFactor <= healthFactorForMaxBonus) {
-      return maxLiquidationBonus;
-    }
-
-    uint256 minLiquidationBonus = (maxLiquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
-      .percentMulDown(liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
-
-    // linear interpolation between min and max
-    // denominator cannot be zero as healthFactorForMaxBonus is always < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    return
-      minLiquidationBonus +
-      (maxLiquidationBonus - minLiquidationBonus).mulDivDown(
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactor,
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactorForMaxBonus
-      );
   }
 
   /// @notice Validates the liquidation call.
