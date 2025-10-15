@@ -139,7 +139,11 @@ contract Hub is IHub, AccessManaged {
     }
 
     if (asset.feeReceiver != config.feeReceiver) {
-      _updateSpokeConfig(assetId, asset.feeReceiver, SpokeConfig(true, 0, 0));
+      _updateSpokeConfig(
+        assetId,
+        asset.feeReceiver,
+        SpokeConfig({active: true, paused: false, addCap: 0, drawCap: 0})
+      );
       asset.feeReceiver = config.feeReceiver;
       _addFeeReceiver(assetId, config.feeReceiver);
     }
@@ -636,17 +640,16 @@ contract Hub is IHub, AccessManaged {
     address spoke
   ) external view returns (SpokeConfig memory) {
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    return SpokeConfig(spokeData.active, spokeData.addCap, spokeData.drawCap);
+    return SpokeConfig(spokeData.active, spokeData.paused, spokeData.addCap, spokeData.drawCap);
   }
 
   /// @notice Adds a new spoke to an asset with default feeReceiver configuration (maximum add cap, zero draw cap).
-  /// @dev Emits `AddSpoke` and `UpdateSpokeConfig` events.
   function _addFeeReceiver(uint256 assetId, address feeReceiver) internal {
     _addSpoke(assetId, feeReceiver);
     _updateSpokeConfig(
       assetId,
       feeReceiver,
-      SpokeConfig({addCap: MAX_ALLOWED_SPOKE_CAP, drawCap: 0, active: true})
+      SpokeConfig({active: true, paused: false, addCap: MAX_ALLOWED_SPOKE_CAP, drawCap: 0})
     );
   }
 
@@ -660,6 +663,7 @@ contract Hub is IHub, AccessManaged {
   function _updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig memory config) internal {
     SpokeData storage spokeData = _spokes[assetId][spoke];
     spokeData.active = config.active;
+    spokeData.paused = config.paused;
     spokeData.addCap = config.addCap;
     spokeData.drawCap = config.drawCap;
     emit UpdateSpokeConfig(assetId, spoke, config);
@@ -758,6 +762,7 @@ contract Hub is IHub, AccessManaged {
     require(from != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
+    require(!spoke.paused, SpokePaused());
     uint256 addCap = spoke.addCap;
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
@@ -776,6 +781,7 @@ contract Hub is IHub, AccessManaged {
     require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
+    require(!spoke.paused, SpokePaused());
     uint256 removable = asset.toAddedAssetsDown(spoke.addedShares);
     require(amount <= removable, AddedAmountExceeded(removable));
   }
@@ -790,6 +796,7 @@ contract Hub is IHub, AccessManaged {
     require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
+    require(!spoke.paused, SpokePaused());
     uint256 drawCap = spoke.drawCap;
     uint256 owed = _getSpokeDrawn(asset, spoke) + _getSpokePremium(asset, spoke);
     require(
@@ -809,6 +816,7 @@ contract Hub is IHub, AccessManaged {
     require(from != address(this), InvalidAddress());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
+    require(!spoke.paused, SpokePaused());
     uint256 drawn = _getSpokeDrawn(asset, spoke);
     uint256 premium = _getSpokePremium(asset, spoke);
     require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
@@ -822,6 +830,7 @@ contract Hub is IHub, AccessManaged {
     uint256 premiumAmount
   ) internal view {
     require(spoke.active, SpokeNotActive());
+    require(!spoke.paused, SpokePaused());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
     uint256 drawn = _getSpokeDrawn(asset, spoke);
     uint256 premium = _getSpokePremium(asset, spoke);
@@ -836,6 +845,7 @@ contract Hub is IHub, AccessManaged {
 
   function _validatePayFeeShares(SpokeData storage senderSpoke, uint256 feeShares) internal view {
     require(senderSpoke.active, SpokeNotActive());
+    require(!senderSpoke.paused, SpokePaused());
     require(feeShares > 0, InvalidShares());
   }
 
@@ -846,6 +856,7 @@ contract Hub is IHub, AccessManaged {
     uint256 shares
   ) internal view {
     require(sender.active && receiver.active, SpokeNotActive());
+    require(!sender.paused && !receiver.paused, SpokePaused());
     require(shares > 0, InvalidShares());
     uint256 addCap = receiver.addCap;
     require(
