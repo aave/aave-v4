@@ -36,12 +36,6 @@ jobs:
       - name: Run Lcov report
         uses: bgd-labs/github-workflows/.github/actions/foundry-lcov-report@main
 
-      - name: Cache Save
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
-        with:
-          name: lcov-report
-          path: lcov/lcov.info
-
       - name: Upload & Trigger Comment artifact
         uses: bgd-labs/github-workflows/.github/actions/comment-artifact@main
         with:
