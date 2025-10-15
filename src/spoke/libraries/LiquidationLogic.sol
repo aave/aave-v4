@@ -280,13 +280,15 @@ library LiquidationLogic {
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage positions,
     LiquidateCollateralParams memory params
   ) internal returns (bool) {
+    ISpoke.UserPosition storage collateralPosition = positions[params.user][
+      params.collateralReserveId
+    ];
     IHubBase hub = collateralReserve.hub;
     uint256 assetId = collateralReserve.assetId;
 
     uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
 
-    positions[params.user][params.collateralReserveId].suppliedShares -= sharesToLiquidate
-      .toUint128();
+    collateralPosition.suppliedShares -= sharesToLiquidate.toUint128();
 
     uint256 sharesToLiquidator;
     if (params.receiveShares) {
@@ -301,7 +303,7 @@ library LiquidationLogic {
       hub.payFeeShares(assetId, sharesToLiquidate.uncheckedSub(sharesToLiquidator));
     }
 
-    return positions[params.user][params.collateralReserveId].suppliedShares == 0;
+    return collateralPosition.suppliedShares == 0;
   }
 
   /// @dev Invoked by `liquidateUser` method.
