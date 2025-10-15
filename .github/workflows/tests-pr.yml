@@ -27,19 +27,11 @@ jobs:
       - name: Run Gas report
         uses: bgd-labs/github-workflows/.github/actions/foundry-gas-report@main
 
-      - name: Check committed gas snapshots
-        uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
-        with:
-          FOUNDRY_PROFILE: gas
-          FORGE_SNAPSHOT_CHECK: true
-
       - name: Run Forge tests
         uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
         with:
           FOUNDRY_PROFILE: pr
-
-      - name: Run Lcov report
-        uses: bgd-labs/github-workflows/.github/actions/foundry-lcov-report@main
+          FORGE_SNAPSHOT_CHECK: true
 
       - name: Upload & Trigger Comment artifact
         uses: bgd-labs/github-workflows/.github/actions/comment-artifact@main
