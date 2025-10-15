@@ -35,8 +35,13 @@ jobs:
         with:
           nameSuffix: "default"
 
+      - name: Check committed gas snapshots
+        uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
+        with:
+          FOUNDRY_PROFILE: gas
+          FORGE_SNAPSHOT_CHECK: true
+
       - name: Run Forge tests
         uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
         with:
           FOUNDRY_PROFILE: pr
-          FORGE_SNAPSHOT_CHECK: true

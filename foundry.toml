@@ -34,6 +34,7 @@ runs = 10000
 [profile.gas]
 gas_snapshot_check = true
 test = 'tests/gas'
+isolate = true
 
 [rpc_endpoints]
 mainnet = "${RPC_MAINNET}"
