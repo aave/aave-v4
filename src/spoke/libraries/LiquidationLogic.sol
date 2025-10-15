@@ -117,7 +117,7 @@ library LiquidationLogic {
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
   // see ISpoke.DUST_LIQUIDATION_THRESHOLD docs
-  uint256 constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
+  uint256 public constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
 
   /// @notice Liquidates a user position.
   /// @param collateralReserve The collateral reserve to seize during liquidation.
@@ -127,7 +127,7 @@ library LiquidationLogic {
   /// @param liquidationConfig The liquidation config.
   /// @param collateralDynConfig The collateral dynamic config.
   /// @param params The liquidate user params.
-  /// @return True if the liquidation results in deficit, false otherwise.
+  /// @return True if the liquidation results in deficit.
   function liquidateUser(
     ISpoke.Reserve storage collateralReserve,
     ISpoke.Reserve storage debtReserve,
@@ -232,6 +232,114 @@ library LiquidationLogic {
       });
   }
 
+  /// @notice Calculates the liquidation bonus at a given health factor.
+  /// @dev Liquidation Bonus is expressed as a BPS value greater than `PercentageMath.PERCENTAGE_FACTOR`.
+  /// @param healthFactorForMaxBonus The health factor for max bonus.
+  /// @param liquidationBonusFactor The liquidation bonus factor.
+  /// @param healthFactor The health factor.
+  /// @param maxLiquidationBonus The max liquidation bonus.
+  /// @return The liquidation bonus.
+  function calculateLiquidationBonus(
+    uint256 healthFactorForMaxBonus,
+    uint256 liquidationBonusFactor,
+    uint256 healthFactor,
+    uint256 maxLiquidationBonus
+  ) internal pure returns (uint256) {
+    if (healthFactor <= healthFactorForMaxBonus) {
+      return maxLiquidationBonus;
+    }
+
+    uint256 minLiquidationBonus = (maxLiquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
+      .percentMulDown(liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
+
+    // linear interpolation between min and max
+    // denominator cannot be zero as healthFactorForMaxBonus is always < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    return
+      minLiquidationBonus +
+      (maxLiquidationBonus - minLiquidationBonus).mulDivDown(
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactor,
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactorForMaxBonus
+      );
+  }
+
+  /// @notice Settles the premium debt by realizing change in premium and resetting premium shares and offset.
+  function settlePremiumDebt(
+    ISpoke.UserPosition storage debtPosition,
+    int256 realizedDelta
+  ) internal {
+    debtPosition.premiumShares = 0;
+    debtPosition.premiumOffset = 0;
+    debtPosition.realizedPremium = debtPosition.realizedPremium.add(realizedDelta).toUint128();
+  }
+
+  /// @dev Invoked by `liquidateUser` method.
+  /// @return True if the collateral position is empty, false otherwise.
+  function _liquidateCollateral(
+    ISpoke.Reserve storage collateralReserve,
+    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage positions,
+    LiquidateCollateralParams memory params
+  ) internal returns (bool) {
+    IHubBase hub = collateralReserve.hub;
+    uint256 assetId = collateralReserve.assetId;
+
+    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
+
+    positions[params.user][params.collateralReserveId].suppliedShares -= sharesToLiquidate
+      .toUint128();
+
+    uint256 sharesToLiquidator;
+    if (params.receiveShares) {
+      sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
+      positions[params.liquidator][params.collateralReserveId].suppliedShares += sharesToLiquidator
+        .toUint128();
+    } else {
+      sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
+    }
+
+    if (sharesToLiquidate > sharesToLiquidator) {
+      hub.payFeeShares(assetId, sharesToLiquidate.uncheckedSub(sharesToLiquidator));
+    }
+
+    return positions[params.user][params.collateralReserveId].suppliedShares == 0;
+  }
+
+  /// @dev Invoked by `liquidateUser` method.
+  /// @return True if the debt position becomes zero after restoring.
+  function _liquidateDebt(
+    ISpoke.Reserve storage debtReserve,
+    ISpoke.UserPosition storage debtPosition,
+    ISpoke.PositionStatus storage positionStatus,
+    LiquidateDebtParams memory params
+  ) internal returns (bool) {
+    {
+      uint256 premiumDebtToLiquidate = params.premiumDebt.min(params.debtToLiquidate);
+      uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
+
+      IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+        sharesDelta: -debtPosition.premiumShares.toInt256(),
+        offsetDelta: -debtPosition.premiumOffset.toInt256(),
+        realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
+      });
+
+      uint256 drawnSharesLiquidated = debtReserve.hub.restore(
+        debtReserve.assetId,
+        drawnDebtToLiquidate,
+        premiumDebtToLiquidate,
+        premiumDelta,
+        params.liquidator
+      );
+      settlePremiumDebt(debtPosition, premiumDelta.realizedDelta);
+      debtPosition.drawnShares -= drawnSharesLiquidated.toUint128();
+    }
+
+    if (debtPosition.drawnShares == 0) {
+      positionStatus.setBorrowing(params.debtReserveId, false);
+      return true;
+    }
+
+    return false;
+  }
+
   /// @notice Validates the liquidation call.
   /// @param params The validate liquidation call params.
   function _validateLiquidationCall(ValidateLiquidationCallParams memory params) internal pure {
@@ -331,36 +439,6 @@ library LiquidationLogic {
     return (collateralToLiquidate, collateralToLiquidator, debtToLiquidate);
   }
 
-  /// @notice Calculates the liquidation bonus at a given health factor.
-  /// @dev Liquidation Bonus is expressed as a BPS value greater than `PercentageMath.PERCENTAGE_FACTOR`.
-  /// @param healthFactorForMaxBonus The health factor for max bonus.
-  /// @param liquidationBonusFactor The liquidation bonus factor.
-  /// @param healthFactor The health factor.
-  /// @param maxLiquidationBonus The max liquidation bonus.
-  /// @return The liquidation bonus.
-  function calculateLiquidationBonus(
-    uint256 healthFactorForMaxBonus,
-    uint256 liquidationBonusFactor,
-    uint256 healthFactor,
-    uint256 maxLiquidationBonus
-  ) internal pure returns (uint256) {
-    if (healthFactor <= healthFactorForMaxBonus) {
-      return maxLiquidationBonus;
-    }
-
-    uint256 minLiquidationBonus = (maxLiquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
-      .percentMulDown(liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
-
-    // linear interpolation between min and max
-    // denominator cannot be zero as healthFactorForMaxBonus is always < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    return
-      minLiquidationBonus +
-      (maxLiquidationBonus - minLiquidationBonus).mulDivDown(
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactor,
-        HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactorForMaxBonus
-      );
-  }
-
   /// @notice Calculates the debt that should be liquidated.
   /// @dev Generally, it returns the minimum of `debtToCover`, `debtReserveBalance` and `debtToTarget`.
   /// If debt dust would be left behind, it returns `debtReserveBalance` to ensure the debt is fully cleared and no dust is left.
@@ -420,74 +498,6 @@ library LiquidationLogic {
       );
   }
 
-  /// @dev Invoked by `liquidateUser` method.
-  /// @return True if the debt position becomes zero after restoring, false otherwise.
-  function _liquidateDebt(
-    ISpoke.Reserve storage debtReserve,
-    ISpoke.UserPosition storage debtPosition,
-    ISpoke.PositionStatus storage positionStatus,
-    LiquidateDebtParams memory params
-  ) internal returns (bool) {
-    {
-      uint256 premiumDebtToLiquidate = params.premiumDebt.min(params.debtToLiquidate);
-      uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
-
-      IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-        sharesDelta: -debtPosition.premiumShares.toInt256(),
-        offsetDelta: -debtPosition.premiumOffset.toInt256(),
-        realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
-      });
-
-      uint256 drawnSharesLiquidated = debtReserve.hub.restore(
-        debtReserve.assetId,
-        drawnDebtToLiquidate,
-        premiumDebtToLiquidate,
-        premiumDelta,
-        params.liquidator
-      );
-      _settlePremiumDebt(debtPosition, premiumDelta.realizedDelta);
-      debtPosition.drawnShares -= drawnSharesLiquidated.toUint128();
-    }
-
-    if (debtPosition.drawnShares == 0) {
-      positionStatus.setBorrowing(params.debtReserveId, false);
-      return true;
-    }
-
-    return false;
-  }
-
-  /// @dev Invoked by `liquidateUser` method.
-  /// @return True if the collateral position is empty, false otherwise.
-  function _liquidateCollateral(
-    ISpoke.Reserve storage collateralReserve,
-    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage positions,
-    LiquidateCollateralParams memory params
-  ) internal returns (bool) {
-    IHubBase hub = collateralReserve.hub;
-    uint256 assetId = collateralReserve.assetId;
-
-    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
-
-    positions[params.user][params.collateralReserveId].suppliedShares -= sharesToLiquidate
-      .toUint128();
-
-    uint256 sharesToLiquidator;
-    if (params.receiveShares) {
-      sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
-      positions[params.liquidator][params.collateralReserveId].suppliedShares += sharesToLiquidator
-        .toUint128();
-    } else {
-      sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
-    }
-
-    if (sharesToLiquidate > sharesToLiquidator) {
-      hub.payFeeShares(assetId, sharesToLiquidate.uncheckedSub(sharesToLiquidator));
-    }
-
-    return positions[params.user][params.collateralReserveId].suppliedShares == 0;
-  }
-
   /// @notice Returns if the liquidation results in deficit.
   function _evaluateDeficit(
     bool isCollateralPositionEmpty,
@@ -499,14 +509,5 @@ library LiquidationLogic {
       return false;
     }
     return !isDebtPositionEmpty || borrowedCount > 1;
-  }
-
-  function _settlePremiumDebt(
-    ISpoke.UserPosition storage debtPosition,
-    int256 realizedDelta
-  ) internal {
-    debtPosition.premiumShares = 0;
-    debtPosition.premiumOffset = 0;
-    debtPosition.realizedPremium = debtPosition.realizedPremium.add(realizedDelta).toUint128();
   }
 }

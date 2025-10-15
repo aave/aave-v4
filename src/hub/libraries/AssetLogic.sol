@@ -179,11 +179,11 @@ library AssetLogic {
     uint256 liquidityFee = asset.liquidityFee;
     if (liquidityFee == 0) return 0;
 
-    // @dev we do not simplify further to avoid overestimating the liquidity growth
-    uint256 feesAmount = (asset.drawnShares.rayMulDown(indexDelta) +
+    // we do not simplify further to avoid overestimating the liquidity growth
+    uint256 feeAmount = (asset.drawnShares.rayMulDown(indexDelta) +
       asset.premiumShares.rayMulDown(indexDelta)).percentMulDown(liquidityFee);
 
-    return feesAmount.toSharesDown(asset.totalAddedAssets() - feesAmount, asset.addedShares);
+    return feeAmount.toSharesDown(asset.totalAddedAssets() - feeAmount, asset.addedShares);
   }
 
   /// @notice Calculates the amount of unrealized fee shares since last accrual.
