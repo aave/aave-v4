@@ -27,12 +27,6 @@ jobs:
       - name: Run Gas report
         uses: bgd-labs/github-workflows/.github/actions/foundry-gas-report@main
 
-      # - name: Run Forge tests
-      #   uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
-      #   with:
-      #     FOUNDRY_PROFILE: pr
-      #     FORGE_SNAPSHOT_CHECK: true
-
       - name: Run Lcov report
         uses: bgd-labs/github-workflows/.github/actions/foundry-lcov-report@main
 
@@ -40,3 +34,9 @@ jobs:
         uses: bgd-labs/github-workflows/.github/actions/comment-artifact@main
         with:
           nameSuffix: "default"
+
+      - name: Run Forge tests
+        uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
+        with:
+          FOUNDRY_PROFILE: pr
+          FORGE_SNAPSHOT_CHECK: true
