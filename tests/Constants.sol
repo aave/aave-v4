@@ -6,7 +6,7 @@ library Constants {
   /// @dev Hub Constants
   uint8 public constant MAX_ALLOWED_UNDERLYING_DECIMALS = 18;
   uint8 public constant MIN_ALLOWED_UNDERLYING_DECIMALS = 6;
-  uint56 public constant MAX_ALLOWED_SPOKE_CAP = type(uint56).max;
+  uint40 public constant MAX_ALLOWED_SPOKE_CAP = type(uint40).max;
 
   /// @dev Spoke Constants
   uint8 public constant ORACLE_DECIMALS = 8;

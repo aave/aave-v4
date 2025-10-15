@@ -100,7 +100,7 @@ contract HubTransferSharesTest is HubBase {
   }
 
   function test_transferShares_revertsWith_AddCapExceeded() public {
-    uint56 newSupplyCap = 1000;
+    uint40 newSupplyCap = 1000;
 
     uint256 supplyAmount = newSupplyCap * 10 ** tokenList.dai.decimals() + 1;
     Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);

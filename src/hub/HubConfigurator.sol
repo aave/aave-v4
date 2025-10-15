@@ -201,7 +201,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external onlyOwner {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-    config.addCap = addCap.toUint56();
+    config.addCap = addCap.toUint40();
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
@@ -214,7 +214,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external onlyOwner {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-    config.drawCap = drawCap.toUint56();
+    config.drawCap = drawCap.toUint40();
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
@@ -284,8 +284,8 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 drawCap
   ) internal {
     IHub.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
-    config.addCap = addCap.toUint56();
-    config.drawCap = drawCap.toUint56();
+    config.addCap = addCap.toUint40();
+    config.drawCap = drawCap.toUint40();
     hub.updateSpokeConfig(assetId, spoke, config);
   }
 }

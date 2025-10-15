@@ -35,7 +35,7 @@ contract Hub is IHub, AccessManaged {
   uint8 public constant MIN_ALLOWED_UNDERLYING_DECIMALS = 6;
 
   /// @inheritdoc IHub
-  uint56 public constant MAX_ALLOWED_SPOKE_CAP = type(uint56).max;
+  uint40 public constant MAX_ALLOWED_SPOKE_CAP = type(uint40).max;
 
   /// @inheritdoc IHub
   uint24 public constant MAX_ALLOWED_RISK_PREMIUM = 1000_00; // 1000.00%

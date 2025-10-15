@@ -811,7 +811,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateSpokeSupplyCap() public {
-    uint56 newSupplyCap = 100;
+    uint40 newSupplyCap = 100;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
     expectedSpokeConfig.addCap = newSupplyCap;
     vm.expectCall(
@@ -830,7 +830,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateSpokeDrawCap() public {
-    uint56 newDrawCap = 100;
+    uint40 newDrawCap = 100;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
     expectedSpokeConfig.drawCap = newDrawCap;
     vm.expectCall(
@@ -849,8 +849,8 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateSpokeCaps() public {
-    uint56 newSupplyCap = 100;
-    uint56 newDrawCap = 200;
+    uint40 newSupplyCap = 100;
+    uint40 newDrawCap = 200;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
     expectedSpokeConfig.addCap = newSupplyCap;
     expectedSpokeConfig.drawCap = newDrawCap;

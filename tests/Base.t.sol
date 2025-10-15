@@ -1247,7 +1247,7 @@ abstract contract Base is Test {
     IHub hub,
     uint256 assetId,
     address spoke,
-    uint56 newDrawCap
+    uint40 newDrawCap
   ) internal pausePrank {
     IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.drawCap = newDrawCap;

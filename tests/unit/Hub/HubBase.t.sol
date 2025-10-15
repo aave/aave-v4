@@ -49,7 +49,7 @@ contract HubBase is Base {
     initEnvironment();
   }
 
-  function _updateAddCap(uint256 assetId, address spoke, uint56 newAddCap) internal {
+  function _updateAddCap(uint256 assetId, address spoke, uint40 newAddCap) internal {
     IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spoke);
     spokeConfig.addCap = newAddCap;
     vm.prank(HUB_ADMIN);
