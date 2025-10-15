@@ -18,6 +18,6 @@
     "prettier-plugin-solidity": "2.1.0"
   },
   "lint-staged": {
-    "*.{sol,md,py,ts}": "prettier --write"
+    "*.{sol,md,py,ts}": "prettier . --write"
   }
 }
