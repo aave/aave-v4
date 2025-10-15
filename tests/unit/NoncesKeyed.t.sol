@@ -18,9 +18,13 @@ contract NoncesKeyedTest is Base {
     address owner = vm.randomAddress();
 
     uint256 keyNonce = mock.nonces(owner);
+    (uint192 key, ) = _unpackNonce(keyNonce);
+    assertEq(key, 0);
 
     vm.prank(owner);
     uint256 consumedKeyNonce = mock.useNonce();
+    (key, ) = _unpackNonce(consumedKeyNonce);
+    assertEq(key, 0);
 
     assertEq(consumedKeyNonce, keyNonce);
     _assertNonceIncrement(mock, owner, keyNonce);
