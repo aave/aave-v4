@@ -287,8 +287,8 @@ library LiquidationLogic {
     uint256 assetId = collateralReserve.assetId;
 
     uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
-
-    collateralPosition.suppliedShares -= sharesToLiquidate.toUint128();
+    uint128 suppliedShares = collateralPosition.suppliedShares - sharesToLiquidate.toUint128();
+    collateralPosition.suppliedShares = suppliedShares;
 
     uint256 sharesToLiquidator;
     if (params.receiveShares) {
@@ -303,7 +303,7 @@ library LiquidationLogic {
       hub.payFeeShares(assetId, sharesToLiquidate.uncheckedSub(sharesToLiquidator));
     }
 
-    return collateralPosition.suppliedShares == 0;
+    return suppliedShares == 0;
   }
 
   /// @dev Invoked by `liquidateUser` method.
