@@ -1,0 +1,41 @@
+name: Foundry lcov report
+description: Compares lcov on default branch against the pr
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download previous sizes report
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: dawidd6/action-download-artifact@72aaadce3bc708349fc665eee3785cbb1b6e51d0 # v3.1.1
+      with:
+        branch: ${{ github.base_ref }}
+        name: lcov-report
+        if_no_artifact_found: warn
+        path: lcov
+        check_artifacts: true
+
+    - uses: bgd-labs/action-foundry-lcov@main
+      id: lcov
+      with:
+        # The path to the first contract to compare
+        ROOT_REPORT_PATH: "lcov/lcov.info"
+        # The path to the second contract to compare
+        REPORT_PATH: "lcov.info"
+        COVERAGE_COMMAND: 'forge coverage --fuzz-runs 50 --report lcov --no-match-coverage "(scripts|tests|deployments|mocks|dependencies)"'
+
+    - name: Prepare comment
+      shell: bash
+      run: |
+        printf '%s' "${{ steps.lcov.outputs.report }}" > /tmp/content/lcov.txt
+
+    - name: Move lcov to cache
+      shell: bash
+      run: |
+        mkdir -p lcov
+        mv lcov.info lcov/lcov.info
+
+    - name: Cache Save
+      uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
+      with:
+        name: lcov-report
+        path: lcov/lcov.info

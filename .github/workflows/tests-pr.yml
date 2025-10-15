@@ -33,6 +33,9 @@ jobs:
           FOUNDRY_PROFILE: pr
           FORGE_SNAPSHOT_CHECK: true
 
+      - name: Run Lcov report
+        uses: ./.github/actions/coverage.yml
+
       - name: Upload & Trigger Comment artifact
         uses: bgd-labs/github-workflows/.github/actions/comment-artifact@main
         with:
