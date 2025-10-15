@@ -50,6 +50,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     // Set liquidationLogicWrapper as a spoke
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });
@@ -226,11 +227,11 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.liquidateUser(params);
   }
 
-  function updateStorage(ISpoke.LiquidationConfig memory liquidationConfig) internal {
-    liquidationLogicWrapper.setLiquidationConfig(liquidationConfig);
+  function updateStorage(ISpoke.LiquidationConfig memory config) internal {
+    liquidationLogicWrapper.setLiquidationConfig(config);
   }
 
-  function updateStorage(ISpoke.DynamicReserveConfig memory dynamicCollateralConfig) internal {
-    liquidationLogicWrapper.setDynamicCollateralConfig(dynamicCollateralConfig);
+  function updateStorage(ISpoke.DynamicReserveConfig memory config) internal {
+    liquidationLogicWrapper.setDynamicCollateralConfig(config);
   }
 }

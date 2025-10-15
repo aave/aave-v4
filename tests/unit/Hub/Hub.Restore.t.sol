@@ -87,7 +87,7 @@ contract HubRestoreTest is HubBase {
 
   function test_restore_revertsWith_SpokeNotActive_whenPaused() public {
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.pauseAsset(address(hub1), daiAssetId);
+    hubConfigurator.deactivateAsset(address(hub1), daiAssetId);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
@@ -97,6 +97,21 @@ contract HubRestoreTest is HubBase {
     });
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, 1, 0, premiumDelta, alice);
+  }
+
+  function test_restore_revertsWith_SpokePaused() public {
+    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      spoke: spoke1,
+      user: alice,
+      reserveId: daiAssetId,
+      premiumRestored: 0
+    });
+
+    vm.expectRevert(IHub.SpokePaused.selector);
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, 1, 0, premiumDelta, alice);
   }
@@ -846,8 +861,6 @@ contract HubRestoreTest is HubBase {
       reserveId: daiAssetId,
       premiumRestored: premiumRestored
     });
-
-    AssetPosition memory daiDataBefore = getAssetPosition(hub1, daiAssetId);
 
     // spoke1 restore full drawn
     vm.prank(address(spoke1));

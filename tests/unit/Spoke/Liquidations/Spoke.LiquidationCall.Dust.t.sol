@@ -328,7 +328,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     ISpoke spoke,
     uint256 collateralReserveId,
     address user
-  ) internal returns (uint256) {
+  ) internal view returns (uint256) {
     return
       _convertAmountToValue(
         spoke,

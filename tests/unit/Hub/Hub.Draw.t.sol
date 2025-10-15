@@ -153,6 +153,13 @@ contract HubDrawTest is HubBase {
     assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
   }
 
+  function test_draw_revertsWith_SpokePaused() public {
+    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+    vm.expectRevert(IHub.SpokePaused.selector);
+    vm.prank(address(spoke1));
+    hub1.draw(daiAssetId, 100e18, alice);
+  }
+
   function test_draw_revertsWith_SpokeNotActive() public {
     updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector);
