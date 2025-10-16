@@ -30,7 +30,7 @@ contract UnitPriceFeedTest is Base {
   }
 
   function test_getRoundData() public {
-    uint80 skipTime = uint80(vm.randomUint());
+    uint80 skipTime = vm.randomUint(80).toUint80();
     skip(skipTime);
     uint80 _roundId = uint80(vm.randomUint(0, skipTime));
     (
@@ -48,9 +48,9 @@ contract UnitPriceFeedTest is Base {
   }
 
   function test_getRoundData_futureRound() public {
-    uint80 skipTime = uint80(vm.randomUint(0, type(uint80).max - 1));
+    uint80 skipTime = vm.randomUint(0, type(uint80).max - 1).toUint80();
     skip(skipTime);
-    uint80 _roundId = uint80(vm.randomUint(skipTime + 1, type(uint80).max));
+    uint80 _roundId = vm.randomUint(skipTime + 1, type(uint80).max).toUint80();
     (
       uint80 roundId,
       int256 answer,
