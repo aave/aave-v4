@@ -51,6 +51,7 @@ interface INativeTokenGateway is IGatewayBase {
   function borrowNative(address spoke, uint256 reserveId, uint256 amount) external;
 
   /// @notice Wraps the native asset and repays debt on a specified registered `spoke`.
+  /// @dev It refunds any excess funds sent beyond the required debt repayment.
   /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.

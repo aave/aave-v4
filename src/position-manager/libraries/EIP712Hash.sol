@@ -36,10 +36,6 @@ library EIP712Hash {
     // keccak256('UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)')
     0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
 
-  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
-    // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
-    0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
-
   function hash(EIP712Types.Supply calldata params) internal pure returns (bytes32) {
     return
       keccak256(
@@ -137,22 +133,6 @@ library EIP712Hash {
           UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
           params.spoke,
           params.user,
-          params.nonce,
-          params.deadline
-        )
-      );
-  }
-
-  function hash(
-    EIP712Types.SetUserPositionManager calldata params
-  ) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          SET_USER_POSITION_MANAGER_TYPEHASH,
-          params.positionManager,
-          params.user,
-          params.approve,
           params.nonce,
           params.deadline
         )

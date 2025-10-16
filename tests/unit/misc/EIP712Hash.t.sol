@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
-import {EIP712Hash, EIP712Types} from 'src/libraries/cryptography/EIP712Hash.sol';
+import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
 
 contract EIP712HashTest is Test {
   using EIP712Hash for *;
@@ -48,12 +48,6 @@ contract EIP712HashTest is Test {
       EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
       keccak256(
         'UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)'
-      )
-    );
-    assertEq(
-      EIP712Hash.SET_USER_POSITION_MANAGER_TYPEHASH,
-      keccak256(
-        'SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)'
       )
     );
   }
@@ -164,23 +158,6 @@ contract EIP712HashTest is Test {
         EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
         params.spoke,
         params.user,
-        params.nonce,
-        params.deadline
-      )
-    );
-
-    assertEq(params.hash(), expectedHash);
-  }
-
-  function test_hash_setUserPositionManager_fuzz(
-    EIP712Types.SetUserPositionManager calldata params
-  ) public pure {
-    bytes32 expectedHash = keccak256(
-      abi.encode(
-        EIP712Hash.SET_USER_POSITION_MANAGER_TYPEHASH,
-        params.positionManager,
-        params.user,
-        params.approve,
         params.nonce,
         params.deadline
       )

@@ -3,7 +3,6 @@
 pragma solidity 0.8.28;
 
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {Rescuable} from 'src/utils/Rescuable.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
@@ -52,9 +51,9 @@ abstract contract GatewayBase is IGatewayBase, Rescuable, Ownable2Step {
   function _getReserveData(
     address spoke,
     uint256 reserveId
-  ) internal view returns (IERC20, address) {
+  ) internal view returns (address, address) {
     ISpoke.Reserve memory reserveData = ISpoke(spoke).getReserve(reserveId);
-    return (IERC20(reserveData.underlying), address(reserveData.hub));
+    return (reserveData.underlying, address(reserveData.hub));
   }
 
   /// @dev The `owner()` is the allowed caller for Rescuable methods.

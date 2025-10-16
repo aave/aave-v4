@@ -6,9 +6,9 @@ import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/Reentrancy
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {INativeWrapper} from 'src/position-manager/interfaces/INativeWrapper.sol';
+import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
 
 /// @title NativeTokenGateway
@@ -65,7 +65,7 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
     uint256 reserveId,
     uint256 amount
   ) external onlyRegisteredSpoke(spoke) {
-    (IERC20 underlying, ) = _getReserveData(spoke, reserveId);
+    (address underlying, ) = _getReserveData(spoke, reserveId);
     _validateParams(underlying, amount);
 
     uint256 withdrawAmount = MathUtils.min(
@@ -84,7 +84,7 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
     uint256 reserveId,
     uint256 amount
   ) external onlyRegisteredSpoke(spoke) {
-    (IERC20 underlying, ) = _getReserveData(spoke, reserveId);
+    (address underlying, ) = _getReserveData(spoke, reserveId);
     _validateParams(underlying, amount);
 
     ISpoke(spoke).borrow(reserveId, amount, msg.sender);
@@ -99,15 +99,15 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
     uint256 amount
   ) external payable nonReentrant onlyRegisteredSpoke(spoke) {
     require(msg.value == amount, NativeAmountMismatch());
-    (IERC20 underlying, address hub) = _getReserveData(spoke, reserveId);
+    (address underlying, address hub) = _getReserveData(spoke, reserveId);
     _validateParams(underlying, amount);
 
-    uint256 userDebtAmount = ISpoke(spoke).getUserTotalDebt(reserveId, msg.sender);
+    uint256 userTotalDebt = ISpoke(spoke).getUserTotalDebt(reserveId, msg.sender);
     uint256 repayAmount = amount;
     uint256 leftovers;
-    if (amount > userDebtAmount) {
-      leftovers = amount - userDebtAmount;
-      repayAmount = userDebtAmount;
+    if (amount > userTotalDebt) {
+      leftovers = amount - userTotalDebt;
+      repayAmount = userTotalDebt;
     }
 
     _nativeWrapper.deposit{value: repayAmount}();
@@ -126,7 +126,7 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
 
   /// @dev `msg.value` verification must be done before calling this.
   function _supplyNative(address spoke, uint256 reserveId, address user, uint256 amount) internal {
-    (IERC20 underlying, address hub) = _getReserveData(spoke, reserveId);
+    (address underlying, address hub) = _getReserveData(spoke, reserveId);
     _validateParams(underlying, amount);
 
     _nativeWrapper.deposit{value: amount}();
@@ -134,8 +134,8 @@ contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, Ga
     ISpoke(spoke).supply(reserveId, amount, user);
   }
 
-  function _validateParams(IERC20 underlying, uint256 amount) internal view {
-    require(address(underlying) == address(_nativeWrapper), NotNativeWrappedAsset());
+  function _validateParams(address underlying, uint256 amount) internal view {
+    require(address(_nativeWrapper) == underlying, NotNativeWrappedAsset());
     require(amount > 0, InvalidAmount());
   }
 }

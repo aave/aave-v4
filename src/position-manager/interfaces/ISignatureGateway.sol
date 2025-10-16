@@ -74,6 +74,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @notice Facilitates setting this gateway as user position manager on the specified registered `spoke`
   /// with a typed signature from `user`.
   /// @dev The signature is consumed on the the specified registered `spoke`.
+  /// @dev The given data is passed to the `spoke` for the signature to be verified.
   /// @param spoke The address of the spoke.
   /// @param params The structured setSelfAsUserPositionManager parameters.
   /// @param signature The signed bytes for the intent.
@@ -83,7 +84,8 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
     bytes calldata signature
   ) external;
 
-  /// @notice Allows consuming a permit for the given reserve's underlying asset on the specified registered `spoke`.
+  /// @notice Facilitates consuming a permit for the given reserve's underlying asset on the specified registered `spoke`.
+  /// @dev The given data is passed to the underlying asset for the signature to be verified.
   /// @dev Spender is this gateway contract.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
