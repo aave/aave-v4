@@ -38,6 +38,8 @@ interface IHub is IHubBase, IAccessManaged {
     //
     uint128 feeAmount;
     uint128 feeShares;
+    //
+    uint128 lastTotalAddedAssets;
   }
 
   struct AssetConfig {

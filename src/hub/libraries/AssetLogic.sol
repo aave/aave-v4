@@ -19,7 +19,7 @@ library AssetLogic {
   using SharesMath for uint256;
   using WadRayMath for *;
   using MathUtils for uint256;
-  using SafeCast for uint256;
+  using SafeCast for *;
 
   /// @notice Converts an amount of shares to the equivalent amount of drawn assets, rounding up.
   function toDrawnAssetsUp(
@@ -72,7 +72,7 @@ library AssetLogic {
 
   /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.liquidity + asset.swept + asset.deficit + asset.totalOwed() - asset.feeAmount - asset.getUnrealizedFeeAmount(asset.getDrawnIndex());
+    return asset.lastTotalAddedAssets + asset.getUnrealizedNonFeeAmount(asset.getDrawnIndex());
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
@@ -132,6 +132,7 @@ library AssetLogic {
     uint256 assetsBefore = asset.totalAddedAssets();
 
     uint256 newDrawnIndex = asset.getDrawnIndex();
+    asset.updateTotalAddedAssets(asset.getUnrealizedNonFeeAmount(newDrawnIndex).toInt256());
 
     uint256 feeAmount = asset.getUnrealizedFeeAmount(newDrawnIndex);
     asset.feeAmount += feeAmount.toUint128();
@@ -160,6 +161,19 @@ library AssetLogic {
       );
   }
 
+  function getLiquidityGrowth(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
+    if (drawnIndex == asset.drawnIndex) return 0;
+
+    uint256 liquidityFee = asset.liquidityFee;
+    if (liquidityFee == 0) return 0;
+
+    uint256 lastDrawnIndex = asset.drawnIndex;
+    return asset.drawnShares.rayMulUp(drawnIndex) -
+      asset.drawnShares.rayMulUp(lastDrawnIndex) +
+      asset.premiumShares.rayMulUp(drawnIndex) -
+      asset.premiumShares.rayMulUp(lastDrawnIndex);
+  }
+
   /// @notice Calculates the amount of fee shares derived from the index growth due to interest accrual.
   /// @dev The true liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee.
   /// @param drawnIndex The current drawn index.
@@ -167,16 +181,14 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 drawnIndex
   ) internal view returns (uint256) {
-    if (drawnIndex == asset.drawnIndex) return 0;
+    return asset.getLiquidityGrowth(drawnIndex).percentMulDown(asset.liquidityFee);
+  }
 
-    uint256 liquidityFee = asset.liquidityFee;
-    if (liquidityFee == 0) return 0;
+  function getUnrealizedNonFeeAmount(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
+    return asset.getLiquidityGrowth(drawnIndex).percentMulUp(PercentageMath.PERCENTAGE_FACTOR - asset.liquidityFee);
+  }
 
-    uint256 lastDrawnIndex = asset.drawnIndex;
-    uint256 liquidityGrowth = asset.drawnShares.rayMulUp(drawnIndex) -
-      asset.drawnShares.rayMulUp(lastDrawnIndex) +
-      asset.premiumShares.rayMulUp(drawnIndex) -
-      asset.premiumShares.rayMulUp(lastDrawnIndex);
-    return liquidityGrowth.percentMulDown(asset.liquidityFee);
+  function updateTotalAddedAssets(IHub.Asset storage asset, int256 delta) internal {
+    asset.lastTotalAddedAssets = (asset.lastTotalAddedAssets.toInt256() + delta).toUint256().toUint128();
   }
 }

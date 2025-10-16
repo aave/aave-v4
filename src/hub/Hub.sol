@@ -21,7 +21,7 @@ import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
-  using SafeCast for uint256;
+  using SafeCast for *;
   using WadRayMath for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
@@ -97,7 +97,8 @@ contract Hub is IHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0,
       feeAmount: 0,
-      feeShares: 0
+      feeShares: 0,
+      lastTotalAddedAssets: 0
     });
     _addFeeReceiver(assetId, feeReceiver);
 
@@ -206,6 +207,7 @@ contract Hub is IHub, AccessManaged {
     asset.liquidity += amount.toUint128();
 
     asset.updateDrawnRate(assetId);
+    asset.updateTotalAddedAssets(amount.toInt256());
 
     IERC20(asset.underlying).safeTransferFrom(from, address(this), amount);
 
@@ -230,7 +232,7 @@ contract Hub is IHub, AccessManaged {
     asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
 
     asset.updateDrawnRate(assetId);
-
+    asset.updateTotalAddedAssets(-amount.toInt256());
     IERC20(asset.underlying).safeTransfer(to, amount);
 
     emit Remove(assetId, msg.sender, shares, amount);
@@ -252,6 +254,7 @@ contract Hub is IHub, AccessManaged {
     asset.drawnShares += drawnShares;
     spoke.drawnShares += drawnShares;
     asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
+    // I think here we should take the increase in drawn debt, and update the total added assets by increaseInDrawnDebt - amount
 
     asset.updateDrawnRate(assetId);
 
@@ -282,6 +285,7 @@ contract Hub is IHub, AccessManaged {
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
     uint256 totalAmount = drawnAmount + premiumAmount;
     asset.liquidity += totalAmount.toUint128();
+    // I think here we should take the decrease in drawn debt, and update the total added assets by amount - decreaseInDrawnDebt
 
     asset.updateDrawnRate(assetId);
 
@@ -314,6 +318,7 @@ contract Hub is IHub, AccessManaged {
     spoke.deficit += deficitAmount;
 
     asset.updateDrawnRate(assetId);
+    asset.updateTotalAddedAssets(deficitAmount.toInt256());
 
     emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
@@ -342,6 +347,7 @@ contract Hub is IHub, AccessManaged {
     coveredSpoke.deficit = deficit.uncheckedSub(amount).toUint128();
 
     asset.updateDrawnRate(assetId);
+    asset.updateTotalAddedAssets(-amount.toInt256());
 
     emit EliminateDeficit(assetId, msg.sender, spoke, shares, amount);
 
@@ -720,6 +726,7 @@ contract Hub is IHub, AccessManaged {
     address feeReceiver = asset.feeReceiver;
     asset.addedShares += feeShares;
     _spokes[assetId][feeReceiver].addedShares += feeShares;
+    asset.updateTotalAddedAssets(asset.feeAmount.toInt256());
     asset.feeAmount = 0;
     asset.feeShares = 0;
     emit IHub.AccrueFees(assetId, feeReceiver, feeShares);
