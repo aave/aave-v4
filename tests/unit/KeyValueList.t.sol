@@ -10,35 +10,42 @@ contract KeyValueListTest is Test {
   using KeyValueList for KeyValueList.List;
 
   function test_add_unique() public {
-    KeyValueList.List memory list = KeyValueList.init(9);
+    /// @dev needed for reverts not to block the test
+    KeyValueListWrapper wrapper = new KeyValueListWrapper();
+    KeyValueList.List memory list = KeyValueList.init(11);
 
-    list.add(0, 1, 1);
-    list.add(1, 100, 1e15);
-    list.add(2, 100, 5e20);
-    list.add(3, 5e4, 5e20);
-    list.add(4, 5e4, 1e12);
-    list.add(5, 45e6, 2.5e50);
-    list.add(6, 45e6, 10);
+    list = wrapper.add(list, 0, 1, 1);
+    list = wrapper.add(list, 1, 100, 1e15);
+    list = wrapper.add(list, 2, 100, 5e20);
+    list = wrapper.add(list, 3, 5e4, 5e20);
+    list = wrapper.add(list, 4, 5e4, 1e12);
+    list = wrapper.add(list, 5, 45e6, 2.5e50);
+    list = wrapper.add(list, 6, 45e6, 10);
+
+    list = wrapper.add(list, 7, type(uint32).max - 1, 10000000000);
+
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
-    list.add(7, 4294967295, 10000000000);
+    wrapper.add(list, 8, type(uint32).max, 10000000000);
+
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
-    list.add(7, 45e8, 10000000000);
+    wrapper.add(list, 8, 45e8, 10000000000);
+
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
-    list.add(type(uint32).max - 1, 75e9, 10000000000);
+    wrapper.add(list, 8, 75e9, 10000000000);
+
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
-    list.add(type(uint32).max, 75e9, 10000000000);
+    wrapper.add(list, 9, 5e6, 2.696e67);
+
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
-    list.add(7, 75e9, 10000000000);
+    wrapper.add(list, 9, 5e6, 5e70);
+
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
-    list.add(8, 5e6, 2.696e67);
+    wrapper.add(list, 9, 5e6, 12.5e75);
+
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
-    list.add(8, 5e6, 5e70);
-    vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
-    list.add(8, 5e6, 12.5e75);
-    vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
-    list.add(8, 5e6, type(uint224).max - 1);
-    vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
-    list.add(8, 5e6, type(uint224).max);
+    wrapper.add(list, 9, 5e6, type(uint224).max);
+
+    list = wrapper.add(list, 10, 5e6, type(uint224).max - 1);
 
     uint256 returnedKey;
     uint256 returnedValue;
@@ -64,20 +71,30 @@ contract KeyValueListTest is Test {
     assertEq(returnedKey, 45e6);
     assertEq(returnedValue, 10);
     (returnedKey, returnedValue) = list.get(7);
-    assertEq(returnedKey, 0);
-    assertEq(returnedValue, 0);
+    assertEq(returnedKey, type(uint32).max - 1);
+    assertEq(returnedValue, 10000000000);
     (returnedKey, returnedValue) = list.get(8);
     assertEq(returnedKey, 0);
     assertEq(returnedValue, 0);
+    (returnedKey, returnedValue) = list.get(9);
+    assertEq(returnedKey, 0);
+    assertEq(returnedValue, 0);
+    (returnedKey, returnedValue) = list.get(10);
+    assertEq(returnedKey, 5e6);
+    assertEq(returnedValue, type(uint224).max - 1);
   }
 
   function test_fuzz_add(uint256 key, uint256 value) public {
+    /// @dev needed for reverts not to block the test
+    KeyValueListWrapper wrapper = new KeyValueListWrapper();
     KeyValueList.List memory list = KeyValueList.init(5);
 
     if (key >= KeyValueList._MAX_KEY || value >= KeyValueList._MAX_VALUE) {
       vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
+      wrapper.add(list, 0, key, value);
+    } else {
+      list.add(0, key, value);
     }
-    list.add(0, key, value);
 
     if (key < KeyValueList._MAX_KEY && value < KeyValueList._MAX_VALUE) {
       (uint256 storedKey, uint256 storedValue) = list.get(0);
@@ -231,5 +248,20 @@ contract KeyValueListTest is Test {
         lowerBound;
     }
     return result;
+  }
+}
+
+contract KeyValueListWrapper {
+  using KeyValueList for KeyValueList.List;
+
+  function add(
+    KeyValueList.List memory list,
+    uint256 idx,
+    uint256 key,
+    uint256 value
+  ) external pure returns (KeyValueList.List memory returnList) {
+    returnList = list;
+    returnList.add(idx, key, value);
+    return returnList;
   }
 }
