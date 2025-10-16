@@ -11,7 +11,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.supplyWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.supplyWithSig(p, signature);
   }
 
   function test_withdrawWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
@@ -20,7 +20,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.withdrawWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.withdrawWithSig(p, signature);
   }
 
   function test_borrowWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
@@ -29,7 +29,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.borrowWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.borrowWithSig(p, signature);
   }
 
   function test_repayWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
@@ -38,7 +38,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.repayWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.repayWithSig(p, signature);
   }
 
   function test_setUsingAsCollateralWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
@@ -50,14 +50,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.setUsingAsCollateralWithSig(
-      p.reserveId,
-      p.useAsCollateral,
-      p.onBehalfOf,
-      p.nonce,
-      p.deadline,
-      signature
-    );
+    gateway.setUsingAsCollateralWithSig(p, signature);
   }
 
   function test_updateUserRiskPremiumWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
@@ -69,7 +62,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.updateUserRiskPremiumWithSig(p.user, p.nonce, p.deadline, signature);
+    gateway.updateUserRiskPremiumWithSig(p, signature);
   }
 
   function test_updateUserDynamicConfigWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
@@ -84,7 +77,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.updateUserDynamicConfigWithSig(p.user, p.nonce, p.deadline, signature);
+    gateway.updateUserDynamicConfigWithSig(p, signature);
   }
 
   function test_supplyWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
@@ -97,7 +90,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.supplyWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.supplyWithSig(p, signature);
   }
 
   function test_withdrawWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
@@ -110,7 +103,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.withdrawWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.withdrawWithSig(p, signature);
   }
 
   function test_borrowWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
@@ -123,7 +116,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.borrowWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.borrowWithSig(p, signature);
   }
 
   function test_repayWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
@@ -136,7 +129,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.repayWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.repayWithSig(p, signature);
   }
 
   function test_setUsingAsCollateralWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner()
@@ -152,14 +145,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.setUsingAsCollateralWithSig(
-      p.reserveId,
-      p.useAsCollateral,
-      p.onBehalfOf,
-      p.nonce,
-      p.deadline,
-      signature
-    );
+    gateway.setUsingAsCollateralWithSig(p, signature);
   }
 
   function test_updateUserRiskPremiumWithSig_revertsWith_InvalidSignatureDueTo_InvalidSigner()
@@ -175,7 +161,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.updateUserRiskPremiumWithSig(p.user, p.nonce, p.deadline, signature);
+    gateway.updateUserRiskPremiumWithSig(p, signature);
   }
 
   function test_updateUserDynamicConfigWithSig_revertsWith_InvalidSignatureDueTo_InvalidSigner()
@@ -191,7 +177,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    gateway.updateUserDynamicConfigWithSig(p.user, p.nonce, p.deadline, signature);
+    gateway.updateUserDynamicConfigWithSig(p, signature);
   }
 
   function test_supplyWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
@@ -206,7 +192,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.onBehalfOf, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    gateway.supplyWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.supplyWithSig(p, signature);
   }
 
   function test_withdrawWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
@@ -221,7 +207,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.onBehalfOf, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    gateway.withdrawWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.withdrawWithSig(p, signature);
   }
 
   function test_borrowWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
@@ -236,7 +222,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.onBehalfOf, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    gateway.borrowWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.borrowWithSig(p, signature);
   }
 
   function test_repayWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
@@ -251,7 +237,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.onBehalfOf, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    gateway.repayWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.repayWithSig(p, signature);
   }
 
   function test_setUsingAsCollateralWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
@@ -267,14 +253,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.onBehalfOf, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    gateway.setUsingAsCollateralWithSig(
-      p.reserveId,
-      p.useAsCollateral,
-      p.onBehalfOf,
-      p.nonce,
-      p.deadline,
-      signature
-    );
+    gateway.setUsingAsCollateralWithSig(p, signature);
   }
 
   function test_updateUserRiskPremiumWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
@@ -290,7 +269,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.user, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    gateway.updateUserRiskPremiumWithSig(p.user, p.nonce, p.deadline, signature);
+    gateway.updateUserRiskPremiumWithSig(p, signature);
   }
 
   function test_updateUserDynamicConfigWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
@@ -309,6 +288,6 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.user, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    gateway.updateUserDynamicConfigWithSig(p.user, p.nonce, p.deadline, signature);
+    gateway.updateUserDynamicConfigWithSig(p, signature);
   }
 }
