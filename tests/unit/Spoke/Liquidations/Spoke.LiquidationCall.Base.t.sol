@@ -336,7 +336,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       newAvgCollateralFactor += collateralFactor * userSuppliedAmount;
     }
 
-    if (totalCollateralValue != 0) {
+    if (totalCollateralValue > 0) {
       newAvgCollateralFactor = newAvgCollateralFactor
         .wadDivDown(totalCollateralValue)
         .fromBpsDown();
