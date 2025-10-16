@@ -82,7 +82,7 @@ library KeyValueList {
   }
 
   /// @notice Comparator function performing greater-than comparison.
-  /// @return True if `a` is greater than `b`, false otherwise.
+  /// @return True if `a` is greater than `b`.
   function gtComparator(uint256 a, uint256 b) internal pure returns (bool) {
     return a > b;
   }

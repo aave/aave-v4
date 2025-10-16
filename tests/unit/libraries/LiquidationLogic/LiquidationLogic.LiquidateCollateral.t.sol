@@ -14,6 +14,8 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
   IERC20 asset;
   uint256 assetId;
   uint256 suppliedShares;
+  uint256 reserveId;
+  address borrower;
 
   ISpoke.Reserve initialReserve;
   ISpoke.UserPosition initialPosition;
@@ -24,11 +26,15 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     hub = hub1;
     spoke = ISpoke(address(liquidationLogicWrapper));
     assetId = wethAssetId;
+    reserveId = _wethReserveId(spoke);
     asset = IERC20(hub.getAsset(assetId).underlying);
     suppliedShares = 100e18;
+    borrower = makeAddr('borrower');
 
     liquidationLogicWrapper.setCollateralReserveHub(hub);
     liquidationLogicWrapper.setCollateralReserveAssetId(assetId);
+    liquidationLogicWrapper.setCollateralReserveId(reserveId);
+    liquidationLogicWrapper.setBorrower(borrower);
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(suppliedShares);
 
     initialReserve = liquidationLogicWrapper.getCollateralReserve();
@@ -61,6 +67,8 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       hub.previewRemoveByShares(assetId, suppliedShares)
     );
     params.collateralToLiquidator = bound(collateralToLiquidator, 1, params.collateralToLiquidate);
+    params.collateralReserveId = reserveId;
+    params.user = borrower;
 
     uint256 initialHubBalance = asset.balanceOf(address(hub));
 
@@ -94,6 +102,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       hub.previewRemoveByShares(assetId, suppliedShares)
     );
     params.collateralToLiquidator = 0;
+    params.user = borrower;
 
     vm.expectRevert(IHub.InvalidAmount.selector);
     liquidationLogicWrapper.liquidateCollateral(params);

@@ -342,7 +342,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Returns whether the spoke is listed for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
-  /// @return True if the spoke is listed, false otherwise.
+  /// @return True if the spoke is listed.
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
 
   /// @notice Returns the address of the spoke for an asset at the given index.

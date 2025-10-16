@@ -151,7 +151,7 @@ interface IHubBase {
   /// @param premiumDelta The change in premium.
   function refreshPremium(uint256 assetId, PremiumDelta calldata premiumDelta) external;
 
-  /// @notice Transfers existing `addedShares` of caller spoke to `feeReceiver`.
+  /// @notice Transfers `shares` amount of existing `addedShares` of caller spoke to `feeReceiver`.
   /// @dev Only callable by active spokes. Utilized to pay liquidation fee.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of shares to pay to feeReceiver.
