@@ -72,12 +72,30 @@ library AssetLogic {
 
   /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.liquidity + asset.swept + asset.deficit + asset.totalOwed();
+    if (asset.lastUpdateTimestamp < block.timestamp) {
+      return
+        asset.liquidity +
+        asset.swept +
+        asset.deficit +
+        asset.totalOwed() -
+        asset.getUnrealizedFeeAmount(asset.getDrawnIndex());
+    }
+
+    return
+      asset.liquidity +
+      asset.swept +
+      asset.deficit +
+      asset.totalOwed() -
+      asset.oldUnrealizedFeeAmount;
   }
 
   /// @notice Returns the total added shares for the specified asset.
   function totalAddedShares(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.addedShares + asset.unrealizedFeeShares();
+    if (asset.lastUpdateTimestamp < block.timestamp) {
+      return asset.addedShares + asset.oldUnrealizedFeeShares;
+    }
+
+    return asset.addedShares;
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
@@ -139,18 +157,22 @@ library AssetLogic {
     }
 
     uint256 newDrawnIndex = asset.getDrawnIndex();
-    uint256 indexDelta = newDrawnIndex.uncheckedSub(asset.drawnIndex);
+
+    uint128 unrealizedFeeAmount = asset.getUnrealizedFeeAmount(newDrawnIndex).toUint128();
+    uint128 unrealizedFeeShares = asset.toAddedSharesDown(unrealizedFeeAmount).toUint128();
+
+    uint128 oldUnrealizedFeeShares = asset.oldUnrealizedFeeShares;
+    if (oldUnrealizedFeeShares > 0) {
+      address feeReceiver = asset.feeReceiver;
+      asset.addedShares += oldUnrealizedFeeShares;
+      spokes[assetId][feeReceiver].addedShares += oldUnrealizedFeeShares;
+      emit IHub.AccrueFees(assetId, feeReceiver, oldUnrealizedFeeShares);
+    }
 
     asset.drawnIndex = newDrawnIndex.toUint128();
     asset.lastUpdateTimestamp = block.timestamp.toUint32();
-
-    uint128 feeShares = asset.getFeeShares(indexDelta).toUint128();
-    if (feeShares > 0) {
-      address feeReceiver = asset.feeReceiver;
-      asset.addedShares += feeShares;
-      spokes[assetId][feeReceiver].addedShares += feeShares;
-      emit IHub.AccrueFees(assetId, feeReceiver, feeShares);
-    }
+    asset.oldUnrealizedFeeAmount = unrealizedFeeAmount;
+    asset.oldUnrealizedFeeShares = unrealizedFeeShares;
   }
 
   /// @notice Calculates the drawn index of a specified asset based on the existing drawn rate and index.
@@ -168,26 +190,15 @@ library AssetLogic {
       );
   }
 
-  /// @notice Calculates the amount of fee shares derived from the index growth due to interest accrual.
-  /// @dev The true liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee.
-  /// @param indexDelta The delta between the current and next drawn index.
-  function getFeeShares(
+  function getUnrealizedFeeAmount(
     IHub.Asset storage asset,
-    uint256 indexDelta
+    uint256 drawnIndex
   ) internal view returns (uint256) {
-    if (indexDelta == 0) return 0;
-    uint256 liquidityFee = asset.liquidityFee;
-    if (liquidityFee == 0) return 0;
-
-    // @dev we do not simplify further to avoid overestimating the liquidity growth
-    uint256 feesAmount = (asset.drawnShares.rayMulDown(indexDelta) +
-      asset.premiumShares.rayMulDown(indexDelta)).percentMulDown(liquidityFee);
-
-    return feesAmount.toSharesDown(asset.totalAddedAssets() - feesAmount, asset.addedShares);
-  }
-
-  /// @notice Calculates the amount of unrealized fee shares since last accrual.
-  function unrealizedFeeShares(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.getFeeShares(asset.getDrawnIndex().uncheckedSub(asset.drawnIndex));
+    uint256 lastDrawnIndex = asset.drawnIndex;
+    uint256 liquidityGrowth = asset.drawnShares.rayMulUp(drawnIndex) -
+      asset.drawnShares.rayMulUp(lastDrawnIndex) +
+      asset.premiumShares.rayMulUp(drawnIndex) -
+      asset.premiumShares.rayMulUp(lastDrawnIndex);
+    return liquidityGrowth.percentMulDown(asset.liquidityFee);
   }
 }

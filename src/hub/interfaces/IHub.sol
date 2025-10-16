@@ -13,6 +13,9 @@ interface IHub is IHubBase, IAccessManaged {
     uint128 liquidity;
     uint128 addedShares;
     //
+    uint128 oldUnrealizedFeeAmount;
+    uint128 oldUnrealizedFeeShares;
+    //
     uint128 deficit;
     uint128 swept;
     //
