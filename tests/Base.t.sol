@@ -58,6 +58,7 @@ import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 
 // position manager
+import {GatewayBase, IGatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {NativeTokenGateway, INativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 import {SignatureGateway, ISignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 
@@ -71,6 +72,7 @@ import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
+import {GatewayBaseWrapper} from 'tests/mocks/GatewayBaseWrapper.sol';
 import {NoncesKeyedMock} from 'tests/mocks/NoncesKeyedMock.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
