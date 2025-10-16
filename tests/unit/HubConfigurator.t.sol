@@ -158,10 +158,11 @@ contract HubConfiguratorTest is HubBase {
       reinvestmentController: address(0)
     });
     IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
+      active: true,
+      paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: 0,
-      active: true,
-      paused: false
+      riskPremiumCap: 0
     });
 
     vm.expectCall(
@@ -684,10 +685,11 @@ contract HubConfiguratorTest is HubBase {
     address newSpoke = makeAddr('newSpoke');
 
     IHub.SpokeConfig memory daiSpokeConfig = IHub.SpokeConfig({
+      active: true,
+      paused: false,
       addCap: 1,
       drawCap: 2,
-      active: true,
-      paused: false
+      riskPremiumCap: 22
     });
 
     vm.expectEmit(address(hub1));
@@ -715,9 +717,27 @@ contract HubConfiguratorTest is HubBase {
     assetIds[1] = wethAssetId;
 
     IHub.SpokeConfig[] memory spokeConfigs = new IHub.SpokeConfig[](3);
-    spokeConfigs[0] = IHub.SpokeConfig({addCap: 1, drawCap: 2, active: true, paused: false});
-    spokeConfigs[1] = IHub.SpokeConfig({addCap: 3, drawCap: 4, active: true, paused: false});
-    spokeConfigs[2] = IHub.SpokeConfig({addCap: 5, drawCap: 6, active: true, paused: false});
+    spokeConfigs[0] = IHub.SpokeConfig({
+      addCap: 1,
+      drawCap: 2,
+      active: true,
+      paused: false,
+      riskPremiumCap: 0
+    });
+    spokeConfigs[1] = IHub.SpokeConfig({
+      addCap: 3,
+      drawCap: 4,
+      active: true,
+      paused: false,
+      riskPremiumCap: 0
+    });
+    spokeConfigs[2] = IHub.SpokeConfig({
+      addCap: 5,
+      drawCap: 6,
+      active: true,
+      paused: false,
+      riskPremiumCap: 0
+    });
 
     vm.expectRevert(IHubConfigurator.MismatchedConfigs.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -732,16 +752,18 @@ contract HubConfiguratorTest is HubBase {
     assetIds[1] = wethAssetId;
 
     IHub.SpokeConfig memory daiSpokeConfig = IHub.SpokeConfig({
+      active: true,
+      paused: false,
       addCap: 1,
       drawCap: 2,
-      active: true,
-      paused: false
+      riskPremiumCap: 0
     });
     IHub.SpokeConfig memory wethSpokeConfig = IHub.SpokeConfig({
+      active: true,
+      paused: false,
       addCap: 3,
       drawCap: 4,
-      active: true,
-      paused: false
+      riskPremiumCap: 0
     });
 
     IHub.SpokeConfig[] memory spokeConfigs = new IHub.SpokeConfig[](2);

@@ -52,6 +52,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint128 drawnShares;
     //
     uint128 addedShares;
+    uint24 riskPremiumCap;
     uint40 addCap;
     uint40 drawCap;
     bool active;
@@ -61,10 +62,11 @@ interface IHub is IHubBase, IAccessManaged {
   }
 
   struct SpokeConfig {
-    bool active;
-    bool paused;
+    uint24 riskPremiumCap;
     uint40 addCap;
     uint40 drawCap;
+    bool active;
+    bool paused;
   }
 
   /// @notice Emitted when an asset is added.
@@ -379,8 +381,5 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The maximum cap value, expressed in asset units.
   function MAX_ALLOWED_SPOKE_CAP() external view returns (uint40);
 
-  /// @notice Returns the maximum allowed risk premium.
-  /// @dev This is used to validate and limit premium values reported by spokes.
-  /// @return The maximum risk premium value, expressed in bps.
-  function MAX_ALLOWED_RISK_PREMIUM() external view returns (uint24);
+  function MAX_ALLOWED_RISK_PREMIUM_CAP() external view returns (uint24);
 }

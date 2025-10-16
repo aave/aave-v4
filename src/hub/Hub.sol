@@ -38,7 +38,7 @@ contract Hub is IHub, AccessManaged {
   uint40 public constant MAX_ALLOWED_SPOKE_CAP = type(uint40).max;
 
   /// @inheritdoc IHub
-  uint24 public constant MAX_ALLOWED_RISK_PREMIUM = 1000_00; // 1000.00%
+  uint24 public constant MAX_ALLOWED_RISK_PREMIUM_CAP = type(uint24).max;
 
   uint256 internal _assetCount;
   mapping(uint256 assetId => Asset) internal _assets;
@@ -145,7 +145,7 @@ contract Hub is IHub, AccessManaged {
       _updateSpokeConfig(
         assetId,
         asset.feeReceiver,
-        SpokeConfig({active: true, paused: false, addCap: 0, drawCap: 0})
+        SpokeConfig({active: true, paused: false, addCap: 0, drawCap: 0, riskPremiumCap: 0})
       );
       asset.feeReceiver = config.feeReceiver;
       _addFeeReceiver(assetId, config.feeReceiver);
@@ -643,7 +643,14 @@ contract Hub is IHub, AccessManaged {
     address spoke
   ) external view returns (SpokeConfig memory) {
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    return SpokeConfig(spokeData.active, spokeData.paused, spokeData.addCap, spokeData.drawCap);
+    return
+      SpokeConfig({
+        riskPremiumCap: spokeData.riskPremiumCap,
+        addCap: spokeData.addCap,
+        drawCap: spokeData.drawCap,
+        active: spokeData.active,
+        paused: spokeData.paused
+      });
   }
 
   /// @notice Adds a new spoke to an asset with default feeReceiver configuration (maximum add cap, zero draw cap).
@@ -652,7 +659,13 @@ contract Hub is IHub, AccessManaged {
     _updateSpokeConfig(
       assetId,
       feeReceiver,
-      SpokeConfig({active: true, paused: false, addCap: MAX_ALLOWED_SPOKE_CAP, drawCap: 0})
+      SpokeConfig({
+        active: true,
+        paused: false,
+        addCap: MAX_ALLOWED_SPOKE_CAP,
+        drawCap: 0,
+        riskPremiumCap: 0
+      })
     );
   }
 
@@ -669,6 +682,7 @@ contract Hub is IHub, AccessManaged {
     spokeData.paused = config.paused;
     spokeData.addCap = config.addCap;
     spokeData.drawCap = config.drawCap;
+    spokeData.riskPremiumCap = config.riskPremiumCap;
     emit UpdateSpokeConfig(assetId, spoke, config);
   }
 
@@ -686,7 +700,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @dev Applies premium deltas on asset & spoke premium owed.
-  /// @dev Checks premium does not increase by more than `premiumAmount`.
+  /// @dev Checks premium owed does not increase by more than `premiumAmount`.
   /// @dev Checks updated risk premium is within allowed limit.
   function _applyPremiumDelta(
     Asset storage asset,
@@ -695,6 +709,7 @@ contract Hub is IHub, AccessManaged {
     uint256 premiumAmount
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
+
     // asset premium change
     (asset.premiumShares, asset.premiumOffset, asset.realizedPremium) = _validateApplyPremiumDelta(
       drawnIndex,
@@ -714,8 +729,11 @@ contract Hub is IHub, AccessManaged {
       premium,
       premiumAmount
     );
+
+    uint24 riskPremiumCap = spoke.riskPremiumCap;
     require(
-      spoke.premiumShares <= spoke.drawnShares.percentMulUp(MAX_ALLOWED_RISK_PREMIUM),
+      riskPremiumCap == MAX_ALLOWED_RISK_PREMIUM_CAP ||
+        spoke.premiumShares <= spoke.drawnShares.percentMulUp(riskPremiumCap),
       InvalidPremiumChange()
     );
   }

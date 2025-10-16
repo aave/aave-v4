@@ -97,7 +97,7 @@ contract HubRefreshPremiumTest is HubBase {
       reverting = true;
       vm.expectRevert(stdError.arithmeticError);
     } else if (
-      asset.drawnShares.percentMulUp(Constants.MAX_ALLOWED_RISK_PREMIUM) <
+      asset.drawnShares.percentMulUp(Constants.MAX_ALLOWED_RISK_PREMIUM_CAP) <
       asset.premiumShares + sharesDelta.toUint256()
     ) {
       reverting = true;
