@@ -21,7 +21,7 @@ import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
-  using SafeCast for uint256;
+  using SafeCast for *;
   using WadRayMath for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
@@ -201,6 +201,7 @@ contract Hub is IHub, AccessManaged {
     uint128 liquidity = asset.liquidity;
     uint128 assetAddedShares = asset.addedShares;
     uint128 spokeAddedShares = spoke.addedShares;
+
     asset.addedShares = assetAddedShares + shares;
     spoke.addedShares = spokeAddedShares + shares;
     asset.liquidity = liquidity + amount.toUint128();
@@ -225,8 +226,11 @@ contract Hub is IHub, AccessManaged {
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
     uint128 shares = asset.toAddedSharesUp(amount).toUint128();
-    asset.addedShares -= shares;
-    spoke.addedShares -= shares;
+    uint128 assetAddedShares = asset.addedShares;
+    uint128 spokeAddedShares = spoke.addedShares;
+
+    asset.addedShares = assetAddedShares - shares;
+    spoke.addedShares = spokeAddedShares - shares;
     asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
 
     asset.updateDrawnRate(assetId);
