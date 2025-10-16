@@ -79,3 +79,39 @@ rule unrealizedFeeSharesSupplyRate(uint256 assetId){
 
 }
 
+rule previewRemoveByShares_time_monotonic(uint256 assetId, uint256 shares){
+    env e1; env e2; env e3;
+    uint256 oneM = 1000000;
+    require e1.block.timestamp < e2.block.timestamp && e2.block.timestamp < e3.block.timestamp;
+
+    require hub._assets[assetId].lastUpdateTimestamp!=0 && hub._assets[assetId].lastUpdateTimestamp == e1.block.timestamp; 
+
+    //correlate the drawn index with the symbolic one, assume increasing and min value as proved in
+    // HubAccrueIntegrityDrawnIndex.spec
+    require hub._assets[assetId].drawnIndex == symbolicDrawnIndex(e1.block.timestamp);
+    //based on rule drawnIndex_increasing(assetId);
+    require  symbolicDrawnIndex(e1.block.timestamp) <= symbolicDrawnIndex(e2.block.timestamp);
+    require  symbolicDrawnIndex(e2.block.timestamp) <= symbolicDrawnIndex(e3.block.timestamp);
+    //based on requireInvariant baseDebtIndexMin(assetId); 
+    require  symbolicDrawnIndex(e1.block.timestamp) >= wadRayMath.RAY();
+    require  symbolicDrawnIndex(e3.block.timestamp) <= wadRayMath.RAY() * 2;
+
+
+    mathint assets_e1 = getAddedAssets(e1, assetId);
+    mathint shares_e1 = hub._assets[assetId].addedShares;
+    //requireInvariant totalAssetsVsShares(assetId,e);
+    require assets_e1 >= shares_e1 ;
+
+    // get the fee shares and asset at e2
+    uint256 feeShares_e2 = unrealizedFeeShares(e2,assetId);
+    mathint assets_e2 = getAddedAssets(e2, assetId);
+    mathint shares_e2 = getAddedShares(e2, assetId);
+    
+    // get the fee shares and asset at e2
+    uint256 feeShares_e3 = unrealizedFeeShares(e3,assetId);
+    mathint assets_e3 = getAddedAssets(e3, assetId);
+    mathint shares_e3 = getAddedShares(e3, assetId);
+    assert feeShares_e2 <= feeShares_e3;
+
+    assert (assets_e3 + oneM) * (shares_e2 + oneM) >= (assets_e2 + oneM) * (shares_e3 + oneM); 
+}

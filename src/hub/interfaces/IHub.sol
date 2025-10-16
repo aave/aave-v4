@@ -35,6 +35,9 @@ interface IHub is IHubBase, IAccessManaged {
     address feeReceiver;
     uint16 liquidityFee;
     uint8 decimals;
+    //
+    uint128 feeAmount;
+    uint128 feeShares;
   }
 
   struct AssetConfig {
