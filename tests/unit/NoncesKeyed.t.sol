@@ -12,6 +12,24 @@ contract NoncesKeyedTest is Base {
     mock = new NoncesKeyedMock();
   }
 
+  function test_useNonce_zeroKey_monotonic(bytes32) public {
+    vm.setArbitraryStorage(address(mock));
+
+    address owner = vm.randomAddress();
+
+    uint256 keyNonce = mock.nonces(owner);
+    (uint192 key, ) = _unpackNonce(keyNonce);
+    assertEq(key, 0);
+
+    vm.prank(owner);
+    uint256 consumedKeyNonce = mock.useNonce();
+    (key, ) = _unpackNonce(consumedKeyNonce);
+    assertEq(key, 0);
+
+    assertEq(consumedKeyNonce, keyNonce);
+    _assertNonceIncrement(mock, owner, keyNonce);
+  }
+
   function test_useNonce_monotonic(bytes32) public {
     vm.setArbitraryStorage(address(mock));
 

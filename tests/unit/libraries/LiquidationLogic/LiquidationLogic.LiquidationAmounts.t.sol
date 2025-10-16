@@ -62,7 +62,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     (
       uint256 expectedCollateralToLiquidate,
       uint256 expectedCollateralToLiquidator,
-      uint256 expectedDebtToLiquidate
+
     ) = _calculateRawLiquidationAmounts(params);
 
     params.collateralReserveBalance = bound(
@@ -142,11 +142,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) public {
     params = _bound(params);
-    (
-      uint256 rawCollateralToLiquidate,
-      ,
-      uint256 rawDebtToLiquidate
-    ) = _calculateRawLiquidationAmounts(params);
+    (uint256 rawCollateralToLiquidate, , ) = _calculateRawLiquidationAmounts(params);
     vm.assume(rawCollateralToLiquidate > 0);
     params.collateralReserveBalance = bound(
       params.collateralReserveBalance,
@@ -230,7 +226,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.calculateLiquidationAmounts(params);
   }
 
-  function test_calculateLiquidationAmounts_EnoughCollateral() public {
+  function test_calculateLiquidationAmounts_EnoughCollateral() public view {
     // variable liquidation bonus is max: 120%
     // liquidation penalty: 1.2 * 0.5 = 0.6
     // debtToTarget = $10000 * (1 - 0.8) / (1 - 0.6) / $2000 = 2.5
@@ -268,7 +264,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     assertEq(debtToLiquidate, 2.5e18, 'debtToLiquidate');
   }
 
-  function test_calculateLiquidationAmounts_InsufficientCollateral() public {
+  function test_calculateLiquidationAmounts_InsufficientCollateral() public view {
     // variable liquidation bonus is max: 120%
     // liquidation penalty: 1.2 * 0.5 = 0.6
     // debtToTarget = $10000 * (1 - 0.8) / (1 - 0.6) / $2000 = 2.5
@@ -362,7 +358,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     uint256 collateralToLiquidate,
     uint256 liquidationBonus,
     uint256 liquidationFee
-  ) internal returns (uint256) {
+  ) internal pure returns (uint256) {
     uint256 bonusCollateral = collateralToLiquidate -
       collateralToLiquidate.percentDivUp(liquidationBonus);
     return collateralToLiquidate - bonusCollateral.percentMulDown(liquidationFee);

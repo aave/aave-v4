@@ -377,7 +377,6 @@ contract HubRemoveTest is HubBase {
   }
 
   function test_remove_revertsWith_AddedAmountExceeded() public {
-    uint256 assetId = daiAssetId;
     uint256 amount = 100e18;
 
     // User add
@@ -427,6 +426,13 @@ contract HubRemoveTest is HubBase {
     vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, 0, alice);
+  }
+
+  function test_remove_revertsWith_SpokePaused() public {
+    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+    vm.expectRevert(IHub.SpokePaused.selector);
+    vm.prank(address(spoke1));
+    hub1.remove(daiAssetId, 100e18, alice);
   }
 
   function test_remove_revertsWith_SpokeNotActive() public {

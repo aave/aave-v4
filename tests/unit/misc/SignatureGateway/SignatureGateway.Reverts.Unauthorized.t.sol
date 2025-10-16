@@ -19,7 +19,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
     vm.prank(vm.randomAddress());
-    gateway.supplyWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.supplyWithSig(p, signature);
   }
 
   function test_withdrawWithSig_revertsWith_Unauthorized() public {
@@ -28,7 +28,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
     vm.prank(vm.randomAddress());
-    gateway.withdrawWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.withdrawWithSig(p, signature);
   }
 
   function test_borrowWithSig_revertsWith_Unauthorized() public {
@@ -37,7 +37,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
     vm.prank(vm.randomAddress());
-    gateway.borrowWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.borrowWithSig(p, signature);
   }
 
   function test_repayWithSig_revertsWith_Unauthorized() public {
@@ -46,7 +46,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
     vm.prank(vm.randomAddress());
-    gateway.repayWithSig(p.reserveId, p.amount, p.onBehalfOf, p.nonce, p.deadline, signature);
+    gateway.repayWithSig(p, signature);
   }
 
   function test_setUsingAsCollateralWithSig_revertsWith_Unauthorized() public {
@@ -56,14 +56,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
     vm.prank(vm.randomAddress());
-    gateway.setUsingAsCollateralWithSig(
-      p.reserveId,
-      p.useAsCollateral,
-      p.onBehalfOf,
-      p.nonce,
-      p.deadline,
-      signature
-    );
+    gateway.setUsingAsCollateralWithSig(p, signature);
   }
 
   function test_updateUserRiskPremiumWithSig_revertsWith_Unauthorized() public {
@@ -78,7 +71,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(gateway))
     );
     vm.prank(vm.randomAddress());
-    gateway.updateUserRiskPremiumWithSig(p.user, p.nonce, p.deadline, signature);
+    gateway.updateUserRiskPremiumWithSig(p, signature);
   }
 
   function test_updateUserDynamicConfigWithSig_revertsWith_Unauthorized() public {
@@ -93,7 +86,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(gateway))
     );
     vm.prank(vm.randomAddress());
-    gateway.updateUserDynamicConfigWithSig(p.user, p.nonce, p.deadline, signature);
+    gateway.updateUserDynamicConfigWithSig(p, signature);
   }
 }
 
@@ -104,6 +97,8 @@ contract SignatureGateway_Unauthorized_PositionManagerActive_Test is
     super.setUp();
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(gateway), true);
+    vm.prank(address(ADMIN));
+    gateway.registerSpoke(address(spoke1), true);
     assertTrue(spoke1.isPositionManagerActive(address(gateway)));
     assertFalse(spoke1.isPositionManager(alice, address(gateway)));
   }
