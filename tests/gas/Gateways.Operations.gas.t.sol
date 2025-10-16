@@ -142,6 +142,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     Utils.supply(spoke1, p.reserveId, alice, 200e18, alice);
+    Utils.withdraw(spoke1, p.reserveId, alice, 100e18, alice);
 
     gateway.withdrawWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'withdrawWithSig');
