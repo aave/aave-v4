@@ -212,25 +212,30 @@ contract SpokeMulticall is SpokeBase {
   }
 
   function test_multicall_getters() public {
+    uint256 supplyAmount = 120e18;
+    uint256 borrowAmount = 80e18;
+
     bytes[] memory calls = new bytes[](4);
-    calls[0] = abi.encodeCall(ISpokeBase.supply, (_daiReserveId(spoke1), 120e18, alice));
+    calls[0] = abi.encodeCall(ISpokeBase.supply, (_daiReserveId(spoke1), supplyAmount, alice));
     calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke1), true, alice));
-    calls[2] = abi.encodeCall(ISpokeBase.borrow, (_daiReserveId(spoke1), 80e18, alice));
+    calls[2] = abi.encodeCall(ISpokeBase.borrow, (_daiReserveId(spoke1), borrowAmount, alice));
     calls[3] = abi.encodeCall(ISpokeBase.getUserDebt, (_daiReserveId(spoke1), alice));
 
     vm.prank(alice);
     bytes[] memory ret = spoke1.multicall(calls);
 
     assertEq(ret.length, calls.length);
-    assertEq(ret[0].length, 0);
+    assertEq(ret[0], abi.encode(supplyAmount));
     assertEq(ret[1].length, 0);
-    assertEq(ret[2].length, 0);
-    assertEq(ret[3], abi.encode(80e18, 0));
+    assertEq(ret[2], abi.encode(borrowAmount));
+    assertEq(ret[3], abi.encode(borrowAmount, 0));
   }
 
   function test_multicall_forwards_first_revert() public {
+    uint256 supplyAmount = 120e18;
+
     bytes[] memory calls = new bytes[](3);
-    calls[0] = abi.encodeCall(ISpokeBase.supply, (_daiReserveId(spoke1), 120e18, alice));
+    calls[0] = abi.encodeCall(ISpokeBase.supply, (_daiReserveId(spoke1), supplyAmount, alice));
     calls[1] = abi.encodeCall(ISpokeBase.withdraw, (_daiReserveId(spoke1), 0, alice));
     calls[2] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke1), true, alice));
 
