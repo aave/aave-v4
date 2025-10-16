@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity 0.8.28;
+pragma solidity ^0.8.28;
 
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -84,6 +84,8 @@ contract Hub is IHub, AccessManaged {
       swept: 0,
       addedShares: 0,
       drawnShares: 0,
+      oldUnrealizedFeeAmount: 0,
+      oldUnrealizedFeeShares: 0,
       premiumShares: 0,
       premiumOffset: 0,
       drawnIndex: drawnIndex.toUint128(),
@@ -575,15 +577,21 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHubBase
   function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    uint256 unrealized = spoke == asset.feeReceiver ? asset.unrealizedFeeShares() : 0;
-    return asset.toAddedAssetsDown(_spokes[assetId][spoke].addedShares + unrealized);
+    uint256 oldUnrealizedFeeShares = spoke == asset.feeReceiver &&
+      asset.lastUpdateTimestamp < block.timestamp
+      ? asset.oldUnrealizedFeeShares
+      : 0;
+    return asset.toAddedAssetsDown(_spokes[assetId][spoke].addedShares + oldUnrealizedFeeShares);
   }
 
   /// @inheritdoc IHubBase
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    uint256 unrealized = spoke == asset.feeReceiver ? asset.unrealizedFeeShares() : 0;
-    return _spokes[assetId][spoke].addedShares + unrealized;
+    uint256 oldUnrealizedFeeShares = spoke == asset.feeReceiver &&
+      asset.lastUpdateTimestamp < block.timestamp
+      ? asset.oldUnrealizedFeeShares
+      : 0;
+    return _spokes[assetId][spoke].addedShares + oldUnrealizedFeeShares;
   }
 
   /// @inheritdoc IHubBase
