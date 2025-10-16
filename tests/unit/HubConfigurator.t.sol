@@ -1051,7 +1051,6 @@ contract HubConfiguratorTest is HubBase {
   ) internal returns (uint256) {
     if (fetchErc20Decimals) {
       _mockDecimals(underlying, decimals);
-      console.log('decimals', decimals);
       return
         hubConfigurator.addAsset(
           address(hub1),
@@ -1062,7 +1061,6 @@ contract HubConfiguratorTest is HubBase {
           encodedIrData
         );
     } else {
-      console.log('decimals asdf', decimals);
       return
         hubConfigurator.addAsset(
           address(hub1),
