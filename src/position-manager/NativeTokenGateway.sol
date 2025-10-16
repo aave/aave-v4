@@ -15,7 +15,7 @@ import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenG
 /// @author Aave Labs
 /// @notice Gateway to interact with a spoke using the native coin of a chain.
 /// @dev Contract must be an active & approved user position manager in order to execute spoke actions on a user's behalf.
-contract NativeTokenGateway is INativeTokenGateway, ReentrancyGuardTransient, GatewayBase {
+contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuardTransient {
   using SafeERC20 for *;
 
   INativeWrapper internal immutable _nativeWrapper;
