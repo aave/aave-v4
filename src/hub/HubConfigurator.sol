@@ -24,8 +24,8 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address hub,
     address underlying,
     address feeReceiver,
-    address irStrategy,
     uint256 liquidityFee,
+    address irStrategy,
     bytes calldata irData
   ) external onlyOwner returns (uint256) {
     IHub targetHub = IHub(hub);
@@ -46,8 +46,8 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address underlying,
     uint8 decimals,
     address feeReceiver,
-    address irStrategy,
     uint256 liquidityFee,
+    address irStrategy,
     bytes calldata irData
   ) external onlyOwner returns (uint256) {
     IHub targetHub = IHub(hub);
