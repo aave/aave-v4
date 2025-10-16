@@ -90,10 +90,11 @@ contract SpokeSupplyTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), bob, bob, amount);
     vm.prank(bob);
-    spoke1.supply(_daiReserveId(spoke1), amount, bob);
+    uint256 returnedShares = spoke1.supply(_daiReserveId(spoke1), amount, bob);
     stage = 1;
     bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
+    assertEq(returnedShares, hub1.convertToAddedShares(daiAssetId, amount));
     // dai balance
     assertEq(
       tokenList.dai.balanceOf(bob),
@@ -168,12 +169,13 @@ contract SpokeSupplyTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), bob, bob, amount);
     vm.prank(bob);
-    spoke1.supply(_daiReserveId(spoke1), amount, bob);
+    uint256 returnedShares = spoke1.supply(_daiReserveId(spoke1), amount, bob);
 
     stage = 1;
     bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
 
+    assertEq(returnedShares, hub1.convertToAddedShares(daiAssetId, amount));
     // dai balance
     assertEq(tokenList.dai.balanceOf(bob), 0, 'user token balance after-supply');
     assertEq(tokenList.dai.balanceOf(address(hub1)), amount, 'hub token balance after-supply');
@@ -237,13 +239,14 @@ contract SpokeSupplyTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares);
     vm.prank(carol);
-    spoke1.supply(_daiReserveId(spoke1), amount, carol);
+    uint256 returnedShares = spoke1.supply(_daiReserveId(spoke1), amount, carol);
     stage = 1;
 
     carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
+    assertEq(returnedShares, expectedShares);
     // dai balance
     assertEq(tokenList.dai.balanceOf(carol), 0, 'user token balance after-supply');
     assertEq(
@@ -350,13 +353,14 @@ contract SpokeSupplyTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, carol, carol, expectedSuppliedShares);
     vm.prank(carol);
-    spoke1.supply(reserveId, amount, carol);
+    uint256 returnedShares = spoke1.supply(reserveId, amount, carol);
     stage = 1;
 
     carolData[stage] = loadUserInfo(spoke1, reserveId, carol);
     reserveData[stage] = loadReserveInfo(spoke1, reserveId);
     tokenData[stage] = getTokenBalances(state.underlying, address(spoke1));
 
+    assertEq(returnedShares, expectedSuppliedShares);
     // token balance
     assertEq(
       state.underlying.balanceOf(carol),
@@ -420,13 +424,14 @@ contract SpokeSupplyTest is SpokeBase {
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares);
-    spoke1.supply(_daiReserveId(spoke1), amount, carol);
+    uint256 returnedShares = spoke1.supply(_daiReserveId(spoke1), amount, carol);
     stage = 1;
 
     carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
+    assertEq(returnedShares, expectedShares);
     // dai balance
     assertEq(tokenList.dai.balanceOf(carol), 0, 'user token balance after-supply');
     assertEq(
@@ -515,13 +520,14 @@ contract SpokeSupplyTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, carol, carol, expectedShares);
     vm.prank(carol);
-    spoke1.supply(reserveId, amount, carol);
+    uint256 returnedShares = spoke1.supply(reserveId, amount, carol);
 
     stage = 1;
     carolData[stage] = loadUserInfo(spoke1, reserveId, carol);
     reserveData[stage] = loadReserveInfo(spoke1, reserveId);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
 
+    assertEq(returnedShares, expectedShares);
     // token balance
     assertEq(underlying.balanceOf(carol), 0, 'user token balance after-supply');
     assertEq(

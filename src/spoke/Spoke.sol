@@ -195,7 +195,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
+  ) external onlyPositionManager(onBehalfOf) returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve);
@@ -204,6 +204,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     userPosition.suppliedShares += suppliedShares.toUint128();
 
     emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares);
+
+    return suppliedShares;
   }
 
   /// @inheritdoc ISpokeBase
@@ -211,7 +213,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
+  ) external onlyPositionManager(onBehalfOf) returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve);
@@ -232,6 +234,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
 
     emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
+
+    return withdrawnShares;
   }
 
   /// @inheritdoc ISpokeBase
@@ -239,7 +243,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
+  ) external onlyPositionManager(onBehalfOf) returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -256,6 +260,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
+
+    return drawnShares;
   }
 
   /// @inheritdoc ISpokeBase
@@ -263,16 +269,15 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
+  ) external onlyPositionManager(onBehalfOf) returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve);
     IHubBase hub = reserve.hub;
-    uint256 assetId = reserve.assetId;
 
     (uint256 drawnDebtRestored, uint256 premiumDebtRestored, uint256 accruedPremium) = _getUserDebt(
       hub,
-      assetId,
+      reserve.assetId,
       userPosition
     );
     (drawnDebtRestored, premiumDebtRestored) = _calculateRestoreAmount(
@@ -287,7 +292,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       realizedDelta: accruedPremium.toInt256() - premiumDebtRestored.toInt256()
     });
     uint256 restoredShares = hub.restore(
-      assetId,
+      reserve.assetId,
       drawnDebtRestored,
       premiumDebtRestored,
       premiumDelta,
@@ -304,6 +309,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
 
     emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, premiumDelta);
+
+    return restoredShares;
   }
 
   /// @inheritdoc ISpokeBase

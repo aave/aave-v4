@@ -7,15 +7,9 @@ import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
   function test_constructor() public {
     vm.expectRevert();
-    new SignatureGateway(address(0), vm.randomAddress());
-    vm.expectRevert();
-    new SignatureGateway(vm.randomAddress(), address(0));
-    vm.expectRevert();
-    new SignatureGateway(address(0), address(0));
+    new SignatureGateway(address(0));
 
     address spoke = vm.randomAddress();
-    assertEq(address((new SignatureGateway(spoke, vm.randomAddress())).SPOKE()), spoke);
-    assertEq(address(gateway.SPOKE()), address(spoke1));
     assertEq(Ownable2Step(address(gateway)).owner(), ADMIN);
     assertEq(Ownable2Step(address(gateway)).pendingOwner(), address(0));
     assertEq(gateway.rescueGuardian(), ADMIN);
@@ -23,7 +17,6 @@ contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
 
   function test_eip712Domain() public {
     SignatureGateway instance = new SignatureGateway{salt: bytes32(vm.randomUint())}(
-      vm.randomAddress(),
       vm.randomAddress()
     );
     (
@@ -47,7 +40,6 @@ contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
 
   function test_DOMAIN_SEPARATOR() public {
     SignatureGateway instance = new SignatureGateway{salt: bytes32(vm.randomUint())}(
-      vm.randomAddress(),
       vm.randomAddress()
     );
     bytes32 expectedDomainSeparator = keccak256(
