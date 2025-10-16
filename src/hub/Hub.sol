@@ -253,8 +253,11 @@ contract Hub is IHub, AccessManaged {
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
     uint128 drawnShares = asset.toDrawnSharesUp(amount).toUint128();
-    asset.drawnShares += drawnShares;
-    spoke.drawnShares += drawnShares;
+    uint128 assetDrawnShares = asset.drawnShares;
+    uint128 spokeDrawnShares = spoke.drawnShares;
+
+    asset.drawnShares = assetDrawnShares + drawnShares;
+    spoke.drawnShares = spokeDrawnShares + drawnShares;
     asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
 
     asset.updateDrawnRate(assetId);
