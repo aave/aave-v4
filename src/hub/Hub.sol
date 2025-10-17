@@ -751,7 +751,6 @@ contract Hub is IHub, AccessManaged {
     require(!spoke.paused, SpokePaused());
     uint256 drawCap = spoke.drawCap;
     uint256 owed = _getSpokeDrawn(asset, spoke) + _getSpokePremium(asset, spoke);
-
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
         drawCap * MathUtils.uncheckedExp(10, asset.decimals) >= owed + amount + spoke.deficit,
