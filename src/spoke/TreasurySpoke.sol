@@ -32,6 +32,8 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
 
   /// @inheritdoc ITreasurySpoke
   function supply(uint256 reserveId, uint256 amount, address) external onlyOwner returns (uint256) {
+    (address underlying, ) = HUB.getAssetUnderlyingAndDecimals(reserveId);
+    IERC20(underlying).safeTransferFrom(msg.sender, address(HUB), amount);
     return HUB.add(reserveId, amount, msg.sender);
   }
 

@@ -35,13 +35,15 @@ contract SpokeAccessTest is SpokeBase {
     // A spoke is allowed to call the hub functions
     deal(address(tokenList.dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));
-    tokenList.dai.approve(address(hub1), MAX_SUPPLY_AMOUNT);
     deal(address(tokenList.dai), address(spoke1), 1000e18);
+    tokenList.dai.transfer(address(hub1), 1000e18);
     hub1.add(daiAssetId, 1000e18, address(spoke1));
     hub1.draw(daiAssetId, 500e18, address(spoke1));
+    tokenList.dai.transfer(address(hub1), 500e18);
     hub1.restore(daiAssetId, 500e18, 0, IHubBase.PremiumDelta(0, 0, 0), address(spoke1));
     hub1.remove(daiAssetId, 1000e18, address(spoke1));
     hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(0, 0, 0));
+    tokenList.dai.transfer(address(hub1), 1000e18);
     hub1.add(daiAssetId, 1000e18, address(spoke1));
     hub1.payFeeShares(daiAssetId, 1e18);
     hub1.transferShares(

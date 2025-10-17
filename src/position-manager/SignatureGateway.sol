@@ -41,9 +41,9 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
-    (address underlying, address hub) = _getReserveData(spoke, reserveId);
+    (address underlying, ) = _getReserveData(spoke, reserveId);
     IERC20(underlying).safeTransferFrom(user, address(this), params.amount);
-    IERC20(underlying).forceApprove(hub, params.amount);
+    IERC20(underlying).forceApprove(spoke, params.amount);
 
     ISpoke(spoke).supply(reserveId, params.amount, user);
   }
@@ -103,14 +103,14 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
-    (address underlying, address hub) = _getReserveData(spoke, reserveId);
+    (address underlying, ) = _getReserveData(spoke, reserveId);
     uint256 repayAmount = MathUtils.min(
       params.amount,
       ISpoke(spoke).getUserTotalDebt(reserveId, user)
     );
 
     IERC20(underlying).safeTransferFrom(user, address(this), repayAmount);
-    IERC20(underlying).forceApprove(hub, repayAmount);
+    IERC20(underlying).forceApprove(spoke, repayAmount);
 
     ISpoke(spoke).repay(reserveId, repayAmount, user);
   }

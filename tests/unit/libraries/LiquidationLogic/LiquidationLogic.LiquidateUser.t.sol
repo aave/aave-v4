@@ -77,6 +77,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setDebtReserveId(wethReserveId);
     liquidationLogicWrapper.setDebtReserveHub(hub2);
     liquidationLogicWrapper.setDebtReserveAssetId(wethAssetId);
+    liquidationLogicWrapper.setDebtReserveUnderlying(address(tokenList.weth));
     liquidationLogicWrapper.setDebtReserveDecimals(18);
     liquidationLogicWrapper.setBorrowingStatus(wethReserveId, true);
 
@@ -144,9 +145,14 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       params.premiumDebt - params.accruedPremium
     );
 
-    // Mint tokens to liquidator and approve hub
+    // Mint tokens to liquidator and approve spoke
     deal(address(tokenList.weth), params.liquidator, spokeDrawnOwed + spokePremiumOwed);
-    Utils.approve(hub2, wethAssetId, params.liquidator, spokeDrawnOwed + spokePremiumOwed);
+    Utils.approve(
+      ISpoke(address(liquidationLogicWrapper)),
+      address(tokenList.weth),
+      params.liquidator,
+      spokeDrawnOwed + spokePremiumOwed
+    );
   }
 
   function test_liquidateUser() public {

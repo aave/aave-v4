@@ -18,7 +18,8 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    approve(IHub(address(hub)), assetId, user, amount);
+    approve(IHub(address(hub)), assetId, caller, user, amount);
+    transferFrom(IHub(address(hub)), assetId, caller, user, address(hub), amount);
     vm.prank(caller);
     return hub.add(assetId, amount, user);
   }
@@ -52,7 +53,8 @@ library Utils {
     uint256 drawnAmount,
     address restorer
   ) internal returns (uint256) {
-    approve(IHub(address(hub)), assetId, restorer, drawnAmount);
+    approve(IHub(address(hub)), assetId, caller, restorer, drawnAmount);
+    transferFrom(IHub(address(hub)), assetId, caller, restorer, address(hub), drawnAmount);
     vm.prank(caller);
     return hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0), restorer);
   }
@@ -173,7 +175,11 @@ library Utils {
   function approve(ISpoke spoke, uint256 reserveId, address owner, uint256 amount) internal {
     IHubBase hub = spoke.getReserve(reserveId).hub;
     (address underlying, ) = hub.getAssetUnderlyingAndDecimals(spoke.getReserve(reserveId).assetId);
-    _approve(IERC20(underlying), owner, address(hub), amount);
+    _approve(IERC20(underlying), owner, address(spoke), amount);
+  }
+
+  function approve(ISpoke spoke, address underlying, address owner, uint256 amount) internal {
+    _approve(IERC20(underlying), owner, address(spoke), amount);
   }
 
   function approve(
@@ -192,8 +198,15 @@ library Utils {
     );
   }
 
-  function approve(IHub hub, uint256 assetId, address owner, uint256 amount) internal {
-    _approve(IERC20(hub.getAsset(assetId).underlying), owner, address(hub), amount);
+  function approve(
+    IHub hub,
+    uint256 assetId,
+    address caller,
+    address owner,
+    uint256 amount
+  ) internal {
+    /// @dev caller is always a spoke
+    _approve(IERC20(hub.getAsset(assetId).underlying), owner, caller, amount);
   }
 
   function _approve(IERC20 underlying, address owner, address spender, uint256 amount) private {
@@ -201,5 +214,45 @@ library Utils {
     underlying.approve(spender, 0);
     underlying.approve(spender, amount);
     vm.stopPrank();
+  }
+
+  function transferFrom(
+    ISpoke spoke,
+    uint256 reserveId,
+    address caller,
+    address from,
+    address to,
+    uint256 amount
+  ) internal {
+    IHub hub = IHub(address(spoke.getReserve(reserveId).hub));
+    _transferFrom(
+      IERC20(hub.getAsset(spoke.getReserve(reserveId).assetId).underlying),
+      caller,
+      from,
+      to,
+      amount
+    );
+  }
+
+  function transferFrom(
+    IHub hub,
+    uint256 assetId,
+    address caller,
+    address from,
+    address to,
+    uint256 amount
+  ) internal {
+    _transferFrom(IERC20(hub.getAsset(assetId).underlying), caller, from, to, amount);
+  }
+
+  function _transferFrom(
+    IERC20 underlying,
+    address caller,
+    address from,
+    address to,
+    uint256 amount
+  ) private {
+    vm.prank(caller);
+    underlying.transferFrom(from, to, amount);
   }
 }

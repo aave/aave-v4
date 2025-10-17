@@ -387,11 +387,28 @@ abstract contract Base is Test {
       deal(address(tokenList.weth), users[x], mintAmount_WETH);
 
       vm.startPrank(users[x]);
-      tokenList.weth.approve(address(hub1), UINT256_MAX);
-      tokenList.usdx.approve(address(hub1), UINT256_MAX);
-      tokenList.dai.approve(address(hub1), UINT256_MAX);
-      tokenList.wbtc.approve(address(hub1), UINT256_MAX);
-      tokenList.usdy.approve(address(hub1), UINT256_MAX);
+      tokenList.weth.approve(address(spoke1), UINT256_MAX);
+      tokenList.usdx.approve(address(spoke1), UINT256_MAX);
+      tokenList.dai.approve(address(spoke1), UINT256_MAX);
+      tokenList.wbtc.approve(address(spoke1), UINT256_MAX);
+      tokenList.usdy.approve(address(spoke1), UINT256_MAX);
+
+      tokenList.weth.approve(address(spoke2), UINT256_MAX);
+      tokenList.usdx.approve(address(spoke2), UINT256_MAX);
+      tokenList.dai.approve(address(spoke2), UINT256_MAX);
+      tokenList.wbtc.approve(address(spoke2), UINT256_MAX);
+      tokenList.usdy.approve(address(spoke2), UINT256_MAX);
+
+      tokenList.weth.approve(address(spoke3), UINT256_MAX);
+      tokenList.usdx.approve(address(spoke3), UINT256_MAX);
+      tokenList.dai.approve(address(spoke3), UINT256_MAX);
+      tokenList.wbtc.approve(address(spoke3), UINT256_MAX);
+
+      tokenList.weth.approve(address(treasurySpoke), UINT256_MAX);
+      tokenList.usdx.approve(address(treasurySpoke), UINT256_MAX);
+      tokenList.dai.approve(address(treasurySpoke), UINT256_MAX);
+      tokenList.wbtc.approve(address(treasurySpoke), UINT256_MAX);
+      tokenList.usdy.approve(address(treasurySpoke), UINT256_MAX);
       vm.stopPrank();
     }
   }

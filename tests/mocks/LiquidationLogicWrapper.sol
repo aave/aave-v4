@@ -3,6 +3,8 @@
 pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
@@ -10,6 +12,7 @@ import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 
 contract LiquidationLogicWrapper {
   using SafeCast for uint256;
+  using SafeERC20 for IERC20;
   using PositionStatusMap for ISpoke.PositionStatus;
 
   mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
@@ -80,6 +83,10 @@ contract LiquidationLogicWrapper {
     _debtReserveId = reserveId;
   }
 
+  function setDebtReserveUnderlying(address underlying) public {
+    _reserves[_debtReserveId].underlying = underlying;
+  }
+
   function setDebtPositionDrawnShares(uint256 drawnShares) public {
     _userPositions[_borrower][_debtReserveId].drawnShares = drawnShares.toUint128();
   }
@@ -95,6 +102,7 @@ contract LiquidationLogicWrapper {
   function setDebtPositionRealizedPremium(uint256 realizedPremium) public {
     _userPositions[_borrower][_debtReserveId].realizedPremium = realizedPremium.toUint128();
   }
+
   function setCollateralStatus(uint256 reserveId, bool status) public {
     positionStatus.setUsingAsCollateral(reserveId, status);
   }

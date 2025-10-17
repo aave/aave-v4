@@ -13,6 +13,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {AssetLogic} from 'src/hub/libraries/AssetLogic.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 
 /// @title Hub
@@ -204,7 +205,11 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    IERC20(asset.underlying).safeTransferFrom(from, address(this), amount);
+    /// @dev Check the received amount instead of trusting Spokes, prevents malicious Spokes to transfer less.
+    require(
+      IERC20(asset.underlying).balanceOf(address(this)) >= asset.liquidity,
+      InvalidAmountReceived()
+    );
 
     emit Add(assetId, msg.sender, shares, amount);
 
@@ -282,7 +287,11 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    IERC20(asset.underlying).safeTransferFrom(from, address(this), totalAmount);
+    /// @dev Check the received amount instead of trusting Spokes, prevents malicious Spokes to transfer less.
+    require(
+      IERC20(asset.underlying).balanceOf(address(this)) >= asset.liquidity,
+      InvalidAmountReceived()
+    );
 
     emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 

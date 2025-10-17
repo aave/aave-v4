@@ -350,6 +350,7 @@ contract HubDrawTest is HubBase {
     // restore to provide liquidity
     // Must restore at least one full share;
     vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), singleShareInAssets);
     hub1.restore({
       assetId: daiAssetId,
       drawnAmount: singleShareInAssets,
@@ -418,6 +419,7 @@ contract HubDrawTest is HubBase {
     // restore to provide liquidity
     // Must repay at least one full share
     vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), minimumAssetsPerDrawnShare(hub1, daiAssetId));
     hub1.restore({
       assetId: daiAssetId,
       drawnAmount: minimumAssetsPerDrawnShare(hub1, daiAssetId),

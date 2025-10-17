@@ -43,11 +43,11 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 approvalAmount = amount - 1;
 
     vm.startPrank(bob);
-    tokenList.dai.approve(address(hub1), approvalAmount);
+    tokenList.dai.approve(address(spoke1), approvalAmount);
     vm.expectRevert(
       abi.encodeWithSelector(
         IERC20Errors.ERC20InsufficientAllowance.selector,
-        address(hub1),
+        address(spoke1),
         approvalAmount,
         amount
       )

@@ -66,10 +66,13 @@ contract HubRestoreTest is HubBase {
       premiumRestored: 0
     });
 
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawn + premium + 1);
+
     // alice restore invalid amount > drawn
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, drawAmount));
-    vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawn + 1, premium, premiumDelta, alice);
+    vm.stopPrank();
   }
 
   function test_restore_revertsWith_InvalidAmount_zero() public {
@@ -116,6 +119,39 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, 1, 0, premiumDelta, alice);
   }
 
+  function test_restore_revertsWith_InvalidAmountReceived() public {
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addAmount: daiAmount,
+      addSpoke: address(spoke2),
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: drawAmount,
+      skipTime: 365 days
+    });
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 restoreDrawnAmount = drawn / 2;
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      spoke: spoke1,
+      user: alice,
+      reserveId: daiAssetId,
+      premiumRestored: premium
+    });
+
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), restoreDrawnAmount / 2);
+
+    vm.expectRevert(IHub.InvalidAmountReceived.selector);
+    hub1.restore(daiAssetId, restoreDrawnAmount, premium, premiumDelta, alice);
+    vm.stopPrank();
+  }
+
   /// @dev It's possible to restore even when asset is frozen
   function test_restore_when_asset_frozen() public {
     uint256 daiAmount = 100e18;
@@ -158,6 +194,9 @@ contract HubRestoreTest is HubBase {
       premiumRestored: premium
     });
 
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
+
     vm.expectEmit(address(hub1));
     emit IHubBase.Restore(
       daiAssetId,
@@ -168,8 +207,8 @@ contract HubRestoreTest is HubBase {
       premium
     );
 
-    vm.prank(address(spoke1));
     uint256 restoredShares = hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
+    vm.stopPrank();
 
     assertEq(restoredShares, drawnShares);
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
@@ -347,9 +386,11 @@ contract HubRestoreTest is HubBase {
     });
 
     // alice restore invalid drawn
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawn + premiumRestored + 1);
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, drawn));
-    vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawn + 1, premiumRestored, premiumDelta, alice);
+    vm.stopPrank();
   }
 
   function test_restore_premiumDeltas_twoWeiIncrease_realizedDelta() public {
@@ -386,6 +427,9 @@ contract HubRestoreTest is HubBase {
     });
     premiumDelta.realizedDelta += vm.randomUint(0, 2).toInt256();
 
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
+
     vm.expectEmit(address(hub1));
     emit IHubBase.Restore(
       daiAssetId,
@@ -396,8 +440,8 @@ contract HubRestoreTest is HubBase {
       premium
     );
 
-    vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
+    vm.stopPrank();
   }
 
   function test_restore_revertsWith_InvalidPremiumChange_premiumIncrease() public {
@@ -434,9 +478,12 @@ contract HubRestoreTest is HubBase {
     });
     premiumDelta.realizedDelta += 3;
 
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
+
     vm.expectRevert(IHub.InvalidPremiumChange.selector);
-    vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
+    vm.stopPrank();
   }
 
   function test_restore_revertsWith_underflow_offsetIncrease() public {
@@ -473,9 +520,12 @@ contract HubRestoreTest is HubBase {
     });
     premiumDelta.offsetDelta += 1;
 
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
+
     vm.expectRevert(stdError.arithmeticError);
-    vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
+    vm.stopPrank();
   }
 
   function test_restore_two_wei_shares_delta_increase() public {
@@ -512,8 +562,10 @@ contract HubRestoreTest is HubBase {
     });
     premiumDelta.sharesDelta += vm.randomUint(0, 2).toInt256();
 
-    vm.prank(address(spoke1));
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
     hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
+    vm.stopPrank();
   }
 
   function test_restore_revertsWith_InvalidPremiumChange_premiumSharesIncrease() public {
@@ -550,9 +602,12 @@ contract HubRestoreTest is HubBase {
     });
     premiumDelta.sharesDelta += 3;
 
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
+
     vm.expectRevert(IHub.InvalidPremiumChange.selector);
-    vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
+    vm.stopPrank();
   }
 
   /// @dev Restore partial amount of drawn after time has passed (no premium).
@@ -584,8 +639,10 @@ contract HubRestoreTest is HubBase {
       premiumRestored: premium
     });
 
-    vm.prank(address(spoke1));
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), restoreDrawnAmount + premium);
     hub1.restore(daiAssetId, restoreDrawnAmount, premium, premiumDelta, alice);
+    vm.stopPrank();
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
     address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
@@ -651,6 +708,9 @@ contract HubRestoreTest is HubBase {
       premiumRestored: premium
     });
 
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
+
     vm.expectEmit(address(hub1));
     emit IHubBase.Restore(
       daiAssetId,
@@ -661,8 +721,8 @@ contract HubRestoreTest is HubBase {
       premium
     );
 
-    vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
+    vm.stopPrank();
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
 
@@ -761,8 +821,10 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 restore full drawn
-    vm.prank(address(spoke1));
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawn + premium);
     hub1.restore(daiAssetId, drawn, premium, premiumDelta, alice);
+    vm.stopPrank();
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
     address daiFeeReceiver = _getFeeReceiver(hub1, daiAssetId);
@@ -863,8 +925,10 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 restore full drawn
-    vm.prank(address(spoke1));
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawn + premiumRestored);
     hub1.restore(daiAssetId, drawn, premiumRestored, premiumDelta, alice);
+    vm.stopPrank();
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
     address daiFeeReceiver = _getFeeReceiver(hub1, daiAssetId);
