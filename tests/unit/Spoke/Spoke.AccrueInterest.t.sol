@@ -699,7 +699,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
         interestRateRay: rates.daiBaseBorrowRate,
         assetId: daiAssetId,
         liquidity: asset.liquidity - amounts.daiBorrowAmount,
-        drawn: hub1.convertToDrawnAssets(daiAssetId, asset.drawnShares + daiBorrowShares)
+        drawn: hub1.previewRestoreByShares(daiAssetId, asset.drawnShares + daiBorrowShares)
       });
       Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
     }
@@ -712,7 +712,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
         interestRateRay: rates.wethBaseBorrowRate,
         assetId: wethAssetId,
         liquidity: asset.liquidity - amounts.wethBorrowAmount,
-        drawn: hub1.convertToDrawnAssets(wethAssetId, asset.drawnShares + wethBorrowShares)
+        drawn: hub1.previewRestoreByShares(wethAssetId, asset.drawnShares + wethBorrowShares)
       });
       Utils.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
     }
@@ -725,7 +725,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
         interestRateRay: rates.usdxBaseBorrowRate,
         assetId: usdxAssetId,
         liquidity: asset.liquidity - amounts.usdxBorrowAmount,
-        drawn: hub1.convertToDrawnAssets(usdxAssetId, asset.drawnShares + usdxBorrowShares)
+        drawn: hub1.previewRestoreByShares(usdxAssetId, asset.drawnShares + usdxBorrowShares)
       });
       Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
     }
@@ -738,7 +738,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
         interestRateRay: rates.wbtcBaseBorrowRate,
         assetId: wbtcAssetId,
         liquidity: asset.liquidity - amounts.wbtcBorrowAmount,
-        drawn: hub1.convertToDrawnAssets(wbtcAssetId, asset.drawnShares + wbtcBorrowShares)
+        drawn: hub1.previewRestoreByShares(wbtcAssetId, asset.drawnShares + wbtcBorrowShares)
       });
       Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
     }
@@ -855,7 +855,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       startTime
     );
     uint256 expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
-    uint256 expectedPremiumDebt = hub1.convertToDrawnAssets(daiAssetId, expectedpremiumShares) -
+    uint256 expectedPremiumDebt = hub1.previewRestoreByShares(daiAssetId, expectedpremiumShares) -
       bobPosition.premiumOffset +
       bobPosition.realizedPremium;
     uint256 interest = (drawnDebt + expectedPremiumDebt) -
@@ -903,7 +903,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
     expectedPremiumDebt =
-      hub1.convertToDrawnAssets(wethAssetId, expectedpremiumShares) -
+      hub1.previewRestoreByShares(wethAssetId, expectedpremiumShares) -
       bobPosition.premiumOffset +
       bobPosition.realizedPremium;
     interest =
@@ -952,7 +952,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
     expectedPremiumDebt =
-      hub1.convertToDrawnAssets(usdxAssetId, expectedpremiumShares) -
+      hub1.previewRestoreByShares(usdxAssetId, expectedpremiumShares) -
       bobPosition.premiumOffset +
       bobPosition.realizedPremium;
     interest =
@@ -1001,7 +1001,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
     expectedPremiumDebt =
-      hub1.convertToDrawnAssets(wbtcAssetId, expectedpremiumShares) -
+      hub1.previewRestoreByShares(wbtcAssetId, expectedpremiumShares) -
       bobPosition.premiumOffset +
       bobPosition.realizedPremium;
     interest =

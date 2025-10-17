@@ -177,7 +177,7 @@ contract HubRestoreTest is HubBase {
     assertEq(daiData.addedAmount, daiAmount, 'hub dai total assets post-restore');
     assertEq(
       daiData.addedShares,
-      hub1.convertToAddedShares(daiAssetId, daiAmount),
+      hub1.previewAddByAssets(daiAssetId, daiAmount),
       'hub dai total shares post-restore'
     );
     assertEq(
@@ -671,7 +671,7 @@ contract HubRestoreTest is HubBase {
     assertEq(daiData.addedAmount, daiAmount, 'hub dai total assets post-restore');
     assertEq(
       daiData.addedShares,
-      hub1.convertToAddedShares(daiAssetId, daiAmount),
+      hub1.previewAddByAssets(daiAssetId, daiAmount),
       'hub dai total shares post-restore'
     );
     assertEq(
