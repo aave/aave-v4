@@ -254,12 +254,11 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'supply + enable collateral (multicall)');
 
     // supplyWithPermit (dai)
-    IHub hub = _hub(spoke, reserveId.dai);
-    tokenList.dai.approve(address(hub), 0);
+    tokenList.dai.approve(address(spoke), 0);
     (, uint256 bobPk) = makeAddrAndKey('bob');
     EIP712Types.Permit memory permit = EIP712Types.Permit({
       owner: bob,
-      spender: address(hub),
+      spender: address(spoke),
       value: 1000e6,
       nonce: tokenList.dai.nonces(bob),
       deadline: vm.getBlockTimestamp()
@@ -277,11 +276,10 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     skip(100);
 
     // repayWithPermit (usdx)
-    hub = _hub(spoke, reserveId.usdx);
-    tokenList.usdx.approve(address(hub), 0);
+    tokenList.usdx.approve(address(spoke), 0);
     permit = EIP712Types.Permit({
       owner: bob,
-      spender: address(hub),
+      spender: address(spoke),
       value: 500e6,
       nonce: tokenList.usdx.nonces(bob),
       deadline: vm.getBlockTimestamp()
@@ -299,12 +297,11 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
     // supplyWithPermitAndEnableCollateral (wbtc)
     calls = new bytes[](3);
-    hub = _hub(spoke, reserveId.wbtc);
-    tokenList.wbtc.approve(address(hub), 0);
+    tokenList.wbtc.approve(address(spoke), 0);
     (, bobPk) = makeAddrAndKey('bob');
     permit = EIP712Types.Permit({
       owner: bob,
-      spender: address(hub),
+      spender: address(spoke),
       value: 1000e6,
       nonce: tokenList.wbtc.nonces(bob),
       deadline: vm.getBlockTimestamp()

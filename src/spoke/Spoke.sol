@@ -476,7 +476,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     try
       IERC20Permit(underlying).permit({
         owner: onBehalfOf,
-        spender: address(reserve.hub),
+        spender: address(this),
         value: value,
         deadline: deadline,
         v: permitV,
