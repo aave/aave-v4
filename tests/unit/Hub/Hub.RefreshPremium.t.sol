@@ -100,6 +100,7 @@ contract HubRefreshPremiumTest is HubBase {
       ? asset.premiumOffset + offsetDelta.toUint256()
       : asset.premiumOffset - (-offsetDelta).toUint256();
 
+    // Only 1 spoke drawing so checks on asset are equivalent to spoke
     if (expectedOffset > expectedPremiumShares.rayMulUp(asset.drawnIndex)) {
       reverting = true;
       vm.expectRevert(stdError.arithmeticError);
