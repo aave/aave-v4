@@ -288,12 +288,13 @@ contract HubConfigTest is HubBase {
       (uint32, uint32, uint32, uint32)
     );
 
+    // feeReceiver risk premium cap defaults to 0
     IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
       active: true,
       paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: 0,
-      riskPremiumCap: 1000_00
+      riskPremiumCap: 0
     });
 
     vm.expectEmit(address(hub1));

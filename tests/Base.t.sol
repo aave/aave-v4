@@ -1260,6 +1260,20 @@ abstract contract Base is Test {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
+  function _updateSpokeRiskPremiumCap(
+    IHub hub,
+    uint256 assetId,
+    address spoke,
+    uint24 newRiskPremiumCap
+  ) internal pausePrank {
+    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    spokeConfig.riskPremiumCap = newRiskPremiumCap;
+    vm.prank(HUB_ADMIN);
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+
+    assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
+  }
+
   function getUserInfo(
     ISpoke spoke,
     address user,
