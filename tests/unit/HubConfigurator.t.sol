@@ -386,7 +386,7 @@ contract HubConfiguratorTest is HubBase {
       ISpoke(address(treasurySpoke)),
       daiAssetId,
       TREASURY_ADMIN,
-      hub1.convertToAddedAssets(daiAssetId, feeShares / 2),
+      hub1.previewRemoveByShares(daiAssetId, feeShares / 2),
       address(treasurySpoke)
     );
 

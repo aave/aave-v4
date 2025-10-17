@@ -196,7 +196,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     vars.expectedPremiumDebt =
-      hub1.convertToDrawnAssets(daiAssetId, alicePosition.premiumShares) -
+      hub1.previewRestoreByShares(daiAssetId, alicePosition.premiumShares) -
       alicePosition.premiumOffset;
 
     (baseDaiDebt, daiPremiumDebt) = spoke1.getUserDebt(reservesIds.dai, alice);

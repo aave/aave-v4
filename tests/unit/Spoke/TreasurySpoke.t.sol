@@ -271,7 +271,7 @@ contract TreasurySpokeTest is SpokeBase {
     );
     assertApproxEqAbs(
       treasurySpoke.getReserveSuppliedShares(reserveId),
-      hub1.convertToAddedShares(assetId, fees),
+      hub1.previewAddByAssets(assetId, fees),
       1,
       'reserve supplied shares'
     );

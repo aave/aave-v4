@@ -467,26 +467,6 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].toDrawnAssetsUp(shares);
   }
 
-  /// @inheritdoc IHub
-  function convertToAddedAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toAddedAssetsDown(shares);
-  }
-
-  /// @inheritdoc IHub
-  function convertToAddedShares(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toAddedSharesDown(assets);
-  }
-
-  /// @inheritdoc IHub
-  function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toDrawnAssetsUp(shares);
-  }
-
-  /// @inheritdoc IHub
-  function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toDrawnSharesUp(assets);
-  }
-
   /// @inheritdoc IHubBase
   function getAssetUnderlyingAndDecimals(uint256 assetId) external view returns (address, uint8) {
     Asset storage asset = _assets[assetId];

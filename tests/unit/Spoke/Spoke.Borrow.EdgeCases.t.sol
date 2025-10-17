@@ -140,7 +140,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
 
     // ensure inflated exch rate
-    vm.assume(hub1.convertToDrawnAssets(daiAssetId, 1e18) > 1e18);
+    vm.assume(hub1.previewRestoreByShares(daiAssetId, 1e18) > 1e18);
     // ensure that shares conversion of smaller amounts individually are greater than shares of total sum
     vm.assume(
       amount1.mulDiv(hub1.getAsset(daiAssetId).drawnShares, drawnDebt, Math.Rounding.Ceil) +
