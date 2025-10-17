@@ -159,6 +159,7 @@ contract HubRefreshPremiumTest is HubBase {
   /// @dev offsetDelta can't be more than sharesDelta or else underflow
   /// @dev sharesDelta + realizedDelta can't be more than 2 more than offsetDelta
   function test_refreshPremium_fuzz_positiveDeltas(
+    uint256 borrowAmount,
     int256 sharesDelta,
     int256 offsetDelta,
     int256 realizedDelta,
@@ -167,19 +168,27 @@ contract HubRefreshPremiumTest is HubBase {
     sharesDelta = bound(sharesDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
     offsetDelta = bound(offsetDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
     realizedDelta = bound(realizedDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
+    borrowAmount = bound(borrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: sharesDelta,
       offsetDelta: offsetDelta,
       realizedDelta: realizedDelta
     });
 
-    uint24 riskPremiumCap = Constants.MAX_ALLOWED_RISK_PREMIUM_CAP;
-    if (!isRiskPremiumCapMaxAllowed) {
-      riskPremiumCap = vm.randomUint(0, Constants.MAX_ALLOWED_RISK_PREMIUM_CAP - 1).toUint24();
-      _updateSpokeRiskPremiumCap(hub1, daiAssetId, address(spoke1), riskPremiumCap);
+    uint256 assetId = daiAssetId;
+
+    uint24 riskPremiumCap = vm.randomUint(0, Constants.MAX_ALLOWED_RISK_PREMIUM_CAP - 1).toUint24();
+    if (isRiskPremiumCapMaxAllowed) {
+      // sentinel value to preclude check
+      riskPremiumCap = Constants.MAX_ALLOWED_RISK_PREMIUM_CAP;
+    }
+    _updateSpokeRiskPremiumCap(hub1, assetId, address(spoke1), riskPremiumCap);
+
+    if (borrowAmount > 0) {
+      Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, borrowAmount * 2, bob);
+      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
     }
 
-    uint256 assetId = daiAssetId;
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
     bool reverting;
@@ -195,6 +204,7 @@ contract HubRefreshPremiumTest is HubBase {
       reverting = true;
       vm.expectRevert(stdError.arithmeticError);
     } else if (
+      riskPremiumCap != Constants.MAX_ALLOWED_RISK_PREMIUM_CAP &&
       asset.drawnShares.percentMulUp(riskPremiumCap) < asset.premiumShares + sharesDelta.toUint256()
     ) {
       reverting = true;

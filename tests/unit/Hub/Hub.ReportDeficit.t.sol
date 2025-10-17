@@ -167,7 +167,7 @@ contract HubReportDeficitTest is HubBase {
       (params.drawnAfter, params.premiumAfter) = hub1.getAssetOwed(usdxAssetId);
 
       params.deficitAfter = getDeficit(hub1, usdxAssetId);
-      params.supplyExchangeRateAfter = hub1.previewRestoreByShares(usdxAssetId, WadRayMath.RAY);
+      params.supplyExchangeRateAfter = hub1.previewRemoveByShares(usdxAssetId, WadRayMath.RAY);
       params.liquidityAfter = hub1.getAssetLiquidity(usdxAssetId);
       params.balanceAfter = IERC20(hub1.getAsset(usdxAssetId).underlying).balanceOf(
         address(spoke1)
