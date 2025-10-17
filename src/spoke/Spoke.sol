@@ -322,20 +322,21 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 debtToCover,
     bool receiveShares
   ) external {
-    UserAccountData memory userAccountData = _calculateUserAccountData(user);
+    UserAccountDataWithoutRiskPremium
+      memory userAccountDataWithoutRp = _calculateUserAccountDataWithoutRiskPremium(user);
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       oracle: ORACLE,
       user: user,
       debtToCover: debtToCover,
-      healthFactor: userAccountData.healthFactor,
+      healthFactor: userAccountDataWithoutRp.healthFactor,
       drawnDebt: 0, // populated below
       premiumDebt: 0, // populated below
       accruedPremium: 0, // populated below
-      totalDebtValue: userAccountData.totalDebtValue,
-      activeCollateralCount: userAccountData.activeCollateralCount,
-      borrowedCount: userAccountData.borrowedCount,
+      totalDebtValue: userAccountDataWithoutRp.totalDebtValue,
+      activeCollateralCount: userAccountDataWithoutRp.activeCollateralCount,
+      borrowedCount: userAccountDataWithoutRp.borrowedCount,
       liquidator: msg.sender,
       receiveShares: receiveShares
     });
@@ -677,7 +678,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function _calculateAndRefreshUserAccountData(
     address user
   ) internal returns (UserAccountData memory) {
-    UserAccountData memory accountData = _calculateAndPotentiallyRefreshUserAccountData(user, true);
+    UserAccountData memory accountData = _calculateAndPotentiallyRefreshUserAccountData(
+      user,
+      true,
+      true
+    );
     emit RefreshAllUserDynamicConfig(user);
     return accountData;
   }
@@ -686,14 +691,16 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev User RiskPremium calc runs until the first of either debt or collateral is exhausted.
   function _calculateAndPotentiallyRefreshUserAccountData(
     address user,
-    bool refreshConfig
+    bool refreshConfig,
+    bool withRiskPremium
   ) internal returns (UserAccountData memory accountData) {
     PositionStatus storage positionStatus = _positionStatus[user];
 
     uint256 reserveId = _reserveCount;
-    KeyValueList.List memory collateralInfo = KeyValueList.init(
-      positionStatus.collateralCount(reserveId)
-    );
+    KeyValueList.List memory collateralInfo;
+    if (withRiskPremium) {
+      collateralInfo = KeyValueList.init(positionStatus.collateralCount(reserveId));
+    }
     bool borrowing;
     bool collateral;
     while (true) {
@@ -721,11 +728,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
               suppliedShares
             ) * assetPrice).wadDivDown(assetUnit);
             accountData.totalCollateralValue += userCollateralValue;
-            collateralInfo.add(
-              accountData.activeCollateralCount,
-              reserve.collateralRisk,
-              userCollateralValue
-            );
+            if (withRiskPremium) {
+              collateralInfo.add(
+                accountData.activeCollateralCount,
+                reserve.collateralRisk,
+                userCollateralValue
+              );
+            }
             accountData.avgCollateralFactor += collateralFactor * userCollateralValue;
             accountData.activeCollateralCount = accountData.activeCollateralCount.uncheckedAdd(1);
           }
@@ -763,23 +772,25 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         .fromBpsDown();
     }
 
-    uint256 debtValueLeftToCover = accountData.totalDebtValue;
-    collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
-    for (uint256 index = 0; index < collateralInfo.length(); ++index) {
-      if (debtValueLeftToCover == 0) {
-        break;
+    if (withRiskPremium) {
+      uint256 debtValueLeftToCover = accountData.totalDebtValue;
+      collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
+      for (uint256 index = 0; index < collateralInfo.length(); ++index) {
+        if (debtValueLeftToCover == 0) {
+          break;
+        }
+
+        (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.get(index);
+        userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
+        accountData.riskPremium += userCollateralValue * collateralRisk;
+        debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
       }
 
-      (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.get(index);
-      userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
-      accountData.riskPremium += userCollateralValue * collateralRisk;
-      debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
-    }
-
-    if (debtValueLeftToCover < accountData.totalDebtValue) {
-      accountData.riskPremium =
-        accountData.riskPremium /
-        accountData.totalDebtValue.uncheckedSub(debtValueLeftToCover);
+      if (debtValueLeftToCover < accountData.totalDebtValue) {
+        accountData.riskPremium =
+          accountData.riskPremium /
+          accountData.totalDebtValue.uncheckedSub(debtValueLeftToCover);
+      }
     }
 
     return accountData;
@@ -924,7 +935,24 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   function _calculateUserAccountData(address user) internal view returns (UserAccountData memory) {
     // SAFETY: function does not modify state when refreshConfig is false.
-    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
+    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false, true);
+  }
+
+  function _calculateUserAccountDataWithoutRiskPremium(
+    address user
+  ) internal view returns (UserAccountDataWithoutRiskPremium memory) {
+    UserAccountData memory accountData = _castToView(
+      _calculateAndPotentiallyRefreshUserAccountData
+    )(user, false, false);
+    return
+      UserAccountDataWithoutRiskPremium({
+        avgCollateralFactor: accountData.avgCollateralFactor,
+        healthFactor: accountData.healthFactor,
+        totalCollateralValue: accountData.totalCollateralValue,
+        totalDebtValue: accountData.totalDebtValue,
+        activeCollateralCount: accountData.activeCollateralCount,
+        borrowedCount: accountData.borrowedCount
+      });
   }
 
   /// @return The user's drawn debt.
@@ -980,11 +1008,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   function _castToView(
-    function(address, bool) internal returns (UserAccountData memory) fnIn
+    function(address, bool, bool) internal returns (UserAccountData memory) fnIn
   )
     internal
     pure
-    returns (function(address, bool) internal view returns (UserAccountData memory) fnOut)
+    returns (function(address, bool, bool) internal view returns (UserAccountData memory) fnOut)
   {
     assembly ('memory-safe') {
       fnOut := fnIn

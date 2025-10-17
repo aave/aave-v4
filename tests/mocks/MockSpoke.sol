@@ -96,8 +96,9 @@ contract MockSpoke is Spoke, Test {
   // Exposes spoke's calculateAndPotentiallyRefreshUserAccountData
   function calculateAndPotentiallyRefreshUserAccountData(
     address user,
-    bool refreshConfig
+    bool refreshConfig,
+    bool withRiskPremium
   ) external returns (UserAccountData memory) {
-    return _calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig);
+    return _calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig, withRiskPremium);
   }
 }

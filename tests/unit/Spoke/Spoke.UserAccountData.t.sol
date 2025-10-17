@@ -259,8 +259,12 @@ contract SpokeUserAccountDataTest is SpokeBase {
     spoke.mockStorage(user, accountDataInfo);
 
     ISpoke.UserAccountData memory userAccountData = spoke
-      .calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig);
+      .calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig, true);
     assertApproxEq(userAccountData, expectedUserAccountData);
+
+    ISpoke.UserAccountData memory userAccountDataWithoutRp = spoke
+      .calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig, false);
+    assertEqWithoutRiskPremium(userAccountData, userAccountDataWithoutRp);
   }
 
   function _getLastReserveConfigKey(uint256 reserveId) internal view returns (uint16) {
@@ -276,6 +280,18 @@ contract SpokeUserAccountDataTest is SpokeBase {
     assertApproxEqAbs(a.avgCollateralFactor, b.avgCollateralFactor, 1e12, 'avgCollateralFactor');
     assertApproxEqAbs(a.healthFactor, b.healthFactor, 1e12, 'healthFactor');
     assertApproxEqAbs(a.riskPremium, b.riskPremium, 1, 'riskPremium');
+    assertEq(a.activeCollateralCount, b.activeCollateralCount, 'activeCollateralCount');
+    assertEq(a.borrowedCount, b.borrowedCount, 'borrowedCount');
+  }
+
+  function assertEqWithoutRiskPremium(
+    ISpoke.UserAccountData memory a,
+    ISpoke.UserAccountData memory b
+  ) internal pure {
+    assertEq(a.totalCollateralValue, b.totalCollateralValue, 'totalCollateralValue');
+    assertEq(a.totalDebtValue, b.totalDebtValue, 'totalDebtValue');
+    assertApproxEqAbs(a.avgCollateralFactor, b.avgCollateralFactor, 1e12, 'avgCollateralFactor');
+    assertApproxEqAbs(a.healthFactor, b.healthFactor, 1e12, 'healthFactor');
     assertEq(a.activeCollateralCount, b.activeCollateralCount, 'activeCollateralCount');
     assertEq(a.borrowedCount, b.borrowedCount, 'borrowedCount');
   }
