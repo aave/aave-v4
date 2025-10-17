@@ -56,12 +56,13 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   }
 
   struct PositionManagerConfig {
-    bool active;
     mapping(address user => bool) approval;
+    bool active;
   }
 
   struct PositionStatus {
     mapping(uint256 slot => uint256) map;
+    bool hasPositiveRiskPremium; // premiumShares > 0
   }
 
   struct UserAccountData {
@@ -119,14 +120,14 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Emitted on updatePositionManager action.
   /// @param positionManager The address of the position manager.
-  /// @param active True if position manager has become active, false otherwise.
+  /// @param active True if position manager has become active.
   event UpdatePositionManager(address indexed positionManager, bool active);
 
   /// @notice Emitted on setUsingAsCollateral action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator.
   /// @param user The owner of the position being modified.
-  /// @param usingAsCollateral Boolean whether the reserve is enabled or disabled as collateral.
+  /// @param usingAsCollateral Whether the reserve is enabled or disabled as collateral.
   event SetUsingAsCollateral(
     uint256 indexed reserveId,
     address indexed caller,
@@ -192,6 +193,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when collateral cannot be liquidated.
   error CollateralCannotBeLiquidated();
 
+  /// @notice Thrown when a specified reserve is not supplied by the user during liquidation.
+  error ReserveNotSupplied();
+
   /// @notice Thrown when a specified reserve is not borrowed by the user during liquidation.
   error ReserveNotBorrowed();
 
@@ -234,11 +238,14 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown during liquidation when a user's health factor is not below the liquidation threshold.
   error HealthFactorNotBelowThreshold();
 
-  /// @notice Thrown when dust debt remains after a liquidation.
+  /// @notice Thrown when collateral or debt dust remains after a liquidation, and neither reserve is fully liquidated.
   error MustNotLeaveDust();
 
   /// @notice Thrown when a debt to cover input is zero.
   error InvalidDebtToCover();
+
+  /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen.
+  error CannotReceiveShares();
 
   /// @notice Updates the liquidation config.
   /// @param config The liquidation config.
@@ -299,14 +306,14 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Allows an approved caller (admin) to toggle the active status of position manager.
   /// @param positionManager The address of the position manager.
-  /// @param active True if positionManager is to be set as active, false otherwise.
+  /// @param active True if positionManager is to be set as active.
   function updatePositionManager(address positionManager, bool active) external;
 
   /// @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @param reserveId The reserve identifier of the underlying asset.
-  /// @param usingAsCollateral True if the user wants to use the supply as collateral, false otherwise.
+  /// @param usingAsCollateral True if the user wants to use the supply as collateral.
   /// @param onBehalfOf The owner of the position being modified.
   function setUsingAsCollateral(
     uint256 reserveId,
@@ -367,10 +374,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     bytes32 permitS
   ) external;
 
-  /// @notice Returns the address of the external `LiquidationLogic` library.
-  /// @return The address of the library.
-  function getLiquidationLogic() external pure returns (address);
-
   /// @notice Returns the liquidation config struct.
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
 
@@ -405,14 +408,14 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint16 configKey
   ) external view returns (DynamicReserveConfig memory);
 
-  /// @notice Returns true if the reserve is set as collateral for the user, false otherwise.
+  /// @notice Returns true if the reserve is set as collateral for the user.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Even if enabled as collateral, it will only count towards user position if the collateral factor is greater than 0.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
   function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
 
-  /// @notice Returns true if the user is borrowing the reserve, false otherwise.
+  /// @notice Returns true if the user is borrowing the reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
@@ -444,17 +447,21 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Returns whether positionManager is currently activated by governance.
   /// @param positionManager The address of the position manager.
-  /// @return True if positionManager is currently active, false otherwise.
+  /// @return True if positionManager is currently active.
   function isPositionManagerActive(address positionManager) external view returns (bool);
 
   /// @notice Returns whether positionManager is active and approved by user.
   /// @param user The address of the user.
   /// @param positionManager The address of the position manager.
-  /// @return True if positionManager is active and approved by user, false otherwise.
+  /// @return True if positionManager is active and approved by user.
   function isPositionManager(address user, address positionManager) external view returns (bool);
 
   /// @notice Returns the EIP-712 domain separator.
   function DOMAIN_SEPARATOR() external view returns (bytes32);
+
+  /// @notice Returns the address of the external `LiquidationLogic` library.
+  /// @return The address of the library.
+  function getLiquidationLogic() external pure returns (address);
 
   /// @notice Returns the maximum allowed value for an asset identifier.
   /// @return The maximum asset identifier value (inclusive).
@@ -472,9 +479,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @return The minimum health factor considered healthy, expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint64);
 
-  /// @notice Returns the minimum required remaining base currency amount after a partial liquidation.
-  /// @return The minimum debt amount considered as dust, denominated in USD with 26 decimals.
-  function DUST_DEBT_LIQUIDATION_THRESHOLD() external view returns (uint256);
+  /// @notice Returns the maximum amount considered as dust for a user's collateral and debt balances after a liquidation.
+  /// @return The maximum amount considered as dust, expressed in USD with 26 decimals.
+  function DUST_LIQUIDATION_THRESHOLD() external view returns (uint256);
 
   /// @notice Returns the number of decimals used by the oracle.
   /// @return The number of decimals.

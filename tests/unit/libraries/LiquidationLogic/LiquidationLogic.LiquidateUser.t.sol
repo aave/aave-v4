@@ -44,12 +44,14 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       totalDebtValue: 10_000e26,
       liquidator: makeAddr('liquidator'),
       activeCollateralCount: 1,
-      borrowedCount: 1
+      borrowedCount: 1,
+      receiveShares: false
     });
 
     // Set liquidationLogicWrapper as a spoke
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });
@@ -58,8 +60,12 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     hub2.addSpoke(wethAssetId, address(liquidationLogicWrapper), spokeConfig);
     vm.stopPrank();
 
+    // set borrower
+    liquidationLogicWrapper.setBorrower(params.user);
+
     // Mock storage for collateral side
     require(hub1.getAsset(usdxAssetId).underlying == address(tokenList.usdx));
+    liquidationLogicWrapper.setCollateralReserveId(usdxReserveId);
     liquidationLogicWrapper.setCollateralReserveHub(hub1);
     liquidationLogicWrapper.setCollateralReserveAssetId(usdxAssetId);
     liquidationLogicWrapper.setCollateralReserveDecimals(6);
@@ -68,6 +74,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
 
     // Mock storage for debt side
     require(hub2.getAsset(wethAssetId).underlying == address(tokenList.weth));
+    liquidationLogicWrapper.setDebtReserveId(wethReserveId);
     liquidationLogicWrapper.setDebtReserveHub(hub2);
     liquidationLogicWrapper.setDebtReserveAssetId(wethAssetId);
     liquidationLogicWrapper.setDebtReserveDecimals(18);
@@ -209,18 +216,28 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.liquidateUser(params);
   }
 
-  function test_liquidateUser_revertsWith_MustNotLeaveDust() public {
+  function test_liquidateUser_revertsWith_MustNotLeaveDust_Debt() public {
     params.totalDebtValue *= 2;
     params.debtToCover = 4.9e18;
+    liquidationLogicWrapper.setCollateralPositionSuppliedShares(
+      liquidationLogicWrapper.getCollateralPosition().suppliedShares * 2
+    );
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.liquidateUser(params);
   }
 
-  function updateStorage(ISpoke.LiquidationConfig memory liquidationConfig) internal {
-    liquidationLogicWrapper.setLiquidationConfig(liquidationConfig);
+  function test_liquidateUser_revertsWith_MustNotLeaveDust_Collateral() public {
+    liquidationLogicWrapper.setCollateralPositionSuppliedShares(6500e6);
+    params.debtToCover = 2.6e18;
+    vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
+    liquidationLogicWrapper.liquidateUser(params);
   }
 
-  function updateStorage(ISpoke.DynamicReserveConfig memory dynamicCollateralConfig) internal {
-    liquidationLogicWrapper.setDynamicCollateralConfig(dynamicCollateralConfig);
+  function updateStorage(ISpoke.LiquidationConfig memory config) internal {
+    liquidationLogicWrapper.setLiquidationConfig(config);
+  }
+
+  function updateStorage(ISpoke.DynamicReserveConfig memory config) internal {
+    liquidationLogicWrapper.setDynamicCollateralConfig(config);
   }
 }

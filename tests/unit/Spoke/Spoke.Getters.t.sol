@@ -115,14 +115,14 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), supplyAmount);
     assertEq(
       spoke1.getUserSuppliedShares(reserveId, alice),
-      hub1.convertToAddedShares(assetId, supplyAmount)
+      hub1.previewAddByAssets(assetId, supplyAmount)
     );
 
     // Reserve supply
     assertEq(spoke1.getReserveSuppliedAssets(reserveId), supplyAmount);
     assertEq(
       spoke1.getReserveSuppliedShares(reserveId),
-      hub1.convertToAddedShares(assetId, supplyAmount)
+      hub1.previewAddByAssets(assetId, supplyAmount)
     );
 
     // Spoke debts
@@ -154,11 +154,11 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke1)), supplyAmount);
     assertEq(
       hub1.getSpokeAddedShares(assetId, address(spoke1)),
-      hub1.convertToAddedShares(assetId, supplyAmount)
+      hub1.previewAddByAssets(assetId, supplyAmount)
     );
 
     // Asset supply
     assertEq(hub1.getAddedAssets(assetId), supplyAmount);
-    assertEq(hub1.getAddedShares(assetId), hub1.convertToAddedShares(assetId, supplyAmount));
+    assertEq(hub1.getAddedShares(assetId), hub1.previewAddByAssets(assetId, supplyAmount));
   }
 }

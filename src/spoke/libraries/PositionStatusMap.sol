@@ -104,8 +104,8 @@ library PositionStatusMap {
   /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
   /// @param fromReserveId The identifier of the reserve to start searching from.
   /// @return reserveId The reserve identifier for the next reserve that is borrowed or used as collateral.
-  /// @return borrowing True if the next reserveId is borrowed, false otherwise.
-  /// @return collateral True if the next reserveId is used as collateral, false otherwise.
+  /// @return borrowing True if the next reserveId is borrowed.
+  /// @return collateral True if the next reserveId is used as collateral.
   function next(
     ISpoke.PositionStatus storage self,
     uint256 fromReserveId

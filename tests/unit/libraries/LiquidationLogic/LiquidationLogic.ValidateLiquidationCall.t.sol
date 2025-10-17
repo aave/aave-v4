@@ -18,9 +18,12 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
       debtReserveHub: address(hub1),
       collateralReservePaused: false,
       debtReservePaused: false,
+      receiveShares: false,
+      collateralReserveFrozen: false,
       healthFactor: 0.8e18,
       isUsingAsCollateral: true,
       collateralFactor: 75_00,
+      collateralReserveBalance: 120e6,
       debtReserveBalance: 100e18
     });
   }
@@ -55,6 +58,21 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
+  function test_validateLiquidationCall_revertsWith_CannotReceiveShares_CollateralFrozen() public {
+    // frozen coll reserve; receiveShares false allowed
+    params.collateralReserveFrozen = true;
+    liquidationLogicWrapper.validateLiquidationCall(params);
+
+    // frozen coll reserve; receiveShares true not allowed
+    params.receiveShares = true;
+    vm.expectRevert(ISpoke.CannotReceiveShares.selector);
+    liquidationLogicWrapper.validateLiquidationCall(params);
+
+    // non-frozen coll reserve; receiveShares true allowed
+    params.collateralReserveFrozen = false;
+    liquidationLogicWrapper.validateLiquidationCall(params);
+  }
+
   function test_validateLiquidationCall_revertsWith_ReservePaused_DebtPaused() public {
     params.debtReservePaused = true;
     vm.expectRevert(ISpoke.ReservePaused.selector);
@@ -80,6 +98,12 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
   {
     params.collateralFactor = 0;
     vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
+    liquidationLogicWrapper.validateLiquidationCall(params);
+  }
+
+  function test_validateLiquidationCall_revertsWith_ReserveNotSupplied() public {
+    params.collateralReserveBalance = 0;
+    vm.expectRevert(ISpoke.ReserveNotSupplied.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 

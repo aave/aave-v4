@@ -55,12 +55,14 @@ interface IHub is IHubBase, IAccessManaged {
     uint56 addCap;
     uint56 drawCap;
     bool active;
+    bool paused;
     //
     uint128 deficit;
   }
 
   struct SpokeConfig {
     bool active;
+    bool paused;
     uint56 addCap;
     uint56 drawCap;
   }
@@ -95,8 +97,9 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Emitted when fees are accrued to `feeReceiver`.
   /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the current feeReceiver.
   /// @param shares The amount of shares accrued.
-  event AccrueFees(uint256 indexed assetId, uint256 shares);
+  event AccrueFees(uint256 indexed assetId, address indexed spoke, uint256 shares);
 
   /// @notice Emitted when an amount of liquidity is swept by the reinvestment controller.
   /// @param assetId The identifier of the asset.
@@ -131,6 +134,18 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param addCap The current `addCap` of the asset.
   error AddCapExceeded(uint256 addCap);
 
+  /// @notice Thrown when the added amount is exceeded.
+  /// @param addedAmount The current removable asset balance.
+  error AddedAmountExceeded(uint256 addedAmount);
+
+  /// @notice Thrown when the added shares are exceeded.
+  /// @param addedShares The current removable shares balance.
+  error AddedSharesExceeded(uint256 addedShares);
+
+  /// @notice Thrown when the liquidity is insufficient.
+  /// @param liquidity The current available liquidity.
+  error InsufficientLiquidity(uint256 liquidity);
+
   /// @notice Thrown when the draw cap is exceeded.
   /// @param drawCap The current `drawCap` of the asset.
   error DrawCapExceeded(uint256 drawCap);
@@ -142,8 +157,15 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Thrown when the premium change is invalid.
   error InvalidPremiumChange();
 
+  /// @notice Thrown when a surplus on existing deficit is reported.
+  /// @param amount The amount of surplus on existing deficit assets.
+  error SurplusDeficitReported(uint256 amount);
+
   /// @notice Thrown when a spoke is not active.
   error SpokeNotActive();
+
+  /// @notice Thrown when a spoke is paused.
+  error SpokePaused();
 
   /// @notice Thrown when a new reinvestment controller is the zero address and the asset has existing swept liquidity.
   error InvalidReinvestmentController();
@@ -258,34 +280,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The number of listed assets.
   function getAssetCount() external view returns (uint256);
 
-  /// @notice Converts the given amount of supplied shares to assets amount for the specified asset.
-  /// @dev Rounds down to the nearest assets amount.
-  /// @param assetId The identifier of the asset.
-  /// @param shares The amount of supplied shares to convert to assets amount.
-  /// @return The amount of supplied assets converted from shares amount.
-  function convertToAddedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
-
-  /// @notice Converts the given amount of supplied assets to shares amount for the specified asset.
-  /// @dev Rounds down to the nearest shares amount.
-  /// @param assetId The identifier of the asset.
-  /// @param assets The amount of supplied assets to convert to shares amount.
-  /// @return The amount of supplied shares converted from assets amount.
-  function convertToAddedShares(uint256 assetId, uint256 assets) external view returns (uint256);
-
-  /// @notice Converts the given amount of drawn shares to assets amount for the specified asset.
-  /// @dev Rounds up to the nearest assets amount.
-  /// @param assetId The identifier of the asset.
-  /// @param shares The amount of drawn shares to convert to assets amount.
-  /// @return The amount of drawn assets converted from shares amount.
-  function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
-
-  /// @notice Converts the specified amount of drawn assets to shares amount.
-  /// @dev Rounds up to the nearest shares amount.
-  /// @param assetId The identifier of the asset.
-  /// @param assets The amount of drawn assets to convert to shares amount.
-  /// @return The amount of drawn shares converted from assets amount.
-  function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
-
   /// @notice Returns information regarding the specified asset.
   /// @dev `drawnIndex`, `drawnRate` and `lastUpdateTimestamp` can be outdated due to passage of time.
   /// @param assetId The identifier of the asset.
@@ -320,7 +314,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Returns whether the spoke is listed for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
-  /// @return True if the spoke is listed, false otherwise.
+  /// @return True if the spoke is listed.
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
 
   /// @notice Returns the address of the spoke for an asset at the given index.

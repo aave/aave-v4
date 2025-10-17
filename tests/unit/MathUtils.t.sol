@@ -41,6 +41,32 @@ contract MathUtilsTest is Base {
     test_fuzz_calculateLinearInterest(type(uint96).max, type(uint32).max - 1, MAX_SKIP_TIME);
   }
 
+  function test_calculateLinearInterest_reverts_on_past_timestamp(uint32 currentTimestamp) public {
+    currentTimestamp = bound(currentTimestamp, 1, MAX_SKIP_TIME).toUint32();
+    vm.warp(currentTimestamp);
+    vm.expectRevert();
+    MathUtils.calculateLinearInterest(uint96(vm.randomUint()), currentTimestamp + 1);
+  }
+
+  function test_calculateLinearInterest_add_edge() public {
+    uint96 rate = type(uint96).max;
+    uint32 previousTimestamp = 0;
+    uint256 skipTime = type(uint32).max;
+
+    vm.warp(skipTime);
+    assertEq(
+      MathUtils.calculateLinearInterest(rate, previousTimestamp),
+      1e27 + (uint256(rate) * uint256(skipTime)) / 365 days
+    );
+
+    skipTime = type(uint128).max;
+    vm.warp(skipTime);
+    assertEq(
+      MathUtils.calculateLinearInterest(rate, previousTimestamp),
+      1e27 + (uint256(rate) * uint256(skipTime)) / 365 days
+    );
+  }
+
   function test_min(uint256 a, uint256 b) public pure {
     assertEq(MathUtils.min(a, b), a < b ? a : b);
   }

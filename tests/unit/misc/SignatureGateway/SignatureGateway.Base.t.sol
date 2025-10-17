@@ -2,30 +2,25 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SignatureGatewayBaseTest is Base {
+contract SignatureGatewayBaseTest is SpokeBase {
   ISignatureGateway public gateway;
   uint256 public alicePk;
 
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
-    gateway = ISignatureGateway(new SignatureGateway(address(spoke1), ADMIN));
+    gateway = ISignatureGateway(new SignatureGateway(ADMIN));
     (alice, alicePk) = makeAddrAndKey('alice');
+
+    vm.prank(address(ADMIN));
+    gateway.registerSpoke(address(spoke1), true);
   }
 
   function _sign(uint256 pk, bytes32 digest) internal pure returns (bytes memory) {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
     return abi.encodePacked(r, s, v);
-  }
-
-  function _randomReserveId(ISpoke spoke) internal returns (uint256) {
-    return vm.randomUint(0, spoke.getReserveCount() - 1);
-  }
-
-  function _randomInvalidReserveId(ISpoke spoke) internal returns (uint256) {
-    return vm.randomUint(spoke.getReserveCount(), UINT256_MAX);
   }
 
   function _supplyData(

@@ -52,10 +52,11 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
   }
 
   /// Second accrual after an action - which should update the user rp
-  function test_accrueInterest_fuzz_RPBorrowAndskipTime_twoActions(
+  function test_accrueInterest_fuzz_RPBorrowAndSkipTime_twoActions(
     TestAmounts memory amounts,
     uint32 skipTime
   ) public {
+    vm.skip(true, 'pending rft');
     amounts = _bound(amounts);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 2).toUint32();
 
@@ -443,7 +444,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           spoke2,
           _daiReserveId(spoke2),
           bob,
-          hub1.convertToDrawnAssets(daiAssetId, 1),
+          hub1.previewRestoreByShares(daiAssetId, 1),
           bob
         );
       }

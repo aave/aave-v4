@@ -58,6 +58,7 @@ import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 
 // position manager
+import {GatewayBase, IGatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {NativeTokenGateway, INativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 import {SignatureGateway, ISignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 
@@ -71,6 +72,7 @@ import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
+import {GatewayBaseWrapper} from 'tests/mocks/GatewayBaseWrapper.sol';
 import {NoncesKeyedMock} from 'tests/mocks/NoncesKeyedMock.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
@@ -90,6 +92,7 @@ abstract contract Base is Test {
     0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
+  uint256 internal constant MIN_TOKEN_DECIMALS_SUPPORTED = 6;
   uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED = 18;
   uint256 internal constant MAX_SUPPLY_ASSET_UNITS =
     MAX_SUPPLY_AMOUNT / 10 ** MAX_TOKEN_DECIMALS_SUPPORTED;
@@ -99,7 +102,8 @@ abstract contract Base is Test {
   uint256 internal MAX_SUPPLY_AMOUNT_WETH;
   uint256 internal MAX_SUPPLY_AMOUNT_USDY;
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
-  uint32 internal constant MAX_RISK_PREMIUM_BPS = 1000_00;
+  uint24 internal constant MIN_COLLATERAL_RISK_BPS = 1;
+  uint24 internal constant MAX_COLLATERAL_RISK_BPS = 1000_00;
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
   uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
@@ -420,6 +424,7 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });
@@ -553,8 +558,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 105_00,
+      liquidationFee: 10_00
     });
     spokeInfo[spoke1].wbtc.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -564,8 +569,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 103_00,
+      liquidationFee: 15_00
     });
     spokeInfo[spoke1].dai.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -575,8 +580,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 102_00,
+      liquidationFee: 10_00
     });
     spokeInfo[spoke1].usdx.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -586,8 +591,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 101_00,
+      liquidationFee: 12_00
     });
     spokeInfo[spoke1].usdy.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -597,8 +602,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke1].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 101_50,
+      liquidationFee: 15_00
     });
 
     spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
@@ -652,8 +657,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 105_00,
+      liquidationFee: 10_00
     });
     spokeInfo[spoke2].weth.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -663,8 +668,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 76_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 103_00,
+      liquidationFee: 15_00
     });
     spokeInfo[spoke2].dai.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -674,8 +679,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 72_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 102_00,
+      liquidationFee: 10_00
     });
     spokeInfo[spoke2].usdx.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -685,8 +690,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 72_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 101_00,
+      liquidationFee: 12_00
     });
     spokeInfo[spoke2].usdy.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -696,8 +701,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 72_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 101_50,
+      liquidationFee: 15_00
     });
     spokeInfo[spoke2].dai2.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -707,8 +712,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke2].dai2.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 70_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 106_00,
+      liquidationFee: 10_00
     });
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
@@ -770,8 +775,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 104_00,
+      liquidationFee: 11_00
     });
     spokeInfo[spoke3].usdx.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -781,8 +786,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 103_00,
+      liquidationFee: 15_00
     });
     spokeInfo[spoke3].weth.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -792,8 +797,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 79_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 102_00,
+      liquidationFee: 10_00
     });
     spokeInfo[spoke3].wbtc.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
@@ -803,8 +808,8 @@ abstract contract Base is Test {
     });
     spokeInfo[spoke3].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 77_00,
-      maxLiquidationBonus: 100_00,
-      liquidationFee: 0
+      maxLiquidationBonus: 101_00,
+      liquidationFee: 12_00
     });
 
     spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
@@ -1018,13 +1023,13 @@ abstract contract Base is Test {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateReservePausedFlag(
+  function _updateReservePausedFlag(
     ISpoke spoke,
     uint256 reserveId,
-    bool newPausedFlag
+    bool paused
   ) internal pausePrank {
     ISpoke.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
-    config.paused = newPausedFlag;
+    config.paused = paused;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
@@ -1072,14 +1077,15 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function updateCollateralFactor(
+  function _updateCollateralFactorAndLiquidationBonus(
     ISpoke spoke,
-    function(ISpoke) pure returns (uint256) reserveIdFn,
-    uint256 newCollateralFactor
+    uint256 reserveId,
+    uint256 newCollateralFactor,
+    uint256 newLiquidationBonus
   ) internal pausePrank returns (uint16) {
-    uint256 reserveId = reserveIdFn(spoke);
     ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
+    config.maxLiquidationBonus = newLiquidationBonus.toUint32();
 
     vm.prank(SPOKE_ADMIN);
     uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
@@ -1088,7 +1094,7 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function updateCollateralFactor(
+  function _updateCollateralFactor(
     ISpoke spoke,
     uint256 reserveId,
     uint256 newCollateralFactor
@@ -1102,7 +1108,7 @@ abstract contract Base is Test {
     return configKey;
   }
 
-  function updateCollateralFactorAtKey(
+  function _updateCollateralFactorAtKey(
     ISpoke spoke,
     uint256 reserveId,
     uint16 configKey,
@@ -1129,7 +1135,7 @@ abstract contract Base is Test {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateCollateralRisk(
+  function _updateCollateralRisk(
     ISpoke spoke,
     uint256 reserveId,
     uint24 newCollateralRisk
@@ -1143,12 +1149,12 @@ abstract contract Base is Test {
   }
 
   function updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal pausePrank {
-    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, config, new bytes(0));
+    hub.updateAssetConfig(assetId, config, new bytes(0));
 
-    assertEq(hub1.getAssetConfig(assetId), config);
+    assertEq(hub.getAssetConfig(assetId), config);
   }
 
   function _updateTargetHealthFactor(
@@ -1186,7 +1192,7 @@ abstract contract Base is Test {
     return spokeInfo[spoke].usdx.reserveId;
   }
 
-  // assumes spoke has usdx supported
+  // assumes spoke has usdy supported
   function _usdyReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].usdy.reserveId;
   }
@@ -1209,6 +1215,20 @@ abstract contract Base is Test {
   // assumes spoke has dai2 supported
   function _dai2ReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].dai2.reserveId;
+  }
+
+  function _updateSpokePaused(
+    IHub hub,
+    uint256 assetId,
+    address spoke,
+    bool paused
+  ) internal pausePrank {
+    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    spokeConfig.paused = paused;
+    vm.prank(HUB_ADMIN);
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+
+    assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
   function updateSpokeActive(
@@ -1323,11 +1343,11 @@ abstract contract Base is Test {
   }
 
   function getAddExRate(uint256 assetId) internal view returns (uint256) {
-    return hub1.convertToAddedAssets(assetId, MAX_SUPPLY_AMOUNT);
+    return hub1.previewRemoveByShares(assetId, MAX_SUPPLY_AMOUNT);
   }
 
   function getDebtExRate(uint256 assetId) internal view returns (uint256) {
-    return hub1.convertToDrawnAssets(assetId, MAX_SUPPLY_AMOUNT);
+    return hub1.previewRestoreByShares(assetId, MAX_SUPPLY_AMOUNT);
   }
 
   function getDeficit(IHub hub, uint256 assetId) internal view returns (uint256) {
@@ -1467,7 +1487,7 @@ abstract contract Base is Test {
     uint256 expectedSuppliedAmount,
     string memory label
   ) internal view {
-    uint256 expectedSuppliedShares = hub1.convertToAddedShares(assetId, expectedSuppliedAmount);
+    uint256 expectedSuppliedShares = hub1.previewAddByAssets(assetId, expectedSuppliedAmount);
     assertEq(
       hub1.getAddedShares(assetId),
       expectedSuppliedShares,
@@ -1754,7 +1774,6 @@ abstract contract Base is Test {
       );
   }
 
-  /// @dev Convert base currency to asset amount
   function _convertValueToAmount(
     uint256 valueAmount,
     uint256 assetPrice,
@@ -1778,7 +1797,7 @@ abstract contract Base is Test {
   }
 
   /**
-   * @notice Returns the required debt in base currency to ensure user position is below a certain health factor.
+   * @notice Returns the required debt in value terms to ensure user position is below a certain health factor.
    */
   function _getRequiredDebtValueForHf(
     ISpoke spoke,
@@ -1929,6 +1948,10 @@ abstract contract Base is Test {
     return hub.getAssetConfig(assetId).feeReceiver;
   }
 
+  function _getFeeReceiver(ISpoke spoke, uint256 reserveId) internal view returns (address) {
+    return _getFeeReceiver(_hub(spoke, reserveId), spoke.getReserve(reserveId).assetId);
+  }
+
   function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint24) {
     return spoke.getReserveConfig(reserveId).collateralRisk;
   }
@@ -2036,6 +2059,7 @@ abstract contract Base is Test {
     assertEq(a.addCap, b.addCap, 'addCap');
     assertEq(a.drawCap, b.drawCap, 'drawCap');
     assertEq(a.active, b.active, 'active');
+    assertEq(a.paused, b.paused, 'paused');
     assertEq(abi.encode(a), abi.encode(b));
   }
 
@@ -2107,8 +2131,8 @@ abstract contract Base is Test {
   }
 
   /**
-   * @notice Returns the required debt amount in base currency to ensure user position is above a certain health factor.
-   * @return requiredDebt The required additional debt amount in base currency.
+   * @notice Returns the required debt amount in value terms to ensure user position is above a certain health factor.
+   * @return requiredDebt The required additional debt amount in value terms.
    */
   function _getRequiredDebtForGtHf(
     ISpoke spoke,
@@ -2276,7 +2300,7 @@ abstract contract Base is Test {
     string memory operation
   ) internal view {
     IHub.Asset memory asset = targetHub.getAsset(assetId);
-    (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
+    (uint256 drawn, ) = hub1.getAssetOwed(assetId);
 
     vm.assertEq(
       asset.drawnRate,

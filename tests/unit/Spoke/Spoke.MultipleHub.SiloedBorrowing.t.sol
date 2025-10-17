@@ -58,6 +58,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       siloedVars.assetBId,
       address(newSpoke),
       IHub.SpokeConfig({
+        paused: false,
         active: true,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: siloedVars.assetBDrawCap
@@ -89,6 +90,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(spoke1),
       IHub.SpokeConfig({
         active: true,
+        paused: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
       })
@@ -107,7 +109,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     hub1.addSpoke(
       siloedVars.assetAId,
       address(newSpoke),
-      IHub.SpokeConfig({active: true, addCap: siloedVars.assetAAddCap, drawCap: 0})
+      IHub.SpokeConfig({active: true, paused: false, addCap: siloedVars.assetAAddCap, drawCap: 0})
     );
     vm.stopPrank();
 

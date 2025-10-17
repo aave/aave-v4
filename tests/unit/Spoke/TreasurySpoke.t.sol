@@ -238,7 +238,8 @@ contract TreasurySpokeTest is SpokeBase {
       vm.randomUint(),
       vm.randomUint(),
       vm.randomAddress(),
-      vm.randomUint()
+      vm.randomUint(),
+      vm.randomBool()
     );
   }
 
@@ -256,7 +257,7 @@ contract TreasurySpokeTest is SpokeBase {
     updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
 
     // create debt
-    address tempUser = _openDebtPosition(spoke1, reserveId, amount, true);
+    _openDebtPosition(spoke1, reserveId, amount, true);
 
     skip(skipTime);
 
@@ -270,7 +271,7 @@ contract TreasurySpokeTest is SpokeBase {
     );
     assertApproxEqAbs(
       treasurySpoke.getReserveSuppliedShares(reserveId),
-      hub1.convertToAddedShares(assetId, fees),
+      hub1.previewAddByAssets(assetId, fees),
       1,
       'reserve supplied shares'
     );

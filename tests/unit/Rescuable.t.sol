@@ -14,12 +14,12 @@ contract RescuableTest is Base {
     rescuable = new RescuableWrapper(ADMIN);
   }
 
-  function test_constructor() public {
+  function test_constructor() public view {
     assertEq(rescuable.rescueGuardian(), address(ADMIN));
   }
 
   function test_rescueToken_fuzz(uint256 lostAmount) public {
-    uint256 lostAmount = bound(lostAmount, 1, 100e18);
+    lostAmount = bound(lostAmount, 1, 100e18);
 
     deal(address(tokenList.dai), address(rescuable), lostAmount);
 
