@@ -21,7 +21,7 @@ contract HubTransferSharesTest is HubBase {
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 assetSuppliedShares = hub1.getAddedShares(daiAssetId);
-    assertEq(suppliedShares, hub1.convertToAddedAssets(daiAssetId, supplyAmount));
+    assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));
     assertEq(suppliedShares, assetSuppliedShares);
 
     vm.expectEmit(address(hub1));
@@ -45,7 +45,7 @@ contract HubTransferSharesTest is HubBase {
     Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
-    assertEq(suppliedShares, hub1.convertToAddedAssets(daiAssetId, supplyAmount));
+    assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));
 
     // try to transfer more supplied shares than spoke1 has
     vm.prank(address(spoke1));
@@ -71,7 +71,7 @@ contract HubTransferSharesTest is HubBase {
     assertFalse(hub1.getSpokeConfig(daiAssetId, address(spoke1)).active);
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
-    assertEq(suppliedShares, hub1.convertToAddedAssets(daiAssetId, supplyAmount));
+    assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));
 
     // try to transfer supplied shares from inactive spoke1
     vm.prank(address(spoke1));
@@ -91,7 +91,7 @@ contract HubTransferSharesTest is HubBase {
     assertTrue(hub1.getSpokeConfig(daiAssetId, address(spoke1)).paused);
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
-    assertEq(suppliedShares, hub1.convertToAddedAssets(daiAssetId, supplyAmount));
+    assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));
 
     // try to transfer supplied shares from paused spoke1
     vm.prank(address(spoke1));
@@ -106,14 +106,14 @@ contract HubTransferSharesTest is HubBase {
     Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
-    assertEq(suppliedShares, hub1.convertToAddedAssets(daiAssetId, supplyAmount));
+    assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));
 
     _updateAddCap(daiAssetId, address(spoke2), newSupplyCap);
 
     // attempting transfer of supplied shares exceeding cap on spoke2
     assertLt(
       hub1.getSpokeConfig(daiAssetId, address(spoke2)).addCap,
-      hub1.convertToAddedAssets(daiAssetId, supplyAmount)
+      hub1.previewRemoveByShares(daiAssetId, supplyAmount)
     );
 
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newSupplyCap));

@@ -167,7 +167,7 @@ contract HubAddTest is HubBase {
       drawAmount: drawAmount,
       skipTime: skipTime
     });
-    vm.assume(hub1.convertToAddedShares(daiAssetId, daiAmount) < daiAmount);
+    vm.assume(hub1.previewAddByAssets(daiAssetId, daiAmount) < daiAmount);
 
     uint256 addAmount = hub1.previewAddByShares(daiAssetId, 1);
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
@@ -318,7 +318,7 @@ contract HubAddTest is HubBase {
     // asset1
     assertEq(
       hub1.getAddedShares(assetId),
-      hub1.convertToAddedShares(assetId, amount),
+      hub1.previewAddByAssets(assetId, amount),
       'asset addedShares after'
     );
     assertEq(hub1.getAddedAssets(assetId), amount, 'asset addedAmount after');
@@ -330,7 +330,7 @@ contract HubAddTest is HubBase {
     );
     assertEq(
       hub1.getSpokeAddedShares(assetId, address(spoke1)),
-      hub1.convertToAddedShares(assetId, amount),
+      hub1.previewAddByAssets(assetId, amount),
       'spoke1 addedShares after'
     );
     assertEq(
@@ -344,7 +344,7 @@ contract HubAddTest is HubBase {
     // asset2
     assertEq(
       hub1.getAddedShares(assetId2),
-      hub1.convertToAddedShares(assetId2, amount2),
+      hub1.previewAddByAssets(assetId2, amount2),
       'asset2 addedShares after'
     );
     assertEq(hub1.getAssetLiquidity(assetId2), amount2, 'asset2 liquidity after');
@@ -355,7 +355,7 @@ contract HubAddTest is HubBase {
     );
     assertEq(
       hub1.getSpokeAddedShares(assetId2, address(spoke2)),
-      hub1.convertToAddedShares(assetId2, amount2),
+      hub1.previewAddByAssets(assetId2, amount2),
       'spoke2 addedShares after'
     );
     assertEq(
@@ -397,11 +397,11 @@ contract HubAddTest is HubBase {
       drawAmount: drawAmount,
       skipTime: 365 days * 10
     });
-    assertLt(hub1.convertToAddedShares(daiAssetId, daiAmount), daiAmount); // index increased
+    assertLt(hub1.previewAddByAssets(daiAssetId, daiAmount), daiAmount); // index increased
 
     // add < 1 share
     uint256 amount = 1;
-    assertTrue(hub1.convertToAddedShares(daiAssetId, amount) == 0);
+    assertTrue(hub1.previewAddByAssets(daiAssetId, amount) == 0);
 
     vm.expectRevert(IHub.InvalidShares.selector);
     vm.prank(address(spoke1));
@@ -428,7 +428,7 @@ contract HubAddTest is HubBase {
       skipTime: skipTime
     });
 
-    uint256 minAllowedAddedAmount = hub1.convertToAddedAssets(daiAssetId, 1);
+    uint256 minAllowedAddedAmount = hub1.previewRemoveByShares(daiAssetId, 1);
     // 1 share converts to > 1 amount
     vm.assume(minAllowedAddedAmount > 1);
 
@@ -465,7 +465,7 @@ contract HubAddTest is HubBase {
     assertEq(premium, 0); // zero premium debt
 
     uint256 addAmount = 10e18; // this can be 0
-    uint256 shares = hub1.convertToAddedShares(daiAssetId, addAmount);
+    uint256 shares = hub1.previewAddByAssets(daiAssetId, addAmount);
     assertLt(shares, addAmount); // index increased, exch rate > 1
 
     uint256 spokeAddedSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke2));
@@ -524,10 +524,10 @@ contract HubAddTest is HubBase {
     uint256 daiAmount = 100e18;
     _addLiquidity(daiAssetId, daiAmount);
     _drawLiquidity(daiAssetId, daiAmount, true);
-    assertLt(hub1.convertToAddedShares(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
+    assertLt(hub1.previewAddByAssets(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
 
     uint256 addAmount = 10e18;
-    uint256 expectedAddedShares = hub1.convertToAddedShares(daiAssetId, addAmount);
+    uint256 expectedAddedShares = hub1.previewAddByAssets(daiAssetId, addAmount);
 
     uint256 addedAssetsBefore = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
     uint256 addedSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke2));
@@ -691,13 +691,13 @@ contract HubAddTest is HubBase {
       drawAmount: amount,
       skipTime: skipTime
     });
-    vm.assume(hub1.convertToAddedShares(assetId, amount) < amount);
+    vm.assume(hub1.previewAddByAssets(assetId, amount) < amount);
 
     params.drawnAmount = amount;
-    params.assetAddedAmount = hub1.convertToAddedAssets(assetId, params.assetAddedShares);
+    params.assetAddedAmount = hub1.previewRemoveByShares(assetId, params.assetAddedShares);
     params.availableLiq = amount - params.drawnAmount;
     params.spoke2AddedShares = hub1.getSpokeAddedShares(assetId, address(spoke2));
-    params.spoke2AddedAmount = hub1.convertToAddedAssets(assetId, params.spoke2AddedShares);
+    params.spoke2AddedAmount = hub1.previewRemoveByShares(assetId, params.spoke2AddedShares);
     params.aliceBalance = MAX_SUPPLY_AMOUNT + params.drawnAmount;
     params.bobBalance = MAX_SUPPLY_AMOUNT - amount;
 
@@ -722,9 +722,9 @@ contract HubAddTest is HubBase {
 
       params.availableLiq += addAmount;
       params.assetAddedShares += addShares;
-      params.assetAddedAmount = hub1.convertToAddedAssets(assetId, params.assetAddedShares);
+      params.assetAddedAmount = hub1.previewRemoveByShares(assetId, params.assetAddedShares);
       params.spoke1AddedShares += addShares;
-      params.spoke1AddedAmount = hub1.convertToAddedAssets(assetId, params.spoke1AddedShares);
+      params.spoke1AddedAmount = hub1.previewRemoveByShares(assetId, params.spoke1AddedShares);
       params.bobBalance -= addAmount;
 
       // hub
@@ -739,7 +739,7 @@ contract HubAddTest is HubBase {
       // spoke1
       assertEq(
         hub1.getSpokeAddedAssets(assetId, address(spoke1)),
-        hub1.convertToAddedAssets(assetId, params.spoke1AddedShares),
+        hub1.previewRemoveByShares(assetId, params.spoke1AddedShares),
         'spoke1 addedAmount after'
       );
       assertEq(
@@ -750,7 +750,7 @@ contract HubAddTest is HubBase {
       // spoke2
       assertEq(
         hub1.getSpokeAddedAssets(assetId, address(spoke2)),
-        hub1.convertToAddedAssets(assetId, params.spoke2AddedShares),
+        hub1.previewRemoveByShares(assetId, params.spoke2AddedShares),
         'spoke2 addedAmount after'
       );
       assertEq(

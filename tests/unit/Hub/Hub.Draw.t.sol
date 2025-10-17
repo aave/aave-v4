@@ -28,7 +28,7 @@ contract HubDrawTest is HubBase {
         (
           assetId,
           assetBefore.liquidity - assetBefore.swept - amount,
-          hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
+          hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
           assetBefore.deficit,
           assetBefore.swept
         )
@@ -42,7 +42,7 @@ contract HubDrawTest is HubBase {
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,
-        drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
+        drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
         deficit: assetBefore.deficit,
         swept: assetBefore.swept
       })
@@ -89,7 +89,7 @@ contract HubDrawTest is HubBase {
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
     assertEq(
-      hub1.convertToDrawnShares(assetId, amount),
+      hub1.previewDrawByAssets(assetId, amount),
       hub1.previewRestoreByShares(assetId, amount)
     );
   }
@@ -112,7 +112,7 @@ contract HubDrawTest is HubBase {
         (
           assetId,
           assetBefore.liquidity - assetBefore.swept - amount,
-          hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
+          hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
           assetBefore.deficit,
           assetBefore.swept
         )
@@ -126,7 +126,7 @@ contract HubDrawTest is HubBase {
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,
-        drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
+        drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
         deficit: assetBefore.deficit,
         swept: assetBefore.swept
       })

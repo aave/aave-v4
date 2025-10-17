@@ -470,26 +470,6 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].toDrawnAssetsUp(shares);
   }
 
-  /// @inheritdoc IHub
-  function convertToAddedAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toAddedAssetsDown(shares);
-  }
-
-  /// @inheritdoc IHub
-  function convertToAddedShares(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toAddedSharesDown(assets);
-  }
-
-  /// @inheritdoc IHub
-  function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toDrawnAssetsUp(shares);
-  }
-
-  /// @inheritdoc IHub
-  function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toDrawnSharesUp(assets);
-  }
-
   /// @inheritdoc IHubBase
   function getAssetUnderlyingAndDecimals(uint256 assetId) external view returns (address, uint8) {
     Asset storage asset = _assets[assetId];
@@ -721,29 +701,6 @@ contract Hub is IHub, AccessManaged {
     );
   }
 
-  /// @dev Validates applied premium delta for given premium data and returns updated premium data.
-  function _validateApplyPremiumDelta(
-    uint256 drawnIndex,
-    uint256 premiumShares,
-    uint256 premiumOffset,
-    uint256 realizedPremium,
-    PremiumDelta calldata premium,
-    uint256 premiumAmount
-  ) internal pure returns (uint128, uint128, uint128) {
-    uint256 premiumBefore = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
-    premiumBefore += realizedPremium;
-
-    premiumShares = premiumShares.add(premium.sharesDelta);
-    premiumOffset = premiumOffset.add(premium.offsetDelta);
-    realizedPremium = realizedPremium.add(premium.realizedDelta);
-
-    uint256 premiumAfter = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
-    premiumAfter += realizedPremium;
-    // can increase due to precision loss on premium (drawn unchanged)
-    require(premiumAfter + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
-    return (premiumShares.toUint128(), premiumOffset.toUint128(), realizedPremium.toUint128());
-  }
-
   /// @dev Returns the spoke's drawn amount for a specified asset.
   function _getSpokeDrawn(
     Asset storage asset,
@@ -886,5 +843,28 @@ contract Hub is IHub, AccessManaged {
     // sufficient check to disallow when controller unset
     require(caller == asset.reinvestmentController, OnlyReinvestmentController());
     require(amount > 0 && amount <= asset.swept, InvalidAmount());
+  }
+
+  /// @dev Validates applied premium delta for given premium data and returns updated premium data.
+  function _validateApplyPremiumDelta(
+    uint256 drawnIndex,
+    uint256 premiumShares,
+    uint256 premiumOffset,
+    uint256 realizedPremium,
+    PremiumDelta calldata premium,
+    uint256 premiumAmount
+  ) internal pure returns (uint128, uint128, uint128) {
+    uint256 premiumBefore = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
+    premiumBefore += realizedPremium;
+
+    premiumShares = premiumShares.add(premium.sharesDelta);
+    premiumOffset = premiumOffset.add(premium.offsetDelta);
+    realizedPremium = realizedPremium.add(premium.realizedDelta);
+
+    uint256 premiumAfter = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
+    premiumAfter += realizedPremium;
+    // can increase due to precision loss on premium (drawn unchanged)
+    require(premiumAfter + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
+    return (premiumShares.toUint128(), premiumOffset.toUint128(), realizedPremium.toUint128());
   }
 }

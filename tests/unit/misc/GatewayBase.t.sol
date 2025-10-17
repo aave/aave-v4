@@ -27,6 +27,7 @@ contract GatewayBaseTest is Base {
   }
 
   function test_registerSpoke_fuzz(address newSpoke) public {
+    vm.assume(newSpoke != address(0));
     assertFalse(gateway.isSpokeRegistered(newSpoke));
 
     vm.expectEmit(address(gateway));

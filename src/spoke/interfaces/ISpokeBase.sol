@@ -65,13 +65,15 @@ interface ISpokeBase {
   /// @param liquidatedDebt The debt amount of borrowed asset to be liquidated.
   /// @param liquidatedCollateral The amount of collateral received by the liquidator.
   /// @param liquidator The address of the liquidator.
+  /// @param receiveShares Whether the liquidator receives collateral in supplied shares or in underlying assets.
   event LiquidationCall(
     uint256 indexed collateralAssetId,
     uint256 indexed debtAssetId,
     address indexed user,
     uint256 liquidatedDebt,
     uint256 liquidatedCollateral,
-    address liquidator
+    address liquidator,
+    bool receiveShares
   );
 
   /// @notice Supplies an amount of underlying asset of the specified reserve.
@@ -126,11 +128,13 @@ interface ISpokeBase {
   /// @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator.
   /// @param user The address of the user to liquidate.
   /// @param debtToCover The desired amount of debt to cover.
+  /// @param receiveShares True to receive collateral in supplied shares, false to receive in underlying assets.
   function liquidationCall(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
-    uint256 debtToCover
+    uint256 debtToCover,
+    bool receiveShares
   ) external;
 
   /// @notice Returns the total amount of supplied assets of a given reserve.
