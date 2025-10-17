@@ -72,7 +72,13 @@ library AssetLogic {
 
   /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.liquidity + asset.swept + asset.deficit + asset.totalOwed() - asset.feeAmount - asset.getUnrealizedFeeAmount(asset.getDrawnIndex());
+    return
+      asset.liquidity +
+      asset.swept +
+      asset.deficit +
+      asset.totalOwed() -
+      asset.feeAmount -
+      asset.getUnrealizedFeeAmount(asset.getDrawnIndex());
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
@@ -129,20 +135,10 @@ library AssetLogic {
       return;
     }
 
-    uint256 assetsBefore = asset.totalAddedAssets();
-
     uint256 newDrawnIndex = asset.getDrawnIndex();
-
-    uint256 feeAmount = asset.getUnrealizedFeeAmount(newDrawnIndex);
-    asset.feeAmount += feeAmount.toUint128();
-    uint256 feeShares = asset.toAddedSharesDown(feeAmount);
-    asset.feeShares += feeShares.toUint128();
-
+    asset.feeAmount += asset.getUnrealizedFeeAmount(newDrawnIndex).toUint96();
     asset.drawnIndex = newDrawnIndex.toUint128();
     asset.lastUpdateTimestamp = block.timestamp.toUint32();
-
-    uint256 assetsAfter = asset.totalAddedAssets();
-    require(assetsAfter == assetsBefore, "AssetLogic: total added assets mismatch");
   }
 
   /// @notice Calculates the drawn index of a specified asset based on the existing drawn rate and index.

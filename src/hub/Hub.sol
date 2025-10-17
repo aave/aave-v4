@@ -93,11 +93,10 @@ contract Hub is IHub, AccessManaged {
       decimals: decimals,
       drawnRate: drawnRate.toUint96(),
       irStrategy: irStrategy,
+      feeAmount: 0,
       reinvestmentController: address(0),
       feeReceiver: feeReceiver,
-      liquidityFee: 0,
-      feeAmount: 0,
-      feeShares: 0
+      liquidityFee: 0
     });
     _addFeeReceiver(assetId, feeReceiver);
 
@@ -578,14 +577,14 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHubBase
   function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    uint256 feeShares = spoke == asset.feeReceiver ? asset.feeShares : 0;
+    uint256 feeShares = spoke == asset.feeReceiver ? asset.toAddedSharesDown(asset.feeAmount) : 0;
     return asset.toAddedAssetsDown(_spokes[assetId][spoke].addedShares + feeShares);
   }
 
   /// @inheritdoc IHubBase
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    uint256 feeShares = spoke == asset.feeReceiver ? asset.feeShares : 0;
+    uint256 feeShares = spoke == asset.feeReceiver ? asset.toAddedSharesDown(asset.feeAmount) : 0;
     return _spokes[assetId][spoke].addedShares + feeShares;
   }
 
@@ -716,12 +715,11 @@ contract Hub is IHub, AccessManaged {
   }
 
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal {
-    uint128 feeShares = asset.feeShares;
+    uint128 feeShares = asset.toAddedSharesDown(asset.feeAmount).toUint128();
     address feeReceiver = asset.feeReceiver;
     asset.addedShares += feeShares;
     _spokes[assetId][feeReceiver].addedShares += feeShares;
     asset.feeAmount = 0;
-    asset.feeShares = 0;
     emit IHub.AccrueFees(assetId, feeReceiver, feeShares);
   }
 
