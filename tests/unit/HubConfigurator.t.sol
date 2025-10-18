@@ -16,6 +16,9 @@ contract HubConfiguratorTest is HubBase {
   address[4] public spokeAddresses;
   address spoke;
 
+  mapping(address => uint24) public riskPremiumCapsPerSpoke; // spoke address => risk premium cap
+  mapping(uint256 => uint24) public riskPremiumCapsPerAsset; // assetId => risk premium cap
+
   function setUp() public virtual override {
     super.setUp();
     hubConfigurator = new HubConfigurator(HUB_CONFIGURATOR_ADMIN);
@@ -660,6 +663,8 @@ contract HubConfiguratorTest is HubBase {
         address(hub1),
         abi.encodeCall(IHub.updateSpokeConfig, (assetId, spokeAddresses[i], spokeConfig))
       );
+
+      riskPremiumCapsPerSpoke[spokeAddresses[i]] = spokeConfig.riskPremiumCap;
     }
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -669,6 +674,7 @@ contract HubConfiguratorTest is HubBase {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddresses[i]);
       assertEq(spokeConfig.addCap, 0);
       assertEq(spokeConfig.drawCap, 0);
+      assertEq(spokeConfig.riskPremiumCap, riskPremiumCapsPerSpoke[spokeAddresses[i]]);
     }
   }
 
@@ -912,24 +918,52 @@ contract HubConfiguratorTest is HubBase {
     assertEq(hub1.getSpokeConfig(assetId, spoke), expectedSpokeConfig);
   }
 
-  function test_updateSpokeCaps_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_updateSpokeRiskPremiumCap_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    hubConfigurator.updateSpokeCaps(address(hub1), assetId, spokeAddresses[0], 100, 100);
+    hubConfigurator.updateSpokeRiskPremiumCap(address(hub1), assetId, spokeAddresses[0], 100);
   }
 
-  function test_updateSpokeCaps() public {
-    uint40 newSupplyCap = 100;
-    uint40 newDrawCap = 200;
+  function test_updateSpokeRiskPremiumCap() public {
+    uint24 newRiskPremiumCap = 100;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
-    expectedSpokeConfig.addCap = newSupplyCap;
-    expectedSpokeConfig.drawCap = newDrawCap;
+    expectedSpokeConfig.riskPremiumCap = newRiskPremiumCap;
     vm.expectCall(
       address(hub1),
       abi.encodeCall(IHub.updateSpokeConfig, (assetId, spoke, expectedSpokeConfig))
     );
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateSpokeCaps(address(hub1), assetId, spoke, newSupplyCap, newDrawCap);
+    hubConfigurator.updateSpokeRiskPremiumCap(address(hub1), assetId, spoke, newRiskPremiumCap);
+    assertEq(hub1.getSpokeConfig(assetId, spoke), expectedSpokeConfig);
+  }
+
+  function test_updateSpokeCaps_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    hubConfigurator.updateSpokeCaps(address(hub1), assetId, spokeAddresses[0], 100, 100, 100);
+  }
+
+  function test_updateSpokeCaps() public {
+    uint40 newSupplyCap = 100;
+    uint40 newDrawCap = 200;
+    uint24 newRiskPremiumCap = 300;
+    IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
+    expectedSpokeConfig.addCap = newSupplyCap;
+    expectedSpokeConfig.drawCap = newDrawCap;
+    expectedSpokeConfig.riskPremiumCap = newRiskPremiumCap;
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHub.updateSpokeConfig, (assetId, spoke, expectedSpokeConfig))
+    );
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateSpokeCaps(
+      address(hub1),
+      assetId,
+      spoke,
+      newSupplyCap,
+      newDrawCap,
+      newRiskPremiumCap
+    );
     assertEq(hub1.getSpokeConfig(assetId, spoke), expectedSpokeConfig);
   }
 
@@ -1021,6 +1055,8 @@ contract HubConfiguratorTest is HubBase {
         address(hub1),
         abi.encodeCall(IHub.updateSpokeConfig, (assetId, address(spoke3), expectedSpokeConfig))
       );
+
+      riskPremiumCapsPerAsset[assetId] = expectedSpokeConfig.riskPremiumCap;
     }
 
     for (uint256 assetId = 4; assetId < hub1.getAssetCount(); ++assetId) {
@@ -1034,6 +1070,7 @@ contract HubConfiguratorTest is HubBase {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
       assertEq(spokeConfig.addCap, 0);
       assertEq(spokeConfig.drawCap, 0);
+      assertEq(spokeConfig.riskPremiumCap, riskPremiumCapsPerAsset[assetId]);
     }
   }
 
