@@ -94,7 +94,7 @@ contract SpokeSupplyTest is SpokeBase {
     stage = 1;
     bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
-    assertEq(returnedShares, hub1.convertToAddedShares(daiAssetId, amount));
+    assertEq(returnedShares, hub1.previewAddByAssets(daiAssetId, amount));
     // dai balance
     assertEq(
       tokenList.dai.balanceOf(bob),
@@ -110,7 +110,7 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(daiData[stage].data.realizedPremium, 0, 'reserve realizedPremium after-supply');
     assertEq(
       daiData[stage].data.addedShares,
-      hub1.convertToAddedShares(daiAssetId, amount),
+      hub1.previewAddByAssets(daiAssetId, amount),
       'reserve suppliedShares after-supply'
     );
     assertEq(
@@ -127,7 +127,7 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(bobData[stage].data.realizedPremium, 0, 'bob realizedPremium after-supply');
     assertEq(
       bobData[stage].data.suppliedShares,
-      hub1.convertToAddedShares(daiAssetId, amount),
+      hub1.previewAddByAssets(daiAssetId, amount),
       'bob suppliedShares after-supply'
     );
     assertEq(
@@ -175,7 +175,7 @@ contract SpokeSupplyTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
 
-    assertEq(returnedShares, hub1.convertToAddedShares(daiAssetId, amount));
+    assertEq(returnedShares, hub1.previewAddByAssets(daiAssetId, amount));
     // dai balance
     assertEq(tokenList.dai.balanceOf(bob), 0, 'user token balance after-supply');
     assertEq(tokenList.dai.balanceOf(address(hub1)), amount, 'hub token balance after-supply');
@@ -187,7 +187,7 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(daiData[stage].data.realizedPremium, 0, 'reserve realizedPremium after-supply');
     assertEq(
       daiData[stage].data.addedShares,
-      hub1.convertToAddedShares(daiAssetId, amount),
+      hub1.previewAddByAssets(daiAssetId, amount),
       'reserve suppliedShares after-supply'
     );
     assertEq(
@@ -204,7 +204,7 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(bobData[stage].data.realizedPremium, 0, 'user realizedPremium after-supply');
     assertEq(
       bobData[stage].data.suppliedShares,
-      hub1.convertToAddedShares(daiAssetId, amount),
+      hub1.previewAddByAssets(daiAssetId, amount),
       'user suppliedShares after-supply'
     );
     assertEq(
@@ -222,7 +222,7 @@ contract SpokeSupplyTest is SpokeBase {
     _increaseReserveIndex(spoke1, _daiReserveId(spoke1));
 
     uint256 amount = 1e18;
-    uint256 expectedShares = hub1.convertToAddedShares(daiAssetId, amount);
+    uint256 expectedShares = hub1.previewAddByAssets(daiAssetId, amount);
     assertGt(amount, expectedShares, 'exchange rate should be > 1');
 
     TestUserData[2] memory carolData;
@@ -333,7 +333,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     SupplyFuzzLocal memory state;
     (state.assetId, state.underlying) = getAssetByReserveId(spoke1, reserveId);
-    state.expectedShares = hub1.convertToAddedShares(state.assetId, amount);
+    state.expectedShares = hub1.previewAddByAssets(state.assetId, amount);
 
     vm.assume(state.expectedShares > 0);
     assertGt(amount, state.expectedShares, 'exchange rate should be > 1');
@@ -347,7 +347,7 @@ contract SpokeSupplyTest is SpokeBase {
     reserveData[stage] = loadReserveInfo(spoke1, reserveId);
     tokenData[stage] = getTokenBalances(state.underlying, address(spoke1));
 
-    uint256 expectedSuppliedShares = hub1.convertToAddedShares(state.assetId, amount);
+    uint256 expectedSuppliedShares = hub1.previewAddByAssets(state.assetId, amount);
     vm.assume(expectedSuppliedShares > 0);
 
     vm.expectEmit(address(spoke1));
@@ -405,7 +405,7 @@ contract SpokeSupplyTest is SpokeBase {
     _increaseReserveIndex(spoke1, _daiReserveId(spoke1));
 
     uint256 amount = 1e18;
-    uint256 expectedShares = hub1.convertToAddedShares(daiAssetId, amount);
+    uint256 expectedShares = hub1.previewAddByAssets(daiAssetId, amount);
     assertGt(amount, expectedShares, 'exchange rate should be > 1');
 
     TestUserData[2] memory carolData;
@@ -500,7 +500,7 @@ contract SpokeSupplyTest is SpokeBase {
       skipTime: skipTime
     });
 
-    uint256 expectedShares = hub1.convertToAddedShares(assetId, amount);
+    uint256 expectedShares = hub1.previewAddByAssets(assetId, amount);
     vm.assume(expectedShares > 0);
     assertGt(amount, expectedShares, 'exchange rate should be > 1');
 
@@ -577,27 +577,27 @@ contract SpokeSupplyTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob); // bob collateral
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount, bob); // introduce debt
 
-    uint256 supplyExchangeRatio = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    uint256 debtExchangeRatio = hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice);
 
-    assertGe(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGe(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
     skip(delay); // with interest accrual, both ex rates should strictly
 
-    assertGt(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGt(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGt(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGt(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
-    if (hub1.convertToAddedShares(daiAssetId, amount) > 0) {
-      supplyExchangeRatio = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-      debtExchangeRatio = hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    if (hub1.previewAddByAssets(daiAssetId, amount) > 0) {
+      supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
+      debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
       Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice);
 
-      assertGe(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-      assertGe(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+      assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+      assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
     }
   }
 }

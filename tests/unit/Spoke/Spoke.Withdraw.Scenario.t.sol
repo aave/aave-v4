@@ -375,14 +375,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     underlying.approve(address(hub1), assets);
 
     // Supply and confirm share amount from event emission
-    uint256 shares1 = hub1.convertToAddedShares(reserve.assetId, assets);
+    uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, caller, caller, shares1);
     vm.prank(caller);
     uint256 returnedShares1 = spoke1.supply(reserveId, assets, caller);
 
     // Withdraw and confirm share amount from event emission
-    uint256 shares2 = hub1.convertToAddedShares(reserve.assetId, assets);
+    uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(reserveId, caller, caller, shares2);
     vm.prank(caller);
@@ -441,14 +441,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     });
 
     // Withdraw and confirm share amount from event emission
-    uint256 shares1 = hub1.convertToAddedShares(reserve.assetId, assets);
+    uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(reserveId, caller, caller, shares1);
     vm.prank(caller);
     uint256 returnedShares1 = spoke1.withdraw(reserveId, assets, caller);
 
     // Supply and confirm share amount from event emission
-    uint256 shares2 = hub1.convertToAddedShares(reserve.assetId, assets);
+    uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, caller, caller, shares2);
     vm.prank(caller);

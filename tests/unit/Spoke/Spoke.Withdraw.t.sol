@@ -40,7 +40,7 @@ contract SpokeWithdrawTest is SpokeBase {
     TestUserData[2] memory bobData;
     TokenData[2] memory tokenData;
 
-    uint256 expectedSupplyShares = hub1.convertToAddedShares(daiAssetId, amount);
+    uint256 expectedSupplyShares = hub1.previewAddByAssets(daiAssetId, amount);
 
     // Bob supplies DAI
     Utils.supply({
@@ -896,26 +896,26 @@ contract SpokeWithdrawTest is SpokeBase {
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount / 2, bob); // introduce debt
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice); // alice supply
 
-    uint256 supplyExchangeRatio = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    uint256 debtExchangeRatio = hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
     Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, amount / 2, alice);
 
-    assertGe(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGe(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
     skip(delay); // with interest accrual, both ex rates should strictly
 
-    assertGt(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGt(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGt(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGt(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
-    supplyExchangeRatio = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    debtExchangeRatio = hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
+    debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
     Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, amount / 2, alice);
 
-    assertGe(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGe(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
   }
 
   /// @dev Withdraw exceeding supplied amount withdraws everything

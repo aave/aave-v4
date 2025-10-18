@@ -94,14 +94,11 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
   ) public {
     params = _bound(params);
     params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, type(uint256).max);
-    console.log('params.debtToCover', params.debtToCover);
     (
       uint256 expectedCollateralToLiquidate,
       uint256 expectedCollateralToLiquidator,
       uint256 expectedDebtToLiquidate
     ) = _calculateRawLiquidationAmounts(params);
-
-    console.log('params.collateralAssetDecimals', params.collateralAssetDecimals);
 
     params.collateralReserveBalance = bound(
       params.collateralReserveBalance,
@@ -309,7 +306,6 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
   function _calculateRawLiquidationAmounts(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) internal returns (uint256, uint256, uint256) {
-    console.log('_calculateRawLiquidationAmounts');
     uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
       healthFactorForMaxBonus: params.healthFactorForMaxBonus,
       liquidationBonusFactor: params.liquidationBonusFactor,
