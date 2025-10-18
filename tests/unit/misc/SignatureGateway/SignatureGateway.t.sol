@@ -39,14 +39,14 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    gateway.renounceSelfAsUserPositionManager(alice);
+    gateway.renouncePositionManagerRole(address(spoke1), alice);
   }
 
   function test_renouncePositionManagerRole() public {
     address who = vm.randomAddress();
     vm.expectCall(address(spoke1), abi.encodeCall(ISpoke.renouncePositionManagerRole, (who)));
     vm.prank(ADMIN);
-    gateway.renounceSelfAsUserPositionManager(who);
+    gateway.renouncePositionManagerRole(address(spoke1), who);
   }
 
   function test_supplyWithSig() public {
@@ -64,7 +64,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     emit ISpokeBase.Supply(p.reserveId, address(gateway), alice, shares);
 
     vm.prank(vm.randomAddress());
-    gateway.supplyWithSig(p.reserveId, p.amount, alice, p.nonce, p.deadline, signature);
+    gateway.supplyWithSig(p, signature);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -86,7 +86,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     emit ISpokeBase.Withdraw(p.reserveId, address(gateway), alice, shares);
 
     vm.prank(vm.randomAddress());
-    gateway.withdrawWithSig(p.reserveId, p.amount, alice, p.nonce, p.deadline, signature);
+    gateway.withdrawWithSig(p, signature);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -110,7 +110,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     );
 
     vm.prank(vm.randomAddress());
-    gateway.borrowWithSig(p.reserveId, p.amount, alice, p.nonce, p.deadline, signature);
+    gateway.borrowWithSig(p, signature);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -143,7 +143,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     );
 
     vm.prank(vm.randomAddress());
-    gateway.repayWithSig(p.reserveId, p.amount, alice, p.nonce, p.deadline, signature);
+    gateway.repayWithSig(p, signature);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -164,14 +164,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     }
 
     vm.prank(vm.randomAddress());
-    gateway.setUsingAsCollateralWithSig(
-      p.reserveId,
-      p.useAsCollateral,
-      alice,
-      p.nonce,
-      p.deadline,
-      signature
-    );
+    gateway.setUsingAsCollateralWithSig(p, signature);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -191,7 +184,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(alice, spoke1));
 
     vm.prank(vm.randomAddress());
-    gateway.updateUserRiskPremiumWithSig(alice, p.nonce, p.deadline, signature);
+    gateway.updateUserRiskPremiumWithSig(p, signature);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -211,7 +204,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     emit ISpoke.RefreshAllUserDynamicConfig(alice);
 
     vm.prank(vm.randomAddress());
-    gateway.updateUserDynamicConfigWithSig(alice, p.nonce, p.deadline, signature);
+    gateway.updateUserDynamicConfigWithSig(p, signature);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -232,7 +225,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     emit ISpoke.SetUserPositionManager(alice, address(gateway), p.approve);
 
     vm.prank(vm.randomAddress());
-    gateway.setSelfAsUserPositionManagerWithSig(alice, p.approve, p.nonce, p.deadline, signature);
+    gateway.setSelfAsUserPositionManagerWithSig(address(spoke1), p, signature);
 
     _assertNonceIncrement(ISignatureGateway(address(spoke1)), alice, p.nonce); // note: nonce consumed on spoke
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);

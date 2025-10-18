@@ -59,6 +59,7 @@ import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 
 // position manager
+import {GatewayBase, IGatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {NativeTokenGateway, INativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 import {SignatureGateway, ISignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 
@@ -72,6 +73,7 @@ import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
+import {GatewayBaseWrapper} from 'tests/mocks/GatewayBaseWrapper.sol';
 import {NoncesKeyedMock} from 'tests/mocks/NoncesKeyedMock.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
@@ -423,6 +425,7 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });
@@ -1021,13 +1024,13 @@ abstract contract Base is Test {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateReservePausedFlag(
+  function _updateReservePausedFlag(
     ISpoke spoke,
     uint256 reserveId,
-    bool newPausedFlag
+    bool paused
   ) internal pausePrank {
     ISpoke.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
-    config.paused = newPausedFlag;
+    config.paused = paused;
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
@@ -1213,6 +1216,20 @@ abstract contract Base is Test {
   // assumes spoke has dai2 supported
   function _dai2ReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].dai2.reserveId;
+  }
+
+  function _updateSpokePaused(
+    IHub hub,
+    uint256 assetId,
+    address spoke,
+    bool paused
+  ) internal pausePrank {
+    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    spokeConfig.paused = paused;
+    vm.prank(HUB_ADMIN);
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+
+    assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
   function updateSpokeActive(
@@ -2043,6 +2060,7 @@ abstract contract Base is Test {
     assertEq(a.addCap, b.addCap, 'addCap');
     assertEq(a.drawCap, b.drawCap, 'drawCap');
     assertEq(a.active, b.active, 'active');
+    assertEq(a.paused, b.paused, 'paused');
     assertEq(abi.encode(a), abi.encode(b));
   }
 

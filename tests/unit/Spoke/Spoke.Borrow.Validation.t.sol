@@ -56,7 +56,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    updateReservePausedFlag(spoke1, reserveId, true);
+    _updateReservePausedFlag(spoke1, reserveId, true);
     assertTrue(spoke1.getReserve(reserveId).paused);
 
     // Bob try to draw

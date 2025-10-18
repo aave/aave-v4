@@ -59,7 +59,7 @@ contract HubTransferSharesTest is HubBase {
     hub1.transferShares(daiAssetId, 0, address(spoke2));
   }
 
-  function test_transferShares_revertsWith_InactiveSpoke() public {
+  function test_transferShares_revertsWith_SpokeNotActive() public {
     uint256 supplyAmount = 1000e18;
     Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
@@ -76,6 +76,26 @@ contract HubTransferSharesTest is HubBase {
     // try to transfer supplied shares from inactive spoke1
     vm.prank(address(spoke1));
     vm.expectRevert(IHub.SpokeNotActive.selector);
+    hub1.transferShares(daiAssetId, suppliedShares, address(spoke2));
+  }
+
+  function test_transferShares_revertsWith_SpokePaused() public {
+    uint256 supplyAmount = 1000e18;
+    Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
+
+    // pause spoke1
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
+    spokeConfig.paused = true;
+    vm.prank(HUB_ADMIN);
+    hub1.updateSpokeConfig(daiAssetId, address(spoke1), spokeConfig);
+    assertTrue(hub1.getSpokeConfig(daiAssetId, address(spoke1)).paused);
+
+    uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
+    assertEq(suppliedShares, hub1.convertToAddedAssets(daiAssetId, supplyAmount));
+
+    // try to transfer supplied shares from paused spoke1
+    vm.prank(address(spoke1));
+    vm.expectRevert(IHub.SpokePaused.selector);
     hub1.transferShares(daiAssetId, suppliedShares, address(spoke2));
   }
 
