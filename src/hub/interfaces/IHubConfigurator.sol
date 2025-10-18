@@ -17,6 +17,7 @@ interface IHubConfigurator {
   /// @param hub The address of the Hub contract.
   /// @param underlying The address of the underlying asset.
   /// @param feeReceiver The address of the fee receiver spoke.
+  /// @param liquidityFee The liquidity fee of the asset, in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
@@ -24,6 +25,7 @@ interface IHubConfigurator {
     address hub,
     address underlying,
     address feeReceiver,
+    uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
   ) external returns (uint256);
@@ -35,6 +37,7 @@ interface IHubConfigurator {
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of the asset.
   /// @param feeReceiver The address of the fee receiver spoke.
+  /// @param liquidityFee The liquidity fee of the asset, in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
@@ -43,6 +46,7 @@ interface IHubConfigurator {
     address underlying,
     uint8 decimals,
     address feeReceiver,
+    uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
   ) external returns (uint256);
@@ -100,6 +104,11 @@ interface IHubConfigurator {
   /// @param assetId The identifier of the asset.
   function freezeAsset(address hub, uint256 assetId) external;
 
+  /// @notice Deactivates an asset.
+  /// @param hub The address of the Hub contract.
+  /// @param assetId The identifier of the asset.
+  function deactivateAsset(address hub, uint256 assetId) external;
+
   /// @notice Pauses an asset.
   /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
@@ -136,6 +145,13 @@ interface IHubConfigurator {
   /// @param spoke The address of the spoke.
   /// @param active The new active flag.
   function updateSpokeActive(address hub, uint256 assetId, address spoke, bool active) external;
+
+  /// @notice Updates the paused flag of an asset's spoke.
+  /// @param hub The address of the Hub contract.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  /// @param paused The new paused flag.
+  function updateSpokePaused(address hub, uint256 assetId, address spoke, bool paused) external;
 
   /// @notice Updates the supply cap of an asset's spoke.
   /// @param hub The address of the Hub contract.
@@ -175,12 +191,17 @@ interface IHubConfigurator {
     uint256 drawCap
   ) external;
 
-  /// @notice Pauses all assets of a spoke by setting the active flag to false.
+  /// @notice Deactivates all assets of a spoke on a specified hub by setting the active flag to false.
+  /// @param hub The address of the Hub contract.
+  /// @param spoke The address of the spoke.
+  function deactivateSpoke(address hub, address spoke) external;
+
+  /// @notice Pauses all assets of a spoke on a specified hub by setting the paused flag to true.
   /// @param hub The address of the Hub contract.
   /// @param spoke The address of the spoke.
   function pauseSpoke(address hub, address spoke) external;
 
-  /// @notice Freezes all assets of a spoke by setting the add and draw caps to zero.
+  /// @notice Freezes all assets of a spoke on a specified hub by setting the add and draw caps to zero.
   /// @param hub The address of the Hub contract.
   /// @param spoke The address of the spoke.
   function freezeSpoke(address hub, address spoke) external;

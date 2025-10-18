@@ -58,7 +58,9 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, expectedPremiumDelta);
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
+    uint256 returnedShares = spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
+
+    assertEq(returnedShares, 0);
 
     _checkSupplyRateIncreasing(
       addExRateBefore,
@@ -125,7 +127,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // inflated to 1.5
     uint256 addExRateBefore = getAddExRate(daiAssetId);
-    uint256 exchangeRateBefore = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 exchangeRateBefore = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertApproxEqAbs(exchangeRateBefore, 1.5e30, 0.0000001e30);
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30);
@@ -166,7 +168,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     skip(365 days);
 
     // inflated to 1.5
-    uint256 exchangeRateBefore = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 exchangeRateBefore = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertApproxEqAbs(exchangeRateBefore, 1.5e30, 0.0000001e30);
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30e18);
@@ -179,7 +181,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.prank(bob);
     spoke1.borrow(_daiReserveId(spoke1), 15, bob);
 
-    uint256 exchangeRateAfter = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 exchangeRateAfter = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGt(exchangeRateAfter, exchangeRateBefore);
     exchangeRateBefore = exchangeRateAfter;
 
@@ -188,7 +190,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // alice repays full
     Utils.repay(spoke1, _daiReserveId(spoke1), alice, UINT256_MAX, alice);
 
-    exchangeRateAfter = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    exchangeRateAfter = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGt(exchangeRateAfter, exchangeRateBefore, 'supply rate decreased');
   }
 
@@ -218,7 +220,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     assertEq(bobDaiDebtBefore.totalDebt, daiBorrowAmount, 'Initial bob dai debt');
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(getUserDebt(spoke1, bob, _wethReserveId(spoke1)).totalDebt, 0);
 
@@ -251,7 +253,9 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     emit IERC20.Transfer(bob, address(hub1), repayAmount);
 
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), repayAmount, bob);
+    uint256 returnedShare = spoke1.repay(_daiReserveId(spoke1), repayAmount, bob);
+
+    assertEq(returnedShare, 0);
 
     // debt remains unchanged & is donated (premium was already 0)
     assertEq(getUserDebt(spoke1, bob, _daiReserveId(spoke1)), bobDaiDebtBefore);
@@ -304,7 +308,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     );
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(bobWethBefore.totalDebt, 0);
 
@@ -346,7 +350,9 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, expectedPremiumDelta);
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), repayAmount, bob);
+    uint256 returnedShare = spoke1.repay(_daiReserveId(spoke1), repayAmount, bob);
+
+    assertEq(returnedShare, 0);
 
     ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
@@ -414,7 +420,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(bobWethBefore.totalDebt, 0, 'bob weth total debt before time skip');
 
@@ -449,23 +455,27 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       daiAssetId
     );
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1),
-      daiRepayAmount
-    );
+    {
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+        spoke1,
+        bob,
+        _daiReserveId(spoke1),
+        daiRepayAmount
+      );
 
-    vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
-      _daiReserveId(spoke1),
-      bob,
-      bob,
-      hub1.previewRestoreByAssets(daiAssetId, baseRestored),
-      expectedPremiumDelta
-    );
+      vm.expectEmit(address(spoke1));
+      emit ISpokeBase.Repay(
+        _daiReserveId(spoke1),
+        bob,
+        bob,
+        hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+        expectedPremiumDelta
+      );
+    }
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
+    uint256 returnedShares = spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
+
+    assertEq(returnedShares, hub1.previewRestoreByAssets(daiAssetId, baseRestored));
 
     ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
@@ -531,7 +541,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(bobWethBefore.totalDebt, 0);
 
@@ -567,7 +577,9 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       expectedPremiumDelta
     );
     vm.prank(bob);
-    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
+    uint256 returnedShares = spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
+
+    assertEq(returnedShares, hub1.previewRestoreByAssets(daiAssetId, daiRepayAmount));
 
     ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));

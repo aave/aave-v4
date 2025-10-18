@@ -14,7 +14,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
   function setUp() public virtual override {
     super.setUp();
-    liquidationLogicWrapper = new LiquidationLogicWrapper();
+    liquidationLogicWrapper = new LiquidationLogicWrapper(makeAddr('borrower'));
   }
 
   // generic bounds for liquidation logic params
@@ -142,6 +142,12 @@ contract LiquidationLogicBaseTest is SpokeBase {
       params.maxLiquidationBonus
     );
 
+    params.debtAssetDecimals = bound(
+      params.debtAssetDecimals,
+      MIN_TOKEN_DECIMALS_SUPPORTED,
+      MAX_TOKEN_DECIMALS_SUPPORTED
+    );
+
     LiquidationLogic.CalculateDebtToLiquidateParams
       memory debtToLiquidateParams = _getCalculateDebtToLiquidateParams(params);
     debtToLiquidateParams = _bound(debtToLiquidateParams);
@@ -153,16 +159,13 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.targetHealthFactor = debtToLiquidateParams.targetHealthFactor;
     params.collateralFactor = debtToLiquidateParams.collateralFactor;
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
-    params.debtAssetUnit = debtToLiquidateParams.debtAssetUnit;
 
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
-    params.collateralAssetUnit =
-      10 **
-        bound(
-          params.collateralAssetUnit,
-          MIN_TOKEN_DECIMALS_SUPPORTED,
-          MAX_TOKEN_DECIMALS_SUPPORTED
-        );
+    params.collateralAssetDecimals = bound(
+      params.collateralAssetDecimals,
+      MIN_TOKEN_DECIMALS_SUPPORTED,
+      MAX_TOKEN_DECIMALS_SUPPORTED
+    );
     params.liquidationFee = bound(params.liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     params.collateralReserveBalance = bound(params.collateralReserveBalance, 0, MAX_SUPPLY_AMOUNT);
 
@@ -184,7 +187,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.targetHealthFactor = debtToLiquidateParams.targetHealthFactor;
     params.collateralFactor = debtToLiquidateParams.collateralFactor;
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
-    params.debtAssetUnit = debtToLiquidateParams.debtAssetUnit;
+    params.debtAssetDecimals = _getExponent(debtToLiquidateParams.debtAssetUnit);
 
     return params;
   }
@@ -223,7 +226,17 @@ contract LiquidationLogicBaseTest is SpokeBase {
         liquidationBonus: liquidationBonus,
         collateralFactor: params.collateralFactor,
         debtAssetPrice: params.debtAssetPrice,
-        debtAssetUnit: params.debtAssetUnit
+        debtAssetUnit: 10 ** params.debtAssetDecimals
       });
+  }
+
+  /// naive log 10 exponent
+  function _getExponent(uint256 value) internal pure returns (uint256) {
+    uint256 exp = 0;
+    while (value > 1) {
+      value /= 10;
+      exp++;
+    }
+    return exp;
   }
 }

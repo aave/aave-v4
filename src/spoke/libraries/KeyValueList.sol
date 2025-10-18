@@ -35,8 +35,9 @@ library KeyValueList {
   }
 
   /// @notice Inserts packed `key`, `value` at `idx`. Reverts if data exceeds maximum allowed size.
+  /// @dev Reverts if `key` equals or exceeds the `_MAX_KEY` value and reverts if `value` equals or exceeds the `_MAX_VALUE` value.
   function add(List memory self, uint256 idx, uint256 key, uint256 value) internal pure {
-    require(key <= _MAX_KEY && value <= _MAX_VALUE, MaxDataSizeExceeded());
+    require(key < _MAX_KEY && value < _MAX_VALUE, MaxDataSizeExceeded());
     self._inner[idx] = pack(key, value);
   }
 
@@ -81,7 +82,7 @@ library KeyValueList {
   }
 
   /// @notice Comparator function performing greater-than comparison.
-  /// @return True if `a` is greater than `b`, false otherwise.
+  /// @return True if `a` is greater than `b`.
   function gtComparator(uint256 a, uint256 b) internal pure returns (bool) {
     return a > b;
   }

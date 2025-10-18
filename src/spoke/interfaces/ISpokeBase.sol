@@ -65,13 +65,15 @@ interface ISpokeBase {
   /// @param liquidatedDebt The debt amount of borrowed asset to be liquidated.
   /// @param liquidatedCollateral The amount of collateral received by the liquidator.
   /// @param liquidator The address of the liquidator.
+  /// @param receiveShares Whether the liquidator receives collateral in supplied shares or in underlying assets.
   event LiquidationCall(
     uint256 indexed collateralAssetId,
     uint256 indexed debtAssetId,
     address indexed user,
     uint256 liquidatedDebt,
     uint256 liquidatedCollateral,
-    address liquidator
+    address liquidator,
+    bool receiveShares
   );
 
   /// @notice Supplies an amount of underlying asset of the specified reserve.
@@ -81,7 +83,8 @@ interface ISpokeBase {
   /// @param reserveId The reserve identifier.
   /// @param amount The amount of asset to supply.
   /// @param onBehalfOf The owner of the position to add supply shares to.
-  function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external;
+  /// @return The amount of shares supplied.
+  function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external returns (uint256);
 
   /// @notice Withdraws a specified amount of underlying asset from the given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -91,7 +94,12 @@ interface ISpokeBase {
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to withdraw.
   /// @param onBehalfOf The owner of position to remove supply shares from.
-  function withdraw(uint256 reserveId, uint256 amount, address onBehalfOf) external;
+  /// @return The amount of shares withdrawn.
+  function withdraw(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external returns (uint256);
 
   /// @notice Borrows a specified amount of underlying asset from the given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -100,7 +108,8 @@ interface ISpokeBase {
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to borrow.
   /// @param onBehalfOf The owner of the position against which debt is generated.
-  function borrow(uint256 reserveId, uint256 amount, address onBehalfOf) external;
+  /// @return The amount of shares borrowed.
+  function borrow(uint256 reserveId, uint256 amount, address onBehalfOf) external returns (uint256);
 
   /// @notice Repays a specified amount of underlying asset to a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -109,7 +118,8 @@ interface ISpokeBase {
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to repay.
   /// @param onBehalfOf The owner of the position whose debt is repaid.
-  function repay(uint256 reserveId, uint256 amount, address onBehalfOf) external;
+  /// @return The amount of shares repaid.
+  function repay(uint256 reserveId, uint256 amount, address onBehalfOf) external returns (uint256);
 
   /// @notice Liquidates a user position.
   /// @dev It reverts if the reserves associated with any of the given reserve identifiers are not listed.
@@ -118,11 +128,13 @@ interface ISpokeBase {
   /// @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator.
   /// @param user The address of the user to liquidate.
   /// @param debtToCover The desired amount of debt to cover.
+  /// @param receiveShares True to receive collateral in supplied shares, false to receive in underlying assets.
   function liquidationCall(
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user,
-    uint256 debtToCover
+    uint256 debtToCover,
+    bool receiveShares
   ) external;
 
   /// @notice Returns the total amount of supplied assets of a given reserve.

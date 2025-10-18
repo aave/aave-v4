@@ -5,11 +5,28 @@ pragma solidity ^0.8.0;
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
+  function test_permitReserve_revertsWith_SpokeNotRegistered() public {
+    uint256 reserveId = _randomReserveId(spoke1);
+    vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
+    vm.prank(vm.randomAddress());
+    gateway.permitReserve(
+      address(spoke2),
+      reserveId,
+      vm.randomAddress(),
+      vm.randomUint(),
+      vm.randomUint(),
+      uint8(vm.randomUint()),
+      bytes32(vm.randomUint()),
+      bytes32(vm.randomUint())
+    );
+  }
+
   function test_permitReserve_revertsWith_ReserveNotListed() public {
     uint256 unlistedReserveId = vm.randomUint(spoke1.getReserveCount() + 1, UINT256_MAX);
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(vm.randomAddress());
     gateway.permitReserve(
+      address(spoke1),
       unlistedReserveId,
       vm.randomAddress(),
       vm.randomUint(),
@@ -36,7 +53,7 @@ contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
       1
     );
     vm.prank(vm.randomAddress());
-    gateway.permitReserve(reserveId, owner, value, deadline, v, r, s);
+    gateway.permitReserve(address(spoke1), reserveId, owner, value, deadline, v, r, s);
   }
 
   function test_permitReserve_ignores_permit_reverts() public {
@@ -47,6 +64,7 @@ contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
 
     vm.prank(vm.randomAddress());
     gateway.permitReserve(
+      address(spoke1),
       reserveId,
       vm.randomAddress(),
       vm.randomUint(),
@@ -77,7 +95,7 @@ contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
     vm.expectEmit(address(token));
     emit IERC20.Approval(user, address(gateway), params.value);
     vm.prank(vm.randomAddress());
-    gateway.permitReserve(reserveId, user, params.value, params.deadline, v, r, s);
+    gateway.permitReserve(address(spoke1), reserveId, user, params.value, params.deadline, v, r, s);
 
     assertEq(token.allowance(user, address(gateway)), params.value);
   }
