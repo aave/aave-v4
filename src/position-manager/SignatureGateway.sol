@@ -204,37 +204,37 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
   }
 
   /// @inheritdoc ISignatureGateway
-  function SUPPLY_TYPEHASH() external view returns (bytes32) {
+  function SUPPLY_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.SUPPLY_TYPEHASH;
   }
 
   /// @inheritdoc ISignatureGateway
-  function WITHDRAW_TYPEHASH() external view returns (bytes32) {
+  function WITHDRAW_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.WITHDRAW_TYPEHASH;
   }
 
   /// @inheritdoc ISignatureGateway
-  function BORROW_TYPEHASH() external view returns (bytes32) {
+  function BORROW_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.BORROW_TYPEHASH;
   }
 
   /// @inheritdoc ISignatureGateway
-  function REPAY_TYPEHASH() external view returns (bytes32) {
+  function REPAY_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.REPAY_TYPEHASH;
   }
 
   /// @inheritdoc ISignatureGateway
-  function SET_USING_AS_COLLATERAL_TYPEHASH() external view returns (bytes32) {
+  function SET_USING_AS_COLLATERAL_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.SET_USING_AS_COLLATERAL_TYPEHASH;
   }
 
   /// @inheritdoc ISignatureGateway
-  function UPDATE_USER_RISK_PREMIUM_TYPEHASH() external view returns (bytes32) {
+  function UPDATE_USER_RISK_PREMIUM_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH;
   }
 
   /// @inheritdoc ISignatureGateway
-  function UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH() external view returns (bytes32) {
+  function UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH;
   }
 

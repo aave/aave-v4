@@ -444,7 +444,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           spoke2,
           _daiReserveId(spoke2),
           bob,
-          hub1.convertToDrawnAssets(daiAssetId, 1),
+          hub1.previewRestoreByShares(daiAssetId, 1),
           bob
         );
       }

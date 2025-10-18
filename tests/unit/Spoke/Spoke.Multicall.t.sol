@@ -22,7 +22,7 @@ contract SpokeMulticall is SpokeBase {
       daiReserveId,
       bob,
       bob,
-      hub1.convertToAddedShares(daiAssetId, supplyAmount)
+      hub1.previewAddByAssets(daiAssetId, supplyAmount)
     );
     vm.expectEmit(address(spoke1));
     emit ISpoke.SetUsingAsCollateral(daiReserveId, bob, bob, true);
@@ -64,7 +64,7 @@ contract SpokeMulticall is SpokeBase {
       _daiReserveId(spoke2),
       bob,
       bob,
-      hub1.convertToAddedShares(daiAssetId, MAX_SUPPLY_AMOUNT)
+      hub1.previewAddByAssets(daiAssetId, MAX_SUPPLY_AMOUNT)
     );
     vm.expectEmit(address(spoke2));
     emit ISpoke.SetUsingAsCollateral(_daiReserveId(spoke2), bob, bob, true);

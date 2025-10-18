@@ -92,7 +92,7 @@ contract HubPayFeeTest is HubBase {
     uint256 spokeSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
 
     // supply ex rate increases due to interest
-    assertGe(hub1.convertToAddedAssets(daiAssetId, WadRayMath.RAY), WadRayMath.RAY);
+    assertGe(hub1.previewRemoveByShares(daiAssetId, WadRayMath.RAY), WadRayMath.RAY);
 
     feeShares = bound(feeShares, 1, spokeSharesBefore);
 

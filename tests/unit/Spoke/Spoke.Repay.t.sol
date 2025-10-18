@@ -37,7 +37,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(bobWethBefore.totalDebt, 0);
 
@@ -111,13 +111,13 @@ contract SpokeRepayTest is SpokeBase {
 
     ISpoke.UserPosition memory pos = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
     assertGt(pos.drawnShares, 0, 'user drawnShares after repay');
-    assertGt(hub1.convertToDrawnAssets(daiAssetId, pos.drawnShares), 0, 'user baseDrawnAssets');
+    assertGt(hub1.previewRestoreByShares(daiAssetId, pos.drawnShares), 0, 'user baseDrawnAssets');
 
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
 
     pos = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
     assertEq(pos.drawnShares, 0, 'user drawnShares after full repay');
-    assertEq(hub1.convertToDrawnAssets(daiAssetId, pos.drawnShares), 0, 'user baseDrawnAssets');
+    assertEq(hub1.previewRestoreByShares(daiAssetId, pos.drawnShares), 0, 'user baseDrawnAssets');
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       0,
@@ -162,7 +162,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobTotalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(bobWethDrawnDebtBefore, 0, 'bob weth drawn debt before');
     assertEq(bobWethPremiumDebtBefore, 0, 'bob weth premium debt before');
@@ -233,7 +233,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(bobWethBefore.totalDebt, 0);
 
@@ -338,7 +338,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobDaiDebtBefore, daiBorrowAmount, 'bob dai debt before');
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(bobWethDebtBefore, 0);
 
@@ -532,7 +532,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(bobWethBefore.totalDebt, 0);
 
@@ -630,7 +630,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
@@ -647,7 +647,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Calculate minimum repay amount
     if (hub1.previewRestoreByAssets(daiAssetId, daiRepayAmount) == 0) {
-      daiRepayAmount = hub1.convertToDrawnAssets(daiAssetId, 1);
+      daiRepayAmount = hub1.previewRestoreByShares(daiAssetId, 1);
     }
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
@@ -756,7 +756,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
@@ -865,7 +865,7 @@ contract SpokeRepayTest is SpokeBase {
     );
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
@@ -973,7 +973,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
@@ -1095,7 +1095,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(
       bobWethDataBefore.suppliedShares,
-      hub1.convertToAddedShares(wethAssetId, wethSupplyAmount)
+      hub1.previewAddByAssets(wethAssetId, wethSupplyAmount)
     );
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
 
