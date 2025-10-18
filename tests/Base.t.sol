@@ -1344,11 +1344,11 @@ abstract contract Base is Test {
   }
 
   function getAddExRate(uint256 assetId) internal view returns (uint256) {
-    return hub1.convertToAddedAssets(assetId, MAX_SUPPLY_AMOUNT);
+    return hub1.previewRemoveByShares(assetId, MAX_SUPPLY_AMOUNT);
   }
 
   function getDebtExRate(uint256 assetId) internal view returns (uint256) {
-    return hub1.convertToDrawnAssets(assetId, MAX_SUPPLY_AMOUNT);
+    return hub1.previewRestoreByShares(assetId, MAX_SUPPLY_AMOUNT);
   }
 
   function getDeficit(IHub hub, uint256 assetId) internal view returns (uint256) {
@@ -1488,7 +1488,7 @@ abstract contract Base is Test {
     uint256 expectedSuppliedAmount,
     string memory label
   ) internal view {
-    uint256 expectedSuppliedShares = hub1.convertToAddedShares(assetId, expectedSuppliedAmount);
+    uint256 expectedSuppliedShares = hub1.previewAddByAssets(assetId, expectedSuppliedAmount);
     assertEq(
       hub1.getAddedShares(assetId),
       expectedSuppliedShares,

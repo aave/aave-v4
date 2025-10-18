@@ -109,115 +109,137 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     spoke1.updatePositionManager(address(gateway), true);
     vm.prank(alice);
     spoke1.setUserPositionManager(address(gateway), true);
+    vm.prank(alice);
+    gateway.useNonce();
   }
 
   function test_supplyWithSig() public {
-    EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
-    p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
-    p.amount = 10e18;
+    EIP712Types.Supply memory p = EIP712Types.Supply({
+      spoke: address(spoke1),
+      reserveId: _wethReserveId(spoke1),
+      amount: 100e18,
+      onBehalfOf: alice,
+      nonce: gateway.nonces(alice),
+      deadline: _warpBeforeRandomDeadline()
+    });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
     Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
     Utils.supply(spoke1, p.reserveId, alice, p.amount, alice);
 
-    vm.prank(vm.randomAddress());
     gateway.supplyWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'supplyWithSig');
   }
 
   function test_withdrawWithSig() public {
-    EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
-    p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
-    p.amount = 10e18;
+    EIP712Types.Withdraw memory p = EIP712Types.Withdraw({
+      spoke: address(spoke1),
+      reserveId: _wethReserveId(spoke1),
+      amount: 100e18,
+      onBehalfOf: alice,
+      nonce: gateway.nonces(alice),
+      deadline: _warpBeforeRandomDeadline()
+    });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    Utils.supply(spoke1, p.reserveId, alice, 15e18, alice);
-    Utils.withdraw(spoke1, p.reserveId, alice, p.amount, alice);
+    Utils.supply(spoke1, p.reserveId, alice, 200e18, alice);
+    Utils.withdraw(spoke1, p.reserveId, alice, 100e18, alice);
 
-    vm.prank(vm.randomAddress());
     gateway.withdrawWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'withdrawWithSig');
   }
 
   function test_borrowWithSig() public {
-    EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpBeforeRandomDeadline());
-    p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
-    p.reserveId = _daiReserveId(spoke1);
-    p.amount = 1e18;
+    EIP712Types.Borrow memory p = EIP712Types.Borrow({
+      spoke: address(spoke1),
+      reserveId: _wethReserveId(spoke1),
+      amount: 100e18,
+      onBehalfOf: alice,
+      nonce: gateway.nonces(alice),
+      deadline: _warpBeforeRandomDeadline()
+    });
     Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 4, alice);
     Utils.borrow(spoke1, p.reserveId, alice, p.amount, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.prank(vm.randomAddress());
     gateway.borrowWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'borrowWithSig');
   }
 
   function test_repayWithSig() public {
-    EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpBeforeRandomDeadline());
-    p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
-    p.reserveId = _daiReserveId(spoke1);
-    p.amount = 1e18;
+    EIP712Types.Repay memory p = EIP712Types.Repay({
+      spoke: address(spoke1),
+      reserveId: _wethReserveId(spoke1),
+      amount: 100e18,
+      onBehalfOf: alice,
+      nonce: gateway.nonces(alice),
+      deadline: _warpBeforeRandomDeadline()
+    });
     Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 10, alice);
     Utils.borrow(spoke1, p.reserveId, alice, p.amount * 3, alice);
     Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount * 2);
     Utils.repay(spoke1, p.reserveId, alice, p.amount, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.prank(vm.randomAddress());
     gateway.repayWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'repayWithSig');
   }
 
   function test_setUsingAsCollateralWithSig() public {
-    uint256 deadline = _warpBeforeRandomDeadline();
-    EIP712Types.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
-    p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
-    p.reserveId = _daiReserveId(spoke1);
-    Utils.supplyCollateral(spoke1, p.reserveId, alice, 1e18, alice);
+    EIP712Types.SetUsingAsCollateral memory p = EIP712Types.SetUsingAsCollateral({
+      spoke: address(spoke1),
+      reserveId: _wethReserveId(spoke1),
+      useAsCollateral: true,
+      onBehalfOf: alice,
+      nonce: gateway.nonces(alice),
+      deadline: _warpBeforeRandomDeadline()
+    });
+    Utils.supply(spoke1, p.reserveId, alice, 1e18, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.prank(vm.randomAddress());
     gateway.setUsingAsCollateralWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'setUsingAsCollateralWithSig');
   }
 
   function test_updateUserRiskPremiumWithSig() public {
-    uint256 deadline = _warpBeforeRandomDeadline();
-    EIP712Types.UpdateUserRiskPremium memory p = _updateRiskPremiumData(spoke1, alice, deadline);
-    p.nonce = _burnRandomNoncesAtKey(gateway, alice);
+    EIP712Types.UpdateUserRiskPremium memory p = EIP712Types.UpdateUserRiskPremium({
+      spoke: address(spoke1),
+      user: alice,
+      nonce: gateway.nonces(alice),
+      deadline: _warpBeforeRandomDeadline()
+    });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
 
-    vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'updateUserRiskPremiumWithSig');
   }
 
   function test_updateUserDynamicConfigWithSig() public {
-    EIP712Types.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(
-      spoke1,
-      alice,
-      _warpBeforeRandomDeadline()
-    );
-    p.nonce = _burnRandomNoncesAtKey(gateway, alice);
+    EIP712Types.UpdateUserDynamicConfig memory p = EIP712Types.UpdateUserDynamicConfig({
+      spoke: address(spoke1),
+      user: alice,
+      nonce: gateway.nonces(alice),
+      deadline: _warpBeforeRandomDeadline()
+    });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.prank(alice);
     spoke1.updateUserDynamicConfig(alice);
 
-    vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfigWithSig');
   }
 
   function test_setSelfAsUserPositionManagerWithSig() public {
+    vm.prank(alice);
+    spoke1.useNonce();
     EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
       positionManager: address(gateway),
       user: alice,
       approve: true,
-      nonce: spoke1.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke
+      nonce: spoke1.nonces(alice), // note: this typed sig is forwarded to spoke
       deadline: _warpBeforeRandomDeadline()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
@@ -225,7 +247,6 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     vm.prank(alice);
     spoke1.setUserPositionManager(address(gateway), false);
 
-    vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig(address(spoke1), p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'setSelfAsUserPositionManagerWithSig');
   }

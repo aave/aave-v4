@@ -155,7 +155,7 @@ contract HubRefreshPremiumTest is HubBase {
     sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares);
     offsetDeltaPos = bound(offsetDeltaPos, 0, asset.premiumOffset);
     uint256 realizedDeltaPos;
-    uint256 premiumAssetsPos = hub1.convertToDrawnAssets(assetId, sharesDeltaPos);
+    uint256 premiumAssetsPos = hub1.previewRestoreByShares(assetId, sharesDeltaPos);
 
     // If we introduced debt with shares vs offset, capture with realized delta
     if (offsetDeltaPos > premiumAssetsPos) {
@@ -226,10 +226,10 @@ contract HubRefreshPremiumTest is HubBase {
     userAccruedPremium = bound(
       userAccruedPremium,
       0,
-      hub1.convertToDrawnAssets(assetId, asset.premiumShares) - asset.premiumOffset
+      hub1.previewRestoreByShares(assetId, asset.premiumShares) - asset.premiumOffset
     );
-    vm.assume(hub1.convertToDrawnAssets(assetId, userPremiumShares) >= userAccruedPremium);
-    uint256 userPremiumOffset = hub1.convertToDrawnAssets(assetId, userPremiumShares) -
+    vm.assume(hub1.previewRestoreByShares(assetId, userPremiumShares) >= userAccruedPremium);
+    uint256 userPremiumOffset = hub1.previewRestoreByShares(assetId, userPremiumShares) -
       userAccruedPremium;
 
     // New user position

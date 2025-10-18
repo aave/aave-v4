@@ -160,7 +160,7 @@ contract NativeTokenGatewayTest is Base {
       amount: mintAmount_WETH,
       onBehalfOf: bob
     });
-    uint256 expectedSupplyShares = hub1.convertToAddedShares(wethAssetId, mintAmount_WETH);
+    uint256 expectedSupplyShares = hub1.previewAddByAssets(wethAssetId, mintAmount_WETH);
 
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
@@ -195,7 +195,7 @@ contract NativeTokenGatewayTest is Base {
       amount: supplyAmount,
       onBehalfOf: bob
     });
-    uint256 expectedSupplyShares = hub1.convertToAddedShares(wethAssetId, supplyAmount);
+    uint256 expectedSupplyShares = hub1.previewAddByAssets(wethAssetId, supplyAmount);
 
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
@@ -238,7 +238,7 @@ contract NativeTokenGatewayTest is Base {
       amount: supplyAmount,
       onBehalfOf: bob
     });
-    uint256 expectedSupplyShares = hub1.convertToAddedShares(wethAssetId, supplyAmount);
+    uint256 expectedSupplyShares = hub1.previewAddByAssets(wethAssetId, supplyAmount);
 
     // Bob borrows weth
     Utils.borrow({
