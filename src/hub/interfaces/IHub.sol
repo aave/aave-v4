@@ -29,6 +29,7 @@ interface IHub is IHubBase, IAccessManaged {
     address underlying;
     //
     address irStrategy;
+    uint96 feeAmount;
     //
     address reinvestmentController;
     //
@@ -263,6 +264,11 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param shares The amount of shares to move.
   /// @param toSpoke The address of the recipient spoke.
   function transferShares(uint256 assetId, uint256 shares, address toSpoke) external;
+
+  /// @notice Mints shares for the accrued fees to the current fee receiver of the specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @return The amount of shares minted.
+  function mintFeeShares(uint256 assetId) external returns (uint256);
 
   /// @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment controller.
   /// @dev The controller handles the actual reinvestment of funds, redistribution of interest, and investment caps.

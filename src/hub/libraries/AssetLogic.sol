@@ -72,12 +72,13 @@ library AssetLogic {
 
   /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.liquidity + asset.swept + asset.deficit + asset.totalOwed();
-  }
-
-  /// @notice Returns the total added shares for the specified asset.
-  function totalAddedShares(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.addedShares + asset.unrealizedFeeShares();
+    return
+      asset.liquidity +
+      asset.swept +
+      asset.deficit +
+      asset.totalOwed() -
+      asset.feeAmount -
+      asset.getUnrealizedFeeAmount(asset.getDrawnIndex());
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
@@ -85,7 +86,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsUp(asset.totalAddedAssets(), asset.totalAddedShares());
+    return shares.toAssetsUp(asset.totalAddedAssets(), asset.addedShares);
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding down.
@@ -93,7 +94,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsDown(asset.totalAddedAssets(), asset.totalAddedShares());
+    return shares.toAssetsDown(asset.totalAddedAssets(), asset.addedShares);
   }
 
   /// @notice Converts an amount of added assets to the equivalent amount of shares, rounding up.
@@ -101,7 +102,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesUp(asset.totalAddedAssets(), asset.totalAddedShares());
+    return assets.toSharesUp(asset.totalAddedAssets(), asset.addedShares);
   }
 
   /// @notice Converts an amount of added assets to the equivalent amount of shares, rounding down.
@@ -109,7 +110,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesDown(asset.totalAddedAssets(), asset.totalAddedShares());
+    return assets.toSharesDown(asset.totalAddedAssets(), asset.addedShares);
   }
 
   /// @notice Updates the drawn rate of a specified asset.
@@ -129,28 +130,15 @@ library AssetLogic {
   }
 
   /// @notice Accrues interest and fees for the specified asset.
-  function accrue(
-    IHub.Asset storage asset,
-    mapping(uint256 => mapping(address => IHub.SpokeData)) storage spokes,
-    uint256 assetId
-  ) internal {
+  function accrue(IHub.Asset storage asset) internal {
     if (asset.lastUpdateTimestamp == block.timestamp) {
       return;
     }
 
     uint256 newDrawnIndex = asset.getDrawnIndex();
-    uint256 indexDelta = newDrawnIndex.uncheckedSub(asset.drawnIndex);
-
+    asset.feeAmount += asset.getUnrealizedFeeAmount(newDrawnIndex).toUint96();
     asset.drawnIndex = newDrawnIndex.toUint128();
     asset.lastUpdateTimestamp = block.timestamp.toUint32();
-
-    uint128 feeShares = asset.getFeeShares(indexDelta).toUint128();
-    if (feeShares > 0) {
-      address feeReceiver = asset.feeReceiver;
-      asset.addedShares += feeShares;
-      spokes[assetId][feeReceiver].addedShares += feeShares;
-      emit IHub.AccrueFees(assetId, feeReceiver, feeShares);
-    }
   }
 
   /// @notice Calculates the drawn index of a specified asset based on the existing drawn rate and index.
@@ -170,24 +158,21 @@ library AssetLogic {
 
   /// @notice Calculates the amount of fee shares derived from the index growth due to interest accrual.
   /// @dev The true liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee.
-  /// @param indexDelta The delta between the current and next drawn index.
-  function getFeeShares(
+  /// @param drawnIndex The current drawn index.
+  function getUnrealizedFeeAmount(
     IHub.Asset storage asset,
-    uint256 indexDelta
+    uint256 drawnIndex
   ) internal view returns (uint256) {
-    if (indexDelta == 0) return 0;
+    uint256 lastDrawnIndex = asset.drawnIndex;
+    if (drawnIndex == lastDrawnIndex) return 0;
+
     uint256 liquidityFee = asset.liquidityFee;
     if (liquidityFee == 0) return 0;
 
-    // we do not simplify further to avoid overestimating the liquidity growth
-    uint256 feeAmount = (asset.drawnShares.rayMulDown(indexDelta) +
-      asset.premiumShares.rayMulDown(indexDelta)).percentMulDown(liquidityFee);
-
-    return feeAmount.toSharesDown(asset.totalAddedAssets() - feeAmount, asset.addedShares);
-  }
-
-  /// @notice Calculates the amount of unrealized fee shares since last accrual.
-  function unrealizedFeeShares(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.getFeeShares(asset.getDrawnIndex().uncheckedSub(asset.drawnIndex));
+    uint256 liquidityGrowth = asset.drawnShares.rayMulUp(drawnIndex) -
+      asset.drawnShares.rayMulUp(lastDrawnIndex) +
+      asset.premiumShares.rayMulUp(drawnIndex) -
+      asset.premiumShares.rayMulUp(lastDrawnIndex);
+    return liquidityGrowth.percentMulDown(asset.liquidityFee);
   }
 }
