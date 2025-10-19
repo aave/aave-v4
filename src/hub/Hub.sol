@@ -495,12 +495,14 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHubBase
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256) {
     Asset storage asset = _assets[assetId];
-    return (asset.drawn(), asset.premium());
+    uint256 drawnIndex = asset.getDrawnIndex();
+    return (asset.drawn(drawnIndex), asset.premium(drawnIndex));
   }
 
   /// @inheritdoc IHubBase
   function getAssetTotalOwed(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].totalOwed();
+    Asset storage asset = _assets[assetId];
+    return asset.totalOwed(asset.getDrawnIndex());
   }
 
   /// @inheritdoc IHubBase

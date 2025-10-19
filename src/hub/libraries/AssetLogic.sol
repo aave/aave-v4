@@ -54,31 +54,32 @@ library AssetLogic {
   }
 
   /// @notice Returns the total drawn assets amount for the specified asset.
-  function drawn(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.drawnShares.rayMulUp(asset.getDrawnIndex());
+  function drawn(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
+    return asset.drawnShares.rayMulUp(drawnIndex);
   }
 
   /// @notice Returns the total premium amount for the specified asset.
-  function premium(IHub.Asset storage asset) internal view returns (uint256) {
+  function premium(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
     // sanity: utilize solc underflow check
-    uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumShares) - asset.premiumOffset;
+    uint256 accruedPremium = asset.premiumShares.rayMulUp(drawnIndex) - asset.premiumOffset;
     return asset.realizedPremium + accruedPremium;
   }
 
   /// @notice Returns the total amount owed for the specified asset, including drawn and premium.
-  function totalOwed(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.drawn() + asset.premium();
+  function totalOwed(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
+    return asset.drawn(drawnIndex) + asset.premium(drawnIndex);
   }
 
   /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
+    uint256 drawnIndex = asset.getDrawnIndex();
     return
       asset.liquidity +
       asset.swept +
       asset.deficit +
-      asset.totalOwed() -
+      asset.totalOwed(drawnIndex) -
       asset.feeAmount -
-      asset.getUnrealizedFeeAmount(asset.getDrawnIndex());
+      asset.getUnrealizedFeeAmount(drawnIndex);
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
@@ -116,17 +117,18 @@ library AssetLogic {
   /// @notice Updates the drawn rate of a specified asset.
   /// @dev Premium debt is not used in the interest rate calculation.
   function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
+    // asset accrual should have already occurred
+    uint256 drawnIndex = asset.drawnIndex;
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
       assetId: assetId,
       liquidity: asset.liquidity,
-      drawn: asset.drawn(),
+      drawn: asset.drawn(drawnIndex),
       deficit: asset.deficit,
       swept: asset.swept
     });
     asset.drawnRate = newDrawnRate.toUint96();
 
-    // asset accrual should have already occurred
-    emit IHub.UpdateAsset(assetId, asset.drawnIndex, newDrawnRate);
+    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate);
   }
 
   /// @notice Accrues interest and fees for the specified asset.
