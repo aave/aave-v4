@@ -322,8 +322,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 debtToCover,
     bool receiveShares
   ) external {
-    UserAccountDataWithoutRiskPremium
-      memory userAccountDataWithoutRp = _calculateUserAccountDataWithoutRiskPremium(user);
+    UserAccountData memory userAccountDataWithoutRp = _calculateUserAccountDataWithoutRiskPremium(
+      user
+    );
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
@@ -940,19 +941,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   function _calculateUserAccountDataWithoutRiskPremium(
     address user
-  ) internal view returns (UserAccountDataWithoutRiskPremium memory) {
-    UserAccountData memory accountData = _castToView(
-      _calculateAndPotentiallyRefreshUserAccountData
-    )(user, false, false);
-    return
-      UserAccountDataWithoutRiskPremium({
-        avgCollateralFactor: accountData.avgCollateralFactor,
-        healthFactor: accountData.healthFactor,
-        totalCollateralValue: accountData.totalCollateralValue,
-        totalDebtValue: accountData.totalDebtValue,
-        activeCollateralCount: accountData.activeCollateralCount,
-        borrowedCount: accountData.borrowedCount
-      });
+  ) internal view returns (UserAccountData memory) {
+    // risk premium is not computed and will always be zero
+    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false, false);
   }
 
   /// @return The user's drawn debt.

@@ -361,7 +361,8 @@ library LiquidationLogic {
       params.isUsingAsCollateral && params.collateralFactor > 0,
       ISpoke.CollateralCannotBeLiquidated()
     );
-    require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied()); // equivalent to suppliedShares > 0, given no precision loss when converting from shares to assets
+    // there is no precision loss when converting from shares to assets
+    require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
     require(!params.receiveShares || !params.collateralReserveFrozen, ISpoke.CannotReceiveShares());
   }

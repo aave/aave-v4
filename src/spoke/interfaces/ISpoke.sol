@@ -75,15 +75,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint256 borrowedCount;
   }
 
-  struct UserAccountDataWithoutRiskPremium {
-    uint256 avgCollateralFactor;
-    uint256 healthFactor;
-    uint256 totalCollateralValue;
-    uint256 totalDebtValue;
-    uint256 activeCollateralCount; // 'active' collateral: collateralFactor > 0, enabledAsCollateral and suppliedAmount > 0
-    uint256 borrowedCount;
-  }
-
   /// @notice Emitted when a liquidation config is updated.
   /// @param config The new liquidation config.
   event UpdateLiquidationConfig(LiquidationConfig config);

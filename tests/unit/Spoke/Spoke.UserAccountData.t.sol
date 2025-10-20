@@ -282,17 +282,28 @@ contract SpokeUserAccountDataTest is SpokeBase {
     assertApproxEqAbs(a.riskPremium, b.riskPremium, 1, 'riskPremium');
     assertEq(a.activeCollateralCount, b.activeCollateralCount, 'activeCollateralCount');
     assertEq(a.borrowedCount, b.borrowedCount, 'borrowedCount');
+    assertEq(abi.encode(a).length, 7 * 32, 'UserAccountData length');
   }
 
   function assertEqWithoutRiskPremium(
     ISpoke.UserAccountData memory a,
-    ISpoke.UserAccountData memory b
+    ISpoke.UserAccountData memory bWithoutRiskPremium
   ) internal pure {
-    assertEq(a.totalCollateralValue, b.totalCollateralValue, 'totalCollateralValue');
-    assertEq(a.totalDebtValue, b.totalDebtValue, 'totalDebtValue');
-    assertApproxEqAbs(a.avgCollateralFactor, b.avgCollateralFactor, 1e12, 'avgCollateralFactor');
-    assertApproxEqAbs(a.healthFactor, b.healthFactor, 1e12, 'healthFactor');
-    assertEq(a.activeCollateralCount, b.activeCollateralCount, 'activeCollateralCount');
-    assertEq(a.borrowedCount, b.borrowedCount, 'borrowedCount');
+    assertEq(
+      a.totalCollateralValue,
+      bWithoutRiskPremium.totalCollateralValue,
+      'totalCollateralValue'
+    );
+    assertEq(a.totalDebtValue, bWithoutRiskPremium.totalDebtValue, 'totalDebtValue');
+    assertEq(a.avgCollateralFactor, bWithoutRiskPremium.avgCollateralFactor, 'avgCollateralFactor');
+    assertEq(a.healthFactor, bWithoutRiskPremium.healthFactor, 'healthFactor');
+    assertEq(bWithoutRiskPremium.riskPremium, 0, 'riskPremium');
+    assertEq(
+      a.activeCollateralCount,
+      bWithoutRiskPremium.activeCollateralCount,
+      'activeCollateralCount'
+    );
+    assertEq(a.borrowedCount, bWithoutRiskPremium.borrowedCount, 'borrowedCount');
+    assertEq(abi.encode(a).length, 7 * 32, 'UserAccountData length');
   }
 }
