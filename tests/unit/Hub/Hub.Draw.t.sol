@@ -167,28 +167,31 @@ contract HubDrawTest is HubBase {
     hub1.draw(daiAssetId, 100e18, alice);
   }
 
-  function test_draw_revertsWith_underflow() public {
+  function test_draw_revertsWith_InsufficientLiquidity() public {
     uint256 drawAmount = 1;
 
     assertTrue(hub1.getAssetLiquidity(daiAssetId) == 0);
 
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub1.draw(daiAssetId, drawAmount, address(spoke1));
   }
 
-  function test_draw_fuzz_revertsWith_underflow(uint256 assetId, uint256 drawAmount) public {
+  function test_draw_fuzz_revertsWith_InsufficientLiquidity(
+    uint256 assetId,
+    uint256 drawAmount
+  ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
     assertTrue(hub1.getAssetLiquidity(assetId) == 0);
 
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke2));
     hub1.draw(assetId, drawAmount, address(spoke2));
   }
 
-  function test_draw_revertsWith_underflow_due_to_remove() public {
+  function test_draw_revertsWith_InsufficientLiquidity_due_to_remove() public {
     uint256 daiAmount = 100e18;
 
     // spoke2, bob add dai
@@ -212,12 +215,14 @@ contract HubDrawTest is HubBase {
 
     uint256 drawAmount = 1;
 
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  function test_draw_fuzz_revertsWith_underflow_due_to_remove(uint256 daiAmount) public {
+  function test_draw_fuzz_revertsWith_InsufficientLiquidity_due_to_remove(
+    uint256 daiAmount
+  ) public {
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
 
     // spoke2, bob add dai
@@ -241,12 +246,12 @@ contract HubDrawTest is HubBase {
 
     uint256 drawAmount = 1;
 
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  function test_draw_revertsWith_underflow_due_to_draw() public {
+  function test_draw_revertsWith_InsufficientLiquidity_due_to_draw() public {
     uint256 daiAmount = 100e18;
 
     // spoke2, bob add dai
@@ -270,12 +275,12 @@ contract HubDrawTest is HubBase {
 
     uint256 drawAmount = 1;
 
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  function test_draw_fuzz_revertsWith_underflow_due_to_draw(uint256 daiAmount) public {
+  function test_draw_fuzz_revertsWith_InsufficientLiquidity_due_to_draw(uint256 daiAmount) public {
     daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
 
     // spoke2, bob add dai
@@ -299,7 +304,7 @@ contract HubDrawTest is HubBase {
 
     uint256 drawAmount = 1;
 
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }

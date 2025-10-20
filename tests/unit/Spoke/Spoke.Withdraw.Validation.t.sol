@@ -51,7 +51,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
   }
 
   // Withdrawal limit increases due to debt interest, but still cannot withdraw more than available liquidity
-  function test_withdraw_revertsWith_underflow_with_debt() public {
+  function test_withdraw_revertsWith_InsufficientLiquidity_with_debt() public {
     uint256 supplyAmount = 100e18;
     uint256 borrowAmount = 50e18;
     uint256 reserveId = _daiReserveId(spoke1);
@@ -74,7 +74,9 @@ contract SpokeWithdrawValidationTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+    );
     vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, onBehalfOf: alice});
 
@@ -86,13 +88,15 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     assertGt(newWithdrawalLimit, supplyAmount);
 
     // Interest added on both sides, so can ignore
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+    );
     vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, onBehalfOf: alice});
   }
 
   // Cannot withdraw more than available liquidity, before and after time skip, fuzzed
-  function test_withdraw_fuzz_revertsWith_underflow_with_debt(
+  function test_withdraw_fuzz_revertsWith_InsufficientLiquidity_with_debt(
     uint256 reserveId,
     uint256 supplyAmount,
     uint256 borrowAmount,
@@ -124,7 +128,9 @@ contract SpokeWithdrawValidationTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+    );
     vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, onBehalfOf: alice});
 
@@ -136,7 +142,9 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     vm.assume(newWithdrawalLimit > supplyAmount);
 
     // Interest added on both sides, so can ignore
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+    );
     vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, onBehalfOf: alice});
   }

@@ -220,11 +220,13 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(_spokes, assetId);
     _validateRemove(asset, spoke, amount, to);
 
-    uint128 liquidity = asset.liquidity;
+    uint256 liquidity = asset.liquidity;
+    require(amount <= liquidity, InsufficientLiquidity(liquidity));
+
     uint128 shares = asset.toAddedSharesUp(amount).toUint128();
     asset.addedShares -= shares;
     spoke.addedShares -= shares;
-    asset.liquidity = liquidity - amount.toUint128();
+    asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
 
     asset.updateDrawnRate(assetId);
 
@@ -243,11 +245,13 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(_spokes, assetId);
     _validateDraw(asset, spoke, amount, to);
 
-    uint128 liquidity = asset.liquidity;
+    uint256 liquidity = asset.liquidity;
+    require(amount <= liquidity, InsufficientLiquidity(liquidity));
+
     uint128 drawnShares = asset.toDrawnSharesUp(amount).toUint128();
     asset.drawnShares += drawnShares;
     spoke.drawnShares += drawnShares;
-    asset.liquidity = liquidity - amount.toUint128();
+    asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
 
     asset.updateDrawnRate(assetId);
 
@@ -396,7 +400,10 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(_spokes, assetId);
     _validateSweep(asset, msg.sender, amount);
 
-    asset.liquidity -= amount.toUint128();
+    uint256 liquidity = asset.liquidity;
+    require(amount <= liquidity, InsufficientLiquidity(liquidity));
+
+    asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
     asset.swept += amount.toUint128();
     asset.updateDrawnRate(assetId);
 
@@ -782,6 +789,8 @@ contract Hub is IHub, AccessManaged {
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
+    uint256 drawn = _getSpokeDrawn(asset, spoke);
+    require(drawnAmount <= drawn, SurplusDeficitReported(drawn));
   }
 
   function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {
