@@ -38,20 +38,13 @@ contract SpokeSupplyTest is SpokeBase {
     spoke1.supply(daiReserveId, amount, bob);
   }
 
-  function test_supply_revertsWith_ERC20InsufficientAllowance() public {
+  function test_supply_revertsWith_TransferFromFailed() public {
     uint256 amount = 100e18;
     uint256 approvalAmount = amount - 1;
 
     vm.startPrank(bob);
     tokenList.dai.approve(address(hub1), approvalAmount);
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        IERC20Errors.ERC20InsufficientAllowance.selector,
-        address(hub1),
-        approvalAmount,
-        amount
-      )
-    );
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     spoke1.supply(_daiReserveId(spoke1), amount, bob);
     vm.stopPrank();
   }
