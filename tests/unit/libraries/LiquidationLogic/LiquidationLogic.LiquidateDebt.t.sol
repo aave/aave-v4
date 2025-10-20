@@ -17,6 +17,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   address internal liquidator;
   uint256 internal realizedPremium;
   address internal user;
+
   function setUp() public override {
     super.setUp();
 

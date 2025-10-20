@@ -402,7 +402,7 @@ library LiquidationLogic {
       })
     );
 
-    uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
+    uint256 collateralToLiquidate = debtToLiquidate.mulDivUp(
       params.debtAssetPrice * collateralAssetUnit * liquidationBonus,
       debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
     );
@@ -424,10 +424,12 @@ library LiquidationLogic {
       // - `debtToLiquidate` is increased if `(leavesCollateralDust && debtToLiquidate < params.debtReserveBalance)`, ensuring collateral reserve
       //   is fully liquidated (potentially bypassing the target health factor). Can only increase by at most `DUST_LIQUIDATION_THRESHOLD` (in
       //   value terms). Since debt dust condition was enforced, it is guaranteed that `debtToLiquidate` will never exceed `params.debtReserveBalance`.
-      debtToLiquidate = collateralToLiquidate.mulDivUp(
-        params.collateralAssetPrice * debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
-        params.debtAssetPrice * collateralAssetUnit * liquidationBonus
-      );
+      debtToLiquidate = collateralToLiquidate
+        .mulDivUp(
+          params.collateralAssetPrice * debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
+          params.debtAssetPrice * collateralAssetUnit * liquidationBonus
+        )
+        .min(params.debtReserveBalance);
     }
 
     // revert if the liquidator does not cover the necessary debt to prevent dust from remaining
