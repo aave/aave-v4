@@ -21,7 +21,7 @@ import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGatew
 /// @dev Uses keyed-nonces where each key's namespace nonce is consumed sequentially. Intents bundled through
 /// multicall can be executed independently in order of signed nonce & deadline; does not guarantee batch atomicity.
 contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multicall, EIP712 {
-  using SafeTransferLib for *;
+  using SafeTransferLib for address;
   using EIP712Hash for *;
 
   /// @dev Constructor.
