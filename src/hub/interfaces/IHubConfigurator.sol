@@ -177,18 +177,32 @@ interface IHubConfigurator {
     uint256 drawCap
   ) external;
 
+  /// @notice Updates the risk premium cap of an asset's spoke.
+  /// @param hub The address of the Hub contract.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  /// @param riskPremiumCap The new risk premium cap.
+  function updateSpokeRiskPremiumCap(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    uint256 riskPremiumCap
+  ) external;
+
   /// @notice Updates the caps of an asset's spoke.
   /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @param addCap The new supply cap.
   /// @param drawCap The new draw cap.
+  /// @param riskPremiumCap The new risk premium cap.
   function updateSpokeCaps(
     address hub,
     uint256 assetId,
     address spoke,
     uint256 addCap,
-    uint256 drawCap
+    uint256 drawCap,
+    uint256 riskPremiumCap
   ) external;
 
   /// @notice Deactivates all assets of a spoke on a specified hub by setting the active flag to false.
