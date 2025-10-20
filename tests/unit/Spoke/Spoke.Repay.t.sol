@@ -74,7 +74,7 @@ contract SpokeRepayTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, expectedShares, expectedPremiumDelta);
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       daiRepayAmount,
       bob
@@ -183,7 +183,7 @@ contract SpokeRepayTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, daiRepayAmount, expectedPremiumDelta);
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       daiRepayAmount,
       bob
@@ -287,7 +287,7 @@ contract SpokeRepayTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, expectedShares, expectedPremiumDelta);
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       daiRepayAmount,
       bob
@@ -391,7 +391,7 @@ contract SpokeRepayTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, expectedPremiumDelta);
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       daiRepayAmount,
       bob
@@ -487,7 +487,7 @@ contract SpokeRepayTest is SpokeBase {
     // Bob repays using the max value to signal full repayment
     TestReturnValues memory returnValues;
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       UINT256_MAX,
       bob
@@ -597,7 +597,7 @@ contract SpokeRepayTest is SpokeBase {
       emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, expectedShares, expectedPremiumDelta);
     }
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       daiRepayAmount,
       bob
@@ -719,7 +719,7 @@ contract SpokeRepayTest is SpokeBase {
     // Bob repays
     TestReturnValues memory returnValues;
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       daiRepayAmount,
       bob
@@ -850,7 +850,7 @@ contract SpokeRepayTest is SpokeBase {
       }
     }
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       daiRepayAmount,
       bob
@@ -961,7 +961,7 @@ contract SpokeRepayTest is SpokeBase {
       emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, expectedPremiumDelta);
     }
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       daiRepayAmount,
       bob
@@ -1088,7 +1088,7 @@ contract SpokeRepayTest is SpokeBase {
       );
     }
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       daiRepayAmount,
       bob
@@ -1212,7 +1212,7 @@ contract SpokeRepayTest is SpokeBase {
     }
 
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       daiRepayAmount,
       bob
@@ -1575,7 +1575,7 @@ contract SpokeRepayTest is SpokeBase {
       expectedPremiumDelta
     );
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       UINT256_MAX,
       bob

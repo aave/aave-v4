@@ -1,8 +1,8 @@
 {
   "borrowNative": "225536",
-  "repayNative": "240605",
+  "repayNative": "240610",
   "supplyAsCollateralNative": "155402",
   "supplyNative": "131656",
-  "withdrawNative: full": "128376",
-  "withdrawNative: partial": "140269"
+  "withdrawNative: full": "128373",
+  "withdrawNative: partial": "140266"
 }

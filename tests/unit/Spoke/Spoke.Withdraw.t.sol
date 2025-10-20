@@ -92,7 +92,7 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(_daiReserveId(spoke1), bob, bob, amount);
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.withdraw(
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
       _daiReserveId(spoke1),
       amount,
       bob
@@ -149,7 +149,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // Withdraw all supplied assets
     TestReturnValues memory returnValues;
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.withdraw(
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
       _daiReserveId(spoke1),
       UINT256_MAX,
       bob
@@ -188,7 +188,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // Withdraw all supplied assets
     TestReturnValues memory returnValues;
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.withdraw(
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
       _daiReserveId(spoke1),
       UINT256_MAX,
       bob
@@ -227,7 +227,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // Withdraw all supplied assets
     TestReturnValues memory returnValues;
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.withdraw(
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
       _daiReserveId(spoke1),
       supplyAmount + 1,
       bob
@@ -296,7 +296,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // bob withdraws all
     TestReturnValues memory returnValues;
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.withdraw(
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
       _daiReserveId(spoke1),
       UINT256_MAX,
       bob
@@ -373,7 +373,7 @@ contract SpokeWithdrawTest is SpokeBase {
     TestReturnValues memory returnValues;
 
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.withdraw(
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
       _daiReserveId(spoke1),
       UINT256_MAX,
       bob
@@ -443,7 +443,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // bc debt is fully repaid, bob can withdraw all supplied
     TestReturnValues memory returnValues;
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.withdraw({
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw({
       reserveId: state.reserveId,
       amount: state.withdrawAmount,
       onBehalfOf: bob
@@ -599,7 +599,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // bob withdraws all
     TestReturnValues memory returnValues;
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.withdraw({
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw({
       reserveId: state.reserveId,
       amount: state.withdrawAmount,
       onBehalfOf: bob
@@ -715,7 +715,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // debt is fully repaid, so bob can withdraw all supplied
     TestReturnValues memory returnValues;
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.withdraw({
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw({
       reserveId: state.reserveId,
       amount: state.withdrawAmount,
       onBehalfOf: bob
@@ -867,7 +867,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // bob withdraws all
     TestReturnValues memory returnValues;
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.withdraw({
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw({
       reserveId: state.reserveId,
       amount: state.withdrawAmount,
       onBehalfOf: bob
@@ -998,7 +998,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.prank(alice);
-    (returnValues.amount, returnValues.shares) = spoke1.withdraw(
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
       reserveId,
       withdrawable + 1,
       alice

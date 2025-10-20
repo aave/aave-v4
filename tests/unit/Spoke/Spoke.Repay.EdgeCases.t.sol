@@ -64,7 +64,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, expectedPremiumDelta);
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       daiRepayAmount,
       bob
@@ -266,7 +266,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     emit IERC20.Transfer(bob, address(hub1), repayAmount);
 
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       repayAmount,
       bob
@@ -369,7 +369,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, expectedPremiumDelta);
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       repayAmount,
       bob
@@ -498,7 +498,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       );
     }
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       daiRepayAmount,
       bob
@@ -608,7 +608,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       expectedPremiumDelta
     );
     vm.prank(bob);
-    (returnValues.amount, returnValues.shares) = spoke1.repay(
+    (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
       daiRepayAmount,
       bob

@@ -236,7 +236,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
 
-    return (withdrawAmount, withdrawnShares);
+    return (withdrawnShares, withdrawAmount);
   }
 
   /// @inheritdoc ISpokeBase
@@ -310,7 +310,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, premiumDelta);
 
-    return (drawnDebtRestored + premiumDebtRestored, restoredShares);
+    return (restoredShares, drawnDebtRestored + premiumDebtRestored);
   }
 
   /// @inheritdoc ISpokeBase

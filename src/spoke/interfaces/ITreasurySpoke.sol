@@ -30,8 +30,8 @@ interface ITreasurySpoke is ISpokeBase {
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to withdraw.
   /// @param onBehalfOf Unused parameter for this spoke.
-  /// @return The amount of asset repaid.
   /// @return The amount of shares repaid.
+  /// @return The amount of asset repaid.
   function withdraw(
     uint256 reserveId,
     uint256 amount,

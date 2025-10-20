@@ -220,7 +220,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // withdraw all supplied
     vm.prank(alice);
-    (returnValues[0].amount, returnValues[0].shares) = spoke1.withdraw({
+    (returnValues[0].shares, returnValues[0].amount) = spoke1.withdraw({
       reserveId: params.reserveId,
       amount: aliceData[state.stage].suppliedAmount,
       onBehalfOf: alice
@@ -246,7 +246,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // bob withdraws all supplied
     vm.prank(bob);
-    (returnValues[1].amount, returnValues[1].shares) = spoke1.withdraw({
+    (returnValues[1].shares, returnValues[1].amount) = spoke1.withdraw({
       reserveId: params.reserveId,
       amount: bobData[state.stage].suppliedAmount,
       onBehalfOf: bob
@@ -395,7 +395,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(reserveId, caller, caller, shares2);
     vm.prank(caller);
-    (returnValues2.amount, returnValues2.shares) = spoke1.withdraw(reserveId, assets, caller);
+    (returnValues2.shares, returnValues2.amount) = spoke1.withdraw(reserveId, assets, caller);
 
     assertEq(shares2, shares1, 'supplied and withdrawn shares');
     assertEq(returnedShares1, shares1);
@@ -456,7 +456,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(reserveId, caller, caller, shares1);
     vm.prank(caller);
-    (returnValues1.amount, returnValues1.shares) = spoke1.withdraw(reserveId, assets, caller);
+    (returnValues1.shares, returnValues1.amount) = spoke1.withdraw(reserveId, assets, caller);
 
     // Supply and confirm share amount from event emission
     uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
