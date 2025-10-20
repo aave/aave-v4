@@ -9,61 +9,100 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 /// @author Aave Labs
 /// @notice Full interface for Hub.
 interface IHub is IHubBase, IAccessManaged {
+  /// @notice Asset data.
   struct Asset {
+    /// available liquidity, expressed in asset units
     uint128 liquidity;
+    /// total shares added across all spokes, expressed in shares
     uint128 addedShares;
     //
+    /// deficit amount, expressed in asset units
     uint128 deficit;
+    /// swept amount, expressed in asset units
     uint128 swept;
     //
+    /// total premium shares across all spokes of the asset, expressed in shares
     uint128 premiumShares;
+    /// premium offset across all spokes, used to calculate the realized premium, expressed in asset units
     uint128 premiumOffset;
     //
+    /// total drawn shares across all spokes of the asset, expressed in shares
     uint128 drawnShares;
+    /// realized premium across all spokes of the asset, expressed in asset units
     uint128 realizedPremium;
     //
+    /// drawn index, expressed in RAY
     uint128 drawnIndex;
+    /// drawn rate, expressed in RAY
     uint96 drawnRate;
+    /// timestamp of last update
     uint32 lastUpdateTimestamp;
     //
+    /// the underlying asset address
     address underlying;
     //
+    /// the interest rate strategy address
     address irStrategy;
     //
+    /// the reinvestment controller address
     address reinvestmentController;
     //
+    /// the fee receiver address
     address feeReceiver;
+    /// the liquidity fee, expressed in BPS
     uint16 liquidityFee;
+    /// the number of decimals of the underlying asset
     uint8 decimals;
   }
 
+  /// @notice Asset configuration.
   struct AssetConfig {
+    /// the fee receiver address
     address feeReceiver;
+    /// the liquidity fee, expressed in BPS
     uint16 liquidityFee;
+    /// the interest rate strategy address
     address irStrategy;
+    /// the reinvestment controller address
     address reinvestmentController;
   }
 
+  /// @notice Spoke data.
   struct SpokeData {
+    /// total premium shares of a spoke for a given asset, expressed in shares
     uint128 premiumShares;
+    /// premium offset across all spokes, used to calculate the realized premium, expressed in asset units
     uint128 premiumOffset;
     //
-    uint128 realizedPremium;
+    /// total drawn shares of a spoke for a given asset, expressed in shares
     uint128 drawnShares;
+    /// realized premium of a spoke for a given asset, expressed in asset units
+    uint128 realizedPremium;
     //
+    /// total added shares of a spoke for a given asset, expressed in shares
     uint128 addedShares;
+    /// add cap, expressed in whole assets (not scaled by decimals)
     uint56 addCap;
+    /// draw cap, expressed in whole assets (not scaled by decimals)
     uint56 drawCap;
+    /// active flag
     bool active;
+    /// paused flag
     bool paused;
     //
+    /// the deficit of a spoke for a given asset, expressed in asset units
     uint128 deficit;
   }
 
+  /// @notice Spoke configuration.
   struct SpokeConfig {
+    /// the active flag
     bool active;
+    /// the paused flag
     bool paused;
+    /// the add cap, expressed in whole assets (not scaled by decimals)
     uint56 addCap;
+    /// the draw cap, expressed in whole assets (not scaled by decimals)
     uint56 drawCap;
   }
 
@@ -131,7 +170,7 @@ interface IHub is IHubBase, IAccessManaged {
   error AssetNotListed();
 
   /// @notice Thrown when the add cap is exceeded.
-  /// @param addCap The current `addCap` of the asset.
+  /// @param addCap The current `addCap` of the asset, expressed in whole assets (not scaled by decimals).
   error AddCapExceeded(uint256 addCap);
 
   /// @notice Thrown when the added amount is exceeded.
@@ -147,7 +186,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InsufficientLiquidity(uint256 liquidity);
 
   /// @notice Thrown when the draw cap is exceeded.
-  /// @param drawCap The current `drawCap` of the asset.
+  /// @param drawCap The current `drawCap` of the asset, expressed in whole assets (not scaled by decimals).
   error DrawCapExceeded(uint256 drawCap);
 
   /// @notice Thrown when a surplus amount is restored.

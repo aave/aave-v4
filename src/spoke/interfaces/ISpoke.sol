@@ -12,66 +12,110 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 /// @author Aave Labs
 /// @notice Full interface for Spoke.
 interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
+  /// @notice Reserve data.
   struct Reserve {
+    /// the underlying asset address
     address underlying;
     //
+    /// the associated hub
     IHubBase hub;
+    /// the identifier of the asset in the hub
     uint16 assetId;
+    /// the number of decimals of the underlying asset
     uint8 decimals;
-    uint16 dynamicConfigKey; // key of the last reserve config
+    /// the key of the last reserve config
+    uint16 dynamicConfigKey;
+    /// the paused flag
     bool paused;
+    /// the frozen flag
     bool frozen;
+    /// the borrowable flag
     bool borrowable;
+    /// the collateral risk, expressed in BPS. Maximum allowed is 1000_00 (1000.00%)
     uint24 collateralRisk;
   }
 
+  /// @notice Reserve configuration.
   struct ReserveConfig {
+    /// the paused flag
     bool paused;
+    /// the frozen flag
     bool frozen;
+    /// the borrowable flag
     bool borrowable;
-    uint24 collateralRisk; // BPS
+    /// the collateral risk, expressed in BPS. Maximum allowed is 1000_00 (1000.00%)
+    uint24 collateralRisk;
   }
 
+  /// @notice Dynamic reserve configuration.
   struct DynamicReserveConfig {
+    /// the collateral factor, expressed in BPS. Maximum allowed is 100_00 (100.00%)
     uint16 collateralFactor;
-    uint32 maxLiquidationBonus; // BPS, 100_00 represent a 0% bonus
-    uint16 liquidationFee; // BPS
+    /// maximum liquidation bonus, expressed in BPS. Minimum allowed is 100_00, which represents a 0% bonus
+    uint32 maxLiquidationBonus;
+    /// the liquidation fee, expressed in BPS. Maximum allowed is 100_00 (100.00%)
+    uint16 liquidationFee;
   }
 
+  /// @notice Liquidation configuration.
   struct LiquidationConfig {
-    uint128 targetHealthFactor; // WAD, ideal health factor to restore user position during liquidation
-    uint64 healthFactorForMaxBonus; // WAD, health factor under which liquidation bonus is max
-    uint16 liquidationBonusFactor; // BPS, liquidation bonus factor * maxLiquidationBonus is the minimum liquidation bonus
+    /// the ideal health factor to restore user position during liquidation, expressed in WAD. Minimum allowed is 1e18 (1.00)
+    uint128 targetHealthFactor;
+    /// the health factor under which liquidation bonus is maximum, expressed in WAD. Must be less than 1e18 (1.00)
+    uint64 healthFactorForMaxBonus;
+    /// the liquidation bonus factor, expressed in BPS. liquidBonusFactor * maxLiquidationBonus is the minimum liquidation bonus
+    uint16 liquidationBonusFactor;
   }
 
+  /// @notice User position data.
   struct UserPosition {
+    /// the total drawn shares of the user, expressed in shares
     uint128 drawnShares;
+    /// the total realized premium of the user, expressed in asset units
     uint128 realizedPremium;
     //
+    /// the total premium shares of the user, expressed in shares
     uint128 premiumShares;
+    /// the premium offset of the user, expressed in asset units
     uint128 premiumOffset;
     //
+    /// the total supplied shares of the user, expressed in shares
     uint128 suppliedShares;
-    uint16 configKey; // key of the last user config
+    /// the key of the last user config
+    uint16 configKey;
   }
 
+  /// @notice Position manager configuration.
   struct PositionManagerConfig {
+    /// the approval mapping for the position manager
     mapping(address user => bool) approval;
+    /// the active flag
     bool active;
   }
 
+  /// @notice Position status data.
   struct PositionStatus {
+    /// the bitmap of the position status
     mapping(uint256 slot => uint256) map;
-    bool hasPositiveRiskPremium; // premiumShares > 0
+    /// the flag indicating if the user has a positive risk premium
+    bool hasPositiveRiskPremium;
   }
 
+  /// @notice User account data.
   struct UserAccountData {
+    /// the risk premium, expressed in BPS
     uint256 riskPremium;
+    /// the weighted average collateral factor, expressed in BPS
     uint256 avgCollateralFactor;
+    /// the health factor, expressed in WAD
     uint256 healthFactor;
+    /// the total collateral value, expressed in asset units
     uint256 totalCollateralValue;
+    /// the total debt value, expressed in asset units
     uint256 totalDebtValue;
-    uint256 activeCollateralCount; // 'active' collateral: collateralFactor > 0, enabledAsCollateral and suppliedAmount > 0
+    /// the 'active' collateral count, including reserves with `collateralFactor` > 0, `enabledAsCollateral` and `suppliedAmount` > 0
+    uint256 activeCollateralCount;
+    /// the amount of borrowed reserves
     uint256 borrowedCount;
   }
 
