@@ -60,7 +60,6 @@ library AssetLogic {
 
   /// @notice Returns the total premium amount for the specified asset.
   function premium(IHub.Asset storage asset) internal view returns (uint256) {
-    // sanity: utilize solc underflow check
     uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumShares) - asset.premiumOffset;
     return asset.realizedPremium + accruedPremium;
   }
