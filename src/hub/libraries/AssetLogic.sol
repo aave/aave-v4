@@ -138,7 +138,7 @@ library AssetLogic {
     }
 
     uint256 newDrawnIndex = asset.getDrawnIndex();
-    asset.feeAmount += asset.getUnrealizedFeeAmount(newDrawnIndex).toUint96();
+    asset.feeAmount += asset.getUnrealizedFeeAmount(newDrawnIndex).toUint128();
     asset.drawnIndex = newDrawnIndex.toUint128();
     asset.lastUpdateTimestamp = block.timestamp.toUint32();
   }

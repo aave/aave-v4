@@ -29,11 +29,12 @@ interface IHub is IHubBase, IAccessManaged {
     address underlying;
     //
     address irStrategy;
-    uint96 feeAmount;
     //
     address reinvestmentController;
     //
     address feeReceiver;
+    //
+    uint128 feeAmount;
     uint16 liquidityFee;
     uint8 decimals;
   }
