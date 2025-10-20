@@ -18,12 +18,22 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
+    uint256 shares = addWithoutMintingFeeShares(hub, assetId, caller, amount, user);
+    IHub(address(hub)).mintFeeShares(assetId);
+    return shares;
+  }
+
+  function addWithoutMintingFeeShares(
+    IHubBase hub,
+    uint256 assetId,
+    address caller,
+    uint256 amount,
+    address user
+  ) internal returns (uint256) {
     IHub hub = IHub(address(hub));
     approve(hub, assetId, user, amount);
     vm.prank(caller);
-    uint256 shares = hub.add(assetId, amount, user);
-    hub.mintFeeShares(assetId);
-    return shares;
+    return hub.add(assetId, amount, user);
   }
 
   function draw(
