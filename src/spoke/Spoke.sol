@@ -214,7 +214,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256) {
+  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve);
@@ -236,7 +236,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
 
-    return withdrawnShares;
+    return (withdrawAmount, withdrawnShares);
   }
 
   /// @inheritdoc ISpokeBase
@@ -270,14 +270,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256) {
+  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve);
-    IHubBase hub = reserve.hub;
 
     (uint256 drawnDebtRestored, uint256 premiumDebtRestored, uint256 accruedPremium) = _getUserDebt(
-      hub,
+      reserve.hub,
       reserve.assetId,
       userPosition
     );
@@ -292,7 +291,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       offsetDelta: -userPosition.premiumOffset.toInt256(),
       realizedDelta: accruedPremium.toInt256() - premiumDebtRestored.toInt256()
     });
-    uint256 restoredShares = hub.restore(
+    uint256 restoredShares = reserve.hub.restore(
       reserve.assetId,
       drawnDebtRestored,
       premiumDebtRestored,
@@ -311,7 +310,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, premiumDelta);
 
-    return restoredShares;
+    return (drawnDebtRestored + premiumDebtRestored, restoredShares);
   }
 
   /// @inheritdoc ISpokeBase

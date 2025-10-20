@@ -94,12 +94,13 @@ interface ISpokeBase {
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to withdraw.
   /// @param onBehalfOf The owner of position to remove supply shares from.
+  /// @return The amount of asset withdrawn.
   /// @return The amount of shares withdrawn.
   function withdraw(
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external returns (uint256);
+  ) external returns (uint256, uint256);
 
   /// @notice Borrows a specified amount of underlying asset from the given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -118,8 +119,13 @@ interface ISpokeBase {
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to repay.
   /// @param onBehalfOf The owner of the position whose debt is repaid.
+  /// @return The amount of asset repaid.
   /// @return The amount of shares repaid.
-  function repay(uint256 reserveId, uint256 amount, address onBehalfOf) external returns (uint256);
+  function repay(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external returns (uint256, uint256);
 
   /// @notice Liquidates a user position.
   /// @dev It reverts if the reserves associated with any of the given reserve identifiers are not listed.
