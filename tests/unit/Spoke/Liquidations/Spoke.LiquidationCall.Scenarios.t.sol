@@ -253,4 +253,53 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     // Risk Premium after liquidation: ($100 * 10% + $353.1891 * 15%) / $453.1891 = 13.89%
     assertApproxEqAbs(userAccountData.riskPremium, 13_89, 1, 'post liquidation: risk premium');
   }
+
+  // Liquidated collateral is between 0 and 1 wei. It is rounded up to prevent reverting.
+  function test_scenario3() public {
+    // Liquidation bonus: 0
+    _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 100_00);
+
+    // The collateral has a price 10 times higher than the debt
+    _mockReservePrice(spoke, _wethReserveId(spoke), 100e8);
+    _mockReservePrice(spoke, _daiReserveId(spoke), 1e8);
+
+    // Collateral: 1 wei of WETH
+    _increaseCollateralSupply(spoke, _wethReserveId(spoke), 1, user);
+
+    // Max borrow: 79 wei of DAI (collateral factor of WETH is 80%)
+    assertEq(_getCollateralFactor(spoke, _wethReserveId(spoke)), 80_00);
+    _increaseReserveDebt(spoke, _daiReserveId(spoke), 79, user);
+
+    // Decrease WETH price by 10% to make user unhealthy
+    _mockReservePriceByPercent(spoke, _wethReserveId(spoke), 90_00);
+
+    // User is liquidatable
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    assertLe(userAccountData.healthFactor, 1e18, 'User should be unhealthy');
+
+    // Perform liquidation
+    // Liquidated amounts:
+    //   - Collateral: 79 * 1 / 90 = 1 if round up, 0 otherwise (will revert if 0)
+    //   - Debt: 79 wei of DAI
+    _checkedLiquidationCall(
+      CheckedLiquidationCallParams({
+        spoke: spoke,
+        collateralReserveId: _wethReserveId(spoke),
+        debtReserveId: _daiReserveId(spoke),
+        user: user,
+        debtToCover: type(uint256).max,
+        liquidator: liquidator,
+        isSolvent: true,
+        receiveShares: false
+      })
+    );
+
+    assertEq(spoke.getUserSuppliedAssets(_wethReserveId(spoke), user), 0, 'Collateral should be 0');
+    assertEq(spoke.getUserTotalDebt(_daiReserveId(spoke), user), 0, 'Debt should be 0');
+    assertEq(
+      _hub(spoke, _daiReserveId(spoke)).getAssetDeficit(_assetId(spoke, _daiReserveId(spoke))),
+      0,
+      'Deficit should be 0'
+    );
+  }
 }

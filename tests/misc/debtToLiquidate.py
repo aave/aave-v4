@@ -1,4 +1,4 @@
-# Make sure debtToLiquidate does not exceed params.debtReserveBalance in liquidation logic
+# Highlights the fact that debtToLiquidate can exceed debtReserveBalance in liquidation logic.
 from z3 import *
 
 WAD = IntVal(10**18)
@@ -37,7 +37,7 @@ s.add(0 <= debtToLiquidate, debtToLiquidate <= debtReserveBalance)
 collateralReserveBalance = Int('collateralReserveBalance')
 s.add(0 <= collateralReserveBalance, collateralReserveBalance <= 10**30)
 collateralToLiquidate = Int('collateralToLiquidate')
-s.add(collateralToLiquidate == mulDivDown(debtToLiquidate, debtAssetPrice * collateralAssetUnit * liquidationBonus, debtAssetUnit * collateralAssetPrice * PERCENTAGE_FACTOR))
+s.add(collateralToLiquidate == mulDivUp(debtToLiquidate, debtAssetPrice * collateralAssetUnit * liquidationBonus, debtAssetUnit * collateralAssetPrice * PERCENTAGE_FACTOR))
 
 s.add(
   Or(
