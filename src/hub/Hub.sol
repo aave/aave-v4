@@ -195,16 +195,17 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(_spokes, assetId);
     _validateAdd(asset, spoke, amount);
 
+    uint256 newLiquidity = asset.liquidity + amount;
     uint128 shares = asset.toAddedSharesDown(amount).toUint128();
     require(shares > 0, InvalidShares());
     asset.addedShares += shares;
     spoke.addedShares += shares;
-    asset.liquidity += amount.toUint128();
+    asset.liquidity = newLiquidity.toUint128();
 
     asset.updateDrawnRate(assetId);
 
     // enforces spoke transfers the correct funds from user to hub
-    require(asset.underlying.balanceOf(address(this)) >= asset.liquidity, InvalidAmountReceived());
+    require(asset.underlying.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
 
     emit Add(assetId, msg.sender, shares, amount);
 
@@ -276,13 +277,13 @@ contract Hub is IHub, AccessManaged {
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
-    uint256 totalAmount = drawnAmount + premiumAmount;
-    asset.liquidity += totalAmount.toUint128();
+    uint256 newLiquidity = asset.liquidity + drawnAmount + premiumAmount;
+    asset.liquidity = newLiquidity.toUint128();
 
     asset.updateDrawnRate(assetId);
 
     // enforces spoke transfers the correct funds from user to hub
-    require(asset.underlying.balanceOf(address(this)) >= asset.liquidity, InvalidAmountReceived());
+    require(asset.underlying.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
 
     emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
