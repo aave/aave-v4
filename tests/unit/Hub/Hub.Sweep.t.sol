@@ -74,7 +74,7 @@ contract HubSweepTest is HubBase {
 
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(bob, address(hub1), initialLiquidity);
-    hub1.add(daiAssetId, initialLiquidity, alice);
+    hub1.add(daiAssetId, initialLiquidity);
     vm.stopPrank();
 
     vm.prank(reinvestmentController);

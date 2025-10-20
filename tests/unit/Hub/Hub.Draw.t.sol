@@ -355,8 +355,7 @@ contract HubDrawTest is HubBase {
       assetId: daiAssetId,
       drawnAmount: singleShareInAssets,
       premiumAmount: 0,
-      premiumDelta: IHubBase.PremiumDelta(0, 0, 0),
-      from: alice
+      premiumDelta: IHubBase.PremiumDelta(0, 0, 0)
     });
 
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
@@ -424,8 +423,7 @@ contract HubDrawTest is HubBase {
       assetId: daiAssetId,
       drawnAmount: minimumAssetsPerDrawnShare(hub1, daiAssetId),
       premiumAmount: 0,
-      premiumDelta: IHubBase.PremiumDelta(0, 0, 0),
-      from: alice
+      premiumDelta: IHubBase.PremiumDelta(0, 0, 0)
     });
     vm.stopPrank();
 

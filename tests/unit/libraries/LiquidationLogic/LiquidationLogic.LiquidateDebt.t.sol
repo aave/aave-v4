@@ -100,7 +100,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       address(hub),
       abi.encodeCall(
         IHubBase.restore,
-        (assetId, drawnDebtToLiquidate, premiumDebtToLiquidate, premiumDelta, liquidator)
+        (assetId, drawnDebtToLiquidate, premiumDebtToLiquidate, premiumDelta)
       )
     );
 

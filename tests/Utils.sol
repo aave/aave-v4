@@ -21,7 +21,7 @@ library Utils {
     approve(IHub(address(hub)), assetId, caller, user, amount);
     transferFrom(IHub(address(hub)), assetId, caller, user, address(hub), amount);
     vm.prank(caller);
-    return hub.add(assetId, amount, user);
+    return hub.add(assetId, amount);
   }
 
   function draw(
@@ -56,7 +56,7 @@ library Utils {
     approve(IHub(address(hub)), assetId, caller, restorer, drawnAmount);
     transferFrom(IHub(address(hub)), assetId, caller, restorer, address(hub), drawnAmount);
     vm.prank(caller);
-    return hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0), restorer);
+    return hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0));
   }
 
   function addSpoke(

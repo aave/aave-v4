@@ -204,12 +204,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve);
 
-    address caller = msg.sender;
-    IERC20(reserve.underlying).safeTransferFrom(caller, address(reserve.hub), amount);
-    uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount, caller);
+    IERC20(reserve.underlying).safeTransferFrom(msg.sender, address(reserve.hub), amount);
+    uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
     userPosition.suppliedShares += suppliedShares.toUint128();
 
-    emit Supply(reserveId, caller, onBehalfOf, suppliedShares);
+    emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares);
 
     return suppliedShares;
   }
@@ -292,27 +291,22 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       amount
     );
 
-    uint256 restoredShares;
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),
       offsetDelta: -userPosition.premiumOffset.toInt256(),
       realizedDelta: accruedPremium.toInt256() - premiumDebtRestored.toInt256()
     });
-    {
-      address caller = msg.sender;
-      IERC20(reserve.underlying).safeTransferFrom(
-        caller,
-        address(hub),
-        drawnDebtRestored + premiumDebtRestored
-      );
-      restoredShares = hub.restore(
-        reserve.assetId,
-        drawnDebtRestored,
-        premiumDebtRestored,
-        premiumDelta,
-        caller
-      );
-    }
+    IERC20(reserve.underlying).safeTransferFrom(
+      msg.sender,
+      address(hub),
+      drawnDebtRestored + premiumDebtRestored
+    );
+    uint256 restoredShares = hub.restore(
+      reserve.assetId,
+      drawnDebtRestored,
+      premiumDebtRestored,
+      premiumDelta
+    );
 
     userPosition.settlePremiumDebt(premiumDelta.realizedDelta);
     userPosition.drawnShares -= restoredShares.toUint128();

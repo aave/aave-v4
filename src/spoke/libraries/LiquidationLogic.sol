@@ -336,8 +336,7 @@ library LiquidationLogic {
         debtReserve.assetId,
         drawnDebtToLiquidate,
         premiumDebtToLiquidate,
-        premiumDelta,
-        params.liquidator
+        premiumDelta
       );
       debtPosition.settlePremiumDebt(premiumDelta.realizedDelta);
       debtPosition.drawnShares -= drawnSharesLiquidated.toUint128();
