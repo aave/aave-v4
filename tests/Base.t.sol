@@ -2332,6 +2332,16 @@ abstract contract Base is Test {
     );
   }
 
+  function assertHubLiquidity(IHub targetHub, uint256 assetId, string memory label) internal view {
+    IHub.Asset memory asset = targetHub.getAsset(assetId);
+    uint256 currentHubBalance = IERC20(asset.underlying).balanceOf(address(targetHub));
+    assertEq(
+      targetHub.getAssetLiquidity(assetId),
+      currentHubBalance,
+      string.concat('hub liquidity ', label)
+    );
+  }
+
   function _assertEventNotEmitted(bytes32 eventSignature) internal {
     Vm.Log[] memory entries = vm.getRecordedLogs();
     for (uint256 i; i < entries.length; i++) {

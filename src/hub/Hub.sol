@@ -204,7 +204,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    // Enforces spoke transfers the correct funds from user to hub.
+    // enforces spoke transfers the correct funds from user to hub
     require(
       IERC20(asset.underlying).balanceOf(address(this)) >= asset.liquidity,
       InvalidAmountReceived()
@@ -285,7 +285,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    // Enforces spoke transfers the correct funds from user to hub.
+    // enforces spoke transfers the correct funds from user to hub
     require(
       IERC20(asset.underlying).balanceOf(address(this)) >= asset.liquidity,
       InvalidAmountReceived()

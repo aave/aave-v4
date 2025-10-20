@@ -91,6 +91,8 @@ interface IHubBase {
 
   /// @notice Add asset on behalf of user.
   /// @dev Only callable by active spokes.
+  /// @dev Must receive the funds prior to calling, this hub balance is verified against the recorded liquidity.
+  /// @dev Donated liquidity can be skimmed by any spoke.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset liquidity to add.
   /// @return The amount of shares added.
@@ -115,6 +117,8 @@ interface IHubBase {
   /// @notice Restore assets on behalf of user.
   /// @dev Only callable by active spokes.
   /// @dev Interest is always paid off first from premium, then from drawn.
+  /// @dev Must receive the funds prior to calling, this hub balance is verified against the recorded liquidity.
+  /// @dev Donated liquidity can be skimmed by any spoke.
   /// @param assetId The identifier of the asset.
   /// @param drawnAmount The drawn amount to restore.
   /// @param premiumAmount The premium amount to repay.

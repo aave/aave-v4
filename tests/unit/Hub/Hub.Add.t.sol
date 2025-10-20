@@ -282,6 +282,7 @@ contract HubAddTest is HubBase {
     (uint256 drawnAfter, ) = hub1.getAssetOwed(assetId);
     assertEq(drawnAfter, drawnBefore, 'hub drawn debt after');
     assertBorrowRateSynced(hub1, assetId, 'hub1.add');
+    assertHubLiquidity(hub1, assetId, 'hub1.add');
     // token balance
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-add');
     assertEq(underlying.balanceOf(address(hub1)), amount, 'hub token balance post-add');
@@ -349,6 +350,7 @@ contract HubAddTest is HubBase {
     assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount, 'user asset1 balance after');
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset1 balance after');
     assertEq(underlying.balanceOf(address(hub1)), amount, 'hub asset1 balance after');
+    assertHubLiquidity(hub1, assetId, 'hub1.add');
     // asset2
     assertEq(
       hub1.getAddedShares(assetId2),
@@ -378,6 +380,7 @@ contract HubAddTest is HubBase {
     );
     assertEq(underlying2.balanceOf(address(spoke2)), 0, 'spoke2 asset2 balance after');
     assertEq(underlying2.balanceOf(address(hub1)), amount2, 'hub asset2 balance after');
+    assertHubLiquidity(hub1, assetId2, 'hub1.add');
   }
 
   function test_add_revertsWith_InvalidAmount() public {
@@ -527,6 +530,7 @@ contract HubAddTest is HubBase {
     (uint256 drawnAfter, ) = hub1.getAssetOwed(daiAssetId);
     assertEq(drawnAfter, drawnBefore, 'hub drawn debt after');
     assertBorrowRateSynced(hub1, daiAssetId, 'hub1.add');
+    assertHubLiquidity(hub1, daiAssetId, 'hub1.add');
   }
 
   function test_add_with_increased_index_with_premium() public {
@@ -576,6 +580,7 @@ contract HubAddTest is HubBase {
       addedSharesBefore + expectedAddedShares,
       'hub addedShares after'
     );
+    assertHubLiquidity(hub1, daiAssetId, 'hub1.add');
   }
 
   function test_add_multi_add_minimal_shares() public {
@@ -679,6 +684,7 @@ contract HubAddTest is HubBase {
       MAX_SUPPLY_AMOUNT - amount - addAmount,
       'bob token balance after'
     );
+    assertHubLiquidity(hub1, daiAssetId, 'hub1.add');
   }
 
   function test_add_fuzz_single_spoke_multi_add(uint256 amount, uint256 skipTime) public {
@@ -745,6 +751,7 @@ contract HubAddTest is HubBase {
         vm.getBlockTimestamp(),
         'asset lastUpdateTimestamp after'
       );
+      assertHubLiquidity(hub1, assetId, 'hub1.add');
       // spoke1
       assertEq(
         hub1.getSpokeAddedAssets(assetId, address(spoke1)),

@@ -231,6 +231,7 @@ contract HubRestoreTest is HubBase {
       vm.getBlockTimestamp(),
       'hub dai lastUpdateTimestamp post-restore'
     );
+    assertHubLiquidity(hub1, daiAssetId, 'hub1.restore');
     // spoke1 dai data
     assertEq(
       hub1.getSpokeAddedShares(daiAssetId, address(spoke1)),
@@ -660,6 +661,7 @@ contract HubRestoreTest is HubBase {
     assertEq(daiData.premium, 0, 'dai premium');
     assertEq(daiData.liquidity, daiAmount - drawAmount + restoreDrawnAmount, 'hub dai liquidity');
     assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
+    assertHubLiquidity(hub1, daiAssetId, 'hub1.restore');
     // spoke1
     assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)), 0, 'hub spoke1 addedAmount');
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(spoke1)), 0, 'hub spoke1 addedShares');
@@ -745,6 +747,7 @@ contract HubRestoreTest is HubBase {
       vm.getBlockTimestamp(),
       'hub dai lastUpdateTimestamp post-restore'
     );
+    assertHubLiquidity(hub1, daiAssetId, 'hub1.restore');
     // spoke1 dai data
     assertEq(
       hub1.getSpokeAddedShares(daiAssetId, address(spoke1)),
@@ -832,6 +835,7 @@ contract HubRestoreTest is HubBase {
     // asset
     assertEq(daiData.drawn, 0, 'asset drawn');
     assertEq(daiData.premium, 0, 'asset premium');
+    assertHubLiquidity(hub1, daiAssetId, 'hub1.restore');
 
     // spoke
     assertApproxEqAbs(
@@ -936,6 +940,7 @@ contract HubRestoreTest is HubBase {
     // asset
     assertEq(daiData.drawn, 0, 'asset drawn');
     assertApproxEqAbs(daiData.premium, premium - premiumRestored, 2, 'asset premium');
+    assertHubLiquidity(hub1, daiAssetId, 'hub1.restore');
 
     // spoke
     assertApproxEqAbs(
