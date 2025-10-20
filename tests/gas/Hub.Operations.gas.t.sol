@@ -18,6 +18,7 @@ contract HubOperations_Gas_Tests is Base {
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
     hub1.add(usdxAssetId, 1000e6, alice);
     vm.snapshotGasLastCall('Hub.Operations', 'add');
+    vm.stopPrank();
   }
 
   function test_remove() public {
