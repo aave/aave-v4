@@ -48,11 +48,13 @@ contract UnitPriceFeed is AggregatorV3Interface {
       uint80 answeredInRound
     )
   {
-    roundId = _roundId;
-    answer = _units;
-    startedAt = _roundId;
-    updatedAt = _roundId;
-    answeredInRound = _roundId;
+    if (_roundId <= uint80(block.timestamp)) {
+      roundId = _roundId;
+      answer = _units;
+      startedAt = _roundId;
+      updatedAt = _roundId;
+      answeredInRound = _roundId;
+    }
   }
 
   /// @inheritdoc AggregatorV3Interface

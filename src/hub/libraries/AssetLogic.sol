@@ -60,7 +60,6 @@ library AssetLogic {
 
   /// @notice Returns the total premium amount for the specified asset.
   function premium(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
-    // sanity: utilize solc underflow check
     uint256 accruedPremium = asset.premiumShares.rayMulUp(drawnIndex) - asset.premiumOffset;
     return asset.realizedPremium + accruedPremium;
   }
@@ -116,6 +115,7 @@ library AssetLogic {
 
   /// @notice Updates the drawn rate of a specified asset.
   /// @dev Premium debt is not used in the interest rate calculation.
+  /// @dev Uses last stored index, asset accrual should have already occurred.
   function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
     // asset accrual should have already occurred
     uint256 drawnIndex = asset.drawnIndex;
