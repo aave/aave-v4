@@ -41,7 +41,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
-    (address underlying, ) = _getReserveData(spoke, reserveId);
+    address underlying = _getReserveUnderlying(spoke, reserveId);
     underlying.safeTransferFrom(user, address(this), params.amount);
     underlying.safeApproveWithRetry(spoke, params.amount);
 
@@ -61,7 +61,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
-    (address underlying, ) = _getReserveData(spoke, reserveId);
+    address underlying = _getReserveUnderlying(spoke, reserveId);
     uint256 withdrawAmount = MathUtils.min(
       params.amount,
       ISpoke(spoke).getUserSuppliedAssets(reserveId, user)
@@ -84,7 +84,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
-    (address underlying, ) = _getReserveData(spoke, reserveId);
+    address underlying = _getReserveUnderlying(spoke, reserveId);
 
     ISpoke(spoke).borrow(reserveId, params.amount, user);
     underlying.safeTransfer(user, params.amount);
@@ -103,7 +103,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
-    (address underlying, ) = _getReserveData(spoke, reserveId);
+    address underlying = _getReserveUnderlying(spoke, reserveId);
     uint256 repayAmount = MathUtils.min(
       params.amount,
       ISpoke(spoke).getUserTotalDebt(reserveId, user)
@@ -190,7 +190,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     bytes32 permitR,
     bytes32 permitS
   ) external onlyRegisteredSpoke(spoke) {
-    (address underlying, ) = _getReserveData(spoke, reserveId);
+    address underlying = _getReserveUnderlying(spoke, reserveId);
     try
       IERC20Permit(underlying).permit({
         owner: onBehalfOf,

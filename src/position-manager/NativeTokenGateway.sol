@@ -64,7 +64,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     uint256 reserveId,
     uint256 amount
   ) external onlyRegisteredSpoke(spoke) {
-    (address underlying, ) = _getReserveData(spoke, reserveId);
+    address underlying = _getReserveUnderlying(spoke, reserveId);
     _validateParams(underlying, amount);
 
     uint256 withdrawAmount = MathUtils.min(
@@ -83,7 +83,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     uint256 reserveId,
     uint256 amount
   ) external onlyRegisteredSpoke(spoke) {
-    (address underlying, ) = _getReserveData(spoke, reserveId);
+    address underlying = _getReserveUnderlying(spoke, reserveId);
     _validateParams(underlying, amount);
 
     ISpoke(spoke).borrow(reserveId, amount, msg.sender);
@@ -98,7 +98,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     uint256 amount
   ) external payable nonReentrant onlyRegisteredSpoke(spoke) {
     require(msg.value == amount, NativeAmountMismatch());
-    (address underlying, ) = _getReserveData(spoke, reserveId);
+    address underlying = _getReserveUnderlying(spoke, reserveId);
     _validateParams(underlying, amount);
 
     uint256 userTotalDebt = ISpoke(spoke).getUserTotalDebt(reserveId, msg.sender);
@@ -125,7 +125,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
 
   /// @dev `msg.value` verification must be done before calling this.
   function _supplyNative(address spoke, uint256 reserveId, address user, uint256 amount) internal {
-    (address underlying, ) = _getReserveData(spoke, reserveId);
+    address underlying = _getReserveUnderlying(spoke, reserveId);
     _validateParams(underlying, amount);
 
     _nativeWrapper.deposit{value: amount}();
