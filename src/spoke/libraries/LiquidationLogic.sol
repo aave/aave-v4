@@ -3,8 +3,7 @@
 pragma solidity ^0.8.20;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -18,7 +17,7 @@ import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 /// @notice Implements the logic for liquidations.
 library LiquidationLogic {
   using SafeCast for *;
-  using SafeERC20 for IERC20;
+  using SafeTransferLib for address;
   using PositionStatusMap for ISpoke.PositionStatus;
   using PercentageMath for uint256;
   using WadRayMath for uint256;
@@ -327,7 +326,7 @@ library LiquidationLogic {
         realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
       });
 
-      IERC20(debtReserve.underlying).safeTransferFrom(
+      debtReserve.underlying.safeTransferFrom(
         params.liquidator,
         address(debtReserve.hub),
         drawnDebtToLiquidate + premiumDebtToLiquidate

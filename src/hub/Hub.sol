@@ -204,10 +204,7 @@ contract Hub is IHub, AccessManaged {
     asset.updateDrawnRate(assetId);
 
     // enforces spoke transfers the correct funds from user to hub
-    require(
-      asset.underlying.balanceOf(address(this)) >= asset.liquidity,
-      InvalidAmountReceived()
-    );
+    require(asset.underlying.balanceOf(address(this)) >= asset.liquidity, InvalidAmountReceived());
 
     emit Add(assetId, msg.sender, shares, amount);
 
@@ -285,10 +282,7 @@ contract Hub is IHub, AccessManaged {
     asset.updateDrawnRate(assetId);
 
     // enforces spoke transfers the correct funds from user to hub
-    require(
-      asset.underlying.balanceOf(address(this)) >= asset.liquidity,
-      InvalidAmountReceived()
-    );
+    require(asset.underlying.balanceOf(address(this)) >= asset.liquidity, InvalidAmountReceived());
 
     emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 

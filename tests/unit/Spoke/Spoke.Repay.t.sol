@@ -8,6 +8,39 @@ contract SpokeRepayTest is SpokeBase {
   using PercentageMath for uint256;
   using SafeCast for uint256;
 
+  function test_supply_revertsWith_TransferFromFailed() public {
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
+    uint256 daiRepayAmount = daiSupplyAmount / 4;
+    uint256 approvalAmount = daiRepayAmount - 1;
+
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+
+    vm.startPrank(bob);
+    tokenList.dai.approve(address(spoke1), approvalAmount);
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
+    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
+    vm.stopPrank();
+  }
+
+  function test_supply_fuzz_revertsWith_TransferFromFailed(uint256 daiRepayAmount) public {
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
+    daiRepayAmount = bound(daiRepayAmount, 1, daiSupplyAmount / 4);
+
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+
+    vm.startPrank(bob);
+    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
+    vm.stopPrank();
+  }
+
   function test_repay() public {
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;
