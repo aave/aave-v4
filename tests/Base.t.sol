@@ -1915,8 +1915,10 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke
-  function withdrawLiquidityFees(uint256 assetId, uint256 amount) internal {
-    uint256 fees = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
+  function _withdrawLiquidityFees(IHub hub, uint256 assetId, uint256 amount) internal {
+    hub.mintFeeShares(assetId);
+    uint256 fees = hub.getSpokeAddedAssets(assetId, address(treasurySpoke));
+
     if (amount > fees) {
       amount = fees;
     }

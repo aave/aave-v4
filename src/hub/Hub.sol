@@ -709,7 +709,7 @@ contract Hub is IHub, AccessManaged {
     asset.addedShares += feeShares;
     _spokes[assetId][feeReceiver].addedShares += feeShares;
     asset.feeAmount = 0;
-    emit IHub.AccrueFees(assetId, feeReceiver, feeShares);
+    emit AccrueFees(assetId, feeReceiver, feeShares);
     return feeShares;
   }
 

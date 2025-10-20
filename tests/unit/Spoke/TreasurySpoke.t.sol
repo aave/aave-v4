@@ -94,6 +94,8 @@ contract TreasurySpokeTest is SpokeBase {
 
     skip(365 days);
 
+    hub1.mintFeeShares(daiAssetId);
+
     assertGe(treasurySpoke.getSuppliedShares(daiAssetId), 0);
     uint256 fees = treasurySpoke.getSuppliedAmount(daiAssetId);
 
@@ -190,6 +192,7 @@ contract TreasurySpokeTest is SpokeBase {
 
     skip(skipTime);
 
+    hub1.mintFeeShares(assetId);
     uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
 
     assertApproxEqAbs(

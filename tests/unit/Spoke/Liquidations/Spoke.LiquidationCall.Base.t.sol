@@ -691,7 +691,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     if (accountsInfoAfter.userAccountData.totalDebtValue == 0) {
       assertEq(
         accountsInfoAfter.userAccountData.healthFactor,
-        type(uint256).max,
+        UINT256_MAX,
         'health factor should be max if all debt is liquidated'
       );
     } else if (liquidationMetadata.debtToLiquidate == liquidationMetadata.debtToTarget) {
@@ -1245,6 +1245,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _openSupplyPosition(params.spoke, params.collateralReserveId, MAX_AMOUNT_IN_BASE_CURRENCY);
 
     _execBeforeLiquidation(params);
+    _mintTreasuryFeeShares(params);
 
     AccountsInfo memory accountsInfoBefore = _getAccountsInfo(params);
     LiquidationMetadata memory liquidationMetadata = _getLiquidationMetadata(
@@ -1264,8 +1265,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.debtToCover,
       params.receiveShares
     );
-
     Vm.Log[] memory logs = vm.getRecordedLogs();
+
+    _mintTreasuryFeeShares(params);
 
     AccountsInfo memory accountsInfoAfter = _getAccountsInfo(params);
 
@@ -1278,5 +1280,14 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _checkErc20Balances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkSpokeBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkHubBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
+  }
+
+  function _mintTreasuryFeeShares(CheckedLiquidationCallParams memory params) internal {
+    _hub(params.spoke, params.collateralReserveId).mintFeeShares(
+      _assetId(params.spoke, params.collateralReserveId)
+    );
+    _hub(params.spoke, params.debtReserveId).mintFeeShares(
+      _assetId(params.spoke, params.debtReserveId)
+    );
   }
 }

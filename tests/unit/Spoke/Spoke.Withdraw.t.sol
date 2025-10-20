@@ -270,7 +270,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(returnedShares, expectedShares);
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, UINT256_MAX);
+    _withdrawLiquidityFees(hub1, daiAssetId, UINT256_MAX);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
@@ -339,7 +339,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(returnedShares, expectedShares);
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, type(uint256).max);
+    _withdrawLiquidityFees(hub1, daiAssetId, UINT256_MAX);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
@@ -404,7 +404,7 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: bob
     });
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, type(uint256).max);
+    _withdrawLiquidityFees(hub1, daiAssetId, UINT256_MAX);
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -559,7 +559,7 @@ contract SpokeWithdrawTest is SpokeBase {
     });
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(assetId, type(uint256).max);
+    _withdrawLiquidityFees(hub1, assetId, UINT256_MAX);
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -672,7 +672,7 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: bob
     });
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, type(uint256).max);
+    _withdrawLiquidityFees(hub1, daiAssetId, UINT256_MAX);
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -823,7 +823,7 @@ contract SpokeWithdrawTest is SpokeBase {
     });
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(assetId, type(uint256).max);
+    _withdrawLiquidityFees(hub1, assetId, UINT256_MAX);
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);

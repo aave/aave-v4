@@ -18,9 +18,12 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    approve(IHub(address(hub)), assetId, user, amount);
+    IHub hub = IHub(address(hub));
+    approve(hub, assetId, user, amount);
     vm.prank(caller);
-    return hub.add(assetId, amount, user);
+    uint256 shares = hub.add(assetId, amount, user);
+    hub.mintFeeShares(assetId);
+    return shares;
   }
 
   function draw(
@@ -31,7 +34,9 @@ library Utils {
     uint256 amount
   ) internal returns (uint256) {
     vm.prank(caller);
-    return hub.draw(assetId, amount, to);
+    uint256 shares = hub.draw(assetId, amount, to);
+    IHub(address(hub)).mintFeeShares(assetId);
+    return shares;
   }
 
   function remove(
@@ -42,7 +47,9 @@ library Utils {
     address to
   ) internal returns (uint256) {
     vm.prank(caller);
-    return hub.remove(assetId, amount, to);
+    uint256 shares = hub.remove(assetId, amount, to);
+    IHub(address(hub)).mintFeeShares(assetId);
+    return shares;
   }
 
   function restoreDrawn(
@@ -54,7 +61,9 @@ library Utils {
   ) internal returns (uint256) {
     approve(IHub(address(hub)), assetId, restorer, drawnAmount);
     vm.prank(caller);
-    return hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0), restorer);
+    uint256 shares = hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0), restorer);
+    IHub(address(hub)).mintFeeShares(assetId);
+    return shares;
   }
 
   function addSpoke(

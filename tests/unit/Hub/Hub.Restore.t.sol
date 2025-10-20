@@ -586,6 +586,7 @@ contract HubRestoreTest is HubBase {
 
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, restoreDrawnAmount, premium, premiumDelta, alice);
+    hub1.mintFeeShares(daiAssetId);
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
     address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
@@ -763,6 +764,7 @@ contract HubRestoreTest is HubBase {
     // spoke1 restore full drawn
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawn, premium, premiumDelta, alice);
+    hub1.mintFeeShares(daiAssetId);
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
     address daiFeeReceiver = _getFeeReceiver(hub1, daiAssetId);
@@ -865,6 +867,7 @@ contract HubRestoreTest is HubBase {
     // spoke1 restore full drawn
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawn, premiumRestored, premiumDelta, alice);
+    hub1.mintFeeShares(daiAssetId);
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
     address daiFeeReceiver = _getFeeReceiver(hub1, daiAssetId);

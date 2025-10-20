@@ -32,7 +32,7 @@ contract HubConfigTest is HubBase {
     uint256 assetId,
     IHub.SpokeConfig calldata spokeConfig
   ) public {
-    assetId = bound(assetId, hub1.getAssetCount(), type(uint256).max);
+    assetId = bound(assetId, hub1.getAssetCount(), UINT256_MAX);
     vm.expectRevert(IHub.AssetNotListed.selector, address(hub1));
     Utils.addSpoke(hub1, ADMIN, assetId, address(spoke1), spokeConfig);
   }
@@ -534,6 +534,7 @@ contract HubConfigTest is HubBase {
     uint256 oldFees = hub1.getSpokeAddedShares(assetId, oldFeeReceiver);
 
     skip(365 days);
+    hub1.mintFeeShares(assetId);
 
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     address newFeeReceiver = config.feeReceiver;

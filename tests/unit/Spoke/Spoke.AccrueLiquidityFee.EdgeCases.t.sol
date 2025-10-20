@@ -40,6 +40,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
     skip(skipTime);
+    hub1.mintFeeShares(assetId);
 
     (, uint256 premiumDebt) = spoke1.getUserDebt(reserveId, alice);
     assertGt(premiumDebt, 0);
@@ -92,6 +93,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     Utils.borrow(spoke1, reserveId, bob, borrowAmount2, bob);
 
     skip(skipTime);
+    hub1.mintFeeShares(assetId);
 
     assertApproxEqAbs(
       spoke1.getUserSuppliedAssets(reserveId, alice),

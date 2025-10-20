@@ -140,6 +140,8 @@ contract HubRemoveTest is HubBase {
     uint256 spoke2Amount = hub1.getSpokeAddedAssets(assetId, address(spoke2));
     Utils.remove(hub1, assetId, address(spoke2), spoke2Amount, alice);
 
+    hub1.mintFeeShares(assetId);
+
     AssetPosition memory assetData = getAssetPosition(hub1, assetId);
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);

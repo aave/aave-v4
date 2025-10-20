@@ -78,6 +78,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       amount: UINT256_MAX,
       onBehalfOf: bob
     });
+    hub1.mintFeeShares(daiAssetId);
 
     uint256 treasuryFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
     uint256 interestAccrued = hub1.getAddedAssets(daiAssetId) -
@@ -123,7 +124,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, UINT256_MAX);
+    _withdrawLiquidityFees(hub1, daiAssetId, UINT256_MAX);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
@@ -250,7 +251,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), 'after bob withdraw');
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(state.assetId, UINT256_MAX);
+    _withdrawLiquidityFees(hub1, state.assetId, UINT256_MAX);
 
     state.stage = 2;
     reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
