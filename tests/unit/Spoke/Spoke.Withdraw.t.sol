@@ -110,6 +110,8 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // Check supply rate monotonically increases after withdrawal
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
   function test_withdraw_all_liquidity() public {
@@ -143,6 +145,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
   function test_withdraw_fuzz_suppliedAmount(uint256 supplyAmount) public {
@@ -176,6 +179,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
   function test_withdraw_fuzz_all_greater_than_supplied(uint256 supplyAmount) public {
@@ -209,6 +213,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
   function test_withdraw_fuzz_all_with_interest(uint256 supplyAmount, uint256 borrowAmount) public {
@@ -274,6 +279,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
   function test_withdraw_fuzz_all_elapsed_with_interest(
@@ -343,6 +349,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
   function test_withdraw_all_liquidity_with_interest_no_premium() public {
@@ -419,6 +426,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(reserveDrawnDebt, 0, 'reserveData drawn debt');
     assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
     assertEq(reserveData[stage].data.addedShares, 0, 'reserveData added shares');
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
 
     // alice
     (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
@@ -611,6 +619,8 @@ contract SpokeWithdrawTest is SpokeBase {
       'bob balance'
     );
 
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
+
     // Check supply rate monotonically increasing after withdraw
     uint256 addExRateAfter = getAddExRate(assetId); // caching to avoid stack too deep
     _checkSupplyRateIncreasing(addExRateBefore, addExRateAfter, 'after withdraw');
@@ -721,6 +731,8 @@ contract SpokeWithdrawTest is SpokeBase {
       MAX_SUPPLY_AMOUNT - state.borrowReserveSupplyAmount + state.withdrawAmount,
       'bob balance'
     );
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
 
     // Check supply rate monotonically increasing after withdraw
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
@@ -875,6 +887,8 @@ contract SpokeWithdrawTest is SpokeBase {
       'bob balance'
     );
 
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
+
     // Check supply rate monotonically increasing after withdraw
     uint256 addExRateAfter = getAddExRate(assetId); // caching to avoid stack too deep
     _checkSupplyRateIncreasing(addExRateBefore, addExRateAfter, 'after withdraw');
@@ -954,5 +968,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // Check supply rate monotonically increasing after withdraw
     _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after withdraw');
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 }

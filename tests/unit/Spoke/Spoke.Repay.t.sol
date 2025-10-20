@@ -93,6 +93,8 @@ contract SpokeRepayTest is SpokeBase {
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   function test_repay_all_with_accruals() public {
@@ -124,6 +126,8 @@ contract SpokeRepayTest is SpokeBase {
       'user total debt after full repay'
     );
     assertFalse(spoke1.isBorrowing(_daiReserveId(spoke1), bob));
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   function test_repay_same_block() public {
@@ -198,6 +202,8 @@ contract SpokeRepayTest is SpokeBase {
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// repay all debt interest
@@ -305,6 +311,8 @@ contract SpokeRepayTest is SpokeBase {
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// repay partial or full premium debt, but no drawn debt
@@ -397,6 +405,8 @@ contract SpokeRepayTest is SpokeBase {
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   function test_repay_max() public {
@@ -488,6 +498,8 @@ contract SpokeRepayTest is SpokeBase {
     // verify LH asset debt is 0
     uint256 lhAssetDebt = hub1.getAssetTotalOwed(_daiReserveId(spoke1));
     assertEq(lhAssetDebt, 0);
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// repay all or a portion of total debt in same block
@@ -583,6 +595,8 @@ contract SpokeRepayTest is SpokeBase {
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
 
     _repayAll(spoke1, _daiReserveId);
   }
@@ -713,6 +727,8 @@ contract SpokeRepayTest is SpokeBase {
     assertGe(daiRepayAmount, baseRestored + premiumRestored); // excess amount donated
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
 
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
+
     _repayAll(spoke1, _daiReserveId);
   }
 
@@ -824,6 +840,8 @@ contract SpokeRepayTest is SpokeBase {
     // repays only interest
     // it can be equal because of 1 wei rounding issue when repaying
     assertGe(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), daiBorrowAmount);
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// repay all or a portion of premium debt
@@ -936,6 +954,8 @@ contract SpokeRepayTest is SpokeBase {
 
     // repays only premium
     assertGe(bobDaiAfter.premiumDebt, 0);
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// repay all or a portion of accrued drawn debt when premium debt is already repaid
@@ -1055,6 +1075,8 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
     assertEq(tokenList.dai.balanceOf(bob), 0, 'bob dai final balance');
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// repay all or a portion of accrued drawn debt when premium debt is zero
@@ -1180,6 +1202,8 @@ contract SpokeRepayTest is SpokeBase {
       daiRepayAmount >= bobDaiBefore.drawnDebt ? 0 : bobDaiBefore.drawnDebt - daiRepayAmount,
       'bob dai drawn debt final balance'
     );
+
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// borrow and repay multiple reserves
@@ -1421,6 +1445,11 @@ contract SpokeRepayTest is SpokeBase {
       assertEq(bobWbtcAfter.totalDebt, bobWbtcBefore.totalDebt);
     }
 
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
+    assertHubLiquidity(hub1, wethAssetId, 'spoke1.repay');
+    assertHubLiquidity(hub1, usdxAssetId, 'spoke1.repay');
+    assertHubLiquidity(hub1, wbtcAssetId, 'spoke1.repay');
+
     _repayAll(spoke1, _daiReserveId);
     _repayAll(spoke1, _wethReserveId);
     _repayAll(spoke1, _usdxReserveId);
@@ -1519,5 +1548,6 @@ contract SpokeRepayTest is SpokeBase {
       stdMath.delta(bobDaiBalanceAfter, bobDaiBalanceBefore),
       'bob balance vs debt change'
     );
+    assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 }
