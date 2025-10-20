@@ -24,17 +24,20 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address hub,
     address underlying,
     address feeReceiver,
+    uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
   ) external onlyOwner returns (uint256) {
-    return
-      IHub(hub).addAsset(
-        underlying,
-        IERC20Metadata(underlying).decimals(),
-        feeReceiver,
-        irStrategy,
-        irData
-      );
+    IHub targetHub = IHub(hub);
+    uint256 assetId = targetHub.addAsset(
+      underlying,
+      IERC20Metadata(underlying).decimals(),
+      feeReceiver,
+      irStrategy,
+      irData
+    );
+    _updateLiquidityFee(targetHub, assetId, liquidityFee);
+    return assetId;
   }
 
   /// @inheritdoc IHubConfigurator
@@ -43,10 +46,14 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address underlying,
     uint8 decimals,
     address feeReceiver,
+    uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
   ) external onlyOwner returns (uint256) {
-    return IHub(hub).addAsset(underlying, decimals, feeReceiver, irStrategy, irData);
+    IHub targetHub = IHub(hub);
+    uint256 assetId = targetHub.addAsset(underlying, decimals, feeReceiver, irStrategy, irData);
+    _updateLiquidityFee(targetHub, assetId, liquidityFee);
+    return assetId;
   }
 
   /// @inheritdoc IHubConfigurator
@@ -55,10 +62,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     uint256 liquidityFee
   ) external onlyOwner {
-    IHub targetHub = IHub(hub);
-    IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    config.liquidityFee = liquidityFee.toUint16();
-    targetHub.updateAssetConfig(assetId, config, new bytes(0));
+    _updateLiquidityFee(IHub(hub), assetId, liquidityFee);
   }
 
   /// @inheritdoc IHubConfigurator
@@ -287,5 +291,11 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     config.addCap = addCap.toUint56();
     config.drawCap = drawCap.toUint56();
     hub.updateSpokeConfig(assetId, spoke, config);
+  }
+
+  function _updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal {
+    IHub.AssetConfig memory config = hub.getAssetConfig(assetId);
+    config.liquidityFee = liquidityFee.toUint16();
+    hub.updateAssetConfig(assetId, config, new bytes(0));
   }
 }
