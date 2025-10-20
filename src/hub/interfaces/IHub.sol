@@ -52,9 +52,9 @@ interface IHub is IHubBase, IAccessManaged {
     uint128 drawnShares;
     //
     uint128 addedShares;
-    uint24 riskPremiumCap;
     uint40 addCap;
     uint40 drawCap;
+    uint24 riskPremiumCap;
     bool active;
     bool paused;
     //
@@ -62,9 +62,9 @@ interface IHub is IHubBase, IAccessManaged {
   }
 
   struct SpokeConfig {
-    uint24 riskPremiumCap;
     uint40 addCap;
     uint40 drawCap;
+    uint24 riskPremiumCap;
     bool active;
     bool paused;
   }

@@ -145,7 +145,7 @@ contract Hub is IHub, AccessManaged {
       _updateSpokeConfig(
         assetId,
         asset.feeReceiver,
-        SpokeConfig({active: true, paused: false, addCap: 0, drawCap: 0, riskPremiumCap: 0})
+        SpokeConfig({addCap: 0, drawCap: 0, riskPremiumCap: 0, active: true, paused: false})
       );
       asset.feeReceiver = config.feeReceiver;
       _addFeeReceiver(assetId, config.feeReceiver);
@@ -658,11 +658,11 @@ contract Hub is IHub, AccessManaged {
 
   function _updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig memory config) internal {
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    spokeData.active = config.active;
-    spokeData.paused = config.paused;
     spokeData.addCap = config.addCap;
     spokeData.drawCap = config.drawCap;
     spokeData.riskPremiumCap = config.riskPremiumCap;
+    spokeData.active = config.active;
+    spokeData.paused = config.paused;
     emit UpdateSpokeConfig(assetId, spoke, config);
   }
 
