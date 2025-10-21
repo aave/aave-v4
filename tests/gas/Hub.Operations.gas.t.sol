@@ -84,8 +84,11 @@ contract HubOperations_Gas_Tests is Base {
       .previewRestoreByShares(daiAssetId, uint256(premiumShares))
       .toInt256();
 
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
+
     vm.prank(address(spoke1));
-    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(premiumShares, premiumOffset, 0));
+    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(premiumShares, premiumOffset, 1));
     vm.snapshotGasLastCall('Hub.Operations', 'refreshPremium');
   }
 
