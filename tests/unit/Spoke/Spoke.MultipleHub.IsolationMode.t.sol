@@ -73,7 +73,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         active: true,
         paused: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
     newHub.addSpoke(
@@ -83,7 +84,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         active: true,
         paused: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
     vm.stopPrank();
@@ -116,7 +118,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         active: true,
         paused: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
     vm.stopPrank();
@@ -184,7 +187,13 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     hub1.addSpoke(
       isolationVars.assetBIdMainHub,
       address(newSpoke),
-      IHub.SpokeConfig({active: true, paused: false, addCap: 0, drawCap: 100_000})
+      IHub.SpokeConfig({
+        active: true,
+        paused: false,
+        addCap: 0,
+        drawCap: 100_000,
+        riskPremiumCap: 1000_00
+      })
     );
     vm.stopPrank();
 
@@ -252,7 +261,13 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     hub1.updateSpokeConfig(
       isolationVars.assetBIdMainHub,
       address(newSpoke),
-      IHub.SpokeConfig({active: true, paused: false, addCap: 0, drawCap: 0})
+      IHub.SpokeConfig({
+        active: true,
+        paused: false,
+        addCap: 0,
+        drawCap: 0,
+        riskPremiumCap: 1000_00
+      })
     );
 
     // Now Bob or any other users cannot draw any asset B from the new spoke main hub due to new draw cap of 0

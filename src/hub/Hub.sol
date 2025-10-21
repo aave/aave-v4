@@ -23,7 +23,7 @@ contract Hub is IHub, AccessManaged {
   using SafeCast for uint256;
   using WadRayMath for uint256;
   using SharesMath for uint256;
-  using PercentageMath for uint256;
+  using PercentageMath for uint128;
   using AssetLogic for Asset;
   using MathUtils for *;
 
@@ -34,7 +34,10 @@ contract Hub is IHub, AccessManaged {
   uint8 public constant MIN_ALLOWED_UNDERLYING_DECIMALS = 6;
 
   /// @inheritdoc IHub
-  uint56 public constant MAX_ALLOWED_SPOKE_CAP = type(uint56).max;
+  uint40 public constant MAX_ALLOWED_SPOKE_CAP = type(uint40).max;
+
+  /// @inheritdoc IHub
+  uint24 public constant MAX_ALLOWED_RISK_PREMIUM_CAP = type(uint24).max;
 
   uint256 internal _assetCount;
   mapping(uint256 assetId => Asset) internal _assets;
@@ -141,7 +144,7 @@ contract Hub is IHub, AccessManaged {
       _updateSpokeConfig(
         assetId,
         asset.feeReceiver,
-        SpokeConfig({active: true, paused: false, addCap: 0, drawCap: 0})
+        SpokeConfig({addCap: 0, drawCap: 0, riskPremiumCap: 0, active: true, paused: false})
       );
       asset.feeReceiver = config.feeReceiver;
       _addFeeReceiver(assetId, config.feeReceiver);
@@ -625,7 +628,14 @@ contract Hub is IHub, AccessManaged {
     address spoke
   ) external view returns (SpokeConfig memory) {
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    return SpokeConfig(spokeData.active, spokeData.paused, spokeData.addCap, spokeData.drawCap);
+    return
+      SpokeConfig({
+        addCap: spokeData.addCap,
+        drawCap: spokeData.drawCap,
+        riskPremiumCap: spokeData.riskPremiumCap,
+        active: spokeData.active,
+        paused: spokeData.paused
+      });
   }
 
   /// @notice Adds a new spoke to an asset with default feeReceiver configuration (maximum add cap, zero draw cap).
@@ -634,7 +644,13 @@ contract Hub is IHub, AccessManaged {
     _updateSpokeConfig(
       assetId,
       feeReceiver,
-      SpokeConfig({active: true, paused: false, addCap: MAX_ALLOWED_SPOKE_CAP, drawCap: 0})
+      SpokeConfig({
+        addCap: MAX_ALLOWED_SPOKE_CAP,
+        drawCap: 0,
+        riskPremiumCap: 0,
+        active: true,
+        paused: false
+      })
     );
   }
 
@@ -647,10 +663,11 @@ contract Hub is IHub, AccessManaged {
 
   function _updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig memory config) internal {
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    spokeData.active = config.active;
-    spokeData.paused = config.paused;
     spokeData.addCap = config.addCap;
     spokeData.drawCap = config.drawCap;
+    spokeData.riskPremiumCap = config.riskPremiumCap;
+    spokeData.active = config.active;
+    spokeData.paused = config.paused;
     emit UpdateSpokeConfig(assetId, spoke, config);
   }
 
@@ -664,8 +681,10 @@ contract Hub is IHub, AccessManaged {
     receiver.addedShares += shares.toUint128();
   }
 
-  /// @dev Applies premium deltas on asset & spoke premium owed, also checks premium
-  /// does not increase by more than `premiumAmount`.
+  /// @dev Applies premium deltas on asset & spoke premium owed.
+  /// @dev Checks premium owed does not increase by more than `premiumAmount`.
+  /// @dev Checks updated risk premium is within allowed limit.
+  /// @dev Can increase premium by 2 wei due to opposite rounding on premium shares and offset.
   function _applyPremiumDelta(
     Asset storage asset,
     SpokeData storage spoke,
@@ -673,6 +692,7 @@ contract Hub is IHub, AccessManaged {
     uint256 premiumAmount
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
+
     // asset premium change
     (asset.premiumShares, asset.premiumOffset, asset.realizedPremium) = _validateApplyPremiumDelta(
       drawnIndex,
@@ -691,6 +711,13 @@ contract Hub is IHub, AccessManaged {
       spoke.realizedPremium,
       premium,
       premiumAmount
+    );
+
+    uint24 riskPremiumCap = spoke.riskPremiumCap;
+    require(
+      riskPremiumCap == MAX_ALLOWED_RISK_PREMIUM_CAP ||
+        spoke.premiumShares <= spoke.drawnShares.percentMulUp(riskPremiumCap),
+      InvalidPremiumChange()
     );
   }
 

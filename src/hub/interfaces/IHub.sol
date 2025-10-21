@@ -52,8 +52,9 @@ interface IHub is IHubBase, IAccessManaged {
     uint128 drawnShares;
     //
     uint128 addedShares;
-    uint56 addCap;
-    uint56 drawCap;
+    uint40 addCap;
+    uint40 drawCap;
+    uint24 riskPremiumCap;
     bool active;
     bool paused;
     //
@@ -61,10 +62,11 @@ interface IHub is IHubBase, IAccessManaged {
   }
 
   struct SpokeConfig {
+    uint40 addCap;
+    uint40 drawCap;
+    uint24 riskPremiumCap;
     bool active;
     bool paused;
-    uint56 addCap;
-    uint56 drawCap;
   }
 
   /// @notice Emitted when an asset is added.
@@ -349,5 +351,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Returns the maximum value for any spoke cap (add or draw).
   /// @dev The value is not inclusive; using the maximum value indicates no cap.
   /// @return The maximum cap value, expressed in asset units.
-  function MAX_ALLOWED_SPOKE_CAP() external view returns (uint56);
+  function MAX_ALLOWED_SPOKE_CAP() external view returns (uint40);
+
+  function MAX_ALLOWED_RISK_PREMIUM_CAP() external view returns (uint24);
 }
