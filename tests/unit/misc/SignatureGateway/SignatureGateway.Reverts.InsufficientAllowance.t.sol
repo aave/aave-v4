@@ -17,31 +17,19 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
     assertTrue(spoke1.isPositionManager(alice, address(gateway)));
   }
 
-  function test_supplyWithSig_revertsWith_ERC20InsufficientAllowance() public {
+  function test_supplyWithSig_revertsWith_TransferFromFailed_on_InsufficientAllowance() public {
     uint256 deadline = _warpBeforeRandomDeadline();
 
     EIP712Types.Supply memory p = _supplyData(spoke1, alice, deadline);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
     address underlying = address(_underlying(spoke1, p.reserveId));
 
-    if (underlying == address(tokenList.weth)) {
-      vm.expectRevert();
-    } else {
-      vm.expectRevert(
-        abi.encodeWithSelector(
-          IERC20Errors.ERC20InsufficientAllowance.selector,
-          address(gateway),
-          0,
-          p.amount,
-          underlying
-        )
-      );
-    }
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     vm.prank(vm.randomAddress());
     gateway.supplyWithSig(p, signature);
   }
 
-  function test_repayWithSig_revertsWith_ERC20InsufficientAllowance() public {
+  function test_repayWithSig_revertsWith_TransferFromFailed_on_InsufficientAllowance() public {
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
 
@@ -52,15 +40,7 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
     p.amount = 50e18;
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        IERC20Errors.ERC20InsufficientAllowance.selector,
-        address(gateway),
-        0,
-        p.amount
-      ),
-      address(_underlying(spoke1, p.reserveId))
-    );
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     vm.prank(vm.randomAddress());
     gateway.repayWithSig(p, signature);
   }

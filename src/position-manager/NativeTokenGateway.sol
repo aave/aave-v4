@@ -3,8 +3,7 @@
 pragma solidity 0.8.28;
 
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
-import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {Address} from 'src/dependencies/openzeppelin/Address.sol';
+import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {INativeWrapper} from 'src/position-manager/interfaces/INativeWrapper.sol';
@@ -16,7 +15,7 @@ import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenG
 /// @notice Gateway to interact with a spoke using the native coin of a chain.
 /// @dev Contract must be an active & approved user position manager in order to execute spoke actions on a user's behalf.
 contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuardTransient {
-  using SafeERC20 for *;
+  using SafeTransferLib for address;
 
   INativeWrapper internal immutable _nativeWrapper;
 
@@ -75,7 +74,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
 
     ISpoke(spoke).withdraw(reserveId, withdrawAmount, msg.sender);
     _nativeWrapper.withdraw(withdrawAmount);
-    Address.sendValue(payable(msg.sender), withdrawAmount);
+    msg.sender.safeTransferETH(withdrawAmount);
   }
 
   /// @inheritdoc INativeTokenGateway
@@ -89,7 +88,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
 
     ISpoke(spoke).borrow(reserveId, amount, msg.sender);
     _nativeWrapper.withdraw(amount);
-    Address.sendValue(payable(msg.sender), amount);
+    msg.sender.safeTransferETH(amount);
   }
 
   /// @inheritdoc INativeTokenGateway
@@ -111,11 +110,11 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     }
 
     _nativeWrapper.deposit{value: repayAmount}();
-    _nativeWrapper.forceApprove(hub, repayAmount);
+    address(_nativeWrapper).safeApproveWithRetry(hub, repayAmount);
     ISpoke(spoke).repay(reserveId, repayAmount, msg.sender);
 
     if (leftovers > 0) {
-      Address.sendValue(payable(msg.sender), leftovers);
+      msg.sender.safeTransferETH(leftovers);
     }
   }
 
@@ -130,7 +129,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     _validateParams(underlying, amount);
 
     _nativeWrapper.deposit{value: amount}();
-    _nativeWrapper.forceApprove(hub, amount);
+    address(_nativeWrapper).safeApproveWithRetry(hub, amount);
     ISpoke(spoke).supply(reserveId, amount, user);
   }
 
