@@ -38,7 +38,9 @@ contract HubTransferSharesTest is HubBase {
   }
 
   /// @dev Test transferring more shares than a spoke has supplied
-  function test_transferShares_fuzz_revertsWith_underflow(uint256 supplyAmount) public {
+  function test_transferShares_fuzz_revertsWith_underflow_spoke_added_shares_exceeded(
+    uint256 supplyAmount
+  ) public {
     supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT - 1);
 
     // supply from spoke1
