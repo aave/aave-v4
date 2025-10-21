@@ -639,11 +639,11 @@ contract Hub is IHub, AccessManaged {
       assetId,
       feeReceiver,
       SpokeConfig({
-        active: true,
-        paused: false,
         addCap: MAX_ALLOWED_SPOKE_CAP,
         drawCap: 0,
-        riskPremiumCap: 0
+        riskPremiumCap: 0,
+        active: true,
+        paused: false
       })
     );
   }
