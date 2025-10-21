@@ -4,9 +4,9 @@ pragma solidity 0.8.28;
 
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
+import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {INativeWrapper} from 'src/position-manager/interfaces/INativeWrapper.sol';
-import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
 
 /// @title NativeTokenGateway
