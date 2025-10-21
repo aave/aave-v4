@@ -114,7 +114,7 @@ interface ISpokeBase {
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to borrow.
   /// @param onBehalfOf The owner of the position against which debt is generated.
-  /// @return The amount of drawn shares borrowed.
+  /// @return The amount of shares borrowed.
   /// @return The amount of assets borrowed.
   function borrow(
     uint256 reserveId,
@@ -129,7 +129,7 @@ interface ISpokeBase {
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to repay.
   /// @param onBehalfOf The owner of the position whose debt is repaid.
-  /// @return The amount of drawn shares repaid.
+  /// @return The amount of shares repaid.
   /// @return The amount of assets repaid.
   function repay(
     uint256 reserveId,

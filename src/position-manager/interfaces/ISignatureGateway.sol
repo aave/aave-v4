@@ -44,7 +44,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured borrow parameters.
   /// @param signature The signed bytes for the intent.
-  /// @return The amount of drawn shares borrowed.
+  /// @return The amount of shares borrowed.
   /// @return The amount of assets borrowed.
   function borrowWithSig(
     EIP712Types.Borrow calldata params,
@@ -57,7 +57,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured repay parameters.
   /// @param signature The signed bytes for the intent.
-  /// @return The amount of drawn shares repaid.
+  /// @return The amount of shares repaid.
   /// @return The amount of assets repaid.
   function repayWithSig(
     EIP712Types.Repay calldata params,

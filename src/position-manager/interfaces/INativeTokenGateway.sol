@@ -62,7 +62,7 @@ interface INativeTokenGateway is IGatewayBase {
   /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to borrow and unwrap.
-  /// @return The amount of drawn shares borrowed.
+  /// @return The amount of shares borrowed.
   /// @return The amount of assets borrowed.
   function borrowNative(
     address spoke,
@@ -76,7 +76,7 @@ interface INativeTokenGateway is IGatewayBase {
   /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to wrap and repay.
-  /// @return The amount of drawn shares repaid.
+  /// @return The amount of shares repaid.
   /// @return The amount of assets repaid.
   function repayNative(
     address spoke,
