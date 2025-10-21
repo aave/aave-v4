@@ -774,7 +774,9 @@ contract Hub is IHub, AccessManaged {
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
     uint256 drawn = _getSpokeDrawn(asset, spoke);
+    uint256 premium = _getSpokePremium(asset, spoke);
     require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
+    require(premiumAmount <= premium, SurplusAmountRestored(premium));
   }
 
   function _validateReportDeficit(
@@ -787,7 +789,9 @@ contract Hub is IHub, AccessManaged {
     require(!spoke.paused, SpokePaused());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
     uint256 drawn = _getSpokeDrawn(asset, spoke);
+    uint256 premium = _getSpokePremium(asset, spoke);
     require(drawnAmount <= drawn, SurplusDeficitReported(drawn));
+    require(premiumAmount <= premium, SurplusDeficitReported(premium));
   }
 
   function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {
