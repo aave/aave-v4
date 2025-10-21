@@ -204,6 +204,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount, msg.sender);
     userPosition.suppliedShares += suppliedShares.toUint128();
 
+    if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
+      UserAccountData memory accountData = _calculateUserAccountData(onBehalfOf);
+      _notifyRiskPremiumUpdate(onBehalfOf, accountData.riskPremium);
+    }
+
     emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares);
 
     return suppliedShares;
@@ -306,8 +311,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
     }
 
-    UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf);
-    _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
+    UserAccountData memory accountData = _calculateUserAccountData(onBehalfOf);
+    _notifyRiskPremiumUpdate(onBehalfOf, accountData.riskPremium);
 
     emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, premiumDelta);
 
@@ -382,12 +387,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
+    uint256 riskPremium;
     if (usingAsCollateral) {
       _refreshDynamicConfig(onBehalfOf, reserveId);
+      riskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
     } else {
-      uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
-      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
+      riskPremium = _refreshAndValidateUserPosition(onBehalfOf);
     }
+    _notifyRiskPremiumUpdate(onBehalfOf, riskPremium);
 
     emit SetUsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
   }
@@ -397,8 +404,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
-    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
+    UserAccountData memory accountData = _calculateUserAccountData(onBehalfOf);
+    _notifyRiskPremiumUpdate(onBehalfOf, accountData.riskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -689,8 +696,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bool refreshConfig
   ) internal returns (UserAccountData memory accountData) {
     PositionStatus storage positionStatus = _positionStatus[user];
-
     uint256 reserveId = _reserveCount;
+
+    if (positionStatus.isEmpty(reserveId)) {
+      accountData.healthFactor = type(uint256).max;
+      return accountData;
+    }
+
     KeyValueList.List memory collateralInfo = KeyValueList.init(
       positionStatus.collateralCount(reserveId)
     );
@@ -764,6 +776,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
 
     uint256 debtValueLeftToCover = accountData.totalDebtValue;
+    // riskPremium is 0 when position is underwater or has no debt
+    if (
+      accountData.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD || debtValueLeftToCover == 0
+    ) {
+      return accountData;
+    }
+
     collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
     for (uint256 index = 0; index < collateralInfo.length(); ++index) {
       if (debtValueLeftToCover == 0) {
@@ -777,9 +796,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
 
     if (debtValueLeftToCover < accountData.totalDebtValue) {
-      accountData.riskPremium =
-        accountData.riskPremium /
-        accountData.totalDebtValue.uncheckedSub(debtValueLeftToCover);
+      accountData.riskPremium /= accountData.totalDebtValue.uncheckedSub(debtValueLeftToCover);
     }
 
     return accountData;

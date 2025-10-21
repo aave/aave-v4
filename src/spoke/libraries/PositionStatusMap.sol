@@ -81,6 +81,20 @@ library PositionStatusMap {
     }
   }
 
+  function isEmpty(
+    ISpoke.PositionStatus storage self,
+    uint256 reserveCount
+  ) internal view returns (bool) {
+    unchecked {
+      uint256 bucket = reserveCount.bucketId();
+      bool empty = self.map[bucket] == 0;
+      while (!empty && bucket != 0) {
+        empty = self.map[--bucket] == 0;
+      }
+      return empty;
+    }
+  }
+
   /// @notice Counts the number of reserves enabled as collateral.
   /// @dev Disregards potential dirty bits set after `reserveCount`.
   /// @param reserveCount The current `reserveCount`, to avoid reading uninitialized buckets.
