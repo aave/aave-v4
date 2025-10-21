@@ -155,13 +155,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
 
     _nativeWrapper.deposit{value: amount}();
     address(_nativeWrapper).safeApproveWithRetry(hub, amount);
-    (uint256 suppliedShares, uint256 suppliedAmount) = ISpoke(spoke).supply(
-      reserveId,
-      amount,
-      user
-    );
-
-    return (suppliedShares, suppliedAmount);
+    return ISpoke(spoke).supply(reserveId, amount, user);
   }
 
   function _validateParams(address underlying, uint256 amount) internal view {
