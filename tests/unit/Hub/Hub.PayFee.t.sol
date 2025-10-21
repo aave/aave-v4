@@ -36,7 +36,7 @@ contract HubPayFeeTest is HubBase {
     hub1.payFeeShares(daiAssetId, feeShares + 1);
   }
 
-  function test_payFee_revertsWith_underflow__added_shares_exceeded_with_interest() public {
+  function test_payFee_revertsWith_underflow_added_shares_exceeded_with_interest() public {
     uint256 addAmount = 100e18;
     Utils.add({
       hub: hub1,
