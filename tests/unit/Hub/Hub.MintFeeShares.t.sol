@@ -27,7 +27,7 @@ contract HubMintFeeSharesTest is HubBase {
     assertEq(feeShares, 0);
 
     // trigger accrual of fees
-    Utils.addWithoutMintingFeeShares(hub1, daiAssetId, address(spoke1), 1000e18, bob);
+    Utils.add(hub1, daiAssetId, address(spoke1), 1000e18, bob);
 
     uint256 expectedMintedShares = hub1.previewAddByAssets(
       daiAssetId,

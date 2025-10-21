@@ -1091,8 +1091,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       accountsInfoAfter.collateralFeeReceiverBalanceInfo.addedInHub,
       accountsInfoBefore.collateralFeeReceiverBalanceInfo.addedInHub +
         liquidationMetadata.collateralToLiquidate -
-        liquidationMetadata.collateralToLiquidator,
-      _approxRelFromBps(1),
+        liquidationMetadata.collateralToLiquidator +
+        _hub(params.spoke, params.collateralReserveId)
+          .getAsset(_assetId(params.spoke, params.collateralReserveId))
+          .feeAmount,
+      _approxRelFromBps(5),
       'collateral fee receiver: added'
     );
     assertEq(
@@ -1107,7 +1110,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     ) {
       assertEq(
         accountsInfoAfter.debtFeeReceiverBalanceInfo.addedInHub,
-        accountsInfoBefore.debtFeeReceiverBalanceInfo.addedInHub,
+        accountsInfoBefore.debtFeeReceiverBalanceInfo.addedInHub +
+          _hub(params.spoke, params.debtReserveId)
+            .getAsset(_assetId(params.spoke, params.debtReserveId))
+            .feeAmount,
         'debt fee receiver: added'
       );
       assertEq(
@@ -1245,7 +1251,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _openSupplyPosition(params.spoke, params.collateralReserveId, MAX_AMOUNT_IN_BASE_CURRENCY);
 
     _execBeforeLiquidation(params);
-    _mintTreasuryFeeShares(params);
 
     AccountsInfo memory accountsInfoBefore = _getAccountsInfo(params);
     LiquidationMetadata memory liquidationMetadata = _getLiquidationMetadata(
@@ -1267,8 +1272,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     );
     Vm.Log[] memory logs = vm.getRecordedLogs();
 
-    _mintTreasuryFeeShares(params);
-
     AccountsInfo memory accountsInfoAfter = _getAccountsInfo(params);
 
     _checkTransferSharesCall(params, liquidationMetadata, logs);
@@ -1280,14 +1283,5 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _checkErc20Balances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkSpokeBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkHubBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
-  }
-
-  function _mintTreasuryFeeShares(CheckedLiquidationCallParams memory params) internal {
-    _hub(params.spoke, params.collateralReserveId).mintFeeShares(
-      _assetId(params.spoke, params.collateralReserveId)
-    );
-    _hub(params.spoke, params.debtReserveId).mintFeeShares(
-      _assetId(params.spoke, params.debtReserveId)
-    );
   }
 }

@@ -345,15 +345,15 @@ contract HubConfiguratorTest is HubBase {
       100e18,
       365 days
     );
-    hub1.mintFeeShares(daiAssetId);
 
     assertGe(treasurySpoke.getSuppliedShares(daiAssetId), 0);
-    uint256 fees = treasurySpoke.getSuppliedAmount(daiAssetId);
 
     // Change the fee receiver
     TreasurySpoke newTreasurySpoke = new TreasurySpoke(HUB_ADMIN, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, address(newTreasurySpoke));
+
+    uint256 fees = treasurySpoke.getSuppliedAmount(daiAssetId);
 
     assertEq(
       hub1.getAssetConfig(daiAssetId).feeReceiver,

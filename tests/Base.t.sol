@@ -80,7 +80,7 @@ import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 
 abstract contract Base is Test {
   using stdStorage for StdStorage;
-  using WadRayMath for uint256;
+  using WadRayMath for *;
   using SharesMath for uint256;
   using PercentageMath for uint256;
   using SafeCast for *;
@@ -2591,5 +2591,24 @@ abstract contract Base is Test {
 
   function _bpsToRay(uint256 bps) internal pure returns (uint256) {
     return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
+  }
+
+  /// @dev Calculate expected fee amount based on previous drawn index
+  function _calcExpectedFeeAmount(IHub hub, uint256 assetId) internal view returns (uint256) {
+    IHub.Asset memory asset = hub.getAsset(assetId);
+    uint256 lastDrawnIndex = asset.drawnIndex;
+    uint256 drawnIndex = asset.drawnIndex.rayMulUp(
+      MathUtils.calculateLinearInterest(asset.drawnRate, uint32(asset.lastUpdateTimestamp))
+    );
+    uint256 liquidityGrowth = asset.drawnShares.rayMulUp(drawnIndex) -
+      asset.drawnShares.rayMulUp(lastDrawnIndex) +
+      asset.premiumShares.rayMulUp(drawnIndex) -
+      asset.premiumShares.rayMulUp(lastDrawnIndex);
+
+    return liquidityGrowth.percentMulDown(asset.liquidityFee);
+  }
+
+  function _getAddedAssetsWithFee(IHubBase hub, uint256 assetId) internal view returns (uint256) {
+    return hub.getAddedAssets(assetId) + IHub(address(hub)).getAsset(assetId).feeAmount;
   }
 }
