@@ -330,6 +330,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue(_spokes, assetId);
     _validateEliminateDeficit(callerSpoke, amount);
+
     uint256 deficit = coveredSpoke.deficit;
     require(amount <= deficit, InvalidAmount());
 
