@@ -2,14 +2,13 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract NativeTokenGatewayTest is Base {
+contract NativeTokenGatewayTest is SpokeBase {
   NativeTokenGateway public nativeTokenGateway;
 
   function setUp() public virtual override {
     super.setUp();
-    initEnvironment();
 
     nativeTokenGateway = new NativeTokenGateway(address(tokenList.weth), address(ADMIN));
 

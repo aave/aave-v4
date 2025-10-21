@@ -84,7 +84,12 @@ interface ISpokeBase {
   /// @param amount The amount of asset to supply.
   /// @param onBehalfOf The owner of the position to add supply shares to.
   /// @return The amount of shares supplied.
-  function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external returns (uint256);
+  /// @return The amount of assets supplied.
+  function supply(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external returns (uint256, uint256);
 
   /// @notice Withdraws a specified amount of underlying asset from the given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -110,7 +115,12 @@ interface ISpokeBase {
   /// @param amount The amount of asset to borrow.
   /// @param onBehalfOf The owner of the position against which debt is generated.
   /// @return The amount of drawn shares borrowed.
-  function borrow(uint256 reserveId, uint256 amount, address onBehalfOf) external returns (uint256);
+  /// @return The amount of assets borrowed.
+  function borrow(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external returns (uint256, uint256);
 
   /// @notice Repays a specified amount of underlying asset to a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.

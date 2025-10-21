@@ -196,7 +196,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256) {
+  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve);
@@ -206,7 +206,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares);
 
-    return suppliedShares;
+    return (suppliedShares, amount);
   }
 
   /// @inheritdoc ISpokeBase
@@ -244,7 +244,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256) {
+  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -262,7 +262,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
 
-    return drawnShares;
+    return (drawnShares, amount);
   }
 
   /// @inheritdoc ISpokeBase

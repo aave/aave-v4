@@ -378,11 +378,12 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     underlying.approve(address(hub1), assets);
 
     // Supply and confirm share amount from event emission
+    TestReturnValues memory returnValues1;
     uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, caller, caller, shares1);
     vm.prank(caller);
-    uint256 returnedShares1 = spoke1.supply(reserveId, assets, caller);
+    (returnValues1.shares, returnValues1.amount) = spoke1.supply(reserveId, assets, caller);
 
     // Withdraw and confirm share amount from event emission
     TestReturnValues memory returnValues2;
@@ -393,7 +394,8 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     (returnValues2.shares, returnValues2.amount) = spoke1.withdraw(reserveId, assets, caller);
 
     assertEq(shares2, shares1, 'supplied and withdrawn shares');
-    assertEq(returnedShares1, shares1);
+    assertEq(returnValues1.shares, shares1);
+    assertEq(returnValues1.amount, assets);
     assertEq(returnValues2.shares, shares2);
     assertEq(returnValues2.amount, assets);
   }
@@ -454,15 +456,17 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     (returnValues1.shares, returnValues1.amount) = spoke1.withdraw(reserveId, assets, caller);
 
     // Supply and confirm share amount from event emission
+    TestReturnValues memory returnValues2;
     uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, caller, caller, shares2);
     vm.prank(caller);
-    uint256 returnedShares2 = spoke1.supply(reserveId, assets, caller);
+    (returnValues2.shares, returnValues2.amount) = spoke1.supply(reserveId, assets, caller);
 
     assertEq(shares2, shares1, 'supplied and withdrawn shares');
-    assertEq(returnValues1.amount, assets);
     assertEq(returnValues1.shares, shares1);
-    assertEq(returnedShares2, shares2);
+    assertEq(returnValues1.amount, assets);
+    assertEq(returnValues2.shares, shares2);
+    assertEq(returnValues2.amount, assets);
   }
 }

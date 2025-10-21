@@ -31,8 +31,13 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   }
 
   /// @inheritdoc ITreasurySpoke
-  function supply(uint256 reserveId, uint256 amount, address) external onlyOwner returns (uint256) {
-    return HUB.add(reserveId, amount, msg.sender);
+  function supply(
+    uint256 reserveId,
+    uint256 amount,
+    address
+  ) external onlyOwner returns (uint256, uint256) {
+    uint256 shares = HUB.add(reserveId, amount, msg.sender);
+    return (shares, amount);
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -63,7 +68,7 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   }
 
   /// @inheritdoc ISpokeBase
-  function borrow(uint256, uint256, address) external pure returns (uint256) {
+  function borrow(uint256, uint256, address) external pure returns (uint256, uint256) {
     revert UnsupportedAction();
   }
 
