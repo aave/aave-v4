@@ -8,11 +8,6 @@ contract SpokeRepayTest is SpokeBase {
   using PercentageMath for uint256;
   using SafeCast for uint256;
 
-  struct TestReturnValues {
-    uint256 amount;
-    uint256 shares;
-  }
-
   function test_repay() public {
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;

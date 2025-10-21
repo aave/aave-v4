@@ -32,12 +32,6 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 borrowReserveSupplyAmount;
     uint256 skipTime;
   }
-
-  struct TestReturnValues {
-    uint256 amount;
-    uint256 shares;
-  }
-
   function test_withdraw_same_block() public {
     uint256 amount = 100e18;
 

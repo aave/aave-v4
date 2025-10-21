@@ -41,7 +41,7 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
     uint256 amount,
     address
   ) external onlyOwner returns (uint256, uint256) {
-    // If amount to withdraw is greater than total supplied, withdraw all supplied assets
+    // if amount to withdraw is greater than total supplied, withdraw all supplied assets
     amount = MathUtils.min(amount, HUB.getSpokeAddedAssets(reserveId, address(this)));
     uint256 withdrawnShares = HUB.remove(reserveId, amount, msg.sender);
     return (withdrawnShares, amount);

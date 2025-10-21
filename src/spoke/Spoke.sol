@@ -221,11 +221,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     IHubBase hub = reserve.hub;
     uint256 assetId = reserve.assetId;
 
-    uint256 withdrawAmount = MathUtils.min(
+    uint256 withdrawnAmount = MathUtils.min(
       amount,
       hub.previewRemoveByShares(assetId, userPosition.suppliedShares)
     );
-    uint256 withdrawnShares = hub.remove(assetId, withdrawAmount, msg.sender);
+    uint256 withdrawnShares = hub.remove(assetId, withdrawnAmount, msg.sender);
 
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
@@ -236,7 +236,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
 
-    return (withdrawnShares, withdrawAmount);
+    return (withdrawnShares, withdrawnAmount);
   }
 
   /// @inheritdoc ISpokeBase

@@ -7,11 +7,6 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeRepayEdgeCaseTest is SpokeBase {
   using PercentageMath for uint256;
 
-  struct TestReturnValues {
-    uint256 amount;
-    uint256 shares;
-  }
-
   /// repay partial premium, base & full debt, with no interest accrual (no time pass)
   /// supply ex rate can increase while debt ex rate should remain the same
   /// this is due to donation on available liquidity

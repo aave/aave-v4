@@ -24,11 +24,6 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     uint256 rate;
   }
 
-  struct TestReturnValues {
-    uint256 amount;
-    uint256 shares;
-  }
-
   function test_withdraw_fuzz_partial_full_with_interest(
     uint256 supplyAmount,
     uint256 borrowAmount,
