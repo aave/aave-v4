@@ -84,25 +84,20 @@ contract SpokeBorrowValidationTest is SpokeBase {
     spoke1.borrow(reserveId, 1, bob);
   }
 
-  function test_borrow_revertsWith_underflow() public {
-    test_borrow_fuzz_revertsWith_underflow({
-      daiAmount: 100e18,
-      wethAmount: 10e18,
-      borrowAmount: 100e18 + 1
-    });
+  function test_borrow_revertsWith_InsufficientLiquidity() public {
+    test_borrow_fuzz_revertsWith_InsufficientLiquidity({daiAmount: 100e18, wethAmount: 10e18});
   }
 
-  function test_borrow_fuzz_revertsWith_underflow(
+  function test_borrow_fuzz_revertsWith_InsufficientLiquidity(
     uint256 daiAmount,
-    uint256 wethAmount,
-    uint256 borrowAmount
+    uint256 wethAmount
   ) public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
 
     wethAmount = bound(wethAmount, 10, MAX_SUPPLY_AMOUNT);
     daiAmount = wethAmount / 10;
-    vm.assume(borrowAmount > daiAmount);
+    uint256 borrowAmount = vm.randomUint(daiAmount + 1, MAX_SUPPLY_AMOUNT);
 
     // Bob supply weth
     Utils.supply(spoke1, wethReserveId, bob, wethAmount, bob);
@@ -111,7 +106,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     Utils.supply(spoke1, daiReserveId, alice, daiAmount, alice);
 
     // Bob draw more than supplied dai amount
-    vm.expectRevert();
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, daiAmount));
     vm.prank(bob);
     spoke1.borrow(daiReserveId, borrowAmount, bob);
   }
