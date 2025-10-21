@@ -741,6 +741,8 @@ contract Hub is IHub, AccessManaged {
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
+    uint256 removable = asset.toAddedAssetsDown(spoke.addedShares);
+    require(amount <= removable, AddedAmountExceeded(removable));
   }
 
   /// @dev Spoke with maximum cap have unlimited draw capacity.
