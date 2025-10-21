@@ -400,7 +400,7 @@ contract HubRemoveTest is HubBase {
     hub1.remove(daiAssetId, amount + 1, alice);
   }
 
-  /// @dev Spoke tries to withdraw funds entitled to another spoke, but there is enough liquidity in hub.
+  /// @dev Spoke tries to withdraw more than it has added, causing revert via underflow on accounting, even though hub has enough liquidity.
   function test_remove_revertsWith_underflow_exceeding_added_amount() public {
     uint256 amount = 100e18;
 
