@@ -460,6 +460,12 @@ contract HubRemoveTest is HubBase {
     });
     uint256 supplied = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
 
+    assertEq(
+      hub1.previewRemoveByAssets(daiAssetId, supplied),
+      hub1.previewRemoveByAssets(daiAssetId, supplied - 1),
+      'Removing 1 wei less assets removes same amount of shares'
+    );
+
     // It's possible to withdraw 1 wei less than what Alice has supplied, and her supply becomes 0
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, supplied - 1, alice);
@@ -486,6 +492,12 @@ contract HubRemoveTest is HubBase {
       user: alice
     });
     supplied = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
+
+    assertNotEq(
+      hub1.previewRemoveByAssets(daiAssetId, supplied),
+      hub1.previewRemoveByAssets(daiAssetId, supplied + 1),
+      'Removing 1 wei more assets removes different amount of shares'
+    );
 
     // But withdrawing 1 wei more reverts, because it rounds up to the next share amount
     vm.expectRevert(stdError.arithmeticError);
