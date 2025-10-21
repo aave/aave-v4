@@ -7,102 +7,95 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 
 /// @title IHub
 /// @author Aave Labs
-/// @notice Full interface for Hub.
+/// @notice Full interface for hub.
 interface IHub is IHubBase, IAccessManaged {
-  /// @notice Asset data.
+  /// @notice Asset position and configuration data.
+  /// @dev liquidity Available liquidity, expressed in asset units.
+  /// @dev addedShares Total shares added across all spokes.
+  /// @dev deficit Deficit reported, expressed in asset units.
+  /// @dev swept Outstanding liquidity which has been swept by the reinvestment controller, expressed in asset units.
+  /// @dev premiumShares Total premium shares across all spokes.
+  /// @dev premiumOffset Premium offset across all spokes, used to calculate the premium, expressed in asset units.
+  /// @dev realizedPremium The premium debt across all spokes previously accrued, expressed in asset units.
+  /// @dev drawnShares Total drawn shares across all spokes.
+  /// @dev drawnIndex Drawn index which scales according to the drawn rate, expressed in RAY.
+  /// @dev drawnRate The rate at which drawn assets grows, expressed in RAY.
   struct Asset {
-    /// available liquidity, expressed in asset units
     uint128 liquidity;
-    /// total shares added across all spokes, expressed in shares
     uint128 addedShares;
     //
-    /// deficit amount, expressed in asset units
     uint128 deficit;
-    /// swept amount, expressed in asset units
     uint128 swept;
     //
-    /// total premium shares across all spokes of the asset, expressed in shares
     uint128 premiumShares;
-    /// premium offset across all spokes, used to calculate the realized premium, expressed in asset units
     uint128 premiumOffset;
     //
-    /// total drawn shares across all spokes of the asset, expressed in shares
-    uint128 drawnShares;
-    /// realized premium across all spokes of the asset, expressed in asset units
     uint128 realizedPremium;
+    uint128 drawnShares;
     //
-    /// drawn index, expressed in RAY
     uint128 drawnIndex;
-    /// drawn rate, expressed in RAY
     uint96 drawnRate;
-    /// timestamp of last update
     uint32 lastUpdateTimestamp;
     //
-    /// the underlying asset address
     address underlying;
     //
-    /// the interest rate strategy address
     address irStrategy;
     //
-    /// the reinvestment controller address
     address reinvestmentController;
     //
-    /// the fee receiver address
     address feeReceiver;
-    /// the liquidity fee, expressed in BPS
     uint16 liquidityFee;
-    /// the number of decimals of the underlying asset
     uint8 decimals;
   }
 
-  /// @notice Asset configuration.
+  /// @notice Asset configuration. Subset of the `Asset` struct.
+  /// @dev feeReceiver The address of the fee receiver spoke.
+  /// @dev liquidityFee The liquidity fee, expressed in BPS.
+  /// @dev irStrategy The interest rate strategy address.
+  /// @dev reinvestmentController The reinvestment controller address.
   struct AssetConfig {
-    /// the fee receiver address
     address feeReceiver;
-    /// the liquidity fee, expressed in BPS
     uint16 liquidityFee;
-    /// the interest rate strategy address
     address irStrategy;
-    /// the reinvestment controller address
     address reinvestmentController;
   }
 
-  /// @notice Spoke data.
+  /// @notice Spoke position and configuration data.
+  /// @dev premiumShares Premium shares of a spoke for a given asset.
+  /// @dev premiumOffset Premium offset used to calculate the premium, expressed in asset units.
+  /// @dev drawnShares Drawn shares of a spoke for a given asset.
+  /// @dev realizedPremium The premium debt of a spoke previously accrued for a given asset, expressed in asset units.
+  /// @dev addedShares Added shares of a spoke for a given asset.
+  /// @dev addCap Maximum amount that can be added by a spoke, expressed in whole assets (not scaled by decimals).
+  /// @dev drawCap Maximum amount that can be drawn by a spoke, expressed in whole assets (not scaled by decimals).
+  /// @dev active Spokes which are inactive cannot perform any actions.
+  /// @dev paused Spokes which are paused can only call `refreshPremium`.
+  /// @dev deficit The deficit reported by a spoke for a given asset, expressed in asset units.
   struct SpokeData {
-    /// total premium shares of a spoke for a given asset, expressed in shares
     uint128 premiumShares;
-    /// premium offset across all spokes, used to calculate the realized premium, expressed in asset units
     uint128 premiumOffset;
     //
-    /// total drawn shares of a spoke for a given asset, expressed in shares
     uint128 drawnShares;
-    /// realized premium of a spoke for a given asset, expressed in asset units
     uint128 realizedPremium;
     //
-    /// total added shares of a spoke for a given asset, expressed in shares
     uint128 addedShares;
-    /// add cap, expressed in whole assets (not scaled by decimals)
     uint56 addCap;
-    /// draw cap, expressed in whole assets (not scaled by decimals)
     uint56 drawCap;
-    /// active flag
     bool active;
-    /// paused flag
     bool paused;
     //
-    /// the deficit of a spoke for a given asset, expressed in asset units
     uint128 deficit;
   }
 
-  /// @notice Spoke configuration.
+  /// @notice Spoke configuration data. Subset of the `SpokeData` struct.
+  /// @dev active Spokes which are inactive cannot perform any actions.
+  /// @dev paused Spokes which are paused can only call `refreshPremium`.
+  /// @dev addCap Maximum amount that can be added by a spoke, expressed in whole assets (not scaled by decimals).
+  /// @dev drawCap Maximum amount that can be drawn by a spoke, expressed in whole assets (not scaled by decimals).
   struct SpokeConfig {
-    /// the active flag
     bool active;
-    /// the paused flag
     bool paused;
-    /// the add cap, expressed in whole assets (not scaled by decimals)
     uint56 addCap;
-    /// the draw cap, expressed in whole assets (not scaled by decimals)
     uint56 drawCap;
   }
 
