@@ -307,7 +307,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
 
     UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf);
-    _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
+    if (userAccountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
+      _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
+    }
 
     emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, premiumDelta);
 
@@ -364,7 +366,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _reportDeficit(user);
     } else {
       // new risk premium only needs to be propagated if no deficit exists
-      _notifyRiskPremiumUpdate(user, _calculateUserAccountData(user).riskPremium);
+      userAccountData = _calculateUserAccountData(user);
+      if (userAccountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
+        _notifyRiskPremiumUpdate(user, userAccountData.riskPremium);
+      }
     }
   }
 
@@ -397,8 +402,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
-    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
+    UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf);
+    if (userAccountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
+      _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
+    }
   }
 
   /// @inheritdoc ISpoke
