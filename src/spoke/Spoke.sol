@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
+import {TransientSlot} from 'src/dependencies/openzeppelin/TransientSlot.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
@@ -31,6 +32,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   using PositionStatusMap for *;
   using MathUtils for *;
   using LiquidationLogic for *;
+  using TransientSlot for *;
 
   /// @inheritdoc ISpoke
   uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
@@ -55,6 +57,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
+
+  /// keccak256('REFRESHED_IN_SAME_BLOCK')
+  bytes32 internal constant _REFRESHED_IN_SAME_BLOCK =
+    0x1dfe1d82f6349ca6d9dffe78901a462e604b9c4ac1ac6612a32bb8d46869dd1e;
 
   uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
@@ -809,8 +815,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
       uint256 oldPremiumShares = userPosition.premiumShares;
       uint256 oldPremiumOffset = userPosition.premiumOffset;
-      uint256 accruedPremium = hub.previewRestoreByShares(assetId, oldPremiumShares) -
-        oldPremiumOffset;
+      uint256 accruedPremium = _getRefreshedInSameBlock(user, reserveId)
+        ? 0
+        : hub.previewRestoreByShares(assetId, oldPremiumShares) - oldPremiumOffset;
 
       uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newRiskPremium);
       // uses opposite rounding direction as premiumOffset is virtual debt owed by the protocol
@@ -827,6 +834,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       });
 
       hub.refreshPremium(assetId, premiumDelta);
+      _setRefreshedInSameBlock(user, reserveId);
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
     }
     emit UpdateUserRiskPremium(user, newRiskPremium);
@@ -866,6 +874,28 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
     // non-zero deficit means user ends up with zero total debt
     emit UpdateUserRiskPremium(user, 0);
+  }
+
+  function _getRefreshedInSameBlockSlot(
+    address user,
+    uint256 reserveId
+  ) internal view returns (TransientSlot.Uint256Slot) {
+    return
+      TransientSlot.asUint256(
+        keccak256(abi.encodePacked(_REFRESHED_IN_SAME_BLOCK, user, reserveId >> 8))
+      );
+  }
+
+  function _getRefreshedInSameBlock(address user, uint256 reserveId) internal view returns (bool) {
+    TransientSlot.Uint256Slot slot = _getRefreshedInSameBlockSlot(user, reserveId);
+    uint256 value = slot.tload();
+    return (value & (1 << (reserveId % 256))) != 0;
+  }
+
+  function _setRefreshedInSameBlock(address user, uint256 reserveId) internal {
+    TransientSlot.Uint256Slot slot = _getRefreshedInSameBlockSlot(user, reserveId);
+    uint256 value = slot.tload();
+    slot.tstore(value | (1 << (reserveId % 256)));
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
