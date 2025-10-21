@@ -3,8 +3,8 @@
 pragma solidity 0.8.28;
 
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
+import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
@@ -21,7 +21,7 @@ import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGatew
 /// @dev Uses keyed-nonces where each key's namespace nonce is consumed sequentially. Intents bundled through
 /// multicall can be executed independently in order of signed nonce & deadline; does not guarantee batch atomicity.
 contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multicall, EIP712 {
-  using SafeERC20 for IERC20;
+  using SafeTransferLib for address;
   using EIP712Hash for *;
 
   /// @dev Constructor.
@@ -37,13 +37,13 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
-    bytes32 hash = _hashTypedData(params.hash());
-    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    bytes32 digest = _hashTypedData(params.hash());
+    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
     (address underlying, address hub) = _getReserveData(spoke, reserveId);
-    IERC20(underlying).safeTransferFrom(user, address(this), params.amount);
-    IERC20(underlying).forceApprove(hub, params.amount);
+    underlying.safeTransferFrom(user, address(this), params.amount);
+    underlying.safeApproveWithRetry(hub, params.amount);
 
     ISpoke(spoke).supply(reserveId, params.amount, user);
   }
@@ -57,8 +57,8 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
-    bytes32 hash = _hashTypedData(params.hash());
-    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    bytes32 digest = _hashTypedData(params.hash());
+    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
     (address underlying, ) = _getReserveData(spoke, reserveId);
@@ -68,7 +68,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     );
 
     ISpoke(spoke).withdraw(reserveId, withdrawAmount, user);
-    IERC20(underlying).safeTransfer(user, withdrawAmount);
+    underlying.safeTransfer(user, withdrawAmount);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -80,14 +80,14 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
-    bytes32 hash = _hashTypedData(params.hash());
-    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    bytes32 digest = _hashTypedData(params.hash());
+    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
     (address underlying, ) = _getReserveData(spoke, reserveId);
 
     ISpoke(spoke).borrow(reserveId, params.amount, user);
-    IERC20(underlying).safeTransfer(user, params.amount);
+    underlying.safeTransfer(user, params.amount);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -99,8 +99,8 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
-    bytes32 hash = _hashTypedData(params.hash());
-    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    bytes32 digest = _hashTypedData(params.hash());
+    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
     (address underlying, address hub) = _getReserveData(spoke, reserveId);
@@ -109,8 +109,8 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
       ISpoke(spoke).getUserTotalDebt(reserveId, user)
     );
 
-    IERC20(underlying).safeTransferFrom(user, address(this), repayAmount);
-    IERC20(underlying).forceApprove(hub, repayAmount);
+    underlying.safeTransferFrom(user, address(this), repayAmount);
+    underlying.safeApproveWithRetry(hub, repayAmount);
 
     ISpoke(spoke).repay(reserveId, repayAmount, user);
   }
@@ -122,8 +122,8 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     address user = params.onBehalfOf;
-    bytes32 hash = _hashTypedData(params.hash());
-    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    bytes32 digest = _hashTypedData(params.hash());
+    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
     ISpoke(params.spoke).setUsingAsCollateral(params.reserveId, params.useAsCollateral, user);
@@ -135,8 +135,11 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(params.hash());
-    require(SignatureChecker.isValidSignatureNow(params.user, hash, signature), InvalidSignature());
+    bytes32 digest = _hashTypedData(params.hash());
+    require(
+      SignatureChecker.isValidSignatureNow(params.user, digest, signature),
+      InvalidSignature()
+    );
     _useCheckedNonce(params.user, params.nonce);
 
     ISpoke(params.spoke).updateUserRiskPremium(params.user);
@@ -148,8 +151,11 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(params.hash());
-    require(SignatureChecker.isValidSignatureNow(params.user, hash, signature), InvalidSignature());
+    bytes32 digest = _hashTypedData(params.hash());
+    require(
+      SignatureChecker.isValidSignatureNow(params.user, digest, signature),
+      InvalidSignature()
+    );
     _useCheckedNonce(params.user, params.nonce);
 
     ISpoke(params.spoke).updateUserDynamicConfig(params.user);

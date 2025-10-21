@@ -50,31 +50,17 @@ contract HubAddTest is HubBase {
     vm.stopPrank();
   }
 
-  function test_add_revertsWith_ERC20InsufficientAllowance() public {
+  function test_add_revertsWith_TransferFromFailed() public {
     uint256 amount = 100e18;
 
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        IERC20Errors.ERC20InsufficientAllowance.selector,
-        address(hub1),
-        0,
-        amount
-      )
-    );
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount, makeAddr('randomUser'));
   }
 
-  function test_add_fuzz_revertsWith_ERC20InsufficientAllowance(uint256 amount) public {
+  function test_add_fuzz_revertsWith_TransferFromFailed(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        IERC20Errors.ERC20InsufficientAllowance.selector,
-        address(hub1),
-        0,
-        amount
-      )
-    );
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount, makeAddr('randomUser'));
   }
