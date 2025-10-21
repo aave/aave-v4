@@ -54,10 +54,18 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(address(hub1)), 0);
     assertEq(prevUserSuppliedAmount, 0);
 
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_wethReserveId(spoke1), address(nativeTokenGateway), bob, amount);
     vm.prank(bob);
-    nativeTokenGateway.supplyNative{value: amount}(address(spoke1), _wethReserveId(spoke1), amount);
+    (returnValues.shares, returnValues.amount) = nativeTokenGateway.supplyNative{value: amount}(
+      address(spoke1),
+      _wethReserveId(spoke1),
+      amount
+    );
+
+    assertEq(returnValues.amount, amount);
+    assertEq(returnValues.shares, hub1.previewAddByAssets(wethAssetId, amount));
 
     assertEq(bob.balance, prevUserBalance - amount);
     assertEq(
@@ -125,14 +133,16 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(address(hub1)), 0);
     assertEq(prevUserSuppliedAmount, 0);
 
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_wethReserveId(spoke1), address(nativeTokenGateway), bob, amount);
     vm.prank(bob);
-    nativeTokenGateway.supplyAsCollateralNative{value: amount}(
-      address(spoke1),
-      _wethReserveId(spoke1),
-      amount
-    );
+    (returnValues.shares, returnValues.amount) = nativeTokenGateway.supplyAsCollateralNative{
+      value: amount
+    }(address(spoke1), _wethReserveId(spoke1), amount);
+
+    assertEq(returnValues.amount, amount);
+    assertEq(returnValues.shares, hub1.previewAddByAssets(wethAssetId, amount));
 
     assertEq(bob.balance, prevUserBalance - amount);
     assertEq(
@@ -170,10 +180,18 @@ contract NativeTokenGatewayTest is SpokeBase {
 
     assertEq(spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob), expectedSupplyShares);
 
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(_wethReserveId(spoke1), address(nativeTokenGateway), bob, amount);
     vm.prank(bob);
-    nativeTokenGateway.withdrawNative(address(spoke1), _wethReserveId(spoke1), amount);
+    (returnValues.shares, returnValues.amount) = nativeTokenGateway.withdrawNative(
+      address(spoke1),
+      _wethReserveId(spoke1),
+      amount
+    );
+
+    assertEq(returnValues.amount, amount);
+    assertEq(returnValues.shares, hub1.previewRemoveByAssets(wethAssetId, amount));
 
     assertEq(bob.balance, prevUserBalance + amount);
     assertEq(
@@ -204,6 +222,7 @@ contract NativeTokenGatewayTest is SpokeBase {
 
     assertEq(spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob), expectedSupplyShares);
 
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(
       _wethReserveId(spoke1),
@@ -212,7 +231,14 @@ contract NativeTokenGatewayTest is SpokeBase {
       supplyAmount
     );
     vm.prank(bob);
-    nativeTokenGateway.withdrawNative(address(spoke1), _wethReserveId(spoke1), UINT256_MAX);
+    (returnValues.shares, returnValues.amount) = nativeTokenGateway.withdrawNative(
+      address(spoke1),
+      _wethReserveId(spoke1),
+      UINT256_MAX
+    );
+
+    assertEq(returnValues.amount, supplyAmount);
+    assertEq(returnValues.shares, expectedSupplyShares);
 
     assertEq(bob.balance, prevUserBalance + supplyAmount);
     assertEq(spoke1.getUserSuppliedAssets(_wethReserveId(spoke1), bob), 0);
@@ -268,6 +294,7 @@ contract NativeTokenGatewayTest is SpokeBase {
 
     assertEq(spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob), expectedSupplyShares);
 
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(
       _wethReserveId(spoke1),
@@ -276,7 +303,14 @@ contract NativeTokenGatewayTest is SpokeBase {
       expectedSupplyShares
     );
     vm.prank(bob);
-    nativeTokenGateway.withdrawNative(address(spoke1), _wethReserveId(spoke1), UINT256_MAX);
+    (returnValues.shares, returnValues.amount) = nativeTokenGateway.withdrawNative(
+      address(spoke1),
+      _wethReserveId(spoke1),
+      UINT256_MAX
+    );
+
+    assertEq(returnValues.amount, expectedWithdrawAmount);
+    assertEq(returnValues.shares, expectedSupplyShares);
 
     assertEq(bob.balance, prevUserBalance + expectedWithdrawAmount);
     assertEq(spoke1.getUserSuppliedAssets(_wethReserveId(spoke1), bob), 0);
@@ -329,6 +363,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
 
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Borrow(
       _wethReserveId(spoke1),
@@ -337,12 +372,19 @@ contract NativeTokenGatewayTest is SpokeBase {
       hub1.previewRestoreByAssets(wethAssetId, borrowAmount)
     );
     vm.prank(bob);
-    nativeTokenGateway.borrowNative(address(spoke1), _wethReserveId(spoke1), borrowAmount);
+    (returnValues.shares, returnValues.amount) = nativeTokenGateway.borrowNative(
+      address(spoke1),
+      _wethReserveId(spoke1),
+      borrowAmount
+    );
 
     (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
       _wethReserveId(spoke1),
       bob
     );
+
+    assertEq(returnValues.amount, borrowAmount);
+    assertEq(returnValues.shares, hub1.previewDrawByAssets(wethAssetId, borrowAmount));
 
     assertEq(userDrawnDebt + userPremiumDebt, borrowAmount);
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - borrowAmount);
@@ -414,6 +456,7 @@ contract NativeTokenGatewayTest is SpokeBase {
       repayAmount
     );
 
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(
       _wethReserveId(spoke1),
@@ -423,13 +466,16 @@ contract NativeTokenGatewayTest is SpokeBase {
       expectedPremiumDelta
     );
     vm.prank(bob);
-    nativeTokenGateway.repayNative{value: repayAmount}(
+    (returnValues.shares, returnValues.amount) = nativeTokenGateway.repayNative{value: repayAmount}(
       address(spoke1),
       _wethReserveId(spoke1),
       repayAmount
     );
 
     (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(_wethReserveId(spoke1), bob);
+
+    assertEq(returnValues.amount, repayAmount);
+    assertEq(returnValues.shares, hub1.previewRestoreByAssets(wethAssetId, baseRestored));
 
     assertEq(userDrawnDebt + userPremiumDebt, borrowAmount - repayAmount);
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + repayAmount);
@@ -464,41 +510,47 @@ contract NativeTokenGatewayTest is SpokeBase {
       repayAmount,
       wethAssetId
     );
-    uint256 totalRepaid = baseRestored + premiumRestored;
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1),
-      repayAmount
-    );
-
-    vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
-      _wethReserveId(spoke1),
-      address(nativeTokenGateway),
-      bob,
-      hub1.previewRestoreByAssets(wethAssetId, baseRestored),
-      expectedPremiumDelta
-    );
-    vm.prank(bob);
-    nativeTokenGateway.repayNative{value: repayAmount}(
-      address(spoke1),
-      _wethReserveId(spoke1),
-      repayAmount
-    );
+    TestReturnValues memory returnValues;
+    {
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+        spoke1,
+        bob,
+        _wethReserveId(spoke1),
+        repayAmount
+      );
+      vm.expectEmit(address(spoke1));
+      emit ISpokeBase.Repay(
+        _wethReserveId(spoke1),
+        address(nativeTokenGateway),
+        bob,
+        hub1.previewRestoreByAssets(wethAssetId, baseRestored),
+        expectedPremiumDelta
+      );
+      vm.prank(bob);
+      (returnValues.shares, returnValues.amount) = nativeTokenGateway.repayNative{
+        value: repayAmount
+      }(address(spoke1), _wethReserveId(spoke1), repayAmount);
+    }
 
     (uint256 newUserDrawnDebt, uint256 newUserPremiumDebt) = spoke1.getUserDebt(
       _wethReserveId(spoke1),
       bob
     );
 
+    assertApproxEqAbs(returnValues.amount, baseRestored + premiumRestored, 1);
+    assertEq(returnValues.shares, hub1.previewRestoreByAssets(wethAssetId, baseRestored));
+
     assertApproxEqAbs(
       newUserDrawnDebt + newUserPremiumDebt,
-      userDrawnDebt + userPremiumDebt - totalRepaid,
+      userDrawnDebt + userPremiumDebt - (baseRestored + premiumRestored),
       2
     );
-    assertApproxEqAbs(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + totalRepaid, 2);
-    assertApproxEqAbs(bob.balance, prevUserBalance - totalRepaid, 1);
+    assertApproxEqAbs(
+      tokenList.weth.balanceOf(address(hub1)),
+      prevHubBalance + (baseRestored + premiumRestored),
+      2
+    );
+    assertApproxEqAbs(bob.balance, prevUserBalance - (baseRestored + premiumRestored), 1);
     _checkFinalBalances();
   }
 
@@ -538,6 +590,7 @@ contract NativeTokenGatewayTest is SpokeBase {
       repayAmount
     );
 
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(
       _wethReserveId(spoke1),
@@ -547,13 +600,16 @@ contract NativeTokenGatewayTest is SpokeBase {
       expectedPremiumDelta
     );
     vm.prank(bob);
-    nativeTokenGateway.repayNative{value: repayAmount}(
+    (returnValues.shares, returnValues.amount) = nativeTokenGateway.repayNative{value: repayAmount}(
       address(spoke1),
       _wethReserveId(spoke1),
       repayAmount
     );
 
     (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(_wethReserveId(spoke1), bob);
+
+    assertEq(returnValues.amount, baseRestored + premiumRestored);
+    assertEq(returnValues.shares, hub1.previewRestoreByAssets(wethAssetId, baseRestored));
 
     assertEq(userDrawnDebt + userPremiumDebt, 0);
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + totalRepaid);

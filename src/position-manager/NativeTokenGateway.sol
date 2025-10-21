@@ -42,9 +42,9 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     address spoke,
     uint256 reserveId,
     uint256 amount
-  ) external payable nonReentrant onlyRegisteredSpoke(spoke) {
+  ) external payable nonReentrant onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
     require(msg.value == amount, NativeAmountMismatch());
-    _supplyNative(spoke, reserveId, msg.sender, amount);
+    return _supplyNative(spoke, reserveId, msg.sender, amount);
   }
 
   /// @inheritdoc INativeTokenGateway
@@ -52,10 +52,16 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     address spoke,
     uint256 reserveId,
     uint256 amount
-  ) external payable nonReentrant onlyRegisteredSpoke(spoke) {
+  ) external payable nonReentrant onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
     require(msg.value == amount, NativeAmountMismatch());
-    _supplyNative(spoke, reserveId, msg.sender, amount);
+    (uint256 suppliedShares, uint256 suppliedAmount) = _supplyNative(
+      spoke,
+      reserveId,
+      msg.sender,
+      amount
+    );
     ISpoke(spoke).setUsingAsCollateral(reserveId, true, msg.sender);
+    return (suppliedShares, suppliedAmount);
   }
 
   /// @inheritdoc INativeTokenGateway
@@ -63,18 +69,18 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     address spoke,
     uint256 reserveId,
     uint256 amount
-  ) external onlyRegisteredSpoke(spoke) {
+  ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
     (address underlying, ) = _getReserveData(spoke, reserveId);
     _validateParams(underlying, amount);
 
-    uint256 withdrawAmount = MathUtils.min(
+    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw(
+      reserveId,
       amount,
-      ISpoke(spoke).getUserSuppliedAssets(reserveId, msg.sender)
+      msg.sender
     );
-
-    ISpoke(spoke).withdraw(reserveId, withdrawAmount, msg.sender);
-    _nativeWrapper.withdraw(withdrawAmount);
-    msg.sender.safeTransferETH(withdrawAmount);
+    _nativeWrapper.withdraw(withdrawnAmount);
+    msg.sender.safeTransferETH(withdrawnAmount);
+    return (withdrawnShares, withdrawnAmount);
   }
 
   /// @inheritdoc INativeTokenGateway
@@ -82,13 +88,18 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     address spoke,
     uint256 reserveId,
     uint256 amount
-  ) external onlyRegisteredSpoke(spoke) {
+  ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
     (address underlying, ) = _getReserveData(spoke, reserveId);
     _validateParams(underlying, amount);
 
-    ISpoke(spoke).borrow(reserveId, amount, msg.sender);
-    _nativeWrapper.withdraw(amount);
-    msg.sender.safeTransferETH(amount);
+    (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow(
+      reserveId,
+      amount,
+      msg.sender
+    );
+    _nativeWrapper.withdraw(borrowedAmount);
+    msg.sender.safeTransferETH(borrowedAmount);
+    return (borrowedShares, borrowedAmount);
   }
 
   /// @inheritdoc INativeTokenGateway
@@ -96,7 +107,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     address spoke,
     uint256 reserveId,
     uint256 amount
-  ) external payable nonReentrant onlyRegisteredSpoke(spoke) {
+  ) external payable nonReentrant onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
     require(msg.value == amount, NativeAmountMismatch());
     (address underlying, address hub) = _getReserveData(spoke, reserveId);
     _validateParams(underlying, amount);
@@ -111,11 +122,17 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
 
     _nativeWrapper.deposit{value: repayAmount}();
     address(_nativeWrapper).safeApproveWithRetry(hub, repayAmount);
-    ISpoke(spoke).repay(reserveId, repayAmount, msg.sender);
+    (uint256 repaidShares, uint256 repaidAmount) = ISpoke(spoke).repay(
+      reserveId,
+      repayAmount,
+      msg.sender
+    );
 
     if (leftovers > 0) {
       msg.sender.safeTransferETH(leftovers);
     }
+
+    return (repaidShares, repaidAmount);
   }
 
   /// @inheritdoc INativeTokenGateway
@@ -124,13 +141,23 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
   }
 
   /// @dev `msg.value` verification must be done before calling this.
-  function _supplyNative(address spoke, uint256 reserveId, address user, uint256 amount) internal {
+  function _supplyNative(
+    address spoke,
+    uint256 reserveId,
+    address user,
+    uint256 amount
+  ) internal returns (uint256, uint256) {
     (address underlying, address hub) = _getReserveData(spoke, reserveId);
     _validateParams(underlying, amount);
 
     _nativeWrapper.deposit{value: amount}();
     address(_nativeWrapper).safeApproveWithRetry(hub, amount);
-    ISpoke(spoke).supply(reserveId, amount, user);
+    (uint256 suppliedShares, uint256 suppliedAmount) = ISpoke(spoke).supply(
+      reserveId,
+      amount,
+      user
+    );
+    return (suppliedShares, suppliedAmount);
   }
 
   function _validateParams(address underlying, uint256 amount) internal view {
