@@ -8,8 +8,8 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
   struct SiloedLocalVars {
     uint256 assetAId;
     uint256 assetBId;
-    uint56 assetAAddCap;
-    uint56 assetBDrawCap;
+    uint40 assetAAddCap;
+    uint40 assetBDrawCap;
     uint256 reserveAId;
     uint256 reserveBId;
     uint256 reserveAIdNewSpoke;
@@ -61,7 +61,8 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         paused: false,
         active: true,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: siloedVars.assetBDrawCap
+        drawCap: siloedVars.assetBDrawCap,
+        riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
 
@@ -92,7 +93,8 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         active: true,
         paused: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
 
@@ -109,7 +111,13 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     hub1.addSpoke(
       siloedVars.assetAId,
       address(newSpoke),
-      IHub.SpokeConfig({active: true, paused: false, addCap: siloedVars.assetAAddCap, drawCap: 0})
+      IHub.SpokeConfig({
+        active: true,
+        paused: false,
+        addCap: siloedVars.assetAAddCap,
+        drawCap: 0,
+        riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      })
     );
     vm.stopPrank();
 
