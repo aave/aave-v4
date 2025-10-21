@@ -61,6 +61,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
       amount
     );
     ISpoke(spoke).setUsingAsCollateral(reserveId, true, msg.sender);
+
     return (suppliedShares, suppliedAmount);
   }
 
@@ -80,6 +81,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     );
     _nativeWrapper.withdraw(withdrawnAmount);
     msg.sender.safeTransferETH(withdrawnAmount);
+
     return (withdrawnShares, withdrawnAmount);
   }
 
@@ -99,6 +101,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     );
     _nativeWrapper.withdraw(borrowedAmount);
     msg.sender.safeTransferETH(borrowedAmount);
+
     return (borrowedShares, borrowedAmount);
   }
 
@@ -157,6 +160,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
       amount,
       user
     );
+
     return (suppliedShares, suppliedAmount);
   }
 

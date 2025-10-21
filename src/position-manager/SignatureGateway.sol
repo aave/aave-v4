@@ -92,6 +92,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
       user
     );
     underlying.safeTransfer(user, borrowedAmount);
+
     return (borrowedShares, borrowedAmount);
   }
 
