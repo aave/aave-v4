@@ -624,9 +624,9 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage spokeData = _spokes[assetId][spoke];
     return
       SpokeConfig({
-        riskPremiumCap: spokeData.riskPremiumCap,
         addCap: spokeData.addCap,
         drawCap: spokeData.drawCap,
+        riskPremiumCap: spokeData.riskPremiumCap,
         active: spokeData.active,
         paused: spokeData.paused
       });
