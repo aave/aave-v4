@@ -99,11 +99,17 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param config The new spoke configuration struct.
   event UpdateSpokeConfig(uint256 indexed assetId, address indexed spoke, SpokeConfig config);
 
-  /// @notice Emitted when fees are accrued to `feeReceiver`.
+  /// @notice Emitted when fees are minted to `feeReceiver`.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the current feeReceiver.
-  /// @param shares The amount of shares accrued.
-  event AccrueFees(uint256 indexed assetId, address indexed spoke, uint256 shares);
+  /// @param shares The amount of shares minted.
+  /// @param assets The amount of assets used to mint the shares.
+  event MintFeeShares(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 shares,
+    uint256 assets
+  );
 
   /// @notice Emitted when an amount of liquidity is swept by the reinvestment controller.
   /// @param assetId The identifier of the asset.

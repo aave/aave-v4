@@ -30,10 +30,8 @@ contract HubMintFeeSharesTest is HubBase {
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, feeReceiver);
     assertEq(feeShares, 0);
 
-    uint256 expectedMintedShares = hub1.previewAddByAssets(
-      daiAssetId,
-      _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId)
-    );
+    uint256 expectedMintedAssets = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
+    uint256 expectedMintedShares = hub1.previewAddByAssets(daiAssetId, expectedMintedAssets);
 
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
     bytes memory irCalldata = abi.encodeCall(
@@ -53,7 +51,7 @@ contract HubMintFeeSharesTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(daiAssetId, hub1.getAssetDrawnIndex(daiAssetId), mockRate);
     vm.expectEmit(address(hub1));
-    emit IHub.AccrueFees(daiAssetId, feeReceiver, expectedMintedShares);
+    emit IHub.MintFeeShares(daiAssetId, feeReceiver, expectedMintedShares, expectedMintedAssets);
 
     uint256 addedSharesBefore = hub1.getAddedShares(daiAssetId);
     uint256 sharePriceBefore = hub1.previewAddByShares(daiAssetId, 1e18);

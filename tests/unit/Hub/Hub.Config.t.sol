@@ -431,14 +431,14 @@ contract HubConfigTest is HubBase {
       !hub1.isSpokeListed(assetId, newConfig.feeReceiver)
     ) {
       if (_calcUnrealizedFeeAmount(hub1, assetId) > 0) {
+        uint256 feeAmount = hub1.getAsset(assetId).feeAmount +
+          _calcUnrealizedFeeAmount(hub1, assetId);
         vm.expectEmit(address(hub1));
-        emit IHub.AccrueFees(
+        emit IHub.MintFeeShares(
           assetId,
           _getFeeReceiver(hub1, assetId),
-          hub1.previewAddByAssets(
-            assetId,
-            hub1.getAsset(assetId).feeAmount + _calcUnrealizedFeeAmount(hub1, assetId)
-          )
+          hub1.previewAddByAssets(assetId, feeAmount),
+          feeAmount
         );
       }
       vm.expectEmit(address(hub1));

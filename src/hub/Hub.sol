@@ -738,7 +738,7 @@ contract Hub is IHub, AccessManaged {
       asset.addedShares += feeShares;
       _spokes[assetId][feeReceiver].addedShares += feeShares;
       asset.feeAmount = 0;
-      emit AccrueFees(assetId, feeReceiver, feeShares);
+      emit MintFeeShares(assetId, feeReceiver, feeShares, feeAmount);
     }
 
     return feeShares;
