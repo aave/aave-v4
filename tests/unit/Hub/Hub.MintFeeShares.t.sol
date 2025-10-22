@@ -5,7 +5,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubMintFeeSharesTest is HubBase {
-  function test_mintFeeShares() public {
+  function setUp() public override {
+    super.setUp();
     // Create debt to build up fees on the existing treasury spoke
     _addAndDrawLiquidity(
       hub1,
@@ -18,6 +19,9 @@ contract HubMintFeeSharesTest is HubBase {
       100e18,
       365 days
     );
+  }
+
+  function test_mintFeeShares() public {
     address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // before mintFeeShares, the fee shares should be 0
@@ -26,17 +30,17 @@ contract HubMintFeeSharesTest is HubBase {
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, feeReceiver);
     assertEq(feeShares, 0);
 
-    // trigger accrual of fees
-    Utils.add(hub1, daiAssetId, address(spoke1), 1000e18, bob);
-
     uint256 expectedMintedShares = hub1.previewAddByAssets(
       daiAssetId,
-      hub1.getAsset(daiAssetId).feeAmount
+      _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId)
     );
 
     // after mintFeeShares, the fee shares should be the amount of the fees
     vm.expectEmit(address(hub1));
     emit IHub.AccrueFees(daiAssetId, feeReceiver, expectedMintedShares);
+
+    uint256 addedSharesBefore = hub1.getAddedShares(daiAssetId);
+    uint256 sharePriceBefore = hub1.previewAddByShares(daiAssetId, 1e18);
 
     uint256 mintedShares = hub1.mintFeeShares(daiAssetId);
 
@@ -47,5 +51,7 @@ contract HubMintFeeSharesTest is HubBase {
       expectedMintedShares,
       'added shares'
     );
+    assertEq(mintedShares, hub1.getAddedShares(daiAssetId) - addedSharesBefore, 'minted shares');
+    assertGe(hub1.previewAddByShares(daiAssetId, 1e18), sharePriceBefore, 'share price');
   }
 }

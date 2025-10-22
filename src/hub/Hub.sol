@@ -700,12 +700,17 @@ contract Hub is IHub, AccessManaged {
   }
 
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
-    uint128 feeShares = asset.toAddedSharesDown(asset.feeAmount).toUint128();
-    address feeReceiver = asset.feeReceiver;
-    asset.addedShares += feeShares;
-    _spokes[assetId][feeReceiver].addedShares += feeShares;
-    asset.feeAmount = 0;
-    emit AccrueFees(assetId, feeReceiver, feeShares);
+    uint256 feeAmount = asset.feeAmount;
+    uint128 feeShares;
+    if (feeAmount > 0) {
+      feeShares = asset.toAddedSharesDown(feeAmount).toUint128();
+      address feeReceiver = asset.feeReceiver;
+      asset.addedShares += feeShares;
+      _spokes[assetId][feeReceiver].addedShares += feeShares;
+      asset.feeAmount = 0;
+      emit AccrueFees(assetId, feeReceiver, feeShares);
+    }
+
     return feeShares;
   }
 

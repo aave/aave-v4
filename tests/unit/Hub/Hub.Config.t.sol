@@ -424,6 +424,17 @@ contract HubConfigTest is HubBase {
       newConfig.feeReceiver != _getFeeReceiver(hub1, assetId) &&
       !hub1.isSpokeListed(assetId, newConfig.feeReceiver)
     ) {
+      if (_calcUnrealizedFeeAmount(hub1, assetId) > 0) {
+        vm.expectEmit(address(hub1));
+        emit IHub.AccrueFees(
+          assetId,
+          _getFeeReceiver(hub1, assetId),
+          hub1.previewAddByAssets(
+            assetId,
+            hub1.getAsset(assetId).feeAmount + _calcUnrealizedFeeAmount(hub1, assetId)
+          )
+        );
+      }
       vm.expectEmit(address(hub1));
       emit IHub.AddSpoke(assetId, newConfig.feeReceiver);
       vm.expectEmit(address(hub1));
@@ -504,6 +515,8 @@ contract HubConfigTest is HubBase {
     uint256 amount = 1000e18;
     _addLiquidity(assetId, amount);
     _drawLiquidity(assetId, amount, true);
+
+    skip(365 days);
 
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     address oldFeeReceiver = config.feeReceiver;
