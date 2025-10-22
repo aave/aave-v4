@@ -105,12 +105,12 @@ contract HubReportDeficitTest is HubBase {
     // skip to accrue interest
     skip(skipTime);
 
-    (uint256 drawn, ) = hub1.getSpokeOwed(usdxAssetId, address(spoke1));
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(usdxAssetId, address(spoke1));
     vm.assume(baseAmount > drawn);
 
     premiumAmount = bound(premiumAmount, 0, UINT256_MAX - baseAmount);
 
-    vm.expectRevert();
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDeficitReported.selector, premium));
     vm.prank(address(spoke1));
     hub1.reportDeficit(
       usdxAssetId,
