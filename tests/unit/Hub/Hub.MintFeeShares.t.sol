@@ -35,13 +35,30 @@ contract HubMintFeeSharesTest is HubBase {
       _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId)
     );
 
+    IHub.Asset memory asset = hub1.getAsset(daiAssetId);
+    bytes memory irCalldata = abi.encodeCall(
+      IBasicInterestRateStrategy.calculateInterestRate,
+      (
+        daiAssetId,
+        asset.liquidity,
+        hub1.previewRestoreByShares(daiAssetId, hub1.getAssetDrawnShares(daiAssetId)),
+        asset.deficit,
+        asset.swept
+      )
+    );
+    uint256 mockRate = 0.3e27;
+    vm.mockCall(address(irStrategy), irCalldata, abi.encode(mockRate));
+
     // after mintFeeShares, the fee shares should be the amount of the fees
+    vm.expectEmit(address(hub1));
+    emit IHub.UpdateAsset(daiAssetId, hub1.getAssetDrawnIndex(daiAssetId), mockRate);
     vm.expectEmit(address(hub1));
     emit IHub.AccrueFees(daiAssetId, feeReceiver, expectedMintedShares);
 
     uint256 addedSharesBefore = hub1.getAddedShares(daiAssetId);
     uint256 sharePriceBefore = hub1.previewAddByShares(daiAssetId, 1e18);
 
+    vm.expectCall(address(irStrategy), irCalldata);
     uint256 mintedShares = hub1.mintFeeShares(daiAssetId);
 
     assertEq(mintedShares, expectedMintedShares, 'minted shares');

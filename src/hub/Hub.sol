@@ -399,6 +399,7 @@ contract Hub is IHub, AccessManaged {
   function mintFeeShares(uint256 assetId) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     asset.accrue();
+    asset.updateDrawnRate(assetId);
     return _mintFeeShares(asset, assetId);
   }
 
