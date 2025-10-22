@@ -788,7 +788,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
       accountData.riskPremium += userCollateralValue * collateralRisk;
       debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
-      if (debtValueLeftToCover == 0) break;
+      if (debtValueLeftToCover == 0) {
+        break;
+      }
     }
 
     if (debtValueLeftToCover < accountData.totalDebtValue) {
