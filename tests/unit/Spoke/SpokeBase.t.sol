@@ -33,6 +33,11 @@ contract SpokeBase is Base {
     address borrower;
   }
 
+  struct TestReturnValues {
+    uint256 amount;
+    uint256 shares;
+  }
+
   struct DebtData {
     uint256 totalDebt;
     uint256 drawnDebt;

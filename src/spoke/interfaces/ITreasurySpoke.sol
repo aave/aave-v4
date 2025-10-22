@@ -22,7 +22,12 @@ interface ITreasurySpoke is ISpokeBase {
   /// @param amount The amount of asset to supply.
   /// @param onBehalfOf Unused parameter for this spoke.
   /// @return The amount of shares supplied.
-  function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external returns (uint256);
+  /// @return The amount of assets supplied.
+  function supply(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external returns (uint256, uint256);
 
   /// @notice Withdraws a specified amount of underlying asset from the given reserve.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
@@ -31,11 +36,12 @@ interface ITreasurySpoke is ISpokeBase {
   /// @param amount The amount of asset to withdraw.
   /// @param onBehalfOf Unused parameter for this spoke.
   /// @return The amount of shares withdrawn.
+  /// @return The amount of assets withdrawn.
   function withdraw(
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external returns (uint256);
+  ) external returns (uint256, uint256);
 
   /// @notice Transfers a specified amount of ERC20 tokens from this contract.
   /// @param token The address of the ERC20 token to transfer.

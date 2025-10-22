@@ -368,15 +368,15 @@ contract HubRemoveTest is HubBase {
     assertEq(tokenList.dai.balanceOf(bob), daiBalanceBefore + removeAmount, 'bob dai balance');
   }
 
-  function test_remove_revertsWith_AddedAmountExceeded_zero_added() public {
+  function test_remove_revertsWith_InsufficientLiquidity_zero_added() public {
     uint256 amount = 1;
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, 0));
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, amount, address(spoke1));
   }
 
-  function test_remove_revertsWith_AddedAmountExceeded() public {
+  function test_remove_revertsWith_InsufficientLiquidity_exceeding_added_amount() public {
     uint256 amount = 100e18;
 
     // User add
@@ -388,16 +388,121 @@ contract HubRemoveTest is HubBase {
       user: alice
     });
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, amount));
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, amount));
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, amount + 1, alice);
 
     // advance time, but no accrual
     skip(365 days);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddedAmountExceeded.selector, amount));
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, amount));
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, amount + 1, alice);
+  }
+
+  /// @dev Spoke tries to withdraw more than it has added, causing revert via underflow on accounting, even though hub has enough liquidity.
+  function test_remove_revertsWith_underflow_exceeding_added_amount() public {
+    uint256 amount = 100e18;
+
+    // Add from spoke 1
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: amount,
+      user: alice
+    });
+
+    // Add from spoke 2
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke2),
+      amount: amount,
+      user: alice
+    });
+
+    vm.expectRevert(stdError.arithmeticError);
+    vm.prank(address(spoke1));
+    hub1.remove(daiAssetId, amount + 1, alice);
+  }
+
+  ///@dev Show trying to remove extra 1 wei reverts, but user can withdraw less due to rounding
+  function test_remove_revertsWtih_underflow_one_extra_wei() public {
+    uint256 skipTime = 3000 days;
+    uint256 supplyAmount = 999e18;
+
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: supplyAmount,
+      user: alice
+    });
+
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: supplyAmount,
+      to: alice
+    });
+
+    // skip to accrue interest
+    skip(skipTime);
+
+    Utils.restoreDrawn({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      drawnAmount: hub1.getSpokeTotalOwed(daiAssetId, address(spoke1)),
+      restorer: alice
+    });
+    uint256 supplied = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
+
+    assertEq(
+      hub1.previewRemoveByAssets(daiAssetId, supplied),
+      hub1.previewRemoveByAssets(daiAssetId, supplied - 1),
+      'Removing 1 wei less assets removes same amount of shares'
+    );
+
+    // It's possible to withdraw 1 wei less than what Alice has supplied, and her supply becomes 0
+    vm.prank(address(spoke1));
+    hub1.remove(daiAssetId, supplied - 1, alice);
+    assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)), 0, 'spoke added assets after');
+
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: supplied,
+      user: alice
+    });
+    supplied = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
+
+    // It's possible to withdraw the exact amount Alice has supplied
+    vm.prank(address(spoke1));
+    hub1.remove(daiAssetId, supplied, alice);
+
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: supplied,
+      user: alice
+    });
+    supplied = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
+
+    assertNotEq(
+      hub1.previewRemoveByAssets(daiAssetId, supplied),
+      hub1.previewRemoveByAssets(daiAssetId, supplied + 1),
+      'Removing 1 wei more assets removes different amount of shares'
+    );
+
+    // But withdrawing 1 wei more reverts, because it rounds up to the next share amount
+    vm.expectRevert(stdError.arithmeticError);
+    vm.prank(address(spoke1));
+    hub1.remove(daiAssetId, supplied + 1, alice);
   }
 
   function test_remove_revertsWith_InsufficientLiquidity() public {
