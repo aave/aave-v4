@@ -484,12 +484,20 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       'Bob weth debt exceeds dai collateral after time skip'
     );
 
-    // Now since Bob's dai collateral is less than debt due to interest accrual, Bob's RP is greater than collateral risk of dai
-    assertGt(
-      _getUserRiskPremium(spoke2, bob),
-      _getCollateralRisk(spoke2, _daiReserveId(spoke2)),
-      'Bob user risk premium after collateral accrual'
-    );
+    // If Bob's position is underwater, his RP should be 0
+    if (
+      spoke2.getUserAccountData(bob).healthFactor < spoke2.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
+    ) {
+      assertEq(_getUserRiskPremium(spoke2, bob), 0, 'Bob user risk premium when underwater');
+      return;
+    } else {
+      // Now since Bob's dai collateral is less than debt due to interest accrual, Bob's RP is greater than collateral risk of dai
+      assertGt(
+        _getUserRiskPremium(spoke2, bob),
+        _getCollateralRisk(spoke2, _daiReserveId(spoke2)),
+        'Bob user risk premium after collateral accrual'
+      );
+    }
 
     assertEq(
       _getUserRiskPremium(spoke2, bob),
@@ -610,12 +618,19 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       'Bob weth debt exceeds dai collateral after 1 year'
     );
 
-    // Now Bob's RP should be greater than collateral risk of dai, since debt is not fully covered by it
-    assertGt(
-      _getUserRiskPremium(spoke2, bob),
-      _getCollateralRisk(spoke2, _daiReserveId(spoke2)),
-      'Bob user risk premium after collateral accrual'
-    );
+    // If Bob's position is underwater, his RP should be 0
+    if (
+      spoke2.getUserAccountData(bob).healthFactor < spoke2.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
+    ) {
+      assertEq(_getUserRiskPremium(spoke2, bob), 0, 'Bob user risk premium when underwater');
+    } else {
+      // Now Bob's RP should be greater than collateral risk of dai, since debt is not fully covered by it
+      assertGt(
+        _getUserRiskPremium(spoke2, bob),
+        _getCollateralRisk(spoke2, _daiReserveId(spoke2)),
+        'Bob user risk premium after collateral accrual'
+      );
+    }
 
     assertEq(
       _getUserRiskPremium(spoke2, bob),

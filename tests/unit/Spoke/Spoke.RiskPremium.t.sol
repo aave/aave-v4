@@ -142,7 +142,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
   }
 
   // Supply multiple collaterals, and borrow one reserve. Then change the price of debt reserve such that collaterals are insufficient to cover the debt
-  // User rp should be weighted sum of the collaterals
+  // User rp should be 0
   function test_riskPremium_collateral_insufficient_to_cover_debt() public {
     uint256 wbtcSupplyAmount = 1e8;
     uint256 daiSupplyAmount = 1000e18;
@@ -179,19 +179,11 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 debtValue = _getValue(spoke2, _dai2ReserveId(spoke2), borrowAmount);
     assertGt(debtValue, collateralValue, 'debt outgrows collateral');
 
-    // Now user rp should be weighted sum of the collaterals
-    uint256 expectedRiskPremium = (_getValue(spoke2, _daiReserveId(spoke2), daiSupplyAmount) *
-      _getCollateralRisk(spoke2, _daiReserveId(spoke2)) +
-      _getValue(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) *
-      _getCollateralRisk(spoke2, _usdxReserveId(spoke2)) +
-      _getValue(spoke2, _wbtcReserveId(spoke2), wbtcSupplyAmount) *
-      _getCollateralRisk(spoke2, _wbtcReserveId(spoke2)) +
-      _getValue(spoke2, _wethReserveId(spoke2), wethSupplyAmount) *
-      _getCollateralRisk(spoke2, _wethReserveId(spoke2))) / collateralValue;
+    // Now user rp should be 0
     assertEq(
       _getUserRiskPremium(spoke2, bob),
-      expectedRiskPremium,
-      'user risk premium matches weighted sum of collaterals'
+      0,
+      'user risk premium is 0 when position underwater'
     );
   }
 

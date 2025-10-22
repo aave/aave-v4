@@ -799,10 +799,6 @@ contract SpokeBase is Base {
     uint256 userRP;
     ISpoke.UserPosition memory userPosition;
 
-    if (spoke.getUserAccountData(user).healthFactor < spoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()) {
-      return 0;
-    }
-
     // Find all reserves user has supplied, adding up total debt
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
       if (spoke.isUsingAsCollateral(reserveId, user)) {
@@ -812,7 +808,10 @@ contract SpokeBase is Base {
       totalDebt += _getValue(spoke, reserveId, userDebt);
     }
 
-    if (totalDebt == 0) {
+    if (
+      totalDebt == 0 ||
+      spoke.getUserAccountData(user).healthFactor < spoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
+    ) {
       return 0;
     }
 
