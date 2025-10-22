@@ -96,7 +96,13 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(reserveId, POSITION_MANAGER, alice, amount);
+    emit ISpokeBase.Supply(
+      reserveId,
+      POSITION_MANAGER,
+      alice,
+      hub1.previewAddByAssets(usdxAssetId, amount),
+      amount
+    );
     Utils.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
@@ -125,7 +131,13 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(reserveId, POSITION_MANAGER, alice, amount);
+    emit ISpokeBase.Withdraw(
+      reserveId,
+      POSITION_MANAGER,
+      alice,
+      hub1.previewRemoveByAssets(usdxAssetId, amount),
+      amount
+    );
     Utils.withdraw(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
@@ -153,7 +165,13 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(reserveId, POSITION_MANAGER, alice, amount);
+    emit ISpokeBase.Borrow(
+      reserveId,
+      POSITION_MANAGER,
+      alice,
+      hub1.previewRestoreByAssets(usdxAssetId, amount),
+      amount
+    );
     Utils.borrow(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
@@ -192,7 +210,14 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), repayAmount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(reserveId, POSITION_MANAGER, alice, repayAmount, expectedPremiumDelta);
+    emit ISpokeBase.Repay(
+      reserveId,
+      POSITION_MANAGER,
+      alice,
+      hub1.previewRestoreByAssets(usdxAssetId, repayAmount),
+      repayAmount,
+      expectedPremiumDelta
+    );
     Utils.repay(spoke1, reserveId, POSITION_MANAGER, repayAmount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);

@@ -2,6 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
@@ -204,7 +206,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount, msg.sender);
     userPosition.suppliedShares += suppliedShares.toUint128();
 
-    emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares);
+    emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares, amount);
 
     return (suppliedShares, amount);
   }
@@ -234,7 +236,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
 
-    emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
+    emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares, withdrawnAmount);
 
     return (withdrawnShares, withdrawnAmount);
   }
@@ -260,7 +262,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
-    emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
+    emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares, amount);
 
     return (drawnShares, amount);
   }
@@ -280,12 +282,18 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       reserve.assetId,
       userPosition
     );
+    console.log(
+      's total amt %e %e %e',
+      drawnDebtRestored,
+      premiumDebtRestored,
+      drawnDebtRestored + premiumDebtRestored
+    );
     (drawnDebtRestored, premiumDebtRestored) = _calculateRestoreAmount(
       drawnDebtRestored,
       premiumDebtRestored,
       amount
     );
-
+    console.log('s otal amt %e', drawnDebtRestored + premiumDebtRestored);
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),
       offsetDelta: -userPosition.premiumOffset.toInt256(),
@@ -308,7 +316,17 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf);
     _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
 
-    emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, premiumDelta);
+    console.log('s restoredShares %e', restoredShares);
+    console.log('s amt %e', drawnDebtRestored + premiumDebtRestored);
+
+    emit Repay(
+      reserveId,
+      msg.sender,
+      onBehalfOf,
+      restoredShares,
+      drawnDebtRestored + premiumDebtRestored,
+      premiumDelta
+    );
 
     return (restoredShares, drawnDebtRestored + premiumDebtRestored);
   }
