@@ -182,6 +182,8 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // accrue interest
     skip(params.skipTime[0]);
 
+    uint256 expectedFeeAmount = _getExpectedFeeReceiverAddedAssets(hub1, params.reserveId);
+
     // carol repays all with interest
     state.repayAmount = spoke1.getUserTotalDebt(params.reserveId, carol);
     // deal in case carol's repayAmount exceeds default supplied amount due to interest
@@ -189,11 +191,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     vm.prank(carol);
     spoke1.repay(params.reserveId, state.repayAmount, carol);
 
-    assertEq(
-      hub1.getAsset(wbtcAssetId).feeAmount,
-      _calcExpectedFeeAmount(hub1, wbtcAssetId),
-      'fee amount'
-    );
+    assertEq(hub1.getAsset(params.reserveId).feeAmount, expectedFeeAmount, 'fee amount');
 
     TestData[3] memory reserveData;
     TestUserData[3] memory aliceData;

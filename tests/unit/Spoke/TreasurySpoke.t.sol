@@ -95,7 +95,7 @@ contract TreasurySpokeTest is SpokeBase {
     skip(365 days);
     assertEq(hub1.getAsset(daiAssetId).feeAmount, 0, 'fees'); // fees not yet accrued
 
-    uint256 expectedFeeAmount = _calcExpectedFeeAmount(hub1, daiAssetId);
+    uint256 expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, daiAssetId);
     hub1.mintFeeShares(daiAssetId);
 
     assertEq(hub1.getAsset(daiAssetId).feeAmount, 0, 'fee amount after minting');
@@ -205,7 +205,7 @@ contract TreasurySpokeTest is SpokeBase {
     skip(skipTime);
     assertEq(hub1.getAsset(assetId).feeAmount, 0, 'fees'); // fees not yet accrued
 
-    uint256 expectedFeeAmount = _calcExpectedFeeAmount(hub1, assetId);
+    uint256 expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, assetId);
 
     hub1.mintFeeShares(assetId);
     uint256 fees = treasurySpoke.getSuppliedAmount(assetId);

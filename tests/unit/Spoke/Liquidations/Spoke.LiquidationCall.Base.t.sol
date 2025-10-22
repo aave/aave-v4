@@ -1091,11 +1091,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       accountsInfoAfter.collateralFeeReceiverBalanceInfo.addedInHub,
       accountsInfoBefore.collateralFeeReceiverBalanceInfo.addedInHub +
         liquidationMetadata.collateralToLiquidate -
-        liquidationMetadata.collateralToLiquidator +
-        _hub(params.spoke, params.collateralReserveId)
-          .getAsset(_assetId(params.spoke, params.collateralReserveId))
-          .feeAmount,
-      _approxRelFromBps(5),
+        liquidationMetadata.collateralToLiquidator,
+      _approxRelFromBps(1),
       'collateral fee receiver: added'
     );
     assertEq(
@@ -1110,10 +1107,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     ) {
       assertEq(
         accountsInfoAfter.debtFeeReceiverBalanceInfo.addedInHub,
-        accountsInfoBefore.debtFeeReceiverBalanceInfo.addedInHub +
-          _hub(params.spoke, params.debtReserveId)
-            .getAsset(_assetId(params.spoke, params.debtReserveId))
-            .feeAmount,
+        accountsInfoBefore.debtFeeReceiverBalanceInfo.addedInHub,
         'debt fee receiver: added'
       );
       assertEq(

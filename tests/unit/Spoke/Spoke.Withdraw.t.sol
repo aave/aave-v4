@@ -246,7 +246,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // Wait a year to accrue interest
     skip(365 days);
 
-    uint256 expectedFeeAmount = _calcExpectedFeeAmount(hub1, daiAssetId);
+    uint256 expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, daiAssetId);
 
     // Ensure interest has accrued
     vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
@@ -320,7 +320,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // Ensure interest has accrued
     vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
 
-    uint256 expectedFeeAmount = _calcExpectedFeeAmount(hub1, daiAssetId);
+    uint256 expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, daiAssetId);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -362,7 +362,7 @@ contract SpokeWithdrawTest is SpokeBase {
       state.borrowReserveSupplyAmount
     ) = _increaseReserveIndex(spoke1, state.reserveId);
 
-    state.expectedFeeAmount = _calcExpectedFeeAmount(hub1, daiAssetId);
+    state.expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, daiAssetId);
 
     (state.aliceDrawnDebt, state.alicePremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
     assertEq(state.alicePremiumDebt, 0, 'alice has no premium contribution to exchange rate');
@@ -515,7 +515,7 @@ contract SpokeWithdrawTest is SpokeBase {
       skipTime: params.skipTime
     });
 
-    state.expectedFeeAmount = _calcExpectedFeeAmount(hub1, wbtcAssetId);
+    state.expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, wbtcAssetId);
 
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
     // deal because repayAmount may exceed default supplied amount due to interest
@@ -639,7 +639,7 @@ contract SpokeWithdrawTest is SpokeBase {
       state.borrowReserveSupplyAmount
     ) = _increaseReserveIndex(spoke1, state.reserveId);
 
-    state.expectedFeeAmount = _calcExpectedFeeAmount(hub1, daiAssetId);
+    state.expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, daiAssetId);
 
     (, state.alicePremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
 
@@ -782,7 +782,7 @@ contract SpokeWithdrawTest is SpokeBase {
       skipTime: params.skipTime
     });
 
-    state.expectedFeeAmount = _calcExpectedFeeAmount(hub1, assetId);
+    state.expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, assetId);
 
     // repay all debt with interest
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);

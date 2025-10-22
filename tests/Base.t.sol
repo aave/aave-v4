@@ -2594,7 +2594,7 @@ abstract contract Base is Test {
   }
 
   /// @dev Calculate expected fee amount based on previous drawn index
-  function _calcExpectedFeeAmount(IHub hub, uint256 assetId) internal view returns (uint256) {
+  function _calcUnrealizedFeeAmount(IHub hub, uint256 assetId) internal view returns (uint256) {
     IHub.Asset memory asset = hub.getAsset(assetId);
     uint256 lastDrawnIndex = asset.drawnIndex;
     uint256 drawnIndex = asset.drawnIndex.rayMulUp(
@@ -2608,7 +2608,19 @@ abstract contract Base is Test {
     return liquidityGrowth.percentMulDown(asset.liquidityFee);
   }
 
-  function _getAddedAssetsWithFee(IHubBase hub, uint256 assetId) internal view returns (uint256) {
-    return hub.getAddedAssets(assetId) + IHub(address(hub)).getAsset(assetId).feeAmount;
+  function _getExpectedFeeReceiverAddedAssets(
+    IHub hub,
+    uint256 assetId
+  ) internal view returns (uint256) {
+    uint256 expectedFeeAmount = hub.getAsset(assetId).feeAmount +
+      _calcUnrealizedFeeAmount(hub, assetId);
+    return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + expectedFeeAmount;
+  }
+
+  function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return
+      hub.getAddedAssets(assetId) +
+      IHub(address(hub)).getAsset(assetId).feeAmount +
+      _calcUnrealizedFeeAmount(hub, assetId);
   }
 }

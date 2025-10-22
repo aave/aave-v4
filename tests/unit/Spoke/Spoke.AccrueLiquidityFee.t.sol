@@ -111,6 +111,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       })
     );
 
+    hub1.mintFeeShares(assetId);
     assertApproxEqAbs(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
@@ -148,6 +149,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       })
     );
 
+    hub1.mintFeeShares(assetId);
     assertApproxEqAbs(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
@@ -170,6 +172,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // treasury
     expectedFeeShares = 0;
 
+    hub1.mintFeeShares(assetId);
     assertApproxEqAbs(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
