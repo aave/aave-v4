@@ -13,15 +13,15 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 /// @notice Full interface for Spoke.
 interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Reserve level data.
-  /// @dev underlying The underlying asset address.
+  /// @dev underlying The address of the underlying asset.
   /// @dev hub The associated hub.
   /// @dev assetId The identifier of the asset in the hub.
   /// @dev decimals The number of decimals of the underlying asset.
   /// @dev dynamicConfigKey The key of the last reserve dynamic config.
-  /// @dev paused Paused reserves prevent all actions.
-  /// @dev frozen Frozen reserves only allow for `withdraw`, `repay`, and `liquidationCall` (which do not `receiveShares`) actions.
-  /// @dev borrowable Flag indicating if the reserve is borrowable.
-  /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS. Maximum allowed is 1000_00 (1000.00%).
+  /// @dev paused True if all actions are prevented for the reserve.
+  /// @dev frozen True if new activity is prevented for the reserve.
+  /// @dev borrowable True if the reserve is borrowable.
+  /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
   struct Reserve {
     address underlying;
     //
@@ -36,10 +36,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   }
 
   /// @notice Reserve configuration. Subset of the `Reserve` struct.
-  /// @dev paused Paused reserves prevent all actions.
-  /// @dev frozen Frozen reserves only allow for `withdraw`, `repay`, and `liquidationCall` (which do not `receiveShares`) actions.
-  /// @dev borrowable Flag indicating if the reserve is borrowable.
-  /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS. Maximum allowed is 1000_00 (1000.00%).
   struct ReserveConfig {
     bool paused;
     bool frozen;
@@ -48,9 +44,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   }
 
   /// @notice Dynamic reserve configuration data.
-  /// @dev collateralFactor Represents the collateralization ratio required for a user position, expressed in BPS. Maximum allowed is 100_00 (100.00%)
-  /// @dev maxLiquidationBonus The maximum liquidation bonus, expressed in BPS. Minimum allowed is 100_00, which represents a 0% bonus.
-  /// @dev liquidationFee The liquidation fee, expressed in BPS. Maximum allowed is 100_00 (100.00%).
+  /// @dev collateralFactor The proportion of a reserve's value eligible to be used as collateral, expressed in BPS.
+  /// @dev maxLiquidationBonus The maximum extra amount of collateral given to the liquidator as bonus, expressed in BPS. A value of 100_00 represents 0.00% bonus.
+  /// @dev liquidationFee The protocol fee charged on liquidations, taken from the collateral bonus given to the liquidator, expressed in BPS.
   struct DynamicReserveConfig {
     uint16 collateralFactor;
     uint32 maxLiquidationBonus;
@@ -58,18 +54,18 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   }
 
   /// @notice Liquidation configuration data.
-  /// @dev targetHealthFactor The ideal health factor to restore a user position during liquidation, expressed in WAD. Minimum allowed is 1e18.
-  /// @dev healthFactorForMaxBonus The health factor under which liquidation bonus is maximum, expressed in WAD. Must be less than 1e18.
-  /// @dev liquidationBonusFactor The liquidation bonus factor, expressed in BPS. liquidBonusFactor * maxLiquidationBonus is the minimum liquidation bonus.
+  /// @dev targetHealthFactor The ideal health factor to restore a user position during liquidation, expressed in WAD.
+  /// @dev healthFactorForMaxBonus The health factor under which liquidation bonus is maximum, expressed in WAD.
+  /// @dev liquidationBonusFactor The value multiplied by `maxLiquidationBonus` to compute the minimum liquidation bonus, expressed in BPS.
   struct LiquidationConfig {
     uint128 targetHealthFactor;
     uint64 healthFactorForMaxBonus;
     uint16 liquidationBonusFactor;
   }
 
-  /// @notice User position data.
+  /// @notice User position data per reserve.
   /// @dev drawnShares The drawn shares of the user position.
-  /// @dev realizedPremium The premium debt of the user position previously accrued, expressed in asset units.
+  /// @dev realizedPremium The interest free premium debt already accrued for the user position, expressed in asset units.
   /// @dev premiumShares The premium shares of the user position.
   /// @dev premiumOffset The premium offset of the user position, used to calculate the premium, expressed in asset units.
   /// @dev suppliedShares The supplied shares of the user position.
@@ -87,15 +83,15 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Position manager configuration data.
   /// @dev approval The mapping of position manager approvals.
-  /// @dev active Flag indicating if the position manager is active.
+  /// @dev active True if the position manager is active.
   struct PositionManagerConfig {
     mapping(address user => bool) approval;
     bool active;
   }
 
-  /// @notice Position status data.
+  /// @notice User position status data.
   /// @dev map The bitmap of the position status.
-  /// @dev hasPositiveRiskPremium Flag indicating if the user has a risk premium greater than 0.
+  /// @dev hasPositiveRiskPremium True if the user position has a risk premium strictly greater than 0.
   struct PositionStatus {
     mapping(uint256 slot => uint256) map;
     bool hasPositiveRiskPremium;
@@ -103,7 +99,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice User account data describing a user position and its health.
   /// @dev riskPremium The risk premium of the user position, expressed in BPS.
-  /// @dev avgCollateralFactor The weighted average collateral factor of the user position, expressed in BPS.
+  /// @dev avgCollateralFactor The weighted average collateral factor of the user position, expressed in WAD.
   /// @dev healthFactor The health factor of the user position, expressed in WAD. 1e18 represents a health factor of 1.00.
   /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
   /// @dev totalDebtValue The total debt value of the user position, expressed in units of base currency. 1e26 represents 1 USD.

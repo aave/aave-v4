@@ -8,6 +8,18 @@ import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateS
 /// @author Aave Labs
 /// @notice Interface of the kink-based asset interest rate strategy.
 interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
+  /// @notice Holds the interest rate data for a given asset.
+  /// @dev optimalUsageRatio The optimal usage ratio, in bps. Maximum and minimum values are defined by `MAX_OPTIMAL_RATIO` and `MIN_OPTIMAL_RATIO`.
+  /// @dev baseVariableBorrowRate The base variable borrow rate, in bps.
+  /// @dev variableRateSlope1 The slope of the variable interest curve, before hitting the optimal usage ratio, in bps.
+  /// @dev variableRateSlope2 The slope of the variable interest curve, after hitting the optimal usage ratio, in bps.
+  struct InterestRateData {
+    uint16 optimalUsageRatio;
+    uint32 baseVariableBorrowRate;
+    uint32 variableRateSlope1;
+    uint32 variableRateSlope2;
+  }
+
   /// @notice Emitted when new interest rate data is set for an asset.
   /// @param hub The address of the associated hub.
   /// @param assetId Identifier of the asset that has new interest rate data set.
@@ -23,18 +35,6 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
     uint256 variableRateSlope1,
     uint256 variableRateSlope2
   );
-
-  /// @notice Holds the interest rate data for a given asset.
-  /// @param optimalUsageRatio The optimal usage ratio, in bps. Maximum and minimum values are defined by `MAX_OPTIMAL_RATIO` and `MIN_OPTIMAL_RATIO`.
-  /// @param baseVariableBorrowRate The base variable borrow rate, in bps.
-  /// @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal usage ratio, in bps.
-  /// @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal usage ratio, in bps.
-  struct InterestRateData {
-    uint16 optimalUsageRatio;
-    uint32 baseVariableBorrowRate;
-    uint32 variableRateSlope1;
-    uint32 variableRateSlope2;
-  }
 
   /// @notice Thrown when the given address is invalid.
   error InvalidAddress();
