@@ -48,6 +48,42 @@ contract HubReportDeficitTest is HubBase {
     hub1.reportDeficit(usdxAssetId, 0, 0, IHubBase.PremiumDelta(0, 0, 0));
   }
 
+  function test_reportDeficit_surplus_drawn_revertsWith_SurplusDeficitReported() public {
+    uint256 skipTime = 2000 days;
+    uint256 drawAmount = 999e18;
+
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: drawAmount * 2,
+      user: alice
+    });
+
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: drawAmount,
+      to: address(spoke1)
+    });
+
+    // skip to accrue interest
+    skip(skipTime);
+
+    uint256 drawn = hub1.getAssetTotalOwed(daiAssetId);
+
+    // We report 1 wei extra, but it rounds down to the correct number of shares
+    assertEq(
+      hub1.previewRestoreByAssets(daiAssetId, drawn),
+      hub1.previewRestoreByAssets(daiAssetId, drawn + 1)
+    );
+
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDeficitReported.selector, drawn));
+    vm.prank(address(spoke1));
+    hub1.reportDeficit(daiAssetId, drawn + 1, 0, IHubBase.PremiumDelta(0, 0, 0));
+  }
+
   function test_reportDeficit_fuzz_revertsWith_SurplusDeficitReported(
     uint256 drawnAmount,
     uint256 skipTime,
@@ -69,12 +105,12 @@ contract HubReportDeficitTest is HubBase {
     // skip to accrue interest
     skip(skipTime);
 
-    (uint256 drawn, ) = hub1.getSpokeOwed(usdxAssetId, address(spoke1));
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(usdxAssetId, address(spoke1));
     vm.assume(baseAmount > drawn);
 
     premiumAmount = bound(premiumAmount, 0, UINT256_MAX - baseAmount);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDeficitReported.selector, drawn));
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDeficitReported.selector, premium));
     vm.prank(address(spoke1));
     hub1.reportDeficit(
       usdxAssetId,

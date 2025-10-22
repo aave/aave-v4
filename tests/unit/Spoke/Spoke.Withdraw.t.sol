@@ -32,7 +32,6 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 borrowReserveSupplyAmount;
     uint256 skipTime;
   }
-
   function test_withdraw_same_block() public {
     uint256 amount = 100e18;
 
@@ -83,17 +82,23 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Bob withdraws immediately in the same block
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(_daiReserveId(spoke1), bob, bob, amount);
     vm.prank(bob);
-    uint256 returnedShares = spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      _daiReserveId(spoke1),
+      amount,
+      bob
+    );
 
     stage = 1;
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
     bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    assertEq(returnedShares, expectedSupplyShares);
+    assertEq(returnValues.amount, amount);
+    assertEq(returnValues.shares, expectedSupplyShares);
 
     // Reserve assertions after withdrawal
     assertEq(daiData[stage].addedAmount, 0, 'reserve addedAmount post-withdraw');
@@ -138,10 +143,16 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 expectedShares = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), bob);
 
     // Withdraw all supplied assets
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    uint256 returnedShares = spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      _daiReserveId(spoke1),
+      UINT256_MAX,
+      bob
+    );
 
-    assertEq(returnedShares, expectedShares);
+    assertEq(returnValues.amount, supplyAmount);
+    assertEq(returnValues.shares, expectedShares);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
@@ -172,10 +183,16 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 expectedShares = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), bob);
 
     // Withdraw all supplied assets
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    uint256 returnedShares = spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      _daiReserveId(spoke1),
+      UINT256_MAX,
+      bob
+    );
 
-    assertEq(returnedShares, expectedShares);
+    assertEq(returnValues.amount, supplyAmount);
+    assertEq(returnValues.shares, expectedShares);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
@@ -206,10 +223,16 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 expectedShares = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), bob);
 
     // Withdraw all supplied assets
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    uint256 returnedShares = spoke1.withdraw(_daiReserveId(spoke1), supplyAmount + 1, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      _daiReserveId(spoke1),
+      supplyAmount + 1,
+      bob
+    );
 
-    assertEq(returnedShares, expectedShares);
+    assertEq(returnValues.amount, supplyAmount);
+    assertEq(returnValues.shares, expectedShares);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
@@ -266,13 +289,20 @@ contract SpokeWithdrawTest is SpokeBase {
 
     uint256 addExRate = getAddExRate(daiAssetId);
 
+    uint256 expectedAssets = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob);
     uint256 expectedShares = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), bob);
 
     // bob withdraws all
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    uint256 returnedShares = spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      _daiReserveId(spoke1),
+      UINT256_MAX,
+      bob
+    );
 
-    assertEq(returnedShares, expectedShares);
+    assertEq(returnValues.amount, expectedAssets);
+    assertEq(returnValues.shares, expectedShares);
 
     // treasury spoke withdraw fees
     withdrawLiquidityFees(daiAssetId, UINT256_MAX);
@@ -337,12 +367,20 @@ contract SpokeWithdrawTest is SpokeBase {
 
     uint256 addExRate = getAddExRate(daiAssetId);
 
+    uint256 expectedAssets = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob);
     uint256 expectedShares = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), bob);
 
-    vm.prank(bob);
-    uint256 returnedShares = spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
+    TestReturnValues memory returnValues;
 
-    assertEq(returnedShares, expectedShares);
+    vm.prank(bob);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      _daiReserveId(spoke1),
+      UINT256_MAX,
+      bob
+    );
+
+    assertEq(returnValues.amount, expectedAssets);
+    assertEq(returnValues.shares, expectedShares);
 
     // treasury spoke withdraw fees
     withdrawLiquidityFees(daiAssetId, type(uint256).max);
@@ -404,8 +442,9 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // withdraw all available liquidity
     // bc debt is fully repaid, bob can withdraw all supplied
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    uint256 returnedShares = spoke1.withdraw({
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw({
       reserveId: state.reserveId,
       amount: state.withdrawAmount,
       onBehalfOf: bob
@@ -419,7 +458,8 @@ contract SpokeWithdrawTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    assertEq(returnedShares, state.withdrawnShares);
+    assertEq(returnValues.amount, state.withdrawAmount);
+    assertEq(returnValues.shares, state.withdrawnShares);
 
     // reserve
     (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(state.reserveId);
@@ -559,8 +599,9 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 addExRateBefore = getAddExRate(assetId);
 
     // bob withdraws all
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    uint256 returnedShares = spoke1.withdraw({
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw({
       reserveId: state.reserveId,
       amount: state.withdrawAmount,
       onBehalfOf: bob
@@ -575,7 +616,8 @@ contract SpokeWithdrawTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
 
-    assertEq(returnedShares, state.withdrawnShares);
+    assertEq(returnValues.shares, state.withdrawnShares);
+    assertEq(returnValues.amount, state.withdrawAmount);
 
     // reserve
     {
@@ -675,8 +717,9 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 addExRate = getAddExRate(daiAssetId);
 
     // debt is fully repaid, so bob can withdraw all supplied
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    uint256 returnedShares = spoke1.withdraw({
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw({
       reserveId: state.reserveId,
       amount: state.withdrawAmount,
       onBehalfOf: bob
@@ -690,7 +733,8 @@ contract SpokeWithdrawTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    assertEq(returnedShares, state.withdrawnShares);
+    assertEq(returnValues.shares, state.withdrawnShares);
+    assertEq(returnValues.amount, state.withdrawAmount);
 
     // reserve
     (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(state.reserveId);
@@ -827,8 +871,9 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 addExRateBefore = getAddExRate(assetId);
 
     // bob withdraws all
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    uint256 returnedShares = spoke1.withdraw({
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw({
       reserveId: state.reserveId,
       amount: state.withdrawAmount,
       onBehalfOf: bob
@@ -843,7 +888,8 @@ contract SpokeWithdrawTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
 
-    assertEq(returnedShares, state.withdrawnShares);
+    assertEq(returnValues.shares, state.withdrawnShares);
+    assertEq(returnValues.amount, state.withdrawAmount);
 
     // reserve
     {
@@ -958,10 +1004,16 @@ contract SpokeWithdrawTest is SpokeBase {
     // withdrawable remains constant
     assertEq(withdrawable, getTotalWithdrawable(spoke1, reserveId, alice));
 
+    TestReturnValues memory returnValues;
     vm.prank(alice);
-    uint256 returnedShares = spoke1.withdraw(reserveId, withdrawable + 1, alice);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      reserveId,
+      withdrawable + 1,
+      alice
+    );
 
-    assertEq(returnedShares, expectedShares);
+    assertEq(returnValues.shares, expectedShares);
+    assertEq(returnValues.amount, withdrawable);
 
     assertEq(getTotalWithdrawable(spoke1, reserveId, alice), 0);
     _checkSuppliedAmounts(daiAssetId, reserveId, spoke1, alice, 0, 'after withdraw');
