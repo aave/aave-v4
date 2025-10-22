@@ -18,7 +18,8 @@ contract HubAddTest is HubBase {
       active: true,
       paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
@@ -113,8 +114,8 @@ contract HubAddTest is HubBase {
     hub1.add(daiAssetId, amount, alice);
   }
 
-  function test_add_fuzz_revertsWith_AddCapExceeded(uint56 newAddCap) public {
-    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
+  function test_add_fuzz_revertsWith_AddCapExceeded(uint40 newAddCap) public {
+    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals() + 1;
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
@@ -122,8 +123,8 @@ contract HubAddTest is HubBase {
     hub1.add(daiAssetId, amount, alice);
   }
 
-  function test_add_fuzz_AddCapReachedButNotExceeded(uint56 newAddCap) public {
-    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
+  function test_add_fuzz_AddCapReachedButNotExceeded(uint40 newAddCap) public {
+    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals();
     vm.prank(address(spoke1));
@@ -132,11 +133,11 @@ contract HubAddTest is HubBase {
   }
 
   function test_add_fuzz_revertsWith_AddCapExceeded_due_to_interest(
-    uint56 newAddCap,
+    uint40 newAddCap,
     uint256 drawAmount,
     uint256 skipTime
   ) public {
-    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
+    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
     uint256 daiAmount = newAddCap * 10 ** tokenList.dai.decimals() - 1;
     drawAmount = bound(drawAmount, 1, daiAmount);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -191,7 +192,7 @@ contract HubAddTest is HubBase {
       totalAddedShares
     );
 
-    uint56 newAddCap = (spokeAddedAssetsRoundedUp + addedAmount).toUint56();
+    uint40 newAddCap = (spokeAddedAssetsRoundedUp + addedAmount).toUint40();
     _updateAddCap(minDecimalAssetId, address(spoke1), newAddCap);
 
     Utils.add({

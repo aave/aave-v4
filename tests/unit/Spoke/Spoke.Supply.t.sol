@@ -80,14 +80,16 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(bobData[stage].data.premiumOffset, 0);
     assertEq(bobData[stage].data.realizedPremium, 0);
     assertEq(bobData[stage].data.suppliedShares, 0);
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), bob, bob, amount);
     vm.prank(bob);
-    uint256 returnedShares = spoke1.supply(_daiReserveId(spoke1), amount, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.supply(_daiReserveId(spoke1), amount, bob);
     stage = 1;
     bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
-    assertEq(returnedShares, hub1.previewAddByAssets(daiAssetId, amount));
+    assertEq(returnValues.shares, hub1.previewAddByAssets(daiAssetId, amount));
+    assertEq(returnValues.amount, amount);
     // dai balance
     assertEq(
       tokenList.dai.balanceOf(bob),
@@ -159,16 +161,18 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(bobData[stage].data.realizedPremium, 0);
     assertEq(bobData[stage].data.suppliedShares, 0);
 
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), bob, bob, amount);
     vm.prank(bob);
-    uint256 returnedShares = spoke1.supply(_daiReserveId(spoke1), amount, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.supply(_daiReserveId(spoke1), amount, bob);
 
     stage = 1;
     bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
 
-    assertEq(returnedShares, hub1.previewAddByAssets(daiAssetId, amount));
+    assertEq(returnValues.shares, hub1.previewAddByAssets(daiAssetId, amount));
+    assertEq(returnValues.amount, amount);
     // dai balance
     assertEq(tokenList.dai.balanceOf(bob), 0, 'user token balance after-supply');
     assertEq(tokenList.dai.balanceOf(address(hub1)), amount, 'hub token balance after-supply');
@@ -229,17 +233,23 @@ contract SpokeSupplyTest is SpokeBase {
 
     deal(address(tokenList.dai), carol, amount);
 
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares);
     vm.prank(carol);
-    uint256 returnedShares = spoke1.supply(_daiReserveId(spoke1), amount, carol);
+    (returnValues.shares, returnValues.amount) = spoke1.supply(
+      _daiReserveId(spoke1),
+      amount,
+      carol
+    );
     stage = 1;
 
     carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    assertEq(returnedShares, expectedShares);
+    assertEq(returnValues.shares, expectedShares);
+    assertEq(returnValues.amount, amount);
     // dai balance
     assertEq(tokenList.dai.balanceOf(carol), 0, 'user token balance after-supply');
     assertEq(
@@ -343,17 +353,19 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 expectedSuppliedShares = hub1.previewAddByAssets(state.assetId, amount);
     vm.assume(expectedSuppliedShares > 0);
 
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, carol, carol, expectedSuppliedShares);
     vm.prank(carol);
-    uint256 returnedShares = spoke1.supply(reserveId, amount, carol);
+    (returnValues.shares, returnValues.amount) = spoke1.supply(reserveId, amount, carol);
     stage = 1;
 
     carolData[stage] = loadUserInfo(spoke1, reserveId, carol);
     reserveData[stage] = loadReserveInfo(spoke1, reserveId);
     tokenData[stage] = getTokenBalances(state.underlying, address(spoke1));
 
-    assertEq(returnedShares, expectedSuppliedShares);
+    assertEq(returnValues.shares, expectedSuppliedShares);
+    assertEq(returnValues.amount, amount);
     // token balance
     assertEq(
       state.underlying.balanceOf(carol),
@@ -414,17 +426,23 @@ contract SpokeSupplyTest is SpokeBase {
 
     deal(address(tokenList.dai), carol, amount);
 
+    TestReturnValues memory returnValues;
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares);
-    uint256 returnedShares = spoke1.supply(_daiReserveId(spoke1), amount, carol);
+    (returnValues.shares, returnValues.amount) = spoke1.supply(
+      _daiReserveId(spoke1),
+      amount,
+      carol
+    );
     stage = 1;
 
     carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    assertEq(returnedShares, expectedShares);
+    assertEq(returnValues.shares, expectedShares);
+    assertEq(returnValues.amount, amount);
     // dai balance
     assertEq(tokenList.dai.balanceOf(carol), 0, 'user token balance after-supply');
     assertEq(
@@ -510,17 +528,19 @@ contract SpokeSupplyTest is SpokeBase {
 
     deal(address(underlying), carol, amount);
 
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, carol, carol, expectedShares);
     vm.prank(carol);
-    uint256 returnedShares = spoke1.supply(reserveId, amount, carol);
+    (returnValues.shares, returnValues.amount) = spoke1.supply(reserveId, amount, carol);
 
     stage = 1;
     carolData[stage] = loadUserInfo(spoke1, reserveId, carol);
     reserveData[stage] = loadReserveInfo(spoke1, reserveId);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
 
-    assertEq(returnedShares, expectedShares);
+    assertEq(returnValues.shares, expectedShares);
+    assertEq(returnValues.amount, amount);
     // token balance
     assertEq(underlying.balanceOf(carol), 0, 'user token balance after-supply');
     assertEq(

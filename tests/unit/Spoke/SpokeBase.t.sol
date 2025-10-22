@@ -33,6 +33,11 @@ contract SpokeBase is Base {
     address borrower;
   }
 
+  struct TestReturnValues {
+    uint256 amount;
+    uint256 shares;
+  }
+
   struct DebtData {
     uint256 totalDebt;
     uint256 drawnDebt;
@@ -793,6 +798,10 @@ contract SpokeBase is Base {
     uint256 suppliedReservesCount;
     uint256 userRP;
     ISpoke.UserPosition memory userPosition;
+
+    if (spoke.getUserAccountData(user).healthFactor < spoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()) {
+      return 0;
+    }
 
     // Find all reserves user has supplied, adding up total debt
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
