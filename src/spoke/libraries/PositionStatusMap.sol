@@ -81,6 +81,8 @@ library PositionStatusMap {
     }
   }
 
+  /// @notice Returns true if a user has no collateral & no borrowed reserves.
+  /// @dev Does not disregard potential dirty bits set after `reserveCount`.
   function isEmpty(
     ISpoke.PositionStatus storage self,
     uint256 reserveCount

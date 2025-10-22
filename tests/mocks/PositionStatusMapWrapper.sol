@@ -38,6 +38,10 @@ contract PositionStatusMapWrapper {
     return _p.isUsingAsCollateral(reserveId);
   }
 
+  function isEmpty(uint256 reserveCount) external view returns (bool) {
+    return _p.isEmpty(reserveCount);
+  }
+
   function collateralCount(uint256 reserveCount) external view returns (uint256) {
     return _p.collateralCount(reserveCount);
   }

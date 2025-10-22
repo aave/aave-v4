@@ -194,6 +194,25 @@ contract PositionStatusMapTest is Base {
     assertEq(p.collateralCount(600), 6);
   }
 
+  function test_isEmpty_true_when_empty() public {
+    uint256 reserveCount = vm.randomUint();
+    assertTrue(p.isEmpty(reserveCount));
+  }
+
+  function test_isEmpty(uint256 reserveCount) public {
+    reserveCount = bound(reserveCount, 0, 1 << 10); // gas limit
+    vm.setArbitraryStorage(address(p));
+    bool isEmpty = true;
+    uint256 bucket = p.bucketId(reserveCount) + 1;
+    for (uint256 reserveId; reserveId < bucket * 128; ++reserveId) {
+      if (p.isUsingAsCollateralOrBorrowing(reserveId)) {
+        isEmpty = false;
+        break;
+      }
+    }
+    assertEq(p.isEmpty(reserveCount), isEmpty);
+  }
+
   function test_collateralCount(uint256 reserveCount) public {
     reserveCount = bound(reserveCount, 0, 1 << 10); // gas limit
     vm.setArbitraryStorage(address(p));
@@ -472,7 +491,7 @@ contract PositionStatusMapTest is Base {
     }
   }
 
-  function test_fls() public {
+  function test_fls() public pure {
     assertEq(LibBit.fls(0xff << 3), 10);
     for (uint256 i = 1; i < 255; i++) {
       assertEq(LibBit.fls((1 << i) - 1), i - 1);
