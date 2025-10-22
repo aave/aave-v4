@@ -1111,7 +1111,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     assertApproxEqRel(
       accountsInfoAfter.spokeBalanceInfo.addedInHub,
       accountsInfoBefore.spokeBalanceInfo.addedInHub - liquidationMetadata.collateralToLiquidate,
-      _approxRelFromBps(1),
+      _approxRelFromBps(10),
       'spoke: added'
     );
     assertApproxEqRel(

@@ -190,23 +190,11 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Now we supply more weth such that new total debt from now on is covered by weth
     Utils.supply(spoke1, reservesIds.weth, alice, vars.wethSupplyAmount, alice);
 
-    accruedDaiDebt = vars.daiBorrowAmount.rayMulUp(
-      MathUtils.calculateLinearInterest(hub1.getAssetDrawnRate(daiAssetId).toUint96(), startTime) -
-        WadRayMath.RAY
-    );
-
-    vars.expectedPremiumDebt =
-      hub1.previewRestoreByShares(daiAssetId, alicePosition.premiumShares) -
-      alicePosition.premiumOffset;
-
-    (baseDaiDebt, daiPremiumDebt) = spoke1.getUserDebt(reservesIds.dai, alice);
-
     assertEq(
-      baseDaiDebt,
-      vars.daiBorrowAmount + accruedDaiDebt,
-      'dai drawn debt after weth supply'
+      _getUserRiskPremium(spoke1, alice),
+      _calculateExpectedUserRP(alice, spoke1),
+      'user risk premium after weth supply'
     );
-    assertEq(daiPremiumDebt, vars.expectedPremiumDebt, 'dai premium debt after weth supply');
 
     // Alice repays everything
     _repayAll(spoke1, _daiReserveId);

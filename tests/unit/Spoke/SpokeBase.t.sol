@@ -267,7 +267,7 @@ contract SpokeBase is Base {
       collateralReserveId,
       debtReserveId,
       borrowAmount
-    ) * 2;
+    ) * 5;
     deal(spoke, collateralReserveId, user, supplyAmount);
     Utils.approve(spoke, collateralReserveId, user, UINT256_MAX);
     Utils.supplyCollateral(spoke, collateralReserveId, user, supplyAmount, user);
