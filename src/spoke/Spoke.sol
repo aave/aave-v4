@@ -191,7 +191,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external returns (uint256, uint256) {
-    _isPositionManager({user: onBehalfOf, manager: msg.sender});
+    _onlyPositionManager({user: onBehalfOf, manager: msg.sender});
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve);
@@ -210,7 +210,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external returns (uint256, uint256) {
-    _isPositionManager({user: onBehalfOf, manager: msg.sender});
+    _onlyPositionManager({user: onBehalfOf, manager: msg.sender});
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve);
@@ -241,7 +241,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external returns (uint256, uint256) {
-    _isPositionManager({user: onBehalfOf, manager: msg.sender});
+    _onlyPositionManager({user: onBehalfOf, manager: msg.sender});
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -268,7 +268,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external returns (uint256, uint256) {
-    _isPositionManager({user: onBehalfOf, manager: msg.sender});
+    _onlyPositionManager({user: onBehalfOf, manager: msg.sender});
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve);
@@ -371,7 +371,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bool usingAsCollateral,
     address onBehalfOf
   ) external {
-    _isPositionManager({user: onBehalfOf, manager: msg.sender});
+    _onlyPositionManager({user: onBehalfOf, manager: msg.sender});
     _validateSetUsingAsCollateral(_reserves[reserveId], usingAsCollateral);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
@@ -971,6 +971,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       return (0, amount);
     }
     return (amount - premiumDebt, premiumDebt);
+  }
+
+  /// @notice Checks if the caller is an approved positionManager for `onBehalfOf`.
+  function _onlyPositionManager(address user, address manager) internal {
+    require(_isPositionManager(user, manager), Unauthorized());
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
