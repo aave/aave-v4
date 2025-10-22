@@ -256,6 +256,9 @@ function callViewFunction(method f, env e, calldataarg args) returns mathint {
     else if (f.selector == sig:MIN_ALLOWED_UNDERLYING_DECIMALS().selector) {
         return MIN_ALLOWED_UNDERLYING_DECIMALS(e, args);
     }
+    else if (f.selector == sig:MAX_ALLOWED_RISK_PREMIUM_CAP().selector) {
+        return MAX_ALLOWED_RISK_PREMIUM_CAP(e, args);
+    }
     else if (f.selector == sig:getAssetDeficit(uint256).selector) {
         return getAssetDeficit(e, args);
     }
