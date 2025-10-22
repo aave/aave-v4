@@ -225,9 +225,9 @@ contract SpokeMulticall is SpokeBase {
     bytes[] memory ret = spoke1.multicall(calls);
 
     assertEq(ret.length, calls.length);
-    assertEq(ret[0], abi.encode(supplyAmount));
+    assertEq(ret[0], abi.encode(supplyAmount, supplyAmount));
     assertEq(ret[1].length, 0);
-    assertEq(ret[2], abi.encode(borrowAmount));
+    assertEq(ret[2], abi.encode(borrowAmount, borrowAmount));
     assertEq(ret[3], abi.encode(borrowAmount, 0));
   }
 
