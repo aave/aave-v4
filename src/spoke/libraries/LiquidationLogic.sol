@@ -274,7 +274,7 @@ library LiquidationLogic {
   }
 
   /// @dev Invoked by `liquidateUser` method.
-  /// @return True if the collateral position is empty, false otherwise.
+  /// @return True if the user collateral position becomes empty after removing.
   function _liquidateCollateral(
     ISpoke.Reserve storage collateralReserve,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage positions,

@@ -1166,7 +1166,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     Vm.Log[] memory logs
   ) internal view {
     uint256 precision = 0.1e18;
-    // when unhealthy, risk premium should exactly be zero
+
     if (!_isHealthy(params.spoke, accountsInfoAfter.userAccountData.healthFactor)) {
       liquidationMetadata.expectedUserRiskPremium = 0;
       precision = 0;
@@ -1196,8 +1196,12 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     ) {
       riskPremiumEventExpectedCount = 0;
     }
-
     assertEq(riskPremiumEventCount, riskPremiumEventExpectedCount, 'riskPremiumEventExpectedCount');
+
+    assertEq(
+      accountsInfoAfter.hasPositiveRiskPremium,
+      accountsInfoAfter.userAccountData.riskPremium > 0
+    );
 
     assertApproxEqRel(
       accountsInfoAfter.userAccountData.riskPremium,

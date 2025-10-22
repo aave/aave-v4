@@ -880,7 +880,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       userPosition.drawnShares -= deficitShares.toUint128();
       positionStatus.setBorrowing(reserveId, false);
     }
-    // non-zero deficit means user ends up with zero total debt
+
+    positionStatus.hasPositiveRiskPremium = false;
     emit UpdateUserRiskPremium(user, 0);
   }
 
