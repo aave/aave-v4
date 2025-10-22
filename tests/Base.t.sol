@@ -80,7 +80,7 @@ import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 
 abstract contract Base is Test {
   using stdStorage for StdStorage;
-  using WadRayMath for uint256;
+  using WadRayMath for *;
   using SharesMath for uint256;
   using PercentageMath for uint256;
   using SafeCast for *;
@@ -1915,8 +1915,10 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke
-  function withdrawLiquidityFees(uint256 assetId, uint256 amount) internal {
-    uint256 fees = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
+  function _withdrawLiquidityFees(IHub hub, uint256 assetId, uint256 amount) internal {
+    hub.mintFeeShares(assetId);
+    uint256 fees = hub.getSpokeAddedAssets(assetId, address(treasurySpoke));
+
     if (amount > fees) {
       amount = fees;
     }
@@ -2589,5 +2591,36 @@ abstract contract Base is Test {
 
   function _bpsToRay(uint256 bps) internal pure returns (uint256) {
     return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
+  }
+
+  /// @dev Calculate expected fee amount based on previous drawn index
+  function _calcUnrealizedFeeAmount(IHub hub, uint256 assetId) internal view returns (uint256) {
+    IHub.Asset memory asset = hub.getAsset(assetId);
+    uint256 lastDrawnIndex = asset.drawnIndex;
+    uint256 drawnIndex = asset.drawnIndex.rayMulUp(
+      MathUtils.calculateLinearInterest(asset.drawnRate, uint32(asset.lastUpdateTimestamp))
+    );
+    uint256 liquidityGrowth = asset.drawnShares.rayMulUp(drawnIndex) -
+      asset.drawnShares.rayMulUp(lastDrawnIndex) +
+      asset.premiumShares.rayMulUp(drawnIndex) -
+      asset.premiumShares.rayMulUp(lastDrawnIndex);
+
+    return liquidityGrowth.percentMulDown(asset.liquidityFee);
+  }
+
+  function _getExpectedFeeReceiverAddedAssets(
+    IHub hub,
+    uint256 assetId
+  ) internal view returns (uint256) {
+    uint256 expectedFeeAmount = hub.getAsset(assetId).feeAmount +
+      _calcUnrealizedFeeAmount(hub, assetId);
+    return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + expectedFeeAmount;
+  }
+
+  function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return
+      hub.getAddedAssets(assetId) +
+      IHub(address(hub)).getAsset(assetId).feeAmount +
+      _calcUnrealizedFeeAmount(hub, assetId);
   }
 }

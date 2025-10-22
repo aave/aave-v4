@@ -97,7 +97,7 @@ contract HubAccrueInterestTest is Base {
     // Time passes
     skip(elapsed);
 
-    // Spoke 2 does a add to accrue interest
+    // Spoke 2 does an add to accrue interest
     Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
     IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
@@ -112,7 +112,11 @@ contract HubAccrueInterestTest is Base {
 
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex1, 'drawnIndex');
-    assertEq(hub1.getAddedAssets(daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
+    assertEq(
+      _getAddedAssetsWithFees(hub1, daiAssetId),
+      addAmount + addAmount2 + interest,
+      'addAmount'
+    );
     assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt1, 'drawn');
 
     startTime = vm.getBlockTimestamp().toUint32();
@@ -137,7 +141,11 @@ contract HubAccrueInterestTest is Base {
     // Timestamp does not update when no interest accrued
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex2, 'drawnIndex2');
-    assertEq(hub1.getAddedAssets(daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
+    assertEq(
+      _getAddedAssetsWithFees(hub1, daiAssetId),
+      addAmount + addAmount2 + interest,
+      'addAmount'
+    );
     assertEq(getAssetDrawnDebt(daiAssetId), 0, 'drawn');
 
     // Time passes
@@ -150,7 +158,11 @@ contract HubAccrueInterestTest is Base {
 
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex2, 'drawnIndex2');
-    assertEq(hub1.getAddedAssets(daiAssetId), addAmount + addAmount2 * 2 + interest, 'addAmount');
+    assertEq(
+      _getAddedAssetsWithFees(hub1, daiAssetId),
+      addAmount + addAmount2 * 2 + interest,
+      'addAmount'
+    );
     assertEq(getAssetDrawnDebt(daiAssetId), 0, 'drawn');
   }
 
@@ -186,7 +198,11 @@ contract HubAccrueInterestTest is Base {
 
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex, 'drawnIndex');
-    assertEq(hub1.getAddedAssets(daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
+    assertEq(
+      _getAddedAssetsWithFees(hub1, daiAssetId),
+      addAmount + addAmount2 + interest,
+      'addAmount'
+    );
     assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt, 'drawn');
   }
 
@@ -225,7 +241,11 @@ contract HubAccrueInterestTest is Base {
 
     assertEq(elapsed, daiInfo.lastUpdateTimestamp - startTime);
     assertEq(daiInfo.drawnIndex, expectedDrawnIndex, 'drawnIndex');
-    assertEq(hub1.getAddedAssets(daiAssetId), addAmount + addAmount2 + interest, 'addAmount');
+    assertEq(
+      _getAddedAssetsWithFees(hub1, daiAssetId),
+      addAmount + addAmount2 + interest,
+      'addAmount'
+    );
     assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt, 'drawn');
   }
 
@@ -274,7 +294,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(assetData.t1.lastUpdateTimestamp - timestamps.t0, elapsed, 'elapsed');
     assertEq(assetData.t1.drawnIndex, cumulated.t1, 'drawnIndex');
     assertEq(
-      hub1.getAddedAssets(daiAssetId),
+      _getAddedAssetsWithFees(hub1, daiAssetId),
       spoke1Amounts.add0 + addAmount2 + interest1,
       'addAmount'
     );
@@ -307,7 +327,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(assetData.t2.lastUpdateTimestamp - timestamps.t1, elapsed, 'elapsed');
     assertEq(assetData.t2.drawnIndex, cumulated.t2, 'drawnIndex t2');
     assertEq(
-      hub1.getAddedAssets(daiAssetId),
+      _getAddedAssetsWithFees(hub1, daiAssetId),
       spoke1Amounts.add0 + addAmount2 * 3 + interest1 + interest2,
       'addAmount t2'
     );

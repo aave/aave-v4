@@ -18,7 +18,8 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    approve(IHub(address(hub)), assetId, user, amount);
+    IHub hub = IHub(address(hub));
+    approve(hub, assetId, user, amount);
     vm.prank(caller);
     return hub.add(assetId, amount, user);
   }

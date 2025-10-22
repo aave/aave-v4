@@ -71,7 +71,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       expectedCollateralToLiquidate + MAX_SUPPLY_AMOUNT
     );
 
-    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, type(uint256).max);
+    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, UINT256_MAX);
 
     (
       uint256 collateralToLiquidate,
@@ -93,7 +93,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) public {
     params = _bound(params);
-    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, type(uint256).max);
+    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, UINT256_MAX);
     (
       uint256 expectedCollateralToLiquidate,
       uint256 expectedCollateralToLiquidator,
@@ -191,7 +191,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) public {
     params = _bound(params);
-    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, type(uint256).max);
+    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, UINT256_MAX);
 
     (
       uint256 expectedCollateralToLiquidate,
