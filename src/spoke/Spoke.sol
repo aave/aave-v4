@@ -368,7 +368,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _reportDeficit(user);
     } else {
       // new risk premium only needs to be propagated if no deficit exists
-      _notifyRiskPremiumUpdate(user, _calculateUserAccountData(user).riskPremium);
+      uint256 newRiskPremium = _calculateUserAccountData(user).riskPremium;
+      _notifyRiskPremiumUpdate(user, newRiskPremium);
     }
   }
 
