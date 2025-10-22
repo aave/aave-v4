@@ -171,10 +171,13 @@ library AssetLogic {
     uint256 liquidityFee = asset.liquidityFee;
     if (liquidityFee == 0) return 0;
 
-    uint256 liquidityGrowth = asset.drawnShares.rayMulUp(drawnIndex) -
-      asset.drawnShares.rayMulUp(lastDrawnIndex) +
-      asset.premiumShares.rayMulUp(drawnIndex) -
-      asset.premiumShares.rayMulUp(lastDrawnIndex);
-    return liquidityGrowth.percentMulDown(asset.liquidityFee);
+    uint128 drawnShares = asset.drawnShares;
+    uint128 premiumShares = asset.premiumShares;
+
+    uint256 liquidityGrowth = drawnShares.rayMulUp(drawnIndex) -
+      drawnShares.rayMulUp(lastDrawnIndex) +
+      premiumShares.rayMulUp(drawnIndex) -
+      premiumShares.rayMulUp(lastDrawnIndex);
+    return liquidityGrowth.percentMulDown(liquidityFee);
   }
 }

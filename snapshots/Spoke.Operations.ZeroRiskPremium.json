@@ -1,11 +1,11 @@
 {
-  "borrow: first": "193661",
-  "borrow: second action, same reserve": "173616",
+  "borrow: first": "193318",
+  "borrow: second action, same reserve": "173273",
   "liquidationCall (receiveShares): full": "264045",
-  "liquidationCall (receiveShares): partial": "297719",
+  "liquidationCall (receiveShares): partial": "297376",
   "liquidationCall: full": "288086",
-  "liquidationCall: partial": "304377",
-  "permitReserve + repay (multicall)": "230604",
+  "liquidationCall: partial": "304034",
+  "permitReserve + repay (multicall)": "230261",
   "permitReserve + supply (multicall)": "142231",
   "permitReserve + supply + enable collateral (multicall)": "178052",
   "repay: full": "153747",
@@ -20,7 +20,7 @@
   "updateUserDynamicConfig: 1 collateral": "73827",
   "updateUserDynamicConfig: 2 collaterals": "88687",
   "updateUserRiskPremium: 1 borrow": "96327",
-  "updateUserRiskPremium: 2 borrows": "107022",
+  "updateUserRiskPremium: 2 borrows": "106679",
   "usingAsCollateral: 0 borrows, enable": "59042",
   "usingAsCollateral: 1 borrow, disable": "106662",
   "usingAsCollateral: 1 borrow, enable": "32364",
@@ -30,5 +30,5 @@
   "withdraw: 0 borrows, partial": "129786",
   "withdraw: 1 borrow, partial": "158736",
   "withdraw: 2 borrows, partial": "181205",
-  "withdraw: non collateral": "111629"
+  "withdraw: non collateral": "110943"
 }
