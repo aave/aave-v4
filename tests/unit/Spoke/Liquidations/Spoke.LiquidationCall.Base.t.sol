@@ -340,9 +340,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     }
 
     if (totalCollateralValue != 0) {
-      newAvgCollateralFactor = newAvgCollateralFactor
-        .wadDivDown(totalCollateralValue)
-        .fromBpsDown();
+      newAvgCollateralFactor = newAvgCollateralFactor.wadDivDown(totalCollateralValue).fromBpsDown();
     }
     list.sortByKey();
 
@@ -1174,6 +1172,13 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     LiquidationMetadata memory liquidationMetadata,
     Vm.Log[] memory logs
   ) internal view {
+    uint256 precision = 0.1e18;
+    // when unhealthy, risk premium should exactly be zero
+    if (!_isHealthy(params.spoke, accountsInfoAfter.userAccountData.healthFactor)) {
+      liquidationMetadata.expectedUserRiskPremium = 0;
+      precision = 0;
+    }
+
     uint256 riskPremiumEventCount;
     for (uint256 i = 0; i < logs.length; i++) {
       if (logs[i].topics[0] == ISpoke.UpdateUserRiskPremium.selector) {
@@ -1184,7 +1189,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         assertApproxEqRel(
           actualUserRiskPremium,
           liquidationMetadata.expectedUserRiskPremium,
-          0.1e18,
+          precision,
           'user risk premium: event'
         );
       }
@@ -1194,7 +1199,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     assertApproxEqRel(
       accountsInfoAfter.userAccountData.riskPremium,
       liquidationMetadata.expectedUserRiskPremium,
-      0.1e18,
+      precision,
       'user risk premium: user account data'
     );
 
@@ -1204,13 +1209,14 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           reserveId,
           params.user
         );
+        assertNotEq(userPosition.drawnShares, 0, 'borrowed reserve should have non zero base debt');
         uint256 storedUserRiskPremium = userPosition.premiumShares.percentDivDown(
           userPosition.drawnShares
         );
         assertApproxEqRel(
           storedUserRiskPremium,
           accountsInfoAfter.userAccountData.riskPremium,
-          0.1e18,
+          precision,
           string.concat(
             'user risk premium: stored risk premium in reserve ',
             vm.toString(reserveId)

@@ -17,7 +17,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     uint32 lastUpdateTimestamp;
     uint256 delay;
     uint256 expectedPremiumDebt;
-    uint256 expectedpremiumShares;
+    uint256 expectedPremiumShares;
     uint256 expectedUserRiskPremium;
   }
 
@@ -123,10 +123,10 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(_getUserRiskPremium(spoke1, alice), wethCollateralRisk, 'user rp: weth covers debt');
     // Check stored risk premium via back-calculating premium drawn shares
     ISpoke.UserPosition memory alicePosition = spoke1.getUserPosition(_daiReserveId(spoke1), alice);
-    vars.expectedpremiumShares = alicePosition.drawnShares.percentMulUp(wethCollateralRisk);
+    vars.expectedPremiumShares = alicePosition.drawnShares.percentMulUp(wethCollateralRisk);
     assertEq(
       alicePosition.premiumShares,
-      vars.expectedpremiumShares,
+      vars.expectedPremiumShares,
       'premium drawn shares match expected'
     );
 
@@ -160,7 +160,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // Now since debt has grown, weth supply is not enough to cover debt, hence rp changes
     // usdx is enough to cover remaining debt
-    uint256 daiDebtValue = _getValue(spoke1, reservesIds.dai, accruedDaiDebt + daiPremiumDebt);
+    uint256 daiDebtValue = _getDebtValue(spoke1, reservesIds.dai, accruedDaiDebt + daiPremiumDebt);
     uint256 usdxSupplyValue = _getValue(spoke1, reservesIds.usdx, vars.usdxSupplyAmount);
     assertLt(daiDebtValue, usdxSupplyValue);
 
@@ -181,7 +181,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       'user risk premium after supply'
     );
 
-    // Store alice's position before timeskip to calc expected premium debt
+    // Store alice's position before time skip to calc expected premium debt
     alicePosition = spoke1.getUserPosition(reservesIds.dai, alice);
 
     vars.lastUpdateTimestamp = vm.getBlockTimestamp().toUint32();
