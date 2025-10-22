@@ -97,8 +97,15 @@ contract MockSpoke is Spoke, Test {
   function calculateAndPotentiallyRefreshUserAccountData(
     address user,
     bool refreshConfig,
-    bool withRiskPremium
+    bool withRiskPremium,
+    bool withHealthFactor
   ) external returns (UserAccountData memory) {
-    return _calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig, withRiskPremium);
+    return
+      _calculateAndPotentiallyRefreshUserAccountData(
+        user,
+        refreshConfig,
+        withRiskPremium,
+        withHealthFactor
+      );
   }
 }

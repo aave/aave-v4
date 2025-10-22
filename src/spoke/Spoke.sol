@@ -306,7 +306,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
     }
 
-    UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf);
+    UserAccountData memory userAccountData = _calculateUserAccountDataWithoutHealthFactor(
+      onBehalfOf
+    );
     _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
 
     emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, premiumDelta);
@@ -366,7 +368,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _reportDeficit(user);
     } else {
       // new risk premium only needs to be propagated if no deficit exists
-      _notifyRiskPremiumUpdate(user, _calculateUserAccountData(user).riskPremium);
+      _notifyRiskPremiumUpdate(
+        user,
+        _calculateUserAccountDataWithoutHealthFactor(user).riskPremium
+      );
     }
   }
 
@@ -399,7 +404,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
+    uint256 newRiskPremium = _calculateUserAccountDataWithoutHealthFactor(onBehalfOf).riskPremium;
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
   }
 
@@ -679,11 +684,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function _calculateAndRefreshUserAccountData(
     address user
   ) internal returns (UserAccountData memory) {
-    UserAccountData memory accountData = _calculateAndPotentiallyRefreshUserAccountData(
-      user,
-      true,
-      true
-    );
+    UserAccountData memory accountData = _calculateAndPotentiallyRefreshUserAccountData({
+      user: user,
+      refreshConfig: true,
+      withRiskPremium: true,
+      withHealthFactor: true
+    });
     emit RefreshAllUserDynamicConfig(user);
     return accountData;
   }
@@ -693,7 +699,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function _calculateAndPotentiallyRefreshUserAccountData(
     address user,
     bool refreshConfig,
-    bool withRiskPremium
+    bool withRiskPremium,
+    bool withHealthFactor
   ) internal returns (UserAccountData memory accountData) {
     PositionStatus storage positionStatus = _positionStatus[user];
 
@@ -728,7 +735,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
               reserve.assetId,
               suppliedShares
             ) * assetPrice).wadDivDown(assetUnit);
-            accountData.totalCollateralValue += userCollateralValue;
+
             if (withRiskPremium) {
               collateralInfo.add(
                 accountData.activeCollateralCount,
@@ -736,7 +743,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
                 userCollateralValue
               );
             }
-            accountData.avgCollateralFactor += collateralFactor * userCollateralValue;
+            if (withHealthFactor) {
+              accountData.totalCollateralValue += userCollateralValue;
+              accountData.avgCollateralFactor += collateralFactor * userCollateralValue;
+            }
             accountData.activeCollateralCount = accountData.activeCollateralCount.uncheckedAdd(1);
           }
         }
@@ -750,27 +760,30 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         );
         // we can simplify since there is no precision loss due to the division here
         accountData.totalDebtValue += ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
-        accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
+        if (withHealthFactor) {
+          accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
+        }
       }
     }
 
-    if (accountData.totalDebtValue > 0) {
-      // at this point, `avgCollateralFactor` is the collateral-weighted sum (scaled by `collateralFactor` in BPS)
-      // health factor uses this directly for simplicity
-      // the division by `totalCollateralValue` to compute the weighted average is done later
-      accountData.healthFactor = accountData
-        .avgCollateralFactor
-        .wadDivDown(accountData.totalDebtValue)
-        .fromBpsDown();
-    } else {
-      accountData.healthFactor = type(uint256).max;
-    }
-
-    if (accountData.totalCollateralValue > 0) {
-      accountData.avgCollateralFactor = accountData
-        .avgCollateralFactor
-        .wadDivDown(accountData.totalCollateralValue)
-        .fromBpsDown();
+    if (withHealthFactor) {
+      if (accountData.totalDebtValue > 0) {
+        // at this point, `avgCollateralFactor` is the collateral-weighted sum (scaled by `collateralFactor` in BPS)
+        // health factor uses this directly for simplicity
+        // the division by `totalCollateralValue` to compute the weighted average is done later
+        accountData.healthFactor = accountData
+          .avgCollateralFactor
+          .wadDivDown(accountData.totalDebtValue)
+          .fromBpsDown();
+      } else {
+        accountData.healthFactor = type(uint256).max;
+      }
+      if (accountData.totalCollateralValue > 0) {
+        accountData.avgCollateralFactor = accountData
+          .avgCollateralFactor
+          .wadDivDown(accountData.totalCollateralValue)
+          .fromBpsDown();
+      }
     }
 
     if (withRiskPremium) {
@@ -936,14 +949,20 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   function _calculateUserAccountData(address user) internal view returns (UserAccountData memory) {
     // SAFETY: function does not modify state when refreshConfig is false.
-    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false, true);
+    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false, true, true);
   }
 
   function _calculateUserAccountDataWithoutRiskPremium(
     address user
   ) internal view returns (UserAccountData memory) {
     // risk premium is not computed and will always be zero
-    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false, false);
+    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false, false, true);
+  }
+
+  function _calculateUserAccountDataWithoutHealthFactor(
+    address user
+  ) internal view returns (UserAccountData memory) {
+    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false, true, false);
   }
 
   /// @return The user's drawn debt.
@@ -999,11 +1018,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   function _castToView(
-    function(address, bool, bool) internal returns (UserAccountData memory) fnIn
+    function(address, bool, bool, bool) internal returns (UserAccountData memory) fnIn
   )
     internal
     pure
-    returns (function(address, bool, bool) internal view returns (UserAccountData memory) fnOut)
+    returns (
+      function(address, bool, bool, bool) internal view returns (UserAccountData memory) fnOut
+    )
   {
     assembly ('memory-safe') {
       fnOut := fnIn

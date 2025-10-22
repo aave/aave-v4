@@ -259,11 +259,11 @@ contract SpokeUserAccountDataTest is SpokeBase {
     spoke.mockStorage(user, accountDataInfo);
 
     ISpoke.UserAccountData memory userAccountData = spoke
-      .calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig, true);
+      .calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig, true, true);
     assertApproxEq(userAccountData, expectedUserAccountData);
 
     ISpoke.UserAccountData memory userAccountDataWithoutRp = spoke
-      .calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig, false);
+      .calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig, false, true);
     assertEqWithoutRiskPremium(userAccountData, userAccountDataWithoutRp);
   }
 
