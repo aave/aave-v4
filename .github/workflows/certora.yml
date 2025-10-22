@@ -13,9 +13,6 @@ env:
     certora/conf/HubValidState.conf
 on:
   pull_request:
-    branches:
-      - main
-      - certora
   workflow_dispatch:
 
 jobs:
