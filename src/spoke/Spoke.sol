@@ -934,13 +934,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 assetId,
     UserPosition storage userPosition
   ) internal view returns (uint256, uint256, uint256) {
-    uint256 accruedPremium = hub.previewRestoreByShares(assetId, userPosition.premiumShares) -
-      userPosition.premiumOffset;
-    return (
-      hub.previewRestoreByShares(assetId, userPosition.drawnShares),
-      userPosition.realizedPremium + accruedPremium,
-      accruedPremium
+    (uint256 drawnAmount, uint256 premiumAmount) = hub.previewRestoreByShares(
+      assetId,
+      userPosition.drawnShares,
+      userPosition.premiumShares
     );
+    uint256 accruedPremium = premiumAmount - userPosition.premiumOffset;
+    return (drawnAmount, userPosition.realizedPremium + accruedPremium, accruedPremium);
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {

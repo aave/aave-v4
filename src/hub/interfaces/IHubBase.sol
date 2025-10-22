@@ -209,9 +209,21 @@ interface IHubBase {
   /// @notice Converts the specified amount of shares to assets amount restored upon a `restore` action.
   /// @dev Rounds up to the nearest assets amount.
   /// @param assetId The identifier of the asset.
-  /// @param shares The amount of drawn shares to convert to assets amount.
+  /// @param shares The amount of shares to convert to assets amount.
   /// @return The amount of assets converted from shares amount.
   function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256);
+
+  /// @notice Converts the specified amounts of shares to assets amount restored upon a `restore` action.
+  /// @dev Rounds up to the nearest assets amount.
+  /// @param assetId The identifier of the asset.
+  /// @param sharesA The amount of shares to convert to assets amount.
+  /// @return The amount of assets converted from `sharesA` amount.
+  /// @return The amount of assets converted from `sharesB` amount.
+  function previewRestoreByShares(
+    uint256 assetId,
+    uint256 sharesA,
+    uint256 sharesB
+  ) external view returns (uint256, uint256);
 
   /// @notice Returns the underlying address and decimals of the specified asset.
   /// @param assetId The identifier of the asset.
