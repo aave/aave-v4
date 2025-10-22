@@ -1,0 +1,51 @@
+name: Certora Prover Workflow
+
+env:
+  CONFIGS: |
+    certora/conf/libs/LibBit.conf
+    certora/conf/libs/Math.conf
+    certora/conf/libs/SharesMath.conf
+    certora/conf/Hub.conf
+    certora/conf/HubAdditivity.conf
+    certora/conf/HubAccrueIntegrity.conf
+    certora/conf/HubAccrueUnrealizedFee.conf
+    certora/conf/HubIntegrity.conf
+    certora/conf/HubValidState.conf
+on:
+  pull_request:
+    branches:
+      - main
+      - certora
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # (Optional) Add installation steps for your project
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+      - name: Install dependencies
+        run: npm install
+
+      # Run Certora Prover
+      - uses: Certora/certora-run-action@v2
+        with:
+          # Add your configurations as lines, each line is separated.
+          # Specify additional options for each configuration by adding them after the configuration.
+          configurations: ${{ env.CONFIGS }}
+          solc-versions: 0.8.28
+          job-name: "Verified Rules"
+          certora-key: ${{ secrets.CERTORAKEY }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
