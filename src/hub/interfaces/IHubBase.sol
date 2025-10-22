@@ -216,7 +216,8 @@ interface IHubBase {
   /// @notice Converts the specified amounts of shares to assets amount restored upon a `restore` action.
   /// @dev Rounds up to the nearest assets amount.
   /// @param assetId The identifier of the asset.
-  /// @param sharesA The amount of shares to convert to assets amount.
+  /// @param sharesA The amount of sharesA to convert to assets amount.
+  /// @param sharesB The amount of sharesB to convert to assets amount.
   /// @return The amount of assets converted from `sharesA` amount.
   /// @return The amount of assets converted from `sharesB` amount.
   function previewRestoreByShares(
