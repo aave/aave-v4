@@ -403,8 +403,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    UserAccountData memory accountData = _calculateUserAccountData(onBehalfOf);
-    _notifyRiskPremiumUpdate(onBehalfOf, accountData.riskPremium);
+    uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
+    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -775,23 +775,20 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
 
     uint256 debtValueLeftToCover = accountData.totalDebtValue;
-    // riskPremium is 0 when position is underwater or has no debt
     if (
-      accountData.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD || debtValueLeftToCover == 0
+      debtValueLeftToCover == 0 || accountData.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     ) {
+      // riskPremium is 0 when position is underwater or has no debt
       return accountData;
     }
 
     collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
     for (uint256 index = 0; index < collateralInfo.length(); ++index) {
-      if (debtValueLeftToCover == 0) {
-        break;
-      }
-
       (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.get(index);
       userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
       accountData.riskPremium += userCollateralValue * collateralRisk;
       debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
+      if (debtValueLeftToCover == 0) break;
     }
 
     if (debtValueLeftToCover < accountData.totalDebtValue) {
