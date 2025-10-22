@@ -66,12 +66,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
 
-  /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
-  modifier onlyPositionManager(address onBehalfOf) {
-    require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
-    _;
-  }
-
   /// @dev Constructor.
   /// @param oracle_ The address of the AaveOracle contract.
   constructor(address oracle_) {
@@ -196,7 +190,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external returns (uint256, uint256) {
+    _isPositionManager({user: onBehalfOf, manager: msg.sender});
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve);
@@ -214,7 +209,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external returns (uint256, uint256) {
+    _isPositionManager({user: onBehalfOf, manager: msg.sender});
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve);
@@ -244,7 +240,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external returns (uint256, uint256) {
+    _isPositionManager({user: onBehalfOf, manager: msg.sender});
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -270,7 +267,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external returns (uint256, uint256) {
+    _isPositionManager({user: onBehalfOf, manager: msg.sender});
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve);
@@ -372,7 +370,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     bool usingAsCollateral,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
+  ) external {
+    _isPositionManager({user: onBehalfOf, manager: msg.sender});
     _validateSetUsingAsCollateral(_reserves[reserveId], usingAsCollateral);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
