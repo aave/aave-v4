@@ -554,6 +554,7 @@ contract Hub is IHub, AccessManaged {
       });
   }
 
+  /// @inheritdoc IHub
   function getAssetFeeAmount(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
     return asset.feeAmount + asset.getUnrealizedFeeAmount(asset.getDrawnIndex());
