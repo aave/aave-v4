@@ -380,6 +380,13 @@ abstract contract Base is Test {
       POSITION_MANAGER
     ];
 
+    address[4] memory spokes = [
+      address(spoke1),
+      address(spoke2),
+      address(spoke3),
+      address(treasurySpoke)
+    ];
+
     for (uint256 x; x < users.length; ++x) {
       tokenList.usdx.mint(users[x], mintAmount_USDX);
       tokenList.dai.mint(users[x], mintAmount_DAI);
@@ -388,28 +395,13 @@ abstract contract Base is Test {
       deal(address(tokenList.weth), users[x], mintAmount_WETH);
 
       vm.startPrank(users[x]);
-      tokenList.weth.approve(address(spoke1), UINT256_MAX);
-      tokenList.usdx.approve(address(spoke1), UINT256_MAX);
-      tokenList.dai.approve(address(spoke1), UINT256_MAX);
-      tokenList.wbtc.approve(address(spoke1), UINT256_MAX);
-      tokenList.usdy.approve(address(spoke1), UINT256_MAX);
-
-      tokenList.weth.approve(address(spoke2), UINT256_MAX);
-      tokenList.usdx.approve(address(spoke2), UINT256_MAX);
-      tokenList.dai.approve(address(spoke2), UINT256_MAX);
-      tokenList.wbtc.approve(address(spoke2), UINT256_MAX);
-      tokenList.usdy.approve(address(spoke2), UINT256_MAX);
-
-      tokenList.weth.approve(address(spoke3), UINT256_MAX);
-      tokenList.usdx.approve(address(spoke3), UINT256_MAX);
-      tokenList.dai.approve(address(spoke3), UINT256_MAX);
-      tokenList.wbtc.approve(address(spoke3), UINT256_MAX);
-
-      tokenList.weth.approve(address(treasurySpoke), UINT256_MAX);
-      tokenList.usdx.approve(address(treasurySpoke), UINT256_MAX);
-      tokenList.dai.approve(address(treasurySpoke), UINT256_MAX);
-      tokenList.wbtc.approve(address(treasurySpoke), UINT256_MAX);
-      tokenList.usdy.approve(address(treasurySpoke), UINT256_MAX);
+      for (uint256 y; y < spokes.length; ++y) {
+        tokenList.weth.approve(spokes[y], UINT256_MAX);
+        tokenList.usdx.approve(spokes[y], UINT256_MAX);
+        tokenList.dai.approve(spokes[y], UINT256_MAX);
+        tokenList.wbtc.approve(spokes[y], UINT256_MAX);
+        tokenList.usdy.approve(spokes[y], UINT256_MAX);
+      }
       vm.stopPrank();
     }
   }

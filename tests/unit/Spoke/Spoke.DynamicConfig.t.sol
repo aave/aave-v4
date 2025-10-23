@@ -266,6 +266,8 @@ contract SpokeDynamicConfigTest is SpokeBase {
     spoke1.updateDynamicReserveConfig(reserveId, configKey, dynConf);
 
     assertEq(spoke1.getDynamicReserveConfig(reserveId, configKey), dynConf);
+
+    assertHubLiquidity(hub1, reserveId, 'spoke1.updateDynamicReserveConfig');
   }
 
   // update each reserve's config key

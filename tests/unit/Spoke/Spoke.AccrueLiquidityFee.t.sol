@@ -19,6 +19,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       0,
       'no debt without action'
     );
+
+    assertHubLiquidity(hub1, _daiReserveId(spoke1), 'spoke1.accrueLiquidityFee');
   }
 
   /// Supply an asset only, and check no interest accrued.
@@ -46,6 +48,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     // treasury
     assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke)), 0);
+
+    assertHubLiquidity(hub1, daiReserveId, 'spoke1.accrueLiquidityFee');
   }
 
   function test_accrueLiquidityFee_fuzz_BorrowAmountAndSkipTime(
@@ -176,6 +180,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       1,
       'treasury shares'
     );
+
+    assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 
   function test_accrueLiquidityFee_exact() public {
@@ -295,6 +301,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       hub1.previewAddByAssets(assetId, expectedTreasuryFees),
       'treasury fees after drawn debt accrual'
     );
+
+    assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 
   function test_accrueLiquidityFee() public {
@@ -420,6 +428,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       hub1.previewAddByAssets(assetId, expectedTreasuryFees),
       'treasury fees after drawn debt accrual'
     );
+
+    assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 
   // todo: check treasury fees shares only grow
@@ -492,6 +502,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       hub1.previewAddByAssets(assetId, expectedTreasuryFees),
       'treasury fees after base and premium debt accrual'
     );
+
+    assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 
   /// 100.00% liquidity fee redirect all liquidity growth to fee receiver and nothing to suppliers
@@ -543,5 +555,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       expectedDrawnDebtAccrual + expectedPremiumDebt,
       'treasury all accumulated interest'
     );
+
+    assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 }

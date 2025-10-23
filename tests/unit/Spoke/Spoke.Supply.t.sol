@@ -51,11 +51,12 @@ contract SpokeSupplyTest is SpokeBase {
 
   function test_supply_fuzz_revertsWith_TransferFromFailed(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    address randomUser = makeAddr('randomUser');
 
-    vm.startPrank(bob);
-    tokenList.dai.approve(address(spoke1), 0);
+    vm.startPrank(randomUser);
+    tokenList.dai.approve(address(spoke1), amount);
     vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
-    spoke1.supply(_daiReserveId(spoke1), amount, bob);
+    spoke1.supply(_daiReserveId(spoke1), amount, randomUser);
     vm.stopPrank();
   }
 
