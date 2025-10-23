@@ -696,13 +696,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bool refreshConfig
   ) internal returns (UserAccountData memory accountData) {
     PositionStatus storage positionStatus = _positionStatus[user];
+
     uint256 reserveId = _reserveCount;
-
-    if (positionStatus.isEmpty(reserveId)) {
-      accountData.healthFactor = type(uint256).max;
-      return accountData;
-    }
-
     KeyValueList.List memory collateralInfo = KeyValueList.init(
       positionStatus.collateralCount(reserveId)
     );
