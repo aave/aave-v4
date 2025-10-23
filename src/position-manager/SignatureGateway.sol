@@ -9,9 +9,9 @@ import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
 
 /// @title SignatureGateway
@@ -32,7 +32,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
   function supplyWithSig(
     EIP712Types.Supply calldata params,
     bytes calldata signature
-  ) external onlyRegisteredSpoke(params.spoke) {
+  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
@@ -45,14 +45,14 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     underlying.safeTransferFrom(user, address(this), params.amount);
     underlying.safeApproveWithRetry(hub, params.amount);
 
-    ISpoke(spoke).supply(reserveId, params.amount, user);
+    return ISpoke(spoke).supply(reserveId, params.amount, user);
   }
 
   /// @inheritdoc ISignatureGateway
   function withdrawWithSig(
     EIP712Types.Withdraw calldata params,
     bytes calldata signature
-  ) external onlyRegisteredSpoke(params.spoke) {
+  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
@@ -62,20 +62,21 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     _useCheckedNonce(user, params.nonce);
 
     (address underlying, ) = _getReserveData(spoke, reserveId);
-    uint256 withdrawAmount = MathUtils.min(
+    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw(
+      reserveId,
       params.amount,
-      ISpoke(spoke).getUserSuppliedAssets(reserveId, user)
+      user
     );
+    underlying.safeTransfer(user, withdrawnAmount);
 
-    ISpoke(spoke).withdraw(reserveId, withdrawAmount, user);
-    underlying.safeTransfer(user, withdrawAmount);
+    return (withdrawnShares, withdrawnAmount);
   }
 
   /// @inheritdoc ISignatureGateway
   function borrowWithSig(
     EIP712Types.Borrow calldata params,
     bytes calldata signature
-  ) external onlyRegisteredSpoke(params.spoke) {
+  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
@@ -85,16 +86,21 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     _useCheckedNonce(user, params.nonce);
 
     (address underlying, ) = _getReserveData(spoke, reserveId);
+    (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow(
+      reserveId,
+      params.amount,
+      user
+    );
+    underlying.safeTransfer(user, borrowedAmount);
 
-    ISpoke(spoke).borrow(reserveId, params.amount, user);
-    underlying.safeTransfer(user, params.amount);
+    return (borrowedShares, borrowedAmount);
   }
 
   /// @inheritdoc ISignatureGateway
   function repayWithSig(
     EIP712Types.Repay calldata params,
     bytes calldata signature
-  ) external onlyRegisteredSpoke(params.spoke) {
+  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
@@ -112,7 +118,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     underlying.safeTransferFrom(user, address(this), repayAmount);
     underlying.safeApproveWithRetry(hub, repayAmount);
 
-    ISpoke(spoke).repay(reserveId, repayAmount, user);
+    return ISpoke(spoke).repay(reserveId, repayAmount, user);
   }
 
   /// @inheritdoc ISignatureGateway

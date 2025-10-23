@@ -60,11 +60,15 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       p.amount
     );
 
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(p.reserveId, address(gateway), alice, shares);
 
     vm.prank(vm.randomAddress());
-    gateway.supplyWithSig(p, signature);
+    (returnValues.shares, returnValues.amount) = gateway.supplyWithSig(p, signature);
+
+    assertEq(returnValues.shares, shares);
+    assertEq(returnValues.amount, p.amount);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -82,11 +86,15 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       _assetId(spoke1, p.reserveId),
       p.amount
     );
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(p.reserveId, address(gateway), alice, shares);
 
     vm.prank(vm.randomAddress());
-    gateway.withdrawWithSig(p, signature);
+    (returnValues.shares, returnValues.amount) = gateway.withdrawWithSig(p, signature);
+
+    assertEq(returnValues.shares, shares);
+    assertEq(returnValues.amount, p.amount);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -101,16 +109,19 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 2, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(
-      p.reserveId,
-      address(gateway),
-      alice,
-      _hub(spoke1, p.reserveId).previewDrawByAssets(_assetId(spoke1, p.reserveId), p.amount)
+    uint256 shares = _hub(spoke1, p.reserveId).previewDrawByAssets(
+      _assetId(spoke1, p.reserveId),
+      p.amount
     );
+    TestReturnValues memory returnValues;
+    vm.expectEmit(address(spoke1));
+    emit ISpokeBase.Borrow(p.reserveId, address(gateway), alice, shares);
 
     vm.prank(vm.randomAddress());
-    gateway.borrowWithSig(p, signature);
+    (returnValues.shares, returnValues.amount) = gateway.borrowWithSig(p, signature);
+
+    assertEq(returnValues.shares, shares);
+    assertEq(returnValues.amount, p.amount);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -133,17 +144,25 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       alice,
       p.amount
     );
+    uint256 shares = _hub(spoke1, p.reserveId).previewRestoreByAssets(
+      _assetId(spoke1, p.reserveId),
+      baseRestored
+    );
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(
       p.reserveId,
       address(gateway),
       alice,
-      _hub(spoke1, p.reserveId).previewRestoreByAssets(_assetId(spoke1, p.reserveId), baseRestored),
+      shares,
       _getExpectedPremiumDelta(spoke1, alice, p.reserveId, premiumRestored)
     );
 
     vm.prank(vm.randomAddress());
-    gateway.repayWithSig(p, signature);
+    (returnValues.shares, returnValues.amount) = gateway.repayWithSig(p, signature);
+
+    assertEq(returnValues.shares, shares);
+    assertEq(returnValues.amount, p.amount);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);

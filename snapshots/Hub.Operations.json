@@ -3,12 +3,12 @@
   "draw": "121540",
   "eliminateDeficit: full": "57149",
   "eliminateDeficit: partial": "66725",
-  "payFee": "73120",
+  "payFee": "73206",
   "refreshPremium": "69468",
-  "remove: full": "73655",
-  "remove: partial": "78902",
+  "remove: full": "70663",
+  "remove: partial": "75910",
   "reportDeficit": "118680",
   "restore: full": "97070",
   "restore: partial": "110500",
-  "transferShares": "78712"
+  "transferShares": "78798"
 }

@@ -352,6 +352,43 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, drawn + 1, premiumRestored, premiumDelta, alice);
   }
 
+  function test_restore_tooMuchDrawn_revertsWith_SurplusAmountRestored() public {
+    uint256 skipTime = 20000 days;
+    uint256 drawAmount = 999e18;
+
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: drawAmount * 2,
+      user: alice
+    });
+
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: drawAmount,
+      to: address(spoke1)
+    });
+
+    // skip to accrue interest
+    skip(skipTime);
+
+    uint256 drawn = hub1.getAssetTotalOwed(daiAssetId);
+
+    // We restore slightly more, but it rounds down to the correct number of shares
+    assertEq(
+      hub1.previewRestoreByAssets(daiAssetId, drawn),
+      hub1.previewRestoreByAssets(daiAssetId, drawn + 1)
+    );
+
+    IHubBase.PremiumDelta memory premiumDelta;
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusAmountRestored.selector, drawn));
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, drawn + 1, 0, premiumDelta, alice);
+  }
+
   function test_restore_premiumDeltas_twoWeiIncrease_realizedDelta() public {
     uint256 daiAmount = 100e18;
     uint256 drawAmount = daiAmount / 2;

@@ -220,6 +220,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue(_spokes, assetId);
     _validateRemove(asset, spoke, amount, to);
+
     uint256 liquidity = asset.liquidity;
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
@@ -244,6 +245,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue(_spokes, assetId);
     _validateDraw(asset, spoke, amount, to);
+
     uint256 liquidity = asset.liquidity;
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
@@ -331,6 +333,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue(_spokes, assetId);
     _validateEliminateDeficit(callerSpoke, amount);
+
     uint256 deficit = coveredSpoke.deficit;
     require(amount <= deficit, InvalidAmount());
 
@@ -398,7 +401,10 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(_spokes, assetId);
     _validateSweep(asset, msg.sender, amount);
 
-    asset.liquidity -= amount.toUint128();
+    uint256 liquidity = asset.liquidity;
+    require(amount <= liquidity, InsufficientLiquidity(liquidity));
+
+    asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
     asset.swept += amount.toUint128();
     asset.updateDrawnRate(assetId);
 
@@ -671,10 +677,7 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage receiver,
     uint256 shares
   ) internal {
-    uint256 addedShares = sender.addedShares;
-    require(shares <= addedShares, AddedSharesExceeded(addedShares));
-
-    sender.addedShares = addedShares.uncheckedSub(shares).toUint128();
+    sender.addedShares -= shares.toUint128();
     receiver.addedShares += shares.toUint128();
   }
 
@@ -765,8 +768,6 @@ contract Hub is IHub, AccessManaged {
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
-    uint256 removable = asset.toAddedAssetsDown(spoke.addedShares);
-    require(amount <= removable, AddedAmountExceeded(removable));
   }
 
   /// @dev Spoke with maximum cap have unlimited draw capacity.
@@ -853,13 +854,13 @@ contract Hub is IHub, AccessManaged {
   function _validateSweep(Asset storage asset, address caller, uint256 amount) internal view {
     // sufficient check to disallow when controller unset
     require(caller == asset.reinvestmentController, OnlyReinvestmentController());
-    require(amount > 0 && amount <= asset.liquidity, InvalidAmount());
+    require(amount > 0, InvalidAmount());
   }
 
   function _validateReclaim(Asset storage asset, address caller, uint256 amount) internal view {
     // sufficient check to disallow when controller unset
     require(caller == asset.reinvestmentController, OnlyReinvestmentController());
-    require(amount > 0 && amount <= asset.swept, InvalidAmount());
+    require(amount > 0, InvalidAmount());
   }
 
   /// @dev Validates applied premium delta for given premium data and returns updated premium data.

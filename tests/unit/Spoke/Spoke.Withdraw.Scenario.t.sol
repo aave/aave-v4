@@ -198,7 +198,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     TestUserData[3] memory aliceData;
     TestUserData[3] memory bobData;
     TokenData[3] memory tokenData;
-    uint256[2] memory returnedShares;
+    TestReturnValues[2] memory returnValues;
 
     state.stage = 0;
     reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
@@ -215,7 +215,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // withdraw all supplied
     vm.prank(alice);
-    returnedShares[0] = spoke1.withdraw({
+    (returnValues[0].shares, returnValues[0].amount) = spoke1.withdraw({
       reserveId: params.reserveId,
       amount: aliceData[state.stage].suppliedAmount,
       onBehalfOf: alice
@@ -241,7 +241,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // bob withdraws all supplied
     vm.prank(bob);
-    returnedShares[1] = spoke1.withdraw({
+    (returnValues[1].shares, returnValues[1].amount) = spoke1.withdraw({
       reserveId: params.reserveId,
       amount: bobData[state.stage].suppliedAmount,
       onBehalfOf: bob
@@ -258,8 +258,11 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
     tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
 
-    assertEq(returnedShares[0], aliceData[0].data.suppliedShares);
-    assertEq(returnedShares[1], bobData[0].data.suppliedShares);
+    assertEq(returnValues[0].amount, aliceData[0].suppliedAmount);
+    assertEq(returnValues[1].amount, bobData[1].suppliedAmount);
+
+    assertEq(returnValues[0].shares, aliceData[0].data.suppliedShares);
+    assertEq(returnValues[1].shares, bobData[1].data.suppliedShares);
 
     // reserve
     (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(
@@ -375,22 +378,26 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     underlying.approve(address(hub1), assets);
 
     // Supply and confirm share amount from event emission
+    TestReturnValues memory returnValues1;
     uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, caller, caller, shares1);
     vm.prank(caller);
-    uint256 returnedShares1 = spoke1.supply(reserveId, assets, caller);
+    (returnValues1.shares, returnValues1.amount) = spoke1.supply(reserveId, assets, caller);
 
     // Withdraw and confirm share amount from event emission
+    TestReturnValues memory returnValues2;
     uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(reserveId, caller, caller, shares2);
     vm.prank(caller);
-    uint256 returnedShares2 = spoke1.withdraw(reserveId, assets, caller);
+    (returnValues2.shares, returnValues2.amount) = spoke1.withdraw(reserveId, assets, caller);
 
     assertEq(shares2, shares1, 'supplied and withdrawn shares');
-    assertEq(returnedShares1, shares1);
-    assertEq(returnedShares2, shares2);
+    assertEq(returnValues1.shares, shares1);
+    assertEq(returnValues1.amount, assets);
+    assertEq(returnValues2.shares, shares2);
+    assertEq(returnValues2.amount, assets);
   }
 
   /// Let protocol have some funds initially. Assume user has a nonzero balance to withdraw.
@@ -441,21 +448,25 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     });
 
     // Withdraw and confirm share amount from event emission
+    TestReturnValues memory returnValues1;
     uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(reserveId, caller, caller, shares1);
     vm.prank(caller);
-    uint256 returnedShares1 = spoke1.withdraw(reserveId, assets, caller);
+    (returnValues1.shares, returnValues1.amount) = spoke1.withdraw(reserveId, assets, caller);
 
     // Supply and confirm share amount from event emission
+    TestReturnValues memory returnValues2;
     uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, caller, caller, shares2);
     vm.prank(caller);
-    uint256 returnedShares2 = spoke1.supply(reserveId, assets, caller);
+    (returnValues2.shares, returnValues2.amount) = spoke1.supply(reserveId, assets, caller);
 
     assertEq(shares2, shares1, 'supplied and withdrawn shares');
-    assertEq(returnedShares1, shares1);
-    assertEq(returnedShares2, shares2);
+    assertEq(returnValues1.shares, shares1);
+    assertEq(returnValues1.amount, assets);
+    assertEq(returnValues2.shares, shares2);
+    assertEq(returnValues2.amount, assets);
   }
 }
