@@ -18,7 +18,7 @@ contract HubPayFeeTest is HubBase {
     hub1.payFeeShares(daiAssetId, 1);
   }
 
-  function test_payFee_revertsWith_AddedSharesExceeded() public {
+  function test_payFee_revertsWith_underflow_added_shares_exceeded() public {
     uint256 addAmount = 100e18;
     Utils.add({
       hub: hub1,
@@ -31,15 +31,12 @@ contract HubPayFeeTest is HubBase {
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 feeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
 
-    vm.expectRevert(
-      abi.encodeWithSelector(IHub.AddedSharesExceeded.selector, feeShares),
-      address(hub1)
-    );
+    vm.expectRevert(stdError.arithmeticError);
     vm.prank(address(spoke1));
     hub1.payFeeShares(daiAssetId, feeShares + 1);
   }
 
-  function test_payFee_revertsWith_AddedSharesExceeded_with_interest() public {
+  function test_payFee_revertsWith_underflow_added_shares_exceeded_with_interest() public {
     uint256 addAmount = 100e18;
     Utils.add({
       hub: hub1,
@@ -58,10 +55,7 @@ contract HubPayFeeTest is HubBase {
     // supply ex rate increases due to interest
     assertGt(feeAmount, feeShares);
 
-    vm.expectRevert(
-      abi.encodeWithSelector(IHub.AddedSharesExceeded.selector, feeShares),
-      address(hub1)
-    );
+    vm.expectRevert(stdError.arithmeticError);
     vm.prank(address(spoke1));
     hub1.payFeeShares(daiAssetId, feeShares + 1);
   }

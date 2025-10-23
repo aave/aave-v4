@@ -19,7 +19,12 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured supply parameters.
   /// @param signature The signed bytes for the intent.
-  function supplyWithSig(EIP712Types.Supply calldata params, bytes calldata signature) external;
+  /// @return The amount of shares supplied.
+  /// @return The amount of assets supplied.
+  function supplyWithSig(
+    EIP712Types.Supply calldata params,
+    bytes calldata signature
+  ) external returns (uint256, uint256);
 
   /// @notice Facilitates `withdraw` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Providing an amount exceeding the user's current withdrawable balance indicates a request for a maximum withdrawal.
@@ -27,14 +32,24 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured withdraw parameters.
   /// @param signature The signed bytes for the intent.
-  function withdrawWithSig(EIP712Types.Withdraw calldata params, bytes calldata signature) external;
+  /// @return The amount of shares withdrawn.
+  /// @return The amount of assets withdrawn.
+  function withdrawWithSig(
+    EIP712Types.Withdraw calldata params,
+    bytes calldata signature
+  ) external returns (uint256, uint256);
 
   /// @notice Facilitates `borrow` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Borrowed assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured borrow parameters.
   /// @param signature The signed bytes for the intent.
-  function borrowWithSig(EIP712Types.Borrow calldata params, bytes calldata signature) external;
+  /// @return The amount of shares borrowed.
+  /// @return The amount of assets borrowed.
+  function borrowWithSig(
+    EIP712Types.Borrow calldata params,
+    bytes calldata signature
+  ) external returns (uint256, uint256);
 
   /// @notice Facilitates `repay` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Repay assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
@@ -42,7 +57,12 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured repay parameters.
   /// @param signature The signed bytes for the intent.
-  function repayWithSig(EIP712Types.Repay calldata params, bytes calldata signature) external;
+  /// @return The amount of shares repaid.
+  /// @return The amount of assets repaid.
+  function repayWithSig(
+    EIP712Types.Repay calldata params,
+    bytes calldata signature
+  ) external returns (uint256, uint256);
 
   /// @notice Facilitates `setUsingAsCollateral` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.

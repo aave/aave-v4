@@ -31,8 +31,14 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   }
 
   /// @inheritdoc ITreasurySpoke
-  function supply(uint256 reserveId, uint256 amount, address) external onlyOwner returns (uint256) {
-    return HUB.add(reserveId, amount, msg.sender);
+  function supply(
+    uint256 reserveId,
+    uint256 amount,
+    address
+  ) external onlyOwner returns (uint256, uint256) {
+    uint256 shares = HUB.add(reserveId, amount, msg.sender);
+
+    return (shares, amount);
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -40,10 +46,15 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
     uint256 reserveId,
     uint256 amount,
     address
-  ) external onlyOwner returns (uint256) {
-    // If amount to withdraw is greater than total supplied, withdraw all supplied assets
-    amount = MathUtils.min(amount, HUB.getSpokeAddedAssets(reserveId, address(this)));
-    return HUB.remove(reserveId, amount, msg.sender);
+  ) external onlyOwner returns (uint256, uint256) {
+    // if amount to withdraw is greater than total supplied, withdraw all supplied assets
+    uint256 withdrawnAmount = MathUtils.min(
+      amount,
+      HUB.getSpokeAddedAssets(reserveId, address(this))
+    );
+    uint256 withdrawnShares = HUB.remove(reserveId, withdrawnAmount, msg.sender);
+
+    return (withdrawnShares, withdrawnAmount);
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -62,12 +73,12 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   }
 
   /// @inheritdoc ISpokeBase
-  function borrow(uint256, uint256, address) external pure returns (uint256) {
+  function borrow(uint256, uint256, address) external pure returns (uint256, uint256) {
     revert UnsupportedAction();
   }
 
   /// @inheritdoc ISpokeBase
-  function repay(uint256, uint256, address) external pure returns (uint256) {
+  function repay(uint256, uint256, address) external pure returns (uint256, uint256) {
     revert UnsupportedAction();
   }
 
