@@ -39,7 +39,7 @@ contract SpokeMultipleHubBase is SpokeBase {
     // Canonical hub and spoke
     hub1 = new Hub(address(accessManager));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
-    treasurySpoke = new TreasurySpoke(ADMIN, address(hub1));
+    treasurySpoke = new TreasurySpoke(ADMIN);
     irStrategy = new AssetInterestRateStrategy(address(hub1));
 
     // New hub and spoke

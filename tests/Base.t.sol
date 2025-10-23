@@ -283,7 +283,7 @@ abstract contract Base is Test {
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
     (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)');
-    treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
+    treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
@@ -1940,7 +1940,7 @@ abstract contract Base is Test {
       return; // nothing to withdraw
     }
     vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
+    treasurySpoke.withdraw(address(hub1), assetId, amount, address(treasurySpoke));
   }
 
   function _assumeValidSupplier(address user) internal view {

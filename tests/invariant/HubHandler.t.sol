@@ -59,7 +59,7 @@ contract HubHandler is Test {
       )
     );
     assertEq(address(spoke1), predictedSpoke, 'predictedSpoke');
-    treasurySpoke = new TreasurySpoke(hubAdmin, address(hub1));
+    treasurySpoke = new TreasurySpoke(hubAdmin);
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
