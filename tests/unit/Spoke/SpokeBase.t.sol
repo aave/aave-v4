@@ -95,7 +95,7 @@ contract SpokeBase is Base {
     uint256 totalDebtValue;
     uint256 healthFactor;
     uint256 activeCollateralCount;
-    uint16 configKey;
+    uint16 dynamicConfigKey;
     uint256 collateralFactor;
     uint256 collateralValue;
     ISpoke.UserPosition pos;
@@ -835,11 +835,11 @@ contract SpokeBase is Base {
       );
 
       if (spoke.isUsingAsCollateral(reserveId, user)) {
-        vars.configKey = refreshDynamicConfig
+        vars.dynamicConfigKey = refreshDynamicConfig
           ? spoke.getReserve(reserveId).dynamicConfigKey
-          : spoke.getUserPosition(reserveId, user).configKey;
+          : spoke.getUserPosition(reserveId, user).dynamicConfigKey;
         vars.collateralFactor = spoke
-          .getDynamicReserveConfig(reserveId, vars.configKey)
+          .getDynamicReserveConfig(reserveId, vars.dynamicConfigKey)
           .collateralFactor;
 
         vars.collateralValue = _getValue(
