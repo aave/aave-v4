@@ -52,7 +52,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint128 premiumOffset;
     //
     uint128 suppliedShares;
-    uint16 configKey; // key of the last user config
+    uint16 dynamicConfigKey; // key of the last user config
   }
 
   struct PositionManagerConfig {
@@ -100,21 +100,21 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// key of the reserve. It can be an existing key that was previously used and is now being
   /// overridden.
   /// @param reserveId The identifier of the reserve.
-  /// @param configKey The key of the added dynamic config.
+  /// @param dynamicConfigKey The key of the added dynamic config.
   /// @param config The dynamic reserve config.
   event AddDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint16 indexed configKey,
+    uint16 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
   /// @notice Emitted when a dynamic reserve config is updated.
   /// @param reserveId The identifier of the reserve.
-  /// @param configKey The key of the updated dynamic config.
+  /// @param dynamicConfigKey The key of the updated dynamic config.
   /// @param config The dynamic reserve config.
   event UpdateDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint16 indexed configKey,
+    uint16 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -285,22 +285,22 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev Appends dynamic config to the next valid config key, and overrides existing config if the key is already used.
   /// @param reserveId The identifier of the reserve.
   /// @param dynamicConfig The new dynamic reserve config.
-  /// @return configKey The key of the added dynamic config.
+  /// @return dynamicConfigKey The key of the added dynamic config.
   function addDynamicReserveConfig(
     uint256 reserveId,
     DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint16 configKey);
+  ) external returns (uint16 dynamicConfigKey);
 
   /// @notice Updates the dynamic reserve config for a given reserve at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Reverts with `ConfigKeyUninitialized` if the config key has not been initialized yet.
   /// @dev Reverts with `InvalidCollateralFactor` if the collateral factor is 0.
   /// @param reserveId The identifier of the reserve.
-  /// @param configKey The key of the config to update.
+  /// @param dynamicConfigKey The key of the config to update.
   /// @param dynamicConfig The new dynamic reserve config.
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
   ) external;
 
@@ -400,12 +400,12 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Returns the dynamic reserve configuration struct at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Does not revert if `configKey` is unset.
+  /// @dev Does not revert if `dynamicConfigKey` is unset.
   /// @param reserveId The identifier of the reserve.
-  /// @param configKey The key of the dynamic config.
+  /// @param dynamicConfigKey The key of the dynamic config.
   function getDynamicReserveConfig(
     uint256 reserveId,
-    uint16 configKey
+    uint16 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory);
 
   /// @notice Returns true if the reserve is set as collateral for the user.
