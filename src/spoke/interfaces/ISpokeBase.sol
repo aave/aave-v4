@@ -63,9 +63,9 @@ interface ISpokeBase {
   /// @param debtAssetId The identifier of the asset to be repaid with the liquidation.
   /// @param user The address of the borrower getting liquidated.
   /// @param liquidatedDebt The debt amount of borrowed asset to be liquidated.
-  /// @param liquidatedCollateral The amount of collateral received by the liquidator.
+  /// @param liquidatedCollateral The amount of collateral liquidated.
   /// @param liquidator The address of the liquidator.
-  /// @param receiveShares Whether the liquidator receives collateral in supplied shares or in underlying assets.
+  /// @param receiveShares Whether the liquidator received collateral in supplied shares or in underlying assets.
   event LiquidationCall(
     uint256 indexed collateralAssetId,
     uint256 indexed debtAssetId,

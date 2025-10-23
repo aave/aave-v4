@@ -683,6 +683,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @notice Refreshes the dynamic config and calculates the user account data if `refreshConfig` is true.
   /// @dev User RiskPremium calc runs until the first of either debt or collateral is exhausted.
+  /// @dev WARNING, schrodinger's cat: method might update state when `refreshConfig` is true.
   function _calculateAndPotentiallyRefreshUserAccountData(
     address user,
     bool refreshConfig
