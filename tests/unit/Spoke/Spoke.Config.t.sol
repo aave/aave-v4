@@ -146,7 +146,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.AddDynamicReserveConfig({
       reserveId: reserveId,
-      configKey: 0,
+      dynamicConfigKey: 0,
       config: newDynReserveConfig
     });
 

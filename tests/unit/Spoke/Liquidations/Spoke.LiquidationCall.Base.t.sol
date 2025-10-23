@@ -206,7 +206,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         collateralFactor: spoke
           .getDynamicReserveConfig(
             collateralReserveId,
-            spoke.getUserPosition(collateralReserveId, user).configKey
+            spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
           )
           .collateralFactor,
         debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
@@ -234,7 +234,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         collateralFactor: spoke
           .getDynamicReserveConfig(
             collateralReserveId,
-            spoke.getUserPosition(collateralReserveId, user).configKey
+            spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
           )
           .collateralFactor,
         debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
@@ -263,13 +263,13 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         maxLiquidationBonus: spoke
           .getDynamicReserveConfig(
             collateralReserveId,
-            spoke.getUserPosition(collateralReserveId, user).configKey
+            spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
           )
           .maxLiquidationBonus,
         collateralFactor: spoke
           .getDynamicReserveConfig(
             collateralReserveId,
-            spoke.getUserPosition(collateralReserveId, user).configKey
+            spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
           )
           .collateralFactor,
         debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
@@ -281,7 +281,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         liquidationFee: spoke
           .getDynamicReserveConfig(
             collateralReserveId,
-            spoke.getUserPosition(collateralReserveId, user).configKey
+            spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
           )
           .liquidationFee
       });
