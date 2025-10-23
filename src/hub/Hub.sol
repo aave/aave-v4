@@ -627,6 +627,10 @@ contract Hub is IHub, AccessManaged {
     return _spokes[assetId][spoke];
   }
 
+  function isAssetListed(address underlying) external view returns (bool) {
+    return _underlyingSet.contains(underlying);
+  }
+
   /// @inheritdoc IHub
   function getSpokeConfig(
     uint256 assetId,
