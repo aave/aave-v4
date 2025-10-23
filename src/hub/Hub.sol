@@ -481,8 +481,8 @@ contract Hub is IHub, AccessManaged {
     uint256 sharesA,
     uint256 sharesB
   ) external view returns (uint256, uint256) {
-    uint256 nextIndex = _assets[assetId].getDrawnIndex();
-    return (sharesA.rayMulUp(nextIndex), sharesB.rayMulUp(nextIndex));
+    uint256 drawnIndex = _assets[assetId].getDrawnIndex();
+    return (sharesA.rayMulUp(drawnIndex), sharesB.rayMulUp(drawnIndex));
   }
 
   /// @inheritdoc IHubBase
