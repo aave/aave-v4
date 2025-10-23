@@ -21,10 +21,10 @@ contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeTransferLib for address;
   using SafeCast for uint256;
-  using WadRayMath for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint128;
   using AssetLogic for Asset;
+  using WadRayMath for *;
   using MathUtils for *;
 
   /// @inheritdoc IHub
@@ -588,14 +588,15 @@ contract Hub is IHub, AccessManaged {
   function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    return (_getSpokeDrawn(asset, spokeData), _getSpokePremium(asset, spokeData));
+    return _getSpokeOwed(asset, spokeData);
   }
 
   /// @inheritdoc IHubBase
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    return _getSpokeDrawn(asset, spokeData) + _getSpokePremium(asset, spokeData);
+    (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spokeData);
+    return drawn + premium;
   }
 
   /// @inheritdoc IHubBase
@@ -731,21 +732,14 @@ contract Hub is IHub, AccessManaged {
     );
   }
 
-  /// @dev Returns the spoke's drawn amount for a specified asset.
-  function _getSpokeDrawn(
+  /// @dev Returns the spoke's drawn & premium amount for a specified asset.
+  function _getSpokeOwed(
     Asset storage asset,
     SpokeData storage spoke
-  ) internal view returns (uint256) {
-    return asset.toDrawnAssetsUp(spoke.drawnShares);
-  }
-
-  /// @dev Returns the spoke's premium amount for a specified asset.
-  function _getSpokePremium(
-    Asset storage asset,
-    SpokeData storage spoke
-  ) internal view returns (uint256) {
-    uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumShares) - spoke.premiumOffset;
-    return spoke.realizedPremium + accruedPremium;
+  ) internal view returns (uint256, uint256) {
+    uint256 drawnIndex = asset.getDrawnIndex();
+    uint256 accruedPremium = spoke.premiumShares.rayMulUp(drawnIndex) - spoke.premiumOffset;
+    return (spoke.drawnShares.rayMulUp(drawnIndex), spoke.realizedPremium + accruedPremium);
   }
 
   /// @dev Spoke with maximum cap have unlimited add capacity.
@@ -792,10 +786,11 @@ contract Hub is IHub, AccessManaged {
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
     uint256 drawCap = spoke.drawCap;
-    uint256 owed = _getSpokeDrawn(asset, spoke) + _getSpokePremium(asset, spoke);
+    (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spoke);
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
-        drawCap * MathUtils.uncheckedExp(10, asset.decimals) >= owed + amount + spoke.deficit,
+        drawCap * MathUtils.uncheckedExp(10, asset.decimals) >=
+        drawn + premium + amount + spoke.deficit,
       DrawCapExceeded(drawCap)
     );
   }
@@ -811,8 +806,7 @@ contract Hub is IHub, AccessManaged {
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
-    uint256 drawn = _getSpokeDrawn(asset, spoke);
-    uint256 premium = _getSpokePremium(asset, spoke);
+    (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spoke);
     require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
     require(premiumAmount <= premium, SurplusAmountRestored(premium));
   }
@@ -826,8 +820,7 @@ contract Hub is IHub, AccessManaged {
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
-    uint256 drawn = _getSpokeDrawn(asset, spoke);
-    uint256 premium = _getSpokePremium(asset, spoke);
+    (uint256 drawn, uint256 premium) = _getSpokeOwed(asset, spoke);
     require(drawnAmount <= drawn, SurplusDeficitReported(drawn));
     require(premiumAmount <= premium, SurplusDeficitReported(premium));
   }
