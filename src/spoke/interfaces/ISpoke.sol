@@ -14,8 +14,8 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Reserve level data.
   /// @dev underlying The address of the underlying asset.
-  /// @dev hub The associated hub.
-  /// @dev assetId The identifier of the asset in the hub.
+  /// @dev hub The address of the associated Hub.
+  /// @dev assetId The identifier of the asset in the Hub.
   /// @dev decimals The number of decimals of the underlying asset.
   /// @dev dynamicConfigKey The key of the last reserve dynamic config.
   /// @dev paused True if all actions are prevented for the reserve.
@@ -45,7 +45,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Dynamic reserve configuration data.
   /// @dev collateralFactor The proportion of a reserve's value eligible to be used as collateral, expressed in BPS.
-  /// @dev maxLiquidationBonus The maximum extra amount of collateral given to the liquidator as bonus, expressed in BPS. A value of 100_00 represents 0.00% bonus.
+  /// @dev maxLiquidationBonus The maximum extra amount of collateral given to the liquidator as bonus, expressed in BPS. 100_00 represents 0.00% bonus.
   /// @dev liquidationFee The protocol fee charged on liquidations, taken from the collateral bonus given to the liquidator, expressed in BPS.
   struct DynamicReserveConfig {
     uint16 collateralFactor;
@@ -65,11 +65,11 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice User position data per reserve.
   /// @dev drawnShares The drawn shares of the user position.
-  /// @dev realizedPremium The interest free premium debt already accrued for the user position, expressed in asset units.
+  /// @dev realizedPremium The interest-free premium debt already accrued for the user position, expressed in asset units.
   /// @dev premiumShares The premium shares of the user position.
   /// @dev premiumOffset The premium offset of the user position, used to calculate the premium, expressed in asset units.
   /// @dev suppliedShares The supplied shares of the user position.
-  /// @dev dynamicConfigKey The key of the last user position dynamic config.
+  /// @dev dynamicConfigKey The key of the user position dynamic config.
   struct UserPosition {
     uint128 drawnShares;
     uint128 realizedPremium;
@@ -82,7 +82,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   }
 
   /// @notice Position manager configuration data.
-  /// @dev approval The mapping of position manager approvals.
+  /// @dev approval The mapping of position manager user approvals.
   /// @dev active True if the position manager is active.
   struct PositionManagerConfig {
     mapping(address user => bool) approval;
@@ -122,7 +122,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Emitted when a reserve is added.
   /// @param reserveId The identifier of the reserve.
   /// @param assetId The identifier of the asset.
-  /// @param hub The address of the hub where the asset is listed.
+  /// @param hub The address of the Hub where the asset is listed.
   event AddReserve(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
 
   /// @notice Emitted when a reserve configuration is updated.
@@ -205,10 +205,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     IHubBase.PremiumDelta premiumDelta
   );
 
-  /// @notice Thrown when an asset is not listed on the hub when adding a reserve.
+  /// @notice Thrown when an asset is not listed on the Hub when adding a reserve.
   error AssetNotListed();
 
-  /// @notice Thrown when adding a new reserve if that reserve already exists for a given hub/assetId pair.
+  /// @notice Thrown when adding a new reserve if that reserve already exists for a given Hub/assetId pair.
   error ReserveExists();
 
   /// @notice Thrown when adding a new reserve if an asset id is invalid.
@@ -292,7 +292,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
   /// @notice Adds a new reserve to the spoke.
-  /// @dev Allowed even if the spoke has not yet been added to the hub.
+  /// @dev Allowed even if the spoke has not yet been added to the Hub.
   /// @dev Allowed even if the `active` flag is `false`.
   /// @dev Allowed even if the spoke has been added but the `addCap` is zero.
   /// @param hub The address of the Hub where the asset is listed.
@@ -399,7 +399,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Allows consuming a permit signature for the given reserve's underlying asset.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Spender is the corresponding hub of the given reserve.
+  /// @dev Spender is the corresponding Hub of the given reserve.
   /// @param reserveId The identifier of the reserve.
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
