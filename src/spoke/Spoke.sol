@@ -2,8 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
@@ -282,18 +280,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       reserve.assetId,
       userPosition
     );
-    console.log(
-      's total amt %e %e %e',
-      drawnDebtRestored,
-      premiumDebtRestored,
-      drawnDebtRestored + premiumDebtRestored
-    );
     (drawnDebtRestored, premiumDebtRestored) = _calculateRestoreAmount(
       drawnDebtRestored,
       premiumDebtRestored,
       amount
     );
-    console.log('s otal amt %e', drawnDebtRestored + premiumDebtRestored);
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),
       offsetDelta: -userPosition.premiumOffset.toInt256(),
@@ -315,9 +306,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf);
     _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
-
-    console.log('s restoredShares %e', restoredShares);
-    console.log('s amt %e', drawnDebtRestored + premiumDebtRestored);
 
     emit Repay(
       reserveId,
