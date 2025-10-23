@@ -298,6 +298,11 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The asset configuration struct.
   function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory);
 
+  /// @notice Returns the amount of fees accrued but not yet minted for the specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @return The amount of fees accrued but not yet minted.
+  function getAssetFeeAmount(uint256 assetId) external view returns (uint256);
+
   /// @notice Returns the amount of liquidity swept by the reinvestment controller for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The amount of liquidity swept.

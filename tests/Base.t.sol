@@ -2637,7 +2637,7 @@ abstract contract Base is Test {
   function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
     return
       hub.getAddedAssets(assetId) +
-      IHub(address(hub)).getAsset(assetId).feeAmount +
+      hub.getAsset(assetId).feeAmount +
       _calcUnrealizedFeeAmount(hub, assetId);
   }
 }

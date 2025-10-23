@@ -117,7 +117,6 @@ library AssetLogic {
   /// @dev Premium debt is not used in the interest rate calculation.
   /// @dev Uses last stored index, asset accrual should have already occurred.
   function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
-    // asset accrual should have already occurred
     uint256 drawnIndex = asset.drawnIndex;
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
       assetId: assetId,
@@ -146,7 +145,7 @@ library AssetLogic {
   /// @notice Calculates the drawn index of a specified asset based on the existing drawn rate and index.
   function getDrawnIndex(IHub.Asset storage asset) internal view returns (uint256) {
     uint256 previousIndex = asset.drawnIndex;
-    uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
+    uint32 lastUpdateTimestamp = asset.lastUpdateTimestamp;
     if (
       lastUpdateTimestamp == block.timestamp || (asset.drawnShares == 0 && asset.premiumShares == 0)
     ) {
@@ -154,7 +153,7 @@ library AssetLogic {
     }
     return
       previousIndex.rayMulUp(
-        MathUtils.calculateLinearInterest(asset.drawnRate, uint32(lastUpdateTimestamp))
+        MathUtils.calculateLinearInterest(asset.drawnRate, lastUpdateTimestamp)
       );
   }
 

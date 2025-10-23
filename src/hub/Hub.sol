@@ -399,8 +399,9 @@ contract Hub is IHub, AccessManaged {
   function mintFeeShares(uint256 assetId) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     asset.accrue();
+    uint256 feeShares = _mintFeeShares(asset, assetId);
     asset.updateDrawnRate(assetId);
-    return _mintFeeShares(asset, assetId);
+    return feeShares;
   }
 
   /// @inheritdoc IHub
@@ -550,6 +551,10 @@ contract Hub is IHub, AccessManaged {
         irStrategy: asset.irStrategy,
         reinvestmentController: asset.reinvestmentController
       });
+  }
+
+  function getAssetFeeAmount(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].feeAmount;
   }
 
   /// @inheritdoc IHub
@@ -731,15 +736,22 @@ contract Hub is IHub, AccessManaged {
 
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
     uint256 feeAmount = asset.feeAmount;
-    uint128 feeShares;
-    if (feeAmount > 0) {
-      feeShares = asset.toAddedSharesDown(feeAmount).toUint128();
-      address feeReceiver = asset.feeReceiver;
-      asset.addedShares += feeShares;
-      _spokes[assetId][feeReceiver].addedShares += feeShares;
-      asset.feeAmount = 0;
-      emit MintFeeShares(assetId, feeReceiver, feeShares, feeAmount);
+    if (feeAmount == 0) {
+      return 0;
     }
+
+    uint128 feeShares = asset.toAddedSharesDown(feeAmount).toUint128();
+    if (feeShares == 0) {
+      return 0;
+    }
+
+    address feeReceiver = asset.feeReceiver;
+
+    asset.addedShares += feeShares;
+    _spokes[assetId][feeReceiver].addedShares += feeShares;
+
+    asset.feeAmount = 0;
+    emit MintFeeShares(assetId, feeReceiver, feeShares, feeAmount);
 
     return feeShares;
   }

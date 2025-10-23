@@ -3,13 +3,13 @@
   "draw": "124128",
   "eliminateDeficit: full": "59273",
   "eliminateDeficit: partial": "68849",
-  "mintFeeShares": "68489",
-  "payFee": "70669",
-  "refreshPremium": "69531",
+  "mintFeeShares": "68541",
+  "payFee": "70736",
+  "refreshPremium": "69509",
   "remove: full": "73302",
   "remove: partial": "78031",
-  "reportDeficit": "109403",
-  "restore: full": "90660",
-  "restore: partial": "104074",
-  "transferShares": "69559"
+  "reportDeficit": "109470",
+  "restore: full": "90638",
+  "restore: partial": "104052",
+  "transferShares": "69537"
 }

@@ -7,6 +7,9 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubMintFeeSharesTest is HubBase {
   function setUp() public override {
     super.setUp();
+  }
+
+  function test_mintFeeShares() public {
     // Create debt to build up fees on the existing treasury spoke
     _addAndDrawLiquidity(
       hub1,
@@ -19,9 +22,7 @@ contract HubMintFeeSharesTest is HubBase {
       100e18,
       365 days
     );
-  }
 
-  function test_mintFeeShares() public {
     address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // before mintFeeShares, the fee shares should be 0
@@ -49,9 +50,9 @@ contract HubMintFeeSharesTest is HubBase {
 
     // after mintFeeShares, the fee shares should be the amount of the fees
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(daiAssetId, hub1.getAssetDrawnIndex(daiAssetId), mockRate);
-    vm.expectEmit(address(hub1));
     emit IHub.MintFeeShares(daiAssetId, feeReceiver, expectedMintedShares, expectedMintedAssets);
+    vm.expectEmit(address(hub1));
+    emit IHub.UpdateAsset(daiAssetId, hub1.getAssetDrawnIndex(daiAssetId), mockRate);
 
     uint256 addedSharesBefore = hub1.getAddedShares(daiAssetId);
     uint256 sharePriceBefore = hub1.previewAddByShares(daiAssetId, 1e18);
@@ -68,5 +69,57 @@ contract HubMintFeeSharesTest is HubBase {
     );
     assertEq(mintedShares, hub1.getAddedShares(daiAssetId) - addedSharesBefore, 'minted shares');
     assertGe(hub1.previewAddByShares(daiAssetId, 1e18), sharePriceBefore, 'share price');
+  }
+
+  function test_mintFeeShares_noFees() public {
+    test_mintFeeShares();
+
+    IHub.Asset memory asset = hub1.getAsset(daiAssetId);
+
+    vm.expectEmit(address(hub1));
+    emit IHub.UpdateAsset(daiAssetId, asset.drawnIndex, asset.drawnRate);
+
+    vm.recordLogs();
+    hub1.mintFeeShares(daiAssetId);
+    Vm.Log[] memory entries = vm.getRecordedLogs();
+    _assertEventNotEmitted(IHub.MintFeeShares.selector);
+  }
+
+  function test_mintFeeShares_noShares() public {
+    updateLiquidityFee(hub1, daiAssetId, 0);
+    _mockInterestRateRay(2);
+
+    // Create debt to build up fees on the existing treasury spoke
+    _addAndDrawLiquidity(
+      hub1,
+      daiAssetId,
+      bob,
+      address(spoke1),
+      3,
+      bob,
+      address(spoke1),
+      1,
+      365 days
+    );
+
+    // drawn index is 1.0000...002
+    assertEq(hub1.getAssetDrawnIndex(daiAssetId), 1e27 + 2);
+
+    _mockInterestRateRay(1e27 - 3);
+    updateLiquidityFee(hub1, daiAssetId, PercentageMath.PERCENTAGE_FACTOR);
+
+    // mint fee shares just to accrue (liquidity fee is 0, so no fees are minted)
+    hub1.mintFeeShares(daiAssetId);
+    skip(365 days);
+
+    // drawn index is 2.000...001
+    assertEq(hub1.getAssetDrawnIndex(daiAssetId), 2e27 + 1);
+
+    vm.recordLogs();
+    hub1.mintFeeShares(daiAssetId);
+    Vm.Log[] memory entries = vm.getRecordedLogs();
+    _assertEventNotEmitted(IHub.MintFeeShares.selector);
+
+    assertEq(hub1.getAsset(daiAssetId).feeAmount, 1, 'fee amount after');
   }
 }
