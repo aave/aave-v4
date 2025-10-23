@@ -142,6 +142,7 @@ contract Hub is IHub, AccessManaged {
     }
 
     if (asset.feeReceiver != config.feeReceiver) {
+      // if fees are worth less than one share, no shares are minted and existing fees will be minted to the new fee receiver
       _mintFeeShares(asset, assetId);
       _updateSpokeConfig(
         assetId,
