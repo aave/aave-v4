@@ -54,14 +54,14 @@ interface ISpokeBase {
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator who is repaying the underlying asset.
   /// @param user The owner of the position whose debt is being repaid.
-  /// @param restoredShares The amount of debt shares burned.
+  /// @param drawnShares The amount of drawn shares burned.
   /// @param totalAmountRepaid The amount of drawn and premium underlying assets repaid.
   /// @param premiumDelta A struct representing the changes to premium debt after repayment.
   event Repay(
     uint256 indexed reserveId,
     address indexed caller,
     address indexed user,
-    uint256 restoredShares,
+    uint256 drawnShares,
     uint256 totalAmountRepaid,
     IHubBase.PremiumDelta premiumDelta
   );

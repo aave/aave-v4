@@ -1428,15 +1428,6 @@ abstract contract Base is Test {
       _convertValueToAmount(spoke, toReserveId, _convertAmountToValue(spoke, reserveId, amount));
   }
 
-  /// @dev duplicates internal repay logic from Spoke
-  function _calculateTotalRestoreAmount(
-    uint256 drawn,
-    uint256 premium,
-    uint256 restoreAmount
-  ) internal view returns (uint256) {
-    return _min(drawn + premium, restoreAmount);
-  }
-
   /// @dev Helper function to calculate the amount of base and premium debt to restore
   // @return drawnRestored amount of drawn debt to restore
   // @return premiumRestored amount of premium debt to restore
