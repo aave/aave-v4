@@ -2631,6 +2631,7 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     uint256 expectedFeeAmount = hub.getAsset(assetId).feeAmount +
       _calcUnrealizedFeeAmount(hub, assetId);
+    assertEq(expectedFeeAmount, hub.getAssetFeeAmount(assetId), 'asset fee amount');
     return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + expectedFeeAmount;
   }
 

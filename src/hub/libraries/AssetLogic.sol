@@ -165,10 +165,14 @@ library AssetLogic {
     uint256 drawnIndex
   ) internal view returns (uint256) {
     uint256 lastDrawnIndex = asset.drawnIndex;
-    if (drawnIndex == lastDrawnIndex) return 0;
+    if (lastDrawnIndex == drawnIndex) {
+      return 0;
+    }
 
     uint256 liquidityFee = asset.liquidityFee;
-    if (liquidityFee == 0) return 0;
+    if (liquidityFee == 0) {
+      return 0;
+    }
 
     uint128 drawnShares = asset.drawnShares;
     uint128 premiumShares = asset.premiumShares;
