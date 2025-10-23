@@ -263,6 +263,11 @@ interface IHubBase {
   /// @return The amount of deficit.
   function getAssetDeficit(uint256 assetId) external view returns (uint256);
 
+  /// @notice Returns the amount of available liquidity for the specified underlying.
+  /// @param underlying The address of the underlying asset.
+  /// @return The amount of liquidity.
+  function getUnderlyingLiquidity(address underlying) external view returns (uint256);
+
   /// @notice Returns the total amount of the specified assets added to the hub by the specified spoke.
   /// @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
   /// @param assetId The identifier of the asset.

@@ -2345,7 +2345,7 @@ abstract contract Base is Test {
     IHub.Asset memory asset = targetHub.getAsset(assetId);
     uint256 currentHubBalance = IERC20(asset.underlying).balanceOf(address(targetHub));
     assertEq(
-      targetHub.getAssetLiquidity(assetId),
+      targetHub.getUnderlyingLiquidity(asset.underlying),
       currentHubBalance,
       string.concat('hub liquidity ', label)
     );
