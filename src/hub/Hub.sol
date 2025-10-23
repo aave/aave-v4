@@ -737,10 +737,6 @@ contract Hub is IHub, AccessManaged {
 
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
     uint256 feeAmount = asset.feeAmount;
-    if (feeAmount == 0) {
-      return 0;
-    }
-
     uint128 feeShares = asset.toAddedSharesDown(feeAmount).toUint128();
     if (feeShares == 0) {
       return 0;
