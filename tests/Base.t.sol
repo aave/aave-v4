@@ -541,24 +541,24 @@ abstract contract Base is Test {
       }),
       new bytes(0)
     );
-    // add DAI again
-    hub1.addAsset(
-      address(tokenList.dai),
-      tokenList.dai.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      hub1.getAssetCount() - 1,
-      IHub.AssetConfig({
-        liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
+    // // add DAI again
+    // hub1.addAsset(
+    //   address(tokenList.dai),
+    //   tokenList.dai.decimals(),
+    //   address(treasurySpoke),
+    //   address(irStrategy),
+    //   encodedIrData
+    // );
+    // hub1.updateAssetConfig(
+    //   hub1.getAssetCount() - 1,
+    //   IHub.AssetConfig({
+    //     liquidityFee: 5_00,
+    //     feeReceiver: address(treasurySpoke),
+    //     irStrategy: address(irStrategy),
+    //     reinvestmentController: address(0)
+    //   }),
+    //   new bytes(0)
+    // );
 
     // Spoke 1 reserve configs
     spokeInfo[spoke1].weth.reserveConfig = ISpoke.ReserveConfig({
@@ -715,17 +715,17 @@ abstract contract Base is Test {
       maxLiquidationBonus: 101_50,
       liquidationFee: 15_00
     });
-    spokeInfo[spoke2].dai2.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 100_00
-    });
-    spokeInfo[spoke2].dai2.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 70_00,
-      maxLiquidationBonus: 106_00,
-      liquidationFee: 10_00
-    });
+    // spokeInfo[spoke2].dai2.reserveConfig = ISpoke.ReserveConfig({
+    //   paused: false,
+    //   frozen: false,
+    //   borrowable: true,
+    //   collateralRisk: 100_00
+    // });
+    // spokeInfo[spoke2].dai2.dynReserveConfig = ISpoke.DynamicReserveConfig({
+    //   collateralFactor: 70_00,
+    //   maxLiquidationBonus: 106_00,
+    //   liquidationFee: 10_00
+    // });
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
       address(hub1),
@@ -762,20 +762,20 @@ abstract contract Base is Test {
       spokeInfo[spoke2].usdy.reserveConfig,
       spokeInfo[spoke2].usdy.dynReserveConfig
     );
-    spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(
-      address(hub1),
-      dai2AssetId,
-      _deployMockPriceFeed(spoke2, 1e8),
-      spokeInfo[spoke2].dai2.reserveConfig,
-      spokeInfo[spoke2].dai2.dynReserveConfig
-    );
+    // spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(
+    //   address(hub1),
+    //   dai2AssetId,
+    //   _deployMockPriceFeed(spoke2, 1e8),
+    //   spokeInfo[spoke2].dai2.reserveConfig,
+    //   spokeInfo[spoke2].dai2.dynReserveConfig
+    // );
 
     hub1.addSpoke(wbtcAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(wethAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(daiAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(usdxAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(usdyAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(dai2AssetId, address(spoke2), spokeConfig);
+    // hub1.addSpoke(dai2AssetId, address(spoke2), spokeConfig);
 
     // Spoke 3 reserve configs
     spokeInfo[spoke3].dai.reserveConfig = ISpoke.ReserveConfig({

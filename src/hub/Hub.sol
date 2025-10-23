@@ -43,6 +43,7 @@ contract Hub is IHub, AccessManaged {
   mapping(uint256 assetId => Asset) internal _assets;
   mapping(uint256 assetId => mapping(address spoke => SpokeData)) internal _spokes;
   mapping(uint256 assetId => EnumerableSet.AddressSet) internal _assetToSpokes;
+  EnumerableSet.AddressSet internal _underlyingSet;
 
   /// @dev Constructor.
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
@@ -67,6 +68,7 @@ contract Hub is IHub, AccessManaged {
       MIN_ALLOWED_UNDERLYING_DECIMALS <= decimals && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
       InvalidAssetDecimals()
     );
+    require(!_underlyingSet.contains(underlying), AssetAlreadyListed());
 
     uint256 assetId = _assetCount++;
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
@@ -99,6 +101,7 @@ contract Hub is IHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
+    _underlyingSet.add(underlying);
     _addFeeReceiver(assetId, feeReceiver);
 
     emit AddAsset(assetId, underlying, decimals);
