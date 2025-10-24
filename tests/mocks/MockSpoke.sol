@@ -44,7 +44,10 @@ contract MockSpoke is Spoke, Test {
     userPosition.drawnShares += drawnShares.toUint128();
     positionStatus.setBorrowing(reserveId, true);
 
-    ISpoke.UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf, true);
+    ISpoke.UserAccountData memory userAccountData = _calculateUserAccountData({
+      user: onBehalfOf,
+      refreshConfig: true
+    });
     _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
