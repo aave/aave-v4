@@ -159,7 +159,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
     vm.stopPrank();
 
-    _borrowToBeAtHf(spoke, alice, reserveId.dai, 0.9e18);
+    _borrowToBeLiquidatableWithPriceChange(spoke, alice, reserveId.dai, reserveId.usdx);
 
     skip(100);
 
@@ -185,7 +185,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
     vm.stopPrank();
 
-    _borrowToBeAtHf(spoke, alice, reserveId.dai, 0.9e18);
+    _borrowToBeLiquidatableWithPriceChange(spoke, alice, reserveId.dai, reserveId.usdx);
 
     skip(100);
 
