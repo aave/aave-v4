@@ -377,19 +377,21 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
     vm.stopPrank();
 
-    (uint256 healthFactor, uint256 riskPremium) = _borrowToBeLiquidatableWithPriceChange(
+    ISpoke.UserAccountData memory userAccountData = _borrowToBeLiquidatableWithPriceChange(
       spoke,
       alice,
       reserveId.dai,
-      reserveId.usdx
+      reserveId.usdx,
+      1.05e18,
+      85_00
     );
 
     skip(100);
 
     if (keccak256(bytes(NAMESPACE)) == keccak256(bytes('Spoke.Operations.ZeroRiskPremium'))) {
-      assertEq(riskPremium, 0); // rp after borrow should be 0
+      assertEq(userAccountData.riskPremium, 0); // rp after borrow should be 0
     } else {
-      assertGt(riskPremium, 0); // rp after borrow should be non zero
+      assertGt(userAccountData.riskPremium, 0); // rp after borrow should be non zero
     }
     vm.mockCallRevert(
       address(hub1),
