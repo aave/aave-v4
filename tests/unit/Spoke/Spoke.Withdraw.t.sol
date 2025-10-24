@@ -32,6 +32,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 borrowReserveSupplyAmount;
     uint256 skipTime;
   }
+
   function test_withdraw_same_block() public {
     uint256 amount = 100e18;
 

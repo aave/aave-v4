@@ -326,16 +326,12 @@ library LiquidationLogic {
         realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
       });
 
-      debtReserve.underlying.safeTransferFrom(
-        params.liquidator,
-        address(debtReserve.hub),
-        drawnDebtToLiquidate + premiumDebtToLiquidate
-      );
       uint256 drawnSharesLiquidated = debtReserve.hub.restore(
         debtReserve.assetId,
         drawnDebtToLiquidate,
         premiumDebtToLiquidate,
-        premiumDelta
+        premiumDelta,
+        params.liquidator
       );
       debtPosition.settlePremiumDebt(premiumDelta.realizedDelta);
       debtPosition.drawnShares -= drawnSharesLiquidated.toUint128();

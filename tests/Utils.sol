@@ -19,9 +19,8 @@ library Utils {
     address user
   ) internal returns (uint256) {
     approve(IHub(address(hub)), assetId, caller, user, amount);
-    transferFrom(IHub(address(hub)), assetId, caller, user, address(hub), amount);
     vm.prank(caller);
-    return hub.add(assetId, amount);
+    return hub.add(assetId, amount, user);
   }
 
   function draw(
@@ -54,9 +53,8 @@ library Utils {
     address restorer
   ) internal returns (uint256) {
     approve(IHub(address(hub)), assetId, caller, restorer, drawnAmount);
-    transferFrom(IHub(address(hub)), assetId, caller, restorer, address(hub), drawnAmount);
     vm.prank(caller);
-    return hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0));
+    return hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0), restorer);
   }
 
   function addSpoke(
@@ -214,39 +212,5 @@ library Utils {
     underlying.approve(spender, 0);
     underlying.approve(spender, amount);
     vm.stopPrank();
-  }
-
-  function transferFrom(
-    ISpoke spoke,
-    uint256 reserveId,
-    address caller,
-    address from,
-    address to,
-    uint256 amount
-  ) internal {
-    IHub hub = IHub(address(spoke.getReserve(reserveId).hub));
-    _transferFrom(IERC20(spoke.getReserve(reserveId).underlying), caller, from, to, amount);
-  }
-
-  function transferFrom(
-    IHub hub,
-    uint256 assetId,
-    address caller,
-    address from,
-    address to,
-    uint256 amount
-  ) internal {
-    _transferFrom(IERC20(hub.getAsset(assetId).underlying), caller, from, to, amount);
-  }
-
-  function _transferFrom(
-    IERC20 underlying,
-    address caller,
-    address from,
-    address to,
-    uint256 amount
-  ) private {
-    vm.prank(caller);
-    underlying.transferFrom(from, to, amount);
   }
 }

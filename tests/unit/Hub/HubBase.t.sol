@@ -165,7 +165,8 @@ contract HubBase is Base {
 
   /// @dev Adds liquidity to the Hub via a random spoke
   function _addLiquidity(uint256 assetId, uint256 amount) public {
-    address tempSpoke = vm.randomAddress();
+    bytes32 salt = keccak256(abi.encode(vm.randomUint()));
+    address tempSpoke = address(new MockDummySpoke{salt: salt}());
     address tempUser = vm.randomAddress();
 
     uint256 initialLiq = hub1.getAssetLiquidity(assetId);

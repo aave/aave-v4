@@ -78,6 +78,7 @@ import {NoncesKeyedMock} from 'tests/mocks/NoncesKeyedMock.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
+import {MockDummySpoke} from 'tests/mocks/MockDummySpoke.sol';
 
 abstract contract Base is Test {
   using stdStorage for StdStorage;
@@ -2345,7 +2346,7 @@ abstract contract Base is Test {
     IHub.Asset memory asset = targetHub.getAsset(assetId);
     uint256 currentHubBalance = IERC20(asset.underlying).balanceOf(address(targetHub));
     assertEq(
-      targetHub.getUnderlyingLiquidity(asset.underlying),
+      targetHub.getAssetLiquidity(assetId),
       currentHubBalance,
       string.concat('hub liquidity ', label)
     );

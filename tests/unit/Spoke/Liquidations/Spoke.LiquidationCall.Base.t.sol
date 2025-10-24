@@ -391,7 +391,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             sharesDelta: -userDebtPosition.premiumShares.toInt256(),
             offsetDelta: -userDebtPosition.premiumOffset.toInt256(),
             realizedDelta: realizedDelta
-          })
+          }),
+          params.liquidator
         )
       )
     );

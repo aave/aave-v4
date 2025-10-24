@@ -196,7 +196,8 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
             -debtPosition.premiumShares.toInt256(),
             -debtPosition.premiumOffset.toInt256(),
             0.2e18 - 0.5e18
-          )
+          ),
+          params.liquidator
         )
       ),
       1

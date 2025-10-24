@@ -224,4 +224,13 @@ contract LiquidationLogicWrapper {
         params
       );
   }
+
+  function transferAssetsFrom(
+    uint256 /*assetId*/,
+    address underlying,
+    address from,
+    uint256 amount
+  ) external {
+    IERC20(underlying).safeTransferFrom(from, msg.sender, amount);
+  }
 }

@@ -15,6 +15,9 @@ interface ITreasurySpoke is ISpokeBase {
   /// @notice Thrown when the given address is invalid.
   error InvalidAddress();
 
+  /// @notice Thrown when the caller is invalid.
+  error InvalidCaller();
+
   /// @notice Supplies a specified amount of the underlying asset to a given reserve.
   /// @dev The spoke pulls the underlying asset from the caller, so prior approval is required.
   /// @dev The reserve identifier must match the asset identifier in the hub.

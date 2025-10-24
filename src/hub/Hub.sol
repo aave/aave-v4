@@ -13,6 +13,7 @@ import {AssetLogic} from 'src/hub/libraries/AssetLogic.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
+import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 
 /// @title Hub
 /// @author Aave Labs
@@ -43,7 +44,6 @@ contract Hub is IHub, AccessManaged {
   mapping(uint256 assetId => Asset) internal _assets;
   mapping(uint256 assetId => mapping(address spoke => SpokeData)) internal _spokes;
   mapping(uint256 assetId => EnumerableSet.AddressSet) internal _assetToSpokes;
-  mapping(address underlying => uint256 liquidity) internal _underlyingLiquidity;
 
   /// @dev Constructor.
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
@@ -192,12 +192,12 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function add(uint256 assetId, uint256 amount) external returns (uint256) {
+  function add(uint256 assetId, uint256 amount, address from) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(_spokes, assetId);
-    _validateAdd(asset, spoke, amount);
+    _validateAdd(asset, spoke, amount, from);
 
     uint128 shares = asset.toAddedSharesDown(amount).toUint128();
     require(shares > 0, InvalidShares());
@@ -207,13 +207,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    // enforces spoke transfers the correct funds from user to hub
-    uint256 newUnderlyingLiquidity = _underlyingLiquidity[asset.underlying] + amount;
-    require(
-      asset.underlying.balanceOf(address(this)) >= newUnderlyingLiquidity,
-      InvalidAmountReceived()
-    );
-    _underlyingLiquidity[asset.underlying] = newUnderlyingLiquidity;
+    _transferAssetsFrom(msg.sender, assetId, asset.underlying, from, amount);
 
     emit Add(assetId, msg.sender, shares, amount);
 
@@ -239,7 +233,6 @@ contract Hub is IHub, AccessManaged {
     asset.updateDrawnRate(assetId);
 
     asset.underlying.safeTransfer(to, amount);
-    _underlyingLiquidity[asset.underlying] -= amount;
 
     emit Remove(assetId, msg.sender, shares, amount);
 
@@ -265,7 +258,6 @@ contract Hub is IHub, AccessManaged {
     asset.updateDrawnRate(assetId);
 
     asset.underlying.safeTransfer(to, amount);
-    _underlyingLiquidity[asset.underlying] -= amount;
 
     emit Draw(assetId, msg.sender, drawnShares, amount);
 
@@ -277,31 +269,25 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     uint256 drawnAmount,
     uint256 premiumAmount,
-    PremiumDelta calldata premiumDelta
+    PremiumDelta calldata premiumDelta,
+    address from
   ) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(_spokes, assetId);
-    _validateRestore(asset, spoke, drawnAmount, premiumAmount);
+    _validateRestore(asset, spoke, drawnAmount, premiumAmount, from);
 
     uint128 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint128();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
+    uint256 totalAmount = drawnAmount + premiumAmount;
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
-    asset.liquidity += (drawnAmount + premiumAmount).toUint128();
+    asset.liquidity += totalAmount.toUint128();
 
     asset.updateDrawnRate(assetId);
 
-    // enforces spoke transfers the correct funds from user to hub
-    uint256 newUnderlyingLiquidity = _underlyingLiquidity[asset.underlying] +
-      drawnAmount +
-      premiumAmount;
-    require(
-      asset.underlying.balanceOf(address(this)) >= newUnderlyingLiquidity,
-      InvalidAmountReceived()
-    );
-    _underlyingLiquidity[asset.underlying] = newUnderlyingLiquidity;
+    _transferAssetsFrom(msg.sender, assetId, asset.underlying, from, totalAmount);
 
     emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
@@ -424,7 +410,6 @@ contract Hub is IHub, AccessManaged {
     asset.updateDrawnRate(assetId);
 
     asset.underlying.safeTransfer(msg.sender, amount);
-    _underlyingLiquidity[asset.underlying] -= amount;
 
     emit Sweep(assetId, msg.sender, amount);
   }
@@ -442,7 +427,6 @@ contract Hub is IHub, AccessManaged {
     asset.updateDrawnRate(assetId);
 
     asset.underlying.safeTransferFrom(msg.sender, address(this), amount);
-    _underlyingLiquidity[asset.underlying] += amount;
 
     emit Reclaim(assetId, msg.sender, amount);
   }
@@ -572,11 +556,6 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].drawnRate;
   }
 
-  /// @inheritdoc IHubBase
-  function getUnderlyingLiquidity(address underlying) external view returns (uint256) {
-    return _underlyingLiquidity[underlying];
-  }
-
   /// @inheritdoc IHub
   function getSpokeCount(uint256 assetId) external view returns (uint256) {
     return _assetToSpokes[assetId].length();
@@ -693,6 +672,20 @@ contract Hub is IHub, AccessManaged {
     emit UpdateSpokeConfig(assetId, spoke, config);
   }
 
+  /// @dev Triggers a transfer of assets from the user to the hub via the spoke.
+  function _transferAssetsFrom(
+    address spoke,
+    uint256 assetId,
+    address underlying,
+    address from,
+    uint256 amount
+  ) internal {
+    uint256 balanceBefore = underlying.balanceOf(address(this));
+    ISpokeBase(spoke).transferAssetsFrom(assetId, underlying, from, amount);
+    // check the received amount instead of trusting Spokes, prevents malicious Spokes to transfer less.
+    require(underlying.balanceOf(address(this)) - balanceBefore == amount, InvalidAmountReceived());
+  }
+
   /// @dev Receiver `addCap` is validated in `_validateTransferShares`.
   function _transferShares(
     SpokeData storage sender,
@@ -764,8 +757,10 @@ contract Hub is IHub, AccessManaged {
   function _validateAdd(
     Asset storage asset,
     SpokeData storage spoke,
-    uint256 amount
+    uint256 amount,
+    address from
   ) internal view {
+    require(from != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
@@ -814,8 +809,10 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset,
     SpokeData storage spoke,
     uint256 drawnAmount,
-    uint256 premiumAmount
+    uint256 premiumAmount,
+    address from
   ) internal view {
+    require(from != address(this), InvalidAddress());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());

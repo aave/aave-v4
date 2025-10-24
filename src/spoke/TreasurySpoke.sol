@@ -35,9 +35,7 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
     uint256 amount,
     address
   ) external onlyOwner returns (uint256, uint256) {
-    (address underlying, ) = HUB.getAssetUnderlyingAndDecimals(reserveId);
-    underlying.safeTransferFrom(msg.sender, address(HUB), amount);
-    uint256 shares = HUB.add(reserveId, amount);
+    uint256 shares = HUB.add(reserveId, amount, msg.sender);
 
     return (shares, amount);
   }
@@ -56,6 +54,21 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
     uint256 withdrawnShares = HUB.remove(reserveId, withdrawnAmount, msg.sender);
 
     return (withdrawnShares, withdrawnAmount);
+  }
+
+  /// @inheritdoc ISpokeBase
+  function transferAssetsFrom(
+    uint256 assetId,
+    address underlying,
+    address from,
+    uint256 amount
+  ) external {
+    require(msg.sender == address(HUB), InvalidCaller());
+    if (from == address(this)) {
+      underlying.safeTransfer(msg.sender, amount);
+    } else {
+      underlying.safeTransferFrom(from, msg.sender, amount);
+    }
   }
 
   /// @inheritdoc ITreasurySpoke

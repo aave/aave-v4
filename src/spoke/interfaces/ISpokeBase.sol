@@ -153,6 +153,19 @@ interface ISpokeBase {
     bool receiveShares
   ) external;
 
+  /// @notice Transfers assets from the caller to a hub.
+  /// @dev Caller must be a registered hub.
+  /// @param assetId The identifier of the asset in the Hub.
+  /// @param underlying The address of the underlying asset.
+  /// @param from The address from which the assets will be pulled.
+  /// @param amount The amount to be transferred.
+  function transferAssetsFrom(
+    uint256 assetId,
+    address underlying,
+    address from,
+    uint256 amount
+  ) external;
+
   /// @notice Returns the total amount of supplied assets of a given reserve.
   /// @param reserveId The identifier of the reserve.
   /// @return The amount of supplied assets.

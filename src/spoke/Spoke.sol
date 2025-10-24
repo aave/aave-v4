@@ -203,8 +203,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve);
 
-    reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), amount);
-    uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
+    uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount, msg.sender);
     userPosition.suppliedShares += suppliedShares.toUint128();
 
     emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares);
@@ -294,16 +293,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       offsetDelta: -userPosition.premiumOffset.toInt256(),
       realizedDelta: accruedPremium.toInt256() - premiumDebtRestored.toInt256()
     });
-    reserve.underlying.safeTransferFrom(
-      msg.sender,
-      address(reserve.hub),
-      drawnDebtRestored + premiumDebtRestored
-    );
     uint256 restoredShares = reserve.hub.restore(
       reserve.assetId,
       drawnDebtRestored,
       premiumDebtRestored,
-      premiumDelta
+      premiumDelta,
+      msg.sender
     );
 
     userPosition.settlePremiumDebt(premiumDelta.realizedDelta);
@@ -481,6 +476,22 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         s: permitS
       })
     {} catch {}
+  }
+
+  /// @inheritdoc ISpokeBase
+  function transferAssetsFrom(
+    uint256 assetId,
+    address underlying,
+    address from,
+    uint256 amount
+  ) external {
+    // TODO : see if this can be moved to modifier or _validate method
+    require(_reserveExists[msg.sender][assetId], AssetNotListed());
+    if (from == address(this)) {
+      underlying.safeTransfer(msg.sender, amount);
+    } else {
+      underlying.safeTransferFrom(from, msg.sender, amount);
+    }
   }
 
   /// @inheritdoc ISpoke

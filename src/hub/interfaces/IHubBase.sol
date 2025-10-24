@@ -95,8 +95,9 @@ interface IHubBase {
   /// @dev Donated liquidity can be skimmed by any spoke.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset liquidity to add.
+  /// @param from The address which we pull assets from (user).
   /// @return The amount of shares added.
-  function add(uint256 assetId, uint256 amount) external returns (uint256);
+  function add(uint256 assetId, uint256 amount, address from) external returns (uint256);
 
   /// @notice Remove added asset on behalf of user.
   /// @dev Only callable by active spokes.
@@ -123,12 +124,14 @@ interface IHubBase {
   /// @param drawnAmount The drawn amount to restore.
   /// @param premiumAmount The premium amount to repay.
   /// @param premiumDelta The premium delta to apply which signal premium repayment.
+  /// @param from The address to pull assets from.
   /// @return The amount of drawn shares restored.
   function restore(
     uint256 assetId,
     uint256 drawnAmount,
     uint256 premiumAmount,
-    PremiumDelta calldata premiumDelta
+    PremiumDelta calldata premiumDelta,
+    address from
   ) external returns (uint256);
 
   /// @notice Reports deficit.
@@ -262,11 +265,6 @@ interface IHubBase {
   /// @param assetId The identifier of the asset.
   /// @return The amount of deficit.
   function getAssetDeficit(uint256 assetId) external view returns (uint256);
-
-  /// @notice Returns the amount of available liquidity for the specified underlying.
-  /// @param underlying The address of the underlying asset.
-  /// @return The amount of liquidity.
-  function getUnderlyingLiquidity(address underlying) external view returns (uint256);
 
   /// @notice Returns the total amount of the specified assets added to the hub by the specified spoke.
   /// @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
