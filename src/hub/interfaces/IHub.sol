@@ -91,8 +91,13 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param spoke The address of the spoke.
   event AddSpoke(uint256 indexed assetId, address indexed spoke);
 
+  /// @notice Emitted when a spoke is approved to execute actions that allow hub to transfer user's assets.
+  /// @param caller The address of the caller.
+  /// @param spoke The address of the spoke.
+  /// @param underlying The address of the underlying asset.
+  /// @param amount The amount of tokens approved for transfer from user to hub from actions on spoke.
   event ApproveSpoke(
-    address indexed user,
+    address indexed caller,
     address indexed spoke,
     address indexed underlying,
     uint256 amount
@@ -286,6 +291,17 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param underlying The address of the underlying asset.
   /// @param amount The amount of tokens to approve for transfer from user to hub from actions on spoke.
   function approve(address spoke, address underlying, uint256 amount) external;
+
+  /// @notice Returns the allowance of a user to spoke.
+  /// @param owner The address of the owner.
+  /// @param spoke The address of the spoke.
+  /// @param underlying The address of the underlying asset.
+  /// @return The amount of tokens approved for transfer from user to hub from actions on spoke.
+  function allowance(
+    address owner,
+    address spoke,
+    address underlying
+  ) external view returns (uint256);
 
   /// @notice Returns the number of listed assets.
   /// @return The number of listed assets.

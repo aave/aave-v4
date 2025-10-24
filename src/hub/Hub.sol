@@ -452,6 +452,15 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
+  function allowance(
+    address owner,
+    address spoke,
+    address underlying
+  ) external view returns (uint256) {
+    return _userSpokeAllowance[owner][spoke][underlying];
+  }
+
+  /// @inheritdoc IHub
   function getAssetCount() external view returns (uint256) {
     return _assetCount;
   }

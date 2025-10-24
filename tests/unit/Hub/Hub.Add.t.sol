@@ -51,6 +51,21 @@ contract HubAddTest is HubBase {
     vm.stopPrank();
   }
 
+  function test_add_revertsWith_InsufficientSpokeAllowance() public {
+    uint256 amount = 100e18;
+
+    address user = makeAddr('randomUser');
+    Utils.approve(hub1, address(spoke1), daiAssetId, user, UINT256_MAX);
+
+    vm.prank(user);
+    hub1.approve(address(spoke1), address(tokenList.dai), 0);
+    assertEq(hub1.allowance(user, address(spoke1), address(tokenList.dai)), 0);
+
+    vm.expectRevert(IHub.InsufficientSpokeAllowance.selector);
+    vm.prank(address(spoke1));
+    hub1.add(daiAssetId, amount, user);
+  }
+
   function test_add_revertsWith_TransferFromFailed() public {
     uint256 amount = 100e18;
 

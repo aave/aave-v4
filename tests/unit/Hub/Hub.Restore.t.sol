@@ -593,6 +593,41 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
   }
 
+  function test_restore_revertsWith_InsufficientSpokeAllowance() public {
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addAmount: daiAmount,
+      addSpoke: address(spoke2),
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: drawAmount,
+      skipTime: 365 days
+    });
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 restoreDrawnAmount = drawn / 2;
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      spoke: spoke1,
+      user: alice,
+      reserveId: _daiReserveId(spoke1),
+      premiumRestored: premium
+    });
+
+    vm.prank(alice);
+    hub1.approve(address(spoke1), address(tokenList.dai), 0);
+    assertEq(hub1.allowance(alice, address(spoke1), address(tokenList.dai)), 0);
+
+    vm.expectRevert(IHub.InsufficientSpokeAllowance.selector);
+
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, restoreDrawnAmount, premium, premiumDelta, alice);
+  }
+
   /// @dev Restore partial amount of drawn after time has passed (no premium).
   function test_restore_partial_drawn() public {
     uint256 daiAmount = 100e18;
