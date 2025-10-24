@@ -230,7 +230,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
     if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
-      UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf, true);
+      UserAccountData memory userAccountData = _calculateUserAccountData({
+        user: onBehalfOf,
+        refreshConfig: true
+      });
       _validateHealthFactor(userAccountData.healthFactor);
       _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
     }
@@ -258,7 +261,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf, true);
+    UserAccountData memory userAccountData = _calculateUserAccountData({
+      user: onBehalfOf,
+      refreshConfig: true
+    });
     _validateHealthFactor(userAccountData.healthFactor);
     _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
 
@@ -394,7 +400,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (usingAsCollateral) {
       _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
-      UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf, true);
+      UserAccountData memory userAccountData = _calculateUserAccountData({
+        user: onBehalfOf,
+        refreshConfig: true
+      });
       _validateHealthFactor(userAccountData.healthFactor);
       _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
     }
@@ -417,7 +426,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    UserAccountData memory userAccountData = _calculateUserAccountData(onBehalfOf, true);
+    UserAccountData memory userAccountData = _calculateUserAccountData({
+      user: onBehalfOf,
+      refreshConfig: true
+    });
     _validateHealthFactor(userAccountData.healthFactor);
     _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
   }
