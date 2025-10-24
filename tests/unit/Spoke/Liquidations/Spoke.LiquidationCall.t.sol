@@ -415,7 +415,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_SmallPosition is
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
       ISpoke.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
         i,
-        spoke.getUserPosition(i, liquidator).configKey
+        spoke.getUserPosition(i, liquidator).dynamicConfigKey
       );
       dynConfig.maxLiquidationBonus = 105_00;
       vm.prank(SPOKE_ADMIN);
@@ -437,7 +437,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_LargePosition is
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
       ISpoke.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
         i,
-        spoke.getUserPosition(i, liquidator).configKey
+        spoke.getUserPosition(i, liquidator).dynamicConfigKey
       );
       dynConfig.maxLiquidationBonus = 105_00;
       vm.prank(SPOKE_ADMIN);
@@ -462,7 +462,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_SmallPosition is
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
       ISpoke.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
         i,
-        spoke.getUserPosition(i, liquidator).configKey
+        spoke.getUserPosition(i, liquidator).dynamicConfigKey
       );
       dynConfig.maxLiquidationBonus = _randomMaxLiquidationBonus(spoke, i);
       vm.prank(SPOKE_ADMIN);
@@ -487,7 +487,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_LargePosition is
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
       ISpoke.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
         i,
-        spoke.getUserPosition(i, liquidator).configKey
+        spoke.getUserPosition(i, liquidator).dynamicConfigKey
       );
       dynConfig.maxLiquidationBonus = _randomMaxLiquidationBonus(spoke, i);
       vm.prank(SPOKE_ADMIN);
@@ -515,7 +515,7 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
       ISpoke.DynamicReserveConfig memory dynConfig = spoke.getDynamicReserveConfig(
         i,
-        spoke.getUserPosition(i, liquidator).configKey
+        spoke.getUserPosition(i, liquidator).dynamicConfigKey
       );
       dynConfig.maxLiquidationBonus = _randomMaxLiquidationBonus(spoke, i);
       vm.prank(SPOKE_ADMIN);

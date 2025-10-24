@@ -39,10 +39,10 @@ interface ISpokeConfigurator {
   ) external;
 
   /// @notice Adds a new reserve to a spoke.
-  /// @dev The asset corresponding to the reserve must be already listed on the hub.
+  /// @dev The asset corresponding to the reserve must be already listed on the Hub.
   /// @dev The price source must implement the AggregatorV3Interface.
   /// @param spoke The address of the spoke.
-  /// @param hub The address of the hub where the asset corresponding to the reserve is listed.
+  /// @param hub The address of the Hub where the asset corresponding to the reserve is listed.
   /// @param assetId The identifier of the asset.
   /// @param priceSource The address of the price source.
   /// @param config The configuration of the reserve.
@@ -85,7 +85,7 @@ interface ISpokeConfigurator {
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param collateralFactor The new collateral factor.
-  /// @return The configKey of the added dynamic configuration.
+  /// @return The dynamicConfigKey of the added dynamic configuration.
   function addCollateralFactor(
     address spoke,
     uint256 reserveId,
@@ -95,12 +95,12 @@ interface ISpokeConfigurator {
   /// @notice Updates an existing collateral factor of a reserve at the specified key.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
-  /// @param configKey The key of the dynamic config to update.
+  /// @param dynamicConfigKey The key of the dynamic config to update.
   /// @param collateralFactor The new collateral factor.
   function updateCollateralFactor(
     address spoke,
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     uint16 collateralFactor
   ) external;
 
@@ -108,7 +108,7 @@ interface ISpokeConfigurator {
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param maxLiquidationBonus The new max liquidation bonus.
-  /// @return The configKey of the added dynamic configuration.
+  /// @return The dynamicConfigKey of the added dynamic configuration.
   function addMaxLiquidationBonus(
     address spoke,
     uint256 reserveId,
@@ -118,12 +118,12 @@ interface ISpokeConfigurator {
   /// @notice Updates an existing liquidation bonus of a reserve at the specified key.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
-  /// @param configKey The key of the dynamic config to update.
+  /// @param dynamicConfigKey The key of the dynamic config to update.
   /// @param maxLiquidationBonus The new liquidation bonus.
   function updateMaxLiquidationBonus(
     address spoke,
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     uint256 maxLiquidationBonus
   ) external;
 
@@ -131,7 +131,7 @@ interface ISpokeConfigurator {
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param liquidationFee The new liquidation fee.
-  /// @return The configKey of the added dynamic configuration.
+  /// @return The dynamicConfigKey of the added dynamic configuration.
   function addLiquidationFee(
     address spoke,
     uint256 reserveId,
@@ -141,12 +141,12 @@ interface ISpokeConfigurator {
   /// @notice Updates an existing liquidation fee of a reserve at the specified key.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
-  /// @param configKey The key of the dynamic config to update.
+  /// @param dynamicConfigKey The key of the dynamic config to update.
   /// @param liquidationFee The new liquidation fee.
   function updateLiquidationFee(
     address spoke,
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     uint256 liquidationFee
   ) external;
 
@@ -154,7 +154,7 @@ interface ISpokeConfigurator {
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param dynamicConfig The new dynamic config.
-  /// @return configKey The key of the added dynamic config.
+  /// @return dynamicConfigKey The key of the added dynamic config.
   function addDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
@@ -164,12 +164,12 @@ interface ISpokeConfigurator {
   /// @notice Updates the dynamic config of a reserve at the specified key.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
-  /// @param configKey The key of the dynamic config to update.
+  /// @param dynamicConfigKey The key of the dynamic config to update.
   /// @param dynamicConfig The new dynamic config.
   function updateDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external;
 

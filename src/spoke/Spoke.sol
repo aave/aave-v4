@@ -23,7 +23,7 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @title Spoke
 /// @author Aave Labs
 /// @notice Handles risk configuration & borrowing strategy for reserves and user positions.
-/// @dev Each reserve can be associated with a separate hub.
+/// @dev Each reserve can be associated with a separate Hub.
 abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using SafeTransferLib for address;
@@ -63,7 +63,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   mapping(address user => PositionStatus) internal _positionStatus;
   mapping(uint256 reserveId => Reserve) internal _reserves;
   mapping(address positionManager => PositionManagerConfig) internal _positionManager;
-  mapping(uint256 reserveId => mapping(uint16 configKey => DynamicReserveConfig))
+  mapping(uint256 reserveId => mapping(uint16 dynamicConfigKey => DynamicReserveConfig))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
@@ -165,26 +165,26 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external restricted returns (uint16) {
     require(reserveId < _reserveCount, ReserveNotListed());
     _validateDynamicReserveConfig(dynamicConfig);
-    uint16 configKey;
+    uint16 dynamicConfigKey;
     // overflow is desired, we implicitly invalidate & override stale config
     unchecked {
-      configKey = ++_reserves[reserveId].dynamicConfigKey;
+      dynamicConfigKey = ++_reserves[reserveId].dynamicConfigKey;
     }
-    _dynamicConfig[reserveId][configKey] = dynamicConfig;
-    emit AddDynamicReserveConfig(reserveId, configKey, dynamicConfig);
-    return configKey;
+    _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
+    emit AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
+    return dynamicConfigKey;
   }
 
   /// @inheritdoc ISpoke
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
-    _validateUpdateDynamicReserveConfig(_dynamicConfig[reserveId][configKey], dynamicConfig);
-    _dynamicConfig[reserveId][configKey] = dynamicConfig;
-    emit UpdateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
+    _validateUpdateDynamicReserveConfig(_dynamicConfig[reserveId][dynamicConfigKey], dynamicConfig);
+    _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
+    emit UpdateDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
   }
 
   /// @inheritdoc ISpoke
@@ -348,7 +348,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     );
 
     DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
-      _userPositions[user][collateralReserveId].configKey
+      _userPositions[user][collateralReserveId].dynamicConfigKey
     ];
 
     bool isUserInDeficit = LiquidationLogic.liquidateUser(
@@ -556,10 +556,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   function getDynamicReserveConfig(
     uint256 reserveId,
-    uint16 configKey
+    uint16 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory) {
     _getReserve(reserveId);
-    return _dynamicConfig[reserveId][configKey];
+    return _dynamicConfig[reserveId][dynamicConfigKey];
   }
 
   /// @inheritdoc ISpoke
@@ -635,8 +635,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
         healthFactor: healthFactor,
-        maxLiquidationBonus: _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey]
-          .maxLiquidationBonus
+        maxLiquidationBonus: _dynamicConfig[reserveId][
+          _userPositions[user][reserveId].dynamicConfigKey
+        ].maxLiquidationBonus
       });
   }
 
@@ -726,8 +727,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       if (collateral) {
         uint256 collateralFactor = _dynamicConfig[reserveId][
           refreshConfig
-            ? (userPosition.configKey = reserve.dynamicConfigKey)
-            : userPosition.configKey
+            ? (userPosition.dynamicConfigKey = reserve.dynamicConfigKey)
+            : userPosition.dynamicConfigKey
         ].collateralFactor;
         if (collateralFactor > 0) {
           uint256 suppliedShares = userPosition.suppliedShares;
@@ -803,7 +804,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
-    _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
+    _userPositions[user][reserveId].dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
     emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 

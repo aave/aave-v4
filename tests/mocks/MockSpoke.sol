@@ -61,7 +61,7 @@ contract MockSpoke is Spoke, Test {
         .previewAddByAssets(reserve.assetId, info.collateralAmounts[i])
         .toUint128();
 
-      _userPositions[user][info.collateralReserveIds[i]].configKey = info
+      _userPositions[user][info.collateralReserveIds[i]].dynamicConfigKey = info
         .collateralDynamicConfigKeys[i]
         .toUint16();
     }
