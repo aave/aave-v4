@@ -368,8 +368,11 @@ library LiquidationLogic {
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
     // if the liquidator is using the collateral reserve as collateral, they cannot receive shares
     require(
-      !(params.receiveShares &&
-        (params.liquidatorUsingAsCollateral || params.collateralReserveFrozen)),
+      !(params.receiveShares && params.liquidatorUsingAsCollateral),
+      ISpoke.CannotReceiveShares()
+    );
+    require(
+      !(params.receiveShares && params.collateralReserveFrozen),
       ISpoke.CannotReceiveShares()
     );
   }
