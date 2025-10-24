@@ -22,7 +22,7 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @title Spoke
 /// @author Aave Labs
 /// @notice Handles risk configuration & borrowing strategy for reserves and user positions.
-/// @dev Each reserve can be associated with a separate hub.
+/// @dev Each reserve can be associated with a separate Hub.
 abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
