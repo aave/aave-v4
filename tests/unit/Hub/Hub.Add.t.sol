@@ -13,6 +13,9 @@ contract HubAddTest is HubBase {
   function setUp() public override {
     super.setUp();
 
+    TestnetERC20 usda = new TestnetERC20('USDA', 'USDA', Constants.MIN_ALLOWED_UNDERLYING_DECIMALS);
+    deal(address(usda), alice, MAX_SUPPLY_AMOUNT);
+
     /// @dev add a minimum decimal asset to test add cap rounding
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
@@ -31,7 +34,7 @@ contract HubAddTest is HubBase {
     );
     vm.startPrank(ADMIN);
     minDecimalAssetId = hub1.addAsset(
-      address(tokenList.dai),
+      address(usda),
       Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
       address(treasurySpoke),
       address(irStrategy),

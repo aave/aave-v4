@@ -48,7 +48,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     updateLiquidityFee(hub1, wethAssetId, 0);
     updateLiquidityFee(hub1, usdxAssetId, 0);
     updateLiquidityFee(hub1, wbtcAssetId, 0);
-    updateLiquidityFee(hub1, dai2AssetId, 0);
+    updateLiquidityFee(hub1, usdzAssetId, 0);
   }
 
   /// Second accrual after an action - which should update the user rp
@@ -435,7 +435,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     if (_getUserHealthFactor(spoke2, bob) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
       // Supply more collateral to ensure bob can borrow more dai to trigger accrual
       deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT);
-      Utils.supplyCollateral(spoke2, _dai2ReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
+      Utils.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
 
       // Handle case that bob isn't already borrowing dai by borrowing 1 share
       bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);

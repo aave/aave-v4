@@ -85,7 +85,7 @@ contract SpokeAccessTest is SpokeBase {
     );
     spoke1.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       reserveSource,
       ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       ISpoke.DynamicReserveConfig({
@@ -99,7 +99,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       reserveSource,
       ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       ISpoke.DynamicReserveConfig({
@@ -156,6 +156,8 @@ contract SpokeAccessTest is SpokeBase {
     address NEW_ADMIN = makeAddr('NEW_ADMIN');
     IAccessManager newAuthority = new AccessManager(NEW_ADMIN);
 
+    uint256 assetId = usdzAssetId;
+
     // Set up the role for spoke admin to call update liquidation config
     vm.startPrank(NEW_ADMIN);
     newAuthority.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
@@ -198,7 +200,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      5,
+      assetId,
       reserveSource,
       ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       ISpoke.DynamicReserveConfig({
@@ -217,7 +219,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      5,
+      assetId,
       reserveSource,
       ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       ISpoke.DynamicReserveConfig({

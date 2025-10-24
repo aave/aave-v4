@@ -102,6 +102,7 @@ abstract contract Base is Test {
   uint256 internal MAX_SUPPLY_AMOUNT_WBTC;
   uint256 internal MAX_SUPPLY_AMOUNT_WETH;
   uint256 internal MAX_SUPPLY_AMOUNT_USDY;
+  uint256 internal MAX_SUPPLY_AMOUNT_USDZ;
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
   uint24 internal constant MIN_COLLATERAL_RISK_BPS = 1;
   uint24 internal constant MAX_COLLATERAL_RISK_BPS = 1000_00;
@@ -163,15 +164,16 @@ abstract contract Base is Test {
   uint256 internal daiAssetId = 2;
   uint256 internal wbtcAssetId = 3;
   uint256 internal usdyAssetId = 4;
-  uint256 internal dai2AssetId = 5;
+  uint256 internal usdzAssetId = 5;
 
   uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDY = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_USDZ = MAX_SUPPLY_AMOUNT;
 
-  Decimals internal decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18});
+  Decimals internal decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18, usdz: 18});
 
   struct Decimals {
     uint8 usdx;
@@ -179,6 +181,7 @@ abstract contract Base is Test {
     uint8 wbtc;
     uint8 usdy;
     uint8 weth;
+    uint8 usdz;
   }
 
   struct TokenList {
@@ -187,6 +190,7 @@ abstract contract Base is Test {
     TestnetERC20 dai;
     TestnetERC20 wbtc;
     TestnetERC20 usdy;
+    TestnetERC20 usdz;
   }
 
   struct SpokeInfo {
@@ -195,7 +199,7 @@ abstract contract Base is Test {
     ReserveInfo dai;
     ReserveInfo usdx;
     ReserveInfo usdy;
-    ReserveInfo dai2; // Special case: dai listed twice on hub and spoke2 (unique assetIds)
+    ReserveInfo usdz;
     uint256 MAX_ALLOWED_ASSET_ID;
   }
 
@@ -355,7 +359,8 @@ abstract contract Base is Test {
       new TestnetERC20('USDX', 'USDX', decimals.usdx),
       new TestnetERC20('DAI', 'DAI', decimals.dai),
       new TestnetERC20('WBTC', 'WBTC', decimals.wbtc),
-      new TestnetERC20('USDY', 'USDY', decimals.usdy)
+      new TestnetERC20('USDY', 'USDY', decimals.usdy),
+      new TestnetERC20('USDZ', 'USDZ', decimals.usdz)
     );
 
     vm.label(address(tokenList.weth), 'WETH');
@@ -369,6 +374,7 @@ abstract contract Base is Test {
     MAX_SUPPLY_AMOUNT_DAI = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.dai.decimals();
     MAX_SUPPLY_AMOUNT_WBTC = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.wbtc.decimals();
     MAX_SUPPLY_AMOUNT_USDY = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdy.decimals();
+    MAX_SUPPLY_AMOUNT_USDZ = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdz.decimals();
 
     address[7] memory users = [
       alice,
@@ -392,6 +398,7 @@ abstract contract Base is Test {
       tokenList.dai.mint(users[x], mintAmount_DAI);
       tokenList.wbtc.mint(users[x], mintAmount_WBTC);
       tokenList.usdy.mint(users[x], mintAmount_USDY);
+      tokenList.usdz.mint(users[x], mintAmount_USDZ);
       deal(address(tokenList.weth), users[x], mintAmount_WETH);
 
       vm.startPrank(users[x]);
@@ -401,6 +408,7 @@ abstract contract Base is Test {
         tokenList.dai.approve(spokes[y], UINT256_MAX);
         tokenList.wbtc.approve(spokes[y], UINT256_MAX);
         tokenList.usdy.approve(spokes[y], UINT256_MAX);
+        tokenList.usdz.approve(spokes[y], UINT256_MAX);
       }
       vm.stopPrank();
     }
@@ -412,6 +420,7 @@ abstract contract Base is Test {
     uint256 spokeMintAmount_WBTC = 100e6 * 10 ** tokenList.wbtc.decimals();
     uint256 spokeMintAmount_WETH = 100e6 * 10 ** tokenList.weth.decimals();
     uint256 spokeMintAmount_USDY = 100e6 * 10 ** tokenList.usdy.decimals();
+    uint256 spokeMintAmount_USDZ = 100e6 * 10 ** tokenList.usdz.decimals();
     address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
 
     for (uint256 x; x < spokes.length; ++x) {
@@ -419,6 +428,7 @@ abstract contract Base is Test {
       tokenList.dai.mint(spokes[x], spokeMintAmount_DAI);
       tokenList.wbtc.mint(spokes[x], spokeMintAmount_WBTC);
       tokenList.usdy.mint(spokes[x], spokeMintAmount_USDY);
+      tokenList.usdz.mint(spokes[x], spokeMintAmount_USDZ);
       deal(address(tokenList.weth), spokes[x], spokeMintAmount_WETH);
 
       vm.startPrank(spokes[x]);
@@ -427,6 +437,7 @@ abstract contract Base is Test {
       tokenList.dai.approve(address(hub1), UINT256_MAX);
       tokenList.wbtc.approve(address(hub1), UINT256_MAX);
       tokenList.usdy.approve(address(hub1), UINT256_MAX);
+      tokenList.usdz.approve(address(hub1), UINT256_MAX);
       vm.stopPrank();
     }
   }
@@ -541,24 +552,24 @@ abstract contract Base is Test {
       }),
       new bytes(0)
     );
-    // // add DAI again
-    // hub1.addAsset(
-    //   address(tokenList.dai),
-    //   tokenList.dai.decimals(),
-    //   address(treasurySpoke),
-    //   address(irStrategy),
-    //   encodedIrData
-    // );
-    // hub1.updateAssetConfig(
-    //   hub1.getAssetCount() - 1,
-    //   IHub.AssetConfig({
-    //     liquidityFee: 5_00,
-    //     feeReceiver: address(treasurySpoke),
-    //     irStrategy: address(irStrategy),
-    //     reinvestmentController: address(0)
-    //   }),
-    //   new bytes(0)
-    // );
+    // add usdz
+    hub1.addAsset(
+      address(tokenList.usdz),
+      tokenList.usdz.decimals(),
+      address(treasurySpoke),
+      address(irStrategy),
+      encodedIrData
+    );
+    hub1.updateAssetConfig(
+      hub1.getAssetCount() - 1,
+      IHub.AssetConfig({
+        liquidityFee: 5_00,
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy),
+        reinvestmentController: address(0)
+      }),
+      new bytes(0)
+    );
 
     // Spoke 1 reserve configs
     spokeInfo[spoke1].weth.reserveConfig = ISpoke.ReserveConfig({
@@ -715,17 +726,17 @@ abstract contract Base is Test {
       maxLiquidationBonus: 101_50,
       liquidationFee: 15_00
     });
-    // spokeInfo[spoke2].dai2.reserveConfig = ISpoke.ReserveConfig({
-    //   paused: false,
-    //   frozen: false,
-    //   borrowable: true,
-    //   collateralRisk: 100_00
-    // });
-    // spokeInfo[spoke2].dai2.dynReserveConfig = ISpoke.DynamicReserveConfig({
-    //   collateralFactor: 70_00,
-    //   maxLiquidationBonus: 106_00,
-    //   liquidationFee: 10_00
-    // });
+    spokeInfo[spoke2].usdz.reserveConfig = ISpoke.ReserveConfig({
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      collateralRisk: 100_00
+    });
+    spokeInfo[spoke2].usdz.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 70_00,
+      maxLiquidationBonus: 106_00,
+      liquidationFee: 10_00
+    });
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
       address(hub1),
@@ -762,20 +773,20 @@ abstract contract Base is Test {
       spokeInfo[spoke2].usdy.reserveConfig,
       spokeInfo[spoke2].usdy.dynReserveConfig
     );
-    // spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(
-    //   address(hub1),
-    //   dai2AssetId,
-    //   _deployMockPriceFeed(spoke2, 1e8),
-    //   spokeInfo[spoke2].dai2.reserveConfig,
-    //   spokeInfo[spoke2].dai2.dynReserveConfig
-    // );
+    spokeInfo[spoke2].usdz.reserveId = spoke2.addReserve(
+      address(hub1),
+      usdzAssetId,
+      _deployMockPriceFeed(spoke2, 1e8),
+      spokeInfo[spoke2].usdz.reserveConfig,
+      spokeInfo[spoke2].usdz.dynReserveConfig
+    );
 
     hub1.addSpoke(wbtcAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(wethAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(daiAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(usdxAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(usdyAssetId, address(spoke2), spokeConfig);
-    // hub1.addSpoke(dai2AssetId, address(spoke2), spokeConfig);
+    hub1.addSpoke(usdzAssetId, address(spoke2), spokeConfig);
 
     // Spoke 3 reserve configs
     spokeInfo[spoke3].dai.reserveConfig = ISpoke.ReserveConfig({
@@ -1226,9 +1237,9 @@ abstract contract Base is Test {
     return spokeInfo[spoke].wbtc.reserveId;
   }
 
-  // assumes spoke has dai2 supported
-  function _dai2ReserveId(ISpoke spoke) internal view returns (uint256) {
-    return spokeInfo[spoke].dai2.reserveId;
+  // assumes spoke has usdz supported
+  function _usdzReserveId(ISpoke spoke) internal view returns (uint256) {
+    return spokeInfo[spoke].usdz.reserveId;
   }
 
   function _updateSpokePaused(

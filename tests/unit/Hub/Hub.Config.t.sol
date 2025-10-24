@@ -227,13 +227,10 @@ contract HubConfigTest is HubBase {
     );
   }
 
-  function test_addAsset_revertsWith_DrawnRateDowncastOverflow() public {
-    uint256 drawnRateRay = uint256(type(uint96).max) + 1;
-    _mockInterestRateRay(drawnRateRay);
-    vm.expectRevert(
-      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 96, drawnRateRay),
-      address(hub1)
-    );
+  function test_addAsset_fuzz_reverts_AssetAlreadyListed() public {
+    assertTrue(hub1.isAssetListed(address(tokenList.dai)));
+
+    vm.expectRevert(IHub.AssetAlreadyListed.selector, address(hub1));
     Utils.addAsset(
       hub1,
       ADMIN,
@@ -245,7 +242,32 @@ contract HubConfigTest is HubBase {
     );
   }
 
+  function test_addAsset_revertsWith_DrawnRateDowncastOverflow() public {
+    address underlying = address(
+      new TestnetERC20('USDA', 'USDA', Constants.MIN_ALLOWED_UNDERLYING_DECIMALS)
+    );
+
+    uint256 drawnRateRay = uint256(type(uint96).max) + 1;
+    _mockInterestRateRay(drawnRateRay);
+    vm.expectRevert(
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 96, drawnRateRay),
+      address(hub1)
+    );
+    Utils.addAsset(
+      hub1,
+      ADMIN,
+      underlying,
+      18,
+      address(treasurySpoke),
+      address(irStrategy),
+      encodedIrData
+    );
+  }
+
   function test_addAsset_revertsWith_BlockTimestampDowncastOverflow() public {
+    address underlying = address(
+      new TestnetERC20('USDA', 'USDA', Constants.MIN_ALLOWED_UNDERLYING_DECIMALS)
+    );
     uint256 blockTimestamp = uint256(type(uint32).max) + 1;
     vm.warp(blockTimestamp);
     vm.expectRevert(
@@ -255,7 +277,7 @@ contract HubConfigTest is HubBase {
     Utils.addAsset(
       hub1,
       ADMIN,
-      address(tokenList.dai),
+      underlying,
       18,
       address(treasurySpoke),
       address(irStrategy),
