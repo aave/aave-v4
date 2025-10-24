@@ -230,7 +230,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
     if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
-      UserAccountData memory userAccountData = _calculateUserAccountData({
+      UserAccountData memory userAccountData = _processUserAccountData({
         user: onBehalfOf,
         refreshConfig: true
       });
@@ -261,7 +261,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    UserAccountData memory userAccountData = _calculateUserAccountData({
+    UserAccountData memory userAccountData = _processUserAccountData({
       user: onBehalfOf,
       refreshConfig: true
     });
@@ -313,7 +313,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
     }
 
-    UserAccountData memory userAccountData = _calculateUserAccountData({
+    UserAccountData memory userAccountData = _processUserAccountData({
       user: onBehalfOf,
       refreshConfig: false
     });
@@ -332,7 +332,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 debtToCover,
     bool receiveShares
   ) external {
-    UserAccountData memory userAccountData = _calculateUserAccountData({
+    UserAccountData memory userAccountData = _processUserAccountData({
       user: user,
       refreshConfig: false
     });
@@ -377,7 +377,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _reportDeficit(user);
     } else {
       // new risk premium only needs to be propagated if no deficit exists
-      uint256 newRiskPremium = _calculateUserAccountData({user: user, refreshConfig: false})
+      uint256 newRiskPremium = _processUserAccountData({user: user, refreshConfig: false})
         .riskPremium;
       _notifyRiskPremiumUpdate(user, newRiskPremium);
     }
@@ -400,7 +400,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (usingAsCollateral) {
       _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
-      UserAccountData memory userAccountData = _calculateUserAccountData({
+      UserAccountData memory userAccountData = _processUserAccountData({
         user: onBehalfOf,
         refreshConfig: true
       });
@@ -416,7 +416,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    uint256 newRiskPremium = _calculateUserAccountData({user: onBehalfOf, refreshConfig: false})
+    uint256 newRiskPremium = _processUserAccountData({user: onBehalfOf, refreshConfig: false})
       .riskPremium;
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
   }
@@ -426,7 +426,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    UserAccountData memory userAccountData = _calculateUserAccountData({
+    UserAccountData memory userAccountData = _processUserAccountData({
       user: onBehalfOf,
       refreshConfig: true
     });
@@ -649,7 +649,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function getUserAccountData(address user) external view returns (UserAccountData memory) {
-    return _viewCalculateUserPosition(user);
+    // SAFETY: function does not modify state when refreshConfig is false.
+    return _castToView(_processUserAccountData)(user, false);
   }
 
   /// @inheritdoc ISpoke
@@ -686,9 +687,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     emit SetUserPositionManager(user, positionManager, approve);
   }
 
-  /// @notice Calculates the user account data.
+  /// @notice Process the user account data.
   /// @dev It runs user risk calculations until the first of either collateral or debt is exhausted.
-  function _calculateUserAccountData(
+  function _processUserAccountData(
     address user,
     bool refreshConfig
   ) internal returns (UserAccountData memory accountData) {
@@ -928,12 +929,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
-  }
-
-  /// @notice View version of `_calculateUserAccountData`.
-  /// @dev It does not refresh dynamic config before calculating.
-  function _viewCalculateUserPosition(address user) internal view returns (UserAccountData memory) {
-    return _castToView(_calculateUserAccountData)(user, false);
   }
 
   /// @return The user's drawn debt.
