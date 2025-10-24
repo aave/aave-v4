@@ -1293,6 +1293,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _checkHubBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
   }
 
+  // @dev reads `positionStatus.hasPositiveRiskPremium` by temporarily upgrading to mock spoke
   function _hasPositiveRiskPremium(ISpoke spoke, address user) internal returns (bool) {
     address mockSpoke = address(new MockSpoke(spoke.ORACLE()));
     address implementation = _getImplementationAddress(address(spoke));
