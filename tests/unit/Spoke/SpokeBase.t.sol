@@ -1096,7 +1096,7 @@ contract SpokeBase is Base {
     Utils.borrow(spoke, reserveId, user, requiredDebtAmount, user);
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
-    _mockReservePriceByPercent(spoke, collateralReserveId, 70_00);
+    _mockReservePriceByPercent(spoke, collateralReserveId, 85_00);
 
     return (userAccountData.healthFactor, userAccountData.riskPremium);
   }
