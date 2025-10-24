@@ -688,8 +688,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return accountData;
   }
 
-  /// @notice Refreshes the dynamic config and calculates the user account data if `refreshConfig` is true.
-  /// @dev User RiskPremium calc runs until the first of either debt or collateral is exhausted.
+  /// @notice Calculates the user account data, refreshing the dynamic config if `refreshConfig` is true. It does not calculate the risk premium if `withRiskPremium` is false.
+  /// @dev If calculated, risk premium computation runs until the first of either debt or collateral is exhausted.
   function _calculateAndPotentiallyRefreshUserAccountData(
     address user,
     bool refreshConfig,
@@ -939,10 +939,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false, true);
   }
 
+  /// @notice Calculates the user account data without computing the risk premium.
   function _calculateUserAccountDataWithoutRiskPremium(
     address user
   ) internal view returns (UserAccountData memory) {
-    // risk premium is not computed and will always be zero
     return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false, false);
   }
 

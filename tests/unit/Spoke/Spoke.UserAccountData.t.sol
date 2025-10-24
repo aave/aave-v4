@@ -46,7 +46,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.realizedPremiumAmounts.push(0.005e18);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
@@ -80,7 +80,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.realizedPremiumAmounts.push(0.005e18);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
@@ -114,7 +114,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.realizedPremiumAmounts.push(0.005e18);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       true,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
@@ -156,7 +156,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.realizedPremiumAmounts.push(0.15e18);
     accountDataInfo.accruedPremiumAmounts.push(0.05e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       true,
       ISpoke.UserAccountData({
         totalCollateralValue: 5100e26,
@@ -198,7 +198,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.realizedPremiumAmounts.push(0);
     accountDataInfo.accruedPremiumAmounts.push(0);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
@@ -238,7 +238,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.realizedPremiumAmounts.push(0.005e18);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
@@ -252,7 +252,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
   }
 
-  function _checkedUserAccounData(
+  function _checkedUserAccountData(
     bool refreshConfig,
     ISpoke.UserAccountData memory expectedUserAccountData
   ) internal {
