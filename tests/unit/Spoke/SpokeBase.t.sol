@@ -1089,12 +1089,16 @@ contract SpokeBase is Base {
     address user,
     uint256 reserveId,
     uint256 collateralReserveId
-  ) internal {
+  ) internal returns (uint256, uint256) {
     uint256 desiredHf = 1.05e18;
     uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
     require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
     _borrowWithoutHfCheck(spoke, user, reserveId, requiredDebtAmount);
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+
     _mockReservePriceByPercent(spoke, collateralReserveId, 70_00);
+
+    return (userAccountData.healthFactor, userAccountData.riskPremium);
   }
 
   /// @dev Helper function to borrow without health factor check
