@@ -1090,7 +1090,7 @@ contract SpokeBase is Base {
     uint256 reserveId,
     uint256 collateralReserveId
   ) internal {
-    uint256 desiredHf = 1e18;
+    uint256 desiredHf = 1.05e18;
     uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
     require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
     _borrowWithoutHfCheck(spoke, user, reserveId, requiredDebtAmount);
