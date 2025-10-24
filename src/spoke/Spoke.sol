@@ -663,13 +663,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     emit SetUserPositionManager(user, positionManager, approve);
   }
 
-  /// @notice Calculates and validates the user position.
+  /// @notice Calculates and validates the user account data.
   /// @dev It refreshes the dynamic config before calculation.
   /// @dev It checks that the health factor is above the liquidation threshold.
   function _refreshAndValidateUserAccountData(
     address user
   ) internal returns (UserAccountData memory) {
-    UserAccountData memory accountData = _computeUserAccountDataWithRefresh(user, true);
+    UserAccountData memory accountData = _processUserAccountData(user, true);
     emit RefreshAllUserDynamicConfig(user);
     require(
       accountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
@@ -678,15 +678,15 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return accountData;
   }
 
-  /// @notice Calculates the user position with the current dynamic config.
+  /// @notice Calculates the user account data with the current user dynamic config.
   function _calculateUserAccountData(address user) internal returns (UserAccountData memory) {
-    return _computeUserAccountDataWithRefresh(user, false);
+    return _processUserAccountData(user, false);
   }
 
-  /// @notice Calculates the user account data.
+  /// @notice Process the user account data.
   /// @dev It updates user dynamic config if `refreshConfig` is true.
   /// @dev It runs user risk calculations until the first of either collateral or debt is exhausted.
-  function _computeUserAccountDataWithRefresh(
+  function _processUserAccountData(
     address user,
     bool refreshConfig
   ) internal returns (UserAccountData memory accountData) {
