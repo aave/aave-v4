@@ -8,7 +8,7 @@ import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/in
 /// @title AssetInterestRateStrategy
 /// @author Aave Labs
 /// @notice Manages the kink-based interest rate strategy for an asset.
-/// @dev Strategies are hub-specific, due to the usage of asset identifier as index of the _interestRateData.
+/// @dev Strategies are Hub-specific, due to the usage of asset identifier as index of the `_interestRateData` mapping.
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;
 
@@ -28,7 +28,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   mapping(uint256 assetId => InterestRateData) internal _interestRateData;
 
   /// @dev Constructor.
-  /// @param hub_ The address of the associated hub.
+  /// @param hub_ The address of the associated Hub.
   constructor(address hub_) {
     require(hub_ != address(0), InvalidAddress());
     HUB = hub_;
