@@ -545,7 +545,7 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].swept;
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function getAssetDrawnIndex(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].getDrawnIndex();
   }
