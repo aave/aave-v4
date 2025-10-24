@@ -224,7 +224,7 @@ interface IHubBase {
   /// @return The current drawn index of the asset.
   function getAssetDrawnIndex(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the total amount of the specified asset added to the hub.
+  /// @notice Returns the total amount of the specified asset added to the Hub.
   /// @param assetId The identifier of the asset.
   /// @return The amount of the asset added.
   function getAddedAssets(uint256 assetId) external view returns (uint256);
