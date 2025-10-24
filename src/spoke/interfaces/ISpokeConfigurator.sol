@@ -39,10 +39,10 @@ interface ISpokeConfigurator {
   ) external;
 
   /// @notice Adds a new reserve to a spoke.
-  /// @dev The asset corresponding to the reserve must be already listed on the hub.
+  /// @dev The asset corresponding to the reserve must be already listed on the Hub.
   /// @dev The price source must implement the AggregatorV3Interface.
   /// @param spoke The address of the spoke.
-  /// @param hub The address of the hub where the asset corresponding to the reserve is listed.
+  /// @param hub The address of the Hub where the asset corresponding to the reserve is listed.
   /// @param assetId The identifier of the asset.
   /// @param priceSource The address of the price source.
   /// @param config The configuration of the reserve.

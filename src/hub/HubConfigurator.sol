@@ -10,8 +10,8 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 
 /// @title HubConfigurator
 /// @author Aave Labs
-/// @notice Handles administrative functions on the hub.
-/// @dev Must be granted permission by the hub.
+/// @notice Handles administrative functions on the Hub.
+/// @dev Must be granted permission by the Hub.
 contract HubConfigurator is Ownable2Step, IHubConfigurator {
   using SafeCast for uint256;
 
