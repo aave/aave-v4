@@ -25,7 +25,7 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @dev Each reserve can be associated with a separate Hub.
 abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
-  using WadRayMath for uint256;
+  using WadRayMath for *;
   using PercentageMath for *;
   using KeyValueList for KeyValueList.List;
   using PositionStatusMap for *;
@@ -806,15 +806,15 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       Reserve storage reserve = _reserves[reserveId];
       uint256 assetId = reserve.assetId;
       IHubBase hub = reserve.hub;
+      uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
 
       uint256 oldPremiumShares = userPosition.premiumShares;
       uint256 oldPremiumOffset = userPosition.premiumOffset;
-      uint256 accruedPremium = hub.previewRestoreByShares(assetId, oldPremiumShares) -
-        oldPremiumOffset;
+      uint256 accruedPremium = oldPremiumShares.rayMulUp(drawnIndex) - oldPremiumOffset;
 
       uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newRiskPremium);
       // uses opposite rounding direction as premiumOffset is virtual debt owed by the protocol
-      uint256 newPremiumOffset = hub.previewDrawByShares(assetId, newPremiumShares);
+      uint256 newPremiumOffset = newPremiumShares.rayMulDown(drawnIndex);
 
       userPosition.premiumShares = newPremiumShares.toUint128();
       userPosition.premiumOffset = newPremiumOffset.toUint128();
@@ -935,10 +935,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 assetId,
     UserPosition storage userPosition
   ) internal view returns (uint256, uint256, uint256) {
-    uint256 accruedPremium = hub.previewRestoreByShares(assetId, userPosition.premiumShares) -
+    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+    uint256 accruedPremium = userPosition.premiumShares.rayMulUp(drawnIndex) -
       userPosition.premiumOffset;
     return (
-      hub.previewRestoreByShares(assetId, userPosition.drawnShares),
+      userPosition.drawnShares.rayMulUp(drawnIndex),
       userPosition.realizedPremium + accruedPremium,
       accruedPremium
     );
