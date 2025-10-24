@@ -1093,7 +1093,7 @@ contract SpokeBase is Base {
     uint256 desiredHf = 1.05e18;
     uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
     require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
-    _borrowWithoutHfCheck(spoke, user, reserveId, requiredDebtAmount);
+    Utils.borrow(spoke, reserveId, user, requiredDebtAmount, user);
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
     _mockReservePriceByPercent(spoke, collateralReserveId, 70_00);
