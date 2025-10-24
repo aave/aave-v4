@@ -428,7 +428,7 @@ abstract contract Base is Test {
       paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
 
     bytes memory encodedIrData = abi.encode(
@@ -1264,14 +1264,14 @@ abstract contract Base is Test {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
-  function _updateSpokeRiskPremiumCap(
+  function _updateSpokeRiskPremiumThreshold(
     IHub hub,
     uint256 assetId,
     address spoke,
-    uint24 newRiskPremiumCap
+    uint24 newRiskPremiumThreshold
   ) internal pausePrank {
     IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
-    spokeConfig.riskPremiumCap = newRiskPremiumCap;
+    spokeConfig.riskPremiumThreshold = newRiskPremiumThreshold;
     vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
 
@@ -2077,7 +2077,7 @@ abstract contract Base is Test {
   function assertEq(IHub.SpokeConfig memory a, IHub.SpokeConfig memory b) internal pure {
     assertEq(a.addCap, b.addCap, 'addCap');
     assertEq(a.drawCap, b.drawCap, 'drawCap');
-    assertEq(a.riskPremiumCap, b.riskPremiumCap, 'riskPremiumCap');
+    assertEq(a.riskPremiumThreshold, b.riskPremiumThreshold, 'riskPremiumThreshold');
     assertEq(a.active, b.active, 'active');
     assertEq(a.paused, b.paused, 'paused');
     assertEq(abi.encode(a), abi.encode(b));
