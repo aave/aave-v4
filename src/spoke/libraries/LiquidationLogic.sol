@@ -366,7 +366,7 @@ library LiquidationLogic {
     );
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
-    // if the liquidator is using the collateral reserve as collateral, they cannot receive shares due to skipped `notifyRiskPremiumUpdate`
+    // if the liquidator is using the collateral reserve as collateral, they cannot receive shares
     require(
       !(params.receiveShares &&
         (params.liquidatorUsingAsCollateral || params.collateralReserveFrozen)),
