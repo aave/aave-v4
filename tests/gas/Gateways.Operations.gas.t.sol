@@ -26,6 +26,8 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
     deal(address(tokenList.weth), MAX_SUPPLY_AMOUNT);
     deal(bob, mintAmount_WETH);
+
+    Utils.approve(hub1, address(nativeTokenGateway), _wethReserveId(spoke1), bob, UINT256_MAX);
   }
 
   function test_supplyNative() public {

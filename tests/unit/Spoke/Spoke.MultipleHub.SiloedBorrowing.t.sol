@@ -122,11 +122,8 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     vm.stopPrank();
 
     // Approvals
-    vm.prank(bob);
-    assetA.approve(address(hub1), type(uint256).max);
-
-    vm.prank(alice);
-    assetB.approve(address(newHub), type(uint256).max);
+    Utils.approve(hub1, address(newSpoke), siloedVars.assetAId, bob, UINT256_MAX);
+    Utils.approve(newHub, address(newSpoke), siloedVars.assetBId, alice, UINT256_MAX);
 
     // Deal tokens
     deal(address(assetA), bob, MAX_SUPPLY_AMOUNT);

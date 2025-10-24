@@ -13,6 +13,7 @@ import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash
 import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 /// @title SignatureGateway
 /// @author Aave Labs
@@ -44,6 +45,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     (address underlying, address hub) = _getReserveData(spoke, reserveId);
     underlying.safeTransferFrom(user, address(this), params.amount);
     underlying.safeApproveWithRetry(hub, params.amount);
+    IHub(hub).approve(address(spoke), underlying, params.amount);
 
     return ISpoke(spoke).supply(reserveId, params.amount, user);
   }
@@ -117,6 +119,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
 
     underlying.safeTransferFrom(user, address(this), repayAmount);
     underlying.safeApproveWithRetry(hub, repayAmount);
+    IHub(hub).approve(address(spoke), underlying, repayAmount);
 
     return ISpoke(spoke).repay(reserveId, repayAmount, user);
   }

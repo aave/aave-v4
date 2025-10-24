@@ -87,14 +87,11 @@ contract SpokeMultipleHubTest is SpokeBase {
     deal(address(tokenList.dai), alice, MAX_SUPPLY_AMOUNT * 2);
 
     // Approvals
-    vm.startPrank(alice);
-    tokenList.dai.approve(address(hub2), type(uint256).max);
-    tokenList.dai.approve(address(hub3), type(uint256).max);
+    Utils.approve(hub2, address(spoke1), daiAssetId, alice, UINT256_MAX);
+    Utils.approve(hub3, address(spoke1), hub3DaiAssetId, alice, UINT256_MAX);
 
-    vm.startPrank(bob);
-    tokenList.dai.approve(address(hub2), type(uint256).max);
-    tokenList.dai.approve(address(hub3), type(uint256).max);
-    vm.stopPrank();
+    Utils.approve(hub2, address(spoke1), daiAssetId, bob, UINT256_MAX);
+    Utils.approve(hub3, address(spoke1), hub3DaiAssetId, bob, UINT256_MAX);
   }
 
   /// @dev Test showcasing dai may be borrowed from hub 2 and hub 1 via spoke 1

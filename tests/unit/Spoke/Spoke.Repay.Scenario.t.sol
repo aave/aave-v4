@@ -7,6 +7,14 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeRepayScenarioTest is SpokeBase {
   using SafeCast for uint256;
 
+  function setUp() public virtual override {
+    super.setUp();
+    Utils.approve(hub1, address(spoke1), _daiReserveId(spoke1), address(spoke1), UINT256_MAX);
+    Utils.approve(hub1, address(spoke1), _wethReserveId(spoke1), address(spoke1), UINT256_MAX);
+    Utils.approve(hub1, address(spoke1), _usdxReserveId(spoke1), address(spoke1), UINT256_MAX);
+    Utils.approve(hub1, address(spoke1), _wbtcReserveId(spoke1), address(spoke1), UINT256_MAX);
+  }
+
   function test_repay_fuzz_multiple_users_multiple_assets(
     UserAssetInfo memory bobInfo,
     UserAssetInfo memory aliceInfo,
@@ -1343,7 +1351,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
     deal(address(underlying), caller, supplyAmount);
     vm.prank(caller);
-    underlying.approve(address(hub1), supplyAmount);
+    Utils.approve(hub1, address(spoke1), reserve.assetId, caller, UINT256_MAX);
     Utils.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
 
     // Borrow
@@ -1398,7 +1406,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
     deal(address(underlying), caller, supplyAmount);
     vm.prank(caller);
-    underlying.approve(address(hub1), supplyAmount);
+    Utils.approve(hub1, address(spoke1), reserve.assetId, caller, UINT256_MAX);
     Utils.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
     Utils.borrow(spoke1, reserveId, caller, callerStartingDebt, caller);
 

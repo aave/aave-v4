@@ -8,6 +8,7 @@ import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {INativeWrapper} from 'src/position-manager/interfaces/INativeWrapper.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 /// @title NativeTokenGateway
 /// @author Aave Labs
@@ -124,6 +125,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
 
     _nativeWrapper.deposit{value: repayAmount}();
     address(_nativeWrapper).safeApproveWithRetry(hub, repayAmount);
+    IHub(hub).approve(address(spoke), underlying, repayAmount);
     (uint256 repaidShares, uint256 repaidAmount) = ISpoke(spoke).repay(
       reserveId,
       repayAmount,
@@ -154,6 +156,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
 
     _nativeWrapper.deposit{value: amount}();
     address(_nativeWrapper).safeApproveWithRetry(hub, amount);
+    IHub(hub).approve(address(spoke), underlying, amount);
     return ISpoke(spoke).supply(reserveId, amount, user);
   }
 

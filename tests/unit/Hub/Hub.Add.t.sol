@@ -54,16 +54,23 @@ contract HubAddTest is HubBase {
   function test_add_revertsWith_TransferFromFailed() public {
     uint256 amount = 100e18;
 
+    address user = makeAddr('randomUser');
+    Utils.approve(hub1, address(spoke1), daiAssetId, user, UINT256_MAX);
+
     vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, amount, makeAddr('randomUser'));
+    hub1.add(daiAssetId, amount, user);
   }
 
   function test_add_fuzz_revertsWith_TransferFromFailed(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+
+    address user = makeAddr('randomUser');
+    Utils.approve(hub1, address(spoke1), daiAssetId, user, UINT256_MAX);
+
     vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, amount, makeAddr('randomUser'));
+    hub1.add(daiAssetId, amount, user);
   }
 
   function test_add_revertsWith_SpokePaused() public {
@@ -227,8 +234,7 @@ contract HubAddTest is HubBase {
       )
     );
 
-    vm.prank(user);
-    underlying.approve(address(hub1), amount);
+    Utils.approve(hub1, address(spoke1), assetId, user, UINT256_MAX);
     deal(address(underlying), user, amount);
 
     uint256 shares = hub1.previewAddByAssets(assetId, amount);

@@ -32,6 +32,8 @@ contract SpokeAccessTest is SpokeBase {
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
     hub1.transferShares(daiAssetId, 1000e18, bob);
 
+    Utils.approve(hub1, address(spoke1), daiAssetId, address(spoke1), UINT256_MAX);
+
     // A spoke is allowed to call the hub functions
     deal(address(tokenList.dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));

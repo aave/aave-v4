@@ -79,7 +79,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
 
     // Mint tokens to liquidator and approve hub
     deal(address(asset), liquidator, spokeDrawnOwed + spokePremiumOwed);
-    Utils.approve(hub, assetId, liquidator, spokeDrawnOwed + spokePremiumOwed);
+    Utils.approve(hub, address(spoke), assetId, liquidator, spokeDrawnOwed + spokePremiumOwed);
   }
 
   function expectCall(
@@ -187,7 +187,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     updateStorage(drawnDebt, premiumDebt, accruedPremium);
 
     uint256 debtToLiquidate = drawnDebt + premiumDebt;
-    Utils.approve(hub, assetId, liquidator, debtToLiquidate - 1);
+    Utils.approve(hub, address(spoke), assetId, liquidator, debtToLiquidate - 1);
 
     vm.expectRevert();
     liquidationLogicWrapper.liquidateDebt(

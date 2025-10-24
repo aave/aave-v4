@@ -18,7 +18,7 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    approve(IHub(address(hub)), assetId, user, amount);
+    approve(IHub(address(hub)), caller, assetId, user, amount);
     vm.prank(caller);
     return hub.add(assetId, amount, user);
   }
@@ -52,7 +52,7 @@ library Utils {
     uint256 drawnAmount,
     address restorer
   ) internal returns (uint256) {
-    approve(IHub(address(hub)), assetId, restorer, drawnAmount);
+    approve(IHub(address(hub)), caller, assetId, restorer, drawnAmount);
     vm.prank(caller);
     return hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0), restorer);
   }
@@ -174,6 +174,7 @@ library Utils {
     IHubBase hub = spoke.getReserve(reserveId).hub;
     (address underlying, ) = hub.getAssetUnderlyingAndDecimals(spoke.getReserve(reserveId).assetId);
     _approve(IERC20(underlying), owner, address(hub), amount);
+    _approveSpoke(IHub(address(hub)), spoke, owner, underlying, amount);
   }
 
   function approve(
@@ -190,16 +191,48 @@ library Utils {
       spender,
       amount
     );
+    _approveSpoke(
+      hub,
+      spoke,
+      owner,
+      hub.getAsset(spoke.getReserve(reserveId).assetId).underlying,
+      amount
+    );
   }
 
-  function approve(IHub hub, uint256 assetId, address owner, uint256 amount) internal {
+  function approve(
+    IHub hub,
+    address spoke,
+    uint256 assetId,
+    address owner,
+    uint256 amount
+  ) internal {
     _approve(IERC20(hub.getAsset(assetId).underlying), owner, address(hub), amount);
+    _approveSpoke(
+      IHub(address(hub)),
+      ISpoke(spoke),
+      owner,
+      hub.getAsset(assetId).underlying,
+      amount
+    );
   }
 
   function _approve(IERC20 underlying, address owner, address spender, uint256 amount) private {
     vm.startPrank(owner);
     underlying.approve(spender, 0);
     underlying.approve(spender, amount);
+    vm.stopPrank();
+  }
+
+  function _approveSpoke(
+    IHub hub,
+    ISpoke spoke,
+    address owner,
+    address underlying,
+    uint256 amount
+  ) private {
+    vm.startPrank(owner);
+    hub.approve(address(spoke), underlying, amount);
     vm.stopPrank();
   }
 }

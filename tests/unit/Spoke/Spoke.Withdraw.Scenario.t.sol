@@ -24,6 +24,11 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     uint256 rate;
   }
 
+  function setUp() public virtual override {
+    super.setUp();
+    Utils.approve(hub1, address(spoke1), daiAssetId, address(spoke1), UINT256_MAX);
+  }
+
   function test_withdraw_fuzz_partial_full_with_interest(
     uint256 supplyAmount,
     uint256 borrowAmount,
@@ -375,7 +380,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // Deal caller the balance to deposit, and approve hub
     deal(address(underlying), caller, assets);
     vm.prank(caller);
-    underlying.approve(address(hub1), assets);
+    Utils.approve(hub1, address(spoke1), reserve.assetId, caller, UINT256_MAX);
 
     // Supply and confirm share amount from event emission
     TestReturnValues memory returnValues1;
@@ -436,7 +441,8 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // Deal caller the balance they will supply, and approve hub
     deal(address(underlying), caller, callerStartingBalance);
     vm.prank(caller);
-    underlying.approve(address(hub1), UINT256_MAX);
+    underlying.approve(address(hub1), callerStartingBalance);
+    Utils.approve(hub1, address(spoke1), reserve.assetId, caller, UINT256_MAX);
 
     // Set up initial state of caller by supplying their starting balance
     Utils.supply({

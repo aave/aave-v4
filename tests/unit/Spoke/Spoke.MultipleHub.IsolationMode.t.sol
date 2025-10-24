@@ -124,20 +124,24 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     );
     vm.stopPrank();
 
-    // Approvals
-    vm.startPrank(bob);
-    assetA.approve(address(newHub), type(uint256).max);
-    assetB.approve(address(hub1), type(uint256).max);
-    vm.stopPrank();
-
-    vm.startPrank(alice);
-    assetB.approve(address(hub1), type(uint256).max);
-    assetB.approve(address(newHub), type(uint256).max);
-    vm.stopPrank();
+    _executeApprovals();
 
     // Deal tokens
     deal(address(assetA), bob, MAX_SUPPLY_AMOUNT);
     deal(address(assetB), alice, MAX_SUPPLY_AMOUNT * 2); // Alice supplies on 2 different hubs
+  }
+
+  function _executeApprovals() internal {
+    // Approvals for Bob
+    Utils.approve(newHub, address(newSpoke), isolationVars.assetAId, bob, UINT256_MAX);
+    Utils.approve(newHub, address(newSpoke), isolationVars.assetBId, bob, UINT256_MAX);
+    Utils.approve(hub1, address(newSpoke), isolationVars.assetBIdMainHub, bob, UINT256_MAX);
+
+    // Approvals for Alice
+    Utils.approve(newHub, address(newSpoke), isolationVars.assetAId, alice, UINT256_MAX);
+    Utils.approve(newHub, address(newSpoke), isolationVars.assetBId, alice, UINT256_MAX);
+    Utils.approve(hub1, address(spoke1), isolationVars.assetBIdMainHub, alice, UINT256_MAX);
+    Utils.approve(hub1, address(newSpoke), isolationVars.assetBIdMainHub, alice, UINT256_MAX);
   }
 
   /* @dev Test showcasing a possible configuration for isolation mode

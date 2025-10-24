@@ -91,6 +91,13 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param spoke The address of the spoke.
   event AddSpoke(uint256 indexed assetId, address indexed spoke);
 
+  event ApproveSpoke(
+    address indexed user,
+    address indexed spoke,
+    address indexed underlying,
+    uint256 amount
+  );
+
   /// @notice Emitted when a spoke configuration is updated.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
@@ -192,6 +199,9 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev The `irData` must be empty if the interest rate strategy is not updated.
   error InvalidInterestRateStrategy();
 
+  /// @notice Thrown when the allowance provided to the spoke is insufficient.
+  error InsufficientSpokeAllowance();
+
   /// @notice Adds a new asset to the hub.
   /// @dev The same underlying asset address can be added as an asset multiple times.
   /// @dev The fee receiver is added as a new spoke with maximum add cap and zero draw cap.
@@ -269,6 +279,13 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param assetId The identifier of the asset.
   /// @param amount The amount to reclaim.
   function reclaim(uint256 assetId, uint256 amount) external;
+
+  /// @notice Approves a spoke to transfer its supplied shares of an asset to another spoke.
+  /// @dev Only callable by users.
+  /// @param spoke The address of the spoke to approve.
+  /// @param underlying The address of the underlying asset.
+  /// @param amount The amount of tokens to approve for transfer from user to hub from actions on spoke.
+  function approve(address spoke, address underlying, uint256 amount) external;
 
   /// @notice Returns the number of listed assets.
   /// @return The number of listed assets.

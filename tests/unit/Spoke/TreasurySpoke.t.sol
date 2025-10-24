@@ -10,6 +10,8 @@ contract TreasurySpokeTest is SpokeBase {
   function setUp() public virtual override {
     super.setUp();
     _testToken = new MockERC20();
+
+    Utils.approve(hub1, address(treasurySpoke), daiAssetId, TREASURY_ADMIN, UINT256_MAX);
   }
 
   function test_deploy_reverts_on_invalid_params() public {

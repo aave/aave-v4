@@ -43,6 +43,8 @@ contract Hub is IHub, AccessManaged {
   mapping(uint256 assetId => Asset) internal _assets;
   mapping(uint256 assetId => mapping(address spoke => SpokeData)) internal _spokes;
   mapping(uint256 assetId => EnumerableSet.AddressSet) internal _assetToSpokes;
+  mapping(address user => mapping(address spoke => mapping(address underlying => uint256)))
+    internal _userSpokeAllowance;
 
   /// @dev Constructor.
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
@@ -190,13 +192,19 @@ contract Hub is IHub, AccessManaged {
     asset.updateDrawnRate(assetId);
   }
 
+  function approve(address spoke, address underlying, uint256 amount) external {
+    _userSpokeAllowance[msg.sender][spoke][underlying] = amount;
+
+    emit ApproveSpoke(msg.sender, spoke, underlying, amount);
+  }
+
   /// @inheritdoc IHubBase
   function add(uint256 assetId, uint256 amount, address from) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(_spokes, assetId);
-    _validateAdd(asset, spoke, amount, from);
+    uint256 allowance = _validateAdd(asset, spoke, amount, from, msg.sender);
 
     uint128 shares = asset.toAddedSharesDown(amount).toUint128();
     require(shares > 0, InvalidShares());
@@ -207,6 +215,9 @@ contract Hub is IHub, AccessManaged {
     asset.updateDrawnRate(assetId);
 
     asset.underlying.safeTransferFrom(from, address(this), amount);
+    if (allowance != type(uint256).max) {
+      _userSpokeAllowance[from][msg.sender][asset.underlying] = allowance.uncheckedSub(amount);
+    }
 
     emit Add(assetId, msg.sender, shares, amount);
 
@@ -275,7 +286,14 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(_spokes, assetId);
-    _validateRestore(asset, spoke, drawnAmount, premiumAmount, from);
+    uint256 allowance = _validateRestore(
+      asset,
+      spoke,
+      drawnAmount,
+      premiumAmount,
+      from,
+      msg.sender
+    );
 
     uint128 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint128();
     asset.drawnShares -= drawnShares;
@@ -287,6 +305,9 @@ contract Hub is IHub, AccessManaged {
     asset.updateDrawnRate(assetId);
 
     asset.underlying.safeTransferFrom(from, address(this), totalAmount);
+    if (allowance != type(uint256).max) {
+      _userSpokeAllowance[from][msg.sender][asset.underlying] = allowance.uncheckedSub(totalAmount);
+    }
 
     emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
@@ -741,21 +762,25 @@ contract Hub is IHub, AccessManaged {
   /// @dev Spoke with maximum cap have unlimited add capacity.
   function _validateAdd(
     Asset storage asset,
-    SpokeData storage spoke,
+    SpokeData storage spokeData,
     uint256 amount,
-    address from
-  ) internal view {
+    address from,
+    address spoke
+  ) internal view returns (uint256) {
     require(from != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
-    require(spoke.active, SpokeNotActive());
-    require(!spoke.paused, SpokePaused());
-    uint256 addCap = spoke.addCap;
+    require(spokeData.active, SpokeNotActive());
+    require(!spokeData.paused, SpokePaused());
+    uint256 addCap = spokeData.addCap;
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-        asset.toAddedAssetsUp(spoke.addedShares) + amount,
+        asset.toAddedAssetsUp(spokeData.addedShares) + amount,
       AddCapExceeded(addCap)
     );
+    uint256 allowance = _userSpokeAllowance[from][spoke][asset.underlying];
+    require(allowance >= amount, InsufficientSpokeAllowance());
+    return allowance;
   }
 
   function _validateRemove(
@@ -792,19 +817,23 @@ contract Hub is IHub, AccessManaged {
 
   function _validateRestore(
     Asset storage asset,
-    SpokeData storage spoke,
+    SpokeData storage spokeData,
     uint256 drawnAmount,
     uint256 premiumAmount,
-    address from
-  ) internal view {
+    address from,
+    address spoke
+  ) internal view returns (uint256) {
     require(from != address(this), InvalidAddress());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
-    require(spoke.active, SpokeNotActive());
-    require(!spoke.paused, SpokePaused());
-    uint256 drawn = _getSpokeDrawn(asset, spoke);
-    uint256 premium = _getSpokePremium(asset, spoke);
+    require(spokeData.active, SpokeNotActive());
+    require(!spokeData.paused, SpokePaused());
+    uint256 drawn = _getSpokeDrawn(asset, spokeData);
+    uint256 premium = _getSpokePremium(asset, spokeData);
     require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
     require(premiumAmount <= premium, SurplusAmountRestored(premium));
+    uint256 allowance = _userSpokeAllowance[from][spoke][asset.underlying];
+    require(allowance >= drawnAmount + premiumAmount, InsufficientSpokeAllowance());
+    return allowance;
   }
 
   function _validateReportDeficit(

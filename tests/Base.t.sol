@@ -393,6 +393,26 @@ abstract contract Base is Test {
       tokenList.dai.approve(address(hub1), UINT256_MAX);
       tokenList.wbtc.approve(address(hub1), UINT256_MAX);
       tokenList.usdy.approve(address(hub1), UINT256_MAX);
+
+      hub1.approve(address(spoke1), address(tokenList.weth), UINT256_MAX);
+      hub1.approve(address(spoke2), address(tokenList.weth), UINT256_MAX);
+      hub1.approve(address(spoke3), address(tokenList.weth), UINT256_MAX);
+
+      hub1.approve(address(spoke1), address(tokenList.usdx), UINT256_MAX);
+      hub1.approve(address(spoke2), address(tokenList.usdx), UINT256_MAX);
+      hub1.approve(address(spoke3), address(tokenList.usdx), UINT256_MAX);
+
+      hub1.approve(address(spoke1), address(tokenList.dai), UINT256_MAX);
+      hub1.approve(address(spoke2), address(tokenList.dai), UINT256_MAX);
+      hub1.approve(address(spoke3), address(tokenList.dai), UINT256_MAX);
+
+      hub1.approve(address(spoke1), address(tokenList.wbtc), UINT256_MAX);
+      hub1.approve(address(spoke2), address(tokenList.wbtc), UINT256_MAX);
+      hub1.approve(address(spoke3), address(tokenList.wbtc), UINT256_MAX);
+
+      hub1.approve(address(spoke1), address(tokenList.usdy), UINT256_MAX);
+      hub1.approve(address(spoke2), address(tokenList.usdy), UINT256_MAX);
+      hub1.approve(address(spoke3), address(tokenList.usdy), UINT256_MAX);
       vm.stopPrank();
     }
   }
