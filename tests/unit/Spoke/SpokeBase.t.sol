@@ -1035,6 +1035,24 @@ contract SpokeBase is Base {
     return (finalHf, requiredDebtAmount);
   }
 
+  /// @dev Borrow to be at a certain health factor
+  function _borrowToBeLiquidatableWithPriceChange(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 collateralReserveId
+  ) internal returns (uint256, uint256) {
+    uint256 desiredHf = 1.05e18;
+    uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
+    require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
+    Utils.borrow(spoke, reserveId, user, requiredDebtAmount, user);
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+
+    _mockReservePriceByPercent(spoke, collateralReserveId, 85_00);
+
+    return (userAccountData.healthFactor, userAccountData.riskPremium);
+  }
+
   /// @dev Helper function to borrow without health factor check
   function _borrowWithoutHfCheck(
     ISpoke spoke,
