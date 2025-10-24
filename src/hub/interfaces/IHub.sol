@@ -350,7 +350,8 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The address of the spoke.
   function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address);
 
-  function isAssetListed(address underlying) external view returns (bool);
+  /// @notice Returns true when `underlying` is currently listed as an asset.
+  function isUnderlyingListed(address underlying) external view returns (bool);
 
   /// @notice Returns the spoke data struct.
   /// @param assetId The identifier of the asset.

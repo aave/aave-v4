@@ -227,8 +227,8 @@ contract HubConfigTest is HubBase {
     );
   }
 
-  function test_addAsset_fuzz_reverts_AssetAlreadyListed() public {
-    assertTrue(hub1.isAssetListed(address(tokenList.dai)));
+  function test_addAsset_reverts_AssetAlreadyListed() public {
+    assertTrue(hub1.isUnderlyingListed(address(tokenList.dai)));
 
     vm.expectRevert(IHub.AssetAlreadyListed.selector, address(hub1));
     Utils.addAsset(
