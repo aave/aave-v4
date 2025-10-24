@@ -37,6 +37,7 @@ library LiquidationLogic {
     uint256 activeCollateralCount;
     uint256 borrowedCount;
     bool receiveShares;
+    bool liquidatorUsingAsCollateral;
   }
 
   struct ValidateLiquidationCallParams {
@@ -54,6 +55,7 @@ library LiquidationLogic {
     uint256 collateralReserveBalance;
     uint256 debtReserveBalance;
     bool receiveShares;
+    bool liquidatorUsingAsCollateral;
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
@@ -157,7 +159,8 @@ library LiquidationLogic {
         collateralFactor: collateralDynConfig.collateralFactor,
         collateralReserveBalance: collateralReserveBalance,
         debtReserveBalance: params.drawnDebt + params.premiumDebt,
-        receiveShares: params.receiveShares
+        receiveShares: params.receiveShares,
+        liquidatorUsingAsCollateral: params.liquidatorUsingAsCollateral
       })
     );
 
@@ -363,7 +366,12 @@ library LiquidationLogic {
     );
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
-    require(!params.receiveShares || !params.collateralReserveFrozen, ISpoke.CannotReceiveShares());
+    // if the liquidator is using the collateral reserve as collateral, they cannot receive shares due to skipped `notifyRiskPremiumUpdate`
+    require(
+      !(params.receiveShares &&
+        (params.liquidatorUsingAsCollateral || params.collateralReserveFrozen)),
+      ISpoke.CannotReceiveShares()
+    );
   }
 
   /// @notice Calculates the liquidation amounts.

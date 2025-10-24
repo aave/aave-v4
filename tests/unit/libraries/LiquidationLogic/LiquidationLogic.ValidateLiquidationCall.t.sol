@@ -24,7 +24,8 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
       isUsingAsCollateral: true,
       collateralFactor: 75_00,
       collateralReserveBalance: 120e6,
-      debtReserveBalance: 100e18
+      debtReserveBalance: 100e18,
+      liquidatorUsingAsCollateral: false
     });
   }
 
@@ -58,18 +59,56 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
-  function test_validateLiquidationCall_revertsWith_CannotReceiveShares_CollateralFrozen() public {
-    // frozen coll reserve; receiveShares false allowed
+  function test_validateLiquidationCall_revertsWith_CannotReceiveShares() public {
+    // receiveShares = false; liquidatorUsingAsCollateral = false; frozen = false; => allowed
+    params.receiveShares = false;
+    params.liquidatorUsingAsCollateral = false;
+    params.collateralReserveFrozen = false;
+    liquidationLogicWrapper.validateLiquidationCall(params);
+
+    // receiveShares = false; liquidatorUsingAsCollateral = true; frozen = false; => allowed
+    params.receiveShares = false;
+    params.liquidatorUsingAsCollateral = true;
+    params.collateralReserveFrozen = false;
+    liquidationLogicWrapper.validateLiquidationCall(params);
+
+    // receiveShares = false; liquidatorUsingAsCollateral = false; frozen = true; => allowed
+    params.receiveShares = false;
+    params.liquidatorUsingAsCollateral = false;
     params.collateralReserveFrozen = true;
     liquidationLogicWrapper.validateLiquidationCall(params);
 
-    // frozen coll reserve; receiveShares true not allowed
+    // receiveShares = false; liquidatorUsingAsCollateral = true; frozen = true; => allowed
+    params.receiveShares = false;
+    params.liquidatorUsingAsCollateral = true;
+    params.collateralReserveFrozen = true;
+    liquidationLogicWrapper.validateLiquidationCall(params);
+
+    // receiveShares = true; liquidatorUsingAsCollateral = false; frozen = false; => allowed
     params.receiveShares = true;
+    params.liquidatorUsingAsCollateral = false;
+    params.collateralReserveFrozen = false;
+    liquidationLogicWrapper.validateLiquidationCall(params);
+
+    // receiveShares = true; liquidatorUsingAsCollateral = true; frozen = false; => revert
+    params.receiveShares = true;
+    params.liquidatorUsingAsCollateral = true;
+    params.collateralReserveFrozen = false;
     vm.expectRevert(ISpoke.CannotReceiveShares.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
 
-    // non-frozen coll reserve; receiveShares true allowed
-    params.collateralReserveFrozen = false;
+    // receiveShares = true; liquidatorUsingAsCollateral = false; frozen = true; => revert
+    params.receiveShares = true;
+    params.liquidatorUsingAsCollateral = false;
+    params.collateralReserveFrozen = true;
+    vm.expectRevert(ISpoke.CannotReceiveShares.selector);
+    liquidationLogicWrapper.validateLiquidationCall(params);
+
+    // receiveShares = true; liquidatorUsingAsCollateral = true; frozen = true; => revert
+    params.receiveShares = true;
+    params.liquidatorUsingAsCollateral = true;
+    params.collateralReserveFrozen = true;
+    vm.expectRevert(ISpoke.CannotReceiveShares.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 

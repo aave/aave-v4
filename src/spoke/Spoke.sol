@@ -341,7 +341,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       activeCollateralCount: userAccountData.activeCollateralCount,
       borrowedCount: userAccountData.borrowedCount,
       liquidator: msg.sender,
-      receiveShares: receiveShares
+      receiveShares: receiveShares,
+      liquidatorUsingAsCollateral: receiveShares
+        ? _positionStatus[msg.sender].isUsingAsCollateral(collateralReserveId)
+        : false
     });
 
     (params.drawnDebt, params.premiumDebt, params.accruedPremium) = _getUserDebt(
