@@ -366,15 +366,12 @@ library LiquidationLogic {
     );
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
-    // if the liquidator is using the collateral reserve as collateral, they cannot receive shares
-    require(
-      !(params.receiveShares && params.liquidatorUsingAsCollateral),
-      ISpoke.CannotReceiveShares()
-    );
-    require(
-      !(params.receiveShares && params.collateralReserveFrozen),
-      ISpoke.CannotReceiveShares()
-    );
+    if (params.receiveShares) {
+      require(
+        !params.liquidatorUsingAsCollateral && !params.collateralReserveFrozen,
+        ISpoke.CannotReceiveShares()
+      );
+    }
   }
 
   /// @notice Calculates the liquidation amounts.
