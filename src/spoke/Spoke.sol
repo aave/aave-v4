@@ -625,8 +625,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function getUserAccountData(address user) external view returns (UserAccountData memory) {
-    // SAFETY: function does not modify state when refreshConfig is false.
-    return _castToView(_calculateUserAccountData)(user);
+    // SAFETY: function does not modify state when `refreshConfig` is false.
+    return _castToView(_processUserAccountData)(user, false);
   }
 
   /// @inheritdoc ISpoke
@@ -680,12 +680,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @notice Calculates the user account data with the current user dynamic config.
   function _calculateUserAccountData(address user) internal returns (UserAccountData memory) {
-    return _processUserAccountData(user, false);
+    return _processUserAccountData(user, false); // does not modify state
   }
 
-  /// @notice Process the user account data.
-  /// @dev It updates user dynamic config if `refreshConfig` is true.
-  /// @dev It runs user risk calculations until the first of either collateral or debt is exhausted.
+  /// @notice Process the user account data and updates dynamic config of the user if `refreshConfig` is true.
   function _processUserAccountData(
     address user,
     bool refreshConfig
@@ -767,6 +765,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     uint256 debtValueLeftToCover = accountData.totalDebtValue;
     collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
+
+    // it runs until the first of either collateral or debt is exhausted
     for (uint256 index = 0; index < collateralInfo.length(); ++index) {
       if (debtValueLeftToCover == 0) {
         break;
