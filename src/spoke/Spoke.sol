@@ -979,8 +979,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   function _castToView(
-    function(address) internal returns (UserAccountData memory) fnIn
-  ) internal pure returns (function(address) internal view returns (UserAccountData memory) fnOut) {
+    function(address, bool) internal returns (UserAccountData memory) fnIn
+  )
+    internal
+    pure
+    returns (function(address, bool) internal view returns (UserAccountData memory) fnOut)
+  {
     assembly ('memory-safe') {
       fnOut := fnIn
     }

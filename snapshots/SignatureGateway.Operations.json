@@ -1,11 +1,6 @@
 {
-<<<<<<< HEAD
-  "borrowWithSig": "214026",
-  "repayWithSig": "242385",
-=======
-  "borrowWithSig": "211789",
+  "borrowWithSig": "211725",
   "repayWithSig": "237828",
->>>>>>> main
   "setSelfAsUserPositionManagerWithSig": "75492",
   "setUsingAsCollateralWithSig": "85259",
   "supplyWithSig": "147957",

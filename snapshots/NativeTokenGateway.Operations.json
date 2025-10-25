@@ -1,11 +1,6 @@
 {
-<<<<<<< HEAD
-  "borrowNative": "225846",
-  "repayNative": "241350",
-=======
-  "borrowNative": "223609",
+  "borrowNative": "223545",
   "repayNative": "236794",
->>>>>>> main
   "supplyAsCollateralNative": "155117",
   "supplyNative": "131351",
   "withdrawNative: full": "121180",
