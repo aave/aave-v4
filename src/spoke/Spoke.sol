@@ -426,7 +426,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(
+    bytes32 digest = _hashTypedData(
       keccak256(
         abi.encode(
           SET_USER_POSITION_MANAGER_TYPEHASH,
@@ -438,7 +438,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         )
       )
     );
-    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, nonce);
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
@@ -768,7 +768,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 debtValueLeftToCover = accountData.totalDebtValue;
     collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
 
-    // it runs until the first of either collateral or debt is exhausted
+    // runs until either the collateral or debt is exhausted
     for (uint256 index = 0; index < collateralInfo.length(); ++index) {
       if (debtValueLeftToCover == 0) {
         break;
