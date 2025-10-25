@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "borrow: first": "268035",
   "borrow: second action, same reserve": "211273",
   "liquidationCall (receiveShares): full": "295109",
@@ -6,10 +7,19 @@
   "liquidationCall: full": "319122",
   "liquidationCall: partial": "341897",
   "permitReserve + repay (multicall)": "268475",
+=======
+  "borrow: first": "265798",
+  "borrow: second action, same reserve": "209036",
+  "liquidationCall (receiveShares): full": "290542",
+  "liquidationCall (receiveShares): partial": "329925",
+  "liquidationCall: full": "314550",
+  "liquidationCall: partial": "336267",
+  "permitReserve + repay (multicall)": "264519",
+>>>>>>> main
   "permitReserve + supply (multicall)": "140176",
   "permitReserve + supply + enable collateral (multicall)": "175479",
-  "repay: full": "146165",
-  "repay: partial": "209661",
+  "repay: full": "145039",
+  "repay: partial": "206234",
   "setUserPositionManagerWithSig: disable": "44896",
   "setUserPositionManagerWithSig: enable": "68925",
   "supply + enable collateral (multicall)": "153420",
@@ -17,6 +27,7 @@
   "supply: 0 borrows, collateral enabled": "119313",
   "supply: 1 borrow": "119305",
   "supply: second action, same reserve": "102213",
+<<<<<<< HEAD
   "updateUserDynamicConfig: 1 collateral": "73763",
   "updateUserDynamicConfig: 2 collaterals": "88623",
   "updateUserRiskPremium: 1 borrow": "176413",
@@ -31,4 +42,20 @@
   "withdraw: 1 borrow, partial": "235526",
   "withdraw: 2 borrows, partial": "335077",
   "withdraw: non collateral": "120019"
+=======
+  "updateUserDynamicConfig: 1 collateral": "73827",
+  "updateUserDynamicConfig: 2 collaterals": "88687",
+  "updateUserRiskPremium: 1 borrow": "173054",
+  "updateUserRiskPremium: 2 borrows": "253640",
+  "usingAsCollateral: 0 borrows, enable": "59042",
+  "usingAsCollateral: 1 borrow, disable": "183389",
+  "usingAsCollateral: 1 borrow, enable": "32364",
+  "usingAsCollateral: 2 borrows, disable": "279592",
+  "usingAsCollateral: 2 borrows, enable": "41942",
+  "withdraw: 0 borrows, full": "122623",
+  "withdraw: 0 borrows, partial": "127474",
+  "withdraw: 1 borrow, partial": "232226",
+  "withdraw: 2 borrows, partial": "328417",
+  "withdraw: non collateral": "120014"
+>>>>>>> main
 }

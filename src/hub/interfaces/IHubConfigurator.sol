@@ -11,7 +11,7 @@ interface IHubConfigurator {
   /// @notice Thrown when the list of assets and spoke configs are not the same length in `addSpokeToAssets`.
   error MismatchedConfigs();
 
-  /// @notice Adds a new asset to the hub.
+  /// @notice Adds a new asset to the Hub.
   /// @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
   /// @dev The fee receiver is automatically added as a spoke with maximum caps.
   /// @param hub The address of the Hub contract.
@@ -30,7 +30,7 @@ interface IHubConfigurator {
     bytes calldata irData
   ) external returns (uint256);
 
-  /// @notice Adds a new asset to the hub.
+  /// @notice Adds a new asset to the Hub.
   /// @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
   /// @dev The fee receiver is automatically added as a spoke with maximum caps.
   /// @param hub The address of the Hub contract.
@@ -114,7 +114,7 @@ interface IHubConfigurator {
   /// @param assetId The identifier of the asset.
   function pauseAsset(address hub, uint256 assetId) external;
 
-  /// @notice Register the spoke for the specified asset in the hub.
+  /// @notice Register the spoke for the specified asset in the Hub.
   /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset to register the spoke for.
   /// @param spoke The address of the Spoke contract.
@@ -126,7 +126,7 @@ interface IHubConfigurator {
     IHub.SpokeConfig calldata config
   ) external;
 
-  /// @notice Registers the same spoke for multiple assets with the hub, each with their own configuration.
+  /// @notice Registers the same spoke for multiple assets with the Hub, each with their own configuration.
   /// @dev The i-th asset identifier in `assetIds` corresponds to the i-th configuration in `configs`.
   /// @param hub The address of the Hub contract.
   /// @param spoke The address of the Spoke contract.
@@ -177,16 +177,16 @@ interface IHubConfigurator {
     uint256 drawCap
   ) external;
 
-  /// @notice Updates the risk premium cap of an asset's spoke.
+  /// @notice Updates the risk premium threshold of an asset's spoke.
   /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
-  /// @param riskPremiumCap The new risk premium cap.
-  function updateSpokeRiskPremiumCap(
+  /// @param riskPremiumThreshold The new risk premium threshold.
+  function updateSpokeRiskPremiumThreshold(
     address hub,
     uint256 assetId,
     address spoke,
-    uint256 riskPremiumCap
+    uint256 riskPremiumThreshold
   ) external;
 
   /// @notice Updates the caps of an asset's spoke.
@@ -195,14 +195,12 @@ interface IHubConfigurator {
   /// @param spoke The address of the spoke.
   /// @param addCap The new supply cap.
   /// @param drawCap The new draw cap.
-  /// @param riskPremiumCap The new risk premium cap.
   function updateSpokeCaps(
     address hub,
     uint256 assetId,
     address spoke,
     uint256 addCap,
-    uint256 drawCap,
-    uint256 riskPremiumCap
+    uint256 drawCap
   ) external;
 
   /// @notice Deactivates all assets of a spoke on a specified hub by setting the active flag to false.

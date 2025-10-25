@@ -59,26 +59,26 @@ interface ISpokeBase {
   );
 
   /// @dev Emitted when a borrower is liquidated.
-  /// @param collateralAssetId The identifier of the asset used as collateral, to receive as result of the liquidation.
-  /// @param debtAssetId The identifier of the asset to be repaid with the liquidation.
+  /// @param collateralReserveId The identifier of the reserve used as collateral, to receive as a result of the liquidation.
+  /// @param debtReserveId The identifier of the reserve to be repaid with the liquidation.
   /// @param user The address of the borrower getting liquidated.
-  /// @param liquidatedDebt The debt amount of borrowed asset to be liquidated.
-  /// @param liquidatedCollateral The amount of collateral received by the liquidator.
+  /// @param debtToLiquidate The debt amount of borrowed reserve to be liquidated.
+  /// @param collateralToLiquidate The total amount of collateral asset to be liquidated, inclusive of liquidation fee.
   /// @param liquidator The address of the liquidator.
-  /// @param receiveShares Whether the liquidator receives collateral in supplied shares or in underlying assets.
+  /// @param receiveShares True if the liquidator receives collateral in supplied shares rather than underlying assets.
   event LiquidationCall(
-    uint256 indexed collateralAssetId,
-    uint256 indexed debtAssetId,
+    uint256 indexed collateralReserveId,
+    uint256 indexed debtReserveId,
     address indexed user,
-    uint256 liquidatedDebt,
-    uint256 liquidatedCollateral,
+    uint256 debtToLiquidate,
+    uint256 collateralToLiquidate,
     address liquidator,
     bool receiveShares
   );
 
   /// @notice Supplies an amount of underlying asset of the specified reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev The hub pulls the underlying asset from the caller, so prior token approval is required.
+  /// @dev The Hub pulls the underlying asset from the caller, so prior token approval is required.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @param reserveId The reserve identifier.
   /// @param amount The amount of asset to supply.
@@ -124,7 +124,7 @@ interface ISpokeBase {
 
   /// @notice Repays a specified amount of underlying asset to a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev The hub pulls the underlying asset from the caller, so prior approval is required.
+  /// @dev The Hub pulls the underlying asset from the caller, so prior approval is required.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to repay.
@@ -139,7 +139,7 @@ interface ISpokeBase {
 
   /// @notice Liquidates a user position.
   /// @dev It reverts if the reserves associated with any of the given reserve identifiers are not listed.
-  /// @dev Invokes hub `restore`, and pulls underlying repaid debt assets from caller (Liquidator), hence it needs prior approval.
+  /// @dev Invokes Hub `restore`, and pulls underlying repaid debt assets from caller (Liquidator), hence it needs prior approval.
   /// @param collateralReserveId The reserveId of the underlying asset used as collateral by the liquidated user.
   /// @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator.
   /// @param user The address of the user to liquidate.

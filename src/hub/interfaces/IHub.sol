@@ -7,8 +7,26 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 
 /// @title IHub
 /// @author Aave Labs
-/// @notice Full interface for Hub.
+/// @notice Full interface for the Hub.
 interface IHub is IHubBase, IAccessManaged {
+  /// @notice Asset position and configuration data.
+  /// @dev liquidity The liquidity available to be accessed, expressed in asset units.
+  /// @dev addedShares The total shares added across all spokes.
+  /// @dev deficit The amount of outstanding bad debt across all spokes, expressed in asset units.
+  /// @dev swept The outstanding liquidity which has been invested by the reinvestment controller, expressed in asset units.
+  /// @dev premiumShares The total premium shares across all spokes.
+  /// @dev premiumOffset The total premium offset across all spokes, used to calculate the premium, expressed in asset units.
+  /// @dev drawnShares The total drawn shares across all spokes.
+  /// @dev realizedPremium The interest-free premium debt already accrued across all spokes, expressed in asset units.
+  /// @dev drawnIndex The drawn index which monotonically increases according to the drawn rate, expressed in RAY.
+  /// @dev drawnRate The rate at which drawn assets grows, expressed in RAY.
+  /// @dev lastUpdateTimestamp The timestamp of the last accrual.
+  /// @dev underlying The address of the underlying asset.
+  /// @dev irStrategy The address of the interest rate strategy.
+  /// @dev reinvestmentController The address of the reinvestment controller.
+  /// @dev feeReceiver The address of the fee receiver spoke.
+  /// @dev liquidityFee The protocol fee charged on drawn and premium liquidity growth, expressed in BPS.
+  /// @dev decimals The number of decimals of the underlying asset.
   struct Asset {
     uint128 liquidity;
     uint128 addedShares;
@@ -37,6 +55,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint8 decimals;
   }
 
+  /// @notice Asset configuration. Subset of the `Asset` struct.
   struct AssetConfig {
     address feeReceiver;
     uint16 liquidityFee;
@@ -44,6 +63,18 @@ interface IHub is IHubBase, IAccessManaged {
     address reinvestmentController;
   }
 
+  /// @notice Spoke position and configuration data.
+  /// @dev premiumShares The premium shares of a spoke for a given asset.
+  /// @dev premiumOffset The premium offset of a spoke for a given asset, used to calculate the premium, expressed in asset units.
+  /// @dev realizedPremium The interest-free premium debt already accrued for a spoke for a given asset, expressed in asset units.
+  /// @dev drawnShares The drawn shares of a spoke for a given asset.
+  /// @dev addedShares The added shares of a spoke for a given asset.
+  /// @dev addCap The maximum amount that can be added by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
+  /// @dev drawCap The maximum amount that can be drawn by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
+  /// @dev riskPremiumThreshold The maximum ratio of premium to drawn shares a spoke can have, expressed in BPS. A value of `MAX_RISK_PREMIUM_THRESHOLD` indicates no threshold.
+  /// @dev active True if the spoke is prevented from performing any actions.
+  /// @dev paused True if the spoke is prevented from performing actions that instantly update the liquidity.
+  /// @dev deficit The deficit reported by a spoke for a given asset, expressed in asset units.
   struct SpokeData {
     uint128 premiumShares;
     uint128 premiumOffset;
@@ -54,17 +85,18 @@ interface IHub is IHubBase, IAccessManaged {
     uint128 addedShares;
     uint40 addCap;
     uint40 drawCap;
-    uint24 riskPremiumCap;
+    uint24 riskPremiumThreshold;
     bool active;
     bool paused;
     //
     uint128 deficit;
   }
 
+  /// @notice Spoke configuration data. Subset of the `SpokeData` struct.
   struct SpokeConfig {
     uint40 addCap;
     uint40 drawCap;
-    uint24 riskPremiumCap;
+    uint24 riskPremiumThreshold;
     bool active;
     bool paused;
   }
@@ -103,10 +135,10 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param shares The amount of shares accrued.
   event AccrueFees(uint256 indexed assetId, address indexed spoke, uint256 shares);
 
-  /// @notice Emitted when an amount of liquidity is swept by the reinvestment controller.
+  /// @notice Emitted when an amount of liquidity is invested by the reinvestment controller.
   /// @param assetId The identifier of the asset.
   /// @param reinvestmentController The active asset controller.
-  /// @param amount The amount swept.
+  /// @param amount The amount invested.
   event Sweep(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
 
   /// @notice Emitted when an amount of liquidity is reclaimed (from swept liquidity) by the reinvestment controller.
@@ -133,7 +165,7 @@ interface IHub is IHubBase, IAccessManaged {
   error AssetNotListed();
 
   /// @notice Thrown when the add cap is exceeded.
-  /// @param addCap The current `addCap` of the asset.
+  /// @param addCap The current `addCap` of the asset, expressed in whole assets (not scaled by decimals).
   error AddCapExceeded(uint256 addCap);
 
   /// @notice Thrown when the liquidity is insufficient.
@@ -141,7 +173,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InsufficientLiquidity(uint256 liquidity);
 
   /// @notice Thrown when the draw cap is exceeded.
-  /// @param drawCap The current `drawCap` of the asset.
+  /// @param drawCap The current `drawCap` of the asset, expressed in whole assets (not scaled by decimals).
   error DrawCapExceeded(uint256 drawCap);
 
   /// @notice Thrown when a surplus amount is restored.
@@ -192,7 +224,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev The `irData` must be empty if the interest rate strategy is not updated.
   error InvalidInterestRateStrategy();
 
-  /// @notice Adds a new asset to the hub.
+  /// @notice Adds a new asset to the Hub.
   /// @dev The same underlying asset address can be added as an asset multiple times.
   /// @dev The fee receiver is added as a new spoke with maximum add cap and zero draw cap.
   /// @param underlying The address of the underlying asset.
@@ -221,7 +253,7 @@ interface IHub is IHubBase, IAccessManaged {
     bytes calldata irData
   ) external;
 
-  /// @notice Registers a new spoke for a specific asset in the hub.
+  /// @notice Registers a new spoke for a specific asset in the Hub.
   /// @dev Reverts with `SpokeAlreadyListed` if spoke is already listed.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke to add.
@@ -290,11 +322,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The amount of liquidity swept.
   function getAssetSwept(uint256 assetId) external view returns (uint256);
 
-  /// @notice Calculates the current drawn index for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The current drawn index of the asset.
-  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256);
-
   /// @notice Returns the current drawn rate for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The current drawn rate of the asset.
@@ -345,5 +372,8 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The maximum cap value, expressed in asset units.
   function MAX_ALLOWED_SPOKE_CAP() external view returns (uint40);
 
-  function MAX_ALLOWED_RISK_PREMIUM_CAP() external view returns (uint24);
+  /// @notice Returns the maximum value for any spoke risk premium threshold.
+  /// @dev The value is not inclusive; using the maximum value indicates no threshold.
+  /// @return The maximum risk premium threshold, expressed in BPS.
+  function MAX_RISK_PREMIUM_THRESHOLD() external view returns (uint24);
 }

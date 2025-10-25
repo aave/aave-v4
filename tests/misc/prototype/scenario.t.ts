@@ -209,7 +209,7 @@ it('7 underflow bc sum of scaled may not to equate to individual scaled when all
     alice.repay(9n);
 
     carol.repay(1255n);
-  },
+  }
 );
 
 it('index')((ctx) => {

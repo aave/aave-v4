@@ -428,7 +428,7 @@ abstract contract Base is Test {
       paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
 
     bytes memory encodedIrData = abi.encode(
@@ -1058,10 +1058,10 @@ abstract contract Base is Test {
     config.maxLiquidationBonus = newMaxLiquidationBonus;
 
     vm.prank(SPOKE_ADMIN);
-    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint16 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
-    return configKey;
+    return dynamicConfigKey;
   }
 
   function _updateLiquidationFee(
@@ -1073,10 +1073,10 @@ abstract contract Base is Test {
     config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
-    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint16 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
-    return configKey;
+    return dynamicConfigKey;
   }
 
   function _updateCollateralFactorAndLiquidationBonus(
@@ -1090,10 +1090,10 @@ abstract contract Base is Test {
     config.maxLiquidationBonus = newLiquidationBonus.toUint32();
 
     vm.prank(SPOKE_ADMIN);
-    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint16 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
-    return configKey;
+    return dynamicConfigKey;
   }
 
   function _updateCollateralFactor(
@@ -1104,22 +1104,25 @@ abstract contract Base is Test {
     ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     vm.prank(SPOKE_ADMIN);
-    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint16 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
-    return configKey;
+    return dynamicConfigKey;
   }
 
   function _updateCollateralFactorAtKey(
     ISpoke spoke,
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     uint256 newCollateralFactor
   ) internal pausePrank {
-    ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId, configKey);
+    ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(
+      reserveId,
+      dynamicConfigKey
+    );
     config.collateralFactor = newCollateralFactor.toUint16();
     vm.prank(SPOKE_ADMIN);
-    spoke.updateDynamicReserveConfig(reserveId, configKey, config);
+    spoke.updateDynamicReserveConfig(reserveId, dynamicConfigKey, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
   }
@@ -1261,14 +1264,14 @@ abstract contract Base is Test {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
-  function _updateSpokeRiskPremiumCap(
+  function _updateSpokeRiskPremiumThreshold(
     IHub hub,
     uint256 assetId,
     address spoke,
-    uint24 newRiskPremiumCap
+    uint24 newRiskPremiumThreshold
   ) internal pausePrank {
     IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
-    spokeConfig.riskPremiumCap = newRiskPremiumCap;
+    spokeConfig.riskPremiumThreshold = newRiskPremiumThreshold;
     vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
 
@@ -1981,7 +1984,7 @@ abstract contract Base is Test {
     uint256 reserveId,
     address user
   ) internal view returns (uint16) {
-    uint16 dynamicConfigKey = spoke.getUserPosition(reserveId, user).configKey;
+    uint16 dynamicConfigKey = spoke.getUserPosition(reserveId, user).dynamicConfigKey;
     return spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).collateralFactor;
   }
 
@@ -2074,7 +2077,7 @@ abstract contract Base is Test {
   function assertEq(IHub.SpokeConfig memory a, IHub.SpokeConfig memory b) internal pure {
     assertEq(a.addCap, b.addCap, 'addCap');
     assertEq(a.drawCap, b.drawCap, 'drawCap');
-    assertEq(a.riskPremiumCap, b.riskPremiumCap, 'riskPremiumCap');
+    assertEq(a.riskPremiumThreshold, b.riskPremiumThreshold, 'riskPremiumThreshold');
     assertEq(a.active, b.active, 'active');
     assertEq(a.paused, b.paused, 'paused');
     assertEq(abi.encode(a), abi.encode(b));
