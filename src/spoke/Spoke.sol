@@ -79,7 +79,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     ORACLE = oracle_;
   }
 
-  function initialize(address _authority) external virtual;
+  /// @dev To be overridden by the inheriting Spoke instance contract.
+  function initialize(address authority) external virtual;
 
   /// @inheritdoc ISpoke
   function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
