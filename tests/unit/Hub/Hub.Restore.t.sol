@@ -72,6 +72,186 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, drawn + 1, premium, premiumDelta, alice);
   }
 
+  function test_add_revertsWith_TransferFromFailed() public {
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
+    uint256 restoreAmount = drawAmount / 2;
+
+    // spoke1 add weth
+    Utils.add({
+      hub: hub1,
+      assetId: wethAssetId,
+      caller: address(spoke1),
+      amount: wethAmount,
+      user: alice
+    });
+
+    // spoke2 add dai
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke2),
+      amount: daiAmount,
+      user: bob
+    });
+
+    // spoke1 draw liquidity
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    vm.prank(alice);
+    tokenList.dai.approve(address(spoke1), restoreAmount - 1);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      spoke: spoke1,
+      user: alice,
+      reserveId: _daiReserveId(spoke1),
+      premiumRestored: 0
+    });
+
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, restoreAmount, 0, premiumDelta, alice);
+  }
+
+  function test_add_fuzz_revertsWith_TransferFromFailed(uint256 restoreAmount) public {
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
+    restoreAmount = bound(restoreAmount, 1, drawAmount);
+
+    // spoke1 add weth
+    Utils.add({
+      hub: hub1,
+      assetId: wethAssetId,
+      caller: address(spoke1),
+      amount: wethAmount,
+      user: alice
+    });
+
+    // spoke2 add dai
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke2),
+      amount: daiAmount,
+      user: bob
+    });
+
+    // spoke1 draw liquidity
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    vm.prank(alice);
+    tokenList.dai.approve(address(spoke1), 0);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      spoke: spoke1,
+      user: alice,
+      reserveId: _daiReserveId(spoke1),
+      premiumRestored: 0
+    });
+
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, restoreAmount, 0, premiumDelta, alice);
+  }
+
+  function test_restore_fuzz_revertsWith_InvalidAmountReceived(uint256 restoreAmount) public {
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+    uint256 drawAmount = daiAmount / 2;
+    restoreAmount = bound(restoreAmount, 1, drawAmount);
+
+    MockDummySpoke badSpoke = new MockDummySpoke();
+
+    vm.startPrank(ADMIN);
+    uint256 minDecimalAssetId = hub1.addAsset(
+      address(tokenList.dai),
+      Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
+      address(treasurySpoke),
+      address(irStrategy),
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      )
+    );
+    hub1.updateAssetConfig(
+      minDecimalAssetId,
+      IHub.AssetConfig({
+        liquidityFee: 5_00,
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy),
+        reinvestmentController: address(0)
+      }),
+      new bytes(0)
+    );
+    hub1.addSpoke(
+      minDecimalAssetId,
+      address(badSpoke),
+      IHub.SpokeConfig({
+        active: true,
+        paused: false,
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      })
+    );
+    vm.stopPrank();
+
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: wethAmount,
+      user: alice
+    });
+    Utils.add({
+      hub: hub1,
+      assetId: minDecimalAssetId,
+      caller: address(badSpoke),
+      amount: daiAmount,
+      user: bob
+    });
+    Utils.draw({
+      hub: hub1,
+      assetId: minDecimalAssetId,
+      to: alice,
+      caller: address(badSpoke),
+      amount: drawAmount
+    });
+
+    vm.prank(alice);
+    tokenList.dai.approve(address(badSpoke), MAX_SUPPLY_AMOUNT);
+
+    badSpoke.setTamperedTransfers(true);
+
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+      realizedDelta: 0,
+      offsetDelta: 0,
+      sharesDelta: 0
+    });
+
+    vm.expectRevert(IHub.InvalidAmountReceived.selector);
+    vm.prank(address(badSpoke));
+    hub1.restore(minDecimalAssetId, restoreAmount, 0, premiumDelta, alice);
+  }
+
   function test_restore_revertsWith_InvalidAmount_zero() public {
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,

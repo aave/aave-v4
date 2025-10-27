@@ -487,7 +487,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     address from,
     uint256 amount
   ) external {
-    // TODO : see if this can be moved to modifier or _validate method
+    // also enforces the Hub is allowed to call this function
     require(_reserveExists[msg.sender][assetId], AssetNotListed());
     if (from == address(this)) {
       underlying.safeTransfer(msg.sender, amount);

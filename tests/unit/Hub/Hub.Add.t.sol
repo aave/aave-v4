@@ -62,6 +62,49 @@ contract HubAddTest is HubBase {
     vm.stopPrank();
   }
 
+  function test_add_revertsWith_TransferFromFailed() public {
+    uint256 amount = 100e18;
+
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
+    vm.prank(address(spoke1));
+    hub1.add(daiAssetId, amount, makeAddr('randomUser'));
+  }
+
+  function test_add_fuzz_revertsWith_TransferFromFailed(uint256 amount) public {
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
+    vm.prank(address(spoke1));
+    hub1.add(daiAssetId, amount, makeAddr('randomUser'));
+  }
+
+  function test_add_fuzz_revertsWith_InvalidAmountReceived(uint256 amount) public {
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+
+    MockDummySpoke badSpoke = new MockDummySpoke();
+    badSpoke.setTamperedTransfers(true);
+
+    vm.startPrank(ADMIN);
+    hub1.addSpoke(
+      minDecimalAssetId,
+      address(badSpoke),
+      IHub.SpokeConfig({
+        active: true,
+        paused: false,
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      })
+    );
+    vm.stopPrank();
+
+    vm.prank(alice);
+    tokenList.dai.approve(address(badSpoke), MAX_SUPPLY_AMOUNT);
+
+    vm.expectRevert(IHub.InvalidAmountReceived.selector);
+    vm.prank(address(badSpoke));
+    hub1.add(minDecimalAssetId, amount, alice);
+  }
+
   function test_add_revertsWith_SpokePaused() public {
     _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
 
