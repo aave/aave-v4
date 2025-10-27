@@ -19,7 +19,7 @@ contract HubAccessTest is HubBase {
       paused: false,
       addCap: 1000,
       drawCap: 1000,
-      riskPremiumCap: 1000_00
+      riskPremiumThreshold: 1000_00
     });
 
     bytes memory encodedIrData = abi.encode(
@@ -142,7 +142,7 @@ contract HubAccessTest is HubBase {
         paused: false,
         addCap: 1000,
         drawCap: 1000,
-        riskPremiumCap: 1000_00
+        riskPremiumThreshold: 1000_00
       })
     );
   }
@@ -259,7 +259,7 @@ contract HubAccessTest is HubBase {
       paused: false,
       addCap: 1000,
       drawCap: 1000,
-      riskPremiumCap: 1000_00
+      riskPremiumThreshold: 1000_00
     });
 
     IAccessManager authority = IAccessManager(hub1.authority());

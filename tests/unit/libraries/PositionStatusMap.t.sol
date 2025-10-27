@@ -472,7 +472,7 @@ contract PositionStatusMapTest is Base {
     }
   }
 
-  function test_fls() public {
+  function test_fls() public pure {
     assertEq(LibBit.fls(0xff << 3), 10);
     for (uint256 i = 1; i < 255; i++) {
       assertEq(LibBit.fls((1 << i) - 1), i - 1);

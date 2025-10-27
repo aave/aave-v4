@@ -30,12 +30,13 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     user = makeAddr('user');
 
     // Set initial storage values
+    liquidationLogicWrapper.setBorrower(user);
+    liquidationLogicWrapper.setLiquidator(liquidator);
     liquidationLogicWrapper.setDebtReserveId(reserveId);
     liquidationLogicWrapper.setDebtReserveHub(hub);
     liquidationLogicWrapper.setDebtReserveAssetId(assetId);
     liquidationLogicWrapper.setDebtReserveUnderlying(address(asset));
-    liquidationLogicWrapper.setBorrowingStatus(reserveId, true);
-    liquidationLogicWrapper.setBorrower(user);
+    liquidationLogicWrapper.setBorrowerBorrowingStatus(reserveId, true);
 
     // Add liquidation logic wrapper as a spoke
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
@@ -43,7 +44,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.prank(HUB_ADMIN);
     hub.addSpoke(assetId, address(spoke), spokeConfig);
@@ -146,7 +147,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     );
 
     assertEq(isPositionEmpty, debtToLiquidate == drawnDebt + premiumDebt);
-    assertEq(liquidationLogicWrapper.getBorrowingStatus(reserveId), !isPositionEmpty);
+    assertEq(liquidationLogicWrapper.getBorrowerBorrowingStatus(reserveId), !isPositionEmpty);
     assertPosition(
       liquidationLogicWrapper.getDebtPosition(),
       initialPosition,
