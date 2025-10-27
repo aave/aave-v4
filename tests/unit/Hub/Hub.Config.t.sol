@@ -600,6 +600,23 @@ contract HubConfigTest is HubBase {
     );
   }
 
+  /// Updates the fee receiver while the current fee receiver is not active
+  function test_updateAssetConfig_NewFeeReceiver_revertsWith_SpokeNotActive() public {
+    uint256 assetId = daiAssetId;
+
+    uint256 amount = 1000e18;
+    _addLiquidity(assetId, amount);
+    _drawLiquidity(assetId, amount, true);
+    skip(365 days);
+
+    updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
+    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    config.feeReceiver = makeAddr('newFeeReceiver');
+
+    vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
+    Utils.updateAssetConfig(hub1, ADMIN, assetId, config, new bytes(0));
+  }
+
   /// Updates the fee receiver by reusing a previously assigned spoke, with no impact on accrued fees
   function test_updateAssetConfig_fuzz_ReuseFeeReceiver_revertsWith_SpokeAlreadyListed(
     uint256 assetId

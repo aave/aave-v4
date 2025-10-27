@@ -196,7 +196,6 @@ contract Hub is IHub, AccessManaged {
   function mintFeeShares(uint256 assetId) external restricted returns (uint256) {
     Asset storage asset = _assets[assetId];
     asset.accrue();
-    require(_spokes[assetId][asset.feeReceiver].active, SpokeNotActive());
     uint256 feeShares = _mintFeeShares(asset, assetId);
     asset.updateDrawnRate(assetId);
     return feeShares;
@@ -737,15 +736,18 @@ contract Hub is IHub, AccessManaged {
   }
 
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
+    address feeReceiver = asset.feeReceiver;
+    SpokeData storage feeReceiverSpoke = _spokes[assetId][feeReceiver];
+    require(feeReceiverSpoke.active, SpokeNotActive());
+
     uint256 fees = asset.realizedFees;
     uint128 shares = asset.toAddedSharesDown(fees).toUint128();
     if (shares == 0) {
       return 0;
     }
 
-    address feeReceiver = asset.feeReceiver;
     asset.addedShares += shares;
-    _spokes[assetId][feeReceiver].addedShares += shares;
+    feeReceiverSpoke.addedShares += shares;
     asset.realizedFees = 0;
     emit MintFeeShares(assetId, feeReceiver, shares, fees);
 
