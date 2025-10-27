@@ -115,7 +115,7 @@ library AssetLogic {
 
   /// @notice Updates the drawn rate of a specified asset.
   /// @dev Premium debt is not used in the interest rate calculation.
-  /// @dev Uses last stored index and realized fees, asset accrual should have already occurred.
+  /// @dev Uses last stored index; asset accrual should have already occurred.
   function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
     uint256 drawnIndex = asset.drawnIndex;
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
