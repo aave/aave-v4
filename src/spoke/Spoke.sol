@@ -395,7 +395,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _refreshDynamicConfig(onBehalfOf, reserveId);
       newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
     } else {
-      uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
+      newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
