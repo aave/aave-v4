@@ -44,7 +44,7 @@ interface IHub is IHubBase, IAccessManaged {
     //
     uint120 drawnIndex;
     uint96 drawnRate;
-    uint32 lastUpdateTimestamp; // todo make this 40
+    uint40 lastUpdateTimestamp;
     //
     address underlying;
     //

@@ -91,7 +91,7 @@ contract Hub is IHub, AccessManaged {
       drawnIndex: drawnIndex.toUint120(),
       realizedPremium: 0,
       underlying: underlying,
-      lastUpdateTimestamp: lastUpdateTimestamp.toUint32(),
+      lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
       decimals: decimals,
       drawnRate: drawnRate.toUint96(),
       irStrategy: irStrategy,

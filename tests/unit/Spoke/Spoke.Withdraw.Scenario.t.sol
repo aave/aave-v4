@@ -30,12 +30,12 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     uint256 supplyAmount,
     uint256 borrowAmount,
     uint256 partialWithdrawAmount,
-    uint32 elapsed
+    uint40 elapsed
   ) public {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
     partialWithdrawAmount = bound(partialWithdrawAmount, 1, supplyAmount - 1);
-    elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint32();
+    elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint40();
 
     Utils.supplyCollateral({
       spoke: spoke1,

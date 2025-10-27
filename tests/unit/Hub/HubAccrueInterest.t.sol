@@ -8,11 +8,11 @@ contract HubAccrueInterestTest is Base {
   using SafeCast for uint256;
 
   struct Timestamps {
-    uint32 t0;
-    uint32 t1;
-    uint32 t2;
-    uint32 t3;
-    uint32 t4;
+    uint40 t0;
+    uint40 t1;
+    uint40 t2;
+    uint40 t3;
+    uint40 t4;
   }
 
   struct AssetDataLocal {
@@ -60,8 +60,8 @@ contract HubAccrueInterestTest is Base {
   }
 
   /// no interest accrued with only add
-  function test_accrueInterest_NoInterest_OnlyAdd(uint32 elapsed) public {
-    elapsed = bound(elapsed, 1, type(uint32).max / 3).toUint32();
+  function test_accrueInterest_NoInterest_OnlyAdd(uint40 elapsed) public {
+    elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
 
     uint256 addAmount = 1000e18;
     Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
@@ -82,12 +82,12 @@ contract HubAccrueInterestTest is Base {
   }
 
   /// no interest accrued when no debt after restore
-  function test_accrueInterest_NoInterest_NoDebt(uint32 elapsed) public {
-    elapsed = bound(elapsed, 1, type(uint32).max / 3).toUint32();
+  function test_accrueInterest_NoInterest_NoDebt(uint40 elapsed) public {
+    elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
 
     uint256 addAmount = 1000e18;
     uint256 addAmount2 = 100e18;
-    uint32 startTime = vm.getBlockTimestamp().toUint32();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
     uint256 borrowAmount = 100e18;
 
     Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
@@ -119,7 +119,7 @@ contract HubAccrueInterestTest is Base {
     );
     assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt1, 'drawn');
 
-    startTime = vm.getBlockTimestamp().toUint32();
+    startTime = vm.getBlockTimestamp().toUint40();
     drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
 
     // calculate expected drawn to restore
@@ -167,12 +167,12 @@ contract HubAccrueInterestTest is Base {
   }
 
   /// accrue interest after some time has passed
-  function test_accrueInterest_fuzz_BorrowAndWait(uint32 elapsed) public {
-    elapsed = bound(elapsed, 1, type(uint32).max / 3).toUint32();
+  function test_accrueInterest_fuzz_BorrowAndWait(uint40 elapsed) public {
+    elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
 
     uint256 addAmount = 1000e18;
     uint256 addAmount2 = 100e18;
-    uint32 startTime = vm.getBlockTimestamp().toUint32();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
     uint256 borrowAmount = 100e18;
     uint256 initialDrawnIndex = WadRayMath.RAY;
 
@@ -209,12 +209,12 @@ contract HubAccrueInterestTest is Base {
   /// accrue interest on any borrow amount after any time has passed
   function test_accrueInterest_fuzz_BorrowAmountAndElapsed(
     uint256 borrowAmount,
-    uint32 elapsed
+    uint40 elapsed
   ) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    elapsed = bound(elapsed, 1, type(uint32).max / 3).toUint32();
+    elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
 
-    uint32 startTime = vm.getBlockTimestamp().toUint32();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
     uint256 addAmount = borrowAmount * 2;
     uint256 addAmount2 = 100e18;
     uint256 initialDrawnIndex = WadRayMath.RAY;
@@ -253,11 +253,11 @@ contract HubAccrueInterestTest is Base {
   function test_accrueInterest_fuzz_BorrowAmountRateAndElapsed(
     uint256 borrowAmount,
     uint256 borrowRate,
-    uint32 elapsed
+    uint40 elapsed
   ) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     borrowRate = bound(borrowRate, 0, MAX_BORROW_RATE);
-    elapsed = bound(elapsed, 1, type(uint32).max / 3).toUint32();
+    elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
     uint256 initialDrawnIndex = WadRayMath.RAY;
     uint256 addAmount2 = 1000e18;
 
@@ -267,7 +267,7 @@ contract HubAccrueInterestTest is Base {
     CumulatedInterest memory cumulated;
 
     spoke1Amounts.add0 = borrowAmount * 2;
-    timestamps.t0 = vm.getBlockTimestamp().toUint32();
+    timestamps.t0 = vm.getBlockTimestamp().toUint40();
 
     Utils.add(hub1, daiAssetId, address(spoke1), spoke1Amounts.add0, address(spoke1));
     Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
@@ -281,7 +281,7 @@ contract HubAccrueInterestTest is Base {
     Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
     assetData.t1 = hub1.getAsset(daiAssetId);
-    timestamps.t1 = vm.getBlockTimestamp().toUint32();
+    timestamps.t1 = vm.getBlockTimestamp().toUint40();
     (uint256 expectedDrawnIndex, uint256 expectedDrawnDebt1) = calculateExpectedDebt(
       assetData.t0.drawnShares,
       initialDrawnIndex,
@@ -307,13 +307,13 @@ contract HubAccrueInterestTest is Base {
 
     // Time passes
     skip(elapsed);
-    timestamps.t2 = vm.getBlockTimestamp().toUint32();
+    timestamps.t2 = vm.getBlockTimestamp().toUint40();
 
     // Spoke 2 does a add to accrue interest
     Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
     assetData.t2 = hub1.getAsset(daiAssetId);
-    timestamps.t2 = vm.getBlockTimestamp().toUint32();
+    timestamps.t2 = vm.getBlockTimestamp().toUint40();
     uint256 expectedDrawnDebt2;
     (expectedDrawnIndex, expectedDrawnDebt2) = calculateExpectedDebt(
       assetData.t0.drawnShares,

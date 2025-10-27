@@ -139,13 +139,13 @@ library AssetLogic {
     uint256 newDrawnIndex = asset.getDrawnIndex();
     asset.feeAmount += asset.getUnrealizedFeeAmount(newDrawnIndex).toUint120();
     asset.drawnIndex = newDrawnIndex.toUint120();
-    asset.lastUpdateTimestamp = block.timestamp.toUint32();
+    asset.lastUpdateTimestamp = block.timestamp.toUint40();
   }
 
   /// @notice Calculates the drawn index of a specified asset based on the existing drawn rate and index.
   function getDrawnIndex(IHub.Asset storage asset) internal view returns (uint256) {
     uint256 previousIndex = asset.drawnIndex;
-    uint32 lastUpdateTimestamp = asset.lastUpdateTimestamp;
+    uint40 lastUpdateTimestamp = asset.lastUpdateTimestamp;
     if (
       lastUpdateTimestamp == block.timestamp || (asset.drawnShares == 0 && asset.premiumShares == 0)
     ) {
