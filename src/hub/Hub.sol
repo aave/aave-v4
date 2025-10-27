@@ -23,7 +23,7 @@ contract Hub is IHub, AccessManaged {
   using SafeCast for uint256;
   using WadRayMath for uint256;
   using SharesMath for uint256;
-  using PercentageMath for uint128;
+  using PercentageMath for *;
   using AssetLogic for Asset;
   using MathUtils for *;
 
@@ -88,7 +88,7 @@ contract Hub is IHub, AccessManaged {
       drawnShares: 0,
       premiumShares: 0,
       premiumOffset: 0,
-      drawnIndex: drawnIndex.toUint128(),
+      drawnIndex: drawnIndex.toUint120(),
       realizedPremium: 0,
       underlying: underlying,
       lastUpdateTimestamp: lastUpdateTimestamp.toUint32(),
@@ -201,11 +201,11 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
     _validateAdd(asset, spoke, amount, from);
 
-    uint128 shares = asset.toAddedSharesDown(amount).toUint128();
+    uint120 shares = asset.toAddedSharesDown(amount).toUint120();
     require(shares > 0, InvalidShares());
     asset.addedShares += shares;
     spoke.addedShares += shares;
-    asset.liquidity += amount.toUint128();
+    asset.liquidity += amount.toUint120();
 
     asset.updateDrawnRate(assetId);
 
@@ -227,10 +227,10 @@ contract Hub is IHub, AccessManaged {
     uint256 liquidity = asset.liquidity;
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
-    uint128 shares = asset.toAddedSharesUp(amount).toUint128();
+    uint120 shares = asset.toAddedSharesUp(amount).toUint120();
     asset.addedShares -= shares;
     spoke.addedShares -= shares;
-    asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
+    asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
 
     asset.updateDrawnRate(assetId);
 
@@ -252,10 +252,10 @@ contract Hub is IHub, AccessManaged {
     uint256 liquidity = asset.liquidity;
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
-    uint128 drawnShares = asset.toDrawnSharesUp(amount).toUint128();
+    uint120 drawnShares = asset.toDrawnSharesUp(amount).toUint120();
     asset.drawnShares += drawnShares;
     spoke.drawnShares += drawnShares;
-    asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
+    asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
 
     asset.updateDrawnRate(assetId);
 
@@ -280,12 +280,12 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
     _validateRestore(asset, spoke, drawnAmount, premiumAmount, from);
 
-    uint128 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint128();
+    uint120 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint120();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
     uint256 totalAmount = drawnAmount + premiumAmount;
-    asset.liquidity += totalAmount.toUint128();
+    asset.liquidity += totalAmount.toUint120();
 
     asset.updateDrawnRate(assetId);
 
@@ -309,11 +309,11 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
     _validateReportDeficit(asset, spoke, drawnAmount, premiumAmount);
 
-    uint128 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint128();
+    uint120 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint120();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
-    uint128 deficitAmount = (drawnAmount + premiumAmount).toUint128();
+    uint120 deficitAmount = (drawnAmount + premiumAmount).toUint120();
     asset.deficit += deficitAmount;
     spoke.deficit += deficitAmount;
 
@@ -340,11 +340,11 @@ contract Hub is IHub, AccessManaged {
     uint256 deficit = coveredSpoke.deficit;
     require(amount <= deficit, InvalidAmount());
 
-    uint128 shares = asset.toAddedSharesUp(amount).toUint128();
+    uint120 shares = asset.toAddedSharesUp(amount).toUint120();
     asset.addedShares -= shares;
     callerSpoke.addedShares -= shares;
-    asset.deficit -= amount.toUint128();
-    coveredSpoke.deficit = deficit.uncheckedSub(amount).toUint128();
+    asset.deficit -= amount.toUint120();
+    coveredSpoke.deficit = deficit.uncheckedSub(amount).toUint120();
 
     asset.updateDrawnRate(assetId);
 
@@ -416,8 +416,8 @@ contract Hub is IHub, AccessManaged {
     uint256 liquidity = asset.liquidity;
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
-    asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
-    asset.swept += amount.toUint128();
+    asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
+    asset.swept += amount.toUint120();
     asset.updateDrawnRate(assetId);
 
     asset.underlying.safeTransfer(msg.sender, amount);
@@ -433,8 +433,8 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
     _validateReclaim(asset, msg.sender, amount);
 
-    asset.liquidity += amount.toUint128();
-    asset.swept -= amount.toUint128();
+    asset.liquidity += amount.toUint120();
+    asset.swept -= amount.toUint120();
     asset.updateDrawnRate(assetId);
 
     asset.underlying.safeTransferFrom(msg.sender, address(this), amount);
@@ -693,8 +693,8 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage receiver,
     uint256 shares
   ) internal {
-    sender.addedShares -= shares.toUint128();
-    receiver.addedShares += shares.toUint128();
+    sender.addedShares -= shares.toUint120();
+    receiver.addedShares += shares.toUint120();
   }
 
   /// @dev Applies premium deltas on asset & spoke premium owed.
@@ -738,7 +738,7 @@ contract Hub is IHub, AccessManaged {
 
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
     uint256 feeAmount = asset.feeAmount;
-    uint128 feeShares = asset.toAddedSharesDown(feeAmount).toUint128();
+    uint120 feeShares = asset.toAddedSharesDown(feeAmount).toUint120();
     if (feeShares == 0) {
       return 0;
     }
@@ -899,7 +899,7 @@ contract Hub is IHub, AccessManaged {
     uint256 realizedPremium,
     PremiumDelta calldata premium,
     uint256 premiumAmount
-  ) internal pure returns (uint128, uint128, uint128) {
+  ) internal pure returns (uint120, uint120, uint120) {
     uint256 premiumBefore = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
     premiumBefore += realizedPremium;
 
@@ -911,6 +911,6 @@ contract Hub is IHub, AccessManaged {
     premiumAfter += realizedPremium;
     // can increase due to precision loss on premium (drawn unchanged)
     require(premiumAfter + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
-    return (premiumShares.toUint128(), premiumOffset.toUint128(), realizedPremium.toUint128());
+    return (premiumShares.toUint120(), premiumOffset.toUint120(), realizedPremium.toUint120());
   }
 }

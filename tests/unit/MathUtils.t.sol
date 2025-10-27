@@ -59,7 +59,7 @@ contract MathUtilsTest is Base {
       1e27 + (uint256(rate) * uint256(skipTime)) / 365 days
     );
 
-    skipTime = type(uint128).max;
+    skipTime = type(uint120).max;
     vm.warp(skipTime);
     assertEq(
       MathUtils.calculateLinearInterest(rate, previousTimestamp),

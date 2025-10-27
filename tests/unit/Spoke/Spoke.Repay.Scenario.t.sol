@@ -63,9 +63,9 @@ contract SpokeRepayScenarioTest is SpokeBase {
       }
 
       if (usersInfo[i].usdxInfo.borrowAmount > 0) {
-        wethCollateralNeeded += _calcMinimumCollAmount(
+        wbtcCollateralNeeded += _calcMinimumCollAmount(
           spoke1,
-          _wethReserveId(spoke1),
+          _wbtcReserveId(spoke1),
           _usdxReserveId(spoke1),
           usersInfo[i].usdxInfo.borrowAmount
         );
@@ -407,9 +407,9 @@ contract SpokeRepayScenarioTest is SpokeBase {
       }
 
       if (usersInfo[i].usdxInfo.borrowAmount > 0) {
-        wethCollateralNeeded += _calcMinimumCollAmount(
+        wbtcCollateralNeeded += _calcMinimumCollAmount(
           spoke1,
-          _wethReserveId(spoke1),
+          _wbtcReserveId(spoke1),
           _usdxReserveId(spoke1),
           usersInfo[i].usdxInfo.borrowAmount
         );

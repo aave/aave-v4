@@ -1276,8 +1276,8 @@ contract SpokeRepayTest is SpokeBase {
     usdxInfo.repayAmount = usdxInfo.borrowAmount.percentMulUp(repayPortion);
     wbtcInfo.repayAmount = wbtcInfo.borrowAmount.percentMulUp(repayPortion);
 
-    // weth collateral for dai and usdx
-    // wbtc collateral for weth and wbtc
+    // weth collateral for dai
+    // wbtc collateral for usdx, weth and wbtc
     // calculate weth collateral
     // calculate wbtc collateral
     {
@@ -1286,13 +1286,7 @@ contract SpokeRepayTest is SpokeBase {
         _wethReserveId(spoke1),
         _daiReserveId(spoke1),
         daiInfo.borrowAmount
-      ) +
-        _calcMinimumCollAmount(
-          spoke1,
-          _wethReserveId(spoke1),
-          _usdxReserveId(spoke1),
-          usdxInfo.borrowAmount
-        );
+      );
       uint256 wbtcSupplyAmount = _calcMinimumCollAmount(
         spoke1,
         _wbtcReserveId(spoke1),
@@ -1304,6 +1298,12 @@ contract SpokeRepayTest is SpokeBase {
           _wbtcReserveId(spoke1),
           _wbtcReserveId(spoke1),
           wbtcInfo.borrowAmount
+        ) +
+        _calcMinimumCollAmount(
+          spoke1,
+          _wbtcReserveId(spoke1),
+          _usdxReserveId(spoke1),
+          usdxInfo.borrowAmount
         );
 
       // Bob supply weth and wbtc

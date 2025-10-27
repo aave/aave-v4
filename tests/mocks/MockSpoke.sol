@@ -41,7 +41,7 @@ contract MockSpoke is Spoke, Test {
 
     uint256 drawnShares = hub.draw(assetId, amount, msg.sender);
 
-    userPosition.drawnShares += drawnShares.toUint128();
+    userPosition.drawnShares += drawnShares.toUint120();
     positionStatus.setBorrowing(reserveId, true);
 
     ISpoke.UserAccountData memory userAccountData = _processUserAccountData(onBehalfOf, true);
@@ -59,7 +59,7 @@ contract MockSpoke is Spoke, Test {
       _userPositions[user][info.collateralReserveIds[i]].suppliedShares = reserve
         .hub
         .previewAddByAssets(reserve.assetId, info.collateralAmounts[i])
-        .toUint128();
+        .toUint120();
 
       _userPositions[user][info.collateralReserveIds[i]].dynamicConfigKey = info
         .collateralDynamicConfigKeys[i]
@@ -71,7 +71,7 @@ contract MockSpoke is Spoke, Test {
       _userPositions[user][info.suppliedAssetsReserveIds[i]].suppliedShares = reserve
         .hub
         .previewAddByAssets(reserve.assetId, info.suppliedAssetsAmounts[i])
-        .toUint128();
+        .toUint120();
     }
 
     for (uint256 i = 0; i < info.debtReserveIds.length; i++) {
@@ -80,15 +80,15 @@ contract MockSpoke is Spoke, Test {
       _userPositions[user][info.debtReserveIds[i]].drawnShares = reserve
         .hub
         .previewDrawByAssets(reserve.assetId, info.drawnDebtAmounts[i])
-        .toUint128();
+        .toUint120();
       _userPositions[user][info.debtReserveIds[i]].realizedPremium = info
         .realizedPremiumAmounts[i]
-        .toUint128();
+        .toUint120();
       _userPositions[user][info.debtReserveIds[i]].premiumOffset = vm
         .randomUint(1, 100e18)
-        .toUint128();
+        .toUint120();
       _userPositions[user][info.debtReserveIds[i]].premiumShares =
-        reserve.hub.previewAddByAssets(reserve.assetId, info.accruedPremiumAmounts[i]).toUint128() +
+        reserve.hub.previewAddByAssets(reserve.assetId, info.accruedPremiumAmounts[i]).toUint120() +
         _userPositions[user][info.debtReserveIds[i]].premiumOffset;
     }
   }

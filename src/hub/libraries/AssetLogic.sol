@@ -137,8 +137,8 @@ library AssetLogic {
     }
 
     uint256 newDrawnIndex = asset.getDrawnIndex();
-    asset.feeAmount += asset.getUnrealizedFeeAmount(newDrawnIndex).toUint128();
-    asset.drawnIndex = newDrawnIndex.toUint128();
+    asset.feeAmount += asset.getUnrealizedFeeAmount(newDrawnIndex).toUint120();
+    asset.drawnIndex = newDrawnIndex.toUint120();
     asset.lastUpdateTimestamp = block.timestamp.toUint32();
   }
 
@@ -174,8 +174,8 @@ library AssetLogic {
       return 0;
     }
 
-    uint128 drawnShares = asset.drawnShares;
-    uint128 premiumShares = asset.premiumShares;
+    uint120 drawnShares = asset.drawnShares;
+    uint120 premiumShares = asset.premiumShares;
 
     uint256 liquidityGrowth = drawnShares.rayMulUp(drawnIndex) -
       drawnShares.rayMulUp(lastDrawnIndex) +

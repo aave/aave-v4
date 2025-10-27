@@ -166,7 +166,7 @@ contract TreasurySpokeTest is SpokeBase {
   function test_transfer_fuzz(address recipient, uint256 amount, uint256 transferAmount) public {
     vm.assume(recipient != address(0));
     vm.assume(recipient != address(treasurySpoke));
-    amount = bound(amount, 1, type(uint128).max);
+    amount = bound(amount, 1, type(uint120).max);
     transferAmount = bound(transferAmount, 1, amount);
 
     _testToken.mint(address(treasurySpoke), amount);

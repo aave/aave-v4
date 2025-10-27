@@ -81,10 +81,10 @@ contract HubAddTest is HubBase {
   }
 
   function test_add_revertsWith_SharesDowncastOverflow() public {
-    uint256 shares = uint256(type(uint128).max) + 1;
+    uint256 shares = uint256(type(uint120).max) + 1;
     uint256 amount = hub1.previewAddByShares(daiAssetId, shares);
     vm.expectRevert(
-      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 128, shares)
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 120, shares)
     );
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount, alice);
@@ -103,12 +103,12 @@ contract HubAddTest is HubBase {
       skipTime: 365 days
     });
 
-    uint256 shares = type(uint128).max - 2;
+    uint256 shares = type(uint120).max - 2;
     uint256 amount = hub1.previewAddByShares(daiAssetId, shares);
-    assertGt(amount, type(uint128).max);
+    assertGt(amount, type(uint120).max);
 
     vm.expectRevert(
-      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 128, amount)
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 120, amount)
     );
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount, alice);

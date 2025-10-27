@@ -71,13 +71,13 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev suppliedShares The supplied shares of the user position.
   /// @dev dynamicConfigKey The key of the user position dynamic config.
   struct UserPosition {
-    uint128 drawnShares;
-    uint128 realizedPremium;
+    uint120 drawnShares;
+    uint120 realizedPremium;
     //
-    uint128 premiumShares;
-    uint128 premiumOffset;
+    uint120 premiumShares;
+    uint120 premiumOffset;
     //
-    uint128 suppliedShares;
+    uint120 suppliedShares;
     uint16 dynamicConfigKey;
   }
 

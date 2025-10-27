@@ -478,12 +478,12 @@ contract HubRefreshPremiumTest is HubBase {
     PremiumDataLocal memory premiumData,
     IHubBase.PremiumDelta memory premiumDelta
   ) internal pure returns (PremiumDataLocal memory) {
-    premiumData.premiumShares = premiumData.premiumShares.add(premiumDelta.sharesDelta).toUint128();
-    premiumData.premiumOffset = premiumData.premiumOffset.add(premiumDelta.offsetDelta).toUint128();
+    premiumData.premiumShares = premiumData.premiumShares.add(premiumDelta.sharesDelta).toUint120();
+    premiumData.premiumOffset = premiumData.premiumOffset.add(premiumDelta.offsetDelta).toUint120();
     premiumData.realizedPremium = premiumData
       .realizedPremium
       .add(premiumDelta.realizedDelta)
-      .toUint128();
+      .toUint120();
     return premiumData;
   }
 
