@@ -384,7 +384,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _validateSetUsingAsCollateral(_reserves[reserveId], usingAsCollateral);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
-    // no op also ensures only new collateral without health factor check
+    // no op also ensures only new collateral is enabled and refreshed without health factor check
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
       return;
     }
