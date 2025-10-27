@@ -327,8 +327,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 debtToCover,
     bool receiveShares
   ) external {
-    Reserve storage debtReserve = _reserves[debtReserveId];
     Reserve storage collateralReserve = _reserves[collateralReserveId];
+    Reserve storage debtReserve = _reserves[debtReserveId];
     DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
       _userPositions[user][collateralReserveId].dynamicConfigKey
     ];
