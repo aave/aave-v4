@@ -547,22 +547,25 @@ contract HubConfigTest is HubBase {
   }
 
   /// Updates the fee receiver to a new spoke; old fee receiver active/paused flags are preserved
-  /// forge-config: pr.fuzz.runs = 10
-  function test_updateAssetConfig_oldFeeReceiver_flags(
-    bool oldFeeReceiverActive,
-    bool oldFeeReceiverPaused
-  ) public {
+  function test_updateAssetConfig_oldFeeReceiver_flags() public {
+    _test_updateAssetConfig_oldFeeReceiver_flags({active: true, paused: true});
+    _test_updateAssetConfig_oldFeeReceiver_flags({active: true, paused: false});
+    _test_updateAssetConfig_oldFeeReceiver_flags({active: false, paused: true});
+    _test_updateAssetConfig_oldFeeReceiver_flags({active: false, paused: false});
+  }
+
+  function _test_updateAssetConfig_oldFeeReceiver_flags(bool active, bool paused) internal {
     uint256 assetId = _randomAssetId(hub1);
 
     address oldFeeReceiver = _getFeeReceiver(hub1, assetId);
     IHub.SpokeConfig memory oldFeeReceiverConfig = hub1.getSpokeConfig(assetId, oldFeeReceiver);
-    oldFeeReceiverConfig.active = oldFeeReceiverActive;
-    oldFeeReceiverConfig.paused = oldFeeReceiverPaused;
+    oldFeeReceiverConfig.active = active;
+    oldFeeReceiverConfig.paused = paused;
 
     // update old fee receiver config flags
     Utils.updateSpokeConfig(hub1, ADMIN, assetId, oldFeeReceiver, oldFeeReceiverConfig);
-    assertEq(hub1.getSpokeConfig(assetId, oldFeeReceiver).active, oldFeeReceiverActive);
-    assertEq(hub1.getSpokeConfig(assetId, oldFeeReceiver).paused, oldFeeReceiverPaused);
+    assertEq(hub1.getSpokeConfig(assetId, oldFeeReceiver).active, active);
+    assertEq(hub1.getSpokeConfig(assetId, oldFeeReceiver).paused, paused);
 
     // update asset config to new fee receiver; old fee receiver paused/active flags should be unchanged
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
@@ -572,12 +575,12 @@ contract HubConfigTest is HubBase {
     assertEq(_getFeeReceiver(hub1, assetId), config.feeReceiver, 'new fee receiver');
     assertEq(
       hub1.getSpokeConfig(assetId, oldFeeReceiver).active,
-      oldFeeReceiverActive,
+      active,
       'old fee receiver active'
     );
     assertEq(
       hub1.getSpokeConfig(assetId, oldFeeReceiver).paused,
-      oldFeeReceiverPaused,
+      paused,
       'old fee receiver paused'
     );
   }

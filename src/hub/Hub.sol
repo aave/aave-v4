@@ -142,18 +142,10 @@ contract Hub is IHub, AccessManaged {
 
     address oldFeeReceiver = asset.feeReceiver;
     if (oldFeeReceiver != config.feeReceiver) {
-      IHub.SpokeData memory spokeData = _spokes[assetId][oldFeeReceiver];
-      _updateSpokeConfig(
-        assetId,
-        oldFeeReceiver,
-        SpokeConfig({
-          addCap: 0,
-          drawCap: 0,
-          riskPremiumThreshold: 0,
-          active: spokeData.active,
-          paused: spokeData.paused
-        })
-      );
+      IHub.SpokeConfig memory spokeConfig;
+      spokeConfig.active = _spokes[assetId][oldFeeReceiver].active;
+      spokeConfig.paused = _spokes[assetId][oldFeeReceiver].paused;
+      _updateSpokeConfig(assetId, oldFeeReceiver, spokeConfig);
       asset.feeReceiver = config.feeReceiver;
       _addFeeReceiver(assetId, config.feeReceiver);
     }
