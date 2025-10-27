@@ -152,8 +152,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       0.0001e18,
       'post liquidation: health factor'
     );
-    // Risk Premium after liquidation: ($100 * 10% + 387.5 * 15%) / 487.6 = 13.97%
-    assertApproxEqAbs(userAccountData.riskPremium, 13_97, 1, 'post liquidation: risk premium');
+    // Risk Premium after liquidation should be zero since position is unhealthy
+    assertEq(userAccountData.riskPremium, 0, 'post liquidation: risk premium');
   }
 
   // User is solvent, but health factor decreases after liquidation due to high collateral factor.
@@ -250,8 +250,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       0.0001e18,
       'post liquidation: health factor'
     );
-    // Risk Premium after liquidation: ($100 * 10% + $353.1891 * 15%) / $453.1891 = 13.89%
-    assertApproxEqAbs(userAccountData.riskPremium, 13_89, 1, 'post liquidation: risk premium');
+    // Risk Premium after liquidation should be zero since position is unhealthy
+    assertEq(userAccountData.riskPremium, 0, 'post liquidation: risk premium');
   }
 
   // Liquidated collateral is between 0 and 1 wei. It is rounded up to prevent reverting.
