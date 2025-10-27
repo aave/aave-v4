@@ -30,11 +30,12 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     user = makeAddr('user');
 
     // Set initial storage values
+    liquidationLogicWrapper.setBorrower(user);
+    liquidationLogicWrapper.setLiquidator(liquidator);
     liquidationLogicWrapper.setDebtReserveId(reserveId);
     liquidationLogicWrapper.setDebtReserveHub(hub);
     liquidationLogicWrapper.setDebtReserveAssetId(assetId);
-    liquidationLogicWrapper.setBorrowingStatus(reserveId, true);
-    liquidationLogicWrapper.setBorrower(user);
+    liquidationLogicWrapper.setBorrowerBorrowingStatus(reserveId, true);
 
     // Add liquidation logic wrapper as a spoke
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
@@ -145,7 +146,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     );
 
     assertEq(isPositionEmpty, debtToLiquidate == drawnDebt + premiumDebt);
-    assertEq(liquidationLogicWrapper.getBorrowingStatus(reserveId), !isPositionEmpty);
+    assertEq(liquidationLogicWrapper.getBorrowerBorrowingStatus(reserveId), !isPositionEmpty);
     assertPosition(
       liquidationLogicWrapper.getDebtPosition(),
       initialPosition,

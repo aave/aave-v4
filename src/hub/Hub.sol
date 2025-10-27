@@ -744,10 +744,8 @@ contract Hub is IHub, AccessManaged {
     }
 
     address feeReceiver = asset.feeReceiver;
-
     asset.addedShares += shares;
     _spokes[assetId][feeReceiver].addedShares += shares;
-
     asset.realizedFees = 0;
     emit MintFeeShares(assetId, feeReceiver, shares, fees);
 

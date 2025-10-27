@@ -14,7 +14,10 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
   function setUp() public virtual override {
     super.setUp();
-    liquidationLogicWrapper = new LiquidationLogicWrapper(makeAddr('borrower'));
+    liquidationLogicWrapper = new LiquidationLogicWrapper(
+      makeAddr('borrower'),
+      makeAddr('liquidator')
+    );
   }
 
   // generic bounds for liquidation logic params
