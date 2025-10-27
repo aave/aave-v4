@@ -123,8 +123,8 @@ library LiquidationLogic {
   /// @notice Liquidates a user position.
   /// @param collateralReserve The collateral reserve to seize during liquidation.
   /// @param debtReserve The debt reserve to repay during liquidation.
-  /// @param positions The user positions mapping in storage.
-  /// @param positionStatus The mapping of user position status in storage.
+  /// @param positions The mapping of positions per reserve per user.
+  /// @param positionStatus The mapping of position status per user.
   /// @param liquidationConfig The liquidation config.
   /// @param collateralDynConfig The collateral dynamic config.
   /// @param params The liquidate user params.
