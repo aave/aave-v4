@@ -343,10 +343,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       liquidator: msg.sender,
       receiveShares: receiveShares
     });
+    Reserve storage debtReserve = _reserves[debtReserveId];
+    Reserve storage collateralReserve = _reserves[collateralReserveId];
 
     (params.drawnDebt, params.premiumDebt, params.accruedPremium) = _getUserDebt(
-      _reserves[debtReserveId].hub,
-      _reserves[debtReserveId].assetId,
+      debtReserve.hub,
+      debtReserve.assetId,
       _userPositions[user][debtReserveId]
     );
 
@@ -355,10 +357,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     ];
 
     bool isUserInDeficit = LiquidationLogic.liquidateUser(
-      _reserves[collateralReserveId],
-      _reserves[debtReserveId],
+      collateralReserve,
+      debtReserve,
       _userPositions,
-      _positionStatus[user],
+      _positionStatus,
       _liquidationConfig,
       collateralDynConfig,
       params
@@ -432,7 +434,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(
+    bytes32 digest = _hashTypedData(
       keccak256(
         abi.encode(
           SET_USER_POSITION_MANAGER_TYPEHASH,
@@ -444,7 +446,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         )
       )
     );
-    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, nonce);
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
