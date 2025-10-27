@@ -565,7 +565,6 @@ contract HubConfigTest is HubBase {
   function test_updateAssetConfig_oldFeeReceiver_flags() public {
     _test_updateAssetConfig_oldFeeReceiver_flags({active: true, paused: true});
     _test_updateAssetConfig_oldFeeReceiver_flags({active: true, paused: false});
-
     _test_updateAssetConfig_oldFeeReceiver_flags({active: false, paused: true});
     _test_updateAssetConfig_oldFeeReceiver_flags({active: false, paused: false});
   }
