@@ -775,6 +775,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
 
     uint256 debtValueLeftToCover = accountData.totalDebtValue;
+    if (
+      debtValueLeftToCover == 0 || accountData.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    ) {
+      // riskPremium is 0 when position is underwater or has no debt
+      return accountData;
+    }
+
     collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
 
     // runs until either the collateral or debt is exhausted
