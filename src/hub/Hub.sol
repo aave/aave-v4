@@ -736,8 +736,6 @@ contract Hub is IHub, AccessManaged {
     );
   }
 
-  /// @dev If fee receiver is updated and fees are worth less than one share, no shares are minted and remaining fees are left to be minted for the new fee receiver.
-  /// @dev No op when fees are worth less than one share.
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
     uint256 fees = asset.realizedFees;
     uint128 shares = asset.toAddedSharesDown(fees).toUint128();

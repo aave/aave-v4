@@ -114,7 +114,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param assetId The identifier of the asset.
   /// @param drawnIndex The new drawn index of the asset.
   /// @param drawnRate The new drawn rate of the asset.
-  /// @param accruedFees The new accrued fees of the asset (not yet minted).
+  /// @param accruedFees The accrued fees of the asset since the last mint.
   event UpdateAsset(
     uint256 indexed assetId,
     uint256 drawnIndex,
@@ -286,6 +286,12 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   function setInterestRateData(uint256 assetId, bytes calldata irData) external;
 
+  /// @notice Mints shares to the fee receiver from accrued fees.
+  /// @dev No op when fees are worth less than one share.
+  /// @param assetId The identifier of the asset.
+  /// @return The amount of shares minted.
+  function mintFeeShares(uint256 assetId) external returns (uint256);
+
   /// @notice Eliminates deficit by removing supplied shares of caller spoke.
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
@@ -304,11 +310,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param shares The amount of shares to move.
   /// @param toSpoke The address of the recipient spoke.
   function transferShares(uint256 assetId, uint256 shares, address toSpoke) external;
-
-  /// @notice Mints shares to the fee receiver from accrued fees.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of shares minted.
-  function mintFeeShares(uint256 assetId) external returns (uint256);
 
   /// @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment controller.
   /// @dev The controller handles the actual reinvestment of funds, redistribution of interest, and investment caps.
