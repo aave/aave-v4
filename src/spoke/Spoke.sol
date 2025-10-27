@@ -395,7 +395,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
     } else {
       newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
-      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
