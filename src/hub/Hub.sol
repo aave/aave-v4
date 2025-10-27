@@ -192,6 +192,16 @@ contract Hub is IHub, AccessManaged {
     asset.updateDrawnRate(assetId);
   }
 
+  /// @inheritdoc IHub
+  function mintFeeShares(uint256 assetId) external restricted returns (uint256) {
+    Asset storage asset = _assets[assetId];
+    asset.accrue();
+    require(_spokes[assetId][asset.feeReceiver].active, SpokeNotActive());
+    uint256 feeShares = _mintFeeShares(asset, assetId);
+    asset.updateDrawnRate(assetId);
+    return feeShares;
+  }
+
   /// @inheritdoc IHubBase
   function add(uint256 assetId, uint256 amount, address from) external returns (uint256) {
     Asset storage asset = _assets[assetId];
@@ -393,16 +403,6 @@ contract Hub is IHub, AccessManaged {
     asset.updateDrawnRate(assetId);
 
     emit TransferShares(assetId, msg.sender, toSpoke, shares);
-  }
-
-  /// @inheritdoc IHub
-  function mintFeeShares(uint256 assetId) external restricted returns (uint256) {
-    require(assetId < _assetCount, AssetNotListed());
-    Asset storage asset = _assets[assetId];
-    asset.accrue();
-    uint256 feeShares = _mintFeeShares(asset, assetId);
-    asset.updateDrawnRate(assetId);
-    return feeShares;
   }
 
   /// @inheritdoc IHub
@@ -736,6 +736,8 @@ contract Hub is IHub, AccessManaged {
     );
   }
 
+  /// @dev If fee receiver is updated and fees are worth less than one share, no shares are minted and remaining fees are left to be minted for the new fee receiver.
+  /// @dev No op when fees are worth less than one share.
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
     uint256 fees = asset.realizedFees;
     uint128 shares = asset.toAddedSharesDown(fees).toUint128();
