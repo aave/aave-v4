@@ -5,10 +5,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubMintFeeSharesTest is HubBase {
-  function setUp() public override {
-    super.setUp();
-  }
-
   function test_mintFeeShares_revertsWith_AssetNotListed() public {
     uint256 invalidAssetId = hub1.getAssetCount();
     vm.expectRevert(abi.encodeWithSelector(IHub.AssetNotListed.selector), address(hub1));
@@ -24,17 +20,17 @@ contract HubMintFeeSharesTest is HubBase {
 
   function test_mintFeeShares() public {
     // Create debt to build up fees on the existing treasury spoke
-    _addAndDrawLiquidity(
-      hub1,
-      daiAssetId,
-      bob,
-      address(spoke1),
-      1000e18,
-      bob,
-      address(spoke1),
-      100e18,
-      365 days
-    );
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addSpoke: address(spoke1),
+      addAmount: 1000e18,
+      drawUser: bob,
+      drawSpoke: address(spoke1),
+      drawAmount: 100e18,
+      skipTime: 365 days
+    });
 
     address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
@@ -103,17 +99,17 @@ contract HubMintFeeSharesTest is HubBase {
     _mockInterestRateRay(2);
 
     // Create debt to build up fees on the existing treasury spoke
-    _addAndDrawLiquidity(
-      hub1,
-      daiAssetId,
-      bob,
-      address(spoke1),
-      3,
-      bob,
-      address(spoke1),
-      1,
-      365 days
-    );
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addSpoke: address(spoke1),
+      addAmount: 3,
+      drawUser: bob,
+      drawSpoke: address(spoke1),
+      drawAmount: 1,
+      skipTime: 365 days
+    });
 
     // drawn index is 1.0000...002
     assertEq(hub1.getAssetDrawnIndex(daiAssetId), 1e27 + 2);
