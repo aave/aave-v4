@@ -327,7 +327,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 debtToCover,
     bool receiveShares
   ) external {
+    Reserve storage collateralReserve = _reserves[collateralReserveId];
+    Reserve storage debtReserve = _reserves[debtReserveId];
+    DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
+      _userPositions[user][collateralReserveId].dynamicConfigKey
+    ];
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
+
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
@@ -344,22 +350,17 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       liquidator: msg.sender,
       receiveShares: receiveShares
     });
-
     (params.drawnDebt, params.premiumDebt, params.accruedPremium) = _getUserDebt(
-      _reserves[debtReserveId].hub,
-      _reserves[debtReserveId].assetId,
+      debtReserve.hub,
+      debtReserve.assetId,
       _userPositions[user][debtReserveId]
     );
 
-    DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
-      _userPositions[user][collateralReserveId].dynamicConfigKey
-    ];
-
     bool isUserInDeficit = LiquidationLogic.liquidateUser(
-      _reserves[collateralReserveId],
-      _reserves[debtReserveId],
+      collateralReserve,
+      debtReserve,
       _userPositions,
-      _positionStatus[user],
+      _positionStatus,
       _liquidationConfig,
       collateralDynConfig,
       params
@@ -393,7 +394,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _refreshDynamicConfig(onBehalfOf, reserveId);
       newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
     } else {
-      uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
+      newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
