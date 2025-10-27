@@ -143,7 +143,6 @@ contract Hub is IHub, AccessManaged {
 
     address oldFeeReceiver = asset.feeReceiver;
     if (oldFeeReceiver != config.feeReceiver) {
-      _mintFeeShares(asset, assetId);
       IHub.SpokeConfig memory spokeConfig;
       spokeConfig.active = _spokes[assetId][oldFeeReceiver].active;
       spokeConfig.paused = _spokes[assetId][oldFeeReceiver].paused;
@@ -195,10 +194,27 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function mintFeeShares(uint256 assetId) external restricted returns (uint256) {
     Asset storage asset = _assets[assetId];
+    address feeReceiver = asset.feeReceiver;
+    SpokeData storage feeReceiverSpoke = _spokes[assetId][feeReceiver];
+
     asset.accrue();
-    require(_spokes[assetId][asset.feeReceiver].active, SpokeNotActive());
-    uint256 feeShares = _mintFeeShares(asset, assetId);
+
+    require(feeReceiverSpoke.active, SpokeNotActive());
+
+    uint256 fees = asset.realizedFees;
+    uint128 feeShares = asset.toAddedSharesDown(fees).toUint128();
+    if (feeShares == 0) {
+      return 0;
+    }
+
+    asset.addedShares += feeShares;
+    feeReceiverSpoke.addedShares += feeShares;
+    asset.realizedFees = 0;
+
     asset.updateDrawnRate(assetId);
+
+    emit MintFeeShares(assetId, feeReceiver, feeShares, fees);
+
     return feeShares;
   }
 
@@ -734,22 +750,6 @@ contract Hub is IHub, AccessManaged {
         spoke.premiumShares <= spoke.drawnShares.percentMulUp(riskPremiumThreshold),
       InvalidPremiumChange()
     );
-  }
-
-  function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
-    uint256 fees = asset.realizedFees;
-    uint128 shares = asset.toAddedSharesDown(fees).toUint128();
-    if (shares == 0) {
-      return 0;
-    }
-
-    address feeReceiver = asset.feeReceiver;
-    asset.addedShares += shares;
-    _spokes[assetId][feeReceiver].addedShares += shares;
-    asset.realizedFees = 0;
-    emit MintFeeShares(assetId, feeReceiver, shares, fees);
-
-    return shares;
   }
 
   /// @dev Returns the spoke's drawn amount for a specified asset.
