@@ -140,11 +140,19 @@ contract Hub is IHub, AccessManaged {
       require(irData.length == 0, InvalidInterestRateStrategy());
     }
 
-    if (asset.feeReceiver != config.feeReceiver) {
+    address oldFeeReceiver = asset.feeReceiver;
+    if (oldFeeReceiver != config.feeReceiver) {
+      IHub.SpokeData memory spokeData = _spokes[assetId][oldFeeReceiver];
       _updateSpokeConfig(
         assetId,
-        asset.feeReceiver,
-        SpokeConfig({addCap: 0, drawCap: 0, riskPremiumThreshold: 0, active: true, paused: false})
+        oldFeeReceiver,
+        SpokeConfig({
+          addCap: 0,
+          drawCap: 0,
+          riskPremiumThreshold: 0,
+          active: spokeData.active,
+          paused: spokeData.paused
+        })
       );
       asset.feeReceiver = config.feeReceiver;
       _addFeeReceiver(assetId, config.feeReceiver);

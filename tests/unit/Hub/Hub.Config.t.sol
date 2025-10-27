@@ -425,11 +425,27 @@ contract HubConfigTest is HubBase {
     uint256 liquidity = hub1.getAssetLiquidity(assetId);
     (uint256 drawn, ) = hub1.getAssetOwed(assetId);
 
+    address oldFeeReceiver = _getFeeReceiver(hub1, assetId);
+    IHub.SpokeConfig memory oldFeeReceiverConfig = hub1.getSpokeConfig(assetId, oldFeeReceiver);
+
     // new spoke is added only if it is different from the old one and not yet listed
     if (
       newConfig.feeReceiver != _getFeeReceiver(hub1, assetId) &&
       !hub1.isSpokeListed(assetId, newConfig.feeReceiver)
     ) {
+      vm.expectEmit(address(hub1));
+      emit IHub.UpdateSpokeConfig(
+        assetId,
+        oldFeeReceiver,
+        IHub.SpokeConfig({
+          active: oldFeeReceiverConfig.active,
+          paused: oldFeeReceiverConfig.paused,
+          addCap: 0,
+          drawCap: 0,
+          riskPremiumThreshold: 0
+        })
+      );
+
       vm.expectEmit(address(hub1));
       emit IHub.AddSpoke(assetId, newConfig.feeReceiver);
       vm.expectEmit(address(hub1));
@@ -528,6 +544,42 @@ contract HubConfigTest is HubBase {
     assertTrue(spokeConfig.active, 'old fee receiver remains active');
     assertEq(spokeConfig.addCap, 0, 'old fee receiver add cap');
     assertEq(spokeConfig.drawCap, 0, 'old fee receiver draw cap');
+  }
+
+  /// Updates the fee receiver to a new spoke; old fee receiver active/paused flags are preserved
+  /// forge-config: pr.fuzz.runs = 10
+  function test_updateAssetConfig_oldFeeReceiver_flags(
+    bool oldFeeReceiverActive,
+    bool oldFeeReceiverPaused
+  ) public {
+    uint256 assetId = _randomAssetId(hub1);
+
+    address oldFeeReceiver = _getFeeReceiver(hub1, assetId);
+    IHub.SpokeConfig memory oldFeeReceiverConfig = hub1.getSpokeConfig(assetId, oldFeeReceiver);
+    oldFeeReceiverConfig.active = oldFeeReceiverActive;
+    oldFeeReceiverConfig.paused = oldFeeReceiverPaused;
+
+    // update old fee receiver config flags
+    Utils.updateSpokeConfig(hub1, ADMIN, assetId, oldFeeReceiver, oldFeeReceiverConfig);
+    assertEq(hub1.getSpokeConfig(assetId, oldFeeReceiver).active, oldFeeReceiverActive);
+    assertEq(hub1.getSpokeConfig(assetId, oldFeeReceiver).paused, oldFeeReceiverPaused);
+
+    // update asset config to new fee receiver; old fee receiver paused/active flags should be unchanged
+    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    config.feeReceiver = makeAddr('newFeeReceiver');
+    test_updateAssetConfig_fuzz(assetId, config);
+
+    assertEq(_getFeeReceiver(hub1, assetId), config.feeReceiver, 'new fee receiver');
+    assertEq(
+      hub1.getSpokeConfig(assetId, oldFeeReceiver).active,
+      oldFeeReceiverActive,
+      'old fee receiver active'
+    );
+    assertEq(
+      hub1.getSpokeConfig(assetId, oldFeeReceiver).paused,
+      oldFeeReceiverPaused,
+      'old fee receiver paused'
+    );
   }
 
   /// Updates the fee receiver by reusing a previously assigned spoke, with no impact on accrued fees
