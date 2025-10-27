@@ -124,7 +124,7 @@ library LiquidationLogic {
   /// @param collateralReserve The collateral reserve to seize during liquidation.
   /// @param debtReserve The debt reserve to repay during liquidation.
   /// @param positions The user positions mapping in storage.
-  /// @param positionStatuses The mapping of user position status in storage.
+  /// @param positionStatus The mapping of user position status in storage.
   /// @param liquidationConfig The liquidation config.
   /// @param collateralDynConfig The collateral dynamic config.
   /// @param params The liquidate user params.
@@ -133,7 +133,7 @@ library LiquidationLogic {
     ISpoke.Reserve storage collateralReserve,
     ISpoke.Reserve storage debtReserve,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage positions,
-    mapping(address user => ISpoke.PositionStatus) storage positionStatuses,
+    mapping(address user => ISpoke.PositionStatus) storage positionStatus,
     ISpoke.LiquidationConfig storage liquidationConfig,
     ISpoke.DynamicReserveConfig storage collateralDynConfig,
     LiquidateUserParams memory params
@@ -143,7 +143,7 @@ library LiquidationLogic {
       positions[params.user][params.collateralReserveId].suppliedShares
     );
     _validateLiquidationCall(
-      positionStatuses,
+      positionStatus,
       ValidateLiquidationCallParams({
         user: params.user,
         liquidator: params.liquidator,
@@ -204,7 +204,7 @@ library LiquidationLogic {
     bool isDebtPositionEmpty = _liquidateDebt(
       debtReserve,
       positions[params.user][params.debtReserveId],
-      positionStatuses[params.user],
+      positionStatus[params.user],
       LiquidateDebtParams({
         debtReserveId: params.debtReserveId,
         debtToLiquidate: debtToLiquidate,
@@ -347,7 +347,7 @@ library LiquidationLogic {
   /// @notice Validates the liquidation call.
   /// @param params The validate liquidation call params.
   function _validateLiquidationCall(
-    mapping(address user => ISpoke.PositionStatus) storage positionStatuses,
+    mapping(address user => ISpoke.PositionStatus) storage positionStatus,
     ValidateLiquidationCallParams memory params
   ) internal view {
     require(params.user != params.liquidator, ISpoke.SelfLiquidation());
@@ -363,7 +363,7 @@ library LiquidationLogic {
     );
     require(
       params.collateralFactor > 0 &&
-        positionStatuses[params.user].isUsingAsCollateral(params.collateralReserveId),
+        positionStatus[params.user].isUsingAsCollateral(params.collateralReserveId),
       ISpoke.CollateralCannotBeLiquidated()
     );
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
@@ -371,7 +371,7 @@ library LiquidationLogic {
     if (params.receiveShares) {
       require(
         !params.collateralReserveFrozen &&
-          !positionStatuses[params.liquidator].isUsingAsCollateral(params.collateralReserveId),
+          !positionStatus[params.liquidator].isUsingAsCollateral(params.collateralReserveId),
         ISpoke.CannotReceiveShares()
       );
     }
