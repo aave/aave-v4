@@ -72,7 +72,7 @@ contract SpokeMultipleHubTest is SpokeBase {
       paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
 
     // Connect hub 2 and spoke 1 for dai
