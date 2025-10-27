@@ -50,14 +50,12 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'usingAsCollateral: 0 borrows, enable');
 
-    spoke.supply(reserveId.usdx, 1000e6, alice);
+    spoke.supply(reserveId.usdx, 10000e6, alice);
     spoke.borrow(reserveId.dai, 100e18, alice);
     skip(100);
 
-    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'usingAsCollateral: 1 borrow, enable');
-
     spoke.setUsingAsCollateral(reserveId.weth, true, alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'usingAsCollateral: 1 borrow, enable');
 
     spoke.setUsingAsCollateral(reserveId.weth, false, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'usingAsCollateral: 1 borrow, disable');

@@ -100,4 +100,12 @@ contract MockSpoke is Spoke, Test {
   ) external returns (UserAccountData memory) {
     return _processUserAccountData(user, refreshConfig);
   }
+
+  function hasPositiveRiskPremium(address user) external view returns (bool) {
+    return _positionStatus[user].hasPositiveRiskPremium;
+  }
+
+  function setReserveDynamicConfigKey(uint256 reserveId, uint16 configKey) external {
+    _reserves[reserveId].dynamicConfigKey = configKey;
+  }
 }
