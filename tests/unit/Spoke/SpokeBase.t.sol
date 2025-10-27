@@ -90,6 +90,20 @@ contract SpokeBase is Base {
     uint256 premiumRestored;
   }
 
+  struct CalculateRiskPremiumLocal {
+    uint256 reserveCount;
+    uint256 totalDebtValue;
+    uint256 healthFactor;
+    uint256 activeCollateralCount;
+    uint16 dynamicConfigKey;
+    uint256 collateralFactor;
+    uint256 collateralValue;
+    ISpoke.UserPosition pos;
+    uint256 riskPremium;
+    uint256 utilizedSupply;
+    uint256 idx;
+  }
+
   struct Action {
     uint256 supplyAmount;
     uint256 borrowAmount;
@@ -253,7 +267,7 @@ contract SpokeBase is Base {
       collateralReserveId,
       debtReserveId,
       borrowAmount
-    ) * 2;
+    ) * 5;
     deal(spoke, collateralReserveId, user, supplyAmount);
     Utils.approve(spoke, collateralReserveId, user, UINT256_MAX);
     Utils.supplyCollateral(spoke, collateralReserveId, user, supplyAmount, user);
@@ -792,64 +806,98 @@ contract SpokeBase is Base {
     assertEq(abi.encode(a), abi.encode(b)); // sanity
   }
 
+  function _isHealthy(ISpoke spoke, address user) internal view returns (bool) {
+    return _isHealthy(spoke, spoke.getUserAccountData(user).healthFactor);
+  }
+
+  function _isHealthy(ISpoke spoke, uint256 healthFactor) internal view returns (bool) {
+    return healthFactor >= spoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD();
+  }
+
   function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
-    uint256 assetId;
-    uint256 totalDebt;
-    uint256 suppliedReservesCount;
-    uint256 userRP;
-    ISpoke.UserPosition memory userPosition;
+    return _calculateExpectedUserRP(user, spoke, false);
+  }
+
+  function _calculateExpectedUserRP(
+    address user,
+    ISpoke spoke,
+    bool refreshDynamicConfig
+  ) internal view returns (uint256) {
+    CalculateRiskPremiumLocal memory vars;
+    vars.reserveCount = spoke.getReserveCount();
 
     // Find all reserves user has supplied, adding up total debt
-    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+    for (uint256 reserveId; reserveId < vars.reserveCount; ++reserveId) {
+      vars.totalDebtValue += _getDebtValue(
+        spoke,
+        reserveId,
+        spoke.getUserTotalDebt(reserveId, user)
+      );
+
       if (spoke.isUsingAsCollateral(reserveId, user)) {
-        ++suppliedReservesCount;
+        vars.dynamicConfigKey = refreshDynamicConfig
+          ? spoke.getReserve(reserveId).dynamicConfigKey
+          : spoke.getUserPosition(reserveId, user).dynamicConfigKey;
+        vars.collateralFactor = spoke
+          .getDynamicReserveConfig(reserveId, vars.dynamicConfigKey)
+          .collateralFactor;
+
+        vars.collateralValue = _getValue(
+          spoke,
+          reserveId,
+          spoke.getUserSuppliedAssets(reserveId, user)
+        );
+        vars.healthFactor += (vars.collateralValue * vars.collateralFactor);
+        ++vars.activeCollateralCount;
       }
-      uint256 userDebt = spoke.getUserTotalDebt(reserveId, user);
-      totalDebt += _getValue(spoke, reserveId, userDebt);
     }
 
-    if (totalDebt == 0) {
+    if (vars.totalDebtValue == 0) {
       return 0;
+    } else {
+      vars.healthFactor = vars.healthFactor.wadDivDown(vars.totalDebtValue).fromBpsDown();
+      if (vars.healthFactor < spoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()) {
+        return 0;
+      }
     }
 
     // Gather up list of reserves as collateral to sort by collateral risk
-    KeyValueList.List memory reserveCollateralRisk = KeyValueList.init(suppliedReservesCount);
-    uint256 idx = 0;
-    for (uint256 reserveId; reserveId < spoke.getReserveCount(); reserveId++) {
+    KeyValueList.List memory reserveCollateralRisk = KeyValueList.init(vars.activeCollateralCount);
+    for (uint256 reserveId; reserveId < vars.reserveCount; ++reserveId) {
       if (spoke.isUsingAsCollateral(reserveId, user)) {
-        reserveCollateralRisk.add(idx, _getCollateralRisk(spoke, reserveId), reserveId);
-        ++idx;
+        reserveCollateralRisk.add(vars.idx, _getCollateralRisk(spoke, reserveId), reserveId);
+        ++vars.idx;
       }
     }
 
     // Sort supplied reserves by collateral risk
     reserveCollateralRisk.sortByKey();
+    vars.idx = 0;
 
     // While user's normalized debt amount is non-zero, iterate through supplied reserves, and add up collateral risk
-    idx = 0;
-    uint256 utilizedSupply = 0;
-    while (totalDebt > 0 && idx < reserveCollateralRisk.length()) {
-      (uint256 collateralRisk, uint256 reserveId) = reserveCollateralRisk.get(idx);
-      userPosition = getUserInfo(spoke, user, reserveId);
-      (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      uint256 suppliedAssets = hub1.previewRemoveByShares(assetId, userPosition.suppliedShares);
-      uint256 supplyAmount = _getValue(spoke, reserveId, suppliedAssets);
+    while (vars.totalDebtValue > 0 && vars.idx < reserveCollateralRisk.length()) {
+      (uint256 collateralRisk, uint256 reserveId) = reserveCollateralRisk.get(vars.idx);
+      vars.collateralValue = _getValue(
+        spoke,
+        reserveId,
+        spoke.getUserSuppliedAssets(reserveId, user)
+      );
 
-      if (supplyAmount >= totalDebt) {
-        userRP += totalDebt * collateralRisk;
-        utilizedSupply += totalDebt;
-        totalDebt = 0;
+      if (vars.collateralValue >= vars.totalDebtValue) {
+        vars.riskPremium += vars.totalDebtValue * collateralRisk;
+        vars.utilizedSupply += vars.totalDebtValue;
+        vars.totalDebtValue = 0;
         break;
       } else {
-        userRP += supplyAmount * collateralRisk;
-        utilizedSupply += supplyAmount;
-        totalDebt -= supplyAmount;
+        vars.riskPremium += vars.collateralValue * collateralRisk;
+        vars.utilizedSupply += vars.collateralValue;
+        vars.totalDebtValue -= vars.collateralValue;
       }
 
-      ++idx;
+      ++vars.idx;
     }
 
-    return userRP / utilizedSupply;
+    return vars.riskPremium / vars.utilizedSupply;
   }
 
   function _getSpokeDynConfigKeys(ISpoke spoke) internal view returns (DynamicConfig[] memory) {
