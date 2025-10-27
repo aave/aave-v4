@@ -79,7 +79,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     ORACLE = oracle_;
   }
 
-  function initialize(address _authority) external virtual;
+  /// @dev To be overridden by the inheriting Spoke instance contract.
+  function initialize(address authority) external virtual;
 
   /// @inheritdoc ISpoke
   function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
@@ -235,7 +236,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
     if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
-      uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+      uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
 
@@ -262,7 +263,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+    uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
@@ -392,7 +393,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _refreshDynamicConfig(onBehalfOf, reserveId);
       newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
     } else {
-      newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+      uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
+      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
@@ -413,7 +415,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+    uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
   }
 
@@ -432,7 +434,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(
+    bytes32 digest = _hashTypedData(
       keccak256(
         abi.encode(
           SET_USER_POSITION_MANAGER_TYPEHASH,
@@ -444,7 +446,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         )
       )
     );
-    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, nonce);
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
@@ -633,7 +635,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function getUserAccountData(address user) external view returns (UserAccountData memory) {
-    return _calculateUserAccountData(user);
+    // SAFETY: function does not modify state when `refreshConfig` is false.
+    return _castToView(_processUserAccountData)(user, false);
   }
 
   /// @inheritdoc ISpoke
@@ -670,29 +673,28 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     emit SetUserPositionManager(user, positionManager, approve);
   }
 
-  /// @notice Refreshes user dynamic configuration and checks the position is healthy.
-  /// @return The user's new risk premium.
-  function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
-    UserAccountData memory accountData = _calculateAndRefreshUserAccountData(user);
+  /// @notice Calculates and validates the user account data.
+  /// @dev It refreshes the dynamic config before calculation.
+  /// @dev It checks that the health factor is above the liquidation threshold.
+  function _refreshAndValidateUserAccountData(
+    address user
+  ) internal returns (UserAccountData memory) {
+    UserAccountData memory accountData = _processUserAccountData(user, true);
+    emit RefreshAllUserDynamicConfig(user);
     require(
       accountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
     );
-    return accountData.riskPremium;
-  }
-
-  /// @notice Refreshes the dynamic config and calculates the user account data.
-  function _calculateAndRefreshUserAccountData(
-    address user
-  ) internal returns (UserAccountData memory) {
-    UserAccountData memory accountData = _calculateAndPotentiallyRefreshUserAccountData(user, true);
-    emit RefreshAllUserDynamicConfig(user);
     return accountData;
   }
 
-  /// @notice Refreshes the dynamic config and calculates the user account data if `refreshConfig` is true.
-  /// @dev User RiskPremium calc runs until the first of either debt or collateral is exhausted.
-  function _calculateAndPotentiallyRefreshUserAccountData(
+  /// @notice Calculates the user account data with the current user dynamic config.
+  function _calculateUserAccountData(address user) internal returns (UserAccountData memory) {
+    return _processUserAccountData(user, false); // does not modify state
+  }
+
+  /// @notice Process the user account data and updates dynamic config of the user if `refreshConfig` is true.
+  function _processUserAccountData(
     address user,
     bool refreshConfig
   ) internal returns (UserAccountData memory accountData) {
@@ -772,14 +774,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
 
     uint256 debtValueLeftToCover = accountData.totalDebtValue;
-    if (
-      debtValueLeftToCover == 0 || accountData.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    ) {
-      // riskPremium is 0 when position is underwater or has no debt
-      return accountData;
-    }
-
     collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
+
+    // runs until either the collateral or debt is exhausted
     for (uint256 index = 0; index < collateralInfo.length(); ++index) {
       (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.get(index);
       userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
@@ -933,11 +930,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
-  }
-
-  function _calculateUserAccountData(address user) internal view returns (UserAccountData memory) {
-    // SAFETY: function does not modify state when refreshConfig is false.
-    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
   }
 
   /// @return The user's drawn debt.

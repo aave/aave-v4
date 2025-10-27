@@ -258,8 +258,10 @@ contract SpokeUserAccountDataTest is SpokeBase {
   ) internal {
     spoke.mockStorage(user, accountDataInfo);
 
-    ISpoke.UserAccountData memory userAccountData = spoke
-      .calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig);
+    ISpoke.UserAccountData memory userAccountData = spoke.calculateUserAccountData(
+      user,
+      refreshConfig
+    );
     assertApproxEq(userAccountData, expectedUserAccountData);
   }
 

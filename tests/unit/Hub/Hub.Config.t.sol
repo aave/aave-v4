@@ -29,7 +29,7 @@ contract HubConfigTest is HubBase {
   }
 
   function test_hub_max_riskPremium() public {
-    assertEq(Constants.MAX_ALLOWED_RISK_PREMIUM_CAP, hub1.MAX_ALLOWED_RISK_PREMIUM_CAP());
+    assertEq(Constants.MAX_RISK_PREMIUM_THRESHOLD, hub1.MAX_RISK_PREMIUM_THRESHOLD());
   }
 
   function test_addSpoke_fuzz_revertsWith_AssetNotListed(
@@ -288,13 +288,13 @@ contract HubConfigTest is HubBase {
       (uint32, uint32, uint32, uint32)
     );
 
-    // feeReceiver risk premium cap defaults to 0
+    // feeReceiver risk premium threshold defaults to 0
     IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
       active: true,
       paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: 0,
-      riskPremiumCap: 0
+      riskPremiumThreshold: 0
     });
 
     vm.expectEmit(address(hub1));
@@ -441,7 +441,7 @@ contract HubConfigTest is HubBase {
           paused: false,
           addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
           drawCap: 0,
-          riskPremiumCap: 0
+          riskPremiumThreshold: 0
         })
       );
     } else {

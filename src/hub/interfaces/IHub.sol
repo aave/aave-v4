@@ -71,7 +71,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev addedShares The added shares of a spoke for a given asset.
   /// @dev addCap The maximum amount that can be added by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev drawCap The maximum amount that can be drawn by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
-  /// @dev riskPremiumCap The maximum proportion of drawn shares that a spoke can update, expressed in BPS. A value of `MAX_ALLOWED_RISK_PREMIUM_CAP` indicates no cap.
+  /// @dev riskPremiumThreshold The maximum ratio of premium to drawn shares a spoke can have, expressed in BPS. A value of `MAX_RISK_PREMIUM_THRESHOLD` indicates no threshold.
   /// @dev active True if the spoke is prevented from performing any actions.
   /// @dev paused True if the spoke is prevented from performing actions that instantly update the liquidity.
   /// @dev deficit The deficit reported by a spoke for a given asset, expressed in asset units.
@@ -85,7 +85,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint128 addedShares;
     uint40 addCap;
     uint40 drawCap;
-    uint24 riskPremiumCap;
+    uint24 riskPremiumThreshold;
     bool active;
     bool paused;
     //
@@ -96,7 +96,7 @@ interface IHub is IHubBase, IAccessManaged {
   struct SpokeConfig {
     uint40 addCap;
     uint40 drawCap;
-    uint24 riskPremiumCap;
+    uint24 riskPremiumThreshold;
     bool active;
     bool paused;
   }
@@ -372,5 +372,8 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The maximum cap value, expressed in asset units.
   function MAX_ALLOWED_SPOKE_CAP() external view returns (uint40);
 
-  function MAX_ALLOWED_RISK_PREMIUM_CAP() external view returns (uint24);
+  /// @notice Returns the maximum value for any spoke risk premium threshold.
+  /// @dev The value is not inclusive; using the maximum value indicates no threshold.
+  /// @return The maximum risk premium threshold, expressed in BPS.
+  function MAX_RISK_PREMIUM_THRESHOLD() external view returns (uint24);
 }

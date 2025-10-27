@@ -6,3 +6,4 @@ snapshots
 report
 src/dependencies
 tests/mocks/JsonBindings.sol
+tests/misc/prototype

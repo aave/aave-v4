@@ -74,7 +74,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         paused: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
+        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
     newHub.addSpoke(
@@ -85,7 +85,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         paused: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
+        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
     vm.stopPrank();
@@ -119,7 +119,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         paused: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
+        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
     vm.stopPrank();
@@ -192,7 +192,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         paused: false,
         addCap: 0,
         drawCap: 100_000,
-        riskPremiumCap: 1000_00
+        riskPremiumThreshold: 1000_00
       })
     );
     vm.stopPrank();
@@ -266,7 +266,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
         paused: false,
         addCap: 0,
         drawCap: 0,
-        riskPremiumCap: 1000_00
+        riskPremiumThreshold: 1000_00
       })
     );
 
