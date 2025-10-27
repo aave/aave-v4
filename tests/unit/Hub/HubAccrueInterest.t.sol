@@ -257,7 +257,7 @@ contract HubAccrueInterestTest is Base {
   ) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     borrowRate = bound(borrowRate, 0, MAX_BORROW_RATE);
-    elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
+    elapsed = bound(elapsed, 1, MAX_SKIP_TIME / 3).toUint40();
     uint256 initialDrawnIndex = WadRayMath.RAY;
     uint256 addAmount2 = 1000e18;
 
