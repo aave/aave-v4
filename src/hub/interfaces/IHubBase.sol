@@ -219,12 +219,17 @@ interface IHubBase {
   /// @return The decimals of the asset.
   function getAssetUnderlyingAndDecimals(uint256 assetId) external view returns (address, uint8);
 
-  /// @notice Returns the total amount of the specified asset added to the hub.
+  /// @notice Calculates the current drawn index for the specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @return The current drawn index of the asset.
+  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256);
+
+  /// @notice Returns the total amount of the specified asset added to the Hub.
   /// @param assetId The identifier of the asset.
   /// @return The amount of the asset added.
   function getAddedAssets(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the total amount of shares of the specified asset added to the hub.
+  /// @notice Returns the total amount of shares of the specified asset added to the Hub.
   /// @param assetId The identifier of the asset.
   /// @return The amount of shares of the asset added.
   function getAddedShares(uint256 assetId) external view returns (uint256);
@@ -235,7 +240,7 @@ interface IHubBase {
   /// @return The amount of owed premium assets.
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
 
-  /// @notice Returns the total amount of assets owed to the hub.
+  /// @notice Returns the total amount of assets owed to the Hub.
   /// @param assetId The identifier of the asset.
   /// @return The total amount of the assets owed.
   function getAssetTotalOwed(uint256 assetId) external view returns (uint256);
@@ -262,28 +267,28 @@ interface IHubBase {
   /// @return The amount of deficit.
   function getAssetDeficit(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the total amount of the specified assets added to the hub by the specified spoke.
+  /// @notice Returns the total amount of the specified assets added to the Hub by the specified spoke.
   /// @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @return The amount of added assets.
   function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256);
 
-  /// @notice Returns the total amount of shares of the specified asset added to the hub by the specified spoke.
+  /// @notice Returns the total amount of shares of the specified asset added to the Hub by the specified spoke.
   /// @dev If spoke is `asset.feeReceiver`, includes `unrealizedFeeShares` in return value.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @return The amount of added shares.
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256);
 
-  /// @notice Returns the amount of the specified assets owed to the hub by the specified spoke.
+  /// @notice Returns the amount of the specified assets owed to the Hub by the specified spoke.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @return The amount of owed drawn assets.
   /// @return The amount of owed premium assets.
   function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256);
 
-  /// @notice Returns the total amount of the specified asset owed to the hub by the specified spoke.
+  /// @notice Returns the total amount of the specified asset owed to the Hub by the specified spoke.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @return The total amount of the asset owed.

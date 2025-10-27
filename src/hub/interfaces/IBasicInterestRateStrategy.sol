@@ -21,7 +21,7 @@ interface IBasicInterestRateStrategy {
   /// @param drawn The current drawn amount of the asset.
   /// @param deficit The current deficit of the asset.
   /// @param swept The current swept (reinvested) amount of the asset.
-  /// @return interestRate The interest rate expressed in ray.
+  /// @return The interest rate expressed in RAY.
   function calculateInterestRate(
     uint256 assetId,
     uint256 liquidity,

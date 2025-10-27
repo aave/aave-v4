@@ -22,10 +22,10 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @title Spoke
 /// @author Aave Labs
 /// @notice Handles risk configuration & borrowing strategy for reserves and user positions.
-/// @dev Each reserve can be associated with a separate hub.
+/// @dev Each reserve can be associated with a separate Hub.
 abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
-  using WadRayMath for uint256;
+  using WadRayMath for *;
   using PercentageMath for *;
   using KeyValueList for KeyValueList.List;
   using PositionStatusMap for *;
@@ -61,7 +61,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   mapping(address user => PositionStatus) internal _positionStatus;
   mapping(uint256 reserveId => Reserve) internal _reserves;
   mapping(address positionManager => PositionManagerConfig) internal _positionManager;
-  mapping(uint256 reserveId => mapping(uint16 configKey => DynamicReserveConfig))
+  mapping(uint256 reserveId => mapping(uint16 dynamicConfigKey => DynamicReserveConfig))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
@@ -79,7 +79,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     ORACLE = oracle_;
   }
 
-  function initialize(address _authority) external virtual;
+  /// @dev To be overridden by the inheriting Spoke instance contract.
+  function initialize(address authority) external virtual;
 
   /// @inheritdoc ISpoke
   function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
@@ -163,26 +164,26 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external restricted returns (uint16) {
     require(reserveId < _reserveCount, ReserveNotListed());
     _validateDynamicReserveConfig(dynamicConfig);
-    uint16 configKey;
+    uint16 dynamicConfigKey;
     // overflow is desired, we implicitly invalidate & override stale config
     unchecked {
-      configKey = ++_reserves[reserveId].dynamicConfigKey;
+      dynamicConfigKey = ++_reserves[reserveId].dynamicConfigKey;
     }
-    _dynamicConfig[reserveId][configKey] = dynamicConfig;
-    emit AddDynamicReserveConfig(reserveId, configKey, dynamicConfig);
-    return configKey;
+    _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
+    emit AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
+    return dynamicConfigKey;
   }
 
   /// @inheritdoc ISpoke
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
-    _validateUpdateDynamicReserveConfig(_dynamicConfig[reserveId][configKey], dynamicConfig);
-    _dynamicConfig[reserveId][configKey] = dynamicConfig;
-    emit UpdateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
+    _validateUpdateDynamicReserveConfig(_dynamicConfig[reserveId][dynamicConfigKey], dynamicConfig);
+    _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
+    emit UpdateDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
   }
 
   /// @inheritdoc ISpoke
@@ -230,7 +231,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
     if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
-      uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+      uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
 
@@ -257,7 +258,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+    uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
@@ -346,7 +347,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     );
 
     DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
-      _userPositions[user][collateralReserveId].configKey
+      _userPositions[user][collateralReserveId].dynamicConfigKey
     ];
 
     bool isUserInDeficit = LiquidationLogic.liquidateUser(
@@ -363,7 +364,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _reportDeficit(user);
     } else {
       // new risk premium only needs to be propagated if no deficit exists
-      _notifyRiskPremiumUpdate(user, _calculateUserAccountData(user).riskPremium);
+      uint256 newRiskPremium = _calculateUserAccountData(user).riskPremium;
+      _notifyRiskPremiumUpdate(user, newRiskPremium);
     }
   }
 
@@ -384,7 +386,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (usingAsCollateral) {
       _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
-      uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+      uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
 
@@ -405,7 +407,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
+    uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
   }
 
@@ -424,7 +426,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bytes calldata signature
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
-    bytes32 hash = _hashTypedData(
+    bytes32 digest = _hashTypedData(
       keccak256(
         abi.encode(
           SET_USER_POSITION_MANAGER_TYPEHASH,
@@ -436,7 +438,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         )
       )
     );
-    require(SignatureChecker.isValidSignatureNow(user, hash, signature), InvalidSignature());
+    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, nonce);
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
@@ -538,10 +540,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   function getDynamicReserveConfig(
     uint256 reserveId,
-    uint16 configKey
+    uint16 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory) {
     _getReserve(reserveId);
-    return _dynamicConfig[reserveId][configKey];
+    return _dynamicConfig[reserveId][dynamicConfigKey];
   }
 
   /// @inheritdoc ISpoke
@@ -617,14 +619,16 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
         healthFactor: healthFactor,
-        maxLiquidationBonus: _dynamicConfig[reserveId][_userPositions[user][reserveId].configKey]
-          .maxLiquidationBonus
+        maxLiquidationBonus: _dynamicConfig[reserveId][
+          _userPositions[user][reserveId].dynamicConfigKey
+        ].maxLiquidationBonus
       });
   }
 
   /// @inheritdoc ISpoke
   function getUserAccountData(address user) external view returns (UserAccountData memory) {
-    return _calculateUserAccountData(user);
+    // SAFETY: function does not modify state when `refreshConfig` is false.
+    return _castToView(_processUserAccountData)(user, false);
   }
 
   /// @inheritdoc ISpoke
@@ -661,29 +665,28 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     emit SetUserPositionManager(user, positionManager, approve);
   }
 
-  /// @notice Refreshes user dynamic configuration and checks the position is healthy.
-  /// @return The user's new risk premium.
-  function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
-    UserAccountData memory accountData = _calculateAndRefreshUserAccountData(user);
+  /// @notice Calculates and validates the user account data.
+  /// @dev It refreshes the dynamic config before calculation.
+  /// @dev It checks that the health factor is above the liquidation threshold.
+  function _refreshAndValidateUserAccountData(
+    address user
+  ) internal returns (UserAccountData memory) {
+    UserAccountData memory accountData = _processUserAccountData(user, true);
+    emit RefreshAllUserDynamicConfig(user);
     require(
       accountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
     );
-    return accountData.riskPremium;
-  }
-
-  /// @notice Refreshes the dynamic config and calculates the user account data.
-  function _calculateAndRefreshUserAccountData(
-    address user
-  ) internal returns (UserAccountData memory) {
-    UserAccountData memory accountData = _calculateAndPotentiallyRefreshUserAccountData(user, true);
-    emit RefreshAllUserDynamicConfig(user);
     return accountData;
   }
 
-  /// @notice Refreshes the dynamic config and calculates the user account data if `refreshConfig` is true.
-  /// @dev User RiskPremium calc runs until the first of either debt or collateral is exhausted.
-  function _calculateAndPotentiallyRefreshUserAccountData(
+  /// @notice Calculates the user account data with the current user dynamic config.
+  function _calculateUserAccountData(address user) internal returns (UserAccountData memory) {
+    return _processUserAccountData(user, false); // does not modify state
+  }
+
+  /// @notice Process the user account data and updates dynamic config of the user if `refreshConfig` is true.
+  function _processUserAccountData(
     address user,
     bool refreshConfig
   ) internal returns (UserAccountData memory accountData) {
@@ -708,8 +711,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       if (collateral) {
         uint256 collateralFactor = _dynamicConfig[reserveId][
           refreshConfig
-            ? (userPosition.configKey = reserve.dynamicConfigKey)
-            : userPosition.configKey
+            ? (userPosition.dynamicConfigKey = reserve.dynamicConfigKey)
+            : userPosition.dynamicConfigKey
         ].collateralFactor;
         if (collateralFactor > 0) {
           uint256 suppliedShares = userPosition.suppliedShares;
@@ -764,6 +767,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     uint256 debtValueLeftToCover = accountData.totalDebtValue;
     collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
+
+    // runs until either the collateral or debt is exhausted
     for (uint256 index = 0; index < collateralInfo.length(); ++index) {
       if (debtValueLeftToCover == 0) {
         break;
@@ -785,7 +790,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
-    _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
+    _userPositions[user][reserveId].dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
     emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 
@@ -805,15 +810,15 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       Reserve storage reserve = _reserves[reserveId];
       uint256 assetId = reserve.assetId;
       IHubBase hub = reserve.hub;
+      uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
 
       uint256 oldPremiumShares = userPosition.premiumShares;
       uint256 oldPremiumOffset = userPosition.premiumOffset;
-      uint256 accruedPremium = hub.previewRestoreByShares(assetId, oldPremiumShares) -
-        oldPremiumOffset;
+      uint256 accruedPremium = oldPremiumShares.rayMulUp(drawnIndex) - oldPremiumOffset;
 
       uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newRiskPremium);
       // uses opposite rounding direction as premiumOffset is virtual debt owed by the protocol
-      uint256 newPremiumOffset = hub.previewDrawByShares(assetId, newPremiumShares);
+      uint256 newPremiumOffset = newPremiumShares.rayMulDown(drawnIndex);
 
       userPosition.premiumShares = newPremiumShares.toUint128();
       userPosition.premiumOffset = newPremiumOffset.toUint128();
@@ -921,11 +926,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return config.active && config.approval[user];
   }
 
-  function _calculateUserAccountData(address user) internal view returns (UserAccountData memory) {
-    // SAFETY: function does not modify state when refreshConfig is false.
-    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
-  }
-
   /// @return The user's drawn debt.
   /// @return The user's premium debt.
   /// @return The user's accrued premium debt.
@@ -934,10 +934,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 assetId,
     UserPosition storage userPosition
   ) internal view returns (uint256, uint256, uint256) {
-    uint256 accruedPremium = hub.previewRestoreByShares(assetId, userPosition.premiumShares) -
+    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+    uint256 accruedPremium = userPosition.premiumShares.rayMulUp(drawnIndex) -
       userPosition.premiumOffset;
     return (
-      hub.previewRestoreByShares(assetId, userPosition.drawnShares),
+      userPosition.drawnShares.rayMulUp(drawnIndex),
       userPosition.realizedPremium + accruedPremium,
       accruedPremium
     );
