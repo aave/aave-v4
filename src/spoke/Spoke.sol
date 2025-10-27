@@ -327,7 +327,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 debtToCover,
     bool receiveShares
   ) external {
+    Reserve storage debtReserve = _reserves[debtReserveId];
+    Reserve storage collateralReserve = _reserves[collateralReserveId];
+    DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
+      _userPositions[user][collateralReserveId].dynamicConfigKey
+    ];
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
+
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
@@ -344,18 +350,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       liquidator: msg.sender,
       receiveShares: receiveShares
     });
-    Reserve storage debtReserve = _reserves[debtReserveId];
-    Reserve storage collateralReserve = _reserves[collateralReserveId];
-
     (params.drawnDebt, params.premiumDebt, params.accruedPremium) = _getUserDebt(
       debtReserve.hub,
       debtReserve.assetId,
       _userPositions[user][debtReserveId]
     );
-
-    DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
-      _userPositions[user][collateralReserveId].dynamicConfigKey
-    ];
 
     bool isUserInDeficit = LiquidationLogic.liquidateUser(
       collateralReserve,
