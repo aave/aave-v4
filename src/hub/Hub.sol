@@ -141,13 +141,13 @@ contract Hub is IHub, AccessManaged {
       require(irData.length == 0, InvalidInterestRateStrategy());
     }
 
-    if (asset.feeReceiver != config.feeReceiver) {
+    address oldFeeReceiver = asset.feeReceiver;
+    if (oldFeeReceiver != config.feeReceiver) {
       _mintFeeShares(asset, assetId);
-      _updateSpokeConfig(
-        assetId,
-        asset.feeReceiver,
-        SpokeConfig({addCap: 0, drawCap: 0, riskPremiumThreshold: 0, active: true, paused: false})
-      );
+      IHub.SpokeConfig memory spokeConfig;
+      spokeConfig.active = _spokes[assetId][oldFeeReceiver].active;
+      spokeConfig.paused = _spokes[assetId][oldFeeReceiver].paused;
+      _updateSpokeConfig(assetId, oldFeeReceiver, spokeConfig);
       asset.feeReceiver = config.feeReceiver;
       _addFeeReceiver(assetId, config.feeReceiver);
     }
