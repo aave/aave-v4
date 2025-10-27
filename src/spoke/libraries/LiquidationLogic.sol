@@ -357,6 +357,8 @@ library LiquidationLogic {
       ISpoke.ReserveNotListed()
     );
     require(!params.collateralReservePaused && !params.debtReservePaused, ISpoke.ReservePaused());
+    require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
+    require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
     require(
       params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       ISpoke.HealthFactorNotBelowThreshold()
@@ -366,8 +368,6 @@ library LiquidationLogic {
         positionStatus[params.user].isUsingAsCollateral(params.collateralReserveId),
       ISpoke.CollateralCannotBeLiquidated()
     );
-    require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
-    require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
     // liquidator cannot receive collateral shares if the reserve is frozen or if it is being used as collateral
     if (params.receiveShares) {
       require(

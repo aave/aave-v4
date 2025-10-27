@@ -385,7 +385,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
-      return;
+      return; // no op also ensures only new collateral is refreshed once
     }
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
@@ -777,10 +777,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (
       debtValueLeftToCover == 0 || accountData.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     ) {
-      // riskPremium is 0 when position is underwater or has no debt
+      // riskPremium is 0 when user has no debt or is unhealthy
       return accountData;
     }
-
     collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
 
     // runs until either the collateral or debt is exhausted
@@ -789,6 +788,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
       accountData.riskPremium += userCollateralValue * collateralRisk;
       debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
+
       if (debtValueLeftToCover == 0) {
         break;
       }
