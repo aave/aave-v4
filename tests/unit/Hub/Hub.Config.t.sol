@@ -306,7 +306,7 @@ contract HubConfigTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAssetConfig(expectedAssetId, expectedConfig);
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(expectedAssetId, WadRayMath.RAY, baseVariableBorrowRate.bpsToRay());
+    emit IHub.UpdateAsset(expectedAssetId, WadRayMath.RAY, baseVariableBorrowRate.bpsToRay(), 0);
 
     uint256 assetId = Utils.addAsset(
       hub1,
@@ -426,19 +426,16 @@ contract HubConfigTest is HubBase {
     (uint256 drawn, ) = hub1.getAssetOwed(assetId);
 
     // new spoke is added only if it is different from the old one and not yet listed
-    if (
-      newConfig.feeReceiver != _getFeeReceiver(hub1, assetId) &&
-      !hub1.isSpokeListed(assetId, newConfig.feeReceiver)
-    ) {
-      if (_calcUnrealizedFeeAmount(hub1, assetId) > 0) {
-        uint256 feeAmount = hub1.getAsset(assetId).feeAmount +
-          _calcUnrealizedFeeAmount(hub1, assetId);
+    bool isNewFeeReceiver = newConfig.feeReceiver != _getFeeReceiver(hub1, assetId);
+    if (isNewFeeReceiver && !hub1.isSpokeListed(assetId, newConfig.feeReceiver)) {
+      if (_calcUnrealizedFees(hub1, assetId) > 0) {
+        uint256 accruedFees = hub1.getAssetAccruedFees(assetId);
         vm.expectEmit(address(hub1));
         emit IHub.MintFeeShares(
           assetId,
           _getFeeReceiver(hub1, assetId),
-          hub1.previewAddByAssets(assetId, feeAmount),
-          feeAmount
+          hub1.previewAddByAssets(assetId, accruedFees),
+          accruedFees
         );
       }
       vm.expectEmit(address(hub1));
@@ -468,7 +465,8 @@ contract HubConfigTest is HubBase {
         drawn: drawn,
         deficit: 0,
         swept: 0
-      })
+      }),
+      isNewFeeReceiver ? 0 : hub1.getAssetAccruedFees(assetId)
     );
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAssetConfig(assetId, newConfig);
@@ -558,7 +556,7 @@ contract HubConfigTest is HubBase {
     uint256 oldFees = hub1.getSpokeAddedShares(assetId, oldFeeReceiver);
 
     skip(365 days);
-    hub1.mintFeeShares(assetId);
+    Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     address newFeeReceiver = config.feeReceiver;
@@ -633,7 +631,7 @@ contract HubConfigTest is HubBase {
     config.liquidityFee = liquidityFee;
     test_updateAssetConfig_fuzz(assetId, config);
 
-    assertEq(_calcUnrealizedFeeAmount(hub1, assetId), 0);
+    assertEq(_calcUnrealizedFees(hub1, assetId), 0);
     assertEq(_getExpectedFeeReceiverAddedAssets(hub1, assetId), expectedFeeReceiverAddedAssets);
   }
 

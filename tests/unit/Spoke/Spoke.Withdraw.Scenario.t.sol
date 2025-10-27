@@ -191,7 +191,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     vm.prank(carol);
     spoke1.repay(params.reserveId, state.repayAmount, carol);
 
-    assertEq(hub1.getAsset(params.reserveId).feeAmount, expectedFeeAmount, 'fee amount');
+    assertEq(hub1.getAsset(params.reserveId).realizedFees, expectedFeeAmount, 'realized fees');
 
     TestData[3] memory reserveData;
     TestUserData[3] memory aliceData;
@@ -288,7 +288,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     assertEq(tokenData[state.stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[state.stage].hubBalance,
-      _calculateBurntInterest(hub1, state.assetId) + hub1.getAsset(state.assetId).feeAmount,
+      _calculateBurntInterest(hub1, state.assetId) + hub1.getAsset(state.assetId).realizedFees,
       'tokenData hub balance'
     );
     assertEq(

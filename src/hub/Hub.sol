@@ -95,7 +95,7 @@ contract Hub is IHub, AccessManaged {
       decimals: decimals,
       drawnRate: drawnRate.toUint96(),
       irStrategy: irStrategy,
-      feeAmount: 0,
+      realizedFees: 0,
       reinvestmentController: address(0),
       feeReceiver: feeReceiver,
       liquidityFee: 0
@@ -112,7 +112,7 @@ contract Hub is IHub, AccessManaged {
         reinvestmentController: address(0)
       })
     );
-    emit UpdateAsset(assetId, drawnIndex, drawnRate);
+    emit UpdateAsset(assetId, drawnIndex, drawnRate, 0);
 
     return assetId;
   }
@@ -142,7 +142,6 @@ contract Hub is IHub, AccessManaged {
     }
 
     if (asset.feeReceiver != config.feeReceiver) {
-      // if fees are worth less than one share, no shares are minted and existing fees will be minted to the new fee receiver
       _mintFeeShares(asset, assetId);
       _updateSpokeConfig(
         assetId,
@@ -397,7 +396,8 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function mintFeeShares(uint256 assetId) external returns (uint256) {
+  function mintFeeShares(uint256 assetId) external restricted returns (uint256) {
+    require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
     asset.accrue();
     uint256 feeShares = _mintFeeShares(asset, assetId);
@@ -560,9 +560,9 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getAssetFeeAmount(uint256 assetId) external view returns (uint256) {
+  function getAssetAccruedFees(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return asset.feeAmount + asset.getUnrealizedFeeAmount(asset.getDrawnIndex());
+    return asset.realizedFees + asset.getUnrealizedFees(asset.getDrawnIndex());
   }
 
   /// @inheritdoc IHub
@@ -737,21 +737,21 @@ contract Hub is IHub, AccessManaged {
   }
 
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
-    uint256 feeAmount = asset.feeAmount;
-    uint128 feeShares = asset.toAddedSharesDown(feeAmount).toUint128();
-    if (feeShares == 0) {
+    uint256 fees = asset.realizedFees;
+    uint128 shares = asset.toAddedSharesDown(fees).toUint128();
+    if (shares == 0) {
       return 0;
     }
 
     address feeReceiver = asset.feeReceiver;
 
-    asset.addedShares += feeShares;
-    _spokes[assetId][feeReceiver].addedShares += feeShares;
+    asset.addedShares += shares;
+    _spokes[assetId][feeReceiver].addedShares += shares;
 
-    asset.feeAmount = 0;
-    emit MintFeeShares(assetId, feeReceiver, feeShares, feeAmount);
+    asset.realizedFees = 0;
+    emit MintFeeShares(assetId, feeReceiver, shares, fees);
 
-    return feeShares;
+    return shares;
   }
 
   /// @dev Returns the spoke's drawn amount for a specified asset.

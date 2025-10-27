@@ -333,12 +333,13 @@ abstract contract Base is Test {
     }
 
     {
-      bytes4[] memory selectors = new bytes4[](5);
+      bytes4[] memory selectors = new bytes4[](6);
       selectors[0] = IHub.addAsset.selector;
       selectors[1] = IHub.updateAssetConfig.selector;
       selectors[2] = IHub.addSpoke.selector;
       selectors[3] = IHub.updateSpokeConfig.selector;
       selectors[4] = IHub.setInterestRateData.selector;
+      selectors[5] = IHub.mintFeeShares.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
     }
     vm.stopPrank();
@@ -1935,7 +1936,7 @@ abstract contract Base is Test {
 
   /// @dev Helper function to withdraw fees from the treasury spoke
   function _withdrawLiquidityFees(IHub hub, uint256 assetId, uint256 amount) internal {
-    hub.mintFeeShares(assetId);
+    Utils.mintFeeShares(hub, assetId, ADMIN);
     uint256 fees = hub.getSpokeAddedAssets(assetId, address(treasurySpoke));
 
     if (amount > fees) {
@@ -2613,8 +2614,8 @@ abstract contract Base is Test {
     return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
   }
 
-  /// @dev Calculate expected fee amount based on previous drawn index
-  function _calcUnrealizedFeeAmount(IHub hub, uint256 assetId) internal view returns (uint256) {
+  /// @dev Calculate expected fees based on previous drawn index
+  function _calcUnrealizedFees(IHub hub, uint256 assetId) internal view returns (uint256) {
     IHub.Asset memory asset = hub.getAsset(assetId);
     uint256 lastDrawnIndex = asset.drawnIndex;
     uint256 drawnIndex = asset.drawnIndex.rayMulUp(
@@ -2632,16 +2633,15 @@ abstract contract Base is Test {
     IHub hub,
     uint256 assetId
   ) internal view returns (uint256) {
-    uint256 expectedFeeAmount = hub.getAsset(assetId).feeAmount +
-      _calcUnrealizedFeeAmount(hub, assetId);
-    assertEq(expectedFeeAmount, hub.getAssetFeeAmount(assetId), 'asset fee amount');
-    return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + expectedFeeAmount;
+    uint256 expectedFees = hub.getAsset(assetId).realizedFees + _calcUnrealizedFees(hub, assetId);
+    assertEq(expectedFees, hub.getAssetAccruedFees(assetId), 'asset accrued fees');
+    return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + expectedFees;
   }
 
   function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
     return
       hub.getAddedAssets(assetId) +
-      hub.getAsset(assetId).feeAmount +
-      _calcUnrealizedFeeAmount(hub, assetId);
+      hub.getAsset(assetId).realizedFees +
+      _calcUnrealizedFees(hub, assetId);
   }
 }

@@ -270,7 +270,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // Wait a year to accrue interest
     skip(365 days);
 
-    uint256 expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, daiAssetId);
+    uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
 
     // Ensure interest has accrued
     vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
@@ -287,7 +287,7 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    assertEq(hub1.getAsset(daiAssetId).feeAmount, expectedFeeAmount, 'fee amount');
+    assertEq(hub1.getAsset(daiAssetId).realizedFees, expectedFeeAmount, 'realized fees');
 
     uint256 addExRate = getAddExRate(daiAssetId);
 
@@ -351,7 +351,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // Ensure interest has accrued
     vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
 
-    uint256 expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, daiAssetId);
+    uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -401,7 +401,7 @@ contract SpokeWithdrawTest is SpokeBase {
       state.borrowReserveSupplyAmount
     ) = _increaseReserveIndex(spoke1, state.reserveId);
 
-    state.expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, daiAssetId);
+    state.expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
 
     (state.aliceDrawnDebt, state.alicePremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
     assertEq(state.alicePremiumDebt, 0, 'alice has no premium contribution to exchange rate');
@@ -448,7 +448,7 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    assertEq(hub1.getAsset(daiAssetId).feeAmount, state.expectedFeeAmount, 'fee amount');
+    assertEq(hub1.getAsset(daiAssetId).realizedFees, state.expectedFeeAmount, 'realized fees');
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -481,7 +481,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).feeAmount,
+      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFees,
       'tokenData hub balance'
     );
     assertEq(
@@ -556,7 +556,7 @@ contract SpokeWithdrawTest is SpokeBase {
       skipTime: params.skipTime
     });
 
-    state.expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, wbtcAssetId);
+    state.expectedFeeAmount = _calcUnrealizedFees(hub1, wbtcAssetId);
 
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
     // deal because repayAmount may exceed default supplied amount due to interest
@@ -569,7 +569,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // alice repays all with interest
     Utils.repay(spoke1, state.reserveId, alice, repayAmount, alice);
 
-    assertEq(hub1.getAsset(wbtcAssetId).feeAmount, state.expectedFeeAmount, 'fee amount');
+    assertEq(hub1.getAsset(wbtcAssetId).realizedFees, state.expectedFeeAmount, 'realized fees');
 
     // number of test stages
     TestData[3] memory reserveData;
@@ -649,7 +649,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, assetId) + hub1.getAsset(assetId).feeAmount,
+      _calculateBurntInterest(hub1, assetId) + hub1.getAsset(assetId).realizedFees,
       'tokenData hub balance'
     );
     assertEq(underlying.balanceOf(alice), 0, 'alice balance');
@@ -682,7 +682,7 @@ contract SpokeWithdrawTest is SpokeBase {
       state.borrowReserveSupplyAmount
     ) = _increaseReserveIndex(spoke1, state.reserveId);
 
-    state.expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, daiAssetId);
+    state.expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
 
     (, state.alicePremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
 
@@ -692,7 +692,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
     Utils.repay(spoke1, state.reserveId, alice, repayAmount, alice);
 
-    assertEq(hub1.getAsset(daiAssetId).feeAmount, state.expectedFeeAmount, 'fee amount');
+    assertEq(hub1.getAsset(daiAssetId).realizedFees, state.expectedFeeAmount, 'realized fees');
 
     uint256 stage = 0;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -760,7 +760,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).feeAmount,
+      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFees,
       'tokenData hub balance'
     );
     assertEq(
@@ -827,7 +827,7 @@ contract SpokeWithdrawTest is SpokeBase {
       skipTime: params.skipTime
     });
 
-    state.expectedFeeAmount = _calcUnrealizedFeeAmount(hub1, assetId);
+    state.expectedFeeAmount = _calcUnrealizedFees(hub1, assetId);
 
     // repay all debt with interest
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
@@ -838,7 +838,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     Utils.repay(spoke1, state.reserveId, alice, repayAmount, alice);
 
-    assertEq(hub1.getAsset(assetId).feeAmount, state.expectedFeeAmount, 'fee amount');
+    assertEq(hub1.getAsset(assetId).realizedFees, state.expectedFeeAmount, 'realized fees');
 
     // number of test stages
     TestData[3] memory reserveData;
@@ -920,7 +920,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, assetId) + hub1.getAsset(assetId).feeAmount,
+      _calculateBurntInterest(hub1, assetId) + hub1.getAsset(assetId).realizedFees,
       'tokenData hub balance'
     );
     assertEq(underlying.balanceOf(alice), 0, 'alice balance');

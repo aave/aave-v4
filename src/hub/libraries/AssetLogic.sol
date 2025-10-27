@@ -77,8 +77,8 @@ library AssetLogic {
       asset.swept +
       asset.deficit +
       asset.totalOwed(drawnIndex) -
-      asset.feeAmount -
-      asset.getUnrealizedFeeAmount(drawnIndex);
+      asset.realizedFees -
+      asset.getUnrealizedFees(drawnIndex);
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
@@ -115,7 +115,7 @@ library AssetLogic {
 
   /// @notice Updates the drawn rate of a specified asset.
   /// @dev Premium debt is not used in the interest rate calculation.
-  /// @dev Uses last stored index, asset accrual should have already occurred.
+  /// @dev Uses last stored index and realized fees, asset accrual should have already occurred.
   function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
     uint256 drawnIndex = asset.drawnIndex;
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
@@ -127,7 +127,7 @@ library AssetLogic {
     });
     asset.drawnRate = newDrawnRate.toUint96();
 
-    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate);
+    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate, asset.realizedFees);
   }
 
   /// @notice Accrues interest and fees for the specified asset.
@@ -136,9 +136,9 @@ library AssetLogic {
       return;
     }
 
-    uint256 newDrawnIndex = asset.getDrawnIndex();
-    asset.feeAmount += asset.getUnrealizedFeeAmount(newDrawnIndex).toUint128();
-    asset.drawnIndex = newDrawnIndex.toUint128();
+    uint256 drawnIndex = asset.getDrawnIndex();
+    asset.realizedFees += asset.getUnrealizedFees(drawnIndex).toUint128();
+    asset.drawnIndex = drawnIndex.toUint128();
     asset.lastUpdateTimestamp = block.timestamp.toUint32();
   }
 
@@ -157,15 +157,14 @@ library AssetLogic {
       );
   }
 
-  /// @notice Calculates the amount of fee shares derived from the index growth due to interest accrual.
-  /// @dev The true liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee.
+  /// @notice Calculates the amount of fees derived from the index growth due to interest accrual.
   /// @param drawnIndex The current drawn index.
-  function getUnrealizedFeeAmount(
+  function getUnrealizedFees(
     IHub.Asset storage asset,
     uint256 drawnIndex
   ) internal view returns (uint256) {
-    uint256 lastDrawnIndex = asset.drawnIndex;
-    if (lastDrawnIndex == drawnIndex) {
+    uint256 previousIndex = asset.drawnIndex;
+    if (previousIndex == drawnIndex) {
       return 0;
     }
 
@@ -178,9 +177,9 @@ library AssetLogic {
     uint128 premiumShares = asset.premiumShares;
 
     uint256 liquidityGrowth = drawnShares.rayMulUp(drawnIndex) -
-      drawnShares.rayMulUp(lastDrawnIndex) +
+      drawnShares.rayMulUp(previousIndex) +
       premiumShares.rayMulUp(drawnIndex) -
-      premiumShares.rayMulUp(lastDrawnIndex);
+      premiumShares.rayMulUp(previousIndex);
     return liquidityGrowth.percentMulDown(liquidityFee);
   }
 }

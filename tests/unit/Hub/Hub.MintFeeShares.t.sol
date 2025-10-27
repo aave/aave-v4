@@ -9,6 +9,19 @@ contract HubMintFeeSharesTest is HubBase {
     super.setUp();
   }
 
+  function test_mintFeeShares_revertsWith_AssetNotListed() public {
+    uint256 invalidAssetId = hub1.getAssetCount();
+    vm.expectRevert(abi.encodeWithSelector(IHub.AssetNotListed.selector), address(hub1));
+    Utils.mintFeeShares(hub1, invalidAssetId, ADMIN);
+  }
+
+  function test_mintFeeShares_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
+    );
+    Utils.mintFeeShares(hub1, daiAssetId, address(this));
+  }
+
   function test_mintFeeShares() public {
     // Create debt to build up fees on the existing treasury spoke
     _addAndDrawLiquidity(
@@ -26,8 +39,8 @@ contract HubMintFeeSharesTest is HubBase {
     address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // before mintFeeShares, the fee shares should be 0
-    uint256 feeAmount = hub1.getAsset(daiAssetId).feeAmount;
-    assertEq(feeAmount, 0);
+    uint256 realizedFees = hub1.getAsset(daiAssetId).realizedFees;
+    assertEq(realizedFees, 0);
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, feeReceiver);
     assertEq(feeShares, 0);
 
@@ -52,16 +65,16 @@ contract HubMintFeeSharesTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.MintFeeShares(daiAssetId, feeReceiver, expectedMintedShares, expectedMintedAssets);
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(daiAssetId, hub1.getAssetDrawnIndex(daiAssetId), mockRate);
+    emit IHub.UpdateAsset(daiAssetId, hub1.getAssetDrawnIndex(daiAssetId), mockRate, 0);
 
     uint256 addedSharesBefore = hub1.getAddedShares(daiAssetId);
     uint256 sharePriceBefore = hub1.previewAddByShares(daiAssetId, 1e18);
 
     vm.expectCall(address(irStrategy), irCalldata);
-    uint256 mintedShares = hub1.mintFeeShares(daiAssetId);
+    uint256 mintedShares = Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertEq(mintedShares, expectedMintedShares, 'minted shares');
-    assertEq(hub1.getAsset(daiAssetId).feeAmount, 0, 'fee amount after');
+    assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'realized fees after');
     assertEq(
       hub1.getSpokeAddedShares(daiAssetId, feeReceiver),
       expectedMintedShares,
@@ -77,10 +90,10 @@ contract HubMintFeeSharesTest is HubBase {
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
 
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(daiAssetId, asset.drawnIndex, asset.drawnRate);
+    emit IHub.UpdateAsset(daiAssetId, asset.drawnIndex, asset.drawnRate, 0);
 
     vm.recordLogs();
-    hub1.mintFeeShares(daiAssetId);
+    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
     Vm.Log[] memory entries = vm.getRecordedLogs();
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
   }
@@ -109,17 +122,17 @@ contract HubMintFeeSharesTest is HubBase {
     updateLiquidityFee(hub1, daiAssetId, PercentageMath.PERCENTAGE_FACTOR);
 
     // mint fee shares just to accrue (liquidity fee is 0, so no fees are minted)
-    hub1.mintFeeShares(daiAssetId);
+    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
     skip(365 days);
 
     // drawn index is 2.000...001
     assertEq(hub1.getAssetDrawnIndex(daiAssetId), 2e27 + 1);
 
     vm.recordLogs();
-    hub1.mintFeeShares(daiAssetId);
+    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
     Vm.Log[] memory entries = vm.getRecordedLogs();
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
 
-    assertEq(hub1.getAsset(daiAssetId).feeAmount, 1, 'fee amount after');
+    assertEq(hub1.getAsset(daiAssetId).realizedFees, 1, 'realized fees after');
   }
 }

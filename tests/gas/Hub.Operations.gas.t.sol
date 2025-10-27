@@ -103,7 +103,7 @@ contract HubOperations_Gas_Tests is Base {
 
     skip(100);
 
-    hub1.mintFeeShares(daiAssetId);
+    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
     vm.snapshotGasLastCall('Hub.Operations', 'mintFeeShares');
   }
 

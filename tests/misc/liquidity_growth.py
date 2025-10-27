@@ -18,8 +18,8 @@ rayMulUp = lambda a, b: (a * b + RAY - 1) / RAY
 rayMulDown = lambda a, b: (a * b) / RAY
 
 trueLiquidityGrowth = rayMulUp(base, index2) - rayMulUp(base, index1) + rayMulUp(premium, index2) - rayMulUp(premium, index1)
-x = rayMulDown(base, index2 - index1) + rayMulDown(premium, index2 - index1) # incorrect
-# x = rayMulDown(base + premium, index2 - index1) # incorrect
+x = rayMulDown(base, index2 - index1) + rayMulDown(premium, index2 - index1) # incorrect -- it underestimates the liquidity growth
+# x = rayMulDown(base + premium, index2 - index1) # incorrect -- it overestimates the liquidity growth
 
 s.add(Not(trueLiquidityGrowth == x))
 
