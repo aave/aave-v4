@@ -90,10 +90,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   }
 
   /// @notice User position status data.
-  /// @dev map The bitmap of the position status.
+  /// @dev map The map of bitmap buckets for the position status.
   /// @dev hasPositiveRiskPremium True if the user position has a risk premium strictly greater than 0.
   struct PositionStatus {
-    mapping(uint256 slot => uint256) map;
+    mapping(uint256 bucket => uint256) map;
     bool hasPositiveRiskPremium;
   }
 

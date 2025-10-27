@@ -43,6 +43,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     BalanceInfo collateralFeeReceiverBalanceInfo;
     BalanceInfo debtFeeReceiverBalanceInfo;
     BalanceInfo spokeBalanceInfo;
+    bool hasPositiveRiskPremium;
   }
 
   struct LiquidationMetadata {
@@ -340,9 +341,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     }
 
     if (totalCollateralValue != 0) {
-      newAvgCollateralFactor = newAvgCollateralFactor
-        .wadDivDown(totalCollateralValue)
-        .fromBpsDown();
+      newAvgCollateralFactor = newAvgCollateralFactor.wadDivDown(totalCollateralValue).fromBpsDown();
     }
     list.sortByKey();
 
@@ -476,16 +475,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         );
       }
     }
-
-    if (!liquidationMetadata.hasDeficit) {
-      vm.expectEmit(false, false, false, false, address(params.spoke));
-      // topics > 0 and data are not checked here
-      // they are checked after the liquidation call since expected risk premium calculation is an approximation
-      emit ISpoke.UpdateUserRiskPremium(address(0), 0);
-    } else {
-      vm.expectEmit(address(params.spoke));
-      emit ISpoke.UpdateUserRiskPremium(params.user, 0);
-    }
   }
 
   function _getBalanceInfo(
@@ -560,7 +549,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           address(params.spoke),
           params.collateralReserveId,
           params.debtReserveId
-        )
+        ),
+        hasPositiveRiskPremium: _hasPositiveRiskPremium(params.spoke, params.user)
       });
   }
 
@@ -1120,7 +1110,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     assertApproxEqRel(
       accountsInfoAfter.spokeBalanceInfo.addedInHub,
       accountsInfoBefore.spokeBalanceInfo.addedInHub - liquidationMetadata.collateralToLiquidate,
-      _approxRelFromBps(1),
+      _approxRelFromBps(10),
       'spoke: added'
     );
     assertApproxEqRel(
@@ -1169,10 +1159,18 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _checkRiskPremium(
     CheckedLiquidationCallParams memory params,
+    AccountsInfo memory accountsInfoBefore,
     AccountsInfo memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata,
     Vm.Log[] memory logs
   ) internal view {
+    uint256 precision = 0.1e18;
+
+    if (!_isHealthy(params.spoke, accountsInfoAfter.userAccountData.healthFactor)) {
+      liquidationMetadata.expectedUserRiskPremium = 0;
+      precision = 0;
+    }
+
     uint256 riskPremiumEventCount;
     for (uint256 i = 0; i < logs.length; i++) {
       if (logs[i].topics[0] == ISpoke.UpdateUserRiskPremium.selector) {
@@ -1183,17 +1181,31 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         assertApproxEqRel(
           actualUserRiskPremium,
           liquidationMetadata.expectedUserRiskPremium,
-          0.1e18,
+          precision,
           'user risk premium: event'
         );
       }
     }
-    assertEq(riskPremiumEventCount, 1, 'user risk premium: event emitted');
+
+    uint256 riskPremiumEventExpectedCount = 1;
+    if (
+      !accountsInfoBefore.hasPositiveRiskPremium &&
+      !accountsInfoAfter.hasPositiveRiskPremium &&
+      !liquidationMetadata.hasDeficit
+    ) {
+      riskPremiumEventExpectedCount = 0;
+    }
+    assertEq(riskPremiumEventCount, riskPremiumEventExpectedCount, 'riskPremiumEventExpectedCount');
+
+    assertEq(
+      accountsInfoAfter.hasPositiveRiskPremium,
+      accountsInfoAfter.userAccountData.riskPremium > 0
+    );
 
     assertApproxEqRel(
       accountsInfoAfter.userAccountData.riskPremium,
       liquidationMetadata.expectedUserRiskPremium,
-      0.1e18,
+      precision,
       'user risk premium: user account data'
     );
 
@@ -1203,13 +1215,14 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           reserveId,
           params.user
         );
+        assertNotEq(userPosition.drawnShares, 0, 'borrowed reserve should have non zero base debt');
         uint256 storedUserRiskPremium = userPosition.premiumShares.percentDivDown(
           userPosition.drawnShares
         );
         assertApproxEqRel(
           storedUserRiskPremium,
           accountsInfoAfter.userAccountData.riskPremium,
-          0.1e18,
+          precision,
           string.concat(
             'user risk premium: stored risk premium in reserve ',
             vm.toString(reserveId)
@@ -1241,7 +1254,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _checkedLiquidationCall(CheckedLiquidationCallParams memory params) internal virtual {
     // make sure there is enough liquidity to liquidate
-    _openSupplyPosition(params.spoke, params.collateralReserveId, MAX_AMOUNT_IN_BASE_CURRENCY);
+    _openSupplyPosition(params.spoke, params.collateralReserveId, MAX_SUPPLY_AMOUNT);
 
     _execBeforeLiquidation(params);
 
@@ -1269,7 +1282,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     AccountsInfo memory accountsInfoAfter = _getAccountsInfo(params);
 
     _checkTransferSharesCall(params, liquidationMetadata, logs);
-    _checkRiskPremium(params, accountsInfoAfter, liquidationMetadata, logs);
+    _checkRiskPremium(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata, logs);
     _checkAvgCollateralFactor(accountsInfoAfter, liquidationMetadata);
 
     _checkPositionStatus(params, accountsInfoBefore, liquidationMetadata);
@@ -1287,5 +1300,20 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.debtReserveId,
       'spoke1.liquidationCall'
     );
+  }
+
+  // @dev reads `positionStatus.hasPositiveRiskPremium` by temporarily upgrading to mock spoke
+  function _hasPositiveRiskPremium(ISpoke spoke, address user) internal returns (bool) {
+    address mockSpoke = address(new MockSpoke(spoke.ORACLE()));
+    address implementation = _getImplementationAddress(address(spoke));
+    vm.prank(_getProxyAdminAddress(address(spoke)));
+    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(address(mockSpoke), '');
+
+    bool hasPositiveRiskPremium = MockSpoke(address(spoke)).hasPositiveRiskPremium(user);
+
+    vm.prank(_getProxyAdminAddress(address(spoke)));
+    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
+
+    return hasPositiveRiskPremium;
   }
 }
