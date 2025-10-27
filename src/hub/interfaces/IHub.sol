@@ -258,6 +258,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Updates the configuration of an asset.
   /// @dev If the fee receiver is updated, adds it as a new spoke with maximum add cap and zero draw cap, and sets old fee receiver caps to zero.
+  /// @dev If the fee receiver is updated, accrued fees are minted as shares before the update if their value exceeds one share.
   /// @dev If the interest rate strategy is updated, it is configured with `irData`. Otherwise, `irData` must be empty.
   /// @param assetId The identifier of the asset.
   /// @param config The new configuration for the asset.
