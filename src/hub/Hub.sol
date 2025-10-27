@@ -736,15 +736,15 @@ contract Hub is IHub, AccessManaged {
   }
 
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
-    address feeReceiver = asset.feeReceiver;
-    SpokeData storage feeReceiverSpoke = _spokes[assetId][feeReceiver];
-    require(feeReceiverSpoke.active, SpokeNotActive());
-
     uint256 fees = asset.realizedFees;
     uint128 shares = asset.toAddedSharesDown(fees).toUint128();
     if (shares == 0) {
       return 0;
     }
+
+    address feeReceiver = asset.feeReceiver;
+    SpokeData storage feeReceiverSpoke = _spokes[assetId][feeReceiver];
+    require(feeReceiverSpoke.active, SpokeNotActive());
 
     asset.addedShares += shares;
     feeReceiverSpoke.addedShares += shares;

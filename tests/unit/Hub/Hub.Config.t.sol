@@ -565,6 +565,7 @@ contract HubConfigTest is HubBase {
   function test_updateAssetConfig_oldFeeReceiver_flags() public {
     _test_updateAssetConfig_oldFeeReceiver_flags({active: true, paused: true});
     _test_updateAssetConfig_oldFeeReceiver_flags({active: true, paused: false});
+
     _test_updateAssetConfig_oldFeeReceiver_flags({active: false, paused: true});
     _test_updateAssetConfig_oldFeeReceiver_flags({active: false, paused: false});
   }
@@ -601,7 +602,7 @@ contract HubConfigTest is HubBase {
   }
 
   /// Updates the fee receiver while the current fee receiver is not active
-  function test_updateAssetConfig_NewFeeReceiver_revertsWith_SpokeNotActive() public {
+  function test_updateAssetConfig_NewFeeReceiver_revertsWith_SpokeNotActive_noFees() public {
     uint256 assetId = daiAssetId;
 
     uint256 amount = 1000e18;
@@ -614,6 +615,24 @@ contract HubConfigTest is HubBase {
     config.feeReceiver = makeAddr('newFeeReceiver');
 
     vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
+    Utils.updateAssetConfig(hub1, ADMIN, assetId, config, new bytes(0));
+  }
+
+  /// Updates the fee receiver while the current fee receiver is not active and no fees are accrued
+  function test_updateAssetConfig_NewFeeReceiver_noFees() public {
+    uint256 assetId = daiAssetId;
+
+    uint256 amount = 1000e18;
+    _addLiquidity(assetId, amount);
+    _drawLiquidity(assetId, amount, true);
+    skip(365 days);
+
+    Utils.mintFeeShares(hub1, assetId, ADMIN);
+
+    updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
+    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    config.feeReceiver = makeAddr('newFeeReceiver');
+
     Utils.updateAssetConfig(hub1, ADMIN, assetId, config, new bytes(0));
   }
 
