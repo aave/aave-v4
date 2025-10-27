@@ -5,17 +5,17 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubMintFeeSharesTest is HubBase {
-  function test_mintFeeShares_revertsWith_AssetNotListed() public {
-    uint256 invalidAssetId = hub1.getAssetCount();
-    vm.expectRevert(abi.encodeWithSelector(IHub.AssetNotListed.selector), address(hub1));
-    Utils.mintFeeShares(hub1, invalidAssetId, ADMIN);
-  }
-
   function test_mintFeeShares_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
     Utils.mintFeeShares(hub1, daiAssetId, address(this));
+  }
+
+  function test_mintFeeShares_revertsWith_SpokeNotActive() public {
+    updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false);
+    vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
+    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
   }
 
   function test_mintFeeShares() public {
