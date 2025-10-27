@@ -38,7 +38,7 @@ contract Hub is IHub, AccessManaged {
   uint40 public constant MAX_ALLOWED_SPOKE_CAP = type(uint40).max;
 
   /// @inheritdoc IHub
-  uint24 public constant MAX_ALLOWED_RISK_PREMIUM_CAP = type(uint24).max;
+  uint24 public constant MAX_RISK_PREMIUM_THRESHOLD = type(uint24).max;
 
   uint256 internal _assetCount;
   mapping(uint256 assetId => Asset) internal _assets;
@@ -145,7 +145,7 @@ contract Hub is IHub, AccessManaged {
       _updateSpokeConfig(
         assetId,
         asset.feeReceiver,
-        SpokeConfig({addCap: 0, drawCap: 0, riskPremiumCap: 0, active: true, paused: false})
+        SpokeConfig({addCap: 0, drawCap: 0, riskPremiumThreshold: 0, active: true, paused: false})
       );
       asset.feeReceiver = config.feeReceiver;
       _addFeeReceiver(assetId, config.feeReceiver);
@@ -220,7 +220,7 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(_spokes, assetId);
-    _validateRemove(asset, spoke, amount, to);
+    _validateRemove(spoke, amount, to);
 
     uint256 liquidity = asset.liquidity;
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
@@ -483,6 +483,11 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
+  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].getDrawnIndex();
+  }
+
+  /// @inheritdoc IHubBase
   function getAddedAssets(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].totalAddedAssets();
   }
@@ -544,11 +549,6 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function getAssetSwept(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].swept;
-  }
-
-  /// @inheritdoc IHub
-  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].getDrawnIndex();
   }
 
   /// @inheritdoc IHub
@@ -633,7 +633,7 @@ contract Hub is IHub, AccessManaged {
       SpokeConfig({
         addCap: spokeData.addCap,
         drawCap: spokeData.drawCap,
-        riskPremiumCap: spokeData.riskPremiumCap,
+        riskPremiumThreshold: spokeData.riskPremiumThreshold,
         active: spokeData.active,
         paused: spokeData.paused
       });
@@ -648,7 +648,7 @@ contract Hub is IHub, AccessManaged {
       SpokeConfig({
         addCap: MAX_ALLOWED_SPOKE_CAP,
         drawCap: 0,
-        riskPremiumCap: 0,
+        riskPremiumThreshold: 0,
         active: true,
         paused: false
       })
@@ -666,7 +666,7 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage spokeData = _spokes[assetId][spoke];
     spokeData.addCap = config.addCap;
     spokeData.drawCap = config.drawCap;
-    spokeData.riskPremiumCap = config.riskPremiumCap;
+    spokeData.riskPremiumThreshold = config.riskPremiumThreshold;
     spokeData.active = config.active;
     spokeData.paused = config.paused;
     emit UpdateSpokeConfig(assetId, spoke, config);
@@ -697,9 +697,8 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @dev Applies premium deltas on asset & spoke premium owed.
-  /// @dev Checks premium owed does not increase by more than `premiumAmount`.
-  /// @dev Checks updated risk premium is within allowed limit.
-  /// @dev Can increase premium by 2 wei due to opposite rounding on premium shares and offset.
+  /// @dev Checks premium owed does not increase by more than `premiumAmount` + 2 wei (due to opposite rounding on premium shares and offset).
+  /// @dev Checks updated risk premium is within allowed threshold.
   function _applyPremiumDelta(
     Asset storage asset,
     SpokeData storage spoke,
@@ -728,10 +727,10 @@ contract Hub is IHub, AccessManaged {
       premiumAmount
     );
 
-    uint24 riskPremiumCap = spoke.riskPremiumCap;
+    uint24 riskPremiumThreshold = spoke.riskPremiumThreshold;
     require(
-      riskPremiumCap == MAX_ALLOWED_RISK_PREMIUM_CAP ||
-        spoke.premiumShares <= spoke.drawnShares.percentMulUp(riskPremiumCap),
+      riskPremiumThreshold == MAX_RISK_PREMIUM_THRESHOLD ||
+        spoke.premiumShares <= spoke.drawnShares.percentMulUp(riskPremiumThreshold),
       InvalidPremiumChange()
     );
   }
@@ -773,12 +772,7 @@ contract Hub is IHub, AccessManaged {
     );
   }
 
-  function _validateRemove(
-    Asset storage asset,
-    SpokeData storage spoke,
-    uint256 amount,
-    address to
-  ) internal view {
+  function _validateRemove(SpokeData storage spoke, uint256 amount, address to) internal view {
     require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());

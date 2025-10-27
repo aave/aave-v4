@@ -54,7 +54,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.startPrank(HUB_ADMIN);
     hub1.addSpoke(usdxAssetId, address(liquidationLogicWrapper), spokeConfig);
