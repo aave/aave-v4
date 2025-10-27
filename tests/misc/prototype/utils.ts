@@ -31,7 +31,7 @@ export function logDebt(who: User | Spoke | Hub) {
     f(hub.toDrawnAssets(who.ghostDrawnShares)),
     f(who.offset),
     f(who.realisedPremium),
-    f(who.getTotalDebt()),
+    f(who.getTotalDebt())
   );
 }
 
@@ -188,7 +188,7 @@ export function it(
   name = `Scenario ${scenarioId}`,
   runInvariants = true,
   numSpokes = 1,
-  numUsers = 3,
+  numUsers = 3
 ) {
   const ctx = new System(numSpokes, numUsers);
   const runner = (fn: Runner) => {
