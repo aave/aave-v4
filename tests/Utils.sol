@@ -170,6 +170,11 @@ library Utils {
     spoke.repay(reserveId, amount, onBehalfOf);
   }
 
+  function mintFeeShares(IHub hub, uint256 assetId, address caller) internal returns (uint256) {
+    vm.prank(caller);
+    return hub.mintFeeShares(assetId);
+  }
+
   function approve(ISpoke spoke, uint256 reserveId, address owner, uint256 amount) internal {
     IHubBase hub = spoke.getReserve(reserveId).hub;
     address underlying = spoke.getReserve(reserveId).underlying;

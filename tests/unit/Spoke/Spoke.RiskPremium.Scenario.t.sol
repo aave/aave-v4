@@ -14,7 +14,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     uint256 usdxSupplyAmount;
     uint256 wethSupplyAmount;
     uint256 daiBorrowAmount;
-    uint32 lastUpdateTimestamp;
+    uint40 lastUpdateTimestamp;
     uint256 delay;
     uint256 expectedPremiumDebt;
     uint256 expectedPremiumShares;
@@ -130,8 +130,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       'premium drawn shares match expected'
     );
 
-    vars.lastUpdateTimestamp = vm.getBlockTimestamp().toUint32();
-    uint32 startTime = vars.lastUpdateTimestamp;
+    vars.lastUpdateTimestamp = vm.getBlockTimestamp().toUint40();
+    uint40 startTime = vars.lastUpdateTimestamp;
     skip(vars.delay);
 
     // Since only DAI is borrowed in the system, supply interest is accrued only on it
@@ -184,7 +184,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Store alice's position before time skip to calc expected premium debt
     alicePosition = spoke1.getUserPosition(reservesIds.dai, alice);
 
-    vars.lastUpdateTimestamp = vm.getBlockTimestamp().toUint32();
+    vars.lastUpdateTimestamp = vm.getBlockTimestamp().toUint40();
     skip(vars.delay);
 
     // Now we supply more weth such that new total debt from now on is covered by weth
@@ -277,7 +277,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       daiInfo.reserveId,
       bob
     );
-    uint32 startTime = vm.getBlockTimestamp().toUint32();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
 
     assertEq(bobDaiInfo.borrowAmount, debtChecks.actualDrawnDebt, 'Bob dai debt before');
     assertEq(debtChecks.actualPremium, 0, 'Bob dai premium before');
@@ -555,7 +555,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     UserBorrowAction memory aliceUsdxAction,
     uint16 daiCollateralRisk,
     uint16 usdxCollateralRisk,
-    uint32[3] memory timeSkip
+    uint40[3] memory timeSkip
   ) public {
     bobDaiAction = _boundUserBorrowAction(bobDaiAction);
     bobUsdxAction = _boundUserBorrowAction(bobUsdxAction);
@@ -565,9 +565,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     daiCollateralRisk = bound(daiCollateralRisk, 0, MAX_COLLATERAL_RISK_BPS).toUint16();
     usdxCollateralRisk = bound(usdxCollateralRisk, 0, MAX_COLLATERAL_RISK_BPS).toUint16();
 
-    timeSkip[0] = bound(timeSkip[0], 0, MAX_SKIP_TIME).toUint32();
-    timeSkip[1] = bound(timeSkip[1], 0, MAX_SKIP_TIME).toUint32();
-    timeSkip[2] = bound(timeSkip[2], 0, MAX_SKIP_TIME).toUint32();
+    timeSkip[0] = bound(timeSkip[0], 0, MAX_SKIP_TIME).toUint40();
+    timeSkip[1] = bound(timeSkip[1], 0, MAX_SKIP_TIME).toUint40();
+    timeSkip[2] = bound(timeSkip[2], 0, MAX_SKIP_TIME).toUint40();
 
     // Set collateral risks
     _updateCollateralRisk(spoke1, _daiReserveId(spoke1), daiCollateralRisk);
@@ -663,7 +663,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       bob
     );
 
-    uint32 startTime = vm.getBlockTimestamp().toUint32();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
 
     assertEq(bobDaiInfo.borrowAmount, debtChecks.actualDrawnDebt, 'Bob dai debt before');
     assertEq(debtChecks.actualPremium, 0, 'Bob dai premium before');
@@ -886,9 +886,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     UserBorrowAction memory wethAmounts,
     UserBorrowAction memory usdxAmounts,
     UserBorrowAction memory wbtcAmounts,
-    uint32 skipTime
+    uint40 skipTime
   ) public {
-    skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint32();
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint40();
 
     daiAmounts.supplyAmount = bound(daiAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
     wethAmounts.supplyAmount = bound(wethAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);

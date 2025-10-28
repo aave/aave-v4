@@ -120,7 +120,7 @@ contract HubHandler is Test {
   function supply(uint256 assetId, address user, uint256 amount, address onBehalfOf) public {
     vm.assume(user != address(hub1) && user != address(0) && onBehalfOf != address(0));
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
-    amount = bound(amount, 1, type(uint128).max);
+    amount = bound(amount, 1, type(uint120).max);
 
     deal(hub1.getAsset(assetId).underlying, user, amount);
     Utils.add({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, user: user});
@@ -145,7 +145,7 @@ contract HubHandler is Test {
   function donate(uint256 assetId, address user, uint256 amount) public {
     vm.assume(user != address(hub1) && user != address(0));
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
-    amount = bound(amount, 1, type(uint128).max);
+    amount = bound(amount, 1, type(uint120).max);
 
     address underlying = hub1.getAsset(assetId).underlying;
 

@@ -18,8 +18,6 @@ contract GatewayBaseTest is Base {
   }
 
   function test_constructor() public {
-    GatewayBaseWrapper gateway = new GatewayBaseWrapper(address(ADMIN));
-
     assertEq(gateway.owner(), address(ADMIN));
     assertEq(gateway.pendingOwner(), address(0));
 

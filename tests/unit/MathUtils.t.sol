@@ -15,14 +15,14 @@ contract MathUtilsTest is Base {
   }
 
   function test_calculateLinearInterest() public {
-    uint32 previousTimestamp = uint32(vm.getBlockTimestamp());
+    uint40 previousTimestamp = uint40(vm.getBlockTimestamp());
     skip(365 days * 7);
     assertEq(MathUtils.calculateLinearInterest(0.08e27, previousTimestamp), 1.56e27);
   }
 
   function test_fuzz_calculateLinearInterest(
     uint96 rate,
-    uint32 previousTimestamp,
+    uint40 previousTimestamp,
     uint256 skipTime
   ) public {
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
@@ -35,14 +35,14 @@ contract MathUtilsTest is Base {
   }
 
   function test_calculateLinearInterest_edge_cases() public {
-    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint32).max, 0);
-    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint32).max, 1);
-    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint32).max, MAX_SKIP_TIME);
-    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint32).max - 1, MAX_SKIP_TIME);
+    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint40).max, 0);
+    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint40).max, 1);
+    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint40).max, MAX_SKIP_TIME);
+    test_fuzz_calculateLinearInterest(type(uint96).max, type(uint40).max - 1, MAX_SKIP_TIME);
   }
 
-  function test_calculateLinearInterest_reverts_on_past_timestamp(uint32 currentTimestamp) public {
-    currentTimestamp = bound(currentTimestamp, 1, MAX_SKIP_TIME).toUint32();
+  function test_calculateLinearInterest_reverts_on_past_timestamp(uint40 currentTimestamp) public {
+    currentTimestamp = bound(currentTimestamp, 1, MAX_SKIP_TIME).toUint40();
     vm.warp(currentTimestamp);
     vm.expectRevert();
     MathUtils.calculateLinearInterest(uint96(vm.randomUint()), currentTimestamp + 1);
@@ -50,8 +50,8 @@ contract MathUtilsTest is Base {
 
   function test_calculateLinearInterest_add_edge() public {
     uint96 rate = type(uint96).max;
-    uint32 previousTimestamp = 0;
-    uint256 skipTime = type(uint32).max;
+    uint40 previousTimestamp = 0;
+    uint256 skipTime = type(uint40).max;
 
     vm.warp(skipTime);
     assertEq(
@@ -59,7 +59,7 @@ contract MathUtilsTest is Base {
       1e27 + (uint256(rate) * uint256(skipTime)) / 365 days
     );
 
-    skipTime = type(uint128).max;
+    skipTime = type(uint120).max;
     vm.warp(skipTime);
     assertEq(
       MathUtils.calculateLinearInterest(rate, previousTimestamp),
