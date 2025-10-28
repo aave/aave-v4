@@ -54,11 +54,11 @@ contract LiquidationLogicWrapper {
   }
 
   function setCollateralPositionSuppliedShares(uint256 suppliedShares) public {
-    _userPositions[_borrower][_collateralReserveId].suppliedShares = suppliedShares.toUint128();
+    _userPositions[_borrower][_collateralReserveId].suppliedShares = suppliedShares.toUint120();
   }
 
   function setLiquidatorPositionSuppliedShares(address liquidator, uint256 suppliedShares) public {
-    _userPositions[liquidator][_collateralReserveId].suppliedShares = suppliedShares.toUint128();
+    _userPositions[liquidator][_collateralReserveId].suppliedShares = suppliedShares.toUint120();
   }
 
   function getCollateralReserve() public view returns (ISpoke.Reserve memory) {
@@ -86,19 +86,19 @@ contract LiquidationLogicWrapper {
   }
 
   function setDebtPositionDrawnShares(uint256 drawnShares) public {
-    _userPositions[_borrower][_debtReserveId].drawnShares = drawnShares.toUint128();
+    _userPositions[_borrower][_debtReserveId].drawnShares = drawnShares.toUint120();
   }
 
   function setDebtPositionPremiumShares(uint256 premiumShares) public {
-    _userPositions[_borrower][_debtReserveId].premiumShares = premiumShares.toUint128();
+    _userPositions[_borrower][_debtReserveId].premiumShares = premiumShares.toUint120();
   }
 
   function setDebtPositionPremiumOffset(uint256 premiumOffset) public {
-    _userPositions[_borrower][_debtReserveId].premiumOffset = premiumOffset.toUint128();
+    _userPositions[_borrower][_debtReserveId].premiumOffset = premiumOffset.toUint120();
   }
 
   function setDebtPositionRealizedPremium(uint256 realizedPremium) public {
-    _userPositions[_borrower][_debtReserveId].realizedPremium = realizedPremium.toUint128();
+    _userPositions[_borrower][_debtReserveId].realizedPremium = realizedPremium.toUint120();
   }
 
   function setBorrowerCollateralStatus(uint256 reserveId, bool status) public {

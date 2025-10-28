@@ -93,11 +93,24 @@ contract TreasurySpokeTest is SpokeBase {
     _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub1, daiAssetId), 100e18, true);
 
     skip(365 days);
+    assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'fees'); // fees not yet accrued
 
-    assertGe(treasurySpoke.getSuppliedShares(daiAssetId), 0);
-    uint256 fees = treasurySpoke.getSuppliedAmount(daiAssetId);
+    uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
+    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
-    Utils.withdraw(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, fees, address(treasurySpoke));
+    assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'realized fees after minting');
+    assertGe(
+      treasurySpoke.getSuppliedShares(daiAssetId),
+      hub1.previewAddByAssets(daiAssetId, expectedFeeAmount)
+    );
+
+    Utils.withdraw(
+      _treasurySpoke(),
+      daiAssetId,
+      TREASURY_ADMIN,
+      UINT256_MAX,
+      address(treasurySpoke)
+    );
   }
 
   /// treasury supplies to earn interest and fees
@@ -153,7 +166,7 @@ contract TreasurySpokeTest is SpokeBase {
   function test_transfer_fuzz(address recipient, uint256 amount, uint256 transferAmount) public {
     vm.assume(recipient != address(0));
     vm.assume(recipient != address(treasurySpoke));
-    amount = bound(amount, 1, type(uint128).max);
+    amount = bound(amount, 1, type(uint120).max);
     transferAmount = bound(transferAmount, 1, amount);
 
     _testToken.mint(address(treasurySpoke), amount);
@@ -184,14 +197,21 @@ contract TreasurySpokeTest is SpokeBase {
     updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
 
     assertEq(treasurySpoke.getSuppliedShares(reserveId), 0);
+    uint256 lastDrawnIndex = hub1.getAsset(assetId).drawnIndex;
 
     // create debt
     address tempUser = _openDebtPosition(spoke1, reserveId, amount, true);
 
     skip(skipTime);
+    assertEq(hub1.getAsset(assetId).realizedFees, 0, 'fees'); // fees not yet accrued
 
+    uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, assetId);
+
+    Utils.mintFeeShares(hub1, assetId, ADMIN);
     uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
 
+    assertEq(fees, expectedFeeAmount, 'supplied amount of fees');
+    assertEq(hub1.getAsset(assetId).realizedFees, 0, 'realized fees after minting');
     assertApproxEqAbs(
       hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
       hub1.getAssetTotalOwed(assetId) - amount,

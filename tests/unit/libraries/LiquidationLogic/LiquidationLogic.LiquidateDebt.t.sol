@@ -249,12 +249,12 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 accruedPremium,
     uint256 premiumDebtToLiquidate
   ) internal {
-    initialPosition.drawnShares -= drawnSharesLiquidated.toUint128();
+    initialPosition.drawnShares -= drawnSharesLiquidated.toUint120();
     initialPosition.premiumShares = 0;
     initialPosition.premiumOffset = 0;
     initialPosition.realizedPremium = (initialPosition.realizedPremium +
       accruedPremium -
-      premiumDebtToLiquidate).toUint128();
+      premiumDebtToLiquidate).toUint120();
     assertEq(newPosition, initialPosition);
   }
 }

@@ -16,7 +16,7 @@ library MathUtils {
   /// @return result The interest rate linearly accumulated during the time delta in Ray units.
   function calculateLinearInterest(
     uint96 rate,
-    uint32 lastUpdateTimestamp
+    uint40 lastUpdateTimestamp
   ) internal view returns (uint256 result) {
     assembly ('memory-safe') {
       if gt(lastUpdateTimestamp, timestamp()) {

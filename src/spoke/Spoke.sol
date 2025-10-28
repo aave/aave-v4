@@ -203,7 +203,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _validateSupply(reserve);
 
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount, msg.sender);
-    userPosition.suppliedShares += suppliedShares.toUint128();
+    userPosition.suppliedShares += suppliedShares.toUint120();
 
     if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
       uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
@@ -233,7 +233,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     );
     uint256 withdrawnShares = hub.remove(assetId, withdrawnAmount, msg.sender);
 
-    userPosition.suppliedShares -= withdrawnShares.toUint128();
+    userPosition.suppliedShares -= withdrawnShares.toUint120();
 
     if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
       uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
@@ -258,7 +258,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     IHubBase hub = reserve.hub;
 
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
-    userPosition.drawnShares += drawnShares.toUint128();
+    userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
       positionStatus.setBorrowing(reserveId, true);
     }
@@ -306,7 +306,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     );
 
     userPosition.settlePremiumDebt(premiumDelta.realizedDelta);
-    userPosition.drawnShares -= restoredShares.toUint128();
+    userPosition.drawnShares -= restoredShares.toUint120();
     if (userPosition.drawnShares == 0) {
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
     }
@@ -833,9 +833,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       // uses opposite rounding direction as premiumOffset is virtual debt owed by the protocol
       uint256 newPremiumOffset = newPremiumShares.rayMulDown(drawnIndex);
 
-      userPosition.premiumShares = newPremiumShares.toUint128();
-      userPosition.premiumOffset = newPremiumOffset.toUint128();
-      userPosition.realizedPremium += accruedPremium.toUint128();
+      userPosition.premiumShares = newPremiumShares.toUint120();
+      userPosition.premiumOffset = newPremiumOffset.toUint120();
+      userPosition.realizedPremium += accruedPremium.toUint120();
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: newPremiumShares.signedSub(oldPremiumShares),
@@ -880,7 +880,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         premiumDelta
       );
       userPosition.settlePremiumDebt(premiumDelta.realizedDelta);
-      userPosition.drawnShares -= deficitShares.toUint128();
+      userPosition.drawnShares -= deficitShares.toUint120();
       positionStatus.setBorrowing(reserveId, false);
     }
 

@@ -66,7 +66,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       liqConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       MAX_CLOSE_FACTOR
-    ).toUint128();
+    ).toUint120();
 
     liqConfig.healthFactorForMaxBonus = bound(
       liqConfig.healthFactorForMaxBonus,
@@ -341,7 +341,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     }
 
     if (totalCollateralValue != 0) {
-      newAvgCollateralFactor = newAvgCollateralFactor.wadDivDown(totalCollateralValue).fromBpsDown();
+      newAvgCollateralFactor = newAvgCollateralFactor
+        .wadDivDown(totalCollateralValue)
+        .fromBpsDown();
     }
     list.sortByKey();
 
@@ -441,11 +443,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
               assetId,
               liquidationMetadata.debtToLiquidate - premiumDebtRestored
             )
-            .toUint128();
+            .toUint120();
           userReservePosition.premiumShares = 0;
           userReservePosition.premiumOffset = 0;
           userReservePosition.realizedPremium = (userReservePosition.realizedPremium.toInt256() +
-            realizedDelta).toUint256().toUint128();
+            realizedDelta).toUint256().toUint120();
         }
         uint256 userReserveDrawnDebt = _hub(params.spoke, reserveId).previewRestoreByShares(
           assetId,
@@ -681,7 +683,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     if (accountsInfoAfter.userAccountData.totalDebtValue == 0) {
       assertEq(
         accountsInfoAfter.userAccountData.healthFactor,
-        type(uint256).max,
+        UINT256_MAX,
         'health factor should be max if all debt is liquidated'
       );
     } else if (liquidationMetadata.debtToLiquidate == liquidationMetadata.debtToTarget) {
@@ -1277,7 +1279,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.debtToCover,
       params.receiveShares
     );
-
     Vm.Log[] memory logs = vm.getRecordedLogs();
 
     AccountsInfo memory accountsInfoAfter = _getAccountsInfo(params);

@@ -144,23 +144,11 @@ contract HubRemoveTest is HubBase {
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
 
-    address feeReceiver = _getFeeReceiver(hub1, assetId);
-
     // asset
     // only remaining added amount are fees
     assertEq(
-      assetData.addedAmount,
-      hub1.getSpokeAddedAssets(assetId, feeReceiver),
-      'asset addedAmount after'
-    );
-    assertEq(
-      assetData.addedShares,
-      hub1.getSpokeAddedShares(assetId, feeReceiver),
-      'asset addedShares after'
-    );
-    assertEq(
       assetData.liquidity,
-      hub1.getSpokeAddedAssets(assetId, feeReceiver) + _calculateBurntInterest(hub1, assetId),
+      hub1.getAsset(assetId).realizedFees + _calculateBurntInterest(hub1, assetId),
       'asset liquidity after'
     );
     assertEq(
@@ -224,14 +212,6 @@ contract HubRemoveTest is HubBase {
 
     uint256 removeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
     uint256 daiBalanceBefore = tokenList.dai.balanceOf(bob);
-    uint256 feeAmount = hub1.getSpokeAddedAssets(
-      daiAssetId,
-      hub1.getAssetConfig(daiAssetId).feeReceiver
-    );
-    uint256 feeShares = hub1.getSpokeAddedShares(
-      daiAssetId,
-      hub1.getAssetConfig(daiAssetId).feeReceiver
-    );
 
     // removable amount should exceed initial added amount due to accrued interest
     assertTrue(removeAmount > addAmount);
@@ -246,8 +226,8 @@ contract HubRemoveTest is HubBase {
     asset = getAssetPosition(hub1, daiAssetId);
 
     // hub
-    assertApproxEqAbs(asset.addedAmount, feeAmount, 1, 'asset addedAmount');
-    assertEq(asset.addedShares, feeShares, 'asset addedShares');
+    assertApproxEqAbs(asset.addedAmount, 0, 1, 'asset addedAmount');
+    assertEq(asset.addedShares, 0, 'asset addedShares');
     assertApproxEqAbs(asset.liquidity, initialLiquidity - removeAmount, 1, 'dai liquidity');
     assertEq(asset.drawn, 0, 'dai drawn');
     assertEq(asset.premium, 0, 'dai premium');
@@ -325,14 +305,6 @@ contract HubRemoveTest is HubBase {
 
     uint256 removeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
     uint256 daiBalanceBefore = tokenList.dai.balanceOf(bob);
-    uint256 feeAmount = hub1.getSpokeAddedAssets(
-      daiAssetId,
-      hub1.getAssetConfig(daiAssetId).feeReceiver
-    );
-    uint256 feeShares = hub1.getSpokeAddedShares(
-      daiAssetId,
-      hub1.getAssetConfig(daiAssetId).feeReceiver
-    );
 
     // bob removes all possible liquidity
     // some has gone to feeReceiver
@@ -344,11 +316,11 @@ contract HubRemoveTest is HubBase {
     asset = getAssetPosition(hub1, daiAssetId);
 
     // hub
-    assertApproxEqAbs(asset.addedAmount, feeAmount, 1, 'hub addedAmount');
-    assertEq(asset.addedShares, feeShares, 'hub addedShares');
+    assertApproxEqAbs(asset.addedAmount, 0, 1, 'hub addedAmount');
+    assertEq(asset.addedShares, 0, 'hub addedShares');
     assertApproxEqAbs(
       asset.liquidity,
-      feeAmount + _calculateBurntInterest(hub1, daiAssetId),
+      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFees,
       1,
       'dai liquidity'
     );
