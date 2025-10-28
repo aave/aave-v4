@@ -540,7 +540,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     });
 
     state.daiBob.userPosBefore = spoke1.getUserPosition(state.daiReserveId, bob);
-    uint32 lastTimestamp = vm.getBlockTimestamp().toUint32();
+    uint40 lastTimestamp = vm.getBlockTimestamp().toUint40();
     (uint256 drawnDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
 
     skip(skipTime);

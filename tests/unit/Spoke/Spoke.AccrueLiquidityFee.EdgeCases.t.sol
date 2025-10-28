@@ -40,6 +40,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
     skip(skipTime);
+    Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     (, uint256 premiumDebt) = spoke1.getUserDebt(reserveId, alice);
     assertGt(premiumDebt, 0);
@@ -92,6 +93,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     Utils.borrow(spoke1, reserveId, bob, borrowAmount2, bob);
 
     skip(skipTime);
+    Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     assertApproxEqAbs(
       spoke1.getUserSuppliedAssets(reserveId, alice),
@@ -146,9 +148,9 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
 
       feesAccrued += totalOwedAfter - totalOwedBefore;
-      totalOwedBefore = totalOwedAfter;
+      totalOwedBefore = hub1.getAssetTotalOwed(assetId);
 
-      uint256 actualFeesAccrued = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
+      uint256 actualFeesAccrued = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
       assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18); // 0.00001%
       assertLe(actualFeesAccrued, feesAccrued, 'actual fees <= expected fees');
 
@@ -191,9 +193,9 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
 
       feesAccrued += totalOwedAfter - totalOwedBefore;
-      totalOwedBefore = totalOwedAfter;
+      totalOwedBefore = hub1.getAssetTotalOwed(assetId);
 
-      uint256 actualFeesAccrued = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
+      uint256 actualFeesAccrued = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
       assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18); // 0.00001%
       assertLe(actualFeesAccrued, feesAccrued, 'actual fees <= expected fees');
 
