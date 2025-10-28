@@ -273,7 +273,7 @@ library LiquidationLogic {
   ) internal {
     debtPosition.premiumShares = 0;
     debtPosition.premiumOffset = 0;
-    debtPosition.realizedPremium = debtPosition.realizedPremium.add(realizedDelta).toUint128();
+    debtPosition.realizedPremium = debtPosition.realizedPremium.add(realizedDelta).toUint120();
   }
 
   /// @dev Invoked by `liquidateUser` method.
@@ -290,14 +290,14 @@ library LiquidationLogic {
     uint256 assetId = collateralReserve.assetId;
 
     uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
-    uint128 suppliedShares = collateralPosition.suppliedShares - sharesToLiquidate.toUint128();
+    uint120 suppliedShares = collateralPosition.suppliedShares - sharesToLiquidate.toUint120();
     collateralPosition.suppliedShares = suppliedShares;
 
     uint256 sharesToLiquidator;
     if (params.receiveShares) {
       sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
       positions[params.liquidator][params.collateralReserveId].suppliedShares += sharesToLiquidator
-        .toUint128();
+        .toUint120();
     } else {
       sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
     }
@@ -339,7 +339,7 @@ library LiquidationLogic {
         premiumDelta
       );
       debtPosition.settlePremiumDebt(premiumDelta.realizedDelta);
-      debtPosition.drawnShares -= drawnSharesLiquidated.toUint128();
+      debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
     }
 
     if (debtPosition.drawnShares == 0) {

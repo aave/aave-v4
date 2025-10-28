@@ -130,7 +130,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     ISpoke.UserPosition memory initPosition,
     uint256 newSuppliedShares
   ) internal pure {
-    initPosition.suppliedShares = newSuppliedShares.toUint128();
+    initPosition.suppliedShares = newSuppliedShares.toUint120();
     assertEq(newPosition, initPosition);
   }
 
