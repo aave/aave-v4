@@ -53,21 +53,21 @@ interface IHubConfigurator {
 
   /// @notice Updates the liquidity fee of an asset.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param liquidityFee The new liquidity fee.
   function updateLiquidityFee(address hub, uint256 assetId, uint256 liquidityFee) external;
 
   /// @notice Updates the fee receiver of an asset.
   /// @dev The fee receiver cannot be zero.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param feeReceiver The new fee receiver.
   function updateFeeReceiver(address hub, uint256 assetId, address feeReceiver) external;
 
   /// @notice Updates the liquidity fee and fee receiver of an asset.
   /// @dev The fee receiver cannot be zero.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param liquidityFee The new liquidity fee.
   /// @param feeReceiver The new fee receiver.
   function updateFeeConfig(
@@ -79,7 +79,7 @@ interface IHubConfigurator {
 
   /// @notice Updates the interest rate strategy of an asset.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param irStrategy The new interest rate strategy.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   function updateInterestRateStrategy(
@@ -91,7 +91,7 @@ interface IHubConfigurator {
 
   /// @notice Updates the reinvestment controller of an asset.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param reinvestmentController The new reinvestment controller.
   function updateReinvestmentController(
     address hub,
@@ -101,17 +101,17 @@ interface IHubConfigurator {
 
   /// @notice Freezes an asset.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   function freezeAsset(address hub, uint256 assetId) external;
 
   /// @notice Deactivates an asset.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   function deactivateAsset(address hub, uint256 assetId) external;
 
   /// @notice Pauses an asset.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   function pauseAsset(address hub, uint256 assetId) external;
 
   /// @notice Register the spoke for the specified asset in the Hub.
@@ -141,21 +141,21 @@ interface IHubConfigurator {
 
   /// @notice Updates the active flag of an asset's spoke.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @param active The new active flag.
   function updateSpokeActive(address hub, uint256 assetId, address spoke, bool active) external;
 
   /// @notice Updates the paused flag of an asset's spoke.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @param paused The new paused flag.
   function updateSpokePaused(address hub, uint256 assetId, address spoke, bool paused) external;
 
   /// @notice Updates the supply cap of an asset's spoke.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @param addCap The new supply cap.
   function updateSpokeSupplyCap(
@@ -167,7 +167,7 @@ interface IHubConfigurator {
 
   /// @notice Updates the draw cap of an asset's spoke.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @param drawCap The new draw cap.
   function updateSpokeDrawCap(
@@ -179,7 +179,7 @@ interface IHubConfigurator {
 
   /// @notice Updates the risk premium threshold of an asset's spoke.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @param riskPremiumThreshold The new risk premium threshold.
   function updateSpokeRiskPremiumThreshold(
@@ -191,7 +191,7 @@ interface IHubConfigurator {
 
   /// @notice Updates the caps of an asset's spoke.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @param addCap The new supply cap.
   /// @param drawCap The new draw cap.
@@ -220,7 +220,7 @@ interface IHubConfigurator {
 
   /// @notice Updates the interest rate data for an asset.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   function updateInterestRateData(address hub, uint256 assetId, bytes calldata irData) external;
 }

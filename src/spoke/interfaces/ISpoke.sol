@@ -121,9 +121,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Emitted when a reserve is added.
   /// @param reserveId The identifier of the reserve.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param hub The address of the Hub where the asset is listed.
-  event AddReserve(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
+  event AddReserve(uint256 indexed reserveId, address indexed underlying, address indexed hub);
 
   /// @notice Emitted when a reserve configuration is updated.
   /// @param reserveId The identifier of the reserve.

@@ -116,10 +116,10 @@ library AssetLogic {
   /// @notice Updates the drawn rate of a specified asset.
   /// @dev Premium debt is not used in the interest rate calculation.
   /// @dev Uses last stored index; asset accrual should have already occurred.
-  function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
+  function updateDrawnRate(IHub.Asset storage asset, address underlying) internal {
     uint256 drawnIndex = asset.drawnIndex;
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
-      assetId: assetId,
+      underlying: underlying,
       liquidity: asset.liquidity,
       drawn: asset.drawn(drawnIndex),
       deficit: asset.deficit,
@@ -127,7 +127,7 @@ library AssetLogic {
     });
     asset.drawnRate = newDrawnRate.toUint96();
 
-    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate, asset.realizedFees);
+    emit IHub.UpdateAsset(underlying, drawnIndex, newDrawnRate, asset.realizedFees);
   }
 
   /// @notice Accrues interest and fees for the specified asset.

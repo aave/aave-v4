@@ -22,14 +22,14 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
 
   /// @notice Emitted when new interest rate data is set for an asset.
   /// @param hub The address of the associated Hub.
-  /// @param assetId Identifier of the asset that has new interest rate data set.
+  /// @param underlying Identifier of the asset that has new interest rate data set.
   /// @param optimalUsageRatio The optimal usage ratio, in BPS.
   /// @param baseVariableBorrowRate The base variable borrow rate, in BPS.
   /// @param variableRateSlope1 The slope of the variable interest curve, before hitting the optimal usage ratio, in BPS.
   /// @param variableRateSlope2 The slope of the variable interest curve, after hitting the optimal usage ratio, in BPS.
   event UpdateRateData(
     address indexed hub,
-    uint256 indexed assetId,
+    address indexed underlying,
     uint256 optimalUsageRatio,
     uint256 baseVariableBorrowRate,
     uint256 variableRateSlope1,
@@ -52,36 +52,36 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   error InvalidOptimalUsageRatio();
 
   /// @notice Returns the full InterestRateData struct for the given asset.
-  /// @param assetId The identifier of the asset to get the data for.
+  /// @param underlying The identifier of the asset to get the data for.
   /// @return The InterestRateData struct for the given asset, all in BPS.
-  function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory);
+  function getInterestRateData(address underlying) external view returns (InterestRateData memory);
 
   /// @notice Returns the optimal usage rate for the given asset.
-  /// @param assetId The identifier of the asset to get the optimal usage ratio for.
+  /// @param underlying The identifier of the asset to get the optimal usage ratio for.
   /// @return The optimal usage ratio, in BPS.
-  function getOptimalUsageRatio(uint256 assetId) external view returns (uint256);
+  function getOptimalUsageRatio(address underlying) external view returns (uint256);
 
   /// @notice Returns the base variable borrow rate.
-  /// @param assetId The identifier of the asset to get the base variable borrow rate for.
+  /// @param underlying The identifier of the asset to get the base variable borrow rate for.
   /// @return The base variable borrow rate, in BPS.
-  function getBaseVariableBorrowRate(uint256 assetId) external view returns (uint256);
+  function getBaseVariableBorrowRate(address underlying) external view returns (uint256);
 
   /// @notice Returns the variable rate slope below optimal usage ratio.
   /// @dev Applicable when usage ratio > 0 and <= OPTIMAL_USAGE_RATIO.
-  /// @param assetId The identifier of the asset to get the variable rate slope 1 for.
+  /// @param underlying The identifier of the asset to get the variable rate slope 1 for.
   /// @return The variable rate slope, in BPS.
-  function getVariableRateSlope1(uint256 assetId) external view returns (uint256);
+  function getVariableRateSlope1(address underlying) external view returns (uint256);
 
   /// @notice Returns the variable rate slope above optimal usage ratio.
   /// @dev Applicable when usage ratio > OPTIMAL_USAGE_RATIO.
-  /// @param assetId The identifier of the asset to get the variable rate slope 2 for.
+  /// @param underlying The identifier of the asset to get the variable rate slope 2 for.
   /// @return The variable rate slope, in BPS.
-  function getVariableRateSlope2(uint256 assetId) external view returns (uint256);
+  function getVariableRateSlope2(address underlying) external view returns (uint256);
 
   /// @notice Returns the maximum variable borrow rate.
-  /// @param assetId The identifier of the asset to get the maximum variable borrow rate for.
+  /// @param underlying The identifier of the asset to get the maximum variable borrow rate for.
   /// @return The maximum variable borrow rate, in BPS.
-  function getMaxVariableBorrowRate(uint256 assetId) external view returns (uint256);
+  function getMaxVariableBorrowRate(address underlying) external view returns (uint256);
 
   /// @notice Returns the maximum value achievable for the borrow rate.
   /// @return The maximum rate, in BPS.

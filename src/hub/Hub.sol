@@ -40,9 +40,9 @@ contract Hub is IHub, AccessManaged {
   uint24 public constant MAX_RISK_PREMIUM_THRESHOLD = type(uint24).max;
 
   uint256 internal _assetCount;
-  mapping(uint256 assetId => Asset) internal _assets;
-  mapping(uint256 assetId => mapping(address spoke => SpokeData)) internal _spokes;
-  mapping(uint256 assetId => EnumerableSet.AddressSet) internal _assetToSpokes;
+  mapping(address underlying => Asset) internal _assets;
+  mapping(address underlying => mapping(address spoke => SpokeData)) internal _spokes;
+  mapping(address underlying => EnumerableSet.AddressSet) internal _assetToSpokes;
   EnumerableSet.AddressSet internal _underlyingSet;
 
   /// @dev Constructor.
@@ -59,7 +59,7 @@ contract Hub is IHub, AccessManaged {
     address feeReceiver,
     address irStrategy,
     bytes calldata irData
-  ) external restricted returns (uint256) {
+  ) external restricted {
     require(
       underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
       InvalidAddress()
@@ -70,10 +70,9 @@ contract Hub is IHub, AccessManaged {
     );
     require(!_underlyingSet.contains(underlying), AssetAlreadyListed());
 
-    uint256 assetId = _assetCount++;
-    IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
+    IBasicInterestRateStrategy(irStrategy).setInterestRateData(underlying, irData);
     uint256 drawnRate = IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
-      assetId: assetId,
+      underlying: underlying,
       liquidity: 0,
       drawn: 0,
       deficit: 0,
@@ -82,7 +81,7 @@ contract Hub is IHub, AccessManaged {
 
     uint256 drawnIndex = WadRayMath.RAY;
     uint256 lastUpdateTimestamp = block.timestamp;
-    _assets[assetId] = Asset({
+    _assets[underlying] = Asset({
       liquidity: 0,
       deficit: 0,
       swept: 0,
@@ -103,11 +102,11 @@ contract Hub is IHub, AccessManaged {
       liquidityFee: 0
     });
     _underlyingSet.add(underlying);
-    _addFeeReceiver(assetId, feeReceiver);
+    _addFeeReceiver(underlying, feeReceiver);
 
-    emit AddAsset(assetId, underlying, decimals);
+    emit AddAsset(underlying, underlying, decimals);
     emit UpdateAssetConfig(
-      assetId,
+      underlying,
       AssetConfig({
         feeReceiver: feeReceiver,
         liquidityFee: 0,
@@ -115,19 +114,18 @@ contract Hub is IHub, AccessManaged {
         reinvestmentController: address(0)
       })
     );
-    emit UpdateAsset(assetId, drawnIndex, drawnRate, 0);
+    emit UpdateAsset(underlying, drawnIndex, drawnRate, 0);
 
-    return assetId;
+    return underlying;
   }
 
   /// @inheritdoc IHub
   function updateAssetConfig(
-    uint256 assetId,
+    address underlying,
     AssetConfig calldata config,
     bytes calldata irData
   ) external restricted {
-    require(assetId < _assetCount, AssetNotListed());
-    Asset storage asset = _assets[assetId];
+    Asset storage asset = _assets[underlying];
     asset.accrue();
 
     require(config.liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
@@ -139,51 +137,51 @@ contract Hub is IHub, AccessManaged {
 
     if (config.irStrategy != asset.irStrategy) {
       asset.irStrategy = config.irStrategy;
-      IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData);
+      IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(underlying, irData);
     } else {
       require(irData.length == 0, InvalidInterestRateStrategy());
     }
 
     address oldFeeReceiver = asset.feeReceiver;
     if (oldFeeReceiver != config.feeReceiver) {
-      _mintFeeShares(asset, assetId);
+      _mintFeeShares(asset, underlying);
       IHub.SpokeConfig memory spokeConfig;
-      spokeConfig.active = _spokes[assetId][oldFeeReceiver].active;
-      spokeConfig.paused = _spokes[assetId][oldFeeReceiver].paused;
-      _updateSpokeConfig(assetId, oldFeeReceiver, spokeConfig);
+      spokeConfig.active = _spokes[underlying][oldFeeReceiver].active;
+      spokeConfig.paused = _spokes[underlying][oldFeeReceiver].paused;
+      _updateSpokeConfig(underlying, oldFeeReceiver, spokeConfig);
       asset.feeReceiver = config.feeReceiver;
-      _addFeeReceiver(assetId, config.feeReceiver);
+      _addFeeReceiver(underlying, config.feeReceiver);
     }
 
     asset.liquidityFee = config.liquidityFee;
     asset.reinvestmentController = config.reinvestmentController;
 
-    asset.updateDrawnRate(assetId);
+    asset.updateDrawnRate(underlying);
 
-    emit UpdateAssetConfig(assetId, config);
+    emit UpdateAssetConfig(underlying, config);
   }
 
   /// @inheritdoc IHub
   function addSpoke(
-    uint256 assetId,
+    address underlying,
     address spoke,
     SpokeConfig calldata config
   ) external restricted {
-    require(assetId < _assetCount, AssetNotListed());
+    require(underlying < _assetCount, AssetNotListed());
     require(spoke != address(0), InvalidAddress());
-    _addSpoke(assetId, spoke);
-    _updateSpokeConfig(assetId, spoke, config);
+    _addSpoke(underlying, spoke);
+    _updateSpokeConfig(underlying, spoke, config);
   }
 
   /// @inheritdoc IHub
   function updateSpokeConfig(
-    uint256 assetId,
+    address underlying,
     address spoke,
     SpokeConfig calldata config
   ) external restricted {
-    require(assetId < _assetCount, AssetNotListed());
-    require(_assetToSpokes[assetId].contains(spoke), SpokeNotListed());
-    _updateSpokeConfig(assetId, spoke, config);
+    require(underlying < _assetCount, AssetNotListed());
+    require(_assetToSpokes[underlying].contains(spoke), SpokeNotListed());
+    _updateSpokeConfig(underlying, spoke, config);
   }
 
   /// @inheritdoc IHub
@@ -205,9 +203,9 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function add(uint256 assetId, uint256 amount) external returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    SpokeData storage spoke = _spokes[assetId][msg.sender];
+  function add(address underlying, uint256 amount) external returns (uint256) {
+    Asset storage asset = _assets[underlying];
+    SpokeData storage spoke = _spokes[underlying][msg.sender];
 
     asset.accrue();
     _validateAdd(asset, spoke, amount);
@@ -219,20 +217,20 @@ contract Hub is IHub, AccessManaged {
     spoke.addedShares += shares;
     asset.liquidity = newLiquidity.toUint120();
 
-    asset.updateDrawnRate(assetId);
+    asset.updateDrawnRate(underlying);
 
     // enforces spoke transfers the correct funds from user to hub
-    require(asset.underlying.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
+    require(underlying.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
 
-    emit Add(assetId, msg.sender, shares, amount);
+    emit Add(underlying, msg.sender, shares, amount);
 
     return shares;
   }
 
   /// @inheritdoc IHubBase
-  function remove(uint256 assetId, uint256 amount, address to) external returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    SpokeData storage spoke = _spokes[assetId][msg.sender];
+  function remove(address underlying, uint256 amount, address to) external returns (uint256) {
+    Asset storage asset = _assets[underlying];
+    SpokeData storage spoke = _spokes[underlying][msg.sender];
 
     asset.accrue();
     _validateRemove(spoke, amount, to);
@@ -245,19 +243,19 @@ contract Hub is IHub, AccessManaged {
     spoke.addedShares -= shares;
     asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
 
-    asset.updateDrawnRate(assetId);
+    asset.updateDrawnRate(underlying);
 
-    asset.underlying.safeTransfer(to, amount);
+    underlying.safeTransfer(to, amount);
 
-    emit Remove(assetId, msg.sender, shares, amount);
+    emit Remove(underlying, msg.sender, shares, amount);
 
     return shares;
   }
 
   /// @inheritdoc IHubBase
-  function draw(uint256 assetId, uint256 amount, address to) external returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    SpokeData storage spoke = _spokes[assetId][msg.sender];
+  function draw(address underlying, uint256 amount, address to) external returns (uint256) {
+    Asset storage asset = _assets[underlying];
+    SpokeData storage spoke = _spokes[underlying][msg.sender];
 
     asset.accrue();
     _validateDraw(asset, spoke, amount, to);
@@ -270,24 +268,24 @@ contract Hub is IHub, AccessManaged {
     spoke.drawnShares += drawnShares;
     asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
 
-    asset.updateDrawnRate(assetId);
+    asset.updateDrawnRate(underlying);
 
     asset.underlying.safeTransfer(to, amount);
 
-    emit Draw(assetId, msg.sender, drawnShares, amount);
+    emit Draw(underlying, msg.sender, drawnShares, amount);
 
     return drawnShares;
   }
 
   /// @inheritdoc IHubBase
   function restore(
-    uint256 assetId,
+    address underlying,
     uint256 drawnAmount,
     uint256 premiumAmount,
     PremiumDelta calldata premiumDelta
   ) external returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    SpokeData storage spoke = _spokes[assetId][msg.sender];
+    Asset storage asset = _assets[underlying];
+    SpokeData storage spoke = _spokes[underlying][msg.sender];
 
     asset.accrue();
     _validateRestore(asset, spoke, drawnAmount, premiumAmount);
@@ -299,25 +297,25 @@ contract Hub is IHub, AccessManaged {
     uint256 newLiquidity = asset.liquidity + drawnAmount + premiumAmount;
     asset.liquidity = newLiquidity.toUint120();
 
-    asset.updateDrawnRate(assetId);
+    asset.updateDrawnRate(underlying);
 
     // enforces spoke transfers the correct funds from user to hub
     require(asset.underlying.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
 
-    emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
+    emit Restore(underlying, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
     return drawnShares;
   }
 
   /// @inheritdoc IHubBase
   function reportDeficit(
-    uint256 assetId,
+    address underlying,
     uint256 drawnAmount,
     uint256 premiumAmount,
     PremiumDelta calldata premiumDelta
   ) external returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    SpokeData storage spoke = _spokes[assetId][msg.sender];
+    Asset storage asset = _assets[underlying];
+    SpokeData storage spoke = _spokes[underlying][msg.sender];
 
     asset.accrue();
     _validateReportDeficit(asset, spoke, drawnAmount, premiumAmount);
@@ -330,22 +328,29 @@ contract Hub is IHub, AccessManaged {
     asset.deficit += deficitAmount;
     spoke.deficit += deficitAmount;
 
-    asset.updateDrawnRate(assetId);
+    asset.updateDrawnRate(underlying);
 
-    emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
+    emit ReportDeficit(
+      underlying,
+      msg.sender,
+      drawnShares,
+      premiumDelta,
+      drawnAmount,
+      premiumAmount
+    );
 
     return drawnShares;
   }
 
   /// @inheritdoc IHub
   function eliminateDeficit(
-    uint256 assetId,
+    address underlying,
     uint256 amount,
     address spoke
   ) external returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    SpokeData storage callerSpoke = _spokes[assetId][msg.sender];
-    SpokeData storage coveredSpoke = _spokes[assetId][spoke];
+    Asset storage asset = _assets[underlying];
+    SpokeData storage callerSpoke = _spokes[underlying][msg.sender];
+    SpokeData storage coveredSpoke = _spokes[underlying][spoke];
 
     asset.accrue();
     _validateEliminateDeficit(callerSpoke, amount);
@@ -359,60 +364,60 @@ contract Hub is IHub, AccessManaged {
     asset.deficit -= amount.toUint120();
     coveredSpoke.deficit = deficit.uncheckedSub(amount).toUint120();
 
-    asset.updateDrawnRate(assetId);
+    asset.updateDrawnRate(underlying);
 
-    emit EliminateDeficit(assetId, msg.sender, spoke, shares, amount);
+    emit EliminateDeficit(underlying, msg.sender, spoke, shares, amount);
 
     return shares;
   }
 
   /// @inheritdoc IHubBase
-  function refreshPremium(uint256 assetId, PremiumDelta calldata premiumDelta) external {
-    Asset storage asset = _assets[assetId];
-    SpokeData storage spoke = _spokes[assetId][msg.sender];
+  function refreshPremium(address underlying, PremiumDelta calldata premiumDelta) external {
+    Asset storage asset = _assets[underlying];
+    SpokeData storage spoke = _spokes[underlying][msg.sender];
 
     asset.accrue();
     require(spoke.active, SpokeNotActive());
     // no premium change allowed
     _applyPremiumDelta(asset, spoke, premiumDelta, 0);
-    asset.updateDrawnRate(assetId);
+    asset.updateDrawnRate(underlying);
 
-    emit RefreshPremium(assetId, msg.sender, premiumDelta);
+    emit RefreshPremium(underlying, msg.sender, premiumDelta);
   }
 
   /// @inheritdoc IHubBase
-  function payFeeShares(uint256 assetId, uint256 shares) external {
-    Asset storage asset = _assets[assetId];
-    address feeReceiver = _assets[assetId].feeReceiver;
-    SpokeData storage receiver = _spokes[assetId][feeReceiver];
-    SpokeData storage sender = _spokes[assetId][msg.sender];
+  function payFeeShares(address underlying, uint256 shares) external {
+    Asset storage asset = _assets[underlying];
+    address feeReceiver = _assets[underlying].feeReceiver;
+    SpokeData storage receiver = _spokes[underlying][feeReceiver];
+    SpokeData storage sender = _spokes[underlying][msg.sender];
 
     asset.accrue();
     _validatePayFeeShares(sender, shares);
     _transferShares(sender, receiver, shares);
-    asset.updateDrawnRate(assetId);
+    asset.updateDrawnRate(underlying);
 
-    emit TransferShares(assetId, msg.sender, feeReceiver, shares);
+    emit TransferShares(underlying, msg.sender, feeReceiver, shares);
   }
 
   /// @inheritdoc IHub
-  function transferShares(uint256 assetId, uint256 shares, address toSpoke) external {
-    Asset storage asset = _assets[assetId];
-    SpokeData storage sender = _spokes[assetId][msg.sender];
-    SpokeData storage receiver = _spokes[assetId][toSpoke];
+  function transferShares(address underlying, uint256 shares, address toSpoke) external {
+    Asset storage asset = _assets[underlying];
+    SpokeData storage sender = _spokes[underlying][msg.sender];
+    SpokeData storage receiver = _spokes[underlying][toSpoke];
 
     asset.accrue();
     _validateTransferShares(asset, sender, receiver, shares);
     _transferShares(sender, receiver, shares);
-    asset.updateDrawnRate(assetId);
+    asset.updateDrawnRate(underlying);
 
-    emit TransferShares(assetId, msg.sender, toSpoke, shares);
+    emit TransferShares(underlying, msg.sender, toSpoke, shares);
   }
 
   /// @inheritdoc IHub
-  function sweep(uint256 assetId, uint256 amount) external {
-    require(assetId < _assetCount, AssetNotListed());
-    Asset storage asset = _assets[assetId];
+  function sweep(address underlying, uint256 amount) external {
+    require(underlying < _assetCount, AssetNotListed());
+    Asset storage asset = _assets[underlying];
 
     asset.accrue();
     _validateSweep(asset, msg.sender, amount);
@@ -420,30 +425,30 @@ contract Hub is IHub, AccessManaged {
     uint256 liquidity = asset.liquidity;
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
-    asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
-    asset.swept += amount.toUint120();
-    asset.updateDrawnRate(assetId);
+    asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
+    asset.swept += amount.toUint128();
+    asset.updateDrawnRate(underlying);
 
     asset.underlying.safeTransfer(msg.sender, amount);
 
-    emit Sweep(assetId, msg.sender, amount);
+    emit Sweep(underlying, msg.sender, amount);
   }
 
   /// @inheritdoc IHub
-  function reclaim(uint256 assetId, uint256 amount) external {
-    require(assetId < _assetCount, AssetNotListed());
-    Asset storage asset = _assets[assetId];
+  function reclaim(address underlying, uint256 amount) external {
+    require(underlying < _assetCount, AssetNotListed());
+    Asset storage asset = _assets[underlying];
 
-    asset.accrue();
+    asset.accrue(_spokes, underlying);
     _validateReclaim(asset, msg.sender, amount);
 
-    asset.liquidity += amount.toUint120();
-    asset.swept -= amount.toUint120();
-    asset.updateDrawnRate(assetId);
+    asset.liquidity += amount.toUint128();
+    asset.swept -= amount.toUint128();
+    asset.updateDrawnRate(underlying);
 
     asset.underlying.safeTransferFrom(msg.sender, address(this), amount);
 
-    emit Reclaim(assetId, msg.sender, amount);
+    emit Reclaim(underlying, msg.sender, amount);
   }
 
   /// @inheritdoc IHub
@@ -452,108 +457,124 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function previewAddByAssets(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toAddedSharesDown(assets);
+  function previewAddByAssets(address underlying, uint256 assets) external view returns (uint256) {
+    return _assets[underlying].toAddedSharesDown(assets);
   }
 
   /// @inheritdoc IHubBase
-  function previewAddByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toAddedAssetsUp(shares);
+  function previewAddByShares(address underlying, uint256 shares) external view returns (uint256) {
+    return _assets[underlying].toAddedAssetsUp(shares);
   }
 
   /// @inheritdoc IHubBase
-  function previewRemoveByAssets(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toAddedSharesUp(assets);
+  function previewRemoveByAssets(
+    address underlying,
+    uint256 assets
+  ) external view returns (uint256) {
+    return _assets[underlying].toAddedSharesUp(assets);
   }
 
   /// @inheritdoc IHubBase
-  function previewRemoveByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toAddedAssetsDown(shares);
+  function previewRemoveByShares(
+    address underlying,
+    uint256 shares
+  ) external view returns (uint256) {
+    return _assets[underlying].toAddedAssetsDown(shares);
   }
 
   /// @inheritdoc IHubBase
-  function previewDrawByAssets(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toDrawnSharesUp(assets);
+  function previewDrawByAssets(address underlying, uint256 assets) external view returns (uint256) {
+    return _assets[underlying].toDrawnSharesUp(assets);
   }
 
   /// @inheritdoc IHubBase
-  function previewDrawByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toDrawnAssetsDown(shares);
+  function previewDrawByShares(address underlying, uint256 shares) external view returns (uint256) {
+    return _assets[underlying].toDrawnAssetsDown(shares);
   }
 
   /// @inheritdoc IHubBase
-  function previewRestoreByAssets(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].toDrawnSharesDown(assets);
+  function previewRestoreByAssets(
+    address underlying,
+    uint256 assets
+  ) external view returns (uint256) {
+    return _assets[underlying].toDrawnSharesDown(assets);
   }
 
   /// @inheritdoc IHubBase
-  function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toDrawnAssetsUp(shares);
+  function previewRestoreByShares(
+    address underlying,
+    uint256 shares
+  ) external view returns (uint256) {
+    return _assets[underlying].toDrawnAssetsUp(shares);
   }
 
   /// @inheritdoc IHubBase
-  function getAssetUnderlyingAndDecimals(uint256 assetId) external view returns (address, uint8) {
-    Asset storage asset = _assets[assetId];
+  function getAssetUnderlyingAndDecimals(
+    address underlying
+  ) external view returns (address, uint8) {
+    Asset storage asset = _assets[underlying];
     return (asset.underlying, asset.decimals);
   }
 
   /// @inheritdoc IHubBase
-  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].getDrawnIndex();
+  function getAssetDrawnIndex(address underlying) external view returns (uint256) {
+    return _assets[underlying].getDrawnIndex();
   }
 
   /// @inheritdoc IHubBase
-  function getAddedAssets(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].totalAddedAssets();
+  function getAddedAssets(address underlying) external view returns (uint256) {
+    return _assets[underlying].totalAddedAssets();
   }
 
   /// @inheritdoc IHubBase
-  function getAddedShares(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].addedShares;
+  function getAddedShares(address underlying) external view returns (uint256) {
+    return _assets[underlying].addedShares;
   }
 
   /// @inheritdoc IHubBase
-  function getAssetOwed(uint256 assetId) external view returns (uint256, uint256) {
-    Asset storage asset = _assets[assetId];
+  function getAssetOwed(address underlying) external view returns (uint256, uint256) {
+    Asset storage asset = _assets[underlying];
     uint256 drawnIndex = asset.getDrawnIndex();
     return (asset.drawn(drawnIndex), asset.premium(drawnIndex));
   }
 
   /// @inheritdoc IHubBase
-  function getAssetTotalOwed(uint256 assetId) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
+  function getAssetTotalOwed(address underlying) external view returns (uint256) {
+    Asset storage asset = _assets[underlying];
     return asset.totalOwed(asset.getDrawnIndex());
   }
 
   /// @inheritdoc IHubBase
-  function getAssetDrawnShares(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].drawnShares;
+  function getAssetDrawnShares(address underlying) external view returns (uint256) {
+    return _assets[underlying].drawnShares;
   }
 
   /// @inheritdoc IHubBase
-  function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256) {
-    Asset storage asset = _assets[assetId];
+  function getAssetPremiumData(
+    address underlying
+  ) external view returns (uint256, uint256, uint256) {
+    Asset storage asset = _assets[underlying];
     return (asset.premiumShares, asset.premiumOffset, asset.realizedPremium);
   }
 
   /// @inheritdoc IHubBase
-  function getAssetLiquidity(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].liquidity;
+  function getAssetLiquidity(address underlying) external view returns (uint256) {
+    return _assets[underlying].liquidity;
   }
 
   /// @inheritdoc IHubBase
-  function getAssetDeficit(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].deficit;
+  function getAssetDeficit(address underlying) external view returns (uint256) {
+    return _assets[underlying].deficit;
   }
 
   /// @inheritdoc IHub
-  function getAsset(uint256 assetId) external view returns (Asset memory) {
-    return _assets[assetId];
+  function getAsset(address underlying) external view returns (Asset memory) {
+    return _assets[underlying];
   }
 
   /// @inheritdoc IHub
-  function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory) {
-    Asset storage asset = _assets[assetId];
+  function getAssetConfig(address underlying) external view returns (AssetConfig memory) {
+    Asset storage asset = _assets[underlying];
     return
       AssetConfig({
         feeReceiver: asset.feeReceiver,
@@ -564,82 +585,85 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getAssetAccruedFees(uint256 assetId) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
+  function getAssetAccruedFees(address underlying) external view returns (uint256) {
+    Asset storage asset = _assets[underlying];
     return asset.realizedFees + asset.getUnrealizedFees(asset.getDrawnIndex());
   }
 
   /// @inheritdoc IHub
-  function getAssetSwept(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].swept;
+  function getAssetSwept(address underlying) external view returns (uint256) {
+    return _assets[underlying].swept;
   }
 
   /// @inheritdoc IHub
-  function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].drawnRate;
+  function getAssetDrawnRate(address underlying) external view returns (uint256) {
+    return _assets[underlying].drawnRate;
   }
 
   /// @inheritdoc IHub
-  function getSpokeCount(uint256 assetId) external view returns (uint256) {
-    return _assetToSpokes[assetId].length();
+  function getSpokeCount(address underlying) external view returns (uint256) {
+    return _assetToSpokes[underlying].length();
   }
 
   /// @inheritdoc IHubBase
-  function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256) {
-    return _assets[assetId].toAddedAssetsDown(_spokes[assetId][spoke].addedShares);
+  function getSpokeAddedAssets(address underlying, address spoke) external view returns (uint256) {
+    return _assets[underlying].toAddedAssetsDown(_spokes[underlying][spoke].addedShares);
   }
 
   /// @inheritdoc IHubBase
-  function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256) {
-    return _spokes[assetId][spoke].addedShares;
+  function getSpokeAddedShares(address underlying, address spoke) external view returns (uint256) {
+    return _spokes[underlying][spoke].addedShares;
   }
 
   /// @inheritdoc IHubBase
-  function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256) {
-    Asset storage asset = _assets[assetId];
-    SpokeData storage spokeData = _spokes[assetId][spoke];
+  function getSpokeOwed(
+    address underlying,
+    address spoke
+  ) external view returns (uint256, uint256) {
+    Asset storage asset = _assets[underlying];
+    SpokeData storage spokeData = _spokes[underlying][spoke];
     return (_getSpokeDrawn(asset, spokeData), _getSpokePremium(asset, spokeData));
   }
 
   /// @inheritdoc IHubBase
-  function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    SpokeData storage spokeData = _spokes[assetId][spoke];
+  function getSpokeTotalOwed(address underlying, address spoke) external view returns (uint256) {
+    Asset storage asset = _assets[underlying];
+    SpokeData storage spokeData = _spokes[underlying][spoke];
     return _getSpokeDrawn(asset, spokeData) + _getSpokePremium(asset, spokeData);
   }
 
   /// @inheritdoc IHubBase
-  function getSpokeDrawnShares(uint256 assetId, address spoke) external view returns (uint256) {
-    return _spokes[assetId][spoke].drawnShares;
+  function getSpokeDrawnShares(address underlying, address spoke) external view returns (uint256) {
+    return _spokes[underlying][spoke].drawnShares;
   }
 
   /// @inheritdoc IHubBase
   function getSpokePremiumData(
-    uint256 assetId,
+    address underlying,
     address spoke
   ) external view returns (uint256, uint256, uint256) {
-    SpokeData storage spokeData = _spokes[assetId][spoke];
+    SpokeData storage spokeData = _spokes[underlying][spoke];
     return (spokeData.premiumShares, spokeData.premiumOffset, spokeData.realizedPremium);
   }
 
   /// @inheritdoc IHubBase
-  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256) {
-    return _spokes[assetId][spoke].deficit;
+  function getSpokeDeficit(address underlying, address spoke) external view returns (uint256) {
+    return _spokes[underlying][spoke].deficit;
   }
 
   /// @inheritdoc IHub
-  function isSpokeListed(uint256 assetId, address spoke) external view returns (bool) {
-    return _assetToSpokes[assetId].contains(spoke);
+  function isSpokeListed(address underlying, address spoke) external view returns (bool) {
+    return _assetToSpokes[underlying].contains(spoke);
   }
 
   /// @inheritdoc IHub
-  function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address) {
-    return _assetToSpokes[assetId].at(index);
+  function getSpokeAddress(address underlying, uint256 index) external view returns (address) {
+    return _assetToSpokes[underlying].at(index);
   }
 
   /// @inheritdoc IHub
-  function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory) {
-    return _spokes[assetId][spoke];
+  function getSpoke(address underlying, address spoke) external view returns (SpokeData memory) {
+    return _spokes[underlying][spoke];
   }
 
   /// @inheritdoc IHub
@@ -649,10 +673,10 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function getSpokeConfig(
-    uint256 assetId,
+    address underlying,
     address spoke
   ) external view returns (SpokeConfig memory) {
-    SpokeData storage spokeData = _spokes[assetId][spoke];
+    SpokeData storage spokeData = _spokes[underlying][spoke];
     return
       SpokeConfig({
         addCap: spokeData.addCap,
@@ -664,10 +688,10 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @notice Adds a new spoke to an asset with default feeReceiver configuration (maximum add cap, zero draw cap).
-  function _addFeeReceiver(uint256 assetId, address feeReceiver) internal {
-    _addSpoke(assetId, feeReceiver);
+  function _addFeeReceiver(address underlying, address feeReceiver) internal {
+    _addSpoke(underlying, feeReceiver);
     _updateSpokeConfig(
-      assetId,
+      underlying,
       feeReceiver,
       SpokeConfig({
         addCap: MAX_ALLOWED_SPOKE_CAP,
@@ -681,19 +705,23 @@ contract Hub is IHub, AccessManaged {
 
   /// @notice Adds a spoke to an asset.
   /// @dev Reverts with `SpokeAlreadyListed` if spoke is already listed for the given asset.
-  function _addSpoke(uint256 assetId, address spoke) internal {
-    require(_assetToSpokes[assetId].add(spoke), SpokeAlreadyListed());
-    emit AddSpoke(assetId, spoke);
+  function _addSpoke(address underlying, address spoke) internal {
+    require(_assetToSpokes[underlying].add(spoke), SpokeAlreadyListed());
+    emit AddSpoke(underlying, spoke);
   }
 
-  function _updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig memory config) internal {
-    SpokeData storage spokeData = _spokes[assetId][spoke];
+  function _updateSpokeConfig(
+    address underlying,
+    address spoke,
+    SpokeConfig memory config
+  ) internal {
+    SpokeData storage spokeData = _spokes[underlying][spoke];
     spokeData.addCap = config.addCap;
     spokeData.drawCap = config.drawCap;
     spokeData.riskPremiumThreshold = config.riskPremiumThreshold;
     spokeData.active = config.active;
     spokeData.paused = config.paused;
-    emit UpdateSpokeConfig(assetId, spoke, config);
+    emit UpdateSpokeConfig(underlying, spoke, config);
   }
 
   /// @dev Receiver `addCap` is validated in `_validateTransferShares`.

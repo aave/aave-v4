@@ -43,7 +43,7 @@ interface ISpokeConfigurator {
   /// @dev The price source must implement the AggregatorV3Interface.
   /// @param spoke The address of the spoke.
   /// @param hub The address of the Hub where the asset corresponding to the reserve is listed.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @param priceSource The address of the price source.
   /// @param config The configuration of the reserve.
   /// @param dynamicConfig The dynamic configuration of the reserve.
