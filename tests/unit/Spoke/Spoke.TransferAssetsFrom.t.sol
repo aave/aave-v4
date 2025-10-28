@@ -35,19 +35,4 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(address(hub1)), hubInitialBalance + amount);
     assertEq(tokenList.dai.balanceOf(address(spoke1)), spokeInitialBalance);
   }
-
-  function test_transferAssetsFrom_fuzz_transfer(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-
-    deal(address(tokenList.dai), address(spoke1), MAX_SUPPLY_AMOUNT);
-
-    uint256 hubInitialBalance = tokenList.dai.balanceOf(address(hub1));
-    uint256 spokeInitialBalance = tokenList.dai.balanceOf(address(spoke1));
-
-    vm.prank(address(hub1));
-    spoke1.transferAssetsFrom(daiAssetId, address(tokenList.dai), address(spoke1), amount);
-
-    assertEq(tokenList.dai.balanceOf(address(hub1)), hubInitialBalance + amount);
-    assertEq(tokenList.dai.balanceOf(address(spoke1)), spokeInitialBalance - amount);
-  }
 }
