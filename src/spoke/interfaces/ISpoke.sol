@@ -13,9 +13,8 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 /// @notice Full interface for Spoke.
 interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Reserve level data.
-  /// @dev underlying The address of the underlying asset.
+  /// @dev underlying The address of the underlying asset (as listed on the Hub).
   /// @dev hub The address of the associated Hub.
-  /// @dev assetId The identifier of the asset in the Hub.
   /// @dev decimals The number of decimals of the underlying asset.
   /// @dev dynamicConfigKey The key of the last reserve dynamic config.
   /// @dev paused True if all actions are prevented for the reserve.
@@ -26,7 +25,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     address underlying;
     //
     IHubBase hub;
-    uint16 assetId;
     uint8 decimals;
     uint16 dynamicConfigKey;
     bool paused;
@@ -121,9 +119,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Emitted when a reserve is added.
   /// @param reserveId The identifier of the reserve.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param hub The address of the Hub where the asset is listed.
-  event AddReserve(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
+  event AddReserve(uint256 indexed reserveId, address indexed asset, address indexed hub);
 
   /// @notice Emitted when a reserve configuration is updated.
   /// @param reserveId The identifier of the reserve.
@@ -208,7 +206,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when an asset is not listed on the Hub when adding a reserve.
   error AssetNotListed();
 
-  /// @notice Thrown when adding a new reserve if that reserve already exists for a given Hub/assetId pair.
+  /// @notice Thrown when adding a new reserve if that reserve already exists for a given Hub/asset pair.
   error ReserveExists();
 
   /// @notice Thrown when adding a new reserve if an asset id is invalid.
@@ -296,14 +294,14 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev Allowed even if the `active` flag is `false`.
   /// @dev Allowed even if the spoke has been added but the `addCap` is zero.
   /// @param hub The address of the Hub where the asset is listed.
-  /// @param assetId The identifier of the asset in the Hub.
+  /// @param asset The address of the asset (as listed on the Hub).
   /// @param priceSource The address of the price source for the asset.
   /// @param config The initial reserve configuration.
   /// @param dynamicConfig The initial dynamic reserve configuration.
   /// @return The identifier of the newly added reserve.
   function addReserve(
     address hub,
-    uint256 assetId,
+    address asset,
     address priceSource,
     ReserveConfig calldata config,
     DynamicReserveConfig calldata dynamicConfig

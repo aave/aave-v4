@@ -14,40 +14,40 @@ interface IHubBase {
   }
 
   /// @notice Emitted on the `add` action.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @param shares The amount of shares added.
   /// @param amount The amount of assets added.
-  event Add(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
+  event Add(address indexed asset, address indexed spoke, uint256 shares, uint256 amount);
 
   /// @notice Emitted on the `remove` action.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @param shares The amount of shares removed.
   /// @param amount The amount of assets removed.
-  event Remove(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
+  event Remove(address indexed asset, address indexed spoke, uint256 shares, uint256 amount);
 
   /// @notice Emitted on the `draw` action.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @param drawnShares The amount of drawn shares.
   /// @param drawnAmount The amount of drawn assets.
   event Draw(
-    uint256 indexed assetId,
+    address indexed asset,
     address indexed spoke,
     uint256 drawnShares,
     uint256 drawnAmount
   );
 
   /// @notice Emitted on the `restore` action.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @param drawnShares The amount of drawn shares.
   /// @param premiumDelta The premium delta data struct.
   /// @param drawnAmount The amount of drawn assets restored.
   /// @param premiumAmount The amount of premium assets restored.
   event Restore(
-    uint256 indexed assetId,
+    address indexed asset,
     address indexed spoke,
     uint256 drawnShares,
     PremiumDelta premiumDelta,
@@ -56,20 +56,20 @@ interface IHubBase {
   );
 
   /// @notice Emitted on the `refreshPremium` action.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @param premiumDelta The premium delta data struct.
-  event RefreshPremium(uint256 indexed assetId, address indexed spoke, PremiumDelta premiumDelta);
+  event RefreshPremium(address indexed asset, address indexed spoke, PremiumDelta premiumDelta);
 
   /// @notice Emitted on the `reportDeficit` action.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @param drawnShares The amount of drawn shares reported as deficit.
   /// @param premiumDelta The premium delta data struct.
   /// @param drawnAmount The amount of drawn assets reported as deficit.
   /// @param premiumAmount The amount of premium assets reported as deficit.
   event ReportDeficit(
-    uint256 indexed assetId,
+    address indexed asset,
     address indexed spoke,
     uint256 drawnShares,
     PremiumDelta premiumDelta,
@@ -78,12 +78,12 @@ interface IHubBase {
   );
 
   /// @notice Emitted on the `transferShares` action.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param sender The address of the sender.
   /// @param receiver The address of the receiver.
   /// @param shares The amount of shares transferred.
   event TransferShares(
-    uint256 indexed assetId,
+    address indexed asset,
     address indexed sender,
     address indexed receiver,
     uint256 shares
@@ -93,39 +93,39 @@ interface IHubBase {
   /// @dev Only callable by active spokes.
   /// @dev Must receive the funds prior to calling, hub's balance is verified against the stored liquidity.
   /// @dev Donated liquidity can be skimmed by any spoke.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param amount The amount of asset liquidity to add.
   /// @return The amount of shares added.
-  function add(uint256 assetId, uint256 amount) external returns (uint256);
+  function add(address asset, uint256 amount) external returns (uint256);
 
   /// @notice Remove added asset on behalf of user.
   /// @dev Only callable by active spokes.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param amount The amount of asset liquidity to remove.
   /// @param to The address to transfer the assets to.
   /// @return The amount of shares removed.
-  function remove(uint256 assetId, uint256 amount, address to) external returns (uint256);
+  function remove(address asset, uint256 amount, address to) external returns (uint256);
 
   /// @notice Draw assets on behalf of user.
   /// @dev Only callable by active spokes.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param amount The amount of assets to draw.
   /// @param to The address to transfer the underlying assets to.
   /// @return The amount of drawn shares.
-  function draw(uint256 assetId, uint256 amount, address to) external returns (uint256);
+  function draw(address asset, uint256 amount, address to) external returns (uint256);
 
   /// @notice Restore assets on behalf of user.
   /// @dev Only callable by active spokes.
   /// @dev Interest is always paid off first from premium, then from drawn.
   /// @dev Must receive the funds prior to calling, hub's balance is verified against the stored liquidity.
   /// @dev Donated liquidity can be skimmed by any spoke.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param drawnAmount The drawn amount to restore.
   /// @param premiumAmount The premium amount to repay.
   /// @param premiumDelta The premium delta to apply which signal premium repayment.
   /// @return The amount of drawn shares restored.
   function restore(
-    uint256 assetId,
+    address asset,
     uint256 drawnAmount,
     uint256 premiumAmount,
     PremiumDelta calldata premiumDelta
@@ -133,13 +133,13 @@ interface IHubBase {
 
   /// @notice Reports deficit.
   /// @dev Only callable by active spokes.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param drawnAmount The drawn amount to report as deficit.
   /// @param premiumAmount The premium amount to report as deficit.
   /// @param premiumDelta The premium delta to apply which signal premium deficit.
   /// @return The amount of drawn shares reported as deficit.
   function reportDeficit(
-    uint256 assetId,
+    address asset,
     uint256 drawnAmount,
     uint256 premiumAmount,
     PremiumDelta calldata premiumDelta
@@ -148,173 +148,172 @@ interface IHubBase {
   /// @notice Refreshes premium accounting.
   /// @dev Only callable by active spokes.
   /// @dev Asset and spoke premium should not decrease.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param premiumDelta The change in premium.
-  function refreshPremium(uint256 assetId, PremiumDelta calldata premiumDelta) external;
+  function refreshPremium(address asset, PremiumDelta calldata premiumDelta) external;
 
   /// @notice Transfers `shares` amount of existing `addedShares` of caller spoke to `feeReceiver`.
   /// @dev Only callable by active spokes. Utilized to pay liquidation fee.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param shares The amount of shares to pay to feeReceiver.
-  function payFeeShares(uint256 assetId, uint256 shares) external;
+  function payFeeShares(address asset, uint256 shares) external;
 
   /// @notice Converts the specified amount of assets to shares upon an `add` action.
   /// @dev Rounds down to the nearest shares amount.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param assets The amount of assets to convert to shares amount.
   /// @return The amount of shares converted from assets amount.
-  function previewAddByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
+  function previewAddByAssets(address asset, uint256 assets) external view returns (uint256);
 
   /// @notice Converts the specified shares amount to assets amount added upon an `add` action.
   /// @dev Rounds up to the nearest assets amount.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param shares The amount of shares to convert to assets amount.
   /// @return The amount of assets converted from shares amount.
-  function previewAddByShares(uint256 assetId, uint256 shares) external view returns (uint256);
+  function previewAddByShares(address asset, uint256 shares) external view returns (uint256);
 
   /// @notice Converts the specified amount of assets to shares amount removed upon a `remove` action.
   /// @dev Rounds up to the nearest shares amount.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param assets The amount of assets to convert to shares amount.
   /// @return The amount of shares converted from assets amount.
-  function previewRemoveByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
+  function previewRemoveByAssets(address asset, uint256 assets) external view returns (uint256);
 
   /// @notice Converts the specified amount of shares to assets amount removed upon a `remove` action.
   /// @dev Rounds down to the nearest assets amount.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param shares The amount of shares to convert to assets amount.
   /// @return The amount of assets converted from shares amount.
-  function previewRemoveByShares(uint256 assetId, uint256 shares) external view returns (uint256);
+  function previewRemoveByShares(address asset, uint256 shares) external view returns (uint256);
 
   /// @notice Converts the specified amount of assets to shares amount drawn upon a `draw` action.
   /// @dev Rounds up to the nearest shares amount.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param assets The amount of assets to convert to shares amount.
   /// @return The amount of shares converted from assets amount.
-  function previewDrawByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
+  function previewDrawByAssets(address asset, uint256 assets) external view returns (uint256);
 
   /// @notice Converts the specified amount of shares to assets amount drawn upon a `draw` action.
   /// @dev Rounds down to the nearest assets amount.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param shares The amount of shares to convert to assets amount.
   /// @return The amount of assets converted from shares amount.
-  function previewDrawByShares(uint256 assetId, uint256 shares) external view returns (uint256);
+  function previewDrawByShares(address asset, uint256 shares) external view returns (uint256);
 
   /// @notice Converts the specified amount of assets to shares amount restored upon a `restore` action.
   /// @dev Rounds down to the nearest shares amount.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param assets The amount of assets to convert to shares amount.
   /// @return The amount of shares converted from assets amount.
-  function previewRestoreByAssets(uint256 assetId, uint256 assets) external view returns (uint256);
+  function previewRestoreByAssets(address asset, uint256 assets) external view returns (uint256);
 
   /// @notice Converts the specified amount of shares to assets amount restored upon a `restore` action.
   /// @dev Rounds up to the nearest assets amount.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param shares The amount of drawn shares to convert to assets amount.
   /// @return The amount of assets converted from shares amount.
-  function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256);
+  function previewRestoreByShares(address asset, uint256 shares) external view returns (uint256);
 
   /// @notice Returns the underlying address and decimals of the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The underlying address of the asset.
+  /// @param asset The address of the asset.
   /// @return The decimals of the asset.
-  function getAssetUnderlyingAndDecimals(uint256 assetId) external view returns (address, uint8);
+  function getAssetDecimals(address asset) external view returns (uint8);
 
   /// @notice Calculates the current drawn index for the specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The current drawn index of the asset.
-  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256);
+  function getAssetDrawnIndex(address asset) external view returns (uint256);
 
   /// @notice Returns the total amount of the specified asset added to the Hub.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The amount of the asset added.
-  function getAddedAssets(uint256 assetId) external view returns (uint256);
+  function getAddedAssets(address asset) external view returns (uint256);
 
   /// @notice Returns the total amount of shares of the specified asset added to the Hub.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The amount of shares of the asset added.
-  function getAddedShares(uint256 assetId) external view returns (uint256);
+  function getAddedShares(address asset) external view returns (uint256);
 
   /// @notice Returns the amount of owed drawn and premium assets for the specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The amount of owed drawn assets.
   /// @return The amount of owed premium assets.
-  function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
+  function getAssetOwed(address asset) external view returns (uint256, uint256);
 
   /// @notice Returns the total amount of assets owed to the Hub.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The total amount of the assets owed.
-  function getAssetTotalOwed(uint256 assetId) external view returns (uint256);
+  function getAssetTotalOwed(address asset) external view returns (uint256);
 
   /// @notice Returns the amount of drawn shares of the specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The amount of drawn shares.
-  function getAssetDrawnShares(uint256 assetId) external view returns (uint256);
+  function getAssetDrawnShares(address asset) external view returns (uint256);
 
   /// @notice Returns the information regarding premium shares of the specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The amount of premium shares owed to the asset.
   /// @return The premium offset of the asset.
   /// @return The realized premium of the asset.
-  function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256);
+  function getAssetPremiumData(address asset) external view returns (uint256, uint256, uint256);
 
   /// @notice Returns the amount of available liquidity for the specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The amount of available liquidity.
-  function getAssetLiquidity(uint256 assetId) external view returns (uint256);
+  function getAssetLiquidity(address asset) external view returns (uint256);
 
   /// @notice Returns the amount of deficit of the specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The amount of deficit.
-  function getAssetDeficit(uint256 assetId) external view returns (uint256);
+  function getAssetDeficit(address asset) external view returns (uint256);
 
   /// @notice Returns the total amount of the specified assets added to the Hub by the specified spoke.
   /// @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @return The amount of added assets.
-  function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeAddedAssets(address asset, address spoke) external view returns (uint256);
 
   /// @notice Returns the total amount of shares of the specified asset added to the Hub by the specified spoke.
   /// @dev If spoke is `asset.feeReceiver`, includes `unrealizedFeeShares` in return value.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @return The amount of added shares.
-  function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeAddedShares(address asset, address spoke) external view returns (uint256);
 
   /// @notice Returns the amount of the specified assets owed to the Hub by the specified spoke.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @return The amount of owed drawn assets.
   /// @return The amount of owed premium assets.
-  function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256);
+  function getSpokeOwed(address asset, address spoke) external view returns (uint256, uint256);
 
   /// @notice Returns the total amount of the specified asset owed to the Hub by the specified spoke.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @return The total amount of the asset owed.
-  function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeTotalOwed(address asset, address spoke) external view returns (uint256);
 
   /// @notice Returns the amount of drawn shares of the specified asset by the specified spoke.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @return The amount of drawn shares.
-  function getSpokeDrawnShares(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeDrawnShares(address asset, address spoke) external view returns (uint256);
 
   /// @notice Returns the information regarding premium shares of the specified asset for the specified spoke.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @return The amount of premium shares.
   /// @return The premium offset.
   /// @return The realized premium.
   function getSpokePremiumData(
-    uint256 assetId,
+    address asset,
     address spoke
   ) external view returns (uint256, uint256, uint256);
 
   /// @notice Returns the amount of a given spoke's deficit for the specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @return The amount of deficit.
-  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256);
+  function getSpokeDeficit(address asset, address spoke) external view returns (uint256);
 }

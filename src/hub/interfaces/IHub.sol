@@ -21,7 +21,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev drawnIndex The drawn index which monotonically increases according to the drawn rate, expressed in RAY.
   /// @dev drawnRate The rate at which drawn assets grows, expressed in RAY.
   /// @dev lastUpdateTimestamp The timestamp of the last accrual.
-  /// @dev underlying The address of the underlying asset.
   /// @dev irStrategy The address of the interest rate strategy.
   /// @dev reinvestmentController The address of the reinvestment controller.
   /// @dev feeReceiver The address of the fee receiver spoke.
@@ -46,8 +45,6 @@ interface IHub is IHubBase, IAccessManaged {
     uint120 drawnIndex;
     uint96 drawnRate;
     uint40 lastUpdateTimestamp;
-    //
-    address underlying;
     //
     address irStrategy;
     //
@@ -105,71 +102,71 @@ interface IHub is IHubBase, IAccessManaged {
   }
 
   /// @notice Emitted when an asset is added.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of the asset.
-  event AddAsset(uint256 indexed assetId, address indexed underlying, uint8 decimals);
+  event AddAsset(address indexed asset, address indexed underlying, uint8 decimals);
 
   /// @notice Emitted when an asset is updated.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param drawnIndex The new drawn index of the asset.
   /// @param drawnRate The new drawn rate of the asset.
   /// @param accruedFees The accrued fees of the asset since the last mint.
   event UpdateAsset(
-    uint256 indexed assetId,
+    address indexed asset,
     uint256 drawnIndex,
     uint256 drawnRate,
     uint256 accruedFees
   );
 
   /// @notice Emitted when an asset configuration is updated.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param config The new asset configuration struct.
-  event UpdateAssetConfig(uint256 indexed assetId, AssetConfig config);
+  event UpdateAssetConfig(address indexed asset, AssetConfig config);
 
   /// @notice Emitted when a spoke is added.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
-  event AddSpoke(uint256 indexed assetId, address indexed spoke);
+  event AddSpoke(address indexed asset, address indexed spoke);
 
   /// @notice Emitted when a spoke configuration is updated.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @param config The new spoke configuration struct.
-  event UpdateSpokeConfig(uint256 indexed assetId, address indexed spoke, SpokeConfig config);
+  event UpdateSpokeConfig(address indexed asset, address indexed spoke, SpokeConfig config);
 
   /// @notice Emitted when fees are minted to the fee receiver spoke.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param feeReceiver The address of the current fee receiver spoke.
   /// @param shares The amount of shares minted.
   /// @param assets The amount of assets used to mint the shares.
   event MintFeeShares(
-    uint256 indexed assetId,
+    address indexed asset,
     address indexed feeReceiver,
     uint256 shares,
     uint256 assets
   );
 
   /// @notice Emitted when an amount of liquidity is invested by the reinvestment controller.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param reinvestmentController The active asset controller.
   /// @param amount The amount invested.
-  event Sweep(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
+  event Sweep(address indexed asset, address indexed reinvestmentController, uint256 amount);
 
   /// @notice Emitted when an amount of liquidity is reclaimed (from swept liquidity) by the reinvestment controller.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param reinvestmentController The active asset controller.
   /// @param amount The amount reclaimed.
-  event Reclaim(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
+  event Reclaim(address indexed asset, address indexed reinvestmentController, uint256 amount);
 
   /// @notice Emitted when deficit is eliminated.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param callerSpoke The spoke that eliminated the deficit using its supplied shares.
   /// @param coveredSpoke The spoke for which the deficit was eliminated.
   /// @param shares The amount of shares removed.
   /// @param amount The amount of deficit eliminated.
   event EliminateDeficit(
-    uint256 indexed assetId,
+    address indexed asset,
     address indexed callerSpoke,
     address indexed coveredSpoke,
     uint256 shares,
@@ -246,89 +243,87 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidAmountReceived();
 
   /// @notice Adds a new asset to the Hub.
-  /// @dev The same underlying asset address can be added as an asset multiple times.
   /// @dev The fee receiver is added as a new spoke with maximum add cap and zero draw cap.
-  /// @param underlying The address of the underlying asset.
-  /// @param decimals The number of decimals of `underlying`.
+  /// @param asset The address of the asset.
+  /// @param decimals The number of decimals of `asset`.
   /// @param feeReceiver The address of the fee receiver spoke.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset encoded in bytes.
-  /// @return The unique identifier of the added asset.
   function addAsset(
-    address underlying,
+    address asset,
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
     bytes calldata irData
-  ) external returns (uint256);
+  ) external;
 
   /// @notice Updates the configuration of an asset.
   /// @dev If the fee receiver is updated, adds it as a new spoke with maximum add cap and zero draw cap, and sets old fee receiver caps to zero.
   /// @dev If the fee receiver is updated, accrued fees are minted as shares before the update if their value exceeds one share.
   /// @dev If the interest rate strategy is updated, it is configured with `irData`. Otherwise, `irData` must be empty.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param config The new configuration for the asset.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   function updateAssetConfig(
-    uint256 assetId,
+    address asset,
     AssetConfig calldata config,
     bytes calldata irData
   ) external;
 
   /// @notice Registers a new spoke for a specific asset in the Hub.
   /// @dev Reverts with `SpokeAlreadyListed` if spoke is already listed.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke to add.
   /// @param params The configuration parameters for the spoke.
-  function addSpoke(uint256 assetId, address spoke, SpokeConfig calldata params) external;
+  function addSpoke(address asset, address spoke, SpokeConfig calldata params) external;
 
   /// @notice Updates the configuration of a spoke for a specific asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke to update.
   /// @param config The new configuration for the spoke.
-  function updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig calldata config) external;
+  function updateSpokeConfig(address asset, address spoke, SpokeConfig calldata config) external;
 
   /// @notice Updates the interest rate strategy for a specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
-  function setInterestRateData(uint256 assetId, bytes calldata irData) external;
+  function setInterestRateData(address asset, bytes calldata irData) external;
 
   /// @notice Mints shares to the fee receiver from accrued fees.
   /// @dev No op when fees are worth less than one share.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The amount of shares minted.
-  function mintFeeShares(uint256 assetId) external returns (uint256);
+  function mintFeeShares(address asset) external returns (uint256);
 
   /// @notice Eliminates deficit by removing supplied shares of caller spoke.
   /// @dev Only callable by active spokes.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param amount The amount of deficit to eliminate.
   /// @param spoke The spoke for which the deficit is eliminated.
   /// @return The amount of shares removed.
   function eliminateDeficit(
-    uint256 assetId,
+    address asset,
     uint256 amount,
     address spoke
   ) external returns (uint256);
 
   /// @notice Allows a spoke to transfer its supplied shares of an asset to another spoke.
   /// @dev Only callable by spokes.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param shares The amount of shares to move.
   /// @param toSpoke The address of the recipient spoke.
-  function transferShares(uint256 assetId, uint256 shares, address toSpoke) external;
+  function transferShares(address asset, uint256 shares, address toSpoke) external;
 
   /// @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the configured reinvestment controller.
   /// @dev The controller handles the actual reinvestment of funds, redistribution of interest, and investment caps.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param amount The amount to sweep.
-  function sweep(uint256 assetId, uint256 amount) external;
+  function sweep(address asset, uint256 amount) external;
 
   /// @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment controller.
   /// @dev The controller can only reclaim up to swept amount. All accrued interest is distributed offchain.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param amount The amount to reclaim.
-  function reclaim(uint256 assetId, uint256 amount) external;
+  function reclaim(address asset, uint256 amount) external;
 
   /// @notice Returns the number of listed assets.
   /// @return The number of listed assets.
@@ -336,65 +331,62 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Returns information regarding the specified asset.
   /// @dev `drawnIndex`, `drawnRate` and `lastUpdateTimestamp` can be outdated due to passage of time.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The asset struct.
-  function getAsset(uint256 assetId) external view returns (Asset memory);
+  function getAsset(address asset) external view returns (Asset memory);
 
   /// @notice Returns the asset configuration for the specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The asset configuration struct.
-  function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory);
+  function getAssetConfig(address asset) external view returns (AssetConfig memory);
 
   /// @notice Returns the accrued fees for the asset, expressed in asset units.
   /// @dev Accrued fees are excluded from total added assets.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The amount of accrued fees.
-  function getAssetAccruedFees(uint256 assetId) external view returns (uint256);
+  function getAssetAccruedFees(address asset) external view returns (uint256);
 
   /// @notice Returns the amount of liquidity swept by the reinvestment controller for the specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The amount of liquidity swept.
-  function getAssetSwept(uint256 assetId) external view returns (uint256);
+  function getAssetSwept(address asset) external view returns (uint256);
 
   /// @notice Returns the current drawn rate for the specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The current drawn rate of the asset.
-  function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
+  function getAssetDrawnRate(address asset) external view returns (uint256);
 
   /// @notice Returns the number of spokes listed for the specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @return The number of spokes.
-  function getSpokeCount(uint256 assetId) external view returns (uint256);
+  function getSpokeCount(address asset) external view returns (uint256);
 
   /// @notice Returns whether the spoke is listed for the specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @return True if the spoke is listed.
-  function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
+  function isSpokeListed(address asset, address spoke) external view returns (bool);
 
   /// @notice Returns the address of the spoke for an asset at the given index.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param index The index of the spoke.
   /// @return The address of the spoke.
-  function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address);
+  function getSpokeAddress(address asset, uint256 index) external view returns (address);
 
   /// @notice Returns true when `underlying` is currently listed as an asset.
   function isUnderlyingListed(address underlying) external view returns (bool);
 
   /// @notice Returns the spoke data struct.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @return The spoke data struct.
-  function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory);
+  function getSpoke(address asset, address spoke) external view returns (SpokeData memory);
 
   /// @notice Returns the spoke configuration struct.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param spoke The address of the spoke.
   /// @return The spoke configuration struct.
-  function getSpokeConfig(
-    uint256 assetId,
-    address spoke
-  ) external view returns (SpokeConfig memory);
+  function getSpokeConfig(address asset, address spoke) external view returns (SpokeConfig memory);
 
   /// @notice Returns the maximum allowed number of decimals for the underlying asset.
   /// @return The maximum number of decimals (inclusive).

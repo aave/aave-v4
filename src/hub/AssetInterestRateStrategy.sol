@@ -24,8 +24,8 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @inheritdoc IAssetInterestRateStrategy
   address public immutable HUB;
 
-  /// @dev Map of assetId and their interest rate data (assetId => interestRateData)
-  mapping(uint256 assetId => InterestRateData) internal _interestRateData;
+  /// @dev Map of asset and their interest rate data (asset => interestRateData)
+  mapping(address asset => InterestRateData) internal _interestRateData;
 
   /// @dev Constructor.
   /// @param hub_ The address of the associated Hub.
@@ -35,9 +35,9 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   }
 
   /// @notice Sets the interest rate parameters for a specified asset.
-  /// @param assetId The identifier of the asset.
+  /// @param asset The address of the asset.
   /// @param data The encoded parameters containing BPS data used to configure the interest rate of the asset.
-  function setInterestRateData(uint256 assetId, bytes calldata data) external {
+  function setInterestRateData(address asset, bytes calldata data) external {
     require(HUB == msg.sender, OnlyHub());
     InterestRateData memory rateData = abi.decode(data, (InterestRateData));
     require(
@@ -52,11 +52,11 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
       InvalidMaxRate()
     );
 
-    _interestRateData[assetId] = rateData;
+    _interestRateData[asset] = rateData;
 
     emit UpdateRateData(
       HUB,
-      assetId,
+      asset,
       rateData.optimalUsageRatio,
       rateData.baseVariableBorrowRate,
       rateData.variableRateSlope1,
@@ -65,48 +65,48 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory) {
-    return _interestRateData[assetId];
+  function getInterestRateData(address asset) external view returns (InterestRateData memory) {
+    return _interestRateData[asset];
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getOptimalUsageRatio(uint256 assetId) external view returns (uint256) {
-    return _interestRateData[assetId].optimalUsageRatio;
+  function getOptimalUsageRatio(address asset) external view returns (uint256) {
+    return _interestRateData[asset].optimalUsageRatio;
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getBaseVariableBorrowRate(uint256 assetId) external view returns (uint256) {
-    return _interestRateData[assetId].baseVariableBorrowRate;
+  function getBaseVariableBorrowRate(address asset) external view returns (uint256) {
+    return _interestRateData[asset].baseVariableBorrowRate;
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getVariableRateSlope1(uint256 assetId) external view returns (uint256) {
-    return _interestRateData[assetId].variableRateSlope1;
+  function getVariableRateSlope1(address asset) external view returns (uint256) {
+    return _interestRateData[asset].variableRateSlope1;
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getVariableRateSlope2(uint256 assetId) external view returns (uint256) {
-    return _interestRateData[assetId].variableRateSlope2;
+  function getVariableRateSlope2(address asset) external view returns (uint256) {
+    return _interestRateData[asset].variableRateSlope2;
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getMaxVariableBorrowRate(uint256 assetId) external view returns (uint256) {
+  function getMaxVariableBorrowRate(address asset) external view returns (uint256) {
     return
-      _interestRateData[assetId].baseVariableBorrowRate +
-      _interestRateData[assetId].variableRateSlope1 +
-      _interestRateData[assetId].variableRateSlope2;
+      _interestRateData[asset].baseVariableBorrowRate +
+      _interestRateData[asset].variableRateSlope1 +
+      _interestRateData[asset].variableRateSlope2;
   }
 
   /// @inheritdoc IBasicInterestRateStrategy
   function calculateInterestRate(
-    uint256 assetId,
+    address asset,
     uint256 liquidity,
     uint256 drawn,
     uint256 /* deficit */,
     uint256 swept
   ) external view returns (uint256) {
-    InterestRateData memory rateData = _interestRateData[assetId];
-    require(rateData.optimalUsageRatio > 0, InterestRateDataNotSet(assetId));
+    InterestRateData memory rateData = _interestRateData[asset];
+    require(rateData.optimalUsageRatio > 0, InterestRateDataNotSet(asset));
 
     uint256 currentVariableBorrowRateRay = rateData.baseVariableBorrowRate.bpsToRay();
     if (drawn == 0) {

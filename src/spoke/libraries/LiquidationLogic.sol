@@ -141,7 +141,7 @@ library LiquidationLogic {
     LiquidateUserParams memory params
   ) external returns (bool) {
     uint256 collateralReserveBalance = collateralReserve.hub.previewRemoveByShares(
-      collateralReserve.assetId,
+      collateralReserve.underlying,
       positions[params.user][params.collateralReserveId].suppliedShares
     );
     _validateLiquidationCall(
@@ -287,23 +287,23 @@ library LiquidationLogic {
       params.collateralReserveId
     ];
     IHubBase hub = collateralReserve.hub;
-    uint256 assetId = collateralReserve.assetId;
+    address asset = collateralReserve.underlying;
 
-    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
+    uint256 sharesToLiquidate = hub.previewRemoveByAssets(asset, params.collateralToLiquidate);
     uint120 suppliedShares = collateralPosition.suppliedShares - sharesToLiquidate.toUint120();
     collateralPosition.suppliedShares = suppliedShares;
 
     uint256 sharesToLiquidator;
     if (params.receiveShares) {
-      sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
+      sharesToLiquidator = hub.previewRemoveByAssets(asset, params.collateralToLiquidator);
       positions[params.liquidator][params.collateralReserveId].suppliedShares += sharesToLiquidator
         .toUint120();
     } else {
-      sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
+      sharesToLiquidator = hub.remove(asset, params.collateralToLiquidator, params.liquidator);
     }
 
     if (sharesToLiquidate > sharesToLiquidator) {
-      hub.payFeeShares(assetId, sharesToLiquidate.uncheckedSub(sharesToLiquidator));
+      hub.payFeeShares(asset, sharesToLiquidate.uncheckedSub(sharesToLiquidator));
     }
 
     return suppliedShares == 0;
@@ -333,7 +333,7 @@ library LiquidationLogic {
         drawnDebtToLiquidate + premiumDebtToLiquidate
       );
       uint256 drawnSharesLiquidated = debtReserve.hub.restore(
-        debtReserve.assetId,
+        debtReserve.underlying,
         drawnDebtToLiquidate,
         premiumDebtToLiquidate,
         premiumDelta

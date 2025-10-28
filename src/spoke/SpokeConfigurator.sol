@@ -72,12 +72,12 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   function addReserve(
     address spoke,
     address hub,
-    uint256 assetId,
+    address asset,
     address priceSource,
     ISpoke.ReserveConfig calldata config,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external onlyOwner returns (uint256) {
-    return ISpoke(spoke).addReserve(hub, assetId, priceSource, config, dynamicConfig);
+    return ISpoke(spoke).addReserve(hub, asset, priceSource, config, dynamicConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
