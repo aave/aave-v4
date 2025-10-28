@@ -408,7 +408,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           params.liquidator
         )
       ),
-      params.receiveShares ? 0 : 1
+      params.receiveShares || liquidationMetadata.collateralToLiquidate == 0 ? 0 : 1
     );
 
     // PayFee call is partially checked, as conversion from assets to shares might differ due to restore donation

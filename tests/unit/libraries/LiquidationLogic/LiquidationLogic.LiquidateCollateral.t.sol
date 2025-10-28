@@ -94,7 +94,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
   }
 
   // hub reverts on remove when collateralToLiquidator is 0
-  function test_liquidateCollateral_fuzz_revertsWith_InvalidAmount(
+  function test_liquidateCollateral_fuzz_CollateralToLiquidatorIsZero(
     uint256 collateralToLiquidate
   ) public {
     params.collateralToLiquidate = bound(
@@ -105,7 +105,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     params.collateralToLiquidator = 0;
     params.user = borrower;
 
-    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.expectCall(address(hub), abi.encodeWithSelector(IHubBase.remove.selector), 0);
     liquidationLogicWrapper.liquidateCollateral(params);
   }
 

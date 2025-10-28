@@ -292,12 +292,14 @@ library LiquidationLogic {
     collateralPosition.suppliedShares = suppliedShares;
 
     uint256 sharesToLiquidator;
-    if (params.receiveShares) {
-      sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
-      positions[params.liquidator][params.collateralReserveId].suppliedShares += sharesToLiquidator
-        .toUint120();
-    } else {
-      sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
+    if (params.collateralToLiquidator > 0) {
+      if (params.receiveShares) {
+        sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
+        positions[params.liquidator][params.collateralReserveId].suppliedShares += sharesToLiquidator
+          .toUint120();
+      } else {
+        sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
+      }
     }
 
     if (sharesToLiquidate > sharesToLiquidator) {
@@ -414,7 +416,7 @@ library LiquidationLogic {
       })
     );
 
-    uint256 collateralToLiquidate = debtToLiquidate.mulDivUp(
+    uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
       params.debtAssetPrice * collateralAssetUnit * liquidationBonus,
       debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
     );
@@ -440,8 +442,7 @@ library LiquidationLogic {
         .mulDivUp(
           params.collateralAssetPrice * debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
           params.debtAssetPrice * collateralAssetUnit * liquidationBonus
-        )
-        .min(params.debtReserveBalance);
+        );
     }
 
     // revert if the liquidator does not cover the necessary debt to prevent dust from remaining
