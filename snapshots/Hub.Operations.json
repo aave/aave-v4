@@ -1,15 +1,15 @@
 {
-  "add": "118313",
+  "add": "117728",
   "draw": "120582",
-  "eliminateDeficit: full": "59772",
-  "eliminateDeficit: partial": "69348",
+  "eliminateDeficit: full": "59750",
+  "eliminateDeficit: partial": "69326",
   "mintFeeShares": "82887",
   "payFee": "69103",
   "refreshPremium": "70157",
   "remove: full": "76677",
   "remove: partial": "81324",
   "reportDeficit": "112891",
-  "restore: full": "91259",
-  "restore: partial": "99873",
+  "restore: full": "90766",
+  "restore: partial": "99380",
   "transferShares": "67904"
 }

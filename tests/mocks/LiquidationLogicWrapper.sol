@@ -101,6 +101,10 @@ contract LiquidationLogicWrapper {
     _userPositions[_borrower][_debtReserveId].realizedPremium = realizedPremium.toUint120();
   }
 
+  function setDebtReserveUnderlying(address underlying) public {
+    _reserves[_debtReserveId].underlying = underlying;
+  }
+
   function setBorrowerCollateralStatus(uint256 reserveId, bool status) public {
     _positionStatuses[_borrower].setUsingAsCollateral(reserveId, status);
   }

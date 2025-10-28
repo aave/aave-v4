@@ -18,10 +18,12 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    IHub hub = IHub(address(hub));
-    approve(hub, assetId, user, amount);
+    IERC20 underlying = IERC20(IHub(address(hub)).getAsset(assetId).underlying);
     vm.prank(caller);
-    return hub.add(assetId, amount, user);
+    underlying.transferFrom(user, caller, amount);
+    approve(IHub(address(hub)), assetId, address(hub), caller, amount);
+    vm.prank(caller);
+    return hub.add(assetId, amount);
   }
 
   function draw(
@@ -53,9 +55,12 @@ library Utils {
     uint256 drawnAmount,
     address restorer
   ) internal returns (uint256) {
-    approve(IHub(address(hub)), assetId, restorer, drawnAmount);
+    IERC20 underlying = IERC20(IHub(address(hub)).getAsset(assetId).underlying);
     vm.prank(caller);
-    return hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0), restorer);
+    underlying.transferFrom(restorer, caller, drawnAmount);
+    approve(IHub(address(hub)), assetId, address(hub), caller, drawnAmount);
+    vm.prank(caller);
+    return hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0));
   }
 
   function addSpoke(
@@ -178,8 +183,12 @@ library Utils {
 
   function approve(ISpoke spoke, uint256 reserveId, address owner, uint256 amount) internal {
     IHubBase hub = spoke.getReserve(reserveId).hub;
-    (address underlying, ) = hub.getAssetUnderlyingAndDecimals(spoke.getReserve(reserveId).assetId);
-    _approve(IERC20(underlying), owner, address(hub), amount);
+    address underlying = spoke.getReserve(reserveId).underlying;
+    _approve(IERC20(underlying), owner, address(spoke), amount);
+  }
+
+  function approve(ISpoke spoke, address underlying, address owner, uint256 amount) internal {
+    _approve(IERC20(underlying), owner, address(spoke), amount);
   }
 
   function approve(
@@ -198,8 +207,15 @@ library Utils {
     );
   }
 
-  function approve(IHub hub, uint256 assetId, address owner, uint256 amount) internal {
-    _approve(IERC20(hub.getAsset(assetId).underlying), owner, address(hub), amount);
+  function approve(
+    IHub hub,
+    uint256 assetId,
+    address caller,
+    address owner,
+    uint256 amount
+  ) internal {
+    /// @dev caller is always a spoke
+    _approve(IERC20(hub.getAsset(assetId).underlying), owner, caller, amount);
   }
 
   function _approve(IERC20 underlying, address owner, address spender, uint256 amount) private {

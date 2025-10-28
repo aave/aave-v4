@@ -47,6 +47,17 @@ contract HubAddTest is HubBase {
       }),
       new bytes(0)
     );
+    spoke1.addReserve(
+      address(hub1),
+      minDecimalAssetId,
+      _deployMockPriceFeed(spoke1, 1e8),
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 20_00}),
+      ISpoke.DynamicReserveConfig({
+        collateralFactor: 78_00,
+        maxLiquidationBonus: 100_00,
+        liquidationFee: 0
+      })
+    );
     hub1.addSpoke(minDecimalAssetId, address(spoke1), spokeConfig);
     vm.stopPrank();
   }
@@ -54,30 +65,39 @@ contract HubAddTest is HubBase {
   function test_add_revertsWith_TransferFromFailed() public {
     uint256 amount = 100e18;
 
+    vm.prank(address(spoke1));
+    tokenList.dai.approve(address(spoke1), amount - 1);
+
     vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, amount, makeAddr('randomUser'));
+    hub1.add(daiAssetId, amount);
   }
 
   function test_add_fuzz_revertsWith_TransferFromFailed(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+
+    vm.prank(address(spoke1));
+    tokenList.dai.approve(address(spoke1), 0);
+
     vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, amount, makeAddr('randomUser'));
+    hub1.add(daiAssetId, amount);
   }
 
   function test_add_revertsWith_SpokePaused() public {
     _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+
     vm.expectRevert(IHub.SpokePaused.selector);
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, 100e18, alice);
+    hub1.add(daiAssetId, 100e18);
   }
 
   function test_add_revertsWith_SpokeNotActive() public {
     updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
+
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, 100e18, alice);
+    hub1.add(daiAssetId, 100e18);
   }
 
   function test_add_revertsWith_SharesDowncastOverflow() public {
@@ -87,7 +107,7 @@ contract HubAddTest is HubBase {
       abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 120, shares)
     );
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, amount, alice);
+    hub1.add(daiAssetId, amount);
   }
 
   function test_add_revertsWith_AmountDowncastOverflow() public {
@@ -111,7 +131,7 @@ contract HubAddTest is HubBase {
       abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 120, amount)
     );
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, amount, alice);
+    hub1.add(daiAssetId, amount);
   }
 
   function test_add_fuzz_revertsWith_AddCapExceeded(uint40 newAddCap) public {
@@ -120,7 +140,7 @@ contract HubAddTest is HubBase {
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals() + 1;
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, amount, alice);
+    hub1.add(daiAssetId, amount);
   }
 
   function test_add_fuzz_AddCapReachedButNotExceeded(uint40 newAddCap) public {
@@ -128,7 +148,7 @@ contract HubAddTest is HubBase {
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals();
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, amount, alice);
+    hub1.add(daiAssetId, amount);
     assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)), amount);
   }
 
@@ -157,9 +177,11 @@ contract HubAddTest is HubBase {
     vm.assume(hub1.previewAddByAssets(daiAssetId, daiAmount) < daiAmount);
 
     uint256 addAmount = hub1.previewAddByShares(daiAssetId, 1);
+    vm.prank(alice);
+    tokenList.dai.approve(address(spoke2), addAmount);
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke2));
-    hub1.add(daiAssetId, addAmount, alice); // cannot add any additional amount
+    hub1.add(daiAssetId, addAmount); // cannot add any additional amount
   }
 
   // add succeeds if cap is reached but not exceeded
@@ -228,7 +250,7 @@ contract HubAddTest is HubBase {
     );
 
     vm.prank(user);
-    underlying.approve(address(hub1), amount);
+    underlying.approve(address(spoke1), amount);
     deal(address(underlying), user, amount);
 
     uint256 shares = hub1.previewAddByAssets(assetId, amount);
@@ -238,7 +260,7 @@ contract HubAddTest is HubBase {
     emit IHubBase.Add(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
-    uint256 addedShares = hub1.add(assetId, amount, user);
+    uint256 addedShares = hub1.add(assetId, amount);
 
     // hub
     assertEq(addedShares, shares);
@@ -286,19 +308,21 @@ contract HubAddTest is HubBase {
 
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(alice, address(hub1), amount);
+
     vm.expectEmit(address(hub1));
     emit IHubBase.Add(assetId, address(spoke1), amount, amount);
 
     vm.prank(address(spoke1));
-    hub1.add(assetId, amount, alice);
+    hub1.add(assetId, amount);
 
     vm.expectEmit(address(underlying2));
     emit IERC20.Transfer(alice, address(hub1), amount2);
+
     vm.expectEmit(address(hub1));
     emit IHubBase.Add(assetId2, address(spoke2), amount2, amount2);
 
     vm.prank(address(spoke2));
-    hub1.add(assetId2, amount2, alice);
+    hub1.add(assetId2, amount2);
 
     uint256 timestamp = vm.getBlockTimestamp();
 
@@ -365,7 +389,7 @@ contract HubAddTest is HubBase {
 
     vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
-    hub1.add(assetId, amount, alice);
+    hub1.add(assetId, amount);
   }
 
   function test_add_revertsWith_InvalidShares() public {
@@ -392,7 +416,7 @@ contract HubAddTest is HubBase {
 
     vm.expectRevert(IHub.InvalidShares.selector);
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, amount, alice);
+    hub1.add(daiAssetId, amount);
   }
 
   function test_add_fuzz_revertsWith_InvalidShares_due_to_index(
@@ -424,13 +448,7 @@ contract HubAddTest is HubBase {
 
     vm.expectRevert(IHub.InvalidShares.selector);
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, addAmount, alice);
-  }
-
-  function test_add_revertsWith_InvalidAddress() public {
-    vm.expectRevert(IHub.InvalidAddress.selector);
-    vm.prank(address(spoke1));
-    hub1.add(daiAssetId, 100e18, address(hub1));
+    hub1.add(daiAssetId, addAmount);
   }
 
   function test_add_with_increased_index() public {
@@ -470,15 +488,13 @@ contract HubAddTest is HubBase {
     );
 
     vm.prank(alice);
-    tokenList.dai.approve(address(hub1), addAmount);
+    tokenList.dai.approve(address(spoke2), addAmount);
 
-    vm.expectEmit(address(tokenList.dai));
-    emit IERC20.Transfer(alice, address(hub1), addAmount);
     vm.expectEmit(address(hub1));
     emit IHubBase.Add(daiAssetId, address(spoke2), shares, addAmount);
 
     vm.prank(address(spoke2));
-    hub1.add(daiAssetId, addAmount, alice);
+    hub1.add(daiAssetId, addAmount);
 
     assertEq(
       hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),

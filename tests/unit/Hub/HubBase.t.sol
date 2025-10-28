@@ -47,6 +47,8 @@ contract HubBase is Base {
   function setUp() public virtual override {
     super.setUp();
     initEnvironment();
+    _seedSpoke(address(spoke1));
+    _seedSpoke(address(spoke2));
   }
 
   function _updateAddCap(uint256 assetId, address spoke, uint40 newAddCap) internal {
@@ -113,6 +115,10 @@ contract HubBase is Base {
       })
     );
 
+    address underlying = hub1.getAsset(assetId).underlying;
+    vm.prank(tempSpoke);
+    IERC20(underlying).approve(address(hub1), UINT256_MAX);
+
     Utils.draw(hub1, assetId, tempSpoke, tempUser, amount);
 
     if (withPremium) {
@@ -173,8 +179,11 @@ contract HubBase is Base {
     address underlying = hub1.getAsset(assetId).underlying;
     deal(underlying, tempUser, amount);
 
-    vm.prank(tempUser);
+    vm.prank(tempSpoke);
     IERC20(underlying).approve(address(hub1), UINT256_MAX);
+
+    vm.prank(tempUser);
+    IERC20(underlying).approve(tempSpoke, UINT256_MAX);
 
     vm.prank(ADMIN);
     hub1.addSpoke(

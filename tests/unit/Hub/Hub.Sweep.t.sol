@@ -73,7 +73,7 @@ contract HubSweepTest is HubBase {
     uint256 swept = vm.randomUint(1, initialLiquidity);
 
     vm.prank(address(spoke1));
-    hub1.add(daiAssetId, initialLiquidity, alice);
+    hub1.add(daiAssetId, initialLiquidity);
 
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, swept);

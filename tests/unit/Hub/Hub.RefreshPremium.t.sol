@@ -149,7 +149,7 @@ contract HubRefreshPremiumTest is HubBase {
 
   function test_refreshPremium_emitsEvent() public {
     vm.startPrank(address(spoke1));
-    hub1.add(daiAssetId, 10000e18, alice);
+    hub1.add(daiAssetId, 10000e18);
     hub1.draw(daiAssetId, 5000e18, alice);
 
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, daiAssetId);

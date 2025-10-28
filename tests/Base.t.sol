@@ -381,6 +381,13 @@ abstract contract Base is Test {
       POSITION_MANAGER
     ];
 
+    address[4] memory spokes = [
+      address(spoke1),
+      address(spoke2),
+      address(spoke3),
+      address(treasurySpoke)
+    ];
+
     for (uint256 x; x < users.length; ++x) {
       tokenList.usdx.mint(users[x], mintAmount_USDX);
       tokenList.dai.mint(users[x], mintAmount_DAI);
@@ -389,11 +396,13 @@ abstract contract Base is Test {
       deal(address(tokenList.weth), users[x], mintAmount_WETH);
 
       vm.startPrank(users[x]);
-      tokenList.weth.approve(address(hub1), UINT256_MAX);
-      tokenList.usdx.approve(address(hub1), UINT256_MAX);
-      tokenList.dai.approve(address(hub1), UINT256_MAX);
-      tokenList.wbtc.approve(address(hub1), UINT256_MAX);
-      tokenList.usdy.approve(address(hub1), UINT256_MAX);
+      for (uint256 y; y < spokes.length; ++y) {
+        tokenList.weth.approve(spokes[y], UINT256_MAX);
+        tokenList.usdx.approve(spokes[y], UINT256_MAX);
+        tokenList.dai.approve(spokes[y], UINT256_MAX);
+        tokenList.wbtc.approve(spokes[y], UINT256_MAX);
+        tokenList.usdy.approve(spokes[y], UINT256_MAX);
+      }
       vm.stopPrank();
     }
   }
@@ -2643,5 +2652,13 @@ abstract contract Base is Test {
       hub.getAddedAssets(assetId) +
       hub.getAsset(assetId).realizedFees +
       _calcUnrealizedFees(hub, assetId);
+  }
+
+  function _seedSpoke(address spokeAddress) internal {
+    tokenList.usdx.mint(address(spokeAddress), mintAmount_USDX);
+    tokenList.dai.mint(address(spokeAddress), mintAmount_DAI);
+    tokenList.wbtc.mint(address(spokeAddress), mintAmount_WBTC);
+    tokenList.usdy.mint(address(spokeAddress), mintAmount_USDY);
+    deal(address(tokenList.weth), address(spokeAddress), mintAmount_WETH);
   }
 }
