@@ -27,17 +27,16 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
-  ) external onlyOwner returns (uint256) {
+  ) external onlyOwner {
     IHub targetHub = IHub(hub);
-    uint256 assetId = targetHub.addAsset(
+    targetHub.addAsset(
       underlying,
       IERC20Metadata(underlying).decimals(),
       feeReceiver,
       irStrategy,
       irData
     );
-    _updateLiquidityFee(targetHub, assetId, liquidityFee);
-    return assetId;
+    _updateLiquidityFee(targetHub, underlying, liquidityFee);
   }
 
   /// @inheritdoc IHubConfigurator
@@ -49,104 +48,107 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
-  ) external onlyOwner returns (uint256) {
+  ) external onlyOwner {
     IHub targetHub = IHub(hub);
-    uint256 assetId = targetHub.addAsset(underlying, decimals, feeReceiver, irStrategy, irData);
-    _updateLiquidityFee(targetHub, assetId, liquidityFee);
-    return assetId;
+    targetHub.addAsset(underlying, decimals, feeReceiver, irStrategy, irData);
+    _updateLiquidityFee(targetHub, underlying, liquidityFee);
   }
 
   /// @inheritdoc IHubConfigurator
   function updateLiquidityFee(
     address hub,
-    uint256 assetId,
+    address underlying,
     uint256 liquidityFee
   ) external onlyOwner {
-    _updateLiquidityFee(IHub(hub), assetId, liquidityFee);
+    _updateLiquidityFee(IHub(hub), underlying, liquidityFee);
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateFeeReceiver(address hub, uint256 assetId, address feeReceiver) external onlyOwner {
+  function updateFeeReceiver(
+    address hub,
+    address underlying,
+    address feeReceiver
+  ) external onlyOwner {
     IHub targetHub = IHub(hub);
-    IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = targetHub.getAssetConfig(underlying);
     config.feeReceiver = feeReceiver;
-    targetHub.updateAssetConfig(assetId, config, new bytes(0));
+    targetHub.updateAssetConfig(underlying, config, new bytes(0));
   }
 
   /// @inheritdoc IHubConfigurator
   function updateFeeConfig(
     address hub,
-    uint256 assetId,
+    address underlying,
     uint256 liquidityFee,
     address feeReceiver
   ) external onlyOwner {
     IHub targetHub = IHub(hub);
-    IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = targetHub.getAssetConfig(underlying);
     config.liquidityFee = liquidityFee.toUint16();
     config.feeReceiver = feeReceiver;
-    targetHub.updateAssetConfig(assetId, config, new bytes(0));
+    targetHub.updateAssetConfig(underlying, config, new bytes(0));
   }
 
   /// @inheritdoc IHubConfigurator
   function updateInterestRateStrategy(
     address hub,
-    uint256 assetId,
+    address underlying,
     address irStrategy,
     bytes calldata irData
   ) external onlyOwner {
     IHub targetHub = IHub(hub);
-    IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = targetHub.getAssetConfig(underlying);
     config.irStrategy = irStrategy;
-    targetHub.updateAssetConfig(assetId, config, irData);
+    targetHub.updateAssetConfig(underlying, config, irData);
   }
 
   /// @inheritdoc IHubConfigurator
   function updateReinvestmentController(
     address hub,
-    uint256 assetId,
+    address underlying,
     address reinvestmentController
   ) external onlyOwner {
     IHub targetHub = IHub(hub);
-    IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = targetHub.getAssetConfig(underlying);
     config.reinvestmentController = reinvestmentController;
-    targetHub.updateAssetConfig(assetId, config, new bytes(0));
+    targetHub.updateAssetConfig(underlying, config, new bytes(0));
   }
 
   /// @inheritdoc IHubConfigurator
-  function freezeAsset(address hub, uint256 assetId) external onlyOwner {
+  function freezeAsset(address hub, address underlying) external onlyOwner {
     IHub targetHub = IHub(hub);
-    uint256 spokesCount = targetHub.getSpokeCount(assetId);
+    uint256 spokesCount = targetHub.getSpokeCount(underlying);
 
     for (uint256 i = 0; i < spokesCount; ++i) {
-      address spoke = targetHub.getSpokeAddress(assetId, i);
-      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+      address spoke = targetHub.getSpokeAddress(underlying, i);
+      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(underlying, spoke);
       config.addCap = 0;
       config.drawCap = 0;
-      targetHub.updateSpokeConfig(assetId, spoke, config);
+      targetHub.updateSpokeConfig(underlying, spoke, config);
     }
   }
 
   /// @inheritdoc IHubConfigurator
-  function deactivateAsset(address hub, uint256 assetId) external onlyOwner {
+  function deactivateAsset(address hub, address underlying) external onlyOwner {
     IHub targetHub = IHub(hub);
-    uint256 spokesCount = targetHub.getSpokeCount(assetId);
+    uint256 spokesCount = targetHub.getSpokeCount(underlying);
     for (uint256 i = 0; i < spokesCount; ++i) {
-      address spoke = targetHub.getSpokeAddress(assetId, i);
-      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+      address spoke = targetHub.getSpokeAddress(underlying, i);
+      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(underlying, spoke);
       config.active = false;
-      targetHub.updateSpokeConfig(assetId, spoke, config);
+      targetHub.updateSpokeConfig(underlying, spoke, config);
     }
   }
 
   /// @inheritdoc IHubConfigurator
-  function pauseAsset(address hub, uint256 assetId) external onlyOwner {
+  function pauseAsset(address hub, address underlying) external onlyOwner {
     IHub targetHub = IHub(hub);
-    uint256 spokesCount = targetHub.getSpokeCount(assetId);
+    uint256 spokesCount = targetHub.getSpokeCount(underlying);
     for (uint256 i = 0; i < spokesCount; ++i) {
-      address spoke = targetHub.getSpokeAddress(assetId, i);
-      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+      address spoke = targetHub.getSpokeAddress(underlying, i);
+      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(underlying, spoke);
       config.paused = true;
-      targetHub.updateSpokeConfig(assetId, spoke, config);
+      targetHub.updateSpokeConfig(underlying, spoke, config);
     }
   }
 
@@ -154,168 +156,169 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   function addSpoke(
     address hub,
     address spoke,
-    uint256 assetId,
+    address underlying,
     IHub.SpokeConfig calldata config
   ) external onlyOwner {
-    IHub(hub).addSpoke(assetId, spoke, config);
+    IHub(hub).addSpoke(underlying, spoke, config);
   }
 
   /// @inheritdoc IHubConfigurator
   function addSpokeToAssets(
     address hub,
     address spoke,
-    uint256[] calldata assetIds,
+    uint256[] calldata underlyings,
     IHub.SpokeConfig[] calldata configs
   ) external onlyOwner {
-    uint256 assetCount = assetIds.length;
+    uint256 assetCount = underlyings.length;
     require(assetCount == configs.length, MismatchedConfigs());
-    for (uint256 i = 0; i < assetCount; ++i) {
-      IHub(hub).addSpoke(assetIds[i], spoke, configs[i]);
-    }
+    // for (uint256 i = 0; i < assetCount; ++i) {
+    //   IHub(hub).addSpoke(underlyings[i], spoke, configs[i]);
+    // }
   }
 
   /// @inheritdoc IHubConfigurator
   function updateSpokeActive(
     address hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     bool active
   ) external onlyOwner {
     IHub targetHub = IHub(hub);
-    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(underlying, spoke);
     config.active = active;
-    targetHub.updateSpokeConfig(assetId, spoke, config);
+    targetHub.updateSpokeConfig(underlying, spoke, config);
   }
 
   /// @inheritdoc IHubConfigurator
   function updateSpokePaused(
     address hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     bool paused
   ) external onlyOwner {
     IHub targetHub = IHub(hub);
-    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(underlying, spoke);
     config.paused = paused;
-    targetHub.updateSpokeConfig(assetId, spoke, config);
+    targetHub.updateSpokeConfig(underlying, spoke, config);
   }
 
   /// @inheritdoc IHubConfigurator
   function updateSpokeSupplyCap(
     address hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     uint256 addCap
   ) external onlyOwner {
     IHub targetHub = IHub(hub);
-    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(underlying, spoke);
     config.addCap = addCap.toUint40();
-    targetHub.updateSpokeConfig(assetId, spoke, config);
+    targetHub.updateSpokeConfig(underlying, spoke, config);
   }
 
   /// @inheritdoc IHubConfigurator
   function updateSpokeDrawCap(
     address hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     uint256 drawCap
   ) external onlyOwner {
     IHub targetHub = IHub(hub);
-    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(underlying, spoke);
     config.drawCap = drawCap.toUint40();
-    targetHub.updateSpokeConfig(assetId, spoke, config);
+    targetHub.updateSpokeConfig(underlying, spoke, config);
   }
 
   /// @inheritdoc IHubConfigurator
   function updateSpokeRiskPremiumThreshold(
     address hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     uint256 riskPremiumThreshold
   ) external onlyOwner {
     IHub targetHub = IHub(hub);
-    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(underlying, spoke);
     config.riskPremiumThreshold = riskPremiumThreshold.toUint24();
-    targetHub.updateSpokeConfig(assetId, spoke, config);
+    targetHub.updateSpokeConfig(underlying, spoke, config);
   }
 
   /// @inheritdoc IHubConfigurator
   function updateSpokeCaps(
     address hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     uint256 addCap,
     uint256 drawCap
   ) external onlyOwner {
-    _updateSpokeCaps(IHub(hub), assetId, spoke, addCap, drawCap);
+    _updateSpokeCaps(IHub(hub), underlying, spoke, addCap, drawCap);
   }
 
   /// @inheritdoc IHubConfigurator
   function deactivateSpoke(address hub, address spoke) external onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
-    for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
-      if (targetHub.isSpokeListed(assetId, spoke)) {
-        IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-        config.active = false;
-        targetHub.updateSpokeConfig(assetId, spoke, config);
-      }
-    }
+    // todo fix
+    // for (address underlying = 0; underlying < assetCount; ++underlying) {
+    //   if (targetHub.isSpokeListed(underlying, spoke)) {
+    //     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(underlying, spoke);
+    //     config.active = false;
+    //     targetHub.updateSpokeConfig(underlying, spoke, config);
+    //   }
+    // }
   }
 
   /// @inheritdoc IHubConfigurator
   function pauseSpoke(address hub, address spoke) external onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
-    for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
-      if (targetHub.isSpokeListed(assetId, spoke)) {
-        IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-        config.paused = true;
-        targetHub.updateSpokeConfig(assetId, spoke, config);
-      }
-    }
+    // for (address underlying = 0; underlying < assetCount; ++underlying) {
+    //   if (targetHub.isSpokeListed(underlying, spoke)) {
+    //     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(underlying, spoke);
+    //     config.paused = true;
+    //     targetHub.updateSpokeConfig(underlying, spoke, config);
+    //   }
+    // }
   }
 
   /// @inheritdoc IHubConfigurator
   function freezeSpoke(address hub, address spoke) external onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
-    for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
-      if (targetHub.isSpokeListed(assetId, spoke)) {
-        IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-        config.addCap = 0;
-        config.drawCap = 0;
-        targetHub.updateSpokeConfig(assetId, spoke, config);
-      }
-    }
+    // for (address underlying = 0; underlying < assetCount; ++underlying) {
+    //   if (targetHub.isSpokeListed(underlying, spoke)) {
+    //     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(underlying, spoke);
+    //     config.addCap = 0;
+    //     config.drawCap = 0;
+    //     targetHub.updateSpokeConfig(underlying, spoke, config);
+    //   }
+    // }
   }
 
   /// @inheritdoc IHubConfigurator
   function updateInterestRateData(
     address hub,
-    uint256 assetId,
+    address underlying,
     bytes calldata irData
   ) external onlyOwner {
-    IHub(hub).setInterestRateData(assetId, irData);
+    IHub(hub).setInterestRateData(underlying, irData);
   }
 
   /// @dev Updates spoke caps without changing the active flag.
   function _updateSpokeCaps(
     IHub hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     uint256 addCap,
     uint256 drawCap
   ) internal {
-    IHub.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory config = hub.getSpokeConfig(underlying, spoke);
     config.addCap = addCap.toUint40();
     config.drawCap = drawCap.toUint40();
-    hub.updateSpokeConfig(assetId, spoke, config);
+    hub.updateSpokeConfig(underlying, spoke, config);
   }
 
-  function _updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal {
-    IHub.AssetConfig memory config = hub.getAssetConfig(assetId);
+  function _updateLiquidityFee(IHub hub, address underlying, uint256 liquidityFee) internal {
+    IHub.AssetConfig memory config = hub.getAssetConfig(underlying);
     config.liquidityFee = liquidityFee.toUint16();
-    hub.updateAssetConfig(assetId, config, new bytes(0));
+    hub.updateAssetConfig(underlying, config, new bytes(0));
   }
 }

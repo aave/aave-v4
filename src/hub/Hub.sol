@@ -104,7 +104,7 @@ contract Hub is IHub, AccessManaged {
     _underlyingSet.add(underlying);
     _addFeeReceiver(underlying, feeReceiver);
 
-    emit AddAsset(underlying, underlying, decimals);
+    emit AddAsset(underlying, decimals);
     emit UpdateAssetConfig(
       underlying,
       AssetConfig({
@@ -115,8 +115,6 @@ contract Hub is IHub, AccessManaged {
       })
     );
     emit UpdateAsset(underlying, drawnIndex, drawnRate, 0);
-
-    return underlying;
   }
 
   /// @inheritdoc IHub
@@ -167,7 +165,6 @@ contract Hub is IHub, AccessManaged {
     address spoke,
     SpokeConfig calldata config
   ) external restricted {
-    require(underlying < _assetCount, AssetNotListed());
     require(spoke != address(0), InvalidAddress());
     _addSpoke(underlying, spoke);
     _updateSpokeConfig(underlying, spoke, config);
@@ -179,26 +176,24 @@ contract Hub is IHub, AccessManaged {
     address spoke,
     SpokeConfig calldata config
   ) external restricted {
-    require(underlying < _assetCount, AssetNotListed());
     require(_assetToSpokes[underlying].contains(spoke), SpokeNotListed());
     _updateSpokeConfig(underlying, spoke, config);
   }
 
   /// @inheritdoc IHub
-  function setInterestRateData(uint256 assetId, bytes calldata irData) external restricted {
-    require(assetId < _assetCount, AssetNotListed());
-    Asset storage asset = _assets[assetId];
+  function setInterestRateData(address underlying, bytes calldata irData) external restricted {
+    Asset storage asset = _assets[underlying];
     asset.accrue();
-    IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, irData);
-    asset.updateDrawnRate(assetId);
+    IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(underlying, irData);
+    asset.updateDrawnRate(underlying);
   }
 
   /// @inheritdoc IHub
-  function mintFeeShares(uint256 assetId) external restricted returns (uint256) {
-    Asset storage asset = _assets[assetId];
+  function mintFeeShares(address underlying) external restricted returns (uint256) {
+    Asset storage asset = _assets[underlying];
     asset.accrue();
-    uint256 feeShares = _mintFeeShares(asset, assetId);
-    asset.updateDrawnRate(assetId);
+    uint256 feeShares = _mintFeeShares(asset, underlying);
+    asset.updateDrawnRate(underlying);
     return feeShares;
   }
 
@@ -416,7 +411,6 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function sweep(address underlying, uint256 amount) external {
-    require(underlying < _assetCount, AssetNotListed());
     Asset storage asset = _assets[underlying];
 
     asset.accrue();
@@ -425,8 +419,8 @@ contract Hub is IHub, AccessManaged {
     uint256 liquidity = asset.liquidity;
     require(amount <= liquidity, InsufficientLiquidity(liquidity));
 
-    asset.liquidity = liquidity.uncheckedSub(amount).toUint128();
-    asset.swept += amount.toUint128();
+    asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
+    asset.swept += amount.toUint120();
     asset.updateDrawnRate(underlying);
 
     asset.underlying.safeTransfer(msg.sender, amount);
@@ -436,14 +430,13 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function reclaim(address underlying, uint256 amount) external {
-    require(underlying < _assetCount, AssetNotListed());
     Asset storage asset = _assets[underlying];
 
-    asset.accrue(_spokes, underlying);
+    asset.accrue();
     _validateReclaim(asset, msg.sender, amount);
 
-    asset.liquidity += amount.toUint128();
-    asset.swept -= amount.toUint128();
+    asset.liquidity += amount.toUint120();
+    asset.swept -= amount.toUint120();
     asset.updateDrawnRate(underlying);
 
     asset.underlying.safeTransferFrom(msg.sender, address(this), amount);
@@ -773,7 +766,7 @@ contract Hub is IHub, AccessManaged {
     );
   }
 
-  function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
+  function _mintFeeShares(Asset storage asset, address underlying) internal returns (uint256) {
     uint256 fees = asset.realizedFees;
     uint120 shares = asset.toAddedSharesDown(fees).toUint120();
     if (shares == 0) {
@@ -781,13 +774,13 @@ contract Hub is IHub, AccessManaged {
     }
 
     address feeReceiver = asset.feeReceiver;
-    SpokeData storage feeReceiverSpoke = _spokes[assetId][feeReceiver];
+    SpokeData storage feeReceiverSpoke = _spokes[underlying][feeReceiver];
     require(feeReceiverSpoke.active, SpokeNotActive());
 
     asset.addedShares += shares;
     feeReceiverSpoke.addedShares += shares;
     asset.realizedFees = 0;
-    emit MintFeeShares(assetId, feeReceiver, shares, fees);
+    emit MintFeeShares(underlying, feeReceiver, shares, fees);
 
     return shares;
   }

@@ -51,7 +51,7 @@ interface ISpokeConfigurator {
   function addReserve(
     address spoke,
     address hub,
-    uint256 assetId,
+    address underlying,
     address priceSource,
     ISpoke.ReserveConfig calldata config,
     ISpoke.DynamicReserveConfig calldata dynamicConfig

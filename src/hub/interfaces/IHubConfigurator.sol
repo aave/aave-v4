@@ -20,7 +20,6 @@ interface IHubConfigurator {
   /// @param liquidityFee The liquidity fee of the asset, in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
-  /// @return The unique identifier of the added asset.
   function addAsset(
     address hub,
     address underlying,
@@ -28,7 +27,7 @@ interface IHubConfigurator {
     uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
-  ) external returns (uint256);
+  ) external;
 
   /// @notice Adds a new asset to the Hub.
   /// @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
@@ -40,7 +39,6 @@ interface IHubConfigurator {
   /// @param liquidityFee The liquidity fee of the asset, in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
-  /// @return The unique identifier of the added asset.
   function addAsset(
     address hub,
     address underlying,
@@ -49,20 +47,20 @@ interface IHubConfigurator {
     uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
-  ) external returns (uint256);
+  ) external;
 
   /// @notice Updates the liquidity fee of an asset.
   /// @param hub The address of the Hub contract.
   /// @param underlying The identifier of the asset.
   /// @param liquidityFee The new liquidity fee.
-  function updateLiquidityFee(address hub, uint256 assetId, uint256 liquidityFee) external;
+  function updateLiquidityFee(address hub, address underlying, uint256 liquidityFee) external;
 
   /// @notice Updates the fee receiver of an asset.
   /// @dev The fee receiver cannot be zero.
   /// @param hub The address of the Hub contract.
   /// @param underlying The identifier of the asset.
   /// @param feeReceiver The new fee receiver.
-  function updateFeeReceiver(address hub, uint256 assetId, address feeReceiver) external;
+  function updateFeeReceiver(address hub, address underlying, address feeReceiver) external;
 
   /// @notice Updates the liquidity fee and fee receiver of an asset.
   /// @dev The fee receiver cannot be zero.
@@ -72,7 +70,7 @@ interface IHubConfigurator {
   /// @param feeReceiver The new fee receiver.
   function updateFeeConfig(
     address hub,
-    uint256 assetId,
+    address underlying,
     uint256 liquidityFee,
     address feeReceiver
   ) external;
@@ -84,7 +82,7 @@ interface IHubConfigurator {
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   function updateInterestRateStrategy(
     address hub,
-    uint256 assetId,
+    address underlying,
     address irStrategy,
     bytes calldata irData
   ) external;
@@ -95,34 +93,34 @@ interface IHubConfigurator {
   /// @param reinvestmentController The new reinvestment controller.
   function updateReinvestmentController(
     address hub,
-    uint256 assetId,
+    address underlying,
     address reinvestmentController
   ) external;
 
   /// @notice Freezes an asset.
   /// @param hub The address of the Hub contract.
   /// @param underlying The identifier of the asset.
-  function freezeAsset(address hub, uint256 assetId) external;
+  function freezeAsset(address hub, address underlying) external;
 
   /// @notice Deactivates an asset.
   /// @param hub The address of the Hub contract.
   /// @param underlying The identifier of the asset.
-  function deactivateAsset(address hub, uint256 assetId) external;
+  function deactivateAsset(address hub, address underlying) external;
 
   /// @notice Pauses an asset.
   /// @param hub The address of the Hub contract.
   /// @param underlying The identifier of the asset.
-  function pauseAsset(address hub, uint256 assetId) external;
+  function pauseAsset(address hub, address underlying) external;
 
   /// @notice Register the spoke for the specified asset in the Hub.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset to register the spoke for.
+  /// @param underlying The identifier of the asset.
   /// @param spoke The address of the Spoke contract.
   /// @param config The Spoke configuration to register.
   function addSpoke(
     address hub,
     address spoke,
-    uint256 assetId,
+    address underlying,
     IHub.SpokeConfig calldata config
   ) external;
 
@@ -144,14 +142,14 @@ interface IHubConfigurator {
   /// @param underlying The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @param active The new active flag.
-  function updateSpokeActive(address hub, uint256 assetId, address spoke, bool active) external;
+  function updateSpokeActive(address hub, address underlying, address spoke, bool active) external;
 
   /// @notice Updates the paused flag of an asset's spoke.
   /// @param hub The address of the Hub contract.
   /// @param underlying The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @param paused The new paused flag.
-  function updateSpokePaused(address hub, uint256 assetId, address spoke, bool paused) external;
+  function updateSpokePaused(address hub, address underlying, address spoke, bool paused) external;
 
   /// @notice Updates the supply cap of an asset's spoke.
   /// @param hub The address of the Hub contract.
@@ -160,7 +158,7 @@ interface IHubConfigurator {
   /// @param addCap The new supply cap.
   function updateSpokeSupplyCap(
     address hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     uint256 addCap
   ) external;
@@ -172,7 +170,7 @@ interface IHubConfigurator {
   /// @param drawCap The new draw cap.
   function updateSpokeDrawCap(
     address hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     uint256 drawCap
   ) external;
@@ -184,7 +182,7 @@ interface IHubConfigurator {
   /// @param riskPremiumThreshold The new risk premium threshold.
   function updateSpokeRiskPremiumThreshold(
     address hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     uint256 riskPremiumThreshold
   ) external;
@@ -197,7 +195,7 @@ interface IHubConfigurator {
   /// @param drawCap The new draw cap.
   function updateSpokeCaps(
     address hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     uint256 addCap,
     uint256 drawCap
@@ -222,5 +220,5 @@ interface IHubConfigurator {
   /// @param hub The address of the Hub contract.
   /// @param underlying The identifier of the asset.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
-  function updateInterestRateData(address hub, uint256 assetId, bytes calldata irData) external;
+  function updateInterestRateData(address hub, address underlying, bytes calldata irData) external;
 }

@@ -15,7 +15,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Reserve level data.
   /// @dev underlying The address of the underlying asset.
   /// @dev hub The address of the associated Hub.
-  /// @dev assetId The identifier of the asset in the Hub.
   /// @dev decimals The number of decimals of the underlying asset.
   /// @dev dynamicConfigKey The key of the last reserve dynamic config.
   /// @dev paused True if all actions are prevented for the reserve.
@@ -26,7 +25,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     address underlying;
     //
     IHubBase hub;
-    uint16 assetId;
     uint8 decimals;
     uint16 dynamicConfigKey;
     bool paused;
@@ -296,14 +294,14 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev Allowed even if the `active` flag is `false`.
   /// @dev Allowed even if the spoke has been added but the `addCap` is zero.
   /// @param hub The address of the Hub where the asset is listed.
-  /// @param assetId The identifier of the asset in the Hub.
+  /// @param underlying The identifier of the asset in the Hub.
   /// @param priceSource The address of the price source for the asset.
   /// @param config The initial reserve configuration.
   /// @param dynamicConfig The initial dynamic reserve configuration.
   /// @return The identifier of the newly added reserve.
   function addReserve(
     address hub,
-    uint256 assetId,
+    address underlying,
     address priceSource,
     ReserveConfig calldata config,
     DynamicReserveConfig calldata dynamicConfig

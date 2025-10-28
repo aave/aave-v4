@@ -35,9 +35,9 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
     uint256 amount,
     address
   ) external onlyOwner returns (uint256, uint256) {
-    (address underlying, ) = HUB.getAssetUnderlyingAndDecimals(reserveId);
+    (address underlying, ) = HUB.getAssetUnderlyingAndDecimals(address(0));
     underlying.safeTransferFrom(msg.sender, address(HUB), amount);
-    uint256 shares = HUB.add(reserveId, amount);
+    uint256 shares = HUB.add(address(0), amount);
 
     return (shares, amount);
   }
@@ -51,9 +51,9 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
     // if amount to withdraw is greater than total supplied, withdraw all supplied assets
     uint256 withdrawnAmount = MathUtils.min(
       amount,
-      HUB.getSpokeAddedAssets(reserveId, address(this))
+      HUB.getSpokeAddedAssets(address(0), address(this))
     );
-    uint256 withdrawnShares = HUB.remove(reserveId, withdrawnAmount, msg.sender);
+    uint256 withdrawnShares = HUB.remove(address(0), withdrawnAmount, msg.sender);
 
     return (withdrawnShares, withdrawnAmount);
   }
@@ -65,12 +65,12 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
 
   /// @inheritdoc ITreasurySpoke
   function getSuppliedAmount(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeAddedAssets(reserveId, address(this));
+    return HUB.getSpokeAddedAssets(address(0), address(this));
   }
 
   /// @inheritdoc ITreasurySpoke
   function getSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeAddedShares(reserveId, address(this));
+    return HUB.getSpokeAddedShares(address(0), address(this));
   }
 
   /// @inheritdoc ISpokeBase
@@ -96,12 +96,14 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
 
   /// @inheritdoc ISpokeBase
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeAddedAssets(reserveId, address(this));
+    // todo
+    return HUB.getSpokeAddedAssets(address(0), address(this));
   }
 
   /// @inheritdoc ISpokeBase
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeAddedShares(reserveId, address(this));
+    // todo
+    return HUB.getSpokeAddedShares(address(0), address(this));
   }
 
   /// @inheritdoc ISpokeBase

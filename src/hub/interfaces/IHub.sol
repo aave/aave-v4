@@ -252,14 +252,13 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param feeReceiver The address of the fee receiver spoke.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset encoded in bytes.
-  /// @return The unique identifier of the added asset.
   function addAsset(
     address underlying,
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
     bytes calldata irData
-  ) external returns (uint256);
+  ) external;
 
   /// @notice Updates the configuration of an asset.
   /// @dev If the fee receiver is updated, adds it as a new spoke with maximum add cap and zero draw cap, and sets old fee receiver caps to zero.
@@ -298,9 +297,9 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Mints shares to the fee receiver from accrued fees.
   /// @dev No op when fees are worth less than one share.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @return The amount of shares minted.
-  function mintFeeShares(uint256 assetId) external returns (uint256);
+  function mintFeeShares(address underlying) external returns (uint256);
 
   /// @notice Eliminates deficit by removing supplied shares of caller spoke.
   /// @dev Only callable by active spokes.
@@ -350,9 +349,9 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Returns the accrued fees for the asset, expressed in asset units.
   /// @dev Accrued fees are excluded from total added assets.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The identifier of the asset.
   /// @return The amount of accrued fees.
-  function getAssetAccruedFees(uint256 assetId) external view returns (uint256);
+  function getAssetAccruedFees(address underlying) external view returns (uint256);
 
   /// @notice Returns the amount of liquidity swept by the reinvestment controller for the specified asset.
   /// @param underlying The identifier of the asset.
