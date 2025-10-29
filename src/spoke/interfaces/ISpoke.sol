@@ -28,7 +28,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     IHubBase hub;
     uint16 assetId;
     uint8 decimals;
-    uint16 dynamicConfigKey;
+    uint24 dynamicConfigKey;
     bool paused;
     bool frozen;
     bool borrowable;
@@ -78,7 +78,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint120 premiumOffset;
     //
     uint120 suppliedShares;
-    uint16 dynamicConfigKey;
+    uint24 dynamicConfigKey;
   }
 
   /// @notice Position manager configuration data.
@@ -144,7 +144,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param config The dynamic reserve config.
   event AddDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint16 indexed dynamicConfigKey,
+    uint24 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -154,7 +154,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param config The dynamic reserve config.
   event UpdateDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint16 indexed dynamicConfigKey,
+    uint24 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -332,7 +332,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   function addDynamicReserveConfig(
     uint256 reserveId,
     DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint16 dynamicConfigKey);
+  ) external returns (uint24 dynamicConfigKey);
 
   /// @notice Updates the dynamic reserve config for a given reserve at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -343,7 +343,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param dynamicConfig The new dynamic reserve config.
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
   ) external;
 
@@ -448,7 +448,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param dynamicConfigKey The key of the dynamic config.
   function getDynamicReserveConfig(
     uint256 reserveId,
-    uint16 dynamicConfigKey
+    uint24 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory);
 
   /// @notice Returns true if the reserve is set as collateral for the user.

@@ -105,7 +105,7 @@ contract MockSpoke is Spoke, Test {
     return _positionStatus[user].hasPositiveRiskPremium;
   }
 
-  function setReserveDynamicConfigKey(uint256 reserveId, uint16 configKey) external {
+  function setReserveDynamicConfigKey(uint256 reserveId, uint24 configKey) external {
     _reserves[reserveId].dynamicConfigKey = configKey;
   }
 }
