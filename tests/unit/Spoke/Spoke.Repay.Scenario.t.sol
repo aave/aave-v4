@@ -1008,6 +1008,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         bob,
         bob,
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+        action1.repayAmount,
         expectedPremiumDelta
       );
     }
@@ -1115,6 +1116,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         bob,
         bob,
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+        action2.repayAmount,
         expectedPremiumDelta
       );
     }
@@ -1213,6 +1215,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       bob,
       bob,
       hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+      baseRestored + premiumRestored,
       expectedPremiumDelta
     );
 
@@ -1276,6 +1279,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       bob,
       bob,
       hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+      baseRestored + premiumRestored,
       expectedPremiumDelta
     );
 
