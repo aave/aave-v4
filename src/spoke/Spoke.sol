@@ -335,8 +335,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 debtToCover,
     bool receiveShares
   ) external {
-    Reserve storage collateralReserve = _reserves[collateralReserveId];
-    Reserve storage debtReserve = _reserves[debtReserveId];
+    Reserve storage collateralReserve = _getReserve(collateralReserveId);
+    Reserve storage debtReserve = _getReserve(debtReserveId);
     DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
       _userPositions[user][collateralReserveId].dynamicConfigKey
     ];
@@ -389,7 +389,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bool usingAsCollateral,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    _validateSetUsingAsCollateral(_reserves[reserveId], usingAsCollateral);
+    _validateSetUsingAsCollateral(_getReserve(reserveId), usingAsCollateral);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
     // no op also ensures only new collateral is enabled and refreshed without health factor check
@@ -936,7 +936,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     Reserve storage reserve,
     bool usingAsCollateral
   ) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     // can disable as collateral if the reserve is frozen
     require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());

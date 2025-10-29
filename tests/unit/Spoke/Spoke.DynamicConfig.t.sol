@@ -89,7 +89,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     uint256 reserveId = _randomReserveId(spoke1);
     ISpoke.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
 
-    for(uint256 i = 0; i < type(uint16).max; ++i) {
+    for (uint256 i = 0; i < type(uint16).max; ++i) {
       vm.prank(SPOKE_ADMIN);
       spoke1.addDynamicReserveConfig(reserveId, dynConf);
     }
