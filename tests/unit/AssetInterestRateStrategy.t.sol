@@ -156,10 +156,7 @@ contract AssetInterestRateStrategyTest is Base {
   function test_calculateInterestRate_revertsWith_InterestRateDataNotSet() public {
     address mockAsset2 = makeAddr('mockAsset2');
     vm.expectRevert(
-      abi.encodeWithSelector(
-        IBasicInterestRateStrategy.InterestRateDataNotSet.selector,
-        mockAsset2
-      )
+      abi.encodeWithSelector(IBasicInterestRateStrategy.InterestRateDataNotSet.selector, mockAsset2)
     );
     rateStrategy.calculateInterestRate({
       asset: mockAsset2,

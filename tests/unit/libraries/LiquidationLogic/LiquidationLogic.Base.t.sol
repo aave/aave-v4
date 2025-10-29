@@ -12,7 +12,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
   LiquidationLogicWrapper public liquidationLogicWrapper;
 
-  /*function setUp() public virtual override {
+  function setUp() public virtual override {
     super.setUp();
     liquidationLogicWrapper = new LiquidationLogicWrapper(
       makeAddr('borrower'),
@@ -241,5 +241,5 @@ contract LiquidationLogicBaseTest is SpokeBase {
       exp++;
     }
     return exp;
-  }*/
+  }
 }

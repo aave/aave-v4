@@ -131,7 +131,13 @@ contract HubAccrueInterestTest is Base {
     );
 
     // Full repayment, so back to zero debt
-    Utils.restoreDrawn(hub1, address(tokenList.dai), address(spoke1), borrowAmount + interest, address(spoke1));
+    Utils.restoreDrawn(
+      hub1,
+      address(tokenList.dai),
+      address(spoke1),
+      borrowAmount + interest,
+      address(spoke1)
+    );
 
     assertEq(expectedDrawnIndex2, expectedDrawnIndex1, 'expectedDrawnIndex');
     assertEq(expectedDrawnDebt2, expectedDrawnDebt1, 'expectedDrawnDebt');

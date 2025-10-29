@@ -88,7 +88,10 @@ contract MockSpoke is Spoke, Test {
         .randomUint(1, 100e18)
         .toUint120();
       _userPositions[user][info.debtReserveIds[i]].premiumShares =
-        reserve.hub.previewAddByAssets(reserve.underlying, info.accruedPremiumAmounts[i]).toUint120() +
+        reserve
+          .hub
+          .previewAddByAssets(reserve.underlying, info.accruedPremiumAmounts[i])
+          .toUint120() +
         _userPositions[user][info.debtReserveIds[i]].premiumOffset;
     }
   }

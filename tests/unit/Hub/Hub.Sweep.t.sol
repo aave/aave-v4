@@ -107,13 +107,14 @@ contract HubSweepTest is HubBase {
     assertHubLiquidity(hub1, address(tokenList.dai), 'sweep');
     (uint256 drawn, ) = hub1.getAssetOwed(address(tokenList.dai));
     assertEq(
-      IBasicInterestRateStrategy(hub1.getAsset(address(tokenList.dai)).irStrategy).calculateInterestRate({
-        asset: address(tokenList.dai),
-        liquidity: supplyAmount - drawAmount - swept,
-        drawn: drawn,
-        deficit: vm.randomUint(), // ignored
-        swept: swept
-      }),
+      IBasicInterestRateStrategy(hub1.getAsset(address(tokenList.dai)).irStrategy)
+        .calculateInterestRate({
+          asset: address(tokenList.dai),
+          liquidity: supplyAmount - drawAmount - swept,
+          drawn: drawn,
+          deficit: vm.randomUint(), // ignored
+          swept: swept
+        }),
       drawnRate
     );
     assertEq(hub1.getAssetLiquidity(address(tokenList.dai)), supplyAmount - drawAmount - swept);

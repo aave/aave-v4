@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
-  /*function test_supplyWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
+  function test_supplyWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
     EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpAfterRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
@@ -289,5 +289,5 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     );
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);
-  }*/
+  }
 }

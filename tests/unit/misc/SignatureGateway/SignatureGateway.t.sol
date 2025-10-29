@@ -7,7 +7,7 @@ import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 contract SignatureGatewayTest is SignatureGatewayBaseTest {
   using SafeCast for *;
 
-  /*function setUp() public virtual override {
+  function setUp() public virtual override {
     super.setUp();
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(gateway), true);
@@ -56,7 +56,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
 
     uint256 shares = _hub(spoke1, p.reserveId).previewAddByAssets(
-      _assetId(spoke1, p.reserveId),
+      _underlying(spoke1, p.reserveId),
       p.amount
     );
 
@@ -83,7 +83,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     Utils.supply(spoke1, p.reserveId, alice, p.amount + 1, alice);
 
     uint256 shares = _hub(spoke1, p.reserveId).previewRemoveByAssets(
-      _assetId(spoke1, p.reserveId),
+      _underlying(spoke1, p.reserveId),
       p.amount
     );
     TestReturnValues memory returnValues;
@@ -110,7 +110,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     uint256 shares = _hub(spoke1, p.reserveId).previewDrawByAssets(
-      _assetId(spoke1, p.reserveId),
+      _underlying(spoke1, p.reserveId),
       p.amount
     );
     TestReturnValues memory returnValues;
@@ -145,7 +145,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       p.amount
     );
     uint256 shares = _hub(spoke1, p.reserveId).previewRestoreByAssets(
-      _assetId(spoke1, p.reserveId),
+      _underlying(spoke1, p.reserveId),
       baseRestored
     );
     TestReturnValues memory returnValues;
@@ -250,5 +250,5 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     _assertNonceIncrement(ISignatureGateway(address(spoke1)), alice, p.nonce); // note: nonce consumed on spoke
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     _assertGatewayHasNoActivePosition(spoke1, gateway);
-  }*/
+  }
 }

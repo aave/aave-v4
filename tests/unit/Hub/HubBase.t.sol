@@ -88,12 +88,7 @@ contract HubBase is Base {
   }
 
   /// @dev Draws liquidity from the Hub via a random spoke
-  function _drawLiquidity(
-    address asset,
-    uint256 amount,
-    bool withPremium,
-    bool skipTime
-  ) internal {
+  function _drawLiquidity(address asset, uint256 amount, bool withPremium, bool skipTime) internal {
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
 

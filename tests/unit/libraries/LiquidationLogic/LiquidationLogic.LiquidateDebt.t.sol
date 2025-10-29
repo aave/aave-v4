@@ -11,19 +11,20 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
 
   IHub internal hub;
   ISpoke internal spoke;
-  IERC20 internal asset;
+  address internal asset;
+  IERC20 internal underlying;
   uint256 internal reserveId;
   address internal liquidator;
   uint256 internal realizedPremium;
   address internal user;
 
-  /*function setUp() public override {
+  function setUp() public override {
     super.setUp();
 
     hub = hub1;
     spoke = ISpoke(address(liquidationLogicWrapper));
-    assetId = address(tokenList.weth);
-    asset = IERC20(hub.getAsset(assetId).underlying);
+    asset = address(tokenList.weth);
+    underlying = IERC20(asset);
     reserveId = 1;
     liquidator = makeAddr('liquidator');
     user = makeAddr('user');
@@ -33,7 +34,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setLiquidator(liquidator);
     liquidationLogicWrapper.setDebtReserveId(reserveId);
     liquidationLogicWrapper.setDebtReserveHub(hub);
-    liquidationLogicWrapper.setDebtReserveAsset(address(asset));
+    liquidationLogicWrapper.setDebtReserveAsset(asset);
     liquidationLogicWrapper.setBorrowerBorrowingStatus(reserveId, true);
 
     // Add liquidation logic wrapper as a spoke
@@ -45,41 +46,37 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.prank(HUB_ADMIN);
-    hub.addSpoke(assetId, address(spoke), spokeConfig);
+    hub.addSpoke(asset, address(spoke), spokeConfig);
 
     // Add liquidity, remove liquidity, refresh premium and skip time to accrue both drawn and premium debt
     address tempUser = makeUser();
-    deal(address(asset), tempUser, MAX_SUPPLY_AMOUNT);
-    Utils.add(hub, assetId, address(spoke), MAX_SUPPLY_AMOUNT, tempUser);
-    Utils.draw(hub, assetId, address(spoke), tempUser, MAX_SUPPLY_AMOUNT);
+    deal(asset, tempUser, MAX_SUPPLY_AMOUNT);
+    Utils.add(hub, asset, address(spoke), MAX_SUPPLY_AMOUNT, tempUser);
+    Utils.draw(hub, asset, address(spoke), tempUser, MAX_SUPPLY_AMOUNT);
     vm.startPrank(address(spoke));
     hub.refreshPremium(
-      assetId,
-      IHubBase.PremiumDelta(
-        hub.previewRestoreByAssets(assetId, 1e6 * 1e18).toInt256(),
-        1e6 * 1e18,
-        0
-      )
+      asset,
+      IHubBase.PremiumDelta(hub.previewRestoreByAssets(asset, 1e6 * 1e18).toInt256(), 1e6 * 1e18, 0)
     );
     vm.stopPrank();
     skip(365 days);
-    (uint256 spokeDrawnOwed, uint256 spokePremiumOwed) = hub.getSpokeOwed(assetId, address(spoke));
+    (uint256 spokeDrawnOwed, uint256 spokePremiumOwed) = hub.getSpokeOwed(asset, address(spoke));
     assertGt(spokeDrawnOwed, 10000e18);
     assertGt(spokePremiumOwed, 10000e18);
 
     // Refresh premium to realise some premium debt
-    realizedPremium = hub.previewRestoreByShares(assetId, 1e3 * 1e18) - 1e3 * 1e18;
+    realizedPremium = hub.previewRestoreByShares(asset, 1e3 * 1e18) - 1e3 * 1e18;
     assertGt(realizedPremium, 10e18);
     vm.prank(address(spoke));
     hub.refreshPremium(
-      assetId,
+      asset,
       IHubBase.PremiumDelta(-1e3 * 1e18, -1e3 * 1e18, realizedPremium.toInt256())
     );
     liquidationLogicWrapper.setDebtPositionRealizedPremium(realizedPremium);
 
     // Mint tokens to liquidator and approve spoke
-    deal(address(asset), liquidator, spokeDrawnOwed + spokePremiumOwed);
-    Utils.approve(spoke, address(asset), liquidator, spokeDrawnOwed + spokePremiumOwed);
+    deal(asset, liquidator, spokeDrawnOwed + spokePremiumOwed);
+    Utils.approve(spoke, asset, liquidator, spokeDrawnOwed + spokePremiumOwed);
   }
 
   function expectCall(
@@ -92,7 +89,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 drawnDebtToLiquidate = _min(drawnDebt, debtToLiquidate - premiumDebtToLiquidate);
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: -hub.previewRestoreByAssets(assetId, premiumDebt).toInt256(),
+      sharesDelta: -hub.previewRestoreByAssets(asset, premiumDebt).toInt256(),
       offsetDelta: -(premiumDebt - accruedPremium).toInt256(),
       realizedDelta: accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
     });
@@ -100,15 +97,15 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       address(hub),
       abi.encodeCall(
         IHubBase.restore,
-        (assetId, drawnDebtToLiquidate, premiumDebtToLiquidate, premiumDelta)
+        (asset, drawnDebtToLiquidate, premiumDebtToLiquidate, premiumDelta)
       )
     );
 
-    return (hub.previewRestoreByAssets(assetId, drawnDebtToLiquidate), premiumDebtToLiquidate);
+    return (hub.previewRestoreByAssets(asset, drawnDebtToLiquidate), premiumDebtToLiquidate);
   }
 
   function test_liquidateDebt_fuzz(uint256) public {
-    (uint256 spokeDrawnOwed, uint256 spokePremiumOwed) = hub.getSpokeOwed(assetId, address(spoke));
+    (uint256 spokeDrawnOwed, uint256 spokePremiumOwed) = hub.getSpokeOwed(asset, address(spoke));
     uint256 drawnDebt = vm.randomUint(0, spokeDrawnOwed);
     uint256 premiumDebt = vm.randomUint(0, spokePremiumOwed);
     vm.assume(drawnDebt + premiumDebt > 0);
@@ -124,8 +121,8 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       premiumDebt,
       accruedPremium
     );
-    uint256 initialHubBalance = asset.balanceOf(address(hub));
-    uint256 initialLiquidatorBalance = asset.balanceOf(liquidator);
+    uint256 initialHubBalance = underlying.balanceOf(address(hub));
+    uint256 initialLiquidatorBalance = underlying.balanceOf(liquidator);
 
     (uint256 drawnDebtToLiquidate, uint256 premiumDebtToLiquidate) = expectCall(
       drawnDebt,
@@ -153,8 +150,8 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       accruedPremium,
       premiumDebtToLiquidate
     );
-    assertEq(asset.balanceOf(address(hub)), initialHubBalance + debtToLiquidate);
-    assertEq(asset.balanceOf(liquidator), initialLiquidatorBalance - debtToLiquidate);
+    assertEq(underlying.balanceOf(address(hub)), initialHubBalance + debtToLiquidate);
+    assertEq(underlying.balanceOf(liquidator), initialLiquidatorBalance - debtToLiquidate);
   }
 
   // reverts with arithmetic underflow if more debt is liquidated than the position has
@@ -187,7 +184,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     updateStorage(drawnDebt, premiumDebt, accruedPremium);
 
     uint256 debtToLiquidate = drawnDebt + premiumDebt;
-    Utils.approve(spoke, address(asset), liquidator, debtToLiquidate - 1);
+    Utils.approve(spoke, asset, liquidator, debtToLiquidate - 1);
 
     vm.expectRevert();
     liquidationLogicWrapper.liquidateDebt(
@@ -210,7 +207,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     updateStorage(drawnDebt, premiumDebt, accruedPremium);
 
     uint256 debtToLiquidate = drawnDebt + premiumDebt;
-    deal(address(asset), liquidator, debtToLiquidate - 1);
+    deal(asset, liquidator, debtToLiquidate - 1);
 
     vm.expectRevert();
     liquidationLogicWrapper.liquidateDebt(
@@ -231,10 +228,10 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 accruedPremium
   ) internal returns (ISpoke.UserPosition memory) {
     liquidationLogicWrapper.setDebtPositionDrawnShares(
-      hub.previewRestoreByAssets(assetId, drawnDebt)
+      hub.previewRestoreByAssets(asset, drawnDebt)
     );
     liquidationLogicWrapper.setDebtPositionPremiumShares(
-      hub.previewRestoreByAssets(assetId, premiumDebt)
+      hub.previewRestoreByAssets(asset, premiumDebt)
     );
     liquidationLogicWrapper.setDebtPositionPremiumOffset(premiumDebt - accruedPremium);
 
@@ -255,5 +252,5 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       accruedPremium -
       premiumDebtToLiquidate).toUint120();
     assertEq(newPosition, initialPosition);
-  }*/
+  }
 }

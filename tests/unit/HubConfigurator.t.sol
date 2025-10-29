@@ -452,7 +452,11 @@ contract HubConfiguratorTest is HubBase {
 
     // Withdraw half the fee shares from the old treasury spoke
     vm.startPrank(TREASURY_ADMIN);
-    treasurySpoke.withdraw(address(hub1), address(tokenList.dai), hub1.previewRemoveByShares(address(tokenList.dai), feeShares / 2));
+    treasurySpoke.withdraw(
+      address(hub1),
+      address(tokenList.dai),
+      hub1.previewRemoveByShares(address(tokenList.dai), feeShares / 2)
+    );
     vm.stopPrank();
 
     // Get the remaining fee shares

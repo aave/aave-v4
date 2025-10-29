@@ -207,7 +207,12 @@ contract HubRestoreTest is HubBase {
       premium
     );
 
-    uint256 restoredShares = hub1.restore(address(tokenList.dai), drawnRestored, premium, premiumDelta);
+    uint256 restoredShares = hub1.restore(
+      address(tokenList.dai),
+      drawnRestored,
+      premium,
+      premiumDelta
+    );
     vm.stopPrank();
 
     assertEq(restoredShares, drawnShares);
@@ -698,8 +703,16 @@ contract HubRestoreTest is HubBase {
     assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
     assertHubLiquidity(hub1, address(tokenList.dai), 'hub1.restore');
     // spoke1
-    assertEq(hub1.getSpokeAddedAssets(address(tokenList.dai), address(spoke1)), 0, 'hub spoke1 addedAmount');
-    assertEq(hub1.getSpokeAddedShares(address(tokenList.dai), address(spoke1)), 0, 'hub spoke1 addedShares');
+    assertEq(
+      hub1.getSpokeAddedAssets(address(tokenList.dai), address(spoke1)),
+      0,
+      'hub spoke1 addedAmount'
+    );
+    assertEq(
+      hub1.getSpokeAddedShares(address(tokenList.dai), address(spoke1)),
+      0,
+      'hub spoke1 addedShares'
+    );
     (uint256 spoke1DaiDrawn, uint256 spoke1DaiPremium) = hub1.getSpokeOwed(
       address(tokenList.dai),
       address(spoke1)
@@ -797,7 +810,11 @@ contract HubRestoreTest is HubBase {
     assertEq(spoke1DaiPremium, daiData.premium, 'spoke1 dai premium post-restore');
 
     // dai token balance
-    assertEq(tokenList.dai.balanceOf(address(hub1)), daiAmount - restoreAmount, 'hub dai final balance');
+    assertEq(
+      tokenList.dai.balanceOf(address(hub1)),
+      daiAmount - restoreAmount,
+      'hub dai final balance'
+    );
     assertEq(
       tokenList.dai.balanceOf(alice),
       drawAmount - restoreAmount + MAX_SUPPLY_AMOUNT,

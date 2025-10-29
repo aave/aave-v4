@@ -1335,7 +1335,6 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.withdraw({reserveId: daiReserveId, amount: 1, onBehalfOf: bob});
   }*/
-
   // TODO: tests with other combos of collateral/debt, particularly with different units
   // - 2 colls, 1e18/1e6, with 1 debt, 1e0
   // - 2 colls, 1e18/1e0, with 1 debt, 1e6

@@ -89,10 +89,7 @@ contract HubEliminateDeficitTest is HubBase {
     assertEq(removedShares, expectedRemoveShares);
     assertEq(hub1.getAssetDeficit(asset), deficitAmount2 + deficitAmount - clearedDeficit);
     assertEq(hub1.getAddedShares(asset), assetSuppliedShares - expectedRemoveShares);
-    assertEq(
-      hub1.getSpokeAddedShares(asset, callerSpoke),
-      spokeAddedShares - expectedRemoveShares
-    );
+    assertEq(hub1.getSpokeAddedShares(asset, callerSpoke), spokeAddedShares - expectedRemoveShares);
     assertEq(hub1.getSpokeDeficit(asset, coveredSpoke), deficitAmount - clearedDeficit);
     assertGe(getAddExRate(asset), addExRate);
     assertBorrowRateSynced(hub1, asset, 'eliminateDeficit');

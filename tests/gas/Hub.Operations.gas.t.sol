@@ -66,7 +66,10 @@ contract HubOperations_Gas_Tests is Base {
     int256 premiumOffset = hub1
       .previewRestoreByShares(address(tokenList.dai), uint256(premiumShares))
       .toInt256();
-    hub1.refreshPremium(address(tokenList.dai), IHubBase.PremiumDelta(premiumShares, premiumOffset, 0));
+    hub1.refreshPremium(
+      address(tokenList.dai),
+      IHubBase.PremiumDelta(premiumShares, premiumOffset, 0)
+    );
 
     skip(1000);
 
@@ -99,7 +102,10 @@ contract HubOperations_Gas_Tests is Base {
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
 
     vm.prank(address(spoke1));
-    hub1.refreshPremium(address(tokenList.dai), IHubBase.PremiumDelta(premiumShares, premiumOffset, 1));
+    hub1.refreshPremium(
+      address(tokenList.dai),
+      IHubBase.PremiumDelta(premiumShares, premiumOffset, 1)
+    );
     vm.snapshotGasLastCall('Hub.Operations', 'refreshPremium');
   }
 

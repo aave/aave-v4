@@ -25,7 +25,12 @@ contract HubTransferSharesTest is HubBase {
     assertEq(suppliedShares, assetSuppliedShares);
 
     vm.expectEmit(address(hub1));
-    emit IHubBase.TransferShares(address(tokenList.dai), address(spoke1), address(spoke2), moveAmount);
+    emit IHubBase.TransferShares(
+      address(tokenList.dai),
+      address(spoke1),
+      address(spoke2),
+      moveAmount
+    );
 
     // transfer supplied shares from spoke1 to spoke2
     vm.prank(address(spoke1));
@@ -33,7 +38,10 @@ contract HubTransferSharesTest is HubBase {
 
     assertBorrowRateSynced(hub1, address(tokenList.dai), 'transferShares');
     assertHubLiquidity(hub1, address(tokenList.dai), 'transferShares');
-    assertEq(hub1.getSpokeAddedShares(address(tokenList.dai), address(spoke1)), suppliedShares - moveAmount);
+    assertEq(
+      hub1.getSpokeAddedShares(address(tokenList.dai), address(spoke1)),
+      suppliedShares - moveAmount
+    );
     assertEq(hub1.getSpokeAddedShares(address(tokenList.dai), address(spoke2)), moveAmount);
     assertEq(hub1.getAddedShares(address(tokenList.dai)), assetSuppliedShares);
   }
@@ -67,7 +75,10 @@ contract HubTransferSharesTest is HubBase {
     Utils.add(hub1, address(tokenList.dai), address(spoke1), supplyAmount, bob);
 
     // deactivate spoke1
-    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(address(tokenList.dai), address(spoke1));
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(
+      address(tokenList.dai),
+      address(spoke1)
+    );
     spokeConfig.active = false;
     vm.prank(HUB_ADMIN);
     hub1.updateSpokeConfig(address(tokenList.dai), address(spoke1), spokeConfig);
@@ -87,7 +98,10 @@ contract HubTransferSharesTest is HubBase {
     Utils.add(hub1, address(tokenList.dai), address(spoke1), supplyAmount, bob);
 
     // pause spoke1
-    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(address(tokenList.dai), address(spoke1));
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(
+      address(tokenList.dai),
+      address(spoke1)
+    );
     spokeConfig.paused = true;
     vm.prank(HUB_ADMIN);
     hub1.updateSpokeConfig(address(tokenList.dai), address(spoke1), spokeConfig);

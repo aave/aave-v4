@@ -155,7 +155,10 @@ contract HubReportDeficitTest is HubBase {
     vm.assume(baseAmount + premiumAmount > 0);
 
     params.deficitBefore = getDeficit(hub1, address(tokenList.usdx));
-    params.supplyExchangeRateBefore = hub1.previewRemoveByShares(address(tokenList.usdx), WadRayMath.RAY);
+    params.supplyExchangeRateBefore = hub1.previewRemoveByShares(
+      address(tokenList.usdx),
+      WadRayMath.RAY
+    );
     params.liquidityBefore = hub1.getAssetLiquidity(address(tokenList.usdx));
     params.balanceBefore = tokenList.usdx.balanceOf(address(spoke1));
     uint256 drawnSharesBefore = hub1.getAsset(address(tokenList.usdx)).drawnShares;
@@ -176,7 +179,8 @@ contract HubReportDeficitTest is HubBase {
       : assetData.premiumShares + uint256(premiumDelta.sharesDelta);
 
     if (
-      premiumDelta.realizedDelta < 0 && uint256(-premiumDelta.realizedDelta) > assetData.realizedPremium
+      premiumDelta.realizedDelta < 0 &&
+      uint256(-premiumDelta.realizedDelta) > assetData.realizedPremium
     ) {
       vm.expectRevert(stdError.arithmeticError);
       vm.prank(address(spoke1));
@@ -203,11 +207,12 @@ contract HubReportDeficitTest is HubBase {
       (params.drawnAfter, params.premiumAfter) = hub1.getAssetOwed(address(tokenList.usdx));
 
       params.deficitAfter = getDeficit(hub1, address(tokenList.usdx));
-      params.supplyExchangeRateAfter = hub1.previewRemoveByShares(address(tokenList.usdx), WadRayMath.RAY);
-      params.liquidityAfter = hub1.getAssetLiquidity(address(tokenList.usdx));
-      params.balanceAfter = tokenList.usdx.balanceOf(
-        address(spoke1)
+      params.supplyExchangeRateAfter = hub1.previewRemoveByShares(
+        address(tokenList.usdx),
+        WadRayMath.RAY
       );
+      params.liquidityAfter = hub1.getAssetLiquidity(address(tokenList.usdx));
+      params.balanceAfter = tokenList.usdx.balanceOf(address(spoke1));
       uint256 drawnSharesAfter = hub1.getAsset(address(tokenList.usdx)).drawnShares;
 
       // due to rounding of donation, drawn debt can differ by asset amount of one share

@@ -172,7 +172,10 @@ contract HubReclaimTest is HubBase {
     hub1.reclaim(address(tokenList.dai), firstReclaim);
 
     assertEq(hub1.getAssetSwept(address(tokenList.dai)), totalSwept - firstReclaim);
-    assertEq(hub1.getAssetLiquidity(address(tokenList.dai)), initialLiquidity - totalSwept + firstReclaim);
+    assertEq(
+      hub1.getAssetLiquidity(address(tokenList.dai)),
+      initialLiquidity - totalSwept + firstReclaim
+    );
 
     // Second reclaim
     uint256 secondReclaim = 150e18;

@@ -9,7 +9,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
 
   uint256[] assetUnitList;
 
-  /*function setUp() public override {
+  function setUp() public override {
     super.setUp();
     assetUnitList.push(1);
     assetUnitList.push(1e6);
@@ -115,5 +115,5 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
     params.debtAssetUnit = 1e18;
     debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(params);
     assertEq(debtToTarget, 24.024024024024024025e18);
-  }*/
+  }
 }

@@ -11,7 +11,8 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
 
   IHub hub;
   ISpoke spoke;
-  IERC20 asset;
+  address asset;
+  IERC20 underlying;
   uint256 suppliedShares;
   uint256 reserveId;
   address borrower;
@@ -19,19 +20,19 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
   ISpoke.Reserve initialReserve;
   ISpoke.UserPosition initialPosition;
 
-  /*function setUp() public override {
+  function setUp() public override {
     super.setUp();
 
     hub = hub1;
     spoke = ISpoke(address(liquidationLogicWrapper));
-    assetId = address(tokenList.weth);
+    asset = address(tokenList.weth);
     reserveId = _wethReserveId(spoke);
-    asset = IERC20(hub.getAsset(assetId).underlying);
+    underlying = IERC20(asset);
     suppliedShares = 100e18;
     borrower = makeAddr('borrower');
 
     liquidationLogicWrapper.setCollateralReserveHub(hub);
-    liquidationLogicWrapper.setCollateralReserveAsset(address(asset));
+    liquidationLogicWrapper.setCollateralReserveAsset(address(underlying));
     liquidationLogicWrapper.setCollateralReserveId(reserveId);
     liquidationLogicWrapper.setBorrower(borrower);
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(suppliedShares);
@@ -50,11 +51,11 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     });
 
     vm.prank(HUB_ADMIN);
-    hub.addSpoke(assetId, address(spoke), spokeConfig);
+    hub.addSpoke(asset, address(spoke), spokeConfig);
 
     address tempUser = makeUser();
-    deal(address(asset), tempUser, MAX_SUPPLY_AMOUNT);
-    Utils.add(hub, assetId, address(spoke), MAX_SUPPLY_AMOUNT, tempUser);
+    deal(asset, tempUser, MAX_SUPPLY_AMOUNT);
+    Utils.add(hub, asset, address(spoke), MAX_SUPPLY_AMOUNT, tempUser);
   }
 
   function test_liquidateCollateral_fuzz(
@@ -64,13 +65,13 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     params.collateralToLiquidate = bound(
       collateralToLiquidate,
       1,
-      hub.previewRemoveByShares(assetId, suppliedShares)
+      hub.previewRemoveByShares(asset, suppliedShares)
     );
     params.collateralToLiquidator = bound(collateralToLiquidator, 1, params.collateralToLiquidate);
     params.collateralReserveId = reserveId;
     params.user = borrower;
 
-    uint256 initialHubBalance = asset.balanceOf(address(hub));
+    uint256 initialHubBalance = underlying.balanceOf(address(hub));
 
     uint256 sharesToLiquidate = expectCalls(params);
     bool isPositionEmpty = liquidationLogicWrapper.liquidateCollateral(params);
@@ -83,10 +84,10 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     );
 
     assertEq(isPositionEmpty, suppliedShares == sharesToLiquidate);
-    assertEq(asset.balanceOf(address(hub)), initialHubBalance - params.collateralToLiquidator);
-    assertEq(asset.balanceOf(params.liquidator), params.collateralToLiquidator);
+    assertEq(underlying.balanceOf(address(hub)), initialHubBalance - params.collateralToLiquidator);
+    assertEq(underlying.balanceOf(params.liquidator), params.collateralToLiquidator);
     assertApproxEqAbs(
-      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
+      hub.getSpokeAddedShares(asset, address(treasurySpoke)),
       params.collateralToLiquidate - params.collateralToLiquidator,
       1
     );
@@ -99,7 +100,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     params.collateralToLiquidate = bound(
       collateralToLiquidate,
       0,
-      hub.previewRemoveByShares(assetId, suppliedShares)
+      hub.previewRemoveByShares(asset, suppliedShares)
     );
     params.collateralToLiquidator = 0;
     params.user = borrower;
@@ -115,7 +116,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
   ) public {
     params.collateralToLiquidate = bound(
       collateralToLiquidate,
-      hub.previewRemoveByShares(assetId, suppliedShares) + 1,
+      hub.previewRemoveByShares(asset, suppliedShares) + 1,
       MAX_SUPPLY_AMOUNT
     );
     params.collateralToLiquidator = bound(collateralToLiquidator, 1, params.collateralToLiquidate);
@@ -136,28 +137,28 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
   function expectCalls(
     LiquidationLogic.LiquidateCollateralParams memory p
   ) internal returns (uint256) {
-    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, p.collateralToLiquidate);
-    uint256 sharesToLiquidator = hub.previewRemoveByAssets(assetId, p.collateralToLiquidator);
+    uint256 sharesToLiquidate = hub.previewRemoveByAssets(asset, p.collateralToLiquidate);
+    uint256 sharesToLiquidator = hub.previewRemoveByAssets(asset, p.collateralToLiquidator);
     uint256 sharesToPayFee = sharesToLiquidate - sharesToLiquidator;
 
     vm.expectCall(
       address(hub),
-      abi.encodeCall(IHubBase.previewRemoveByAssets, (assetId, p.collateralToLiquidate)),
+      abi.encodeCall(IHubBase.previewRemoveByAssets, (asset, p.collateralToLiquidate)),
       1
     );
     vm.expectCall(
       address(hub),
-      abi.encodeCall(IHubBase.remove, (assetId, p.collateralToLiquidator, p.liquidator)),
+      abi.encodeCall(IHubBase.remove, (asset, p.collateralToLiquidator, p.liquidator)),
       1
     );
     if (sharesToPayFee > 0) {
       vm.expectCall(
         address(hub),
-        abi.encodeCall(IHubBase.payFeeShares, (assetId, sharesToPayFee)),
+        abi.encodeCall(IHubBase.payFeeShares, (asset, sharesToPayFee)),
         1
       );
     }
 
     return sharesToLiquidate;
-  }*/
+  }
 }

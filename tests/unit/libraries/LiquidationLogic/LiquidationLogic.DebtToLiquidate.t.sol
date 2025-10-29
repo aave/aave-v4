@@ -10,7 +10,7 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
 
   /// function always returns min between reserve debt, debt to cover and debt to restore target health factor,
   /// unless it leaves dust, in which case it returns reserve debt
-  /*function test_calculateDebtToLiquidate_fuzz(
+  function test_calculateDebtToLiquidate_fuzz(
     LiquidationLogic.CalculateDebtToLiquidateParams memory params
   ) public {
     params = _bound(params);
@@ -66,5 +66,5 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
     params = _boundWithDustAdjustment(params);
     uint256 debtToLiquidate = liquidationLogicWrapper.calculateDebtToLiquidate(params);
     assertEq(debtToLiquidate, params.debtReserveBalance);
-  }*/
+  }
 }

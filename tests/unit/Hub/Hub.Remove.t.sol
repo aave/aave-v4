@@ -25,12 +25,7 @@ contract HubRemoveTest is HubBase {
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(address(hub1), alice, amount);
     vm.expectEmit(address(hub1));
-    emit IHubBase.Remove(
-      asset,
-      address(spoke1),
-      hub1.previewRemoveByAssets(asset, amount),
-      amount
-    );
+    emit IHubBase.Remove(asset, address(spoke1), hub1.previewRemoveByAssets(asset, amount), amount);
 
     vm.prank(address(spoke1));
     hub1.remove(asset, amount, alice);
@@ -323,7 +318,8 @@ contract HubRemoveTest is HubBase {
     assertEq(asset.addedShares, 0, 'hub addedShares');
     assertApproxEqAbs(
       asset.liquidity,
-      _calculateBurntInterest(hub1, address(tokenList.dai)) + hub1.getAsset(address(tokenList.dai)).realizedFees,
+      _calculateBurntInterest(hub1, address(tokenList.dai)) +
+        hub1.getAsset(address(tokenList.dai)).realizedFees,
       1,
       'dai liquidity'
     );
@@ -445,7 +441,11 @@ contract HubRemoveTest is HubBase {
     // It's possible to withdraw 1 wei less than what Alice has supplied, and her supply becomes 0
     vm.prank(address(spoke1));
     hub1.remove(address(tokenList.dai), supplied - 1, alice);
-    assertEq(hub1.getSpokeAddedAssets(address(tokenList.dai), address(spoke1)), 0, 'spoke added assets after');
+    assertEq(
+      hub1.getSpokeAddedAssets(address(tokenList.dai), address(spoke1)),
+      0,
+      'spoke added assets after'
+    );
 
     Utils.add({
       hub: hub1,

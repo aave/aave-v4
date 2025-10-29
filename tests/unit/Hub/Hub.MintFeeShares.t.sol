@@ -26,7 +26,12 @@ contract HubMintFeeSharesTest is HubBase {
       skipTime: 365 days
     });
 
-    updateSpokeActive(hub1, address(tokenList.dai), _getFeeReceiver(hub1, address(tokenList.dai)), false);
+    updateSpokeActive(
+      hub1,
+      address(tokenList.dai),
+      _getFeeReceiver(hub1, address(tokenList.dai)),
+      false
+    );
     vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
     Utils.mintFeeShares(hub1, address(tokenList.dai), ADMIN);
   }
@@ -54,7 +59,10 @@ contract HubMintFeeSharesTest is HubBase {
     assertEq(feeShares, 0);
 
     uint256 expectedMintedAssets = _getExpectedFeeReceiverAddedAssets(hub1, address(tokenList.dai));
-    uint256 expectedMintedShares = hub1.previewAddByAssets(address(tokenList.dai), expectedMintedAssets);
+    uint256 expectedMintedShares = hub1.previewAddByAssets(
+      address(tokenList.dai),
+      expectedMintedAssets
+    );
 
     IHub.Asset memory asset = hub1.getAsset(address(tokenList.dai));
     bytes memory irCalldata = abi.encodeCall(
@@ -62,7 +70,10 @@ contract HubMintFeeSharesTest is HubBase {
       (
         address(tokenList.dai),
         asset.liquidity,
-        hub1.previewRestoreByShares(address(tokenList.dai), hub1.getAssetDrawnShares(address(tokenList.dai))),
+        hub1.previewRestoreByShares(
+          address(tokenList.dai),
+          hub1.getAssetDrawnShares(address(tokenList.dai))
+        ),
         asset.deficit,
         asset.swept
       )
@@ -72,9 +83,19 @@ contract HubMintFeeSharesTest is HubBase {
 
     // after mintFeeShares, the fee shares should be the amount of the fees
     vm.expectEmit(address(hub1));
-    emit IHub.MintFeeShares(address(tokenList.dai), feeReceiver, expectedMintedShares, expectedMintedAssets);
+    emit IHub.MintFeeShares(
+      address(tokenList.dai),
+      feeReceiver,
+      expectedMintedShares,
+      expectedMintedAssets
+    );
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(address(tokenList.dai), hub1.getAssetDrawnIndex(address(tokenList.dai)), mockRate, 0);
+    emit IHub.UpdateAsset(
+      address(tokenList.dai),
+      hub1.getAssetDrawnIndex(address(tokenList.dai)),
+      mockRate,
+      0
+    );
 
     uint256 addedSharesBefore = hub1.getAddedShares(address(tokenList.dai));
     uint256 sharePriceBefore = hub1.previewAddByShares(address(tokenList.dai), 1e18);
@@ -89,8 +110,16 @@ contract HubMintFeeSharesTest is HubBase {
       expectedMintedShares,
       'added shares'
     );
-    assertEq(mintedShares, hub1.getAddedShares(address(tokenList.dai)) - addedSharesBefore, 'minted shares');
-    assertGe(hub1.previewAddByShares(address(tokenList.dai), 1e18), sharePriceBefore, 'share price');
+    assertEq(
+      mintedShares,
+      hub1.getAddedShares(address(tokenList.dai)) - addedSharesBefore,
+      'minted shares'
+    );
+    assertGe(
+      hub1.previewAddByShares(address(tokenList.dai), 1e18),
+      sharePriceBefore,
+      'share price'
+    );
   }
 
   function test_mintFeeShares_noFees() public {
@@ -99,7 +128,12 @@ contract HubMintFeeSharesTest is HubBase {
     IHub.Asset memory asset = hub1.getAsset(address(tokenList.dai));
 
     // pausing the fee receiver does not revert the action since no shares are minted
-    updateSpokeActive(hub1, address(tokenList.dai), _getFeeReceiver(hub1, address(tokenList.dai)), false);
+    updateSpokeActive(
+      hub1,
+      address(tokenList.dai),
+      _getFeeReceiver(hub1, address(tokenList.dai)),
+      false
+    );
 
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(address(tokenList.dai), asset.drawnIndex, asset.drawnRate, 0);

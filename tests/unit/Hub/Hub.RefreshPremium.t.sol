@@ -43,7 +43,12 @@ contract HubRefreshPremiumTest is HubBase {
     _createDrawnSharesAndPremiumData();
 
     uint24 riskPremiumThreshold = 0.toUint24();
-    _updateSpokeRiskPremiumThreshold(hub1, address(tokenList.dai), address(spoke1), riskPremiumThreshold);
+    _updateSpokeRiskPremiumThreshold(
+      hub1,
+      address(tokenList.dai),
+      address(spoke1),
+      riskPremiumThreshold
+    );
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: 1,
@@ -63,7 +68,12 @@ contract HubRefreshPremiumTest is HubBase {
     hub1.refreshPremium(address(tokenList.dai), premiumDelta);
 
     riskPremiumThreshold = (vm.randomUint(0, Constants.MAX_RISK_PREMIUM_THRESHOLD - 1)).toUint24();
-    _updateSpokeRiskPremiumThreshold(hub1, address(tokenList.dai), address(spoke1), riskPremiumThreshold);
+    _updateSpokeRiskPremiumThreshold(
+      hub1,
+      address(tokenList.dai),
+      address(spoke1),
+      riskPremiumThreshold
+    );
 
     // expect allowed condition to be met
     assertTrue(
@@ -81,7 +91,12 @@ contract HubRefreshPremiumTest is HubBase {
     _createDrawnSharesAndPremiumData();
 
     uint24 riskPremiumThreshold = 1_00; // 1%
-    _updateSpokeRiskPremiumThreshold(hub1, address(tokenList.dai), address(spoke1), riskPremiumThreshold);
+    _updateSpokeRiskPremiumThreshold(
+      hub1,
+      address(tokenList.dai),
+      address(spoke1),
+      riskPremiumThreshold
+    );
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -1,
@@ -472,7 +487,8 @@ contract HubRefreshPremiumTest is HubBase {
     address asset
   ) internal view returns (PremiumDataLocal memory) {
     IHub.Asset memory assetData = hub.getAsset(asset);
-    return PremiumDataLocal(assetData.premiumShares, assetData.premiumOffset, assetData.realizedPremium);
+    return
+      PremiumDataLocal(assetData.premiumShares, assetData.premiumOffset, assetData.realizedPremium);
   }
 
   function _applyPremiumDelta(

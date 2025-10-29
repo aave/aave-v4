@@ -50,7 +50,10 @@ contract HubConfigTest is HubBase {
   }
 
   function test_addSpoke_revertsWith_SpokeAlreadyListed() public {
-    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(address(tokenList.dai), address(spoke1));
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(
+      address(tokenList.dai),
+      address(spoke1)
+    );
     vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
     Utils.addSpoke(hub1, ADMIN, address(tokenList.dai), address(spoke1), spokeConfig);
   }
@@ -431,7 +434,7 @@ contract HubConfigTest is HubBase {
   }
 
   function test_updateAssetConfig_fuzz(address asset, IHub.AssetConfig memory newConfig) public {
-    if(!hub1.isUnderlyingListed(asset)) {
+    if (!hub1.isUnderlyingListed(asset)) {
       asset = _randomAsset(hub1);
     }
     _assumeValidAssetConfig(newConfig);
@@ -610,16 +613,8 @@ contract HubConfigTest is HubBase {
     test_updateAssetConfig_fuzz(asset, config);
 
     assertEq(_getFeeReceiver(hub1, asset), config.feeReceiver, 'new fee receiver');
-    assertEq(
-      hub1.getSpokeConfig(asset, oldFeeReceiver).active,
-      active,
-      'old fee receiver active'
-    );
-    assertEq(
-      hub1.getSpokeConfig(asset, oldFeeReceiver).paused,
-      paused,
-      'old fee receiver paused'
-    );
+    assertEq(hub1.getSpokeConfig(asset, oldFeeReceiver).active, active, 'old fee receiver active');
+    assertEq(hub1.getSpokeConfig(asset, oldFeeReceiver).paused, paused, 'old fee receiver paused');
   }
 
   /// Updates the fee receiver while the current fee receiver is not active

@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is SignatureGatewayBaseTest {
-  /*function setUp() public virtual override {
+  function setUp() public virtual override {
     super.setUp();
     _approveAllUnderlying(spoke1, alice, address(gateway));
 
@@ -87,7 +87,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
     );
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);
-  }*/
+  }
 }
 
 contract SignatureGateway_Unauthorized_PositionManagerActive_Test is

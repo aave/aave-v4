@@ -8,7 +8,7 @@ contract NativeTokenGatewayTest is SpokeBase {
   NativeTokenGateway public nativeTokenGateway;
   TestReturnValues public returnValues;
 
-  /*function setUp() public virtual override {
+  function setUp() public virtual override {
     super.setUp();
 
     nativeTokenGateway = new NativeTokenGateway(address(tokenList.weth), address(ADMIN));
@@ -60,7 +60,7 @@ contract NativeTokenGatewayTest is SpokeBase {
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
-      hub1.previewAddByAssets(wethAssetId, amount),
+      hub1.previewAddByAssets(address(tokenList.weth), amount),
       amount
     );
     vm.prank(bob);
@@ -144,7 +144,7 @@ contract NativeTokenGatewayTest is SpokeBase {
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
-      hub1.previewAddByAssets(wethAssetId, amount),
+      hub1.previewAddByAssets(address(tokenList.weth), amount),
       amount
     );
     vm.prank(bob);
@@ -180,7 +180,10 @@ contract NativeTokenGatewayTest is SpokeBase {
       amount: mintAmount_WETH,
       onBehalfOf: bob
     });
-    uint256 expectedSupplyShares = hub1.previewAddByAssets(address(tokenList.weth), mintAmount_WETH);
+    uint256 expectedSupplyShares = hub1.previewAddByAssets(
+      address(tokenList.weth),
+      mintAmount_WETH
+    );
 
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
@@ -196,7 +199,7 @@ contract NativeTokenGatewayTest is SpokeBase {
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
-      hub1.previewRemoveByAssets(wethAssetId, amount),
+      hub1.previewRemoveByAssets(address(tokenList.weth), amount),
       amount
     );
     vm.prank(bob);
@@ -491,7 +494,10 @@ contract NativeTokenGatewayTest is SpokeBase {
     (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(_wethReserveId(spoke1), bob);
 
     assertEq(returnValues.amount, repayAmount);
-    assertEq(returnValues.shares, hub1.previewRestoreByAssets(address(tokenList.weth), baseRestored));
+    assertEq(
+      returnValues.shares,
+      hub1.previewRestoreByAssets(address(tokenList.weth), baseRestored)
+    );
 
     assertEq(userDrawnDebt + userPremiumDebt, borrowAmount - repayAmount);
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + repayAmount);
@@ -550,7 +556,10 @@ contract NativeTokenGatewayTest is SpokeBase {
       }(address(spoke1), _wethReserveId(spoke1), repayAmount);
 
       assertApproxEqAbs(returnValues.amount, baseRestored + premiumRestored, 1);
-      assertEq(returnValues.shares, hub1.previewRestoreByAssets(wethAssetId, baseRestored));
+      assertEq(
+        returnValues.shares,
+        hub1.previewRestoreByAssets(address(tokenList.weth), baseRestored)
+      );
     }
 
     (uint256 newUserDrawnDebt, uint256 newUserPremiumDebt) = spoke1.getUserDebt(
@@ -627,7 +636,10 @@ contract NativeTokenGatewayTest is SpokeBase {
     (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(_wethReserveId(spoke1), bob);
 
     assertEq(returnValues.amount, baseRestored + premiumRestored);
-    assertEq(returnValues.shares, hub1.previewRestoreByAssets(address(tokenList.weth), baseRestored));
+    assertEq(
+      returnValues.shares,
+      hub1.previewRestoreByAssets(address(tokenList.weth), baseRestored)
+    );
 
     assertEq(userDrawnDebt + userPremiumDebt, 0);
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + totalRepaid);
@@ -715,5 +727,5 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(address(nativeTokenGateway).balance, 0);
     assertEq(tokenList.weth.balanceOf(address(nativeTokenGateway)), 0);
     assertEq(tokenList.weth.allowance(address(nativeTokenGateway), address(hub1)), 0);
-  }*/
+  }
 }

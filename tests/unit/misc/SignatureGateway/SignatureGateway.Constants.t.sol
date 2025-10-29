@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
-  /*function test_constructor() public {
+  function test_constructor() public {
     vm.expectRevert();
     new SignatureGateway(address(0));
 
@@ -128,5 +128,5 @@ contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
         'UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)'
       )
     );
-  }*/
+  }
 }

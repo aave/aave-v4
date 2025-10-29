@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
-  /*function setUp() public virtual override {
+  function setUp() public virtual override {
     super.setUp();
 
     vm.prank(SPOKE_ADMIN);
@@ -86,5 +86,5 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
     );
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);
-  }*/
+  }
 }

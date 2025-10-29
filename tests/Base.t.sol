@@ -1328,10 +1328,7 @@ abstract contract Base is Test {
     return hub1.getAsset(asset);
   }
 
-  function getAssetByReserveId(
-    ISpoke spoke,
-    uint256 reserveId
-  ) internal view returns (IERC20) {
+  function getAssetByReserveId(ISpoke spoke, uint256 reserveId) internal view returns (IERC20) {
     ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
     return IERC20(reserve.underlying);
   }
@@ -1619,10 +1616,7 @@ abstract contract Base is Test {
     string memory label
   ) internal view {
     address asset = spoke.getReserve(reserveId).underlying;
-    (uint256 actualDrawnDebt, uint256 actualPremiumDebt) = hub1.getSpokeOwed(
-      asset,
-      address(spoke)
-    );
+    (uint256 actualDrawnDebt, uint256 actualPremiumDebt) = hub1.getSpokeOwed(asset, address(spoke));
     assertApproxEqAbs(
       actualDrawnDebt,
       expectedDrawnDebt,
@@ -1934,8 +1928,7 @@ abstract contract Base is Test {
 
   /// @dev Helper function to calculate burnt interest in assets terms (originated from virtual shares and assets)
   function _calculateBurntInterest(IHub hub, address asset) internal view returns (uint256) {
-    return
-      hub.getAddedAssets(asset) - hub.previewRemoveByShares(asset, hub.getAddedShares(asset));
+    return hub.getAddedAssets(asset) - hub.previewRemoveByShares(asset, hub.getAddedShares(asset));
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke
@@ -2387,10 +2380,7 @@ abstract contract Base is Test {
   }
 
   // @dev Helper function to get asset position, valid if no time has passed since last action
-  function getAssetPosition(
-    IHub hub,
-    address asset
-  ) internal view returns (AssetPosition memory) {
+  function getAssetPosition(IHub hub, address asset) internal view returns (AssetPosition memory) {
     IHub.Asset memory assetData = hub.getAsset(asset);
     (uint256 drawn, uint256 premium) = hub.getAssetOwed(asset);
     return

@@ -351,11 +351,7 @@ contract HubAddTest is HubBase {
       hub1.previewAddByAssets(asset, amount),
       'spoke1 addedShares after'
     );
-    assertEq(
-      hub1.getSpokeAddedAssets(asset, address(spoke1)),
-      amount,
-      'spoke1 addedAmount after'
-    );
+    assertEq(hub1.getSpokeAddedAssets(asset, address(spoke1)), amount, 'spoke1 addedAmount after');
     assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount, 'user asset1 balance after');
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset1 balance after');
     assertEq(underlying.balanceOf(address(hub1)), amount, 'hub asset1 balance after');
@@ -488,7 +484,10 @@ contract HubAddTest is HubBase {
     uint256 shares = hub1.previewAddByAssets(address(tokenList.dai), addAmount);
     assertLt(shares, addAmount); // index increased, exch rate > 1
 
-    uint256 spokeAddedSharesBefore = hub1.getSpokeAddedShares(address(tokenList.dai), address(spoke2));
+    uint256 spokeAddedSharesBefore = hub1.getSpokeAddedShares(
+      address(tokenList.dai),
+      address(spoke2)
+    );
     uint256 addedAssetsBefore = hub1.getSpokeAddedAssets(address(tokenList.dai), address(spoke2));
     uint256 addedSharesBefore = hub1.getAddedShares(address(tokenList.dai));
 
@@ -530,7 +529,11 @@ contract HubAddTest is HubBase {
       addedAssetsBefore + addAmount,
       'hub addedAssets after'
     );
-    assertGe(hub1.getAddedShares(address(tokenList.dai)), addedSharesBefore + shares, 'hub addedShares after');
+    assertGe(
+      hub1.getAddedShares(address(tokenList.dai)),
+      addedSharesBefore + shares,
+      'hub addedShares after'
+    );
     assertEq(
       hub1.getAsset(address(tokenList.dai)).liquidity,
       liquidityBefore + addAmount,
@@ -731,13 +734,7 @@ contract HubAddTest is HubBase {
       addAmount = minimumAssetsPerAddedShare(hub1, asset);
 
       // bob add minimal amount
-      Utils.add({
-        hub: hub1,
-        asset: asset,
-        caller: address(spoke1),
-        amount: addAmount,
-        user: bob
-      });
+      Utils.add({hub: hub1, asset: asset, caller: address(spoke1), amount: addAmount, user: bob});
 
       (uint256 drawn, ) = hub1.getAssetOwed(asset);
       assertGt(drawn, 0);

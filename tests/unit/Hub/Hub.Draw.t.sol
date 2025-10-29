@@ -91,10 +91,7 @@ contract HubDrawTest is HubBase {
     assertEq(underlying.balanceOf(bob), MAX_SUPPLY_AMOUNT - amount, 'bob asset final balance');
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
-    assertEq(
-      hub1.previewDrawByAssets(asset, amount),
-      hub1.previewRestoreByShares(asset, amount)
-    );
+    assertEq(hub1.previewDrawByAssets(asset, amount), hub1.previewRestoreByShares(asset, amount));
   }
 
   function test_draw_fuzz_IncreasedBorrowRate(uint256 assetIdx, uint256 amount) public {
@@ -426,7 +423,11 @@ contract HubDrawTest is HubBase {
     // restore to provide liquidity
     // Must repay at least one full share
     vm.startPrank(address(spoke1));
-    tokenList.dai.transferFrom(alice, address(hub1), minimumAssetsPerDrawnShare(hub1, address(tokenList.dai)));
+    tokenList.dai.transferFrom(
+      alice,
+      address(hub1),
+      minimumAssetsPerDrawnShare(hub1, address(tokenList.dai))
+    );
     hub1.restore({
       asset: address(tokenList.dai),
       drawnAmount: minimumAssetsPerDrawnShare(hub1, address(tokenList.dai)),

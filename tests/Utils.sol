@@ -194,12 +194,7 @@ library Utils {
     address spender,
     uint256 amount
   ) internal {
-    _approve(
-      IERC20(spoke.getReserve(reserveId).underlying),
-      owner,
-      spender,
-      amount
-    );
+    _approve(IERC20(spoke.getReserve(reserveId).underlying), owner, spender, amount);
   }
 
   function approve(
