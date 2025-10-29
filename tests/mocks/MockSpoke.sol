@@ -36,10 +36,10 @@ contract MockSpoke is Spoke, Test {
     Reserve storage reserve = _reserves[reserveId];
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    uint256 assetId = reserve.assetId;
+    address underlying = reserve.underlying;
     IHubBase hub = reserve.hub;
 
-    uint256 drawnShares = hub.draw(assetId, amount, msg.sender);
+    uint256 drawnShares = hub.draw(underlying, amount, msg.sender);
 
     userPosition.drawnShares += drawnShares.toUint120();
     positionStatus.setBorrowing(reserveId, true);
@@ -58,7 +58,7 @@ contract MockSpoke is Spoke, Test {
       Reserve storage reserve = _reserves[info.collateralReserveIds[i]];
       _userPositions[user][info.collateralReserveIds[i]].suppliedShares = reserve
         .hub
-        .previewAddByAssets(reserve.assetId, info.collateralAmounts[i])
+        .previewAddByAssets(reserve.underlying, info.collateralAmounts[i])
         .toUint120();
 
       _userPositions[user][info.collateralReserveIds[i]].dynamicConfigKey = info
@@ -70,7 +70,7 @@ contract MockSpoke is Spoke, Test {
       Reserve storage reserve = _reserves[info.suppliedAssetsReserveIds[i]];
       _userPositions[user][info.suppliedAssetsReserveIds[i]].suppliedShares = reserve
         .hub
-        .previewAddByAssets(reserve.assetId, info.suppliedAssetsAmounts[i])
+        .previewAddByAssets(reserve.underlying, info.suppliedAssetsAmounts[i])
         .toUint120();
     }
 
@@ -79,7 +79,7 @@ contract MockSpoke is Spoke, Test {
       Reserve storage reserve = _reserves[info.debtReserveIds[i]];
       _userPositions[user][info.debtReserveIds[i]].drawnShares = reserve
         .hub
-        .previewDrawByAssets(reserve.assetId, info.drawnDebtAmounts[i])
+        .previewDrawByAssets(reserve.underlying, info.drawnDebtAmounts[i])
         .toUint120();
       _userPositions[user][info.debtReserveIds[i]].realizedPremium = info
         .realizedPremiumAmounts[i]
@@ -88,7 +88,10 @@ contract MockSpoke is Spoke, Test {
         .randomUint(1, 100e18)
         .toUint120();
       _userPositions[user][info.debtReserveIds[i]].premiumShares =
-        reserve.hub.previewAddByAssets(reserve.assetId, info.accruedPremiumAmounts[i]).toUint120() +
+        reserve
+          .hub
+          .previewAddByAssets(reserve.underlying, info.accruedPremiumAmounts[i])
+          .toUint120() +
         _userPositions[user][info.debtReserveIds[i]].premiumOffset;
     }
   }

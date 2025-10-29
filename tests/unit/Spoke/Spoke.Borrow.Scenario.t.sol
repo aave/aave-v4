@@ -514,7 +514,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     // Bob supply weth as collateral
     Utils.supplyCollateral(spoke1, state.wethReserveId, bob, state.wethBob.supplyAmount, bob);
 
-    uint256 expectedShares = hub1.previewRestoreByAssets(daiAssetId, borrowAmount1);
+    uint256 expectedShares = hub1.previewRestoreByAssets(address(tokenList.dai), borrowAmount1);
 
     // Bob borrow dai
     TestReturnValues memory returnValues;
@@ -546,7 +546,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     skip(skipTime);
 
     uint256 cumulatedInterest = MathUtils.calculateLinearInterest(
-      hub1.getAsset(daiAssetId).drawnRate,
+      hub1.getAsset(address(tokenList.dai)).drawnRate,
       lastTimestamp
     );
     uint256 expectedDrawnDebt = cumulatedInterest.rayMulUp(borrowAmount1) + borrowAmount2;
@@ -565,7 +565,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       lastTimestamp
     );
 
-    uint256 expectedShares2 = hub1.previewRestoreByAssets(daiAssetId, borrowAmount2);
+    uint256 expectedShares2 = hub1.previewRestoreByAssets(address(tokenList.dai), borrowAmount2);
 
     // Bob borrow more dai
     TestReturnValues memory returnValues2;

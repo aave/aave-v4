@@ -206,11 +206,11 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when an asset is not listed on the Hub when adding a reserve.
   error AssetNotListed();
 
-  /// @notice Thrown when adding a new reserve if that reserve already exists for a given Hub/assetId pair.
+  /// @notice Thrown when adding a new reserve if that reserve already exists for a given Hub/underlying pair.
   error ReserveExists();
 
   /// @notice Thrown when adding a new reserve if an asset id is invalid.
-  error InvalidAssetId();
+  error InvalidUnderlying();
 
   /// @notice Thrown when updating a reserve if it is not listed.
   error ReserveNotListed();

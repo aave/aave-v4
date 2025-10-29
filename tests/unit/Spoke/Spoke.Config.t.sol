@@ -140,7 +140,7 @@ contract SpokeConfigTest is SpokeBase {
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.AddReserve(reserveId, usdzAssetId, address(hub1));
+    emit ISpoke.AddReserve(reserveId, address(tokenList.usdz), address(hub1));
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateReserveConfig(reserveId, newReserveConfig);
     vm.expectEmit(address(spoke1));
@@ -153,7 +153,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      usdzAssetId,
+      address(tokenList.usdz),
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
@@ -164,7 +164,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_fuzz_revertsWith_AssetNotListed() public {
-    uint256 assetId = vm.randomUint(hub1.getAssetCount(), Constants.MAX_ALLOWED_ASSET_ID); // non-existing asset id
+    address underlying = vm.randomUint(hub1.getAssetCount(), Constants.MAX_ALLOWED_ASSET_ID); // non-existing asset id
 
     ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
       paused: true,
@@ -181,7 +181,13 @@ contract SpokeConfigTest is SpokeBase {
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
     vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
-    spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
+    spoke1.addReserve(
+      address(hub1),
+      underlying,
+      reserveSource,
+      newReserveConfig,
+      newDynReserveConfig
+    );
   }
 
   function test_addReserve_revertsWith_InvalidAddress_hub() public {
@@ -220,7 +226,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(ADMIN);
     newSpoke.addReserve(
       address(hub1),
-      wethAssetId,
+      address(tokenList.weth),
       address(0),
       newReserveConfig,
       newDynReserveConfig
@@ -245,7 +251,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      usdzAssetId,
+      address(tokenList.usdz),
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
@@ -255,14 +261,14 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      usdzAssetId,
+      address(tokenList.usdz),
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
     );
   }
 
-  function test_addReserve_revertsWith_InvalidAssetId() public {
+  function test_addReserve_revertsWith_InvalidUnderlying() public {
     ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
       paused: true,
       frozen: true,
@@ -275,11 +281,11 @@ contract SpokeConfigTest is SpokeBase {
       liquidationFee: 10_00
     });
 
-    vm.expectRevert(ISpoke.InvalidAssetId.selector, address(spoke1));
+    vm.expectRevert(ISpoke.InvalidUnderlying.selector, address(spoke1));
     vm.prank(ADMIN);
     spoke1.addReserve(
       address(hub1),
-      Constants.MAX_ALLOWED_ASSET_ID + 1, // invalid assetId
+      Constants.MAX_ALLOWED_ASSET_ID + 1, // invalid underlying
       address(0),
       newReserveConfig,
       newDynReserveConfig

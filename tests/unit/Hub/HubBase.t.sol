@@ -49,17 +49,17 @@ contract HubBase is Base {
     initEnvironment();
   }
 
-  function _updateAddCap(uint256 assetId, address spoke, uint40 newAddCap) internal {
-    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spoke);
+  function _updateAddCap(address underlying, address spoke, uint40 newAddCap) internal {
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(underlying, spoke);
     spokeConfig.addCap = newAddCap;
     vm.prank(HUB_ADMIN);
-    hub1.updateSpokeConfig(assetId, spoke, spokeConfig);
+    hub1.updateSpokeConfig(underlying, spoke, spokeConfig);
   }
 
   /// @dev mocks rate, addSpoke (addUser) adds asset, drawSpoke (drawUser) draws asset, skips time
   function _addAndDrawLiquidity(
     IHub hub,
-    uint256 assetId,
+    address underlying,
     address addUser,
     address addSpoke,
     uint256 addAmount,
@@ -70,7 +70,7 @@ contract HubBase is Base {
   ) internal returns (uint256 addedShares, uint256 drawnShares) {
     addedShares = Utils.add({
       hub: hub,
-      assetId: assetId,
+      underlying: underlying,
       caller: addSpoke,
       amount: addAmount,
       user: addUser
@@ -78,7 +78,7 @@ contract HubBase is Base {
 
     drawnShares = Utils.draw({
       hub: hub,
-      assetId: assetId,
+      underlying: underlying,
       to: drawUser,
       caller: drawSpoke,
       amount: drawAmount
@@ -89,7 +89,7 @@ contract HubBase is Base {
 
   /// @dev Draws liquidity from the Hub via a random spoke
   function _drawLiquidity(
-    uint256 assetId,
+    address underlying,
     uint256 amount,
     bool withPremium,
     bool skipTime
@@ -102,7 +102,7 @@ contract HubBase is Base {
 
     vm.prank(HUB_ADMIN);
     hub1.addSpoke(
-      assetId,
+      underlying,
       tempSpoke,
       IHub.SpokeConfig({
         active: true,
@@ -113,17 +113,17 @@ contract HubBase is Base {
       })
     );
 
-    Utils.draw(hub1, assetId, tempSpoke, tempUser, amount);
+    Utils.draw(hub1, underlying, tempSpoke, tempUser, amount);
 
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(tempSpoke);
-      hub1.refreshPremium(assetId, IHubBase.PremiumDelta(sharesDelta, premiumOffsetDelta, 0));
+      hub1.refreshPremium(underlying, IHubBase.PremiumDelta(sharesDelta, premiumOffsetDelta, 0));
     }
 
     if (skipTime) skip(365 days);
 
-    (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
+    (uint256 drawn, uint256 premium) = hub1.getAssetOwed(underlying);
     assertGt(drawn, 0); // non-zero premium debt
 
     if (withPremium) {
@@ -131,46 +131,46 @@ contract HubBase is Base {
       // restore premium data
       vm.prank(tempSpoke);
       hub1.refreshPremium(
-        assetId,
+        underlying,
         IHubBase.PremiumDelta(-sharesDelta, -premiumOffsetDelta, int256(premium))
       );
     }
   }
 
   // @dev Draws liquidity from the Hub via a random spoke and skips time
-  function _drawLiquidity(uint256 assetId, uint256 amount, bool premium) internal {
-    _drawLiquidity(assetId, amount, premium, true);
+  function _drawLiquidity(address underlying, uint256 amount, bool premium) internal {
+    _drawLiquidity(underlying, amount, premium, true);
   }
 
   /// @dev Draws liquidity from the Hub via a specific spoke which is already active
   function _drawLiquidityFromSpoke(
     address spoke,
-    uint256 assetId,
+    address underlying,
     uint256 reserveId,
     uint256 amount,
     uint256 skipTime
   ) internal returns (uint256 drawn, uint256 premium) {
-    assertTrue(hub1.getSpoke(assetId, spoke).active);
+    assertTrue(hub1.getSpoke(underlying, spoke).active);
 
-    deal(hub1.getAsset(assetId).underlying, alice, amount * 2);
+    deal(hub1.getAsset(underlying).underlying, alice, amount * 2);
     Utils.supplyCollateral(ISpoke(spoke), reserveId, alice, amount * 2, alice);
     Utils.borrow(ISpokeBase(spoke), reserveId, alice, amount, alice);
 
     skip(skipTime);
 
-    (drawn, premium) = hub1.getAssetOwed(assetId);
+    (drawn, premium) = hub1.getAssetOwed(underlying);
     assertGt(drawn, 0); // non-zero drawn debt
     assertGt(premium, 0); // non-zero premium debt
   }
 
   /// @dev Adds liquidity to the Hub via a random spoke
-  function _addLiquidity(uint256 assetId, uint256 amount) public {
+  function _addLiquidity(address underlying, uint256 amount) public {
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
 
-    uint256 initialLiq = hub1.getAssetLiquidity(assetId);
+    uint256 initialLiq = hub1.getAssetLiquidity(underlying);
 
-    address underlying = hub1.getAsset(assetId).underlying;
+    address underlying = hub1.getAsset(underlying).underlying;
     deal(underlying, tempUser, amount);
 
     vm.prank(tempUser);
@@ -178,7 +178,7 @@ contract HubBase is Base {
 
     vm.prank(ADMIN);
     hub1.addSpoke(
-      assetId,
+      underlying,
       tempSpoke,
       IHub.SpokeConfig({
         active: true,
@@ -189,9 +189,15 @@ contract HubBase is Base {
       })
     );
 
-    Utils.add({hub: hub1, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
+    Utils.add({
+      hub: hub1,
+      underlying: underlying,
+      caller: tempSpoke,
+      amount: amount,
+      user: tempUser
+    });
 
-    assertEq(hub1.getAssetLiquidity(assetId), initialLiq + amount);
+    assertEq(hub1.getAssetLiquidity(underlying), initialLiq + amount);
   }
 
   function _getExpectedPremiumDelta(
@@ -201,7 +207,7 @@ contract HubBase is Base {
     uint256 premiumRestored
   ) internal view override returns (IHubBase.PremiumDelta memory) {
     ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    address underlying = spoke.getReserve(reserveId).underlying;
 
     IHubBase.PremiumDelta memory expectedPremiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -int256(uint256(userPosition.premiumShares)),
@@ -209,7 +215,7 @@ contract HubBase is Base {
       realizedDelta: 0
     });
 
-    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPosition.premiumShares) -
+    uint256 accruedPremium = hub1.previewRestoreByShares(underlying, userPosition.premiumShares) -
       userPosition.premiumOffset;
 
     expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumRestored);
@@ -217,11 +223,11 @@ contract HubBase is Base {
     return expectedPremiumDelta;
   }
 
-  function _randomAssetId(IHub hub) internal returns (uint256) {
+  function _randomUnderlying(IHub hub) internal returns (uint256) {
     return vm.randomUint(0, hub.getAssetCount() - 1);
   }
 
-  function _randomInvalidAssetId(IHub hub) internal returns (uint256) {
+  function _randomInvalidUnderlying(IHub hub) internal returns (uint256) {
     return vm.randomUint(hub.getAssetCount(), UINT256_MAX);
   }
 }

@@ -44,11 +44,11 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
   function setUp() public override {
     super.setUp();
-    updateLiquidityFee(hub1, daiAssetId, 0);
-    updateLiquidityFee(hub1, wethAssetId, 0);
-    updateLiquidityFee(hub1, usdxAssetId, 0);
-    updateLiquidityFee(hub1, wbtcAssetId, 0);
-    updateLiquidityFee(hub1, usdzAssetId, 0);
+    updateLiquidityFee(hub1, address(tokenList.dai), 0);
+    updateLiquidityFee(hub1, address(tokenList.weth), 0);
+    updateLiquidityFee(hub1, address(tokenList.usdx), 0);
+    updateLiquidityFee(hub1, address(tokenList.wbtc), 0);
+    updateLiquidityFee(hub1, address(tokenList.usdz), 0);
   }
 
   /// Second accrual after an action - which should update the user rp
@@ -142,10 +142,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
     // Store base borrow rates
     Rates memory rates;
-    rates.daiBaseBorrowRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
-    rates.wethBaseBorrowRate = hub1.getAssetDrawnRate(wethAssetId).toUint96();
-    rates.usdxBaseBorrowRate = hub1.getAssetDrawnRate(usdxAssetId).toUint96();
-    rates.wbtcBaseBorrowRate = hub1.getAssetDrawnRate(wbtcAssetId).toUint96();
+    rates.daiBaseBorrowRate = hub1.getAssetDrawnRate(address(tokenList.dai)).toUint96();
+    rates.wethBaseBorrowRate = hub1.getAssetDrawnRate(address(tokenList.weth)).toUint96();
+    rates.usdxBaseBorrowRate = hub1.getAssetDrawnRate(address(tokenList.usdx)).toUint96();
+    rates.wbtcBaseBorrowRate = hub1.getAssetDrawnRate(address(tokenList.wbtc)).toUint96();
 
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     uint256 drawnDebt = _calculateExpectedDrawnDebt(
@@ -261,7 +261,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     );
     uint256 interest = (drawnDebt + expectedPremiumDebt) -
       amounts.daiBorrowAmount -
-      _calculateBurntInterest(hub1, daiAssetId);
+      _calculateBurntInterest(hub1, address(tokenList.dai));
     _assertSingleUserProtocolDebt(
       spoke2,
       _daiReserveId(spoke2),
@@ -306,7 +306,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     interest =
       (drawnDebt + expectedPremiumDebt) -
       amounts.wethBorrowAmount -
-      _calculateBurntInterest(hub1, wethAssetId);
+      _calculateBurntInterest(hub1, address(tokenList.weth));
     _assertSingleUserProtocolDebt(
       spoke2,
       _wethReserveId(spoke2),
@@ -351,7 +351,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     interest =
       (drawnDebt + expectedPremiumDebt) -
       amounts.usdxBorrowAmount -
-      _calculateBurntInterest(hub1, usdxAssetId);
+      _calculateBurntInterest(hub1, address(tokenList.usdx));
     _assertSingleUserProtocolDebt(
       spoke2,
       _usdxReserveId(spoke2),
@@ -396,7 +396,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     interest =
       (drawnDebt + expectedPremiumDebt) -
       amounts.wbtcBorrowAmount -
-      _calculateBurntInterest(hub1, wbtcAssetId);
+      _calculateBurntInterest(hub1, address(tokenList.wbtc));
     _assertSingleUserProtocolDebt(
       spoke2,
       _wbtcReserveId(spoke2),
@@ -444,7 +444,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           spoke2,
           _daiReserveId(spoke2),
           bob,
-          hub1.previewRestoreByShares(daiAssetId, 1),
+          hub1.previewRestoreByShares(address(tokenList.dai), 1),
           bob
         );
       }
@@ -468,10 +468,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       (amounts.wbtcBorrowAmount, ) = spoke2.getUserDebt(_wbtcReserveId(spoke2), bob);
 
       // Refresh base borrow rates
-      rates.daiBaseBorrowRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
-      rates.wethBaseBorrowRate = hub1.getAssetDrawnRate(wethAssetId).toUint96();
-      rates.usdxBaseBorrowRate = hub1.getAssetDrawnRate(usdxAssetId).toUint96();
-      rates.wbtcBaseBorrowRate = hub1.getAssetDrawnRate(wbtcAssetId).toUint96();
+      rates.daiBaseBorrowRate = hub1.getAssetDrawnRate(address(tokenList.dai)).toUint96();
+      rates.wethBaseBorrowRate = hub1.getAssetDrawnRate(address(tokenList.weth)).toUint96();
+      rates.usdxBaseBorrowRate = hub1.getAssetDrawnRate(address(tokenList.usdx)).toUint96();
+      rates.wbtcBaseBorrowRate = hub1.getAssetDrawnRate(address(tokenList.wbtc)).toUint96();
 
       BaseShares memory baseShares;
 
@@ -526,10 +526,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
       // Store index before accrual, and use this for calculating expected drawn debt
       Indices memory indices;
-      indices.daiIndex = hub1.getAssetDrawnIndex(daiAssetId);
-      indices.wethIndex = hub1.getAssetDrawnIndex(wethAssetId);
-      indices.usdxIndex = hub1.getAssetDrawnIndex(usdxAssetId);
-      indices.wbtcIndex = hub1.getAssetDrawnIndex(wbtcAssetId);
+      indices.daiIndex = hub1.getAssetDrawnIndex(address(tokenList.dai));
+      indices.wethIndex = hub1.getAssetDrawnIndex(address(tokenList.weth));
+      indices.usdxIndex = hub1.getAssetDrawnIndex(address(tokenList.usdx));
+      indices.wbtcIndex = hub1.getAssetDrawnIndex(address(tokenList.wbtc));
 
       // Store timestamp before next skip time
       startTime = vm.getBlockTimestamp().toUint40();
@@ -550,7 +550,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       interest =
         (drawnDebt + expectedPremiumDebt) -
         (originalAmounts.daiBorrowAmount + 1e18) -
-        _calculateBurntInterest(hub1, daiAssetId); // subtract out the extra amount we borrowed
+        _calculateBurntInterest(hub1, address(tokenList.dai)); // subtract out the extra amount we borrowed
       _assertSingleUserProtocolDebt(
         spoke2,
         _daiReserveId(spoke2),
@@ -605,7 +605,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       interest =
         (drawnDebt + expectedPremiumDebt) -
         originalAmounts.wethBorrowAmount -
-        _calculateBurntInterest(hub1, wethAssetId);
+        _calculateBurntInterest(hub1, address(tokenList.weth));
       _assertSingleUserProtocolDebt(
         spoke2,
         _wethReserveId(spoke2),
@@ -655,7 +655,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       interest =
         (drawnDebt + expectedPremiumDebt) -
         originalAmounts.usdxBorrowAmount -
-        _calculateBurntInterest(hub1, usdxAssetId);
+        _calculateBurntInterest(hub1, address(tokenList.usdx));
       _assertSingleUserProtocolDebt(
         spoke2,
         _usdxReserveId(spoke2),
@@ -705,7 +705,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       interest =
         (drawnDebt + expectedPremiumDebt) -
         originalAmounts.wbtcBorrowAmount -
-        _calculateBurntInterest(hub1, wbtcAssetId);
+        _calculateBurntInterest(hub1, address(tokenList.wbtc));
       _assertSingleUserProtocolDebt(
         spoke2,
         _wbtcReserveId(spoke2),

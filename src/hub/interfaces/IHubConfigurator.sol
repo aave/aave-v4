@@ -125,15 +125,15 @@ interface IHubConfigurator {
   ) external;
 
   /// @notice Registers the same spoke for multiple assets with the Hub, each with their own configuration.
-  /// @dev The i-th asset identifier in `assetIds` corresponds to the i-th configuration in `configs`.
+  /// @dev The i-th asset identifier in `underlyings` corresponds to the i-th configuration in `configs`.
   /// @param hub The address of the Hub contract.
   /// @param spoke The address of the Spoke contract.
-  /// @param assetIds The list of asset identifiers to register the spoke for.
+  /// @param underlyings The list of asset identifiers to register the spoke for.
   /// @param configs The list of Spoke configurations to register.
   function addSpokeToAssets(
     address hub,
     address spoke,
-    uint256[] calldata assetIds,
+    uint256[] calldata underlyings,
     IHub.SpokeConfig[] calldata configs
   ) external;
 

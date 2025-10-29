@@ -196,7 +196,7 @@ contract SignatureGatewayBaseTest is SpokeBase {
     address who
   ) internal view {
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
-      IERC20 underlying = _underlying(spoke, reserveId);
+      IERC20 underlying = IERC20(_underlying(spoke, reserveId));
       assertEq(underlying.balanceOf(address(_gateway)), 0);
       assertEq(underlying.allowance({owner: who, spender: address(_gateway)}), 0);
     }

@@ -159,12 +159,6 @@ abstract contract Base is Test {
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
 
   TokenList internal tokenList;
-  uint256 internal wethAssetId = 0;
-  uint256 internal usdxAssetId = 1;
-  uint256 internal daiAssetId = 2;
-  uint256 internal wbtcAssetId = 3;
-  uint256 internal usdyAssetId = 4;
-  uint256 internal usdzAssetId = 5;
 
   uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
@@ -223,7 +217,7 @@ abstract contract Base is Test {
   }
 
   struct AssetPosition {
-    uint256 assetId;
+    address underlying;
     uint256 addedShares;
     uint256 addedAmount;
     uint256 drawnShares;
@@ -240,7 +234,7 @@ abstract contract Base is Test {
 
   struct SpokePosition {
     uint256 reserveId;
-    uint256 assetId;
+    address underlying;
     uint256 addedShares;
     uint256 addedAmount;
     uint256 drawnShares;
@@ -254,7 +248,6 @@ abstract contract Base is Test {
   struct Reserve {
     uint256 reserveId;
     IHub hub;
-    uint16 assetId;
     uint8 decimals;
     uint16 dynamicConfigKey; // key of the last reserve config
     bool paused;
@@ -472,7 +465,7 @@ abstract contract Base is Test {
       encodedIrData
     );
     hub1.updateAssetConfig(
-      wethAssetId,
+      address(tokenList.weth),
       IHub.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
@@ -490,7 +483,7 @@ abstract contract Base is Test {
       encodedIrData
     );
     hub1.updateAssetConfig(
-      usdxAssetId,
+      address(tokenList.usdx),
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
@@ -508,7 +501,7 @@ abstract contract Base is Test {
       encodedIrData
     );
     hub1.updateAssetConfig(
-      daiAssetId,
+      address(tokenList.dai),
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
@@ -526,7 +519,7 @@ abstract contract Base is Test {
       encodedIrData
     );
     hub1.updateAssetConfig(
-      wbtcAssetId,
+      address(tokenList.wbtc),
       IHub.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
@@ -544,7 +537,7 @@ abstract contract Base is Test {
       encodedIrData
     );
     hub1.updateAssetConfig(
-      usdyAssetId,
+      address(tokenList.usdy),
       IHub.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
@@ -631,45 +624,45 @@ abstract contract Base is Test {
 
     spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
       address(hub1),
-      wethAssetId,
+      address(tokenList.weth),
       _deployMockPriceFeed(spoke1, 2000e8),
       spokeInfo[spoke1].weth.reserveConfig,
       spokeInfo[spoke1].weth.dynReserveConfig
     );
     spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
       address(hub1),
-      wbtcAssetId,
+      address(tokenList.wbtc),
       _deployMockPriceFeed(spoke1, 50_000e8),
       spokeInfo[spoke1].wbtc.reserveConfig,
       spokeInfo[spoke1].wbtc.dynReserveConfig
     );
     spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(
       address(hub1),
-      daiAssetId,
+      address(tokenList.dai),
       _deployMockPriceFeed(spoke1, 1e8),
       spokeInfo[spoke1].dai.reserveConfig,
       spokeInfo[spoke1].dai.dynReserveConfig
     );
     spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(
       address(hub1),
-      usdxAssetId,
+      address(tokenList.usdx),
       _deployMockPriceFeed(spoke1, 1e8),
       spokeInfo[spoke1].usdx.reserveConfig,
       spokeInfo[spoke1].usdx.dynReserveConfig
     );
     spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(
       address(hub1),
-      usdyAssetId,
+      address(tokenList.usdy),
       _deployMockPriceFeed(spoke1, 1e8),
       spokeInfo[spoke1].usdy.reserveConfig,
       spokeInfo[spoke1].usdy.dynReserveConfig
     );
 
-    hub1.addSpoke(wethAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(wbtcAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(daiAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(usdxAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(usdyAssetId, address(spoke1), spokeConfig);
+    hub1.addSpoke(address(tokenList.weth), address(spoke1), spokeConfig);
+    hub1.addSpoke(address(tokenList.wbtc), address(spoke1), spokeConfig);
+    hub1.addSpoke(address(tokenList.dai), address(spoke1), spokeConfig);
+    hub1.addSpoke(address(tokenList.usdx), address(spoke1), spokeConfig);
+    hub1.addSpoke(address(tokenList.usdy), address(spoke1), spokeConfig);
 
     // Spoke 2 reserve configs
     spokeInfo[spoke2].wbtc.reserveConfig = ISpoke.ReserveConfig({
@@ -741,53 +734,53 @@ abstract contract Base is Test {
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
       address(hub1),
-      wbtcAssetId,
+      address(tokenList.wbtc),
       _deployMockPriceFeed(spoke2, 50_000e8),
       spokeInfo[spoke2].wbtc.reserveConfig,
       spokeInfo[spoke2].wbtc.dynReserveConfig
     );
     spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(
       address(hub1),
-      wethAssetId,
+      address(tokenList.weth),
       _deployMockPriceFeed(spoke2, 2000e8),
       spokeInfo[spoke2].weth.reserveConfig,
       spokeInfo[spoke2].weth.dynReserveConfig
     );
     spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(
       address(hub1),
-      daiAssetId,
+      address(tokenList.dai),
       _deployMockPriceFeed(spoke2, 1e8),
       spokeInfo[spoke2].dai.reserveConfig,
       spokeInfo[spoke2].dai.dynReserveConfig
     );
     spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(
       address(hub1),
-      usdxAssetId,
+      address(tokenList.usdx),
       _deployMockPriceFeed(spoke2, 1e8),
       spokeInfo[spoke2].usdx.reserveConfig,
       spokeInfo[spoke2].usdx.dynReserveConfig
     );
     spokeInfo[spoke2].usdy.reserveId = spoke2.addReserve(
       address(hub1),
-      usdyAssetId,
+      address(tokenList.usdy),
       _deployMockPriceFeed(spoke2, 1e8),
       spokeInfo[spoke2].usdy.reserveConfig,
       spokeInfo[spoke2].usdy.dynReserveConfig
     );
     spokeInfo[spoke2].usdz.reserveId = spoke2.addReserve(
       address(hub1),
-      usdzAssetId,
+      address(tokenList.usdz),
       _deployMockPriceFeed(spoke2, 1e8),
       spokeInfo[spoke2].usdz.reserveConfig,
       spokeInfo[spoke2].usdz.dynReserveConfig
     );
 
-    hub1.addSpoke(wbtcAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(wethAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(daiAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(usdxAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(usdyAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(usdzAssetId, address(spoke2), spokeConfig);
+    hub1.addSpoke(address(tokenList.wbtc), address(spoke2), spokeConfig);
+    hub1.addSpoke(address(tokenList.weth), address(spoke2), spokeConfig);
+    hub1.addSpoke(address(tokenList.dai), address(spoke2), spokeConfig);
+    hub1.addSpoke(address(tokenList.usdx), address(spoke2), spokeConfig);
+    hub1.addSpoke(address(tokenList.usdy), address(spoke2), spokeConfig);
+    hub1.addSpoke(address(tokenList.usdz), address(spoke2), spokeConfig);
 
     // Spoke 3 reserve configs
     spokeInfo[spoke3].dai.reserveConfig = ISpoke.ReserveConfig({
@@ -837,42 +830,42 @@ abstract contract Base is Test {
 
     spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
       address(hub1),
-      daiAssetId,
+      address(tokenList.dai),
       _deployMockPriceFeed(spoke3, 1e8),
       spokeInfo[spoke3].dai.reserveConfig,
       spokeInfo[spoke3].dai.dynReserveConfig
     );
     spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(
       address(hub1),
-      usdxAssetId,
+      address(tokenList.usdx),
       _deployMockPriceFeed(spoke3, 1e8),
       spokeInfo[spoke3].usdx.reserveConfig,
       spokeInfo[spoke3].usdx.dynReserveConfig
     );
     spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(
       address(hub1),
-      wethAssetId,
+      address(tokenList.weth),
       _deployMockPriceFeed(spoke3, 2000e8),
       spokeInfo[spoke3].weth.reserveConfig,
       spokeInfo[spoke3].weth.dynReserveConfig
     );
     spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(
       address(hub1),
-      wbtcAssetId,
+      address(tokenList.wbtc),
       _deployMockPriceFeed(spoke3, 50_000e8),
       spokeInfo[spoke3].wbtc.reserveConfig,
       spokeInfo[spoke3].wbtc.dynReserveConfig
     );
 
-    hub1.addSpoke(daiAssetId, address(spoke3), spokeConfig);
-    hub1.addSpoke(usdxAssetId, address(spoke3), spokeConfig);
-    hub1.addSpoke(wethAssetId, address(spoke3), spokeConfig);
-    hub1.addSpoke(wbtcAssetId, address(spoke3), spokeConfig);
+    hub1.addSpoke(address(tokenList.dai), address(spoke3), spokeConfig);
+    hub1.addSpoke(address(tokenList.usdx), address(spoke3), spokeConfig);
+    hub1.addSpoke(address(tokenList.weth), address(spoke3), spokeConfig);
+    hub1.addSpoke(address(tokenList.wbtc), address(spoke3), spokeConfig);
 
     vm.stopPrank();
   }
 
-  /* @dev Configures Hub 2 with the following assetIds:
+  /* @dev Configures Hub 2 with the following underlyings:
    * 0: WETH
    * 1: USDX
    * 2: DAI
@@ -939,7 +932,7 @@ abstract contract Base is Test {
     return (hub2, hub2IrStrategy);
   }
 
-  /* @dev Configures Hub 3 with the following assetIds:
+  /* @dev Configures Hub 3 with the following underlyings:
    * 0: DAI
    * 1: USDX
    * 2: WBTC
@@ -1006,30 +999,30 @@ abstract contract Base is Test {
 
   function updateAssetFeeReceiver(
     IHub hub,
-    uint256 assetId,
+    address underlying,
     address newFeeReceiver
   ) internal pausePrank {
-    IHub.AssetConfig memory config = hub.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = hub.getAssetConfig(underlying);
     config.feeReceiver = newFeeReceiver;
 
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, config, new bytes(0));
+    hub.updateAssetConfig(underlying, config, new bytes(0));
 
-    assertEq(hub.getAssetConfig(assetId), config);
+    assertEq(hub.getAssetConfig(underlying), config);
   }
 
   function updateAssetReinvestmentController(
     IHub hub,
-    uint256 assetId,
+    address underlying,
     address newReinvestmentController
   ) internal pausePrank {
-    IHub.AssetConfig memory config = hub.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = hub.getAssetConfig(underlying);
     config.reinvestmentController = newReinvestmentController;
 
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, config, new bytes(0));
+    hub.updateAssetConfig(underlying, config, new bytes(0));
 
-    assertEq(hub.getAssetConfig(assetId), config);
+    assertEq(hub.getAssetConfig(underlying), config);
   }
 
   function updateReserveFrozenFlag(
@@ -1174,13 +1167,17 @@ abstract contract Base is Test {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal pausePrank {
-    IHub.AssetConfig memory config = hub.getAssetConfig(assetId);
+  function updateLiquidityFee(
+    IHub hub,
+    address underlying,
+    uint256 liquidityFee
+  ) internal pausePrank {
+    IHub.AssetConfig memory config = hub.getAssetConfig(underlying);
     config.liquidityFee = liquidityFee.toUint16();
     vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, config, new bytes(0));
+    hub.updateAssetConfig(underlying, config, new bytes(0));
 
-    assertEq(hub.getAssetConfig(assetId), config);
+    assertEq(hub.getAssetConfig(underlying), config);
   }
 
   function _updateTargetHealthFactor(
@@ -1245,58 +1242,58 @@ abstract contract Base is Test {
 
   function _updateSpokePaused(
     IHub hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     bool paused
   ) internal pausePrank {
-    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(underlying, spoke);
     spokeConfig.paused = paused;
     vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+    hub.updateSpokeConfig(underlying, spoke, spokeConfig);
 
-    assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
+    assertEq(hub.getSpokeConfig(underlying, spoke), spokeConfig);
   }
 
   function updateSpokeActive(
     IHub hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     bool newActive
   ) internal pausePrank {
-    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(underlying, spoke);
     spokeConfig.active = newActive;
     vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+    hub.updateSpokeConfig(underlying, spoke, spokeConfig);
 
-    assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
+    assertEq(hub.getSpokeConfig(underlying, spoke), spokeConfig);
   }
 
   function updateDrawCap(
     IHub hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     uint40 newDrawCap
   ) internal pausePrank {
-    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(underlying, spoke);
     spokeConfig.drawCap = newDrawCap;
     vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+    hub.updateSpokeConfig(underlying, spoke, spokeConfig);
 
-    assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
+    assertEq(hub.getSpokeConfig(underlying, spoke), spokeConfig);
   }
 
   function _updateSpokeRiskPremiumThreshold(
     IHub hub,
-    uint256 assetId,
+    address underlying,
     address spoke,
     uint24 newRiskPremiumThreshold
   ) internal pausePrank {
-    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(underlying, spoke);
     spokeConfig.riskPremiumThreshold = newRiskPremiumThreshold;
     vm.prank(HUB_ADMIN);
-    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+    hub.updateSpokeConfig(underlying, spoke, spokeConfig);
 
-    assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
+    assertEq(hub.getSpokeConfig(underlying, spoke), spokeConfig);
   }
 
   function getUserInfo(
@@ -1324,14 +1321,14 @@ abstract contract Base is Test {
   }
 
   function getSpokeInfo(
-    uint256 assetId,
+    address underlying,
     address spoke
   ) internal view returns (IHub.SpokeData memory) {
-    return hub1.getSpoke(assetId, spoke);
+    return hub1.getSpoke(underlying, spoke);
   }
 
-  function getAssetInfo(uint256 assetId) internal view returns (IHub.Asset memory) {
-    return hub1.getAsset(assetId);
+  function getAssetInfo(address underlying) internal view returns (IHub.Asset memory) {
+    return hub1.getAsset(underlying);
   }
 
   function getAssetByReserveId(
@@ -1339,8 +1336,8 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (uint256, IERC20) {
     ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
-    (address underlying, ) = reserve.hub.getAssetUnderlyingAndDecimals(reserve.assetId);
-    return (reserve.assetId, IERC20(underlying));
+    (address underlying, ) = reserve.hub.getAssetUnderlyingAndDecimals(reserve.underlying);
+    return (reserve.underlying, IERC20(underlying));
   }
 
   function getAssetUnderlyingByReserveId(
@@ -1348,7 +1345,7 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (IERC20) {
     ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
-    (address underlying, ) = reserve.hub.getAssetUnderlyingAndDecimals(reserve.assetId);
+    (address underlying, ) = reserve.hub.getAssetUnderlyingAndDecimals(reserve.underlying);
     return IERC20(underlying);
   }
 
@@ -1361,13 +1358,19 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to calculate asset amount corresponding to single added share
-  function minimumAssetsPerAddedShare(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.previewAddByShares(assetId, 1);
+  function minimumAssetsPerAddedShare(
+    IHub hub,
+    address underlying
+  ) internal view returns (uint256) {
+    return hub.previewAddByShares(underlying, 1);
   }
 
   /// @dev Helper function to calculate asset amount corresponding to single drawn share
-  function minimumAssetsPerDrawnShare(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.previewRestoreByShares(assetId, 1);
+  function minimumAssetsPerDrawnShare(
+    IHub hub,
+    address underlying
+  ) internal view returns (uint256) {
+    return hub.previewRestoreByShares(underlying, 1);
   }
 
   /// @dev Helper function to calculate expected supplied assets based on amount to supply and current exchange rate
@@ -1382,20 +1385,20 @@ abstract contract Base is Test {
       sharesAmount.toAssetsDown(totalAddedAssets + assetsAmount, totalAddedShares + sharesAmount);
   }
 
-  function getAddExRate(uint256 assetId) internal view returns (uint256) {
-    return hub1.previewRemoveByShares(assetId, MAX_SUPPLY_AMOUNT);
+  function getAddExRate(address underlying) internal view returns (uint256) {
+    return hub1.previewRemoveByShares(underlying, MAX_SUPPLY_AMOUNT);
   }
 
-  function getDebtExRate(uint256 assetId) internal view returns (uint256) {
-    return hub1.previewRestoreByShares(assetId, MAX_SUPPLY_AMOUNT);
+  function getDebtExRate(address underlying) internal view returns (uint256) {
+    return hub1.previewRestoreByShares(underlying, MAX_SUPPLY_AMOUNT);
   }
 
-  function getDeficit(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.getAsset(assetId).deficit;
+  function getDeficit(IHub hub, address underlying) internal view returns (uint256) {
+    return hub.getAsset(underlying).deficit;
   }
 
-  function getAssetDrawnRate(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.getAsset(assetId).drawnRate;
+  function getAssetDrawnRate(IHub hub, address underlying) internal view returns (uint256) {
+    return hub.getAsset(underlying).drawnRate;
   }
 
   /// @dev Helper function to ensure supply exchange rate is monotonically increasing
@@ -1423,7 +1426,7 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     return
       (amount * IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId)).wadDivDown(
-        10 ** _underlying(spoke, reserveId).decimals()
+        10 ** TestnetERC20(_underlying(spoke, reserveId)).decimals()
       );
   }
 
@@ -1435,7 +1438,7 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     return
       (amount * IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId)).wadDivUp(
-        10 ** _underlying(spoke, reserveId).decimals()
+        10 ** TestnetERC20(_underlying(spoke, reserveId)).decimals()
       );
   }
 
@@ -1459,7 +1462,7 @@ abstract contract Base is Test {
     uint256 drawn,
     uint256 premium,
     uint256 restoreAmount,
-    uint256 assetId
+    address underlying
   ) internal view returns (uint256, uint256) {
     if (restoreAmount <= premium) {
       return (0, restoreAmount);
@@ -1467,8 +1470,8 @@ abstract contract Base is Test {
     uint256 drawnRestored = _min(drawn, restoreAmount - premium);
     // round drawn debt to nearest whole share
     drawnRestored = hub1.previewRestoreByShares(
-      assetId,
-      hub1.previewRestoreByAssets(assetId, drawnRestored)
+      underlying,
+      hub1.previewRestoreByAssets(underlying, drawnRestored)
     );
     return (drawnRestored, premium);
   }
@@ -1485,7 +1488,7 @@ abstract contract Base is Test {
         userDrawnDebt,
         userPremiumDebt,
         repayAmount,
-        _assetId(spoke, reserveId)
+        _underlying(spoke, reserveId)
       );
   }
 
@@ -1497,7 +1500,7 @@ abstract contract Base is Test {
   ) internal view virtual returns (IHubBase.PremiumDelta memory) {
     ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
     Debts memory userDebt = getUserDebt(spoke, user, reserveId);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    address underlying = spoke.getReserve(reserveId).underlying;
 
     IHubBase.PremiumDelta memory expectedPremiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -int256(uint256(userPosition.premiumShares)),
@@ -1505,13 +1508,13 @@ abstract contract Base is Test {
       realizedDelta: 0
     });
 
-    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPosition.premiumShares) -
+    uint256 accruedPremium = hub1.previewRestoreByShares(underlying, userPosition.premiumShares) -
       userPosition.premiumOffset;
     (, uint256 premiumDebtRestored) = _calculateExactRestoreAmount(
       userDebt.drawnDebt,
       userDebt.premiumDebt,
       repayAmount,
-      assetId
+      underlying
     );
     expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumDebtRestored);
 
@@ -1520,31 +1523,31 @@ abstract contract Base is Test {
 
   /// @dev Helper function to check consistent supplied amounts within accounting
   function _checkSuppliedAmounts(
-    uint256 assetId,
+    address underlying,
     uint256 reserveId,
     ISpoke spoke,
     address user,
     uint256 expectedSuppliedAmount,
     string memory label
   ) internal view {
-    uint256 expectedSuppliedShares = hub1.previewAddByAssets(assetId, expectedSuppliedAmount);
+    uint256 expectedSuppliedShares = hub1.previewAddByAssets(underlying, expectedSuppliedAmount);
     assertEq(
-      hub1.getAddedShares(assetId),
+      hub1.getAddedShares(underlying),
       expectedSuppliedShares,
       string(abi.encodePacked('asset supplied shares ', label))
     );
     assertEq(
-      hub1.getAddedAssets(assetId) - _calculateBurntInterest(hub1, assetId),
+      hub1.getAddedAssets(underlying) - _calculateBurntInterest(hub1, underlying),
       expectedSuppliedAmount,
       string(abi.encodePacked('asset supplied amount ', label))
     );
     assertEq(
-      hub1.getSpokeAddedShares(assetId, address(spoke)),
+      hub1.getSpokeAddedShares(underlying, address(spoke)),
       expectedSuppliedShares,
       string(abi.encodePacked('spoke supplied shares ', label))
     );
     assertEq(
-      hub1.getSpokeAddedAssets(assetId, address(spoke)),
+      hub1.getSpokeAddedAssets(underlying, address(spoke)),
       expectedSuppliedAmount,
       string(abi.encodePacked('spoke supplied amount ', label))
     );
@@ -1634,9 +1637,9 @@ abstract contract Base is Test {
     uint256 expectedPremiumDebt,
     string memory label
   ) internal view {
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    address underlying = spoke.getReserve(reserveId).underlying;
     (uint256 actualDrawnDebt, uint256 actualPremiumDebt) = hub1.getSpokeOwed(
-      assetId,
+      underlying,
       address(spoke)
     );
     assertApproxEqAbs(
@@ -1652,7 +1655,7 @@ abstract contract Base is Test {
       string.concat('spoke premium debt ', label)
     );
     assertApproxEqAbs(
-      hub1.getSpokeTotalOwed(assetId, address(spoke)),
+      hub1.getSpokeTotalOwed(underlying, address(spoke)),
       expectedDrawnDebt + expectedPremiumDebt,
       3,
       string.concat('spoke total debt ', label)
@@ -1666,8 +1669,8 @@ abstract contract Base is Test {
     uint256 expectedPremiumDebt,
     string memory label
   ) internal view {
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    (uint256 actualDrawnDebt, uint256 actualPremiumDebt) = hub1.getAssetOwed(assetId);
+    address underlying = spoke.getReserve(reserveId).underlying;
+    (uint256 actualDrawnDebt, uint256 actualPremiumDebt) = hub1.getAssetOwed(underlying);
     assertApproxEqAbs(
       actualDrawnDebt,
       expectedDrawnDebt,
@@ -1681,7 +1684,7 @@ abstract contract Base is Test {
       string.concat('asset premium debt ', label)
     );
     assertApproxEqAbs(
-      hub1.getAssetTotalOwed(assetId),
+      hub1.getAssetTotalOwed(underlying),
       expectedDrawnDebt + expectedPremiumDebt,
       3,
       string.concat('asset total debt ', label)
@@ -1740,9 +1743,9 @@ abstract contract Base is Test {
     uint256 expectedSuppliedAmount,
     string memory label
   ) internal view {
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    address underlying = spoke.getReserve(reserveId).underlying;
     assertApproxEqAbs(
-      hub1.getSpokeAddedAssets(assetId, address(spoke)),
+      hub1.getSpokeAddedAssets(underlying, address(spoke)),
       expectedSuppliedAmount,
       3,
       string.concat('spoke supplied amount ', label)
@@ -1755,9 +1758,9 @@ abstract contract Base is Test {
     uint256 expectedSuppliedAmount,
     string memory label
   ) internal view {
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    address underlying = spoke.getReserve(reserveId).underlying;
     assertApproxEqAbs(
-      hub1.getAddedAssets(assetId) - _calculateBurntInterest(hub1, assetId),
+      hub1.getAddedAssets(underlying) - _calculateBurntInterest(hub1, underlying),
       expectedSuppliedAmount,
       3,
       string.concat('asset supplied amount ', label)
@@ -1789,7 +1792,7 @@ abstract contract Base is Test {
       _convertAmountToValue(
         amount,
         IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId),
-        10 ** _underlying(spoke, reserveId).decimals()
+        10 ** TestnetERC20(_underlying(spoke, reserveId)).decimals()
       );
   }
 
@@ -1810,7 +1813,7 @@ abstract contract Base is Test {
       _convertValueToAmount(
         valueAmount,
         IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId),
-        10 ** _underlying(spoke, reserveId).decimals()
+        10 ** TestnetERC20(_underlying(spoke, reserveId)).decimals()
       );
   }
 
@@ -1889,10 +1892,10 @@ abstract contract Base is Test {
     ISpoke.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
 
     uint256 collPrice = oracle.getReservePrice(collReserveId);
-    uint256 collAssetUnits = 10 ** hub1.getAsset(collData.assetId).decimals;
+    uint256 collAssetUnits = 10 ** hub1.getAsset(collData.underlying).decimals;
 
     ISpoke.Reserve memory debtData = spoke.getReserve(debtReserveId);
-    uint256 debtAssetUnits = 10 ** hub1.getAsset(debtData.assetId).decimals;
+    uint256 debtAssetUnits = 10 ** hub1.getAsset(debtData.underlying).decimals;
     uint256 debtPrice = oracle.getReservePrice(debtReserveId);
 
     uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadDivDown(debtAssetUnits);
@@ -1943,21 +1946,22 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to get asset drawn debt
-  function getAssetDrawnDebt(uint256 assetId) internal view returns (uint256) {
-    (uint256 drawn, ) = hub1.getAssetOwed(assetId);
+  function getAssetDrawnDebt(address underlying) internal view returns (uint256) {
+    (uint256 drawn, ) = hub1.getAssetOwed(underlying);
     return drawn;
   }
 
   /// @dev Helper function to calculate burnt interest in assets terms (originated from virtual shares and assets)
-  function _calculateBurntInterest(IHub hub, uint256 assetId) internal view returns (uint256) {
+  function _calculateBurntInterest(IHub hub, address underlying) internal view returns (uint256) {
     return
-      hub.getAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getAddedShares(assetId));
+      hub.getAddedAssets(underlying) -
+      hub.previewRemoveByShares(underlying, hub.getAddedShares(underlying));
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke
-  function _withdrawLiquidityFees(IHub hub, uint256 assetId, uint256 amount) internal {
-    Utils.mintFeeShares(hub, assetId, ADMIN);
-    uint256 fees = hub.getSpokeAddedAssets(assetId, address(treasurySpoke));
+  function _withdrawLiquidityFees(IHub hub, address underlying, uint256 amount) internal {
+    Utils.mintFeeShares(hub, underlying, ADMIN);
+    uint256 fees = hub.getSpokeAddedAssets(underlying, address(treasurySpoke));
 
     if (amount > fees) {
       amount = fees;
@@ -1966,7 +1970,7 @@ abstract contract Base is Test {
       return; // nothing to withdraw
     }
     vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
+    treasurySpoke.withdraw(underlying, amount, address(treasurySpoke));
   }
 
   function _assumeValidSupplier(address user) internal view {
@@ -1982,16 +1986,16 @@ abstract contract Base is Test {
     );
   }
 
-  function _getAssetLiquidityFee(uint256 assetId) internal view returns (uint256) {
-    return hub1.getAssetConfig(assetId).liquidityFee;
+  function _getAssetLiquidityFee(address underlying) internal view returns (uint256) {
+    return hub1.getAssetConfig(underlying).liquidityFee;
   }
 
-  function _getFeeReceiver(IHub hub, uint256 assetId) internal view returns (address) {
-    return hub.getAssetConfig(assetId).feeReceiver;
+  function _getFeeReceiver(IHub hub, address underlying) internal view returns (address) {
+    return hub.getAssetConfig(underlying).feeReceiver;
   }
 
   function _getFeeReceiver(ISpoke spoke, uint256 reserveId) internal view returns (address) {
-    return _getFeeReceiver(_hub(spoke, reserveId), spoke.getReserve(reserveId).assetId);
+    return _getFeeReceiver(_hub(spoke, reserveId), spoke.getReserve(reserveId).underlying);
   }
 
   function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint24) {
@@ -2035,17 +2039,13 @@ abstract contract Base is Test {
     return IHub(address(spoke.getReserve(reserveId).hub));
   }
 
-  function _assetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
-    return spoke.getReserve(reserveId).assetId;
-  }
-
-  function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (TestnetERC20) {
-    return TestnetERC20(spoke.getReserve(reserveId).underlying);
+  function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (address) {
+    return spoke.getReserve(reserveId).underlying;
   }
 
   function _approveAllUnderlying(ISpoke spoke, address owner, address spender) internal {
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
-      TestnetERC20 underlying = _underlying(spoke, reserveId);
+      TestnetERC20 underlying = TestnetERC20(_underlying(spoke, reserveId));
       vm.prank(owner);
       underlying.approve(spender, UINT256_MAX);
     }
@@ -2236,7 +2236,7 @@ abstract contract Base is Test {
 
   function _mockInterestRateBps(
     uint256 interestRateBps,
-    uint256 assetId,
+    address underlying,
     uint256 liquidity,
     uint256 drawn,
     uint256 deficit,
@@ -2245,7 +2245,7 @@ abstract contract Base is Test {
     _mockInterestRateBps(
       address(irStrategy),
       interestRateBps,
-      assetId,
+      underlying,
       liquidity,
       drawn,
       deficit,
@@ -2256,7 +2256,7 @@ abstract contract Base is Test {
   function _mockInterestRateBps(
     address interestRateStrategy,
     uint256 interestRateBps,
-    uint256 assetId,
+    address underlying,
     uint256 liquidity,
     uint256 drawn,
     uint256 deficit,
@@ -2266,7 +2266,7 @@ abstract contract Base is Test {
       interestRateStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, liquidity, drawn, deficit, swept)
+        (underlying, liquidity, drawn, deficit, swept)
       ),
       abi.encode(interestRateBps.bpsToRay())
     );
@@ -2286,17 +2286,17 @@ abstract contract Base is Test {
 
   function _mockInterestRateRay(
     uint256 interestRateRay,
-    uint256 assetId,
+    address underlying,
     uint256 liquidity,
     uint256 drawn
   ) internal {
-    _mockInterestRateRay(address(irStrategy), interestRateRay, assetId, liquidity, drawn, 0, 0);
+    _mockInterestRateRay(address(irStrategy), interestRateRay, underlying, liquidity, drawn, 0, 0);
   }
 
   function _mockInterestRateRay(
     address interestRateStrategy,
     uint256 interestRateRay,
-    uint256 assetId,
+    address underlying,
     uint256 liquidity,
     uint256 drawn,
     uint256 deficit,
@@ -2306,7 +2306,7 @@ abstract contract Base is Test {
       interestRateStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, liquidity, drawn, deficit, swept)
+        (underlying, liquidity, drawn, deficit, swept)
       ),
       abi.encode(interestRateRay)
     );
@@ -2339,16 +2339,16 @@ abstract contract Base is Test {
 
   function assertBorrowRateSynced(
     IHub targetHub,
-    uint256 assetId,
+    address underlying,
     string memory operation
   ) internal view {
-    IHub.Asset memory asset = targetHub.getAsset(assetId);
-    (uint256 drawn, ) = hub1.getAssetOwed(assetId);
+    IHub.Asset memory asset = targetHub.getAsset(underlying);
+    (uint256 drawn, ) = hub1.getAssetOwed(underlying);
 
     vm.assertEq(
       asset.drawnRate,
       IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate(
-        assetId,
+        underlying,
         asset.liquidity,
         drawn,
         asset.deficit,
@@ -2358,11 +2358,15 @@ abstract contract Base is Test {
     );
   }
 
-  function assertHubLiquidity(IHub targetHub, uint256 assetId, string memory label) internal view {
-    IHub.Asset memory asset = targetHub.getAsset(assetId);
+  function assertHubLiquidity(
+    IHub targetHub,
+    address underlying,
+    string memory label
+  ) internal view {
+    IHub.Asset memory asset = targetHub.getAsset(underlying);
     uint256 currentHubBalance = IERC20(asset.underlying).balanceOf(address(targetHub));
     assertEq(
-      targetHub.getAssetLiquidity(assetId),
+      targetHub.getAssetLiquidity(underlying),
       currentHubBalance,
       string.concat('hub liquidity ', label)
     );
@@ -2409,16 +2413,16 @@ abstract contract Base is Test {
   // @dev Helper function to get asset position, valid if no time has passed since last action
   function getAssetPosition(
     IHub hub,
-    uint256 assetId
+    address underlying
   ) internal view returns (AssetPosition memory) {
-    IHub.Asset memory assetData = hub.getAsset(assetId);
-    (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
+    IHub.Asset memory assetData = hub.getAsset(underlying);
+    (uint256 drawn, uint256 premium) = hub.getAssetOwed(underlying);
     return
       AssetPosition({
-        assetId: assetId,
+        underlying: underlying,
         liquidity: assetData.liquidity,
         addedShares: assetData.addedShares,
-        addedAmount: hub.getAddedAssets(assetId) - _calculateBurntInterest(hub, assetId),
+        addedAmount: hub.getAddedAssets(underlying) - _calculateBurntInterest(hub, underlying),
         drawnShares: assetData.drawnShares,
         drawn: drawn,
         premiumShares: assetData.premiumShares,
@@ -2442,15 +2446,15 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (SpokePosition memory) {
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    IHub.SpokeData memory spokeData = hub1.getSpoke(assetId, address(spoke));
-    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(assetId, address(spoke));
+    address underlying = spoke.getReserve(reserveId).underlying;
+    IHub.SpokeData memory spokeData = hub1.getSpoke(underlying, address(spoke));
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(underlying, address(spoke));
     return
       SpokePosition({
         reserveId: reserveId,
-        assetId: assetId,
+        underlying: underlying,
         addedShares: spokeData.addedShares,
-        addedAmount: hub1.getSpokeAddedAssets(assetId, address(spoke)),
+        addedAmount: hub1.getSpokeAddedAssets(underlying, address(spoke)),
         drawnShares: spokeData.drawnShares,
         drawn: drawn,
         premiumShares: spokeData.premiumShares,
@@ -2466,7 +2470,7 @@ abstract contract Base is Test {
       Reserve({
         reserveId: reserveId,
         hub: _hub(spoke, reserveId),
-        assetId: reserve.assetId,
+        underlying: reserve.underlying,
         decimals: reserve.decimals,
         dynamicConfigKey: reserve.dynamicConfigKey,
         paused: reserve.paused,
@@ -2477,7 +2481,7 @@ abstract contract Base is Test {
   }
 
   function assertEq(SpokePosition memory a, AssetPosition memory b) internal pure {
-    assertEq(a.assetId, b.assetId, 'assetId');
+    assertEq(a.underlying, b.underlying, 'underlying');
     assertEq(a.addedShares, b.addedShares, 'addedShares');
     assertEq(a.addedAmount, b.addedAmount, 'addedAmount');
     assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
@@ -2490,7 +2494,7 @@ abstract contract Base is Test {
 
   function assertEq(SpokePosition memory a, SpokePosition memory b) internal pure {
     assertEq(a.reserveId, b.reserveId, 'reserveId');
-    assertEq(a.assetId, b.assetId, 'assetId');
+    assertEq(a.underlying, b.underlying, 'underlying');
     assertEq(a.addedShares, b.addedShares, 'addedShares');
     assertEq(a.addedAmount, b.addedAmount, 'addedAmount');
     assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
@@ -2645,8 +2649,8 @@ abstract contract Base is Test {
   }
 
   /// @dev Calculate expected fees based on previous drawn index
-  function _calcUnrealizedFees(IHub hub, uint256 assetId) internal view returns (uint256) {
-    IHub.Asset memory asset = hub.getAsset(assetId);
+  function _calcUnrealizedFees(IHub hub, address underlying) internal view returns (uint256) {
+    IHub.Asset memory asset = hub.getAsset(underlying);
     uint256 lastDrawnIndex = asset.drawnIndex;
     uint256 drawnIndex = asset.drawnIndex.rayMulUp(
       MathUtils.calculateLinearInterest(asset.drawnRate, uint40(asset.lastUpdateTimestamp))
@@ -2661,17 +2665,18 @@ abstract contract Base is Test {
 
   function _getExpectedFeeReceiverAddedAssets(
     IHub hub,
-    uint256 assetId
+    address underlying
   ) internal view returns (uint256) {
-    uint256 expectedFees = hub.getAsset(assetId).realizedFees + _calcUnrealizedFees(hub, assetId);
-    assertEq(expectedFees, hub.getAssetAccruedFees(assetId), 'asset accrued fees');
-    return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + expectedFees;
+    uint256 expectedFees = hub.getAsset(underlying).realizedFees +
+      _calcUnrealizedFees(hub, underlying);
+    assertEq(expectedFees, hub.getAssetAccruedFees(underlying), 'asset accrued fees');
+    return hub.getSpokeAddedAssets(underlying, hub.getAsset(underlying).feeReceiver) + expectedFees;
   }
 
-  function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
+  function _getAddedAssetsWithFees(IHub hub, address underlying) internal view returns (uint256) {
     return
-      hub.getAddedAssets(assetId) +
-      hub.getAsset(assetId).realizedFees +
-      _calcUnrealizedFees(hub, assetId);
+      hub.getAddedAssets(underlying) +
+      hub.getAsset(underlying).realizedFees +
+      _calcUnrealizedFees(hub, underlying);
   }
 }

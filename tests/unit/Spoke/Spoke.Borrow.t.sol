@@ -91,7 +91,10 @@ contract SpokeBorrowTest is SpokeBase {
       label: 'alice weth data before'
     });
 
-    uint256 expectedShares = hub1.previewRestoreByAssets(daiAssetId, state.daiBob.borrowAmount);
+    uint256 expectedShares = hub1.previewRestoreByAssets(
+      address(tokenList.dai),
+      state.daiBob.borrowAmount
+    );
 
     // Bob draw all dai reserve liquidity
     TestReturnValues memory returnValues;
@@ -164,7 +167,7 @@ contract SpokeBorrowTest is SpokeBase {
     users[0] = bob;
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'bob dai after');
 
-    assertHubLiquidity(hub1, daiAssetId, 'spoke1.borrow');
+    assertHubLiquidity(hub1, address(tokenList.dai), 'spoke1.borrow');
   }
 
   function test_borrow_fuzz_amounts(uint256 wethSupplyAmount, uint256 daiBorrowAmount) public {
@@ -253,7 +256,10 @@ contract SpokeBorrowTest is SpokeBase {
       label: 'alice weth data before'
     });
 
-    uint256 expectedShares = hub1.previewRestoreByAssets(daiAssetId, state.daiBob.borrowAmount);
+    uint256 expectedShares = hub1.previewRestoreByAssets(
+      address(tokenList.dai),
+      state.daiBob.borrowAmount
+    );
 
     // Bob draw dai
     TestReturnValues memory returnValues;
@@ -337,7 +343,7 @@ contract SpokeBorrowTest is SpokeBase {
     users[0] = bob;
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'bob dai after');
 
-    assertHubLiquidity(hub1, daiAssetId, 'spoke1.borrow');
-    assertHubLiquidity(hub1, wethAssetId, 'spoke1.borrow');
+    assertHubLiquidity(hub1, address(tokenList.dai), 'spoke1.borrow');
+    assertHubLiquidity(hub1, address(tokenList.weth), 'spoke1.borrow');
   }
 }

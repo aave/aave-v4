@@ -94,7 +94,7 @@ contract SpokeGettersTest is SpokeBase {
   /// @dev Basic user flow and check accounting getters working properly
   function test_protocol_getters() public {
     uint256 reserveId = _daiReserveId(spoke1);
-    uint256 assetId = daiAssetId;
+    address underlying = address(tokenList.dai);
     uint256 supplyAmount = 10_000e18;
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
 
@@ -115,50 +115,50 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), supplyAmount);
     assertEq(
       spoke1.getUserSuppliedShares(reserveId, alice),
-      hub1.previewAddByAssets(assetId, supplyAmount)
+      hub1.previewAddByAssets(underlying, supplyAmount)
     );
 
     // Reserve supply
     assertEq(spoke1.getReserveSuppliedAssets(reserveId), supplyAmount);
     assertEq(
       spoke1.getReserveSuppliedShares(reserveId),
-      hub1.previewAddByAssets(assetId, supplyAmount)
+      hub1.previewAddByAssets(underlying, supplyAmount)
     );
 
     // Spoke debts
-    (drawn, premium) = hub1.getSpokeOwed(assetId, address(spoke1));
+    (drawn, premium) = hub1.getSpokeOwed(underlying, address(spoke1));
     assertEq(drawn, 0);
     assertEq(premium, 0);
-    assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke1)), 0);
-    assertEq(hub1.getSpokeDrawnShares(assetId, address(spoke1)), 0);
+    assertEq(hub1.getSpokeTotalOwed(underlying, address(spoke1)), 0);
+    assertEq(hub1.getSpokeDrawnShares(underlying, address(spoke1)), 0);
 
     (uint256 premiumShares, uint256 premiumOffset, uint256 realizedPremium) = hub1
-      .getSpokePremiumData(assetId, address(spoke1));
+      .getSpokePremiumData(underlying, address(spoke1));
     assertEq(premiumShares, 0);
     assertEq(premiumOffset, 0);
     assertEq(realizedPremium, 0);
 
     // Asset debts
-    (drawn, premium) = hub1.getAssetOwed(assetId);
+    (drawn, premium) = hub1.getAssetOwed(underlying);
     assertEq(drawn, 0);
     assertEq(premium, 0);
-    assertEq(hub1.getAssetTotalOwed(assetId), 0);
-    assertEq(hub1.getAssetDrawnShares(assetId), 0);
+    assertEq(hub1.getAssetTotalOwed(underlying), 0);
+    assertEq(hub1.getAssetDrawnShares(underlying), 0);
 
-    (premiumShares, premiumOffset, realizedPremium) = hub1.getAssetPremiumData(assetId);
+    (premiumShares, premiumOffset, realizedPremium) = hub1.getAssetPremiumData(underlying);
     assertEq(premiumShares, 0);
     assertEq(premiumOffset, 0);
     assertEq(realizedPremium, 0);
 
     // Spoke supply
-    assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke1)), supplyAmount);
+    assertEq(hub1.getSpokeAddedAssets(underlying, address(spoke1)), supplyAmount);
     assertEq(
-      hub1.getSpokeAddedShares(assetId, address(spoke1)),
-      hub1.previewAddByAssets(assetId, supplyAmount)
+      hub1.getSpokeAddedShares(underlying, address(spoke1)),
+      hub1.previewAddByAssets(underlying, supplyAmount)
     );
 
     // Asset supply
-    assertEq(hub1.getAddedAssets(assetId), supplyAmount);
-    assertEq(hub1.getAddedShares(assetId), hub1.previewAddByAssets(assetId, supplyAmount));
+    assertEq(hub1.getAddedAssets(underlying), supplyAmount);
+    assertEq(hub1.getAddedShares(underlying), hub1.previewAddByAssets(underlying, supplyAmount));
   }
 }
