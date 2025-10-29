@@ -93,7 +93,13 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(bobData[stage].data.suppliedShares, 0);
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(_daiReserveId(spoke1), bob, bob, amount);
+    emit ISpokeBase.Supply(
+      _daiReserveId(spoke1),
+      bob,
+      bob,
+      hub1.previewAddByAssets(daiAssetId, amount),
+      amount
+    );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.supply(_daiReserveId(spoke1), amount, bob);
     stage = 1;
@@ -175,7 +181,13 @@ contract SpokeSupplyTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(_daiReserveId(spoke1), bob, bob, amount);
+    emit ISpokeBase.Supply(
+      _daiReserveId(spoke1),
+      bob,
+      bob,
+      hub1.previewAddByAssets(daiAssetId, amount),
+      amount
+    );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.supply(_daiReserveId(spoke1), amount, bob);
 
@@ -248,7 +260,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares);
+    emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
     vm.prank(carol);
     (returnValues.shares, returnValues.amount) = spoke1.supply(
       _daiReserveId(spoke1),
@@ -369,7 +381,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(reserveId, carol, carol, expectedSuppliedShares);
+    emit ISpokeBase.Supply(reserveId, carol, carol, expectedSuppliedShares, amount);
     vm.prank(carol);
     (returnValues.shares, returnValues.amount) = spoke1.supply(reserveId, amount, carol);
     stage = 1;
@@ -444,7 +456,7 @@ contract SpokeSupplyTest is SpokeBase {
     TestReturnValues memory returnValues;
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares);
+    emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
     (returnValues.shares, returnValues.amount) = spoke1.supply(
       _daiReserveId(spoke1),
       amount,
@@ -503,7 +515,7 @@ contract SpokeSupplyTest is SpokeBase {
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    (address asset, IERC20 underlying) = getAssetByReserveId(spoke1, reserveId);
+    IERC20 underlying = getAssetByReserveId(spoke1, reserveId);
 
     // alice supplies WETH as collateral, borrows DAI
     _executeSpokeSupplyAndBorrow({
@@ -527,7 +539,7 @@ contract SpokeSupplyTest is SpokeBase {
       skipTime: skipTime
     });
 
-    uint256 expectedShares = hub1.previewAddByAssets(assetId, amount);
+    uint256 expectedShares = hub1.previewAddByAssets(spoke1.getReserve(reserveId).assetId, amount);
     vm.assume(expectedShares > 0);
     assertGt(amount, expectedShares, 'exchange rate should be > 1');
 
@@ -546,7 +558,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(reserveId, carol, carol, expectedShares);
+    emit ISpokeBase.Supply(reserveId, carol, carol, expectedShares, amount);
     vm.prank(carol);
     (returnValues.shares, returnValues.amount) = spoke1.supply(reserveId, amount, carol);
 

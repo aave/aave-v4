@@ -47,7 +47,7 @@ contract MockSpoke is Spoke, Test {
     ISpoke.UserAccountData memory userAccountData = _processUserAccountData(onBehalfOf, true);
     _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
 
-    emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
+    emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares, amount);
   }
 
   // Mock the user account data
