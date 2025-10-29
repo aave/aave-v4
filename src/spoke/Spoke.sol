@@ -201,9 +201,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve);
+    address underlying = reserve.underlying;
 
-    reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), amount);
-    uint256 suppliedShares = reserve.hub.add(reserve.underlying, amount);
+    underlying.safeTransferFrom(msg.sender, address(reserve.hub), amount);
+    uint256 suppliedShares = reserve.hub.add(underlying, amount);
     userPosition.suppliedShares += suppliedShares.toUint120();
 
     if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {

@@ -265,7 +265,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(underlying);
 
-    asset.underlying.safeTransfer(to, amount);
+    underlying.safeTransfer(to, amount);
 
     emit Draw(underlying, msg.sender, drawnShares, amount);
 
@@ -295,7 +295,7 @@ contract Hub is IHub, AccessManaged {
     asset.updateDrawnRate(underlying);
 
     // enforces spoke transfers the correct funds from user to hub
-    require(asset.underlying.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
+    require(underlying.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
 
     emit Restore(underlying, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
@@ -423,7 +423,7 @@ contract Hub is IHub, AccessManaged {
     asset.swept += amount.toUint120();
     asset.updateDrawnRate(underlying);
 
-    asset.underlying.safeTransfer(msg.sender, amount);
+    underlying.safeTransfer(msg.sender, amount);
 
     emit Sweep(underlying, msg.sender, amount);
   }
@@ -439,7 +439,7 @@ contract Hub is IHub, AccessManaged {
     asset.swept -= amount.toUint120();
     asset.updateDrawnRate(underlying);
 
-    asset.underlying.safeTransferFrom(msg.sender, address(this), amount);
+    underlying.safeTransferFrom(msg.sender, address(this), amount);
 
     emit Reclaim(underlying, msg.sender, amount);
   }
