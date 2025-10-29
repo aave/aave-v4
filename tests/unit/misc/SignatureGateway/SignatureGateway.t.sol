@@ -62,7 +62,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(p.reserveId, address(gateway), alice, shares);
+    emit ISpokeBase.Supply(p.reserveId, address(gateway), alice, shares, p.amount);
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.supplyWithSig(p, signature);
@@ -88,7 +88,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     );
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(p.reserveId, address(gateway), alice, shares);
+    emit ISpokeBase.Withdraw(p.reserveId, address(gateway), alice, shares, p.amount);
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.withdrawWithSig(p, signature);
@@ -115,7 +115,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     );
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(p.reserveId, address(gateway), alice, shares);
+    emit ISpokeBase.Borrow(p.reserveId, address(gateway), alice, shares, p.amount);
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.borrowWithSig(p, signature);
@@ -155,6 +155,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       address(gateway),
       alice,
       shares,
+      baseRestored + premiumRestored,
       _getExpectedPremiumDelta(spoke1, alice, p.reserveId, premiumRestored)
     );
 
