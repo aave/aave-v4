@@ -288,7 +288,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   error CannotReceiveShares();
 
   /// @notice Thrown when trying to add a dynamic config but the key would overflow.
-  error DynamicConfigKeyOverflow();
+  error MaximumAllowedDynamicConfig();
 
   /// @notice Updates the liquidation config.
   /// @param config The liquidation config.
@@ -513,6 +513,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Returns the maximum allowed collateral risk value for a reserve.
   /// @return The maximum collateral risk value, expressed in bps (e.g. 100_00 is 100.00%).
   function MAX_ALLOWED_COLLATERAL_RISK() external view returns (uint24);
+
+  /// @notice Returns the maximum allowed value for a dynamic configuration key.
+  /// @return The maximum dynamic configuration key value (inclusive).
+  function MAX_ALLOWED_DYNAMIC_CONFIG_KEY() external view returns (uint256);
 
   /// @notice Returns the type hash for the SetUserPositionManager intent.
   /// @return The bytes-encoded EIP-712 struct hash representing the intent.

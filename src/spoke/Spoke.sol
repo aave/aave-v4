@@ -39,6 +39,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
 
   /// @inheritdoc ISpoke
+  uint256 public constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint16).max;
+
+  /// @inheritdoc ISpoke
   bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
     // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
     0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
@@ -165,11 +168,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(reserveId < _reserveCount, ReserveNotListed());
     _validateDynamicReserveConfig(dynamicConfig);
     uint16 dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
-    require(dynamicConfigKey < type(uint16).max, DynamicConfigKeyOverflow());
-    // overflow is desired, we implicitly invalidate & override stale config
-    unchecked {
-      dynamicConfigKey += 1;
-    }
+    require(dynamicConfigKey < MAX_ALLOWED_DYNAMIC_CONFIG_KEY, MaximumAllowedDynamicConfig());
+    dynamicConfigKey = dynamicConfigKey.uncheckedAdd(1).toUint16();
     _reserves[reserveId].dynamicConfigKey = dynamicConfigKey;
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
     emit AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);

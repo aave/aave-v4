@@ -352,10 +352,6 @@ library LiquidationLogic {
   ) internal view {
     require(params.user != params.liquidator, ISpoke.SelfLiquidation());
     require(params.debtToCover > 0, ISpoke.InvalidDebtToCover());
-    require(
-      params.collateralReserveHub != address(0) && params.debtReserveHub != address(0),
-      ISpoke.ReserveNotListed()
-    );
     require(!params.collateralReservePaused && !params.debtReservePaused, ISpoke.ReservePaused());
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
