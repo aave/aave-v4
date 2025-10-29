@@ -164,7 +164,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     spokeConfigurator.addReserve({
       spoke: spokeAddr,
       hub: address(hub1),
-      assetId: 0,
+      assetId: dai2AssetId,
       priceSource: address(0),
       config: ISpoke.ReserveConfig({
         paused: false,
@@ -180,7 +180,40 @@ contract SpokeConfiguratorTest is SpokeBase {
     });
   }
 
+  function test_addReserve_revertsWith_ReserveLimitReached() public {
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateReserveLimit(spokeAddr, 0);
+
+    address newPriceSource = _deployMockPriceFeed(spoke, 1000e8);
+    vm.expectRevert(
+      abi.encodeWithSelector(ISpokeConfigurator.ReserveLimitReached.selector, spokeAddr, 0)
+    );
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.addReserve({
+      spoke: spokeAddr,
+      hub: address(hub1),
+      assetId: dai2AssetId,
+      priceSource: newPriceSource,
+      config: ISpoke.ReserveConfig({
+        paused: false,
+        frozen: false,
+        borrowable: true,
+        collateralRisk: 15_00
+      }),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 80_00,
+        maxLiquidationBonus: 100_00,
+        liquidationFee: 0
+      })
+    });
+  }
+
   function test_addReserve() public {
+    uint256 expectedReserveId = spoke.getReserveCount();
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateReserveLimit(spokeAddr, expectedReserveId + 1);
+
     address newPriceSource = _deployMockPriceFeed(spoke, 1000e8);
     ISpoke.ReserveConfig memory config = ISpoke.ReserveConfig({
       paused: false,
@@ -193,8 +226,6 @@ contract SpokeConfiguratorTest is SpokeBase {
       maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
-
-    uint256 expectedReserveId = spoke.getReserveCount();
 
     vm.expectCall(
       spokeAddr,

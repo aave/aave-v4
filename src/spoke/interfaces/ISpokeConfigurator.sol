@@ -8,6 +8,11 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Interface for the SpokeConfigurator.
 interface ISpokeConfigurator {
+  /// @dev Thrown when the reserve limit for a spoke is reached.
+  /// @param spoke The address of the spoke.
+  /// @param limit The reserve limit.
+  error ReserveLimitReached(address spoke, uint256 limit);
+
   /// @notice Updates the price source of a reserve.
   /// @dev The price source must implement the AggregatorV3Interface.
   /// @param spoke The address of the spoke.
@@ -37,6 +42,11 @@ interface ISpokeConfigurator {
     address spoke,
     ISpoke.LiquidationConfig calldata liquidationConfig
   ) external;
+
+  /// @notice Updates the allowed number of reserves for a spoke.
+  /// @param spoke The address of the spoke.
+  /// @param limit The new reserve limit.
+  function updateReserveLimit(address spoke, uint256 limit) external;
 
   /// @notice Adds a new reserve to a spoke.
   /// @dev The asset corresponding to the reserve must be already listed on the Hub.
