@@ -103,9 +103,8 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Emitted when an asset is added.
   /// @param asset The address of the asset.
-  /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of the asset.
-  event AddAsset(address indexed asset, address indexed underlying, uint8 decimals);
+  event AddAsset(address indexed asset, uint8 decimals);
 
   /// @notice Emitted when an asset is updated.
   /// @param asset The address of the asset.
@@ -375,6 +374,11 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Returns true when `underlying` is currently listed as an asset.
   function isUnderlyingListed(address underlying) external view returns (bool);
+
+  /// @notice Returns the address of the underlying asset at the given index.
+  /// @param index The index of the underlying asset.
+  /// @return The address of the underlying asset.
+  function getUnderlyingAddress(uint256 index) external view returns (address);
 
   /// @notice Returns the spoke data struct.
   /// @param asset The address of the asset.

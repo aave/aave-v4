@@ -38,6 +38,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
 
   /// @inheritdoc ISpoke
+  uint256 public constant MAX_ALLOWED_ASSET_COUNT = 1_000; // TODO : set proper value + add check in addReserve
+
+  /// @inheritdoc ISpoke
   bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
     // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
     0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
@@ -103,6 +106,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external restricted returns (uint256) {
     require(hub != address(0), InvalidAddress());
     require(!_reserveExists[hub][asset], ReserveExists());
+    require(_reserveCount < MAX_ALLOWED_ASSET_COUNT, MaxAssetCountExceeded());
 
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
@@ -110,12 +114,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint16 dynamicConfigKey; // 0 as first key to use
 
     uint8 decimals = IHubBase(hub).getAssetDecimals(asset);
-    require(underlying != address(0), AssetNotListed());
+    require(asset != address(0), AssetNotListed());
 
     _updateReservePriceSource(reserveId, priceSource);
 
     _reserves[reserveId] = Reserve({
-      underlying: underlying,
+      underlying: asset,
       hub: IHubBase(hub),
       decimals: decimals,
       dynamicConfigKey: dynamicConfigKey,
@@ -948,7 +952,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @return The user's accrued premium debt.
   function _getUserDebt(
     IHubBase hub,
-    uint256 asset,
+    address asset,
     UserPosition storage userPosition
   ) internal view returns (uint256, uint256, uint256) {
     uint256 drawnIndex = hub.getAssetDrawnIndex(asset);

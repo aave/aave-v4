@@ -6,7 +6,7 @@ import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.
 import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
-import {ITreasurySpoke, ISpokeBase} from 'src/spoke/interfaces/ITreasurySpoke.sol';
+import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 
 /// @title TreasurySpoke
 /// @author Aave Labs
@@ -17,43 +17,34 @@ import {ITreasurySpoke, ISpokeBase} from 'src/spoke/interfaces/ITreasurySpoke.so
 contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   using SafeTransferLib for address;
 
-  /// @inheritdoc ITreasurySpoke
-  IHubBase public immutable HUB;
-
   /// @dev Constructor.
   /// @param owner_ The address of the owner.
-  /// @param hub_ The address of the Hub.
-  constructor(address owner_, address hub_) Ownable(owner_) {
-    require(hub_ != address(0), InvalidAddress());
-
-    HUB = IHubBase(hub_);
-  }
+  constructor(address owner_) Ownable(owner_) {}
 
   /// @inheritdoc ITreasurySpoke
   function supply(
-    uint256 reserveId,
-    uint256 amount,
-    address
+    address hub,
+    address asset,
+    uint256 amount
   ) external onlyOwner returns (uint256, uint256) {
-    (address underlying, ) = HUB.getAssetUnderlyingAndDecimals(reserveId);
-    underlying.safeTransferFrom(msg.sender, address(HUB), amount);
-    uint256 shares = HUB.add(reserveId, amount);
+    asset.safeTransferFrom(msg.sender, hub, amount);
+    uint256 shares = IHubBase(hub).add(asset, amount);
 
     return (shares, amount);
   }
 
   /// @inheritdoc ITreasurySpoke
   function withdraw(
-    uint256 reserveId,
-    uint256 amount,
-    address
+    address hub,
+    address asset,
+    uint256 amount
   ) external onlyOwner returns (uint256, uint256) {
     // if amount to withdraw is greater than total supplied, withdraw all supplied assets
     uint256 withdrawnAmount = MathUtils.min(
       amount,
-      HUB.getSpokeAddedAssets(reserveId, address(this))
+      IHubBase(hub).getSpokeAddedAssets(asset, address(this))
     );
-    uint256 withdrawnShares = HUB.remove(reserveId, withdrawnAmount, msg.sender);
+    uint256 withdrawnShares = IHubBase(hub).remove(asset, withdrawnAmount, msg.sender);
 
     return (withdrawnShares, withdrawnAmount);
   }
@@ -64,55 +55,12 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   }
 
   /// @inheritdoc ITreasurySpoke
-  function getSuppliedAmount(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeAddedAssets(reserveId, address(this));
+  function getSuppliedAmount(address hub, address asset) external view returns (uint256) {
+    return IHubBase(hub).getSpokeAddedAssets(asset, address(this));
   }
 
   /// @inheritdoc ITreasurySpoke
-  function getSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeAddedShares(reserveId, address(this));
+  function getSuppliedShares(address hub, address asset) external view returns (uint256) {
+    return IHubBase(hub).getSpokeAddedShares(asset, address(this));
   }
-
-  /// @inheritdoc ISpokeBase
-  function borrow(uint256, uint256, address) external pure returns (uint256, uint256) {
-    revert UnsupportedAction();
-  }
-
-  /// @inheritdoc ISpokeBase
-  function repay(uint256, uint256, address) external pure returns (uint256, uint256) {
-    revert UnsupportedAction();
-  }
-
-  /// @inheritdoc ISpokeBase
-  function liquidationCall(uint256, uint256, address, uint256, bool) external pure {
-    revert UnsupportedAction();
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getUserDebt(uint256, address) external pure returns (uint256, uint256) {}
-
-  /// @inheritdoc ISpokeBase
-  function getUserTotalDebt(uint256, address) external pure returns (uint256) {}
-
-  /// @inheritdoc ISpokeBase
-  function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeAddedAssets(reserveId, address(this));
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeAddedShares(reserveId, address(this));
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getUserSuppliedAssets(uint256, address) external pure returns (uint256) {}
-
-  /// @inheritdoc ISpokeBase
-  function getUserSuppliedShares(uint256, address) external pure returns (uint256) {}
-
-  /// @inheritdoc ISpokeBase
-  function getReserveDebt(uint256) external pure returns (uint256, uint256) {}
-
-  /// @inheritdoc ISpokeBase
-  function getReserveTotalDebt(uint256) external pure returns (uint256) {}
 }

@@ -91,7 +91,6 @@ contract Hub is IHub, AccessManaged {
       premiumOffset: 0,
       drawnIndex: drawnIndex.toUint120(),
       realizedPremium: 0,
-      underlying: underlying,
       lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
       decimals: decimals,
       drawnRate: drawnRate.toUint96(),
@@ -104,7 +103,7 @@ contract Hub is IHub, AccessManaged {
     _underlyingSet.add(asset);
     _addFeeReceiver(asset, feeReceiver);
 
-    emit AddAsset(asset, underlying, decimals);
+    emit AddAsset(asset, decimals);
     emit UpdateAssetConfig(
       asset,
       AssetConfig({
@@ -215,7 +214,7 @@ contract Hub is IHub, AccessManaged {
     assetData.updateDrawnRate(asset);
 
     // enforces spoke transfers the correct funds from user to hub
-    require(assetData.underlying.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
+    require(asset.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
 
     emit Add(asset, msg.sender, shares, amount);
 
@@ -240,7 +239,7 @@ contract Hub is IHub, AccessManaged {
 
     assetData.updateDrawnRate(asset);
 
-    assetData.underlying.safeTransfer(to, amount);
+    asset.safeTransfer(to, amount);
 
     emit Remove(asset, msg.sender, shares, amount);
 
@@ -265,7 +264,7 @@ contract Hub is IHub, AccessManaged {
 
     assetData.updateDrawnRate(asset);
 
-    assetData.underlying.safeTransfer(to, amount);
+    asset.safeTransfer(to, amount);
 
     emit Draw(asset, msg.sender, drawnShares, amount);
 
@@ -295,7 +294,7 @@ contract Hub is IHub, AccessManaged {
     assetData.updateDrawnRate(asset);
 
     // enforces spoke transfers the correct funds from user to hub
-    require(assetData.underlying.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
+    require(asset.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
 
     emit Restore(asset, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
@@ -417,7 +416,7 @@ contract Hub is IHub, AccessManaged {
     assetData.swept += amount.toUint120();
     assetData.updateDrawnRate(asset);
 
-    assetData.underlying.safeTransfer(msg.sender, amount);
+    asset.safeTransfer(msg.sender, amount);
 
     emit Sweep(asset, msg.sender, amount);
   }
@@ -434,7 +433,7 @@ contract Hub is IHub, AccessManaged {
     assetData.swept -= amount.toUint120();
     assetData.updateDrawnRate(asset);
 
-    assetData.underlying.safeTransferFrom(msg.sender, address(this), amount);
+    asset.safeTransferFrom(msg.sender, address(this), amount);
 
     emit Reclaim(asset, msg.sender, amount);
   }
@@ -637,6 +636,11 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function isUnderlyingListed(address underlying) external view returns (bool) {
     return _underlyingSet.contains(underlying);
+  }
+
+  /// @inheritdoc IHub
+  function getUnderlyingAddress(uint256 index) external view returns (address) {
+    return _underlyingSet.at(index);
   }
 
   /// @inheritdoc IHub

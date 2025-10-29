@@ -209,6 +209,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when adding a new reserve if that reserve already exists for a given Hub/asset pair.
   error ReserveExists();
 
+  /// @notice Thrown when adding a new reserve if the maximum allowed asset count is exceeded.
+  error MaxAssetCountExceeded();
+
   /// @notice Thrown when adding a new reserve if an asset id is invalid.
   error InvalidAssetId();
 
@@ -501,9 +504,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @return The address of the library.
   function getLiquidationLogic() external pure returns (address);
 
-  /// @notice Returns the maximum allowed value for an asset identifier.
-  /// @return The maximum asset identifier value (inclusive).
-  function MAX_ALLOWED_ASSET_ID() external view returns (uint256);
+  /// @notice Returns the maximum allowed count of listed assets.
+  /// @return The maximum asset count (inclusive).
+  function MAX_ALLOWED_ASSET_COUNT() external view returns (uint256);
 
   /// @notice Returns the maximum allowed collateral risk value for a reserve.
   /// @return The maximum collateral risk value, expressed in bps (e.g. 100_00 is 100.00%).

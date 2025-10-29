@@ -158,10 +158,10 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   function addSpokeToAssets(
     address hub,
     address spoke,
-    uint256[] calldata assets,
+    address[] calldata assets,
     IHub.SpokeConfig[] calldata configs
   ) external onlyOwner {
-    uint256 assetCount = asset.length;
+    uint256 assetCount = assets.length;
     require(assetCount == configs.length, MismatchedConfigs());
     for (uint256 i = 0; i < assetCount; ++i) {
       IHub(hub).addSpoke(assets[i], spoke, configs[i]);
@@ -248,7 +248,8 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   function deactivateSpoke(address hub, address spoke) external onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
-    for (address asset = 0; asset < assetCount; ++asset) {
+    for (uint256 i = 0; i < assetCount; ++i) {
+      address asset = targetHub.getUnderlyingAddress(i);
       if (targetHub.isSpokeListed(asset, spoke)) {
         IHub.SpokeConfig memory config = targetHub.getSpokeConfig(asset, spoke);
         config.active = false;
@@ -261,7 +262,8 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   function pauseSpoke(address hub, address spoke) external onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
-    for (address asset = 0; asset < assetCount; ++asset) {
+    for (uint256 i = 0; i < assetCount; ++i) {
+      address asset = targetHub.getUnderlyingAddress(i);
       if (targetHub.isSpokeListed(asset, spoke)) {
         IHub.SpokeConfig memory config = targetHub.getSpokeConfig(asset, spoke);
         config.paused = true;
@@ -274,7 +276,8 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   function freezeSpoke(address hub, address spoke) external onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
-    for (address asset = 0; asset < assetCount; ++asset) {
+    for (uint256 i = 0; i < assetCount; ++i) {
+      address asset = targetHub.getUnderlyingAddress(i);
       if (targetHub.isSpokeListed(asset, spoke)) {
         IHub.SpokeConfig memory config = targetHub.getSpokeConfig(asset, spoke);
         config.addCap = 0;
