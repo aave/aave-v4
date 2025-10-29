@@ -9,11 +9,11 @@ contract HubRoundingTest is HubBase {
   using Math for uint256;
 
   /// @dev Added share price is not significantly affected by multiple donations
-  /*function test_sharePriceWithMultipleDonations() public {
+  function test_sharePriceWithMultipleDonations() public {
     // add and draw 1 dai and wait 12 seconds to start accruing interest
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       addUser: bob,
       addSpoke: address(spoke1),
       addAmount: 1,
@@ -50,5 +50,5 @@ contract HubRoundingTest is HubBase {
           initialSharePrice.mulDiv(i + 1, SharesMath.VIRTUAL_ASSETS, Math.Rounding.Ceil)
       );
     }
-  }*/
+  }
 }

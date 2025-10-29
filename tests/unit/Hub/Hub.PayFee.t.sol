@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubPayFeeTest is HubBase {
-  /*function test_payFee_revertsWith_InvalidShares() public {
+  function test_payFee_revertsWith_InvalidShares() public {
     vm.expectRevert(IHub.InvalidShares.selector, address(hub1));
     vm.prank(address(spoke1));
     hub1.payFeeShares(address(tokenList.dai), 0);
@@ -22,7 +22,7 @@ contract HubPayFeeTest is HubBase {
     uint256 addAmount = 100e18;
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: addAmount,
       user: alice
@@ -40,7 +40,7 @@ contract HubPayFeeTest is HubBase {
     uint256 addAmount = 100e18;
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: addAmount,
       user: alice
@@ -74,7 +74,7 @@ contract HubPayFeeTest is HubBase {
 
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: addAmount,
       user: alice
@@ -120,5 +120,5 @@ contract HubPayFeeTest is HubBase {
       feeReceiverSharesBefore + feeShares,
       'fee receiver supplied shares after'
     );
-  }*/
+  }
 }

@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubMintFeeSharesTest is HubBase {
-  /*function test_mintFeeShares_revertsWith_AccessManagedUnauthorized() public {
+  function test_mintFeeShares_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
@@ -16,7 +16,7 @@ contract HubMintFeeSharesTest is HubBase {
     // Create debt to build up fees on the existing treasury spoke
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       addUser: bob,
       addSpoke: address(spoke1),
       addAmount: 100e18,
@@ -35,7 +35,7 @@ contract HubMintFeeSharesTest is HubBase {
     // Create debt to build up fees on the existing treasury spoke
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       addUser: bob,
       addSpoke: address(spoke1),
       addAmount: 1000e18,
@@ -117,7 +117,7 @@ contract HubMintFeeSharesTest is HubBase {
     // Create debt to build up fees on the existing treasury spoke
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       addUser: bob,
       addSpoke: address(spoke1),
       addAmount: 3,
@@ -146,5 +146,5 @@ contract HubMintFeeSharesTest is HubBase {
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
 
     assertEq(hub1.getAsset(address(tokenList.dai)).realizedFees, 1, 'realized fees after');
-  }*/
+  }
 }

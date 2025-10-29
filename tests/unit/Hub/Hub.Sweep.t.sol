@@ -7,10 +7,10 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubSweepTest is HubBase {
   address public reinvestmentController = makeAddr('reinvestmentController');
 
-  /*function test_sweep_revertsWith_AssetNotListed() public {
+  function test_sweep_revertsWith_AssetNotListed() public {
     address asset = _randomInvalidAsset(hub1);
     vm.expectRevert(IHub.AssetNotListed.selector);
-    hub1.sweep(assetId, vm.randomUint());
+    hub1.sweep(asset, vm.randomUint());
   }
 
   function test_sweep_revertsWith_OnlyReinvestmentController_init() public {
@@ -108,7 +108,7 @@ contract HubSweepTest is HubBase {
     (uint256 drawn, ) = hub1.getAssetOwed(address(tokenList.dai));
     assertEq(
       IBasicInterestRateStrategy(hub1.getAsset(address(tokenList.dai)).irStrategy).calculateInterestRate({
-        assetId: address(tokenList.dai),
+        asset: address(tokenList.dai),
         liquidity: supplyAmount - drawAmount - swept,
         drawn: drawn,
         deficit: vm.randomUint(), // ignored
@@ -118,5 +118,5 @@ contract HubSweepTest is HubBase {
     );
     assertEq(hub1.getAssetLiquidity(address(tokenList.dai)), supplyAmount - drawAmount - swept);
     assertEq(hub1.getAssetSwept(address(tokenList.dai)), swept);
-  }*/
+  }
 }

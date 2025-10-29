@@ -7,7 +7,7 @@ import 'tests/Base.t.sol';
 contract HubAccrueInterestTest is Base {
   using SafeCast for uint256;
 
-  /*struct Timestamps {
+  struct Timestamps {
     uint40 t0;
     uint40 t1;
     uint40 t2;
@@ -332,5 +332,5 @@ contract HubAccrueInterestTest is Base {
       'addAmount t2'
     );
     assertEq(getAssetDrawnDebt(address(tokenList.dai)), expectedDrawnDebt2, 'drawn t2');
-  }*/
+  }
 }

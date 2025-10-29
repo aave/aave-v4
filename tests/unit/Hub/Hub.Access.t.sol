@@ -6,7 +6,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubAccessTest is HubBase {
   /// @dev Test showing that restricted functions on hub can only be called by hub admin.
-  /*function test_hub_admin_access() public {
+  function test_hub_admin_access() public {
     TestnetERC20 tokenA = new TestnetERC20('A', 'A', 18);
     IHub.AssetConfig memory assetConfig = IHub.AssetConfig({
       feeReceiver: address(treasurySpoke),
@@ -40,7 +40,6 @@ contract HubAccessTest is HubBase {
     // Hub Admin can add assets to the hub
     vm.prank(HUB_ADMIN);
     hub1.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
-    uint256 assetAId = hub1.getAssetCount() - 1; // Asset A Id
 
     // Only Hub Admin can update asset config
     vm.expectRevert(
@@ -56,21 +55,21 @@ contract HubAccessTest is HubBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub1.addSpoke(assetAId, address(spoke1), spokeConfig);
+    hub1.addSpoke(address(tokenA), address(spoke1), spokeConfig);
 
     // Hub Admin can add spoke
     vm.prank(HUB_ADMIN);
-    hub1.addSpoke(assetAId, address(spoke1), spokeConfig);
+    hub1.addSpoke(address(tokenA), address(spoke1), spokeConfig);
 
     // Only Hub Admin can update spoke config
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub1.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
+    hub1.updateSpokeConfig(address(tokenA), address(spoke1), spokeConfig);
 
     // Hub Admin can update spoke config
     vm.prank(HUB_ADMIN);
-    hub1.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
+    hub1.updateSpokeConfig(address(tokenA), address(spoke1), spokeConfig);
   }
 
   function test_setInterestRateData_access() public {
@@ -309,5 +308,5 @@ contract HubAccessTest is HubBase {
     // Hub admin can now call update spoke config on the hub after authority change
     vm.prank(HUB_ADMIN);
     hub1.updateSpokeConfig(address(tokenList.dai), address(spoke1), spokeConfig);
-  }*/
+  }
 }

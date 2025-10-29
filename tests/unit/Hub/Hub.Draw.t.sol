@@ -8,27 +8,28 @@ contract HubDrawTest is HubBase {
   using SharesMath for uint256;
   using SafeCast for uint256;
 
-  /*function test_draw_fuzz_amounts_same_block(address asset, uint256 amount) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+  function test_draw_fuzz_amounts_same_block(uint256 assetIdx, uint256 amount) public {
+    assetIdx = bound(assetIdx, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    address asset = hub1.getUnderlyingAddress(assetIdx);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
+    IERC20 underlying = IERC20(asset);
 
     // spoke2, bob add dai
-    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke2), amount: amount, user: bob});
+    Utils.add({hub: hub1, asset: asset, caller: address(spoke2), amount: amount, user: bob});
 
-    uint256 shares = hub1.previewDrawByAssets(assetId, amount);
+    uint256 shares = hub1.previewDrawByAssets(asset, amount);
 
-    IHub.Asset memory assetBefore = hub1.getAsset(assetId);
-    (, uint256 premium) = hub1.getAssetOwed(assetId);
+    IHub.Asset memory assetBefore = hub1.getAsset(asset);
+    (, uint256 premium) = hub1.getAssetOwed(asset);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
         (
-          assetId,
+          asset,
           assetBefore.liquidity - assetBefore.swept - amount,
-          hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
+          hub1.previewRestoreByShares(asset, assetBefore.drawnShares + shares),
           assetBefore.deficit,
           assetBefore.swept
         )
@@ -37,52 +38,52 @@ contract HubDrawTest is HubBase {
 
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(
-      assetId,
-      hub1.getAssetDrawnIndex(assetId),
+      asset,
+      hub1.getAssetDrawnIndex(asset),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
-        assetId: assetId,
+        asset: asset,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,
-        drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
+        drawn: hub1.previewRestoreByShares(asset, assetBefore.drawnShares + shares),
         deficit: assetBefore.deficit,
         swept: assetBefore.swept
       }),
-      hub1.getAssetAccruedFees(assetId)
+      hub1.getAssetAccruedFees(asset)
     );
-    vm.expectEmit(address(hub1.getAsset(assetId).underlying));
+    vm.expectEmit(address(asset));
     emit IERC20.Transfer(address(hub1), alice, amount);
     vm.expectEmit(address(hub1));
-    emit IHubBase.Draw(assetId, address(spoke1), shares, amount);
+    emit IHubBase.Draw(asset, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
-    hub1.draw(assetId, amount, alice);
+    hub1.draw(asset, amount, alice);
 
     // hub
     uint256 drawn;
-    (drawn, premium) = hub1.getAssetOwed(assetId);
-    assertEq(hub1.getAssetTotalOwed(assetId), amount, 'asset totalDebt after');
+    (drawn, premium) = hub1.getAssetOwed(asset);
+    assertEq(hub1.getAssetTotalOwed(asset), amount, 'asset totalDebt after');
     assertEq(drawn, amount, 'asset drawn after');
     assertEq(premium, 0, 'asset premium after');
-    assertEq(hub1.getAssetLiquidity(assetId), 0, 'asset liquidity after');
+    assertEq(hub1.getAssetLiquidity(asset), 0, 'asset liquidity after');
     assertEq(
-      hub1.getAsset(assetId).lastUpdateTimestamp,
+      hub1.getAsset(asset).lastUpdateTimestamp,
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
     assertEq(
-      hub1.getAsset(assetId).liquidity,
+      hub1.getAsset(asset).liquidity,
       assetBefore.liquidity - amount,
       'available liquidity after draw'
     );
     assertEq(
-      hub1.getAsset(assetId).drawnShares,
+      hub1.getAsset(asset).drawnShares,
       assetBefore.drawnShares + shares,
       'drawnShares after draw'
     );
-    assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
-    assertHubLiquidity(hub1, assetId, 'hub1.draw');
+    assertBorrowRateSynced(hub1, asset, 'hub1.draw');
+    assertHubLiquidity(hub1, asset, 'hub1.draw');
     // spoke
-    (drawn, premium) = hub1.getSpokeOwed(assetId, address(spoke1));
-    assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke1)), amount, 'spoke totalDebt after');
+    (drawn, premium) = hub1.getSpokeOwed(asset, address(spoke1));
+    assertEq(hub1.getSpokeTotalOwed(asset, address(spoke1)), amount, 'spoke totalDebt after');
     assertEq(drawn, amount, 'spoke drawn after');
     assertEq(premium, 0, 'spoke premium after');
     // token balance
@@ -91,30 +92,31 @@ contract HubDrawTest is HubBase {
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
     assertEq(
-      hub1.previewDrawByAssets(assetId, amount),
-      hub1.previewRestoreByShares(assetId, amount)
+      hub1.previewDrawByAssets(asset, amount),
+      hub1.previewRestoreByShares(asset, amount)
     );
   }
 
-  function test_draw_fuzz_IncreasedBorrowRate(address asset, uint256 amount) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+  function test_draw_fuzz_IncreasedBorrowRate(uint256 assetIdx, uint256 amount) public {
+    assetIdx = bound(assetIdx, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
 
-    _addLiquidity(assetId, amount * 2);
-    _drawLiquidity(assetId, amount, true);
+    address asset = hub1.getUnderlyingAddress(assetIdx);
+    _addLiquidity(asset, amount * 2);
+    _drawLiquidity(asset, amount, true);
     skip(365 days);
 
-    uint256 shares = hub1.previewDrawByAssets(assetId, amount);
+    uint256 shares = hub1.previewDrawByAssets(asset, amount);
 
-    IHub.Asset memory assetBefore = hub1.getAsset(assetId);
+    IHub.Asset memory assetBefore = hub1.getAsset(asset);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
         (
-          assetId,
+          asset,
           assetBefore.liquidity - assetBefore.swept - amount,
-          hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
+          hub1.previewRestoreByShares(asset, assetBefore.drawnShares + shares),
           assetBefore.deficit,
           assetBefore.swept
         )
@@ -123,38 +125,38 @@ contract HubDrawTest is HubBase {
 
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(
-      assetId,
-      hub1.getAssetDrawnIndex(assetId),
+      asset,
+      hub1.getAssetDrawnIndex(asset),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
-        assetId: assetId,
+        asset: asset,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,
-        drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
+        drawn: hub1.previewRestoreByShares(asset, assetBefore.drawnShares + shares),
         deficit: assetBefore.deficit,
         swept: assetBefore.swept
       }),
-      hub1.getAssetAccruedFees(assetId)
+      hub1.getAssetAccruedFees(asset)
     );
-    vm.expectEmit(address(hub1.getAsset(assetId).underlying));
+    vm.expectEmit(address(asset));
     emit IERC20.Transfer(address(hub1), alice, amount);
     vm.expectEmit(address(hub1));
-    emit IHubBase.Draw(assetId, address(spoke1), shares, amount);
+    emit IHubBase.Draw(asset, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
-    hub1.draw(assetId, amount, alice);
+    hub1.draw(asset, amount, alice);
 
     assertEq(
-      hub1.getAsset(assetId).liquidity,
+      hub1.getAsset(asset).liquidity,
       assetBefore.liquidity - amount,
       'available liquidity after draw'
     );
     assertEq(
-      hub1.getAsset(assetId).drawnShares,
+      hub1.getAsset(asset).drawnShares,
       assetBefore.drawnShares + shares,
       'drawnShares after draw'
     );
 
-    assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
-    assertHubLiquidity(hub1, assetId, 'hub1.draw');
+    assertBorrowRateSynced(hub1, asset, 'hub1.draw');
+    assertHubLiquidity(hub1, asset, 'hub1.draw');
   }
 
   function test_draw_revertsWith_SpokePaused() public {
@@ -182,17 +184,19 @@ contract HubDrawTest is HubBase {
   }
 
   function test_draw_fuzz_revertsWith_InsufficientLiquidity(
-    address asset,
+    uint256 assetIdx,
     uint256 drawAmount
   ) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    assetIdx = bound(assetIdx, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
-    assertTrue(hub1.getAssetLiquidity(assetId) == 0);
+    address asset = hub1.getUnderlyingAddress(assetIdx);
+
+    assertTrue(hub1.getAssetLiquidity(asset) == 0);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke2));
-    hub1.draw(assetId, drawAmount, address(spoke2));
+    hub1.draw(asset, drawAmount, address(spoke2));
   }
 
   function test_draw_revertsWith_InsufficientLiquidity_due_to_remove() public {
@@ -201,7 +205,7 @@ contract HubDrawTest is HubBase {
     // spoke2, bob add dai
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke2),
       amount: daiAmount,
       user: bob
@@ -209,7 +213,7 @@ contract HubDrawTest is HubBase {
     // remove all so no liquidity remains
     Utils.remove({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke2),
       amount: daiAmount,
       to: bob
@@ -221,7 +225,7 @@ contract HubDrawTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
-    hub1.draw({assetId: address(tokenList.dai), amount: drawAmount, to: address(spoke1)});
+    hub1.draw({asset: address(tokenList.dai), amount: drawAmount, to: address(spoke1)});
   }
 
   function test_draw_fuzz_revertsWith_InsufficientLiquidity_due_to_remove(
@@ -232,7 +236,7 @@ contract HubDrawTest is HubBase {
     // spoke2, bob add dai
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke2),
       amount: daiAmount,
       user: bob
@@ -240,7 +244,7 @@ contract HubDrawTest is HubBase {
     // remove all so no liquidity remains
     Utils.remove({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke2),
       amount: daiAmount,
       to: bob
@@ -252,7 +256,7 @@ contract HubDrawTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
-    hub1.draw({assetId: address(tokenList.dai), amount: drawAmount, to: address(spoke1)});
+    hub1.draw({asset: address(tokenList.dai), amount: drawAmount, to: address(spoke1)});
   }
 
   function test_draw_revertsWith_InsufficientLiquidity_due_to_draw() public {
@@ -261,7 +265,7 @@ contract HubDrawTest is HubBase {
     // spoke2, bob add dai
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke2),
       amount: daiAmount,
       user: bob
@@ -269,7 +273,7 @@ contract HubDrawTest is HubBase {
     // draw all so no liquidity remains
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke2),
       amount: daiAmount,
       to: bob
@@ -281,7 +285,7 @@ contract HubDrawTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
-    hub1.draw({assetId: address(tokenList.dai), amount: drawAmount, to: address(spoke1)});
+    hub1.draw({asset: address(tokenList.dai), amount: drawAmount, to: address(spoke1)});
   }
 
   function test_draw_fuzz_revertsWith_InsufficientLiquidity_due_to_draw(uint256 daiAmount) public {
@@ -290,7 +294,7 @@ contract HubDrawTest is HubBase {
     // spoke2, bob add dai
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke2),
       amount: daiAmount,
       user: bob
@@ -298,7 +302,7 @@ contract HubDrawTest is HubBase {
     // draw all so no liquidity remains
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke2),
       amount: daiAmount,
       to: bob
@@ -310,7 +314,7 @@ contract HubDrawTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
-    hub1.draw({assetId: address(tokenList.dai), amount: drawAmount, to: address(spoke1)});
+    hub1.draw({asset: address(tokenList.dai), amount: drawAmount, to: address(spoke1)});
   }
 
   function test_draw_revertsWith_InvalidAmount() public {
@@ -318,7 +322,7 @@ contract HubDrawTest is HubBase {
 
     vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
-    hub1.draw({assetId: address(tokenList.dai), amount: drawAmount, to: address(spoke1)});
+    hub1.draw({asset: address(tokenList.dai), amount: drawAmount, to: address(spoke1)});
   }
 
   function test_draw_fuzz_revertsWith_DrawCapExceeded_due_to_interest(
@@ -336,7 +340,7 @@ contract HubDrawTest is HubBase {
     _mockInterestRateBps(rate);
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       addUser: bob,
       addSpoke: address(spoke2),
       addAmount: daiAmount,
@@ -356,14 +360,14 @@ contract HubDrawTest is HubBase {
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), singleShareInAssets);
     hub1.restore({
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       drawnAmount: singleShareInAssets,
       premiumAmount: 0,
       premiumDelta: IHubBase.PremiumDelta(0, 0, 0)
     });
 
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
-    hub1.draw({assetId: address(tokenList.dai), amount: 1, to: bob});
+    hub1.draw({asset: address(tokenList.dai), amount: 1, to: bob});
     vm.stopPrank();
   }
 
@@ -375,7 +379,7 @@ contract HubDrawTest is HubBase {
 
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       addUser: alice,
       addSpoke: address(spoke1),
       addAmount: amount + 1,
@@ -391,7 +395,7 @@ contract HubDrawTest is HubBase {
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: 1,
       to: address(spoke1)
@@ -409,7 +413,7 @@ contract HubDrawTest is HubBase {
 
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       addUser: bob,
       addSpoke: address(spoke2),
       addAmount: daiAmount,
@@ -424,7 +428,7 @@ contract HubDrawTest is HubBase {
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), minimumAssetsPerDrawnShare(hub1, address(tokenList.dai)));
     hub1.restore({
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       drawnAmount: minimumAssetsPerDrawnShare(hub1, address(tokenList.dai)),
       premiumAmount: 0,
       premiumDelta: IHubBase.PremiumDelta(0, 0, 0)
@@ -436,10 +440,10 @@ contract HubDrawTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
     vm.prank(address(spoke1));
-    hub1.draw({assetId: address(tokenList.dai), amount: 1, to: bob});
+    hub1.draw({asset: address(tokenList.dai), amount: 1, to: bob});
 
     vm.prank(address(spoke2));
-    hub1.draw({assetId: address(tokenList.dai), amount: 1, to: bob});
+    hub1.draw({asset: address(tokenList.dai), amount: 1, to: bob});
   }
 
   function test_draw_fuzz_revertsWith_DrawCapExceeded(uint40 drawCap) public {
@@ -451,12 +455,12 @@ contract HubDrawTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
     vm.prank(address(spoke1));
-    hub1.draw({assetId: address(tokenList.dai), amount: drawAmount, to: address(spoke1)});
+    hub1.draw({asset: address(tokenList.dai), amount: drawAmount, to: address(spoke1)});
   }
 
   function test_draw_fuzz_revertsWith_InvalidAddress(uint256 daiAmount) public {
     vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(address(spoke1));
-    hub1.draw({assetId: address(tokenList.dai), amount: daiAmount, to: address(hub1)});
-  }*/
+    hub1.draw({asset: address(tokenList.dai), amount: daiAmount, to: address(hub1)});
+  }
 }

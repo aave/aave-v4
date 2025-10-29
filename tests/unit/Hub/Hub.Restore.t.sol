@@ -13,7 +13,7 @@ contract HubRestoreTest is HubBase {
   HubConfigurator public hubConfigurator;
   address public HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
 
-  /*function setUp() public override {
+  function setUp() public override {
     super.setUp();
 
     // Set up a hub configurator to test freezing and pausing assets
@@ -33,7 +33,7 @@ contract HubRestoreTest is HubBase {
     // spoke1 add weth
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.weth),
+      asset: address(tokenList.weth),
       caller: address(spoke1),
       amount: wethAmount,
       user: alice
@@ -42,7 +42,7 @@ contract HubRestoreTest is HubBase {
     // spoke2 add dai
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke2),
       amount: daiAmount,
       user: bob
@@ -51,7 +51,7 @@ contract HubRestoreTest is HubBase {
     // spoke1 draw liquidity
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       to: alice,
       caller: address(spoke1),
       amount: drawAmount
@@ -110,7 +110,7 @@ contract HubRestoreTest is HubBase {
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
-      reserveId: address(tokenList.dai),
+      reserveId: _daiReserveId(spoke1),
       premiumRestored: 0
     });
 
@@ -125,7 +125,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawAmount = daiAmount / 2;
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       addUser: bob,
       addAmount: daiAmount,
       addSpoke: address(spoke2),
@@ -140,7 +140,7 @@ contract HubRestoreTest is HubBase {
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
       user: alice,
-      reserveId: address(tokenList.dai),
+      reserveId: _daiReserveId(spoke1),
       premiumRestored: premium
     });
 
@@ -160,7 +160,7 @@ contract HubRestoreTest is HubBase {
     // spoke2 add dai
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       amount: daiAmount,
       user: bob,
       caller: address(spoke2)
@@ -169,7 +169,7 @@ contract HubRestoreTest is HubBase {
     // spoke1 draw liquidity
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       to: alice,
       caller: address(spoke1),
       amount: drawAmount
@@ -285,7 +285,7 @@ contract HubRestoreTest is HubBase {
     // spoke2 add dai
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke2),
       amount: daiAmount,
       user: bob
@@ -294,7 +294,7 @@ contract HubRestoreTest is HubBase {
     // spoke1 draw half of dai reserve liquidity
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       to: alice,
       caller: address(spoke1),
       amount: drawAmount
@@ -400,7 +400,7 @@ contract HubRestoreTest is HubBase {
 
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: drawAmount * 2,
       user: alice
@@ -408,7 +408,7 @@ contract HubRestoreTest is HubBase {
 
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: drawAmount,
       to: address(spoke1)
@@ -438,7 +438,7 @@ contract HubRestoreTest is HubBase {
     // spoke2 add dai
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       amount: daiAmount,
       user: bob,
       caller: address(spoke2)
@@ -447,7 +447,7 @@ contract HubRestoreTest is HubBase {
     // spoke1 draw liquidity
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       to: alice,
       caller: address(spoke1),
       amount: drawAmount
@@ -489,7 +489,7 @@ contract HubRestoreTest is HubBase {
     // spoke2 add dai
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       amount: daiAmount,
       user: bob,
       caller: address(spoke2)
@@ -498,7 +498,7 @@ contract HubRestoreTest is HubBase {
     // spoke1 draw liquidity
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       to: alice,
       caller: address(spoke1),
       amount: drawAmount
@@ -531,7 +531,7 @@ contract HubRestoreTest is HubBase {
     // spoke2 add dai
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       amount: daiAmount,
       user: bob,
       caller: address(spoke2)
@@ -540,7 +540,7 @@ contract HubRestoreTest is HubBase {
     // spoke1 draw liquidity
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       to: alice,
       caller: address(spoke1),
       amount: drawAmount
@@ -573,7 +573,7 @@ contract HubRestoreTest is HubBase {
     // spoke2 add dai
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       amount: daiAmount,
       user: bob,
       caller: address(spoke2)
@@ -582,7 +582,7 @@ contract HubRestoreTest is HubBase {
     // spoke1 draw liquidity
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       to: alice,
       caller: address(spoke1),
       amount: drawAmount
@@ -612,7 +612,7 @@ contract HubRestoreTest is HubBase {
     // spoke2 add dai
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       amount: daiAmount,
       user: bob,
       caller: address(spoke2)
@@ -621,7 +621,7 @@ contract HubRestoreTest is HubBase {
     // spoke1 draw liquidity
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       to: alice,
       caller: address(spoke1),
       amount: drawAmount
@@ -654,7 +654,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawAmount = daiAmount / 2;
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       addUser: bob,
       addAmount: daiAmount,
       addSpoke: address(spoke2),
@@ -716,7 +716,7 @@ contract HubRestoreTest is HubBase {
     // spoke2 add dai
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       amount: daiAmount,
       user: bob,
       caller: address(spoke2)
@@ -725,7 +725,7 @@ contract HubRestoreTest is HubBase {
     // spoke1 draw liquidity
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       to: alice,
       caller: address(spoke1),
       amount: drawAmount
@@ -796,17 +796,15 @@ contract HubRestoreTest is HubBase {
     assertEq(spoke1DaiDrawn, daiData.drawn, 'spoke1 drawn dai post-restore');
     assertEq(spoke1DaiPremium, daiData.premium, 'spoke1 dai premium post-restore');
 
-    IERC20 dai = IERC20(hub1.getAsset(address(tokenList.dai)).underlying);
-
     // dai token balance
-    assertEq(dai.balanceOf(address(hub1)), daiAmount - restoreAmount, 'hub dai final balance');
+    assertEq(tokenList.dai.balanceOf(address(hub1)), daiAmount - restoreAmount, 'hub dai final balance');
     assertEq(
-      dai.balanceOf(alice),
+      tokenList.dai.balanceOf(alice),
       drawAmount - restoreAmount + MAX_SUPPLY_AMOUNT,
       'alice dai final balance'
     );
-    assertEq(dai.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob dai final balance');
-    assertEq(dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
+    assertEq(tokenList.dai.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob dai final balance');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
   }
 
   function test_restore_full_amount_with_interest() public {
@@ -839,7 +837,7 @@ contract HubRestoreTest is HubBase {
     // spoke1 draw liquidity
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       to: address(spoke1),
       caller: address(spoke1),
       amount: drawAmount
@@ -994,5 +992,5 @@ contract HubRestoreTest is HubBase {
     );
     assertEq(spoke1DaiDrawn, 0, 'spoke1 drawn');
     assertApproxEqAbs(spoke1DaiPremium, premium - premiumRestored, 2, 'spoke1 premium');
-  }*/
+  }
 }

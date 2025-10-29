@@ -8,7 +8,7 @@ contract HubTransferSharesTest is HubBase {
   using SharesMath for uint256;
   using SafeCast for uint256;
 
-  /*function test_transferShares() public {
+  function test_transferShares() public {
     test_transferShares_fuzz(1000e18, 1000e18);
   }
 
@@ -122,5 +122,5 @@ contract HubTransferSharesTest is HubBase {
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newSupplyCap));
     vm.prank(address(spoke1));
     hub1.transferShares(address(tokenList.dai), suppliedShares, address(spoke2));
-  }*/
+  }
 }

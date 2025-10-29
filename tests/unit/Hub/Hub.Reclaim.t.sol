@@ -5,10 +5,10 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubReclaimTest is HubBase {
-  /*function test_reclaim_revertsWith_AssetNotListed() public {
+  function test_reclaim_revertsWith_AssetNotListed() public {
     address asset = _randomInvalidAsset(hub1);
     vm.expectRevert(IHub.AssetNotListed.selector);
-    hub1.reclaim(assetId, vm.randomUint());
+    hub1.reclaim(asset, vm.randomUint());
   }
 
   function test_reclaim_revertsWith_OnlyReinvestmentController_init() public {
@@ -190,5 +190,5 @@ contract HubReclaimTest is HubBase {
     );
 
     assertHubLiquidity(hub1, address(tokenList.dai), 'reclaim');
-  }*/
+  }
 }

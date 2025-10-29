@@ -7,7 +7,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubRemoveTest is HubBase {
   using WadRayMath for uint256;
 
-  /*function test_remove() public {
+  function test_remove() public {
     uint256 amount = 100e18;
     uint256 reserveId = _daiReserveId(spoke1);
 
@@ -17,25 +17,25 @@ contract HubRemoveTest is HubBase {
   function test_remove_fuzz(uint256 reserveId, uint256 amount) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    address asset = spoke1.getReserve(reserveId).assetId;
-    IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
+    address asset = spoke1.getReserve(reserveId).underlying;
+    IERC20 underlying = IERC20(asset);
 
-    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
+    Utils.add({hub: hub1, asset: asset, caller: address(spoke1), amount: amount, user: alice});
 
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(address(hub1), alice, amount);
     vm.expectEmit(address(hub1));
     emit IHubBase.Remove(
-      assetId,
+      asset,
       address(spoke1),
-      hub1.previewRemoveByAssets(assetId, amount),
+      hub1.previewRemoveByAssets(asset, amount),
       amount
     );
 
     vm.prank(address(spoke1));
-    hub1.remove(assetId, amount, alice);
+    hub1.remove(asset, amount, alice);
 
-    AssetPosition memory assetData = getAssetPosition(hub1, assetId);
+    AssetPosition memory assetData = getAssetPosition(hub1, asset);
     SpokePosition memory spokeData = getSpokePosition(spoke1, reserveId);
 
     // hub
@@ -51,7 +51,7 @@ contract HubRemoveTest is HubBase {
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
-    assertHubLiquidity(hub1, assetId, 'hub1.remove');
+    assertHubLiquidity(hub1, asset, 'hub1.remove');
     // spoke
     assertEq(spokeData, assetData);
     // dai
@@ -66,15 +66,15 @@ contract HubRemoveTest is HubBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT - 1);
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
 
-    IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
+    IERC20 underlying = IERC20(asset);
 
-    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
-    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke2), amount: amount2, user: alice});
+    Utils.add({hub: hub1, asset: asset, caller: address(spoke1), amount: amount, user: alice});
+    Utils.add({hub: hub1, asset: asset, caller: address(spoke2), amount: amount2, user: alice});
 
-    Utils.remove(hub1, assetId, address(spoke1), amount, alice);
-    Utils.remove(hub1, assetId, address(spoke2), amount2, alice);
+    Utils.remove(hub1, asset, address(spoke1), amount, alice);
+    Utils.remove(hub1, asset, address(spoke2), amount2, alice);
 
-    AssetPosition memory assetData = getAssetPosition(hub1, assetId);
+    AssetPosition memory assetData = getAssetPosition(hub1, asset);
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
 
@@ -87,7 +87,7 @@ contract HubRemoveTest is HubBase {
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
-    assertHubLiquidity(hub1, assetId, 'hub1.remove');
+    assertHubLiquidity(hub1, asset, 'hub1.remove');
     // spoke 1
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount after');
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares after');
@@ -113,36 +113,36 @@ contract HubRemoveTest is HubBase {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     address asset = address(tokenList.dai);
-    IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
+    IERC20 underlying = IERC20(asset);
 
-    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
-    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke2), amount: amount2, user: alice});
+    Utils.add({hub: hub1, asset: asset, caller: address(spoke1), amount: amount, user: alice});
+    Utils.add({hub: hub1, asset: asset, caller: address(spoke2), amount: amount2, user: alice});
 
     // draw liquidity to accrue interest using spoke3
-    Utils.draw({hub: hub1, assetId: assetId, caller: address(spoke3), amount: drawAmount, to: bob});
+    Utils.draw({hub: hub1, asset: asset, caller: address(spoke3), amount: drawAmount, to: bob});
     skip(skipTime);
 
-    (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
+    (uint256 drawn, uint256 premium) = hub1.getAssetOwed(asset);
     assertEq(premium, 0);
     vm.assume(drawn + premium <= MAX_SUPPLY_AMOUNT);
 
     // restore all drawn liquidity
     Utils.restoreDrawn({
       hub: hub1,
-      assetId: assetId,
+      asset: asset,
       caller: address(spoke3),
       drawnAmount: drawn,
       restorer: bob
     });
 
     uint256 aliceBalanceBefore = underlying.balanceOf(alice);
-    uint256 spoke1Amount = hub1.getSpokeAddedAssets(assetId, address(spoke1));
-    Utils.remove(hub1, assetId, address(spoke1), spoke1Amount, alice);
+    uint256 spoke1Amount = hub1.getSpokeAddedAssets(asset, address(spoke1));
+    Utils.remove(hub1, asset, address(spoke1), spoke1Amount, alice);
 
-    uint256 spoke2Amount = hub1.getSpokeAddedAssets(assetId, address(spoke2));
-    Utils.remove(hub1, assetId, address(spoke2), spoke2Amount, alice);
+    uint256 spoke2Amount = hub1.getSpokeAddedAssets(asset, address(spoke2));
+    Utils.remove(hub1, asset, address(spoke2), spoke2Amount, alice);
 
-    AssetPosition memory assetData = getAssetPosition(hub1, assetId);
+    AssetPosition memory assetData = getAssetPosition(hub1, asset);
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
 
@@ -150,7 +150,7 @@ contract HubRemoveTest is HubBase {
     // only remaining added amount are fees
     assertEq(
       assetData.liquidity,
-      hub1.getAsset(assetId).realizedFees + _calculateBurntInterest(hub1, assetId),
+      hub1.getAsset(asset).realizedFees + _calculateBurntInterest(hub1, asset),
       'asset liquidity after'
     );
     assertEq(
@@ -158,7 +158,7 @@ contract HubRemoveTest is HubBase {
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
-    assertHubLiquidity(hub1, assetId, 'hub1.remove');
+    assertHubLiquidity(hub1, asset, 'hub1.remove');
     // spoke 1
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount after');
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares after');
@@ -183,7 +183,7 @@ contract HubRemoveTest is HubBase {
     // add from spoke2, draw from spoke1
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       addUser: bob,
       addSpoke: address(spoke2),
       addAmount: addAmount,
@@ -200,7 +200,7 @@ contract HubRemoveTest is HubBase {
     assertEq(premiumRestored, 0);
     Utils.restoreDrawn({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       drawnAmount: drawnRestored,
       restorer: alice
@@ -263,7 +263,7 @@ contract HubRemoveTest is HubBase {
     // add from spoke2, draw from spoke1
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       addUser: bob,
       addSpoke: address(spoke2),
       addAmount: daiAmount,
@@ -280,7 +280,7 @@ contract HubRemoveTest is HubBase {
 
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke2),
       amount: add2Amount,
       user: bob
@@ -293,7 +293,7 @@ contract HubRemoveTest is HubBase {
     assertEq(premiumRestored, 0);
     Utils.restoreDrawn({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       drawnAmount: drawnRestored,
       restorer: alice
@@ -358,7 +358,7 @@ contract HubRemoveTest is HubBase {
     // User add
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: amount,
       user: alice
@@ -383,7 +383,7 @@ contract HubRemoveTest is HubBase {
     // Add from spoke 1
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: amount,
       user: alice
@@ -392,7 +392,7 @@ contract HubRemoveTest is HubBase {
     // Add from spoke 2
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke2),
       amount: amount,
       user: alice
@@ -410,7 +410,7 @@ contract HubRemoveTest is HubBase {
 
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: supplyAmount,
       user: alice
@@ -418,7 +418,7 @@ contract HubRemoveTest is HubBase {
 
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: supplyAmount,
       to: alice
@@ -429,7 +429,7 @@ contract HubRemoveTest is HubBase {
 
     Utils.restoreDrawn({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       drawnAmount: hub1.getSpokeTotalOwed(address(tokenList.dai), address(spoke1)),
       restorer: alice
@@ -449,7 +449,7 @@ contract HubRemoveTest is HubBase {
 
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: supplied,
       user: alice
@@ -462,7 +462,7 @@ contract HubRemoveTest is HubBase {
 
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: supplied,
       user: alice
@@ -485,7 +485,7 @@ contract HubRemoveTest is HubBase {
     uint256 amount = 100e18;
     Utils.add({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: amount,
       user: alice
@@ -493,7 +493,7 @@ contract HubRemoveTest is HubBase {
     // spoke1 draw all of dai reserve liquidity
     Utils.draw({
       hub: hub1,
-      assetId: address(tokenList.dai),
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: amount,
       to: alice
@@ -527,5 +527,5 @@ contract HubRemoveTest is HubBase {
     vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(address(spoke1));
     hub1.remove(address(tokenList.dai), 100e18, address(hub1));
-  }*/
+  }
 }

@@ -9,7 +9,7 @@ contract HubRefreshPremiumTest is HubBase {
   using MathUtils for uint256;
   using WadRayMath for uint256;
 
-  /*struct PremiumDataLocal {
+  struct PremiumDataLocal {
     uint256 premiumShares;
     uint256 premiumOffset;
     uint256 realizedPremium;
@@ -205,32 +205,32 @@ contract HubRefreshPremiumTest is HubBase {
       // sentinel value to preclude check
       riskPremiumThreshold = Constants.MAX_RISK_PREMIUM_THRESHOLD;
     }
-    _updateSpokeRiskPremiumThreshold(hub1, assetId, address(spoke1), riskPremiumThreshold);
+    _updateSpokeRiskPremiumThreshold(hub1, asset, address(spoke1), riskPremiumThreshold);
 
     if (borrowAmount > 0) {
       Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, borrowAmount * 2, bob);
       Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
     }
 
-    PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
+    PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, asset);
     (, uint256 premiumBefore) = hub1.getAssetOwed(address(tokenList.dai));
     bool reverting;
-    IHub.Asset memory asset = hub1.getAsset(assetId);
+    IHub.Asset memory assetData = hub1.getAsset(asset);
     uint256 expectedPremiumShares = sharesDelta > 0
-      ? asset.premiumShares + sharesDelta.toUint256()
-      : asset.premiumShares - (-sharesDelta).toUint256();
+      ? assetData.premiumShares + sharesDelta.toUint256()
+      : assetData.premiumShares - (-sharesDelta).toUint256();
     uint256 expectedOffset = offsetDelta > 0
-      ? asset.premiumOffset + offsetDelta.toUint256()
-      : asset.premiumOffset - (-offsetDelta).toUint256();
+      ? assetData.premiumOffset + offsetDelta.toUint256()
+      : assetData.premiumOffset - (-offsetDelta).toUint256();
 
     // Only 1 spoke drawing so checks on asset are equivalent to spoke
-    if (expectedOffset > expectedPremiumShares.rayMulUp(asset.drawnIndex)) {
+    if (expectedOffset > expectedPremiumShares.rayMulUp(assetData.drawnIndex)) {
       reverting = true;
       vm.expectRevert(stdError.arithmeticError);
     } else if (
       riskPremiumThreshold != Constants.MAX_RISK_PREMIUM_THRESHOLD &&
-      asset.drawnShares.percentMulUp(riskPremiumThreshold) <
-      asset.premiumShares + sharesDelta.toUint256()
+      assetData.drawnShares.percentMulUp(riskPremiumThreshold) <
+      assetData.premiumShares + sharesDelta.toUint256()
     ) {
       reverting = true;
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
@@ -239,13 +239,13 @@ contract HubRefreshPremiumTest is HubBase {
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
     }
     vm.prank(address(spoke1));
-    hub1.refreshPremium(assetId, premiumDelta);
+    hub1.refreshPremium(asset, premiumDelta);
 
     (, uint256 premiumAfter) = hub1.getAssetOwed(address(tokenList.dai));
 
     if (!reverting) {
       assertEq(
-        _loadAssetPremiumData(hub1, assetId),
+        _loadAssetPremiumData(hub1, asset),
         _applyPremiumDelta(premiumDataBefore, premiumDelta)
       );
       assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
@@ -258,14 +258,14 @@ contract HubRefreshPremiumTest is HubBase {
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 10000e18, bob);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
 
-    IHub.Asset memory asset = hub1.getAsset(assetId);
-    PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
+    IHub.Asset memory assetData = hub1.getAsset(asset);
+    PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, asset);
     (, uint256 premiumBefore) = hub1.getAssetOwed(address(tokenList.dai));
 
-    sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares.toInt256());
+    sharesDeltaPos = bound(sharesDeltaPos, 0, assetData.premiumShares.toInt256());
     offsetDeltaPos = bound(offsetDeltaPos, sharesDeltaPos, sharesDeltaPos + 2);
-    if (offsetDeltaPos > asset.premiumOffset.toInt256()) {
-      offsetDeltaPos = asset.premiumOffset.toInt256();
+    if (offsetDeltaPos > assetData.premiumOffset.toInt256()) {
+      offsetDeltaPos = assetData.premiumOffset.toInt256();
     }
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
@@ -275,12 +275,12 @@ contract HubRefreshPremiumTest is HubBase {
     });
 
     vm.prank(address(spoke1));
-    hub1.refreshPremium(assetId, premiumDelta);
+    hub1.refreshPremium(asset, premiumDelta);
 
     (, uint256 premiumAfter) = hub1.getAssetOwed(address(tokenList.dai));
 
     assertEq(
-      _loadAssetPremiumData(hub1, assetId),
+      _loadAssetPremiumData(hub1, asset),
       _applyPremiumDelta(premiumDataBefore, premiumDelta)
     );
     assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
@@ -298,15 +298,15 @@ contract HubRefreshPremiumTest is HubBase {
     skip(322 days);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 1e18, bob);
 
-    IHub.Asset memory asset = hub1.getAsset(assetId);
-    PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
+    IHub.Asset memory assetData = hub1.getAsset(asset);
+    PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, asset);
     (, uint256 premiumBefore) = hub1.getAssetOwed(address(tokenList.dai));
     bool reverting;
 
-    sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares);
-    offsetDeltaPos = bound(offsetDeltaPos, 0, asset.premiumOffset);
+    sharesDeltaPos = bound(sharesDeltaPos, 0, assetData.premiumShares);
+    offsetDeltaPos = bound(offsetDeltaPos, 0, assetData.premiumOffset);
     uint256 realizedDeltaPos;
-    uint256 premiumAssetsPos = hub1.previewRestoreByShares(assetId, sharesDeltaPos);
+    uint256 premiumAssetsPos = hub1.previewRestoreByShares(asset, sharesDeltaPos);
 
     // If we introduced debt with shares vs offset, capture with realized delta
     if (offsetDeltaPos > premiumAssetsPos) {
@@ -322,28 +322,28 @@ contract HubRefreshPremiumTest is HubBase {
     });
 
     // Note that we flip these pos numbers to negative
-    if (realizedDeltaPos > asset.realizedPremium) {
+    if (realizedDeltaPos > assetData.realizedPremium) {
       reverting = true;
       vm.expectRevert(stdError.arithmeticError);
     } else if (premiumAssetsPos > offsetDeltaPos) {
       premiumDelta.offsetDelta = -premiumAssetsPos.toInt256();
-      if (premiumAssetsPos > asset.premiumOffset) {
+      if (premiumAssetsPos > assetData.premiumOffset) {
         // set both shares diff and offset diff to match offset
         premiumDelta.sharesDelta = -(
-          hub1.previewRestoreByAssets(assetId, asset.premiumOffset).toInt256()
+          hub1.previewRestoreByAssets(asset, assetData.premiumOffset).toInt256()
         );
-        premiumDelta.offsetDelta = -asset.premiumOffset.toInt256();
+        premiumDelta.offsetDelta = -assetData.premiumOffset.toInt256();
       }
     }
 
     vm.prank(address(spoke1));
-    hub1.refreshPremium(assetId, premiumDelta);
+    hub1.refreshPremium(asset, premiumDelta);
 
     (, uint256 premiumAfter) = hub1.getAssetOwed(address(tokenList.dai));
 
     if (!reverting) {
       assertEq(
-        _loadAssetPremiumData(hub1, assetId),
+        _loadAssetPremiumData(hub1, asset),
         _applyPremiumDelta(premiumDataBefore, premiumDelta)
       );
       assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
@@ -367,29 +367,29 @@ contract HubRefreshPremiumTest is HubBase {
     skip(skipTime);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 1e18, bob);
 
-    IHub.Asset memory asset = hub1.getAsset(assetId);
-    PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
+    IHub.Asset memory assetData = hub1.getAsset(asset);
+    PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, asset);
     (, uint256 premiumBefore) = hub1.getAssetOwed(address(tokenList.dai));
     bool reverting;
 
     // Initial user position
-    userPremiumShares = bound(userPremiumShares, 0, asset.premiumShares);
+    userPremiumShares = bound(userPremiumShares, 0, assetData.premiumShares);
     userAccruedPremium = bound(
       userAccruedPremium,
       0,
-      hub1.previewRestoreByShares(assetId, asset.premiumShares) - asset.premiumOffset
+      hub1.previewRestoreByShares(asset, assetData.premiumShares) - assetData.premiumOffset
     );
-    vm.assume(hub1.previewRestoreByShares(assetId, userPremiumShares) >= userAccruedPremium);
-    uint256 userPremiumOffset = hub1.previewRestoreByShares(assetId, userPremiumShares) -
+    vm.assume(hub1.previewRestoreByShares(asset, userPremiumShares) >= userAccruedPremium);
+    uint256 userPremiumOffset = hub1.previewRestoreByShares(asset, userPremiumShares) -
       userAccruedPremium;
 
     // New user position
     userPremiumSharesNew = bound(
       userPremiumSharesNew,
       0,
-      hub1.previewRestoreByAssets(assetId, MAX_SUPPLY_AMOUNT / 2)
+      hub1.previewRestoreByAssets(asset, MAX_SUPPLY_AMOUNT / 2)
     );
-    uint256 userPremiumOffsetNew = hub1.previewDrawByShares(assetId, userPremiumSharesNew);
+    uint256 userPremiumOffsetNew = hub1.previewDrawByShares(asset, userPremiumSharesNew);
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: userPremiumSharesNew.toInt256() - userPremiumShares.toInt256(),
@@ -398,32 +398,32 @@ contract HubRefreshPremiumTest is HubBase {
     });
 
     uint256 expectedPremiumShares = premiumDelta.sharesDelta >= 0
-      ? asset.premiumShares + premiumDelta.sharesDelta.toUint256()
-      : asset.premiumShares - (-premiumDelta.sharesDelta).toUint256();
+      ? assetData.premiumShares + premiumDelta.sharesDelta.toUint256()
+      : assetData.premiumShares - (-premiumDelta.sharesDelta).toUint256();
 
-    if (asset.drawnShares.percentMulUp(1000_00) < expectedPremiumShares) {
+    if (assetData.drawnShares.percentMulUp(1000_00) < expectedPremiumShares) {
       reverting = true;
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
     } else if (
-      premiumDelta.sharesDelta < 0 && -premiumDelta.sharesDelta > asset.premiumShares.toInt256()
+      premiumDelta.sharesDelta < 0 && -premiumDelta.sharesDelta > assetData.premiumShares.toInt256()
     ) {
       reverting = true;
       vm.expectRevert(stdError.arithmeticError);
     } else if (
-      premiumDelta.offsetDelta < 0 && -premiumDelta.offsetDelta > asset.premiumOffset.toInt256()
+      premiumDelta.offsetDelta < 0 && -premiumDelta.offsetDelta > assetData.premiumOffset.toInt256()
     ) {
       reverting = true;
       vm.expectRevert(stdError.arithmeticError);
     }
 
     vm.prank(address(spoke1));
-    hub1.refreshPremium(assetId, premiumDelta);
+    hub1.refreshPremium(asset, premiumDelta);
 
     (, uint256 premiumAfter) = hub1.getAssetOwed(address(tokenList.dai));
 
     if (!reverting) {
       assertEq(
-        _loadAssetPremiumData(hub1, assetId),
+        _loadAssetPremiumData(hub1, asset),
         _applyPremiumDelta(premiumDataBefore, premiumDelta)
       );
       assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
@@ -440,8 +440,8 @@ contract HubRefreshPremiumTest is HubBase {
 
     skip(322 days);
 
-    uint256 spoke1AccruedPremium = _getSpokeAccruedPremium(hub1, assetId, address(spoke1));
-    uint256 spoke2AccruedPremium = _getSpokeAccruedPremium(hub1, assetId, address(spoke2));
+    uint256 spoke1AccruedPremium = _getSpokeAccruedPremium(hub1, asset, address(spoke1));
+    uint256 spoke2AccruedPremium = _getSpokeAccruedPremium(hub1, asset, address(spoke2));
     assertGt(spoke1AccruedPremium, 0);
     assertGt(spoke2AccruedPremium, 0);
 
@@ -449,7 +449,7 @@ contract HubRefreshPremiumTest is HubBase {
     // realize premium by manipulating offset
     vm.prank(address(spoke1));
     hub1.refreshPremium(
-      assetId,
+      asset,
       IHubBase.PremiumDelta({
         sharesDelta: 0,
         offsetDelta: (spoke1AccruedPremium + spoke2AccruedPremium).toInt256(),
@@ -463,16 +463,16 @@ contract HubRefreshPremiumTest is HubBase {
     address asset,
     address spoke
   ) internal view returns (uint256) {
-    IHub.SpokeData memory spokeData = hub.getSpoke(assetId, spoke);
-    return hub.previewRestoreByShares(assetId, spokeData.premiumShares) - spokeData.premiumOffset;
+    IHub.SpokeData memory spokeData = hub.getSpoke(asset, spoke);
+    return hub.previewRestoreByShares(asset, spokeData.premiumShares) - spokeData.premiumOffset;
   }
 
   function _loadAssetPremiumData(
     IHub hub,
     address asset
   ) internal view returns (PremiumDataLocal memory) {
-    IHub.Asset memory asset = hub.getAsset(assetId);
-    return PremiumDataLocal(asset.premiumShares, asset.premiumOffset, asset.realizedPremium);
+    IHub.Asset memory assetData = hub.getAsset(asset);
+    return PremiumDataLocal(assetData.premiumShares, assetData.premiumOffset, assetData.realizedPremium);
   }
 
   function _applyPremiumDelta(
@@ -493,5 +493,5 @@ contract HubRefreshPremiumTest is HubBase {
     assertEq(a.premiumOffset, b.premiumOffset, 'premium offset');
     assertEq(a.realizedPremium, b.realizedPremium, 'realized premium');
     assertEq(abi.encode(a), abi.encode(b));
-  }*/
+  }
 }
