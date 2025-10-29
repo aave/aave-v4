@@ -13,23 +13,27 @@ interface ISpokeBase {
   /// @param caller The transaction initiator, and supplier of the underlying asset.
   /// @param user The owner of the modified position.
   /// @param suppliedShares The amount of supply shares minted.
+  /// @param suppliedAmount The amount of underlying asset supplied.
   event Supply(
     uint256 indexed reserveId,
     address indexed caller,
     address indexed user,
-    uint256 suppliedShares
+    uint256 suppliedShares,
+    uint256 suppliedAmount
   );
 
   /// @notice Emitted on the withdraw action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator, and recipient of the underlying asset being withdrawn.
   /// @param user The owner of the modified position.
-  /// @param suppliedShares The amount of supply shares burned.
+  /// @param withdrawnShares The amount of supply shares burned.
+  /// @param withdrawnAmount The amount of underlying asset withdrawn.
   event Withdraw(
     uint256 indexed reserveId,
     address indexed caller,
     address indexed user,
-    uint256 suppliedShares
+    uint256 withdrawnShares,
+    uint256 withdrawnAmount
   );
 
   /// @notice Emitted on the borrow action.
@@ -37,24 +41,28 @@ interface ISpokeBase {
   /// @param caller The transaction initiator, and recipient of the underlying asset being borrowed.
   /// @param user The owner of the position on which debt is generated.
   /// @param drawnShares The amount of debt shares minted.
+  /// @param drawnAmount The amount of underlying asset borrowed.
   event Borrow(
     uint256 indexed reserveId,
     address indexed caller,
     address indexed user,
-    uint256 drawnShares
+    uint256 drawnShares,
+    uint256 drawnAmount
   );
 
   /// @notice Emitted on the repay action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator who is repaying the underlying asset.
   /// @param user The owner of the position whose debt is being repaid.
-  /// @param drawnShares The amount of debt shares burned.
+  /// @param drawnShares The amount of drawn shares burned.
+  /// @param totalAmountRepaid The amount of drawn and premium underlying assets repaid.
   /// @param premiumDelta A struct representing the changes to premium debt after repayment.
   event Repay(
     uint256 indexed reserveId,
     address indexed caller,
     address indexed user,
     uint256 drawnShares,
+    uint256 totalAmountRepaid,
     IHubBase.PremiumDelta premiumDelta
   );
 
