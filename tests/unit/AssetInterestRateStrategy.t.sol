@@ -8,13 +8,13 @@ contract AssetInterestRateStrategyTest is Base {
   using WadRayMath for *;
   using SafeCast for uint256;
 
-  uint256 mockAssetId = uint256(keccak256('mockAssetId'));
+  address mockAsset = makeAddr('mockAsset');
 
   IAssetInterestRateStrategy public rateStrategy;
   IAssetInterestRateStrategy.InterestRateData public rateData;
   bytes public encodedRateData;
 
-  /*function setUp() public override {
+  function setUp() public override {
     deployFixtures();
     rateStrategy = new AssetInterestRateStrategy(address(hub1));
 
@@ -27,7 +27,7 @@ contract AssetInterestRateStrategyTest is Base {
     encodedRateData = abi.encode(rateData);
 
     vm.prank(address(hub1));
-    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
+    rateStrategy.setInterestRateData(mockAsset, encodedRateData);
   }
 
   function test_deploy_revertsWith_InvalidAddress() public {
@@ -48,28 +48,28 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_getInterestRateData() public view {
-    assertEq(rateStrategy.getInterestRateData(mockAssetId), rateData);
+    assertEq(rateStrategy.getInterestRateData(mockAsset), rateData);
   }
 
   function test_getOptimalUsageRatio() public view {
-    assertEq(rateStrategy.getOptimalUsageRatio(mockAssetId), rateData.optimalUsageRatio);
+    assertEq(rateStrategy.getOptimalUsageRatio(mockAsset), rateData.optimalUsageRatio);
   }
 
   function test_getBaseVariableBorrowRate() public view {
-    assertEq(rateStrategy.getBaseVariableBorrowRate(mockAssetId), rateData.baseVariableBorrowRate);
+    assertEq(rateStrategy.getBaseVariableBorrowRate(mockAsset), rateData.baseVariableBorrowRate);
   }
 
   function test_getVariableRateSlope1() public view {
-    assertEq(rateStrategy.getVariableRateSlope1(mockAssetId), rateData.variableRateSlope1);
+    assertEq(rateStrategy.getVariableRateSlope1(mockAsset), rateData.variableRateSlope1);
   }
 
   function test_getVariableRateSlope2() public view {
-    assertEq(rateStrategy.getVariableRateSlope2(mockAssetId), rateData.variableRateSlope2);
+    assertEq(rateStrategy.getVariableRateSlope2(mockAsset), rateData.variableRateSlope2);
   }
 
   function test_getMaxVariableBorrowRate() public view {
     assertEq(
-      rateStrategy.getMaxVariableBorrowRate(mockAssetId),
+      rateStrategy.getMaxVariableBorrowRate(mockAsset),
       rateData.baseVariableBorrowRate + rateData.variableRateSlope1 + rateData.variableRateSlope2
     );
   }
@@ -77,7 +77,7 @@ contract AssetInterestRateStrategyTest is Base {
   function test_setInterestRateData_revertsWith_OnlyHub() public {
     vm.expectRevert(IAssetInterestRateStrategy.OnlyHub.selector);
     vm.prank(makeAddr('randomCaller'));
-    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
+    rateStrategy.setInterestRateData(mockAsset, encodedRateData);
   }
 
   function test_setInterestRateData_revertsWith_InvalidOptimalUsageRatio() public {
@@ -90,7 +90,7 @@ contract AssetInterestRateStrategyTest is Base {
       encodedRateData = abi.encode(rateData);
       vm.expectRevert(IAssetInterestRateStrategy.InvalidOptimalUsageRatio.selector);
       vm.prank(address(hub1));
-      rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
+      rateStrategy.setInterestRateData(mockAsset, encodedRateData);
     }
   }
 
@@ -102,7 +102,7 @@ contract AssetInterestRateStrategyTest is Base {
     encodedRateData = abi.encode(rateData);
     vm.expectRevert(IAssetInterestRateStrategy.Slope2MustBeGteSlope1.selector);
     vm.prank(address(hub1));
-    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
+    rateStrategy.setInterestRateData(mockAsset, encodedRateData);
   }
 
   function test_setInterestRateData_revertsWith_InvalidMaxRate() public {
@@ -113,14 +113,14 @@ contract AssetInterestRateStrategyTest is Base {
     encodedRateData = abi.encode(rateData);
     vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxRate.selector);
     vm.prank(address(hub1));
-    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
+    rateStrategy.setInterestRateData(mockAsset, encodedRateData);
   }
 
   function test_setInterestRateData_revertsWith_InvalidRateData() public {
     encodedRateData = abi.encode('invalid');
     vm.expectRevert();
     vm.prank(address(hub1));
-    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
+    rateStrategy.setInterestRateData(mockAsset, encodedRateData);
   }
 
   function test_setInterestRateData() public {
@@ -135,7 +135,7 @@ contract AssetInterestRateStrategyTest is Base {
     vm.expectEmit(address(rateStrategy));
     emit IAssetInterestRateStrategy.UpdateRateData(
       address(hub1),
-      mockAssetId,
+      mockAsset,
       rateData.optimalUsageRatio,
       rateData.baseVariableBorrowRate,
       rateData.variableRateSlope1,
@@ -143,7 +143,7 @@ contract AssetInterestRateStrategyTest is Base {
     );
 
     vm.prank(address(hub1));
-    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
+    rateStrategy.setInterestRateData(mockAsset, encodedRateData);
 
     test_getInterestRateData();
     test_getOptimalUsageRatio();
@@ -154,15 +154,15 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_calculateInterestRate_revertsWith_InterestRateDataNotSet() public {
-    uint256 mockAssetId2 = uint256(keccak256('mockAssetId2'));
+    address mockAsset2 = makeAddr('mockAsset2');
     vm.expectRevert(
       abi.encodeWithSelector(
         IBasicInterestRateStrategy.InterestRateDataNotSet.selector,
-        mockAssetId2
+        mockAsset2
       )
     );
     rateStrategy.calculateInterestRate({
-      assetId: mockAssetId2,
+      asset: mockAsset2,
       liquidity: 0,
       drawn: 0,
       deficit: 0,
@@ -174,7 +174,7 @@ contract AssetInterestRateStrategyTest is Base {
     liquidity = bound(liquidity, 0, type(uint120).max);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
-      assetId: mockAssetId,
+      asset: mockAsset,
       liquidity: liquidity,
       drawn: 0,
       deficit: 0,
@@ -199,7 +199,7 @@ contract AssetInterestRateStrategyTest is Base {
     ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
-      assetId: mockAssetId,
+      asset: mockAsset,
       liquidity: liquidity,
       drawn: drawn,
       deficit: deficit,
@@ -234,7 +234,7 @@ contract AssetInterestRateStrategyTest is Base {
     ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
-      assetId: mockAssetId,
+      asset: mockAsset,
       liquidity: liquidity,
       drawn: drawn,
       deficit: deficit,
@@ -277,5 +277,5 @@ contract AssetInterestRateStrategyTest is Base {
 
     // deficit unused in the current IR strategy
     deficit = vm.randomUint();
-  }*/
+  }
 }

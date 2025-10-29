@@ -32,11 +32,11 @@ contract HubHandler is Test {
 
   address internal hubAdmin = makeAddr('HUB_ADMIN');
 
-  /*struct State {
-    mapping(uint256 => uint256) reserveSupplied; // asset => supply
-    mapping(uint256 => mapping(address => uint256)) userSupplied; // asset => user => supply
+  struct State {
+    mapping(address => uint256) reserveSupplied; // asset => supply
+    mapping(address => mapping(address => uint256)) userSupplied; // asset => user => supply
     mapping(address => uint256) assetDonated; // underlying => donation
-    mapping(uint256 => uint256) lastExchangeRate; // asset => supplyIndex
+    mapping(address => uint256) lastExchangeRate; // asset => supplyIndex
   }
 
   State internal s;
@@ -59,7 +59,7 @@ contract HubHandler is Test {
       )
     );
     assertEq(address(spoke1), predictedSpoke, 'predictedSpoke');
-    treasurySpoke = new TreasurySpoke(hubAdmin, address(hub1));
+    treasurySpoke = new TreasurySpoke(hubAdmin);
     usdc = new MockERC20();
     dai = new MockERC20();
     usdt = new MockERC20();
@@ -78,7 +78,7 @@ contract HubHandler is Test {
     // Add dai
     hub1.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
     hub1.updateAssetConfig(
-      0,
+      address(dai),
       IHub.AssetConfig({
         feeReceiver: address(treasurySpoke),
         liquidityFee: 0,
@@ -89,7 +89,7 @@ contract HubHandler is Test {
     );
     spoke1.addReserve(
       address(hub1),
-      0,
+      address(dai),
       _deployMockPriceFeed(spoke1, 1e8),
       ISpoke.ReserveConfig({frozen: false, paused: false, collateralRisk: 0, borrowable: false}),
       ISpoke.DynamicReserveConfig({
@@ -102,11 +102,11 @@ contract HubHandler is Test {
   }
 
   function getReserveSupplied(address asset) public view returns (uint256) {
-    return s.reserveSupplied[assetId];
+    return s.reserveSupplied[asset];
   }
 
   function getUserSupplied(address asset, address user) public view returns (uint256) {
-    return s.userSupplied[assetId][user];
+    return s.userSupplied[asset][user];
   }
 
   function getAssetDonated(address underlying) public view returns (uint256) {
@@ -114,60 +114,61 @@ contract HubHandler is Test {
   }
 
   function getLastExchangeRate(address asset) public view returns (uint256) {
-    return s.lastExchangeRate[assetId];
+    return s.lastExchangeRate[asset];
   }
 
-  function supply(address asset, address user, uint256 amount, address onBehalfOf) public {
+  function supply(uint256 assetIdx, address user, uint256 amount, address onBehalfOf) public {
     vm.assume(user != address(hub1) && user != address(0) && onBehalfOf != address(0));
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
+    assetIdx = bound(assetIdx, 0, hub1.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint120).max);
+    address asset = hub1.getUnderlyingAddress(assetIdx);
 
-    deal(hub1.getAsset(assetId).underlying, user, amount);
-    Utils.add({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, user: user});
+    deal(asset, user, amount);
+    Utils.add({hub: hub1, asset: asset, caller: address(spoke1), amount: amount, user: user});
 
-    _updateState(assetId);
-    s.reserveSupplied[assetId] += amount;
-    s.userSupplied[assetId][onBehalfOf] += amount;
+    _updateState(asset);
+    s.reserveSupplied[asset] += amount;
+    s.userSupplied[asset][onBehalfOf] += amount;
   }
 
-  function withdraw(address asset, address user, uint256 amount, address to) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
+  function withdraw(uint256 assetIdx, address user, uint256 amount, address to) public {
+    assetIdx = bound(assetIdx, 0, hub1.getAssetCount() - 1);
     // TODO: bound by spoke1 user balance
     amount = bound(amount, 1, 2);
+    address asset = hub1.getUnderlyingAddress(assetIdx);
 
-    Utils.remove({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, to: to});
+    Utils.remove({hub: hub1, asset: asset, caller: address(spoke1), amount: amount, to: to});
 
-    _updateState(assetId);
-    s.reserveSupplied[assetId] -= amount;
-    s.userSupplied[assetId][user] -= amount;
+    _updateState(asset);
+    s.reserveSupplied[asset] -= amount;
+    s.userSupplied[asset][user] -= amount;
   }
 
-  function donate(address asset, address user, uint256 amount) public {
+  function donate(uint256 assetIdx, address user, uint256 amount) public {
     vm.assume(user != address(hub1) && user != address(0));
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
+    assetIdx = bound(assetIdx, 0, hub1.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint120).max);
+    address asset = hub1.getUnderlyingAddress(assetIdx);
 
-    address underlying = hub1.getAsset(assetId).underlying;
-
-    deal(underlying, user, amount);
+    deal(asset, user, amount);
     vm.prank(user);
-    IERC20(underlying).transfer(address(hub1), amount);
+    IERC20(asset).transfer(address(hub1), amount);
 
-    s.assetDonated[underlying] += amount;
+    s.assetDonated[asset] += amount;
   }
 
   function _updateState(address asset) internal {
     revert('implement me');
 
-    // IHub.Asset memory reserveData = hub1.getAsset(assetId);
+    // IHub.Asset memory reserveData = hub1.getAsset(asset);
     // // todo: remove last exchange rate, bad idea to store like this, looses precision
-    // s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
+    // s.lastExchangeRate[asset] = reserveData.suppliedShares == 0
     //   ? 0
-    //   : hub1.getTotalAssets(assetId) / reserveData.suppliedShares;
+    //   : hub1.getTotalAssets(asset) / reserveData.suppliedShares;
   }
 
   function _deployMockPriceFeed(Spoke spoke, uint256 price) internal returns (address) {
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
-  }*/
+  }
 }

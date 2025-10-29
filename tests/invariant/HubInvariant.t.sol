@@ -12,7 +12,7 @@ contract HubInvariant is StdInvariant, Test {
   HubHandler hubHandler;
   Hub hub1;
 
-  /*function setUp() public {
+  function setUp() public {
     hubHandler = new HubHandler();
     hub1 = hubHandler.hub1();
     targetContract(address(hubHandler));
@@ -30,8 +30,8 @@ contract HubInvariant is StdInvariant, Test {
     // TODO: manage asset listed multiple times
     // TODO: manage interest
     for (uint256 i; i < hub1.getAssetCount(); ++i) {
-      IHub.Asset memory reserveData = hub1.getAsset(i);
-      address underlying = hub1.getAsset(i).underlying;
+      address underlying = hub1.getUnderlyingAddress(i);
+      IHub.Asset memory reserveData = hub1.getAsset(underlying);
       // todo implement
       // assertEq(
       //   hub1.getTotalAssets(reserveData.id),
@@ -46,7 +46,8 @@ contract HubInvariant is StdInvariant, Test {
     vm.skip(true);
     // TODO this can be improved with borrows OR changes in borrowRate
     for (uint256 id = 0; id < hub1.getAssetCount(); id++) {
-      IHub.Asset memory reserveData = hub1.getAsset(id);
+      address underlying = hub1.getUnderlyingAddress(id);
+      IHub.Asset memory reserveData = hub1.getAsset(underlying);
       // todo migrate
       // uint256 calcExchangeRate = reserveData.suppliedShares == 0
       //   ? 0
@@ -54,5 +55,5 @@ contract HubInvariant is StdInvariant, Test {
 
       // assertTrue(hubHandler.getLastExchangeRate(id) <= calcExchangeRate, 'supply index decrease');
     }
-  }*/
+  }
 }

@@ -15,7 +15,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   uint256 public reserveId;
   uint256 public invalidReserveId;
 
-  /*function setUp() public virtual override {
+  function setUp() public virtual override {
     super.setUp();
 
     spokeConfigurator = new SpokeConfigurator(SPOKE_CONFIGURATOR_ADMIN);
@@ -164,7 +164,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     spokeConfigurator.addReserve({
       spoke: spokeAddr,
       hub: address(hub1),
-      assetId: 0,
+      asset: address(tokenList.dai),
       priceSource: address(0),
       config: ISpoke.ReserveConfig({
         paused: false,
@@ -213,7 +213,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     uint256 actualReserveId = spokeConfigurator.addReserve({
       spoke: spokeAddr,
       hub: address(hub1),
-      assetId: address(tokenList.usdz),
+      asset: address(tokenList.usdz),
       priceSource: newPriceSource,
       config: config,
       dynamicConfig: dynamicConfig
@@ -712,5 +712,5 @@ contract SpokeConfiguratorTest is SpokeBase {
       spokeConfigurator.updatePositionManager(spokeAddr, newPositionManager, active);
       assertEq(spoke.isPositionManagerActive(newPositionManager), active);
     }
-  }*/
+  }
 }
