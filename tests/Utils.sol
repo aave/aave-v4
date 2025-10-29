@@ -89,9 +89,9 @@ library Utils {
     address feeReceiver,
     address interestRateStrategy,
     bytes memory encodedIrData
-  ) internal returns (uint256) {
+  ) internal {
     vm.prank(hubAdmin);
-    return hub.addAsset(underlying, decimals, feeReceiver, interestRateStrategy, encodedIrData);
+    hub.addAsset(underlying, decimals, feeReceiver, interestRateStrategy, encodedIrData);
   }
 
   function updateAssetConfig(

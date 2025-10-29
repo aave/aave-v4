@@ -80,9 +80,9 @@ contract LiquidationLogicWrapper {
     _reserves[_debtReserveId].decimals = decimals.toUint8();
   }
 
-  function setDebtReserveUnderlying(address underlying) public {
-    _reserves[_debtReserveId].underlying = underlying;
-  }
+  // function setDebtReserveUnderlying(address underlying) public {
+  //   _reserves[_debtReserveId].underlying = underlying;
+  // }
 
   function setDebtReserveId(uint256 reserveId) public {
     _debtReserveId = reserveId;

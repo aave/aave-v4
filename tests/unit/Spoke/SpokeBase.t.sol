@@ -69,8 +69,8 @@ contract SpokeBase is Base {
   }
 
   struct SupplyBorrowLocal {
-    uint256 collateralReserveUnderlying;
-    uint256 borrowReserveUnderlying;
+    address collateralReserveUnderlying;
+    address borrowReserveUnderlying;
     uint256 collateralSupplyShares;
     uint256 borrowSupplyShares;
     uint256 reserveSharesBefore;
@@ -307,7 +307,7 @@ contract SpokeBase is Base {
     borrow.supplyAmount = 100e18;
     borrow.borrowAmount = borrow.supplyAmount / 2;
 
-    (state.borrowReserveUnderlying, ) = getAssetByReserveId(spoke, borrow.reserveId);
+    state.borrowReserveUnderlying = _underlying(spoke, borrow.reserveId);
     (state.collateralSupplyShares, state.borrowSupplyShares) = _executeSpokeSupplyAndBorrow({
       spoke: spoke,
       collateral: collateral,
@@ -347,8 +347,8 @@ contract SpokeBase is Base {
     if (isMockRate) {
       _mockInterestRateBps(rate);
     }
-    (state.collateralReserveUnderlying, ) = getAssetByReserveId(spoke, collateral.reserveId);
-    (state.borrowReserveUnderlying, ) = getAssetByReserveId(spoke, borrow.reserveId);
+    state.collateralReserveUnderlying = _underlying(spoke, collateral.reserveId);
+    state.borrowReserveUnderlying = _underlying(spoke, borrow.reserveId);
     state.collateralSupplyShares = hub1.previewAddByAssets(
       state.collateralReserveUnderlying,
       collateral.supplyAmount

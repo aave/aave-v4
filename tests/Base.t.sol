@@ -248,6 +248,7 @@ abstract contract Base is Test {
   struct Reserve {
     uint256 reserveId;
     IHub hub;
+    address underlying;
     uint8 decimals;
     uint16 dynamicConfigKey; // key of the last reserve config
     bool paused;
@@ -555,7 +556,7 @@ abstract contract Base is Test {
       encodedIrData
     );
     hub1.updateAssetConfig(
-      hub1.getAssetCount() - 1,
+      address(tokenList.usdz),
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
@@ -1331,14 +1332,6 @@ abstract contract Base is Test {
     return hub1.getAsset(underlying);
   }
 
-  function getAssetByReserveId(
-    ISpoke spoke,
-    uint256 reserveId
-  ) internal view returns (uint256, IERC20) {
-    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
-    (address underlying, ) = reserve.hub.getAssetUnderlyingAndDecimals(reserve.underlying);
-    return (reserve.underlying, IERC20(underlying));
-  }
 
   function getAssetUnderlyingByReserveId(
     ISpoke spoke,
@@ -1969,8 +1962,11 @@ abstract contract Base is Test {
     if (amount == 0) {
       return; // nothing to withdraw
     }
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdraw(underlying, amount, address(treasurySpoke));
+    // todo fix 
+    // vm.prank(TREASURY_ADMIN);
+    // treasurySpoke.withdraw(underlying, amount, address(treasurySpoke));
+    vm.prank(address(treasurySpoke));
+    hub.remove(underlying, amount, address(treasurySpoke));
   }
 
   function _assumeValidSupplier(address user) internal view {

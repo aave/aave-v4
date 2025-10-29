@@ -12,7 +12,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   IHub internal hub;
   ISpoke internal spoke;
   IERC20 internal asset;
-  uint256 internal underlying;
+  address internal underlying;
   uint256 internal reserveId;
   address internal liquidator;
   uint256 internal realizedPremium;
