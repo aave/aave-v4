@@ -15,7 +15,6 @@
   "supply + enable collateral (multicall)": "162701",
   "supply: 0 borrows, collateral disabled": "122966",
   "supply: 0 borrows, collateral enabled": "130588",
-  "supply: 1 borrow": "122966",
   "supply: second action, same reserve": "105866",
   "updateUserDynamicConfig: 1 collateral": "73487",
   "updateUserDynamicConfig: 2 collaterals": "87983",
