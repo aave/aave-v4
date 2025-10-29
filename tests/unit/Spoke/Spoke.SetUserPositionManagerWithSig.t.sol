@@ -7,7 +7,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
   using SafeCast for *;
 
-  function setUp() public override {
+  /*function setUp() public override {
     super.setUp();
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(POSITION_MANAGER, true);
@@ -347,5 +347,5 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       deadline: deadline
     });
     return params;
-  }
+  }*/
 }

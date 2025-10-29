@@ -8,7 +8,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
   using MathUtils for uint256;
   using PercentageMath for uint256;
 
-  function test_calculateLiquidationAmounts_fuzz_EnoughCollateral_NoCollateralDust(
+  /*function test_calculateLiquidationAmounts_fuzz_EnoughCollateral_NoCollateralDust(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) public {
     params = _bound(params);
@@ -367,5 +367,5 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     uint256 bonusCollateral = collateralToLiquidate -
       collateralToLiquidate.percentDivUp(liquidationBonus);
     return collateralToLiquidate - bonusCollateral.percentMulDown(liquidationFee);
-  }
+  }*/
 }

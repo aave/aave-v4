@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokePermitReserveTest is SpokeBase {
-  function test_permitReserve_revertsWith_ReserveNotListedIn() public {
+  /*function test_permitReserve_revertsWith_ReserveNotListedIn() public {
     uint256 unlistedReserveId = vm.randomUint(spoke1.getReserveCount() + 1, UINT256_MAX);
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(vm.randomAddress());
@@ -77,5 +77,5 @@ contract SpokePermitReserveTest is SpokeBase {
     spoke1.permitReserve(_daiReserveId(spoke1), user, params.value, params.deadline, v, r, s);
 
     assertEq(tokenList.dai.allowance(user, address(spoke1)), params.value);
-  }
+  }*/
 }

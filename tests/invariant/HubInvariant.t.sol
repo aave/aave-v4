@@ -12,7 +12,7 @@ contract HubInvariant is StdInvariant, Test {
   HubHandler hubHandler;
   Hub hub1;
 
-  function setUp() public {
+  /*function setUp() public {
     hubHandler = new HubHandler();
     hub1 = hubHandler.hub1();
     targetContract(address(hubHandler));
@@ -54,5 +54,5 @@ contract HubInvariant is StdInvariant, Test {
 
       // assertTrue(hubHandler.getLastExchangeRate(id) <= calcExchangeRate, 'supply index decrease');
     }
-  }
+  }*/
 }

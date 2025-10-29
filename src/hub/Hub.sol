@@ -39,7 +39,6 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   uint24 public constant MAX_RISK_PREMIUM_THRESHOLD = type(uint24).max;
 
-  uint256 internal _assetCount;
   mapping(address asset => Asset) internal _assets;
   mapping(address asset => mapping(address spoke => SpokeData)) internal _spokes;
   mapping(address asset => EnumerableSet.AddressSet) internal _assetToSpokes;
@@ -440,7 +439,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function getAssetCount() external view returns (uint256) {
-    return _assetCount;
+    return _underlyingSet.length();
   }
 
   /// @inheritdoc IHubBase

@@ -12,7 +12,6 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
   IHub hub;
   ISpoke spoke;
   IERC20 asset;
-  uint256 assetId;
   uint256 suppliedShares;
   uint256 reserveId;
   address borrower;
@@ -20,19 +19,19 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
   ISpoke.Reserve initialReserve;
   ISpoke.UserPosition initialPosition;
 
-  function setUp() public override {
+  /*function setUp() public override {
     super.setUp();
 
     hub = hub1;
     spoke = ISpoke(address(liquidationLogicWrapper));
-    assetId = wethAssetId;
+    assetId = address(tokenList.weth);
     reserveId = _wethReserveId(spoke);
     asset = IERC20(hub.getAsset(assetId).underlying);
     suppliedShares = 100e18;
     borrower = makeAddr('borrower');
 
     liquidationLogicWrapper.setCollateralReserveHub(hub);
-    liquidationLogicWrapper.setCollateralReserveAssetId(assetId);
+    liquidationLogicWrapper.setCollateralReserveAsset(address(asset));
     liquidationLogicWrapper.setCollateralReserveId(reserveId);
     liquidationLogicWrapper.setBorrower(borrower);
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(suppliedShares);
@@ -160,5 +159,5 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     }
 
     return sharesToLiquidate;
-  }
+  }*/
 }

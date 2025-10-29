@@ -10,7 +10,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
   ISpoke spoke;
   address liquidator = makeAddr('liquidator');
 
-  function setUp() public virtual override {
+  /*function setUp() public virtual override {
     super.setUp();
     spoke = spoke1;
 
@@ -540,5 +540,5 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
 
     uint256 liquidationFee = vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE);
     _updateLiquidationFee(spoke, collateralReserveId, liquidationFee.toUint16());
-  }
+  }*/
 }

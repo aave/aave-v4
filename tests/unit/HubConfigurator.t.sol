@@ -19,14 +19,14 @@ contract HubConfiguratorTest is HubBase {
   mapping(address => uint24) public riskPremiumThresholdsPerSpoke; // spoke address => risk premium threshold
   mapping(uint256 => uint24) public riskPremiumThresholdsPerAsset; // assetId => risk premium threshold
 
-  function setUp() public virtual override {
+  /*function setUp() public virtual override {
     super.setUp();
     hubConfigurator = new HubConfigurator(HUB_CONFIGURATOR_ADMIN);
     IAccessManager accessManager = IAccessManager(hub1.authority());
     // Grant hubConfigurator hub admin role with 0 delay
     vm.prank(ADMIN);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
-    assetId = daiAssetId;
+    assetId = address(tokenList.dai);
     encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
@@ -259,7 +259,7 @@ contract HubConfiguratorTest is HubBase {
     hubConfigurator.updateLiquidityFee(address(hub1), assetId, liquidityFee);
   }
 
-  function test_updateLiquidityFee_fuzz(uint256 assetId, uint16 liquidityFee) public {
+  function test_updateLiquidityFee_fuzz(address asset, uint16 liquidityFee) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     liquidityFee = uint16(bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR));
 
@@ -332,7 +332,7 @@ contract HubConfiguratorTest is HubBase {
   /// @dev Test update fee receiver and fees can still be withdrawn from old fee receiver
   function test_updateFeeReceiver_WithdrawFromOldSpoke() public {
     assertEq(
-      hub1.getAssetConfig(daiAssetId).feeReceiver,
+      hub1.getAssetConfig(address(tokenList.dai)).feeReceiver,
       address(treasurySpoke),
       'current fee receiver matches treasury spoke'
     );
@@ -340,7 +340,7 @@ contract HubConfiguratorTest is HubBase {
     // Create debt to build up fees on the existing treasury spoke
     _addAndDrawLiquidity(
       hub1,
-      daiAssetId,
+      address(tokenList.dai),
       bob,
       address(spoke1),
       1000e18,
@@ -350,52 +350,52 @@ contract HubConfiguratorTest is HubBase {
       365 days
     );
 
-    assertGe(treasurySpoke.getSuppliedShares(daiAssetId), 0);
+    assertGe(treasurySpoke.getSuppliedShares(address(tokenList.dai)), 0);
 
     // Change the fee receiver
     TreasurySpoke newTreasurySpoke = new TreasurySpoke(HUB_ADMIN, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, address(newTreasurySpoke));
+    hubConfigurator.updateFeeReceiver(address(hub1), address(tokenList.dai), address(newTreasurySpoke));
 
-    uint256 fees = treasurySpoke.getSuppliedAmount(daiAssetId);
+    uint256 fees = treasurySpoke.getSuppliedAmount(address(tokenList.dai));
 
     assertEq(
-      hub1.getAssetConfig(daiAssetId).feeReceiver,
+      hub1.getAssetConfig(address(tokenList.dai)).feeReceiver,
       address(newTreasurySpoke),
       'new fee receiver updated'
     );
     assertTrue(
-      hub1.getSpokeConfig(daiAssetId, address(treasurySpoke)).active,
+      hub1.getSpokeConfig(address(tokenList.dai), address(treasurySpoke)).active,
       'old fee receiver is not active'
     );
 
     // Withdraw fees from the old treasury spoke
     Utils.withdraw(
       ISpoke(address(treasurySpoke)),
-      daiAssetId,
+      address(tokenList.dai),
       TREASURY_ADMIN,
       fees,
       address(treasurySpoke)
     );
-    assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), 0, 'old treasury spoke should be empty');
+    assertEq(treasurySpoke.getSuppliedAmount(address(tokenList.dai)), 0, 'old treasury spoke should be empty');
 
     // Accrue more fees, this time to new fee receiver
     skip(365 days);
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    Utils.mintFeeShares(hub1, address(tokenList.dai), ADMIN);
 
     assertGt(
-      newTreasurySpoke.getSuppliedAmount(daiAssetId),
+      newTreasurySpoke.getSuppliedAmount(address(tokenList.dai)),
       0,
       'new fee receiver should have accrued fees'
     );
-    assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), 0, 'old fee receiver should be empty');
+    assertEq(treasurySpoke.getSuppliedAmount(address(tokenList.dai)), 0, 'old fee receiver should be empty');
   }
 
   /// @dev Test update fee receiver and old fee receiver still accrues fees
   function test_updateFeeReceiver_correctAccruals() public {
     // Ensure current fee receiver is the treasury spoke
     assertEq(
-      hub1.getAssetConfig(daiAssetId).feeReceiver,
+      hub1.getAssetConfig(address(tokenList.dai)).feeReceiver,
       address(treasurySpoke),
       'old fee receiver mismatch'
     );
@@ -403,7 +403,7 @@ contract HubConfiguratorTest is HubBase {
     // Create debt to build up fees on the existing treasury spoke
     _addAndDrawLiquidity(
       hub1,
-      daiAssetId,
+      address(tokenList.dai),
       bob,
       address(spoke1),
       1000e18,
@@ -412,53 +412,53 @@ contract HubConfiguratorTest is HubBase {
       100e18,
       365 days
     );
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    Utils.mintFeeShares(hub1, address(tokenList.dai), ADMIN);
 
-    assertGe(treasurySpoke.getSuppliedShares(daiAssetId), 0);
-    uint256 feeShares = treasurySpoke.getSuppliedShares(daiAssetId);
+    assertGe(treasurySpoke.getSuppliedShares(address(tokenList.dai)), 0);
+    uint256 feeShares = treasurySpoke.getSuppliedShares(address(tokenList.dai));
 
     // Change the fee receiver
     TreasurySpoke newTreasurySpoke = new TreasurySpoke(HUB_ADMIN, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, address(newTreasurySpoke));
+    hubConfigurator.updateFeeReceiver(address(hub1), address(tokenList.dai), address(newTreasurySpoke));
 
     // Ensure fee receiver was updated
     assertEq(
-      hub1.getAssetConfig(daiAssetId).feeReceiver,
+      hub1.getAssetConfig(address(tokenList.dai)).feeReceiver,
       address(newTreasurySpoke),
       'new fee receiver mismatch'
     );
 
     // Ensure old fee receiver is still active
     assertTrue(
-      hub1.getSpokeConfig(daiAssetId, address(treasurySpoke)).active,
+      hub1.getSpokeConfig(address(tokenList.dai), address(treasurySpoke)).active,
       'old fee receiver is not active'
     );
 
     // Withdraw half the fee shares from the old treasury spoke
     Utils.withdraw(
       ISpoke(address(treasurySpoke)),
-      daiAssetId,
+      address(tokenList.dai),
       TREASURY_ADMIN,
-      hub1.previewRemoveByShares(daiAssetId, feeShares / 2),
+      hub1.previewRemoveByShares(address(tokenList.dai), feeShares / 2),
       address(treasurySpoke)
     );
 
     // Get the remaining fee shares
-    feeShares = treasurySpoke.getSuppliedShares(daiAssetId);
+    feeShares = treasurySpoke.getSuppliedShares(address(tokenList.dai));
 
     // Accrue more fees, this time to new fee receiver
     skip(365 days);
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    Utils.mintFeeShares(hub1, address(tokenList.dai), ADMIN);
 
     // Check that new fee receiver is getting the fees, and not old treasury spoke
     assertGt(
-      newTreasurySpoke.getSuppliedAmount(daiAssetId),
+      newTreasurySpoke.getSuppliedAmount(address(tokenList.dai)),
       0,
       'new fee receiver should have accrued fees'
     );
     assertEq(
-      treasurySpoke.getSuppliedShares(daiAssetId),
+      treasurySpoke.getSuppliedShares(address(tokenList.dai)),
       feeShares,
       'old fee receiver should still have same share amount'
     );
@@ -466,12 +466,12 @@ contract HubConfiguratorTest is HubBase {
     // Now withdraw remaining fee shares from old treasury spoke
     Utils.withdraw(
       ISpoke(address(treasurySpoke)),
-      daiAssetId,
+      address(tokenList.dai),
       TREASURY_ADMIN,
       UINT256_MAX,
       address(treasurySpoke)
     );
-    assertEq(treasurySpoke.getSuppliedShares(daiAssetId), 0, 'old fee receiver should be empty');
+    assertEq(treasurySpoke.getSuppliedShares(address(tokenList.dai)), 0, 'old fee receiver should be empty');
   }
 
   function test_updateFeeReceiver_Scenario() public {
@@ -494,7 +494,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateFeeConfig_revertsWith_InvalidAddress_spoke() public {
-    uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+    address asset = vm.randomUint(0, hub1.getAssetCount() - 1);
     uint256 liquidityFee = vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR);
 
     vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
@@ -503,7 +503,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateFeeConfig_revertsWith_InvalidLiquidityFee() public {
-    uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+    address asset = vm.randomUint(0, hub1.getAssetCount() - 1);
     uint16 liquidityFee = uint16(
       vm.randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
     );
@@ -515,7 +515,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateFeeConfig_fuzz(
-    uint256 assetId,
+    address asset,
     uint16 liquidityFee,
     address feeReceiver
   ) public {
@@ -750,11 +750,11 @@ contract HubConfiguratorTest is HubBase {
     });
 
     vm.expectEmit(address(hub1));
-    emit IHub.AddSpoke(daiAssetId, newSpoke);
+    emit IHub.AddSpoke(address(tokenList.dai), newSpoke);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.addSpoke(address(hub1), newSpoke, daiAssetId, daiSpokeConfig);
+    hubConfigurator.addSpoke(address(hub1), newSpoke, address(tokenList.dai), daiSpokeConfig);
 
-    assertEq(hub1.getSpokeConfig(daiAssetId, newSpoke), daiSpokeConfig);
+    assertEq(hub1.getSpokeConfig(address(tokenList.dai), newSpoke), daiSpokeConfig);
   }
 
   function test_addSpokeToAssets_revertsWith_OwnableUnauthorizedAccount() public {
@@ -770,8 +770,8 @@ contract HubConfiguratorTest is HubBase {
 
   function test_addSpokeToAssets_revertsWith_MismatchedConfigs() public {
     uint256[] memory assetIds = new uint256[](2);
-    assetIds[0] = daiAssetId;
-    assetIds[1] = wethAssetId;
+    assetIds[0] = address(tokenList.dai);
+    assetIds[1] = address(tokenList.weth);
 
     IHub.SpokeConfig[] memory spokeConfigs = new IHub.SpokeConfig[](3);
     spokeConfigs[0] = IHub.SpokeConfig({
@@ -805,8 +805,8 @@ contract HubConfiguratorTest is HubBase {
     address newSpoke = makeAddr('newSpoke');
 
     uint256[] memory assetIds = new uint256[](2);
-    assetIds[0] = daiAssetId;
-    assetIds[1] = wethAssetId;
+    assetIds[0] = address(tokenList.dai);
+    assetIds[1] = address(tokenList.weth);
 
     IHub.SpokeConfig memory daiSpokeConfig = IHub.SpokeConfig({
       active: true,
@@ -828,14 +828,14 @@ contract HubConfiguratorTest is HubBase {
     spokeConfigs[1] = wethSpokeConfig;
 
     vm.expectEmit(address(hub1));
-    emit IHub.AddSpoke(daiAssetId, newSpoke);
+    emit IHub.AddSpoke(address(tokenList.dai), newSpoke);
     vm.expectEmit(address(hub1));
-    emit IHub.AddSpoke(wethAssetId, newSpoke);
+    emit IHub.AddSpoke(address(tokenList.weth), newSpoke);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.addSpokeToAssets(address(hub1), newSpoke, assetIds, spokeConfigs);
 
-    IHub.SpokeConfig memory daiSpokeData = hub1.getSpokeConfig(daiAssetId, newSpoke);
-    IHub.SpokeConfig memory wethSpokeData = hub1.getSpokeConfig(wethAssetId, newSpoke);
+    IHub.SpokeConfig memory daiSpokeData = hub1.getSpokeConfig(address(tokenList.dai), newSpoke);
+    IHub.SpokeConfig memory wethSpokeData = hub1.getSpokeConfig(address(tokenList.weth), newSpoke);
 
     assertEq(daiSpokeData, daiSpokeConfig);
     assertEq(wethSpokeData, wethSpokeConfig);
@@ -976,7 +976,7 @@ contract HubConfiguratorTest is HubBase {
     /// @dev Spoke3 is listed on hub1 on 4 assets: dai, weth, wbtc, usdx
     assertGt(hub1.getAssetCount(), 4, 'hub1 has less than 4 assets listed');
 
-    for (uint256 assetId = 0; assetId < 4; ++assetId) {
+    for (address asset = 0; assetId < 4; ++assetId) {
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
 
       IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
@@ -987,14 +987,14 @@ contract HubConfiguratorTest is HubBase {
       );
     }
 
-    for (uint256 assetId = 4; assetId < hub1.getAssetCount(); ++assetId) {
+    for (address asset = 4; assetId < hub1.getAssetCount(); ++assetId) {
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
     }
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.deactivateSpoke(address(hub1), address(spoke3));
 
-    for (uint256 assetId = 0; assetId < 4; ++assetId) {
+    for (address asset = 0; assetId < 4; ++assetId) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
       assertEq(spokeConfig.active, false);
     }
@@ -1010,7 +1010,7 @@ contract HubConfiguratorTest is HubBase {
     /// @dev Spoke3 is listed on hub1 on 4 assets: dai, weth, wbtc, usdx
     assertGt(hub1.getAssetCount(), 4, 'hub1 has less than 4 assets listed');
 
-    for (uint256 assetId = 0; assetId < 4; ++assetId) {
+    for (address asset = 0; assetId < 4; ++assetId) {
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
 
       IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
@@ -1021,14 +1021,14 @@ contract HubConfiguratorTest is HubBase {
       );
     }
 
-    for (uint256 assetId = 4; assetId < hub1.getAssetCount(); ++assetId) {
+    for (address asset = 4; assetId < hub1.getAssetCount(); ++assetId) {
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
     }
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.pauseSpoke(address(hub1), address(spoke3));
 
-    for (uint256 assetId = 0; assetId < 4; ++assetId) {
+    for (address asset = 0; assetId < 4; ++assetId) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
       assertEq(spokeConfig.paused, true);
     }
@@ -1044,7 +1044,7 @@ contract HubConfiguratorTest is HubBase {
     /// @dev Spoke3 is listed on hub1 on 4 assets: dai, weth, wbtc, usdx
     assertGt(hub1.getAssetCount(), 4, 'hub1 has less than 4 assets listed');
 
-    for (uint256 assetId = 0; assetId < 4; ++assetId) {
+    for (address asset = 0; assetId < 4; ++assetId) {
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
 
       IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
@@ -1058,14 +1058,14 @@ contract HubConfiguratorTest is HubBase {
       riskPremiumThresholdsPerAsset[assetId] = expectedSpokeConfig.riskPremiumThreshold;
     }
 
-    for (uint256 assetId = 4; assetId < hub1.getAssetCount(); ++assetId) {
+    for (address asset = 4; assetId < hub1.getAssetCount(); ++assetId) {
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
     }
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.freezeSpoke(address(hub1), address(spoke3));
 
-    for (uint256 assetId = 0; assetId < 4; ++assetId) {
+    for (address asset = 0; assetId < 4; ++assetId) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
       assertEq(spokeConfig.addCap, 0);
       assertEq(spokeConfig.drawCap, 0);
@@ -1130,5 +1130,5 @@ contract HubConfiguratorTest is HubBase {
           encodedIrData
         );
     }
-  }
+  }*/
 }

@@ -48,8 +48,8 @@ contract LiquidationLogicWrapper {
     _reserves[_collateralReserveId].decimals = decimals.toUint8();
   }
 
-  function setCollateralReserveAssetId(uint256 assetId) public {
-    _reserves[_collateralReserveId].assetId = assetId.toUint16();
+  function setCollateralReserveAsset(address asset) public {
+    _reserves[_collateralReserveId].underlying = asset;
   }
 
   function setCollateralReserveId(uint256 reserveId) public {
@@ -80,16 +80,12 @@ contract LiquidationLogicWrapper {
     _reserves[_debtReserveId].decimals = decimals.toUint8();
   }
 
-  function setDebtReserveAssetId(uint256 assetId) public {
-    _reserves[_debtReserveId].assetId = assetId.toUint16();
+  function setDebtReserveAsset(address asset) public {
+    _reserves[_debtReserveId].underlying = asset;
   }
 
   function setDebtReserveId(uint256 reserveId) public {
     _debtReserveId = reserveId;
-  }
-
-  function setDebtReserveUnderlying(address underlying) public {
-    _reserves[_debtReserveId].underlying = underlying;
   }
 
   function setDebtPositionDrawnShares(uint256 drawnShares) public {

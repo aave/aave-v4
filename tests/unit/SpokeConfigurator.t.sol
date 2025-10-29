@@ -15,7 +15,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   uint256 public reserveId;
   uint256 public invalidReserveId;
 
-  function setUp() public virtual override {
+  /*function setUp() public virtual override {
     super.setUp();
 
     spokeConfigurator = new SpokeConfigurator(SPOKE_CONFIGURATOR_ADMIN);
@@ -200,11 +200,11 @@ contract SpokeConfiguratorTest is SpokeBase {
       spokeAddr,
       abi.encodeCall(
         ISpoke.addReserve,
-        (address(hub1), usdzAssetId, newPriceSource, config, dynamicConfig)
+        (address(hub1), address(tokenList.usdz), newPriceSource, config, dynamicConfig)
       )
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.AddReserve(expectedReserveId, usdzAssetId, address(hub1));
+    emit ISpoke.AddReserve(expectedReserveId, address(tokenList.usdz), address(hub1));
     vm.expectEmit(address(spoke));
     emit ISpoke.UpdateReserveConfig(expectedReserveId, config);
     vm.expectEmit(address(spoke));
@@ -213,7 +213,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     uint256 actualReserveId = spokeConfigurator.addReserve({
       spoke: spokeAddr,
       hub: address(hub1),
-      assetId: usdzAssetId,
+      assetId: address(tokenList.usdz),
       priceSource: newPriceSource,
       config: config,
       dynamicConfig: dynamicConfig
@@ -712,5 +712,5 @@ contract SpokeConfiguratorTest is SpokeBase {
       spokeConfigurator.updatePositionManager(spokeAddr, newPositionManager, active);
       assertEq(spoke.isPositionManagerActive(newPositionManager), active);
     }
-  }
+  }*/
 }

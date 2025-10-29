@@ -367,13 +367,13 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   function _seed() internal {
     vm.startPrank(address(spoke2));
     tokenList.dai.transferFrom(bob, address(hub1), 10000e18);
-    hub1.add(daiAssetId, 10000e18);
+    hub1.add(address(tokenList.dai), 10000e18);
     tokenList.weth.transferFrom(bob, address(hub1), 1000e18);
-    hub1.add(wethAssetId, 1000e18);
+    hub1.add(address(tokenList.weth), 1000e18);
     tokenList.usdx.transferFrom(bob, address(hub1), 1000e6);
-    hub1.add(usdxAssetId, 1000e6);
+    hub1.add(address(tokenList.usdx), 1000e6);
     tokenList.wbtc.transferFrom(bob, address(hub1), 1000e8);
-    hub1.add(wbtcAssetId, 1000e8);
+    hub1.add(address(tokenList.wbtc), 1000e8);
     vm.stopPrank();
   }
 }

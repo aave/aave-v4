@@ -16,7 +16,7 @@ contract HubOperations_Gas_Tests is Base {
   function test_add() public {
     vm.startPrank(address(spoke1));
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
-    hub1.add(usdxAssetId, 1000e6);
+    hub1.add(address(tokenList.usdx), 1000e6);
     vm.snapshotGasLastCall('Hub.Operations', 'add');
     vm.stopPrank();
   }
@@ -24,11 +24,11 @@ contract HubOperations_Gas_Tests is Base {
   function test_remove() public {
     vm.startPrank(address(spoke1));
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
-    hub1.add(usdxAssetId, 1000e6);
-    hub1.remove(usdxAssetId, 500e6, alice);
+    hub1.add(address(tokenList.usdx), 1000e6);
+    hub1.remove(address(tokenList.usdx), 500e6, alice);
     vm.snapshotGasLastCall('Hub.Operations', 'remove: partial');
     skip(100);
-    hub1.remove(usdxAssetId, 500e6, alice);
+    hub1.remove(address(tokenList.usdx), 500e6, alice);
     vm.snapshotGasLastCall('Hub.Operations', 'remove: full');
     vm.stopPrank();
   }
@@ -36,16 +36,16 @@ contract HubOperations_Gas_Tests is Base {
   function test_draw() public {
     vm.startPrank(address(spoke2));
     tokenList.dai.transferFrom(alice, address(hub1), 1000e18);
-    hub1.add(daiAssetId, 1000e18);
+    hub1.add(address(tokenList.dai), 1000e18);
     vm.stopPrank();
 
     vm.startPrank(address(spoke1));
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
-    hub1.add(usdxAssetId, 1000e6);
+    hub1.add(address(tokenList.usdx), 1000e6);
 
     skip(100);
 
-    hub1.draw(daiAssetId, 500e18, alice);
+    hub1.draw(address(tokenList.dai), 500e18, alice);
     vm.snapshotGasLastCall('Hub.Operations', 'draw');
     vm.stopPrank();
   }
@@ -55,76 +55,76 @@ contract HubOperations_Gas_Tests is Base {
     uint256 premiumRemaining;
     vm.startPrank(address(spoke2));
     tokenList.dai.transferFrom(alice, address(hub1), 1000e18);
-    hub1.add(daiAssetId, 1000e18);
+    hub1.add(address(tokenList.dai), 1000e18);
     vm.stopPrank();
 
     vm.startPrank(address(spoke1));
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
-    hub1.add(usdxAssetId, 1000e6);
-    hub1.draw(daiAssetId, 500e18, alice);
-    int256 premiumShares = hub1.previewDrawByAssets(daiAssetId, 500e18).toInt256();
+    hub1.add(address(tokenList.usdx), 1000e6);
+    hub1.draw(address(tokenList.dai), 500e18, alice);
+    int256 premiumShares = hub1.previewDrawByAssets(address(tokenList.dai), 500e18).toInt256();
     int256 premiumOffset = hub1
-      .previewRestoreByShares(daiAssetId, uint256(premiumShares))
+      .previewRestoreByShares(address(tokenList.dai), uint256(premiumShares))
       .toInt256();
-    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(premiumShares, premiumOffset, 0));
+    hub1.refreshPremium(address(tokenList.dai), IHubBase.PremiumDelta(premiumShares, premiumOffset, 0));
 
     skip(1000);
 
-    (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(address(tokenList.dai), address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), drawnRemaining / 2);
-    hub1.restore(daiAssetId, drawnRemaining / 2, 0, IHubBase.PremiumDelta(0, 0, 0));
+    hub1.restore(address(tokenList.dai), drawnRemaining / 2, 0, IHubBase.PremiumDelta(0, 0, 0));
     vm.snapshotGasLastCall('Hub.Operations', 'restore: partial');
 
     skip(100);
 
-    (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(address(tokenList.dai), address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), drawnRemaining + premiumRemaining);
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta(
       -premiumShares,
       -premiumOffset,
       0
     );
-    hub1.restore(daiAssetId, drawnRemaining, premiumRemaining, premiumDelta);
+    hub1.restore(address(tokenList.dai), drawnRemaining, premiumRemaining, premiumDelta);
     vm.snapshotGasLastCall('Hub.Operations', 'restore: full');
     vm.stopPrank();
   }
 
   function test_refreshPremium() public {
-    int256 premiumShares = hub1.previewDrawByAssets(daiAssetId, 500e18).toInt256();
+    int256 premiumShares = hub1.previewDrawByAssets(address(tokenList.dai), 500e18).toInt256();
     int256 premiumOffset = hub1
-      .previewRestoreByShares(daiAssetId, uint256(premiumShares))
+      .previewRestoreByShares(address(tokenList.dai), uint256(premiumShares))
       .toInt256();
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
 
     vm.prank(address(spoke1));
-    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(premiumShares, premiumOffset, 1));
+    hub1.refreshPremium(address(tokenList.dai), IHubBase.PremiumDelta(premiumShares, premiumOffset, 1));
     vm.snapshotGasLastCall('Hub.Operations', 'refreshPremium');
   }
 
   function test_mintFeeShares() public {
     vm.startPrank(address(spoke2));
     tokenList.dai.transferFrom(alice, address(hub1), 1000e18);
-    hub1.add(daiAssetId, 1000e18);
+    hub1.add(address(tokenList.dai), 1000e18);
     vm.stopPrank();
 
     vm.startPrank(address(spoke1));
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
-    hub1.add(usdxAssetId, 1000e6);
-    hub1.draw(daiAssetId, 500e18, alice);
+    hub1.add(address(tokenList.usdx), 1000e6);
+    hub1.draw(address(tokenList.dai), 500e18, alice);
     vm.stopPrank();
 
     skip(100);
 
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    Utils.mintFeeShares(hub1, address(tokenList.dai), ADMIN);
     vm.snapshotGasLastCall('Hub.Operations', 'mintFeeShares');
   }
 
   function test_payFee_transferShares() public {
     Utils.add({
       hub: hub1,
-      assetId: daiAssetId,
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: 1000e18,
       user: alice
@@ -139,20 +139,20 @@ contract HubOperations_Gas_Tests is Base {
     skip(100);
 
     vm.prank(address(spoke1));
-    hub1.payFeeShares(daiAssetId, 100e18);
+    hub1.payFeeShares(address(tokenList.dai), 100e18);
     vm.snapshotGasLastCall('Hub.Operations', 'payFee');
 
     skip(100);
 
     vm.prank(address(spoke1));
-    hub1.transferShares(daiAssetId, 100e18, address(spoke2));
+    hub1.transferShares(address(tokenList.dai), 100e18, address(spoke2));
     vm.snapshotGasLastCall('Hub.Operations', 'transferShares');
   }
 
   function test_deficit() public {
     Utils.add({
       hub: hub1,
-      assetId: daiAssetId,
+      asset: address(tokenList.dai),
       caller: address(spoke1),
       amount: 1000e18,
       user: alice
@@ -176,17 +176,17 @@ contract HubOperations_Gas_Tests is Base {
     });
 
     vm.prank(address(spoke1));
-    hub1.reportDeficit(daiAssetId, drawnDebt, premiumDebt, premiumDelta);
+    hub1.reportDeficit(address(tokenList.dai), drawnDebt, premiumDebt, premiumDelta);
     vm.snapshotGasLastCall('Hub.Operations', 'reportDeficit');
 
     vm.prank(address(spoke1));
-    hub1.eliminateDeficit(daiAssetId, 100e18, address(spoke1));
+    hub1.eliminateDeficit(address(tokenList.dai), 100e18, address(spoke1));
     vm.snapshotGasLastCall('Hub.Operations', 'eliminateDeficit: partial');
 
-    uint256 deficit = hub1.getAssetDeficit(daiAssetId);
+    uint256 deficit = hub1.getAssetDeficit(address(tokenList.dai));
 
     vm.prank(address(spoke1));
-    hub1.eliminateDeficit(daiAssetId, deficit, address(spoke1));
+    hub1.eliminateDeficit(address(tokenList.dai), deficit, address(spoke1));
     vm.snapshotGasLastCall('Hub.Operations', 'eliminateDeficit: full');
   }
 }

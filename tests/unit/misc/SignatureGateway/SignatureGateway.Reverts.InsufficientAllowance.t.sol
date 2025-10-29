@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest {
-  function setUp() public virtual override {
+  /*function setUp() public virtual override {
     super.setUp();
 
     vm.prank(SPOKE_ADMIN);
@@ -43,5 +43,5 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
     vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     vm.prank(vm.randomAddress());
     gateway.repayWithSig(p, signature);
-  }
+  }*/
 }

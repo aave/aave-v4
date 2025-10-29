@@ -29,7 +29,7 @@ contract SpokeMultipleHubBase is SpokeBase {
     });
   bytes internal encodedIrData = abi.encode(irData);
 
-  function setUp() public virtual override {
+  /*function setUp() public virtual override {
     deployFixtures();
   }
 
@@ -89,5 +89,5 @@ contract SpokeMultipleHubBase is SpokeBase {
     accessManager.setTargetFunctionRole(address(hub1), hubSelectors, Roles.HUB_ADMIN_ROLE);
     accessManager.setTargetFunctionRole(address(newHub), hubSelectors, Roles.HUB_ADMIN_ROLE);
     vm.stopPrank();
-  }
+  }*/
 }

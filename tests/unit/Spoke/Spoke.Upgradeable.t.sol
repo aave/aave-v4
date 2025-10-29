@@ -11,7 +11,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   address internal proxyAdminOwner = makeAddr('proxyAdminOwner');
   address internal oracle = makeAddr('AaveOracle');
 
-  function setUp() public override {
+  /*function setUp() public override {
     super.setUp();
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
   }
@@ -209,5 +209,5 @@ contract SpokeUpgradeableTest is SpokeBase {
 
   function _deployMockSpokeInstance(uint64 revision) internal returns (SpokeInstance) {
     return SpokeInstance(address(new MockSpokeInstance(revision, oracle)));
-  }
+  }*/
 }

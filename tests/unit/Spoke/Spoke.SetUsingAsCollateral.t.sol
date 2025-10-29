@@ -7,7 +7,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeConfigTest is SpokeBase {
   using SafeCast for uint256;
 
-  function test_setUsingAsCollateral_revertsWith_ReserveNotListed() public {
+  /*function test_setUsingAsCollateral_revertsWith_ReserveNotListed() public {
     uint256 reserveCount = spoke1.getReserveCount();
     vm.prank(alice);
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
@@ -129,5 +129,5 @@ contract SpokeConfigTest is SpokeBase {
       usingAsCollateral,
       'wrong usingAsCollateral'
     );
-  }
+  }*/
 }

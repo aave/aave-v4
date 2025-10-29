@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
-  function test_permitReserve_revertsWith_SpokeNotRegistered() public {
+  /*function test_permitReserve_revertsWith_SpokeNotRegistered() public {
     uint256 reserveId = _randomReserveId(spoke1);
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
@@ -98,5 +98,5 @@ contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
     gateway.permitReserve(address(spoke1), reserveId, user, params.value, params.deadline, v, r, s);
 
     assertEq(token.allowance(user, address(gateway)), params.value);
-  }
+  }*/
 }

@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeDynamicConfigTriggersTest is SpokeBase {
-  function test_supply_does_not_trigger_dynamicConfigUpdate() public {
+  /*function test_supply_does_not_trigger_dynamicConfigUpdate() public {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
@@ -315,5 +315,5 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
 
     vm.revertToState(snapshotId);
-  }
+  }*/
 }

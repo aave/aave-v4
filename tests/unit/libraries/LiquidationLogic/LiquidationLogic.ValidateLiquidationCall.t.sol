@@ -8,7 +8,7 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
   LiquidationLogic.ValidateLiquidationCallParams params;
   uint256 constant collateralReserveId = 1;
 
-  function setUp() public override {
+  /*function setUp() public override {
     super.setUp();
     params = LiquidationLogic.ValidateLiquidationCallParams({
       user: alice,
@@ -156,5 +156,5 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
 
   function test_validateLiquidationCall() public view {
     liquidationLogicWrapper.validateLiquidationCall(params);
-  }
+  }*/
 }

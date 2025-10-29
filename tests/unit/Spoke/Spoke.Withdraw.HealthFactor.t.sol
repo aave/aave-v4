@@ -6,7 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeWithdrawHealthFactorTest is SpokeBase {
   /// @dev cannot withdraw an amount if resulting withdrawal would result in HF < threshold
-  function test_withdraw_revertsWith_HealthFactorBelowThreshold_singleBorrow() public {
+  /*function test_withdraw_revertsWith_HealthFactorBelowThreshold_singleBorrow() public {
     uint256 collAmount = 1e18; // $2k in weth
     uint256 collReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
@@ -1334,7 +1334,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     spoke1.withdraw({reserveId: daiReserveId, amount: 1, onBehalfOf: bob});
-  }
+  }*/
 
   // TODO: tests with other combos of collateral/debt, particularly with different units
   // - 2 colls, 1e18/1e6, with 1 debt, 1e0

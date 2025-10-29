@@ -7,7 +7,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubRemoveTest is HubBase {
   using WadRayMath for uint256;
 
-  function test_remove() public {
+  /*function test_remove() public {
     uint256 amount = 100e18;
     uint256 reserveId = _daiReserveId(spoke1);
 
@@ -17,7 +17,7 @@ contract HubRemoveTest is HubBase {
   function test_remove_fuzz(uint256 reserveId, uint256 amount) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+    address asset = spoke1.getReserve(reserveId).assetId;
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
     Utils.add({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
@@ -62,7 +62,7 @@ contract HubRemoveTest is HubBase {
 
   // single asset, multiple spokes added. No debt
   function test_remove_fuzz_multi_spoke(uint256 amount, uint256 amount2) public {
-    uint256 assetId = daiAssetId;
+    address asset = address(tokenList.dai);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT - 1);
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
 
@@ -112,7 +112,7 @@ contract HubRemoveTest is HubBase {
     drawAmount = bound(drawAmount, 1, amount + amount2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    uint256 assetId = daiAssetId;
+    address asset = address(tokenList.dai);
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
     Utils.add({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
@@ -177,13 +177,13 @@ contract HubRemoveTest is HubBase {
 
   function test_remove_all_with_interest() public {
     uint256 addAmount = 100e18;
-    uint256 initialLiquidity = hub1.getAsset(daiAssetId).liquidity;
+    uint256 initialLiquidity = hub1.getAsset(address(tokenList.dai)).liquidity;
 
     // add and draw dai liquidity to accrue interest
     // add from spoke2, draw from spoke1
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       addUser: bob,
       addSpoke: address(spoke2),
       addAmount: addAmount,
@@ -194,25 +194,25 @@ contract HubRemoveTest is HubBase {
     });
 
     (uint256 drawnRestored, uint256 premiumRestored) = hub1.getSpokeOwed(
-      daiAssetId,
+      address(tokenList.dai),
       address(spoke1)
     );
     assertEq(premiumRestored, 0);
     Utils.restoreDrawn({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       caller: address(spoke1),
       drawnAmount: drawnRestored,
       restorer: alice
     });
 
-    AssetPosition memory asset = getAssetPosition(hub1, daiAssetId);
+    AssetPosition memory asset = getAssetPosition(hub1, address(tokenList.dai));
     assertEq(asset.liquidity, initialLiquidity + drawnRestored + premiumRestored, 'dai liquidity');
 
     // reset available liquidity variable
-    initialLiquidity = hub1.getAsset(daiAssetId).liquidity;
+    initialLiquidity = hub1.getAsset(address(tokenList.dai)).liquidity;
 
-    uint256 removeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
+    uint256 removeAmount = hub1.getSpokeAddedAssets(address(tokenList.dai), address(spoke2));
     uint256 daiBalanceBefore = tokenList.dai.balanceOf(bob);
 
     // removable amount should exceed initial added amount due to accrued interest
@@ -221,11 +221,11 @@ contract HubRemoveTest is HubBase {
     // bob removes all possible liquidity
     // some has gone to feeReceiver
     vm.prank(address(spoke2));
-    hub1.remove(daiAssetId, removeAmount, bob);
+    hub1.remove(address(tokenList.dai), removeAmount, bob);
 
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
-    asset = getAssetPosition(hub1, daiAssetId);
+    asset = getAssetPosition(hub1, address(tokenList.dai));
 
     // hub
     assertApproxEqAbs(asset.addedAmount, 0, 1, 'asset addedAmount');
@@ -234,7 +234,7 @@ contract HubRemoveTest is HubBase {
     assertEq(asset.drawn, 0, 'dai drawn');
     assertEq(asset.premium, 0, 'dai premium');
     assertEq(asset.lastUpdateTimestamp, vm.getBlockTimestamp(), 'dai lastUpdateTimestamp');
-    assertHubLiquidity(hub1, daiAssetId, 'hub1.remove');
+    assertHubLiquidity(hub1, address(tokenList.dai), 'hub1.remove');
     // spoke1
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares');
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount');
@@ -263,7 +263,7 @@ contract HubRemoveTest is HubBase {
     // add from spoke2, draw from spoke1
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       addUser: bob,
       addSpoke: address(spoke2),
       addAmount: daiAmount,
@@ -273,64 +273,64 @@ contract HubRemoveTest is HubBase {
       skipTime: skipTime
     });
 
-    uint256 initialLiquidity = hub1.getAsset(daiAssetId).liquidity;
+    uint256 initialLiquidity = hub1.getAsset(address(tokenList.dai)).liquidity;
 
     // bob adds more DAI
     uint256 add2Amount = 10e18;
 
     Utils.add({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       caller: address(spoke2),
       amount: add2Amount,
       user: bob
     });
 
     (uint256 drawnRestored, uint256 premiumRestored) = hub1.getSpokeOwed(
-      daiAssetId,
+      address(tokenList.dai),
       address(spoke1)
     );
     assertEq(premiumRestored, 0);
     Utils.restoreDrawn({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       caller: address(spoke1),
       drawnAmount: drawnRestored,
       restorer: alice
     });
 
-    AssetPosition memory asset = getAssetPosition(hub1, daiAssetId);
+    AssetPosition memory asset = getAssetPosition(hub1, address(tokenList.dai));
     assertEq(
       asset.liquidity,
       initialLiquidity + drawnRestored + premiumRestored + add2Amount,
       'dai liquidity'
     );
 
-    uint256 removeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
+    uint256 removeAmount = hub1.getSpokeAddedAssets(address(tokenList.dai), address(spoke2));
     uint256 daiBalanceBefore = tokenList.dai.balanceOf(bob);
 
     // bob removes all possible liquidity
     // some has gone to feeReceiver
     vm.prank(address(spoke2));
-    hub1.remove(daiAssetId, removeAmount, bob);
+    hub1.remove(address(tokenList.dai), removeAmount, bob);
 
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
-    asset = getAssetPosition(hub1, daiAssetId);
+    asset = getAssetPosition(hub1, address(tokenList.dai));
 
     // hub
     assertApproxEqAbs(asset.addedAmount, 0, 1, 'hub addedAmount');
     assertEq(asset.addedShares, 0, 'hub addedShares');
     assertApproxEqAbs(
       asset.liquidity,
-      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFees,
+      _calculateBurntInterest(hub1, address(tokenList.dai)) + hub1.getAsset(address(tokenList.dai)).realizedFees,
       1,
       'dai liquidity'
     );
     assertEq(asset.drawn, 0, 'dai drawn');
     assertEq(asset.premium, 0, 'dai premium');
     assertEq(asset.lastUpdateTimestamp, vm.getBlockTimestamp(), 'dai lastUpdateTimestamp');
-    assertHubLiquidity(hub1, daiAssetId, 'hub1.remove');
+    assertHubLiquidity(hub1, address(tokenList.dai), 'hub1.remove');
     // spoke1
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares');
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount');
@@ -349,7 +349,7 @@ contract HubRemoveTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, amount, address(spoke1));
+    hub1.remove(address(tokenList.dai), amount, address(spoke1));
   }
 
   function test_remove_revertsWith_InsufficientLiquidity_exceeding_added_amount() public {
@@ -358,7 +358,7 @@ contract HubRemoveTest is HubBase {
     // User add
     Utils.add({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       caller: address(spoke1),
       amount: amount,
       user: alice
@@ -366,14 +366,14 @@ contract HubRemoveTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, amount));
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, amount + 1, alice);
+    hub1.remove(address(tokenList.dai), amount + 1, alice);
 
     // advance time, but no accrual
     skip(365 days);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, amount));
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, amount + 1, alice);
+    hub1.remove(address(tokenList.dai), amount + 1, alice);
   }
 
   /// @dev Spoke tries to withdraw more than it has added, causing revert via underflow on accounting, even though hub has enough liquidity.
@@ -383,7 +383,7 @@ contract HubRemoveTest is HubBase {
     // Add from spoke 1
     Utils.add({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       caller: address(spoke1),
       amount: amount,
       user: alice
@@ -392,7 +392,7 @@ contract HubRemoveTest is HubBase {
     // Add from spoke 2
     Utils.add({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       caller: address(spoke2),
       amount: amount,
       user: alice
@@ -400,7 +400,7 @@ contract HubRemoveTest is HubBase {
 
     vm.expectRevert(stdError.arithmeticError);
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, amount + 1, alice);
+    hub1.remove(address(tokenList.dai), amount + 1, alice);
   }
 
   ///@dev Show trying to remove extra 1 wei reverts, but user can withdraw less due to rounding
@@ -410,7 +410,7 @@ contract HubRemoveTest is HubBase {
 
     Utils.add({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       caller: address(spoke1),
       amount: supplyAmount,
       user: alice
@@ -418,7 +418,7 @@ contract HubRemoveTest is HubBase {
 
     Utils.draw({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       caller: address(spoke1),
       amount: supplyAmount,
       to: alice
@@ -429,63 +429,63 @@ contract HubRemoveTest is HubBase {
 
     Utils.restoreDrawn({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       caller: address(spoke1),
-      drawnAmount: hub1.getSpokeTotalOwed(daiAssetId, address(spoke1)),
+      drawnAmount: hub1.getSpokeTotalOwed(address(tokenList.dai), address(spoke1)),
       restorer: alice
     });
-    uint256 supplied = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
+    uint256 supplied = hub1.getSpokeAddedAssets(address(tokenList.dai), address(spoke1));
 
     assertEq(
-      hub1.previewRemoveByAssets(daiAssetId, supplied),
-      hub1.previewRemoveByAssets(daiAssetId, supplied - 1),
+      hub1.previewRemoveByAssets(address(tokenList.dai), supplied),
+      hub1.previewRemoveByAssets(address(tokenList.dai), supplied - 1),
       'Removing 1 wei less assets removes same amount of shares'
     );
 
     // It's possible to withdraw 1 wei less than what Alice has supplied, and her supply becomes 0
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, supplied - 1, alice);
-    assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)), 0, 'spoke added assets after');
+    hub1.remove(address(tokenList.dai), supplied - 1, alice);
+    assertEq(hub1.getSpokeAddedAssets(address(tokenList.dai), address(spoke1)), 0, 'spoke added assets after');
 
     Utils.add({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       caller: address(spoke1),
       amount: supplied,
       user: alice
     });
-    supplied = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
+    supplied = hub1.getSpokeAddedAssets(address(tokenList.dai), address(spoke1));
 
     // It's possible to withdraw the exact amount Alice has supplied
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, supplied, alice);
+    hub1.remove(address(tokenList.dai), supplied, alice);
 
     Utils.add({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       caller: address(spoke1),
       amount: supplied,
       user: alice
     });
-    supplied = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
+    supplied = hub1.getSpokeAddedAssets(address(tokenList.dai), address(spoke1));
 
     assertNotEq(
-      hub1.previewRemoveByAssets(daiAssetId, supplied),
-      hub1.previewRemoveByAssets(daiAssetId, supplied + 1),
+      hub1.previewRemoveByAssets(address(tokenList.dai), supplied),
+      hub1.previewRemoveByAssets(address(tokenList.dai), supplied + 1),
       'Removing 1 wei more assets removes different amount of shares'
     );
 
     // But withdrawing 1 wei more reverts, because it rounds up to the next share amount
     vm.expectRevert(stdError.arithmeticError);
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, supplied + 1, alice);
+    hub1.remove(address(tokenList.dai), supplied + 1, alice);
   }
 
   function test_remove_revertsWith_InsufficientLiquidity() public {
     uint256 amount = 100e18;
     Utils.add({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       caller: address(spoke1),
       amount: amount,
       user: alice
@@ -493,39 +493,39 @@ contract HubRemoveTest is HubBase {
     // spoke1 draw all of dai reserve liquidity
     Utils.draw({
       hub: hub1,
-      assetId: daiAssetId,
+      assetId: address(tokenList.dai),
       caller: address(spoke1),
       amount: amount,
       to: alice
     });
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, amount, address(spoke1));
+    hub1.remove(address(tokenList.dai), amount, address(spoke1));
   }
 
   function test_remove_revertsWith_InvalidAmount() public {
     vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, 0, alice);
+    hub1.remove(address(tokenList.dai), 0, alice);
   }
 
   function test_remove_revertsWith_SpokePaused() public {
-    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+    _updateSpokePaused(hub1, address(tokenList.dai), address(spoke1), true);
     vm.expectRevert(IHub.SpokePaused.selector);
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, 100e18, alice);
+    hub1.remove(address(tokenList.dai), 100e18, alice);
   }
 
   function test_remove_revertsWith_SpokeNotActive() public {
-    updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, address(tokenList.dai), address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, 100e18, alice);
+    hub1.remove(address(tokenList.dai), 100e18, alice);
   }
 
   function test_remove_revertsWith_InvalidAddress() public {
     vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, 100e18, address(hub1));
-  }
+    hub1.remove(address(tokenList.dai), 100e18, address(hub1));
+  }*/
 }

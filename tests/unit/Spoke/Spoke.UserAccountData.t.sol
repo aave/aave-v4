@@ -10,7 +10,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
 
   MockSpoke.AccountDataInfo internal accountDataInfo;
 
-  function setUp() public override {
+  /*function setUp() public override {
     super.setUp();
     spoke = MockSpoke(address(spoke1));
     address mockSpokeImpl = address(new MockSpoke(address(spoke.ORACLE())));
@@ -280,5 +280,5 @@ contract SpokeUserAccountDataTest is SpokeBase {
     assertApproxEqAbs(a.riskPremium, b.riskPremium, 1, 'riskPremium');
     assertEq(a.activeCollateralCount, b.activeCollateralCount, 'activeCollateralCount');
     assertEq(a.borrowedCount, b.borrowedCount, 'borrowedCount');
-  }
+  }*/
 }

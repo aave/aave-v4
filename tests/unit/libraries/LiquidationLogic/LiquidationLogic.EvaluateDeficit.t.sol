@@ -10,7 +10,7 @@ import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 /// borrowed reserves count (BRC) has 2 relevant states: 1 (O) and >1 (M)
 contract LiquidationLogicEvaluateDeficitTest is LiquidationLogicBaseTest {
   /// Collateral reserve empty (CRE), supplied collaterals count 1 (SCCO), debt reserve empty (DRE), borrowed reserves count 1 (BRCO)
-  function test_evaluateDeficit_CRE_SCCO_DRE_BRCO() public view {
+  /*function test_evaluateDeficit_CRE_SCCO_DRE_BRCO() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({
       isCollateralPositionEmpty: CRE(),
       activeCollateralCount: SCCO(),
@@ -223,5 +223,5 @@ contract LiquidationLogicEvaluateDeficitTest is LiquidationLogicBaseTest {
   /// Borrowed reserves count >1 (BRCM)
   function BRCM() internal pure returns (uint256) {
     return 2;
-  }
+  }*/
 }

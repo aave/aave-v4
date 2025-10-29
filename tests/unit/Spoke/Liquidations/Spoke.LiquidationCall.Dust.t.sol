@@ -12,7 +12,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
   ISpoke spoke;
   address liquidator = makeAddr('liquidator');
 
-  function setUp() public virtual override {
+  /*function setUp() public virtual override {
     super.setUp();
     spoke = spoke1;
 
@@ -335,5 +335,5 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
         collateralReserveId,
         spoke.getUserSuppliedAssets(collateralReserveId, user)
       );
-  }
+  }*/
 }

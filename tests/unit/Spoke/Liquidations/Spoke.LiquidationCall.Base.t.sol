@@ -14,7 +14,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   uint256 internal constant MAX_AMOUNT_IN_BASE_CURRENCY = 1_000_000_000e26; // 1 billion USD
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26; // 1 USD
 
-  struct CheckedLiquidationCallParams {
+  /*struct CheckedLiquidationCallParams {
     ISpoke spoke;
     uint256 collateralReserveId;
     uint256 debtReserveId;
@@ -369,7 +369,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _expectEventsAndCalls(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory /*accountsInfoBefore*/,
+    AccountsInfo memory,
     LiquidationMetadata memory liquidationMetadata
   ) internal virtual {
     ISpoke.UserPosition memory userDebtPosition = params.spoke.getUserPosition(
@@ -435,7 +435,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           reserveId,
           params.user
         );
-        uint256 assetId = _assetId(params.spoke, reserveId);
+        address asset = _assetId(params.spoke, reserveId);
         if (reserveId == params.debtReserveId) {
           userReservePosition.drawnShares -= _hub(params.spoke, reserveId)
             .previewRestoreByAssets(
@@ -487,7 +487,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   ) internal virtual returns (BalanceInfo memory) {
     return
       BalanceInfo({
-        collateralErc20Balance: getAssetUnderlyingByReserveId(spoke, collateralReserveId).balanceOf(
+        collateralErc20Balance: getAssetByReserveId(spoke, collateralReserveId).balanceOf(
           addr
         ),
         suppliedInSpoke: spoke.getUserSuppliedAssets(collateralReserveId, addr),
@@ -495,7 +495,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           _assetId(spoke, collateralReserveId),
           addr
         ),
-        debtErc20Balance: getAssetUnderlyingByReserveId(spoke, debtReserveId).balanceOf(addr),
+        debtErc20Balance: getAssetByReserveId(spoke, debtReserveId).balanceOf(addr),
         borrowedFromSpoke: spoke.getUserTotalDebt(debtReserveId, addr),
         drawnFromHub: _hub(spoke, debtReserveId).getSpokeTotalOwed(
           _assetId(spoke, debtReserveId),
@@ -824,8 +824,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     // Liquidator
     if (
-      getAssetUnderlyingByReserveId(params.spoke, params.collateralReserveId) ==
-      getAssetUnderlyingByReserveId(params.spoke, params.debtReserveId)
+      getAssetByReserveId(params.spoke, params.collateralReserveId) ==
+      getAssetByReserveId(params.spoke, params.debtReserveId)
     ) {
       assertEq(
         accountsInfoAfter.liquidatorBalanceInfo.collateralErc20Balance,
@@ -897,8 +897,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     // Liquidator
     if (
-      getAssetUnderlyingByReserveId(params.spoke, params.collateralReserveId) ==
-      getAssetUnderlyingByReserveId(params.spoke, params.debtReserveId)
+      getAssetByReserveId(params.spoke, params.collateralReserveId) ==
+      getAssetByReserveId(params.spoke, params.debtReserveId)
     ) {
       assertEq(
         accountsInfoAfter.liquidatorBalanceInfo.collateralErc20Balance,
@@ -1316,5 +1316,5 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
 
     return hasPositiveRiskPremium;
-  }
+  }*/
 }

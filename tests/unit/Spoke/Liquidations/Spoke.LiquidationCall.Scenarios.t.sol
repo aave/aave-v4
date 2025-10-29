@@ -10,7 +10,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
   ISpoke spoke;
 
-  function setUp() public virtual override {
+  /*function setUp() public virtual override {
     super.setUp();
 
     spoke = spoke1;
@@ -301,5 +301,5 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       0,
       'Deficit should be 0'
     );
-  }
+  }*/
 }

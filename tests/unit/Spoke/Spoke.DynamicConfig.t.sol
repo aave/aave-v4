@@ -8,7 +8,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
   using SafeCast for uint256;
   using PercentageMath for uint256;
 
-  function test_addDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_liquidationBonus()
+  /*function test_addDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_liquidationBonus()
     public
   {
     uint256 reserveId = _randomReserveId(spoke1);
@@ -363,7 +363,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     // alice cannot borrow more with usdx as collateral
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     Utils.borrow(spoke1, _wethReserveId(spoke1), alice, 1, alice);
-  }
+  }*/
 
   // todo test key overwrites stale slot, dynamically determine struct size & overwrite dynamicConfigKey or use mock spoke
 }

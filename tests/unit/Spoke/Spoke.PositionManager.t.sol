@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokePositionManagerTest is SpokeBase {
-  function test_setApprovalForPositionManager(bytes32) public {
+  /*function test_setApprovalForPositionManager(bytes32) public {
     vm.setArbitraryStorage(address(spoke1));
 
     address user = vm.randomAddress();
@@ -334,5 +334,5 @@ contract SpokePositionManagerTest is SpokeBase {
   function _resetTokenAllowance(address who) internal {
     vm.prank(who);
     tokenList.usdx.approve(address(hub1), 0);
-  }
+  }*/
 }

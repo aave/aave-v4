@@ -32,7 +32,7 @@ contract HubHandler is Test {
 
   address internal hubAdmin = makeAddr('HUB_ADMIN');
 
-  struct State {
+  /*struct State {
     mapping(uint256 => uint256) reserveSupplied; // asset => supply
     mapping(uint256 => mapping(address => uint256)) userSupplied; // asset => user => supply
     mapping(address => uint256) assetDonated; // underlying => donation
@@ -101,11 +101,11 @@ contract HubHandler is Test {
     vm.stopPrank();
   }
 
-  function getReserveSupplied(uint256 assetId) public view returns (uint256) {
+  function getReserveSupplied(address asset) public view returns (uint256) {
     return s.reserveSupplied[assetId];
   }
 
-  function getUserSupplied(uint256 assetId, address user) public view returns (uint256) {
+  function getUserSupplied(address asset, address user) public view returns (uint256) {
     return s.userSupplied[assetId][user];
   }
 
@@ -113,11 +113,11 @@ contract HubHandler is Test {
     return s.assetDonated[underlying];
   }
 
-  function getLastExchangeRate(uint256 assetId) public view returns (uint256) {
+  function getLastExchangeRate(address asset) public view returns (uint256) {
     return s.lastExchangeRate[assetId];
   }
 
-  function supply(uint256 assetId, address user, uint256 amount, address onBehalfOf) public {
+  function supply(address asset, address user, uint256 amount, address onBehalfOf) public {
     vm.assume(user != address(hub1) && user != address(0) && onBehalfOf != address(0));
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint120).max);
@@ -130,7 +130,7 @@ contract HubHandler is Test {
     s.userSupplied[assetId][onBehalfOf] += amount;
   }
 
-  function withdraw(uint256 assetId, address user, uint256 amount, address to) public {
+  function withdraw(address asset, address user, uint256 amount, address to) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     // TODO: bound by spoke1 user balance
     amount = bound(amount, 1, 2);
@@ -142,7 +142,7 @@ contract HubHandler is Test {
     s.userSupplied[assetId][user] -= amount;
   }
 
-  function donate(uint256 assetId, address user, uint256 amount) public {
+  function donate(address asset, address user, uint256 amount) public {
     vm.assume(user != address(hub1) && user != address(0));
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     amount = bound(amount, 1, type(uint120).max);
@@ -156,7 +156,7 @@ contract HubHandler is Test {
     s.assetDonated[underlying] += amount;
   }
 
-  function _updateState(uint256 assetId) internal {
+  function _updateState(address asset) internal {
     revert('implement me');
 
     // IHub.Asset memory reserveData = hub1.getAsset(assetId);
@@ -169,5 +169,5 @@ contract HubHandler is Test {
   function _deployMockPriceFeed(Spoke spoke, uint256 price) internal returns (address) {
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
-  }
+  }*/
 }

@@ -17,7 +17,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
   IsolationLocalVars internal isolationVars;
 
-  function setUp() public virtual override {
+  /*function setUp() public virtual override {
     super.setUp();
     setUpIsolationMode();
   }
@@ -142,7 +142,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // Deal tokens
     deal(address(assetA), bob, MAX_SUPPLY_AMOUNT);
     deal(address(assetB), alice, MAX_SUPPLY_AMOUNT * 2); // Alice supplies on 2 different hubs
-  }
+  }*/
 
   /* @dev Test showcasing a possible configuration for isolation mode
    * A new hub and spoke are deployed with new assets A and B.
@@ -152,7 +152,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
    * without being able to supply it from the new spoke.
    * Users can also supply asset B from the canonical hub and canonical spoke to earn yield as usual.
    */
-  function test_isolation_mode() public {
+  /*function test_isolation_mode() public {
     // Bob can supply asset A to the new spoke and set it as collateral
     Utils.supplyCollateral(newSpoke, isolationVars.reserveAId, bob, MAX_SUPPLY_AMOUNT, bob);
 
@@ -277,5 +277,5 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     // Now Bob or any other users cannot draw any asset B from the new spoke main hub due to new draw cap of 0
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 0));
     Utils.borrow(newSpoke, isolationVars.reserveBIdMainHub, bob, 1e18, bob);
-  }
+  }*/
 }

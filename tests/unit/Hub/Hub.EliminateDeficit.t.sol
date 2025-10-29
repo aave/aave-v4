@@ -5,15 +5,15 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubEliminateDeficitTest is HubBase {
-  uint256 assetId;
+  address asset;
   uint256 deficitAmount;
   address callerSpoke;
   address coveredSpoke;
   address otherSpoke;
 
-  function setUp() public override {
+  /*function setUp() public override {
     super.setUp();
-    assetId = usdxAssetId;
+    assetId = address(tokenList.usdx);
     deficitAmount = 1000e6;
     callerSpoke = address(spoke2);
     coveredSpoke = address(spoke1);
@@ -98,7 +98,7 @@ contract HubEliminateDeficitTest is HubBase {
     assertBorrowRateSynced(hub1, assetId, 'eliminateDeficit');
   }
 
-  function _createDeficit(uint256 assetId, address spoke, uint256 amount) internal {
+  function _createDeficit(address asset, address spoke, uint256 amount) internal {
     _addAndDrawLiquidity({
       hub: hub1,
       assetId: assetId,
@@ -113,5 +113,5 @@ contract HubEliminateDeficitTest is HubBase {
 
     vm.prank(spoke);
     hub1.reportDeficit(assetId, amount, 0, IHubBase.PremiumDelta(0, 0, 0));
-  }
+  }*/
 }

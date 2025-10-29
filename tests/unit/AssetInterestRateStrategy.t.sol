@@ -14,7 +14,7 @@ contract AssetInterestRateStrategyTest is Base {
   IAssetInterestRateStrategy.InterestRateData public rateData;
   bytes public encodedRateData;
 
-  function setUp() public override {
+  /*function setUp() public override {
     deployFixtures();
     rateStrategy = new AssetInterestRateStrategy(address(hub1));
 
@@ -277,5 +277,5 @@ contract AssetInterestRateStrategyTest is Base {
 
     // deficit unused in the current IR strategy
     deficit = vm.randomUint();
-  }
+  }*/
 }

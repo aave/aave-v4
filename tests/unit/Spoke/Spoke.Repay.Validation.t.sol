@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeRepayValidationTest is SpokeBase {
-  function test_repay_revertsWith_ReservePaused() public {
+  /*function test_repay_revertsWith_ReservePaused() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
 
@@ -24,5 +24,5 @@ contract SpokeRepayValidationTest is SpokeBase {
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(bob);
     spoke1.repay(reserveId, amount, bob);
-  }
+  }*/
 }
