@@ -287,6 +287,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen.
   error CannotReceiveShares();
 
+  /// @notice Thrown when trying to add a dynamic config but the key would overflow.
+  error DynamicConfigKeyOverflow();
+
   /// @notice Updates the liquidation config.
   /// @param config The liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;

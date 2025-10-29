@@ -85,6 +85,20 @@ contract SpokeDynamicConfigTest is SpokeBase {
     spoke1.addDynamicReserveConfig(invalidReserveId, dynConf);
   }
 
+  function test_addDynamicReserveConfig_revertsWith_DynamicConfigKeyOverflow() public {
+    uint256 reserveId = _randomReserveId(spoke1);
+    ISpoke.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
+
+    for(uint256 i = 0; i < type(uint16).max; ++i) {
+      vm.prank(SPOKE_ADMIN);
+      spoke1.addDynamicReserveConfig(reserveId, dynConf);
+    }
+
+    vm.expectRevert(ISpoke.DynamicConfigKeyOverflow.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(reserveId, dynConf);
+  }
+
   function test_addDynamicReserveConfig_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
