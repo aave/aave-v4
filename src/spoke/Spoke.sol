@@ -213,7 +213,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
 
-    emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares);
+    emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares, amount);
 
     return (suppliedShares, amount);
   }
@@ -243,7 +243,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
 
-    emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares);
+    emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares, withdrawnAmount);
 
     return (withdrawnShares, withdrawnAmount);
   }
@@ -269,7 +269,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
-    emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
+    emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares, amount);
 
     return (drawnShares, amount);
   }
@@ -294,7 +294,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       premiumDebtRestored,
       amount
     );
-
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),
       offsetDelta: -userPosition.premiumOffset.toInt256(),
@@ -321,7 +320,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
-    emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, premiumDelta);
+    emit Repay(
+      reserveId,
+      msg.sender,
+      onBehalfOf,
+      restoredShares,
+      drawnDebtRestored + premiumDebtRestored,
+      premiumDelta
+    );
 
     return (restoredShares, drawnDebtRestored + premiumDebtRestored);
   }
