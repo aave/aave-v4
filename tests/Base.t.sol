@@ -81,7 +81,7 @@ import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 
 abstract contract Base is Test {
   using stdStorage for StdStorage;
-  using WadRayMath for uint256;
+  using WadRayMath for *;
   using SharesMath for uint256;
   using PercentageMath for uint256;
   using SafeCast for *;
@@ -228,7 +228,7 @@ abstract contract Base is Test {
     uint256 premiumOffset;
     uint256 realizedPremium;
     uint256 premium;
-    uint32 lastUpdateTimestamp;
+    uint40 lastUpdateTimestamp;
     uint256 liquidity;
     uint256 drawnIndex;
     uint256 drawnRate;
@@ -333,12 +333,13 @@ abstract contract Base is Test {
     }
 
     {
-      bytes4[] memory selectors = new bytes4[](5);
+      bytes4[] memory selectors = new bytes4[](6);
       selectors[0] = IHub.addAsset.selector;
       selectors[1] = IHub.updateAssetConfig.selector;
       selectors[2] = IHub.addSpoke.selector;
       selectors[3] = IHub.updateSpokeConfig.selector;
       selectors[4] = IHub.setInterestRateData.selector;
+      selectors[5] = IHub.mintFeeShares.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
     }
     vm.stopPrank();
@@ -428,7 +429,7 @@ abstract contract Base is Test {
       paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
 
     bytes memory encodedIrData = abi.encode(
@@ -1058,10 +1059,10 @@ abstract contract Base is Test {
     config.maxLiquidationBonus = newMaxLiquidationBonus;
 
     vm.prank(SPOKE_ADMIN);
-    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint16 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
-    return configKey;
+    return dynamicConfigKey;
   }
 
   function _updateLiquidationFee(
@@ -1073,10 +1074,10 @@ abstract contract Base is Test {
     config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
-    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint16 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
-    return configKey;
+    return dynamicConfigKey;
   }
 
   function _updateCollateralFactorAndLiquidationBonus(
@@ -1090,10 +1091,10 @@ abstract contract Base is Test {
     config.maxLiquidationBonus = newLiquidationBonus.toUint32();
 
     vm.prank(SPOKE_ADMIN);
-    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint16 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
-    return configKey;
+    return dynamicConfigKey;
   }
 
   function _updateCollateralFactor(
@@ -1104,22 +1105,25 @@ abstract contract Base is Test {
     ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     vm.prank(SPOKE_ADMIN);
-    uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint16 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
-    return configKey;
+    return dynamicConfigKey;
   }
 
   function _updateCollateralFactorAtKey(
     ISpoke spoke,
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     uint256 newCollateralFactor
   ) internal pausePrank {
-    ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId, configKey);
+    ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(
+      reserveId,
+      dynamicConfigKey
+    );
     config.collateralFactor = newCollateralFactor.toUint16();
     vm.prank(SPOKE_ADMIN);
-    spoke.updateDynamicReserveConfig(reserveId, configKey, config);
+    spoke.updateDynamicReserveConfig(reserveId, dynamicConfigKey, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
   }
@@ -1261,14 +1265,14 @@ abstract contract Base is Test {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
-  function _updateSpokeRiskPremiumCap(
+  function _updateSpokeRiskPremiumThreshold(
     IHub hub,
     uint256 assetId,
     address spoke,
-    uint24 newRiskPremiumCap
+    uint24 newRiskPremiumThreshold
   ) internal pausePrank {
     IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
-    spokeConfig.riskPremiumCap = newRiskPremiumCap;
+    spokeConfig.riskPremiumThreshold = newRiskPremiumThreshold;
     vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
 
@@ -1884,7 +1888,7 @@ abstract contract Base is Test {
   function _calculateExpectedDrawnIndex(
     uint256 initialDrawnIndex,
     uint96 borrowRate,
-    uint32 startTime
+    uint40 startTime
   ) internal view returns (uint256) {
     return initialDrawnIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
   }
@@ -1894,7 +1898,7 @@ abstract contract Base is Test {
     uint256 initialDrawnShares,
     uint256 initialDrawnIndex,
     uint96 borrowRate,
-    uint32 startTime
+    uint40 startTime
   ) internal view returns (uint256 newDrawnIndex, uint256 newDrawnDebt) {
     newDrawnIndex = _calculateExpectedDrawnIndex(initialDrawnIndex, borrowRate, startTime);
     newDrawnDebt = initialDrawnShares.rayMulUp(newDrawnIndex);
@@ -1904,7 +1908,7 @@ abstract contract Base is Test {
   function _calculateExpectedDrawnDebt(
     uint256 initialDebt,
     uint96 borrowRate,
-    uint32 startTime
+    uint40 startTime
   ) internal view returns (uint256) {
     return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(initialDebt);
   }
@@ -1931,8 +1935,10 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke
-  function withdrawLiquidityFees(uint256 assetId, uint256 amount) internal {
-    uint256 fees = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
+  function _withdrawLiquidityFees(IHub hub, uint256 assetId, uint256 amount) internal {
+    Utils.mintFeeShares(hub, assetId, ADMIN);
+    uint256 fees = hub.getSpokeAddedAssets(assetId, address(treasurySpoke));
+
     if (amount > fees) {
       amount = fees;
     }
@@ -1981,7 +1987,7 @@ abstract contract Base is Test {
     uint256 reserveId,
     address user
   ) internal view returns (uint16) {
-    uint16 dynamicConfigKey = spoke.getUserPosition(reserveId, user).configKey;
+    uint16 dynamicConfigKey = spoke.getUserPosition(reserveId, user).dynamicConfigKey;
     return spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).collateralFactor;
   }
 
@@ -2074,7 +2080,7 @@ abstract contract Base is Test {
   function assertEq(IHub.SpokeConfig memory a, IHub.SpokeConfig memory b) internal pure {
     assertEq(a.addCap, b.addCap, 'addCap');
     assertEq(a.drawCap, b.drawCap, 'drawCap');
-    assertEq(a.riskPremiumCap, b.riskPremiumCap, 'riskPremiumCap');
+    assertEq(a.riskPremiumThreshold, b.riskPremiumThreshold, 'riskPremiumThreshold');
     assertEq(a.active, b.active, 'active');
     assertEq(a.paused, b.paused, 'paused');
     assertEq(abi.encode(a), abi.encode(b));
@@ -2389,7 +2395,7 @@ abstract contract Base is Test {
         premiumOffset: assetData.premiumOffset,
         realizedPremium: assetData.realizedPremium,
         premium: premium,
-        lastUpdateTimestamp: assetData.lastUpdateTimestamp.toUint32(),
+        lastUpdateTimestamp: assetData.lastUpdateTimestamp.toUint40(),
         drawnIndex: assetData.drawnIndex,
         drawnRate: assetData.drawnRate
       });
@@ -2606,5 +2612,36 @@ abstract contract Base is Test {
 
   function _bpsToRay(uint256 bps) internal pure returns (uint256) {
     return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
+  }
+
+  /// @dev Calculate expected fees based on previous drawn index
+  function _calcUnrealizedFees(IHub hub, uint256 assetId) internal view returns (uint256) {
+    IHub.Asset memory asset = hub.getAsset(assetId);
+    uint256 lastDrawnIndex = asset.drawnIndex;
+    uint256 drawnIndex = asset.drawnIndex.rayMulUp(
+      MathUtils.calculateLinearInterest(asset.drawnRate, uint40(asset.lastUpdateTimestamp))
+    );
+    uint256 liquidityGrowth = asset.drawnShares.rayMulUp(drawnIndex) -
+      asset.drawnShares.rayMulUp(lastDrawnIndex) +
+      asset.premiumShares.rayMulUp(drawnIndex) -
+      asset.premiumShares.rayMulUp(lastDrawnIndex);
+
+    return liquidityGrowth.percentMulDown(asset.liquidityFee);
+  }
+
+  function _getExpectedFeeReceiverAddedAssets(
+    IHub hub,
+    uint256 assetId
+  ) internal view returns (uint256) {
+    uint256 expectedFees = hub.getAsset(assetId).realizedFees + _calcUnrealizedFees(hub, assetId);
+    assertEq(expectedFees, hub.getAssetAccruedFees(assetId), 'asset accrued fees');
+    return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + expectedFees;
+  }
+
+  function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return
+      hub.getAddedAssets(assetId) +
+      hub.getAsset(assetId).realizedFees +
+      _calcUnrealizedFees(hub, assetId);
   }
 }

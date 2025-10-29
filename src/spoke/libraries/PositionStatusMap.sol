@@ -101,7 +101,7 @@ library PositionStatusMap {
   /// @notice Finds the previous borrowing or collateralized reserve strictly before `fromReserveId`.
   /// @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
   /// @dev Returns `NOT_FOUND` if no borrowing or collateralized reserve exists before the bound.
-  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
+  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the last bucket.
   /// @param fromReserveId The identifier of the reserve to start searching from.
   /// @return reserveId The reserve identifier for the next reserve that is borrowed or used as collateral.
   /// @return borrowing True if the next reserveId is borrowed.
@@ -130,7 +130,7 @@ library PositionStatusMap {
   /// @notice Finds the previous borrowed reserve strictly before `fromReserveId`.
   /// @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
   /// @dev Returns `NOT_FOUND` if no borrowed reserve exists before the bound.
-  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
+  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the last bucket.
   /// @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
   /// @return The previous borrowed reserveId, or `NOT_FOUND` if none is found.
   function nextBorrowing(
@@ -150,7 +150,7 @@ library PositionStatusMap {
   /// @notice Finds the previous collateral reserve strictly before `fromReserveId`.
   /// @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
   /// @dev Returns `NOT_FOUND` if no collateral reserve exists before the bound.
-  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
+  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the last bucket.
   /// @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
   /// @return The previous collateral reserveId, or `NOT_FOUND` if none is found.
   function nextCollateral(

@@ -24,7 +24,7 @@ contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
     address /*user*/
   ) internal virtual override {
     uint256 targetHealthFactor = vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR);
-    _updateTargetHealthFactor(spoke, targetHealthFactor.toUint128());
+    _updateTargetHealthFactor(spoke, targetHealthFactor.toUint120());
 
     uint256 liquidationFee = vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE);
     _updateLiquidationFee(spoke, collateralReserveId, liquidationFee.toUint16());
@@ -45,10 +45,14 @@ contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory /*accountsInfoBefore*/,
+    AccountsInfo memory accountsInfoBefore,
     LiquidationMetadata memory /*liquidationMetadata*/
   ) internal virtual override {
     (, uint256 premiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
-    assertGt(premiumDebt, 0, 'premium debt');
+    if (_isHealthy(params.spoke, accountsInfoBefore.userAccountData.healthFactor)) {
+      assertGt(premiumDebt, 0, 'premiumDebt: before liquidation, healthy');
+    } else {
+      assertEq(premiumDebt, 0, 'premiumDebt: before liquidation, unhealthy');
+    }
   }
 }

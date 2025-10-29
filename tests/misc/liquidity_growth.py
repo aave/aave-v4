@@ -1,3 +1,4 @@
+# Highlights the fact that liquidity growth cannot be calculated accurately using the index delta.
 from z3 import *
 
 base = Int('base')
@@ -16,11 +17,11 @@ s.add(0 <= premium, premium <= 10**30)
 rayMulUp = lambda a, b: (a * b + RAY - 1) / RAY
 rayMulDown = lambda a, b: (a * b) / RAY
 
-expected = rayMulUp(base, index2) - rayMulUp(base, index1) + rayMulUp(premium, index2) - rayMulUp(premium, index1)
-actual = rayMulDown(base, index2 - index1) + rayMulDown(premium, index2 - index1)
-# actual = rayMulDown(base + premium, index2 - index1) # incorrect
+trueLiquidityGrowth = rayMulUp(base, index2) - rayMulUp(base, index1) + rayMulUp(premium, index2) - rayMulUp(premium, index1)
+x = rayMulDown(base, index2 - index1) + rayMulDown(premium, index2 - index1) # incorrect -- it underestimates the liquidity growth
+# x = rayMulDown(base + premium, index2 - index1) # incorrect -- it overestimates the liquidity growth
 
-s.add(Not(expected >= actual))
+s.add(Not(trueLiquidityGrowth == x))
 
 if s.check() == sat:
     print("counterexample:", s.model())

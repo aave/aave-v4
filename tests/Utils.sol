@@ -18,7 +18,8 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    approve(IHub(address(hub)), assetId, user, amount);
+    IHub hub = IHub(address(hub));
+    approve(hub, assetId, user, amount);
     vm.prank(caller);
     return hub.add(assetId, amount, user);
   }
@@ -168,6 +169,11 @@ library Utils {
   ) internal {
     vm.prank(caller);
     spoke.repay(reserveId, amount, onBehalfOf);
+  }
+
+  function mintFeeShares(IHub hub, uint256 assetId, address caller) internal returns (uint256) {
+    vm.prank(caller);
+    return hub.mintFeeShares(assetId);
   }
 
   function approve(ISpoke spoke, uint256 reserveId, address owner, uint256 amount) internal {

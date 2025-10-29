@@ -251,14 +251,14 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   /// Debt is initially covered by 2 collaterals, then 1 collateral becomes enough to cover the debt due to interest accrual
   function test_riskPremium_decreasesAfterCollateralAccrual() public {
     uint256 daiSupplyAmount = 1000e18;
-    uint32 skipTime = 365 days;
+    uint40 skipTime = 365 days;
     test_riskPremium_fuzz_nonIncreasesAfterCollateralAccrual(daiSupplyAmount, skipTime);
   }
 
   /// Debt is initially covered by 2 collaterals, then 1 collateral becomes enough to cover the debt due to interest accrual
   function test_riskPremium_fuzz_nonIncreasesAfterCollateralAccrual(
     uint256 daiSupplyAmount,
-    uint32 skipTime
+    uint40 skipTime
   ) public {
     daiSupplyAmount = bound(daiSupplyAmount, 1e18, MAX_SUPPLY_AMOUNT / 2 - 1); // Leave room for Alice to borrow 1 dai
     // Determine value of daiSupplyAmount in weth terms
@@ -269,7 +269,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       _wethReserveId(spoke2)
     ) + 1; // Borrow more than dai supply value so 2 collaterals cover debt
     uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
-    skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME).toUint32(); // At least skip one year to ensure sufficient accrual
+    skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME).toUint40(); // At least skip one year to ensure sufficient accrual
 
     // Deal bob dai to cover dai and dai2 supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
@@ -397,7 +397,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   /// Debt initially fully covered by one collateral. Then debt interest accrues, so debt must be covered by 2 collaterals
   function test_riskPremium_fuzz_increasesAfterDebtAccrual(
     uint256 borrowAmount,
-    uint32 skipTime
+    uint40 skipTime
   ) public {
     // Find max supply amount of dai in terms of weth
     uint256 maxWethDebt = _convertAssetAmount(
@@ -420,7 +420,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       _daiReserveId(spoke2)
     );
     uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
-    skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME).toUint32(); // At least skip one year to ensure sufficient accrual
+    skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME).toUint40(); // At least skip one year to ensure sufficient accrual
 
     // Deal bob dai to cover dai and dai2 supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
@@ -484,15 +484,16 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       'Bob weth debt exceeds dai collateral after time skip'
     );
 
-    // Now since Bob's dai collateral is less than debt due to interest accrual, Bob's RP is greater than collateral risk of dai
-    assertGt(
-      _getUserRiskPremium(spoke2, bob),
-      _getCollateralRisk(spoke2, _daiReserveId(spoke2)),
-      'Bob user risk premium after collateral accrual'
-    );
+    uint256 bobRiskPremium = _getUserRiskPremium(spoke2, bob);
+    if (_isHealthy(spoke2, bob)) {
+      // since Bob's dai collateral is less than debt due to interest accrual, Bob's RP should be greater than collateral risk of dai
+      assertGt(bobRiskPremium, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
+    } else {
+      assertEq(bobRiskPremium, 0);
+    }
 
     assertEq(
-      _getUserRiskPremium(spoke2, bob),
+      bobRiskPremium,
       _calculateExpectedUserRP(bob, spoke2),
       'Bob user risk premium after collateral accrual matches expected'
     );
@@ -501,14 +502,14 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   /// Initially debt is covered by 1 collateral, both debt and collateral accrue at different rates, such that finally debt is covered by 2 collaterals
   function test_riskPremium_changesAfterAccrual() public {
     uint256 wethBorrowAmount = 100e18;
-    uint32 skipTime = 365 days;
+    uint40 skipTime = 365 days;
     test_riskPremium_fuzz_changesAfterAccrual(wethBorrowAmount, skipTime);
   }
 
   /// Initially debt is covered by 1 collateral, both debt and collateral accrue at different rates, such that finally debt is covered by 2 collaterals
   function test_riskPremium_fuzz_changesAfterAccrual(
     uint256 wethBorrowAmount,
-    uint32 skipTime
+    uint40 skipTime
   ) public {
     uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
     // Find max supply amount of dai in terms of weth
@@ -530,7 +531,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       wethBorrowAmount,
       _daiReserveId(spoke2)
     ); // Dai collateral will fully cover initial weth borrow
-    skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME).toUint32(); // At least skip one year to ensure sufficient accrual
+    skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME).toUint40(); // At least skip one year to ensure sufficient accrual
 
     // Deal bob dai to cover dai and dai2 supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
@@ -610,15 +611,16 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       'Bob weth debt exceeds dai collateral after 1 year'
     );
 
-    // Now Bob's RP should be greater than collateral risk of dai, since debt is not fully covered by it
-    assertGt(
-      _getUserRiskPremium(spoke2, bob),
-      _getCollateralRisk(spoke2, _daiReserveId(spoke2)),
-      'Bob user risk premium after collateral accrual'
-    );
+    uint256 bobRiskPremium = _getUserRiskPremium(spoke2, bob);
+    if (_isHealthy(spoke2, bob)) {
+      // Now Bob's RP should be greater than collateral risk of dai, since debt is not fully covered by it
+      assertGt(bobRiskPremium, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
+    } else {
+      assertEq(bobRiskPremium, 0);
+    }
 
     assertEq(
-      _getUserRiskPremium(spoke2, bob),
+      bobRiskPremium,
       _calculateExpectedUserRP(bob, spoke2),
       'Bob user risk premium after collateral accrual matches expected'
     );

@@ -171,7 +171,7 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_calculateInterestRate_fuzz_ZeroDebt(uint256 liquidity) public view {
-    liquidity = bound(liquidity, 0, type(uint128).max);
+    liquidity = bound(liquidity, 0, type(uint120).max);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,

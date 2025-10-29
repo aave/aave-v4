@@ -10,8 +10,8 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 
 /// @title HubConfigurator
 /// @author Aave Labs
-/// @notice Handles administrative functions on the hub.
-/// @dev Must be granted permission by the hub.
+/// @notice Handles administrative functions on the Hub.
+/// @dev Must be granted permission by the Hub.
 contract HubConfigurator is Ownable2Step, IHubConfigurator {
   using SafeCast for uint256;
 
@@ -227,15 +227,15 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateSpokeRiskPremiumCap(
+  function updateSpokeRiskPremiumThreshold(
     address hub,
     uint256 assetId,
     address spoke,
-    uint256 riskPremiumCap
+    uint256 riskPremiumThreshold
   ) external onlyOwner {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-    config.riskPremiumCap = riskPremiumCap.toUint24();
+    config.riskPremiumThreshold = riskPremiumThreshold.toUint24();
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
@@ -245,10 +245,9 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     address spoke,
     uint256 addCap,
-    uint256 drawCap,
-    uint256 riskPremiumCap
+    uint256 drawCap
   ) external onlyOwner {
-    _updateSpokeCaps(IHub(hub), assetId, spoke, addCap, drawCap, riskPremiumCap);
+    _updateSpokeCaps(IHub(hub), assetId, spoke, addCap, drawCap);
   }
 
   /// @inheritdoc IHubConfigurator
@@ -306,13 +305,11 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     address spoke,
     uint256 addCap,
-    uint256 drawCap,
-    uint256 riskPremiumCap
+    uint256 drawCap
   ) internal {
     IHub.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
     config.addCap = addCap.toUint40();
     config.drawCap = drawCap.toUint40();
-    config.riskPremiumCap = riskPremiumCap.toUint24();
     hub.updateSpokeConfig(assetId, spoke, config);
   }
 
