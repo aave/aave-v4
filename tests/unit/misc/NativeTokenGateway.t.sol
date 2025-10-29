@@ -499,11 +499,6 @@ contract NativeTokenGatewayTest is SpokeBase {
     _checkFinalBalances();
   }
 
-  // struct PrevBalance {
-  //   uint256 userBalance;
-  //   uint256 hubBalance;
-  // }
-
   function test_repayNative_fuzz_withInterest(uint256 repayAmount, uint256 elapsedTime) public {
     uint256 borrowAmount = 10e18;
     repayAmount = bound(repayAmount, borrowAmount, borrowAmount * 10);
