@@ -293,7 +293,7 @@ library LiquidationLogic {
 
     uint256 sharesToLiquidator;
     if (params.receiveShares) {
-      sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
+      sharesToLiquidator = hub.previewAddByAssets(assetId, params.collateralToLiquidator);
       positions[params.liquidator][params.collateralReserveId].suppliedShares += sharesToLiquidator
         .toUint120();
     } else {
