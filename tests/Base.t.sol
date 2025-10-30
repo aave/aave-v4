@@ -78,6 +78,7 @@ import {NoncesKeyedMock} from 'tests/mocks/NoncesKeyedMock.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
+import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
 
 abstract contract Base is Test {
   using stdStorage for StdStorage;

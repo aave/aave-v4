@@ -9,12 +9,15 @@ contract HubAddTest is HubBase {
   using SafeCast for uint256;
 
   uint256 minDecimalAssetId;
+  MockSkimSpoke skimSpoke;
 
   function setUp() public override {
     super.setUp();
 
     TestnetERC20 usda = new TestnetERC20('USDA', 'USDA', Constants.MIN_ALLOWED_UNDERLYING_DECIMALS);
     deal(address(usda), alice, MAX_SUPPLY_AMOUNT);
+
+    skimSpoke = new MockSkimSpoke(address(hub1));
 
     /// @dev add a minimum decimal asset to test add cap rounding
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
@@ -62,6 +65,13 @@ contract HubAddTest is HubBase {
       })
     );
     hub1.addSpoke(minDecimalAssetId, address(spoke1), spokeConfig);
+    // add skim spoke
+    hub1.addSpoke(wethAssetId, address(skimSpoke), spokeConfig);
+    hub1.addSpoke(wbtcAssetId, address(skimSpoke), spokeConfig);
+    hub1.addSpoke(daiAssetId, address(skimSpoke), spokeConfig);
+    hub1.addSpoke(usdxAssetId, address(skimSpoke), spokeConfig);
+    hub1.addSpoke(usdyAssetId, address(skimSpoke), spokeConfig);
+    hub1.addSpoke(minDecimalAssetId, address(skimSpoke), spokeConfig);
     vm.stopPrank();
   }
 
@@ -789,5 +799,235 @@ contract HubAddTest is HubBase {
 
       skip(randomizer(1 days, 365 days));
     }
+  }
+
+  function test_add_fuzz_skimDonations_donationAfterAdd(
+    uint256 assetId,
+    uint256 amount,
+    uint256 donationAmount
+  ) public {
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
+    donationAmount = bound(donationAmount, 1, MAX_SUPPLY_AMOUNT / 10);
+
+    IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
+
+    (uint256 drawnBefore, ) = hub1.getAssetOwed(assetId);
+    uint256 liquidityBefore = hub1.getAssetLiquidity(assetId);
+
+    uint256 shares = hub1.previewAddByAssets(assetId, amount);
+    uint256 skimShares = hub1.previewAddByAssets(assetId, donationAmount);
+
+    // normal deposit
+    vm.startPrank(address(spoke1));
+    underlying.transferFrom(alice, address(hub1), amount);
+
+    vm.expectEmit(address(hub1));
+    emit IHubBase.Add(assetId, address(spoke1), shares, amount);
+
+    uint256 addedShares = hub1.add(assetId, amount);
+    vm.stopPrank();
+
+    // donation : wrong transfer to hub
+    vm.prank(bob);
+    underlying.transfer(address(hub1), donationAmount);
+
+    // skimming donation
+    vm.expectEmit(address(hub1));
+    emit IHubBase.Add(assetId, address(skimSpoke), skimShares, donationAmount);
+    uint256 skimmedShares = skimSpoke.skim(assetId, donationAmount);
+
+    // hub
+    assertEq(addedShares, shares);
+    assertEq(skimmedShares, skimShares);
+    assertEq(hub1.getAddedAssets(assetId), amount + donationAmount, 'hub asset addedAmount after');
+    assertEq(hub1.getAddedShares(assetId), shares + skimShares, 'hub asset addedShares after');
+    assertEq(
+      hub1.getSpokeAddedAssets(assetId, address(spoke1)),
+      amount,
+      'hub spoke addedAmount after'
+    );
+    assertEq(
+      hub1.getSpokeAddedShares(assetId, address(spoke1)),
+      shares,
+      'hub spoke addedShares after'
+    );
+    assertEq(
+      hub1.getSpokeAddedAssets(assetId, address(skimSpoke)),
+      donationAmount,
+      'hub skimSpoke addedAmount after'
+    );
+    assertEq(
+      hub1.getSpokeAddedShares(assetId, address(skimSpoke)),
+      skimShares,
+      'hub skimSpoke addedShares after'
+    );
+    assertEq(
+      hub1.getAsset(assetId).liquidity,
+      liquidityBefore + amount + donationAmount,
+      'hub available liquidity after'
+    );
+    (uint256 drawnAfter, ) = hub1.getAssetOwed(assetId);
+    assertEq(drawnAfter, drawnBefore, 'hub drawn debt after');
+    assertBorrowRateSynced(hub1, assetId, 'hub1.add');
+    assertHubLiquidity(hub1, assetId, 'hub1.add.skim');
+    // token balance
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-add');
+    assertEq(
+      underlying.balanceOf(address(hub1)),
+      amount + donationAmount,
+      'hub token balance post-add'
+    );
+  }
+
+  function test_add_fuzz_skimDonations_donationBeforeAdd(
+    uint256 assetId,
+    uint256 amount,
+    uint256 donationAmount
+  ) public {
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
+    donationAmount = bound(donationAmount, 1, MAX_SUPPLY_AMOUNT / 10);
+
+    IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
+
+    (uint256 drawnBefore, ) = hub1.getAssetOwed(assetId);
+    uint256 liquidityBefore = hub1.getAssetLiquidity(assetId);
+
+    uint256 shares = hub1.previewAddByAssets(assetId, amount);
+    uint256 skimShares = hub1.previewAddByAssets(assetId, donationAmount);
+
+    // donation : wrong transfer to hub
+    vm.prank(bob);
+    underlying.transfer(address(hub1), donationAmount);
+
+    // normal deposit
+    vm.startPrank(address(spoke1));
+    underlying.transferFrom(alice, address(hub1), amount);
+
+    vm.expectEmit(address(hub1));
+    emit IHubBase.Add(assetId, address(spoke1), shares, amount);
+
+    uint256 addedShares = hub1.add(assetId, amount);
+    vm.stopPrank();
+
+    // skimming donation
+    vm.expectEmit(address(hub1));
+    emit IHubBase.Add(assetId, address(skimSpoke), skimShares, donationAmount);
+    uint256 skimmedShares = skimSpoke.skim(assetId, donationAmount);
+
+    // hub
+    assertEq(addedShares, shares);
+    assertEq(skimmedShares, skimShares);
+    assertEq(hub1.getAddedAssets(assetId), amount + donationAmount, 'hub asset addedAmount after');
+    assertEq(hub1.getAddedShares(assetId), shares + skimShares, 'hub asset addedShares after');
+    assertEq(
+      hub1.getSpokeAddedAssets(assetId, address(spoke1)),
+      amount,
+      'hub spoke addedAmount after'
+    );
+    assertEq(
+      hub1.getSpokeAddedShares(assetId, address(spoke1)),
+      shares,
+      'hub spoke addedShares after'
+    );
+    assertEq(
+      hub1.getSpokeAddedAssets(assetId, address(skimSpoke)),
+      donationAmount,
+      'hub skimSpoke addedAmount after'
+    );
+    assertEq(
+      hub1.getSpokeAddedShares(assetId, address(skimSpoke)),
+      skimShares,
+      'hub skimSpoke addedShares after'
+    );
+    assertEq(
+      hub1.getAsset(assetId).liquidity,
+      liquidityBefore + amount + donationAmount,
+      'hub available liquidity after'
+    );
+    (uint256 drawnAfter, ) = hub1.getAssetOwed(assetId);
+    assertEq(drawnAfter, drawnBefore, 'hub drawn debt after');
+    assertBorrowRateSynced(hub1, assetId, 'hub1.add');
+    assertHubLiquidity(hub1, assetId, 'hub1.add.skim');
+    // token balance
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-add');
+    assertEq(
+      underlying.balanceOf(address(hub1)),
+      amount + donationAmount,
+      'hub token balance post-add'
+    );
+  }
+
+  function test_add_fuzz_skimDonations_wrongSpokeTransfer(
+    uint256 assetId,
+    uint256 amount,
+    uint256 donationAmount
+  ) public {
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    amount = bound(amount, 1e4, MAX_SUPPLY_AMOUNT / 10);
+    donationAmount = bound(donationAmount, 1, amount / 2);
+    uint256 addAmount = amount - donationAmount;
+
+    IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
+
+    (uint256 drawnBefore, ) = hub1.getAssetOwed(assetId);
+    uint256 liquidityBefore = hub1.getAssetLiquidity(assetId);
+
+    uint256 shares = hub1.previewAddByAssets(assetId, addAmount);
+    uint256 skimShares = hub1.previewAddByAssets(assetId, donationAmount);
+
+    // normal deposit but with wrong transfer to Hub
+    vm.startPrank(address(spoke1));
+    underlying.transferFrom(alice, address(hub1), amount);
+
+    vm.expectEmit(address(hub1));
+    emit IHubBase.Add(assetId, address(spoke1), shares, addAmount);
+
+    uint256 addedShares = hub1.add(assetId, addAmount);
+    vm.stopPrank();
+
+    // skimming donation
+    vm.expectEmit(address(hub1));
+    emit IHubBase.Add(assetId, address(skimSpoke), skimShares, donationAmount);
+    uint256 skimmedShares = skimSpoke.skim(assetId, donationAmount);
+
+    // hub
+    assertEq(addedShares, shares);
+    assertEq(skimmedShares, skimShares);
+    assertEq(hub1.getAddedAssets(assetId), amount, 'hub asset addedAmount after');
+    assertEq(hub1.getAddedShares(assetId), shares + skimShares, 'hub asset addedShares after');
+    assertEq(
+      hub1.getSpokeAddedAssets(assetId, address(spoke1)),
+      addAmount,
+      'hub spoke addedAmount after'
+    );
+    assertEq(
+      hub1.getSpokeAddedShares(assetId, address(spoke1)),
+      shares,
+      'hub spoke addedShares after'
+    );
+    assertEq(
+      hub1.getSpokeAddedAssets(assetId, address(skimSpoke)),
+      donationAmount,
+      'hub skimSpoke addedAmount after'
+    );
+    assertEq(
+      hub1.getSpokeAddedShares(assetId, address(skimSpoke)),
+      skimShares,
+      'hub skimSpoke addedShares after'
+    );
+    assertEq(
+      hub1.getAsset(assetId).liquidity,
+      liquidityBefore + amount,
+      'hub available liquidity after'
+    );
+    (uint256 drawnAfter, ) = hub1.getAssetOwed(assetId);
+    assertEq(drawnAfter, drawnBefore, 'hub drawn debt after');
+    assertBorrowRateSynced(hub1, assetId, 'hub1.add');
+    assertHubLiquidity(hub1, assetId, 'hub1.add.skim');
+    // token balance
+    assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-add');
+    assertEq(underlying.balanceOf(address(hub1)), amount, 'hub token balance post-add');
   }
 }
