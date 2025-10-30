@@ -20,7 +20,7 @@ contract SpokeInstance is Spoke {
   /// @notice Initializer.
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
   /// @param authority The address of the authority contract which manages permissions.
-  function initialize(address authority) public override reinitializer(SPOKE_REVISION) {
+  function initialize(address authority) external override reinitializer(SPOKE_REVISION) {
     emit OracleSet(ORACLE);
     require(authority != address(0), InvalidAddress());
     __AccessManaged_init(authority);

@@ -19,7 +19,7 @@ contract MockSpokeInstance is Spoke {
   }
 
   /// @inheritdoc Spoke
-  function initialize(address _authority) public override reinitializer(SPOKE_REVISION) {
+  function initialize(address _authority) external override reinitializer(SPOKE_REVISION) {
     emit OracleSet(ORACLE);
     require(_authority != address(0), InvalidAddress());
     __AccessManaged_init(_authority);
