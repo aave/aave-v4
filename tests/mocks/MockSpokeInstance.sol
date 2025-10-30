@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {Spoke} from 'src/spoke/Spoke.sol';
+import {ISpoke} from 'src/spoke/Interfaces/ISpoke.sol';
 
 contract MockSpokeInstance is Spoke {
   uint64 public immutable SPOKE_REVISION;
@@ -20,6 +21,7 @@ contract MockSpokeInstance is Spoke {
 
   /// @inheritdoc Spoke
   function initialize(address _authority) external override reinitializer(SPOKE_REVISION) {
+    emit ISpoke.OracleSet(ORACLE);
     require(_authority != address(0), InvalidAddress());
     __AccessManaged_init(_authority);
     if (_liquidationConfig.targetHealthFactor == 0) {
