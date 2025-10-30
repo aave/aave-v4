@@ -8,6 +8,11 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Interface for the SpokeConfigurator.
 interface ISpokeConfigurator {
+  /// @notice Emitted when the reserve limit for a spoke is updated.
+  /// @param spoke The address of the spoke.
+  /// @param limit The new reserve limit.
+  event ReserveLimitUpdated(address spoke, uint256 limit);
+
   /// @dev Thrown when the reserve limit for a spoke is reached.
   /// @param spoke The address of the spoke.
   /// @param limit The reserve limit.
@@ -43,7 +48,7 @@ interface ISpokeConfigurator {
     ISpoke.LiquidationConfig calldata liquidationConfig
   ) external;
 
-  /// @notice Updates the allowed number of reserves for a spoke.
+  /// @notice Updates the maximum number of reserves allowed to exist on a spoke.
   /// @param spoke The address of the spoke.
   /// @param limit The new reserve limit.
   function updateReserveLimit(address spoke, uint256 limit) external;
@@ -196,4 +201,9 @@ interface ISpokeConfigurator {
   /// @param positionManager The address of the position manager.
   /// @param active The new active flag.
   function updatePositionManager(address spoke, address positionManager, bool active) external;
+
+  /// @notice Returns the maximum number of reserves allowed to exist on a spoke.
+  /// @param spoke The address of the spoke.
+  /// @return The reserve limit.
+  function getReserveLimit(address spoke) external view returns (uint256);
 }

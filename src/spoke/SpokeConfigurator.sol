@@ -73,6 +73,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   /// @inheritdoc ISpokeConfigurator
   function updateReserveLimit(address spoke, uint256 limit) external onlyOwner {
     _reserveLimit[spoke] = limit;
+    emit ReserveLimitUpdated(spoke, limit);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -265,5 +266,10 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     bool active
   ) external onlyOwner {
     ISpoke(spoke).updatePositionManager(positionManager, active);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function getReserveLimit(address spoke) external view returns (uint256) {
+    return _reserveLimit[spoke];
   }
 }
