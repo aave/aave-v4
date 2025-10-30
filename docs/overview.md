@@ -12,7 +12,33 @@ By providing preferential rates for stronger collaterals and optimizing capital 
 
 Aave V4 introduces a hub-and-spoke model for liquidity management. The Liquidity Hub (LH) coordinates liquidity, while Spokes handle asset-specific lending and borrowing.
 
-[DIAGRAM]
+```mermaid
+%%{init: {"theme": "dark"}}%%
+flowchart TD
+  %% Nodes
+  LP[Liquidity Providers]
+  BR[Borrowers]
+
+  S1[Spoke 1]
+  S2[Spoke 2]
+  S3[Spoke 3]
+
+  HUB[Liquidity Hub]
+
+  %% Edges
+  LP --> S1
+  LP --> S2
+  BR --> S2
+  BR --> S3
+
+  S1 --> HUB
+  S2 --> HUB
+  S3 --> HUB
+
+  %% Styling (optional)
+  classDef box fill:#0b0b0d,stroke:#e5e5e5,stroke-width:1px,color:#ffffff;
+  class LP,BR,S1,S2,S3,HUB box;
+```
 
 Spokes are individual modules that can connect to one or multiple LHs. They route user actions (supply/withdraw and borrow/repay) to the appropriate LH based on reserve configuration and available caps. Whenever liquidity is restored, Spokes pay a base interest (determined by an interest rate strategy at the LH level) and a risk premium that determines how much borrowers will pay on top of the base rate, depending on the collateral composition of each user.
 
@@ -47,8 +73,6 @@ Users interact with the Spokes, which interact directly with the LHs, managing t
 # Risk Premium
 
 Interest paid as a result of a user's debt is directly impacted by the quality of the assets used as collateral. Likewise, risk level (quality) of the collateral assets of the user determines the additional charge for borrowing, on top of the asset's drawn interest rate.
-
-[DIAGRAM]
 
 ## Premium
 
