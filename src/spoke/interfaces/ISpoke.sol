@@ -137,8 +137,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Emitted when a dynamic reserve config is added.
   /// @dev The config key is the next available key for the reserve, which is now the latest config
-  /// key of the reserve. It can be an existing key that was previously used and is now being
-  /// overridden.
+  /// key of the reserve.
   /// @param reserveId The identifier of the reserve.
   /// @param dynamicConfigKey The key of the added dynamic config.
   /// @param config The dynamic reserve config.
@@ -325,7 +324,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Updates the dynamic reserve config for a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Appends dynamic config to the next valid config key, and overrides existing config if the key is already used.
+  /// @dev Appends dynamic config to the next available key; reverts if `MAX_ALLOWED_DYNAMIC_CONFIG_KEY` is reached.
   /// @param reserveId The identifier of the reserve.
   /// @param dynamicConfig The new dynamic reserve config.
   /// @return dynamicConfigKey The key of the added dynamic config.
