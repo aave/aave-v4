@@ -80,7 +80,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @dev To be overridden by the inheriting Spoke instance contract.
-  function initialize(address authority) public virtual {}
+  function initialize(address authority) external virtual;
 
   /// @inheritdoc ISpoke
   function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
