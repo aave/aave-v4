@@ -14,7 +14,7 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   using SafeCast for uint256;
 
-  mapping(address => uint256) internal _reserveLimit;
+  mapping(address spoke => uint256) internal _maxNumberReserves;
 
   /// @dev Constructor.
   /// @param owner_ The address of the owner.
@@ -72,7 +72,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
 
   /// @inheritdoc ISpokeConfigurator
   function updateReserveLimit(address spoke, uint256 limit) external onlyOwner {
-    _reserveLimit[spoke] = limit;
+    _maxNumberReserves[spoke] = limit;
     emit ReserveLimitUpdated(spoke, limit);
   }
 
@@ -86,8 +86,8 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external onlyOwner returns (uint256) {
     require(
-      ISpoke(spoke).getReserveCount() < _reserveLimit[spoke],
-      ReserveLimitReached(spoke, _reserveLimit[spoke])
+      ISpoke(spoke).getReserveCount() < _maxNumberReserves[spoke],
+      ReserveLimitReached(spoke, _maxNumberReserves[spoke])
     );
     return ISpoke(spoke).addReserve(hub, assetId, priceSource, config, dynamicConfig);
   }
@@ -270,6 +270,6 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
 
   /// @inheritdoc ISpokeConfigurator
   function getReserveLimit(address spoke) external view returns (uint256) {
-    return _reserveLimit[spoke];
+    return _maxNumberReserves[spoke];
   }
 }
