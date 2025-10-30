@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import {Spoke} from 'src/spoke/Spoke.sol';
-import {ISpoke} from 'src/spoke/Interfaces/ISpoke.sol';
 
 contract MockSpokeInstance is Spoke {
   uint64 public immutable SPOKE_REVISION;
