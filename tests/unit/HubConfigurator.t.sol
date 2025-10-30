@@ -16,6 +16,9 @@ contract HubConfiguratorTest is HubBase {
   address[4] public spokeAddresses;
   address spoke;
 
+  mapping(address => uint24) public riskPremiumThresholdsPerSpoke; // spoke address => risk premium threshold
+  mapping(uint256 => uint24) public riskPremiumThresholdsPerAsset; // assetId => risk premium threshold
+
   function setUp() public virtual override {
     super.setUp();
     hubConfigurator = new HubConfigurator(HUB_CONFIGURATOR_ADMIN);
@@ -200,10 +203,11 @@ contract HubConfiguratorTest is HubBase {
       reinvestmentController: address(0)
     });
     IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
+      active: true,
+      paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: 0,
-      active: true,
-      paused: false
+      riskPremiumThreshold: 0
     });
 
     vm.expectCall(
@@ -347,12 +351,13 @@ contract HubConfiguratorTest is HubBase {
     );
 
     assertGe(treasurySpoke.getSuppliedShares(daiAssetId), 0);
-    uint256 fees = treasurySpoke.getSuppliedAmount(daiAssetId);
 
     // Change the fee receiver
     TreasurySpoke newTreasurySpoke = new TreasurySpoke(HUB_ADMIN, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, address(newTreasurySpoke));
+
+    uint256 fees = treasurySpoke.getSuppliedAmount(daiAssetId);
 
     assertEq(
       hub1.getAssetConfig(daiAssetId).feeReceiver,
@@ -372,11 +377,11 @@ contract HubConfiguratorTest is HubBase {
       fees,
       address(treasurySpoke)
     );
-
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), 0, 'old treasury spoke should be empty');
 
     // Accrue more fees, this time to new fee receiver
     skip(365 days);
+    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertGt(
       newTreasurySpoke.getSuppliedAmount(daiAssetId),
@@ -407,6 +412,7 @@ contract HubConfiguratorTest is HubBase {
       100e18,
       365 days
     );
+    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertGe(treasurySpoke.getSuppliedShares(daiAssetId), 0);
     uint256 feeShares = treasurySpoke.getSuppliedShares(daiAssetId);
@@ -443,6 +449,7 @@ contract HubConfiguratorTest is HubBase {
 
     // Accrue more fees, this time to new fee receiver
     skip(365 days);
+    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     // Check that new fee receiver is getting the fees, and not old treasury spoke
     assertGt(
@@ -659,6 +666,8 @@ contract HubConfiguratorTest is HubBase {
         address(hub1),
         abi.encodeCall(IHub.updateSpokeConfig, (assetId, spokeAddresses[i], spokeConfig))
       );
+
+      riskPremiumThresholdsPerSpoke[spokeAddresses[i]] = spokeConfig.riskPremiumThreshold;
     }
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -668,6 +677,7 @@ contract HubConfiguratorTest is HubBase {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddresses[i]);
       assertEq(spokeConfig.addCap, 0);
       assertEq(spokeConfig.drawCap, 0);
+      assertEq(spokeConfig.riskPremiumThreshold, riskPremiumThresholdsPerSpoke[spokeAddresses[i]]);
     }
   }
 
@@ -732,10 +742,11 @@ contract HubConfiguratorTest is HubBase {
     address newSpoke = makeAddr('newSpoke');
 
     IHub.SpokeConfig memory daiSpokeConfig = IHub.SpokeConfig({
+      active: true,
+      paused: false,
       addCap: 1,
       drawCap: 2,
-      active: true,
-      paused: false
+      riskPremiumThreshold: 22
     });
 
     vm.expectEmit(address(hub1));
@@ -763,9 +774,27 @@ contract HubConfiguratorTest is HubBase {
     assetIds[1] = wethAssetId;
 
     IHub.SpokeConfig[] memory spokeConfigs = new IHub.SpokeConfig[](3);
-    spokeConfigs[0] = IHub.SpokeConfig({addCap: 1, drawCap: 2, active: true, paused: false});
-    spokeConfigs[1] = IHub.SpokeConfig({addCap: 3, drawCap: 4, active: true, paused: false});
-    spokeConfigs[2] = IHub.SpokeConfig({addCap: 5, drawCap: 6, active: true, paused: false});
+    spokeConfigs[0] = IHub.SpokeConfig({
+      addCap: 1,
+      drawCap: 2,
+      active: true,
+      paused: false,
+      riskPremiumThreshold: 0
+    });
+    spokeConfigs[1] = IHub.SpokeConfig({
+      addCap: 3,
+      drawCap: 4,
+      active: true,
+      paused: false,
+      riskPremiumThreshold: 0
+    });
+    spokeConfigs[2] = IHub.SpokeConfig({
+      addCap: 5,
+      drawCap: 6,
+      active: true,
+      paused: false,
+      riskPremiumThreshold: 0
+    });
 
     vm.expectRevert(IHubConfigurator.MismatchedConfigs.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -780,16 +809,18 @@ contract HubConfiguratorTest is HubBase {
     assetIds[1] = wethAssetId;
 
     IHub.SpokeConfig memory daiSpokeConfig = IHub.SpokeConfig({
+      active: true,
+      paused: false,
       addCap: 1,
       drawCap: 2,
-      active: true,
-      paused: false
+      riskPremiumThreshold: 0
     });
     IHub.SpokeConfig memory wethSpokeConfig = IHub.SpokeConfig({
+      active: true,
+      paused: false,
       addCap: 3,
       drawCap: 4,
-      active: true,
-      paused: false
+      riskPremiumThreshold: 0
     });
 
     IHub.SpokeConfig[] memory spokeConfigs = new IHub.SpokeConfig[](2);
@@ -859,7 +890,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateSpokeSupplyCap() public {
-    uint56 newSupplyCap = 100;
+    uint40 newSupplyCap = 100;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
     expectedSpokeConfig.addCap = newSupplyCap;
     vm.expectCall(
@@ -878,7 +909,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateSpokeDrawCap() public {
-    uint56 newDrawCap = 100;
+    uint40 newDrawCap = 100;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
     expectedSpokeConfig.drawCap = newDrawCap;
     vm.expectCall(
@@ -890,6 +921,30 @@ contract HubConfiguratorTest is HubBase {
     assertEq(hub1.getSpokeConfig(assetId, spoke), expectedSpokeConfig);
   }
 
+  function test_updateSpokeRiskPremiumThreshold_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    hubConfigurator.updateSpokeRiskPremiumThreshold(address(hub1), assetId, spokeAddresses[0], 100);
+  }
+
+  function test_updateSpokeRiskPremiumThreshold() public {
+    uint24 newRiskPremiumThreshold = 100;
+    IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
+    expectedSpokeConfig.riskPremiumThreshold = newRiskPremiumThreshold;
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHub.updateSpokeConfig, (assetId, spoke, expectedSpokeConfig))
+    );
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateSpokeRiskPremiumThreshold(
+      address(hub1),
+      assetId,
+      spoke,
+      newRiskPremiumThreshold
+    );
+    assertEq(hub1.getSpokeConfig(assetId, spoke), expectedSpokeConfig);
+  }
+
   function test_updateSpokeCaps_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
@@ -897,8 +952,8 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateSpokeCaps() public {
-    uint56 newSupplyCap = 100;
-    uint56 newDrawCap = 200;
+    uint40 newSupplyCap = 100;
+    uint40 newDrawCap = 200;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke);
     expectedSpokeConfig.addCap = newSupplyCap;
     expectedSpokeConfig.drawCap = newDrawCap;
@@ -999,6 +1054,8 @@ contract HubConfiguratorTest is HubBase {
         address(hub1),
         abi.encodeCall(IHub.updateSpokeConfig, (assetId, address(spoke3), expectedSpokeConfig))
       );
+
+      riskPremiumThresholdsPerAsset[assetId] = expectedSpokeConfig.riskPremiumThreshold;
     }
 
     for (uint256 assetId = 4; assetId < hub1.getAssetCount(); ++assetId) {
@@ -1012,6 +1069,7 @@ contract HubConfiguratorTest is HubBase {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
       assertEq(spokeConfig.addCap, 0);
       assertEq(spokeConfig.drawCap, 0);
+      assertEq(spokeConfig.riskPremiumThreshold, riskPremiumThresholdsPerAsset[assetId]);
     }
   }
 

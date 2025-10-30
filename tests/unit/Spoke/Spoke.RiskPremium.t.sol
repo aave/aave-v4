@@ -142,7 +142,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
   }
 
   // Supply multiple collaterals, and borrow one reserve. Then change the price of debt reserve such that collaterals are insufficient to cover the debt
-  // User rp should be weighted sum of the collaterals
+  // user risk premium should be zero
   function test_riskPremium_collateral_insufficient_to_cover_debt() public {
     uint256 wbtcSupplyAmount = 1e8;
     uint256 daiSupplyAmount = 1000e18;
@@ -179,20 +179,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 debtValue = _getValue(spoke2, _dai2ReserveId(spoke2), borrowAmount);
     assertGt(debtValue, collateralValue, 'debt outgrows collateral');
 
-    // Now user rp should be weighted sum of the collaterals
-    uint256 expectedRiskPremium = (_getValue(spoke2, _daiReserveId(spoke2), daiSupplyAmount) *
-      _getCollateralRisk(spoke2, _daiReserveId(spoke2)) +
-      _getValue(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) *
-      _getCollateralRisk(spoke2, _usdxReserveId(spoke2)) +
-      _getValue(spoke2, _wbtcReserveId(spoke2), wbtcSupplyAmount) *
-      _getCollateralRisk(spoke2, _wbtcReserveId(spoke2)) +
-      _getValue(spoke2, _wethReserveId(spoke2), wethSupplyAmount) *
-      _getCollateralRisk(spoke2, _wethReserveId(spoke2))) / collateralValue;
-    assertEq(
-      _getUserRiskPremium(spoke2, bob),
-      expectedRiskPremium,
-      'user risk premium matches weighted sum of collaterals'
-    );
+    assertFalse(_isHealthy(spoke2, bob));
+    // risk premium should be zero when position is underwater, the above proves with worst case of 100% cf
+    assertEq(_getUserRiskPremium(spoke2, bob), 0);
   }
 
   /// After each spoke action, calculated and stored user RP should remain the same
@@ -961,7 +950,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint96 baseRate = hub1.getAssetDrawnRate(wbtcAssetId).toUint96();
     uint256 drawnDebt = wbtcInfo.borrowAmount;
     (uint256 actualDrawnDebt, uint256 actualPremium) = spoke3.getUserDebt(wbtcInfo.reserveId, bob);
-    uint32 startTime = vm.getBlockTimestamp().toUint32();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
 
     assertEq(drawnDebt, actualDrawnDebt, 'user drawn debt');
     assertEq(actualPremium, 0, 'user premium debt');
@@ -1084,7 +1073,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
       wbtcInfo.reserveId,
       bob
     );
-    uint32 startTime = vm.getBlockTimestamp().toUint32();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
 
     assertEq(wbtcInfo.borrowAmount, debtChecks.actualDrawnDebt, 'user drawn debt');
     assertEq(debtChecks.actualPremium, 0, 'user premium debt');

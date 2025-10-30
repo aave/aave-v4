@@ -12,66 +12,106 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 /// @author Aave Labs
 /// @notice Full interface for Spoke.
 interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
+  /// @notice Reserve level data.
+  /// @dev underlying The address of the underlying asset.
+  /// @dev hub The address of the associated Hub.
+  /// @dev assetId The identifier of the asset in the Hub.
+  /// @dev decimals The number of decimals of the underlying asset.
+  /// @dev dynamicConfigKey The key of the last reserve dynamic config.
+  /// @dev paused True if all actions are prevented for the reserve.
+  /// @dev frozen True if new activity is prevented for the reserve.
+  /// @dev borrowable True if the reserve is borrowable.
+  /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
   struct Reserve {
     address underlying;
     //
     IHubBase hub;
     uint16 assetId;
     uint8 decimals;
-    uint16 dynamicConfigKey; // key of the last reserve config
+    uint16 dynamicConfigKey;
     bool paused;
     bool frozen;
     bool borrowable;
     uint24 collateralRisk;
   }
 
+  /// @notice Reserve configuration. Subset of the `Reserve` struct.
   struct ReserveConfig {
     bool paused;
     bool frozen;
     bool borrowable;
-    uint24 collateralRisk; // BPS
+    uint24 collateralRisk;
   }
 
+  /// @notice Dynamic reserve configuration data.
+  /// @dev collateralFactor The proportion of a reserve's value eligible to be used as collateral, expressed in BPS.
+  /// @dev maxLiquidationBonus The maximum extra amount of collateral given to the liquidator as bonus, expressed in BPS. 100_00 represents 0.00% bonus.
+  /// @dev liquidationFee The protocol fee charged on liquidations, taken from the collateral bonus given to the liquidator, expressed in BPS.
   struct DynamicReserveConfig {
     uint16 collateralFactor;
-    uint32 maxLiquidationBonus; // BPS, 100_00 represent a 0% bonus
-    uint16 liquidationFee; // BPS
+    uint32 maxLiquidationBonus;
+    uint16 liquidationFee;
   }
 
+  /// @notice Liquidation configuration data.
+  /// @dev targetHealthFactor The ideal health factor to restore a user position during liquidation, expressed in WAD.
+  /// @dev healthFactorForMaxBonus The health factor under which liquidation bonus is maximum, expressed in WAD.
+  /// @dev liquidationBonusFactor The value multiplied by `maxLiquidationBonus` to compute the minimum liquidation bonus, expressed in BPS.
   struct LiquidationConfig {
-    uint128 targetHealthFactor; // WAD, ideal health factor to restore user position during liquidation
-    uint64 healthFactorForMaxBonus; // WAD, health factor under which liquidation bonus is max
-    uint16 liquidationBonusFactor; // BPS, liquidation bonus factor * maxLiquidationBonus is the minimum liquidation bonus
+    uint128 targetHealthFactor;
+    uint64 healthFactorForMaxBonus;
+    uint16 liquidationBonusFactor;
   }
 
+  /// @notice User position data per reserve.
+  /// @dev drawnShares The drawn shares of the user position.
+  /// @dev realizedPremium The interest-free premium debt already accrued for the user position, expressed in asset units.
+  /// @dev premiumShares The premium shares of the user position.
+  /// @dev premiumOffset The premium offset of the user position, used to calculate the premium, expressed in asset units.
+  /// @dev suppliedShares The supplied shares of the user position.
+  /// @dev dynamicConfigKey The key of the user position dynamic config.
   struct UserPosition {
-    uint128 drawnShares;
-    uint128 realizedPremium;
+    uint120 drawnShares;
+    uint120 realizedPremium;
     //
-    uint128 premiumShares;
-    uint128 premiumOffset;
+    uint120 premiumShares;
+    uint120 premiumOffset;
     //
-    uint128 suppliedShares;
-    uint16 configKey; // key of the last user config
+    uint120 suppliedShares;
+    uint16 dynamicConfigKey;
   }
 
+  /// @notice Position manager configuration data.
+  /// @dev approval The mapping of position manager user approvals.
+  /// @dev active True if the position manager is active.
   struct PositionManagerConfig {
     mapping(address user => bool) approval;
     bool active;
   }
 
+  /// @notice User position status data.
+  /// @dev map The map of bitmap buckets for the position status.
+  /// @dev hasPositiveRiskPremium True if the user position has a risk premium strictly greater than 0.
   struct PositionStatus {
-    mapping(uint256 slot => uint256) map;
-    bool hasPositiveRiskPremium; // premiumShares > 0
+    mapping(uint256 bucket => uint256) map;
+    bool hasPositiveRiskPremium;
   }
 
+  /// @notice User account data describing a user position and its health.
+  /// @dev riskPremium The risk premium of the user position, expressed in BPS.
+  /// @dev avgCollateralFactor The weighted average collateral factor of the user position, expressed in WAD.
+  /// @dev healthFactor The health factor of the user position, expressed in WAD. 1e18 represents a health factor of 1.00.
+  /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
+  /// @dev totalDebtValue The total debt value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
+  /// @dev activeCollateralCount The number of active collaterals, which includes reserves with `collateralFactor` > 0, `enabledAsCollateral` and `suppliedAmount` > 0.
+  /// @dev borrowedCount The number of borrowed reserves of the user position.
   struct UserAccountData {
     uint256 riskPremium;
     uint256 avgCollateralFactor;
     uint256 healthFactor;
     uint256 totalCollateralValue;
     uint256 totalDebtValue;
-    uint256 activeCollateralCount; // 'active' collateral: collateralFactor > 0, enabledAsCollateral and suppliedAmount > 0
+    uint256 activeCollateralCount;
     uint256 borrowedCount;
   }
 
@@ -82,7 +122,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Emitted when a reserve is added.
   /// @param reserveId The identifier of the reserve.
   /// @param assetId The identifier of the asset.
-  /// @param hub The address of the hub where the asset is listed.
+  /// @param hub The address of the Hub where the asset is listed.
   event AddReserve(uint256 indexed reserveId, uint256 indexed assetId, address indexed hub);
 
   /// @notice Emitted when a reserve configuration is updated.
@@ -100,21 +140,21 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// key of the reserve. It can be an existing key that was previously used and is now being
   /// overridden.
   /// @param reserveId The identifier of the reserve.
-  /// @param configKey The key of the added dynamic config.
+  /// @param dynamicConfigKey The key of the added dynamic config.
   /// @param config The dynamic reserve config.
   event AddDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint16 indexed configKey,
+    uint16 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
   /// @notice Emitted when a dynamic reserve config is updated.
   /// @param reserveId The identifier of the reserve.
-  /// @param configKey The key of the updated dynamic config.
+  /// @param dynamicConfigKey The key of the updated dynamic config.
   /// @param config The dynamic reserve config.
   event UpdateDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint16 indexed configKey,
+    uint16 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -165,10 +205,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     IHubBase.PremiumDelta premiumDelta
   );
 
-  /// @notice Thrown when an asset is not listed on the hub when adding a reserve.
+  /// @notice Thrown when an asset is not listed on the Hub when adding a reserve.
   error AssetNotListed();
 
-  /// @notice Thrown when adding a new reserve if that reserve already exists for a given hub/assetId pair.
+  /// @notice Thrown when adding a new reserve if that reserve already exists for a given Hub/assetId pair.
   error ReserveExists();
 
   /// @notice Thrown when adding a new reserve if an asset id is invalid.
@@ -252,7 +292,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
   /// @notice Adds a new reserve to the spoke.
-  /// @dev Allowed even if the spoke has not yet been added to the hub.
+  /// @dev Allowed even if the spoke has not yet been added to the Hub.
   /// @dev Allowed even if the `active` flag is `false`.
   /// @dev Allowed even if the spoke has been added but the `addCap` is zero.
   /// @param hub The address of the Hub where the asset is listed.
@@ -285,22 +325,22 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev Appends dynamic config to the next valid config key, and overrides existing config if the key is already used.
   /// @param reserveId The identifier of the reserve.
   /// @param dynamicConfig The new dynamic reserve config.
-  /// @return configKey The key of the added dynamic config.
+  /// @return dynamicConfigKey The key of the added dynamic config.
   function addDynamicReserveConfig(
     uint256 reserveId,
     DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint16 configKey);
+  ) external returns (uint16 dynamicConfigKey);
 
   /// @notice Updates the dynamic reserve config for a given reserve at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Reverts with `ConfigKeyUninitialized` if the config key has not been initialized yet.
   /// @dev Reverts with `InvalidCollateralFactor` if the collateral factor is 0.
   /// @param reserveId The identifier of the reserve.
-  /// @param configKey The key of the config to update.
+  /// @param dynamicConfigKey The key of the config to update.
   /// @param dynamicConfig The new dynamic reserve config.
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
   ) external;
 
@@ -359,7 +399,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Allows consuming a permit signature for the given reserve's underlying asset.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Spender is the corresponding hub of the given reserve.
+  /// @dev Spender is the corresponding Hub of the given reserve.
   /// @param reserveId The identifier of the reserve.
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
@@ -400,12 +440,12 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Returns the dynamic reserve configuration struct at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Does not revert if `configKey` is unset.
+  /// @dev Does not revert if `dynamicConfigKey` is unset.
   /// @param reserveId The identifier of the reserve.
-  /// @param configKey The key of the dynamic config.
+  /// @param dynamicConfigKey The key of the dynamic config.
   function getDynamicReserveConfig(
     uint256 reserveId,
-    uint16 configKey
+    uint16 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory);
 
   /// @notice Returns true if the reserve is set as collateral for the user.

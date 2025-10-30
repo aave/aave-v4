@@ -17,6 +17,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   address internal liquidator;
   uint256 internal realizedPremium;
   address internal user;
+
   function setUp() public override {
     super.setUp();
 
@@ -29,18 +30,20 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     user = makeAddr('user');
 
     // Set initial storage values
+    liquidationLogicWrapper.setBorrower(user);
+    liquidationLogicWrapper.setLiquidator(liquidator);
     liquidationLogicWrapper.setDebtReserveId(reserveId);
     liquidationLogicWrapper.setDebtReserveHub(hub);
     liquidationLogicWrapper.setDebtReserveAssetId(assetId);
-    liquidationLogicWrapper.setBorrowingStatus(reserveId, true);
-    liquidationLogicWrapper.setBorrower(user);
+    liquidationLogicWrapper.setBorrowerBorrowingStatus(reserveId, true);
 
     // Add liquidation logic wrapper as a spoke
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.prank(HUB_ADMIN);
     hub.addSpoke(assetId, address(spoke), spokeConfig);
@@ -143,7 +146,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     );
 
     assertEq(isPositionEmpty, debtToLiquidate == drawnDebt + premiumDebt);
-    assertEq(liquidationLogicWrapper.getBorrowingStatus(reserveId), !isPositionEmpty);
+    assertEq(liquidationLogicWrapper.getBorrowerBorrowingStatus(reserveId), !isPositionEmpty);
     assertPosition(
       liquidationLogicWrapper.getDebtPosition(),
       initialPosition,
@@ -246,12 +249,12 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 accruedPremium,
     uint256 premiumDebtToLiquidate
   ) internal {
-    initialPosition.drawnShares -= drawnSharesLiquidated.toUint128();
+    initialPosition.drawnShares -= drawnSharesLiquidated.toUint120();
     initialPosition.premiumShares = 0;
     initialPosition.premiumOffset = 0;
     initialPosition.realizedPremium = (initialPosition.realizedPremium +
       accruedPremium -
-      premiumDebtToLiquidate).toUint128();
+      premiumDebtToLiquidate).toUint120();
     assertEq(newPosition, initialPosition);
   }
 }

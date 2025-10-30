@@ -46,7 +46,8 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       active: true,
       paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
 
     vm.prank(HUB_ADMIN);
@@ -129,7 +130,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     ISpoke.UserPosition memory initPosition,
     uint256 newSuppliedShares
   ) internal pure {
-    initPosition.suppliedShares = newSuppliedShares.toUint128();
+    initPosition.suppliedShares = newSuppliedShares.toUint120();
     assertEq(newPosition, initPosition);
   }
 

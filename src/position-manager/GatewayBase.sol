@@ -47,7 +47,7 @@ abstract contract GatewayBase is IGatewayBase, Rescuable, Ownable2Step {
   }
 
   /// @return The underlying asset for `reserveId` on the specified spoke.
-  /// @return The corresponding hub address.
+  /// @return The corresponding Hub address.
   function _getReserveData(
     address spoke,
     uint256 reserveId

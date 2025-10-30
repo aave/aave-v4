@@ -5,7 +5,9 @@ import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubRefreshPremiumTest is HubBase {
   using SafeCast for *;
+  using PercentageMath for *;
   using MathUtils for uint256;
+  using WadRayMath for uint256;
 
   struct PremiumDataLocal {
     uint256 premiumShares;
@@ -17,6 +19,117 @@ contract HubRefreshPremiumTest is HubBase {
     IHubBase.PremiumDelta memory premiumDelta;
     updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector);
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(daiAssetId, premiumDelta);
+  }
+
+  function _createDrawnSharesAndPremiumData() internal {
+    Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
+
+    uint256 amount1 = vm.randomUint(1, MAX_SUPPLY_AMOUNT / 2);
+    uint256 amount2 = vm.randomUint(1, MAX_SUPPLY_AMOUNT - amount1);
+
+    // create drawn shares and premium data
+    _addLiquidity(daiAssetId, MAX_SUPPLY_AMOUNT);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount1, bob);
+    skip(322 days);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount2, bob);
+    skip(322 days);
+  }
+
+  /// @dev reverts with InvalidPremiumChange with a risk premium threshold of 0
+  /// @dev allowed if premiumData is within risk premium threshold
+  function test_refreshPremium_riskPremiumThreshold() public {
+    _createDrawnSharesAndPremiumData();
+
+    uint24 riskPremiumThreshold = 0.toUint24();
+    _updateSpokeRiskPremiumThreshold(hub1, daiAssetId, address(spoke1), riskPremiumThreshold);
+
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+      sharesDelta: 1,
+      offsetDelta: 0,
+      realizedDelta: 0
+    });
+
+    IHub.Asset memory asset = hub1.getAsset(daiAssetId);
+    // expect allowed condition not to be met
+    assertFalse(
+      asset.premiumShares + premiumDelta.sharesDelta.toUint256() <=
+        asset.drawnShares.percentMulUp(riskPremiumThreshold)
+    );
+
+    vm.expectRevert(IHub.InvalidPremiumChange.selector);
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(daiAssetId, premiumDelta);
+
+    riskPremiumThreshold = (vm.randomUint(0, Constants.MAX_RISK_PREMIUM_THRESHOLD - 1)).toUint24();
+    _updateSpokeRiskPremiumThreshold(hub1, daiAssetId, address(spoke1), riskPremiumThreshold);
+
+    // expect allowed condition to be met
+    assertTrue(
+      asset.premiumShares + premiumDelta.sharesDelta.toUint256() <=
+        asset.drawnShares.percentMulUp(riskPremiumThreshold)
+    );
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(daiAssetId, premiumDelta);
+  }
+
+  /// @dev reverts with InvalidPremiumChange as long as threshold is exceeded (even though risk premium is decreasing)
+  function test_refreshPremium_revertsWith_InvalidPremiumChange_RiskPremiumThresholdExceeded_DecreasingPremium()
+    public
+  {
+    _createDrawnSharesAndPremiumData();
+
+    uint24 riskPremiumThreshold = 1_00; // 1%
+    _updateSpokeRiskPremiumThreshold(hub1, daiAssetId, address(spoke1), riskPremiumThreshold);
+
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+      sharesDelta: -1,
+      offsetDelta: -1,
+      realizedDelta: 0
+    });
+
+    vm.expectRevert(IHub.InvalidPremiumChange.selector);
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(daiAssetId, premiumDelta);
+  }
+
+  /// @dev if risk premium threshold is max allowed sentinel val, then exceeding max collateral risk is allowed
+  function test_refreshPremium_maxRiskPremiumThreshold() public {
+    _createDrawnSharesAndPremiumData();
+
+    _updateSpokeRiskPremiumThreshold(
+      hub1,
+      daiAssetId,
+      address(spoke1),
+      Constants.MAX_RISK_PREMIUM_THRESHOLD
+    );
+
+    assertEq(
+      hub1.getSpokeConfig(daiAssetId, address(spoke1)).riskPremiumThreshold,
+      Constants.MAX_RISK_PREMIUM_THRESHOLD
+    );
+
+    IHub.SpokeData memory spokeData = hub1.getSpoke(daiAssetId, address(spoke1));
+    PremiumDataLocal memory premiumData = _loadAssetPremiumData(hub1, daiAssetId);
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+      sharesDelta: spokeData
+        .drawnShares
+        .percentMulUp(Constants.MAX_ALLOWED_COLLATERAL_RISK + 1)
+        .toInt256(), // no shares delta allowed
+      offsetDelta: 0,
+      realizedDelta: 0
+    });
+    premiumDelta.offsetDelta = hub1
+      .previewDrawByShares(daiAssetId, premiumDelta.sharesDelta.toUint256())
+      .toInt256();
+
+    // condition not met on max coll risk, but still allowed with MAX_RISK_PREMIUM_THRESHOLD
+    assertFalse(
+      premiumData.premiumShares + premiumDelta.sharesDelta.toUint256() <=
+        spokeData.drawnShares.percentMulUp(Constants.MAX_ALLOWED_COLLATERAL_RISK)
+    );
+
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
   }
@@ -35,6 +148,10 @@ contract HubRefreshPremiumTest is HubBase {
   }
 
   function test_refreshPremium_emitsEvent() public {
+    vm.startPrank(address(spoke1));
+    hub1.add(daiAssetId, 10000e18, alice);
+    hub1.draw(daiAssetId, 5000e18, alice);
+
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, daiAssetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
 
@@ -46,7 +163,6 @@ contract HubRefreshPremiumTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHubBase.RefreshPremium(daiAssetId, address(spoke1), premiumDelta);
 
-    vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
 
     (, uint256 premiumAfter) = hub1.getAssetOwed(daiAssetId);
@@ -57,18 +173,22 @@ contract HubRefreshPremiumTest is HubBase {
     );
     assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
     assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
+    vm.stopPrank();
   }
 
   /// @dev offsetDelta can't be more than sharesDelta or else underflow
   /// @dev sharesDelta + realizedDelta can't be more than 2 more than offsetDelta
   function test_refreshPremium_fuzz_positiveDeltas(
+    uint256 borrowAmount,
     int256 sharesDelta,
     int256 offsetDelta,
-    int256 realizedDelta
+    int256 realizedDelta,
+    bool isRiskPremiumThresholdMaxAllowed
   ) public {
     sharesDelta = bound(sharesDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
     offsetDelta = bound(offsetDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
     realizedDelta = bound(realizedDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
+    borrowAmount = bound(borrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: sharesDelta,
       offsetDelta: offsetDelta,
@@ -76,13 +196,43 @@ contract HubRefreshPremiumTest is HubBase {
     });
 
     uint256 assetId = daiAssetId;
+
+    uint24 riskPremiumThreshold = vm
+      .randomUint(0, Constants.MAX_RISK_PREMIUM_THRESHOLD - 1)
+      .toUint24();
+    if (isRiskPremiumThresholdMaxAllowed) {
+      // sentinel value to preclude check
+      riskPremiumThreshold = Constants.MAX_RISK_PREMIUM_THRESHOLD;
+    }
+    _updateSpokeRiskPremiumThreshold(hub1, assetId, address(spoke1), riskPremiumThreshold);
+
+    if (borrowAmount > 0) {
+      Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, borrowAmount * 2, bob);
+      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
+    }
+
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
     bool reverting;
+    IHub.Asset memory asset = hub1.getAsset(assetId);
+    uint256 expectedPremiumShares = sharesDelta > 0
+      ? asset.premiumShares + sharesDelta.toUint256()
+      : asset.premiumShares - (-sharesDelta).toUint256();
+    uint256 expectedOffset = offsetDelta > 0
+      ? asset.premiumOffset + offsetDelta.toUint256()
+      : asset.premiumOffset - (-offsetDelta).toUint256();
 
-    if (offsetDelta > sharesDelta) {
+    // Only 1 spoke drawing so checks on asset are equivalent to spoke
+    if (expectedOffset > expectedPremiumShares.rayMulUp(asset.drawnIndex)) {
       reverting = true;
       vm.expectRevert(stdError.arithmeticError);
+    } else if (
+      riskPremiumThreshold != Constants.MAX_RISK_PREMIUM_THRESHOLD &&
+      asset.drawnShares.percentMulUp(riskPremiumThreshold) <
+      asset.premiumShares + sharesDelta.toUint256()
+    ) {
+      reverting = true;
+      vm.expectRevert(IHub.InvalidPremiumChange.selector);
     } else if (sharesDelta - offsetDelta + realizedDelta > 2) {
       reverting = true;
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
@@ -246,7 +396,14 @@ contract HubRefreshPremiumTest is HubBase {
       realizedDelta: userAccruedPremium.toInt256()
     });
 
-    if (
+    uint256 expectedPremiumShares = premiumDelta.sharesDelta >= 0
+      ? asset.premiumShares + premiumDelta.sharesDelta.toUint256()
+      : asset.premiumShares - (-premiumDelta.sharesDelta).toUint256();
+
+    if (asset.drawnShares.percentMulUp(1000_00) < expectedPremiumShares) {
+      reverting = true;
+      vm.expectRevert(IHub.InvalidPremiumChange.selector);
+    } else if (
       premiumDelta.sharesDelta < 0 && -premiumDelta.sharesDelta > asset.premiumShares.toInt256()
     ) {
       reverting = true;
@@ -321,12 +478,12 @@ contract HubRefreshPremiumTest is HubBase {
     PremiumDataLocal memory premiumData,
     IHubBase.PremiumDelta memory premiumDelta
   ) internal pure returns (PremiumDataLocal memory) {
-    premiumData.premiumShares = premiumData.premiumShares.add(premiumDelta.sharesDelta).toUint128();
-    premiumData.premiumOffset = premiumData.premiumOffset.add(premiumDelta.offsetDelta).toUint128();
+    premiumData.premiumShares = premiumData.premiumShares.add(premiumDelta.sharesDelta).toUint120();
+    premiumData.premiumOffset = premiumData.premiumOffset.add(premiumDelta.offsetDelta).toUint120();
     premiumData.realizedPremium = premiumData
       .realizedPremium
       .add(premiumDelta.realizedDelta)
-      .toUint128();
+      .toUint120();
     return premiumData;
   }
 

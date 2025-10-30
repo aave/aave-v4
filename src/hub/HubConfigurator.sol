@@ -10,8 +10,8 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 
 /// @title HubConfigurator
 /// @author Aave Labs
-/// @notice Handles administrative functions on the hub.
-/// @dev Must be granted permission by the hub.
+/// @notice Handles administrative functions on the Hub.
+/// @dev Must be granted permission by the Hub.
 contract HubConfigurator is Ownable2Step, IHubConfigurator {
   using SafeCast for uint256;
 
@@ -116,9 +116,13 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   function freezeAsset(address hub, uint256 assetId) external onlyOwner {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
+
     for (uint256 i = 0; i < spokesCount; ++i) {
       address spoke = targetHub.getSpokeAddress(assetId, i);
-      _updateSpokeCaps(targetHub, assetId, spoke, 0, 0);
+      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+      config.addCap = 0;
+      config.drawCap = 0;
+      targetHub.updateSpokeConfig(assetId, spoke, config);
     }
   }
 
@@ -205,7 +209,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external onlyOwner {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-    config.addCap = addCap.toUint56();
+    config.addCap = addCap.toUint40();
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
@@ -218,7 +222,20 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   ) external onlyOwner {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-    config.drawCap = drawCap.toUint56();
+    config.drawCap = drawCap.toUint40();
+    targetHub.updateSpokeConfig(assetId, spoke, config);
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function updateSpokeRiskPremiumThreshold(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    uint256 riskPremiumThreshold
+  ) external onlyOwner {
+    IHub targetHub = IHub(hub);
+    IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    config.riskPremiumThreshold = riskPremiumThreshold.toUint24();
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
@@ -265,7 +282,10 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
       if (targetHub.isSpokeListed(assetId, spoke)) {
-        _updateSpokeCaps(targetHub, assetId, spoke, 0, 0);
+        IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+        config.addCap = 0;
+        config.drawCap = 0;
+        targetHub.updateSpokeConfig(assetId, spoke, config);
       }
     }
   }
@@ -288,8 +308,8 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 drawCap
   ) internal {
     IHub.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
-    config.addCap = addCap.toUint56();
-    config.drawCap = drawCap.toUint56();
+    config.addCap = addCap.toUint40();
+    config.drawCap = drawCap.toUint40();
     hub.updateSpokeConfig(assetId, spoke, config);
   }
 

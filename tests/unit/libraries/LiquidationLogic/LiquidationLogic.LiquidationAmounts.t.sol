@@ -71,7 +71,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       expectedCollateralToLiquidate + MAX_SUPPLY_AMOUNT
     );
 
-    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, type(uint256).max);
+    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, UINT256_MAX);
 
     (
       uint256 collateralToLiquidate,
@@ -93,7 +93,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) public {
     params = _bound(params);
-    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, type(uint256).max);
+    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, UINT256_MAX);
     (
       uint256 expectedCollateralToLiquidate,
       uint256 expectedCollateralToLiquidator,
@@ -191,7 +191,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) public {
     params = _bound(params);
-    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, type(uint256).max);
+    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, UINT256_MAX);
 
     (
       uint256 expectedCollateralToLiquidate,
@@ -316,7 +316,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     uint256 debtToLiquidate = liquidationLogicWrapper.calculateDebtToLiquidate(
       _getCalculateDebtToLiquidateParams(params)
     );
-    uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
+    uint256 collateralToLiquidate = debtToLiquidate.mulDivUp(
       params.debtAssetPrice * 10 ** params.collateralAssetDecimals * liquidationBonus,
       10 ** params.debtAssetDecimals *
         params.collateralAssetPrice *
@@ -347,12 +347,14 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       liquidationBonus,
       params.liquidationFee
     );
-    uint256 debtToLiquidate = collateralToLiquidate.mulDivUp(
-      params.collateralAssetPrice *
-        10 ** params.debtAssetDecimals *
-        PercentageMath.PERCENTAGE_FACTOR,
-      10 ** params.collateralAssetDecimals * params.debtAssetPrice * liquidationBonus
-    );
+    uint256 debtToLiquidate = collateralToLiquidate
+      .mulDivUp(
+        params.collateralAssetPrice *
+          10 ** params.debtAssetDecimals *
+          PercentageMath.PERCENTAGE_FACTOR,
+        10 ** params.collateralAssetDecimals * params.debtAssetPrice * liquidationBonus
+      )
+      .min(params.debtReserveBalance);
 
     return (collateralToLiquidate, collateralToLiquidator, debtToLiquidate);
   }

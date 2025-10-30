@@ -16,26 +16,32 @@ interface ITreasurySpoke is ISpokeBase {
   error InvalidAddress();
 
   /// @notice Supplies a specified amount of the underlying asset to a given reserve.
-  /// @dev The hub pulls the underlying asset from the caller, so prior approval is required.
-  /// @dev The reserve identifier must match the asset identifier in the hub.
+  /// @dev The Hub pulls the underlying asset from the caller, so prior approval is required.
+  /// @dev The reserve identifier must match the asset identifier in the Hub.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to supply.
   /// @param onBehalfOf Unused parameter for this spoke.
   /// @return The amount of shares supplied.
-  function supply(uint256 reserveId, uint256 amount, address onBehalfOf) external returns (uint256);
+  /// @return The amount of assets supplied.
+  function supply(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external returns (uint256, uint256);
 
   /// @notice Withdraws a specified amount of underlying asset from the given reserve.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
-  /// @dev The reserve identifier must match the asset identifier in the hub.
+  /// @dev The reserve identifier must match the asset identifier in the Hub.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to withdraw.
   /// @param onBehalfOf Unused parameter for this spoke.
   /// @return The amount of shares withdrawn.
+  /// @return The amount of assets withdrawn.
   function withdraw(
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external returns (uint256);
+  ) external returns (uint256, uint256);
 
   /// @notice Transfers a specified amount of ERC20 tokens from this contract.
   /// @param token The address of the ERC20 token to transfer.
@@ -44,19 +50,19 @@ interface ITreasurySpoke is ISpokeBase {
   function transfer(address token, address to, uint256 amount) external;
 
   /// @notice Returns the amount of assets supplied.
-  /// @dev The reserve identifier must match the asset identifier in the hub.
+  /// @dev The reserve identifier must match the asset identifier in the Hub.
   /// @param reserveId The identifier of the reserve.
   /// @return The amount of assets supplied.
   function getSuppliedAmount(uint256 reserveId) external view returns (uint256);
 
   /// @notice Returns the amount of shares supplied.
   /// @dev Shares are denominated relative to the supply side.
-  /// @dev The reserve identifier must match the asset identifier in the hub.
+  /// @dev The reserve identifier must match the asset identifier in the Hub.
   /// @param reserveId The identifier of the reserve.
   /// @return The amount of shares supplied.
   function getSuppliedShares(uint256 reserveId) external view returns (uint256);
 
-  /// @notice Returns the interface of the associated hub.
+  /// @notice Returns the interface of the associated Hub.
   /// @return The HubBase interface.
   function HUB() external view returns (IHubBase);
 }

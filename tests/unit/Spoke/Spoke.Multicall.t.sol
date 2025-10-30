@@ -22,7 +22,8 @@ contract SpokeMulticall is SpokeBase {
       daiReserveId,
       bob,
       bob,
-      hub1.previewAddByAssets(daiAssetId, supplyAmount)
+      hub1.previewAddByAssets(daiAssetId, supplyAmount),
+      supplyAmount
     );
     vm.expectEmit(address(spoke1));
     emit ISpoke.SetUsingAsCollateral(daiReserveId, bob, bob, true);
@@ -64,7 +65,8 @@ contract SpokeMulticall is SpokeBase {
       _daiReserveId(spoke2),
       bob,
       bob,
-      hub1.previewAddByAssets(daiAssetId, MAX_SUPPLY_AMOUNT)
+      hub1.previewAddByAssets(daiAssetId, MAX_SUPPLY_AMOUNT),
+      MAX_SUPPLY_AMOUNT
     );
     vm.expectEmit(address(spoke2));
     emit ISpoke.SetUsingAsCollateral(_daiReserveId(spoke2), bob, bob, true);
@@ -225,9 +227,9 @@ contract SpokeMulticall is SpokeBase {
     bytes[] memory ret = spoke1.multicall(calls);
 
     assertEq(ret.length, calls.length);
-    assertEq(ret[0], abi.encode(supplyAmount));
+    assertEq(ret[0], abi.encode(supplyAmount, supplyAmount));
     assertEq(ret[1].length, 0);
-    assertEq(ret[2], abi.encode(borrowAmount));
+    assertEq(ret[2], abi.encode(borrowAmount, borrowAmount));
     assertEq(ret[3], abi.encode(borrowAmount, 0));
   }
 
