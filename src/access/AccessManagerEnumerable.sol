@@ -16,7 +16,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   /// @dev Mapping from roleId to set of role members.
   mapping(uint64 roleId => EnumerableSet.AddressSet) private _roleMembers;
 
-  /// @dev Mapping from roleId to set of role members.
+  /// @dev Mapping from roleId to set configured function selectors.
   mapping(uint64 roleId => EnumerableSet.Bytes32Set) private _roleSelectors;
 
   constructor(address initialAdmin_) AccessManager(initialAdmin_) {}
@@ -47,13 +47,11 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function getRoleSelectors(uint64 roleId) external view returns (bytes4[] memory) {
+  function getRoleSelectors(uint64 roleId) external view returns (bytes4[] memory ret) {
     bytes32[] memory rawSelectors = _roleSelectors[roleId].values();
-    bytes4[] memory selectors = new bytes4[](rawSelectors.length);
-    for (uint256 i = 0; i < rawSelectors.length; i++) {
-      selectors[i] = bytes4(rawSelectors[i]);
+    assembly ('memory-safe') {
+      ret := rawSelectors
     }
-    return selectors;
   }
 
   /// @dev Override AccessManager:_grantRole to track role members.
