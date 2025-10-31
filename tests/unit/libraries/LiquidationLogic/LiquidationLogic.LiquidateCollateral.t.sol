@@ -16,9 +16,11 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
   uint256 suppliedShares;
   uint256 reserveId;
   address borrower;
+  address liquidator;
 
   ISpoke.Reserve initialReserve;
   ISpoke.UserPosition initialPosition;
+  ISpoke.UserPosition initialLiquidatorPosition;
 
   function setUp() public override {
     super.setUp();
@@ -30,17 +32,18 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     asset = IERC20(hub.getAsset(assetId).underlying);
     suppliedShares = 100e18;
     borrower = makeAddr('borrower');
+    params.liquidator = makeAddr('liquidator');
 
     liquidationLogicWrapper.setCollateralReserveHub(hub);
     liquidationLogicWrapper.setCollateralReserveAssetId(assetId);
     liquidationLogicWrapper.setCollateralReserveId(reserveId);
     liquidationLogicWrapper.setBorrower(borrower);
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(suppliedShares);
+    liquidationLogicWrapper.setLiquidator(params.liquidator);
 
     initialReserve = liquidationLogicWrapper.getCollateralReserve();
-    initialPosition = liquidationLogicWrapper.getCollateralPosition();
-
-    params.liquidator = makeAddr('liquidator');
+    initialPosition = liquidationLogicWrapper.getCollateralPosition(borrower);
+    initialLiquidatorPosition = liquidationLogicWrapper.getCollateralPosition(params.liquidator);
 
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
@@ -78,7 +81,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
 
     assertEq(liquidationLogicWrapper.getCollateralReserve(), initialReserve);
     assertPosition(
-      liquidationLogicWrapper.getCollateralPosition(),
+      liquidationLogicWrapper.getCollateralPosition(params.user),
       initialPosition,
       suppliedShares - sharesToLiquidate
     );
@@ -90,6 +93,71 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
       params.collateralToLiquidate - params.collateralToLiquidator,
       1
+    );
+  }
+
+  /// on receiveShares, sharesToLiquidator should round down
+  function test_liquidateCollateral_receiveShares_sharesToLiquidatorIsZero() public {
+    // increase reserve index to ensure sharesToLiquidator rounds to 0 while feeShares rounds up to 1
+    _increaseReserveIndex(spoke1, reserveId);
+
+    // supply ex rate is between 1 and 2
+    assertGt(hub.previewAddByShares(assetId, WadRayMath.RAY), WadRayMath.RAY);
+    assertLt(hub.previewAddByShares(assetId, WadRayMath.RAY), 2 * WadRayMath.RAY);
+
+    params.collateralToLiquidate = 1;
+    params.collateralToLiquidator = 1;
+    params.receiveShares = true;
+    params.user = borrower;
+
+    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
+    uint256 sharesToLiquidator = hub.previewAddByAssets(assetId, params.collateralToLiquidator);
+    uint256 feeShares = sharesToLiquidate - sharesToLiquidator;
+
+    assertEq(sharesToLiquidate, 1);
+    assertEq(sharesToLiquidator, 0);
+    assertEq(feeShares, 1);
+
+    vm.expectCall(address(hub), abi.encodeCall(IHubBase.payFeeShares, (assetId, feeShares)), 1);
+    liquidationLogicWrapper.liquidateCollateral(params);
+
+    // sharesToLiquidator should round to 0 and remain unchanged
+    assertPosition(
+      liquidationLogicWrapper.getCollateralPosition(params.liquidator),
+      initialLiquidatorPosition,
+      sharesToLiquidator
+    );
+  }
+
+  // on receiveShares, sharesToLiquidator should round down
+  function test_liquidateCollateral_fuzz_receiveShares_sharesToLiquidator(
+    uint256 collateralToLiquidate,
+    uint256 collateralToLiquidator
+  ) public {
+    params.collateralToLiquidate = bound(
+      collateralToLiquidate,
+      1,
+      hub.previewRemoveByShares(assetId, 1e6)
+    );
+    params.collateralToLiquidator = bound(collateralToLiquidator, 1, params.collateralToLiquidate);
+    params.receiveShares = true;
+    params.user = borrower;
+
+    // increase reserve index to ensure sharesToLiquidator rounds to 0 while feeShares rounds up to 1
+    _increaseReserveIndex(spoke1, reserveId);
+
+    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
+    uint256 sharesToLiquidator = hub.previewAddByAssets(assetId, params.collateralToLiquidator);
+    uint256 feeShares = sharesToLiquidate - sharesToLiquidator;
+
+    vm.expectCall(address(hub), abi.encodeCall(IHubBase.payFeeShares, (assetId, feeShares)), 1);
+    liquidationLogicWrapper.liquidateCollateral(params);
+
+    // sharesToLiquidator should round to 0 and remain unchanged
+    assertPosition(
+      liquidationLogicWrapper.getCollateralPosition(params.liquidator),
+      initialLiquidatorPosition,
+      sharesToLiquidator
     );
   }
 
