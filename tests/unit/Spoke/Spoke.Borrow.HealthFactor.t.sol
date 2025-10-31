@@ -721,13 +721,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collReserveId: wethReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountWeth
-    }) + 2; // buffer for premium rounding
+    }) + collateralPremiumBuffer;
     uint256 daiCollAmount = _calcMinimumCollAmount({
       spoke: spoke1,
       collReserveId: daiReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountDai
-    }) + 2; // buffer for premium rounding
+    }) + collateralPremiumBuffer;
 
     vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);

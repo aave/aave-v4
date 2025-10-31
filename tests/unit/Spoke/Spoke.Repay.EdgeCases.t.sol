@@ -18,7 +18,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       _wethReserveId(spoke1),
       _daiReserveId(spoke1),
       daiBorrowAmount
-    ) + 2; // small buffer for premium rounding
+    ) + collateralPremiumBuffer;
 
     // Bob supply weth as collateral
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);

@@ -66,7 +66,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       collReserveId: collReserveId,
       debtReserveId: debtReserveId,
       debtAmount: debtAmount
-    }) + 2; // buffer for premium rounding
+    }) + collateralPremiumBuffer;
 
     vm.assume(collAmount < MAX_SUPPLY_AMOUNT && collAmount > 1);
 
@@ -382,7 +382,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       spoke: spoke1,
       reserveId: wethReserveId,
       caller: alice,
-      amount: wethCollAmountDai + wethCollAmountUsdx + 2, // buffer for premium rounding
+      amount: wethCollAmountDai + wethCollAmountUsdx + collateralPremiumBuffer,
       onBehalfOf: alice
     });
 
@@ -466,7 +466,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       spoke: spoke1,
       reserveId: wethReserveId,
       caller: alice,
-      amount: wethCollAmountDai + wethCollAmountUsdx + 2,
+      amount: wethCollAmountDai + wethCollAmountUsdx + collateralPremiumBuffer,
       onBehalfOf: alice
     });
 
@@ -546,7 +546,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       spoke: spoke1,
       reserveId: wethReserveId,
       caller: alice,
-      amount: wethCollAmountDai + wethCollAmountUsdx + 2, // buffer for premium rounding
+      amount: wethCollAmountDai + wethCollAmountUsdx + collateralPremiumBuffer,
       onBehalfOf: alice
     });
 
@@ -638,7 +638,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       spoke: spoke1,
       reserveId: wethReserveId,
       caller: alice,
-      amount: wethCollAmountDai + wethCollAmountUsdx + 2, // buffer for premium rounding
+      amount: wethCollAmountDai + wethCollAmountUsdx + collateralPremiumBuffer,
       onBehalfOf: alice
     });
 
@@ -720,7 +720,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       spoke: spoke1,
       reserveId: wethReserveId,
       caller: alice,
-      amount: wethCollAmountDai + wethCollAmountUsdx + 2, // buffer for premium rounding
+      amount: wethCollAmountDai + wethCollAmountUsdx + collateralPremiumBuffer,
       onBehalfOf: alice
     });
 
@@ -812,7 +812,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       spoke: spoke1,
       reserveId: wethReserveId,
       caller: alice,
-      amount: wethCollAmountDai + wethCollAmountUsdx + 2, // buffer for premium rounding
+      amount: wethCollAmountDai + wethCollAmountUsdx + collateralPremiumBuffer,
       onBehalfOf: alice
     });
 
@@ -1047,13 +1047,13 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       collReserveId: wethReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountWeth
-    }) + 2; // buffer for premium rounding
+    }) + collateralPremiumBuffer;
     uint256 daiCollAmount = _calcMinimumCollAmount({
       spoke: spoke1,
       collReserveId: daiReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountDai
-    }) + 2; // buffer for premium rounding
+    }) + collateralPremiumBuffer;
 
     vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
