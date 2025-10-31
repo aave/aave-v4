@@ -117,7 +117,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Emitted when a spoke is initialized and the oracle is set.
   /// @param oracle The address of the oracle.
-  event OracleSet(address oracle);
+  event UpdateOracle(address oracle);
 
   /// @notice Emitted when a liquidation config is updated.
   /// @param config The new liquidation config.
