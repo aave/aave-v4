@@ -8,15 +8,15 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Interface for the SpokeConfigurator.
 interface ISpokeConfigurator {
-  /// @notice Emitted when the reserve limit for a spoke is updated.
+  /// @notice Emitted when the maximum allowed number of reserves for a spoke is updated.
   /// @param spoke The address of the spoke.
-  /// @param limit The new reserve limit.
-  event ReserveLimitUpdated(address spoke, uint256 limit);
+  /// @param maxReserves The new maximum number of reserves.
+  event MaxReservesUpdated(address spoke, uint256 maxReserves);
 
-  /// @dev Thrown when the reserve limit for a spoke is reached.
+  /// @dev Thrown upon adding a reserve when the maximum allowed number of reserves is already reached.
   /// @param spoke The address of the spoke.
-  /// @param limit The reserve limit.
-  error ReserveLimitReached(address spoke, uint256 limit);
+  /// @param maxReserves The maximum allowed number of reserves.
+  error MaxReservesReached(address spoke, uint256 maxReserves);
 
   /// @notice Updates the price source of a reserve.
   /// @dev The price source must implement the AggregatorV3Interface.
@@ -50,8 +50,8 @@ interface ISpokeConfigurator {
 
   /// @notice Updates the maximum number of reserves allowed to exist on a spoke.
   /// @param spoke The address of the spoke.
-  /// @param limit The new reserve limit.
-  function updateReserveLimit(address spoke, uint256 limit) external;
+  /// @param maxReserves The new maximum number of reserves.
+  function updateMaxReserves(address spoke, uint256 maxReserves) external;
 
   /// @notice Adds a new reserve to a spoke.
   /// @dev The asset corresponding to the reserve must be already listed on the Hub.
@@ -204,6 +204,6 @@ interface ISpokeConfigurator {
 
   /// @notice Returns the maximum number of reserves allowed to exist on a spoke.
   /// @param spoke The address of the spoke.
-  /// @return The reserve limit.
-  function getReserveLimit(address spoke) external view returns (uint256);
+  /// @return The maximum number of reserves.
+  function getMaxReserves(address spoke) external view returns (uint256);
 }

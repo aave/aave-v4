@@ -158,20 +158,20 @@ contract SpokeConfiguratorTest is SpokeBase {
     assertEq(spoke.getLiquidationConfig(), newLiquidationConfig);
   }
 
-  function test_updateReserveLimit_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_updateMaxReserves_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    spokeConfigurator.updateReserveLimit(spokeAddr, 0);
+    spokeConfigurator.updateMaxReserves(spokeAddr, 0);
   }
 
-  function test_updateReserveLimit() public {
-    uint256 newLimit = vm.randomUint();
+  function test_updateMaxReserves() public {
+    uint256 newMaxReserves = vm.randomUint();
     vm.expectEmit(address(spokeConfigurator));
-    emit ISpokeConfigurator.ReserveLimitUpdated(spokeAddr, newLimit);
+    emit ISpokeConfigurator.MaxReservesUpdated(spokeAddr, newMaxReserves);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateReserveLimit(spokeAddr, newLimit);
+    spokeConfigurator.updateMaxReserves(spokeAddr, newMaxReserves);
 
-    assertEq(spokeConfigurator.getReserveLimit(spokeAddr), newLimit);
+    assertEq(spokeConfigurator.getMaxReserves(spokeAddr), newMaxReserves);
   }
 
   function test_addReserve_revertsWith_OwnableUnauthorizedAccount() public {
@@ -196,18 +196,14 @@ contract SpokeConfiguratorTest is SpokeBase {
     });
   }
 
-  function test_addReserve_revertsWith_ReserveLimitReached() public {
-    uint256 reserveLimit = vm.randomUint(0, spoke.getReserveCount());
+  function test_addReserve_revertsWith_MaxReservesReached() public {
+    uint256 maxReserves = vm.randomUint(0, spoke.getReserveCount());
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateReserveLimit(spokeAddr, reserveLimit);
+    spokeConfigurator.updateMaxReserves(spokeAddr, maxReserves);
 
     address newPriceSource = _deployMockPriceFeed(spoke, 1000e8);
     vm.expectRevert(
-      abi.encodeWithSelector(
-        ISpokeConfigurator.ReserveLimitReached.selector,
-        spokeAddr,
-        reserveLimit
-      )
+      abi.encodeWithSelector(ISpokeConfigurator.MaxReservesReached.selector, spokeAddr, maxReserves)
     );
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.addReserve({
@@ -233,7 +229,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     uint256 expectedReserveId = spoke.getReserveCount();
 
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateReserveLimit(spokeAddr, expectedReserveId + 1);
+    spokeConfigurator.updateMaxReserves(spokeAddr, expectedReserveId + 1);
 
     address newPriceSource = _deployMockPriceFeed(spoke, 1000e8);
     ISpoke.ReserveConfig memory config = ISpoke.ReserveConfig({
