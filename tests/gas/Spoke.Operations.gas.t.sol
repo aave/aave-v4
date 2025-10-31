@@ -376,7 +376,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.mockCallRevert(
       address(hub1),
       abi.encodeWithSelector(IHubBase.reportDeficit.selector),
-      'should not be called'
+      'deficit'
     );
   }
 }
