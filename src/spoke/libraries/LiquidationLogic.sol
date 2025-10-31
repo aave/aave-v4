@@ -291,11 +291,26 @@ library LiquidationLogic {
     uint120 suppliedShares = collateralPosition.suppliedShares - sharesToLiquidate.toUint120();
     collateralPosition.suppliedShares = suppliedShares;
 
+    emit ISpokeBase.Withdraw(
+      params.collateralReserveId,
+      params.liquidator,
+      params.user,
+      sharesToLiquidate,
+      params.collateralToLiquidate
+    );
+
     uint256 sharesToLiquidator;
     if (params.receiveShares) {
       sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
       positions[params.liquidator][params.collateralReserveId].suppliedShares += sharesToLiquidator
         .toUint120();
+      emit ISpokeBase.Supply(
+        params.collateralReserveId,
+        params.liquidator,
+        params.liquidator,
+        sharesToLiquidator,
+        params.collateralToLiquidator
+      );
     } else {
       sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
     }
@@ -334,6 +349,15 @@ library LiquidationLogic {
       );
       debtPosition.settlePremiumDebt(premiumDelta.realizedDelta);
       debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
+
+      emit ISpokeBase.Repay(
+        params.debtReserveId,
+        params.liquidator,
+        params.user,
+        drawnSharesLiquidated,
+        params.debtToLiquidate,
+        premiumDelta
+      );
     }
 
     if (debtPosition.drawnShares == 0) {
