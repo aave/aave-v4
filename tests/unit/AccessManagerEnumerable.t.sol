@@ -46,8 +46,7 @@ contract AccessManagerEnumerableTest is Test {
   }
 
   function test_grantRole_fuzz(uint64 roleId, uint256 membersCount) public {
-    // TODO : unique addresses
-    vm.assume(membersCount > 0 && membersCount <= 10);
+    membersCount = bound(membersCount, 1, 10);
     vm.assume(
       roleId != accessManagerEnumerable.PUBLIC_ROLE() &&
         roleId != accessManagerEnumerable.ADMIN_ROLE()
