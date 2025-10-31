@@ -6,7 +6,7 @@ import {Test} from 'forge-std/Test.sol';
 
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
+import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {Hub} from 'src/hub/Hub.sol';
 import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
@@ -27,7 +27,7 @@ contract HubHandler is Test {
   Hub public hub1;
   Spoke public spoke1;
   TreasurySpoke public treasurySpoke;
-  AccessManager public accessManager;
+  AccessManagerEnumerable public accessManager;
   AssetInterestRateStrategy irStrategy;
 
   address internal hubAdmin = makeAddr('HUB_ADMIN');
@@ -43,7 +43,7 @@ contract HubHandler is Test {
 
   function setUp() public {
     vm.startPrank(hubAdmin);
-    accessManager = new AccessManager(hubAdmin);
+    accessManager = new AccessManagerEnumerable(hubAdmin);
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     address predictedSpoke = vm.computeCreateAddress(hubAdmin, vm.getNonce(hubAdmin) + 3);
