@@ -131,13 +131,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collReserveId: wethReserveId,
       debtReserveId: daiReserveId,
       debtAmount: daiDebtAmount
-    });
+    }) + collateralPremiumBuffer;
     uint256 wethCollAmountUsdx = _calcMinimumCollAmount({
       spoke: spoke1,
       collReserveId: wethReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmount
-    });
+    }) + collateralPremiumBuffer;
 
     // Bob supply weth
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmountDai + wethCollAmountUsdx, bob);
@@ -154,7 +154,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
 
     // valid HF
-    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // cannot borrow more dai
     vm.prank(bob);
@@ -255,7 +255,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
         collReserveId: wethReserveId,
         debtReserveId: usdxReserveId,
         debtAmount: usdxDebtAmount
-      });
+      }) +
+      collateralPremiumBuffer;
 
     // Bob supply weth
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
@@ -496,13 +497,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collReserveId: wethReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountWeth
-    });
+    }) + collateralPremiumBuffer;
     uint256 daiCollAmount = _calcMinimumCollAmount({
       spoke: spoke1,
       collReserveId: daiReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountDai
-    });
+    }) + collateralPremiumBuffer;
 
     vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
@@ -604,13 +605,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collReserveId: wethReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountWeth
-    });
+    }) + collateralPremiumBuffer;
     uint256 daiCollAmount = _calcMinimumCollAmount({
       spoke: spoke1,
       collReserveId: daiReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountDai
-    });
+    }) + collateralPremiumBuffer;
 
     vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
@@ -720,13 +721,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collReserveId: wethReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountWeth
-    });
+    }) + 2; // buffer for premium rounding
     uint256 daiCollAmount = _calcMinimumCollAmount({
       spoke: spoke1,
       collReserveId: daiReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountDai
-    });
+    }) + 2; // buffer for premium rounding
 
     vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
@@ -835,13 +836,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collReserveId: wethReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountWeth
-    });
+    }) + collateralPremiumBuffer;
     uint256 daiCollAmount = _calcMinimumCollAmount({
       spoke: spoke1,
       collReserveId: daiReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountDai
-    });
+    }) + collateralPremiumBuffer;
 
     vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);

@@ -173,6 +173,8 @@ abstract contract Base is Test {
 
   Decimals internal decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18});
 
+  uint256 internal collateralPremiumBuffer = 2;
+
   struct Decimals {
     uint8 usdx;
     uint8 dai;
@@ -1864,6 +1866,7 @@ abstract contract Base is Test {
     uint256 debtAmount
   ) internal view returns (uint256) {
     if (debtAmount == 0) return 1;
+    //debtAmount += 2; // Account for buffer due to premium rounding
     IPriceOracle oracle = IPriceOracle(spoke.ORACLE());
     ISpoke.Reserve memory collData = spoke.getReserve(collReserveId);
     ISpoke.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);

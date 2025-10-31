@@ -312,7 +312,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       _wbtcReserveId(spoke2),
       _daiReserveId(spoke2),
       daiSupplyAmount + dai2SupplyAmount
-    );
+    ) + collateralPremiumBuffer;
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _wbtcReserveId(spoke2),

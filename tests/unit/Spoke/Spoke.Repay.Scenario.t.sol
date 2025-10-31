@@ -735,7 +735,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         _wethReserveId(spoke1),
         _daiReserveId(spoke1),
         usersInfo[i].borrowAmount
-      );
+      ) + collateralPremiumBuffer;
 
       // Supply WETH as collateral
       deal(address(tokenList.weth), user, wethCollateralNeeded);
@@ -845,7 +845,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         _wethReserveId(spoke1),
         _daiReserveId(spoke1),
         usersInfo[i].borrowAmount
-      );
+      ) + collateralPremiumBuffer;
 
       // Supply WETH as collateral
       deal(address(tokenList.weth), user, wethCollateralNeeded);
@@ -1331,7 +1331,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
     assets = bound(assets, 1, MAX_SUPPLY_AMOUNT / 2 - userBorrowing);
 
     // Set up initial state of the vault by having derl borrow
-    uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
+    uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing) +
+      collateralPremiumBuffer;
     Utils.supplyCollateral(spoke1, reserveId, derl, supplyAmount, derl);
     if (userBorrowing > 0) {
       Utils.borrow(spoke1, reserveId, derl, userBorrowing, derl);
@@ -1386,7 +1387,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
     callerStartingDebt = bound(callerStartingDebt, 1, MAX_BORROW_AMOUNT - userBorrowing - assets);
 
     // Set up initial state of the vault by having derl borrow
-    uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
+    uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing) +
+      collateralPremiumBuffer;
     Utils.supplyCollateral(spoke1, reserveId, derl, supplyAmount, derl);
     if (userBorrowing > 0) {
       Utils.borrow(spoke1, reserveId, derl, userBorrowing, derl);

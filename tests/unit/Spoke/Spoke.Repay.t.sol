@@ -352,7 +352,7 @@ contract SpokeRepayTest is SpokeBase {
       _wethReserveId(spoke1),
       _daiReserveId(spoke1),
       daiBorrowAmount
-    );
+    ) + collateralPremiumBuffer;
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint40();
 
     // Bob supply weth as collateral
@@ -560,7 +560,7 @@ contract SpokeRepayTest is SpokeBase {
       _wethReserveId(spoke1),
       _daiReserveId(spoke1),
       daiBorrowAmount
-    );
+    ) + collateralPremiumBuffer;
 
     // Bob supply weth
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
@@ -674,7 +674,7 @@ contract SpokeRepayTest is SpokeBase {
       _wethReserveId(spoke1),
       _daiReserveId(spoke1),
       daiBorrowAmount
-    );
+    ) + collateralPremiumBuffer;
 
     // Bob supply weth
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
@@ -809,7 +809,7 @@ contract SpokeRepayTest is SpokeBase {
       _wethReserveId(spoke1),
       _daiReserveId(spoke1),
       daiBorrowAmount
-    );
+    ) + collateralPremiumBuffer;
 
     // Bob supply weth
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
@@ -926,7 +926,7 @@ contract SpokeRepayTest is SpokeBase {
       _wethReserveId(spoke1),
       _daiReserveId(spoke1),
       daiBorrowAmount
-    );
+    ) + collateralPremiumBuffer;
 
     // Bob supply weth
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
@@ -1051,7 +1051,7 @@ contract SpokeRepayTest is SpokeBase {
       _wethReserveId(spoke1),
       _daiReserveId(spoke1),
       daiBorrowAmount
-    );
+    ) + collateralPremiumBuffer;
 
     // Bob supply weth
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
@@ -1180,7 +1180,7 @@ contract SpokeRepayTest is SpokeBase {
       _wethReserveId(spoke1),
       _daiReserveId(spoke1),
       daiBorrowAmount
-    );
+    ) + collateralPremiumBuffer;
 
     // Bob supply weth
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
@@ -1550,7 +1550,7 @@ contract SpokeRepayTest is SpokeBase {
       _wethReserveId(spoke1),
       _daiReserveId(spoke1),
       borrowAmount
-    );
+    ) + collateralPremiumBuffer;
 
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
 

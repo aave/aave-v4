@@ -213,7 +213,7 @@ contract SpokeBase is Base {
       collReserveId: reserveId,
       debtReserveId: reserveId,
       debtAmount: amount
-    });
+    }) + 4; // small buffer to avoid hf issues
 
     deal(spoke, reserveId, tempUser, supplyAmount);
     Utils.approve(spoke, reserveId, tempUser, UINT256_MAX);
