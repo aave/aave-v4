@@ -766,8 +766,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       // health factor uses this directly for simplicity
       // the division by `totalCollateralValue` to compute the weighted average is done later
       accountData.healthFactor = accountData
-      .avgCollateralFactor
-      .wadDivDown(accountData.totalDebtValue + 2).fromBpsDown(); // 2 debt delta potentially incurred due to premium rounding
+        .avgCollateralFactor
+        .wadDivDown(accountData.totalDebtValue + (2 * accountData.borrowedCount))
+        .fromBpsDown(); // potential 2 debt delta due to premium rounding for each borrowed reserve
     } else {
       accountData.healthFactor = type(uint256).max;
     }
