@@ -2,23 +2,41 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+
 /// @title IAccessManagerEnumerable
 /// @author Aave Labs
 /// @notice Interface for AccessManagerEnumerable extension.
-interface IAccessManagerEnumerable {
-  /// @notice Returns the address of the role member at a given index.
-  /// @param roleId The role identifier.
+interface IAccessManagerEnumerable is IAccessManager {
+  /// @notice Returns the address of the role member at a specified index.
+  /// @param roleId The identifier of the role.
   /// @param index The index in the role member list.
   /// @return The address of the role member.
   function getRoleMember(uint64 roleId, uint256 index) external view returns (address);
 
-  /// @notice Returns the number of members for a given role.
-  /// @param roleId The role identifier.
+  /// @notice Returns the number of members for a specified role.
+  /// @param roleId The identifier of the role.
   /// @return The number of members for the role.
   function getRoleMemberCount(uint64 roleId) external view returns (uint256);
 
-  /// @notice Returns the list of members for a given role.
-  /// @param roleId The role identifier.
+  /// @notice Returns the list of members for a specified role.
+  /// @param roleId The identifier of the role.
   /// @return The list of members for the role.
   function getRoleMembers(uint64 roleId) external view returns (address[] memory);
+
+  /// @notice Returns the selector attributed to a specified role at a specified index.
+  /// @param roleId The identifier of the role.
+  /// @param index The index in the role member list.
+  /// @return The selector at the index.
+  function getRoleSelector(uint64 roleId, uint256 index) external view returns (bytes4);
+
+  /// @notice Returns the number of selectors attributed to specified role.
+  /// @param roleId The identifier of the role.
+  /// @return The number of selectors attributed to the role.
+  function getRoleSelectorCount(uint64 roleId) external view returns (uint256);
+
+  /// @notice Returns the list of all selectors attributed to a specified role.
+  /// @param roleId The identifier of the role.
+  /// @return The list of selectors attributed to the role.
+  function getRoleSelectors(uint64 roleId) external view returns (bytes4[] memory);
 }

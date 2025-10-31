@@ -11,11 +11,15 @@ import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnum
 /// @notice Extension of AccessManager that tracks role members using EnumerableSet.
 contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   using EnumerableSet for EnumerableSet.AddressSet;
+  using EnumerableSet for EnumerableSet.Bytes32Set;
 
   /// @dev Mapping from roleId to set of role members.
   mapping(uint64 roleId => EnumerableSet.AddressSet) private _roleMembers;
 
-  constructor(address initialAdmin) AccessManager(initialAdmin) {}
+  /// @dev Mapping from roleId to set of role members.
+  mapping(uint64 roleId => EnumerableSet.Bytes32Set) private _roleSelectors;
+
+  constructor(address initialAdmin_) AccessManager(initialAdmin_) {}
 
   /// @inheritdoc IAccessManagerEnumerable
   function getRoleMember(uint64 roleId, uint256 index) external view returns (address) {
@@ -30,6 +34,26 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   /// @inheritdoc IAccessManagerEnumerable
   function getRoleMembers(uint64 roleId) external view returns (address[] memory) {
     return _roleMembers[roleId].values();
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getRoleSelector(uint64 roleId, uint256 index) external view returns (bytes4) {
+    return bytes4(_roleSelectors[roleId].at(index));
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getRoleSelectorCount(uint64 roleId) external view returns (uint256) {
+    return _roleSelectors[roleId].length();
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getRoleSelectors(uint64 roleId) external view returns (bytes4[] memory) {
+    bytes32[] memory rawSelectors = _roleSelectors[roleId].values();
+    bytes4[] memory selectors = new bytes4[](rawSelectors.length);
+    for (uint256 i = 0; i < rawSelectors.length; i++) {
+      selectors[i] = bytes4(rawSelectors[i]);
+    }
+    return selectors;
   }
 
   /// @dev Override AccessManager:_grantRole to track role members.
@@ -53,5 +77,19 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
       _roleMembers[roleId].remove(account);
     }
     return revoked;
+  }
+
+  /// @dev Override AccessManager:_setTargetFunctionRole to track selectors attributed to roles.
+  function _setTargetFunctionRole(
+    address target,
+    bytes4 selector,
+    uint64 roleId
+  ) internal override {
+    uint64 oldRoleId = getTargetFunctionRole(target, selector);
+    if (oldRoleId != PUBLIC_ROLE) {
+      _roleSelectors[oldRoleId].remove(bytes32(selector));
+    }
+    super._setTargetFunctionRole(target, selector, roleId);
+    _roleSelectors[roleId].add(bytes32(selector));
   }
 }
