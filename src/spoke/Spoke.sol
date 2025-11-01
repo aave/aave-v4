@@ -757,6 +757,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         );
         // we can simplify since there is no precision loss due to the division here
         accountData.totalDebtValue += ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
+        accountData.overEstimatedDebtValue += ((drawnDebt + premiumDebt + 2) * assetPrice).wadDivUp(
+          assetUnit
+        ); // potential 2 debt delta due to premium rounding for each borrowed reserve, to use in hf calc
         accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
       }
     }
@@ -767,8 +770,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       // the division by `totalCollateralValue` to compute the weighted average is done later
       accountData.healthFactor = accountData
         .avgCollateralFactor
-        .wadDivDown(accountData.totalDebtValue + (2 * accountData.borrowedCount))
-        .fromBpsDown(); // potential 2 debt delta due to premium rounding for each borrowed reserve
+        .wadDivDown(accountData.overEstimatedDebtValue)
+        .fromBpsDown(); // Use overestimated debt for hf check since hf is checked before broadcasting premium updates
     } else {
       accountData.healthFactor = type(uint256).max;
     }

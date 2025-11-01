@@ -93,6 +93,7 @@ contract SpokeBase is Base {
   struct CalculateRiskPremiumLocal {
     uint256 reserveCount;
     uint256 totalDebtValue;
+    uint256 overEstimatedDebtValue;
     uint256 healthFactor;
     uint256 activeCollateralCount;
     uint16 dynamicConfigKey;
@@ -498,7 +499,7 @@ contract SpokeBase is Base {
         normalizedDebtAmount.toWad())
     );
 
-    return maxDebt > 1 ? maxDebt - 1 : maxDebt;
+    return maxDebt > 2 ? maxDebt - 2 : 0;
   }
 
   // assert that user's position and debt accounting matches expected

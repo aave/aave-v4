@@ -173,7 +173,8 @@ abstract contract Base is Test {
 
   Decimals internal decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18});
 
-  uint256 internal collateralPremiumBuffer = 2;
+  uint256 internal debtPremiumBuffer = 2;
+  uint256 internal collateralPremiumBuffer = 4;
 
   struct Decimals {
     uint8 usdx;
@@ -1866,6 +1867,7 @@ abstract contract Base is Test {
     uint256 debtAmount
   ) internal view returns (uint256) {
     if (debtAmount == 0) return 1;
+    debtAmount += debtPremiumBuffer; // Apply buffer due to premium rounding
     IPriceOracle oracle = IPriceOracle(spoke.ORACLE());
     ISpoke.Reserve memory collData = spoke.getReserve(collReserveId);
     ISpoke.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
@@ -2194,6 +2196,13 @@ abstract contract Base is Test {
     uint256 finalHf = _getUserHealthFactor(spoke, user);
     assertGt(finalHf, desiredHf, 'should borrow so that HF is above desiredHf');
     return (finalHf, requiredDebtAmount);
+  }
+
+  /// @dev Returns the price of 2 wei for the given reserve on the spoke
+  function _priceOf2Wei(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+    uint256 assetPrice = IAaveOracle(spoke.ORACLE()).getReservePrice(reserveId);
+    uint256 assetUnit = MathUtils.uncheckedExp(10, spoke.getReserve(reserveId).decimals);
+    return (2 * assetPrice).wadDivUp(assetUnit);
   }
 
   function _mockDecimals(address underlying, uint8 decimals) internal {

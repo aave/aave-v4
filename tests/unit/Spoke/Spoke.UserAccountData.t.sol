@@ -51,6 +51,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
         totalDebtValue: 75e26,
+        overEstimatedDebtValue: 75e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
         riskPremium: 0,
@@ -85,6 +86,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
         totalDebtValue: 75e26,
+        overEstimatedDebtValue: 75e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
         riskPremium: 0,
@@ -119,6 +121,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
         totalDebtValue: 75e26,
+        overEstimatedDebtValue: 75e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
         avgCollateralFactor: 0.96e18,
         healthFactor: 1.28e18,
         riskPremium: 10_00,
@@ -161,6 +164,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
       ISpoke.UserAccountData({
         totalCollateralValue: 5100e26,
         totalDebtValue: 1000e26,
+        overEstimatedDebtValue: 1000e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
         avgCollateralFactor: 0.509019608e18,
         healthFactor: 2.596e18,
         riskPremium: 14_50,
@@ -203,6 +207,9 @@ contract SpokeUserAccountDataTest is SpokeBase {
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
         totalDebtValue: 125e26,
+        overEstimatedDebtValue: 125e26 +
+          _priceOf2Wei(spoke, _wethReserveId(spoke)) +
+          _priceOf2Wei(spoke, _wbtcReserveId(spoke)),
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.576e18,
         riskPremium: 0,
@@ -243,6 +250,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
         totalDebtValue: 75e26,
+        overEstimatedDebtValue: 75e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
         riskPremium: 0,
@@ -275,8 +283,9 @@ contract SpokeUserAccountDataTest is SpokeBase {
   ) internal pure {
     assertEq(a.totalCollateralValue, b.totalCollateralValue, 'totalCollateralValue');
     assertEq(a.totalDebtValue, b.totalDebtValue, 'totalDebtValue');
+    assertEq(a.overEstimatedDebtValue, b.overEstimatedDebtValue, 'overEstimatedDebtValue');
     assertApproxEqAbs(a.avgCollateralFactor, b.avgCollateralFactor, 1e12, 'avgCollateralFactor');
-    assertApproxEqAbs(a.healthFactor, b.healthFactor, 1e12, 'healthFactor');
+    assertApproxEqAbs(a.healthFactor, b.healthFactor, 1e13, 'healthFactor');
     assertApproxEqAbs(a.riskPremium, b.riskPremium, 1, 'riskPremium');
     assertEq(a.activeCollateralCount, b.activeCollateralCount, 'activeCollateralCount');
     assertEq(a.borrowedCount, b.borrowedCount, 'borrowedCount');

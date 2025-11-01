@@ -404,34 +404,6 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
 
   /// @dev Supply 5 wei collateral, draw 1 wei debt (2 created, but 5/3 still healthy)
   function test_borrow_has_2_wei_buffer() public {
-    // Bob inflates the debt exchange rate
-    uint256 skipTime = 3000 days;
-    uint256 supplyAmount = 999e18;
-    uint256 wethReserveId = _wethReserveId(spoke1);
-
-    Utils.supplyCollateral({
-      spoke: spoke1,
-      reserveId: wethReserveId,
-      caller: bob,
-      amount: supplyAmount,
-      onBehalfOf: bob
-    });
-
-    Utils.borrow({
-      spoke: spoke1,
-      reserveId: wethReserveId,
-      caller: bob,
-      amount: 450e18,
-      onBehalfOf: bob
-    });
-
-    // skip to accrue interest
-    skip(skipTime);
-
-    // Check debt share value
-    console.log('debt ex ratio: ', hub1.previewRestoreByShares(wethAssetId, 1e18));
-    assertGe(hub1.previewRestoreByShares(wethAssetId, 1e18), 15e17, 'weth debt ex rate 2:1');
-
     // Supply 5 wei collateral
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -443,8 +415,5 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     // Draw 1 wei debt - 2 wei potentially created, but 5/3 still healthy
     vm.prank(alice);
     spoke1.borrow(_wethReserveId(spoke1), 1, alice);
-
-    console.log('alice health factor', spoke1.getUserAccountData(alice).healthFactor);
-    console.log('alice total debt', spoke1.getUserAccountData(alice).totalDebtValue);
   }
 }

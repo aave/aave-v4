@@ -273,7 +273,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, usdxDebtAmount, bob);
 
     // valid HF
-    assertApproxEqAbs(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD, 1);
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     skip(365 days);
 
@@ -470,12 +470,16 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    // Supply enough to cover the buffer
+    vm.prank(alice);
+    spoke1.supply(usdxReserveId, debtPremiumBuffer, alice);
 
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob);
+    spoke1.borrow(usdxReserveId, 1 + debtPremiumBuffer, bob);
   }
 
   /// fuzz - cannot borrow an amount that brings HF < 1 with multiple colls for same debt
@@ -497,13 +501,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collReserveId: wethReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountWeth
-    }) + collateralPremiumBuffer;
+    });
     uint256 daiCollAmount = _calcMinimumCollAmount({
       spoke: spoke1,
       collReserveId: daiReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountDai
-    }) + collateralPremiumBuffer;
+    });
 
     vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
@@ -524,10 +528,14 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // valid HF
     assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases of coll/debt ratios
 
+    // Supply enough to cover the buffer
+    vm.prank(alice);
+    spoke1.supply(usdxReserveId, 2 * debtPremiumBuffer, alice);
+
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1, bob);
+    spoke1.borrow(usdxReserveId, 1 + 2 * debtPremiumBuffer, bob);
   }
 
   /// cannot borrow any amount with multiple colls for same debt, once HF < 1 due to interest
@@ -570,7 +578,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // skip time to accrue debt and reduce HF < 1
     skip(365 days);
@@ -685,7 +693,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
     _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
@@ -721,13 +729,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collReserveId: wethReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountWeth
-    }) + collateralPremiumBuffer;
+    });
     uint256 daiCollAmount = _calcMinimumCollAmount({
       spoke: spoke1,
       collReserveId: daiReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountDai
-    }) + collateralPremiumBuffer;
+    });
 
     vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
@@ -748,8 +756,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // valid HF
     assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases
 
-    // collateral price drop by half so that bob is undercollateralized
-    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
+    // collateral price drop by 90% so that bob is undercollateralized
+    _mockReservePriceByPercent(spoke1, wethReserveId, 10_00);
 
     // invalid HF
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -800,7 +808,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
     _mockReservePriceByPercent(spoke1, daiReserveId, 50_00);
@@ -836,13 +844,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collReserveId: wethReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountWeth
-    }) + collateralPremiumBuffer;
+    });
     uint256 daiCollAmount = _calcMinimumCollAmount({
       spoke: spoke1,
       collReserveId: daiReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmountDai
-    }) + collateralPremiumBuffer;
+    });
 
     vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);

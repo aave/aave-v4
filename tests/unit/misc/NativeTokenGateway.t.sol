@@ -268,6 +268,7 @@ contract NativeTokenGatewayTest is SpokeBase {
   ) public {
     supplyAmount = bound(supplyAmount, 2, mintAmount_WETH / 2);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
+    supplyAmount += collateralPremiumBuffer;
 
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);

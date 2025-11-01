@@ -382,7 +382,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       spoke: spoke1,
       reserveId: wethReserveId,
       caller: alice,
-      amount: wethCollAmountDai + wethCollAmountUsdx + collateralPremiumBuffer,
+      amount: wethCollAmountDai + wethCollAmountUsdx,
       onBehalfOf: alice
     });
 
@@ -546,7 +546,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       spoke: spoke1,
       reserveId: wethReserveId,
       caller: alice,
-      amount: wethCollAmountDai + wethCollAmountUsdx + collateralPremiumBuffer,
+      amount: wethCollAmountDai + wethCollAmountUsdx,
       onBehalfOf: alice
     });
 
@@ -720,7 +720,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       spoke: spoke1,
       reserveId: wethReserveId,
       caller: alice,
-      amount: wethCollAmountDai + wethCollAmountUsdx + collateralPremiumBuffer,
+      amount: wethCollAmountDai + wethCollAmountUsdx,
       onBehalfOf: alice
     });
 
@@ -900,7 +900,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // withdrawing weth will result in HF < threshold
     vm.prank(bob);
@@ -1010,7 +1010,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // skip time to accrue debt
     skip(365 days);
@@ -1130,7 +1130,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
     _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
@@ -1253,7 +1253,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     spoke1.borrow(usdxReserveId, (usdxDebtAmountWeth + usdxDebtAmountDai), bob);
 
     // valid HF
-    assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
     _mockReservePriceByPercent(spoke1, daiReserveId, 50_00);
