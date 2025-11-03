@@ -115,8 +115,8 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint256 borrowedCount;
   }
 
-  /// @notice Emitted when a spoke is initialized and the oracle is set.
-  /// @param oracle The address of the oracle.
+  /// @notice Emitted when the oracle address of the spoke is updated.
+  /// @param oracle The new address of the oracle.
   event UpdateOracle(address oracle);
 
   /// @notice Emitted when a liquidation config is updated.
