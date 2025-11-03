@@ -93,7 +93,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     spoke1.addDynamicReserveConfig(invalidReserveId, dynConf);
   }
 
-  function test_addDynamicReserveConfig_revertsWith_MaximumAllowedDynamicConfig() public {
+  function test_addDynamicReserveConfig_revertsWith_MaximumDynamicConfigKeyReached() public {
     uint256 reserveId = _randomReserveId(spoke1);
     ISpoke.DynamicReserveConfig memory dynConf = spoke1.getDynamicReserveConfig(reserveId);
 
@@ -102,7 +102,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
       uint24(spoke1.MAX_ALLOWED_DYNAMIC_CONFIG_KEY())
     );
 
-    vm.expectRevert(ISpoke.MaximumAllowedDynamicConfig.selector, address(spoke1));
+    vm.expectRevert(ISpoke.MaximumDynamicConfigKeyReached.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addDynamicReserveConfig(reserveId, dynConf);
   }

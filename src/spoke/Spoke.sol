@@ -167,8 +167,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external restricted returns (uint24) {
     require(reserveId < _reserveCount, ReserveNotListed());
     uint24 dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
+    require(dynamicConfigKey < MAX_ALLOWED_DYNAMIC_CONFIG_KEY, MaximumDynamicConfigKeyReached());
     _validateDynamicReserveConfig(dynamicConfig);
-    require(dynamicConfigKey < MAX_ALLOWED_DYNAMIC_CONFIG_KEY, MaximumAllowedDynamicConfig());
     dynamicConfigKey = dynamicConfigKey.uncheckedAdd(1).toUint24();
     _reserves[reserveId].dynamicConfigKey = dynamicConfigKey;
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
