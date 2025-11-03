@@ -1083,6 +1083,28 @@ contract SpokeBase is Base {
     return (finalHf, requiredDebtAmount);
   }
 
+  /// @dev Borrow to become liquidatable due to price change of asset.
+  /// @param pricePercentage The resultant percentage of the original price of the asset, represented as a bps value. For example, 85_00 represents a 15% decrease in price.
+  /// @return userAccountData The user account data after borrowing (prior to price change).
+  function _borrowToBeLiquidatableWithPriceChange(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 collateralReserveId,
+    uint256 desiredHf,
+    uint256 pricePercentage
+  ) internal returns (ISpoke.UserAccountData memory) {
+    uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
+    require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
+    Utils.borrow(spoke, reserveId, user, requiredDebtAmount, user);
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+
+    _mockReservePriceByPercent(spoke, collateralReserveId, pricePercentage);
+    assertLt(_getUserHealthFactor(spoke, user), Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    return userAccountData;
+  }
+
   /// @dev Helper function to borrow without health factor check
   function _borrowWithoutHfCheck(
     ISpoke spoke,
