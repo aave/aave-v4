@@ -16,7 +16,7 @@ interface ISpokeConfigurator {
   /// @dev Thrown upon adding a reserve when the maximum allowed number of reserves is already reached.
   /// @param spoke The address of the spoke.
   /// @param maxReserves The maximum allowed number of reserves.
-  error MaxReservesReached(address spoke, uint256 maxReserves);
+  error MaximumReservesReached(address spoke, uint256 maxReserves);
 
   /// @notice Updates the price source of a reserve.
   /// @dev The price source must implement the AggregatorV3Interface.
@@ -49,6 +49,7 @@ interface ISpokeConfigurator {
   ) external;
 
   /// @notice Updates the maximum number of reserves allowed to exist on a spoke.
+  /// @dev It allows setting the maximum below the amount of reserves that currently exist.
   /// @param spoke The address of the spoke.
   /// @param maxReserves The new maximum number of reserves.
   function updateMaxReserves(address spoke, uint256 maxReserves) external;

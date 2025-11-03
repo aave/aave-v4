@@ -196,14 +196,18 @@ contract SpokeConfiguratorTest is SpokeBase {
     });
   }
 
-  function test_addReserve_revertsWith_MaxReservesReached() public {
+  function test_addReserve_revertsWith_MaximumReservesReached() public {
     uint256 maxReserves = vm.randomUint(0, spoke.getReserveCount());
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateMaxReserves(spokeAddr, maxReserves);
 
     address newPriceSource = _deployMockPriceFeed(spoke, 1000e8);
     vm.expectRevert(
-      abi.encodeWithSelector(ISpokeConfigurator.MaxReservesReached.selector, spokeAddr, maxReserves)
+      abi.encodeWithSelector(
+        ISpokeConfigurator.MaximumReservesReached.selector,
+        spokeAddr,
+        maxReserves
+      )
     );
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.addReserve({

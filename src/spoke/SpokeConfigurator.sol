@@ -87,7 +87,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   ) external onlyOwner returns (uint256) {
     require(
       ISpoke(spoke).getReserveCount() < _maxReserves[spoke],
-      MaxReservesReached(spoke, _maxReserves[spoke])
+      MaximumReservesReached(spoke, _maxReserves[spoke])
     );
     return ISpoke(spoke).addReserve(hub, assetId, priceSource, config, dynamicConfig);
   }
