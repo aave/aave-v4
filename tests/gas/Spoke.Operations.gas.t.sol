@@ -133,52 +133,39 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.stopPrank();
   }
 
-  function test_liquidation() public {
-    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
-    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
-
-    vm.prank(bob);
-    spoke.supply(reserveId.dai, 1_000_000e18, bob);
-
-    vm.startPrank(alice);
-    spoke.supply(reserveId.usdx, 1_000_000e6, alice);
-    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
-    vm.stopPrank();
-
-    _borrowToBeAtHf(spoke, alice, reserveId.dai, 0.9e18);
-
-    skip(100);
+  function test_liquidation_partial() public {
+    _liquidationSetup();
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, false);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: partial');
+    vm.stopPrank();
+  }
 
+  function test_liquidation_full() public {
+    _liquidationSetup();
+
+    vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: full');
 
     vm.stopPrank();
   }
 
-  function test_liquidation_receiveShares() public {
-    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
-    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
-
-    vm.prank(bob);
-    spoke.supply(reserveId.dai, 1_000_000e18, bob);
-
-    vm.startPrank(alice);
-    spoke.supply(reserveId.usdx, 1_000_000e6, alice);
-    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
-    vm.stopPrank();
-
-    _borrowToBeAtHf(spoke, alice, reserveId.dai, 0.9e18);
-
-    skip(100);
+  function test_liquidation_receiveShares_partial() public {
+    _liquidationSetup();
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, true);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): partial');
 
+    vm.stopPrank();
+  }
+
+  function test_liquidation_receiveShares_full() public {
+    _liquidationSetup();
+
+    vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, true);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): full');
 
@@ -356,6 +343,41 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     hub1.add(usdxAssetId, 10000e6, bob);
     hub1.add(wbtcAssetId, 10000e8, bob);
     vm.stopPrank();
+  }
+
+  function _liquidationSetup() internal {
+    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
+    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
+
+    vm.prank(bob);
+    spoke.supply(reserveId.dai, 1_000_000e18, bob);
+
+    vm.startPrank(alice);
+    spoke.supply(reserveId.usdx, 1_000_000e6, alice);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+    vm.stopPrank();
+
+    ISpoke.UserAccountData memory userAccountData = _borrowToBeLiquidatableWithPriceChange(
+      spoke,
+      alice,
+      reserveId.dai,
+      reserveId.usdx,
+      1.05e18,
+      85_00
+    );
+
+    skip(100);
+
+    if (keccak256(bytes(NAMESPACE)) == keccak256(bytes('Spoke.Operations.ZeroRiskPremium'))) {
+      assertEq(userAccountData.riskPremium, 0); // rp after borrow should be 0
+    } else {
+      assertGt(userAccountData.riskPremium, 0); // rp after borrow should be non zero
+    }
+    vm.mockCallRevert(
+      address(hub1),
+      abi.encodeWithSelector(IHubBase.reportDeficit.selector),
+      'deficit'
+    );
   }
 }
 
