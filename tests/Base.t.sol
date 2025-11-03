@@ -552,6 +552,29 @@ abstract contract Base is Test {
       new bytes(0)
     );
 
+    // Liquidation configs
+    spoke1.updateLiquidationConfig(
+      ISpoke.LiquidationConfig({
+        targetHealthFactor: 1.05e18,
+        healthFactorForMaxBonus: 0.7e18,
+        liquidationBonusFactor: 20_00
+      })
+    );
+    spoke2.updateLiquidationConfig(
+      ISpoke.LiquidationConfig({
+        targetHealthFactor: 1.04e18,
+        healthFactorForMaxBonus: 0.8e18,
+        liquidationBonusFactor: 15_00
+      })
+    );
+    spoke3.updateLiquidationConfig(
+      ISpoke.LiquidationConfig({
+        targetHealthFactor: 1.03e18,
+        healthFactorForMaxBonus: 0.9e18,
+        liquidationBonusFactor: 10_00
+      })
+    );
+
     // Spoke 1 reserve configs
     spokeInfo[spoke1].weth.reserveConfig = ISpoke.ReserveConfig({
       paused: false,

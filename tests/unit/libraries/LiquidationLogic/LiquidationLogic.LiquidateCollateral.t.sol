@@ -93,7 +93,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     );
   }
 
-  // hub reverts on remove when collateralToLiquidator is 0
+  // hub.remove is skipped when collateralToLiquidator is 0 (otherwise it would revert)
   function test_liquidateCollateral_fuzz_CollateralToLiquidatorIsZero(
     uint256 collateralToLiquidate
   ) public {

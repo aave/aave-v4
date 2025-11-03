@@ -295,8 +295,8 @@ library LiquidationLogic {
     if (params.collateralToLiquidator > 0) {
       if (params.receiveShares) {
         sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
-        positions[params.liquidator][params.collateralReserveId].suppliedShares += sharesToLiquidator
-          .toUint120();
+        positions[params.liquidator][params.collateralReserveId]
+          .suppliedShares += sharesToLiquidator.toUint120();
       } else {
         sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
       }
@@ -438,11 +438,10 @@ library LiquidationLogic {
       // - `debtToLiquidate` is increased if `(leavesCollateralDust && debtToLiquidate < params.debtReserveBalance)`, ensuring collateral reserve
       //   is fully liquidated (potentially bypassing the target health factor). Can only increase by at most `DUST_LIQUIDATION_THRESHOLD` (in
       //   value terms). Since debt dust condition was enforced, it is guaranteed that `debtToLiquidate` will never exceed `params.debtReserveBalance`.
-      debtToLiquidate = collateralToLiquidate
-        .mulDivUp(
-          params.collateralAssetPrice * debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
-          params.debtAssetPrice * collateralAssetUnit * liquidationBonus
-        );
+      debtToLiquidate = collateralToLiquidate.mulDivUp(
+        params.collateralAssetPrice * debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
+        params.debtAssetPrice * collateralAssetUnit * liquidationBonus
+      );
     }
 
     // revert if the liquidator does not cover the necessary debt to prevent dust from remaining
