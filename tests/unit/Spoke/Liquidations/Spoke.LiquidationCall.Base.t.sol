@@ -994,20 +994,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     );
 
     // Fee Receivers
-    if (!params.receiveShares) {
-      assertEq(
-        accountsInfoAfter.collateralFeeReceiverBalanceInfo.suppliedInSpoke,
-        accountsInfoBefore.collateralFeeReceiverBalanceInfo.suppliedInSpoke,
-        'collateral fee receiver: collateral supplied'
-      );
-    } else {
-      assertApproxEqAbs(
-        accountsInfoAfter.collateralFeeReceiverBalanceInfo.suppliedInSpoke,
-        accountsInfoBefore.collateralFeeReceiverBalanceInfo.suppliedInSpoke,
-        1,
-        'collateral fee receiver: collateral supplied (receivedShares)'
-      );
-    }
+    assertEq(
+      accountsInfoAfter.collateralFeeReceiverBalanceInfo.suppliedInSpoke,
+      accountsInfoBefore.collateralFeeReceiverBalanceInfo.suppliedInSpoke,
+      'collateral fee receiver: collateral supplied'
+    );
 
     assertEq(
       accountsInfoAfter.collateralFeeReceiverBalanceInfo.borrowedFromSpoke,
