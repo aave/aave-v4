@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract NativeTokenGatewayTest is SpokeBase {
   NativeTokenGateway public nativeTokenGateway;
+  TestReturnValues public returnValues;
 
   function setUp() public virtual override {
     super.setUp();
@@ -54,9 +55,14 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(address(hub1)), 0);
     assertEq(prevUserSuppliedAmount, 0);
 
-    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(_wethReserveId(spoke1), address(nativeTokenGateway), bob, amount);
+    emit ISpokeBase.Supply(
+      _wethReserveId(spoke1),
+      address(nativeTokenGateway),
+      bob,
+      hub1.previewAddByAssets(wethAssetId, amount),
+      amount
+    );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = nativeTokenGateway.supplyNative{value: amount}(
       address(spoke1),
@@ -133,9 +139,14 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(address(hub1)), 0);
     assertEq(prevUserSuppliedAmount, 0);
 
-    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(_wethReserveId(spoke1), address(nativeTokenGateway), bob, amount);
+    emit ISpokeBase.Supply(
+      _wethReserveId(spoke1),
+      address(nativeTokenGateway),
+      bob,
+      hub1.previewAddByAssets(wethAssetId, amount),
+      amount
+    );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = nativeTokenGateway.supplyAsCollateralNative{
       value: amount
@@ -180,9 +191,14 @@ contract NativeTokenGatewayTest is SpokeBase {
 
     assertEq(spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob), expectedSupplyShares);
 
-    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(_wethReserveId(spoke1), address(nativeTokenGateway), bob, amount);
+    emit ISpokeBase.Withdraw(
+      _wethReserveId(spoke1),
+      address(nativeTokenGateway),
+      bob,
+      hub1.previewRemoveByAssets(wethAssetId, amount),
+      amount
+    );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = nativeTokenGateway.withdrawNative(
       address(spoke1),
@@ -222,12 +238,12 @@ contract NativeTokenGatewayTest is SpokeBase {
 
     assertEq(spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob), expectedSupplyShares);
 
-    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
+      expectedSupplyShares,
       supplyAmount
     );
     vm.prank(bob);
@@ -294,13 +310,13 @@ contract NativeTokenGatewayTest is SpokeBase {
 
     assertEq(spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob), expectedSupplyShares);
 
-    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
-      expectedSupplyShares
+      expectedSupplyShares,
+      expectedWithdrawAmount
     );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = nativeTokenGateway.withdrawNative(
@@ -363,13 +379,13 @@ contract NativeTokenGatewayTest is SpokeBase {
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
 
-    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Borrow(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
-      hub1.previewRestoreByAssets(wethAssetId, borrowAmount)
+      hub1.previewRestoreByAssets(wethAssetId, borrowAmount),
+      borrowAmount
     );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = nativeTokenGateway.borrowNative(
@@ -456,13 +472,13 @@ contract NativeTokenGatewayTest is SpokeBase {
       repayAmount
     );
 
-    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
       hub1.previewRestoreByAssets(wethAssetId, baseRestored),
+      repayAmount,
       expectedPremiumDelta
     );
     vm.prank(bob);
@@ -510,7 +526,7 @@ contract NativeTokenGatewayTest is SpokeBase {
       repayAmount,
       wethAssetId
     );
-    TestReturnValues memory returnValues;
+
     {
       IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
         spoke1,
@@ -518,27 +534,29 @@ contract NativeTokenGatewayTest is SpokeBase {
         _wethReserveId(spoke1),
         repayAmount
       );
+      uint256 repaidAmount = _min(userDrawnDebt + userPremiumDebt, repayAmount);
       vm.expectEmit(address(spoke1));
       emit ISpokeBase.Repay(
         _wethReserveId(spoke1),
         address(nativeTokenGateway),
         bob,
         hub1.previewRestoreByAssets(wethAssetId, baseRestored),
+        repaidAmount,
         expectedPremiumDelta
       );
       vm.prank(bob);
       (returnValues.shares, returnValues.amount) = nativeTokenGateway.repayNative{
         value: repayAmount
       }(address(spoke1), _wethReserveId(spoke1), repayAmount);
+
+      assertApproxEqAbs(returnValues.amount, baseRestored + premiumRestored, 1);
+      assertEq(returnValues.shares, hub1.previewRestoreByAssets(wethAssetId, baseRestored));
     }
 
     (uint256 newUserDrawnDebt, uint256 newUserPremiumDebt) = spoke1.getUserDebt(
       _wethReserveId(spoke1),
       bob
     );
-
-    assertApproxEqAbs(returnValues.amount, baseRestored + premiumRestored, 1);
-    assertEq(returnValues.shares, hub1.previewRestoreByAssets(wethAssetId, baseRestored));
 
     assertApproxEqAbs(
       newUserDrawnDebt + newUserPremiumDebt,
@@ -590,13 +608,13 @@ contract NativeTokenGatewayTest is SpokeBase {
       repayAmount
     );
 
-    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
       hub1.previewRestoreByAssets(wethAssetId, baseRestored),
+      totalRepaid,
       expectedPremiumDelta
     );
     vm.prank(bob);

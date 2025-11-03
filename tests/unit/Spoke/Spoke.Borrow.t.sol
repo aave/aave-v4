@@ -96,7 +96,7 @@ contract SpokeBorrowTest is SpokeBase {
     // Bob draw all dai reserve liquidity
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(state.daiReserveId, bob, bob, expectedShares);
+    emit ISpokeBase.Borrow(state.daiReserveId, bob, bob, expectedShares, state.daiBob.borrowAmount);
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.borrow(
       state.daiReserveId,
@@ -256,7 +256,7 @@ contract SpokeBorrowTest is SpokeBase {
     // Bob draw dai
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(state.daiReserveId, bob, bob, expectedShares);
+    emit ISpokeBase.Borrow(state.daiReserveId, bob, bob, expectedShares, state.daiBob.borrowAmount);
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.borrow(
       state.daiReserveId,
