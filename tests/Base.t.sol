@@ -2161,7 +2161,7 @@ abstract contract Base is Test {
     uint256 indexDelta
   ) internal pure returns (uint256 feesAmount) {
     return
-      indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
+      indexDelta.rayMulUp(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
   }
 
   /// @dev Get the liquidation bonus for a given reserve at a user HF
