@@ -1,10 +1,22 @@
 # Aave V4
 
-Aave V4 complete codebase, Foundry-based.
+**Aave V4 complete codebase, Foundry-based.**
 
-## Overview
+A unified liquidity layer and modular architecture that enhances capital efficiency, scalability, and risk management.
 
-Aave V4 introduces a unified liquidity layer and modular architecture that enhances capital efficiency, scalability, and risk management.
+## Table of Contents
+
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Architecture](#architecture)
+- [Repository Structure](#repository-structure)
+- [Dependencies](#dependencies)
+- [Development](#development)
+- [Deployment](#deployment)
+- [Security](#security)
+- [Versioning](#versioning)
+- [Links](#links)
+- [License](#license)
 
 ## Documentation
 
@@ -12,60 +24,180 @@ Aave V4 introduces a unified liquidity layer and modular architecture that enhan
 
 ## Contributing
 
-If you're interested in contributing, please read the [contributing docs](./CONTRIBUTING.md) before submitting a pull request.
+Please read our [Contributing Guidelines](./CONTRIBUTING.md) before submitting pull requests.
+
+Key points:
+
+- Significant protocol changes require discussion before PR creation
+- All changes must include comprehensive tests
+- PRs must maintain or improve test coverage
+- Gas snapshots must be updated for code changes
 
 ## Architecture
 
-The Aave V4 architecture follows a modular hub-and-spoke design.
+The Aave V4 architecture follows a modular **hub-and-spoke design** that separates liquidity management from user-facing operations and collateralization.
 
-Liquidity Hubs (`Hub.sol`) can extend credit lines to multiple Spokes (`Spoke.sol`) across its assets, and Spokes can similarly connect to a separate Hub for every reserve listed on it. User entry points exist on the Spokes, which will abstract all Hub logic from the user. Spokes are also responsible for collateralization enforcement and accounting across end users, while Spoke-level accounting and caps management will be handled in the Hub.
+### Core Components
+
+#### Hub (`Hub.sol`)
+
+- Manages unified liquidity pools for assets
+- Extends credit lines to multiple Spokes
+- Handles asset-level accounting and caps management
+- Implements interest rate strategies and asset logic
+
+#### Spoke (`Spoke.sol`)
+
+- User-facing entry points for supplies, withdraws, borrows, repays, and liquidations
+- Enforces collateralization requirements
+- Manages user positions and risk parameters
+- Abstracts Hub logic from end users
+- Can connect to separate Hubs for each reserve
+
+#### Key Design Principles
+
+1. **Separation of Concerns**: Hubs handle liquidity and asset management, Spokes handle user interactions and risk enforcement
+2. **Flexibility**: Each reserve on a Spoke can connect to a different Hub
+3. **Modularity**: Independent configuration and upgradeability per component
+4. **Capital Efficiency**: Shared liquidity pools enable better capital utilization. Sweep functionality allows rehypothecation of idle funds.
 
 ## Repository Structure
 
-All contracts are held within the `aave-v4/src` folder.
-
-Dependencies are in the `aave-v4/src/dependencies` subfolder, rather than handled through external package managers. This mitigates supply chain attack vectors and ensures dependency immutability, while minimizing potential install times.
-
-All Foundry-based tests are in the `aave-v4/tests` folder. Gas snapshot tests are in the `aave-v4/tests/gas` subfolder.
-
-Base test setup is in the `aave-v4/tests/Base.t.sol` file which configures hubs and associated spokes to initialize a testing environment.
+```
+aave-v4/
+├── src/                          # Main source code
+│   ├── hub/                      # Hub contracts and interfaces
+│   ├── spoke/                    # Spoke contracts and interfaces
+│   ├── position-manager/         # Position Managers, including gateway contracts
+│   ├── libraries/                # Shared libraries (math, types)
+│   ├── utils/                    # Utility contracts (Multicall, etc.)
+│   └── dependencies/             # Dependencies (Chainlink, OpenZeppelin, etc.)
+├── tests/                        # Test suite
+│   ├── unit/                     # Unit tests
+│   ├── gas/                      # Gas snapshot tests
+│   ├── invariant/                # Invariant tests
+│   └── Base.t.sol                # Base test setup
+├── scripts/                      # Deployment scripts
+├── snapshots/                    # Gas snapshots
+└── lib/                          # Foundry dependencies
+```
 
 ## Dependencies
 
-- Foundry, [how-to install](https://book.getfoundry.sh/getting-started/installation) (we recommend also update to the last version with `foundryup`)
-- Node, [how-to install](https://nodejs.org/en/download)
-- Lcov
-  - Optional, only needed for coverage testing
-  - For Ubuntu, you can install via `apt install lcov`
-  - For Mac, you can install via `brew install lcov`
+### Required
+
+- **[Foundry](https://book.getfoundry.sh/getting-started/installation)** - Development framework
+  ```bash
+  curl -L https://foundry.paradigm.xyz | bash
+  foundryup  # Update to latest version
+  ```
+- **[Node.js](https://nodejs.org/en/download)** - For linting and tooling
+  ```bash
+  # Verify installation
+  node --version
+  npm --version
+  ```
+
+### Optional
+
+- **Lcov** - For coverage reports
+
+  ```bash
+  # Ubuntu
+  sudo apt install lcov
+
+  # macOS
+  brew install lcov
+  ```
+
+### Dependency Strategy
+
+Dependencies are inlined in the `src/dependencies` subfolder rather than managed through external package managers. This approach:
+
+- Mitigates supply chain attack vectors
+- Ensures dependency immutability
+- Minimizes potential install times
+- Provides simplified version control and auditability
 
 ## Quickstart
 
-````bash
-# Clone the repository
+### 1. Clone the Repository
+
+```bash
 git clone https://github.com/aave/aave-v4.git
 cd aave-v4
+```
 
-# Install dependencies
-```sh
+### 2. Install Dependencies
+
+```bash
+# Copy environment template and populate
 cp .env.example .env
+
+# Install Foundry dependencies
 forge install
-## required for linting
+
+# Install Node.js dependencies (required for linting)
 yarn install
+```
 
-# Build contracts
+### 3. Build Contracts
+
+```bash
 forge build
-````
+```
 
-## Tests
+## Development
 
-- To run the full test suite: `make test`
-- To re-generate the coverage report: `make coverage`
-- To run gas snapshots: `make gas-report`
+### Testing
+
+- **Run full test suite**: `make test` or `forge test -vvv`
+- **Run specific test file**: `forge test --match-contract ...`
+- **Run with gas reporting**: `make gas-report`
+- **Generate coverage report**: `make coverage`
+
+### Code Quality
+
+- **Check contract sizes**: `forge build --sizes`
+
+### Gas Snapshots
+
+Gas snapshots are automatically generated and stored in the `snapshots/` directory. To update snapshots:
+
+```bash
+make gas-report
+```
+
+Snapshot files:
+
+- `Hub.Operations.json`
+- `Spoke.Operations.json`
+- `Spoke.Getters.json`
+- `NativeTokenGateway.Operations.json`
+- `SignatureGateway.Operations.json`
+
+## Deployment
+
+Deployment scripts are located in the `scripts/` directory. See `./Makefile` for deployment commands.
 
 ## Security
 
-[link to audit reports]
+- **Audit Reports**: [TBD]
+- **Security Policy**: [TBD]
+- **Bug Bounty**: [TBD]
+
+## Versioning
+
+Current version: **v0.5.3**
+
+See `package.json` for version information and changelog.
+
+## Links
+
+- [Website](https://aave.com)
+- [Documentation](https://docs.aave.com)
+- [Twitter](https://twitter.com/aave)
+- [Forum](https://governance.aave.com)
 
 ## License
 
