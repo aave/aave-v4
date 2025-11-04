@@ -747,6 +747,21 @@ contract SpokeBase is Base {
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
+  function assertEq(IHub.SpokeData memory a, IHub.SpokeData memory b) internal pure {
+    assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
+    assertEq(a.premiumOffset, b.premiumOffset, 'premiumOffset');
+    assertEq(a.realizedPremium, b.realizedPremium, 'realizedPremium');
+    assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
+    assertEq(a.addedShares, b.addedShares, 'addedShares');
+    assertEq(a.addCap, b.addCap, 'addCap');
+    assertEq(a.drawCap, b.drawCap, 'drawCap');
+    assertEq(a.riskPremiumThreshold, b.riskPremiumThreshold, 'riskPremiumThreshold');
+    assertEq(a.active, b.active, 'active');
+    assertEq(a.paused, b.paused, 'paused');
+    assertEq(a.deficit, b.deficit, 'deficit');
+    assertEq(abi.encode(a), abi.encode(b)); // sanity check
+  }
+
   function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
     ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
     uint256 riskPremiumStored = pos.premiumShares.percentDivDown(pos.drawnShares);

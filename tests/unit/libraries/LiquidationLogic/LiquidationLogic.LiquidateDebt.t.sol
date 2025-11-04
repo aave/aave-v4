@@ -149,7 +149,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     assertEq(isPositionEmpty, debtToLiquidate == drawnDebt + premiumDebt);
     assertEq(liquidationLogicWrapper.getBorrowerBorrowingStatus(reserveId), !isPositionEmpty);
     assertPosition(
-      liquidationLogicWrapper.getDebtPosition(),
+      liquidationLogicWrapper.getDebtPosition(user),
       initialPosition,
       drawnDebtToLiquidate,
       accruedPremium,
@@ -240,7 +240,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     );
     liquidationLogicWrapper.setDebtPositionPremiumOffset(premiumDebt - accruedPremium);
 
-    return liquidationLogicWrapper.getDebtPosition();
+    return liquidationLogicWrapper.getDebtPosition(user);
   }
 
   function assertPosition(
