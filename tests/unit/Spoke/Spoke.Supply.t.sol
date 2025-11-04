@@ -597,7 +597,7 @@ contract SpokeSupplyTest is SpokeBase {
       _wethReserveId(spoke1),
       _daiReserveId(spoke1),
       amount
-    ) + collateralPremiumBuffer;
+    );
     Utils.supply(spoke1, _daiReserveId(spoke1), bob, amount, bob);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob); // bob collateral
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount, bob); // introduce debt

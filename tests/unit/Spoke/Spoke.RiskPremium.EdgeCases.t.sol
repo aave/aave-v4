@@ -306,13 +306,19 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // borrow rate ~= base borrow rate (5%) + slope1 (5%) / 2
     assertApproxEqAbs(hub1.getAsset(wethAssetId).drawnRate, uint256(7_50).bpsToRay(), 1e18);
 
-    // Alice supplies collateral in order to borrow
+    // Alice supplies collateral in order to borrow (2 different debt assets)
     uint256 aliceCollateralAmount = _calcMinimumCollAmount(
       spoke2,
       _wbtcReserveId(spoke2),
       _daiReserveId(spoke2),
-      daiSupplyAmount + dai2SupplyAmount
-    ) + collateralPremiumBuffer;
+      daiSupplyAmount
+    ) +
+      _calcMinimumCollAmount(
+        spoke2,
+        _wbtcReserveId(spoke2),
+        _daiReserveId(spoke2),
+        dai2SupplyAmount
+      );
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _wbtcReserveId(spoke2),

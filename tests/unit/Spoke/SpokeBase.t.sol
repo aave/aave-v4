@@ -214,7 +214,7 @@ contract SpokeBase is Base {
       collReserveId: reserveId,
       debtReserveId: reserveId,
       debtAmount: amount
-    }) + collateralPremiumBuffer;
+    });
 
     deal(spoke, reserveId, tempUser, supplyAmount);
     Utils.approve(spoke, reserveId, tempUser, UINT256_MAX);
