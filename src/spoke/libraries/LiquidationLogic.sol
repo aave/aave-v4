@@ -294,9 +294,11 @@ library LiquidationLogic {
     uint256 sharesToLiquidator;
     if (params.collateralToLiquidator > 0) {
       if (params.receiveShares) {
-        sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
-        positions[params.liquidator][params.collateralReserveId]
-          .suppliedShares += sharesToLiquidator.toUint120();
+        sharesToLiquidator = hub.previewAddByAssets(assetId, params.collateralToLiquidator);
+        if (sharesToLiquidator > 0) {
+          positions[params.liquidator][params.collateralReserveId]
+            .suppliedShares += sharesToLiquidator.toUint120();
+        }
       } else {
         sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
       }
@@ -354,10 +356,6 @@ library LiquidationLogic {
   ) internal view {
     require(params.user != params.liquidator, ISpoke.SelfLiquidation());
     require(params.debtToCover > 0, ISpoke.InvalidDebtToCover());
-    require(
-      params.collateralReserveHub != address(0) && params.debtReserveHub != address(0),
-      ISpoke.ReserveNotListed()
-    );
     require(!params.collateralReservePaused && !params.debtReservePaused, ISpoke.ReservePaused());
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());

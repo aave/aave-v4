@@ -386,6 +386,38 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       receiveShares
     );
   }
+
+  function test_validateLiquidationCall_revertsWith_ReserveNotListed_CollateralReserve(
+    uint256 collateralId,
+    uint256 debtId
+  ) public {
+    collateralId = vm.randomUint(spoke.getReserveCount(), UINT256_MAX);
+    debtId = vm.randomUint(spoke.getReserveCount(), UINT256_MAX);
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    spoke.liquidationCall(
+      collateralId,
+      debtId,
+      vm.randomAddress(),
+      vm.randomUint(),
+      vm.randomBool()
+    );
+  }
+
+  function test_validateLiquidationCall_revertsWith_ReserveNotListed_DebtReserve(
+    uint256 collateralId,
+    uint256 debtId
+  ) public {
+    collateralId = vm.randomUint(0, spoke.getReserveCount() - 1);
+    debtId = vm.randomUint(spoke.getReserveCount(), UINT256_MAX);
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    spoke.liquidationCall(
+      collateralId,
+      debtId,
+      vm.randomAddress(),
+      vm.randomUint(),
+      vm.randomBool()
+    );
+  }
 }
 
 /// forge-config: pr.fuzz.runs = 1000

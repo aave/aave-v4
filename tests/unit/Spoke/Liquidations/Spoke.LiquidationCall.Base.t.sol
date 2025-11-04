@@ -978,11 +978,13 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         'liquidator: collateral supplied'
       );
     } else {
-      assertEq(
+      // collateral rounded down on receiveShares, can differ by 1 wei in asset terms
+      assertApproxEqAbs(
         accountsInfoAfter.liquidatorBalanceInfo.suppliedInSpoke,
         accountsInfoBefore.liquidatorBalanceInfo.suppliedInSpoke +
           liquidationMetadata.collateralToLiquidator,
-        'liquidator: collateral supplied received shares'
+        1,
+        'liquidator: collateral supplied (receiveShares)'
       );
     }
     assertEq(
@@ -997,6 +999,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       accountsInfoBefore.collateralFeeReceiverBalanceInfo.suppliedInSpoke,
       'collateral fee receiver: collateral supplied'
     );
+
     assertEq(
       accountsInfoAfter.collateralFeeReceiverBalanceInfo.borrowedFromSpoke,
       accountsInfoBefore.collateralFeeReceiverBalanceInfo.borrowedFromSpoke,
@@ -1079,19 +1082,30 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     );
 
     // Fee Receivers
-    assertApproxEqRel(
-      accountsInfoAfter.collateralFeeReceiverBalanceInfo.addedInHub,
-      accountsInfoBefore.collateralFeeReceiverBalanceInfo.addedInHub +
-        liquidationMetadata.collateralToLiquidate -
-        liquidationMetadata.collateralToLiquidator,
-      _approxRelFromBps(1),
-      'collateral fee receiver: added'
-    );
     assertEq(
       accountsInfoAfter.collateralFeeReceiverBalanceInfo.drawnFromHub,
       accountsInfoBefore.collateralFeeReceiverBalanceInfo.drawnFromHub,
       'collateral fee receiver: drawn'
     );
+    if (!params.receiveShares) {
+      assertApproxEqRel(
+        accountsInfoAfter.collateralFeeReceiverBalanceInfo.addedInHub,
+        accountsInfoBefore.collateralFeeReceiverBalanceInfo.addedInHub +
+          liquidationMetadata.collateralToLiquidate -
+          liquidationMetadata.collateralToLiquidator,
+        _approxRelFromBps(1),
+        'collateral fee receiver: added'
+      );
+    } else {
+      assertApproxEqAbs(
+        accountsInfoAfter.collateralFeeReceiverBalanceInfo.addedInHub,
+        accountsInfoBefore.collateralFeeReceiverBalanceInfo.addedInHub +
+          liquidationMetadata.collateralToLiquidate -
+          liquidationMetadata.collateralToLiquidator,
+        1,
+        'collateral fee receiver: added (receiveShares)'
+      );
+    }
 
     if (
       _getFeeReceiver(params.spoke, params.collateralReserveId) !=

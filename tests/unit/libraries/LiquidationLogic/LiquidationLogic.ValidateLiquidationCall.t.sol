@@ -43,18 +43,6 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
-  function test_validateLiquidationCall_revertsWith_ReserveNotListed_ZeroCollateralHub() public {
-    params.collateralReserveHub = address(0);
-    vm.expectRevert(ISpoke.ReserveNotListed.selector);
-    liquidationLogicWrapper.validateLiquidationCall(params);
-  }
-
-  function test_validateLiquidationCall_revertsWith_ReserveNotListed_ZeroDebtHub() public {
-    params.debtReserveHub = address(0);
-    vm.expectRevert(ISpoke.ReserveNotListed.selector);
-    liquidationLogicWrapper.validateLiquidationCall(params);
-  }
-
   function test_validateLiquidationCall_revertsWith_ReservePaused_CollateralPaused() public {
     params.collateralReservePaused = true;
     vm.expectRevert(ISpoke.ReservePaused.selector);

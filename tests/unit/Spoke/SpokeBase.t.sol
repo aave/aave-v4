@@ -95,7 +95,7 @@ contract SpokeBase is Base {
     uint256 totalDebtValue;
     uint256 healthFactor;
     uint256 activeCollateralCount;
-    uint16 dynamicConfigKey;
+    uint24 dynamicConfigKey;
     uint256 collateralFactor;
     uint256 collateralValue;
     ISpoke.UserPosition pos;
@@ -150,7 +150,7 @@ contract SpokeBase is Base {
   }
 
   struct DynamicConfig {
-    uint16 key;
+    uint24 key;
     bool enabled;
   }
 
@@ -747,6 +747,21 @@ contract SpokeBase is Base {
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
+  function assertEq(IHub.SpokeData memory a, IHub.SpokeData memory b) internal pure {
+    assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
+    assertEq(a.premiumOffset, b.premiumOffset, 'premiumOffset');
+    assertEq(a.realizedPremium, b.realizedPremium, 'realizedPremium');
+    assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
+    assertEq(a.addedShares, b.addedShares, 'addedShares');
+    assertEq(a.addCap, b.addCap, 'addCap');
+    assertEq(a.drawCap, b.drawCap, 'drawCap');
+    assertEq(a.riskPremiumThreshold, b.riskPremiumThreshold, 'riskPremiumThreshold');
+    assertEq(a.active, b.active, 'active');
+    assertEq(a.paused, b.paused, 'paused');
+    assertEq(a.deficit, b.deficit, 'deficit');
+    assertEq(abi.encode(a), abi.encode(b)); // sanity check
+  }
+
   function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
     ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
     uint256 riskPremiumStored = pos.premiumShares.percentDivDown(pos.drawnShares);
@@ -989,27 +1004,27 @@ contract SpokeBase is Base {
     revert('not found');
   }
 
-  function _nextDynamicConfigKey(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
-    uint16 dynamicConfigKey = spoke.getReserve(reserveId).dynamicConfigKey;
-    return (dynamicConfigKey + 1) % type(uint16).max;
+  function _nextDynamicConfigKey(ISpoke spoke, uint256 reserveId) internal view returns (uint24) {
+    uint24 dynamicConfigKey = spoke.getReserve(reserveId).dynamicConfigKey;
+    return (dynamicConfigKey + 1) % type(uint24).max;
   }
 
   function _randomUninitializedConfigKey(
     ISpoke spoke,
     uint256 reserveId
-  ) internal returns (uint16) {
-    uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+  ) internal returns (uint24) {
+    uint24 dynamicConfigKey = _nextDynamicConfigKey(spoke, reserveId);
     if (spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).maxLiquidationBonus != 0) {
       revert('no uninitialized config keys');
     }
-    return vm.randomUint(dynamicConfigKey, type(uint16).max).toUint16();
+    return vm.randomUint(dynamicConfigKey, type(uint24).max).toUint24();
   }
 
-  function _randomInitializedConfigKey(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
-    uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+  function _randomInitializedConfigKey(ISpoke spoke, uint256 reserveId) internal returns (uint24) {
+    uint24 dynamicConfigKey = _nextDynamicConfigKey(spoke, reserveId);
     if (spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).maxLiquidationBonus != 0) {
       // all config keys are initialized
-      return vm.randomUint(0, type(uint16).max).toUint16();
+      return vm.randomUint(0, type(uint24).max).toUint16();
     }
     return vm.randomUint(0, spoke.getReserve(reserveId).dynamicConfigKey).toUint16();
   }
@@ -1081,6 +1096,28 @@ contract SpokeBase is Base {
     );
 
     return (finalHf, requiredDebtAmount);
+  }
+
+  /// @dev Borrow to become liquidatable due to price change of asset.
+  /// @param pricePercentage The resultant percentage of the original price of the asset, represented as a bps value. For example, 85_00 represents a 15% decrease in price.
+  /// @return userAccountData The user account data after borrowing (prior to price change).
+  function _borrowToBeLiquidatableWithPriceChange(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 collateralReserveId,
+    uint256 desiredHf,
+    uint256 pricePercentage
+  ) internal returns (ISpoke.UserAccountData memory) {
+    uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
+    require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
+    Utils.borrow(spoke, reserveId, user, requiredDebtAmount, user);
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+
+    _mockReservePriceByPercent(spoke, collateralReserveId, pricePercentage);
+    assertLt(_getUserHealthFactor(spoke, user), Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    return userAccountData;
   }
 
   /// @dev Helper function to borrow without health factor check
