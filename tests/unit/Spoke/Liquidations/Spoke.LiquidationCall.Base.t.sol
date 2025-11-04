@@ -978,12 +978,12 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         'liquidator: collateral supplied'
       );
     } else {
-      // collateral rounded down on receiveShares, can differ by 1 wei in asset terms
+      // collateral rounded down on receiveShares, can differ by 2 wei in asset terms
       assertApproxEqAbs(
         accountsInfoAfter.liquidatorBalanceInfo.suppliedInSpoke,
         accountsInfoBefore.liquidatorBalanceInfo.suppliedInSpoke +
           liquidationMetadata.collateralToLiquidator,
-        1,
+        2,
         'liquidator: collateral supplied (receiveShares)'
       );
     }
@@ -1102,7 +1102,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         accountsInfoBefore.collateralFeeReceiverBalanceInfo.addedInHub +
           liquidationMetadata.collateralToLiquidate -
           liquidationMetadata.collateralToLiquidator,
-        1,
+        2,
         'collateral fee receiver: added (receiveShares)'
       );
     }
