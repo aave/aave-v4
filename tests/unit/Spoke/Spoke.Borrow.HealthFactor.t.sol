@@ -870,8 +870,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     // valid HF
     assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases
 
-    // collateral price drop by half so that bob is undercollateralized
-    _mockReservePriceByPercent(spoke1, daiReserveId, 50_00);
+    // collateral price drop by 90% so that bob is undercollateralized
+    _mockReservePriceByPercent(spoke1, daiReserveId, 10_00);
 
     // invalid HF
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
