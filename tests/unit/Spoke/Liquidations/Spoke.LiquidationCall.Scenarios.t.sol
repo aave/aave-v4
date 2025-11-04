@@ -266,9 +266,9 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     // Collateral: 1 wei of WETH
     _increaseCollateralSupply(spoke, _wethReserveId(spoke), 1, user);
 
-    // Max borrow: 79 wei of DAI (collateral factor of WETH is 80%)
+    // Max borrow: 78 wei of DAI (collateral factor of WETH is 80%)
     assertEq(_getCollateralFactor(spoke, _wethReserveId(spoke)), 80_00);
-    _increaseReserveDebt(spoke, _daiReserveId(spoke), 79, user);
+    _increaseReserveDebt(spoke, _daiReserveId(spoke), 78, user);
 
     // Decrease WETH price by 10% to make user unhealthy
     _mockReservePriceByPercent(spoke, _wethReserveId(spoke), 90_00);
@@ -279,8 +279,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     // Perform liquidation
     // Liquidated amounts:
-    //   - Collateral: 79 * 1 / 90 = 1 if round up, 0 otherwise (will revert if 0)
-    //   - Debt: 79 wei of DAI
+    //   - Collateral: 78 * 1 / 90 = 1 if round up, 0 otherwise (will revert if 0)
+    //   - Debt: 78 wei of DAI
     _checkedLiquidationCall(
       CheckedLiquidationCallParams({
         spoke: spoke,

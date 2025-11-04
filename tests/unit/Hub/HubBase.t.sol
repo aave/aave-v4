@@ -152,8 +152,14 @@ contract HubBase is Base {
   ) internal returns (uint256 drawn, uint256 premium) {
     assertTrue(hub1.getSpoke(assetId, spoke).active);
 
-    deal(hub1.getAsset(assetId).underlying, alice, amount * 2);
-    Utils.supplyCollateral(ISpoke(spoke), reserveId, alice, amount * 2, alice);
+    deal(hub1.getAsset(assetId).underlying, alice, amount * 2 + collateralPremiumBuffer);
+    Utils.supplyCollateral(
+      ISpoke(spoke),
+      reserveId,
+      alice,
+      amount * 2 + collateralPremiumBuffer,
+      alice
+    );
     Utils.borrow(ISpokeBase(spoke), reserveId, alice, amount, alice);
 
     skip(skipTime);
