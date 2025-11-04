@@ -88,6 +88,8 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
       _roleSelectors[oldRoleId].remove(bytes32(selector));
     }
     super._setTargetFunctionRole(target, selector, roleId);
-    _roleSelectors[roleId].add(bytes32(selector));
+    if (roleId != PUBLIC_ROLE) {
+      _roleSelectors[roleId].add(bytes32(selector));
+    }
   }
 }
