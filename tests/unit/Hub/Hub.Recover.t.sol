@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
 
-contract HubAddTest is HubBase {
+contract HubRecoverTest is HubBase {
   address recoverSpoke;
 
   function setUp() public override {
@@ -12,7 +12,6 @@ contract HubAddTest is HubBase {
 
     recoverSpoke = makeAddr('recoverSpoke');
 
-    /// @dev add a minimum decimal asset to test add cap rounding
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       paused: false,
@@ -22,24 +21,6 @@ contract HubAddTest is HubBase {
     });
     vm.prank(ADMIN);
     hub1.addSpoke(daiAssetId, recoverSpoke, spokeConfig);
-  }
-
-  function _recover(
-    IHub hub,
-    address recoverSpoke,
-    uint256 assetId,
-    IERC20 underlying
-  ) internal returns (uint256, uint256, uint256) {
-    uint256 currentBalance = underlying.balanceOf(address(hub));
-    uint256 recordedLiquidity = hub.getAssetLiquidity(assetId);
-    uint256 recoverAmount = currentBalance - recordedLiquidity;
-
-    vm.startPrank(recoverSpoke);
-    uint256 recoverAddedShares = hub.add(assetId, recoverAmount);
-    uint256 recoverWithdrawnShares = hub.remove(assetId, recoverAmount, recoverSpoke);
-    vm.stopPrank();
-
-    return (recoverAmount, recoverAddedShares, recoverWithdrawnShares);
   }
 
   function test_recovery_scenario_fuzz(uint256 lostAmount) public {
@@ -100,5 +81,23 @@ contract HubAddTest is HubBase {
       to: alice
     });
     Utils.remove({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 10e22, to: bob});
+  }
+
+  function _recover(
+    IHub hub,
+    address recoverSpoke,
+    uint256 assetId,
+    IERC20 underlying
+  ) internal returns (uint256, uint256, uint256) {
+    uint256 currentBalance = underlying.balanceOf(address(hub));
+    uint256 recordedLiquidity = hub.getAssetLiquidity(assetId);
+    uint256 recoverAmount = currentBalance - recordedLiquidity;
+
+    vm.startPrank(recoverSpoke);
+    uint256 recoveredAddedShares = hub.add(assetId, recoverAmount);
+    uint256 recoveredWithdrawnShares = hub.remove(assetId, recoverAmount, recoverSpoke);
+    vm.stopPrank();
+
+    return (recoverAmount, recoveredAddedShares, recoveredWithdrawnShares);
   }
 }
