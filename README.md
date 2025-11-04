@@ -10,6 +10,10 @@ Aave V4 introduces a unified liquidity layer and modular architecture that enhan
 
 [insert link to protocol tech docs]
 
+## Contributing
+
+If you're interested in contributing, please read the [contributing docs](./CONTRIBUTING.md) before submitting a pull request.
+
 ## Architecture
 
 The Aave V4 architecture follows a modular hub-and-spoke design.
