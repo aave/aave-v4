@@ -83,5 +83,5 @@ When you're ready to submit a pull request, you can follow these naming conventi
 When you submit a pull request, GitHub will automatically lint, build, and test your changes. If you see an ❌, it's most likely a bug in your code. Please, inspect the logs through the GitHub UI to find the cause.
 
 - Pull requests must always cover all the changes made with tests. If you're adding a new feature, you must also add a test for it. If you're fixing a bug, you must add a test that reproduces the bug. Pull requests that cause a regression in test coverage will not be accepted.
-- Pull requests that touch code functionality should always include updated gas snapshots. Running `forge test` will update the snapshots for you.
-- Make sure that your updates are fitting within the existing code margin. You can check by running `forge build --sizes`
+- Pull requests that touch code functionality should always include updated gas snapshots. Running `forge test` will update the snapshots for you. You can run `make gas-report` otherwise.
+- Make sure that your updates are fitting within the existing contract size code margin. You can check by running `forge build --sizes`

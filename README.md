@@ -1,5 +1,7 @@
 # Aave V4
 
+[![codecov](https://codecov.io/gh/aave/aave-v4/graph/badge.svg?token=afC1P2GrDM)](https://codecov.io/gh/aave/aave-v4)
+
 **Aave V4 complete codebase, Foundry-based.**
 
 A unified liquidity layer and modular architecture that enhances capital efficiency, scalability, and risk management.
@@ -20,7 +22,7 @@ A unified liquidity layer and modular architecture that enhances capital efficie
 
 ## Documentation
 
-[insert link to protocol tech docs]
+- [Aave V4 features](TBD)
 
 ## Contributing
 
@@ -43,8 +45,10 @@ The Aave V4 architecture follows a modular **hub-and-spoke design** that separat
 
 - Manages unified liquidity pools for assets
 - Extends credit lines to multiple Spokes
-- Handles asset-level accounting and caps management
+- Handles asset and Spoke accounting and caps management
+- Responsible for supplied shares exchange rate and debt index conversions
 - Implements interest rate strategies and asset logic
+- Handles reinvestment controllers and their permissioning
 
 #### Spoke (`Spoke.sol`)
 
@@ -53,12 +57,13 @@ The Aave V4 architecture follows a modular **hub-and-spoke design** that separat
 - Manages user positions and risk parameters
 - Abstracts Hub logic from end users
 - Can connect to separate Hubs for each reserve
+- Connects to and reads from oracles
 
 #### Key Design Principles
 
-1. **Separation of Concerns**: Hubs handle liquidity and asset management, Spokes handle user interactions and risk enforcement
-2. **Flexibility**: Each reserve on a Spoke can connect to a different Hub
-3. **Modularity**: Independent configuration and upgradeability per component
+1. **Separation of Concerns**: Hubs handle liquidity and asset management, Spokes handle user interactions and risk enforcement.
+2. **Flexibility**: Each reserve on a Spoke can connect to a different Hub.
+3. **Modularity**: Independent configuration per component.
 4. **Capital Efficiency**: Shared liquidity pools enable better capital utilization. Sweep functionality allows rehypothecation of idle funds.
 
 ## Repository Structure
@@ -76,6 +81,7 @@ aave-v4/
 │   ├── unit/                     # Unit tests
 │   ├── gas/                      # Gas snapshot tests
 │   ├── invariant/                # Invariant tests
+│   ├── misc/                     # Symbolic tests, prototype development
 │   └── Base.t.sol                # Base test setup
 ├── scripts/                      # Deployment scripts
 ├── snapshots/                    # Gas snapshots
@@ -112,11 +118,11 @@ aave-v4/
 
 ### Dependency Strategy
 
-Dependencies are inlined in the `src/dependencies` subfolder rather than managed through external package managers. This approach:
+Dependencies are located in the `src/dependencies` subfolder rather than managed through external package managers. This approach:
 
 - Mitigates supply chain attack vectors
 - Ensures dependency immutability
-- Minimizes potential install times
+- Minimizes installation overhead
 - Provides simplified version control and auditability
 
 ## Quickstart
@@ -168,7 +174,7 @@ Gas snapshots are automatically generated and stored in the `snapshots/` directo
 make gas-report
 ```
 
-Snapshot files:
+Snapshot files generated:
 
 - `Hub.Operations.json`
 - `Spoke.Operations.json`
@@ -190,7 +196,7 @@ Deployment scripts are located in the `scripts/` directory. See `./Makefile` for
 
 Current version: **v0.5.3**
 
-See `package.json` for version information and changelog.
+See `package.json` for version information and metadata.
 
 ## Links
 
