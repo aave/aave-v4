@@ -28,7 +28,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     IHubBase hub;
     uint16 assetId;
     uint8 decimals;
-    uint16 dynamicConfigKey;
+    uint24 dynamicConfigKey;
     bool paused;
     bool frozen;
     bool borrowable;
@@ -78,7 +78,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint120 premiumOffset;
     //
     uint120 suppliedShares;
-    uint16 dynamicConfigKey;
+    uint24 dynamicConfigKey;
   }
 
   /// @notice Position manager configuration data.
@@ -115,6 +115,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint256 borrowedCount;
   }
 
+  /// @notice Emitted when the oracle address of the spoke is updated.
+  /// @param oracle The new address of the oracle.
+  event UpdateOracle(address oracle);
+
   /// @notice Emitted when a liquidation config is updated.
   /// @param config The new liquidation config.
   event UpdateLiquidationConfig(LiquidationConfig config);
@@ -137,14 +141,13 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Emitted when a dynamic reserve config is added.
   /// @dev The config key is the next available key for the reserve, which is now the latest config
-  /// key of the reserve. It can be an existing key that was previously used and is now being
-  /// overridden.
+  /// key of the reserve.
   /// @param reserveId The identifier of the reserve.
   /// @param dynamicConfigKey The key of the added dynamic config.
   /// @param config The dynamic reserve config.
   event AddDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint16 indexed dynamicConfigKey,
+    uint24 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -154,7 +157,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param config The dynamic reserve config.
   event UpdateDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint16 indexed dynamicConfigKey,
+    uint24 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -287,6 +290,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen.
   error CannotReceiveShares();
 
+  /// @notice Thrown when the maximum number of dynamic config keys is reached.
+  error MaximumDynamicConfigKeyReached();
+
   /// @notice Updates the liquidation config.
   /// @param config The liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
@@ -322,14 +328,14 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Updates the dynamic reserve config for a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Appends dynamic config to the next valid config key, and overrides existing config if the key is already used.
+  /// @dev Appends dynamic config to the next available key; reverts if `MAX_ALLOWED_DYNAMIC_CONFIG_KEY` is reached.
   /// @param reserveId The identifier of the reserve.
   /// @param dynamicConfig The new dynamic reserve config.
   /// @return dynamicConfigKey The key of the added dynamic config.
   function addDynamicReserveConfig(
     uint256 reserveId,
     DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint16 dynamicConfigKey);
+  ) external returns (uint24 dynamicConfigKey);
 
   /// @notice Updates the dynamic reserve config for a given reserve at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -340,7 +346,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param dynamicConfig The new dynamic reserve config.
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
   ) external;
 
@@ -445,7 +451,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param dynamicConfigKey The key of the dynamic config.
   function getDynamicReserveConfig(
     uint256 reserveId,
-    uint16 dynamicConfigKey
+    uint24 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory);
 
   /// @notice Returns true if the reserve is set as collateral for the user.
@@ -510,6 +516,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Returns the maximum allowed collateral risk value for a reserve.
   /// @return The maximum collateral risk value, expressed in bps (e.g. 100_00 is 100.00%).
   function MAX_ALLOWED_COLLATERAL_RISK() external view returns (uint24);
+
+  /// @notice Returns the maximum allowed value for a dynamic configuration key.
+  /// @return The maximum dynamic configuration key value (inclusive).
+  function MAX_ALLOWED_DYNAMIC_CONFIG_KEY() external view returns (uint256);
 
   /// @notice Returns the type hash for the SetUserPositionManager intent.
   /// @return The bytes-encoded EIP-712 struct hash representing the intent.
