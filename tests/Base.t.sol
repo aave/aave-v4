@@ -255,7 +255,7 @@ abstract contract Base is Test {
     IHub hub;
     uint16 assetId;
     uint8 decimals;
-    uint16 dynamicConfigKey; // key of the last reserve config
+    uint24 dynamicConfigKey; // key of the last reserve config
     bool paused;
     bool frozen;
     bool borrowable;
@@ -1057,12 +1057,12 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId,
     uint32 newMaxLiquidationBonus
-  ) internal pausePrank returns (uint16) {
+  ) internal pausePrank returns (uint24) {
     ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.maxLiquidationBonus = newMaxLiquidationBonus;
 
     vm.prank(SPOKE_ADMIN);
-    uint16 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint24 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
     return dynamicConfigKey;
@@ -1072,12 +1072,12 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId,
     uint16 newLiquidationFee
-  ) internal pausePrank returns (uint16) {
+  ) internal pausePrank returns (uint24) {
     ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
-    uint16 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint24 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
     return dynamicConfigKey;
@@ -1088,13 +1088,13 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 newCollateralFactor,
     uint256 newLiquidationBonus
-  ) internal pausePrank returns (uint16) {
+  ) internal pausePrank returns (uint24) {
     ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     config.maxLiquidationBonus = newLiquidationBonus.toUint32();
 
     vm.prank(SPOKE_ADMIN);
-    uint16 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint24 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
     return dynamicConfigKey;
@@ -1104,11 +1104,11 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId,
     uint256 newCollateralFactor
-  ) internal pausePrank returns (uint16) {
+  ) internal pausePrank returns (uint24) {
     ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     vm.prank(SPOKE_ADMIN);
-    uint16 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint24 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
     return dynamicConfigKey;
@@ -1117,7 +1117,7 @@ abstract contract Base is Test {
   function _updateCollateralFactorAtKey(
     ISpoke spoke,
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     uint256 newCollateralFactor
   ) internal pausePrank {
     ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(
@@ -1991,7 +1991,7 @@ abstract contract Base is Test {
     uint256 reserveId,
     address user
   ) internal view returns (uint16) {
-    uint16 dynamicConfigKey = spoke.getUserPosition(reserveId, user).dynamicConfigKey;
+    uint24 dynamicConfigKey = spoke.getUserPosition(reserveId, user).dynamicConfigKey;
     return spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).collateralFactor;
   }
 

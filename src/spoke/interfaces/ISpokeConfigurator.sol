@@ -90,7 +90,7 @@ interface ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint16 collateralFactor
-  ) external returns (uint16);
+  ) external returns (uint24);
 
   /// @notice Updates an existing collateral factor of a reserve at the specified key.
   /// @param spoke The address of the spoke.
@@ -100,7 +100,7 @@ interface ISpokeConfigurator {
   function updateCollateralFactor(
     address spoke,
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     uint16 collateralFactor
   ) external;
 
@@ -113,7 +113,7 @@ interface ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint256 maxLiquidationBonus
-  ) external returns (uint16);
+  ) external returns (uint24);
 
   /// @notice Updates an existing liquidation bonus of a reserve at the specified key.
   /// @param spoke The address of the spoke.
@@ -123,7 +123,7 @@ interface ISpokeConfigurator {
   function updateMaxLiquidationBonus(
     address spoke,
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     uint256 maxLiquidationBonus
   ) external;
 
@@ -136,7 +136,7 @@ interface ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint256 liquidationFee
-  ) external returns (uint16);
+  ) external returns (uint24);
 
   /// @notice Updates an existing liquidation fee of a reserve at the specified key.
   /// @param spoke The address of the spoke.
@@ -146,7 +146,7 @@ interface ISpokeConfigurator {
   function updateLiquidationFee(
     address spoke,
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     uint256 liquidationFee
   ) external;
 
@@ -159,7 +159,7 @@ interface ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint16);
+  ) external returns (uint24);
 
   /// @notice Updates the dynamic config of a reserve at the specified key.
   /// @param spoke The address of the spoke.
@@ -169,7 +169,7 @@ interface ISpokeConfigurator {
   function updateDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external;
 

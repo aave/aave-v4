@@ -335,7 +335,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     expectedDynamicReserveConfig.collateralFactor = newCollateralFactor;
 
-    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+    uint24 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
 
     vm.expectCall(
       spokeAddr,
@@ -344,7 +344,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    uint16 dynamicConfigKey = spokeConfigurator.addCollateralFactor(
+    uint24 dynamicConfigKey = spokeConfigurator.addCollateralFactor(
       spokeAddr,
       reserveId,
       newCollateralFactor
@@ -364,7 +364,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_updateCollateralFactor() public {
     uint16 newCollateralFactor = PercentageMath.PERCENTAGE_FACTOR.toUint16() / 4;
 
-    uint16 dynamicConfigKey = 0;
+    uint24 dynamicConfigKey = 0;
 
     ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
       reserveId,
@@ -413,7 +413,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     expectedDynamicReserveConfig.maxLiquidationBonus = newLiquidationBonus;
 
-    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+    uint24 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
 
     vm.expectCall(
       spokeAddr,
@@ -422,7 +422,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    uint16 dynamicConfigKey = spokeConfigurator.addMaxLiquidationBonus(
+    uint24 dynamicConfigKey = spokeConfigurator.addMaxLiquidationBonus(
       spokeAddr,
       reserveId,
       newLiquidationBonus
@@ -442,7 +442,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_updateMaxLiquidationBonus() public {
     uint32 newLiquidationBonus = PercentageMath.PERCENTAGE_FACTOR.toUint32() + 123;
 
-    uint16 dynamicConfigKey = 0;
+    uint24 dynamicConfigKey = 0;
 
     ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
       reserveId,
@@ -491,7 +491,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     expectedDynamicReserveConfig.liquidationFee = newLiquidationFee;
 
-    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+    uint24 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
 
     vm.expectCall(
       spokeAddr,
@@ -500,7 +500,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    uint16 dynamicConfigKey = spokeConfigurator.addLiquidationFee(
+    uint24 dynamicConfigKey = spokeConfigurator.addLiquidationFee(
       spokeAddr,
       reserveId,
       newLiquidationFee
@@ -520,7 +520,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_updateLiquidationFee() public {
     uint16 newLiquidationFee = PercentageMath.PERCENTAGE_FACTOR.toUint16() / 4;
 
-    uint16 dynamicConfigKey = 0;
+    uint24 dynamicConfigKey = 0;
 
     ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
       reserveId,
@@ -576,7 +576,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       liquidationFee: 15_00
     });
 
-    uint16 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+    uint24 expectedConfigKey = _nextDynamicConfigKey(spoke, reserveId);
 
     vm.expectCall(
       spokeAddr,
@@ -585,7 +585,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, newDynamicReserveConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    uint16 actualConfigKey = spokeConfigurator.addDynamicReserveConfig(
+    uint24 actualConfigKey = spokeConfigurator.addDynamicReserveConfig(
       spokeAddr,
       reserveId,
       newDynamicReserveConfig
