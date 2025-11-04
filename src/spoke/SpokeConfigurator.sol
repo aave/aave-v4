@@ -133,7 +133,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint16 collateralFactor
-  ) external onlyOwner returns (uint16) {
+  ) external onlyOwner returns (uint24) {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId
@@ -146,7 +146,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   function updateCollateralFactor(
     address spoke,
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     uint16 collateralFactor
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
@@ -163,7 +163,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint256 maxLiquidationBonus
-  ) external onlyOwner returns (uint16) {
+  ) external onlyOwner returns (uint24) {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId
@@ -176,7 +176,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   function updateMaxLiquidationBonus(
     address spoke,
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     uint256 maxLiquidationBonus
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
@@ -193,7 +193,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint256 liquidationFee
-  ) external onlyOwner returns (uint16) {
+  ) external onlyOwner returns (uint24) {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId
@@ -206,7 +206,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   function updateLiquidationFee(
     address spoke,
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     uint256 liquidationFee
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
@@ -223,7 +223,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
-  ) external onlyOwner returns (uint16) {
+  ) external onlyOwner returns (uint24) {
     return ISpoke(spoke).addDynamicReserveConfig(reserveId, dynamicConfig);
   }
 
@@ -231,7 +231,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   function updateDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external onlyOwner {
     ISpoke(spoke).updateDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
