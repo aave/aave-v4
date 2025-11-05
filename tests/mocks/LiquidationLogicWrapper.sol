@@ -65,8 +65,8 @@ contract LiquidationLogicWrapper {
     return _reserves[_collateralReserveId];
   }
 
-  function getCollateralPosition() public view returns (ISpoke.UserPosition memory) {
-    return _userPositions[_borrower][_collateralReserveId];
+  function getCollateralPosition(address user) public view returns (ISpoke.UserPosition memory) {
+    return _userPositions[user][_collateralReserveId];
   }
 
   function setDebtReserveHub(IHub hub) public {
@@ -121,8 +121,8 @@ contract LiquidationLogicWrapper {
     return _reserves[_debtReserveId];
   }
 
-  function getDebtPosition() public view returns (ISpoke.UserPosition memory) {
-    return _userPositions[_borrower][_debtReserveId];
+  function getDebtPosition(address user) public view returns (ISpoke.UserPosition memory) {
+    return _userPositions[user][_debtReserveId];
   }
 
   function getBorrowerCollateralStatus(uint256 reserveId) public view returns (bool) {

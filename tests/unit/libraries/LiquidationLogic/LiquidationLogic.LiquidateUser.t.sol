@@ -156,7 +156,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     uint256 initialHub2Balance = tokenList.weth.balanceOf(address(hub2));
     uint256 initialLiquidatorWethBalance = tokenList.weth.balanceOf(address(params.liquidator));
 
-    ISpoke.UserPosition memory debtPosition = liquidationLogicWrapper.getDebtPosition();
+    ISpoke.UserPosition memory debtPosition = liquidationLogicWrapper.getDebtPosition(params.user);
 
     uint256 feeShares = hub1.previewRemoveByAssets(usdxAssetId, 6000e6) -
       hub1.previewRemoveByAssets(usdxAssetId, 5900e6);
@@ -222,7 +222,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     params.totalDebtValue *= 2;
     params.debtToCover = 4.9e18;
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(
-      liquidationLogicWrapper.getCollateralPosition().suppliedShares * 2
+      liquidationLogicWrapper.getCollateralPosition(params.user).suppliedShares * 2
     );
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.liquidateUser(params);
