@@ -246,7 +246,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidAmountReceived();
 
   /// @notice Adds a new asset to the Hub.
-  /// @dev The same underlying asset address can be added as an asset multiple times.
+  /// @dev The same underlying asset address cannot be added as an asset multiple times.
   /// @dev The fee receiver is added as a new spoke with maximum add cap and zero draw cap.
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of `underlying`.
@@ -330,6 +330,11 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param amount The amount to reclaim.
   function reclaim(uint256 assetId, uint256 amount) external;
 
+  /// @notice Returns whether the underlying is listed as an asset.
+  /// @param underlying The address of the underlying asset.
+  /// @return True if the underlying asset is listed.
+  function isUnderlyingListed(address underlying) external view returns (bool);
+
   /// @notice Returns the number of listed assets.
   /// @return The number of listed assets.
   function getAssetCount() external view returns (uint256);
@@ -377,9 +382,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param index The index of the spoke.
   /// @return The address of the spoke.
   function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address);
-
-  /// @notice Returns true when `underlying` is currently listed as an asset.
-  function isUnderlyingListed(address underlying) external view returns (bool);
 
   /// @notice Returns the spoke data struct.
   /// @param assetId The identifier of the asset.

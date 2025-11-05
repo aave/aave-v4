@@ -107,11 +107,15 @@ contract HubAddTest is HubBase {
   function test_add_revertsWith_SharesDowncastOverflow() public {
     uint256 shares = uint256(type(uint120).max) + 1;
     uint256 amount = hub1.previewAddByShares(daiAssetId, shares);
+    deal(address(tokenList.dai), alice, amount);
+
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), amount);
     vm.expectRevert(
       abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 120, shares)
     );
-    vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount);
+    vm.stopPrank();
   }
 
   function test_add_revertsWith_AmountDowncastOverflow() public {
@@ -131,11 +135,15 @@ contract HubAddTest is HubBase {
     uint256 amount = hub1.previewAddByShares(daiAssetId, shares);
     assertGt(amount, type(uint120).max);
 
+    deal(address(tokenList.dai), alice, amount);
+
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), amount);
     vm.expectRevert(
       abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 120, amount)
     );
-    vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount);
+    vm.stopPrank();
   }
 
   function test_add_fuzz_revertsWith_AddCapExceeded(uint40 newAddCap) public {

@@ -213,6 +213,7 @@ contract Hub is IHub, AccessManaged {
     _validateAdd(asset, spoke, amount);
 
     uint256 newLiquidity = asset.liquidity + amount;
+    require(asset.underlying.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
     uint120 shares = asset.toAddedSharesDown(amount).toUint120();
     require(shares > 0, InvalidShares());
     asset.addedShares += shares;
@@ -220,9 +221,6 @@ contract Hub is IHub, AccessManaged {
     asset.liquidity = newLiquidity.toUint120();
 
     asset.updateDrawnRate(assetId);
-
-    // enforces spoke transfers the correct funds from user to hub
-    require(asset.underlying.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
 
     emit Add(assetId, msg.sender, shares, amount);
 
@@ -296,13 +294,12 @@ contract Hub is IHub, AccessManaged {
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
+
     uint256 newLiquidity = asset.liquidity + drawnAmount + premiumAmount;
+    require(asset.underlying.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
     asset.liquidity = newLiquidity.toUint120();
 
     asset.updateDrawnRate(assetId);
-
-    // enforces spoke transfers the correct funds from user to hub
-    require(asset.underlying.balanceOf(address(this)) >= newLiquidity, InvalidAmountReceived());
 
     emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
@@ -580,6 +577,11 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
+  function isUnderlyingListed(address underlying) external view returns (bool) {
+    return _underlyingSet.contains(underlying);
+  }
+
+  /// @inheritdoc IHub
   function getSpokeCount(uint256 assetId) external view returns (uint256) {
     return _assetToSpokes[assetId].length();
   }
@@ -640,11 +642,6 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory) {
     return _spokes[assetId][spoke];
-  }
-
-  /// @inheritdoc IHub
-  function isUnderlyingListed(address underlying) external view returns (bool) {
-    return _underlyingSet.contains(underlying);
   }
 
   /// @inheritdoc IHub

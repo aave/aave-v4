@@ -1,5 +1,5 @@
 {
-  "add": "87753",
+  "add": "87756",
   "draw": "120584",
   "eliminateDeficit: full": "59756",
   "eliminateDeficit: partial": "69332",
@@ -9,7 +9,7 @@
   "remove: full": "76661",
   "remove: partial": "81308",
   "reportDeficit": "112788",
-  "restore: full": "77781",
-  "restore: partial": "86411",
+  "restore: full": "77784",
+  "restore: partial": "86414",
   "transferShares": "67922"
 }

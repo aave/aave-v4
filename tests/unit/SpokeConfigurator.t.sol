@@ -213,7 +213,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     spokeConfigurator.addReserve({
       spoke: spokeAddr,
       hub: address(hub1),
-      assetId: dai2AssetId,
+      assetId: usdzAssetId,
       priceSource: newPriceSource,
       config: ISpoke.ReserveConfig({
         paused: false,
