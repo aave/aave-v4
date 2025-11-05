@@ -73,7 +73,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   /// @inheritdoc ISpokeConfigurator
   function updateMaxReserves(address spoke, uint256 maxReserves) external onlyOwner {
     _maxReserves[spoke] = maxReserves;
-    emit MaxReservesUpdated(spoke, maxReserves);
+    emit UpdateMaxReserves(spoke, maxReserves);
   }
 
   /// @inheritdoc ISpokeConfigurator

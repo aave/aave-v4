@@ -167,7 +167,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_updateMaxReserves() public {
     uint256 newMaxReserves = vm.randomUint();
     vm.expectEmit(address(spokeConfigurator));
-    emit ISpokeConfigurator.MaxReservesUpdated(spokeAddr, newMaxReserves);
+    emit ISpokeConfigurator.UpdateMaxReserves(spokeAddr, newMaxReserves);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateMaxReserves(spokeAddr, newMaxReserves);
 
