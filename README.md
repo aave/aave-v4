@@ -136,12 +136,12 @@ make gas-report
 
 Snapshot files generated:
 
-- `Hub.Operations.json`: Gas for Hub actions or treasury operations invoked by Spokes. Includes: `add`, `draw`, `eliminateDeficit`, `mintFeeShares`, `payFee`, `refreshPremium`, `remove`, `reportDeficit`, `restore`, `transferShares`.
-- `Spoke.Operations.json`: Gas for user-facing Spoke operations under representative scenarios: `supply`, `withdraw`, `borrow`, `repay`, enable/disable collateral, risk premium updates, common `multicall` patterns, and `liquidationCall` variants.
-- `Spoke.Operations.ZeroRiskPremium.json`: Same scenarios as `Spoke.Operations.json` but with risk premium set to 0, to show baseline gas excluding risk-premium computation.
-- `Spoke.Getters.json`: Gas for read-only getters (e.g. `getUserAccountData`) across different numbers of supplies/borrows.
-- `NativeTokenGateway.Operations.json`: Gas for native-asset (ETH) gateway flows: `supplyNative`, `supplyAsCollateralNative`, `borrowNative`, `repayNative`, `withdrawNative`.
-- `SignatureGateway.Operations.json`: Gas for EIP-712 meta-transactions: `supplyWithSig`, `repayWithSig`, `withdrawWithSig`, `setUsingAsCollateralWithSig`, `updateUserDynamicConfigWithSig`, `updateUserRiskPremiumWithSig`, `setSelfAsUserPositionManagerWithSig`.
+- `Hub.Operations.json`: Gas for Hub actions or treasury operations invoked by Spokes.
+- `Spoke.Operations.json`: Gas for user-facing Spoke operations.
+- `Spoke.Operations.ZeroRiskPremium.json`: Same scenarios as `Spoke.Operations.json` but with Collateral Risk set to 0, to show baseline gas excluding risk-premium computation.
+- `Spoke.Getters.json`: Gas for getters across different combinations of supplies/borrows.
+- `NativeTokenGateway.Operations.json`: Gas for native-asset (ETH) gateway flows.
+- `SignatureGateway.Operations.json`: Gas for EIP-712 meta-transactions.
 
 ## Security
 
