@@ -353,6 +353,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       premiumDebt: 0, // populated below
       accruedPremium: 0, // populated below
       totalDebtValue: userAccountData.totalDebtValue,
+      overEstimatedDebtValue: userAccountData.overEstimatedDebtValue,
       activeCollateralCount: userAccountData.activeCollateralCount,
       borrowedCount: userAccountData.borrowedCount,
       liquidator: msg.sender,
