@@ -246,6 +246,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           debtReserveBalance: 5e18,
           debtToCover: 3e18,
           totalDebtValue: 10_000e26,
+          overEstimatedDebtValue: 10_000e26 + _priceOf2Wei(spoke1, _daiReserveId(spoke1)),
           healthFactor: 0.8e18,
           targetHealthFactor: 1e18,
           maxLiquidationBonus: 120_00,
@@ -286,6 +287,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           debtReserveBalance: 5e18,
           debtToCover: 3e18,
           totalDebtValue: 10_000e26,
+          overEstimatedDebtValue: 10_000e26 + _priceOf2Wei(spoke1, _daiReserveId(spoke1)),
           healthFactor: 0.8e18,
           targetHealthFactor: 1e18,
           maxLiquidationBonus: 120_00,
@@ -305,7 +307,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
 
   function _calculateRawLiquidationAmounts(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
-  ) internal returns (uint256, uint256, uint256) {
+  ) internal view returns (uint256, uint256, uint256) {
     uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
       healthFactorForMaxBonus: params.healthFactorForMaxBonus,
       liquidationBonusFactor: params.liquidationBonusFactor,
@@ -333,7 +335,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
 
   function _calculateAdjustedLiquidationAmounts(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
-  ) internal returns (uint256, uint256, uint256) {
+  ) internal view returns (uint256, uint256, uint256) {
     uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
       healthFactorForMaxBonus: params.healthFactorForMaxBonus,
       liquidationBonusFactor: params.liquidationBonusFactor,

@@ -156,7 +156,7 @@ contract HubHandler is Test {
     s.assetDonated[underlying] += amount;
   }
 
-  function _updateState(uint256 assetId) internal {
+  function _updateState(uint256 assetId) internal pure {
     revert('implement me');
 
     // IHub.Asset memory reserveData = hub1.getAsset(assetId);

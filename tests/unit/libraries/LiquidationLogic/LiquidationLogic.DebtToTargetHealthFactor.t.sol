@@ -52,7 +52,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
     liquidationLogicWrapper.calculateDebtToTargetHealthFactor(params);
   }
 
-  function test_calculateDebtToTargetHealthFactor_UnitPrice() public {
+  function test_calculateDebtToTargetHealthFactor_UnitPrice() public view {
     for (uint256 i = 0; i < assetUnitList.length; i++) {
       uint256 assetUnit = assetUnitList[i];
       uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
@@ -73,7 +73,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
     }
   }
 
-  function test_calculateDebtToTargetHealthFactor_NoPrecisionLoss() public {
+  function test_calculateDebtToTargetHealthFactor_NoPrecisionLoss() public view {
     for (uint256 i = 0; i < assetUnitList.length; i++) {
       uint256 assetUnit = assetUnitList[i];
       uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
@@ -94,7 +94,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
     }
   }
 
-  function test_calculateDebtToTargetHealthFactor_PrecisionLoss() public {
+  function test_calculateDebtToTargetHealthFactor_PrecisionLoss() public view {
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory params = LiquidationLogic
       .CalculateDebtToTargetHealthFactorParams({
         totalDebtValue: 10_000e26,
