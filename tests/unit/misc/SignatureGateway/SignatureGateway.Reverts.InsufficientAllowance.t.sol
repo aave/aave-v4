@@ -22,7 +22,6 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
 
     EIP712Types.Supply memory p = _supplyData(spoke1, alice, deadline);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
-    address underlying = address(_underlying(spoke1, p.reserveId));
 
     vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
     vm.prank(vm.randomAddress());

@@ -23,7 +23,7 @@ contract TestnetERC20 is IERC20Permit, ERC20 {
 
   uint8 private _decimals;
 
-  constructor(string memory name, string memory symbol, uint8 decimals) ERC20(name, symbol) {
+  constructor(string memory name, string memory symbol, uint8 decimals_) ERC20(name, symbol) {
     uint256 chainId = block.chainid;
 
     DOMAIN_SEPARATOR = keccak256(
@@ -35,7 +35,7 @@ contract TestnetERC20 is IERC20Permit, ERC20 {
         address(this)
       )
     );
-    _setupDecimals(decimals);
+    _setupDecimals(decimals_);
   }
 
   /// @inheritdoc IERC20Permit

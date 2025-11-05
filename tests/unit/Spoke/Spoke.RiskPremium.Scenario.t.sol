@@ -131,7 +131,6 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     vars.lastUpdateTimestamp = vm.getBlockTimestamp().toUint40();
-    uint40 startTime = vars.lastUpdateTimestamp;
     skip(vars.delay);
 
     // Since only DAI is borrowed in the system, supply interest is accrued only on it

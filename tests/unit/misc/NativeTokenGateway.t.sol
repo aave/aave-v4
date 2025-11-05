@@ -96,7 +96,6 @@ contract NativeTokenGatewayTest is SpokeBase {
   }
 
   function test_supplyNative_revertsWith_InvalidAmount() public {
-    uint256 amount = 100e18;
     vm.expectRevert(IGatewayBase.InvalidAmount.selector);
     vm.prank(bob);
     nativeTokenGateway.supplyNative{value: 0}(address(spoke1), _wethReserveId(spoke1), 0);
@@ -346,8 +345,6 @@ contract NativeTokenGatewayTest is SpokeBase {
   }
 
   function test_withdrawNative_revertsWith_InvalidAmount() public {
-    uint256 amount = 100e18;
-
     vm.expectRevert(IGatewayBase.InvalidAmount.selector);
     vm.prank(bob);
     nativeTokenGateway.withdrawNative(address(spoke1), _wethReserveId(spoke1), 0);
@@ -420,8 +417,6 @@ contract NativeTokenGatewayTest is SpokeBase {
   }
 
   function test_borrowNative_revertsWith_InvalidAmount() public {
-    uint256 borrowAmount = 5e18;
-
     vm.expectRevert(IGatewayBase.InvalidAmount.selector);
     vm.prank(bob);
     nativeTokenGateway.borrowNative(address(spoke1), _wethReserveId(spoke1), 0);
@@ -656,8 +651,6 @@ contract NativeTokenGatewayTest is SpokeBase {
   }
 
   function test_repayNative_revertsWith_InvalidAmount() public {
-    uint256 repayAmount = 5e18;
-
     vm.expectRevert(IGatewayBase.InvalidAmount.selector);
     vm.prank(bob);
     nativeTokenGateway.repayNative{value: 0}(address(spoke1), _wethReserveId(spoke1), 0);

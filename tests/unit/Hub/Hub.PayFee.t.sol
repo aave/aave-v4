@@ -29,7 +29,6 @@ contract HubPayFeeTest is HubBase {
     });
 
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
-    uint256 feeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
 
     vm.expectRevert(stdError.arithmeticError);
     vm.prank(address(spoke1));

@@ -68,7 +68,6 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.setArbitraryStorage(address(spoke1));
 
     address user = vm.randomAddress();
-    address positionManager = vm.randomAddress();
     vm.prank(user);
     spoke1.setUserPositionManager(POSITION_MANAGER, false);
 
