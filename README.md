@@ -9,7 +9,6 @@ A unified liquidity layer and modular architecture that enhances capital efficie
 ## Table of Contents
 
 - [Documentation](#documentation)
-- [Contributing](#contributing)
 - [Architecture](#architecture)
 - [Repository Structure](#repository-structure)
 - [Dependencies](#dependencies)
@@ -23,17 +22,6 @@ A unified liquidity layer and modular architecture that enhances capital efficie
 ## Documentation
 
 - [Aave V4 Overview](./docs/overview.md)
-
-## Contributing
-
-Please read our [Contributing Guidelines](./CONTRIBUTING.md) before submitting pull requests.
-
-Key points:
-
-- Significant protocol changes require discussion before PR creation
-- All changes must include comprehensive tests
-- PRs must maintain or improve test coverage
-- Gas snapshots must be updated for code changes
 
 ## Architecture
 
