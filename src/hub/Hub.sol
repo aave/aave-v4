@@ -43,7 +43,7 @@ contract Hub is IHub, AccessManaged {
   mapping(uint256 assetId => Asset) internal _assets;
   mapping(uint256 assetId => mapping(address spoke => SpokeData)) internal _spokes;
   mapping(uint256 assetId => EnumerableSet.AddressSet) internal _assetToSpokes;
-  EnumerableSet.AddressSet internal _underlyingSet;
+  EnumerableSet.AddressSet internal _underlyingAssets;
 
   /// @dev Constructor.
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
@@ -68,7 +68,7 @@ contract Hub is IHub, AccessManaged {
       MIN_ALLOWED_UNDERLYING_DECIMALS <= decimals && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
       InvalidAssetDecimals()
     );
-    require(!_underlyingSet.contains(underlying), AssetAlreadyListed());
+    require(!_underlyingAssets.contains(underlying), AssetAlreadyListed());
 
     uint256 assetId = _assetCount++;
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
@@ -102,7 +102,7 @@ contract Hub is IHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
-    _underlyingSet.add(underlying);
+    _underlyingAssets.add(underlying);
     _addFeeReceiver(assetId, feeReceiver);
 
     emit AddAsset(assetId, underlying, decimals);
@@ -444,6 +444,11 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
+  function isUnderlyingListed(address underlying) external view returns (bool) {
+    return _underlyingAssets.contains(underlying);
+  }
+
+  /// @inheritdoc IHub
   function getAssetCount() external view returns (uint256) {
     return _assetCount;
   }
@@ -574,11 +579,6 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].drawnRate;
-  }
-
-  /// @inheritdoc IHub
-  function isUnderlyingListed(address underlying) external view returns (bool) {
-    return _underlyingSet.contains(underlying);
   }
 
   /// @inheritdoc IHub

@@ -316,7 +316,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     uint256 debtToLiquidate = liquidationLogicWrapper.calculateDebtToLiquidate(
       _getCalculateDebtToLiquidateParams(params)
     );
-    uint256 collateralToLiquidate = debtToLiquidate.mulDivUp(
+    uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
       params.debtAssetPrice * 10 ** params.collateralAssetDecimals * liquidationBonus,
       10 ** params.debtAssetDecimals *
         params.collateralAssetPrice *
