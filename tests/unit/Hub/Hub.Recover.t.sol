@@ -114,7 +114,21 @@ contract HubRecoverTest is HubBase {
       restorer: alice
     });
 
-    vm.assume(lostAmount > _calculateBurntInterest(hub1, daiAssetId));
+    // remove all
+    Utils.remove({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)),
+      to: alice
+    });
+    Utils.remove({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke2),
+      amount: hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
+      to: alice
+    });
 
     uint256 prevHubBalance = underlying.balanceOf(address(hub1));
     uint256 prevRecoveryBalance = underlying.balanceOf(recoverSpoke);
@@ -129,36 +143,21 @@ contract HubRecoverTest is HubBase {
     uint256 finalHubBalance = underlying.balanceOf(address(hub1));
     uint256 finalRecoveryBalance = underlying.balanceOf(recoverSpoke);
 
-    // spoke1, alice remove dai
-    Utils.remove({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
-      amount: 5e20,
-      to: alice
-    });
-    // spoke2, bob add dai
-    Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 2.5e22, user: bob});
-
-    uint256 burntInterest = _calculateBurntInterest(hub1, daiAssetId);
-    lostAmount -= burntInterest;
-
     // check amounts & balances
     assertApproxEqAbs(
       recoverAmount,
       lostAmount,
       hub1.previewAddByShares(daiAssetId, 1),
       'recover amount'
-    ); // can differ by up to 1 share worth of assets due to precision loss from remove donation
+    ); // can differ by up to 1 share worth of assets due to remove donation rounding
     assertEq(recoverAddedShares, recoverWithdrawnShares, 'recover shares');
     assertEq(finalHubBalance, prevHubBalance - recoverAmount, 'hub balance');
     assertEq(finalRecoveryBalance, prevRecoveryBalance + recoverAmount, 'recovery balance');
-    // note: cannot assert hub liquidity as due to rounding, there is dust remaining that cannot be withdrawn (<1 share)
-    // assertHubLiquidity(hub1, daiAssetId, 'hub1.recover');
+    assertHubLiquidity(hub1, daiAssetId, 'hub1.recover');
   }
 
   /// @dev Another spoke cannot improperly recover liquidity fee without transferring underlying tokens
-  function test_cannot_steal_liquidity_fee_reverts_with_InvalidAmountReceived() public {
+  function test_cannot_recover_liquidity_fee_reverts_with_InvalidAmountReceived() public {
     IERC20 underlying = IERC20(hub1.getAsset(daiAssetId).underlying);
 
     // spoke1, alice add dai
@@ -200,9 +199,11 @@ contract HubRecoverTest is HubBase {
     IERC20 underlying
   ) internal returns (uint256, uint256, uint256) {
     uint256 recordedLiquidity = hub.getAssetLiquidity(assetId);
-    uint256 recoverAmount = underlying.balanceOf(address(hub)) -
-      recordedLiquidity -
-      _calculateBurntInterest(hub, assetId);
+    uint256 recoverAmount = underlying.balanceOf(address(hub)) - recordedLiquidity;
+
+    // ensure enough recoverAmount to add
+    vm.assume(hub.previewAddByAssets(assetId, recoverAmount) > 0);
+
     vm.startPrank(recoverSpoke);
     uint256 recoveredAddedShares = hub.add(assetId, recoverAmount);
     recoverAmount = hub1.getSpokeAddedAssets(assetId, recoverSpoke);
