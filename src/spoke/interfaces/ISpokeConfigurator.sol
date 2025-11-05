@@ -8,6 +8,16 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Interface for the SpokeConfigurator.
 interface ISpokeConfigurator {
+  /// @notice Emitted when the maximum allowed number of reserves for a spoke is updated.
+  /// @param spoke The address of the spoke.
+  /// @param maxReserves The new maximum number of reserves.
+  event UpdateMaxReserves(address spoke, uint256 maxReserves);
+
+  /// @dev Thrown upon adding a reserve when the maximum allowed number of reserves is already reached.
+  /// @param spoke The address of the spoke.
+  /// @param maxReserves The maximum allowed number of reserves.
+  error MaximumReservesReached(address spoke, uint256 maxReserves);
+
   /// @notice Updates the price source of a reserve.
   /// @dev The price source must implement the AggregatorV3Interface.
   /// @param spoke The address of the spoke.
@@ -37,6 +47,12 @@ interface ISpokeConfigurator {
     address spoke,
     ISpoke.LiquidationConfig calldata liquidationConfig
   ) external;
+
+  /// @notice Updates the maximum number of reserves allowed to exist on a spoke.
+  /// @dev It allows setting the maximum below the amount of reserves that currently exist.
+  /// @param spoke The address of the spoke.
+  /// @param maxReserves The new maximum number of reserves.
+  function updateMaxReserves(address spoke, uint256 maxReserves) external;
 
   /// @notice Adds a new reserve to a spoke.
   /// @dev The asset corresponding to the reserve must be already listed on the Hub.
@@ -186,4 +202,9 @@ interface ISpokeConfigurator {
   /// @param positionManager The address of the position manager.
   /// @param active The new active flag.
   function updatePositionManager(address spoke, address positionManager, bool active) external;
+
+  /// @notice Returns the maximum number of reserves allowed to exist on a spoke.
+  /// @param spoke The address of the spoke.
+  /// @return The maximum number of reserves.
+  function getMaxReserves(address spoke) external view returns (uint256);
 }
