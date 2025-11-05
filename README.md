@@ -13,11 +13,7 @@ A unified liquidity layer and modular architecture that enhances capital efficie
 - [Repository Structure](#repository-structure)
 - [Dependencies](#dependencies)
 - [Development](#development)
-- [Deployment](#deployment)
 - [Security](#security)
-- [Versioning](#versioning)
-- [Links](#links)
-- [License](#license)
 
 ## Documentation
 
@@ -26,33 +22,6 @@ A unified liquidity layer and modular architecture that enhances capital efficie
 ## Architecture
 
 The Aave V4 architecture follows a modular **hub-and-spoke design** that separates liquidity management from user-facing operations and collateralization.
-
-### Core Components
-
-#### Hub (`Hub.sol`)
-
-- Manages unified liquidity pools for assets
-- Extends credit lines to multiple Spokes
-- Handles asset and Spoke accounting and caps management
-- Responsible for supplied shares exchange rate and debt index conversions
-- Implements interest rate strategies and asset logic
-- Handles reinvestment controllers and their permissioning
-
-#### Spoke (`Spoke.sol`)
-
-- User-facing entry points for supplies, withdraws, borrows, repays, and liquidations
-- Enforces collateralization requirements
-- Manages user positions and risk parameters
-- Abstracts Hub logic from end users
-- Can connect to separate Hubs for each reserve
-- Connects to and reads from oracles
-
-#### Key Design Principles
-
-1. **Separation of Concerns**: Hubs handle liquidity and asset management, Spokes handle user interactions and risk enforcement.
-2. **Flexibility**: Each reserve on a Spoke can connect to a different Hub.
-3. **Modularity**: Independent configuration per component.
-4. **Capital Efficiency**: Shared liquidity pools enable better capital utilization. Sweep functionality allows rehypothecation of idle funds.
 
 ## Repository Structure
 
@@ -164,35 +133,15 @@ make gas-report
 
 Snapshot files generated:
 
-- `Hub.Operations.json`
-- `Spoke.Operations.json`
-- `Spoke.Getters.json`
-- `NativeTokenGateway.Operations.json`
-- `SignatureGateway.Operations.json`
-
-## Deployment
-
-Deployment scripts are located in the `scripts/` directory. See `./Makefile` for deployment commands.
+- `Hub.Operations.json`: Gas for Hub actions or treasury operations invoked by Spokes. Includes: `add`, `draw`, `eliminateDeficit`, `mintFeeShares`, `payFee`, `refreshPremium`, `remove`, `reportDeficit`, `restore`, `transferShares`.
+- `Spoke.Operations.json`: Gas for user-facing Spoke operations under representative scenarios: `supply`, `withdraw`, `borrow`, `repay`, enable/disable collateral, risk premium updates, common `multicall` patterns, and `liquidationCall` variants.
+- `Spoke.Operations.ZeroRiskPremium.json`: Same scenarios as `Spoke.Operations.json` but with risk premium set to 0, to show baseline gas excluding risk-premium computation.
+- `Spoke.Getters.json`: Gas for read-only getters (e.g. `getUserAccountData`) across different numbers of supplies/borrows.
+- `NativeTokenGateway.Operations.json`: Gas for native-asset (ETH) gateway flows: `supplyNative`, `supplyAsCollateralNative`, `borrowNative`, `repayNative`, `withdrawNative`.
+- `SignatureGateway.Operations.json`: Gas for EIP-712 meta-transactions: `supplyWithSig`, `repayWithSig`, `withdrawWithSig`, `setUsingAsCollateralWithSig`, `updateUserDynamicConfigWithSig`, `updateUserRiskPremiumWithSig`, `setSelfAsUserPositionManagerWithSig`.
 
 ## Security
 
 - **Audit Reports**: [TBD]
 - **Security Policy**: [TBD]
 - **Bug Bounty**: [TBD]
-
-## Versioning
-
-Current version: **v0.5.3**
-
-See `package.json` for version information and metadata.
-
-## Links
-
-- [Website](https://aave.com)
-- [Documentation](https://docs.aave.com)
-- [Twitter](https://twitter.com/aave)
-- [Forum](https://governance.aave.com)
-
-## License
-
-All Rights Reserved © Aave Labs

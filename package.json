@@ -11,6 +11,11 @@
   },
   "keywords": [],
   "author": "Aave Labs",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/aave/aave-v4/issues"
+  },
+  "homepage": "https://github.com/aave/aave-v4#readme",
   "devDependencies": {
     "husky": "9.1.7",
     "lint-staged": "16.2.3",
