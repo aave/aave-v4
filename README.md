@@ -55,10 +55,13 @@ aave-v4/
   foundryup  # Update to latest version
   ```
 - **[Node.js](https://nodejs.org/en/download)** - For linting and tooling
+
   ```bash
   # Verify installation
   node --version
-  npm --version
+  yarn --version
+  # Install dependencies
+  yarn install
   ```
 
 ### Optional
