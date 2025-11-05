@@ -83,6 +83,42 @@ contract HubRecoverTest is HubBase {
     Utils.remove({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 10e22, to: bob});
   }
 
+  /// @dev Another spoke cannot improperly recover liquidity fee without transferring underlying tokens
+  function test_cannot_steal_liquidity_fee_reverts_with_InvalidAmountReceived() public {
+    IERC20 underlying = IERC20(hub1.getAsset(daiAssetId).underlying);
+
+    // spoke1, alice add dai
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: 10e20,
+      user: alice
+    });
+    // spoke2, bob add dai
+    Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 7.5e22, user: bob});
+    Utils.draw({hub: hub1, assetId: daiAssetId, caller: address(spoke1), to: alice, amount: 10e20});
+
+    skip(322 days);
+
+    Utils.restoreDrawn({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      drawnAmount: hub1.getSpokeTotalOwed(daiAssetId, address(spoke1)),
+      restorer: alice
+    });
+
+    uint256 liquidityFee = hub1.getAssetAccruedFees(daiAssetId);
+    assertGt(liquidityFee, 0);
+
+    // Cannot add liquidity fee amount without transferring underlying tokens
+    vm.expectRevert(IHub.InvalidAmountReceived.selector);
+
+    vm.prank(address(recoverSpoke));
+    hub1.add(daiAssetId, liquidityFee);
+  }
+
   function _recover(
     IHub hub,
     address recoverSpoke,
