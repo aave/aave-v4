@@ -28,7 +28,7 @@ contract HubConfigTest is HubBase {
     new Hub(address(0));
   }
 
-  function test_hub_max_riskPremium() public {
+  function test_hub_max_riskPremium() public view {
     assertEq(Constants.MAX_RISK_PREMIUM_THRESHOLD, hub1.MAX_RISK_PREMIUM_THRESHOLD());
   }
 

@@ -4,12 +4,17 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
-import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  TransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {Hub} from 'src/hub/Hub.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {Spoke} from 'src/spoke/Spoke.sol';
 import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
@@ -156,7 +161,7 @@ contract HubHandler is Test {
     s.assetDonated[underlying] += amount;
   }
 
-  function _updateState(uint256 assetId) internal {
+  function _updateState(uint256 assetId) internal pure {
     revert('implement me');
 
     // IHub.Asset memory reserveData = hub1.getAsset(assetId);
@@ -167,7 +172,7 @@ contract HubHandler is Test {
   }
 
   function _deployMockPriceFeed(Spoke spoke, uint256 price) internal returns (address) {
-    AaveOracle oracle = AaveOracle(spoke.ORACLE());
-    return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
+    AaveOracle spokeOracle = AaveOracle(spoke.ORACLE());
+    return address(new MockPriceFeed(spokeOracle.DECIMALS(), spokeOracle.DESCRIPTION(), price));
   }
 }

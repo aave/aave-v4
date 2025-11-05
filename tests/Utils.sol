@@ -18,10 +18,10 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    IHub hub = IHub(address(hub));
-    approve(hub, assetId, user, amount);
+    IHub iHub = IHub(address(hub));
+    approve(iHub, assetId, user, amount);
     vm.prank(caller);
-    return hub.add(assetId, amount, user);
+    return iHub.add(assetId, amount, user);
   }
 
   function draw(
