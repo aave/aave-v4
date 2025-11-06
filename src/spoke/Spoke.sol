@@ -349,6 +349,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
+      healthFactorForLiqCheck: userAccountData.healthFactorForLiqCheck,
       drawnDebt: 0, // populated below
       premiumDebt: 0, // populated below
       accruedPremium: 0, // populated below
@@ -774,9 +775,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       accountData.healthFactor = accountData
         .avgCollateralFactor
         .wadDivDown(accountData.overEstimatedDebtValue)
-        .fromBpsDown(); // Use overestimated debt for hf check since hf is checked before broadcasting premium updates
+        .fromBpsDown(); // By default, the hf used in most cases is the underestimated hf
+      accountData.healthFactorForLiqCheck = accountData
+        .avgCollateralFactor
+        .wadDivDown(accountData.totalDebtValue)
+        .fromBpsDown(); // We use the regular hf for liquidation checks
     } else {
       accountData.healthFactor = type(uint256).max;
+      accountData.healthFactorForLiqCheck = type(uint256).max;
     }
 
     if (accountData.totalCollateralValue > 0) {

@@ -54,6 +54,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         overEstimatedDebtValue: 75e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
+        healthFactorForLiqCheck: 0.96e18,
         riskPremium: 0,
         activeCollateralCount: 1,
         borrowedCount: 1
@@ -89,6 +90,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         overEstimatedDebtValue: 75e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
+        healthFactorForLiqCheck: 0.96e18,
         riskPremium: 0,
         activeCollateralCount: 1,
         borrowedCount: 1
@@ -124,6 +126,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         overEstimatedDebtValue: 75e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
         avgCollateralFactor: 0.96e18,
         healthFactor: 1.28e18,
+        healthFactorForLiqCheck: 1.28e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
         borrowedCount: 1
@@ -167,6 +170,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         overEstimatedDebtValue: 1000e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
         avgCollateralFactor: 0.509019608e18,
         healthFactor: 2.596e18,
+        healthFactorForLiqCheck: 2.596e18,
         riskPremium: 14_50,
         activeCollateralCount: 2,
         borrowedCount: 1
@@ -212,6 +216,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
           _priceOf2Wei(spoke, _wbtcReserveId(spoke)),
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.576e18,
+        healthFactorForLiqCheck: 0.576e18,
         riskPremium: 0,
         activeCollateralCount: 1,
         borrowedCount: 2
@@ -253,6 +258,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         overEstimatedDebtValue: 75e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
+        healthFactorForLiqCheck: 0.96e18,
         riskPremium: 0,
         activeCollateralCount: 1,
         borrowedCount: 1

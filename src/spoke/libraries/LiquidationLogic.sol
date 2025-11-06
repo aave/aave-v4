@@ -29,6 +29,7 @@ library LiquidationLogic {
     address user;
     uint256 debtToCover;
     uint256 healthFactor;
+    uint256 healthFactorForLiqCheck;
     uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 accruedPremium;
@@ -156,7 +157,7 @@ library LiquidationLogic {
         collateralReservePaused: collateralReserve.paused,
         collateralReserveFrozen: collateralReserve.frozen,
         debtReservePaused: debtReserve.paused,
-        healthFactor: params.healthFactor,
+        healthFactor: params.healthFactorForLiqCheck,
         collateralReserveId: params.collateralReserveId,
         collateralFactor: collateralDynConfig.collateralFactor,
         collateralReserveBalance: collateralReserveBalance,

@@ -1859,6 +1859,7 @@ abstract contract Base is Test {
       userAccountData.totalDebtValue;
   }
 
+  /// @dev In general this hf is used, except for checking if a user position is liquidatable
   function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {
     return spoke.getUserAccountData(user).healthFactor;
   }

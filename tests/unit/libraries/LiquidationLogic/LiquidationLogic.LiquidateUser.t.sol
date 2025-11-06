@@ -38,6 +38,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       user: makeAddr('user'),
       debtToCover: 3e18,
       healthFactor: 0.8e18,
+      healthFactorForLiqCheck: 0.8e18,
       drawnDebt: 4.5e18,
       premiumDebt: 0.5e18,
       accruedPremium: 0.2e18,

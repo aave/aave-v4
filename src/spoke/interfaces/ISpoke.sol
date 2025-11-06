@@ -109,6 +109,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint256 riskPremium;
     uint256 avgCollateralFactor;
     uint256 healthFactor;
+    uint256 healthFactorForLiqCheck;
     uint256 totalCollateralValue;
     uint256 totalDebtValue;
     uint256 overEstimatedDebtValue;
