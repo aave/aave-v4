@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
 
-contract HubRecoverTest is HubBase {
-  address recoverSpoke;
+contract HubRescueTest is HubBase {
+  address rescueSpoke;
 
   function setUp() public override {
     super.setUp();
 
-    recoverSpoke = makeAddr('recoverSpoke');
+    rescueSpoke = makeAddr('rescueSpoke');
 
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
@@ -20,10 +20,11 @@ contract HubRecoverTest is HubBase {
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.prank(ADMIN);
-    hub1.addSpoke(daiAssetId, recoverSpoke, spokeConfig);
+    hub1.addSpoke(daiAssetId, rescueSpoke, spokeConfig);
   }
 
-  function test_recovery_scenario_fuzz(uint256 lostAmount) public {
+  /// @dev Recovery of funds directly transferred to the hub & ensure asset liquidity tracking is not impacted.
+  function test_rescue_scenario_fuzz(uint256 lostAmount) public {
     lostAmount = bound(lostAmount, 1, MAX_SUPPLY_AMOUNT / 10);
 
     IERC20 underlying = IERC20(hub1.getAsset(daiAssetId).underlying);
@@ -42,17 +43,17 @@ contract HubRecoverTest is HubBase {
     Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 7.5e22, user: bob});
 
     uint256 prevHubBalance = underlying.balanceOf(address(hub1));
-    uint256 prevRecoveryBalance = underlying.balanceOf(recoverSpoke);
+    uint256 prevRecoveryBalance = underlying.balanceOf(rescueSpoke);
 
-    (uint256 recoverAmount, uint256 recoverAddedShares, uint256 recoverWithdrawnShares) = _recover(
+    (uint256 rescueAmount, uint256 rescueAddedShares, uint256 rescueWithdrawnShares) = _rescue(
       hub1,
-      recoverSpoke,
+      rescueSpoke,
       daiAssetId,
       underlying
     );
 
     uint256 finalHubBalance = underlying.balanceOf(address(hub1));
-    uint256 finalRecoveryBalance = underlying.balanceOf(recoverSpoke);
+    uint256 finalRecoveryBalance = underlying.balanceOf(rescueSpoke);
 
     // spoke1, alice remove dai
     Utils.remove({
@@ -66,13 +67,13 @@ contract HubRecoverTest is HubBase {
     Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 2.5e22, user: bob});
 
     // check amounts & balances
-    assertEq(recoverAmount, lostAmount, 'recover amount');
-    assertEq(recoverAddedShares, recoverWithdrawnShares, 'recover shares');
+    assertEq(rescueAmount, lostAmount, 'rescue amount');
+    assertEq(rescueAddedShares, rescueWithdrawnShares, 'rescue shares');
     assertEq(finalHubBalance, prevHubBalance - lostAmount, 'hub balance');
-    assertEq(finalRecoveryBalance, prevRecoveryBalance + lostAmount, 'recovery balance');
-    assertHubLiquidity(hub1, daiAssetId, 'hub1.recover');
+    assertEq(finalRecoveryBalance, prevRecoveryBalance + lostAmount, 'rescuey balance');
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.rescue');
 
-    // remove all
+    // remove all, ensure there is enough liquidity to honor all withdrawals.
     Utils.remove({
       hub: hub1,
       assetId: daiAssetId,
@@ -81,10 +82,12 @@ contract HubRecoverTest is HubBase {
       to: alice
     });
     Utils.remove({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 10e22, to: bob});
+
+    assertEq(underlying.balanceOf(address(hub1)), 0, 'final hub amount');
   }
 
   /// @dev Recovery of funds directly transferred to the hub including interest accrual
-  function test_recovery_fuzz_with_interest(uint256 lostAmount, uint256 skipTime) public {
+  function test_rescue_fuzz_with_interest(uint256 lostAmount, uint256 skipTime) public {
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
     lostAmount = bound(lostAmount, 1, MAX_SUPPLY_AMOUNT / 10);
 
@@ -131,17 +134,17 @@ contract HubRecoverTest is HubBase {
     });
 
     uint256 prevHubBalance = underlying.balanceOf(address(hub1));
-    uint256 prevRecoveryBalance = underlying.balanceOf(recoverSpoke);
+    uint256 prevRecoveryBalance = underlying.balanceOf(rescueSpoke);
 
-    (uint256 recoverAmount, uint256 recoverAddedShares, uint256 recoverWithdrawnShares) = _recover(
+    (uint256 recoverAmount, uint256 recoverAddedShares, uint256 recoverWithdrawnShares) = _rescue(
       hub1,
-      recoverSpoke,
+      rescueSpoke,
       daiAssetId,
       underlying
     );
 
     uint256 finalHubBalance = underlying.balanceOf(address(hub1));
-    uint256 finalRecoveryBalance = underlying.balanceOf(recoverSpoke);
+    uint256 finalRecoveryBalance = underlying.balanceOf(rescueSpoke);
 
     // check amounts & balances
     assertApproxEqAbs(
@@ -153,7 +156,7 @@ contract HubRecoverTest is HubBase {
     assertEq(recoverAddedShares, recoverWithdrawnShares, 'recover shares');
     assertEq(finalHubBalance, prevHubBalance - recoverAmount, 'hub balance');
     assertEq(finalRecoveryBalance, prevRecoveryBalance + recoverAmount, 'recovery balance');
-    assertHubLiquidity(hub1, daiAssetId, 'hub1.recover');
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.recover');
   }
 
   /// @dev Another spoke cannot improperly recover liquidity fee without transferring underlying tokens
@@ -186,30 +189,35 @@ contract HubRecoverTest is HubBase {
     assertGt(liquidityFee, 0);
 
     // Cannot add liquidity fee amount without transferring underlying tokens
-    vm.expectRevert(IHub.InvalidAmountReceived.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IHub.InsufficientLiquidity.selector,
+        hub1.getAssetLiquidity(daiAssetId) + liquidityFee
+      )
+    );
 
-    vm.prank(address(recoverSpoke));
+    vm.prank(address(rescueSpoke));
     hub1.add(daiAssetId, liquidityFee);
   }
 
-  function _recover(
+  function _rescue(
     IHub hub,
-    address recoverSpoke,
+    address rescueSpoke,
     uint256 assetId,
     IERC20 underlying
   ) internal returns (uint256, uint256, uint256) {
     uint256 recordedLiquidity = hub.getAssetLiquidity(assetId);
-    uint256 recoverAmount = underlying.balanceOf(address(hub)) - recordedLiquidity;
+    uint256 rescueAmount = underlying.balanceOf(address(hub)) - recordedLiquidity;
 
-    // ensure enough recoverAmount to add
-    vm.assume(hub.previewAddByAssets(assetId, recoverAmount) > 0);
+    // ensure enough rescueAmount to add
+    vm.assume(hub.previewAddByAssets(assetId, rescueAmount) > 0);
 
-    vm.startPrank(recoverSpoke);
-    uint256 recoveredAddedShares = hub.add(assetId, recoverAmount);
-    recoverAmount = hub1.getSpokeAddedAssets(assetId, recoverSpoke);
-    uint256 recoveredWithdrawnShares = hub.remove(assetId, recoverAmount, recoverSpoke);
+    vm.startPrank(rescueSpoke);
+    uint256 rescuedAddedShares = hub.add(assetId, rescueAmount);
+    rescueAmount = hub1.getSpokeAddedAssets(assetId, rescueSpoke);
+    uint256 rescuedWithdrawnShares = hub.remove(assetId, rescueAmount, rescueSpoke);
     vm.stopPrank();
 
-    return (recoverAmount, recoveredAddedShares, recoveredWithdrawnShares);
+    return (rescueAmount, rescuedAddedShares, rescuedWithdrawnShares);
   }
 }

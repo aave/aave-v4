@@ -11,11 +11,19 @@ contract MockSkimSpoke {
     HUB = IHubBase(hubAddress);
   }
 
-  function skim(uint256 assetId, uint256 amount) external returns (uint256) {
+  function skimAdd(uint256 assetId, uint256 amount) external returns (uint256) {
     return HUB.add(assetId, amount);
   }
 
   function withdraw(uint256 assetId, uint256 amount, address to) external returns (uint256) {
     return HUB.remove(assetId, amount, to);
+  }
+
+  function draw(uint256 assetId, uint256 amount, address to) external returns (uint256) {
+    return HUB.draw(assetId, amount, to);
+  }
+
+  function skimRestore(uint256 assetId, uint256 drawnAmount) external returns (uint256) {
+    return HUB.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0));
   }
 }

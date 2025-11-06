@@ -164,7 +164,7 @@ contract SpokeBorrowTest is SpokeBase {
     users[0] = bob;
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'bob dai after');
 
-    assertHubLiquidity(hub1, daiAssetId, 'spoke1.borrow');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.borrow');
   }
 
   function test_borrow_fuzz_amounts(uint256 wethSupplyAmount, uint256 daiBorrowAmount) public {
@@ -337,7 +337,7 @@ contract SpokeBorrowTest is SpokeBase {
     users[0] = bob;
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'bob dai after');
 
-    assertHubLiquidity(hub1, daiAssetId, 'spoke1.borrow');
-    assertHubLiquidity(hub1, wethAssetId, 'spoke1.borrow');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.borrow');
+    _assertHubLiquidity(hub1, wethAssetId, 'spoke1.borrow');
   }
 }

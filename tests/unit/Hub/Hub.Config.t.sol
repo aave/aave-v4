@@ -227,10 +227,10 @@ contract HubConfigTest is HubBase {
     );
   }
 
-  function test_addAsset_reverts_AssetAlreadyListed() public {
+  function test_addAsset_reverts_UnderlyingAlreadyListed() public {
     assertTrue(hub1.isUnderlyingListed(address(tokenList.dai)));
 
-    vm.expectRevert(IHub.AssetAlreadyListed.selector, address(hub1));
+    vm.expectRevert(IHub.UnderlyingAlreadyListed.selector, address(hub1));
     Utils.addAsset(
       hub1,
       ADMIN,
@@ -340,7 +340,7 @@ contract HubConfigTest is HubBase {
       encodedIrData
     );
 
-    assertBorrowRateSynced(hub1, assetId, 'addAsset');
+    _assertBorrowRateSynced(hub1, assetId, 'addAsset');
     assertEq(assetId, expectedAssetId, 'asset id');
     assertEq(hub1.getAssetCount(), assetId + 1, 'asset count');
     assertEq(hub1.getAsset(assetId).decimals, decimals, 'asset decimals');
@@ -527,7 +527,7 @@ contract HubConfigTest is HubBase {
     );
 
     assertEq(hub1.getAssetConfig(assetId), newConfig);
-    assertBorrowRateSynced(hub1, assetId, 'updateAssetConfig');
+    _assertBorrowRateSynced(hub1, assetId, 'updateAssetConfig');
   }
 
   function test_updateAssetConfig_fuzz_Scenario(uint256 assetId) public {

@@ -176,11 +176,11 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 amount
   );
 
+  /// @notice Thrown when an underlying asset is already listed.
+  error UnderlyingAlreadyListed();
+
   /// @notice Thrown when an asset is not listed.
   error AssetNotListed();
-
-  /// @notice Thrown when an underlying asset is already listed.
-  error AssetAlreadyListed();
 
   /// @notice Thrown when the add cap is exceeded.
   /// @param addCap The current `addCap` of the asset, expressed in whole assets (not scaled by decimals).
@@ -241,9 +241,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Thrown if the interest rate strategy or data are invalid when updating an asset configuration.
   /// @dev The `irData` must be empty if the interest rate strategy is not updated.
   error InvalidInterestRateStrategy();
-
-  /// @notice Thrown when the amount of underlying assets received is less than expected.
-  error InvalidAmountReceived();
 
   /// @notice Adds a new asset to the Hub.
   /// @dev The same underlying asset address cannot be added as an asset multiple times.
