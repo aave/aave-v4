@@ -287,10 +287,6 @@ library LiquidationLogic {
     IHubBase hub = collateralReserve.hub;
     uint256 assetId = collateralReserve.assetId;
 
-    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
-    uint120 suppliedShares = collateralPosition.suppliedShares - sharesToLiquidate.toUint120();
-    collateralPosition.suppliedShares = suppliedShares;
-
     uint256 sharesToLiquidator;
     if (params.collateralToLiquidator > 0) {
       if (params.receiveShares) {
@@ -298,17 +294,37 @@ library LiquidationLogic {
         if (sharesToLiquidator > 0) {
           positions[params.liquidator][params.collateralReserveId]
             .suppliedShares += sharesToLiquidator.toUint120();
+
+          emit ISpokeBase.Supply(
+            params.collateralReserveId,
+            params.liquidator,
+            params.liquidator,
+            sharesToLiquidator,
+            params.collateralToLiquidator
+          );
         }
       } else {
         sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
       }
     }
 
+    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
+    uint120 newSuppliedShares = collateralPosition.suppliedShares - sharesToLiquidate.toUint120();
+    collateralPosition.suppliedShares = newSuppliedShares;
+
+    emit ISpokeBase.Withdraw(
+      params.collateralReserveId,
+      params.liquidator,
+      params.user,
+      sharesToLiquidate,
+      params.collateralToLiquidate
+    );
+
     if (sharesToLiquidate > sharesToLiquidator) {
       hub.payFeeShares(assetId, sharesToLiquidate.uncheckedSub(sharesToLiquidator));
     }
 
-    return suppliedShares == 0;
+    return newSuppliedShares == 0;
   }
 
   /// @dev Invoked by `liquidateUser` method.
@@ -338,6 +354,15 @@ library LiquidationLogic {
       );
       debtPosition.settlePremiumDebt(premiumDelta.realizedDelta);
       debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
+
+      emit ISpokeBase.Repay(
+        params.debtReserveId,
+        params.liquidator,
+        params.user,
+        drawnSharesLiquidated,
+        params.debtToLiquidate,
+        premiumDelta
+      );
     }
 
     if (debtPosition.drawnShares == 0) {

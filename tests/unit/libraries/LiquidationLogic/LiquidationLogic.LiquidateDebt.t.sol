@@ -83,31 +83,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     Utils.approve(hub, assetId, liquidator, spokeDrawnOwed + spokePremiumOwed);
   }
 
-  function expectCall(
-    uint256 drawnDebt,
-    uint256 premiumDebt,
-    uint256 accruedPremium,
-    uint256 debtToLiquidate
-  ) internal returns (uint256, uint256) {
-    uint256 premiumDebtToLiquidate = _min(debtToLiquidate, premiumDebt);
-    uint256 drawnDebtToLiquidate = _min(drawnDebt, debtToLiquidate - premiumDebtToLiquidate);
-
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: -hub.previewRestoreByAssets(assetId, premiumDebt).toInt256(),
-      offsetDelta: -(premiumDebt - accruedPremium).toInt256(),
-      realizedDelta: accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
-    });
-    vm.expectCall(
-      address(hub),
-      abi.encodeCall(
-        IHubBase.restore,
-        (assetId, drawnDebtToLiquidate, premiumDebtToLiquidate, premiumDelta, liquidator)
-      )
-    );
-
-    return (hub.previewRestoreByAssets(assetId, drawnDebtToLiquidate), premiumDebtToLiquidate);
-  }
-
   function test_liquidateDebt_fuzz(uint256) public {
     (uint256 spokeDrawnOwed, uint256 spokePremiumOwed) = hub.getSpokeOwed(assetId, address(spoke));
     uint256 drawnDebt = vm.randomUint(0, spokeDrawnOwed);
@@ -120,7 +95,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       premiumDebt
     );
 
-    ISpoke.UserPosition memory initialPosition = updateStorage(
+    ISpoke.UserPosition memory initialPosition = _updateStorage(
       drawnDebt,
       premiumDebt,
       accruedPremium
@@ -128,7 +103,8 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 initialHubBalance = asset.balanceOf(address(hub));
     uint256 initialLiquidatorBalance = asset.balanceOf(liquidator);
 
-    (uint256 drawnDebtToLiquidate, uint256 premiumDebtToLiquidate) = expectCall(
+    _expectEvent(drawnDebt, premiumDebt, accruedPremium, debtToLiquidate);
+    (uint256 drawnDebtToLiquidate, uint256 premiumDebtToLiquidate) = _expectCall(
       drawnDebt,
       premiumDebt,
       accruedPremium,
@@ -163,7 +139,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 drawnDebt = 100e18;
     uint256 premiumDebt = 10e18;
     uint256 accruedPremium = 5e18;
-    updateStorage(drawnDebt, premiumDebt, accruedPremium);
+    _updateStorage(drawnDebt, premiumDebt, accruedPremium);
 
     uint256 debtToLiquidate = drawnDebt + premiumDebt + 1;
 
@@ -185,7 +161,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 drawnDebt = 100e18;
     uint256 premiumDebt = 10e18;
     uint256 accruedPremium = 5e18;
-    updateStorage(drawnDebt, premiumDebt, accruedPremium);
+    _updateStorage(drawnDebt, premiumDebt, accruedPremium);
 
     uint256 debtToLiquidate = drawnDebt + premiumDebt;
     Utils.approve(hub, assetId, liquidator, debtToLiquidate - 1);
@@ -208,7 +184,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 drawnDebt = 100e18;
     uint256 premiumDebt = 10e18;
     uint256 accruedPremium = 5e18;
-    updateStorage(drawnDebt, premiumDebt, accruedPremium);
+    _updateStorage(drawnDebt, premiumDebt, accruedPremium);
 
     uint256 debtToLiquidate = drawnDebt + premiumDebt;
     deal(address(asset), liquidator, debtToLiquidate - 1);
@@ -226,7 +202,59 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     );
   }
 
-  function updateStorage(
+  function _expectCall(
+    uint256 drawnDebt,
+    uint256 premiumDebt,
+    uint256 accruedPremium,
+    uint256 debtToLiquidate
+  ) internal returns (uint256, uint256) {
+    uint256 premiumDebtToLiquidate = _min(debtToLiquidate, premiumDebt);
+    uint256 drawnDebtToLiquidate = _min(drawnDebt, debtToLiquidate - premiumDebtToLiquidate);
+
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+      sharesDelta: -hub.previewRestoreByAssets(assetId, premiumDebt).toInt256(),
+      offsetDelta: -(premiumDebt - accruedPremium).toInt256(),
+      realizedDelta: accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
+    });
+    vm.expectCall(
+      address(hub),
+      abi.encodeCall(
+        IHubBase.restore,
+        (assetId, drawnDebtToLiquidate, premiumDebtToLiquidate, premiumDelta, liquidator)
+      )
+    );
+
+    return (hub.previewRestoreByAssets(assetId, drawnDebtToLiquidate), premiumDebtToLiquidate);
+  }
+
+  function _expectEvent(
+    uint256 drawnDebt,
+    uint256 premiumDebt,
+    uint256 accruedPremium,
+    uint256 debtToLiquidate
+  ) internal returns (uint256, uint256) {
+    uint256 premiumDebtToLiquidate = _min(debtToLiquidate, premiumDebt);
+    uint256 drawnDebtToLiquidate = _min(drawnDebt, debtToLiquidate - premiumDebtToLiquidate);
+    uint256 drawnSharesLiquidated = hub.previewRestoreByAssets(assetId, drawnDebtToLiquidate);
+
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+      sharesDelta: -hub.previewRestoreByAssets(assetId, premiumDebt).toInt256(),
+      offsetDelta: -(premiumDebt - accruedPremium).toInt256(),
+      realizedDelta: accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
+    });
+
+    vm.expectEmit(address(spoke));
+    emit ISpokeBase.Repay(
+      reserveId,
+      liquidator,
+      user,
+      drawnSharesLiquidated,
+      debtToLiquidate,
+      premiumDelta
+    );
+  }
+
+  function _updateStorage(
     uint256 drawnDebt,
     uint256 premiumDebt,
     uint256 accruedPremium
