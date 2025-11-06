@@ -176,9 +176,12 @@ library AssetLogic {
     uint256 drawnShares = asset.drawnShares;
     uint256 premiumShares = asset.premiumShares;
 
+    uint256 truePremiumGrowth = premiumShares * (drawnIndex - previousIndex);
+    uint256 actualPremiumGrowth = (asset.realizedPremium + truePremiumGrowth).mulDivUp(1, WadRayMath.RAY) - asset.realizedPremium.mulDivUp(1, WadRayMath.RAY);
+
     uint256 liquidityGrowth = drawnShares.rayMulUp(drawnIndex) -
-      drawnShares.rayMulUp(previousIndex) +
-      (premiumShares * (drawnIndex - previousIndex)).mulDivUp(1, WadRayMath.RAY);
+      drawnShares.rayMulUp(previousIndex) + actualPremiumGrowth;
+     
     return liquidityGrowth.percentMulDown(liquidityFee);
   }
 }

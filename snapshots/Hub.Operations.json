@@ -3,11 +3,11 @@
   "draw": "109595",
   "eliminateDeficit: full": "68721",
   "eliminateDeficit: partial": "73497",
-  "mintFeeShares": "106213",
-  "payFee": "88344",
+  "mintFeeShares": "106758",
+  "payFee": "90889",
   "remove: full": "78025",
   "remove: partial": "87496",
-  "reportDeficit": "102394",
-  "restore: partial": "107414",
-  "transferShares": "89217"
+  "reportDeficit": "102939",
+  "restore: partial": "107959",
+  "transferShares": "91762"
 }
