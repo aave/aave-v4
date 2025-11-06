@@ -242,9 +242,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev The `irData` must be empty if the interest rate strategy is not updated.
   error InvalidInterestRateStrategy();
 
-  /// @notice Thrown when the amount of underlying assets received is less than expected.
-  error InvalidAmountReceived();
-
   /// @notice Adds a new asset to the Hub.
   /// @dev The same underlying asset address cannot be added as an asset multiple times.
   /// @dev The fee receiver is added as a new spoke with maximum add cap and zero draw cap.

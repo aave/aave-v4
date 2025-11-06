@@ -23,6 +23,7 @@ contract HubRecoverTest is HubBase {
     hub1.addSpoke(daiAssetId, recoverSpoke, spokeConfig);
   }
 
+  /// @dev Recovery of funds directly transferred to the hub & ensure asset liquidity tracking is not impacted.
   function test_recovery_scenario_fuzz(uint256 lostAmount) public {
     lostAmount = bound(lostAmount, 1, MAX_SUPPLY_AMOUNT / 10);
 
@@ -72,7 +73,7 @@ contract HubRecoverTest is HubBase {
     assertEq(finalRecoveryBalance, prevRecoveryBalance + lostAmount, 'recovery balance');
     assertHubLiquidity(hub1, daiAssetId, 'hub1.recover');
 
-    // remove all
+    // remove all, ensure there is enough liquidity to honor all withdrawals.
     Utils.remove({
       hub: hub1,
       assetId: daiAssetId,
@@ -81,6 +82,8 @@ contract HubRecoverTest is HubBase {
       to: alice
     });
     Utils.remove({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 10e22, to: bob});
+
+    assertEq(underlying.balanceOf(address(hub1)), 0, 'final hub amount');
   }
 
   function _recover(
