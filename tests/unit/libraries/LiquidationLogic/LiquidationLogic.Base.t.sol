@@ -223,6 +223,12 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
     params.debtAssetDecimals = _getExponent(debtToLiquidateParams.debtAssetUnit);
 
+    params.overEstimatedDebtValue = _convertAmountToValue(
+      params.debtReserveBalance + 2,
+      params.debtAssetPrice,
+      10 ** params.debtAssetDecimals
+    );
+
     return params;
   }
 
@@ -231,7 +237,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
   ) internal pure returns (LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory) {
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-        totalDebtValue: params.totalDebtValue,
+        totalDebtValue: params.overEstimatedDebtValue,
         healthFactor: params.healthFactor,
         targetHealthFactor: params.targetHealthFactor,
         liquidationBonus: params.liquidationBonus,
