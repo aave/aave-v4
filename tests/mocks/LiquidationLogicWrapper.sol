@@ -90,15 +90,15 @@ contract LiquidationLogicWrapper {
   }
 
   function setDebtPositionPremiumShares(uint256 premiumShares) public {
-    _userPositions[_borrower][_debtReserveId].premiumShares = premiumShares.toUint120();
+    _userPositions[_borrower][_debtReserveId].premiumShares = premiumShares;
   }
 
   function setDebtPositionPremiumOffset(uint256 premiumOffset) public {
-    _userPositions[_borrower][_debtReserveId].premiumOffset = premiumOffset.toUint120();
+    _userPositions[_borrower][_debtReserveId].premiumOffset = premiumOffset;
   }
 
   function setDebtPositionRealizedPremium(uint256 realizedPremium) public {
-    _userPositions[_borrower][_debtReserveId].realizedPremium = realizedPremium.toUint120();
+    _userPositions[_borrower][_debtReserveId].realizedPremium = realizedPremium;
   }
 
   function setBorrowerCollateralStatus(uint256 reserveId, bool status) public {

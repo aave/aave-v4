@@ -58,7 +58,8 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       assetId,
       IHubBase.PremiumDelta(
         hub.previewRestoreByAssets(assetId, 1e6 * 1e18).toInt256(),
-        1e6 * 1e18,
+        1e6 * 1e18 * 1e27,
+        0,
         0
       )
     );
@@ -69,12 +70,12 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     assertGt(spokePremiumOwed, 10000e18);
 
     // Refresh premium to realise some premium debt
-    realizedPremium = hub.previewRestoreByShares(assetId, 1e3 * 1e18) - 1e3 * 1e18;
-    assertGt(realizedPremium, 10e18);
+    realizedPremium = hub.getAssetDrawnIndex(assetId) * 1e3 * 1e18 - 1e3 * 1e18 * 1e27;
+    assertGt(realizedPremium, 10e18 * 1e27);
     vm.prank(address(spoke));
     hub.refreshPremium(
       assetId,
-      IHubBase.PremiumDelta(-1e3 * 1e18, -1e3 * 1e18, realizedPremium.toInt256())
+      IHubBase.PremiumDelta(-1e3 * 1e18, -1e3 * 1e18 * 1e27, realizedPremium, 0)
     );
     liquidationLogicWrapper.setDebtPositionRealizedPremium(realizedPremium);
 
@@ -95,13 +96,14 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -hub.previewRestoreByAssets(assetId, premiumDebt).toInt256(),
       offsetDelta: -(premiumDebt - accruedPremium).toInt256(),
-      realizedDelta: accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
+      accruedPremium: accruedPremium,
+      premiumRestored: premiumDebtToLiquidate
     });
     vm.expectCall(
       address(hub),
       abi.encodeCall(
         IHubBase.restore,
-        (assetId, drawnDebtToLiquidate, premiumDebtToLiquidate, premiumDelta, liquidator)
+        (assetId, drawnDebtToLiquidate, premiumDelta, liquidator)
       )
     );
 
@@ -252,9 +254,9 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     initialPosition.drawnShares -= drawnSharesLiquidated.toUint120();
     initialPosition.premiumShares = 0;
     initialPosition.premiumOffset = 0;
-    initialPosition.realizedPremium = (initialPosition.realizedPremium +
+    initialPosition.realizedPremium = initialPosition.realizedPremium +
       accruedPremium -
-      premiumDebtToLiquidate).toUint120();
+      premiumDebtToLiquidate; // todo prm
     assertEq(newPosition, initialPosition);
   }
 }

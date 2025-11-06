@@ -36,12 +36,12 @@ interface IHub is IHubBase, IAccessManaged {
     uint120 deficit;
     uint120 swept;
     //
-    uint120 realizedPremium;
-    uint120 premiumOffset;
+    uint256 realizedPremium;
+    uint256 premiumOffset;
     //
     uint16 liquidityFee;
     uint120 drawnShares;
-    uint120 premiumShares;
+    uint256 premiumShares;
     //
     uint120 drawnIndex;
     uint96 drawnRate;
@@ -79,10 +79,10 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev paused True if the spoke is prevented from performing actions that instantly update the liquidity.
   /// @dev deficit The deficit reported by a spoke for a given asset, expressed in asset units.
   struct SpokeData {
-    uint120 premiumShares;
-    uint120 premiumOffset;
+    uint256 premiumShares;
+    uint256 premiumOffset;
     //
-    uint120 realizedPremium;
+    uint256 realizedPremium;
     uint120 drawnShares;
     //
     uint120 addedShares;

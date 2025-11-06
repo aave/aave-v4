@@ -9,6 +9,7 @@ contract SpokeBase is Base {
   using PercentageMath for *;
   using WadRayMath for uint256;
   using KeyValueList for KeyValueList.List;
+  using MathUtils for uint256;
 
   struct TestData {
     SpokePosition data;
@@ -538,7 +539,7 @@ contract SpokeBase is Base {
     uint256 assetId,
     ISpoke.UserPosition memory userPos
   ) internal view returns (DebtData memory userDebt) {
-    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPos.premiumShares) -
+    uint256 accruedPremium = hub1.getAssetDrawnIndex(assetId) * userPos.premiumShares -
       userPos.premiumOffset;
     userDebt.premiumDebt = userPos.realizedPremium + accruedPremium;
     userDebt.drawnDebt = hub1.previewRestoreByShares(assetId, userPos.drawnShares);
@@ -629,10 +630,9 @@ contract SpokeBase is Base {
     userPos.drawnShares = hub1.previewRestoreByAssets(assetId, debtAmount).toUint120();
     userPos.premiumShares = hub1
       .previewRestoreByAssets(assetId, debtAmount)
-      .percentMulUp(userAccountData.riskPremium)
-      .toUint120();
-    userPos.premiumOffset = hub1.previewRestoreByShares(assetId, userPos.premiumShares).toUint120();
-    userPos.realizedPremium = expectedRealizedPremium.toUint120();
+      .percentMulUp(userAccountData.riskPremium);
+    userPos.premiumOffset = hub1.getAssetDrawnIndex(assetId) * userPos.premiumShares;
+    userPos.realizedPremium = expectedRealizedPremium;
     userPos.suppliedShares = hub1.previewAddByAssets(assetId, suppliedAmount).toUint120();
   }
 
@@ -642,12 +642,11 @@ contract SpokeBase is Base {
     ISpoke spoke,
     uint256 reserveId,
     address user
-  ) internal view returns (uint120) {
+  ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     ISpoke.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
     return
-      (hub1.previewRestoreByShares(assetId, userPos.premiumShares) - userPos.premiumOffset)
-        .toUint120();
+      hub1.getAssetDrawnIndex(assetId) * userPos.premiumShares - userPos.premiumOffset;
   }
 
   /// assert that realized premium matches naively calculated value
@@ -665,7 +664,7 @@ contract SpokeBase is Base {
 
     // equivalent to multiplying by risk premium (RP = premium drawn shares / base drawn shares)
     assertApproxEqAbs(
-      userPos.realizedPremium,
+      userPos.realizedPremium.mulDivUp(1, WadRayMath.RAY),
       ((accruedBase - prevDrawnDebt) * (userPos.premiumShares)) / (userPos.drawnShares),
       3, // precision loss due to calcs in asset amount and conversion to
       'realized premium naive calc'
@@ -702,7 +701,7 @@ contract SpokeBase is Base {
       assertEq(
         premiumDebt,
         userData.realizedPremium +
-          hub1.previewRestoreByShares(assetId, userData.premiumShares) -
+          hub1.getAssetDrawnIndex(assetId) * userData.premiumShares -
           userData.premiumOffset,
         string.concat('user ', vm.toString(i), ' premium debt ', label)
       );

@@ -54,41 +54,39 @@ contract HubOperations_Gas_Tests is Base {
     hub1.add(usdxAssetId, 1000e6, alice);
     hub1.draw(daiAssetId, 500e18, alice);
     int256 premiumShares = hub1.previewDrawByAssets(daiAssetId, 500e18).toInt256();
-    int256 premiumOffset = hub1
-      .previewRestoreByShares(daiAssetId, uint256(premiumShares))
-      .toInt256();
-    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(premiumShares, premiumOffset, 0));
+    int256 premiumOffset = hub1.getAssetDrawnIndex(daiAssetId).toInt256() * premiumShares;
+    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(premiumShares, premiumOffset, 0, 0));
 
     skip(1000);
 
     (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
-    hub1.restore(daiAssetId, drawnRemaining / 2, 0, IHubBase.PremiumDelta(0, 0, 0), alice);
+    hub1.restore(daiAssetId, drawnRemaining / 2, IHubBase.PremiumDelta(0, 0, 0, 0), alice);
     vm.snapshotGasLastCall('Hub.Operations', 'restore: partial');
 
     skip(100);
 
     (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 accruedPremium = premiumShares.toUint256() * hub1.getAssetDrawnIndex(daiAssetId) - premiumOffset.toUint256();
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta(
       -premiumShares,
       -premiumOffset,
-      0
+      0,
+      premiumRemaining
     );
-    hub1.restore(daiAssetId, drawnRemaining, premiumRemaining, premiumDelta, alice);
+    hub1.restore(daiAssetId, drawnRemaining, premiumDelta, alice);
     vm.snapshotGasLastCall('Hub.Operations', 'restore: full');
     vm.stopPrank();
   }
 
   function test_refreshPremium() public {
     int256 premiumShares = hub1.previewDrawByAssets(daiAssetId, 500e18).toInt256();
-    int256 premiumOffset = hub1
-      .previewRestoreByShares(daiAssetId, uint256(premiumShares))
-      .toInt256();
+    int256 premiumOffset = hub1.getAssetDrawnIndex(daiAssetId).toInt256() * premiumShares;
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
 
     vm.prank(address(spoke1));
-    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(premiumShares, premiumOffset, 1));
+    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(premiumShares, premiumOffset, 1, 0));
     vm.snapshotGasLastCall('Hub.Operations', 'refreshPremium');
   }
 
@@ -155,14 +153,16 @@ contract HubOperations_Gas_Tests is Base {
     ISpoke.UserPosition memory userPosition = spoke1.getUserPosition(_daiReserveId(spoke1), alice);
     (uint256 drawnDebt, uint256 premiumDebt) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
 
+    uint256 accruedPremium = userPosition.premiumShares * hub1.getAssetDrawnIndex(daiAssetId) - userPosition.premiumOffset;
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),
       offsetDelta: -userPosition.premiumOffset.toInt256(),
-      realizedDelta: 0
+      accruedPremium: accruedPremium,
+      premiumRestored: accruedPremium + userPosition.realizedPremium
     });
 
     vm.prank(address(spoke1));
-    hub1.reportDeficit(daiAssetId, drawnDebt, premiumDebt, premiumDelta);
+    hub1.reportDeficit(daiAssetId, drawnDebt, premiumDelta);
     vm.snapshotGasLastCall('Hub.Operations', 'reportDeficit');
 
     vm.prank(address(spoke1));

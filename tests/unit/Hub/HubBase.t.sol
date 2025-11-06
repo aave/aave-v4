@@ -6,6 +6,7 @@ import 'tests/Base.t.sol';
 
 contract HubBase is Base {
   using SharesMath for uint256;
+  using MathUtils for uint256;
 
   struct TestAddParams {
     uint256 drawnAmount;
@@ -98,7 +99,7 @@ contract HubBase is Base {
     address tempUser = vm.randomAddress();
 
     int256 sharesDelta = int256(amount);
-    int256 premiumOffsetDelta = int256(amount);
+    int256 premiumOffsetDelta = int256(amount) * 1e27;
 
     vm.prank(HUB_ADMIN);
     hub1.addSpoke(
@@ -118,7 +119,7 @@ contract HubBase is Base {
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(tempSpoke);
-      hub1.refreshPremium(assetId, IHubBase.PremiumDelta(sharesDelta, premiumOffsetDelta, 0));
+      hub1.refreshPremium(assetId, IHubBase.PremiumDelta(sharesDelta, premiumOffsetDelta, 0, 0));
     }
 
     if (skipTime) skip(365 days);
@@ -129,10 +130,11 @@ contract HubBase is Base {
     if (withPremium) {
       assertGt(premium, 0); // non-zero premium debt
       // restore premium data
+      premium = amount * (hub1.getAssetDrawnIndex(assetId) - 1e27); // accrued premium
       vm.prank(tempSpoke);
       hub1.refreshPremium(
         assetId,
-        IHubBase.PremiumDelta(-sharesDelta, -premiumOffsetDelta, int256(premium))
+        IHubBase.PremiumDelta(-sharesDelta, -premiumOffsetDelta, premium, 0)
       );
     }
   }
@@ -203,16 +205,15 @@ contract HubBase is Base {
     ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
 
+    uint256 accruedPremium = hub1.getAssetDrawnIndex(assetId) * userPosition.premiumShares -
+      userPosition.premiumOffset;
+
     IHubBase.PremiumDelta memory expectedPremiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -int256(uint256(userPosition.premiumShares)),
       offsetDelta: -int256(uint256(userPosition.premiumOffset)),
-      realizedDelta: 0
+      accruedPremium: accruedPremium,
+      premiumRestored: (accruedPremium + userPosition.realizedPremium).min(premiumRestored * WadRayMath.RAY)
     });
-
-    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPosition.premiumShares) -
-      userPosition.premiumOffset;
-
-    expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumRestored);
 
     return expectedPremiumDelta;
   }

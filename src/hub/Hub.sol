@@ -278,12 +278,13 @@ contract Hub is IHub, AccessManaged {
   function restore(
     uint256 assetId,
     uint256 drawnAmount,
-    uint256 premiumAmount,
     PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
+
+    uint256 premiumAmount = premiumDelta.premiumRestored.mulDivUp(1, WadRayMath.RAY);
 
     asset.accrue();
     _validateRestore(asset, spoke, drawnAmount, premiumAmount, from);
@@ -291,7 +292,7 @@ contract Hub is IHub, AccessManaged {
     uint120 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint120();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
-    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
+    _applyPremiumDelta(asset, spoke, premiumDelta);
     uint256 totalAmount = drawnAmount + premiumAmount;
     asset.liquidity += totalAmount.toUint120();
 
@@ -308,11 +309,12 @@ contract Hub is IHub, AccessManaged {
   function reportDeficit(
     uint256 assetId,
     uint256 drawnAmount,
-    uint256 premiumAmount,
     PremiumDelta calldata premiumDelta
   ) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
+
+    uint256 premiumAmount = premiumDelta.premiumRestored.mulDivUp(1, WadRayMath.RAY);
 
     asset.accrue();
     _validateReportDeficit(asset, spoke, drawnAmount, premiumAmount);
@@ -320,7 +322,7 @@ contract Hub is IHub, AccessManaged {
     uint120 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint120();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
-    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
+    _applyPremiumDelta(asset, spoke, premiumDelta);
     uint120 deficitAmount = (drawnAmount + premiumAmount).toUint120();
     asset.deficit += deficitAmount;
     spoke.deficit += deficitAmount;
@@ -366,10 +368,12 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
+    require(premiumDelta.premiumRestored == 0, InvalidPremiumChange());
+
     asset.accrue();
     require(spoke.active, SpokeNotActive());
     // no premium change allowed
-    _applyPremiumDelta(asset, spoke, premiumDelta, 0);
+    _applyPremiumDelta(asset, spoke, premiumDelta);
     asset.updateDrawnRate(assetId);
 
     emit RefreshPremium(assetId, msg.sender, premiumDelta);
@@ -702,8 +706,7 @@ contract Hub is IHub, AccessManaged {
   function _applyPremiumDelta(
     Asset storage asset,
     SpokeData storage spoke,
-    PremiumDelta calldata premium,
-    uint256 premiumAmount
+    PremiumDelta calldata premium
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
 
@@ -713,8 +716,7 @@ contract Hub is IHub, AccessManaged {
       asset.premiumShares,
       asset.premiumOffset,
       asset.realizedPremium,
-      premium,
-      premiumAmount
+      premium
     );
 
     // spoke premium change
@@ -723,8 +725,7 @@ contract Hub is IHub, AccessManaged {
       spoke.premiumShares,
       spoke.premiumOffset,
       spoke.realizedPremium,
-      premium,
-      premiumAmount
+      premium
     );
 
     uint24 riskPremiumThreshold = spoke.riskPremiumThreshold;
@@ -767,8 +768,8 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset,
     SpokeData storage spoke
   ) internal view returns (uint256) {
-    uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumShares) - spoke.premiumOffset;
-    return spoke.realizedPremium + accruedPremium;
+    uint256 accruedPremium = spoke.premiumShares * asset.getDrawnIndex() - spoke.premiumOffset;
+    return (spoke.realizedPremium + accruedPremium).mulDivUp(1, WadRayMath.RAY);
   }
 
   /// @dev Spoke with maximum cap have unlimited add capacity.
@@ -897,20 +898,18 @@ contract Hub is IHub, AccessManaged {
     uint256 premiumShares,
     uint256 premiumOffset,
     uint256 realizedPremium,
-    PremiumDelta calldata premium,
-    uint256 premiumAmount
-  ) internal pure returns (uint120, uint120, uint120) {
-    uint256 premiumBefore = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
+    PremiumDelta calldata premium
+  ) internal pure returns (uint256, uint256, uint256) {
+    uint256 premiumBefore = premiumShares * drawnIndex - premiumOffset;
     premiumBefore += realizedPremium;
 
     premiumShares = premiumShares.add(premium.sharesDelta);
     premiumOffset = premiumOffset.add(premium.offsetDelta);
-    realizedPremium = realizedPremium.add(premium.realizedDelta);
+    realizedPremium = realizedPremium + premium.accruedPremium - premium.premiumRestored;
 
-    uint256 premiumAfter = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
+    uint256 premiumAfter = premiumShares * drawnIndex - premiumOffset;
     premiumAfter += realizedPremium;
-    // can increase due to precision loss on premium (drawn unchanged)
-    require(premiumAfter + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
-    return (premiumShares.toUint120(), premiumOffset.toUint120(), realizedPremium.toUint120());
+    require(premiumAfter + premium.premiumRestored == premiumBefore, InvalidPremiumChange());
+    return (premiumShares, premiumOffset, realizedPremium);
   }
 }

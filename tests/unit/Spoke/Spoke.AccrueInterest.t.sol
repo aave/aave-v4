@@ -9,6 +9,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for *;
   using SafeCast for uint256;
+  using MathUtils for uint256;
 
   struct TestAmounts {
     uint256 daiSupplyAmount;
@@ -855,9 +856,9 @@ contract SpokeAccrueInterestTest is SpokeBase {
       startTime
     );
     uint256 expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
-    uint256 expectedPremiumDebt = hub1.previewRestoreByShares(daiAssetId, expectedpremiumShares) -
+    uint256 expectedPremiumDebt = (hub1.getAssetDrawnIndex(daiAssetId) * expectedpremiumShares -
       bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+      bobPosition.realizedPremium).mulDivUp(1, WadRayMath.RAY);
     uint256 interest = (drawnDebt + expectedPremiumDebt) -
       amounts.daiBorrowAmount -
       _calculateBurntInterest(hub1, daiAssetId);
@@ -903,9 +904,9 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
     expectedPremiumDebt =
-      hub1.previewRestoreByShares(wethAssetId, expectedpremiumShares) -
+      (hub1.getAssetDrawnIndex(wethAssetId) * expectedpremiumShares -
       bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+      bobPosition.realizedPremium).mulDivUp(1, WadRayMath.RAY);
     interest =
       (drawnDebt + expectedPremiumDebt) -
       amounts.wethBorrowAmount -
@@ -952,9 +953,9 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
     expectedPremiumDebt =
-      hub1.previewRestoreByShares(usdxAssetId, expectedpremiumShares) -
+      (hub1.getAssetDrawnIndex(usdxAssetId) * expectedpremiumShares -
       bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+      bobPosition.realizedPremium).mulDivUp(1, WadRayMath.RAY);
     interest =
       (drawnDebt + expectedPremiumDebt) -
       amounts.usdxBorrowAmount -
@@ -1001,9 +1002,9 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
     expectedPremiumDebt =
-      hub1.previewRestoreByShares(wbtcAssetId, expectedpremiumShares) -
+      (hub1.getAssetDrawnIndex(wbtcAssetId) * expectedpremiumShares -
       bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+      bobPosition.realizedPremium).mulDivUp(1, WadRayMath.RAY);
     interest =
       (drawnDebt + expectedPremiumDebt) -
       amounts.wbtcBorrowAmount -

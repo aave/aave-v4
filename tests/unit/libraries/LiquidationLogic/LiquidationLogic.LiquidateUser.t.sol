@@ -111,8 +111,9 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     hub2.refreshPremium(
       wethAssetId,
       IHubBase.PremiumDelta(
-        hub2.previewRestoreByAssets(wethAssetId, 1e6 * 1e18).toInt256(),
         1e6 * 1e18,
+        1e6 * 1e18 * 1e27,
+        0,
         0
       )
     );
@@ -126,12 +127,12 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     assertGt(spokePremiumOwed, 10000e18);
 
     // Refresh premium to realise some premium debt
-    uint256 realizedPremium = hub2.previewRestoreByShares(wethAssetId, 1e3 * 1e18) - 1e3 * 1e18;
-    assertGt(realizedPremium, 10e18);
+    uint256 realizedPremium = hub2.getAssetDrawnIndex(wethAssetId) * 1e3 * 1e18 - 1e3 * 1e18 * 1e27;
+    assertGt(realizedPremium, 10e18 * 1e27);
     vm.prank(address(liquidationLogicWrapper));
     hub2.refreshPremium(
       wethAssetId,
-      IHubBase.PremiumDelta(-1e3 * 1e18, -1e3 * 1e18, realizedPremium.toInt256())
+      IHubBase.PremiumDelta(-1e3 * 1e18, -1e3 * 1e18 * 1e27, realizedPremium, 0)
     );
     liquidationLogicWrapper.setDebtPositionRealizedPremium(realizedPremium);
 
@@ -186,11 +187,11 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
         (
           wethAssetId,
           2e18,
-          0.5e18,
           IHubBase.PremiumDelta(
             -debtPosition.premiumShares.toInt256(),
             -debtPosition.premiumOffset.toInt256(),
-            0.2e18 - 0.5e18
+            0.2e18,
+            0.5e18
           ),
           params.liquidator
         )

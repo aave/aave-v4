@@ -72,10 +72,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev dynamicConfigKey The key of the user position dynamic config.
   struct UserPosition {
     uint120 drawnShares;
-    uint120 realizedPremium;
+    uint256 realizedPremium;
     //
-    uint120 premiumShares;
-    uint120 premiumOffset;
+    uint256 premiumShares;
+    uint256 premiumOffset;
     //
     uint120 suppliedShares;
     uint24 dynamicConfigKey;

@@ -112,6 +112,6 @@ contract HubEliminateDeficitTest is HubBase {
     });
 
     vm.prank(spoke);
-    hub1.reportDeficit(assetId, amount, 0, IHubBase.PremiumDelta(0, 0, 0));
+    hub1.reportDeficit(assetId, amount, IHubBase.PremiumDelta(0, 0, 0, 0));
   }
 }

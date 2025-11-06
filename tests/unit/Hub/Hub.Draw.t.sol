@@ -355,8 +355,7 @@ contract HubDrawTest is HubBase {
     hub1.restore({
       assetId: daiAssetId,
       drawnAmount: singleShareInAssets,
-      premiumAmount: 0,
-      premiumDelta: IHubBase.PremiumDelta(0, 0, 0),
+      premiumDelta: IHubBase.PremiumDelta(0, 0, 0, 0),
       from: alice
     });
 
@@ -384,7 +383,7 @@ contract HubDrawTest is HubBase {
     });
 
     vm.prank(address(spoke1));
-    hub1.reportDeficit(daiAssetId, amount, 0, IHubBase.PremiumDelta(0, 0, 0));
+    hub1.reportDeficit(daiAssetId, amount, IHubBase.PremiumDelta(0, 0, 0, 0));
 
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
     Utils.draw({
@@ -422,9 +421,8 @@ contract HubDrawTest is HubBase {
     vm.startPrank(address(spoke1));
     hub1.restore({
       assetId: daiAssetId,
-      drawnAmount: minimumAssetsPerDrawnShare(hub1, daiAssetId),
-      premiumAmount: 0,
-      premiumDelta: IHubBase.PremiumDelta(0, 0, 0),
+      drawnAmount: minimumAssetsPerDrawnShare(hub1, daiAssetId),  
+      premiumDelta: IHubBase.PremiumDelta(0, 0, 0, 0),
       from: alice
     });
     vm.stopPrank();

@@ -8,6 +8,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
   using WadRayMath for uint256;
   using PercentageMath for *;
   using SafeCast for uint256;
+  using MathUtils for uint256;
 
   function test_accrueLiquidityFee_NoActionTaken() public view {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(treasurySpoke)), 0);
@@ -77,7 +78,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     {
       uint256 drawnDebt = _calculateExpectedDrawnDebt(borrowAmount, drawnRate, startTime);
       uint256 expectedPremiumShares = bobPosition.drawnShares.percentMulUp(userRp);
-      uint256 expectedPremiumDebt = hub1.previewRestoreByShares(assetId, expectedPremiumShares) -
+      uint256 expectedPremiumDebt = hub1.getAssetDrawnIndex(assetId) * expectedPremiumShares -
         bobPosition.premiumOffset +
         bobPosition.realizedPremium;
 
@@ -86,7 +87,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
         reserveId,
         bob,
         drawnDebt,
-        expectedPremiumDebt,
+        expectedPremiumDebt.mulDivUp(1, WadRayMath.RAY),
         'after accrual'
       );
     }

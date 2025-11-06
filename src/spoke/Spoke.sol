@@ -296,17 +296,17 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),
       offsetDelta: -userPosition.premiumOffset.toInt256(),
-      realizedDelta: accruedPremium.toInt256() - premiumDebtRestored.toInt256()
+      accruedPremium: accruedPremium,
+      premiumRestored: (accruedPremium + userPosition.realizedPremium).min(premiumDebtRestored * WadRayMath.RAY)
     });
     uint256 restoredShares = reserve.hub.restore(
       reserve.assetId,
       drawnDebtRestored,
-      premiumDebtRestored,
       premiumDelta,
       msg.sender
     );
 
-    userPosition.settlePremiumDebt(premiumDelta.realizedDelta);
+    userPosition.settlePremiumDebt(premiumDelta.accruedPremium, premiumDelta.premiumRestored);
     userPosition.drawnShares -= restoredShares.toUint120();
     if (userPosition.drawnShares == 0) {
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
@@ -835,20 +835,21 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
       uint256 oldPremiumShares = userPosition.premiumShares;
       uint256 oldPremiumOffset = userPosition.premiumOffset;
-      uint256 accruedPremium = oldPremiumShares.rayMulUp(drawnIndex) - oldPremiumOffset;
+      uint256 accruedPremium = oldPremiumShares * drawnIndex - oldPremiumOffset;
 
       uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newRiskPremium);
       // uses opposite rounding direction as premiumOffset is virtual debt owed by the protocol
-      uint256 newPremiumOffset = newPremiumShares.rayMulDown(drawnIndex);
+      uint256 newPremiumOffset = newPremiumShares * drawnIndex;
 
-      userPosition.premiumShares = newPremiumShares.toUint120();
-      userPosition.premiumOffset = newPremiumOffset.toUint120();
-      userPosition.realizedPremium += accruedPremium.toUint120();
+      userPosition.premiumShares = newPremiumShares;
+      userPosition.premiumOffset = newPremiumOffset;
+      userPosition.realizedPremium += accruedPremium;
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: newPremiumShares.signedSub(oldPremiumShares),
         offsetDelta: newPremiumOffset.signedSub(oldPremiumOffset),
-        realizedDelta: accruedPremium.toInt256()
+        accruedPremium: accruedPremium,
+        premiumRestored: 0
       });
 
       hub.refreshPremium(assetId, premiumDelta);
@@ -879,15 +880,15 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: -userPosition.premiumShares.toInt256(),
         offsetDelta: -userPosition.premiumOffset.toInt256(),
-        realizedDelta: accruedPremium.toInt256() - premiumDebtReported.toInt256()
+        accruedPremium: accruedPremium,
+        premiumRestored: accruedPremium + userPosition.realizedPremium
       });
       uint256 deficitShares = hub.reportDeficit(
         assetId,
         drawnDebtReported,
-        premiumDebtReported,
         premiumDelta
       );
-      userPosition.settlePremiumDebt(premiumDelta.realizedDelta);
+      userPosition.settlePremiumDebt(premiumDelta.accruedPremium, premiumDelta.premiumRestored);
       userPosition.drawnShares -= deficitShares.toUint120();
       positionStatus.setBorrowing(reserveId, false);
     }
@@ -957,11 +958,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserPosition storage userPosition
   ) internal view returns (uint256, uint256, uint256) {
     uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-    uint256 accruedPremium = userPosition.premiumShares.rayMulUp(drawnIndex) -
+    uint256 accruedPremium = userPosition.premiumShares * drawnIndex -
       userPosition.premiumOffset;
     return (
       userPosition.drawnShares.rayMulUp(drawnIndex),
-      userPosition.realizedPremium + accruedPremium,
+      (userPosition.realizedPremium + accruedPremium).mulDivUp(1, WadRayMath.RAY),
       accruedPremium
     );
   }

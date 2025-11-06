@@ -60,8 +60,8 @@ library AssetLogic {
 
   /// @notice Returns the total premium amount for the specified asset.
   function premium(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
-    uint256 accruedPremium = asset.premiumShares.rayMulUp(drawnIndex) - asset.premiumOffset;
-    return asset.realizedPremium + accruedPremium;
+    uint256 accruedPremium = asset.premiumShares * drawnIndex - asset.premiumOffset;
+    return (asset.realizedPremium + accruedPremium).mulDivUp(1, WadRayMath.RAY);
   }
 
   /// @notice Returns the total amount owed for the specified asset, including drawn and premium.
@@ -173,13 +173,12 @@ library AssetLogic {
       return 0;
     }
 
-    uint120 drawnShares = asset.drawnShares;
-    uint120 premiumShares = asset.premiumShares;
+    uint256 drawnShares = asset.drawnShares;
+    uint256 premiumShares = asset.premiumShares;
 
     uint256 liquidityGrowth = drawnShares.rayMulUp(drawnIndex) -
       drawnShares.rayMulUp(previousIndex) +
-      premiumShares.rayMulUp(drawnIndex) -
-      premiumShares.rayMulUp(previousIndex);
+      (premiumShares * (drawnIndex - previousIndex)).mulDivUp(1, WadRayMath.RAY);
     return liquidityGrowth.percentMulDown(liquidityFee);
   }
 }

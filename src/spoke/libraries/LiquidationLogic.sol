@@ -267,11 +267,12 @@ library LiquidationLogic {
   /// @notice Settles the premium debt by realizing change in premium and resetting premium shares and offset.
   function settlePremiumDebt(
     ISpoke.UserPosition storage debtPosition,
-    int256 realizedDelta
+    uint256 accruedPremium,
+    uint256 premiumRestored
   ) internal {
     debtPosition.premiumShares = 0;
     debtPosition.premiumOffset = 0;
-    debtPosition.realizedPremium = debtPosition.realizedPremium.add(realizedDelta).toUint120();
+    debtPosition.realizedPremium = debtPosition.realizedPremium + accruedPremium - premiumRestored;
   }
 
   /// @dev Invoked by `liquidateUser` method.
@@ -326,17 +327,17 @@ library LiquidationLogic {
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: -debtPosition.premiumShares.toInt256(),
         offsetDelta: -debtPosition.premiumOffset.toInt256(),
-        realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
+        accruedPremium: params.accruedPremium,
+        premiumRestored: (params.accruedPremium + debtPosition.realizedPremium).min(premiumDebtToLiquidate * WadRayMath.RAY)
       });
 
       uint256 drawnSharesLiquidated = debtReserve.hub.restore(
         debtReserve.assetId,
         drawnDebtToLiquidate,
-        premiumDebtToLiquidate,
         premiumDelta,
         params.liquidator
       );
-      debtPosition.settlePremiumDebt(premiumDelta.realizedDelta);
+      debtPosition.settlePremiumDebt(premiumDelta.accruedPremium, premiumDelta.premiumRestored);
       debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
     }
 

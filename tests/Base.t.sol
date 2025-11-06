@@ -1505,10 +1505,11 @@ abstract contract Base is Test {
     IHubBase.PremiumDelta memory expectedPremiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -int256(uint256(userPosition.premiumShares)),
       offsetDelta: -int256(uint256(userPosition.premiumOffset)),
-      realizedDelta: 0
+      accruedPremium: 0,
+      premiumRestored: 0
     });
 
-    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPosition.premiumShares) -
+    uint256 accruedPremium = hub1.getAssetDrawnIndex(assetId) * userPosition.premiumShares -
       userPosition.premiumOffset;
     (, uint256 premiumDebtRestored) = _calculateExactRestoreAmount(
       userDebt.drawnDebt,
@@ -1516,8 +1517,9 @@ abstract contract Base is Test {
       repayAmount,
       assetId
     );
-    expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumDebtRestored);
-
+    uint256 truePremium = accruedPremium + userPosition.realizedPremium;
+    expectedPremiumDelta.accruedPremium = accruedPremium;
+    expectedPremiumDelta.premiumRestored = truePremium.min(premiumDebtRestored * WadRayMath.RAY);
     return expectedPremiumDelta;
   }
 

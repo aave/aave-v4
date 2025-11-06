@@ -378,8 +378,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     );
     (, uint256 userPremiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
     uint256 premiumDebtRestored = _min(liquidationMetadata.debtToLiquidate, userPremiumDebt);
-    int256 realizedDelta = (userPremiumDebt - userDebtPosition.realizedPremium).toInt256() -
-      premiumDebtRestored.toInt256();
+    uint256 accruedPremium = userDebtPosition.premiumShares * _hub(params.spoke, params.debtReserveId).getAssetDrawnIndex(_assetId(params.spoke, params.debtReserveId)) - userDebtPosition.premiumOffset;
+    uint256 premiumRestored = (accruedPremium + userDebtPosition.realizedPremium).min(premiumDebtRestored * WadRayMath.RAY);
     vm.expectCall(
       address(_hub(params.spoke, params.debtReserveId)),
       abi.encodeCall(
@@ -387,11 +387,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         (
           _assetId(params.spoke, params.debtReserveId),
           liquidationMetadata.debtToLiquidate - premiumDebtRestored,
-          premiumDebtRestored,
           IHubBase.PremiumDelta({
             sharesDelta: -userDebtPosition.premiumShares.toInt256(),
             offsetDelta: -userDebtPosition.premiumOffset.toInt256(),
-            realizedDelta: realizedDelta
+            accruedPremium: accruedPremium,
+            premiumRestored: premiumRestored
           }),
           params.liquidator
         )
@@ -446,19 +446,14 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             .toUint120();
           userReservePosition.premiumShares = 0;
           userReservePosition.premiumOffset = 0;
-          userReservePosition.realizedPremium = (userReservePosition.realizedPremium.toInt256() +
-            realizedDelta).toUint256().toUint120();
+          userReservePosition.realizedPremium = userReservePosition.realizedPremium - accruedPremium + 
+            premiumRestored;
         }
         uint256 userReserveDrawnDebt = _hub(params.spoke, reserveId).previewRestoreByShares(
           assetId,
           userReservePosition.drawnShares
         );
-        uint256 userReservePremiumDebt = _hub(params.spoke, reserveId).previewRestoreByShares(
-          assetId,
-          userReservePosition.premiumShares
-        ) -
-          userReservePosition.premiumOffset +
-          userReservePosition.realizedPremium;
+        uint256 accruedPremium = _hub(params.spoke, reserveId).getAssetDrawnIndex(assetId) * userReservePosition.premiumShares - userReservePosition.premiumOffset;
         vm.expectCall(
           address(_hub(params.spoke, reserveId)),
           abi.encodeCall(
@@ -466,11 +461,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             (
               assetId,
               userReserveDrawnDebt,
-              userReservePremiumDebt,
               IHubBase.PremiumDelta({
                 sharesDelta: -userReservePosition.premiumShares.toInt256(),
                 offsetDelta: -userReservePosition.premiumOffset.toInt256(),
-                realizedDelta: -userReservePosition.realizedPremium.toInt256()
+                accruedPremium: accruedPremium,
+                premiumRestored: accruedPremium + userReservePosition.realizedPremium
               })
             )
           ),

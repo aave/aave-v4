@@ -38,14 +38,14 @@ contract HubReportDeficitTest is HubBase {
     vm.expectRevert(IHub.SpokeNotActive.selector);
 
     vm.prank(caller);
-    hub1.reportDeficit(usdxAssetId, 0, 0, IHubBase.PremiumDelta(0, 0, 0));
+    hub1.reportDeficit(usdxAssetId, 0, IHubBase.PremiumDelta(0, 0, 0, 0));
   }
 
   function test_reportDeficit_revertsWith_InvalidAmount() public {
     vm.expectRevert(IHub.InvalidAmount.selector);
 
     vm.prank(address(spoke1));
-    hub1.reportDeficit(usdxAssetId, 0, 0, IHubBase.PremiumDelta(0, 0, 0));
+    hub1.reportDeficit(usdxAssetId, 0, IHubBase.PremiumDelta(0, 0, 0, 0));
   }
 
   function test_reportDeficit_surplus_drawn_revertsWith_SurplusDeficitReported() public {
@@ -81,7 +81,7 @@ contract HubReportDeficitTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDeficitReported.selector, drawn));
     vm.prank(address(spoke1));
-    hub1.reportDeficit(daiAssetId, drawn + 1, 0, IHubBase.PremiumDelta(0, 0, 0));
+    hub1.reportDeficit(daiAssetId, drawn + 1, IHubBase.PremiumDelta(0, 0, 0, 0));
   }
 
   function test_reportDeficit_fuzz_revertsWith_SurplusDeficitReported(
@@ -115,8 +115,7 @@ contract HubReportDeficitTest is HubBase {
     hub1.reportDeficit(
       usdxAssetId,
       baseAmount,
-      premiumAmount,
-      IHubBase.PremiumDelta(0, 0, -int256(premiumAmount))
+      IHubBase.PremiumDelta(0, 0, 0, premiumAmount)
     );
   }
 
@@ -176,17 +175,17 @@ contract HubReportDeficitTest is HubBase {
       : asset.premiumShares + uint256(premiumDelta.sharesDelta);
 
     if (
-      premiumDelta.realizedDelta < 0 && uint256(-premiumDelta.realizedDelta) > asset.realizedPremium
+      premiumDelta.accruedPremium < premiumDelta.premiumRestored && premiumDelta.accruedPremium > premiumDelta.premiumRestored + asset.realizedPremium
     ) {
       vm.expectRevert(stdError.arithmeticError);
       vm.prank(address(spoke1));
-      hub1.reportDeficit(usdxAssetId, baseAmount, premiumAmount, premiumDelta);
+      hub1.reportDeficit(usdxAssetId, baseAmount, premiumDelta);
     } else if (
       expectedNewPremiumShares > (drawnSharesBefore - baseDeficitShares).percentMulUp(1000_00)
     ) {
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
       vm.prank(address(spoke1));
-      hub1.reportDeficit(usdxAssetId, baseAmount, premiumAmount, premiumDelta);
+      hub1.reportDeficit(usdxAssetId, baseAmount, premiumDelta);
     } else {
       vm.expectEmit(address(hub1));
       emit IHubBase.ReportDeficit(
@@ -198,7 +197,7 @@ contract HubReportDeficitTest is HubBase {
         premiumAmount
       );
       vm.prank(address(spoke1));
-      hub1.reportDeficit(usdxAssetId, baseAmount, premiumAmount, premiumDelta);
+      hub1.reportDeficit(usdxAssetId, baseAmount, premiumDelta);
 
       (params.drawnAfter, params.premiumAfter) = hub1.getAssetOwed(usdxAssetId);
 
