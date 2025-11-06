@@ -66,17 +66,6 @@ contract LiquidationLogicBaseTest is SpokeBase {
     uint256 debtAssetUnit = 10 **
       bound(params.debtAssetUnit, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
 
-    /*uint256 totalDebtValueInAmount = _convertValueToAmount(
-      totalDebtValue,
-      debtAssetPrice,
-      debtAssetUnit
-    );
-    totalDebtValue = _convertAmountToValue(
-      totalDebtValueInAmount + 2,
-      debtAssetPrice,
-      debtAssetUnit
-    );
-    */
     totalDebtValue = _getOverEstimatedDebtValue(totalDebtValue, debtAssetPrice, debtAssetUnit);
 
     return
@@ -109,13 +98,8 @@ contract LiquidationLogicBaseTest is SpokeBase {
       ).min(MAX_SUPPLY_AMOUNT)
     );
 
-    uint256 overEstimatedDebtAmount = _convertValueToAmount(
+    params.overEstimatedDebtValue = _getOverEstimatedDebtValue(
       debtToTargetParams.totalDebtValue,
-      debtToTargetParams.debtAssetPrice,
-      debtToTargetParams.debtAssetUnit
-    ) + 2;
-    params.overEstimatedDebtValue = _convertAmountToValue(
-      overEstimatedDebtAmount,
       debtToTargetParams.debtAssetPrice,
       debtToTargetParams.debtAssetUnit
     );
@@ -189,13 +173,8 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.collateralFactor = debtToLiquidateParams.collateralFactor;
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
 
-    uint256 overEstimatedDebtAmount = _convertValueToAmount(
+    params.overEstimatedDebtValue = _getOverEstimatedDebtValue(
       params.totalDebtValue,
-      params.debtAssetPrice,
-      10 ** params.debtAssetDecimals
-    ) + 2;
-    params.overEstimatedDebtValue = _convertAmountToValue(
-      overEstimatedDebtAmount,
       params.debtAssetPrice,
       10 ** params.debtAssetDecimals
     );
