@@ -5,6 +5,9 @@ pragma solidity ^0.8.0;
 import {Spoke} from 'src/spoke/Spoke.sol';
 
 contract MockSpokeInstance is Spoke {
+  /// @dev Skip code size check as this is not meant for production.
+  bool public constant IS_TEST = true;
+
   uint64 public immutable SPOKE_REVISION;
 
   /**
