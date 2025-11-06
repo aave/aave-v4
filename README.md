@@ -125,6 +125,8 @@ forge build
 ### Code Quality
 
 - **Check contract sizes**: `forge build --sizes`
+- **Check linting**: `yarn lint`
+- **Fix linting issues**: `yarn lint:fix`
 
 ### Gas Snapshots
 
