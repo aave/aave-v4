@@ -146,11 +146,6 @@ contract LiquidationLogicBaseTest is SpokeBase {
           params.debtAssetUnit
         )
     );
-    params.overEstimatedDebtValue = _convertAmountToValue(
-      params.debtReserveBalance + 2,
-      params.debtAssetPrice,
-      params.debtAssetUnit
-    );
 
     return params;
   }
