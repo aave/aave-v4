@@ -98,10 +98,10 @@ contract HubEliminateDeficitTest is HubBase {
     assertBorrowRateSynced(hub1, assetId, 'eliminateDeficit');
   }
 
-  function _createDeficit(uint256 assetId, address spokeAddress, uint256 amount) internal {
+  function _createDeficit(uint256 assetId_, address spokeAddress, uint256 amount) internal {
     _addAndDrawLiquidity({
       hub: hub1,
-      assetId: assetId,
+      assetId: assetId_,
       addUser: alice,
       addSpoke: spokeAddress,
       addAmount: amount,
@@ -112,6 +112,6 @@ contract HubEliminateDeficitTest is HubBase {
     });
 
     vm.prank(spokeAddress);
-    hub1.reportDeficit(assetId, amount, 0, IHubBase.PremiumDelta(0, 0, 0));
+    hub1.reportDeficit(assetId_, amount, 0, IHubBase.PremiumDelta(0, 0, 0));
   }
 }

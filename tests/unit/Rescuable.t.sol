@@ -43,7 +43,7 @@ contract RescuableTest is Base {
   }
 
   function test_rescueNative_fuzz(uint256 lostAmount) public {
-    uint256 lostAmount = bound(lostAmount, 1, 100e18);
+    lostAmount = bound(lostAmount, 1, 100e18);
 
     deal(address(rescuable), lostAmount);
 

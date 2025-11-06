@@ -688,7 +688,8 @@ contract NativeTokenGatewayTest is SpokeBase {
     deal(address(this), 1 ether);
 
     vm.expectRevert(INativeTokenGateway.UnsupportedAction.selector);
-    address(nativeTokenGateway).call{value: 1 ether}(new bytes(0));
+    (bool success, ) = address(nativeTokenGateway).call{value: 1 ether}(new bytes(0));
+    assertTrue(success);
   }
 
   function test_fallback_revertsWith_UnsupportedAction() public {
@@ -697,7 +698,8 @@ contract NativeTokenGatewayTest is SpokeBase {
     bytes memory invalidCall = abi.encode('invalidFunction()');
 
     vm.expectRevert(INativeTokenGateway.UnsupportedAction.selector);
-    address(nativeTokenGateway).call{value: 1 ether}(invalidCall);
+    (bool success, ) = address(nativeTokenGateway).call{value: 1 ether}(invalidCall);
+    assertTrue(success);
   }
 
   function _getUserData(address user) internal view returns (ISpoke.UserPosition memory) {

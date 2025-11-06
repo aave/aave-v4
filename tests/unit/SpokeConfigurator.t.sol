@@ -650,22 +650,22 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_pauseAllReserves() public {
-    for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); ++reserveId) {
-      ISpoke.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
+    for (uint256 _reserveId = 0; _reserveId < spoke.getReserveCount(); ++_reserveId) {
+      ISpoke.ReserveConfig memory reserveConfig = spoke.getReserveConfig(_reserveId);
       reserveConfig.paused = true;
       vm.expectCall(
         spokeAddr,
-        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig))
+        abi.encodeCall(ISpoke.updateReserveConfig, (_reserveId, reserveConfig))
       );
       vm.expectEmit(address(spoke));
-      emit ISpoke.UpdateReserveConfig(reserveId, reserveConfig);
+      emit ISpoke.UpdateReserveConfig(_reserveId, reserveConfig);
     }
 
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.pauseAllReserves(spokeAddr);
 
-    for (uint256 id; id < spoke.getReserveCount(); ++id) {
-      assertEq(spoke.getReserveConfig(id).paused, true);
+    for (uint256 _reserveId; _reserveId < spoke.getReserveCount(); ++_reserveId) {
+      assertEq(spoke.getReserveConfig(_reserveId).paused, true);
     }
   }
 

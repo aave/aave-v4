@@ -304,18 +304,18 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
   }
 
   function _calculateDebtToTargetValue(
-    ISpoke spoke,
+    ISpoke spoke_,
     uint256 collateralReserveId,
     uint256 debtReserveId,
     address user
   ) internal returns (uint256) {
     return
       _convertAmountToValue(
-        spoke,
+        spoke_,
         debtReserveId,
         liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
           _getCalculateDebtToTargetHealthFactorParams(
-            spoke,
+            spoke_,
             collateralReserveId,
             debtReserveId,
             user
@@ -325,15 +325,15 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
   }
 
   function _getCollateralValue(
-    ISpoke spoke,
+    ISpoke spoke_,
     uint256 collateralReserveId,
     address user
   ) internal view returns (uint256) {
     return
       _convertAmountToValue(
-        spoke,
+        spoke_,
         collateralReserveId,
-        spoke.getUserSuppliedAssets(collateralReserveId, user)
+        spoke_.getUserSuppliedAssets(collateralReserveId, user)
       );
   }
 }
