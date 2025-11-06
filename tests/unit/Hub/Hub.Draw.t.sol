@@ -78,8 +78,8 @@ contract HubDrawTest is HubBase {
       assetBefore.drawnShares + shares,
       'drawnShares after draw'
     );
-    assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
-    assertHubLiquidity(hub1, assetId, 'hub1.draw');
+    _assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
+    _assertHubLiquidity(hub1, assetId, 'hub1.draw');
     // spoke
     (drawn, premium) = hub1.getSpokeOwed(assetId, address(spoke1));
     assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke1)), amount, 'spoke totalDebt after');
@@ -153,8 +153,8 @@ contract HubDrawTest is HubBase {
       'drawnShares after draw'
     );
 
-    assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
-    assertHubLiquidity(hub1, assetId, 'hub1.draw');
+    _assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
+    _assertHubLiquidity(hub1, assetId, 'hub1.draw');
   }
 
   function test_draw_revertsWith_SpokePaused() public {

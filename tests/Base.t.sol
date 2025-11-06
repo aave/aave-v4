@@ -554,7 +554,7 @@ abstract contract Base is Test {
       }),
       new bytes(0)
     );
-    // add usdz
+    // add USDZ
     hub1.addAsset(
       address(tokenList.usdz),
       tokenList.usdz.decimals(),
@@ -2361,7 +2361,7 @@ abstract contract Base is Test {
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
   }
 
-  function assertBorrowRateSynced(
+  function _assertBorrowRateSynced(
     IHub targetHub,
     uint256 assetId,
     string memory operation
@@ -2382,7 +2382,7 @@ abstract contract Base is Test {
     );
   }
 
-  function assertHubLiquidity(IHub targetHub, uint256 assetId, string memory label) internal view {
+  function _assertHubLiquidity(IHub targetHub, uint256 assetId, string memory label) internal view {
     IHub.Asset memory asset = targetHub.getAsset(assetId);
     uint256 currentHubBalance = IERC20(asset.underlying).balanceOf(address(targetHub));
     assertEq(

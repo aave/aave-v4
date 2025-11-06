@@ -18,8 +18,9 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    approve(IHub(address(hub)), assetId, caller, user, amount);
-    transferFrom(IHub(address(hub)), assetId, caller, user, address(hub), amount);
+    IHub ihub = IHub(address(hub));
+    approve(ihub, assetId, caller, user, amount);
+    transferFrom(ihub, assetId, caller, user, address(hub), amount);
     vm.prank(caller);
     return hub.add(assetId, amount);
   }
@@ -53,8 +54,9 @@ library Utils {
     uint256 drawnAmount,
     address restorer
   ) internal returns (uint256) {
-    approve(IHub(address(hub)), assetId, caller, restorer, drawnAmount);
-    transferFrom(IHub(address(hub)), assetId, caller, restorer, address(hub), drawnAmount);
+    IHub ihub = IHub(address(hub));
+    approve(ihub, assetId, caller, restorer, drawnAmount);
+    transferFrom(ihub, assetId, caller, restorer, address(hub), drawnAmount);
     vm.prank(caller);
     return hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0));
   }

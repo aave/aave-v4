@@ -1305,12 +1305,12 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _checkErc20Balances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkSpokeBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkHubBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
-    assertHubLiquidity(
+    _assertHubLiquidity(
       _hub(params.spoke, params.collateralReserveId),
       params.collateralReserveId,
       'spoke1.liquidationCall'
     );
-    assertHubLiquidity(
+    _assertHubLiquidity(
       _hub(params.spoke, params.debtReserveId),
       params.debtReserveId,
       'spoke1.liquidationCall'

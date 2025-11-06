@@ -131,7 +131,7 @@ contract SpokeSupplyTest is SpokeBase {
       'spoke supplied amount after-supply'
     );
     assertEq(amount, hub1.getAddedAssets(daiAssetId), 'asset supplied amount after-supply');
-    assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
     // user
     assertEq(bobData[stage].data.drawnShares, 0, 'bob drawnShares after-supply');
@@ -217,7 +217,7 @@ contract SpokeSupplyTest is SpokeBase {
       'spoke supplied amount after-supply'
     );
     assertEq(amount, hub1.getAddedAssets(daiAssetId), 'asset supplied amount after-supply');
-    assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
     // user
     assertEq(bobData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
@@ -298,7 +298,7 @@ contract SpokeSupplyTest is SpokeBase {
       daiData[stage - 1].data.addedShares + expectedShares,
       'reserve addedShares after-supply'
     );
-    assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
     // user
     assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
@@ -419,7 +419,7 @@ contract SpokeSupplyTest is SpokeBase {
       reserveData[stage - 1].data.addedShares + state.expectedShares,
       'reserve addedShares after-supply'
     );
-    assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
     // user
     assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
@@ -490,7 +490,7 @@ contract SpokeSupplyTest is SpokeBase {
       daiData[stage - 1].data.addedShares + expectedShares,
       'reserve addedShares after-supply'
     );
-    assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
     // user
     assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
@@ -590,7 +590,7 @@ contract SpokeSupplyTest is SpokeBase {
       reserveData[stage - 1].data.addedShares + expectedShares,
       'reserve addedShares after-supply'
     );
-    assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
     // user
     assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');

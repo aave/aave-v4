@@ -176,11 +176,11 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 amount
   );
 
+  /// @notice Thrown when an underlying asset is already listed.
+  error UnderlyingAlreadyListed();
+
   /// @notice Thrown when an asset is not listed.
   error AssetNotListed();
-
-  /// @notice Thrown when an underlying asset is already listed.
-  error AssetAlreadyListed();
 
   /// @notice Thrown when the add cap is exceeded.
   /// @param addCap The current `addCap` of the asset, expressed in whole assets (not scaled by decimals).

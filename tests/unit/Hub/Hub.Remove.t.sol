@@ -51,7 +51,7 @@ contract HubRemoveTest is HubBase {
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
-    assertHubLiquidity(hub1, assetId, 'hub1.remove');
+    _assertHubLiquidity(hub1, assetId, 'hub1.remove');
     // spoke
     assertEq(spokeData, assetData);
     // dai
@@ -87,7 +87,7 @@ contract HubRemoveTest is HubBase {
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
-    assertHubLiquidity(hub1, assetId, 'hub1.remove');
+    _assertHubLiquidity(hub1, assetId, 'hub1.remove');
     // spoke 1
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount after');
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares after');
@@ -158,7 +158,7 @@ contract HubRemoveTest is HubBase {
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
-    assertHubLiquidity(hub1, assetId, 'hub1.remove');
+    _assertHubLiquidity(hub1, assetId, 'hub1.remove');
     // spoke 1
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount after');
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares after');
@@ -234,7 +234,7 @@ contract HubRemoveTest is HubBase {
     assertEq(asset.drawn, 0, 'dai drawn');
     assertEq(asset.premium, 0, 'dai premium');
     assertEq(asset.lastUpdateTimestamp, vm.getBlockTimestamp(), 'dai lastUpdateTimestamp');
-    assertHubLiquidity(hub1, daiAssetId, 'hub1.remove');
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.remove');
     // spoke1
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares');
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount');
@@ -330,7 +330,7 @@ contract HubRemoveTest is HubBase {
     assertEq(asset.drawn, 0, 'dai drawn');
     assertEq(asset.premium, 0, 'dai premium');
     assertEq(asset.lastUpdateTimestamp, vm.getBlockTimestamp(), 'dai lastUpdateTimestamp');
-    assertHubLiquidity(hub1, daiAssetId, 'hub1.remove');
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.remove');
     // spoke1
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares');
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount');

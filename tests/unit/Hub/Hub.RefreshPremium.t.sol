@@ -173,7 +173,7 @@ contract HubRefreshPremiumTest is HubBase {
       _applyPremiumDelta(premiumDataBefore, premiumDelta)
     );
     assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
-    assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
+    _assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
     vm.stopPrank();
   }
 
@@ -249,7 +249,7 @@ contract HubRefreshPremiumTest is HubBase {
         _applyPremiumDelta(premiumDataBefore, premiumDelta)
       );
       assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
-      assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
+      _assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
     }
   }
 
@@ -284,7 +284,7 @@ contract HubRefreshPremiumTest is HubBase {
       _applyPremiumDelta(premiumDataBefore, premiumDelta)
     );
     assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
-    assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
+    _assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
   }
 
   function test_refreshPremium_negativeDeltas_withAccrual(
@@ -347,7 +347,7 @@ contract HubRefreshPremiumTest is HubBase {
         _applyPremiumDelta(premiumDataBefore, premiumDelta)
       );
       assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
-      assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
+      _assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
     }
   }
 
@@ -427,7 +427,7 @@ contract HubRefreshPremiumTest is HubBase {
         _applyPremiumDelta(premiumDataBefore, premiumDelta)
       );
       assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
-      assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
+      _assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
     }
   }
 

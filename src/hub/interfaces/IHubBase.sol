@@ -92,7 +92,7 @@ interface IHubBase {
   /// @notice Add asset on behalf of user.
   /// @dev Only callable by active spokes.
   /// @dev Underlying assets must be transferred to the Hub before invocation.
-  /// @dev Donated liquidity can be skimmed by any spoke.
+  /// @dev Extra underlying liquidity retained in the Hub can be skimmed by any Spoke through this action.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset liquidity to add.
   /// @return The amount of shares added.
@@ -118,7 +118,7 @@ interface IHubBase {
   /// @dev Only callable by active spokes.
   /// @dev Interest is always paid off first from premium, then from drawn.
   /// @dev Underlying assets must be transferred to the Hub before invocation.
-  /// @dev Donated liquidity can be skimmed by any spoke.
+  /// @dev Extra underlying liquidity retained in the Hub can be skimmed by any Spoke through this action.
   /// @param assetId The identifier of the asset.
   /// @param drawnAmount The drawn amount to restore.
   /// @param premiumAmount The premium amount to repay.

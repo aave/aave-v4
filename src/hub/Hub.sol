@@ -68,7 +68,7 @@ contract Hub is IHub, AccessManaged {
       MIN_ALLOWED_UNDERLYING_DECIMALS <= decimals && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
       InvalidAssetDecimals()
     );
-    require(!_underlyingAssets.contains(underlying), AssetAlreadyListed());
+    require(!_underlyingAssets.contains(underlying), UnderlyingAlreadyListed());
 
     uint256 assetId = _assetCount++;
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
@@ -213,7 +213,10 @@ contract Hub is IHub, AccessManaged {
     _validateAdd(asset, spoke, amount);
 
     uint256 liquidity = asset.liquidity + amount;
-    require(asset.underlying.balanceOf(address(this)) >= liquidity, InsufficientLiquidity(liquidity));
+    require(
+      asset.underlying.balanceOf(address(this)) >= liquidity,
+      InsufficientLiquidity(liquidity)
+    );
     uint120 shares = asset.toAddedSharesDown(amount).toUint120();
     require(shares > 0, InvalidShares());
     asset.addedShares += shares;
@@ -296,7 +299,10 @@ contract Hub is IHub, AccessManaged {
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
 
     uint256 liquidity = asset.liquidity + drawnAmount + premiumAmount;
-    require(asset.underlying.balanceOf(address(this)) >= liquidity, InsufficientLiquidity(liquidity));
+    require(
+      asset.underlying.balanceOf(address(this)) >= liquidity,
+      InsufficientLiquidity(liquidity)
+    );
     asset.liquidity = liquidity.toUint120();
 
     asset.updateDrawnRate(assetId);
