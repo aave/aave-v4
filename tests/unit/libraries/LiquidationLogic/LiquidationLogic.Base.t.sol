@@ -66,6 +66,18 @@ contract LiquidationLogicBaseTest is SpokeBase {
     uint256 debtAssetUnit = 10 **
       bound(params.debtAssetUnit, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
 
+    // Convert totalDebtValue back into an amount, then add 2 wei to that amount, turn that back into value, and pass into the return params
+    uint256 totalDebtValueInAmount = _convertValueToAmount(
+      totalDebtValue,
+      debtAssetPrice,
+      debtAssetUnit
+    );
+    totalDebtValue = _convertAmountToValue(
+      totalDebtValueInAmount + 2,
+      debtAssetPrice,
+      debtAssetUnit
+    );
+
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
         totalDebtValue: totalDebtValue,
@@ -134,6 +146,12 @@ contract LiquidationLogicBaseTest is SpokeBase {
           params.debtAssetUnit
         )
     );
+    params.overEstimatedDebtValue = _convertAmountToValue(
+      params.debtReserveBalance + 2,
+      params.debtAssetPrice,
+      params.debtAssetUnit
+    );
+
     return params;
   }
 
@@ -169,6 +187,12 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.targetHealthFactor = debtToLiquidateParams.targetHealthFactor;
     params.collateralFactor = debtToLiquidateParams.collateralFactor;
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
+
+    params.overEstimatedDebtValue = _convertAmountToValue(
+      debtToLiquidateParams.debtReserveBalance + 2,
+      debtToLiquidateParams.debtAssetPrice,
+      10 ** params.debtAssetDecimals
+    );
 
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
     params.collateralAssetDecimals = bound(
