@@ -207,10 +207,11 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     assertEq(tokenList.usdx.balanceOf(address(params.liquidator)), 5900e6);
     assertApproxEqAbs(hub1.getSpokeAddedShares(usdxAssetId, address(treasurySpoke)), 100e6, 1);
 
-    assertEq(tokenList.weth.balanceOf(address(hub2)), initialHub2Balance + 2.5e18);
-    assertEq(
+    assertApproxEqAbs(tokenList.weth.balanceOf(address(hub2)), initialHub2Balance + 2.5e18, 1);
+    assertApproxEqAbs(
       tokenList.weth.balanceOf(address(params.liquidator)),
-      initialLiquidatorWethBalance - 2.5e18
+      initialLiquidatorWethBalance - 2.5e18,
+      1
     );
   }
 

@@ -256,6 +256,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
       healthFactor: params.healthFactor,
       maxLiquidationBonus: params.maxLiquidationBonus
     });
+
     return
       LiquidationLogic.CalculateDebtToLiquidateParams({
         debtReserveBalance: params.debtReserveBalance,

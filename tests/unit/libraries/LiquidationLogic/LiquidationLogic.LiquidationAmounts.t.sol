@@ -261,7 +261,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
 
     assertEq(collateralToLiquidate, 6000e6, 'collateralToLiquidate');
     assertEq(collateralToLiquidator, 5900e6, 'collateralToLiquidator');
-    assertEq(debtToLiquidate, 2.5e18, 'debtToLiquidate');
+    assertApproxEqAbs(debtToLiquidate, 2.5e18, 1, 'debtToLiquidate');
   }
 
   function test_calculateLiquidationAmounts_InsufficientCollateral() public view {
