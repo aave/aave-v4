@@ -287,6 +287,8 @@ library LiquidationLogic {
     IHubBase hub = collateralReserve.hub;
     uint256 assetId = collateralReserve.assetId;
 
+    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
+    uint120 newSuppliedShares = collateralPosition.suppliedShares - sharesToLiquidate.toUint120();
     uint256 sharesToLiquidator;
     if (params.collateralToLiquidator > 0) {
       if (params.receiveShares) {
@@ -308,8 +310,6 @@ library LiquidationLogic {
       }
     }
 
-    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
-    uint120 newSuppliedShares = collateralPosition.suppliedShares - sharesToLiquidate.toUint120();
     collateralPosition.suppliedShares = newSuppliedShares;
 
     emit ISpokeBase.Withdraw(

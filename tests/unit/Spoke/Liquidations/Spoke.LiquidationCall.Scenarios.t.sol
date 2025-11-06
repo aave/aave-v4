@@ -121,6 +121,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _checkedLiquidationCall(
       CheckedLiquidationCallParams({
         spoke: spoke,
+        collateralHub: _hub(spoke, _wethReserveId(spoke)),
         collateralReserveId: _wethReserveId(spoke),
         debtReserveId: _daiReserveId(spoke),
         user: user,
@@ -219,6 +220,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _checkedLiquidationCall(
       CheckedLiquidationCallParams({
         spoke: spoke,
+        collateralHub: _hub(spoke, _wethReserveId(spoke)),
         collateralReserveId: _wethReserveId(spoke),
         debtReserveId: _daiReserveId(spoke),
         user: user,
@@ -284,6 +286,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _checkedLiquidationCall(
       CheckedLiquidationCallParams({
         spoke: spoke,
+        collateralHub: _hub(spoke, _wethReserveId(spoke)),
         collateralReserveId: _wethReserveId(spoke),
         debtReserveId: _daiReserveId(spoke),
         user: user,

@@ -16,6 +16,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   struct CheckedLiquidationCallParams {
     ISpoke spoke;
+    IHub collateralHub;
     uint256 collateralReserveId;
     uint256 debtReserveId;
     address user;
@@ -384,6 +385,73 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     int256 realizedDelta = (userPremiumDebt - userDebtPosition.realizedPremium).toInt256() -
       premiumDebtRestored.toInt256();
 
+    // IHub collateralHub = _hub(params.spoke, params.collateralReserveId);
+    // uint256 collateralAssetId = _assetId(params.spoke, params.collateralReserveId);
+
+    if (params.receiveShares && liquidationMetadata.collateralToLiquidator > 0) {
+      uint256 sharesToLiquidator = params.collateralHub.previewAddByAssets(
+        _assetId(params.spoke, params.collateralReserveId),
+        liquidationMetadata.collateralToLiquidator
+      );
+      console.log('test %e %e', sharesToLiquidator, liquidationMetadata.collateralToLiquidator);
+      if (sharesToLiquidator > 0) {
+        vm.expectEmit(address(params.spoke));
+        emit ISpokeBase.Supply(
+          params.collateralReserveId,
+          params.liquidator,
+          params.liquidator,
+          sharesToLiquidator,
+          liquidationMetadata.collateralToLiquidator
+        );
+      }
+    }
+    {
+      uint256 sharesToLiquidator = params.collateralHub.previewRemoveByAssets(
+        _assetId(params.spoke, params.collateralReserveId),
+        liquidationMetadata.collateralToLiquidate
+      );
+      vm.expectEmit(address(params.spoke));
+      emit ISpokeBase.Withdraw(
+        params.collateralReserveId,
+        params.liquidator,
+        params.user,
+        sharesToLiquidator,
+        liquidationMetadata.collateralToLiquidate
+      );
+    }
+    {
+      uint256 drawnSharesLiquidated = debtHub
+        .previewRestoreByAssets(
+          debtAssetId,
+          liquidationMetadata.debtToLiquidate - premiumDebtRestored
+        )
+        .toUint120();
+      vm.expectEmit(address(params.spoke));
+      emit ISpokeBase.Repay(
+        params.debtReserveId,
+        params.liquidator,
+        params.user,
+        drawnSharesLiquidated,
+        liquidationMetadata.debtToLiquidate,
+        IHubBase.PremiumDelta({
+          sharesDelta: -userDebtPosition.premiumShares.toInt256(),
+          offsetDelta: -userDebtPosition.premiumOffset.toInt256(),
+          realizedDelta: realizedDelta
+        })
+      );
+    }
+
+    vm.expectEmit(address(params.spoke));
+    emit ISpokeBase.LiquidationCall(
+      params.collateralReserveId,
+      params.debtReserveId,
+      params.user,
+      liquidationMetadata.debtToLiquidate,
+      liquidationMetadata.collateralToLiquidate,
+      params.liquidator,
+      params.receiveShares
+    );
+
     vm.expectCall(
       address(debtHub),
       abi.encodeCall(
@@ -423,58 +491,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         abi.encodeWithSelector(IHubBase.payFeeShares.selector)
       );
     }
-
-    if (params.receiveShares && liquidationMetadata.collateralToLiquidator > 0) {
-      vm.expectEmit(address(params.spoke));
-      emit ISpokeBase.Supply(
-        params.collateralReserveId,
-        params.liquidator,
-        params.liquidator,
-        liquidationMetadata.collateralToLiquidator,
-        liquidationMetadata.collateralToLiquidator
-      );
-    }
-    {
-      vm.expectEmit(address(params.spoke));
-      emit ISpokeBase.Withdraw(
-        params.collateralReserveId,
-        params.liquidator,
-        params.user,
-        liquidationMetadata.collateralToLiquidate,
-        liquidationMetadata.collateralToLiquidate
-      );
-
-      uint256 drawnSharesLiquidated = debtHub
-        .previewRestoreByAssets(
-          debtAssetId,
-          liquidationMetadata.debtToLiquidate - premiumDebtRestored
-        )
-        .toUint120();
-      vm.expectEmit(address(params.spoke));
-      emit ISpokeBase.Repay(
-        params.debtReserveId,
-        params.liquidator,
-        params.user,
-        drawnSharesLiquidated,
-        liquidationMetadata.debtToLiquidate,
-        IHubBase.PremiumDelta({
-          sharesDelta: -userDebtPosition.premiumShares.toInt256(),
-          offsetDelta: -userDebtPosition.premiumOffset.toInt256(),
-          realizedDelta: realizedDelta
-        })
-      );
-    }
-
-    vm.expectEmit(address(params.spoke));
-    emit ISpokeBase.LiquidationCall(
-      params.collateralReserveId,
-      params.debtReserveId,
-      params.user,
-      liquidationMetadata.debtToLiquidate,
-      liquidationMetadata.collateralToLiquidate,
-      params.liquidator,
-      params.receiveShares
-    );
 
     for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
       if (params.spoke.isBorrowing(reserveId, params.user)) {
@@ -1322,6 +1338,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   ) internal virtual {}
 
   function _checkedLiquidationCall(CheckedLiquidationCallParams memory params) internal virtual {
+    params.collateralHub = _hub(params.spoke, params.collateralReserveId);
+
     // make sure there is enough liquidity to liquidate
     _openSupplyPosition(params.spoke, params.collateralReserveId, MAX_SUPPLY_AMOUNT);
 
