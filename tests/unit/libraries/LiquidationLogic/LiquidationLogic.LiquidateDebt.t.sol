@@ -103,8 +103,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 initialHubBalance = asset.balanceOf(address(hub));
     uint256 initialLiquidatorBalance = asset.balanceOf(liquidator);
 
-    _expectEvent(drawnDebt, premiumDebt, accruedPremium, debtToLiquidate);
-    (uint256 drawnDebtToLiquidate, uint256 premiumDebtToLiquidate) = _expectCall(
+    (uint256 drawnDebtToLiquidate, uint256 premiumDebtToLiquidate) = _expectEventsAndCalls(
       drawnDebt,
       premiumDebt,
       accruedPremium,
@@ -202,32 +201,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     );
   }
 
-  function _expectCall(
-    uint256 drawnDebt,
-    uint256 premiumDebt,
-    uint256 accruedPremium,
-    uint256 debtToLiquidate
-  ) internal returns (uint256, uint256) {
-    uint256 premiumDebtToLiquidate = _min(debtToLiquidate, premiumDebt);
-    uint256 drawnDebtToLiquidate = _min(drawnDebt, debtToLiquidate - premiumDebtToLiquidate);
-
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: -hub.previewRestoreByAssets(assetId, premiumDebt).toInt256(),
-      offsetDelta: -(premiumDebt - accruedPremium).toInt256(),
-      realizedDelta: accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
-    });
-    vm.expectCall(
-      address(hub),
-      abi.encodeCall(
-        IHubBase.restore,
-        (assetId, drawnDebtToLiquidate, premiumDebtToLiquidate, premiumDelta, liquidator)
-      )
-    );
-
-    return (hub.previewRestoreByAssets(assetId, drawnDebtToLiquidate), premiumDebtToLiquidate);
-  }
-
-  function _expectEvent(
+  function _expectEventsAndCalls(
     uint256 drawnDebt,
     uint256 premiumDebt,
     uint256 accruedPremium,
@@ -252,8 +226,17 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       debtToLiquidate,
       premiumDelta
     );
-  }
 
+    vm.expectCall(
+      address(hub),
+      abi.encodeCall(
+        IHubBase.restore,
+        (assetId, drawnDebtToLiquidate, premiumDebtToLiquidate, premiumDelta, liquidator)
+      )
+    );
+
+    return (hub.previewRestoreByAssets(assetId, drawnDebtToLiquidate), premiumDebtToLiquidate);
+  }
   function _updateStorage(
     uint256 drawnDebt,
     uint256 premiumDebt,

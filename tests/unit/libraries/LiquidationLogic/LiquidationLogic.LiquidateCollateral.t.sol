@@ -83,8 +83,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
 
     uint256 initialHubBalance = asset.balanceOf(address(hub));
 
-    _expectEvents(params);
-    uint256 sharesToLiquidate = _expectCalls(params);
+    uint256 sharesToLiquidate = _expectEventsAndCalls(params);
     bool isPositionEmpty = liquidationLogicWrapper.liquidateCollateral(params);
 
     assertEq(liquidationLogicWrapper.getCollateralReserve(), initialReserve);
@@ -130,8 +129,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     assertEq(sharesToLiquidator, 0);
     assertEq(feeShares, 1);
 
-    _expectEvents(params);
-    _expectCalls(params);
+    _expectEventsAndCalls(params);
     liquidationLogicWrapper.liquidateCollateral(params);
 
     // sharesToLiquidator should round to 0 and remain unchanged
@@ -178,8 +176,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     uint256 sharesToLiquidator = hub.previewAddByAssets(assetId, params.collateralToLiquidator);
     uint256 feeShares = sharesToLiquidate - sharesToLiquidator;
 
-    _expectEvents(params);
-    _expectCalls(params);
+    _expectEventsAndCalls(params);
     liquidationLogicWrapper.liquidateCollateral(params);
 
     // sharesToLiquidator should round to 0 and remain unchanged
@@ -250,7 +247,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     assertEq(newSpokeData, initSpokeData);
   }
 
-  function _expectCalls(
+  function _expectEventsAndCalls(
     LiquidationLogic.LiquidateCollateralParams memory p
   ) internal returns (uint256) {
     uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, p.collateralToLiquidate);
@@ -258,6 +255,26 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       ? hub.previewAddByAssets(assetId, p.collateralToLiquidator)
       : hub.previewRemoveByAssets(assetId, p.collateralToLiquidator);
     uint256 sharesToPayFee = sharesToLiquidate - sharesToLiquidator;
+
+    if (params.receiveShares && sharesToLiquidator > 0) {
+      vm.expectEmit(address(spoke));
+      emit ISpokeBase.Supply(
+        p.collateralReserveId,
+        p.liquidator,
+        p.liquidator,
+        sharesToLiquidator,
+        p.collateralToLiquidator
+      );
+    }
+
+    vm.expectEmit(address(spoke));
+    emit ISpokeBase.Withdraw(
+      p.collateralReserveId,
+      p.liquidator,
+      p.user,
+      sharesToLiquidate,
+      p.collateralToLiquidate
+    );
 
     if (p.collateralToLiquidator > 0 && p.receiveShares) {
       vm.expectCall(
@@ -287,34 +304,5 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     }
 
     return sharesToLiquidate;
-  }
-
-  function _expectEvents(
-    LiquidationLogic.LiquidateCollateralParams memory p
-  ) internal returns (uint256) {
-    uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, p.collateralToLiquidate);
-    uint256 sharesToLiquidator = p.receiveShares
-      ? hub.previewAddByAssets(assetId, p.collateralToLiquidator)
-      : hub.previewRemoveByAssets(assetId, p.collateralToLiquidator);
-
-    if (params.receiveShares && sharesToLiquidator > 0) {
-      vm.expectEmit(address(spoke));
-      emit ISpokeBase.Supply(
-        p.collateralReserveId,
-        p.liquidator,
-        p.liquidator,
-        sharesToLiquidator,
-        p.collateralToLiquidator
-      );
-    }
-
-    vm.expectEmit(address(spoke));
-    emit ISpokeBase.Withdraw(
-      p.collateralReserveId,
-      p.liquidator,
-      p.user,
-      sharesToLiquidate,
-      p.collateralToLiquidate
-    );
   }
 }
