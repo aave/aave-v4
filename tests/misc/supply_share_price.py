@@ -16,8 +16,16 @@ def rayMulUp(a, b):
 def percentMulDown(a, b):
     return (a * b) / PERCENTAGE_FACTOR
 
-def unrealizedFeeAmount(drawnShares, premiumShares, drawnIndex1, drawnIndex2, liquidityFee):
-    return percentMulDown(rayMulUp(drawnShares, drawnIndex2) - rayMulUp(drawnShares, drawnIndex1) + rayMulUp(premiumShares, drawnIndex2) - rayMulUp(premiumShares, drawnIndex1), liquidityFee)
+def divUp(a, b):
+    return (a + b - 1) / b
+
+def premiumDebt(realizedPremium, premiumShares, drawnIndex, premiumOffset):
+    return divUp(realizedPremium + premiumShares * drawnIndex - premiumOffset, RAY)
+
+def unrealizedFeeAmount(drawnShares, premiumShares, drawnIndex1, drawnIndex2, realizedPremium, liquidityFee):
+    truePremiumGrowthRay = premiumShares * (drawnIndex2 - drawnIndex1)
+    actualPremiumGrowth = divUp(realizedPremium + truePremiumGrowthRay , RAY) - divUp(realizedPremium, RAY)
+    return percentMulDown(rayMulUp(drawnShares, drawnIndex2) - rayMulUp(drawnShares, drawnIndex1) + actualPremiumGrowth, liquidityFee)
 
 def check(propertyDescription):
     print(f"\n-- {propertyDescription} --")
@@ -46,22 +54,25 @@ drawnShares = Int('drawnShares')
 s.add(1 <= drawnShares, drawnShares <= 10**30)
 premiumShares = Int('premiumShares')
 s.add(0 <= premiumShares, premiumShares <= 10**30)
-premiumOffset = Int('premiumOffset')
-s.add(0 <= premiumOffset, premiumOffset <= rayMulDown(premiumShares, drawnIndex1))
-liquiditySweptDeficitRealizedPremium = Int('liquiditySweptDeficitRealizedPremium')
-s.add(0 <= liquiditySweptDeficitRealizedPremium, liquiditySweptDeficitRealizedPremium <= 10**30)
+premiumOffset = premiumShares * RAY
+realizedPremium = Int('realizedPremium')
+s.add(0 <= realizedPremium, realizedPremium <= 10**30)
+liquiditySweptDeficit= Int('liquiditySweptDeficit')
+s.add(0 <= liquiditySweptDeficit, liquiditySweptDeficit <= 10**30)
 
-# T1: accrue/preview
-feeAmount1 = unrealizedFeeAmount(drawnShares, premiumShares, RAY, drawnIndex1, liquidityFee)
-totalAddedAssets1 = liquiditySweptDeficitRealizedPremium + rayMulUp(drawnShares, drawnIndex1) + rayMulUp(premiumShares, drawnIndex1) - premiumOffset - feeAmount1
+# T1: accrue
+feeAmount1 = unrealizedFeeAmount(drawnShares, premiumShares, RAY, drawnIndex1, realizedPremium, liquidityFee)
+totalAddedAssets1 = liquiditySweptDeficit + rayMulUp(drawnShares, drawnIndex1) + premiumDebt(realizedPremium, premiumShares, drawnIndex1, premiumOffset) - feeAmount1
+newRealizedPremium = realizedPremium + premiumShares * drawnIndex1 - premiumOffset
+newPremiumOffset = premiumShares * drawnIndex1
 
-# T2: accrue/preview
-feeAmount2 = feeAmount1 + unrealizedFeeAmount(drawnShares, premiumShares, drawnIndex1, drawnIndex2, liquidityFee)
-totalAddedAssets2 = liquiditySweptDeficitRealizedPremium + rayMulUp(drawnShares, drawnIndex2) + rayMulUp(premiumShares, drawnIndex2) - premiumOffset - feeAmount2
+# T2: preview
+feeAmount2 = feeAmount1 + unrealizedFeeAmount(drawnShares, premiumShares, drawnIndex1, drawnIndex2, newRealizedPremium, liquidityFee)
+totalAddedAssets2 = liquiditySweptDeficit + rayMulUp(drawnShares, drawnIndex2) + premiumDebt(newRealizedPremium, premiumShares, drawnIndex2, newPremiumOffset) - feeAmount2
 
-# T3: accrue/preview
-feeAmount3 = feeAmount2 + unrealizedFeeAmount(drawnShares, premiumShares, drawnIndex2, drawnIndex3, liquidityFee)
-totalAddedAssets3 = liquiditySweptDeficitRealizedPremium + rayMulUp(drawnShares, drawnIndex3) + rayMulUp(premiumShares, drawnIndex3) - premiumOffset - feeAmount3
+# T3: preview
+feeAmount3 = feeAmount1 + unrealizedFeeAmount(drawnShares, premiumShares, drawnIndex1, drawnIndex3, newRealizedPremium, liquidityFee)
+totalAddedAssets3 = liquiditySweptDeficit + rayMulUp(drawnShares, drawnIndex3) + premiumDebt(newRealizedPremium, premiumShares, drawnIndex3, newPremiumOffset) - feeAmount3
 
 s.push()
 # Shares remain constant
