@@ -108,9 +108,13 @@ contract LiquidationLogicBaseTest is SpokeBase {
       ).min(MAX_SUPPLY_AMOUNT)
     );
 
-    // TODO: Adjust this to operate on total debt value
+    uint256 overEstimatedDebtAmount = _convertValueToAmount(
+      debtToTargetParams.totalDebtValue,
+      debtToTargetParams.debtAssetPrice,
+      debtToTargetParams.debtAssetUnit
+    ) + 2;
     params.overEstimatedDebtValue = _convertAmountToValue(
-      debtReserveBalance + 2,
+      overEstimatedDebtAmount,
       debtToTargetParams.debtAssetPrice,
       debtToTargetParams.debtAssetUnit
     );
