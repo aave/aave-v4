@@ -24,7 +24,7 @@ contract HubRescueTest is HubBase {
   }
 
   /// @dev Recovery of funds directly transferred to the hub & ensure asset liquidity tracking is not impacted.
-  function test_rescuey_scenario_fuzz(uint256 lostAmount) public {
+  function test_rescue_scenario_fuzz(uint256 lostAmount) public {
     lostAmount = bound(lostAmount, 1, MAX_SUPPLY_AMOUNT / 10);
 
     IERC20 underlying = IERC20(hub1.getAsset(daiAssetId).underlying);
@@ -86,21 +86,138 @@ contract HubRescueTest is HubBase {
     assertEq(underlying.balanceOf(address(hub1)), 0, 'final hub amount');
   }
 
+  /// @dev Recovery of funds directly transferred to the hub including interest accrual
+  function test_rescue_fuzz_with_interest(uint256 lostAmount, uint256 skipTime) public {
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
+    lostAmount = bound(lostAmount, 1, MAX_SUPPLY_AMOUNT / 10);
+
+    IERC20 underlying = IERC20(hub1.getAsset(daiAssetId).underlying);
+
+    deal(address(underlying), address(hub1), lostAmount);
+
+    // spoke1, alice add dai
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: 10e20,
+      user: alice
+    });
+    // spoke2, bob add dai
+    Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 7.5e22, user: bob});
+    Utils.draw({hub: hub1, assetId: daiAssetId, caller: address(spoke1), to: alice, amount: 10e20});
+
+    skip(skipTime);
+
+    Utils.restoreDrawn({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      drawnAmount: hub1.getSpokeTotalOwed(daiAssetId, address(spoke1)),
+      restorer: alice
+    });
+
+    // remove all
+    Utils.remove({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)),
+      to: alice
+    });
+    Utils.remove({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke2),
+      amount: hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
+      to: alice
+    });
+
+    uint256 prevHubBalance = underlying.balanceOf(address(hub1));
+    uint256 prevRecoveryBalance = underlying.balanceOf(rescueSpoke);
+
+    (uint256 recoverAmount, uint256 recoverAddedShares, uint256 recoverWithdrawnShares) = _rescue(
+      hub1,
+      rescueSpoke,
+      daiAssetId,
+      underlying
+    );
+
+    uint256 finalHubBalance = underlying.balanceOf(address(hub1));
+    uint256 finalRecoveryBalance = underlying.balanceOf(rescueSpoke);
+
+    // check amounts & balances
+    assertApproxEqAbs(
+      recoverAmount,
+      lostAmount,
+      hub1.previewAddByShares(daiAssetId, 1),
+      'recover amount'
+    ); // can differ by up to 1 share worth of assets due to remove donation rounding
+    assertEq(recoverAddedShares, recoverWithdrawnShares, 'recover shares');
+    assertEq(finalHubBalance, prevHubBalance - recoverAmount, 'hub balance');
+    assertEq(finalRecoveryBalance, prevRecoveryBalance + recoverAmount, 'recovery balance');
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.recover');
+  }
+
+  /// @dev Another spoke cannot improperly recover liquidity fee without transferring underlying tokens
+  function test_cannot_recover_liquidity_fee_reverts_with_InvalidAmountReceived() public {
+    IERC20 underlying = IERC20(hub1.getAsset(daiAssetId).underlying);
+
+    // spoke1, alice add dai
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: 10e20,
+      user: alice
+    });
+    // spoke2, bob add dai
+    Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 7.5e22, user: bob});
+    Utils.draw({hub: hub1, assetId: daiAssetId, caller: address(spoke1), to: alice, amount: 10e20});
+
+    skip(322 days);
+
+    Utils.restoreDrawn({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      drawnAmount: hub1.getSpokeTotalOwed(daiAssetId, address(spoke1)),
+      restorer: alice
+    });
+
+    uint256 liquidityFee = hub1.getAssetAccruedFees(daiAssetId);
+    assertGt(liquidityFee, 0);
+
+    // Cannot add liquidity fee amount without transferring underlying tokens
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IHub.InsufficientLiquidity.selector,
+        hub1.getAssetLiquidity(daiAssetId) + liquidityFee
+      )
+    );
+
+    vm.prank(address(rescueSpoke));
+    hub1.add(daiAssetId, liquidityFee);
+  }
+
   function _rescue(
     IHub hub,
     address rescueSpoke,
     uint256 assetId,
     IERC20 underlying
   ) internal returns (uint256, uint256, uint256) {
-    uint256 currentBalance = underlying.balanceOf(address(hub));
     uint256 recordedLiquidity = hub.getAssetLiquidity(assetId);
-    uint256 rescueAmount = currentBalance - recordedLiquidity;
+    uint256 rescueAmount = underlying.balanceOf(address(hub)) - recordedLiquidity;
+
+    // ensure enough rescueAmount to add
+    vm.assume(hub.previewAddByAssets(assetId, rescueAmount) > 0);
 
     vm.startPrank(rescueSpoke);
-    uint256 rescueedAddedShares = hub.add(assetId, rescueAmount);
-    uint256 rescueedWithdrawnShares = hub.remove(assetId, rescueAmount, rescueSpoke);
+    uint256 rescuedAddedShares = hub.add(assetId, rescueAmount);
+    rescueAmount = hub1.getSpokeAddedAssets(assetId, rescueSpoke);
+    uint256 rescuedWithdrawnShares = hub.remove(assetId, rescueAmount, rescueSpoke);
     vm.stopPrank();
 
-    return (rescueAmount, rescueedAddedShares, rescueedWithdrawnShares);
+    return (rescueAmount, rescuedAddedShares, rescuedWithdrawnShares);
   }
 }
