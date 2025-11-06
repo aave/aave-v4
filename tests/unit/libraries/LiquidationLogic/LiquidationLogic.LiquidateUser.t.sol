@@ -187,7 +187,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
         IHubBase.restore,
         (
           wethAssetId,
-          2e18,
+          2e18 + 1,
           0.5e18,
           IHubBase.PremiumDelta(
             -debtPosition.premiumShares.toInt256(),

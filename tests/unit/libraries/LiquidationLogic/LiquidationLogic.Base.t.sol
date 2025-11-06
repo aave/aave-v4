@@ -66,8 +66,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     uint256 debtAssetUnit = 10 **
       bound(params.debtAssetUnit, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
 
-    // Convert totalDebtValue back into an amount, then add 2 wei to that amount, turn that back into value, and pass into the return params
-    uint256 totalDebtValueInAmount = _convertValueToAmount(
+    /*uint256 totalDebtValueInAmount = _convertValueToAmount(
       totalDebtValue,
       debtAssetPrice,
       debtAssetUnit
@@ -77,6 +76,8 @@ contract LiquidationLogicBaseTest is SpokeBase {
       debtAssetPrice,
       debtAssetUnit
     );
+    */
+    totalDebtValue = _getOverEstimatedDebtValue(totalDebtValue, debtAssetPrice, debtAssetUnit);
 
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
@@ -269,6 +270,20 @@ contract LiquidationLogicBaseTest is SpokeBase {
         debtAssetPrice: params.debtAssetPrice,
         debtAssetUnit: 10 ** params.debtAssetDecimals
       });
+  }
+
+  /// @dev Convert totalDebtValue into an amount, add 2 wei, and convert back into value
+  function _getOverEstimatedDebtValue(
+    uint256 totalDebtValue,
+    uint256 debtAssetPrice,
+    uint256 debtAssetUnit
+  ) internal returns (uint256) {
+    uint256 overEstimatedDebtAmount = _convertValueToAmount(
+      totalDebtValue,
+      debtAssetPrice,
+      debtAssetUnit
+    ) + 2;
+    return _convertAmountToValue(overEstimatedDebtAmount, debtAssetPrice, debtAssetUnit);
   }
 
   /// naive log 10 exponent
