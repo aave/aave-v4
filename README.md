@@ -127,6 +127,7 @@ forge build
 - **Check contract sizes**: `forge build --sizes`
 - **Check linting**: `yarn lint`
 - **Fix linting issues**: `yarn lint:fix`
+- **Generate Rust bindings**: `yarn rs:generate`
 
 ### Gas Snapshots
 
