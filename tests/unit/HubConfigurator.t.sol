@@ -519,7 +519,7 @@ contract HubConfiguratorTest is HubBase {
     uint16 liquidityFee,
     address feeReceiver
   ) public {
-    assetId = bound(assetId_, 0, hub1.getAssetCount() - 1);
+    assetId_ = bound(assetId_, 0, hub1.getAssetCount() - 1);
     liquidityFee = uint16(bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR));
     assumeNotZeroAddress(feeReceiver);
 
@@ -1017,7 +1017,7 @@ contract HubConfiguratorTest is HubBase {
       expectedSpokeConfig.paused = true;
       vm.expectCall(
         address(hub1),
-        abi.encodeCall(IHub.updateSpokeConfig, (assetId, address(spoke3), expectedSpokeConfig))
+        abi.encodeCall(IHub.updateSpokeConfig, (_assetId, address(spoke3), expectedSpokeConfig))
       );
     }
 
@@ -1059,7 +1059,7 @@ contract HubConfiguratorTest is HubBase {
     }
 
     for (uint256 _assetId = 4; _assetId < hub1.getAssetCount(); ++_assetId) {
-      vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
+      vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (_assetId, address(spoke3))));
     }
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
