@@ -17,9 +17,6 @@ contract UnitPriceFeed is AggregatorV3Interface {
 
   int256 private immutable _units;
 
-  /// @notice Thrown when the operation is not supported.
-  error OperationNotSupported();
-
   /// @dev Constructor.
   /// @param decimals_ The number of decimals used to represent the unit price.
   /// @param description_ The description of the unit price feed.

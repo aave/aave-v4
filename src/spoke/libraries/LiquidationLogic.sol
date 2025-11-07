@@ -3,6 +3,7 @@
 pragma solidity ^0.8.20;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -16,6 +17,7 @@ import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 /// @notice Implements the logic for liquidations.
 library LiquidationLogic {
   using SafeCast for *;
+  using SafeTransferLib for address;
   using PositionStatusMap for ISpoke.PositionStatus;
   using PercentageMath for uint256;
   using WadRayMath for uint256;
@@ -292,12 +294,16 @@ library LiquidationLogic {
     collateralPosition.suppliedShares = suppliedShares;
 
     uint256 sharesToLiquidator;
-    if (params.receiveShares) {
-      sharesToLiquidator = hub.previewRemoveByAssets(assetId, params.collateralToLiquidator);
-      positions[params.liquidator][params.collateralReserveId].suppliedShares += sharesToLiquidator
-        .toUint120();
-    } else {
-      sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
+    if (params.collateralToLiquidator > 0) {
+      if (params.receiveShares) {
+        sharesToLiquidator = hub.previewAddByAssets(assetId, params.collateralToLiquidator);
+        if (sharesToLiquidator > 0) {
+          positions[params.liquidator][params.collateralReserveId]
+            .suppliedShares += sharesToLiquidator.toUint120();
+        }
+      } else {
+        sharesToLiquidator = hub.remove(assetId, params.collateralToLiquidator, params.liquidator);
+      }
     }
 
     if (sharesToLiquidate > sharesToLiquidator) {
@@ -325,12 +331,16 @@ library LiquidationLogic {
         realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
       });
 
+      debtReserve.underlying.safeTransferFrom(
+        params.liquidator,
+        address(debtReserve.hub),
+        drawnDebtToLiquidate + premiumDebtToLiquidate
+      );
       uint256 drawnSharesLiquidated = debtReserve.hub.restore(
         debtReserve.assetId,
         drawnDebtToLiquidate,
         premiumDebtToLiquidate,
-        premiumDelta,
-        params.liquidator
+        premiumDelta
       );
       debtPosition.settlePremiumDebt(premiumDelta.realizedDelta);
       debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
@@ -352,10 +362,6 @@ library LiquidationLogic {
   ) internal view {
     require(params.user != params.liquidator, ISpoke.SelfLiquidation());
     require(params.debtToCover > 0, ISpoke.InvalidDebtToCover());
-    require(
-      params.collateralReserveHub != address(0) && params.debtReserveHub != address(0),
-      ISpoke.ReserveNotListed()
-    );
     require(!params.collateralReservePaused && !params.debtReservePaused, ISpoke.ReservePaused());
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
@@ -414,7 +420,7 @@ library LiquidationLogic {
       })
     );
 
-    uint256 collateralToLiquidate = debtToLiquidate.mulDivUp(
+    uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
       params.debtAssetPrice * collateralAssetUnit * liquidationBonus,
       debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
     );
@@ -436,12 +442,10 @@ library LiquidationLogic {
       // - `debtToLiquidate` is increased if `(leavesCollateralDust && debtToLiquidate < params.debtReserveBalance)`, ensuring collateral reserve
       //   is fully liquidated (potentially bypassing the target health factor). Can only increase by at most `DUST_LIQUIDATION_THRESHOLD` (in
       //   value terms). Since debt dust condition was enforced, it is guaranteed that `debtToLiquidate` will never exceed `params.debtReserveBalance`.
-      debtToLiquidate = collateralToLiquidate
-        .mulDivUp(
-          params.collateralAssetPrice * debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
-          params.debtAssetPrice * collateralAssetUnit * liquidationBonus
-        )
-        .min(params.debtReserveBalance);
+      debtToLiquidate = collateralToLiquidate.mulDivUp(
+        params.collateralAssetPrice * debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
+        params.debtAssetPrice * collateralAssetUnit * liquidationBonus
+      );
     }
 
     // revert if the liquidator does not cover the necessary debt to prevent dust from remaining

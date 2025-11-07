@@ -392,8 +392,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             sharesDelta: -userDebtPosition.premiumShares.toInt256(),
             offsetDelta: -userDebtPosition.premiumOffset.toInt256(),
             realizedDelta: realizedDelta
-          }),
-          params.liquidator
+          })
         )
       )
     );
@@ -408,7 +407,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           params.liquidator
         )
       ),
-      params.receiveShares ? 0 : 1
+      params.receiveShares || liquidationMetadata.collateralToLiquidate == 0 ? 0 : 1
     );
 
     // PayFee call is partially checked, as conversion from assets to shares might differ due to restore donation
@@ -978,11 +977,13 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         'liquidator: collateral supplied'
       );
     } else {
-      assertEq(
+      // collateral rounded down on receiveShares, can differ by 2 wei in asset terms
+      assertApproxEqAbs(
         accountsInfoAfter.liquidatorBalanceInfo.suppliedInSpoke,
         accountsInfoBefore.liquidatorBalanceInfo.suppliedInSpoke +
           liquidationMetadata.collateralToLiquidator,
-        'liquidator: collateral supplied received shares'
+        2,
+        'liquidator: collateral supplied (receiveShares)'
       );
     }
     assertEq(
@@ -997,6 +998,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       accountsInfoBefore.collateralFeeReceiverBalanceInfo.suppliedInSpoke,
       'collateral fee receiver: collateral supplied'
     );
+
     assertEq(
       accountsInfoAfter.collateralFeeReceiverBalanceInfo.borrowedFromSpoke,
       accountsInfoBefore.collateralFeeReceiverBalanceInfo.borrowedFromSpoke,
@@ -1079,19 +1081,30 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     );
 
     // Fee Receivers
-    assertApproxEqRel(
-      accountsInfoAfter.collateralFeeReceiverBalanceInfo.addedInHub,
-      accountsInfoBefore.collateralFeeReceiverBalanceInfo.addedInHub +
-        liquidationMetadata.collateralToLiquidate -
-        liquidationMetadata.collateralToLiquidator,
-      _approxRelFromBps(1),
-      'collateral fee receiver: added'
-    );
     assertEq(
       accountsInfoAfter.collateralFeeReceiverBalanceInfo.drawnFromHub,
       accountsInfoBefore.collateralFeeReceiverBalanceInfo.drawnFromHub,
       'collateral fee receiver: drawn'
     );
+    if (!params.receiveShares) {
+      assertApproxEqRel(
+        accountsInfoAfter.collateralFeeReceiverBalanceInfo.addedInHub,
+        accountsInfoBefore.collateralFeeReceiverBalanceInfo.addedInHub +
+          liquidationMetadata.collateralToLiquidate -
+          liquidationMetadata.collateralToLiquidator,
+        _approxRelFromBps(1),
+        'collateral fee receiver: added'
+      );
+    } else {
+      assertApproxEqAbs(
+        accountsInfoAfter.collateralFeeReceiverBalanceInfo.addedInHub,
+        accountsInfoBefore.collateralFeeReceiverBalanceInfo.addedInHub +
+          liquidationMetadata.collateralToLiquidate -
+          liquidationMetadata.collateralToLiquidator,
+        2,
+        'collateral fee receiver: added (receiveShares)'
+      );
+    }
 
     if (
       _getFeeReceiver(params.spoke, params.collateralReserveId) !=
@@ -1292,6 +1305,16 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _checkErc20Balances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkSpokeBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkHubBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
+    _assertHubLiquidity(
+      _hub(params.spoke, params.collateralReserveId),
+      params.collateralReserveId,
+      'spoke1.liquidationCall'
+    );
+    _assertHubLiquidity(
+      _hub(params.spoke, params.debtReserveId),
+      params.debtReserveId,
+      'spoke1.liquidationCall'
+    );
   }
 
   // @dev reads `positionStatus.hasPositiveRiskPremium` by temporarily upgrading to mock spoke

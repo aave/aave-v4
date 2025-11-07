@@ -35,6 +35,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setDebtReserveId(reserveId);
     liquidationLogicWrapper.setDebtReserveHub(hub);
     liquidationLogicWrapper.setDebtReserveAssetId(assetId);
+    liquidationLogicWrapper.setDebtReserveUnderlying(address(asset));
     liquidationLogicWrapper.setBorrowerBorrowingStatus(reserveId, true);
 
     // Add liquidation logic wrapper as a spoke
@@ -78,9 +79,9 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     );
     liquidationLogicWrapper.setDebtPositionRealizedPremium(realizedPremium);
 
-    // Mint tokens to liquidator and approve hub
+    // Mint tokens to liquidator and approve spoke
     deal(address(asset), liquidator, spokeDrawnOwed + spokePremiumOwed);
-    Utils.approve(hub, assetId, liquidator, spokeDrawnOwed + spokePremiumOwed);
+    Utils.approve(spoke, address(asset), liquidator, spokeDrawnOwed + spokePremiumOwed);
   }
 
   function expectCall(
@@ -101,7 +102,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       address(hub),
       abi.encodeCall(
         IHubBase.restore,
-        (assetId, drawnDebtToLiquidate, premiumDebtToLiquidate, premiumDelta, liquidator)
+        (assetId, drawnDebtToLiquidate, premiumDebtToLiquidate, premiumDelta)
       )
     );
 
@@ -148,7 +149,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     assertEq(isPositionEmpty, debtToLiquidate == drawnDebt + premiumDebt);
     assertEq(liquidationLogicWrapper.getBorrowerBorrowingStatus(reserveId), !isPositionEmpty);
     assertPosition(
-      liquidationLogicWrapper.getDebtPosition(),
+      liquidationLogicWrapper.getDebtPosition(user),
       initialPosition,
       drawnDebtToLiquidate,
       accruedPremium,
@@ -180,7 +181,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     );
   }
 
-  // reverts when hub does not have enough allowance from liquidator
+  // reverts when spoke does not have enough allowance from liquidator
   function test_liquidateDebt_revertsWith_InsufficientAllowance() public {
     uint256 drawnDebt = 100e18;
     uint256 premiumDebt = 10e18;
@@ -188,7 +189,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     updateStorage(drawnDebt, premiumDebt, accruedPremium);
 
     uint256 debtToLiquidate = drawnDebt + premiumDebt;
-    Utils.approve(hub, assetId, liquidator, debtToLiquidate - 1);
+    Utils.approve(spoke, address(asset), liquidator, debtToLiquidate - 1);
 
     vm.expectRevert();
     liquidationLogicWrapper.liquidateDebt(
@@ -239,7 +240,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     );
     liquidationLogicWrapper.setDebtPositionPremiumOffset(premiumDebt - accruedPremium);
 
-    return liquidationLogicWrapper.getDebtPosition();
+    return liquidationLogicWrapper.getDebtPosition(user);
   }
 
   function assertPosition(

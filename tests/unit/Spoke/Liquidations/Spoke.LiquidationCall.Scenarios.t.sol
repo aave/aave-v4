@@ -48,7 +48,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); reserveId++) {
       deal(spoke, reserveId, liquidator, MAX_SUPPLY_AMOUNT);
-      Utils.approve(hub1, spoke.getReserve(reserveId).assetId, liquidator, MAX_SUPPLY_AMOUNT);
+      Utils.approve(spoke, reserveId, liquidator, MAX_SUPPLY_AMOUNT);
     }
   }
 
@@ -279,7 +279,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     // Perform liquidation
     // Liquidated amounts:
-    //   - Collateral: 79 * 1 / 90 = 1 if round up, 0 otherwise (will revert if 0)
+    //   - Collateral: 79 * 1 / 90 = 0 rounded down (hub call will be skipped, otherwise liquidation would revert)
     //   - Debt: 79 wei of DAI
     _checkedLiquidationCall(
       CheckedLiquidationCallParams({
@@ -294,7 +294,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       })
     );
 
-    assertEq(spoke.getUserSuppliedAssets(_wethReserveId(spoke), user), 0, 'Collateral should be 0');
+    assertEq(spoke.getUserSuppliedAssets(_wethReserveId(spoke), user), 1, 'Collateral should be 1');
     assertEq(spoke.getUserTotalDebt(_daiReserveId(spoke), user), 0, 'Debt should be 0');
     assertEq(
       _hub(spoke, _daiReserveId(spoke)).getAssetDeficit(_assetId(spoke, _daiReserveId(spoke))),

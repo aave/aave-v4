@@ -79,6 +79,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setDebtReserveId(wethReserveId);
     liquidationLogicWrapper.setDebtReserveHub(hub2);
     liquidationLogicWrapper.setDebtReserveAssetId(wethAssetId);
+    liquidationLogicWrapper.setDebtReserveUnderlying(address(tokenList.weth));
     liquidationLogicWrapper.setDebtReserveDecimals(18);
     liquidationLogicWrapper.setBorrowerBorrowingStatus(wethReserveId, true);
 
@@ -146,9 +147,14 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       params.premiumDebt - params.accruedPremium
     );
 
-    // Mint tokens to liquidator and approve hub
+    // Mint tokens to liquidator and approve spoke
     deal(address(tokenList.weth), params.liquidator, spokeDrawnOwed + spokePremiumOwed);
-    Utils.approve(hub2, wethAssetId, params.liquidator, spokeDrawnOwed + spokePremiumOwed);
+    Utils.approve(
+      ISpoke(address(liquidationLogicWrapper)),
+      address(tokenList.weth),
+      params.liquidator,
+      spokeDrawnOwed + spokePremiumOwed
+    );
   }
 
   function test_liquidateUser() public {
@@ -156,7 +162,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     uint256 initialHub2Balance = tokenList.weth.balanceOf(address(hub2));
     uint256 initialLiquidatorWethBalance = tokenList.weth.balanceOf(address(params.liquidator));
 
-    ISpoke.UserPosition memory debtPosition = liquidationLogicWrapper.getDebtPosition();
+    ISpoke.UserPosition memory debtPosition = liquidationLogicWrapper.getDebtPosition(params.user);
 
     uint256 feeShares = hub1.previewRemoveByAssets(usdxAssetId, 6000e6) -
       hub1.previewRemoveByAssets(usdxAssetId, 5900e6);
@@ -191,8 +197,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
             -debtPosition.premiumShares.toInt256(),
             -debtPosition.premiumOffset.toInt256(),
             0.2e18 - 0.5e18
-          ),
-          params.liquidator
+          )
         )
       ),
       1
@@ -222,7 +227,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     params.totalDebtValue *= 2;
     params.debtToCover = 4.9e18;
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(
-      liquidationLogicWrapper.getCollateralPosition().suppliedShares * 2
+      liquidationLogicWrapper.getCollateralPosition(params.user).suppliedShares * 2
     );
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.liquidateUser(params);

@@ -8,6 +8,16 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Interface for the SpokeConfigurator.
 interface ISpokeConfigurator {
+  /// @notice Emitted when the maximum allowed number of reserves for a spoke is updated.
+  /// @param spoke The address of the spoke.
+  /// @param maxReserves The new maximum number of reserves.
+  event UpdateMaxReserves(address spoke, uint256 maxReserves);
+
+  /// @dev Thrown upon adding a reserve when the maximum allowed number of reserves is already reached.
+  /// @param spoke The address of the spoke.
+  /// @param maxReserves The maximum allowed number of reserves.
+  error MaximumReservesReached(address spoke, uint256 maxReserves);
+
   /// @notice Updates the price source of a reserve.
   /// @dev The price source must implement the AggregatorV3Interface.
   /// @param spoke The address of the spoke.
@@ -37,6 +47,12 @@ interface ISpokeConfigurator {
     address spoke,
     ISpoke.LiquidationConfig calldata liquidationConfig
   ) external;
+
+  /// @notice Updates the maximum number of reserves allowed to exist on a spoke.
+  /// @dev It allows setting the maximum below the amount of reserves that currently exist.
+  /// @param spoke The address of the spoke.
+  /// @param maxReserves The new maximum number of reserves.
+  function updateMaxReserves(address spoke, uint256 maxReserves) external;
 
   /// @notice Adds a new reserve to a spoke.
   /// @dev The asset corresponding to the reserve must be already listed on the Hub.
@@ -90,7 +106,7 @@ interface ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint16 collateralFactor
-  ) external returns (uint16);
+  ) external returns (uint24);
 
   /// @notice Updates an existing collateral factor of a reserve at the specified key.
   /// @param spoke The address of the spoke.
@@ -100,7 +116,7 @@ interface ISpokeConfigurator {
   function updateCollateralFactor(
     address spoke,
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     uint16 collateralFactor
   ) external;
 
@@ -113,7 +129,7 @@ interface ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint256 maxLiquidationBonus
-  ) external returns (uint16);
+  ) external returns (uint24);
 
   /// @notice Updates an existing liquidation bonus of a reserve at the specified key.
   /// @param spoke The address of the spoke.
@@ -123,7 +139,7 @@ interface ISpokeConfigurator {
   function updateMaxLiquidationBonus(
     address spoke,
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     uint256 maxLiquidationBonus
   ) external;
 
@@ -136,7 +152,7 @@ interface ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint256 liquidationFee
-  ) external returns (uint16);
+  ) external returns (uint24);
 
   /// @notice Updates an existing liquidation fee of a reserve at the specified key.
   /// @param spoke The address of the spoke.
@@ -146,7 +162,7 @@ interface ISpokeConfigurator {
   function updateLiquidationFee(
     address spoke,
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     uint256 liquidationFee
   ) external;
 
@@ -159,7 +175,7 @@ interface ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint16);
+  ) external returns (uint24);
 
   /// @notice Updates the dynamic config of a reserve at the specified key.
   /// @param spoke The address of the spoke.
@@ -169,7 +185,7 @@ interface ISpokeConfigurator {
   function updateDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external;
 
@@ -186,4 +202,9 @@ interface ISpokeConfigurator {
   /// @param positionManager The address of the position manager.
   /// @param active The new active flag.
   function updatePositionManager(address spoke, address positionManager, bool active) external;
+
+  /// @notice Returns the maximum number of reserves allowed to exist on a spoke.
+  /// @param spoke The address of the spoke.
+  /// @return The maximum number of reserves.
+  function getMaxReserves(address spoke) external view returns (uint256);
 }

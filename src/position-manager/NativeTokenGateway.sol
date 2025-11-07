@@ -70,7 +70,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     uint256 reserveId,
     uint256 amount
   ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
-    (address underlying, ) = _getReserveData(spoke, reserveId);
+    address underlying = _getReserveUnderlying(spoke, reserveId);
     _validateParams(underlying, amount);
 
     (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw(
@@ -90,7 +90,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     uint256 reserveId,
     uint256 amount
   ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
-    (address underlying, ) = _getReserveData(spoke, reserveId);
+    address underlying = _getReserveUnderlying(spoke, reserveId);
     _validateParams(underlying, amount);
 
     (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow(
@@ -111,7 +111,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     uint256 amount
   ) external payable nonReentrant onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
     require(msg.value == amount, NativeAmountMismatch());
-    (address underlying, address hub) = _getReserveData(spoke, reserveId);
+    address underlying = _getReserveUnderlying(spoke, reserveId);
     _validateParams(underlying, amount);
 
     uint256 userTotalDebt = ISpoke(spoke).getUserTotalDebt(reserveId, msg.sender);
@@ -123,7 +123,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     }
 
     _nativeWrapper.deposit{value: repayAmount}();
-    address(_nativeWrapper).safeApproveWithRetry(hub, repayAmount);
+    address(_nativeWrapper).safeApproveWithRetry(spoke, repayAmount);
     (uint256 repaidShares, uint256 repaidAmount) = ISpoke(spoke).repay(
       reserveId,
       repayAmount,
@@ -149,11 +149,11 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     address user,
     uint256 amount
   ) internal returns (uint256, uint256) {
-    (address underlying, address hub) = _getReserveData(spoke, reserveId);
+    address underlying = _getReserveUnderlying(spoke, reserveId);
     _validateParams(underlying, amount);
 
     _nativeWrapper.deposit{value: amount}();
-    address(_nativeWrapper).safeApproveWithRetry(hub, amount);
+    address(_nativeWrapper).safeApproveWithRetry(spoke, amount);
     return ISpoke(spoke).supply(reserveId, amount, user);
   }
 

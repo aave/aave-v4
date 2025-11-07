@@ -6,6 +6,7 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -25,6 +26,7 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @dev Each reserve can be associated with a separate Hub.
 abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
+  using SafeTransferLib for address;
   using WadRayMath for *;
   using PercentageMath for *;
   using KeyValueList for KeyValueList.List;
@@ -37,6 +39,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
+
+  /// @inheritdoc ISpoke
+  uint256 public constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
 
   /// @inheritdoc ISpoke
   bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
@@ -61,7 +66,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   mapping(address user => PositionStatus) internal _positionStatus;
   mapping(uint256 reserveId => Reserve) internal _reserves;
   mapping(address positionManager => PositionManagerConfig) internal _positionManager;
-  mapping(uint256 reserveId => mapping(uint16 dynamicConfigKey => DynamicReserveConfig))
+  mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => DynamicReserveConfig))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
@@ -109,7 +114,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
     uint256 reserveId = _reserveCount++;
-    uint16 dynamicConfigKey; // 0 as first key to use
+    uint24 dynamicConfigKey; // 0 as first key to use
 
     (address underlying, uint8 decimals) = IHubBase(hub).getAssetUnderlyingAndDecimals(assetId);
     require(underlying != address(0), AssetNotListed());
@@ -161,14 +166,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function addDynamicReserveConfig(
     uint256 reserveId,
     DynamicReserveConfig calldata dynamicConfig
-  ) external restricted returns (uint16) {
+  ) external restricted returns (uint24) {
     require(reserveId < _reserveCount, ReserveNotListed());
+    uint24 dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
+    require(dynamicConfigKey < MAX_ALLOWED_DYNAMIC_CONFIG_KEY, MaximumDynamicConfigKeyReached());
     _validateDynamicReserveConfig(dynamicConfig);
-    uint16 dynamicConfigKey;
-    // overflow is desired, we implicitly invalidate & override stale config
-    unchecked {
-      dynamicConfigKey = ++_reserves[reserveId].dynamicConfigKey;
-    }
+    dynamicConfigKey = dynamicConfigKey.uncheckedAdd(1).toUint24();
+    _reserves[reserveId].dynamicConfigKey = dynamicConfigKey;
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
     emit AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
     return dynamicConfigKey;
@@ -177,7 +181,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint16 dynamicConfigKey,
+    uint24 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
@@ -202,7 +206,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve);
 
-    uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount, msg.sender);
+    reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), amount);
+    uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
     userPosition.suppliedShares += suppliedShares.toUint120();
 
     if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
@@ -296,12 +301,16 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       offsetDelta: -userPosition.premiumOffset.toInt256(),
       realizedDelta: accruedPremium.toInt256() - premiumDebtRestored.toInt256()
     });
+    reserve.underlying.safeTransferFrom(
+      msg.sender,
+      address(reserve.hub),
+      drawnDebtRestored + premiumDebtRestored
+    );
     uint256 restoredShares = reserve.hub.restore(
       reserve.assetId,
       drawnDebtRestored,
       premiumDebtRestored,
-      premiumDelta,
-      msg.sender
+      premiumDelta
     );
 
     userPosition.settlePremiumDebt(premiumDelta.realizedDelta);
@@ -333,8 +342,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 debtToCover,
     bool receiveShares
   ) external {
-    Reserve storage collateralReserve = _reserves[collateralReserveId];
-    Reserve storage debtReserve = _reserves[debtReserveId];
+    Reserve storage collateralReserve = _getReserve(collateralReserveId);
+    Reserve storage debtReserve = _getReserve(debtReserveId);
     DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
       _userPositions[user][collateralReserveId].dynamicConfigKey
     ];
@@ -387,7 +396,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bool usingAsCollateral,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    _validateSetUsingAsCollateral(_reserves[reserveId], usingAsCollateral);
+    _validateSetUsingAsCollateral(_getReserve(reserveId), usingAsCollateral);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
     // no op also ensures only new collateral is enabled and refreshed without health factor check
@@ -483,7 +492,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     try
       IERC20Permit(underlying).permit({
         owner: onBehalfOf,
-        spender: address(reserve.hub),
+        spender: address(this),
         value: value,
         deadline: deadline,
         v: permitV,
@@ -555,7 +564,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   function getDynamicReserveConfig(
     uint256 reserveId,
-    uint16 dynamicConfigKey
+    uint24 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory) {
     _getReserve(reserveId);
     return _dynamicConfig[reserveId][dynamicConfigKey];
@@ -934,7 +943,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     Reserve storage reserve,
     bool usingAsCollateral
   ) internal view {
-    require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
     // can disable as collateral if the reserve is frozen
     require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
