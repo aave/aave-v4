@@ -34,7 +34,7 @@ library LiquidationLogic {
     uint256 premiumDebt;
     uint256 accruedPremium;
     uint256 totalDebtValue;
-    uint256 overEstimatedDebtValue;
+    uint256 inflatedTotalDebtValue;
     address liquidator;
     uint256 activeCollateralCount;
     uint256 borrowedCount;
@@ -72,7 +72,7 @@ library LiquidationLogic {
     uint256 debtReserveBalance;
     uint256 debtToCover;
     uint256 totalDebtValue;
-    uint256 overEstimatedDebtValue;
+    uint256 inflatedTotalDebtValue;
     uint256 healthFactor;
     uint256 targetHealthFactor;
     uint256 liquidationBonus;
@@ -89,7 +89,7 @@ library LiquidationLogic {
     uint256 collateralReserveBalance;
     uint256 debtToCover;
     uint256 totalDebtValue;
-    uint256 overEstimatedDebtValue;
+    uint256 inflatedTotalDebtValue;
     uint256 healthFactor;
     uint256 maxLiquidationBonus;
     uint256 collateralFactor;
@@ -179,7 +179,7 @@ library LiquidationLogic {
           collateralReserveBalance: collateralReserveBalance,
           debtToCover: params.debtToCover,
           totalDebtValue: params.totalDebtValue,
-          overEstimatedDebtValue: params.overEstimatedDebtValue,
+          inflatedTotalDebtValue: params.inflatedTotalDebtValue,
           healthFactor: params.healthFactor,
           maxLiquidationBonus: collateralDynConfig.maxLiquidationBonus,
           collateralFactor: collateralDynConfig.collateralFactor,
@@ -410,7 +410,7 @@ library LiquidationLogic {
         debtReserveBalance: params.debtReserveBalance,
         debtToCover: params.debtToCover,
         totalDebtValue: params.totalDebtValue,
-        overEstimatedDebtValue: params.overEstimatedDebtValue,
+        inflatedTotalDebtValue: params.inflatedTotalDebtValue,
         healthFactor: params.healthFactor,
         targetHealthFactor: params.targetHealthFactor,
         liquidationBonus: liquidationBonus,
@@ -473,7 +473,7 @@ library LiquidationLogic {
 
     uint256 debtToTarget = _calculateDebtToTargetHealthFactor(
       CalculateDebtToTargetHealthFactorParams({
-        totalDebtValue: params.overEstimatedDebtValue, // use over-estimated value for target hf calc
+        totalDebtValue: params.inflatedTotalDebtValue, // use over-estimated value for target hf calc
         healthFactor: params.healthFactor,
         targetHealthFactor: params.targetHealthFactor,
         liquidationBonus: params.liquidationBonus,

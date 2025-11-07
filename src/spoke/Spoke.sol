@@ -355,7 +355,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       premiumDebt: 0, // populated below
       accruedPremium: 0, // populated below
       totalDebtValue: userAccountData.totalDebtValue,
-      overEstimatedDebtValue: userAccountData.overEstimatedDebtValue,
+      inflatedTotalDebtValue: userAccountData.inflatedTotalDebtValue,
       activeCollateralCount: userAccountData.activeCollateralCount,
       borrowedCount: userAccountData.borrowedCount,
       liquidator: msg.sender,
@@ -762,7 +762,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         );
         // we can simplify since there is no precision loss due to the division here
         accountData.totalDebtValue += ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
-        accountData.overEstimatedDebtValue += ((drawnDebt + premiumDebt + DEBT_DELTA) * assetPrice)
+        accountData.inflatedTotalDebtValue += ((drawnDebt + premiumDebt + DEBT_DELTA) * assetPrice)
           .wadDivUp(assetUnit); // potential 2 debt delta due to premium rounding for each borrowed reserve, to use in hf calc
         accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
       }
@@ -774,7 +774,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       // the division by `totalCollateralValue` to compute the weighted average is done later
       accountData.healthFactor = accountData
         .avgCollateralFactor
-        .wadDivDown(accountData.overEstimatedDebtValue)
+        .wadDivDown(accountData.inflatedTotalDebtValue)
         .fromBpsDown(); // By default, the hf used in most cases is the underestimated hf
       accountData.healthFactorForLiqCheck = accountData
         .avgCollateralFactor

@@ -93,7 +93,7 @@ contract SpokeBase is Base {
   struct CalculateRiskPremiumLocal {
     uint256 reserveCount;
     uint256 totalDebtValue;
-    uint256 overEstimatedDebtValue;
+    uint256 inflatedTotalDebtValue;
     uint256 healthFactor;
     uint256 activeCollateralCount;
     uint24 dynamicConfigKey;
@@ -850,7 +850,7 @@ contract SpokeBase is Base {
         spoke.getUserTotalDebt(reserveId, user)
       );
       if (spoke.isBorrowing(reserveId, user)) {
-        vars.overEstimatedDebtValue += _getDebtValue(
+        vars.inflatedTotalDebtValue += _getDebtValue(
           spoke,
           reserveId,
           spoke.getUserTotalDebt(reserveId, user) + 2
@@ -878,7 +878,7 @@ contract SpokeBase is Base {
     if (vars.totalDebtValue == 0) {
       return 0;
     } else {
-      vars.healthFactor = vars.healthFactor.wadDivDown(vars.overEstimatedDebtValue).fromBpsDown();
+      vars.healthFactor = vars.healthFactor.wadDivDown(vars.inflatedTotalDebtValue).fromBpsDown();
       if (vars.healthFactor < spoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()) {
         return 0;
       }

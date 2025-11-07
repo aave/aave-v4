@@ -196,7 +196,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         debtReserveBalance: spoke.getUserTotalDebt(debtReserveId, user),
         debtToCover: debtToCover,
         totalDebtValue: userAccountData.totalDebtValue,
-        overEstimatedDebtValue: userAccountData.overEstimatedDebtValue,
+        inflatedTotalDebtValue: userAccountData.inflatedTotalDebtValue,
         healthFactor: userAccountData.healthFactor,
         targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor,
         liquidationBonus: spoke.getLiquidationBonus(
@@ -259,7 +259,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         collateralReserveBalance: spoke.getUserSuppliedAssets(collateralReserveId, user),
         debtToCover: debtToCover,
         totalDebtValue: userAccountData.totalDebtValue,
-        overEstimatedDebtValue: userAccountData.overEstimatedDebtValue,
+        inflatedTotalDebtValue: userAccountData.inflatedTotalDebtValue,
         healthFactor: userAccountData.healthFactor,
         targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor,
         maxLiquidationBonus: spoke

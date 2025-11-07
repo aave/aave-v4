@@ -66,7 +66,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     uint256 debtAssetUnit = 10 **
       bound(params.debtAssetUnit, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
 
-    totalDebtValue = _getOverEstimatedDebtValue(totalDebtValue, debtAssetPrice, debtAssetUnit);
+    totalDebtValue = _getinflatedTotalDebtValue(totalDebtValue, debtAssetPrice, debtAssetUnit);
 
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
@@ -98,7 +98,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
       ).min(MAX_SUPPLY_AMOUNT)
     );
 
-    params.overEstimatedDebtValue = _getOverEstimatedDebtValue(
+    params.inflatedTotalDebtValue = _getinflatedTotalDebtValue(
       debtToTargetParams.totalDebtValue,
       debtToTargetParams.debtAssetPrice,
       debtToTargetParams.debtAssetUnit
@@ -109,7 +109,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
         debtReserveBalance: debtReserveBalance,
         debtToCover: debtToCover,
         totalDebtValue: debtToTargetParams.totalDebtValue,
-        overEstimatedDebtValue: params.overEstimatedDebtValue,
+        inflatedTotalDebtValue: params.inflatedTotalDebtValue,
         healthFactor: debtToTargetParams.healthFactor,
         targetHealthFactor: debtToTargetParams.targetHealthFactor,
         liquidationBonus: debtToTargetParams.liquidationBonus,
@@ -173,7 +173,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.collateralFactor = debtToLiquidateParams.collateralFactor;
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
 
-    params.overEstimatedDebtValue = _getOverEstimatedDebtValue(
+    params.inflatedTotalDebtValue = _getinflatedTotalDebtValue(
       params.totalDebtValue,
       params.debtAssetPrice,
       10 ** params.debtAssetDecimals
@@ -208,7 +208,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
     params.debtAssetDecimals = _getExponent(debtToLiquidateParams.debtAssetUnit);
 
-    params.overEstimatedDebtValue = _getOverEstimatedDebtValue(
+    params.inflatedTotalDebtValue = _getinflatedTotalDebtValue(
       params.totalDebtValue,
       params.debtAssetPrice,
       10 ** params.debtAssetDecimals
@@ -222,7 +222,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
   ) internal pure returns (LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory) {
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-        totalDebtValue: params.overEstimatedDebtValue,
+        totalDebtValue: params.inflatedTotalDebtValue,
         healthFactor: params.healthFactor,
         targetHealthFactor: params.targetHealthFactor,
         liquidationBonus: params.liquidationBonus,
@@ -247,7 +247,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
         debtReserveBalance: params.debtReserveBalance,
         debtToCover: params.debtToCover,
         totalDebtValue: params.totalDebtValue,
-        overEstimatedDebtValue: params.overEstimatedDebtValue,
+        inflatedTotalDebtValue: params.inflatedTotalDebtValue,
         healthFactor: params.healthFactor,
         targetHealthFactor: params.targetHealthFactor,
         liquidationBonus: liquidationBonus,
@@ -258,7 +258,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
   }
 
   /// @dev Convert totalDebtValue into an amount, add 2 wei, and convert back into value
-  function _getOverEstimatedDebtValue(
+  function _getinflatedTotalDebtValue(
     uint256 totalDebtValue,
     uint256 debtAssetPrice,
     uint256 debtAssetUnit
