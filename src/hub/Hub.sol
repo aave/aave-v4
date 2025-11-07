@@ -11,6 +11,7 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {AssetLogic} from 'src/hub/libraries/AssetLogic.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
+import {Premium} from 'src/hub/libraries/Premium.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 
@@ -87,9 +88,9 @@ contract Hub is IHub, AccessManaged {
       addedShares: 0,
       drawnShares: 0,
       premiumShares: 0,
-      premiumOffset: 0,
+      premiumOffsetRay: 0,
       drawnIndex: drawnIndex.toUint120(),
-      realizedPremium: 0,
+      realizedPremiumRay: 0,
       underlying: underlying,
       lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
       decimals: decimals,
@@ -278,12 +279,13 @@ contract Hub is IHub, AccessManaged {
   function restore(
     uint256 assetId,
     uint256 drawnAmount,
-    uint256 premiumAmount,
     PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
+
+    uint256 premiumAmount = premiumDelta.restoredPremiumRay.divUp(WadRayMath.RAY);
 
     asset.accrue();
     _validateRestore(asset, spoke, drawnAmount, premiumAmount, from);
@@ -291,7 +293,7 @@ contract Hub is IHub, AccessManaged {
     uint120 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint120();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
-    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
+    _applyPremiumDelta(asset, spoke, premiumDelta);
     uint256 totalAmount = drawnAmount + premiumAmount;
     asset.liquidity += totalAmount.toUint120();
 
@@ -308,11 +310,12 @@ contract Hub is IHub, AccessManaged {
   function reportDeficit(
     uint256 assetId,
     uint256 drawnAmount,
-    uint256 premiumAmount,
     PremiumDelta calldata premiumDelta
   ) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
+
+    uint256 premiumAmount = premiumDelta.restoredPremiumRay.divUp(WadRayMath.RAY);
 
     asset.accrue();
     _validateReportDeficit(asset, spoke, drawnAmount, premiumAmount);
@@ -320,7 +323,7 @@ contract Hub is IHub, AccessManaged {
     uint120 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint120();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
-    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
+    _applyPremiumDelta(asset, spoke, premiumDelta);
     uint120 deficitAmount = (drawnAmount + premiumAmount).toUint120();
     asset.deficit += deficitAmount;
     spoke.deficit += deficitAmount;
@@ -369,7 +372,8 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
     require(spoke.active, SpokeNotActive());
     // no premium change allowed
-    _applyPremiumDelta(asset, spoke, premiumDelta, 0);
+    require(premiumDelta.restoredPremiumRay == 0, InvalidPremiumChange());
+    _applyPremiumDelta(asset, spoke, premiumDelta);
     asset.updateDrawnRate(assetId);
 
     emit RefreshPremium(assetId, msg.sender, premiumDelta);
@@ -528,7 +532,7 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHubBase
   function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256) {
     Asset storage asset = _assets[assetId];
-    return (asset.premiumShares, asset.premiumOffset, asset.realizedPremium);
+    return (asset.premiumShares, asset.premiumOffsetRay, asset.realizedPremiumRay);
   }
 
   /// @inheritdoc IHubBase
@@ -614,7 +618,7 @@ contract Hub is IHub, AccessManaged {
     address spoke
   ) external view returns (uint256, uint256, uint256) {
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    return (spokeData.premiumShares, spokeData.premiumOffset, spokeData.realizedPremium);
+    return (spokeData.premiumShares, spokeData.premiumOffsetRay, spokeData.realizedPremiumRay);
   }
 
   /// @inheritdoc IHubBase
@@ -703,29 +707,34 @@ contract Hub is IHub, AccessManaged {
   function _applyPremiumDelta(
     Asset storage asset,
     SpokeData storage spoke,
-    PremiumDelta calldata premium,
-    uint256 premiumAmount
+    PremiumDelta calldata premiumDelta
   ) internal {
     uint256 drawnIndex = asset.drawnIndex;
 
     // asset premium change
-    (asset.premiumShares, asset.premiumOffset, asset.realizedPremium) = _validateApplyPremiumDelta(
+    (
+      asset.premiumShares,
+      asset.premiumOffsetRay,
+      asset.realizedPremiumRay
+    ) = _validateApplyPremiumDelta(
       drawnIndex,
       asset.premiumShares,
-      asset.premiumOffset,
-      asset.realizedPremium,
-      premium,
-      premiumAmount
+      asset.premiumOffsetRay,
+      asset.realizedPremiumRay,
+      premiumDelta
     );
 
     // spoke premium change
-    (spoke.premiumShares, spoke.premiumOffset, spoke.realizedPremium) = _validateApplyPremiumDelta(
+    (
+      spoke.premiumShares,
+      spoke.premiumOffsetRay,
+      spoke.realizedPremiumRay
+    ) = _validateApplyPremiumDelta(
       drawnIndex,
       spoke.premiumShares,
-      spoke.premiumOffset,
-      spoke.realizedPremium,
-      premium,
-      premiumAmount
+      spoke.premiumOffsetRay,
+      spoke.realizedPremiumRay,
+      premiumDelta
     );
 
     uint24 riskPremiumThreshold = spoke.riskPremiumThreshold;
@@ -768,8 +777,12 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset,
     SpokeData storage spoke
   ) internal view returns (uint256) {
-    uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumShares) - spoke.premiumOffset;
-    return spoke.realizedPremium + accruedPremium;
+    uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay(
+      spoke.premiumShares,
+      asset.getDrawnIndex(),
+      spoke.premiumOffsetRay
+    );
+    return Premium.calculatePremiumDebt(spoke.realizedPremiumRay, accruedPremiumRay);
   }
 
   /// @dev Spoke with maximum cap have unlimited add capacity.
@@ -896,22 +909,35 @@ contract Hub is IHub, AccessManaged {
   function _validateApplyPremiumDelta(
     uint256 drawnIndex,
     uint256 premiumShares,
-    uint256 premiumOffset,
-    uint256 realizedPremium,
-    PremiumDelta calldata premium,
-    uint256 premiumAmount
-  ) internal pure returns (uint120, uint120, uint120) {
-    uint256 premiumBefore = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
-    premiumBefore += realizedPremium;
+    uint256 premiumOffsetRay,
+    uint256 realizedPremiumRay,
+    PremiumDelta calldata premiumDelta
+  ) internal pure returns (uint120, uint256, uint256) {
+    uint256 premiumBeforeRay = Premium.calculateAccruedPremiumRay(
+      premiumShares,
+      drawnIndex,
+      premiumOffsetRay
+    );
+    premiumBeforeRay += realizedPremiumRay;
 
-    premiumShares = premiumShares.add(premium.sharesDelta);
-    premiumOffset = premiumOffset.add(premium.offsetDelta);
-    realizedPremium = realizedPremium.add(premium.realizedDelta);
+    premiumShares = premiumShares.add(premiumDelta.sharesDelta);
+    premiumOffsetRay = premiumOffsetRay.add(premiumDelta.offsetDeltaRay);
+    realizedPremiumRay =
+      realizedPremiumRay +
+      premiumDelta.accruedPremiumRay -
+      premiumDelta.restoredPremiumRay;
 
-    uint256 premiumAfter = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
-    premiumAfter += realizedPremium;
-    // can increase due to precision loss on premium (drawn unchanged)
-    require(premiumAfter + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
-    return (premiumShares.toUint120(), premiumOffset.toUint120(), realizedPremium.toUint120());
+    uint256 premiumAfterRay = Premium.calculateAccruedPremiumRay(
+      premiumShares,
+      drawnIndex,
+      premiumOffsetRay
+    );
+    premiumAfterRay += realizedPremiumRay;
+
+    require(
+      premiumAfterRay + premiumDelta.restoredPremiumRay == premiumBeforeRay,
+      InvalidPremiumChange()
+    );
+    return (premiumShares.toUint120(), premiumOffsetRay, realizedPremiumRay);
   }
 }

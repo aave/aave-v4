@@ -65,17 +65,18 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice User position data per reserve.
   /// @dev drawnShares The drawn shares of the user position.
-  /// @dev realizedPremium The interest-free premium debt already accrued for the user position, expressed in asset units.
+  /// @dev realizedPremiumRay The interest-free premium debt already accrued for the user position, expressed in asset units + RAY.
   /// @dev premiumShares The premium shares of the user position.
-  /// @dev premiumOffset The premium offset of the user position, used to calculate the premium, expressed in asset units.
+  /// @dev premiumOffsetRay The premium offset of the user position, used to calculate the premium, expressed in asset units + RAY.
   /// @dev suppliedShares The supplied shares of the user position.
   /// @dev dynamicConfigKey The key of the user position dynamic config.
   struct UserPosition {
     uint120 drawnShares;
-    uint120 realizedPremium;
-    //
     uint120 premiumShares;
-    uint120 premiumOffset;
+    //
+    uint256 realizedPremiumRay;
+    //
+    uint256 premiumOffsetRay;
     //
     uint120 suppliedShares;
     uint24 dynamicConfigKey;

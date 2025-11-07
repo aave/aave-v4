@@ -9,8 +9,9 @@ interface IHubBase {
   /// @notice Changes to premium owed accounting.
   struct PremiumDelta {
     int256 sharesDelta;
-    int256 offsetDelta;
-    int256 realizedDelta;
+    int256 offsetDeltaRay;
+    uint256 accruedPremiumRay;
+    uint256 restoredPremiumRay;
   }
 
   /// @notice Emitted on the `add` action.
@@ -118,14 +119,12 @@ interface IHubBase {
   /// @dev Interest is always paid off first from premium, then from drawn.
   /// @param assetId The identifier of the asset.
   /// @param drawnAmount The drawn amount to restore.
-  /// @param premiumAmount The premium amount to repay.
   /// @param premiumDelta The premium delta to apply which signal premium repayment.
   /// @param from The address from which to pull assets.
   /// @return The amount of drawn shares restored.
   function restore(
     uint256 assetId,
     uint256 drawnAmount,
-    uint256 premiumAmount,
     PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256);
@@ -134,13 +133,11 @@ interface IHubBase {
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
   /// @param drawnAmount The drawn amount to report as deficit.
-  /// @param premiumAmount The premium amount to report as deficit.
   /// @param premiumDelta The premium delta to apply which signal premium deficit.
   /// @return The amount of drawn shares reported as deficit.
   function reportDeficit(
     uint256 assetId,
     uint256 drawnAmount,
-    uint256 premiumAmount,
     PremiumDelta calldata premiumDelta
   ) external returns (uint256);
 
@@ -253,8 +250,8 @@ interface IHubBase {
   /// @notice Returns the information regarding premium shares of the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The amount of premium shares owed to the asset.
-  /// @return The premium offset of the asset.
-  /// @return The realized premium of the asset.
+  /// @return The premium offset of the asset, in asset units + RAY.
+  /// @return The realized premium of the asset, in asset units + RAY.
   function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256);
 
   /// @notice Returns the amount of available liquidity for the specified asset.
@@ -304,8 +301,8 @@ interface IHubBase {
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @return The amount of premium shares.
-  /// @return The premium offset.
-  /// @return The realized premium.
+  /// @return The premium offset, in asset units + RAY.
+  /// @return The realized premium, in asset units + RAY.
   function getSpokePremiumData(
     uint256 assetId,
     address spoke

@@ -31,7 +31,7 @@ library LiquidationLogic {
     uint256 healthFactor;
     uint256 drawnDebt;
     uint256 premiumDebt;
-    uint256 accruedPremium;
+    uint256 accruedPremiumRay;
     uint256 totalDebtValue;
     address liquidator;
     uint256 activeCollateralCount;
@@ -100,7 +100,7 @@ library LiquidationLogic {
     uint256 debtReserveId;
     uint256 debtToLiquidate;
     uint256 premiumDebt;
-    uint256 accruedPremium;
+    uint256 accruedPremiumRay;
     address liquidator;
     address user;
   }
@@ -209,7 +209,7 @@ library LiquidationLogic {
         debtReserveId: params.debtReserveId,
         debtToLiquidate: debtToLiquidate,
         premiumDebt: params.premiumDebt,
-        accruedPremium: params.accruedPremium,
+        accruedPremiumRay: params.accruedPremiumRay,
         liquidator: params.liquidator,
         user: params.user
       })
@@ -267,11 +267,15 @@ library LiquidationLogic {
   /// @notice Settles the premium debt by realizing change in premium and resetting premium shares and offset.
   function settlePremiumDebt(
     ISpoke.UserPosition storage debtPosition,
-    int256 realizedDelta
+    uint256 accruedPremiumRay,
+    uint256 restoredPremiumRay
   ) internal {
     debtPosition.premiumShares = 0;
-    debtPosition.premiumOffset = 0;
-    debtPosition.realizedPremium = debtPosition.realizedPremium.add(realizedDelta).toUint120();
+    debtPosition.premiumOffsetRay = 0;
+    debtPosition.realizedPremiumRay =
+      debtPosition.realizedPremiumRay +
+      accruedPremiumRay -
+      restoredPremiumRay;
   }
 
   /// @dev Invoked by `liquidateUser` method.
@@ -325,18 +329,24 @@ library LiquidationLogic {
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: -debtPosition.premiumShares.toInt256(),
-        offsetDelta: -debtPosition.premiumOffset.toInt256(),
-        realizedDelta: params.accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
+        offsetDeltaRay: -debtPosition.premiumOffsetRay.toInt256(),
+        accruedPremiumRay: params.accruedPremiumRay,
+        // todo premium-fix: we could pass realizedPremiumRay from the hub to avoid a warm sload
+        restoredPremiumRay: (premiumDebtToLiquidate * WadRayMath.RAY).min(
+          debtPosition.realizedPremiumRay + params.accruedPremiumRay
+        )
       });
 
       uint256 drawnSharesLiquidated = debtReserve.hub.restore(
         debtReserve.assetId,
         drawnDebtToLiquidate,
-        premiumDebtToLiquidate,
         premiumDelta,
         params.liquidator
       );
-      debtPosition.settlePremiumDebt(premiumDelta.realizedDelta);
+      debtPosition.settlePremiumDebt(
+        premiumDelta.accruedPremiumRay,
+        premiumDelta.restoredPremiumRay
+      );
       debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
     }
 
