@@ -23,13 +23,13 @@ contract TestnetERC20 is IERC20Permit, ERC20 {
 
   uint8 private _decimals;
 
-  constructor(string memory name, string memory symbol, uint8 decimals_) ERC20(name, symbol) {
+  constructor(string memory name_, string memory symbol_, uint8 decimals_) ERC20(name_, symbol_) {
     uint256 chainId = block.chainid;
 
     DOMAIN_SEPARATOR = keccak256(
       abi.encode(
         EIP712_DOMAIN,
-        keccak256(bytes(name)),
+        keccak256(bytes(name_)),
         keccak256(EIP712_REVISION),
         chainId,
         address(this)

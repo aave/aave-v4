@@ -180,7 +180,6 @@ library Utils {
   }
 
   function approve(ISpoke spoke, uint256 reserveId, address owner, uint256 amount) internal {
-    IHubBase hub = spoke.getReserve(reserveId).hub;
     address underlying = spoke.getReserve(reserveId).underlying;
     _approve(IERC20(underlying), owner, address(spoke), amount);
   }
@@ -231,7 +230,6 @@ library Utils {
     address to,
     uint256 amount
   ) internal {
-    IHub hub = IHub(address(spoke.getReserve(reserveId).hub));
     _transferFrom(IERC20(spoke.getReserve(reserveId).underlying), caller, from, to, amount);
   }
 

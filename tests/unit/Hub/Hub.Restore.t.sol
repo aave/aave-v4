@@ -121,7 +121,6 @@ contract HubRestoreTest is HubBase {
 
   function test_restore_revertsWith_InsufficientLiquidity() public {
     uint256 daiAmount = 100e18;
-    uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
     _addAndDrawLiquidity({
       hub: hub1,

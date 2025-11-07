@@ -9,16 +9,16 @@ contract UnitPriceFeedTest is Base {
 
   UnitPriceFeed public unitPriceFeed;
 
-  uint8 private constant _decimals = 8;
+  uint8 private constant DECIMALS = 8;
   string private constant _description = 'Unit Price Feed (8 decimals)';
 
   function setUp() public override {
     super.setUp();
-    unitPriceFeed = new UnitPriceFeed(_decimals, _description);
+    unitPriceFeed = new UnitPriceFeed(DECIMALS, _description);
   }
 
-  function test_decimals() public view {
-    assertEq(unitPriceFeed.decimals(), _decimals);
+  function testDECIMALS() public view {
+    assertEq(unitPriceFeed.decimals(), DECIMALS);
   }
 
   function test_description() public view {
@@ -41,7 +41,7 @@ contract UnitPriceFeedTest is Base {
       uint80 answeredInRound
     ) = unitPriceFeed.getRoundData(_roundId);
     assertEq(roundId, _roundId);
-    assertEq(answer, int256(10 ** _decimals));
+    assertEq(answer, int256(10 ** DECIMALS));
     assertEq(startedAt, roundId);
     assertEq(updatedAt, roundId);
     assertEq(answeredInRound, roundId);
@@ -75,7 +75,7 @@ contract UnitPriceFeedTest is Base {
       uint80 answeredInRound
     ) = unitPriceFeed.latestRoundData();
     assertEq(roundId, blockTimestamp);
-    assertEq(answer, int256(10 ** _decimals));
+    assertEq(answer, int256(10 ** DECIMALS));
     assertEq(startedAt, blockTimestamp);
     assertEq(updatedAt, blockTimestamp);
     assertEq(answeredInRound, blockTimestamp);
