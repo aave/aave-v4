@@ -290,7 +290,7 @@ library LiquidationLogic {
     uint256 assetId = collateralReserve.assetId;
 
     uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
-    uint120 newSuppliedShares = collateralPosition.suppliedShares - sharesToLiquidate.toUint120();
+    uint120 userSuppliedShares = collateralPosition.suppliedShares - sharesToLiquidate.toUint120();
     uint256 sharesToLiquidator;
     if (params.collateralToLiquidator > 0) {
       if (params.receiveShares) {
@@ -312,7 +312,7 @@ library LiquidationLogic {
       }
     }
 
-    collateralPosition.suppliedShares = newSuppliedShares;
+    collateralPosition.suppliedShares = userSuppliedShares;
 
     emit ISpokeBase.Withdraw(
       params.collateralReserveId,
@@ -326,7 +326,7 @@ library LiquidationLogic {
       hub.payFeeShares(assetId, sharesToLiquidate.uncheckedSub(sharesToLiquidator));
     }
 
-    return newSuppliedShares == 0;
+    return userSuppliedShares == 0;
   }
 
   /// @dev Invoked by `liquidateUser` method.
