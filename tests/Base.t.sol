@@ -121,6 +121,8 @@ abstract contract Base is Test {
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8; // $100M per token
   uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =
     PercentageMath.PERCENTAGE_FACTOR;
+  uint256 internal constant debtPremiumBuffer = 2;
+  uint256 internal constant collateralPremiumBuffer = 4;
 
   // TODO: remove after migrating to token list
   IERC20 internal usdc;
@@ -172,9 +174,6 @@ abstract contract Base is Test {
   uint256 internal mintAmount_USDY = MAX_SUPPLY_AMOUNT;
 
   Decimals internal decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18});
-
-  uint256 internal debtPremiumBuffer = 2;
-  uint256 internal collateralPremiumBuffer = 4;
 
   struct Decimals {
     uint8 usdx;

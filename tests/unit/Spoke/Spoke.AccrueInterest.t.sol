@@ -1086,34 +1086,45 @@ contract SpokeAccrueInterestTest is SpokeBase {
       _getValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
       _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount);
 
-    // Bound each debt amount to be no more than half the remaining collateral value
+    // Bound each debt amount to be no more than half the remaining collateral value, leaving 2 wei buffer on each debt
+    uint256 maxAllowedBorrowAmount = (remainingCollateralValue / 2) /
+      _getValue(spoke, _daiReserveId(spoke), 1);
     amounts.daiBorrowAmount = bound(
       amounts.daiBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _daiReserveId(spoke), 1)
+      maxAllowedBorrowAmount >= debtPremiumBuffer ? maxAllowedBorrowAmount - debtPremiumBuffer : 0
     );
     // Subtract out the set debt value from the remaining collateral value
     remainingCollateralValue -= _getValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) * 2;
+    maxAllowedBorrowAmount =
+      (remainingCollateralValue / 2) /
+      _getValue(spoke, _wethReserveId(spoke), 1);
     amounts.wethBorrowAmount = bound(
       amounts.wethBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _wethReserveId(spoke), 1)
+      maxAllowedBorrowAmount >= debtPremiumBuffer ? maxAllowedBorrowAmount - debtPremiumBuffer : 0
     );
     remainingCollateralValue -=
       _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) *
       2;
+    maxAllowedBorrowAmount =
+      (remainingCollateralValue / 2) /
+      _getValue(spoke, _usdxReserveId(spoke), 1);
     amounts.usdxBorrowAmount = bound(
       amounts.usdxBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _usdxReserveId(spoke), 1)
+      maxAllowedBorrowAmount >= debtPremiumBuffer ? maxAllowedBorrowAmount - debtPremiumBuffer : 0
     );
     remainingCollateralValue -=
       _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) *
       2;
+    maxAllowedBorrowAmount =
+      (remainingCollateralValue / 2) /
+      _getValue(spoke, _wbtcReserveId(spoke), 1);
     amounts.wbtcBorrowAmount = bound(
       amounts.wbtcBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _wbtcReserveId(spoke), 1)
+      maxAllowedBorrowAmount >= debtPremiumBuffer ? maxAllowedBorrowAmount - debtPremiumBuffer : 0
     );
 
     assertGt(
