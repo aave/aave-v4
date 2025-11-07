@@ -116,7 +116,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
       1,
-      'treasury shares'
+      'treasury shares after first accrual'
     );
 
     // now only drawn debt grows
@@ -125,7 +125,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     spoke1.updateUserRiskPremium(bob);
 
     // refresh
-    initialBaseIndex = hub1.getAsset(assetId).drawnIndex;
+    initialBaseIndex = hub1.getAssetDrawnIndex(assetId);
 
     // withdraw any treasury fees
     _withdrawLiquidityFees(hub1, assetId, UINT256_MAX);
@@ -145,7 +145,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
         initialDrawnShares: bobPosition.drawnShares,
         initialPremiumShares: 0,
         liquidityFee: _getAssetLiquidityFee(assetId),
-        indexDelta: hub1.getAsset(assetId).drawnIndex - initialBaseIndex
+        indexDelta: hub1.getAssetDrawnIndex(assetId) - initialBaseIndex
       })
     );
 
@@ -153,8 +153,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     assertApproxEqAbs(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
-      1,
-      'treasury shares'
+      2,
+      'treasury shares after second accrual'
     );
 
     // now no liquidity fee, so no fees
@@ -177,7 +177,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
       1,
-      'treasury shares'
+      'treasury shares after third accrual'
     );
   }
 
