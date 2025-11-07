@@ -589,10 +589,10 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     UserInfoLocal memory aliceUsdxInfo;
 
     // Set up user info structs
-    bobDaiInfo.supplyAmount = bobDaiAction.supplyAmount + collateralPremiumBuffer;
-    aliceDaiInfo.supplyAmount = aliceDaiAction.supplyAmount + collateralPremiumBuffer;
-    bobUsdxInfo.supplyAmount = bobUsdxAction.supplyAmount + collateralPremiumBuffer;
-    aliceUsdxInfo.supplyAmount = aliceUsdxAction.supplyAmount + collateralPremiumBuffer;
+    bobDaiInfo.supplyAmount = bobDaiAction.supplyAmount + COLLATERAL_PREMIUM_BUFFER;
+    aliceDaiInfo.supplyAmount = aliceDaiAction.supplyAmount + COLLATERAL_PREMIUM_BUFFER;
+    bobUsdxInfo.supplyAmount = bobUsdxAction.supplyAmount + COLLATERAL_PREMIUM_BUFFER;
+    aliceUsdxInfo.supplyAmount = aliceUsdxAction.supplyAmount + COLLATERAL_PREMIUM_BUFFER;
 
     bobDaiInfo.borrowAmount = bobDaiAction.borrowAmount;
     aliceDaiInfo.borrowAmount = aliceDaiAction.borrowAmount;

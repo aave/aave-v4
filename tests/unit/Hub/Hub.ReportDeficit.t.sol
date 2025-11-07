@@ -136,7 +136,7 @@ contract HubReportDeficitTest is HubBase {
     uint256 premiumAmount,
     uint256 skipTime
   ) public {
-    drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT - collateralPremiumBuffer);
+    drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT - COLLATERAL_PREMIUM_BUFFER);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     ReportDeficitTestParams memory params;

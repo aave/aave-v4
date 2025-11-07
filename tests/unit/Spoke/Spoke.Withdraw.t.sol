@@ -238,9 +238,9 @@ contract SpokeWithdrawTest is SpokeBase {
   }
 
   function test_withdraw_fuzz_all_with_interest(uint256 supplyAmount, uint256 borrowAmount) public {
-    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT - collateralPremiumBuffer);
+    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT - COLLATERAL_PREMIUM_BUFFER);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
-    supplyAmount += collateralPremiumBuffer;
+    supplyAmount += COLLATERAL_PREMIUM_BUFFER;
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -316,10 +316,10 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 borrowAmount,
     uint40 elapsed
   ) public {
-    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT - collateralPremiumBuffer);
+    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT - COLLATERAL_PREMIUM_BUFFER);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
     elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint40();
-    supplyAmount += collateralPremiumBuffer;
+    supplyAmount += COLLATERAL_PREMIUM_BUFFER;
 
     Utils.supplyCollateral({
       spoke: spoke1,

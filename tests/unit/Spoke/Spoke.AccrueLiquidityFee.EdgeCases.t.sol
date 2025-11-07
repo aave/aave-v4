@@ -34,7 +34,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
 
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount) +
-      collateralPremiumBuffer;
+      COLLATERAL_PREMIUM_BUFFER;
     _mockInterestRateBps(rate);
 
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
@@ -84,9 +84,9 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, MAX_LIQUIDITY_FEE);
 
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount) +
-      collateralPremiumBuffer;
+      COLLATERAL_PREMIUM_BUFFER;
     uint256 supplyAmount2 = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount2) +
-      collateralPremiumBuffer;
+      COLLATERAL_PREMIUM_BUFFER;
     _mockInterestRateBps(rate);
 
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);

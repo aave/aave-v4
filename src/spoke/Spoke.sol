@@ -59,6 +59,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
+  uint8 internal constant DEBT_DELTA = 2;
   uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
   mapping(address user => PositionStatus) internal _positionStatus;
@@ -761,9 +762,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         );
         // we can simplify since there is no precision loss due to the division here
         accountData.totalDebtValue += ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
-        accountData.overEstimatedDebtValue += ((drawnDebt + premiumDebt + 2) * assetPrice).wadDivUp(
-          assetUnit
-        ); // potential 2 debt delta due to premium rounding for each borrowed reserve, to use in hf calc
+        accountData.overEstimatedDebtValue += ((drawnDebt + premiumDebt + DEBT_DELTA) * assetPrice)
+          .wadDivUp(assetUnit); // potential 2 debt delta due to premium rounding for each borrowed reserve, to use in hf calc
         accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
       }
     }
