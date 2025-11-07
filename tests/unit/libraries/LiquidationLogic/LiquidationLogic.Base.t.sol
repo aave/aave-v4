@@ -208,6 +208,12 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
     params.debtAssetDecimals = _getExponent(debtToLiquidateParams.debtAssetUnit);
 
+    params.overEstimatedDebtValue = _getOverEstimatedDebtValue(
+      params.totalDebtValue,
+      params.debtAssetPrice,
+      10 ** params.debtAssetDecimals
+    );
+
     return params;
   }
 
