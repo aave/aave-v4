@@ -2,8 +2,6 @@
 
 [![codecov](https://codecov.io/gh/aave/aave-v4/graph/badge.svg?token=afC1P2GrDM)](https://codecov.io/gh/aave/aave-v4)
 
-**Aave V4 complete codebase, Foundry-based.**
-
 A unified liquidity layer and modular architecture that enhances capital efficiency, scalability, and risk management.
 
 ## Table of Contents
