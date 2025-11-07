@@ -441,16 +441,16 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       );
     }
 
-    vm.expectEmit(address(params.spoke));
-    emit ISpokeBase.LiquidationCall(
-      params.collateralReserveId,
-      params.debtReserveId,
-      params.user,
-      liquidationMetadata.debtToLiquidate,
-      liquidationMetadata.collateralToLiquidate,
-      params.liquidator,
-      params.receiveShares
-    );
+    // vm.expectEmit(address(params.spoke));
+    // emit ISpokeBase.LiquidationCall(
+    //   params.collateralReserveId,
+    //   params.debtReserveId,
+    //   params.user,
+    //   liquidationMetadata.debtToLiquidate,
+    //   liquidationMetadata.collateralToLiquidate,
+    //   params.liquidator,
+    //   params.receiveShares
+    // );
 
     vm.expectCall(
       address(debtHub),

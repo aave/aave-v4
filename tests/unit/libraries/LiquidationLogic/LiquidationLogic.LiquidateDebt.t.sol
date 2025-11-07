@@ -135,16 +135,20 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       accruedPremium,
       debtToLiquidate
     );
-    bool isPositionEmpty = liquidationLogicWrapper.liquidateDebt(
-      LiquidationLogic.LiquidateDebtParams({
-        debtReserveId: reserveId,
-        debtToLiquidate: debtToLiquidate,
-        premiumDebt: premiumDebt,
-        accruedPremium: accruedPremium,
-        liquidator: liquidator,
-        user: user
-      })
-    );
+    (
+      bool isPositionEmpty,
+      uint256 drawnSharesLiquidated,
+      IHubBase.PremiumDelta memory premiumDelta
+    ) = liquidationLogicWrapper.liquidateDebt(
+        LiquidationLogic.LiquidateDebtParams({
+          debtReserveId: reserveId,
+          debtToLiquidate: debtToLiquidate,
+          premiumDebt: premiumDebt,
+          accruedPremium: accruedPremium,
+          liquidator: liquidator,
+          user: user
+        })
+      );
 
     assertEq(isPositionEmpty, debtToLiquidate == drawnDebt + premiumDebt);
     assertEq(liquidationLogicWrapper.getBorrowerBorrowingStatus(reserveId), !isPositionEmpty);
