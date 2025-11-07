@@ -11,13 +11,15 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 interface IHub is IHubBase, IAccessManaged {
   /// @notice Asset position and configuration data.
   /// @dev liquidity The liquidity available to be accessed, expressed in asset units.
-  /// @dev addedShares The total shares added across all spokes.
+  /// @dev realizedFees The amount of fees realized but not yet minted, expressed in asset units.
+  /// @dev decimals The number of decimals of the underlying asset.
   /// @dev deficit The amount of outstanding bad debt across all spokes, expressed in asset units.
   /// @dev swept The outstanding liquidity which has been invested by the reinvestment controller, expressed in asset units.
-  /// @dev premiumShares The total premium shares across all spokes.
-  /// @dev premiumOffset The total premium offset across all spokes, used to calculate the premium, expressed in asset units.
-  /// @dev drawnShares The total drawn shares across all spokes.
   /// @dev realizedPremium The interest-free premium debt already accrued across all spokes, expressed in asset units.
+  /// @dev premiumOffset The total premium offset across all spokes, used to calculate the premium, expressed in asset units.
+  /// @dev liquidityFee The protocol fee charged on drawn and premium liquidity growth, expressed in BPS.
+  /// @dev drawnShares The total drawn shares across all spokes.
+  /// @dev premiumShares The total premium shares across all spokes.
   /// @dev drawnIndex The drawn index which monotonically increases according to the drawn rate, expressed in RAY.
   /// @dev drawnRate The rate at which drawn assets grows, expressed in RAY.
   /// @dev lastUpdateTimestamp The timestamp of the last accrual.
@@ -25,9 +27,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev irStrategy The address of the interest rate strategy.
   /// @dev reinvestmentController The address of the reinvestment controller.
   /// @dev feeReceiver The address of the fee receiver spoke.
-  /// @dev realizedFees The amount of fees realized but not yet minted, expressed in asset units.
-  /// @dev liquidityFee The protocol fee charged on drawn and premium liquidity growth, expressed in BPS.
-  /// @dev decimals The number of decimals of the underlying asset.
+  /// @dev addedShares The total shares added across all spokes.
   struct Asset {
     uint120 liquidity;
     uint120 realizedFees;
@@ -176,6 +176,9 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 amount
   );
 
+  /// @notice Thrown when an underlying asset is already listed.
+  error UnderlyingAlreadyListed();
+
   /// @notice Thrown when an asset is not listed.
   error AssetNotListed();
 
@@ -240,7 +243,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidInterestRateStrategy();
 
   /// @notice Adds a new asset to the Hub.
-  /// @dev The same underlying asset address can be added as an asset multiple times.
+  /// @dev The same underlying asset address cannot be added as an asset multiple times.
   /// @dev The fee receiver is added as a new spoke with maximum add cap and zero draw cap.
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of `underlying`.
@@ -323,6 +326,11 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param assetId The identifier of the asset.
   /// @param amount The amount to reclaim.
   function reclaim(uint256 assetId, uint256 amount) external;
+
+  /// @notice Returns whether the underlying is listed as an asset.
+  /// @param underlying The address of the underlying asset.
+  /// @return True if the underlying asset is listed.
+  function isUnderlyingListed(address underlying) external view returns (bool);
 
   /// @notice Returns the number of listed assets.
   /// @return The number of listed assets.

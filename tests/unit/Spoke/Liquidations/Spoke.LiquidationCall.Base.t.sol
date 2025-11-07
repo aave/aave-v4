@@ -392,8 +392,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             sharesDelta: -userDebtPosition.premiumShares.toInt256(),
             offsetDelta: -userDebtPosition.premiumOffset.toInt256(),
             realizedDelta: realizedDelta
-          }),
-          params.liquidator
+          })
         )
       )
     );
@@ -408,7 +407,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           params.liquidator
         )
       ),
-      params.receiveShares ? 0 : 1
+      params.receiveShares || liquidationMetadata.collateralToLiquidate == 0 ? 0 : 1
     );
 
     // PayFee call is partially checked, as conversion from assets to shares might differ due to restore donation
@@ -978,12 +977,12 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         'liquidator: collateral supplied'
       );
     } else {
-      // collateral rounded down on receiveShares, can differ by 1 wei in asset terms
+      // collateral rounded down on receiveShares, can differ by 2 wei in asset terms
       assertApproxEqAbs(
         accountsInfoAfter.liquidatorBalanceInfo.suppliedInSpoke,
         accountsInfoBefore.liquidatorBalanceInfo.suppliedInSpoke +
           liquidationMetadata.collateralToLiquidator,
-        1,
+        2,
         'liquidator: collateral supplied (receiveShares)'
       );
     }
@@ -1102,7 +1101,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         accountsInfoBefore.collateralFeeReceiverBalanceInfo.addedInHub +
           liquidationMetadata.collateralToLiquidate -
           liquidationMetadata.collateralToLiquidator,
-        1,
+        2,
         'collateral fee receiver: added (receiveShares)'
       );
     }
@@ -1306,6 +1305,16 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _checkErc20Balances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkSpokeBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkHubBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
+    _assertHubLiquidity(
+      _hub(params.spoke, params.collateralReserveId),
+      params.collateralReserveId,
+      'spoke1.liquidationCall'
+    );
+    _assertHubLiquidity(
+      _hub(params.spoke, params.debtReserveId),
+      params.debtReserveId,
+      'spoke1.liquidationCall'
+    );
   }
 
   // @dev reads `positionStatus.hasPositiveRiskPremium` by temporarily upgrading to mock spoke

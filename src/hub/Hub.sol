@@ -43,6 +43,7 @@ contract Hub is IHub, AccessManaged {
   mapping(uint256 assetId => Asset) internal _assets;
   mapping(uint256 assetId => mapping(address spoke => SpokeData)) internal _spokes;
   mapping(uint256 assetId => EnumerableSet.AddressSet) internal _assetToSpokes;
+  EnumerableSet.AddressSet internal _underlyingAssets;
 
   /// @dev Constructor.
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
@@ -67,6 +68,7 @@ contract Hub is IHub, AccessManaged {
       MIN_ALLOWED_UNDERLYING_DECIMALS <= decimals && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
       InvalidAssetDecimals()
     );
+    require(!_underlyingAssets.contains(underlying), UnderlyingAlreadyListed());
 
     uint256 assetId = _assetCount++;
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
@@ -100,6 +102,7 @@ contract Hub is IHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
+    _underlyingAssets.add(underlying);
     _addFeeReceiver(assetId, feeReceiver);
 
     emit AddAsset(assetId, underlying, decimals);
@@ -202,22 +205,25 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function add(uint256 assetId, uint256 amount, address from) external returns (uint256) {
+  function add(uint256 assetId, uint256 amount) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue();
-    _validateAdd(asset, spoke, amount, from);
+    _validateAdd(asset, spoke, amount);
 
+    uint256 liquidity = asset.liquidity + amount;
+    require(
+      asset.underlying.balanceOf(address(this)) >= liquidity,
+      InsufficientLiquidity(liquidity)
+    );
     uint120 shares = asset.toAddedSharesDown(amount).toUint120();
     require(shares > 0, InvalidShares());
     asset.addedShares += shares;
     spoke.addedShares += shares;
-    asset.liquidity += amount.toUint120();
+    asset.liquidity = liquidity.toUint120();
 
     asset.updateDrawnRate(assetId);
-
-    asset.underlying.safeTransferFrom(from, address(this), amount);
 
     emit Add(assetId, msg.sender, shares, amount);
 
@@ -279,25 +285,27 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     uint256 drawnAmount,
     uint256 premiumAmount,
-    PremiumDelta calldata premiumDelta,
-    address from
+    PremiumDelta calldata premiumDelta
   ) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue();
-    _validateRestore(asset, spoke, drawnAmount, premiumAmount, from);
+    _validateRestore(asset, spoke, drawnAmount, premiumAmount);
 
     uint120 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint120();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
-    uint256 totalAmount = drawnAmount + premiumAmount;
-    asset.liquidity += totalAmount.toUint120();
+
+    uint256 liquidity = asset.liquidity + drawnAmount + premiumAmount;
+    require(
+      asset.underlying.balanceOf(address(this)) >= liquidity,
+      InsufficientLiquidity(liquidity)
+    );
+    asset.liquidity = liquidity.toUint120();
 
     asset.updateDrawnRate(assetId);
-
-    asset.underlying.safeTransferFrom(from, address(this), totalAmount);
 
     emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
@@ -439,6 +447,11 @@ contract Hub is IHub, AccessManaged {
     asset.underlying.safeTransferFrom(msg.sender, address(this), amount);
 
     emit Reclaim(assetId, msg.sender, amount);
+  }
+
+  /// @inheritdoc IHub
+  function isUnderlyingListed(address underlying) external view returns (bool) {
+    return _underlyingAssets.contains(underlying);
   }
 
   /// @inheritdoc IHub
@@ -699,13 +712,14 @@ contract Hub is IHub, AccessManaged {
   /// @dev Applies premium deltas on asset & spoke premium owed.
   /// @dev Checks premium owed does not increase by more than `premiumAmount` + 2 wei (due to opposite rounding on premium shares and offset).
   /// @dev Checks updated risk premium is within allowed threshold.
+  /// @dev Uses last stored index; asset accrual should have already occurred.
   function _applyPremiumDelta(
     Asset storage asset,
     SpokeData storage spoke,
     PremiumDelta calldata premium,
     uint256 premiumAmount
   ) internal {
-    uint256 drawnIndex = asset.getDrawnIndex();
+    uint256 drawnIndex = asset.drawnIndex;
 
     // asset premium change
     (asset.premiumShares, asset.premiumOffset, asset.realizedPremium) = _validateApplyPremiumDelta(
@@ -775,10 +789,8 @@ contract Hub is IHub, AccessManaged {
   function _validateAdd(
     Asset storage asset,
     SpokeData storage spoke,
-    uint256 amount,
-    address from
+    uint256 amount
   ) internal view {
-    require(from != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
@@ -822,10 +834,8 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset,
     SpokeData storage spoke,
     uint256 drawnAmount,
-    uint256 premiumAmount,
-    address from
+    uint256 premiumAmount
   ) internal view {
-    require(from != address(this), InvalidAddress());
     require(drawnAmount + premiumAmount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());

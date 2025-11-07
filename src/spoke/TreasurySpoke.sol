@@ -3,8 +3,7 @@
 pragma solidity 0.8.28;
 
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ITreasurySpoke, ISpokeBase} from 'src/spoke/interfaces/ITreasurySpoke.sol';
@@ -16,7 +15,7 @@ import {ITreasurySpoke, ISpokeBase} from 'src/spoke/interfaces/ITreasurySpoke.so
 /// @dev Utilizes all assets from the Hub without restrictions, making reserve and asset identifiers aligned.
 /// @dev Allows withdraw to claim fees and supply to invest back into the Hub via this dedicated spoke.
 contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
-  using SafeERC20 for IERC20;
+  using SafeTransferLib for address;
 
   /// @inheritdoc ITreasurySpoke
   IHubBase public immutable HUB;
@@ -36,7 +35,9 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
     uint256 amount,
     address
   ) external onlyOwner returns (uint256, uint256) {
-    uint256 shares = HUB.add(reserveId, amount, msg.sender);
+    (address underlying, ) = HUB.getAssetUnderlyingAndDecimals(reserveId);
+    underlying.safeTransferFrom(msg.sender, address(HUB), amount);
+    uint256 shares = HUB.add(reserveId, amount);
 
     return (shares, amount);
   }
@@ -59,7 +60,7 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
 
   /// @inheritdoc ITreasurySpoke
   function transfer(address token, address to, uint256 amount) external onlyOwner {
-    IERC20(token).safeTransfer(to, amount);
+    token.safeTransfer(to, amount);
   }
 
   /// @inheritdoc ITreasurySpoke
