@@ -38,7 +38,7 @@ contract HubSkimTest is HubBase {
     uint256 amount,
     uint256 donationAmount
   ) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
     donationAmount = bound(donationAmount, 1, MAX_SUPPLY_AMOUNT / 10);
 
@@ -113,7 +113,7 @@ contract HubSkimTest is HubBase {
     uint256 amount,
     uint256 donationAmount
   ) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
     donationAmount = bound(donationAmount, 1, MAX_SUPPLY_AMOUNT / 10);
 
@@ -188,7 +188,7 @@ contract HubSkimTest is HubBase {
     uint256 amount,
     uint256 donationAmount
   ) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     amount = bound(amount, 1e4, MAX_SUPPLY_AMOUNT / 10);
     donationAmount = bound(donationAmount, 1, amount / 2);
     uint256 addAmount = amount - donationAmount;
@@ -256,7 +256,7 @@ contract HubSkimTest is HubBase {
     uint256 drawAmount,
     uint256 donationAmount
   ) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT / 10);
     donationAmount = bound(donationAmount, 1, drawAmount);
     _addAndDrawLiquidity({

@@ -93,7 +93,7 @@ contract HubConfigTest is HubBase {
     uint256 assetId,
     IHub.SpokeConfig calldata spokeConfig
   ) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
 
     vm.expectEmit(address(hub1));
     emit IHub.UpdateSpokeConfig(assetId, address(spoke1), spokeConfig);

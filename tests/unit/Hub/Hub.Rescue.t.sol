@@ -23,7 +23,7 @@ contract HubRescueTest is HubBase {
     hub1.addSpoke(daiAssetId, rescueSpoke, spokeConfig);
   }
 
-  /// @dev Recovery of funds directly transferred to the hub & ensure asset liquidity tracking is not impacted.
+  /// @dev Rescue of funds directly transferred to the hub & ensure asset liquidity tracking is not impacted.
   function test_rescue_scenario_fuzz(uint256 lostAmount) public {
     lostAmount = bound(lostAmount, 1, MAX_SUPPLY_AMOUNT / 10);
 
@@ -43,7 +43,7 @@ contract HubRescueTest is HubBase {
     Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 7.5e22, user: bob});
 
     uint256 prevHubBalance = underlying.balanceOf(address(hub1));
-    uint256 prevRecoveryBalance = underlying.balanceOf(rescueSpoke);
+    uint256 prevRescueBalance = underlying.balanceOf(rescueSpoke);
 
     (uint256 rescueAmount, uint256 rescueAddedShares, uint256 rescueWithdrawnShares) = _rescue(
       hub1,
@@ -53,7 +53,7 @@ contract HubRescueTest is HubBase {
     );
 
     uint256 finalHubBalance = underlying.balanceOf(address(hub1));
-    uint256 finalRecoveryBalance = underlying.balanceOf(rescueSpoke);
+    uint256 finalRescueBalance = underlying.balanceOf(rescueSpoke);
 
     // spoke1, alice remove dai
     Utils.remove({
@@ -70,7 +70,7 @@ contract HubRescueTest is HubBase {
     assertEq(rescueAmount, lostAmount, 'rescue amount');
     assertEq(rescueAddedShares, rescueWithdrawnShares, 'rescue shares');
     assertEq(finalHubBalance, prevHubBalance - lostAmount, 'hub balance');
-    assertEq(finalRecoveryBalance, prevRecoveryBalance + lostAmount, 'rescuey balance');
+    assertEq(finalRescueBalance, prevRescueBalance + lostAmount, 'rescue balance');
     _assertHubLiquidity(hub1, daiAssetId, 'hub1.rescue');
 
     // remove all, ensure there is enough liquidity to honor all withdrawals.
@@ -86,7 +86,7 @@ contract HubRescueTest is HubBase {
     assertEq(underlying.balanceOf(address(hub1)), 0, 'final hub amount');
   }
 
-  /// @dev Recovery of funds directly transferred to the hub including interest accrual
+  /// @dev Rescue of funds directly transferred to the hub including interest accrual
   function test_rescue_fuzz_with_interest(uint256 lostAmount, uint256 skipTime) public {
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
     lostAmount = bound(lostAmount, 1, MAX_SUPPLY_AMOUNT / 10);
@@ -134,9 +134,9 @@ contract HubRescueTest is HubBase {
     });
 
     uint256 prevHubBalance = underlying.balanceOf(address(hub1));
-    uint256 prevRecoveryBalance = underlying.balanceOf(rescueSpoke);
+    uint256 prevRescueBalance = underlying.balanceOf(rescueSpoke);
 
-    (uint256 recoverAmount, uint256 recoverAddedShares, uint256 recoverWithdrawnShares) = _rescue(
+    (uint256 rescueAmount, uint256 rescueAddedShares, uint256 rescueWithdrawnShares) = _rescue(
       hub1,
       rescueSpoke,
       daiAssetId,
@@ -144,23 +144,23 @@ contract HubRescueTest is HubBase {
     );
 
     uint256 finalHubBalance = underlying.balanceOf(address(hub1));
-    uint256 finalRecoveryBalance = underlying.balanceOf(rescueSpoke);
+    uint256 finalRescueBalance = underlying.balanceOf(rescueSpoke);
 
     // check amounts & balances
     assertApproxEqAbs(
-      recoverAmount,
+      rescueAmount,
       lostAmount,
       hub1.previewAddByShares(daiAssetId, 1),
-      'recover amount'
+      'rescue amount'
     ); // can differ by up to 1 share worth of assets due to remove donation rounding
-    assertEq(recoverAddedShares, recoverWithdrawnShares, 'recover shares');
-    assertEq(finalHubBalance, prevHubBalance - recoverAmount, 'hub balance');
-    assertEq(finalRecoveryBalance, prevRecoveryBalance + recoverAmount, 'recovery balance');
-    _assertHubLiquidity(hub1, daiAssetId, 'hub1.recover');
+    assertEq(rescueAddedShares, rescueWithdrawnShares, 'rescue shares');
+    assertEq(finalHubBalance, prevHubBalance - rescueAmount, 'hub balance');
+    assertEq(finalRescueBalance, prevRescueBalance + rescueAmount, 'rescue balance');
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.rescue');
   }
 
-  /// @dev Another spoke cannot improperly recover liquidity fee without transferring underlying tokens
-  function test_cannot_recover_liquidity_fee_reverts_with_InvalidAmountReceived() public {
+  /// @dev Another spoke cannot improperly rescue liquidity fee without transferring underlying tokens
+  function test_cannot_rescue_liquidity_fee_reverts_with_InvalidAmountReceived() public {
     IERC20 underlying = IERC20(hub1.getAsset(daiAssetId).underlying);
 
     // spoke1, alice add dai

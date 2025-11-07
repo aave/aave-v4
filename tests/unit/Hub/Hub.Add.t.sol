@@ -244,7 +244,7 @@ contract HubAddTest is HubBase {
   function test_add_fuzz_single_asset(uint256 assetId, address user, uint256 amount) public {
     _assumeValidSupplier(user);
 
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
@@ -309,7 +309,7 @@ contract HubAddTest is HubBase {
     uint256 amount,
     uint256 amount2
   ) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 4); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 4); // Exclude usdy & usdz
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT);
 

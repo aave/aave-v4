@@ -57,7 +57,7 @@ library PositionStatusMap {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      return (self.map[reserveId.bucketId()] >> ((reserveId % 128) << 1)) & 3 != 0;
+      return (self.getBucketWord(reserveId) >> ((reserveId % 128) << 1)) & 3 != 0;
     }
   }
 

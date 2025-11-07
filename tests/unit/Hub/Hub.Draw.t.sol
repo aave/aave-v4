@@ -9,7 +9,7 @@ contract HubDrawTest is HubBase {
   using SafeCast for uint256;
 
   function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 amount) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
@@ -97,7 +97,7 @@ contract HubDrawTest is HubBase {
   }
 
   function test_draw_fuzz_IncreasedBorrowRate(uint256 assetId, uint256 amount) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
 
     _addLiquidity(assetId, amount * 2);
@@ -185,7 +185,7 @@ contract HubDrawTest is HubBase {
     uint256 assetId,
     uint256 drawAmount
   ) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
     assertTrue(hub1.getAssetLiquidity(assetId) == 0);
