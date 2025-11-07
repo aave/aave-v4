@@ -699,13 +699,14 @@ contract Hub is IHub, AccessManaged {
   /// @dev Applies premium deltas on asset & spoke premium owed.
   /// @dev Checks premium owed does not increase by more than `premiumAmount` + 2 wei (due to opposite rounding on premium shares and offset).
   /// @dev Checks updated risk premium is within allowed threshold.
+  /// @dev Uses last stored index; asset accrual should have already occurred.
   function _applyPremiumDelta(
     Asset storage asset,
     SpokeData storage spoke,
     PremiumDelta calldata premium,
     uint256 premiumAmount
   ) internal {
-    uint256 drawnIndex = asset.getDrawnIndex();
+    uint256 drawnIndex = asset.drawnIndex;
 
     // asset premium change
     (asset.premiumShares, asset.premiumOffset, asset.realizedPremium) = _validateApplyPremiumDelta(
