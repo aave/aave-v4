@@ -163,9 +163,9 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 borrowAmount,
     uint40 skipTime
   ) public {
-    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2 - COLLATERAL_PREMIUM_BUFFER);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2 - PREMIUM_DEBT_BUFFER);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
-    uint256 supplyAmount = borrowAmount * 2 + COLLATERAL_PREMIUM_BUFFER;
+    uint256 supplyAmount = borrowAmount * 2 + PREMIUM_DEBT_BUFFER;
     uint40 startTime = vm.getBlockTimestamp().toUint40();
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -1092,8 +1092,8 @@ contract SpokeAccrueInterestTest is SpokeBase {
     amounts.daiBorrowAmount = bound(
       amounts.daiBorrowAmount,
       0,
-      maxAllowedBorrowAmount >= DEBT_PREMIUM_BUFFER
-        ? maxAllowedBorrowAmount - DEBT_PREMIUM_BUFFER
+      maxAllowedBorrowAmount >= PREMIUM_DEBT_BUFFER
+        ? maxAllowedBorrowAmount - PREMIUM_DEBT_BUFFER
         : 0
     );
     // Subtract out the set debt value from the remaining collateral value
@@ -1104,8 +1104,8 @@ contract SpokeAccrueInterestTest is SpokeBase {
     amounts.wethBorrowAmount = bound(
       amounts.wethBorrowAmount,
       0,
-      maxAllowedBorrowAmount >= DEBT_PREMIUM_BUFFER
-        ? maxAllowedBorrowAmount - DEBT_PREMIUM_BUFFER
+      maxAllowedBorrowAmount >= PREMIUM_DEBT_BUFFER
+        ? maxAllowedBorrowAmount - PREMIUM_DEBT_BUFFER
         : 0
     );
     remainingCollateralValue -=
@@ -1117,8 +1117,8 @@ contract SpokeAccrueInterestTest is SpokeBase {
     amounts.usdxBorrowAmount = bound(
       amounts.usdxBorrowAmount,
       0,
-      maxAllowedBorrowAmount >= DEBT_PREMIUM_BUFFER
-        ? maxAllowedBorrowAmount - DEBT_PREMIUM_BUFFER
+      maxAllowedBorrowAmount >= PREMIUM_DEBT_BUFFER
+        ? maxAllowedBorrowAmount - PREMIUM_DEBT_BUFFER
         : 0
     );
     remainingCollateralValue -=
@@ -1130,8 +1130,8 @@ contract SpokeAccrueInterestTest is SpokeBase {
     amounts.wbtcBorrowAmount = bound(
       amounts.wbtcBorrowAmount,
       0,
-      maxAllowedBorrowAmount >= DEBT_PREMIUM_BUFFER
-        ? maxAllowedBorrowAmount - DEBT_PREMIUM_BUFFER
+      maxAllowedBorrowAmount >= PREMIUM_DEBT_BUFFER
+        ? maxAllowedBorrowAmount - PREMIUM_DEBT_BUFFER
         : 0
     );
 

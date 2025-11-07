@@ -86,12 +86,12 @@ contract SpokeRiskPremiumTest is SpokeBase {
   function test_getUserRiskPremium_fuzz_single_reserve_collateral_borrowed_amount(
     uint256 borrowAmount
   ) public {
-    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2 - COLLATERAL_PREMIUM_BUFFER);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2 - PREMIUM_DEBT_BUFFER);
 
     ReserveInfoLocal memory daiInfo;
     daiInfo.reserveId = _daiReserveId(spoke1);
     daiInfo.borrowAmount = borrowAmount;
-    daiInfo.supplyAmount = borrowAmount * 2 + COLLATERAL_PREMIUM_BUFFER;
+    daiInfo.supplyAmount = borrowAmount * 2 + PREMIUM_DEBT_BUFFER;
 
     daiInfo.collateralRisk = _getCollateralRisk(spoke1, daiInfo.reserveId);
 
@@ -111,14 +111,14 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 borrowAmount,
     uint256 additionalSupplyAmount
   ) public {
-    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2 - COLLATERAL_PREMIUM_BUFFER);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2 - PREMIUM_DEBT_BUFFER);
     additionalSupplyAmount = bound(additionalSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
 
     ReserveInfoLocal memory daiInfo;
     ReserveInfoLocal memory usdxInfo;
 
     daiInfo.borrowAmount = borrowAmount;
-    daiInfo.supplyAmount = borrowAmount * 2 + COLLATERAL_PREMIUM_BUFFER;
+    daiInfo.supplyAmount = borrowAmount * 2 + PREMIUM_DEBT_BUFFER;
 
     daiInfo.reserveId = _daiReserveId(spoke1);
     usdxInfo.reserveId = _usdxReserveId(spoke1);

@@ -188,7 +188,7 @@ contract HubRefreshPremiumTest is HubBase {
     sharesDelta = bound(sharesDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
     offsetDelta = bound(offsetDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
     realizedDelta = bound(realizedDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
-    borrowAmount = bound(borrowAmount, 0, MAX_SUPPLY_AMOUNT / 2 - COLLATERAL_PREMIUM_BUFFER);
+    borrowAmount = bound(borrowAmount, 0, MAX_SUPPLY_AMOUNT / 2 - PREMIUM_DEBT_BUFFER);
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: sharesDelta,
       offsetDelta: offsetDelta,
@@ -211,7 +211,7 @@ contract HubRefreshPremiumTest is HubBase {
         spoke1,
         _daiReserveId(spoke1),
         bob,
-        borrowAmount * 2 + COLLATERAL_PREMIUM_BUFFER,
+        borrowAmount * 2 + PREMIUM_DEBT_BUFFER,
         bob
       );
       Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);

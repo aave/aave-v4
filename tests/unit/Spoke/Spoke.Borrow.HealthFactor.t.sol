@@ -131,13 +131,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collReserveId: wethReserveId,
       debtReserveId: daiReserveId,
       debtAmount: daiDebtAmount
-    }) + COLLATERAL_PREMIUM_BUFFER;
+    }) + PREMIUM_DEBT_BUFFER;
     uint256 wethCollAmountUsdx = _calcMinimumCollAmount({
       spoke: spoke1,
       collReserveId: wethReserveId,
       debtReserveId: usdxReserveId,
       debtAmount: usdxDebtAmount
-    }) + COLLATERAL_PREMIUM_BUFFER;
+    }) + PREMIUM_DEBT_BUFFER;
 
     // Bob supply weth
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmountDai + wethCollAmountUsdx, bob);
@@ -473,12 +473,12 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Supply enough to cover the buffer
     vm.prank(alice);
-    spoke1.supply(usdxReserveId, DEBT_PREMIUM_BUFFER, alice);
+    spoke1.supply(usdxReserveId, PREMIUM_DEBT_BUFFER, alice);
 
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1 + DEBT_PREMIUM_BUFFER, bob);
+    spoke1.borrow(usdxReserveId, 1 + PREMIUM_DEBT_BUFFER, bob);
   }
 
   /// fuzz - cannot borrow an amount that brings HF < 1 with multiple colls for same debt
@@ -529,12 +529,12 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
 
     // Supply enough to cover the buffer
     vm.prank(alice);
-    spoke1.supply(usdxReserveId, 2 * DEBT_PREMIUM_BUFFER, alice);
+    spoke1.supply(usdxReserveId, 2 * PREMIUM_DEBT_BUFFER, alice);
 
     // cannot borrow more usdx
     vm.prank(bob);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    spoke1.borrow(usdxReserveId, 1 + 2 * DEBT_PREMIUM_BUFFER, bob);
+    spoke1.borrow(usdxReserveId, 1 + 2 * PREMIUM_DEBT_BUFFER, bob);
   }
 
   /// cannot borrow any amount with multiple colls for same debt, once HF < 1 due to interest

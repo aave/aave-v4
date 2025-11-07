@@ -104,9 +104,9 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     uint256 skipTime
   ) public {
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
-    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT - COLLATERAL_PREMIUM_BUFFER);
+    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT - PREMIUM_DEBT_BUFFER);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within Collateral Factor
-    supplyAmount += COLLATERAL_PREMIUM_BUFFER;
+    supplyAmount += PREMIUM_DEBT_BUFFER;
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 

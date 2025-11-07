@@ -706,6 +706,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @notice Process the user account data and updates dynamic config of the user if `refreshConfig` is true.
+  /// @dev For checking if a user position is liquidatable, we use regular hf, otherwise we underestimate hf by overestimating debt.
   function _processUserAccountData(
     address user,
     bool refreshConfig
