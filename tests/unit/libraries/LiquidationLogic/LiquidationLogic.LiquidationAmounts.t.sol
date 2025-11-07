@@ -246,7 +246,8 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           debtReserveBalance: 5e18,
           debtToCover: 3e18,
           totalDebtValue: 10_000e26,
-          inflatedTotalDebtValue: 10_000e26 + _priceOf2Wei(spoke1, _daiReserveId(spoke1)),
+          inflatedTotalDebtValue: 10_000e26 +
+            _convertAmountToValue(spoke1, _daiReserveId(spoke1), PREMIUM_DEBT_BUFFER),
           healthFactor: 0.8e18,
           targetHealthFactor: 1e18,
           maxLiquidationBonus: 120_00,
@@ -287,7 +288,8 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           debtReserveBalance: 5e18,
           debtToCover: 3e18,
           totalDebtValue: 10_000e26,
-          inflatedTotalDebtValue: 10_000e26 + _priceOf2Wei(spoke1, _daiReserveId(spoke1)),
+          inflatedTotalDebtValue: 10_000e26 +
+            _convertAmountToValue(spoke1, _daiReserveId(spoke1), PREMIUM_DEBT_BUFFER),
           healthFactor: 0.8e18,
           targetHealthFactor: 1e18,
           maxLiquidationBonus: 120_00,

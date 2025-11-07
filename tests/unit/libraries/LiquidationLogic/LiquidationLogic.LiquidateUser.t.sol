@@ -43,7 +43,8 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       premiumDebt: 0.5e18,
       accruedPremium: 0.2e18,
       totalDebtValue: 10_000e26,
-      inflatedTotalDebtValue: 10_000e26 + _priceOf2Wei(spoke1, _wethReserveId(spoke1)),
+      inflatedTotalDebtValue: 10_000e26 +
+        _convertAmountToValue(spoke1, _wethReserveId(spoke1), PREMIUM_DEBT_BUFFER),
       liquidator: makeAddr('liquidator'),
       activeCollateralCount: 1,
       borrowedCount: 1,

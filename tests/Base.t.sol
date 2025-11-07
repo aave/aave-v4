@@ -2220,13 +2220,6 @@ abstract contract Base is Test {
     return (finalHf, requiredDebtAmount);
   }
 
-  /// @dev Returns the price of 2 wei for the given reserve on the spoke
-  function _priceOf2Wei(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
-    uint256 assetPrice = IAaveOracle(spoke.ORACLE()).getReservePrice(reserveId);
-    uint256 assetUnit = MathUtils.uncheckedExp(10, spoke.getReserve(reserveId).decimals);
-    return (2 * assetPrice).wadDivUp(assetUnit);
-  }
-
   function _mockDecimals(address underlying, uint8 decimals) internal {
     vm.mockCall(
       underlying,

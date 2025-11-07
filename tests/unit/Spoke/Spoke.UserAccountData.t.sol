@@ -51,7 +51,8 @@ contract SpokeUserAccountDataTest is SpokeBase {
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
         totalDebtValue: 75e26,
-        inflatedTotalDebtValue: 75e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
+        inflatedTotalDebtValue: 75e26 +
+          _convertAmountToValue(spoke, _wethReserveId(spoke), PREMIUM_DEBT_BUFFER),
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
         healthFactorForLiqCheck: 0.96e18,
@@ -87,7 +88,8 @@ contract SpokeUserAccountDataTest is SpokeBase {
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
         totalDebtValue: 75e26,
-        inflatedTotalDebtValue: 75e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
+        inflatedTotalDebtValue: 75e26 +
+          _convertAmountToValue(spoke, _wethReserveId(spoke), PREMIUM_DEBT_BUFFER),
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
         healthFactorForLiqCheck: 0.96e18,
@@ -123,7 +125,8 @@ contract SpokeUserAccountDataTest is SpokeBase {
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
         totalDebtValue: 75e26,
-        inflatedTotalDebtValue: 75e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
+        inflatedTotalDebtValue: 75e26 +
+          _convertAmountToValue(spoke, _wethReserveId(spoke), PREMIUM_DEBT_BUFFER),
         avgCollateralFactor: 0.96e18,
         healthFactor: 1.28e18,
         healthFactorForLiqCheck: 1.28e18,
@@ -167,7 +170,8 @@ contract SpokeUserAccountDataTest is SpokeBase {
       ISpoke.UserAccountData({
         totalCollateralValue: 5100e26,
         totalDebtValue: 1000e26,
-        inflatedTotalDebtValue: 1000e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
+        inflatedTotalDebtValue: 1000e26 +
+          _convertAmountToValue(spoke, _wethReserveId(spoke), PREMIUM_DEBT_BUFFER),
         avgCollateralFactor: 0.509019608e18,
         healthFactor: 2.596e18,
         healthFactorForLiqCheck: 2.596e18,
@@ -212,8 +216,8 @@ contract SpokeUserAccountDataTest is SpokeBase {
         totalCollateralValue: 100e26,
         totalDebtValue: 125e26,
         inflatedTotalDebtValue: 125e26 +
-          _priceOf2Wei(spoke, _wethReserveId(spoke)) +
-          _priceOf2Wei(spoke, _wbtcReserveId(spoke)),
+          _convertAmountToValue(spoke, _wethReserveId(spoke), PREMIUM_DEBT_BUFFER) +
+          _convertAmountToValue(spoke, _wbtcReserveId(spoke), PREMIUM_DEBT_BUFFER),
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.576e18,
         healthFactorForLiqCheck: 0.576e18,
@@ -255,7 +259,8 @@ contract SpokeUserAccountDataTest is SpokeBase {
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
         totalDebtValue: 75e26,
-        inflatedTotalDebtValue: 75e26 + _priceOf2Wei(spoke, _wethReserveId(spoke)),
+        inflatedTotalDebtValue: 75e26 +
+          _convertAmountToValue(spoke, _wethReserveId(spoke), PREMIUM_DEBT_BUFFER),
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
         healthFactorForLiqCheck: 0.96e18,
