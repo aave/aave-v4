@@ -12,7 +12,7 @@ contract SpokeAccessTest is SpokeBase {
     // Users are not allowed to directly call the hub functions
     vm.startPrank(bob);
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
-    hub1.add(daiAssetId, 1000e18, bob);
+    hub1.add(daiAssetId, 1000e18);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
     hub1.remove(daiAssetId, 1000e18, bob);
@@ -21,7 +21,7 @@ contract SpokeAccessTest is SpokeBase {
     hub1.draw(daiAssetId, 1000e18, bob);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
-    hub1.restore(daiAssetId, 1000e18, 0, IHubBase.PremiumDelta(0, 0, 0), bob);
+    hub1.restore(daiAssetId, 1000e18, 0, IHubBase.PremiumDelta(0, 0, 0));
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
     hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(0, 0, 0));
@@ -35,14 +35,16 @@ contract SpokeAccessTest is SpokeBase {
     // A spoke is allowed to call the hub functions
     deal(address(tokenList.dai), address(spoke1), 1000e18);
     vm.startPrank(address(spoke1));
-    tokenList.dai.approve(address(hub1), MAX_SUPPLY_AMOUNT);
     deal(address(tokenList.dai), address(spoke1), 1000e18);
-    hub1.add(daiAssetId, 1000e18, address(spoke1));
+    tokenList.dai.transfer(address(hub1), 1000e18);
+    hub1.add(daiAssetId, 1000e18);
     hub1.draw(daiAssetId, 500e18, address(spoke1));
-    hub1.restore(daiAssetId, 500e18, 0, IHubBase.PremiumDelta(0, 0, 0), address(spoke1));
+    tokenList.dai.transfer(address(hub1), 500e18);
+    hub1.restore(daiAssetId, 500e18, 0, IHubBase.PremiumDelta(0, 0, 0));
     hub1.remove(daiAssetId, 1000e18, address(spoke1));
     hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(0, 0, 0));
-    hub1.add(daiAssetId, 1000e18, address(spoke1));
+    tokenList.dai.transfer(address(hub1), 1000e18);
+    hub1.add(daiAssetId, 1000e18);
     hub1.payFeeShares(daiAssetId, 1e18);
     hub1.transferShares(
       daiAssetId,
@@ -83,7 +85,7 @@ contract SpokeAccessTest is SpokeBase {
     );
     spoke1.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       reserveSource,
       ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       ISpoke.DynamicReserveConfig({
@@ -97,7 +99,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       reserveSource,
       ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       ISpoke.DynamicReserveConfig({
@@ -154,6 +156,8 @@ contract SpokeAccessTest is SpokeBase {
     address NEW_ADMIN = makeAddr('NEW_ADMIN');
     IAccessManager newAuthority = new AccessManager(NEW_ADMIN);
 
+    uint256 assetId = usdzAssetId;
+
     // Set up the role for spoke admin to call update liquidation config
     vm.startPrank(NEW_ADMIN);
     newAuthority.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
@@ -196,7 +200,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      5,
+      assetId,
       reserveSource,
       ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       ISpoke.DynamicReserveConfig({
@@ -215,7 +219,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      5,
+      assetId,
       reserveSource,
       ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
       ISpoke.DynamicReserveConfig({

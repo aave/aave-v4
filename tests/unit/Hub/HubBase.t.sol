@@ -174,7 +174,7 @@ contract HubBase is Base {
     deal(underlying, tempUser, amount);
 
     vm.prank(tempUser);
-    IERC20(underlying).approve(address(hub1), UINT256_MAX);
+    IERC20(underlying).approve(tempSpoke, UINT256_MAX);
 
     vm.prank(ADMIN);
     hub1.addSpoke(

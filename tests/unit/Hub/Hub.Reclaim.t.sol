@@ -110,7 +110,8 @@ contract HubReclaimTest is HubBase {
 
     assertEq(hub1.getAssetSwept(daiAssetId), sweptAfterSweep - reclaimAmount);
     assertEq(hub1.getAssetLiquidity(daiAssetId), liquidityAfterSweep + reclaimAmount);
-    assertBorrowRateSynced(hub1, daiAssetId, 'reclaim');
+    _assertBorrowRateSynced(hub1, daiAssetId, 'reclaim');
+    _assertHubLiquidity(hub1, daiAssetId, 'reclaim');
   }
 
   function test_reclaim_fullAmount() public {
@@ -136,6 +137,7 @@ contract HubReclaimTest is HubBase {
 
     assertEq(hub1.getAssetSwept(daiAssetId), 0);
     assertEq(hub1.getAssetLiquidity(daiAssetId), liquidityAfterSweep + sweepAmount);
+    _assertHubLiquidity(hub1, daiAssetId, 'reclaim');
   }
 
   function test_reclaim_multipleSweepsAndReclaims() public {
@@ -186,5 +188,7 @@ contract HubReclaimTest is HubBase {
       hub1.getAssetLiquidity(daiAssetId),
       initialLiquidity - totalSwept + firstReclaim + secondReclaim
     );
+
+    _assertHubLiquidity(hub1, daiAssetId, 'reclaim');
   }
 }

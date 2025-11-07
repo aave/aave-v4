@@ -101,7 +101,7 @@ contract HubAccessTest is HubBase {
     vm.prank(HUB_ADMIN);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
 
-    assertBorrowRateSynced(hub1, daiAssetId, 'setInterestRateData');
+    _assertBorrowRateSynced(hub1, daiAssetId, 'setInterestRateData');
   }
 
   /// @dev Test showcasing ability to change role responsibility for a function selector.

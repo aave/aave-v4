@@ -23,7 +23,7 @@ contract SpokePermitReserveTest is SpokeBase {
   function test_permitReserve_forwards_correct_call() public {
     uint256 reserveId = _daiReserveId(spoke1);
     address owner = vm.randomAddress();
-    address spender = address(getReserveInfo(spoke1, reserveId).hub);
+    address spender = address(spoke1);
     uint256 value = vm.randomUint();
     uint256 deadline = vm.randomUint();
     uint8 v = uint8(vm.randomUint());
@@ -56,14 +56,12 @@ contract SpokePermitReserveTest is SpokeBase {
 
   function test_permitReserve() public {
     (address user, uint256 userPk) = makeAddrAndKey('user');
-    uint256 reserveId = _daiReserveId(spoke1);
-    address hub = address(getReserveInfo(spoke1, reserveId).hub);
 
-    assertEq(tokenList.dai.allowance(user, hub), 0);
+    assertEq(tokenList.dai.allowance(user, address(spoke1)), 0);
 
     EIP712Types.Permit memory params = EIP712Types.Permit({
       owner: user,
-      spender: hub,
+      spender: address(spoke1),
       value: 100e18,
       deadline: vm.randomUint(1, MAX_SKIP_TIME),
       nonce: tokenList.dai.nonces(user)
@@ -74,10 +72,10 @@ contract SpokePermitReserveTest is SpokeBase {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
 
     vm.expectEmit(address(tokenList.dai));
-    emit IERC20.Approval(user, hub, params.value);
+    emit IERC20.Approval(user, address(spoke1), params.value);
     vm.prank(vm.randomAddress());
     spoke1.permitReserve(_daiReserveId(spoke1), user, params.value, params.deadline, v, r, s);
 
-    assertEq(tokenList.dai.allowance(user, hub), params.value);
+    assertEq(tokenList.dai.allowance(user, address(spoke1)), params.value);
   }
 }

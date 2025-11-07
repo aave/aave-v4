@@ -8,6 +8,42 @@ contract SpokeRepayTest is SpokeBase {
   using PercentageMath for uint256;
   using SafeCast for uint256;
 
+  function test_repay_revertsWith_TransferFromFailed() public {
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
+    uint256 daiRepayAmount = daiSupplyAmount / 4;
+    uint256 approvalAmount = daiRepayAmount - 1;
+
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+
+    vm.startPrank(bob);
+    tokenList.dai.approve(address(spoke1), approvalAmount);
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
+    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
+    vm.stopPrank();
+  }
+
+  function test_repay_fuzz_revertsWith_TransferFromFailed(uint256 daiRepayAmount) public {
+    vm.assume(daiRepayAmount > 0);
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
+
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+
+    vm.startPrank(bob);
+    tokenList.dai.transfer(alice, tokenList.dai.balanceOf(bob)); // make bob have insufficient balance
+
+    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
+    spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
+    vm.stopPrank();
+  }
+
   function test_repay() public {
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;
@@ -102,6 +138,8 @@ contract SpokeRepayTest is SpokeBase {
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   function test_repay_all_with_accruals() public {
@@ -133,6 +171,8 @@ contract SpokeRepayTest is SpokeBase {
       'user total debt after full repay'
     );
     assertFalse(spoke1.isBorrowing(_daiReserveId(spoke1), bob));
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   function test_repay_same_block() public {
@@ -222,6 +262,8 @@ contract SpokeRepayTest is SpokeBase {
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// repay all debt interest
@@ -342,6 +384,8 @@ contract SpokeRepayTest is SpokeBase {
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// repay partial or full premium debt, but no drawn debt
@@ -440,6 +484,8 @@ contract SpokeRepayTest is SpokeBase {
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   function test_repay_max() public {
@@ -544,6 +590,8 @@ contract SpokeRepayTest is SpokeBase {
     // verify LH asset debt is 0
     uint256 lhAssetDebt = hub1.getAssetTotalOwed(_daiReserveId(spoke1));
     assertEq(lhAssetDebt, 0);
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// repay all or a portion of total debt in same block
@@ -654,6 +702,8 @@ contract SpokeRepayTest is SpokeBase {
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
 
     _repayAll(spoke1, _daiReserveId);
   }
@@ -791,6 +841,8 @@ contract SpokeRepayTest is SpokeBase {
     assertGe(daiRepayAmount, baseRestored + premiumRestored); // excess amount donated
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
 
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
+
     _repayAll(spoke1, _daiReserveId);
   }
 
@@ -909,6 +961,8 @@ contract SpokeRepayTest is SpokeBase {
     // repays only interest
     // it can be equal because of 1 wei rounding issue when repaying
     assertGe(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), daiBorrowAmount);
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// repay all or a portion of premium debt
@@ -1034,6 +1088,8 @@ contract SpokeRepayTest is SpokeBase {
 
     // repays only premium
     assertGe(bobDaiAfter.premiumDebt, 0);
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// repay all or a portion of accrued drawn debt when premium debt is already repaid
@@ -1160,6 +1216,8 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
     assertEq(tokenList.dai.balanceOf(bob), 0, 'bob dai final balance');
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// repay all or a portion of accrued drawn debt when premium debt is zero
@@ -1292,6 +1350,8 @@ contract SpokeRepayTest is SpokeBase {
       daiRepayAmount >= bobDaiBefore.drawnDebt ? 0 : bobDaiBefore.drawnDebt - daiRepayAmount,
       'bob dai drawn debt final balance'
     );
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 
   /// borrow and repay multiple reserves
@@ -1533,6 +1593,11 @@ contract SpokeRepayTest is SpokeBase {
       assertEq(bobWbtcAfter.totalDebt, bobWbtcBefore.totalDebt);
     }
 
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
+    _assertHubLiquidity(hub1, wethAssetId, 'spoke1.repay');
+    _assertHubLiquidity(hub1, usdxAssetId, 'spoke1.repay');
+    _assertHubLiquidity(hub1, wbtcAssetId, 'spoke1.repay');
+
     _repayAll(spoke1, _daiReserveId);
     _repayAll(spoke1, _wethReserveId);
     _repayAll(spoke1, _usdxReserveId);
@@ -1641,5 +1706,6 @@ contract SpokeRepayTest is SpokeBase {
       stdMath.delta(bobDaiBalanceAfter, bobDaiBalanceBefore),
       'bob balance vs debt change'
     );
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
 }

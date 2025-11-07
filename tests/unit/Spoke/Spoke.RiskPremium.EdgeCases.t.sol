@@ -33,17 +33,17 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     usdxSupplyAmount = bound(
       usdxSupplyAmount,
       1,
-      _convertAssetAmount(spoke2, _dai2ReserveId(spoke2), borrowAmount, _usdxReserveId(spoke2)) - 1
+      _convertAssetAmount(spoke2, _usdzReserveId(spoke2), borrowAmount, _usdxReserveId(spoke2)) - 1
     );
     repayAmount = bound(repayAmount, 2, borrowAmount);
 
-    // Deal bob dai to cover dai and dai2 supply
+    // Deal bob dai to cover dai and usdz supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
-    // Supply max dai2, the highest collateral-risk reserve, to allow borrowing without affecting RP
+    // Supply max usdz, the highest collateral-risk reserve, to allow borrowing without affecting RP
     Utils.supplyCollateral({
       spoke: spoke2,
-      reserveId: _dai2ReserveId(spoke2),
+      reserveId: _usdzReserveId(spoke2),
       caller: bob,
       amount: MAX_SUPPLY_AMOUNT,
       onBehalfOf: bob
@@ -65,10 +65,10 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    // Bob borrows dai2
+    // Bob borrows usdz
     Utils.borrow({
       spoke: spoke2,
-      reserveId: _dai2ReserveId(spoke2),
+      reserveId: _usdzReserveId(spoke2),
       caller: bob,
       amount: borrowAmount,
       onBehalfOf: bob
@@ -77,11 +77,11 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Get Bob's risk premium
     uint256 riskPremium = _getUserRiskPremium(spoke2, bob);
 
-    // Now bob repays dai2
+    // Now bob repays usdz
     deal(address(tokenList.dai), bob, repayAmount);
     Utils.repay({
       spoke: spoke2,
-      reserveId: _dai2ReserveId(spoke2),
+      reserveId: _usdzReserveId(spoke2),
       caller: bob,
       amount: repayAmount,
       onBehalfOf: bob
@@ -105,19 +105,19 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     uint256 daiSupplyAmount,
     uint256 borrowAmount
   ) public {
-    uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
+    uint256 usdzSupplyAmount = MAX_SUPPLY_AMOUNT;
     daiSupplyAmount = bound(daiSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
 
-    // Deal bob dai to cover dai and dai2 supply
+    // Deal bob dai to cover dai and usdz supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
-    // Bob supplies dai and dai2 collaterals
+    // Bob supplies dai and usdz collaterals
     Utils.supplyCollateral({
       spoke: spoke2,
-      reserveId: _dai2ReserveId(spoke2),
+      reserveId: _usdzReserveId(spoke2),
       caller: bob,
-      amount: dai2SupplyAmount,
+      amount: usdzSupplyAmount,
       onBehalfOf: bob
     });
     Utils.supplyCollateral({
@@ -131,10 +131,10 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Deploy liquidity for usdx borrow
     _openSupplyPosition(spoke2, _usdxReserveId(spoke2), borrowAmount);
 
-    // Bob borrows dai2
+    // Bob borrows usdz
     Utils.borrow({
       spoke: spoke2,
-      reserveId: _dai2ReserveId(spoke2),
+      reserveId: _usdzReserveId(spoke2),
       caller: bob,
       amount: borrowAmount,
       onBehalfOf: bob
@@ -143,7 +143,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Get Bob's risk premium
     uint256 riskPremium = _getUserRiskPremium(spoke2, bob);
     // Get Bob's premium drawn shares as proxy for stored user rp
-    uint256 premiumShares = spoke2.getUserPosition(_dai2ReserveId(spoke2), bob).premiumShares;
+    uint256 premiumShares = spoke2.getUserPosition(_usdzReserveId(spoke2), bob).premiumShares;
 
     // Now bob disables dai as collateral
     vm.prank(bob);
@@ -156,7 +156,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
 
     assertGe(
-      spoke2.getUserPosition(_dai2ReserveId(spoke2), bob).premiumShares,
+      spoke2.getUserPosition(_usdzReserveId(spoke2), bob).premiumShares,
       premiumShares,
       'Bob premium drawn shares should not decrease due to unset as collateral triggering rp update'
     );
@@ -189,20 +189,20 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     uint256 borrowAmount,
     uint256 withdrawAmount
   ) public {
-    uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
+    uint256 usdzSupplyAmount = MAX_SUPPLY_AMOUNT;
     daiSupplyAmount = bound(daiSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     withdrawAmount = bound(withdrawAmount, 1, daiSupplyAmount);
 
-    // Deal bob dai to cover dai and dai2 supply
+    // Deal bob dai to cover dai and usdz supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
-    // Bob supplies dai and dai2 collaterals
+    // Bob supplies dai and usdz collaterals
     Utils.supplyCollateral({
       spoke: spoke2,
-      reserveId: _dai2ReserveId(spoke2),
+      reserveId: _usdzReserveId(spoke2),
       caller: bob,
-      amount: dai2SupplyAmount,
+      amount: usdzSupplyAmount,
       onBehalfOf: bob
     });
     Utils.supplyCollateral({
@@ -213,10 +213,10 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    // Bob borrows dai2
+    // Bob borrows usdz
     Utils.borrow({
       spoke: spoke2,
-      reserveId: _dai2ReserveId(spoke2),
+      reserveId: _usdzReserveId(spoke2),
       caller: bob,
       amount: borrowAmount,
       onBehalfOf: bob
@@ -268,13 +268,13 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       daiSupplyAmount,
       _wethReserveId(spoke2)
     ) + 1; // Borrow more than dai supply value so 2 collaterals cover debt
-    uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
+    uint256 usdzSupplyAmount = MAX_SUPPLY_AMOUNT;
     skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME).toUint40(); // At least skip one year to ensure sufficient accrual
 
-    // Deal bob dai to cover dai and dai2 supply
+    // Deal bob dai to cover dai and usdz supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
-    // Bob supplies dai and dai2 collaterals
+    // Bob supplies dai and usdz collaterals
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
@@ -284,9 +284,9 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     });
     Utils.supplyCollateral({
       spoke: spoke2,
-      reserveId: _dai2ReserveId(spoke2),
+      reserveId: _usdzReserveId(spoke2),
       caller: bob,
-      amount: dai2SupplyAmount,
+      amount: usdzSupplyAmount,
       onBehalfOf: bob
     });
 
@@ -311,7 +311,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       spoke2,
       _wbtcReserveId(spoke2),
       _daiReserveId(spoke2),
-      daiSupplyAmount + dai2SupplyAmount
+      daiSupplyAmount + usdzSupplyAmount
     );
     Utils.supplyCollateral({
       spoke: spoke2,
@@ -332,9 +332,9 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     });
     Utils.borrow({
       spoke: spoke2,
-      reserveId: _dai2ReserveId(spoke2),
+      reserveId: _usdzReserveId(spoke2),
       caller: alice,
-      amount: dai2SupplyAmount,
+      amount: usdzSupplyAmount,
       onBehalfOf: alice
     });
 
@@ -419,13 +419,13 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       borrowAmount,
       _daiReserveId(spoke2)
     );
-    uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
+    uint256 usdzSupplyAmount = MAX_SUPPLY_AMOUNT;
     skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME).toUint40(); // At least skip one year to ensure sufficient accrual
 
-    // Deal bob dai to cover dai and dai2 supply
+    // Deal bob dai to cover dai and usdz supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
-    // Bob supplies dai and dai2 collaterals
+    // Bob supplies dai and usdz collaterals
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
@@ -435,9 +435,9 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     });
     Utils.supplyCollateral({
       spoke: spoke2,
-      reserveId: _dai2ReserveId(spoke2),
+      reserveId: _usdzReserveId(spoke2),
       caller: bob,
-      amount: dai2SupplyAmount,
+      amount: usdzSupplyAmount,
       onBehalfOf: bob
     });
 
@@ -511,7 +511,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     uint256 wethBorrowAmount,
     uint40 skipTime
   ) public {
-    uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
+    uint256 usdzSupplyAmount = MAX_SUPPLY_AMOUNT;
     // Find max supply amount of dai in terms of weth
     uint256 maxWethDebt = _convertAssetAmount(
       spoke2,
@@ -533,10 +533,10 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     ); // Dai collateral will fully cover initial weth borrow
     skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME).toUint40(); // At least skip one year to ensure sufficient accrual
 
-    // Deal bob dai to cover dai and dai2 supply
+    // Deal bob dai to cover dai and usdz supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
-    // Bob supplies dai and dai2 collaterals
+    // Bob supplies dai and usdz collaterals
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
@@ -546,9 +546,9 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     });
     Utils.supplyCollateral({
       spoke: spoke2,
-      reserveId: _dai2ReserveId(spoke2),
+      reserveId: _usdzReserveId(spoke2),
       caller: bob,
-      amount: dai2SupplyAmount,
+      amount: usdzSupplyAmount,
       onBehalfOf: bob
     });
 
@@ -646,13 +646,13 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
   ) public {
     initialBorrowAmount = bound(initialBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2 - 1); // leave some space for additional borrow
     uint256 daiSupplyAmount = initialBorrowAmount; // Dai collateral will fully cover initial borrow
-    uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
+    uint256 usdzSupplyAmount = MAX_SUPPLY_AMOUNT;
     additionalBorrowAmount = bound(additionalBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
 
-    // Deal bob dai to cover dai and dai2 supply
+    // Deal bob dai to cover dai and usdz supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
-    // Bob supplies dai and dai2 collaterals
+    // Bob supplies dai and usdz collaterals
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
@@ -662,9 +662,9 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     });
     Utils.supplyCollateral({
       spoke: spoke2,
-      reserveId: _dai2ReserveId(spoke2),
+      reserveId: _usdzReserveId(spoke2),
       caller: bob,
-      amount: dai2SupplyAmount,
+      amount: usdzSupplyAmount,
       onBehalfOf: bob
     });
 
@@ -818,8 +818,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     uint256 startingPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_daiReserveId(spoke2));
     newPrice = bound(newPrice, startingPrice + 1, 1e16);
 
-    // Supply dai and dai2 collaterals to cover weth debt. Dai increases in price to fully cover weth debt
-    uint256 dai2SupplyAmount = MAX_SUPPLY_AMOUNT;
+    // Supply dai and usdz collaterals to cover weth debt. Dai increases in price to fully cover weth debt
+    uint256 usdzSupplyAmount = MAX_SUPPLY_AMOUNT;
     uint256 borrowAmount = _convertAssetAmount(
       spoke2,
       _daiReserveId(spoke2),
@@ -830,10 +830,10 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     // Deploy liquidity for weth borrow
     _openSupplyPosition(spoke2, _wethReserveId(spoke2), MAX_SUPPLY_AMOUNT);
 
-    // Deal bob dai to cover dai and dai2 supply
+    // Deal bob dai to cover dai and usdz supply
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
-    // Bob supplies dai and dai2 collaterals
+    // Bob supplies dai and usdz collaterals
     Utils.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
@@ -843,9 +843,9 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     });
     Utils.supplyCollateral({
       spoke: spoke2,
-      reserveId: _dai2ReserveId(spoke2),
+      reserveId: _usdzReserveId(spoke2),
       caller: bob,
-      amount: dai2SupplyAmount,
+      amount: usdzSupplyAmount,
       onBehalfOf: bob
     });
 
