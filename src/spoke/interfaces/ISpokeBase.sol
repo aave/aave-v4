@@ -74,8 +74,8 @@ interface ISpokeBase {
     uint256 drawnSharesLiquidated,
     IHubBase.PremiumDelta premiumDelta,
     uint256 collateralToLiquidate,
-    uint256 sharesToLiquidate,
-    uint256 sharesToLiquidator,
+    uint256 collateralSharesToLiquidate,
+    uint256 collateralSharesToLiquidator,
     address liquidator,
     bool receiveShares
   );

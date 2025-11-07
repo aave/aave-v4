@@ -122,8 +122,8 @@ library LiquidationLogic {
     uint256 collateralToLiquidator;
     uint256 debtToLiquidate;
     bool isCollateralPositionEmpty;
-    uint256 sharesToLiquidate;
-    uint256 sharesToLiquidator;
+    uint256 collateralSharesToLiquidate;
+    uint256 collateralSharesToLiquidator;
     bool isDebtPositionEmpty;
     uint256 drawnSharesLiquidated;
     IHubBase.PremiumDelta premiumDelta;
@@ -211,8 +211,8 @@ library LiquidationLogic {
 
     (
       vars.isCollateralPositionEmpty,
-      vars.sharesToLiquidate,
-      vars.sharesToLiquidator
+      vars.collateralSharesToLiquidate,
+      vars.collateralSharesToLiquidator
     ) = _liquidateCollateral(
       collateralReserve,
       positions,
@@ -248,8 +248,8 @@ library LiquidationLogic {
       vars.drawnSharesLiquidated,
       vars.premiumDelta,
       vars.collateralToLiquidate,
-      vars.sharesToLiquidate,
-      vars.sharesToLiquidator,
+      vars.collateralSharesToLiquidate,
+      vars.collateralSharesToLiquidator,
       params.liquidator,
       params.receiveShares
     );
