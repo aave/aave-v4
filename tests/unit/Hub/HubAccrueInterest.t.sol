@@ -54,7 +54,7 @@ contract HubAccrueInterestTest is Base {
     IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp());
     assertEq(daiInfo.drawnIndex, WadRayMath.RAY);
-    assertEq(daiInfo.realizedPremium, 0);
+    assertEq(daiInfo.realizedPremiumRay, 0);
     assertEq(hub1.getAddedAssets(daiAssetId), 0);
     assertEq(getAssetDrawnDebt(daiAssetId), 0);
   }

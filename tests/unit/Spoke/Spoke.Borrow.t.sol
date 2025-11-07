@@ -16,22 +16,22 @@ contract SpokeBorrowTest is SpokeBase {
     state.daiBob.borrowAmount = state.daiAlice.supplyAmount;
 
     // should be 0 because no realized premium yet
-    state.daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.daiBob.userPosBefore.realizedPremiumRay = _calculateExpectedRealizedPremiumRay(
       spoke1,
       state.daiReserveId,
       bob
     );
-    state.wethBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.wethBob.userPosBefore.realizedPremiumRay = _calculateExpectedRealizedPremiumRay(
       spoke1,
       state.wethReserveId,
       bob
     );
-    state.daiAlice.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.daiAlice.userPosBefore.realizedPremiumRay = _calculateExpectedRealizedPremiumRay(
       spoke1,
       state.daiReserveId,
       alice
     );
-    state.wethAlice.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.wethAlice.userPosBefore.realizedPremiumRay = _calculateExpectedRealizedPremiumRay(
       spoke1,
       state.wethReserveId,
       alice
@@ -60,7 +60,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.daiBob.userPosBefore.realizedPremiumRay,
       label: 'bob dai data before'
     });
     _assertUserPositionAndDebt({
@@ -69,7 +69,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.wethBob.supplyAmount,
-      expectedRealizedPremium: state.wethBob.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.wethBob.userPosBefore.realizedPremiumRay,
       label: 'bob weth data before'
     });
     _assertUserPositionAndDebt({
@@ -78,7 +78,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: state.daiAlice.supplyAmount,
-      expectedRealizedPremium: state.daiAlice.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.daiAlice.userPosBefore.realizedPremiumRay,
       label: 'alice dai data before'
     });
     _assertUserPositionAndDebt({
@@ -87,7 +87,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.wethAlice.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.wethAlice.userPosBefore.realizedPremiumRay,
       label: 'alice weth data before'
     });
 
@@ -117,7 +117,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: state.daiBob.borrowAmount,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.daiBob.userPosBefore.realizedPremiumRay,
       label: 'bob dai data after'
     });
     _assertUserPositionAndDebt({
@@ -126,7 +126,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.wethBob.supplyAmount,
-      expectedRealizedPremium: state.wethBob.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.wethBob.userPosBefore.realizedPremiumRay,
       label: 'bob weth data after'
     });
     _assertUserPositionAndDebt({
@@ -135,7 +135,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: state.daiAlice.supplyAmount,
-      expectedRealizedPremium: state.daiAlice.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.daiAlice.userPosBefore.realizedPremiumRay,
       label: 'alice dai data after'
     });
     _assertUserPositionAndDebt({
@@ -144,7 +144,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.wethAlice.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.wethAlice.userPosBefore.realizedPremiumRay,
       label: 'alice weth data after'
     });
 
@@ -182,22 +182,22 @@ contract SpokeBorrowTest is SpokeBase {
     Utils.supply(spoke1, state.daiReserveId, alice, state.daiAlice.supplyAmount, alice);
 
     // should be 0 because no realized premium yet
-    state.daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.daiBob.userPosBefore.realizedPremiumRay = _calculateExpectedRealizedPremiumRay(
       spoke1,
       state.daiReserveId,
       bob
     );
-    state.wethBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.wethBob.userPosBefore.realizedPremiumRay = _calculateExpectedRealizedPremiumRay(
       spoke1,
       state.wethReserveId,
       bob
     );
-    state.daiAlice.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.daiAlice.userPosBefore.realizedPremiumRay = _calculateExpectedRealizedPremiumRay(
       spoke1,
       state.daiReserveId,
       alice
     );
-    state.wethAlice.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.wethAlice.userPosBefore.realizedPremiumRay = _calculateExpectedRealizedPremiumRay(
       spoke1,
       state.wethReserveId,
       alice
@@ -220,7 +220,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.daiBob.userPosBefore.realizedPremiumRay,
       label: 'bob dai data before'
     });
     _assertUserPositionAndDebt({
@@ -229,7 +229,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.wethBob.supplyAmount,
-      expectedRealizedPremium: state.wethBob.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.wethBob.userPosBefore.realizedPremiumRay,
       label: 'bob weth data before'
     });
     _assertUserPositionAndDebt({
@@ -238,7 +238,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: state.daiAlice.supplyAmount,
-      expectedRealizedPremium: state.daiAlice.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.daiAlice.userPosBefore.realizedPremiumRay,
       label: 'alice dai data before'
     });
     _assertUserPositionAndDebt({
@@ -247,7 +247,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.wethAlice.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.wethAlice.userPosBefore.realizedPremiumRay,
       label: 'alice weth data before'
     });
 
@@ -300,7 +300,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: state.daiBob.borrowAmount,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.daiBob.userPosBefore.realizedPremiumRay,
       label: 'bob dai data after'
     });
     _assertUserPositionAndDebt({
@@ -309,7 +309,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.wethBob.supplyAmount,
-      expectedRealizedPremium: state.wethBob.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.wethBob.userPosBefore.realizedPremiumRay,
       label: 'bob weth data after'
     });
     _assertUserPositionAndDebt({
@@ -318,7 +318,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: state.daiAlice.supplyAmount,
-      expectedRealizedPremium: state.daiAlice.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.daiAlice.userPosBefore.realizedPremiumRay,
       label: 'alice dai data after'
     });
     _assertUserPositionAndDebt({
@@ -327,7 +327,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.wethAlice.userPosBefore.realizedPremium,
+      expectedRealizedPremiumRay: state.wethAlice.userPosBefore.realizedPremiumRay,
       label: 'alice weth data after'
     });
 

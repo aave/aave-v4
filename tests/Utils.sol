@@ -55,7 +55,7 @@ library Utils {
   ) internal returns (uint256) {
     approve(IHub(address(hub)), assetId, restorer, drawnAmount);
     vm.prank(caller);
-    return hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0), restorer);
+    return hub.restore(assetId, drawnAmount, IHubBase.PremiumDelta(0, 0, 0, 0), restorer);
   }
 
   function addSpoke(

@@ -378,8 +378,25 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     );
     (, uint256 userPremiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
     uint256 premiumDebtRestored = _min(liquidationMetadata.debtToLiquidate, userPremiumDebt);
-    int256 realizedDelta = (userPremiumDebt - userDebtPosition.realizedPremium).toInt256() -
-      premiumDebtRestored.toInt256();
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+      sharesDelta: -userDebtPosition.premiumShares.toInt256(),
+      offsetDeltaRay: -userDebtPosition.premiumOffsetRay.toInt256(),
+      accruedPremiumRay: _calculateAccruedPremiumRay(
+        params.spoke,
+        params.debtReserveId,
+        userDebtPosition.premiumShares,
+        userDebtPosition.premiumOffsetRay
+      ),
+      restoredPremiumRay: (premiumDebtRestored * WadRayMath.RAY).min(
+        _calculatePremiumDebtRay(
+          params.spoke,
+          params.debtReserveId,
+          userDebtPosition.realizedPremiumRay,
+          userDebtPosition.premiumShares,
+          userDebtPosition.premiumOffsetRay
+        )
+      )
+    });
     vm.expectCall(
       address(_hub(params.spoke, params.debtReserveId)),
       abi.encodeCall(
@@ -387,12 +404,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         (
           _assetId(params.spoke, params.debtReserveId),
           liquidationMetadata.debtToLiquidate - premiumDebtRestored,
-          premiumDebtRestored,
-          IHubBase.PremiumDelta({
-            sharesDelta: -userDebtPosition.premiumShares.toInt256(),
-            offsetDelta: -userDebtPosition.premiumOffset.toInt256(),
-            realizedDelta: realizedDelta
-          }),
+          premiumDelta,
           params.liquidator
         )
       )
@@ -445,35 +457,25 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             )
             .toUint120();
           userReservePosition.premiumShares = 0;
-          userReservePosition.premiumOffset = 0;
-          userReservePosition.realizedPremium = (userReservePosition.realizedPremium.toInt256() +
-            realizedDelta).toUint256().toUint120();
+          userReservePosition.premiumOffsetRay = 0;
+          userReservePosition.realizedPremiumRay =
+            userReservePosition.realizedPremiumRay +
+            premiumDelta.accruedPremiumRay -
+            premiumDelta.restoredPremiumRay;
         }
         uint256 userReserveDrawnDebt = _hub(params.spoke, reserveId).previewRestoreByShares(
           assetId,
           userReservePosition.drawnShares
         );
-        uint256 userReservePremiumDebt = _hub(params.spoke, reserveId).previewRestoreByShares(
-          assetId,
-          userReservePosition.premiumShares
-        ) -
-          userReservePosition.premiumOffset +
-          userReservePosition.realizedPremium;
+        IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+          params.spoke,
+          params.user,
+          reserveId,
+          type(uint256).max
+        );
         vm.expectCall(
           address(_hub(params.spoke, reserveId)),
-          abi.encodeCall(
-            IHubBase.reportDeficit,
-            (
-              assetId,
-              userReserveDrawnDebt,
-              userReservePremiumDebt,
-              IHubBase.PremiumDelta({
-                sharesDelta: -userReservePosition.premiumShares.toInt256(),
-                offsetDelta: -userReservePosition.premiumOffset.toInt256(),
-                realizedDelta: -userReservePosition.realizedPremium.toInt256()
-              })
-            )
-          ),
+          abi.encodeCall(IHubBase.reportDeficit, (assetId, userReserveDrawnDebt, premiumDelta)),
           liquidationMetadata.hasDeficit ? 1 : 0
         );
       }

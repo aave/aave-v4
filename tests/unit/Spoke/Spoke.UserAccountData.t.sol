@@ -43,7 +43,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
     _checkedUserAccountData(
@@ -77,7 +77,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.collateralDynamicConfigKeys.push(configKeyBefore);
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
     _checkedUserAccountData(
@@ -111,7 +111,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.collateralDynamicConfigKeys.push(configKeyBefore);
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
     _checkedUserAccountData(
@@ -153,7 +153,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.suppliedAssetsAmounts.push(1e18);
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.3e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.15e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.15e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.05e18);
 
     _checkedUserAccountData(
@@ -191,11 +191,11 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
     accountDataInfo.debtReserveIds.push(_wbtcReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.001e8);
-    accountDataInfo.realizedPremiumAmounts.push(0);
+    accountDataInfo.realizedPremiumAmountsRay.push(0 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0);
 
     _checkedUserAccountData(
@@ -235,7 +235,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
     _checkedUserAccountData(
