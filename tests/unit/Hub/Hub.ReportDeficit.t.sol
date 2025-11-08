@@ -171,7 +171,16 @@ contract HubReportDeficitTest is HubBase {
       ? asset.premiumShares - uint256(-premiumDelta.sharesDelta)
       : asset.premiumShares + uint256(premiumDelta.sharesDelta);
 
-    if (premiumDelta.restoredPremiumRay > asset.realizedPremiumRay) {
+    if (
+      premiumDelta.restoredPremiumRay >
+      _calculatePremiumDebtRay(
+        hub1,
+        usdxAssetId,
+        asset.realizedPremiumRay,
+        asset.premiumShares,
+        asset.premiumOffsetRay
+      )
+    ) {
       vm.expectRevert(stdError.arithmeticError);
       vm.prank(address(spoke1));
       hub1.reportDeficit(usdxAssetId, baseAmount, premiumDelta);

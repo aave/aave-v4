@@ -314,34 +314,26 @@ contract HubRefreshPremiumTest is HubBase {
 
     sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares);
     offsetDeltaPosRay = bound(offsetDeltaPosRay, 0, asset.premiumOffsetRay);
-    uint256 restoredPremiumPosRay;
-    uint256 premiumAssetsPosRay = _calculatePremiumAssetsRay(hub1, assetId, sharesDeltaPos);
 
-    // If we introduced debt with shares vs offset, capture with realized delta
+    // not allowed to restore debt during refreshPremium
+    uint256 premiumAssetsPosRay = _calculatePremiumAssetsRay(hub1, assetId, sharesDeltaPos);
     if (offsetDeltaPosRay > premiumAssetsPosRay) {
-      restoredPremiumPosRay = offsetDeltaPosRay - premiumAssetsPosRay;
+      offsetDeltaPosRay = premiumAssetsPosRay;
     }
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -sharesDeltaPos.toInt256(),
       offsetDeltaRay: -offsetDeltaPosRay.toInt256(),
-      accruedPremiumRay: 0,
-      restoredPremiumRay: restoredPremiumPosRay
+      accruedPremiumRay: premiumAssetsPosRay - offsetDeltaPosRay,
+      restoredPremiumRay: 0
     });
 
-    // Note that we flip these pos numbers to negative
-    if (restoredPremiumPosRay > asset.realizedPremiumRay) {
+    if (
+      _calculatePremiumAssetsRay(hub1, assetId, asset.premiumShares - sharesDeltaPos) <
+      asset.premiumOffsetRay - offsetDeltaPosRay
+    ) {
       reverting = true;
       vm.expectRevert(stdError.arithmeticError);
-    } else if (premiumAssetsPosRay > offsetDeltaPosRay) {
-      premiumDelta.offsetDeltaRay = -premiumAssetsPosRay.toInt256();
-      if (premiumAssetsPosRay > asset.premiumOffsetRay) {
-        // set both shares diff and offset diff to match offset
-        premiumDelta.sharesDelta = -asset
-          .premiumOffsetRay
-          .divUp(hub1.getAssetDrawnIndex(assetId))
-          .toInt256();
-      }
     }
 
     vm.prank(address(spoke1));
