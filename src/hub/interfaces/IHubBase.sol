@@ -92,11 +92,12 @@ interface IHubBase {
 
   /// @notice Add asset on behalf of user.
   /// @dev Only callable by active spokes.
+  /// @dev Underlying assets must be transferred to the Hub before invocation.
+  /// @dev Extra underlying liquidity retained in the Hub can be skimmed by any Spoke through this action.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset liquidity to add.
-  /// @param from The address from which to pull assets.
   /// @return The amount of shares added.
-  function add(uint256 assetId, uint256 amount, address from) external returns (uint256);
+  function add(uint256 assetId, uint256 amount) external returns (uint256);
 
   /// @notice Remove added asset on behalf of user.
   /// @dev Only callable by active spokes.
@@ -117,16 +118,16 @@ interface IHubBase {
   /// @notice Restore assets on behalf of user.
   /// @dev Only callable by active spokes.
   /// @dev Interest is always paid off first from premium, then from drawn.
+  /// @dev Underlying assets must be transferred to the Hub before invocation.
+  /// @dev Extra underlying liquidity retained in the Hub can be skimmed by any Spoke through this action.
   /// @param assetId The identifier of the asset.
   /// @param drawnAmount The drawn amount to restore.
   /// @param premiumDelta The premium delta to apply which signal premium repayment.
-  /// @param from The address from which to pull assets.
   /// @return The amount of drawn shares restored.
   function restore(
     uint256 assetId,
     uint256 drawnAmount,
-    PremiumDelta calldata premiumDelta,
-    address from
+    PremiumDelta calldata premiumDelta
   ) external returns (uint256);
 
   /// @notice Reports deficit.

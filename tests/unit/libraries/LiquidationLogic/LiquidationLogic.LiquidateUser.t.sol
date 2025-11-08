@@ -1,4 +1,4 @@
-// // SPDX-License-Identifier: UNLICENSED
+ // // SPDX-License-Identifier: UNLICENSED
 // // Copyright (c) 2025 Aave Labs
 // pragma solidity ^0.8.0;
 
@@ -74,13 +74,14 @@
 //     liquidationLogicWrapper.setCollateralPositionSuppliedShares(10_200e6);
 //     liquidationLogicWrapper.setBorrowerCollateralStatus(usdxReserveId, true);
 
-//     // Mock storage for debt side
-//     require(hub2.getAsset(wethAssetId).underlying == address(tokenList.weth));
-//     liquidationLogicWrapper.setDebtReserveId(wethReserveId);
-//     liquidationLogicWrapper.setDebtReserveHub(hub2);
-//     liquidationLogicWrapper.setDebtReserveAssetId(wethAssetId);
-//     liquidationLogicWrapper.setDebtReserveDecimals(18);
-//     liquidationLogicWrapper.setBorrowerBorrowingStatus(wethReserveId, true);
+// // Mock storage for debt side
+// require(hub2.getAsset(wethAssetId).underlying == address(tokenList.weth));
+// liquidationLogicWrapper.setDebtReserveId(wethReserveId);
+// liquidationLogicWrapper.setDebtReserveHub(hub2);
+// liquidationLogicWrapper.setDebtReserveAssetId(wethAssetId);
+// liquidationLogicWrapper.setDebtReserveUnderlying(address(tokenList.weth));
+// liquidationLogicWrapper.setDebtReserveDecimals(18);
+// liquidationLogicWrapper.setBorrowerBorrowingStatus(wethReserveId, true);
 
 //     // Mock storage for liquidation config
 //     liquidationConfig = ISpoke.LiquidationConfig({
@@ -146,10 +147,15 @@
 //       params.premiumDebt - params.accruedPremium
 //     );
 
-//     // Mint tokens to liquidator and approve hub
-//     deal(address(tokenList.weth), params.liquidator, spokeDrawnOwed + spokePremiumOwed);
-//     Utils.approve(hub2, wethAssetId, params.liquidator, spokeDrawnOwed + spokePremiumOwed);
-//   }
+//   // Mint tokens to liquidator and approve spoke
+//   deal(address(tokenList.weth), params.liquidator, spokeDrawnOwed + spokePremiumOwed);
+//   Utils.approve(
+//     ISpoke(address(liquidationLogicWrapper)),
+//     address(tokenList.weth),
+//     params.liquidator,
+//     spokeDrawnOwed + spokePremiumOwed
+//   );
+// }
 
 //   function test_liquidateUser() public {
 //     uint256 initialHub1UsdxBalance = tokenList.usdx.balanceOf(address(hub1));
@@ -191,8 +197,7 @@
 //             -debtPosition.premiumShares.toInt256(),
 //             -debtPosition.premiumOffset.toInt256(),
 //             0.2e18 - 0.5e18
-//           ),
-//           params.liquidator
+//           )
 //         )
 //       ),
 //       1

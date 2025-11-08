@@ -3,6 +3,7 @@
 pragma solidity ^0.8.20;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -16,6 +17,7 @@ import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 /// @notice Implements the logic for liquidations.
 library LiquidationLogic {
   using SafeCast for *;
+  using SafeTransferLib for address;
   using PositionStatusMap for ISpoke.PositionStatus;
   using PercentageMath for uint256;
   using WadRayMath for uint256;
@@ -337,11 +339,15 @@ library LiquidationLogic {
         )
       });
 
+      debtReserve.underlying.safeTransferFrom(
+        params.liquidator,
+        address(debtReserve.hub),
+        drawnDebtToLiquidate + premiumDebtToLiquidate
+      );
       uint256 drawnSharesLiquidated = debtReserve.hub.restore(
         debtReserve.assetId,
         drawnDebtToLiquidate,
-        premiumDelta,
-        params.liquidator
+        premiumDelta
       );
       debtPosition.settlePremiumDebt(
         premiumDelta.accruedPremiumRay,

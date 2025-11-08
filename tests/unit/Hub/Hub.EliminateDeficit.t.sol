@@ -95,7 +95,7 @@ contract HubEliminateDeficitTest is HubBase {
     );
     assertEq(hub1.getSpokeDeficit(assetId, coveredSpoke), deficitAmount - clearedDeficit);
     assertGe(getAddExRate(assetId), addExRate);
-    assertBorrowRateSynced(hub1, assetId, 'eliminateDeficit');
+    _assertBorrowRateSynced(hub1, assetId, 'eliminateDeficit');
   }
 
   function _createDeficit(uint256 assetId, address spoke, uint256 amount) internal {

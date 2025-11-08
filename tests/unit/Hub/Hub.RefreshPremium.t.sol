@@ -154,7 +154,8 @@ contract HubRefreshPremiumTest is HubBase {
 
   function test_refreshPremium_emitsEvent() public {
     vm.startPrank(address(spoke1));
-    hub1.add(daiAssetId, 10000e18, alice);
+    tokenList.dai.transferFrom(alice, address(hub1), 10000e18);
+    hub1.add(daiAssetId, 10000e18);
     hub1.draw(daiAssetId, 5000e18, alice);
 
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, daiAssetId);
@@ -178,7 +179,7 @@ contract HubRefreshPremiumTest is HubBase {
       _applyPremiumDelta(premiumDataBefore, premiumDelta)
     );
     assertEq(premiumAfter, premiumBefore, 'premium should not change');
-    assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
+    _assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
     vm.stopPrank();
   }
 
@@ -255,7 +256,7 @@ contract HubRefreshPremiumTest is HubBase {
         _applyPremiumDelta(premiumDataBefore, premiumDelta)
       );
       assertEq(premiumAfter, premiumBefore, 'premium should not change');
-      assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
+      _assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
     }
   }
 
@@ -292,7 +293,7 @@ contract HubRefreshPremiumTest is HubBase {
       _applyPremiumDelta(premiumDataBefore, premiumDelta)
     );
     assertEq(premiumAfter, premiumBefore, 'premium should not change');
-    assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
+    _assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
   }
 
   function test_refreshPremium_negativeDeltas_withAccrual(
@@ -354,7 +355,7 @@ contract HubRefreshPremiumTest is HubBase {
         _applyPremiumDelta(premiumDataBefore, premiumDelta)
       );
       assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
-      assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
+      _assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
     }
   }
 
@@ -442,7 +443,7 @@ contract HubRefreshPremiumTest is HubBase {
         _applyPremiumDelta(premiumDataBefore, premiumDelta)
       );
       assertEq(premiumAfter, premiumBefore, 'premium should not change');
-      assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
+      _assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
     }
   }
 

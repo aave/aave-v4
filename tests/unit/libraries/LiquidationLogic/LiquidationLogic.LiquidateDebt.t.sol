@@ -1,4 +1,4 @@
-// // SPDX-License-Identifier: UNLICENSED
+ // // SPDX-License-Identifier: UNLICENSED
 // // Copyright (c) 2025 Aave Labs
 // pragma solidity ^0.8.0;
 
@@ -29,13 +29,14 @@
 //     liquidator = makeAddr('liquidator');
 //     user = makeAddr('user');
 
-//     // Set initial storage values
-//     liquidationLogicWrapper.setBorrower(user);
-//     liquidationLogicWrapper.setLiquidator(liquidator);
-//     liquidationLogicWrapper.setDebtReserveId(reserveId);
-//     liquidationLogicWrapper.setDebtReserveHub(hub);
-//     liquidationLogicWrapper.setDebtReserveAssetId(assetId);
-//     liquidationLogicWrapper.setBorrowerBorrowingStatus(reserveId, true);
+// // Set initial storage values
+// liquidationLogicWrapper.setBorrower(user);
+// liquidationLogicWrapper.setLiquidator(liquidator);
+// liquidationLogicWrapper.setDebtReserveId(reserveId);
+// liquidationLogicWrapper.setDebtReserveHub(hub);
+// liquidationLogicWrapper.setDebtReserveAssetId(assetId);
+// liquidationLogicWrapper.setDebtReserveUnderlying(address(asset));
+// liquidationLogicWrapper.setBorrowerBorrowingStatus(reserveId, true);
 
 //     // Add liquidation logic wrapper as a spoke
 //     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
@@ -83,10 +84,10 @@
 //     );
 //     liquidationLogicWrapper.setDebtPositionRealizedPremiumRay(realizedPremium * WadRayMath.RAY);
 
-//     // Mint tokens to liquidator and approve hub
-//     deal(address(asset), liquidator, spokeDrawnOwed + spokePremiumOwed);
-//     Utils.approve(hub, assetId, liquidator, spokeDrawnOwed + spokePremiumOwed);
-//   }
+//   // Mint tokens to liquidator and approve spoke
+//   deal(address(asset), liquidator, spokeDrawnOwed + spokePremiumOwed);
+//   Utils.approve(spoke, address(asset), liquidator, spokeDrawnOwed + spokePremiumOwed);
+// }
 
 //   function expectCall(
 //     uint256 drawnDebt,
@@ -97,18 +98,18 @@
 //     uint256 premiumDebtToLiquidate = _min(debtToLiquidate, premiumDebt);
 //     uint256 drawnDebtToLiquidate = _min(drawnDebt, debtToLiquidate - premiumDebtToLiquidate);
 
-//     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-//       sharesDelta: -hub.previewRestoreByAssets(assetId, premiumDebt).toInt256(),
-//       offsetDelta: -(premiumDebt - accruedPremium).toInt256(),
-//       realizedDelta: accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
-//     });
-//     vm.expectCall(
-//       address(hub),
-//       abi.encodeCall(
-//         IHubBase.restore,
-//         (assetId, drawnDebtToLiquidate, premiumDebtToLiquidate, premiumDelta, liquidator)
-//       )
-//     );
+// IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+//   sharesDelta: -hub.previewRestoreByAssets(assetId, premiumDebt).toInt256(),
+//   offsetDelta: -(premiumDebt - accruedPremium).toInt256(),
+//   realizedDelta: accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
+// });
+// vm.expectCall(
+//   address(hub),
+//   abi.encodeCall(
+//     IHubBase.restore,
+//     (assetId, drawnDebtToLiquidate, premiumDebtToLiquidate, premiumDelta)
+//   )
+// );
 
 //     return (hub.previewRestoreByAssets(assetId, drawnDebtToLiquidate), premiumDebtToLiquidate);
 //   }
@@ -185,15 +186,15 @@
 //     );
 //   }
 
-//   // reverts when hub does not have enough allowance from liquidator
-//   function test_liquidateDebt_revertsWith_InsufficientAllowance() public {
-//     uint256 drawnDebt = 100e18;
-//     uint256 premiumDebt = 10e18;
-//     uint256 accruedPremium = 5e18;
-//     updateStorage(drawnDebt, premiumDebt, accruedPremium);
+// // reverts when spoke does not have enough allowance from liquidator
+// function test_liquidateDebt_revertsWith_InsufficientAllowance() public {
+//   uint256 drawnDebt = 100e18;
+//   uint256 premiumDebt = 10e18;
+//   uint256 accruedPremium = 5e18;
+//   updateStorage(drawnDebt, premiumDebt, accruedPremium);
 
-//     uint256 debtToLiquidate = drawnDebt + premiumDebt;
-//     Utils.approve(hub, assetId, liquidator, debtToLiquidate - 1);
+//   uint256 debtToLiquidate = drawnDebt + premiumDebt;
+//   Utils.approve(spoke, address(asset), liquidator, debtToLiquidate - 1);
 
 //     vm.expectRevert();
 //     liquidationLogicWrapper.liquidateDebt(

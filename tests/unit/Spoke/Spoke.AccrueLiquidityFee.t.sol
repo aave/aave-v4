@@ -19,6 +19,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       0,
       'no debt without action'
     );
+
+    _assertHubLiquidity(hub1, _daiReserveId(spoke1), 'spoke1.accrueLiquidityFee');
   }
 
   /// Supply an asset only, and check no interest accrued.
@@ -46,6 +48,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     // treasury
     assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke)), 0);
+
+    _assertHubLiquidity(hub1, daiReserveId, 'spoke1.accrueLiquidityFee');
   }
 
   function test_accrueLiquidityFee_fuzz_BorrowAmountAndSkipTime(
@@ -182,6 +186,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       1,
       'treasury shares'
     );
+
+    _assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 
   function test_accrueLiquidityFee_exact() public {
@@ -291,6 +297,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       hub1.previewAddByAssets(assetId, expectedTreasuryFees),
       'treasury fees after drawn debt accrual'
     );
+
+    _assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 
   function test_accrueLiquidityFee() public {
@@ -404,6 +412,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       hub1.previewAddByAssets(assetId, expectedTreasuryFees),
       'treasury fees after drawn debt accrual'
     );
+
+    _assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 
   // disabling an asset as collateral raises the user’s risk premium, but fees use the old value until the action is executed.
@@ -476,6 +486,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       hub1.previewAddByAssets(assetId, expectedTreasuryFees),
       'treasury fees after base and premium debt accrual'
     );
+
+    _assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 
   /// 100.00% liquidity fee redirect all liquidity growth to fee receiver and nothing to suppliers
@@ -528,5 +540,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       expectedDrawnDebtAccrual + expectedPremiumDebt,
       'treasury all accumulated interest'
     );
+
+    _assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 }

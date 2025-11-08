@@ -159,7 +159,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         MAX_SUPPLY_AMOUNT
       );
     }
-
     deal(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));
     Utils.approve(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));
 
@@ -404,8 +403,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         (
           _assetId(params.spoke, params.debtReserveId),
           liquidationMetadata.debtToLiquidate - premiumDebtRestored,
-          premiumDelta,
-          params.liquidator
+          premiumDelta
         )
       )
     );
@@ -1308,6 +1306,16 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _checkErc20Balances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkSpokeBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkHubBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
+    _assertHubLiquidity(
+      _hub(params.spoke, params.collateralReserveId),
+      params.collateralReserveId,
+      'spoke1.liquidationCall'
+    );
+    _assertHubLiquidity(
+      _hub(params.spoke, params.debtReserveId),
+      params.debtReserveId,
+      'spoke1.liquidationCall'
+    );
   }
 
   // @dev reads `positionStatus.hasPositiveRiskPremium` by temporarily upgrading to mock spoke
