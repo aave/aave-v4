@@ -126,13 +126,17 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Approvals
     vm.startPrank(bob);
-    assetA.approve(address(newHub), type(uint256).max);
-    assetB.approve(address(hub1), type(uint256).max);
+    assetA.approve(address(spoke1), type(uint256).max);
+    assetB.approve(address(spoke1), type(uint256).max);
+    assetA.approve(address(newSpoke), type(uint256).max);
+    assetB.approve(address(newSpoke), type(uint256).max);
     vm.stopPrank();
 
     vm.startPrank(alice);
-    assetB.approve(address(hub1), type(uint256).max);
-    assetB.approve(address(newHub), type(uint256).max);
+    assetA.approve(address(spoke1), type(uint256).max);
+    assetB.approve(address(spoke1), type(uint256).max);
+    assetA.approve(address(newSpoke), type(uint256).max);
+    assetB.approve(address(newSpoke), type(uint256).max);
     vm.stopPrank();
 
     // Deal tokens

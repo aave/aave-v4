@@ -232,7 +232,7 @@ contract HubReportDeficitTest is HubBase {
         params.supplyExchangeRateBefore,
         'supply exchange rate should increase'
       );
-      assertBorrowRateSynced(hub1, usdxAssetId, 'reportDeficit');
+      _assertBorrowRateSynced(hub1, usdxAssetId, 'reportDeficit');
     }
   }
 }

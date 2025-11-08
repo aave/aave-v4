@@ -151,7 +151,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 borrowAmount = 10000e18;
 
     // Deploy liquidity to borrow
-    _openSupplyPosition(spoke2, _dai2ReserveId(spoke2), borrowAmount);
+    _openSupplyPosition(spoke2, _usdzReserveId(spoke2), borrowAmount);
 
     // Bob supplies collaterals
     Utils.supplyCollateral(spoke2, _wbtcReserveId(spoke2), bob, wbtcSupplyAmount, bob);
@@ -159,8 +159,8 @@ contract SpokeRiskPremiumTest is SpokeBase {
     Utils.supplyCollateral(spoke2, _usdxReserveId(spoke2), bob, usdxSupplyAmount, bob);
     Utils.supplyCollateral(spoke2, _wethReserveId(spoke2), bob, wethSupplyAmount, bob);
 
-    // Bob borrows dai2
-    Utils.borrow(spoke2, _dai2ReserveId(spoke2), bob, borrowAmount, bob);
+    // Bob borrows usdz
+    Utils.borrow(spoke2, _usdzReserveId(spoke2), bob, borrowAmount, bob);
 
     assertEq(
       _getUserRiskPremium(spoke2, bob),
@@ -168,15 +168,15 @@ contract SpokeRiskPremiumTest is SpokeBase {
       'user risk premium'
     );
 
-    // Change the price of dai2 via mock call
-    _mockReservePrice(spoke2, _dai2ReserveId(spoke2), 100000e8);
+    // Change the price of usdz via mock call
+    _mockReservePrice(spoke2, _usdzReserveId(spoke2), 100000e8);
 
     // Check that debt has outgrown collateral
     uint256 collateralValue = _getValue(spoke2, _wbtcReserveId(spoke2), wbtcSupplyAmount) +
       _getValue(spoke2, _daiReserveId(spoke2), daiSupplyAmount) +
       _getValue(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) +
       _getValue(spoke2, _wethReserveId(spoke2), wethSupplyAmount);
-    uint256 debtValue = _getValue(spoke2, _dai2ReserveId(spoke2), borrowAmount);
+    uint256 debtValue = _getValue(spoke2, _usdzReserveId(spoke2), borrowAmount);
     assertGt(debtValue, collateralValue, 'debt outgrows collateral');
 
     assertFalse(_isHealthy(spoke2, bob));
@@ -261,17 +261,17 @@ contract SpokeRiskPremiumTest is SpokeBase {
   /// Assert that user rp should be less than the high collateral-risk reserve
   function test_getUserRiskPremium_multi_reserve_collateral_lower_rp_than_highest_cr() public {
     ReserveInfoLocal memory daiInfo;
-    ReserveInfoLocal memory dai2Info;
+    ReserveInfoLocal memory usdzInfo;
     ReserveInfoLocal memory usdxInfo;
     ReserveInfoLocal memory wethInfo;
 
     daiInfo.reserveId = _daiReserveId(spoke2);
-    dai2Info.reserveId = _dai2ReserveId(spoke2);
+    usdzInfo.reserveId = _usdzReserveId(spoke2);
     usdxInfo.reserveId = _usdxReserveId(spoke2);
     wethInfo.reserveId = _wethReserveId(spoke2);
 
     daiInfo.supplyAmount = 1000e18;
-    dai2Info.supplyAmount = 10000e18;
+    usdzInfo.supplyAmount = 10000e18;
     usdxInfo.supplyAmount = 1000e6;
     wethInfo.supplyAmount = 1000e18;
     daiInfo.borrowAmount = 10000e18;
@@ -282,8 +282,8 @@ contract SpokeRiskPremiumTest is SpokeBase {
     // Bob supply dai into spoke2
     Utils.supplyCollateral(spoke2, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
 
-    // Bob supply dai2 into spoke2
-    Utils.supplyCollateral(spoke2, dai2Info.reserveId, bob, dai2Info.supplyAmount, bob);
+    // Bob supply usdz into spoke2
+    Utils.supplyCollateral(spoke2, usdzInfo.reserveId, bob, usdzInfo.supplyAmount, bob);
 
     // Bob supply usdx into spoke2
     Utils.supplyCollateral(spoke2, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
@@ -294,18 +294,18 @@ contract SpokeRiskPremiumTest is SpokeBase {
     // Bob draw dai + usdx
     Utils.borrow(spoke2, daiInfo.reserveId, bob, daiInfo.borrowAmount, bob);
 
-    // Dai2 is enough to cover the total debt
+    // usdz is enough to cover the total debt
     assertGe(
-      _getValue(spoke2, dai2Info.reserveId, dai2Info.supplyAmount),
+      _getValue(spoke2, usdzInfo.reserveId, usdzInfo.supplyAmount),
       _getValue(spoke2, daiInfo.reserveId, daiInfo.borrowAmount),
-      'dai2 supply covers debt'
+      'usdz supply covers debt'
     );
 
     // User risk premium is less than the collateral risk of the highest collateral-risk reserve
     uint256 expectedUserRiskPremium = _calculateExpectedUserRP(bob, spoke2);
     assertLt(
       expectedUserRiskPremium,
-      _getCollateralRisk(spoke2, dai2Info.reserveId),
+      _getCollateralRisk(spoke2, usdzInfo.reserveId),
       'user risk premium is less than highest collateral-risk reserve'
     );
     assertEq(_getUserRiskPremium(spoke2, bob), expectedUserRiskPremium, 'user risk premium');
@@ -535,28 +535,28 @@ contract SpokeRiskPremiumTest is SpokeBase {
     ReserveInfoLocal memory usdxInfo;
     ReserveInfoLocal memory wethInfo;
     ReserveInfoLocal memory wbtcInfo;
-    ReserveInfoLocal memory dai2Info;
+    ReserveInfoLocal memory usdzInfo;
 
     daiInfo.reserveId = _daiReserveId(spoke2);
     usdxInfo.reserveId = _usdxReserveId(spoke2);
     wethInfo.reserveId = _wethReserveId(spoke2);
     wbtcInfo.reserveId = _wbtcReserveId(spoke2);
-    dai2Info.reserveId = _dai2ReserveId(spoke2);
+    usdzInfo.reserveId = _usdzReserveId(spoke2);
 
     daiInfo.supplyAmount = daiSupplyAmount;
     wethInfo.supplyAmount = wethSupplyAmount;
     usdxInfo.supplyAmount = usdxSupplyAmount;
     wbtcInfo.supplyAmount = wbtcSupplyAmount;
 
-    // Borrow all value in dai2
-    dai2Info.borrowAmount = borrowAmount;
+    // Borrow all value in usdz
+    usdzInfo.borrowAmount = borrowAmount;
 
     daiInfo.collateralRisk = _getCollateralRisk(spoke2, daiInfo.reserveId);
     wethInfo.collateralRisk = _getCollateralRisk(spoke2, wethInfo.reserveId);
     usdxInfo.collateralRisk = _getCollateralRisk(spoke2, usdxInfo.reserveId);
     wbtcInfo.collateralRisk = _getCollateralRisk(spoke2, wbtcInfo.reserveId);
 
-    // Handle supplying max of both dai and dai2
+    // Handle supplying max of both dai and usdz
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
     // Bob supply wbtc into spoke2
@@ -579,12 +579,12 @@ contract SpokeRiskPremiumTest is SpokeBase {
       Utils.supplyCollateral(spoke2, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
     }
 
-    // Bob supply dai2 into spoke2
-    Utils.supplyCollateral(spoke2, dai2Info.reserveId, bob, MAX_SUPPLY_AMOUNT, bob);
+    // Bob supply usdz into spoke2
+    Utils.supplyCollateral(spoke2, usdzInfo.reserveId, bob, MAX_SUPPLY_AMOUNT, bob);
 
-    // Bob draw dai2
-    if (dai2Info.borrowAmount > 0) {
-      Utils.borrow(spoke2, dai2Info.reserveId, bob, dai2Info.borrowAmount, bob);
+    // Bob draw usdz
+    if (usdzInfo.borrowAmount > 0) {
+      Utils.borrow(spoke2, usdzInfo.reserveId, bob, usdzInfo.borrowAmount, bob);
     }
 
     // wbtc, weth, dai, and usdx will each cover part of the debt
@@ -619,30 +619,30 @@ contract SpokeRiskPremiumTest is SpokeBase {
     ReserveInfoLocal memory usdxInfo;
     ReserveInfoLocal memory wethInfo;
     ReserveInfoLocal memory wbtcInfo;
-    ReserveInfoLocal memory dai2Info;
+    ReserveInfoLocal memory usdzInfo;
 
     daiInfo.reserveId = _daiReserveId(spoke2);
     wethInfo.reserveId = _wethReserveId(spoke2);
     usdxInfo.reserveId = _usdxReserveId(spoke2);
     wbtcInfo.reserveId = _wbtcReserveId(spoke2);
-    dai2Info.reserveId = _dai2ReserveId(spoke2);
+    usdzInfo.reserveId = _usdzReserveId(spoke2);
 
     daiInfo.supplyAmount = daiSupplyAmount;
     wethInfo.supplyAmount = wethSupplyAmount;
     usdxInfo.supplyAmount = usdxSupplyAmount;
     wbtcInfo.supplyAmount = wbtcSupplyAmount;
-    dai2Info.supplyAmount = MAX_SUPPLY_AMOUNT;
+    usdzInfo.supplyAmount = MAX_SUPPLY_AMOUNT;
 
-    // Borrow all value in dai2
-    dai2Info.borrowAmount = borrowAmount;
+    // Borrow all value in usdz
+    usdzInfo.borrowAmount = borrowAmount;
 
     daiInfo.collateralRisk = _getCollateralRisk(spoke2, daiInfo.reserveId);
     wethInfo.collateralRisk = _getCollateralRisk(spoke2, wethInfo.reserveId);
     usdxInfo.collateralRisk = _getCollateralRisk(spoke2, usdxInfo.reserveId);
     wbtcInfo.collateralRisk = _getCollateralRisk(spoke2, wbtcInfo.reserveId);
-    dai2Info.collateralRisk = _getCollateralRisk(spoke2, dai2Info.reserveId);
+    usdzInfo.collateralRisk = _getCollateralRisk(spoke2, usdzInfo.reserveId);
 
-    // Handle supplying max of both dai and dai2
+    // Handle supplying max of both dai and usdz
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
     // Bob supply wbtc into spoke2
@@ -665,12 +665,12 @@ contract SpokeRiskPremiumTest is SpokeBase {
       Utils.supplyCollateral(spoke2, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
     }
 
-    // Bob supply dai2 into spoke2
-    Utils.supplyCollateral(spoke2, dai2Info.reserveId, bob, dai2Info.supplyAmount, bob);
+    // Bob supply usdz into spoke2
+    Utils.supplyCollateral(spoke2, usdzInfo.reserveId, bob, usdzInfo.supplyAmount, bob);
 
-    // Bob draw dai2
-    if (dai2Info.borrowAmount > 0) {
-      Utils.borrow(spoke2, dai2Info.reserveId, bob, dai2Info.borrowAmount, bob);
+    // Bob draw usdz
+    if (usdzInfo.borrowAmount > 0) {
+      Utils.borrow(spoke2, usdzInfo.reserveId, bob, usdzInfo.borrowAmount, bob);
     }
 
     // wbtc, weth, dai, and usdx will each cover part of the debt
@@ -701,7 +701,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
   ) public {
     uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
 
-    // Bound collateral risk to below dai2 so reserve is still used in rp calc
+    // Bound collateral risk to below usdz so reserve is still used in rp calc
     newCrValue = bound(newCrValue, 0, 99_99).toUint24();
 
     daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
@@ -715,30 +715,30 @@ contract SpokeRiskPremiumTest is SpokeBase {
     ReserveInfoLocal memory usdxInfo;
     ReserveInfoLocal memory wethInfo;
     ReserveInfoLocal memory wbtcInfo;
-    ReserveInfoLocal memory dai2Info;
+    ReserveInfoLocal memory usdzInfo;
 
     daiInfo.reserveId = _daiReserveId(spoke2);
     wethInfo.reserveId = _wethReserveId(spoke2);
     usdxInfo.reserveId = _usdxReserveId(spoke2);
     wbtcInfo.reserveId = _wbtcReserveId(spoke2);
-    dai2Info.reserveId = _dai2ReserveId(spoke2);
+    usdzInfo.reserveId = _usdzReserveId(spoke2);
 
     daiInfo.supplyAmount = daiSupplyAmount;
     wethInfo.supplyAmount = wethSupplyAmount;
     usdxInfo.supplyAmount = usdxSupplyAmount;
     wbtcInfo.supplyAmount = wbtcSupplyAmount;
-    dai2Info.supplyAmount = MAX_SUPPLY_AMOUNT;
+    usdzInfo.supplyAmount = MAX_SUPPLY_AMOUNT;
 
-    // Borrow all value in dai2
-    dai2Info.borrowAmount = borrowAmount;
+    // Borrow all value in usdz
+    usdzInfo.borrowAmount = borrowAmount;
 
     daiInfo.collateralRisk = _getCollateralRisk(spoke2, daiInfo.reserveId);
     wethInfo.collateralRisk = _getCollateralRisk(spoke2, wethInfo.reserveId);
     usdxInfo.collateralRisk = _getCollateralRisk(spoke2, usdxInfo.reserveId);
     wbtcInfo.collateralRisk = _getCollateralRisk(spoke2, wbtcInfo.reserveId);
-    dai2Info.collateralRisk = _getCollateralRisk(spoke2, dai2Info.reserveId);
+    usdzInfo.collateralRisk = _getCollateralRisk(spoke2, usdzInfo.reserveId);
 
-    // Handle supplying max of both dai and dai2
+    // Handle supplying max of both dai and usdz
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
     // Bob supply wbtc into spoke2
@@ -761,12 +761,12 @@ contract SpokeRiskPremiumTest is SpokeBase {
       Utils.supplyCollateral(spoke2, usdxInfo.reserveId, bob, usdxInfo.supplyAmount, bob);
     }
 
-    // Bob supply dai2 into spoke2
-    Utils.supplyCollateral(spoke2, dai2Info.reserveId, bob, dai2Info.supplyAmount, bob);
+    // Bob supply usdz into spoke2
+    Utils.supplyCollateral(spoke2, usdzInfo.reserveId, bob, usdzInfo.supplyAmount, bob);
 
-    // Bob draw dai2
-    if (dai2Info.borrowAmount > 0) {
-      Utils.borrow(spoke2, dai2Info.reserveId, bob, dai2Info.borrowAmount, bob);
+    // Bob draw usdz
+    if (usdzInfo.borrowAmount > 0) {
+      Utils.borrow(spoke2, usdzInfo.reserveId, bob, usdzInfo.borrowAmount, bob);
     }
 
     // wbtc, weth, dai, and usdx will each cover part of the debt

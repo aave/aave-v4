@@ -6,10 +6,10 @@ import 'tests/Base.t.sol';
 
 contract NoncesKeyedTest is Base {
   using SafeCast for *;
-  NoncesKeyedMock public mock;
+  MockNoncesKeyed public mock;
 
   function setUp() public override {
-    mock = new NoncesKeyedMock();
+    mock = new MockNoncesKeyed();
   }
 
   function test_useNonce_zeroKey_monotonic(bytes32) public {

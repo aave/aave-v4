@@ -1,7 +1,6 @@
 [profile.default]
 src = 'src'
 test = 'tests'
-script = 'scripts'
 out = 'out'
 libs = ['lib']
 fs_permissions = [{ access = "read", path = "tests/mocks/JsonBindings.sol" }]

@@ -62,7 +62,8 @@ contract HubSweepTest is HubBase {
 
     assertEq(hub1.getAssetSwept(daiAssetId), sweepAmount);
     assertEq(hub1.getAssetLiquidity(daiAssetId), assetLiquidity - sweepAmount);
-    assertBorrowRateSynced(hub1, daiAssetId, 'sweep');
+    _assertBorrowRateSynced(hub1, daiAssetId, 'sweep');
+    _assertHubLiquidity(hub1, daiAssetId, 'sweep');
   }
 
   ///@dev swept amount is not withdrawable
@@ -72,8 +73,10 @@ contract HubSweepTest is HubBase {
     uint256 initialLiquidity = vm.randomUint(2, MAX_SUPPLY_AMOUNT);
     uint256 swept = vm.randomUint(1, initialLiquidity);
 
-    vm.prank(address(spoke1));
-    hub1.add(daiAssetId, initialLiquidity, alice);
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(bob, address(hub1), initialLiquidity);
+    hub1.add(daiAssetId, initialLiquidity);
+    vm.stopPrank();
 
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, swept);
@@ -100,7 +103,8 @@ contract HubSweepTest is HubBase {
     hub1.sweep(daiAssetId, swept);
 
     assertEq(hub1.getAssetDrawnRate(daiAssetId), drawnRate, 'drawnRate');
-    assertBorrowRateSynced(hub1, daiAssetId, 'swept');
+    _assertBorrowRateSynced(hub1, daiAssetId, 'swept');
+    _assertHubLiquidity(hub1, daiAssetId, 'sweep');
     (uint256 drawn, ) = hub1.getAssetOwed(daiAssetId);
     assertEq(
       IBasicInterestRateStrategy(hub1.getAsset(daiAssetId).irStrategy).calculateInterestRate({

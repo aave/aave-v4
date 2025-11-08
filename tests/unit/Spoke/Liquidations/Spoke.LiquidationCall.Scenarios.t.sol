@@ -48,7 +48,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); reserveId++) {
       deal(spoke, reserveId, liquidator, MAX_SUPPLY_AMOUNT);
-      Utils.approve(hub1, spoke.getReserve(reserveId).assetId, liquidator, MAX_SUPPLY_AMOUNT);
+      Utils.approve(spoke, reserveId, liquidator, MAX_SUPPLY_AMOUNT);
     }
   }
 

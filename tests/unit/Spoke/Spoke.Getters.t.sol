@@ -216,6 +216,8 @@ contract SpokeGettersTest is SpokeBase {
     uint256 reserveId = _daiReserveId(spoke);
     uint256 assetId = daiAssetId;
     uint256 supplyAmount = 10_000e18;
+    vm.prank(alice);
+    tokenList.dai.approve(address(spoke), supplyAmount);
     Utils.supplyCollateral(spoke, reserveId, alice, supplyAmount, alice);
 
     // User debts

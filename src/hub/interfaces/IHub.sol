@@ -176,6 +176,9 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 amount
   );
 
+  /// @notice Thrown when an underlying asset is already listed.
+  error UnderlyingAlreadyListed();
+
   /// @notice Thrown when an asset is not listed.
   error AssetNotListed();
 
@@ -240,7 +243,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InvalidInterestRateStrategy();
 
   /// @notice Adds a new asset to the Hub.
-  /// @dev The same underlying asset address can be added as an asset multiple times.
+  /// @dev The same underlying asset address cannot be added as an asset multiple times.
   /// @dev The fee receiver is added as a new spoke with maximum add cap and zero draw cap.
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of `underlying`.
@@ -323,6 +326,11 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param assetId The identifier of the asset.
   /// @param amount The amount to reclaim.
   function reclaim(uint256 assetId, uint256 amount) external;
+
+  /// @notice Returns whether the underlying is listed as an asset.
+  /// @param underlying The address of the underlying asset.
+  /// @return True if the underlying asset is listed.
+  function isUnderlyingListed(address underlying) external view returns (bool);
 
   /// @notice Returns the number of listed assets.
   /// @return The number of listed assets.

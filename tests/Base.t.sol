@@ -11,7 +11,10 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  TransparentUpgradeableProxy,
+  ITransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
@@ -44,7 +47,11 @@ import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {Hub, IHub, IHubBase} from 'src/hub/Hub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
 import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
@@ -74,10 +81,11 @@ import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
 import {GatewayBaseWrapper} from 'tests/mocks/GatewayBaseWrapper.sol';
-import {NoncesKeyedMock} from 'tests/mocks/NoncesKeyedMock.sol';
+import {MockNoncesKeyed} from 'tests/mocks/MockNoncesKeyed.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
+import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
 
 abstract contract Base is Test {
   using stdStorage for StdStorage;
@@ -102,6 +110,7 @@ abstract contract Base is Test {
   uint256 internal MAX_SUPPLY_AMOUNT_WBTC;
   uint256 internal MAX_SUPPLY_AMOUNT_WETH;
   uint256 internal MAX_SUPPLY_AMOUNT_USDY;
+  uint256 internal MAX_SUPPLY_AMOUNT_USDZ;
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
   uint24 internal constant MIN_COLLATERAL_RISK_BPS = 1;
   uint24 internal constant MAX_COLLATERAL_RISK_BPS = 1000_00;
@@ -164,15 +173,16 @@ abstract contract Base is Test {
   uint256 internal daiAssetId = 2;
   uint256 internal wbtcAssetId = 3;
   uint256 internal usdyAssetId = 4;
-  uint256 internal dai2AssetId = 5;
+  uint256 internal usdzAssetId = 5;
 
   uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDY = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_USDZ = MAX_SUPPLY_AMOUNT;
 
-  Decimals internal decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18});
+  Decimals internal decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18, usdz: 18});
 
   struct Decimals {
     uint8 usdx;
@@ -180,6 +190,7 @@ abstract contract Base is Test {
     uint8 wbtc;
     uint8 usdy;
     uint8 weth;
+    uint8 usdz;
   }
 
   struct TokenList {
@@ -188,6 +199,7 @@ abstract contract Base is Test {
     TestnetERC20 dai;
     TestnetERC20 wbtc;
     TestnetERC20 usdy;
+    TestnetERC20 usdz;
   }
 
   struct SpokeInfo {
@@ -196,7 +208,7 @@ abstract contract Base is Test {
     ReserveInfo dai;
     ReserveInfo usdx;
     ReserveInfo usdy;
-    ReserveInfo dai2; // Special case: dai listed twice on hub and spoke2 (unique assetIds)
+    ReserveInfo usdz;
     uint256 MAX_ALLOWED_ASSET_ID;
   }
 
@@ -357,7 +369,8 @@ abstract contract Base is Test {
       new TestnetERC20('USDX', 'USDX', decimals.usdx),
       new TestnetERC20('DAI', 'DAI', decimals.dai),
       new TestnetERC20('WBTC', 'WBTC', decimals.wbtc),
-      new TestnetERC20('USDY', 'USDY', decimals.usdy)
+      new TestnetERC20('USDY', 'USDY', decimals.usdy),
+      new TestnetERC20('USDZ', 'USDZ', decimals.usdz)
     );
 
     vm.label(address(tokenList.weth), 'WETH');
@@ -371,6 +384,7 @@ abstract contract Base is Test {
     MAX_SUPPLY_AMOUNT_DAI = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.dai.decimals();
     MAX_SUPPLY_AMOUNT_WBTC = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.wbtc.decimals();
     MAX_SUPPLY_AMOUNT_USDY = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdy.decimals();
+    MAX_SUPPLY_AMOUNT_USDZ = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdz.decimals();
 
     address[7] memory users = [
       alice,
@@ -382,19 +396,30 @@ abstract contract Base is Test {
       POSITION_MANAGER
     ];
 
+    address[4] memory spokes = [
+      address(spoke1),
+      address(spoke2),
+      address(spoke3),
+      address(treasurySpoke)
+    ];
+
     for (uint256 x; x < users.length; ++x) {
       tokenList.usdx.mint(users[x], mintAmount_USDX);
       tokenList.dai.mint(users[x], mintAmount_DAI);
       tokenList.wbtc.mint(users[x], mintAmount_WBTC);
       tokenList.usdy.mint(users[x], mintAmount_USDY);
+      tokenList.usdz.mint(users[x], mintAmount_USDZ);
       deal(address(tokenList.weth), users[x], mintAmount_WETH);
 
       vm.startPrank(users[x]);
-      tokenList.weth.approve(address(hub1), UINT256_MAX);
-      tokenList.usdx.approve(address(hub1), UINT256_MAX);
-      tokenList.dai.approve(address(hub1), UINT256_MAX);
-      tokenList.wbtc.approve(address(hub1), UINT256_MAX);
-      tokenList.usdy.approve(address(hub1), UINT256_MAX);
+      for (uint256 y; y < spokes.length; ++y) {
+        tokenList.weth.approve(spokes[y], UINT256_MAX);
+        tokenList.usdx.approve(spokes[y], UINT256_MAX);
+        tokenList.dai.approve(spokes[y], UINT256_MAX);
+        tokenList.wbtc.approve(spokes[y], UINT256_MAX);
+        tokenList.usdy.approve(spokes[y], UINT256_MAX);
+        tokenList.usdz.approve(spokes[y], UINT256_MAX);
+      }
       vm.stopPrank();
     }
   }
@@ -405,6 +430,7 @@ abstract contract Base is Test {
     uint256 spokeMintAmount_WBTC = 100e6 * 10 ** tokenList.wbtc.decimals();
     uint256 spokeMintAmount_WETH = 100e6 * 10 ** tokenList.weth.decimals();
     uint256 spokeMintAmount_USDY = 100e6 * 10 ** tokenList.usdy.decimals();
+    uint256 spokeMintAmount_USDZ = 100e6 * 10 ** tokenList.usdz.decimals();
     address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
 
     for (uint256 x; x < spokes.length; ++x) {
@@ -412,6 +438,7 @@ abstract contract Base is Test {
       tokenList.dai.mint(spokes[x], spokeMintAmount_DAI);
       tokenList.wbtc.mint(spokes[x], spokeMintAmount_WBTC);
       tokenList.usdy.mint(spokes[x], spokeMintAmount_USDY);
+      tokenList.usdz.mint(spokes[x], spokeMintAmount_USDZ);
       deal(address(tokenList.weth), spokes[x], spokeMintAmount_WETH);
 
       vm.startPrank(spokes[x]);
@@ -420,6 +447,7 @@ abstract contract Base is Test {
       tokenList.dai.approve(address(hub1), UINT256_MAX);
       tokenList.wbtc.approve(address(hub1), UINT256_MAX);
       tokenList.usdy.approve(address(hub1), UINT256_MAX);
+      tokenList.usdz.approve(address(hub1), UINT256_MAX);
       vm.stopPrank();
     }
   }
@@ -534,10 +562,10 @@ abstract contract Base is Test {
       }),
       new bytes(0)
     );
-    // add DAI again
+    // add USDZ
     hub1.addAsset(
-      address(tokenList.dai),
-      tokenList.dai.decimals(),
+      address(tokenList.usdz),
+      tokenList.usdz.decimals(),
       address(treasurySpoke),
       address(irStrategy),
       encodedIrData
@@ -731,13 +759,13 @@ abstract contract Base is Test {
       maxLiquidationBonus: 101_50,
       liquidationFee: 15_00
     });
-    spokeInfo[spoke2].dai2.reserveConfig = ISpoke.ReserveConfig({
+    spokeInfo[spoke2].usdz.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
       collateralRisk: 100_00
     });
-    spokeInfo[spoke2].dai2.dynReserveConfig = ISpoke.DynamicReserveConfig({
+    spokeInfo[spoke2].usdz.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 70_00,
       maxLiquidationBonus: 106_00,
       liquidationFee: 10_00
@@ -778,12 +806,12 @@ abstract contract Base is Test {
       spokeInfo[spoke2].usdy.reserveConfig,
       spokeInfo[spoke2].usdy.dynReserveConfig
     );
-    spokeInfo[spoke2].dai2.reserveId = spoke2.addReserve(
+    spokeInfo[spoke2].usdz.reserveId = spoke2.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       _deployMockPriceFeed(spoke2, 1e8),
-      spokeInfo[spoke2].dai2.reserveConfig,
-      spokeInfo[spoke2].dai2.dynReserveConfig
+      spokeInfo[spoke2].usdz.reserveConfig,
+      spokeInfo[spoke2].usdz.dynReserveConfig
     );
 
     hub1.addSpoke(wbtcAssetId, address(spoke2), spokeConfig);
@@ -791,7 +819,7 @@ abstract contract Base is Test {
     hub1.addSpoke(daiAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(usdxAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(usdyAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(dai2AssetId, address(spoke2), spokeConfig);
+    hub1.addSpoke(usdzAssetId, address(spoke2), spokeConfig);
 
     // Spoke 3 reserve configs
     spokeInfo[spoke3].dai.reserveConfig = ISpoke.ReserveConfig({
@@ -1242,9 +1270,9 @@ abstract contract Base is Test {
     return spokeInfo[spoke].wbtc.reserveId;
   }
 
-  // assumes spoke has dai2 supported
-  function _dai2ReserveId(ISpoke spoke) internal view returns (uint256) {
-    return spokeInfo[spoke].dai2.reserveId;
+  // assumes spoke has usdz supported
+  function _usdzReserveId(ISpoke spoke) internal view returns (uint256) {
+    return spokeInfo[spoke].usdz.reserveId;
   }
 
   function _updateSpokePaused(
@@ -2166,7 +2194,7 @@ abstract contract Base is Test {
     uint256 indexDelta
   ) internal pure returns (uint256 feesAmount) {
     return
-      indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
+      indexDelta.rayMulUp(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
   }
 
   /// @dev Get the liquidation bonus for a given reserve at a user HF
@@ -2343,7 +2371,7 @@ abstract contract Base is Test {
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
   }
 
-  function assertBorrowRateSynced(
+  function _assertBorrowRateSynced(
     IHub targetHub,
     uint256 assetId,
     string memory operation
@@ -2361,6 +2389,16 @@ abstract contract Base is Test {
         asset.swept
       ),
       string.concat('base borrow rate after ', operation)
+    );
+  }
+
+  function _assertHubLiquidity(IHub targetHub, uint256 assetId, string memory label) internal view {
+    IHub.Asset memory asset = targetHub.getAsset(assetId);
+    uint256 currentHubBalance = IERC20(asset.underlying).balanceOf(address(targetHub));
+    assertEq(
+      targetHub.getAssetLiquidity(assetId),
+      currentHubBalance,
+      string.concat('hub liquidity ', label)
     );
   }
 
