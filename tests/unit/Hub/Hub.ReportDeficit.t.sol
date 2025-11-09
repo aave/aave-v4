@@ -7,7 +7,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubReportDeficitTest is HubBase {
   using SafeCast for *;
   using PercentageMath for uint256;
-  using MathUtils for uint256;
+  using WadRayMath for uint256;
 
   struct ReportDeficitTestParams {
     uint256 drawn;
@@ -109,7 +109,7 @@ contract HubReportDeficitTest is HubBase {
     premiumAmountRay = bound(premiumAmountRay, 0, UINT256_MAX - baseAmount);
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(usdxAssetId, address(spoke1));
-    vm.assume(baseAmount > drawn || premium > premiumAmountRay.divUp(WadRayMath.RAY));
+    vm.assume(baseAmount > drawn || premium > premiumAmountRay.fromRayUp());
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDeficitReported.selector, premium));
     vm.prank(address(spoke1));

@@ -141,10 +141,19 @@ library WadRayMath {
   }
 
   /// @notice Removes WAD precision from a given value, rounding down.
-  /// @return b = a / WAD in WAD units.
+  /// @return b = a / WAD.
   function fromWadDown(uint256 a) internal pure returns (uint256 b) {
     assembly ('memory-safe') {
       b := div(a, WAD)
+    }
+  }
+
+  /// @notice Removes RAY precision from a given value, rounding up.
+  /// @return b = ceil(a / RAY).
+  function fromRayUp(uint256 a) internal pure returns (uint256 b) {
+    assembly ('memory-safe') {
+      // add 1 if (a % RAY) > 0 to round up the division of a by RAY
+      b := add(div(a, RAY), gt(mod(a, RAY), 0))
     }
   }
 

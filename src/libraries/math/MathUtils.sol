@@ -104,14 +104,4 @@ library MathUtils {
       d := add(div(d, c), gt(mod(d, c), 0))
     }
   }
-
-  function divUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    assembly ('memory-safe') {
-      if iszero(b) {
-        revert(0, 0)
-      }
-      // add 1 if (a % b) > 0 to round up the division of a by b
-      c := add(div(a, b), gt(mod(a, b), 0))
-    }
-  }
 }

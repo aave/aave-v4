@@ -9,7 +9,6 @@ contract SpokeBase is Base {
   using PercentageMath for *;
   using WadRayMath for uint256;
   using KeyValueList for KeyValueList.List;
-  using MathUtils for uint256;
 
   struct TestData {
     SpokePosition data;
@@ -669,7 +668,7 @@ contract SpokeBase is Base {
 
     // equivalent to multiplying by risk premium (RP = premium drawn shares / base drawn shares)
     assertApproxEqAbs(
-      userPos.realizedPremiumRay.divUp(WadRayMath.RAY),
+      userPos.realizedPremiumRay.fromRayUp(),
       ((accruedBase - prevDrawnDebt) * (userPos.premiumShares)) / (userPos.drawnShares),
       3, // precision loss due to calcs in asset amount and conversion to
       'realized premium naive calc'

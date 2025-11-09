@@ -3,13 +3,12 @@
 pragma solidity ^0.8.20;
 
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 /// @title Premium library
 /// @author Aave Labs
 /// @notice Implements the premium calculations.
 library Premium {
-  using MathUtils for uint256;
+  using WadRayMath for uint256;
 
   function calculateAccruedPremiumRay(
     uint256 premiumShares,
@@ -20,11 +19,17 @@ library Premium {
     return accruedPremiumRay;
   }
 
+  function calculatePremiumDebtRay(
+    uint256 realizedPremiumRay,
+    uint256 accruedPremiumRay
+  ) internal pure returns (uint256) {
+    return realizedPremiumRay + accruedPremiumRay;
+  }
+
   function calculatePremiumDebt(
     uint256 realizedPremiumRay,
     uint256 accruedPremiumRay
   ) internal pure returns (uint256) {
-    uint256 premiumRay = realizedPremiumRay + accruedPremiumRay;
-    return premiumRay.divUp(WadRayMath.RAY);
+    return calculatePremiumDebtRay(realizedPremiumRay, accruedPremiumRay).fromRayUp();
   }
 }

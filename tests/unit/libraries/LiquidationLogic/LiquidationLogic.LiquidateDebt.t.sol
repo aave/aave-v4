@@ -6,7 +6,7 @@ import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   using SafeCast for uint256;
-  using MathUtils for uint256;
+  using WadRayMath for uint256;
 
   LiquidationLogic.LiquidateDebtParams params;
 
@@ -160,8 +160,8 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     bool isPositionEmpty = liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
         debtReserveId: reserveId,
-        debtToLiquidate: debtToLiquidateRay.divUp(WadRayMath.RAY),
-        premiumDebt: premiumDebtRay.divUp(WadRayMath.RAY),
+        debtToLiquidate: debtToLiquidateRay.fromRayUp(),
+        premiumDebt: premiumDebtRay.fromRayUp(),
         accruedPremiumRay: accruedPremiumRay,
         liquidator: liquidator,
         user: user
@@ -177,13 +177,10 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       accruedPremiumRay,
       premiumToLiquidateRay
     );
-    assertEq(
-      asset.balanceOf(address(hub)),
-      initialHubBalance + debtToLiquidateRay.divUp(WadRayMath.RAY)
-    );
+    assertEq(asset.balanceOf(address(hub)), initialHubBalance + debtToLiquidateRay.fromRayUp());
     assertEq(
       asset.balanceOf(liquidator),
-      initialLiquidatorBalance - debtToLiquidateRay.divUp(WadRayMath.RAY)
+      initialLiquidatorBalance - debtToLiquidateRay.fromRayUp()
     );
   }
 
@@ -200,8 +197,8 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
         debtReserveId: reserveId,
-        debtToLiquidate: debtToLiquidateRay.divUp(WadRayMath.RAY),
-        premiumDebt: premiumDebtRay.divUp(WadRayMath.RAY),
+        debtToLiquidate: debtToLiquidateRay.fromRayUp(),
+        premiumDebt: premiumDebtRay.fromRayUp(),
         accruedPremiumRay: accruedPremiumRay,
         liquidator: liquidator,
         user: user
@@ -217,7 +214,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     updateStorage(drawnDebt, premiumDebtRay, accruedPremiumRay);
 
     uint256 debtToLiquidateRay = drawnDebt * WadRayMath.RAY + premiumDebtRay;
-    uint256 debtToLiquidate = debtToLiquidateRay.divUp(WadRayMath.RAY);
+    uint256 debtToLiquidate = debtToLiquidateRay.fromRayUp();
     Utils.approve(spoke, address(asset), liquidator, debtToLiquidate - 1);
 
     vm.expectRevert();
@@ -225,7 +222,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       LiquidationLogic.LiquidateDebtParams({
         debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
-        premiumDebt: premiumDebtRay.divUp(WadRayMath.RAY),
+        premiumDebt: premiumDebtRay.fromRayUp(),
         accruedPremiumRay: accruedPremiumRay,
         liquidator: liquidator,
         user: user
@@ -241,7 +238,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     updateStorage(drawnDebt, premiumDebtRay, accruedPremiumRay);
 
     uint256 debtToLiquidateRay = drawnDebt * WadRayMath.RAY + premiumDebtRay;
-    uint256 debtToLiquidate = debtToLiquidateRay.divUp(WadRayMath.RAY);
+    uint256 debtToLiquidate = debtToLiquidateRay.fromRayUp();
     deal(address(asset), liquidator, debtToLiquidate - 1);
 
     vm.expectRevert();
@@ -249,7 +246,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       LiquidationLogic.LiquidateDebtParams({
         debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
-        premiumDebt: premiumDebtRay.divUp(WadRayMath.RAY),
+        premiumDebt: premiumDebtRay.fromRayUp(),
         accruedPremiumRay: accruedPremiumRay,
         liquidator: liquidator,
         user: user
@@ -265,10 +262,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setDebtPositionDrawnShares(
       hub.previewRestoreByAssets(assetId, drawnDebt)
     );
-    uint256 premiumDebtShares = hub.previewDrawByAssets(
-      assetId,
-      premiumDebtRay.divUp(WadRayMath.RAY)
-    );
+    uint256 premiumDebtShares = hub.previewDrawByAssets(assetId, premiumDebtRay.fromRayUp());
     liquidationLogicWrapper.setDebtPositionPremiumShares(premiumDebtShares);
     liquidationLogicWrapper.setDebtPositionPremiumOffsetRay(
       _calculatePremiumAssetsRay(hub, assetId, premiumDebtShares) - accruedPremiumRay

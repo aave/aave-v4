@@ -290,16 +290,15 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    uint256 premiumAmount = premiumDelta.restoredPremiumRay.divUp(WadRayMath.RAY);
-
     asset.accrue();
-    _validateRestore(asset, spoke, drawnAmount, premiumAmount);
+    _validateRestore(asset, spoke, drawnAmount, premiumDelta.restoredPremiumRay);
 
     uint120 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint120();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta);
 
+    uint256 premiumAmount = premiumDelta.restoredPremiumRay.fromRayUp();
     uint256 liquidity = asset.liquidity + drawnAmount + premiumAmount;
     require(
       asset.underlying.balanceOf(address(this)) >= liquidity,
@@ -323,15 +322,15 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    uint256 premiumAmount = premiumDelta.restoredPremiumRay.divUp(WadRayMath.RAY);
-
     asset.accrue();
-    _validateReportDeficit(asset, spoke, drawnAmount, premiumAmount);
+    _validateReportDeficit(asset, spoke, drawnAmount, premiumDelta.restoredPremiumRay);
 
     uint120 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint120();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta);
+
+    uint256 premiumAmount = premiumDelta.restoredPremiumRay.fromRayUp();
     uint120 deficitAmount = (drawnAmount + premiumAmount).toUint120();
     asset.deficit += deficitAmount;
     spoke.deficit += deficitAmount;
@@ -714,7 +713,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @dev Applies premium deltas on asset & spoke premium owed.
-  /// @dev Checks premium owed does not increase by more than `premiumAmount` + 2 wei (due to opposite rounding on premium shares and offset).
+  /// @dev Checks premium owed decreases by exactly `restoredPremiumRay`.
   /// @dev Checks updated risk premium is within allowed threshold.
   /// @dev Uses last stored index; asset accrual should have already occurred.
   function _applyPremiumDelta(
@@ -785,8 +784,7 @@ contract Hub is IHub, AccessManaged {
     return asset.toDrawnAssetsUp(spoke.drawnShares);
   }
 
-  /// @dev Returns the spoke's premium amount for a specified asset.
-  function _getSpokePremium(
+  function _getSpokePremiumRay(
     Asset storage asset,
     SpokeData storage spoke
   ) internal view returns (uint256) {
@@ -795,7 +793,16 @@ contract Hub is IHub, AccessManaged {
       asset.getDrawnIndex(),
       spoke.premiumOffsetRay
     );
-    return Premium.calculatePremiumDebt(spoke.realizedPremiumRay, accruedPremiumRay);
+
+    return Premium.calculatePremiumDebtRay(spoke.realizedPremiumRay, accruedPremiumRay);
+  }
+
+  /// @dev Returns the spoke's premium amount for a specified asset.
+  function _getSpokePremium(
+    Asset storage asset,
+    SpokeData storage spoke
+  ) internal view returns (uint256) {
+    return _getSpokePremiumRay(asset, spoke).fromRayUp();
   }
 
   /// @dev Spoke with maximum cap have unlimited add capacity.
@@ -847,30 +854,30 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset,
     SpokeData storage spoke,
     uint256 drawnAmount,
-    uint256 premiumAmount
+    uint256 premiumAmountRay
   ) internal view {
-    require(drawnAmount + premiumAmount > 0, InvalidAmount());
+    require(drawnAmount > 0 || premiumAmountRay > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
     uint256 drawn = _getSpokeDrawn(asset, spoke);
-    uint256 premium = _getSpokePremium(asset, spoke);
+    uint256 premiumRay = _getSpokePremiumRay(asset, spoke);
     require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
-    require(premiumAmount <= premium, SurplusAmountRestored(premium));
+    require(premiumAmountRay <= premiumRay, SurplusAmountRestored(premiumRay.fromRayUp()));
   }
 
   function _validateReportDeficit(
     Asset storage asset,
     SpokeData storage spoke,
     uint256 drawnAmount,
-    uint256 premiumAmount
+    uint256 premiumAmountRay
   ) internal view {
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
-    require(drawnAmount + premiumAmount > 0, InvalidAmount());
+    require(drawnAmount > 0 || premiumAmountRay > 0, InvalidAmount());
     uint256 drawn = _getSpokeDrawn(asset, spoke);
-    uint256 premium = _getSpokePremium(asset, spoke);
+    uint256 premiumRay = _getSpokePremiumRay(asset, spoke);
     require(drawnAmount <= drawn, SurplusDeficitReported(drawn));
-    require(premiumAmount <= premium, SurplusDeficitReported(premium));
+    require(premiumAmountRay <= premiumRay, SurplusDeficitReported(premiumRay.fromRayUp()));
   }
 
   function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {

@@ -2023,7 +2023,7 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     return
       _calculatePremiumDebtRay(hub, assetId, realizedPremiumRay, premiumShares, premiumOffsetRay)
-        .divUp(WadRayMath.RAY);
+        .fromRayUp();
   }
 
   function _calculatePremiumDebtRay(
@@ -2762,11 +2762,10 @@ abstract contract Base is Test {
     );
     uint256 liquidityGrowth = asset.drawnShares.rayMulUp(drawnIndex) -
       asset.drawnShares.rayMulUp(lastDrawnIndex) +
-      (asset.premiumShares * drawnIndex - asset.premiumOffsetRay + asset.realizedPremiumRay).divUp(
-        WadRayMath.RAY
-      ) -
+      (asset.premiumShares * drawnIndex - asset.premiumOffsetRay + asset.realizedPremiumRay)
+        .fromRayUp() -
       (asset.premiumShares * lastDrawnIndex - asset.premiumOffsetRay + asset.realizedPremiumRay)
-        .divUp(WadRayMath.RAY);
+        .fromRayUp();
 
     return liquidityGrowth.percentMulDown(asset.liquidityFee);
   }
