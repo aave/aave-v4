@@ -86,12 +86,32 @@ contract HubRefreshPremiumTest is HubBase {
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -1,
-      offsetDeltaRay: -WadRayMath.RAY.toInt256(),
+      offsetDeltaRay: -_calculatePremiumAssetsRay(hub1, daiAssetId, 1).toInt256(),
       accruedPremiumRay: 0,
       restoredPremiumRay: 0
     });
 
     vm.expectRevert(IHub.InvalidPremiumChange.selector);
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(daiAssetId, premiumDelta);
+  }
+
+  function test_refreshPremium_revertsWith_InvalidPremiumChange_NonZeroRestoredPremiumRay() public {
+    _createDrawnSharesAndPremiumData();
+
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+      sharesDelta: 1,
+      offsetDeltaRay: _calculatePremiumAssetsRay(hub1, daiAssetId, 1).toInt256(),
+      accruedPremiumRay: 0,
+      restoredPremiumRay: 1
+    });
+
+    vm.expectRevert(IHub.InvalidPremiumChange.selector);
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(daiAssetId, premiumDelta);
+
+    // refresh should work if restored premium is 0
+    premiumDelta.restoredPremiumRay = 0;
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
   }
