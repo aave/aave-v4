@@ -121,9 +121,13 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _checkedLiquidationCall(
       CheckedLiquidationCallParams({
         spoke: spoke,
-        collateralHub: _hub(spoke, _wethReserveId(spoke)),
+        // collateralHub: _hub(spoke, _wethReserveId(spoke)),
+        // debtHub: _hub(spoke, _daiReserveId(spoke)),
+        // collateralAssetId: _assetId(spoke, _wethReserveId(spoke)),
+        // debtAssetId: _assetId(spoke, _daiReserveId(spoke)),
         collateralReserveId: _wethReserveId(spoke),
         debtReserveId: _daiReserveId(spoke),
+        // userDebtPosition: spoke.getUserPosition(_daiReserveId(spoke), user),
         user: user,
         debtToCover: 4000e18,
         liquidator: liquidator,
@@ -220,9 +224,13 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _checkedLiquidationCall(
       CheckedLiquidationCallParams({
         spoke: spoke,
-        collateralHub: _hub(spoke, _wethReserveId(spoke)),
+        // collateralHub: _hub(spoke, _wethReserveId(spoke)),
+        // debtHub: _hub(spoke, _daiReserveId(spoke)),
+        // collateralAssetId: _assetId(spoke, _wethReserveId(spoke)),
+        // debtAssetId: _assetId(spoke, _daiReserveId(spoke)),
         collateralReserveId: _wethReserveId(spoke),
         debtReserveId: _daiReserveId(spoke),
+        // userDebtPosition: spoke.getUserPosition(_daiReserveId(spoke), user),
         user: user,
         debtToCover: 4000e18,
         liquidator: liquidator,
@@ -286,8 +294,12 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _checkedLiquidationCall(
       CheckedLiquidationCallParams({
         spoke: spoke,
-        collateralHub: _hub(spoke, _wethReserveId(spoke)),
+        // collateralHub: _hub(spoke, _wethReserveId(spoke)),
+        // collateralAssetId: _assetId(spoke, _wethReserveId(spoke)),
+        // debtAssetId: _assetId(spoke, _daiReserveId(spoke)),
         collateralReserveId: _wethReserveId(spoke),
+        // userDebtPosition: spoke.getUserPosition(_daiReserveId(spoke), user),
+        // debtHub: _hub(spoke, _daiReserveId(spoke)),
         debtReserveId: _daiReserveId(spoke),
         user: user,
         debtToCover: type(uint256).max,

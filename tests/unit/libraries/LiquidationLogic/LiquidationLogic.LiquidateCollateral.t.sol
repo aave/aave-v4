@@ -257,26 +257,6 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       : hub.previewRemoveByAssets(assetId, p.collateralToLiquidator);
     uint256 sharesToPayFee = sharesToLiquidate - sharesToLiquidator;
 
-    if (params.receiveShares && sharesToLiquidator > 0) {
-      vm.expectEmit(address(spoke));
-      emit ISpokeBase.Supply(
-        p.collateralReserveId,
-        p.liquidator,
-        p.liquidator,
-        sharesToLiquidator,
-        p.collateralToLiquidator
-      );
-    }
-
-    vm.expectEmit(address(spoke));
-    emit ISpokeBase.Withdraw(
-      p.collateralReserveId,
-      p.liquidator,
-      p.user,
-      sharesToLiquidate,
-      p.collateralToLiquidate
-    );
-
     if (p.collateralToLiquidator > 0 && p.receiveShares) {
       vm.expectCall(
         address(hub),

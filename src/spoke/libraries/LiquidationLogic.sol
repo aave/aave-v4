@@ -2,6 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -125,7 +127,7 @@ library LiquidationLogic {
     uint256 collateralSharesToLiquidate;
     uint256 collateralSharesToLiquidator;
     bool isDebtPositionEmpty;
-    uint256 drawnSharesLiquidated;
+    uint256 drawnSharesToLiquidate;
     IHubBase.PremiumDelta premiumDelta;
   }
 
@@ -226,7 +228,7 @@ library LiquidationLogic {
       })
     );
 
-    (vars.isDebtPositionEmpty, vars.drawnSharesLiquidated, vars.premiumDelta) = _liquidateDebt(
+    (vars.isDebtPositionEmpty, vars.drawnSharesToLiquidate, vars.premiumDelta) = _liquidateDebt(
       debtReserve,
       positions[params.user][params.debtReserveId],
       positionStatus[params.user],
@@ -240,12 +242,23 @@ library LiquidationLogic {
       })
     );
 
+    console.log('liq logic');
+    console.log('vars.drawnSharesToLiquidate %e', vars.drawnSharesToLiquidate);
+    console.log(
+      'vars.premiumDelta %e %e %e',
+      uint256(vars.premiumDelta.sharesDelta),
+      uint256(vars.premiumDelta.offsetDelta),
+      uint256(vars.premiumDelta.realizedDelta)
+    );
+    console.log('vars.collateralSharesToLiquidate %e', vars.collateralSharesToLiquidate);
+    console.log('vars.collateralSharesToLiquidator %e', vars.collateralSharesToLiquidator);
+
     emit ISpokeBase.LiquidationCall(
       params.collateralReserveId,
       params.debtReserveId,
       params.user,
       vars.debtToLiquidate,
-      vars.drawnSharesLiquidated,
+      vars.drawnSharesToLiquidate,
       vars.premiumDelta,
       vars.collateralToLiquidate,
       vars.collateralSharesToLiquidate,

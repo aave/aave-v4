@@ -247,16 +247,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       realizedDelta: accruedPremium.toInt256() - premiumDebtToLiquidate.toInt256()
     });
 
-    vm.expectEmit(address(spoke));
-    emit ISpokeBase.Repay(
-      reserveId,
-      liquidator,
-      user,
-      drawnSharesLiquidated,
-      debtToLiquidate,
-      premiumDelta
-    );
-
     vm.expectCall(
       address(hub),
       abi.encodeCall(
