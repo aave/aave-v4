@@ -16,11 +16,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   struct CheckedLiquidationCallParams {
     ISpoke spoke;
-    // IHub collateralHub;
-    // IHub debtHub;
-    // ISpoke.UserPosition userDebtPosition;
-    // uint256 debtAssetId;
-    // uint256 collateralAssetId;
     uint256 collateralReserveId;
     uint256 debtReserveId;
     address user;
@@ -281,9 +276,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           .collateralFactor,
         debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
         debtAssetDecimals: spoke.getReserve(debtReserveId).decimals,
-        // debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals,
         collateralAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(collateralReserveId),
-        // collateralAssetUnit: 10 ** spoke.getReserve(collateralReserveId).decimals,
         collateralAssetDecimals: spoke.getReserve(collateralReserveId).decimals,
         liquidationFee: spoke
           .getDynamicReserveConfig(
@@ -433,12 +426,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       vars.debtAssetId
     );
 
-    console.log(
-      'original %e %e',
-      _min(liquidationMetadata.debtToLiquidate, vars.userPremiumDebt),
-      vars.premiumDebtRestored
-    );
-
     vars.realizedDelta =
       (vars.userPremiumDebt - vars.userDebtPosition.realizedPremium).toInt256() -
       vars.premiumDebtRestored.toInt256();
@@ -466,22 +453,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         liquidator: params.liquidator,
         receiveShares: params.receiveShares
       });
-
-      console.log('drawnSharesToLiquidate %e', liquidationMetadata.drawnSharesToLiquidate);
-      console.log(
-        'vars.premiumDelta %e %e %e',
-        uint256(vars.premiumDelta.sharesDelta),
-        uint256(vars.premiumDelta.offsetDelta),
-        uint256(vars.premiumDelta.realizedDelta)
-      );
-      console.log(
-        'collateralSharesToLiquidate %e',
-        liquidationMetadata.collateralSharesToLiquidate
-      );
-      console.log(
-        'collateralSharesToLiquidator %e',
-        liquidationMetadata.collateralSharesToLiquidator
-      );
     }
     {
       vm.expectCall(
@@ -650,7 +621,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 collateralSharesToLiquidate;
     uint256 collateralSharesToLiquidator;
     uint256 debtToLiquidate;
-    uint256 drawnSharesToLiquidate;
     uint256 liquidationBonus;
     uint256 expectedUserRiskPremium;
   }
@@ -724,10 +694,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       vars.debtToLiquidate
     );
 
-    vars.drawnSharesToLiquidate = _hub(params.spoke, params.debtReserveId)
-      .previewRestoreByAssets(_assetId(params.spoke, params.debtReserveId), vars.debtToLiquidate)
-      .toUint120();
-
     // health factor is decreasing due to liquidation bonus / collateral factor if:
     //   (totalCollateralValue - debtToLiquidateValue * LB) * newCF / (totalDebtValue - debtToLiquidateValue) < totalCollateralValue * oldCF / totalDebtValue
     //   this is equivalent to: LB * totalDebtValue * debtToLiquidateValue * newCF > totalCollateralValue * (totalDebtValue * (newCF - oldCF) + debtToLiquidateValue * oldCF)
@@ -757,7 +723,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         collateralSharesToLiquidate: vars.collateralSharesToLiquidate,
         collateralSharesToLiquidator: vars.collateralSharesToLiquidator,
         debtToLiquidate: vars.debtToLiquidate,
-        drawnSharesToLiquidate: vars.drawnSharesToLiquidate,
         liquidationBonus: vars.liquidationBonus,
         expectedUserRiskPremium: expectedUserRiskPremium,
         expectedUserAvgCollateralFactor: expectedUserAvgCollateralFactor,
@@ -1396,8 +1361,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   ) internal virtual {}
 
   function _checkedLiquidationCall(CheckedLiquidationCallParams memory params) internal virtual {
-    // params.collateralHub = _hub(params.spoke, params.collateralReserveId);
-
     // make sure there is enough liquidity to liquidate
     _openSupplyPosition(params.spoke, params.collateralReserveId, MAX_SUPPLY_AMOUNT);
 

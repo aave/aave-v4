@@ -2,8 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -241,17 +239,6 @@ library LiquidationLogic {
         user: params.user
       })
     );
-
-    console.log('liq logic');
-    console.log('vars.drawnSharesToLiquidate %e', vars.drawnSharesToLiquidate);
-    console.log(
-      'vars.premiumDelta %e %e %e',
-      uint256(vars.premiumDelta.sharesDelta),
-      uint256(vars.premiumDelta.offsetDelta),
-      uint256(vars.premiumDelta.realizedDelta)
-    );
-    console.log('vars.collateralSharesToLiquidate %e', vars.collateralSharesToLiquidate);
-    console.log('vars.collateralSharesToLiquidator %e', vars.collateralSharesToLiquidator);
 
     emit ISpokeBase.LiquidationCall(
       params.collateralReserveId,
