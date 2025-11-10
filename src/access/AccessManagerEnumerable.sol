@@ -33,8 +33,12 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function getRoleMembers(uint64 roleId) external view returns (address[] memory) {
-    return _roleMembers[roleId].values();
+  function getRoleMembers(
+    uint64 roleId,
+    uint256 start,
+    uint256 end
+  ) external view returns (address[] memory) {
+    return _roleMembers[roleId].values(start, end);
   }
 
   /// @inheritdoc IAccessManagerEnumerable
@@ -54,9 +58,11 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   /// @inheritdoc IAccessManagerEnumerable
   function getRoleSelectors(
     uint64 roleId,
-    address target
+    address target,
+    uint256 start,
+    uint256 end
   ) external view returns (bytes4[] memory ret) {
-    bytes32[] memory rawSelectors = _roleSelectors[roleId][target].values();
+    bytes32[] memory rawSelectors = _roleSelectors[roleId][target].values(start, end);
     assembly ('memory-safe') {
       ret := rawSelectors
     }

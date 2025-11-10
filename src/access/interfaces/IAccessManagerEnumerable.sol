@@ -21,8 +21,14 @@ interface IAccessManagerEnumerable is IAccessManager {
 
   /// @notice Returns the list of members for a specified role.
   /// @param roleId The identifier of the role.
+  /// @param start The starting index for the member list.
+  /// @param end The ending index for the member list.
   /// @return The list of members for the role.
-  function getRoleMembers(uint64 roleId) external view returns (address[] memory);
+  function getRoleMembers(
+    uint64 roleId,
+    uint256 start,
+    uint256 end
+  ) external view returns (address[] memory);
 
   /// @notice Returns the selector attributed to a specified role at a specified index.
   /// @param roleId The identifier of the role.
@@ -44,6 +50,13 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @notice Returns the list of all selectors attributed to a specified role.
   /// @param roleId The identifier of the role.
   /// @param target The address of the target contract.
+  /// @param start The starting index for the selector list.
+  /// @param end The ending index for the selector list.
   /// @return The list of selectors attributed to the role.
-  function getRoleSelectors(uint64 roleId, address target) external view returns (bytes4[] memory);
+  function getRoleSelectors(
+    uint64 roleId,
+    address target,
+    uint256 start,
+    uint256 end
+  ) external view returns (bytes4[] memory);
 }
