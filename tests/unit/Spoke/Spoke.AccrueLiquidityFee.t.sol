@@ -84,7 +84,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       uint256 expectedPremiumDebt = _calculatePremiumDebt(
         hub1,
         assetId,
-        bobPosition.realizedPremiumRay,
+        // bobPosition.realizedPremiumRay,
         expectedPremiumShares,
         bobPosition.premiumOffsetRay
       );

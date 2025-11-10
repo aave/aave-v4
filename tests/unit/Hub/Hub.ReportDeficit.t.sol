@@ -39,14 +39,14 @@ contract HubReportDeficitTest is HubBase {
     vm.expectRevert(IHub.SpokeNotActive.selector);
 
     vm.prank(caller);
-    hub1.reportDeficit(usdxAssetId, 0, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.reportDeficit(usdxAssetId, 0, IHubBase.PremiumDelta(0, 0, 0));
   }
 
   function test_reportDeficit_revertsWith_InvalidAmount() public {
     vm.expectRevert(IHub.InvalidAmount.selector);
 
     vm.prank(address(spoke1));
-    hub1.reportDeficit(usdxAssetId, 0, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.reportDeficit(usdxAssetId, 0, IHubBase.PremiumDelta(0, 0, 0));
   }
 
   function test_reportDeficit_surplus_drawn_revertsWith_SurplusDeficitReported() public {
@@ -82,7 +82,7 @@ contract HubReportDeficitTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDeficitReported.selector, drawn));
     vm.prank(address(spoke1));
-    hub1.reportDeficit(daiAssetId, drawn + 1, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.reportDeficit(daiAssetId, drawn + 1, IHubBase.PremiumDelta(0, 0, 0));
   }
 
   function test_reportDeficit_fuzz_revertsWith_SurplusDeficitReported(
@@ -113,7 +113,7 @@ contract HubReportDeficitTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDeficitReported.selector, premium));
     vm.prank(address(spoke1));
-    hub1.reportDeficit(usdxAssetId, baseAmount, IHubBase.PremiumDelta(0, 0, 0, premiumAmountRay));
+    hub1.reportDeficit(usdxAssetId, baseAmount, IHubBase.PremiumDelta(0, 0, premiumAmountRay));
   }
 
   function test_reportDeficit_with_premium() public {
@@ -176,7 +176,7 @@ contract HubReportDeficitTest is HubBase {
       _calculatePremiumDebtRay(
         hub1,
         usdxAssetId,
-        asset.realizedPremiumRay,
+        // asset.realizedPremiumRay,
         asset.premiumShares,
         asset.premiumOffsetRay
       )

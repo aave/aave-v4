@@ -858,7 +858,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 expectedPremiumDebt = _calculatePremiumDebt(
       hub1,
       daiAssetId,
-      bobPosition.realizedPremiumRay,
+      // bobPosition.realizedPremiumRay,
       expectedpremiumShares,
       bobPosition.premiumOffsetRay
     );
@@ -909,7 +909,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     expectedPremiumDebt = _calculatePremiumDebt(
       hub1,
       wethAssetId,
-      bobPosition.realizedPremiumRay,
+      // bobPosition.realizedPremiumRay,
       expectedpremiumShares,
       bobPosition.premiumOffsetRay
     );
@@ -961,7 +961,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     expectedPremiumDebt = _calculatePremiumDebt(
       hub1,
       usdxAssetId,
-      bobPosition.realizedPremiumRay,
+      // bobPosition.realizedPremiumRay,
       expectedpremiumShares,
       bobPosition.premiumOffsetRay
     );
@@ -1013,7 +1013,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     expectedPremiumDebt = _calculatePremiumDebt(
       hub1,
       wbtcAssetId,
-      bobPosition.realizedPremiumRay,
+      // bobPosition.realizedPremiumRay,
       expectedpremiumShares,
       bobPosition.premiumOffsetRay
     );
