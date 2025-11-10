@@ -32,8 +32,7 @@ library LiquidationLogic {
     uint256 debtToCover;
     uint256 healthFactor;
     uint256 drawnDebt;
-    uint256 premiumDebt;
-    uint256 accruedPremiumRay;
+    uint256 premiumDebtRay;
     uint256 totalDebtValue;
     address liquidator;
     uint256 activeCollateralCount;
@@ -101,8 +100,7 @@ library LiquidationLogic {
   struct LiquidateDebtParams {
     uint256 debtReserveId;
     uint256 debtToLiquidate;
-    uint256 premiumDebt;
-    uint256 accruedPremiumRay;
+    uint256 premiumDebtRay;
     address liquidator;
     address user;
   }
@@ -159,7 +157,7 @@ library LiquidationLogic {
         collateralReserveId: params.collateralReserveId,
         collateralFactor: collateralDynConfig.collateralFactor,
         collateralReserveBalance: collateralReserveBalance,
-        debtReserveBalance: params.drawnDebt + params.premiumDebt,
+        debtReserveBalance: params.drawnDebt + params.premiumDebtRay.fromRayUp(),
         receiveShares: params.receiveShares
       })
     );
@@ -173,7 +171,7 @@ library LiquidationLogic {
           healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
           liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
           targetHealthFactor: liquidationConfig.targetHealthFactor,
-          debtReserveBalance: params.drawnDebt + params.premiumDebt,
+          debtReserveBalance: params.drawnDebt + params.premiumDebtRay.fromRayUp(),
           collateralReserveBalance: collateralReserveBalance,
           debtToCover: params.debtToCover,
           totalDebtValue: params.totalDebtValue,
@@ -210,8 +208,7 @@ library LiquidationLogic {
       LiquidateDebtParams({
         debtReserveId: params.debtReserveId,
         debtToLiquidate: debtToLiquidate,
-        premiumDebt: params.premiumDebt,
-        accruedPremiumRay: params.accruedPremiumRay,
+        premiumDebtRay: params.premiumDebtRay,
         liquidator: params.liquidator,
         user: params.user
       })
@@ -267,17 +264,9 @@ library LiquidationLogic {
   }
 
   /// @notice Settles the premium debt by realizing change in premium and resetting premium shares and offset.
-  function settlePremiumDebt(
-    ISpoke.UserPosition storage debtPosition,
-    uint256 accruedPremiumRay,
-    uint256 restoredPremiumRay
-  ) internal {
+  function settlePremiumDebt(ISpoke.UserPosition storage debtPosition) internal {
     debtPosition.premiumShares = 0;
     debtPosition.premiumOffsetRay = 0;
-    debtPosition.realizedPremiumRay =
-      debtPosition.realizedPremiumRay +
-      accruedPremiumRay -
-      restoredPremiumRay;
   }
 
   /// @dev Invoked by `liquidateUser` method.
@@ -326,18 +315,17 @@ library LiquidationLogic {
     LiquidateDebtParams memory params
   ) internal returns (bool) {
     {
-      uint256 premiumDebtToLiquidate = params.premiumDebt.min(params.debtToLiquidate);
-      uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
+      uint256 premiumDebtToLiquidateRay = params.premiumDebtRay.min(
+        params.debtToLiquidate * WadRayMath.RAY
+      );
+      uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidateRay.fromRayUp();
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: -debtPosition.premiumShares.toInt256(),
-        offsetDeltaRay: -debtPosition.premiumOffsetRay.toInt256(),
-        accruedPremiumRay: params.accruedPremiumRay,
-        // todo premium-fix: we could pass realizedPremiumRay from the hub to avoid a warm sload
-        restoredPremiumRay: (premiumDebtToLiquidate * WadRayMath.RAY).min(
-          debtPosition.realizedPremiumRay + params.accruedPremiumRay
-        )
+        offsetDeltaRay: -debtPosition.premiumOffsetRay,
+        restoredPremiumRay: (premiumDebtToLiquidateRay).min(params.premiumDebtRay)
       });
+      uint256 premiumDebtToLiquidate = premiumDelta.restoredPremiumRay.fromRayUp();
 
       debtReserve.underlying.safeTransferFrom(
         params.liquidator,
@@ -349,10 +337,7 @@ library LiquidationLogic {
         drawnDebtToLiquidate,
         premiumDelta
       );
-      debtPosition.settlePremiumDebt(
-        premiumDelta.accruedPremiumRay,
-        premiumDelta.restoredPremiumRay
-      );
+      debtPosition.settlePremiumDebt();
       debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
     }
 

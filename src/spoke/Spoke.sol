@@ -289,29 +289,26 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),
-      offsetDeltaRay: -userPosition.premiumOffsetRay.toInt256(),
-      accruedPremiumRay: 0, // populated below
+      offsetDeltaRay: -userPosition.premiumOffsetRay,
       restoredPremiumRay: 0 // populated below
     });
 
     uint256 drawnDebtRestored;
     uint256 premiumDebtRestored;
-    uint256 realizedPremiumRay;
-    (
-      drawnDebtRestored,
-      premiumDebtRestored,
-      realizedPremiumRay,
-      premiumDelta.accruedPremiumRay
-    ) = _getUserDebt(reserve.hub, reserve.assetId, userPosition);
+    uint256 premiumDebtRay;
+    (drawnDebtRestored, premiumDebtRestored, premiumDebtRay) = _getUserDebt(
+      reserve.hub,
+      reserve.assetId,
+      userPosition
+    );
     (drawnDebtRestored, premiumDebtRestored) = _calculateRestoreAmount(
       drawnDebtRestored,
       premiumDebtRestored,
       amount
     );
 
-    premiumDelta.restoredPremiumRay = (premiumDebtRestored * WadRayMath.RAY).min(
-      realizedPremiumRay + premiumDelta.accruedPremiumRay
-    );
+    premiumDelta.restoredPremiumRay = (premiumDebtRestored * WadRayMath.RAY).min(premiumDebtRay);
+    premiumDebtRestored = premiumDelta.restoredPremiumRay.fromRayUp();
     reserve.underlying.safeTransferFrom(
       msg.sender,
       address(reserve.hub),
@@ -319,7 +316,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     );
     uint256 restoredShares = reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
 
-    userPosition.settlePremiumDebt(premiumDelta.accruedPremiumRay, premiumDelta.restoredPremiumRay);
+    userPosition.settlePremiumDebt();
     userPosition.drawnShares -= restoredShares.toUint120();
     if (userPosition.drawnShares == 0) {
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
@@ -363,15 +360,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
       drawnDebt: 0, // populated below
-      premiumDebt: 0, // populated below
-      accruedPremiumRay: 0, // populated below
+      premiumDebtRay: 0, // populated below
       totalDebtValue: userAccountData.totalDebtValue,
       activeCollateralCount: userAccountData.activeCollateralCount,
       borrowedCount: userAccountData.borrowedCount,
       liquidator: msg.sender,
       receiveShares: receiveShares
     });
-    (params.drawnDebt, params.premiumDebt, , params.accruedPremiumRay) = _getUserDebt(
+    (params.drawnDebt, params.premiumDebtRay, ) = _getUserDebt(
       debtReserve.hub,
       debtReserve.assetId,
       _userPositions[user][debtReserveId]
@@ -608,7 +604,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebt, , ) = _getUserDebt(
+    (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
       reserve.hub,
       reserve.assetId,
       userPosition
@@ -620,7 +616,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebt, , ) = _getUserDebt(
+    (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
       reserve.hub,
       reserve.assetId,
       userPosition
@@ -765,7 +761,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       }
 
       if (borrowing) {
-        (uint256 drawnDebt, uint256 premiumDebt, , ) = _getUserDebt(
+        (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
           reserve.hub,
           reserve.assetId,
           userPosition
@@ -847,24 +843,19 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
 
       uint256 oldPremiumShares = userPosition.premiumShares;
-      uint256 oldPremiumOffsetRay = userPosition.premiumOffsetRay;
-      uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay(
-        oldPremiumShares,
-        drawnIndex,
-        oldPremiumOffsetRay
-      );
+      int256 oldPremiumOffsetRay = userPosition.premiumOffsetRay;
 
       uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newRiskPremium);
-      uint256 newPremiumOffsetRay = newPremiumShares * drawnIndex;
+      int256 newPremiumOffsetRay = (newPremiumShares * drawnIndex).signedSub(
+        Premium.calculatePremiumDebtRay(oldPremiumShares, drawnIndex, oldPremiumOffsetRay)
+      );
 
       userPosition.premiumShares = newPremiumShares.toUint120();
       userPosition.premiumOffsetRay = newPremiumOffsetRay;
-      userPosition.realizedPremiumRay += accruedPremiumRay;
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: newPremiumShares.signedSub(oldPremiumShares),
-        offsetDeltaRay: newPremiumOffsetRay.signedSub(oldPremiumOffsetRay),
-        accruedPremiumRay: accruedPremiumRay,
+        offsetDeltaRay: newPremiumOffsetRay - oldPremiumOffsetRay,
         restoredPremiumRay: 0
       });
 
@@ -887,24 +878,19 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       Reserve storage reserve = _reserves[reserveId];
       IHubBase hub = reserve.hub;
       uint256 assetId = reserve.assetId;
-      (
-        uint256 drawnDebtReported,
-        ,
-        uint256 realizedPremiumRay,
-        uint256 accruedPremiumRay
-      ) = _getUserDebt(hub, assetId, userPosition);
+      (uint256 drawnDebtReported, , uint256 premiumDebtRay) = _getUserDebt(
+        hub,
+        assetId,
+        userPosition
+      );
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: -userPosition.premiumShares.toInt256(),
-        offsetDeltaRay: -userPosition.premiumOffsetRay.toInt256(),
-        accruedPremiumRay: accruedPremiumRay,
-        restoredPremiumRay: realizedPremiumRay + accruedPremiumRay
+        offsetDeltaRay: -userPosition.premiumOffsetRay,
+        restoredPremiumRay: premiumDebtRay
       });
       uint256 deficitShares = hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
-      userPosition.settlePremiumDebt(
-        premiumDelta.accruedPremiumRay,
-        premiumDelta.restoredPremiumRay
-      );
+      userPosition.settlePremiumDebt();
       userPosition.drawnShares -= deficitShares.toUint120();
       positionStatus.setBorrowing(reserveId, false);
     }
@@ -967,25 +953,22 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @return The user's drawn debt.
   /// @return The user's premium debt.
-  /// @return The user's realized premium debt, in asset units + RAY.
-  /// @return The user's accrued premium debt, in asset units + RAY.
+  /// @return The user's premium debt in asset units + RAY.
   function _getUserDebt(
     IHubBase hub,
     uint256 assetId,
     UserPosition storage userPosition
-  ) internal view returns (uint256, uint256, uint256, uint256) {
+  ) internal view returns (uint256, uint256, uint256) {
     uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-    uint256 realizedPremiumRay = userPosition.realizedPremiumRay;
-    uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay(
+    uint256 premiumDebtRay = Premium.calculatePremiumDebtRay(
       userPosition.premiumShares,
       drawnIndex,
       userPosition.premiumOffsetRay
     );
     return (
       userPosition.drawnShares.rayMulUp(drawnIndex),
-      Premium.calculatePremiumDebt(realizedPremiumRay, accruedPremiumRay),
-      realizedPremiumRay,
-      accruedPremiumRay
+      premiumDebtRay.fromRayUp(),
+      premiumDebtRay
     );
   }
 

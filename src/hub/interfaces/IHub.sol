@@ -15,7 +15,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev decimals The number of decimals of the underlying asset.
   /// @dev deficit The amount of outstanding bad debt across all spokes, expressed in asset units.
   /// @dev swept The outstanding liquidity which has been invested by the reinvestment controller, expressed in asset units.
-  /// @dev realizedPremiumRay The interest-free premium debt already accrued across all spokes, expressed in asset units + RAY.
   /// @dev premiumOffsetRay The total premium offset across all spokes, used to calculate the premium, expressed in asset units + RAY.
   /// @dev liquidityFee The protocol fee charged on drawn and premium liquidity growth, expressed in BPS.
   /// @dev drawnShares The total drawn shares across all spokes.
@@ -36,9 +35,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint120 deficit;
     uint120 swept;
     //
-    uint256 realizedPremiumRay;
-    //
-    uint256 premiumOffsetRay;
+    int256 premiumOffsetRay;
     //
     uint16 liquidityFee;
     uint120 drawnShares;
@@ -70,7 +67,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Spoke position and configuration data.
   /// @dev premiumShares The premium shares of a spoke for a given asset.
   /// @dev premiumOffsetRay The premium offset of a spoke for a given asset, used to calculate the premium, expressed in asset units + RAY.
-  /// @dev realizedPremiumRay The interest-free premium debt already accrued for a spoke for a given asset, expressed in asset units + RAY.
   /// @dev drawnShares The drawn shares of a spoke for a given asset.
   /// @dev addedShares The added shares of a spoke for a given asset.
   /// @dev addCap The maximum amount that can be added by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
@@ -83,9 +79,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint120 drawnShares;
     uint120 premiumShares;
     //
-    uint256 premiumOffsetRay;
-    //
-    uint256 realizedPremiumRay;
+    int256 premiumOffsetRay;
     //
     uint120 addedShares;
     uint40 addCap;
