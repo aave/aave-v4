@@ -61,12 +61,10 @@ library AssetLogic {
 
   /// @notice Returns the total premium amount for the specified asset.
   function premium(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
-    uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay(
-      asset.premiumShares,
-      drawnIndex,
-      asset.premiumOffsetRay
-    );
-    return Premium.calculatePremiumDebt(asset.realizedPremiumRay, accruedPremiumRay);
+    return
+      Premium
+        .calculatePremiumDebtRay(asset.premiumShares, drawnIndex, asset.premiumOffsetRay)
+        .fromRayUp();
   }
 
   /// @notice Returns the total amount owed for the specified asset, including drawn and premium.
@@ -183,20 +181,14 @@ library AssetLogic {
       drawnShares.rayMulUp(previousIndex);
 
     uint120 premiumShares = asset.premiumShares;
-    uint256 accruedPremiumBeforeRay = Premium.calculateAccruedPremiumRay(
-      premiumShares,
-      previousIndex,
-      asset.premiumOffsetRay
-    );
-    uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay(
-      premiumShares,
-      drawnIndex,
-      asset.premiumOffsetRay
-    );
-    uint256 liquidityGrowthPremium = Premium.calculatePremiumDebt(
-      asset.realizedPremiumRay,
-      accruedPremiumRay
-    ) - Premium.calculatePremiumDebt(asset.realizedPremiumRay, accruedPremiumBeforeRay);
+    uint256 premiumOffsetRay = asset.premiumOffsetRay;
+    uint256 premiumBefore = Premium
+      .calculatePremiumDebtRay(premiumShares, previousIndex, premiumOffsetRay)
+      .fromRayUp();
+    uint256 premiumAfter = Premium
+      .calculatePremiumDebtRay(premiumShares, drawnIndex, premiumOffsetRay)
+      .fromRayUp();
+    uint256 liquidityGrowthPremium = premiumAfter - premiumBefore;
 
     return (liquidityGrowthDrawn + liquidityGrowthPremium).percentMulDown(liquidityFee);
   }

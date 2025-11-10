@@ -10,26 +10,12 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 library Premium {
   using WadRayMath for uint256;
 
-  function calculateAccruedPremiumRay(
+  function calculatePremiumDebtRay(
     uint256 premiumShares,
     uint256 drawnIndex,
     uint256 premiumOffsetRay
   ) internal pure returns (uint256) {
-    uint256 accruedPremiumRay = premiumShares * drawnIndex - premiumOffsetRay;
-    return accruedPremiumRay;
-  }
-
-  function calculatePremiumDebtRay(
-    uint256 realizedPremiumRay,
-    uint256 accruedPremiumRay
-  ) internal pure returns (uint256) {
-    return realizedPremiumRay + accruedPremiumRay;
-  }
-
-  function calculatePremiumDebt(
-    uint256 realizedPremiumRay,
-    uint256 accruedPremiumRay
-  ) internal pure returns (uint256) {
-    return calculatePremiumDebtRay(realizedPremiumRay, accruedPremiumRay).fromRayUp();
+    uint256 premiumDebtRay = premiumShares * drawnIndex - premiumOffsetRay;
+    return premiumDebtRay;
   }
 }
