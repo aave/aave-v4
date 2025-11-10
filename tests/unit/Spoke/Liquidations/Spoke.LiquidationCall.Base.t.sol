@@ -53,7 +53,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 collateralSharesToLiquidate;
     uint256 collateralSharesToLiquidator;
     uint256 debtToLiquidate;
-    uint256 drawnSharesToLiquidate;
     uint256 liquidationBonus;
     uint256 expectedUserRiskPremium;
     uint256 expectedUserAvgCollateralFactor;
