@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubRescueTest is HubBase {
-  address _rescueSpoke;
+  address internal _rescueSpoke;
 
   function setUp() public override {
     super.setUp();
