@@ -53,7 +53,7 @@ The key aspects of the Hub include:
 - Providing emergency stop functionality to halt operations, if needed.
 - Enforcing accounting invariants:
   - Total borrowed assets <= total supplied assets
-  - Total borrowed shares <= total minted debt shares
+  - Total borrowed shares == total minted debt shares
   - Hub assets <= sum of Spoke assets (converted from shares)
 
 ## Spokes
@@ -132,13 +132,13 @@ $RP_u = f(CR_i, C_{u, i}, P_i) = \frac{CR_0C_{u,0}P_0 + CR_1C_{u,1}P_1}{C_{u,0}P
 
 ### Premium Offset
 
-Operationally, the premium is accounted for by assigning additional (virtual) debt shares (premium debt shares) that exist solely to increase interest accrual and are not repayable principal. To separate this premium component from principal interest, we track a premium offset, which is equivalent to the principal when the borrowing call is executed. Premium drawn shares are recorded in shares units, while the premium offset is tracked in asset units.
+Operationally, the premium is implemented via additional virtual debt shares (“premium shares”) that increase interest accrual but are never repayable principal. We separate this component from principal interest by tracking a premium offset in asset units. At borrow time, the offset is set so that, in asset terms, it exactly equals the value of the premium shares. As time elapses, interest accrues on the premium shares causing their asset value to exceed the offset; the excess is the premium. Premium shares are recorded in share units. The premium offset is recorded in asset units.
 
 A user’s accrued premium debt at any time equals the assets value of their premium drawn shares minus the premium offset. On user actions, this accrued amount is moved to a realized‑premium variable and both the premium drawn shares and premium offset are reset, since the Risk Premium of a user may change and the accounting must be recalibrated.
 
 # Interest Accrual
 
-Interest on every borrow position is split into two concurrent streams accruing at the Hub’s Drawn Rate: the **drawn debt** stream accrues based on the principal (reflects utilization of Hub liquidity), resulting in the base rate $R_{sbase,i}$ for the asset $i$. The **premium debt** stream accrues based on the offset (reflects the quality mix of the position's collateral), resulting in the Risk Premium $R_{sbase,i}RP_u$, where $RP_u$ is the premium of the user $u$.
+Interest on every borrow position is split into two concurrent streams accruing at the Hub’s Drawn Rate: the **drawn debt** stream accrues based on the principal (reflects utilization of Hub liquidity), resulting in the base rate $R_{sbase,i}$ for the asset $i$. The **premium debt** stream accrues based on the premium shares minus the offset. The premium debt stream reflects the quality mix of the position's collateral, determined by the Risk Premium $R_{sbase,i}RP_u$, where $RP_u$ is the premium of the user $u$.
 
 The sum of the resulting base debt and premium debt gives the expected total interest accumulation such that the debt $D_{u,i}$ grows at rate $R_{u,i}$ for a user $u$ for the asset $i$.
 
