@@ -60,6 +60,33 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     bool hasDeficit;
   }
 
+  struct ExpectEventsAndCallsParams {
+    uint256 userDrawnDebt;
+    uint256 userPremiumDebt;
+    uint256 premiumDebtRestored;
+    uint256 baseDebtRestored;
+    int256 realizedDelta;
+    IHubBase.PremiumDelta premiumDelta;
+    ISpoke.UserPosition userReservePosition;
+    ISpoke.UserPosition userDebtPosition;
+    IHub collateralHub;
+    IHub debtHub;
+    uint256 debtAssetId;
+    uint256 collateralAssetId;
+  }
+
+  struct GetLiquidationMetadataLocal {
+    uint256 debtToTarget;
+    IHub collateralHub;
+    uint256 collateralToLiquidate;
+    uint256 collateralToLiquidator;
+    uint256 collateralSharesToLiquidate;
+    uint256 collateralSharesToLiquidator;
+    uint256 debtToLiquidate;
+    uint256 liquidationBonus;
+    uint256 expectedUserRiskPremium;
+  }
+
   /// @notice Bound liquidation config to full range of possible values
   function _bound(
     ISpoke.LiquidationConfig memory liqConfig
@@ -366,21 +393,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     return (newRiskPremium, newAvgCollateralFactor);
   }
 
-  struct ExpectEventsAndCallsParams {
-    uint256 userDrawnDebt;
-    uint256 userPremiumDebt;
-    uint256 premiumDebtRestored;
-    uint256 baseDebtRestored;
-    int256 realizedDelta;
-    IHubBase.PremiumDelta premiumDelta;
-    ISpoke.UserPosition userReservePosition;
-    ISpoke.UserPosition userDebtPosition;
-    IHub collateralHub;
-    IHub debtHub;
-    uint256 debtAssetId;
-    uint256 collateralAssetId;
-  }
-
   function _calculateExactRestoreAmount(
     IHub hub,
     uint256 drawn,
@@ -612,23 +624,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       });
   }
 
-  struct LiquidationMetadataLocal {
-    uint256 debtToTarget;
-    IHub collateralHub;
-    uint256 collateralToLiquidate;
-    uint256 collateralToLiquidator;
-    uint256 collateralSharesToLiquidate;
-    uint256 collateralSharesToLiquidator;
-    uint256 debtToLiquidate;
-    uint256 liquidationBonus;
-    uint256 expectedUserRiskPremium;
-  }
-
   function _getLiquidationMetadata(
     CheckedLiquidationCallParams memory params,
     ISpoke.UserAccountData memory userAccountDataBefore
   ) internal virtual returns (LiquidationMetadata memory) {
-    LiquidationMetadataLocal memory vars;
+    GetLiquidationMetadataLocal memory vars;
 
     vars.debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getCalculateDebtToTargetHealthFactorParams(
