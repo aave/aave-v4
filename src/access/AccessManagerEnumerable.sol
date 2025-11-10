@@ -8,16 +8,17 @@ import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnum
 
 /// @title AccessManagerEnumerable
 /// @author Aave Labs
-/// @notice Extension of AccessManager that tracks role members using EnumerableSet.
+/// @notice Extension of AccessManager that tracks role members and their function selectors using EnumerableSet.
 contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   using EnumerableSet for EnumerableSet.AddressSet;
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
-  /// @dev Mapping from roleId to set of role members.
+  /// @dev Map of role identifiers to their respective member sets.
   mapping(uint64 roleId => EnumerableSet.AddressSet) private _roleMembers;
 
-  /// @dev Mapping from roleId to set configured function selectors.
-  mapping(uint64 roleId => EnumerableSet.Bytes32Set) private _roleSelectors;
+  /// @dev Map of role identifiers and target contract addresses to their respective set of function selectors.
+  mapping(uint64 roleId => mapping(address target => EnumerableSet.Bytes32Set))
+    private _roleSelectors;
 
   constructor(address initialAdmin_) AccessManager(initialAdmin_) {}
 
@@ -37,24 +38,31 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function getRoleSelector(uint64 roleId, uint256 index) external view returns (bytes4) {
-    return bytes4(_roleSelectors[roleId].at(index));
+  function getRoleSelector(
+    uint64 roleId,
+    address target,
+    uint256 index
+  ) external view returns (bytes4) {
+    return bytes4(_roleSelectors[roleId][target].at(index));
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function getRoleSelectorCount(uint64 roleId) external view returns (uint256) {
-    return _roleSelectors[roleId].length();
+  function getRoleSelectorCount(uint64 roleId, address target) external view returns (uint256) {
+    return _roleSelectors[roleId][target].length();
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function getRoleSelectors(uint64 roleId) external view returns (bytes4[] memory ret) {
-    bytes32[] memory rawSelectors = _roleSelectors[roleId].values();
+  function getRoleSelectors(
+    uint64 roleId,
+    address target
+  ) external view returns (bytes4[] memory ret) {
+    bytes32[] memory rawSelectors = _roleSelectors[roleId][target].values();
     assembly ('memory-safe') {
       ret := rawSelectors
     }
   }
 
-  /// @dev Override AccessManager:_grantRole to track role members.
+  /// @dev Override AccessManager `_grantRole` function to track role members.
   function _grantRole(
     uint64 roleId,
     address account,
@@ -68,7 +76,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     return granted;
   }
 
-  /// @dev Override AccessManager:_grantRole to remove from tracked role members.
+  /// @dev Override AccessManager `_revokeRole` function to remove from tracked role members.
   function _revokeRole(uint64 roleId, address account) internal override returns (bool) {
     bool revoked = super._revokeRole(roleId, account);
     if (revoked) {
@@ -77,19 +85,19 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     return revoked;
   }
 
-  /// @dev Override AccessManager:_setTargetFunctionRole to track selectors attributed to roles.
+  /// @dev Override AccessManager `_setTargetFunctionRole` function to track function selectors attributed to roles.
   function _setTargetFunctionRole(
     address target,
     bytes4 selector,
     uint64 roleId
   ) internal override {
     uint64 oldRoleId = getTargetFunctionRole(target, selector);
-    if (oldRoleId != PUBLIC_ROLE) {
-      _roleSelectors[oldRoleId].remove(bytes32(selector));
+    if (oldRoleId != ADMIN_ROLE) {
+      _roleSelectors[oldRoleId][target].remove(bytes32(selector));
     }
     super._setTargetFunctionRole(target, selector, roleId);
-    if (roleId != PUBLIC_ROLE) {
-      _roleSelectors[roleId].add(bytes32(selector));
+    if (roleId != ADMIN_ROLE) {
+      _roleSelectors[roleId][target].add(bytes32(selector));
     }
   }
 }
