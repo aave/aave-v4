@@ -75,9 +75,9 @@ interface ISpokeBase {
   /// @param premiumDelta A struct representing the changes to premium debt after liquidation.
   /// @param collateralToLiquidate The total amount of collateral asset to be liquidated, inclusive of liquidation fee.
   /// @param collateralSharesToLiquidate The total amount of collateral shares to liquidate.
-  /// @param collateralSharesToLiquidator The amount of collateral shares that the liquidator will receive.
+  /// @param collateralSharesToLiquidator The amount of collateral shares that the liquidator received.
   /// @param liquidator The address of the liquidator.
-  /// @param receiveShares True if the liquidator will receive collateral in supplied shares rather than underlying assets.
+  /// @param receiveShares True if the liquidator received collateral in supplied shares rather than underlying assets.
   event LiquidationCall(
     uint256 indexed collateralReserveId,
     uint256 indexed debtReserveId,
