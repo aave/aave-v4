@@ -1521,19 +1521,27 @@ abstract contract Base is Test {
     Debts memory userDebt = getUserDebt(spoke, user, reserveId);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
 
+    uint256 accruedPremiumRay = _calculateAccruedPremiumRay(
+      hub1,
+      assetId,
+      userPosition.premiumShares,
+      userPosition.premiumOffsetRay
+    );
+
     IHubBase.PremiumDelta memory expectedPremiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),
       offsetDeltaRay: -userPosition.premiumOffsetRay.toInt256(),
       restoredPremiumRay: 0 // populated below
     });
-
     (, uint256 premiumDebtRestored) = _calculateExactRestoreAmount(
       userDebt.drawnDebt,
       userDebt.premiumDebt,
       repayAmount,
       assetId
     );
-    expectedPremiumDelta.restoredPremiumRay = (premiumDebtRestored * WadRayMath.RAY);
+    expectedPremiumDelta.restoredPremiumRay = (premiumDebtRestored * WadRayMath.RAY).min(
+      accruedPremiumRay
+    );
 
     return expectedPremiumDelta;
   }
