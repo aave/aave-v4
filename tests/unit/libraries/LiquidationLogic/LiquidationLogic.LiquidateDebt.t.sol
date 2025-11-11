@@ -136,9 +136,9 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       debtToLiquidate
     );
     (
-      bool isPositionEmpty,
       uint256 drawnSharesLiquidated,
-      IHubBase.PremiumDelta memory premiumDelta
+      IHubBase.PremiumDelta memory premiumDelta,
+      bool isPositionEmpty
     ) = liquidationLogicWrapper.liquidateDebt(
         LiquidationLogic.LiquidateDebtParams({
           debtReserveId: reserveId,

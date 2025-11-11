@@ -214,7 +214,7 @@ contract LiquidationLogicWrapper {
 
   function liquidateCollateral(
     LiquidationLogic.LiquidateCollateralParams memory params
-  ) public returns (bool, uint256, uint256) {
+  ) public returns (uint256, uint256, bool) {
     return
       LiquidationLogic._liquidateCollateral(
         _reserves[_collateralReserveId],
@@ -225,7 +225,7 @@ contract LiquidationLogicWrapper {
 
   function liquidateDebt(
     LiquidationLogic.LiquidateDebtParams memory params
-  ) public returns (bool, uint256, IHubBase.PremiumDelta memory) {
+  ) public returns (uint256, IHubBase.PremiumDelta memory, bool) {
     return
       LiquidationLogic._liquidateDebt(
         _reserves[_debtReserveId],

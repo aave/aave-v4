@@ -428,7 +428,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.debtReserveId,
       params.user
     );
-    // vars.premiumDebtRestored = _min(liquidationMetadata.debtToLiquidate, vars.userPremiumDebt);
 
     (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateExactRestoreAmount(
       vars.userDrawnDebt,

@@ -84,7 +84,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     uint256 initialHubBalance = asset.balanceOf(address(hub));
 
     uint256 sharesToLiquidate = _expectEventsAndCalls(params);
-    (bool isPositionEmpty, , uint256 sharesToLiquidator) = liquidationLogicWrapper
+    (, uint256 sharesToLiquidator, bool isPositionEmpty) = liquidationLogicWrapper
       .liquidateCollateral(params);
 
     assertEq(liquidationLogicWrapper.getCollateralReserve(), initialReserve);
