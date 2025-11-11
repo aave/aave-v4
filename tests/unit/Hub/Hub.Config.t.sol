@@ -655,6 +655,8 @@ contract HubConfigTest is HubBase {
     config.feeReceiver = makeAddr('newFeeReceiver');
 
     Utils.updateAssetConfig(hub1, ADMIN, assetId, config, new bytes(0));
+    assertEq(hub1.getSpokeAddedShares(assetId, config.feeReceiver), 0);
+    assertEq(hub1.getAsset(assetId).realizedFees, 0);
   }
 
   /// Updates the fee receiver by reusing a previously assigned spoke, with no impact on accrued fees

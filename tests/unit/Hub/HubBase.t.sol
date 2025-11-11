@@ -89,7 +89,6 @@ contract HubBase is Base {
     skip(skipTime);
   }
 
-  // TODO: Fix this to ensure premium debt creation when desired
   /// @dev Draws liquidity from the Hub via a random spoke
   function _drawLiquidity(
     uint256 assetId,
@@ -118,10 +117,23 @@ contract HubBase is Base {
 
     Utils.draw(hub1, assetId, tempSpoke, vm.randomAddress(), amount);
 
+    if (withPremium) {
+      // inflate premium data to create premium debt
+      vm.prank(tempSpoke);
+      hub1.refreshPremium(assetId, IHubBase.PremiumDelta(sharesDelta, premiumOffsetDeltaRay, 0));
+    }
+
+    uint256 drawnIndexBefore = hub1.getAssetDrawnIndex(assetId);
+
     if (skipTime) skip(365 days);
 
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
     assertGt(drawn, 0); // non-zero drawn debt
+
+    if (withPremium) {
+      assertGt(premium, 0); // non-zero premium debt
+      // cannot restore premium debt unless premium shares are fully restored
+    }
   }
 
   // @dev Draws liquidity from the Hub via a random spoke and skips time
