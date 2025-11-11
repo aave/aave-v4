@@ -260,7 +260,6 @@ contract SpokeGettersTest is SpokeBase {
     );
     assertEq(premiumShares, 0);
     assertEq(premiumOffset, 0);
-    // assertEq(realizedPremium, 0);
 
     // Asset debts
     (drawn, premium) = hub1.getAssetOwed(assetId);
@@ -272,7 +271,6 @@ contract SpokeGettersTest is SpokeBase {
     (premiumShares, premiumOffset) = hub1.getAssetPremiumData(assetId);
     assertEq(premiumShares, 0);
     assertEq(premiumOffset, 0);
-    // assertEq(realizedPremium, 0);
 
     // Spoke supply
     assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke)), supplyAmount);

@@ -515,7 +515,6 @@ contract HubRestoreTest is HubBase {
       reserveId: _daiReserveId(spoke1),
       premiumRestored: premium
     });
-    // premiumDelta.accruedPremiumRay += 1;
 
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);

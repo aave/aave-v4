@@ -87,16 +87,9 @@ contract HubOperations_Gas_Tests is Base {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta(
       -premiumShares,
       -premiumOffsetRay,
-      // _calculateAccruedPremiumRay(
-      //   hub1,
-      //   daiAssetId,
-      //   uint256(premiumShares),
-      //   premiumOffsetRay.toUint256()
-      // ),
       _calculatePremiumDebtRay(
         hub1,
         daiAssetId,
-        // spokeData.realizedPremiumRay,
         uint256(premiumShares),
         premiumOffsetRay.toUint256()
       )
@@ -138,12 +131,6 @@ contract HubOperations_Gas_Tests is Base {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta(
       -premiumShares,
       -premiumOffsetRay,
-      // _calculateAccruedPremiumRay(
-      //   hub1,
-      //   daiAssetId,
-      //   uint256(premiumShares),
-      //   premiumOffsetRay.toUint256()
-      // ),
       _calculatePremiumDebtRay(
         hub1,
         daiAssetId,
@@ -240,12 +227,6 @@ contract HubOperations_Gas_Tests is Base {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),
       offsetDeltaRay: -userPosition.premiumOffsetRay.toInt256(),
-      // accruedPremiumRay: _calculateAccruedPremiumRay(
-      //   hub1,
-      //   daiAssetId,
-      //   userPosition.premiumShares,
-      //   userPosition.premiumOffsetRay
-      // ),
       restoredPremiumRay: _calculatePremiumDebtRay(
         hub1,
         daiAssetId,

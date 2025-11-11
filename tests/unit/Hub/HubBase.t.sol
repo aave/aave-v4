@@ -211,7 +211,6 @@ contract HubBase is Base {
     IHubBase.PremiumDelta memory expectedPremiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -int256(uint256(userPosition.premiumShares)),
       offsetDeltaRay: -int256(uint256(userPosition.premiumOffsetRay)),
-      // accruedPremiumRay: accruedPremiumRay,
       restoredPremiumRay: (premiumRestored * WadRayMath.RAY).min(accruedPremiumRay)
     });
 

@@ -477,7 +477,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
       // Check debt values before accrual
       bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
-      // expectedPremiumDebt = bobPosition.realizedPremiumRay.fromRayUp();
       _assertSingleUserProtocolDebt(
         spoke2,
         _daiReserveId(spoke2),
@@ -489,7 +488,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       baseShares.dai = bobPosition.drawnShares;
 
       bobPosition = spoke2.getUserPosition(_wethReserveId(spoke2), bob);
-      // expectedPremiumDebt = bobPosition.realizedPremiumRay.fromRayUp();
       _assertSingleUserProtocolDebt(
         spoke2,
         _wethReserveId(spoke2),
@@ -501,7 +499,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       baseShares.weth = bobPosition.drawnShares;
 
       bobPosition = spoke2.getUserPosition(_usdxReserveId(spoke2), bob);
-      // expectedPremiumDebt = bobPosition.realizedPremiumRay.fromRayUp();
       _assertSingleUserProtocolDebt(
         spoke2,
         _usdxReserveId(spoke2),
@@ -513,7 +510,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       baseShares.usdx = bobPosition.drawnShares;
 
       bobPosition = spoke2.getUserPosition(_wbtcReserveId(spoke2), bob);
-      // expectedPremiumDebt = bobPosition.realizedPremiumRay.fromRayUp();
       _assertSingleUserProtocolDebt(
         spoke2,
         _wbtcReserveId(spoke2),
@@ -548,8 +544,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         amounts.daiBorrowAmount,
         drawnDebt,
         bobRp
-      ); // +
-      // bobPosition.realizedPremiumRay.fromRayUp();
+      );
       interest =
         (drawnDebt + expectedPremiumDebt) -
         (originalAmounts.daiBorrowAmount + 1e18) -
@@ -607,8 +602,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         drawnDebt,
         bobRp
       );
-      // +
-      // bobPosition.realizedPremiumRay.fromRayUp();
       interest =
         (drawnDebt + expectedPremiumDebt) -
         originalAmounts.wethBorrowAmount -
@@ -661,8 +654,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         drawnDebt,
         bobRp
       );
-      // +
-      // bobPosition.realizedPremiumRay.fromRayUp();
       interest =
         (drawnDebt + expectedPremiumDebt) -
         originalAmounts.usdxBorrowAmount -
@@ -715,8 +706,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         drawnDebt,
         bobRp
       );
-      // +
-      // bobPosition.realizedPremiumRay.fromRayUp();
       interest =
         (drawnDebt + expectedPremiumDebt) -
         originalAmounts.wbtcBorrowAmount -

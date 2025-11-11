@@ -508,7 +508,6 @@ contract SpokeBase is Base {
     address user,
     uint256 debtAmount,
     uint256 suppliedAmount,
-    // uint256 expectedRealizedPremiumRay,
     string memory label
   ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
@@ -518,7 +517,6 @@ contract SpokeBase is Base {
     ISpoke.UserPosition memory expectedUserPos = _calcUserPositionBySuppliedAndDebtAmount(
       spoke,
       user,
-      // expectedRealizedPremiumRay,
       assetId,
       debtAmount,
       suppliedAmount
@@ -587,11 +585,6 @@ contract SpokeBase is Base {
       1,
       string.concat('user premiumOffsetRay ', label)
     );
-    // assertEq(
-    //   userPos.realizedPremiumRay,
-    //   expectedUserPos.realizedPremiumRay,
-    //   string.concat('user realizedPremiumRay ', label)
-    // );
   }
 
   function _assertUserDebt(
@@ -622,7 +615,6 @@ contract SpokeBase is Base {
   function _calcUserPositionBySuppliedAndDebtAmount(
     ISpoke spoke,
     address user,
-    // uint256 expectedRealizedPremiumRay,
     uint256 assetId,
     uint256 debtAmount,
     uint256 suppliedAmount
@@ -635,7 +627,6 @@ contract SpokeBase is Base {
       .percentMulUp(userAccountData.riskPremium)
       .toUint120();
     userPos.premiumOffsetRay = _calculatePremiumAssetsRay(hub1, assetId, userPos.premiumShares);
-    // userPos.realizedPremiumRay = expectedRealizedPremiumRay;
     userPos.suppliedShares = hub1.previewAddByAssets(assetId, suppliedAmount).toUint120();
   }
 
@@ -709,13 +700,7 @@ contract SpokeBase is Base {
       );
       assertEq(
         premiumDebt,
-        _calculatePremiumDebt(
-          hub1,
-          assetId,
-          // userData.realizedPremiumRay,
-          userData.premiumShares,
-          userData.premiumOffsetRay
-        ),
+        _calculatePremiumDebt(hub1, assetId, userData.premiumShares, userData.premiumOffsetRay),
         string.concat('user ', vm.toString(i), ' premium debt ', label)
       );
     }
@@ -754,7 +739,6 @@ contract SpokeBase is Base {
     assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
     assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffsetRay, b.premiumOffsetRay, 'premiumOffsetRay');
-    // assertEq(a.realizedPremiumRay, b.realizedPremiumRay, 'realizedPremiumRay');
     assertEq(a.dynamicConfigKey, b.dynamicConfigKey, 'dynamicConfigKey');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
@@ -762,7 +746,6 @@ contract SpokeBase is Base {
   function assertEq(IHub.SpokeData memory a, IHub.SpokeData memory b) internal pure {
     assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffsetRay, b.premiumOffsetRay, 'premiumOffsetRay');
-    // assertEq(a.realizedPremiumRay, b.realizedPremiumRay, 'realizedPremiumRay');
     assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
     assertEq(a.addedShares, b.addedShares, 'addedShares');
     assertEq(a.addCap, b.addCap, 'addCap');
