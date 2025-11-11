@@ -390,9 +390,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         _calculatePremiumDebtRay(
           params.spoke,
           params.debtReserveId,
-          // userDebtPosition.realizedPremiumRay,
           userDebtPosition.premiumShares,
-          userDebtPosition.premiumOffsetRay
+          userDebtPosition.premiumOffsetRay,
+          params.spoke.getReserve(params.debtReserveId).hub.getAssetDrawnIndex(
+            params.spoke.getReserve(params.debtReserveId).assetId
+          )
         )
       )
     });

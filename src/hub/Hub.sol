@@ -2,6 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -739,6 +741,13 @@ contract Hub is IHub, AccessManaged {
     );
 
     uint24 riskPremiumThreshold = spoke.riskPremiumThreshold;
+
+    console.log(
+      'premShares | drawn * RP thresh %e %e',
+      spoke.premiumShares,
+      spoke.drawnShares.percentMulUp(riskPremiumThreshold)
+    );
+
     require(
       riskPremiumThreshold == MAX_RISK_PREMIUM_THRESHOLD ||
         spoke.premiumShares <= spoke.drawnShares.percentMulUp(riskPremiumThreshold),
@@ -929,6 +938,13 @@ contract Hub is IHub, AccessManaged {
       drawnIndex,
       premiumOffsetRay
     );
+
+    console.log(' --- HUB --- ');
+    console.log('premiumBeforeRay %e', premiumBeforeRay);
+    console.log('premiumAfterRay %e', premiumAfterRay);
+    console.log('premiumDelta.restoredPremiumRay %e', premiumDelta.restoredPremiumRay);
+    console.log('premiumDelta.sharesDelta %e', premiumDelta.sharesDelta);
+    console.log('premiumDelta.offsetDeltaRay %e', premiumDelta.offsetDeltaRay);
 
     require(
       premiumAfterRay + premiumDelta.restoredPremiumRay == premiumBeforeRay,

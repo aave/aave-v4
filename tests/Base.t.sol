@@ -2024,19 +2024,21 @@ abstract contract Base is Test {
   function _calculatePremiumDebt(
     IHub hub,
     uint256 assetId,
-    // uint256 realizedPremiumRay,
     uint256 premiumShares,
-    uint256 premiumOffsetRay
+    uint256 premiumOffsetRay,
+    uint256 lastDrawnIndex
   ) internal view returns (uint256) {
-    return _calculatePremiumDebtRay(hub, assetId, premiumShares, premiumOffsetRay).fromRayUp();
+    return
+      _calculatePremiumDebtRay(hub, assetId, premiumShares, premiumOffsetRay, lastDrawnIndex)
+        .fromRayUp();
   }
 
   function _calculatePremiumDebtRay(
     IHub hub,
     uint256 assetId,
-    // uint256 realizedPremiumRay,
     uint256 premiumShares,
-    uint256 premiumOffsetRay
+    uint256 premiumOffsetRay,
+    uint256 lastDrawnIndex
   ) internal view returns (uint256) {
     uint256 accruedPremiumRay = _calculateAccruedPremiumRay(
       hub,
@@ -2050,13 +2052,13 @@ abstract contract Base is Test {
   function _calculatePremiumDebtRay(
     ISpoke spoke,
     uint256 reserveId,
-    // uint256 realizedPremiumRay,
     uint256 premiumShares,
-    uint256 premiumOffsetRay
+    uint256 premiumOffsetRay,
+    uint256 lastDrawnIndex
   ) internal view returns (uint256) {
     IHub hub = _hub(spoke, reserveId);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    return _calculatePremiumDebtRay(hub, assetId, premiumShares, premiumOffsetRay);
+    return _calculatePremiumDebtRay(hub, assetId, premiumShares, premiumOffsetRay, lastDrawnIndex);
   }
 
   function _calculatePremiumAssetsRay(
@@ -2764,15 +2766,25 @@ abstract contract Base is Test {
     uint256 drawnIndex = asset.drawnIndex.rayMulUp(
       MathUtils.calculateLinearInterest(asset.drawnRate, uint40(asset.lastUpdateTimestamp))
     );
-    uint256 liquidityGrowth;
-    // uint256 liquidityGrowth = asset.drawnShares.rayMulUp(drawnIndex) -
-    //   asset.drawnShares.rayMulUp(lastDrawnIndex) +
-    //   (asset.premiumShares * drawnIndex - asset.premiumOffsetRay + asset.realizedPremiumRay)
-    //     .fromRayUp() -
-    //   (asset.premiumShares * lastDrawnIndex - asset.premiumOffsetRay + asset.realizedPremiumRay)
-    //     .fromRayUp();
+    uint256 liquidityGrowthDrawn = asset.drawnShares.rayMulUp(drawnIndex) -
+      asset.drawnShares.rayMulUp(lastDrawnIndex);
+    uint256 premiumBefore = _calculatePremiumDebt(
+      hub,
+      assetId,
+      asset.premiumShares,
+      asset.premiumOffsetRay,
+      lastDrawnIndex
+    );
+    uint256 premiumAfter = _calculatePremiumDebt(
+      hub,
+      assetId,
+      asset.premiumShares,
+      asset.premiumOffsetRay,
+      drawnIndex
+    );
+    uint256 liquidityGrowthPremium = premiumAfter - premiumBefore;
 
-    return liquidityGrowth.percentMulDown(asset.liquidityFee);
+    return (liquidityGrowthDrawn + liquidityGrowthPremium).percentMulDown(asset.liquidityFee);
   }
 
   function _getExpectedFeeReceiverAddedAssets(

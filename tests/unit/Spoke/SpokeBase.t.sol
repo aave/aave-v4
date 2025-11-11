@@ -541,9 +541,9 @@ contract SpokeBase is Base {
     userDebt.premiumDebt = _calculatePremiumDebt(
       hub1,
       assetId,
-      // userPos.realizedPremiumRay,
       userPos.premiumShares,
-      userPos.premiumOffsetRay
+      userPos.premiumOffsetRay,
+      hub1.getAssetDrawnIndex(assetId)
     );
     userDebt.drawnDebt = hub1.previewRestoreByShares(assetId, userPos.drawnShares);
     userDebt.totalDebt = userDebt.drawnDebt + userDebt.premiumDebt;
@@ -709,7 +709,8 @@ contract SpokeBase is Base {
           assetId,
           // userData.realizedPremiumRay,
           userData.premiumShares,
-          userData.premiumOffsetRay
+          userData.premiumOffsetRay,
+          hub1.getAssetDrawnIndex(assetId)
         ),
         string.concat('user ', vm.toString(i), ' premium debt ', label)
       );

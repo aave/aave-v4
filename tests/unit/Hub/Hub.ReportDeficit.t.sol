@@ -176,9 +176,9 @@ contract HubReportDeficitTest is HubBase {
       _calculatePremiumDebtRay(
         hub1,
         usdxAssetId,
-        // asset.realizedPremiumRay,
         asset.premiumShares,
-        asset.premiumOffsetRay
+        asset.premiumOffsetRay,
+        hub1.getAssetDrawnIndex(usdxAssetId)
       )
     ) {
       vm.expectRevert(stdError.arithmeticError);

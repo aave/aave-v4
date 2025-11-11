@@ -858,9 +858,9 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 expectedPremiumDebt = _calculatePremiumDebt(
       hub1,
       daiAssetId,
-      // bobPosition.realizedPremiumRay,
       expectedpremiumShares,
-      bobPosition.premiumOffsetRay
+      bobPosition.premiumOffsetRay,
+      hub1.getAssetDrawnIndex(daiAssetId)
     );
     uint256 interest = (drawnDebt + expectedPremiumDebt) -
       amounts.daiBorrowAmount -
@@ -909,9 +909,9 @@ contract SpokeAccrueInterestTest is SpokeBase {
     expectedPremiumDebt = _calculatePremiumDebt(
       hub1,
       wethAssetId,
-      // bobPosition.realizedPremiumRay,
       expectedpremiumShares,
-      bobPosition.premiumOffsetRay
+      bobPosition.premiumOffsetRay,
+      hub1.getAssetDrawnIndex(wethAssetId)
     );
     interest =
       (drawnDebt + expectedPremiumDebt) -
@@ -961,9 +961,9 @@ contract SpokeAccrueInterestTest is SpokeBase {
     expectedPremiumDebt = _calculatePremiumDebt(
       hub1,
       usdxAssetId,
-      // bobPosition.realizedPremiumRay,
       expectedpremiumShares,
-      bobPosition.premiumOffsetRay
+      bobPosition.premiumOffsetRay,
+      hub1.getAssetDrawnIndex(usdxAssetId)
     );
     interest =
       (drawnDebt + expectedPremiumDebt) -
@@ -1013,9 +1013,9 @@ contract SpokeAccrueInterestTest is SpokeBase {
     expectedPremiumDebt = _calculatePremiumDebt(
       hub1,
       wbtcAssetId,
-      // bobPosition.realizedPremiumRay,
       expectedpremiumShares,
-      bobPosition.premiumOffsetRay
+      bobPosition.premiumOffsetRay,
+      hub1.getAssetDrawnIndex(wbtcAssetId)
     );
     interest =
       (drawnDebt + expectedPremiumDebt) -
