@@ -372,7 +372,7 @@ library LiquidationLogic {
     debtPosition.settlePremiumDebt(premiumDelta.realizedDelta);
     debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
 
-    bool isDebtPositionEmpty;
+    bool isDebtPositionEmpty = false;
     if (debtPosition.drawnShares == 0) {
       positionStatus.setBorrowing(params.debtReserveId, false);
       isDebtPositionEmpty = true;
