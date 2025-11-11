@@ -542,8 +542,7 @@ contract SpokeBase is Base {
       hub1,
       assetId,
       userPos.premiumShares,
-      userPos.premiumOffsetRay,
-      hub1.getAssetDrawnIndex(assetId)
+      userPos.premiumOffsetRay
     );
     userDebt.drawnDebt = hub1.previewRestoreByShares(assetId, userPos.drawnShares);
     userDebt.totalDebt = userDebt.drawnDebt + userDebt.premiumDebt;
@@ -642,16 +641,22 @@ contract SpokeBase is Base {
 
   /// calculated expected realized premium
   /// MUST be called prior to user action to utilize prior exch rate
-  function _calculateExpectedRealizedPremiumRay(
-    ISpoke spoke,
-    uint256 reserveId,
-    address user
-  ) internal view returns (uint256) {
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    ISpoke.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
-    return
-      _calculateAccruedPremiumRay(hub1, assetId, userPos.premiumShares, userPos.premiumOffsetRay);
-  }
+  // function _calculateExpectedRealizedPremiumRay(
+  //   ISpoke spoke,
+  //   uint256 reserveId,
+  //   address user
+  // ) internal view returns (uint256) {
+  //   uint256 assetId = spoke.getReserve(reserveId).assetId;
+  //   ISpoke.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
+  //   return
+  //     _calculateAccruedPremiumRay(
+  //       hub1,
+  //       assetId,
+  //       userPos.premiumShares,
+  //       userPos.premiumOffsetRay,
+  //       hub1.getAssetDrawnIndex(assetId)
+  //     );
+  // }
 
   /// assert that realized premium matches naively calculated value
   function _assertRealizedPremiumCalcMatchesNaive(
@@ -709,8 +714,7 @@ contract SpokeBase is Base {
           assetId,
           // userData.realizedPremiumRay,
           userData.premiumShares,
-          userData.premiumOffsetRay,
-          hub1.getAssetDrawnIndex(assetId)
+          userData.premiumOffsetRay
         ),
         string.concat('user ', vm.toString(i), ' premium debt ', label)
       );

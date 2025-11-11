@@ -123,8 +123,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       hub,
       assetId,
       spokeData.premiumShares,
-      spokeData.premiumOffsetRay,
-      hub.getAssetDrawnIndex(assetId)
+      spokeData.premiumOffsetRay
     );
 
     uint256 drawnDebt = vm.randomUint(0, spokeDrawnOwed);

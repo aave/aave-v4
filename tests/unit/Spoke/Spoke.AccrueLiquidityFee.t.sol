@@ -85,8 +85,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
         hub1,
         assetId,
         expectedPremiumShares,
-        bobPosition.premiumOffsetRay,
-        hub1.getAssetDrawnIndex(assetId)
+        bobPosition.premiumOffsetRay
       );
       _assertSingleUserProtocolDebt(
         spoke1,

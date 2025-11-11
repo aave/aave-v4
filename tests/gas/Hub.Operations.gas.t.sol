@@ -98,8 +98,7 @@ contract HubOperations_Gas_Tests is Base {
         daiAssetId,
         // spokeData.realizedPremiumRay,
         uint256(premiumShares),
-        premiumOffsetRay.toUint256(),
-        hub1.getAssetDrawnIndex(daiAssetId)
+        premiumOffsetRay.toUint256()
       )
     );
     hub1.restore(daiAssetId, drawnRemaining, premiumDelta);
@@ -149,8 +148,7 @@ contract HubOperations_Gas_Tests is Base {
         hub1,
         daiAssetId,
         uint256(premiumShares),
-        premiumOffsetRay.toUint256(),
-        hub1.getAssetDrawnIndex(daiAssetId)
+        premiumOffsetRay.toUint256()
       )
     );
     vm.startSnapshotGas('Hub.Operations', 'restore: full - with transfer');
@@ -252,8 +250,7 @@ contract HubOperations_Gas_Tests is Base {
         hub1,
         daiAssetId,
         userPosition.premiumShares,
-        userPosition.premiumOffsetRay,
-        hub1.getAssetDrawnIndex(daiAssetId)
+        userPosition.premiumOffsetRay
       )
     });
 

@@ -2,6 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -189,6 +191,17 @@ library AssetLogic {
       .calculatePremiumDebtRay(premiumShares, drawnIndex, premiumOffsetRay)
       .fromRayUp();
     uint256 liquidityGrowthPremium = premiumAfter - premiumBefore;
+
+    console.log('--- AssetLogic ---');
+    console.log('liquidityGrowthDrawn %e', liquidityGrowthDrawn);
+    console.log('previousIndex %e %e', previousIndex, drawnIndex);
+    console.log(
+      'liquidityGrowthPremium, premiumAfter, premBefore, %e %e %e',
+      liquidityGrowthPremium,
+      premiumAfter,
+      premiumBefore
+    );
+    console.log('asset.liquidityFee %e', asset.liquidityFee);
 
     return (liquidityGrowthDrawn + liquidityGrowthPremium).percentMulDown(liquidityFee);
   }

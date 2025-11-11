@@ -859,8 +859,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       hub1,
       daiAssetId,
       expectedpremiumShares,
-      bobPosition.premiumOffsetRay,
-      hub1.getAssetDrawnIndex(daiAssetId)
+      bobPosition.premiumOffsetRay
     );
     uint256 interest = (drawnDebt + expectedPremiumDebt) -
       amounts.daiBorrowAmount -
@@ -910,8 +909,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       hub1,
       wethAssetId,
       expectedpremiumShares,
-      bobPosition.premiumOffsetRay,
-      hub1.getAssetDrawnIndex(wethAssetId)
+      bobPosition.premiumOffsetRay
     );
     interest =
       (drawnDebt + expectedPremiumDebt) -
@@ -962,8 +960,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       hub1,
       usdxAssetId,
       expectedpremiumShares,
-      bobPosition.premiumOffsetRay,
-      hub1.getAssetDrawnIndex(usdxAssetId)
+      bobPosition.premiumOffsetRay
     );
     interest =
       (drawnDebt + expectedPremiumDebt) -
@@ -1014,8 +1011,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
       hub1,
       wbtcAssetId,
       expectedpremiumShares,
-      bobPosition.premiumOffsetRay,
-      hub1.getAssetDrawnIndex(wbtcAssetId)
+      bobPosition.premiumOffsetRay
     );
     interest =
       (drawnDebt + expectedPremiumDebt) -
