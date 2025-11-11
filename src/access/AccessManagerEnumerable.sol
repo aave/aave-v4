@@ -18,7 +18,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
   /// @dev Map of role identifiers and target contract addresses to their respective set of function selectors.
   mapping(uint64 roleId => mapping(address target => EnumerableSet.Bytes32Set))
-    private _roleSelectors;
+    private _roleTargetFunctions;
 
   constructor(address initialAdmin_) AccessManager(initialAdmin_) {}
 
@@ -42,30 +42,35 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function getRoleSelector(
+  function getRoleTargetFunction(
     uint64 roleId,
     address target,
     uint256 index
   ) external view returns (bytes4) {
-    return bytes4(_roleSelectors[roleId][target].at(index));
+    return bytes4(_roleTargetFunctions[roleId][target].at(index));
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function getRoleSelectorCount(uint64 roleId, address target) external view returns (uint256) {
-    return _roleSelectors[roleId][target].length();
+  function getRoleTargetFunctionCount(
+    uint64 roleId,
+    address target
+  ) external view returns (uint256) {
+    return _roleTargetFunctions[roleId][target].length();
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function getRoleSelectors(
+  function getRoleTargetFunctions(
     uint64 roleId,
     address target,
     uint256 start,
     uint256 end
-  ) external view returns (bytes4[] memory ret) {
-    bytes32[] memory rawSelectors = _roleSelectors[roleId][target].values(start, end);
+  ) external view returns (bytes4[] memory) {
+    bytes32[] memory targetFunctions = _roleTargetFunctions[roleId][target].values(start, end);
+    bytes4[] memory targetFunctionSelectors;
     assembly ('memory-safe') {
-      ret := rawSelectors
+      targetFunctionSelectors := targetFunctions
     }
+    return targetFunctionSelectors;
   }
 
   /// @dev Override AccessManager `_grantRole` function to track role members.
@@ -98,12 +103,12 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     uint64 roleId
   ) internal override {
     uint64 oldRoleId = getTargetFunctionRole(target, selector);
-    if (oldRoleId != ADMIN_ROLE) {
-      _roleSelectors[oldRoleId][target].remove(bytes32(selector));
-    }
     super._setTargetFunctionRole(target, selector, roleId);
+    if (oldRoleId != ADMIN_ROLE) {
+      _roleTargetFunctions[oldRoleId][target].remove(bytes32(selector));
+    }
     if (roleId != ADMIN_ROLE) {
-      _roleSelectors[roleId][target].add(bytes32(selector));
+      _roleTargetFunctions[roleId][target].add(bytes32(selector));
     }
   }
 }
