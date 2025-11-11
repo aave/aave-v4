@@ -257,6 +257,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
 
     return (hub.previewRestoreByAssets(assetId, drawnDebtToLiquidate), premiumDebtToLiquidate);
   }
+
   function _updateStorage(
     uint256 drawnDebt,
     uint256 premiumDebt,
