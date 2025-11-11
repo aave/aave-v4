@@ -122,7 +122,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 spokePremiumOwedRay = _calculatePremiumDebtRay(
       hub,
       assetId,
-      // spokeData.realizedPremiumRay,
       spokeData.premiumShares,
       spokeData.premiumOffsetRay
     );

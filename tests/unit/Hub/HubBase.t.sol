@@ -123,6 +123,8 @@ contract HubBase is Base {
       hub1.refreshPremium(assetId, IHubBase.PremiumDelta(sharesDelta, premiumOffsetDeltaRay, 0));
     }
 
+    uint256 drawnIndexBefore = hub1.getAssetDrawnIndex(assetId);
+
     if (skipTime) skip(365 days);
 
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
@@ -130,10 +132,7 @@ contract HubBase is Base {
 
     if (withPremium) {
       assertGt(premium, 0); // non-zero premium debt
-      // restore premium data
-      // uint256 accruedPremiumRay = _calculateAccruedPremiumRay(hub1, assetId);
-      vm.prank(tempSpoke);
-      hub1.refreshPremium(assetId, IHubBase.PremiumDelta(-sharesDelta, -premiumOffsetDeltaRay, 0));
+      // cannot restore premium debt unless premium shares are fully restored
     }
   }
 

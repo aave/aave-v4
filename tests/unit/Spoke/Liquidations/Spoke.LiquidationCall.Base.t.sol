@@ -366,33 +366,35 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     return (newRiskPremium, newAvgCollateralFactor);
   }
 
+  struct ExpectEventsAndCallsParams {
+    ISpoke.UserPosition userDebtPosition;
+    uint256 premiumDebtRestored;
+    IHubBase.PremiumDelta premiumDelta;
+    uint256 drawnIndex;
+  }
+
   function _expectEventsAndCalls(
     CheckedLiquidationCallParams memory params,
     AccountsInfo memory /*accountsInfoBefore*/,
     LiquidationMetadata memory liquidationMetadata
   ) internal virtual {
-    ISpoke.UserPosition memory userDebtPosition = params.spoke.getUserPosition(
-      params.debtReserveId,
-      params.user
-    );
+    ExpectEventsAndCallsParams memory vars;
+
+    vars.userDebtPosition = params.spoke.getUserPosition(params.debtReserveId, params.user);
     (, uint256 userPremiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
-    uint256 premiumDebtRestored = _min(liquidationMetadata.debtToLiquidate, userPremiumDebt);
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: -userDebtPosition.premiumShares.toInt256(),
-      offsetDeltaRay: -userDebtPosition.premiumOffsetRay.toInt256(),
-      // accruedPremiumRay: _calculateAccruedPremiumRay(
-      //   params.spoke,
-      //   params.debtReserveId,
-      //   userDebtPosition.premiumShares,
-      //   userDebtPosition.premiumOffsetRay
-      // ),
-      restoredPremiumRay: (premiumDebtRestored * WadRayMath.RAY).min(
+    vars.premiumDebtRestored = _min(liquidationMetadata.debtToLiquidate, userPremiumDebt);
+    vars.drawnIndex = params.spoke.getReserve(params.debtReserveId).hub.getAssetDrawnIndex(
+      params.spoke.getReserve(params.debtReserveId).assetId
+    );
+    vars.premiumDelta = IHubBase.PremiumDelta({
+      sharesDelta: -vars.userDebtPosition.premiumShares.toInt256(),
+      offsetDeltaRay: -vars.userDebtPosition.premiumOffsetRay.toInt256(),
+      restoredPremiumRay: (vars.premiumDebtRestored * WadRayMath.RAY).min(
         _calculatePremiumDebtRay(
           params.spoke,
           params.debtReserveId,
-          // userDebtPosition.realizedPremiumRay,
-          userDebtPosition.premiumShares,
-          userDebtPosition.premiumOffsetRay
+          vars.userDebtPosition.premiumShares,
+          vars.userDebtPosition.premiumOffsetRay
         )
       )
     });
@@ -402,8 +404,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         IHubBase.restore,
         (
           _assetId(params.spoke, params.debtReserveId),
-          liquidationMetadata.debtToLiquidate - premiumDebtRestored,
-          premiumDelta
+          liquidationMetadata.debtToLiquidate - vars.premiumDebtRestored,
+          vars.premiumDelta
         )
       )
     );
@@ -451,7 +453,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           userReservePosition.drawnShares -= _hub(params.spoke, reserveId)
             .previewRestoreByAssets(
               assetId,
-              liquidationMetadata.debtToLiquidate - premiumDebtRestored
+              liquidationMetadata.debtToLiquidate - vars.premiumDebtRestored
             )
             .toUint120();
           userReservePosition.premiumShares = 0;
