@@ -186,7 +186,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
           IHubBase.PremiumDelta(
             -debtPosition.premiumShares.toInt256(),
             -debtPosition.premiumOffsetRay.toInt256(),
-            0.2e18 * WadRayMath.RAY
+            0.5e18 * WadRayMath.RAY
           )
         )
       ),

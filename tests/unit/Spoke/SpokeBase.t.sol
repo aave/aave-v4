@@ -630,6 +630,41 @@ contract SpokeBase is Base {
     userPos.suppliedShares = hub1.previewAddByAssets(assetId, suppliedAmount).toUint120();
   }
 
+  /// calculated expected realized premium
+  /// MUST be called prior to user action to utilize prior exch rate
+  function _calculateExpectedRealizedPremiumRay(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (uint256) {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    ISpoke.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
+    return
+      _calculateAccruedPremiumRay(hub1, assetId, userPos.premiumShares, userPos.premiumOffsetRay);
+  }
+
+  /// assert that realized premium matches naively calculated value
+  function _assertRealizedPremiumCalcMatchesNaive(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 prevDrawnDebt,
+    ISpoke.UserPosition memory userPos,
+    uint40 lastTimestamp
+  ) internal view {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    uint256 accruedBase = MathUtils
+      .calculateLinearInterest(hub1.getAsset(assetId).drawnRate, lastTimestamp)
+      .rayMulUp(prevDrawnDebt);
+
+    // equivalent to multiplying by risk premium (RP = premium drawn shares / base drawn shares)
+    // assertApproxEqAbs(
+    //   userPos.realizedPremiumRay.fromRayUp(),
+    //   ((accruedBase - prevDrawnDebt) * (userPos.premiumShares)) / (userPos.drawnShares),
+    //   3, // precision loss due to calcs in asset amount and conversion to
+    //   'realized premium naive calc'
+    // );
+  }
+
   /// assert that sum across User storage debt matches Reserve storage debt
   function _assertUsersAndReserveDebt(
     ISpoke spoke,
