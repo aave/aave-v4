@@ -58,7 +58,7 @@ library Utils {
     approve(ihub, assetId, caller, restorer, drawnAmount);
     transferFrom(ihub, assetId, caller, restorer, address(hub), drawnAmount);
     vm.prank(caller);
-    return hub.restore(assetId, drawnAmount, IHubBase.PremiumDelta(0, 0, 0, 0));
+    return hub.restore(assetId, drawnAmount, IHubBase.PremiumDelta(0, 0, 0));
   }
 
   function addSpoke(

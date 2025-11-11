@@ -380,17 +380,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userDebtPosition.premiumShares.toInt256(),
       offsetDeltaRay: -userDebtPosition.premiumOffsetRay.toInt256(),
-      accruedPremiumRay: _calculateAccruedPremiumRay(
-        params.spoke,
-        params.debtReserveId,
-        userDebtPosition.premiumShares,
-        userDebtPosition.premiumOffsetRay
-      ),
       restoredPremiumRay: (premiumDebtRestored * WadRayMath.RAY).min(
         _calculatePremiumDebtRay(
           params.spoke,
           params.debtReserveId,
-          userDebtPosition.realizedPremiumRay,
           userDebtPosition.premiumShares,
           userDebtPosition.premiumOffsetRay
         )
@@ -456,10 +449,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             .toUint120();
           userReservePosition.premiumShares = 0;
           userReservePosition.premiumOffsetRay = 0;
-          userReservePosition.realizedPremiumRay =
-            userReservePosition.realizedPremiumRay +
-            premiumDelta.accruedPremiumRay -
-            premiumDelta.restoredPremiumRay;
         }
         uint256 userReserveDrawnDebt = _hub(params.spoke, reserveId).previewRestoreByShares(
           assetId,

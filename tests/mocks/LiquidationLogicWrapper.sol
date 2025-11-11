@@ -104,10 +104,6 @@ contract LiquidationLogicWrapper {
     _userPositions[_borrower][_debtReserveId].premiumOffsetRay = premiumOffsetRay;
   }
 
-  function setDebtPositionRealizedPremiumRay(uint256 realizedPremiumRay) public {
-    _userPositions[_borrower][_debtReserveId].realizedPremiumRay = realizedPremiumRay;
-  }
-
   function setBorrowerCollateralStatus(uint256 reserveId, bool status) public {
     _positionStatuses[_borrower].setUsingAsCollateral(reserveId, status);
   }

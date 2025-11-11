@@ -12,7 +12,6 @@ contract HubRefreshPremiumTest is HubBase {
   struct PremiumDataLocal {
     uint256 premiumShares;
     uint256 premiumOffsetRay;
-    uint256 realizedPremiumRay;
   }
 
   function test_refreshPremium_revertsWith_SpokeNotActive() public {
@@ -48,7 +47,6 @@ contract HubRefreshPremiumTest is HubBase {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: 1,
       offsetDeltaRay: _calculatePremiumAssetsRay(hub1, daiAssetId, 1).toInt256(),
-      accruedPremiumRay: 0,
       restoredPremiumRay: 0
     });
 
@@ -87,7 +85,6 @@ contract HubRefreshPremiumTest is HubBase {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -1,
       offsetDeltaRay: -_calculatePremiumAssetsRay(hub1, daiAssetId, 1).toInt256(),
-      accruedPremiumRay: 0,
       restoredPremiumRay: 0
     });
 
@@ -102,7 +99,6 @@ contract HubRefreshPremiumTest is HubBase {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: 1,
       offsetDeltaRay: _calculatePremiumAssetsRay(hub1, daiAssetId, 1).toInt256(),
-      accruedPremiumRay: 0,
       restoredPremiumRay: 1
     });
 
@@ -140,7 +136,6 @@ contract HubRefreshPremiumTest is HubBase {
         .percentMulUp(Constants.MAX_ALLOWED_COLLATERAL_RISK + 1)
         .toInt256(), // no shares delta allowed
       offsetDeltaRay: 0,
-      accruedPremiumRay: 0,
       restoredPremiumRay: 0
     });
     premiumDelta.offsetDeltaRay = _calculatePremiumAssetsRay(
@@ -184,7 +179,6 @@ contract HubRefreshPremiumTest is HubBase {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: 1,
       offsetDeltaRay: WadRayMath.RAY.toInt256(),
-      accruedPremiumRay: 0,
       restoredPremiumRay: 0
     });
     vm.expectEmit(address(hub1));
@@ -219,7 +213,6 @@ contract HubRefreshPremiumTest is HubBase {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: sharesDelta,
       offsetDeltaRay: offsetDeltaRay,
-      accruedPremiumRay: accruedPremiumRay,
       restoredPremiumRay: 0
     });
 
@@ -299,7 +292,6 @@ contract HubRefreshPremiumTest is HubBase {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -sharesDeltaPos,
       offsetDeltaRay: -offsetDeltaPosRay,
-      accruedPremiumRay: 0,
       restoredPremiumRay: 0
     });
 
@@ -344,7 +336,6 @@ contract HubRefreshPremiumTest is HubBase {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -sharesDeltaPos.toInt256(),
       offsetDeltaRay: -offsetDeltaPosRay.toInt256(),
-      accruedPremiumRay: premiumAssetsPosRay - offsetDeltaPosRay,
       restoredPremiumRay: 0
     });
 
@@ -420,7 +411,6 @@ contract HubRefreshPremiumTest is HubBase {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: userPremiumSharesNew.toInt256() - userPremiumShares.toInt256(),
       offsetDeltaRay: userPremiumOffsetNewRay.toInt256() - userPremiumOffsetRay.toInt256(),
-      accruedPremiumRay: userAccruedPremiumRay,
       restoredPremiumRay: 0
     });
 
@@ -481,7 +471,6 @@ contract HubRefreshPremiumTest is HubBase {
       IHubBase.PremiumDelta({
         sharesDelta: 0,
         offsetDeltaRay: (spoke1AccruedPremiumRay + spoke2AccruedPremiumRay).toInt256(),
-        accruedPremiumRay: spoke1AccruedPremiumRay + spoke2AccruedPremiumRay,
         restoredPremiumRay: 0
       })
     );
@@ -507,7 +496,7 @@ contract HubRefreshPremiumTest is HubBase {
     uint256 assetId
   ) internal view returns (PremiumDataLocal memory) {
     IHub.Asset memory asset = hub.getAsset(assetId);
-    return PremiumDataLocal(asset.premiumShares, asset.premiumOffsetRay, asset.realizedPremiumRay);
+    return PremiumDataLocal(asset.premiumShares, asset.premiumOffsetRay);
   }
 
   function _applyPremiumDelta(
@@ -516,17 +505,12 @@ contract HubRefreshPremiumTest is HubBase {
   ) internal pure returns (PremiumDataLocal memory) {
     premiumData.premiumShares = premiumData.premiumShares.add(premiumDelta.sharesDelta).toUint120();
     premiumData.premiumOffsetRay = premiumData.premiumOffsetRay.add(premiumDelta.offsetDeltaRay);
-    premiumData.realizedPremiumRay =
-      premiumData.realizedPremiumRay +
-      premiumDelta.accruedPremiumRay -
-      premiumDelta.restoredPremiumRay;
     return premiumData;
   }
 
   function assertEq(PremiumDataLocal memory a, PremiumDataLocal memory b) internal pure {
     assertEq(a.premiumShares, b.premiumShares, 'premium shares');
     assertEq(a.premiumOffsetRay, b.premiumOffsetRay, 'premium offset ray');
-    assertEq(a.realizedPremiumRay, b.realizedPremiumRay, 'realized premium ray');
     assertEq(abi.encode(a), abi.encode(b));
   }
 }
