@@ -7,6 +7,10 @@ pragma solidity ^0.8.0;
 /// @notice Minimal interface for Hub.
 interface IHubBase {
   /// @notice Changes to premium owed accounting.
+  /// @dev sharesDelta The change in premium shares.
+  /// @dev offsetDeltaRay The change in premium offset, expressed in asset units + RAY.
+  /// @dev accruedPremiumRay The accrued premium, expressed in asset units + RAY.
+  /// @dev restoredPremiumRay The restored premium, expressed in asset units + RAY.
   struct PremiumDelta {
     int256 sharesDelta;
     int256 offsetDeltaRay;
