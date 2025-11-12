@@ -39,6 +39,7 @@ import {Roles} from 'src/libraries/types/Roles.sol';
 import {Rescuable, IRescuable} from 'src/utils/Rescuable.sol';
 import {NoncesKeyed, INoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
+import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 
 // hub
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
@@ -140,7 +141,7 @@ abstract contract Base is Test {
   ISpoke internal spoke2;
   ISpoke internal spoke3;
   AssetInterestRateStrategy internal irStrategy;
-  AccessManager internal accessManager;
+  IAccessManager internal accessManager;
 
   // TODO: remove after migrating to other mock users
   address internal USER1 = makeAddr('USER1');
@@ -282,7 +283,7 @@ abstract contract Base is Test {
 
   function deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
-    accessManager = new AccessManager(ADMIN);
+    accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
@@ -903,7 +904,7 @@ abstract contract Base is Test {
    * 3: WBTC
    */
   function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
-    IAccessManager accessManager2 = new AccessManager(ADMIN);
+    IAccessManager accessManager2 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     IHub hub2 = new Hub(address(accessManager2));
     vm.label(address(hub2), 'Hub2');
     AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
@@ -970,7 +971,7 @@ abstract contract Base is Test {
    * 3: WETH
    */
   function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
-    IAccessManager accessManager3 = new AccessManager(ADMIN);
+    IAccessManager accessManager3 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     IHub hub3 = new Hub(address(accessManager3));
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 

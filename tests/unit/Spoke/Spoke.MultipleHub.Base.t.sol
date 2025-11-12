@@ -35,7 +35,7 @@ contract SpokeMultipleHubBase is SpokeBase {
 
   function deployFixtures() internal virtual override {
     vm.startPrank(ADMIN);
-    accessManager = new AccessManager(ADMIN);
+    accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     // Canonical hub and spoke
     hub1 = new Hub(address(accessManager));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
