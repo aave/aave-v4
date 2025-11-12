@@ -198,6 +198,8 @@ contract HubRescueTest is HubBase {
 
     vm.prank(address(rescueSpoke));
     hub1.add(daiAssetId, liquidityFee);
+
+    assertEq(hub1.getAssetAccruedFees(daiAssetId), liquidityFee, 'accrued liquidity fee');
   }
 
   function _rescue(

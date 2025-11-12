@@ -71,15 +71,23 @@ interface ISpokeBase {
   /// @param debtReserveId The identifier of the reserve to be repaid with the liquidation.
   /// @param user The address of the borrower getting liquidated.
   /// @param debtToLiquidate The debt amount of borrowed reserve to be liquidated.
+  /// @param drawnSharesToLiquidate The amount of drawn shares to be liquidated.
+  /// @param premiumDelta A struct representing the changes to premium debt after liquidation.
   /// @param collateralToLiquidate The total amount of collateral asset to be liquidated, inclusive of liquidation fee.
+  /// @param collateralSharesToLiquidate The total amount of collateral shares to liquidate.
+  /// @param collateralSharesToLiquidator The amount of collateral shares that the liquidator received.
   /// @param liquidator The address of the liquidator.
-  /// @param receiveShares True if the liquidator receives collateral in supplied shares rather than underlying assets.
+  /// @param receiveShares True if the liquidator received collateral in supplied shares rather than underlying assets.
   event LiquidationCall(
     uint256 indexed collateralReserveId,
     uint256 indexed debtReserveId,
     address indexed user,
     uint256 debtToLiquidate,
+    uint256 drawnSharesToLiquidate,
+    IHubBase.PremiumDelta premiumDelta,
     uint256 collateralToLiquidate,
+    uint256 collateralSharesToLiquidate,
+    uint256 collateralSharesToLiquidator,
     address liquidator,
     bool receiveShares
   );
