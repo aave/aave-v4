@@ -788,13 +788,13 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset,
     SpokeData storage spoke
   ) internal view returns (uint256) {
-    uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay(
-      spoke.premiumShares,
-      asset.getDrawnIndex(),
-      spoke.premiumOffsetRay
-    );
-
-    return Premium.calculatePremiumDebtRay(spoke.realizedPremiumRay, accruedPremiumRay);
+    return
+      Premium.calculatePremiumDebtRay(
+        spoke.realizedPremiumRay,
+        spoke.premiumShares,
+        asset.getDrawnIndex(),
+        spoke.premiumOffsetRay
+      );
   }
 
   /// @dev Returns the spoke's premium amount for a specified asset.
@@ -861,8 +861,8 @@ contract Hub is IHub, AccessManaged {
     require(!spoke.paused, SpokePaused());
     uint256 drawn = _getSpokeDrawn(asset, spoke);
     uint256 premiumRay = _getSpokePremiumRay(asset, spoke);
-    require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
-    require(premiumAmountRay <= premiumRay, SurplusAmountRestored(premiumRay.fromRayUp()));
+    require(drawnAmount <= drawn, SurplusDrawnRestored(drawn));
+    require(premiumAmountRay <= premiumRay, SurplusPremiumRestored(premiumRay));
   }
 
   function _validateReportDeficit(
@@ -876,8 +876,8 @@ contract Hub is IHub, AccessManaged {
     require(drawnAmount > 0 || premiumAmountRay > 0, InvalidAmount());
     uint256 drawn = _getSpokeDrawn(asset, spoke);
     uint256 premiumRay = _getSpokePremiumRay(asset, spoke);
-    require(drawnAmount <= drawn, SurplusDeficitReported(drawn));
-    require(premiumAmountRay <= premiumRay, SurplusDeficitReported(premiumRay.fromRayUp()));
+    require(drawnAmount <= drawn, SurplusDrawnDeficitReported(drawn));
+    require(premiumAmountRay <= premiumRay, SurplusPremiumDeficitReported(premiumRay));
   }
 
   function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {
@@ -929,31 +929,30 @@ contract Hub is IHub, AccessManaged {
     uint256 realizedPremiumRay,
     PremiumDelta calldata premiumDelta
   ) internal pure returns (uint120, uint256, uint256) {
-    uint256 premiumBeforeRay = Premium.calculateAccruedPremiumRay(
+    uint256 premiumDebtRayBefore = Premium.calculatePremiumDebtRay(
+      realizedPremiumRay,
       premiumShares,
       drawnIndex,
       premiumOffsetRay
     );
-    premiumBeforeRay += realizedPremiumRay;
 
-    premiumShares = premiumShares.add(premiumDelta.sharesDelta);
-    premiumOffsetRay = premiumOffsetRay.add(premiumDelta.offsetDeltaRay);
-    realizedPremiumRay =
-      realizedPremiumRay +
+    uint256 newPremiumShares = premiumShares.add(premiumDelta.sharesDelta);
+    uint256 newPremiumOffsetRay = premiumOffsetRay.add(premiumDelta.offsetDeltaRay);
+    uint256 newRealizedPremiumRay = realizedPremiumRay +
       premiumDelta.accruedPremiumRay -
       premiumDelta.restoredPremiumRay;
 
-    uint256 premiumAfterRay = Premium.calculateAccruedPremiumRay(
-      premiumShares,
+    uint256 premiumDebtRayAfter = Premium.calculatePremiumDebtRay(
+      newRealizedPremiumRay,
+      newPremiumShares,
       drawnIndex,
-      premiumOffsetRay
+      newPremiumOffsetRay
     );
-    premiumAfterRay += realizedPremiumRay;
 
     require(
-      premiumAfterRay + premiumDelta.restoredPremiumRay == premiumBeforeRay,
+      premiumDebtRayAfter + premiumDelta.restoredPremiumRay == premiumDebtRayBefore,
       InvalidPremiumChange()
     );
-    return (premiumShares.toUint120(), premiumOffsetRay, realizedPremiumRay);
+    return (newPremiumShares.toUint120(), newPremiumOffsetRay, newRealizedPremiumRay);
   }
 }

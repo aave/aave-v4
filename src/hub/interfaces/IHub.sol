@@ -196,16 +196,24 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param drawCap The current `drawCap` of the asset, expressed in whole assets (not scaled by decimals).
   error DrawCapExceeded(uint256 drawCap);
 
-  /// @notice Thrown when a surplus amount is restored.
-  /// @param maxAllowedRestore The maximum allowed restore amount.
-  error SurplusAmountRestored(uint256 maxAllowedRestore);
+  /// @notice Thrown when a surplus drawn amount is restored.
+  /// @param maxAllowedRestore The maximum allowed drawn amount to restore.
+  error SurplusDrawnRestored(uint256 maxAllowedRestore);
+
+  /// @notice Thrown when a surplus premium amount is restored.
+  /// @param maxAllowedRestoreRay The maximum allowed premium amount to restore, expressed in asset units + RAY.
+  error SurplusPremiumRestored(uint256 maxAllowedRestoreRay);
 
   /// @notice Thrown when the premium change is invalid.
   error InvalidPremiumChange();
 
-  /// @notice Thrown when a surplus on existing deficit is reported.
-  /// @param amount The amount of surplus on existing deficit assets.
-  error SurplusDeficitReported(uint256 amount);
+  /// @notice Thrown when a drawb surplus on existing deficit is reported.
+  /// @param amount The amount of drawn surplus on existing deficit assets.
+  error SurplusDrawnDeficitReported(uint256 amount);
+
+  /// @notice Thrown when a premium surplus on existing deficit is reported.
+  /// @param amountRay The premium surplus amount on existing deficit assets, expressed in asset units + RAY.
+  error SurplusPremiumDeficitReported(uint256 amountRay);
 
   /// @notice Thrown when a spoke is not active.
   error SpokeNotActive();

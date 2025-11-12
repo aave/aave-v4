@@ -15,21 +15,16 @@ library Premium {
     uint256 drawnIndex,
     uint256 premiumOffsetRay
   ) internal pure returns (uint256) {
-    uint256 accruedPremiumRay = premiumShares * drawnIndex - premiumOffsetRay;
-    return accruedPremiumRay;
+    return premiumShares * drawnIndex - premiumOffsetRay;
   }
 
   function calculatePremiumDebtRay(
     uint256 realizedPremiumRay,
-    uint256 accruedPremiumRay
+    uint256 premiumShares,
+    uint256 drawnIndex,
+    uint256 premiumOffsetRay
   ) internal pure returns (uint256) {
-    return realizedPremiumRay + accruedPremiumRay;
-  }
-
-  function calculatePremiumDebt(
-    uint256 realizedPremiumRay,
-    uint256 accruedPremiumRay
-  ) internal pure returns (uint256) {
-    return calculatePremiumDebtRay(realizedPremiumRay, accruedPremiumRay).fromRayUp();
+    return
+      realizedPremiumRay + calculateAccruedPremiumRay(premiumShares, drawnIndex, premiumOffsetRay);
   }
 }

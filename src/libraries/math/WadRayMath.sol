@@ -140,6 +140,20 @@ library WadRayMath {
     }
   }
 
+  /// @notice Casts value to RAY, adding 27 digits of precision.
+  /// @dev Reverts if intermediate multiplication overflows.
+  /// @return b = a * RAY in RAY units.
+  function toRay(uint256 a) internal pure returns (uint256 b) {
+    // to avoid overflow, b/RAY == a
+    assembly ('memory-safe') {
+      b := mul(a, RAY)
+
+      if iszero(eq(div(b, RAY), a)) {
+        revert(0, 0)
+      }
+    }
+  }
+
   /// @notice Removes WAD precision from a given value, rounding down.
   /// @return b = a / WAD.
   function fromWadDown(uint256 a) internal pure returns (uint256 b) {

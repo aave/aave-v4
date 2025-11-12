@@ -101,7 +101,6 @@ library LiquidationLogic {
   struct LiquidateDebtParams {
     uint256 debtReserveId;
     uint256 debtToLiquidate;
-    uint256 premiumDebt;
     uint256 accruedPremiumRay;
     address liquidator;
     address user;
@@ -210,7 +209,6 @@ library LiquidationLogic {
       LiquidateDebtParams({
         debtReserveId: params.debtReserveId,
         debtToLiquidate: debtToLiquidate,
-        premiumDebt: params.premiumDebt,
         accruedPremiumRay: params.accruedPremiumRay,
         liquidator: params.liquidator,
         user: params.user
@@ -326,17 +324,17 @@ library LiquidationLogic {
     LiquidateDebtParams memory params
   ) internal returns (bool) {
     {
-      uint256 premiumDebtToLiquidate = params.premiumDebt.min(params.debtToLiquidate);
+      uint256 premiumDebtToLiquidateRay = params.debtToLiquidate.toRay().min(
+        debtPosition.realizedPremiumRay + params.accruedPremiumRay
+      );
+      uint256 premiumDebtToLiquidate = premiumDebtToLiquidateRay.fromRayUp();
       uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: -debtPosition.premiumShares.toInt256(),
         offsetDeltaRay: -debtPosition.premiumOffsetRay.toInt256(),
         accruedPremiumRay: params.accruedPremiumRay,
-        // todo premium-fix: we could pass realizedPremiumRay from the hub to avoid a warm sload
-        restoredPremiumRay: (premiumDebtToLiquidate * WadRayMath.RAY).min(
-          debtPosition.realizedPremiumRay + params.accruedPremiumRay
-        )
+        restoredPremiumRay: premiumDebtToLiquidateRay
       });
 
       debtReserve.underlying.safeTransferFrom(

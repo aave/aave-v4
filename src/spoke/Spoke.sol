@@ -295,23 +295,20 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     });
 
     uint256 drawnDebtRestored;
-    uint256 premiumDebtRestored;
     uint256 realizedPremiumRay;
-    (
+    (drawnDebtRestored, , realizedPremiumRay, premiumDelta.accruedPremiumRay) = _getUserDebt(
+      reserve.hub,
+      reserve.assetId,
+      userPosition
+    );
+
+    (drawnDebtRestored, premiumDelta.restoredPremiumRay) = _calculateRestoreAmount(
       drawnDebtRestored,
-      premiumDebtRestored,
-      realizedPremiumRay,
-      premiumDelta.accruedPremiumRay
-    ) = _getUserDebt(reserve.hub, reserve.assetId, userPosition);
-    (drawnDebtRestored, premiumDebtRestored) = _calculateRestoreAmount(
-      drawnDebtRestored,
-      premiumDebtRestored,
+      realizedPremiumRay + premiumDelta.accruedPremiumRay,
       amount
     );
 
-    premiumDelta.restoredPremiumRay = (premiumDebtRestored * WadRayMath.RAY).min(
-      realizedPremiumRay + premiumDelta.accruedPremiumRay
-    );
+    uint256 premiumDebtRestored = premiumDelta.restoredPremiumRay.fromRayUp();
     reserve.underlying.safeTransferFrom(
       msg.sender,
       address(reserve.hub),
@@ -983,7 +980,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     );
     return (
       userPosition.drawnShares.rayMulUp(drawnIndex),
-      Premium.calculatePremiumDebt(realizedPremiumRay, accruedPremiumRay),
+      (realizedPremiumRay + accruedPremiumRay).fromRayUp(),
       realizedPremiumRay,
       accruedPremiumRay
     );
@@ -1008,16 +1005,18 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   function _calculateRestoreAmount(
     uint256 drawnDebt,
-    uint256 premiumDebt,
+    uint256 premiumDebtRay,
     uint256 amount
   ) internal pure returns (uint256, uint256) {
+    uint256 premiumDebt = premiumDebtRay.fromRayUp();
     if (amount >= drawnDebt + premiumDebt) {
-      return (drawnDebt, premiumDebt);
+      return (drawnDebt, premiumDebtRay);
     }
-    if (amount <= premiumDebt) {
-      return (0, amount);
+    uint256 amountRay = amount.toRay();
+    if (amountRay <= premiumDebtRay) {
+      return (0, amountRay);
     }
-    return (amount - premiumDebt, premiumDebt);
+    return (amount - premiumDebt, premiumDebtRay);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

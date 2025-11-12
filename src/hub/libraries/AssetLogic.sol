@@ -61,12 +61,15 @@ library AssetLogic {
 
   /// @notice Returns the total premium amount for the specified asset.
   function premium(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
-    uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay(
-      asset.premiumShares,
-      drawnIndex,
-      asset.premiumOffsetRay
-    );
-    return Premium.calculatePremiumDebt(asset.realizedPremiumRay, accruedPremiumRay);
+    return
+      Premium
+        .calculatePremiumDebtRay(
+          asset.realizedPremiumRay,
+          asset.premiumShares,
+          drawnIndex,
+          asset.premiumOffsetRay
+        )
+        .fromRayUp();
   }
 
   /// @notice Returns the total amount owed for the specified asset, including drawn and premium.
@@ -182,21 +185,23 @@ library AssetLogic {
     uint256 liquidityGrowthDrawn = drawnShares.rayMulUp(drawnIndex) -
       drawnShares.rayMulUp(previousIndex);
 
+    uint256 realizedPremiumRay = asset.realizedPremiumRay;
     uint120 premiumShares = asset.premiumShares;
-    uint256 accruedPremiumBeforeRay = Premium.calculateAccruedPremiumRay(
-      premiumShares,
-      previousIndex,
-      asset.premiumOffsetRay
-    );
-    uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay(
+    uint256 premiumOffsetRay = asset.premiumOffsetRay;
+    uint256 premiumDebtRayAfter = Premium.calculatePremiumDebtRay(
+      realizedPremiumRay,
       premiumShares,
       drawnIndex,
-      asset.premiumOffsetRay
+      premiumOffsetRay
     );
-    uint256 liquidityGrowthPremium = Premium.calculatePremiumDebt(
-      asset.realizedPremiumRay,
-      accruedPremiumRay
-    ) - Premium.calculatePremiumDebt(asset.realizedPremiumRay, accruedPremiumBeforeRay);
+    uint256 premiumDebtRayBefore = Premium.calculatePremiumDebtRay(
+      realizedPremiumRay,
+      premiumShares,
+      previousIndex,
+      premiumOffsetRay
+    );
+    uint256 liquidityGrowthPremium = premiumDebtRayAfter.fromRayUp() -
+      premiumDebtRayBefore.fromRayUp();
 
     return (liquidityGrowthDrawn + liquidityGrowthPremium).percentMulDown(liquidityFee);
   }
