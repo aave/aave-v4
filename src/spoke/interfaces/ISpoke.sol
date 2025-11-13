@@ -208,6 +208,18 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     IHubBase.PremiumDelta premiumDelta
   );
 
+  /// @notice Emitted on liquidations that report deficit to the Hub.
+  /// @param user The address of the user.
+  /// @param reserveId The identifier of the reserve.
+  /// @param drawnShares The amount of drawn shares reported as deficit.
+  /// @param premiumDelta The premium delta data struct reported as deficit.
+  event ReportDeficit(
+    address indexed user,
+    uint256 indexed reserveId,
+    uint256 drawnShares,
+    IHubBase.PremiumDelta premiumDelta
+  );
+
   /// @notice Thrown when an asset is not listed on the Hub when adding a reserve.
   error AssetNotListed();
 
