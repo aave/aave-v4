@@ -115,17 +115,10 @@ library LiquidationLogic {
     bool receiveShares;
   }
 
-  struct LiquidateUserVars {
-    uint256 collateralReserveBalance;
+  struct LiquidationAmounts {
     uint256 collateralToLiquidate;
     uint256 collateralToLiquidator;
     uint256 debtToLiquidate;
-    bool isCollateralPositionEmpty;
-    uint256 collateralSharesToLiquidate;
-    uint256 collateralSharesToLiquidator;
-    bool isDebtPositionEmpty;
-    uint256 drawnSharesToLiquidate;
-    IHubBase.PremiumDelta premiumDelta;
   }
 
   // see ISpoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD docs
@@ -152,9 +145,7 @@ library LiquidationLogic {
     ISpoke.DynamicReserveConfig storage collateralDynConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
-    LiquidateUserVars memory vars;
-
-    vars.collateralReserveBalance = collateralReserve.hub.previewRemoveByShares(
+    uint256 collateralReserveBalance = collateralReserve.hub.previewRemoveByShares(
       collateralReserve.assetId,
       positions[params.user][params.collateralReserveId].suppliedShares
     );
@@ -172,23 +163,19 @@ library LiquidationLogic {
         healthFactor: params.healthFactor,
         collateralReserveId: params.collateralReserveId,
         collateralFactor: collateralDynConfig.collateralFactor,
-        collateralReserveBalance: vars.collateralReserveBalance,
+        collateralReserveBalance: collateralReserveBalance,
         debtReserveBalance: params.drawnDebt + params.premiumDebt,
         receiveShares: params.receiveShares
       })
     );
 
-    (
-      vars.collateralToLiquidate,
-      vars.collateralToLiquidator,
-      vars.debtToLiquidate
-    ) = _calculateLiquidationAmounts(
+    LiquidationAmounts memory liquidationAmounts = _calculateLiquidationAmounts(
       CalculateLiquidationAmountsParams({
         healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
         targetHealthFactor: liquidationConfig.targetHealthFactor,
         debtReserveBalance: params.drawnDebt + params.premiumDebt,
-        collateralReserveBalance: vars.collateralReserveBalance,
+        collateralReserveBalance: collateralReserveBalance,
         debtToCover: params.debtToCover,
         totalDebtValue: params.totalDebtValue,
         healthFactor: params.healthFactor,
@@ -205,53 +192,57 @@ library LiquidationLogic {
     );
 
     (
-      vars.collateralSharesToLiquidate,
-      vars.collateralSharesToLiquidator,
-      vars.isCollateralPositionEmpty
+      uint256 collateralSharesToLiquidate,
+      uint256 collateralSharesToLiquidator,
+      bool isCollateralPositionEmpty
     ) = _liquidateCollateral(
-      collateralReserve,
-      positions,
-      LiquidateCollateralParams({
-        collateralReserveId: params.collateralReserveId,
-        collateralToLiquidate: vars.collateralToLiquidate,
-        collateralToLiquidator: vars.collateralToLiquidator,
-        liquidator: params.liquidator,
-        user: params.user,
-        receiveShares: params.receiveShares
-      })
-    );
+        collateralReserve,
+        positions,
+        LiquidateCollateralParams({
+          collateralReserveId: params.collateralReserveId,
+          collateralToLiquidate: liquidationAmounts.collateralToLiquidate,
+          collateralToLiquidator: liquidationAmounts.collateralToLiquidator,
+          liquidator: params.liquidator,
+          user: params.user,
+          receiveShares: params.receiveShares
+        })
+      );
 
-    (vars.drawnSharesToLiquidate, vars.premiumDelta, vars.isDebtPositionEmpty) = _liquidateDebt(
-      debtReserve,
-      positions[params.user][params.debtReserveId],
-      positionStatus[params.user],
-      LiquidateDebtParams({
-        debtReserveId: params.debtReserveId,
-        debtToLiquidate: vars.debtToLiquidate,
-        accruedPremiumRay: params.accruedPremiumRay,
-        liquidator: params.liquidator,
-        user: params.user
-      })
-    );
+    (
+      uint256 drawnSharesToLiquidate,
+      IHubBase.PremiumDelta memory premiumDelta,
+      bool isDebtPositionEmpty
+    ) = _liquidateDebt(
+        debtReserve,
+        positions[params.user][params.debtReserveId],
+        positionStatus[params.user],
+        LiquidateDebtParams({
+          debtReserveId: params.debtReserveId,
+          debtToLiquidate: liquidationAmounts.debtToLiquidate,
+          accruedPremiumRay: params.accruedPremiumRay,
+          liquidator: params.liquidator,
+          user: params.user
+        })
+      );
 
     emit ISpokeBase.LiquidationCall(
       params.collateralReserveId,
       params.debtReserveId,
       params.user,
-      vars.debtToLiquidate,
-      vars.drawnSharesToLiquidate,
-      vars.premiumDelta,
-      vars.collateralToLiquidate,
-      vars.collateralSharesToLiquidate,
-      vars.collateralSharesToLiquidator,
       params.liquidator,
-      params.receiveShares
+      params.receiveShares,
+      liquidationAmounts.debtToLiquidate,
+      drawnSharesToLiquidate,
+      premiumDelta,
+      liquidationAmounts.collateralToLiquidate,
+      collateralSharesToLiquidate,
+      collateralSharesToLiquidator
     );
 
     return
       _evaluateDeficit({
-        isCollateralPositionEmpty: vars.isCollateralPositionEmpty,
-        isDebtPositionEmpty: vars.isDebtPositionEmpty,
+        isCollateralPositionEmpty: isCollateralPositionEmpty,
+        isDebtPositionEmpty: isDebtPositionEmpty,
         activeCollateralCount: params.activeCollateralCount,
         borrowedCount: params.borrowedCount
       });
@@ -418,12 +409,10 @@ library LiquidationLogic {
 
   /// @notice Calculates the liquidation amounts.
   /// @dev Invoked by `liquidateUser` method.
-  /// @return The collateral to liquidate.
-  /// @return The collateral to transfer to liquidator.
-  /// @return The debt to liquidate.
+  /// @return The liquidation amounts.
   function _calculateLiquidationAmounts(
     CalculateLiquidationAmountsParams memory params
-  ) internal pure returns (uint256, uint256, uint256) {
+  ) internal pure returns (LiquidationAmounts memory) {
     uint256 debtAssetUnit = MathUtils.uncheckedExp(10, params.debtAssetDecimals);
     uint256 collateralAssetUnit = MathUtils.uncheckedExp(10, params.collateralAssetDecimals);
 
@@ -489,7 +478,12 @@ library LiquidationLogic {
         liquidationBonus * PercentageMath.PERCENTAGE_FACTOR
       );
 
-    return (collateralToLiquidate, collateralToLiquidator, debtToLiquidate);
+    return
+      LiquidationAmounts({
+        collateralToLiquidate: collateralToLiquidate,
+        collateralToLiquidator: collateralToLiquidator,
+        debtToLiquidate: debtToLiquidate
+      });
   }
 
   /// @notice Calculates the debt that should be liquidated.

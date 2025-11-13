@@ -193,7 +193,7 @@ contract LiquidationLogicWrapper {
 
   function calculateLiquidationAmounts(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
-  ) public pure returns (uint256, uint256, uint256) {
+  ) public pure returns (LiquidationLogic.LiquidationAmounts memory) {
     return LiquidationLogic._calculateLiquidationAmounts(params);
   }
 
