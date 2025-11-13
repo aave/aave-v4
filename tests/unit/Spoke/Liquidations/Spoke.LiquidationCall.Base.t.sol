@@ -1182,12 +1182,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     Vm.Log[] memory logs
   ) internal view {
     uint256 precision = 0.1e18;
-
-    if (!_isHealthy(params.spoke, accountsInfoAfter.userAccountData.healthFactor)) {
-      liquidationMetadata.expectedUserRiskPremium = 0;
-      precision = 0;
-    }
-
     uint256 riskPremiumEventCount;
     for (uint256 i = 0; i < logs.length; i++) {
       if (logs[i].topics[0] == ISpoke.UpdateUserRiskPremium.selector) {

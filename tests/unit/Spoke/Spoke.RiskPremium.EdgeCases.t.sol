@@ -485,12 +485,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
 
     uint256 bobRiskPremium = _getUserRiskPremium(spoke2, bob);
-    if (_isHealthy(spoke2, bob)) {
-      // since Bob's dai collateral is less than debt due to interest accrual, Bob's RP should be greater than collateral risk of dai
-      assertGt(bobRiskPremium, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
-    } else {
-      assertEq(bobRiskPremium, 0);
-    }
+    // since Bob's dai collateral is less than debt due to interest accrual, Bob's RP should be greater than collateral risk of dai
+    assertGt(bobRiskPremium, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
 
     assertEq(
       bobRiskPremium,
@@ -612,13 +608,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
 
     uint256 bobRiskPremium = _getUserRiskPremium(spoke2, bob);
-    if (_isHealthy(spoke2, bob)) {
-      // Now Bob's RP should be greater than collateral risk of dai, since debt is not fully covered by it
-      assertGt(bobRiskPremium, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
-    } else {
-      assertEq(bobRiskPremium, 0);
-    }
-
+    // Now Bob's RP should be greater than collateral risk of dai, since debt is not fully covered by it
+    assertGt(bobRiskPremium, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
     assertEq(
       bobRiskPremium,
       _calculateExpectedUserRP(bob, spoke2),
