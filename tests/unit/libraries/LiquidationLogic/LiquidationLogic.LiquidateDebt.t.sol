@@ -99,7 +99,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   function test_liquidateDebt_fuzz(uint256) public {
     (uint256 spokeDrawnOwed, ) = hub.getSpokeOwed(assetId, address(spoke));
     IHub.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke));
-    uint256 spokePremiumOwedRay = _calculatePremiumDebtRay(
+    uint256 spokePremiumOwedRay = _calculatePremiumRay(
       hub,
       assetId,
       spokeData.realizedPremiumRay,

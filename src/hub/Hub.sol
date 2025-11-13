@@ -540,7 +540,7 @@ contract Hub is IHub, AccessManaged {
   function getAssetPremiumRay(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
     return
-      Premium.calculatePremiumDebtRay(
+      Premium.calculatePremiumRay(
         asset.realizedPremiumRay,
         asset.premiumShares,
         asset.getDrawnIndex(),
@@ -635,13 +635,7 @@ contract Hub is IHub, AccessManaged {
   function getSpokePremiumRay(uint256 assetId, address spoke) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    return
-      Premium.calculatePremiumDebtRay(
-        spokeData.realizedPremiumRay,
-        spokeData.premiumShares,
-        asset.getDrawnIndex(),
-        spokeData.premiumOffsetRay
-      );
+    return _getSpokePremiumRay(asset, spokeData);
   }
 
   /// @inheritdoc IHubBase
@@ -809,25 +803,26 @@ contract Hub is IHub, AccessManaged {
     return asset.toDrawnAssetsUp(spoke.drawnShares);
   }
 
-  function _getSpokePremiumRay(
-    Asset storage asset,
-    SpokeData storage spoke
-  ) internal view returns (uint256) {
-    return
-      Premium.calculatePremiumDebtRay(
-        spoke.realizedPremiumRay,
-        spoke.premiumShares,
-        asset.getDrawnIndex(),
-        spoke.premiumOffsetRay
-      );
-  }
-
   /// @dev Returns the spoke's premium amount for a specified asset.
   function _getSpokePremium(
     Asset storage asset,
     SpokeData storage spoke
   ) internal view returns (uint256) {
     return _getSpokePremiumRay(asset, spoke).fromRayUp();
+  }
+
+  /// @dev Returns the spoke's premium amount with full precision for a specified asset.
+  function _getSpokePremiumRay(
+    Asset storage asset,
+    SpokeData storage spoke
+  ) internal view returns (uint256) {
+    return
+      Premium.calculatePremiumRay(
+        spoke.realizedPremiumRay,
+        spoke.premiumShares,
+        asset.getDrawnIndex(),
+        spoke.premiumOffsetRay
+      );
   }
 
   /// @dev Spoke with maximum cap have unlimited add capacity.
@@ -954,7 +949,7 @@ contract Hub is IHub, AccessManaged {
     uint256 realizedPremiumRay,
     PremiumDelta calldata premiumDelta
   ) internal pure returns (uint120, uint256, uint256) {
-    uint256 premiumDebtRayBefore = Premium.calculatePremiumDebtRay(
+    uint256 premiumRayBefore = Premium.calculatePremiumRay(
       realizedPremiumRay,
       premiumShares,
       drawnIndex,
@@ -967,7 +962,7 @@ contract Hub is IHub, AccessManaged {
       premiumDelta.accruedPremiumRay -
       premiumDelta.restoredPremiumRay;
 
-    uint256 premiumDebtRayAfter = Premium.calculatePremiumDebtRay(
+    uint256 premiumRayAfter = Premium.calculatePremiumRay(
       newRealizedPremiumRay,
       newPremiumShares,
       drawnIndex,
@@ -975,7 +970,7 @@ contract Hub is IHub, AccessManaged {
     );
 
     require(
-      premiumDebtRayAfter + premiumDelta.restoredPremiumRay == premiumDebtRayBefore,
+      premiumRayAfter + premiumDelta.restoredPremiumRay == premiumRayBefore,
       InvalidPremiumChange()
     );
     return (newPremiumShares.toUint120(), newPremiumOffsetRay, newRealizedPremiumRay);

@@ -2044,11 +2044,11 @@ abstract contract Base is Test {
     uint256 premiumOffsetRay
   ) internal view returns (uint256) {
     return
-      _calculatePremiumDebtRay(hub, assetId, realizedPremiumRay, premiumShares, premiumOffsetRay)
+      _calculatePremiumRay(hub, assetId, realizedPremiumRay, premiumShares, premiumOffsetRay)
         .fromRayUp();
   }
 
-  function _calculatePremiumDebtRay(
+  function _calculatePremiumRay(
     IHub hub,
     uint256 assetId,
     uint256 realizedPremiumRay,
@@ -2064,7 +2064,7 @@ abstract contract Base is Test {
     return realizedPremiumRay + accruedPremiumRay;
   }
 
-  function _calculatePremiumDebtRay(
+  function _calculatePremiumRay(
     ISpoke spoke,
     uint256 reserveId,
     uint256 realizedPremiumRay,
@@ -2073,8 +2073,7 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     IHub hub = _hub(spoke, reserveId);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    return
-      _calculatePremiumDebtRay(hub, assetId, realizedPremiumRay, premiumShares, premiumOffsetRay);
+    return _calculatePremiumRay(hub, assetId, realizedPremiumRay, premiumShares, premiumOffsetRay);
   }
 
   function _calculatePremiumAssetsRay(

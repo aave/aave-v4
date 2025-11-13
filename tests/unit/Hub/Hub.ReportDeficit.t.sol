@@ -86,7 +86,7 @@ contract HubReportDeficitTest is HubBase {
     assertGt(premium, 0);
 
     IHub.SpokeData memory spokeData = hub1.getSpoke(usdxAssetId, address(spoke1));
-    uint256 spokePremiumRay = _calculatePremiumDebtRay(
+    uint256 spokePremiumRay = _calculatePremiumRay(
       hub1,
       usdxAssetId,
       spokeData.realizedPremiumRay,
@@ -165,7 +165,7 @@ contract HubReportDeficitTest is HubBase {
 
     if (
       premiumDelta.restoredPremiumRay >
-      _calculatePremiumDebtRay(
+      _calculatePremiumRay(
         hub1,
         usdxAssetId,
         asset.realizedPremiumRay,

@@ -93,7 +93,7 @@ contract HubOperations_Gas_Tests is Base {
         uint256(premiumShares),
         premiumOffsetRay.toUint256()
       ),
-      _calculatePremiumDebtRay(
+      _calculatePremiumRay(
         hub1,
         daiAssetId,
         spokeData.realizedPremiumRay,
@@ -144,7 +144,7 @@ contract HubOperations_Gas_Tests is Base {
         uint256(premiumShares),
         premiumOffsetRay.toUint256()
       ),
-      _calculatePremiumDebtRay(
+      _calculatePremiumRay(
         hub1,
         daiAssetId,
         spokeData.realizedPremiumRay,
@@ -247,7 +247,7 @@ contract HubOperations_Gas_Tests is Base {
         userPosition.premiumShares,
         userPosition.premiumOffsetRay
       ),
-      restoredPremiumRay: _calculatePremiumDebtRay(
+      restoredPremiumRay: _calculatePremiumRay(
         hub1,
         daiAssetId,
         userPosition.realizedPremiumRay,
