@@ -247,10 +247,10 @@ interface IHubBase {
   /// @return The total amount of the assets owed.
   function getAssetTotalOwed(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the full precision premium of the specified asset owed to the Hub.
+  /// @notice Returns the amount of owed premium with full precision for specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The amount of premium owed, expressed in asset units and scaled by RAY.
-  function getAssetPremiumOwedRay(uint256 assetId) external view returns (uint256);
+  function getAssetPremiumRay(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the amount of drawn shares of the specified asset.
   /// @param assetId The identifier of the asset.
@@ -301,11 +301,11 @@ interface IHubBase {
   /// @return The total amount of the asset owed.
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256);
 
-  /// @notice Returns the full precision premium of the specified asset owed to the Hub by the specified spoke.
+  /// @notice Returns the amount of owed premium with full precision for specified asset and spoke.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
-  /// @return The amount of premium owed, expressed in asset units and scaled by RAY.
-  function getSpokePremiumOwedRay(uint256 assetId, address spoke) external view returns (uint256);
+  /// @return The amount of owed premium assets, expressed in asset units and scaled by RAY.
+  function getSpokePremiumRay(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the amount of drawn shares of the specified asset by the specified spoke.
   /// @param assetId The identifier of the asset.

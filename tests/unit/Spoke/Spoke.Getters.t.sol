@@ -303,10 +303,10 @@ contract SpokeGettersTest is SpokeBase {
     uint256 bobPremiumDebtRay = spoke.getUserPremiumDebtRay(_wethReserveId(spoke), bob);
     assertEq(bobPremiumDebtRay, 1e18 * (assetDrawnIndex - 1e27));
 
-    uint256 spokePremiumDebtRay = hub1.getSpokePremiumOwedRay(wethAssetId, address(spoke));
+    uint256 spokePremiumDebtRay = hub1.getSpokePremiumRay(wethAssetId, address(spoke));
     assertEq(spokePremiumDebtRay, alicePremiumDebtRay + bobPremiumDebtRay);
 
-    uint256 assetPremiumDebtRay = hub1.getAssetPremiumOwedRay(wethAssetId);
+    uint256 assetPremiumDebtRay = hub1.getAssetPremiumRay(wethAssetId);
     assertEq(assetPremiumDebtRay, spokePremiumDebtRay);
 
     // realize premium
@@ -320,10 +320,10 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(spoke.getUserPremiumDebtRay(_wethReserveId(spoke), alice), alicePremiumDebtRay);
     assertEq(spoke.getUserPremiumDebtRay(_wethReserveId(spoke), bob), bobPremiumDebtRay);
     assertEq(
-      hub1.getSpokePremiumOwedRay(wethAssetId, address(spoke)),
+      hub1.getSpokePremiumRay(wethAssetId, address(spoke)),
       alicePremiumDebtRay + bobPremiumDebtRay
     );
-    assertEq(hub1.getAssetPremiumOwedRay(wethAssetId), alicePremiumDebtRay + bobPremiumDebtRay);
+    assertEq(hub1.getAssetPremiumRay(wethAssetId), alicePremiumDebtRay + bobPremiumDebtRay);
 
     // introduce another spoke
     Utils.approve(spoke, _daiReserveId(spoke), carol, 1_000e18);
@@ -333,16 +333,16 @@ contract SpokeGettersTest is SpokeBase {
     skip(365 days);
 
     // check premium in ray is consistent across spoke and hub
-    spokePremiumDebtRay = hub1.getSpokePremiumOwedRay(wethAssetId, address(spoke));
+    spokePremiumDebtRay = hub1.getSpokePremiumRay(wethAssetId, address(spoke));
     alicePremiumDebtRay = spoke.getUserPremiumDebtRay(_wethReserveId(spoke), alice);
     bobPremiumDebtRay = spoke.getUserPremiumDebtRay(_wethReserveId(spoke), bob);
     assertEq(spokePremiumDebtRay, alicePremiumDebtRay + bobPremiumDebtRay);
 
-    uint256 spoke1PremiumDebtRay = hub1.getSpokePremiumOwedRay(wethAssetId, address(spoke1));
+    uint256 spoke1PremiumDebtRay = hub1.getSpokePremiumRay(wethAssetId, address(spoke1));
     uint256 carolPremiumDebtRay = spoke1.getUserPremiumDebtRay(_wethReserveId(spoke1), carol);
     assertEq(spoke1PremiumDebtRay, carolPremiumDebtRay);
 
-    assetPremiumDebtRay = hub1.getAssetPremiumOwedRay(wethAssetId);
+    assetPremiumDebtRay = hub1.getAssetPremiumRay(wethAssetId);
     assertEq(assetPremiumDebtRay, spokePremiumDebtRay + spoke1PremiumDebtRay);
   }
 }

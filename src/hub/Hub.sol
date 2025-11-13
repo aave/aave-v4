@@ -537,7 +537,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function getAssetPremiumOwedRay(uint256 assetId) external view returns (uint256) {
+  function getAssetPremiumRay(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
     return
       Premium.calculatePremiumDebtRay(
@@ -632,7 +632,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function getSpokePremiumOwedRay(uint256 assetId, address spoke) external view returns (uint256) {
+  function getSpokePremiumRay(uint256 assetId, address spoke) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spokeData = _spokes[assetId][spoke];
     return
